@@ -59,6 +59,25 @@ const mockElementRect = (element: Element): void => {
   });
 };
 
+const projectWorldToPreviewScreen = (
+  bounds: { minX: number; minY: number; maxX: number; maxY: number },
+  worldPoint: { x: number; y: number },
+): { clientX: number; clientY: number } => {
+  const width = Math.max(bounds.maxX - bounds.minX, 1);
+  const height = Math.max(bounds.maxY - bounds.minY, 1);
+  const normalized = {
+    minX: bounds.minX - width * 0.08,
+    minY: bounds.minY - height * 0.08,
+    maxX: bounds.maxX + width * 0.08,
+    maxY: bounds.maxY + height * 0.08,
+  };
+  const scale = Math.min((900 - 36 * 2) / (normalized.maxX - normalized.minX), (520 - 36 * 2) / (normalized.maxY - normalized.minY));
+  return {
+    clientX: 36 + (worldPoint.x - normalized.minX) * scale,
+    clientY: 520 - 36 - (worldPoint.y - normalized.minY) * scale,
+  };
+};
+
 const setTextInputValue = (inputElement: HTMLInputElement, value: string): void => {
   const setter = Object.getOwnPropertyDescriptor(
     window.HTMLInputElement.prototype,
@@ -474,8 +493,101 @@ describe('SurveyCadWorkspace', () => {
       );
     });
 
-    expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent).toContain('Point');
+    expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent).toContain('Endpoint');
     expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent).toContain('A');
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('resolves arc midpoint and nearest hover snaps in the live workspace with zoom-aware snap range', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    const baseProject = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+    const persistedProject = {
+      ...baseProject,
+      entities: [
+        ...baseProject.entities,
+        {
+          id: 'arc:hover-test',
+          type: 'arc' as const,
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          centerX: 50,
+          centerY: 20,
+          radius: 12,
+          startAngleDeg: 0,
+          endAngleDeg: 180,
+        },
+      ],
+    };
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+          persistedState={{
+            version: 1,
+            sourceSignature: buildCadProjectSignature(baseProject),
+            project: persistedProject,
+          }}
+        />,
+      );
+    });
+
+    const preview = container.querySelector('[data-survey-cad-preview]') as SVGElement | null;
+    if (!preview) throw new Error('Preview not found');
+    mockElementRect(preview);
+
+    const arcMidpointScreen = projectWorldToPreviewScreen(baseProject.bounds!, { x: 50.2, y: 31.6 });
+    await act(async () => {
+      preview.dispatchEvent(
+        new MouseEvent('mousemove', {
+          bubbles: true,
+          clientX: arcMidpointScreen.clientX,
+          clientY: arcMidpointScreen.clientY,
+        }),
+      );
+    });
+    expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent).toContain('Arc Mid');
+    expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent).toContain('arc:hover-test');
+
+    const nearestScreen = projectWorldToPreviewScreen(baseProject.bounds!, { x: 57.2, y: 29.6 });
+    await act(async () => {
+      preview.dispatchEvent(
+        new WheelEvent('wheel', {
+          bubbles: true,
+          clientX: nearestScreen.clientX,
+          clientY: nearestScreen.clientY,
+          deltaY: -120,
+        }),
+      );
+      preview.dispatchEvent(
+        new MouseEvent('mousemove', {
+          bubbles: true,
+          clientX: nearestScreen.clientX,
+          clientY: nearestScreen.clientY,
+        }),
+      );
+    });
+    expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent).toContain('Nearest');
+    expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent).toContain('arc:hover-test');
 
     await act(async () => {
       root.unmount();

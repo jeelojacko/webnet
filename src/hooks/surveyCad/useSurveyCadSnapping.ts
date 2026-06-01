@@ -7,7 +7,7 @@ import type {
   CadSnapKind,
 } from '../../engine/cad/cadTypes';
 
-const FALLBACK_TOLERANCE_RATIO = 0.02;
+const FALLBACK_TOLERANCE_RATIO = 0.01;
 const SNAP_KIND_ORDER: CadSnapKind[] = [
   'point-node',
   'endpoint',
@@ -55,7 +55,10 @@ interface UseSurveyCadSnappingResult {
   activeSnap: CadSnapCandidate | null;
   pointerWorldPoint: { x: number; y: number } | null;
   snapPreferences: CadSnapPreferences;
-  updatePointerWorldPoint: (_worldPoint: { x: number; y: number } | null) => void;
+  updatePointerWorldPoint: (
+    _worldPoint: { x: number; y: number } | null,
+    _toleranceWorld?: number,
+  ) => void;
   setSnapPreference: (_kind: CadSnapKind, _enabled: boolean) => void;
 }
 
@@ -82,13 +85,20 @@ export const useSurveyCadSnapping = (
     activeSnap,
     pointerWorldPoint,
     snapPreferences,
-    updatePointerWorldPoint: (worldPoint) => {
+    updatePointerWorldPoint: (worldPoint, dynamicToleranceWorld) => {
       setPointerWorldPoint(worldPoint);
       if (!worldPoint) {
         setActiveSnap(null);
         return;
       }
-      setActiveSnap(spatialIndex.queryNearestSnap(worldPoint, toleranceWorld, allowedKinds, constructionContext));
+      setActiveSnap(
+        spatialIndex.queryNearestSnap(
+          worldPoint,
+          dynamicToleranceWorld ?? toleranceWorld,
+          allowedKinds,
+          constructionContext,
+        ),
+      );
     },
     setSnapPreference: (kind, enabled) => {
       setSnapPreferences((current) => {

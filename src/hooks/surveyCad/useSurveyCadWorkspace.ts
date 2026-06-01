@@ -111,7 +111,10 @@ interface UseSurveyCadWorkspaceResult {
   handleEscapeKey: () => void;
   selectEntity: (_entityId: string, _appendToSelection?: boolean) => void;
   selectEntities: (_entityIds: string[], _appendToSelection?: boolean) => void;
-  updatePointerWorldPoint: (_worldPoint: { x: number; y: number } | null) => void;
+  updatePointerWorldPoint: (
+    _worldPoint: { x: number; y: number } | null,
+    _toleranceWorld?: number,
+  ) => void;
   setSnapPreference: (_kind: keyof CadSnapPreferences, _enabled: boolean) => void;
   selectAll: () => void;
   clearSelection: () => void;

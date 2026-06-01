@@ -29,11 +29,11 @@ import type {
 } from './cadTypes';
 
 const SNAP_PRIORITY: Record<CadSnapKind, number> = {
-  'point-node': 0,
-  endpoint: 1,
+  endpoint: 0,
+  'point-node': 1,
   midpoint: 2,
-  center: 3,
-  'arc-midpoint': 4,
+  'arc-midpoint': 3,
+  center: 4,
   quadrant: 5,
   intersection: 6,
   'apparent-intersection': 7,
@@ -42,6 +42,22 @@ const SNAP_PRIORITY: Record<CadSnapKind, number> = {
   parallel: 10,
   tangent: 11,
   nearest: 12,
+};
+
+const SNAP_RANGE_MULTIPLIER: Record<CadSnapKind, number> = {
+  endpoint: 0.85,
+  'point-node': 0.8,
+  midpoint: 0.72,
+  'arc-midpoint': 0.72,
+  center: 0.65,
+  quadrant: 0.65,
+  intersection: 0.65,
+  'apparent-intersection': 0.6,
+  extension: 0.6,
+  perpendicular: 0.6,
+  parallel: 0.6,
+  tangent: 0.6,
+  nearest: 1,
 };
 
 const buildCandidate = (
@@ -562,7 +578,9 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
     }
 
     const viable = dedupeCandidates(candidates)
-      .filter((candidate) => candidate.distance <= toleranceWorld)
+      .filter(
+        (candidate) => candidate.distance <= toleranceWorld * SNAP_RANGE_MULTIPLIER[candidate.kind],
+      )
       .sort((left, right) => {
         if (SNAP_PRIORITY[left.kind] !== SNAP_PRIORITY[right.kind]) {
           return SNAP_PRIORITY[left.kind] - SNAP_PRIORITY[right.kind];

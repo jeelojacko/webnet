@@ -47,7 +47,7 @@ describe('Survey CAD spatial index', () => {
     });
     const index = buildCadSpatialIndex(project);
 
-    const pointNode = index.queryNearestSnap({ x: 0.4, y: 0.3 }, 2);
+    const pointNode = index.queryNearestSnap({ x: 0.4, y: 0.3 }, 2, ['point-node']);
     expect(pointNode?.kind).toBe('point-node');
     expect(pointNode?.label).toBe('A');
 
@@ -236,6 +236,56 @@ describe('Survey CAD spatial index', () => {
     expect(arcArcIntersection?.label).toContain('arc:right-upper');
     expect(arcArcIntersection?.x).toBeCloseTo(4, 6);
     expect(arcArcIntersection?.y).toBeCloseTo(Math.sqrt(84), 6);
+  });
+
+  it('prefers endpoint then midpoint, while still letting nearest win outside tighter exact-snap ranges', () => {
+    const project = appendCadProjectEntities(
+      buildSurveyCadSpikeProject({
+        input,
+        instrumentLibrary: {},
+        parseOptions,
+        units: 'm',
+        result: null,
+      }),
+      [
+        {
+          id: 'arc:priority-test',
+          type: 'arc',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          centerX: 50,
+          centerY: 20,
+          radius: 12,
+          startAngleDeg: 0,
+          endAngleDeg: 180,
+        },
+      ],
+    );
+    const index = buildCadSpatialIndex(project);
+
+    const endpoint = index.queryNearestSnap({ x: 61.2, y: 20.2 }, 2, ['endpoint', 'nearest']);
+    expect(endpoint?.kind).toBe('endpoint');
+    expect(endpoint?.sourceEntityId).toBe('arc:priority-test');
+
+    const arcMidpoint = index.queryNearestSnap(
+      { x: 50.2, y: 31.6 },
+      2,
+      ['arc-midpoint', 'nearest', 'center'],
+    );
+    expect(arcMidpoint?.kind).toBe('arc-midpoint');
+    expect(arcMidpoint?.sourceEntityId).toBe('arc:priority-test');
+
+    const nearest = index.queryNearestSnap(
+      { x: 57.2, y: 29.6 },
+      2,
+      ['endpoint', 'arc-midpoint', 'center', 'nearest'],
+    );
+    expect(nearest?.kind).toBe('nearest');
+    expect(nearest?.sourceEntityId).toBe('arc:priority-test');
+    expect(nearest?.x).toBeCloseTo(7.2 + 50, 1);
+    expect(nearest?.y).toBeCloseTo(9.6 + 20, 1);
   });
 
   it('resolves construction snaps only when active command context supplies a base point', () => {

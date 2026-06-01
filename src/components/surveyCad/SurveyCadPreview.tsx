@@ -31,7 +31,10 @@ interface SurveyCadPreviewProps {
   onSelectEntity: (_entityId: string, _appendToSelection?: boolean) => void;
   onSelectEntities: (_entityIds: string[], _appendToSelection?: boolean) => void;
   onConsumeInteractionPoint: (_worldPoint: { x: number; y: number }) => void;
-  onPointerWorldPointChange: (_worldPoint: { x: number; y: number } | null) => void;
+  onPointerWorldPointChange: (
+    _worldPoint: { x: number; y: number } | null,
+    _toleranceWorld?: number,
+  ) => void;
   onSnapPreferenceChange: (_kind: CadSnapKind, _enabled: boolean) => void;
   onCommandInputChange: (_value: string) => void;
   onCommandInputEnter: () => void;
@@ -44,6 +47,7 @@ const HEIGHT = 520;
 const PADDING = 36;
 const MIN_ZOOM = 0.35;
 const MAX_ZOOM = 16;
+const SNAP_TOLERANCE_SCREEN_UNITS = 14;
 const SNAP_MENU_LABELS: Record<CadSnapKind, string> = {
   'point-node': 'Points',
   endpoint: 'Endpoints',
@@ -586,7 +590,10 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
               },
             });
           }
-          onPointerWorldPointChange(unproject(viewX, viewY));
+          onPointerWorldPointChange(
+            unproject(viewX, viewY),
+            SNAP_TOLERANCE_SCREEN_UNITS / scale,
+          );
         }}
         onMouseUp={() => {
           if (dragState.kind === 'box') {
