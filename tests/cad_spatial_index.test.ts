@@ -137,4 +137,104 @@ describe('Survey CAD spatial index', () => {
     expect(endpoint?.kind).toBe('endpoint');
     expect(endpoint?.label).toBe('P2');
   });
+
+  it('indexes arc centers, arc endpoints, arc midpoint, quadrants, nearest, and curve intersections', () => {
+    const project = appendCadProjectEntities(
+      buildSurveyCadSpikeProject({
+        input,
+        instrumentLibrary: {},
+        parseOptions,
+        units: 'm',
+        result: null,
+      }),
+      [
+        {
+          id: 'line:axis-y',
+          type: 'line',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          fromStationId: 'L1',
+          toStationId: 'L2',
+          fromX: 0,
+          fromY: -15,
+          toX: 0,
+          toY: 15,
+          sourceObservationIds: [],
+        },
+        {
+          id: 'arc:upper',
+          type: 'arc',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          centerX: 0,
+          centerY: 0,
+          radius: 10,
+          startAngleDeg: 0,
+          endAngleDeg: 180,
+        },
+        {
+          id: 'arc:right-upper',
+          type: 'arc',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          centerX: 8,
+          centerY: 0,
+          radius: 10,
+          startAngleDeg: 90,
+          endAngleDeg: 180,
+        },
+      ],
+    );
+    const index = buildCadSpatialIndex(project);
+
+    const center = index.queryNearestSnap({ x: 0.3, y: 0.2 }, 1, ['center']);
+    expect(center?.kind).toBe('center');
+    expect(center?.sourceEntityId).toBe('arc:upper');
+    expect(center?.x).toBeCloseTo(0, 6);
+    expect(center?.y).toBeCloseTo(0, 6);
+
+    const endpoint = index.queryNearestSnap({ x: 9.8, y: 0.1 }, 1, ['endpoint']);
+    expect(endpoint?.kind).toBe('endpoint');
+    expect(endpoint?.sourceEntityId).toBe('arc:upper');
+    expect(endpoint?.x).toBeCloseTo(10, 6);
+    expect(endpoint?.y).toBeCloseTo(0, 6);
+
+    const arcMidpoint = index.queryNearestSnap({ x: 0.2, y: 9.8 }, 1, ['arc-midpoint']);
+    expect(arcMidpoint?.kind).toBe('arc-midpoint');
+    expect(arcMidpoint?.sourceEntityId).toBe('arc:upper');
+    expect(arcMidpoint?.x).toBeCloseTo(0, 6);
+    expect(arcMidpoint?.y).toBeCloseTo(10, 6);
+
+    const quadrant = index.queryNearestSnap({ x: -10.1, y: 0.1 }, 1, ['quadrant']);
+    expect(quadrant?.kind).toBe('quadrant');
+    expect(quadrant?.sourceEntityId).toBe('arc:upper');
+    expect(quadrant?.x).toBeCloseTo(-10, 6);
+    expect(quadrant?.y).toBeCloseTo(0, 6);
+
+    const nearest = index.queryNearestSnap({ x: 7, y: 8.2 }, 2, ['nearest']);
+    expect(nearest?.kind).toBe('nearest');
+    expect(nearest?.sourceEntityId).toBe('arc:upper');
+    expect(nearest?.x).toBeCloseTo(6.4926, 3);
+    expect(nearest?.y).toBeCloseTo(7.6056, 3);
+
+    const lineArcIntersection = index.queryNearestSnap({ x: 0.1, y: 9.8 }, 1, ['intersection']);
+    expect(lineArcIntersection?.kind).toBe('intersection');
+    expect(lineArcIntersection?.label).toContain('L1-L2');
+    expect(lineArcIntersection?.label).toContain('arc:upper');
+    expect(lineArcIntersection?.x).toBeCloseTo(0, 6);
+    expect(lineArcIntersection?.y).toBeCloseTo(10, 6);
+
+    const arcArcIntersection = index.queryNearestSnap({ x: 4, y: 9.1 }, 1, ['intersection']);
+    expect(arcArcIntersection?.kind).toBe('intersection');
+    expect(arcArcIntersection?.label).toContain('arc:upper');
+    expect(arcArcIntersection?.label).toContain('arc:right-upper');
+    expect(arcArcIntersection?.x).toBeCloseTo(4, 6);
+    expect(arcArcIntersection?.y).toBeCloseTo(Math.sqrt(84), 6);
+  });
 });

@@ -3,7 +3,16 @@ import { buildCadSpatialIndex } from '../../engine/cad/cadSpatialIndex';
 import type { CadProject, CadSnapCandidate, CadSnapKind } from '../../engine/cad/cadTypes';
 
 const FALLBACK_TOLERANCE_RATIO = 0.02;
-const SNAP_KIND_ORDER: CadSnapKind[] = ['point-node', 'endpoint', 'midpoint', 'intersection', 'nearest'];
+const SNAP_KIND_ORDER: CadSnapKind[] = [
+  'point-node',
+  'endpoint',
+  'midpoint',
+  'center',
+  'arc-midpoint',
+  'quadrant',
+  'intersection',
+  'nearest',
+];
 
 export type CadSnapPreferences = Record<CadSnapKind, boolean>;
 
@@ -11,6 +20,9 @@ const DEFAULT_SNAP_PREFERENCES: CadSnapPreferences = {
   'point-node': true,
   endpoint: true,
   midpoint: true,
+  center: true,
+  'arc-midpoint': true,
+  quadrant: true,
   intersection: true,
   nearest: true,
 };

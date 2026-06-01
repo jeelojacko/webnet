@@ -256,7 +256,15 @@ export interface CadDisplayScene {
   primitives: CadDisplayPrimitive[];
 }
 
-export type CadSnapKind = 'point-node' | 'endpoint' | 'midpoint' | 'intersection' | 'nearest';
+export type CadSnapKind =
+  | 'point-node'
+  | 'endpoint'
+  | 'midpoint'
+  | 'center'
+  | 'arc-midpoint'
+  | 'quadrant'
+  | 'intersection'
+  | 'nearest';
 
 export interface CadSnapCandidate {
   id: string;

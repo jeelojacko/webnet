@@ -57,6 +57,15 @@ export const cadClosestPointOnSegment = (
   };
 };
 
+export const cadPointOnCircle = (
+  center: CadWorldPoint,
+  radius: number,
+  angleDeg: number,
+): CadWorldPoint => ({
+  x: center.x + Math.cos((angleDeg * Math.PI) / 180) * radius,
+  y: center.y + Math.sin((angleDeg * Math.PI) / 180) * radius,
+});
+
 export const cadSegmentIntersection = (
   firstStart: CadWorldPoint,
   firstEnd: CadWorldPoint,
@@ -200,6 +209,32 @@ export const cadIsAngleOnArcSweep = (
     return cadCounterClockwiseDeltaDeg(start, angle) <= magnitude + toleranceDeg;
   }
   return cadCounterClockwiseDeltaDeg(angle, start) <= magnitude + toleranceDeg;
+};
+
+export const cadArcMidpoint = (
+  center: CadWorldPoint,
+  radius: number,
+  startAngleDeg: number,
+  endAngleDeg: number,
+): CadWorldPoint => {
+  const midpointAngleDeg = startAngleDeg + cadSignedSweepDeg(startAngleDeg, endAngleDeg) / 2;
+  return cadPointOnCircle(center, radius, midpointAngleDeg);
+};
+
+export const cadClosestPointOnArc = (
+  point: CadWorldPoint,
+  center: CadWorldPoint,
+  radius: number,
+  startAngleDeg: number,
+  endAngleDeg: number,
+): CadWorldPoint => {
+  const projectedAngleDeg = cadAngleDegFromCenter(center, point);
+  if (cadIsAngleOnArcSweep(projectedAngleDeg, startAngleDeg, endAngleDeg)) {
+    return cadPointOnCircle(center, radius, projectedAngleDeg);
+  }
+  const startPoint = cadPointOnCircle(center, radius, startAngleDeg);
+  const endPoint = cadPointOnCircle(center, radius, endAngleDeg);
+  return cadDistance(point, startPoint) <= cadDistance(point, endPoint) ? startPoint : endPoint;
 };
 
 const cadChooseArcSweepAngles = (

@@ -1,11 +1,18 @@
 import {
+  cadArcMidpoint,
   cadClosestPointOnSegment,
+  cadClosestPointOnArc,
   cadDistance,
+  cadIntersectArcArc,
+  cadIntersectSegmentArc,
   cadMidpoint,
+  cadPointOnCircle,
   cadSegmentIntersection,
+  cadIsAngleOnArcSweep,
   type CadWorldPoint,
 } from './cadGeometry';
 import type {
+  CadArcEntity,
   CadLineEntity,
   CadParcelEntity,
   CadPolygonEntity,
@@ -19,8 +26,11 @@ const SNAP_PRIORITY: Record<CadSnapKind, number> = {
   'point-node': 0,
   endpoint: 1,
   midpoint: 2,
-  intersection: 3,
-  nearest: 4,
+  center: 3,
+  'arc-midpoint': 4,
+  quadrant: 5,
+  intersection: 6,
+  nearest: 7,
 };
 
 const buildCandidate = (
@@ -53,6 +63,17 @@ interface CadSegmentRef {
   end: CadWorldPoint;
   startLabel: string;
   endLabel: string;
+  label: string;
+}
+
+interface CadArcRef {
+  sourceEntityId: string;
+  center: CadWorldPoint;
+  radius: number;
+  startAngleDeg: number;
+  endAngleDeg: number;
+  startPoint: CadWorldPoint;
+  endPoint: CadWorldPoint;
   label: string;
 }
 
@@ -89,11 +110,34 @@ const vertexEntitySegments = (
 const entitySegments = (entity: CadLineEntity | CadPolylineEntity | CadPolygonEntity | CadParcelEntity): CadSegmentRef[] =>
   entity.type === 'line' ? lineSegments(entity) : vertexEntitySegments(entity);
 
+const arcRefFromEntity = (entity: CadArcEntity): CadArcRef => ({
+  sourceEntityId: entity.id,
+  center: { x: entity.centerX, y: entity.centerY },
+  radius: entity.radius,
+  startAngleDeg: entity.startAngleDeg,
+  endAngleDeg: entity.endAngleDeg,
+  startPoint: cadPointOnCircle({ x: entity.centerX, y: entity.centerY }, entity.radius, entity.startAngleDeg),
+  endPoint: cadPointOnCircle({ x: entity.centerX, y: entity.centerY }, entity.radius, entity.endAngleDeg),
+  label: entity.id,
+});
+
+const dedupeCandidates = (candidates: CadSnapCandidate[]): CadSnapCandidate[] => {
+  const seen = new Set<string>();
+  return candidates.filter((candidate) => {
+    const key = `${candidate.kind}:${candidate.x.toFixed(9)}:${candidate.y.toFixed(9)}`;
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
+};
+
 export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
   queryNearestSnap: (
     worldPoint,
     toleranceWorld,
-    allowedKinds = ['point-node', 'endpoint', 'midpoint', 'intersection', 'nearest'],
+    allowedKinds = ['point-node', 'endpoint', 'midpoint', 'center', 'arc-midpoint', 'quadrant', 'intersection', 'nearest'],
   ) => {
     const allowed = new Set(allowedKinds);
     const candidates: CadSnapCandidate[] = [];
@@ -106,6 +150,9 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
           entity.type === 'parcel'),
       )
       .flatMap((entity) => entitySegments(entity));
+    const arcs = project.entities
+      .filter((entity): entity is CadArcEntity => entity.visible && entity.type === 'arc')
+      .map((entity) => arcRefFromEntity(entity));
 
     project.entities.forEach((entity) => {
       if (!entity.visible) return;
@@ -146,6 +193,55 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
             }
           });
           break;
+        case 'arc': {
+          const arc = arcRefFromEntity(entity);
+          if (allowed.has('endpoint')) {
+            candidates.push(
+              buildCandidate('endpoint', entity.id, arc.startPoint, worldPoint, `${arc.label} start`),
+              buildCandidate('endpoint', entity.id, arc.endPoint, worldPoint, `${arc.label} end`),
+            );
+          }
+          if (allowed.has('center')) {
+            candidates.push(buildCandidate('center', entity.id, arc.center, worldPoint, `${arc.label} center`));
+          }
+          if (allowed.has('arc-midpoint')) {
+            candidates.push(
+              buildCandidate(
+                'arc-midpoint',
+                entity.id,
+                cadArcMidpoint(arc.center, arc.radius, arc.startAngleDeg, arc.endAngleDeg),
+                worldPoint,
+                `${arc.label} mid`,
+              ),
+            );
+          }
+          if (allowed.has('quadrant')) {
+            [0, 90, 180, 270].forEach((angleDeg) => {
+              if (!cadIsAngleOnArcSweep(angleDeg, arc.startAngleDeg, arc.endAngleDeg)) return;
+              candidates.push(
+                buildCandidate(
+                  'quadrant',
+                  entity.id,
+                  cadPointOnCircle(arc.center, arc.radius, angleDeg),
+                  worldPoint,
+                  `${arc.label} q${angleDeg}`,
+                ),
+              );
+            });
+          }
+          if (allowed.has('nearest')) {
+            candidates.push(
+              buildCandidate(
+                'nearest',
+                entity.id,
+                cadClosestPointOnArc(worldPoint, arc.center, arc.radius, arc.startAngleDeg, arc.endAngleDeg),
+                worldPoint,
+                arc.label,
+              ),
+            );
+          }
+          break;
+        }
         default:
           break;
       }
@@ -169,9 +265,57 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
           );
         }
       }
+      segments.forEach((segment) => {
+        arcs.forEach((arc) => {
+          cadIntersectSegmentArc(
+            segment.start,
+            segment.end,
+            arc.center,
+            arc.radius,
+            arc.startAngleDeg,
+            arc.endAngleDeg,
+          ).forEach((intersection) => {
+            candidates.push(
+              buildCandidate(
+                'intersection',
+                `${segment.sourceEntityId}|${arc.sourceEntityId}`,
+                intersection,
+                worldPoint,
+                `${segment.label} x ${arc.label}`,
+              ),
+            );
+          });
+        });
+      });
+      for (let leftIndex = 0; leftIndex < arcs.length; leftIndex += 1) {
+        for (let rightIndex = leftIndex + 1; rightIndex < arcs.length; rightIndex += 1) {
+          const left = arcs[leftIndex];
+          const right = arcs[rightIndex];
+          cadIntersectArcArc(
+            left.center,
+            left.radius,
+            left.startAngleDeg,
+            left.endAngleDeg,
+            right.center,
+            right.radius,
+            right.startAngleDeg,
+            right.endAngleDeg,
+          ).forEach((intersection) => {
+            candidates.push(
+              buildCandidate(
+                'intersection',
+                `${left.sourceEntityId}|${right.sourceEntityId}`,
+                intersection,
+                worldPoint,
+                `${left.label} x ${right.label}`,
+              ),
+            );
+          });
+        }
+      }
     }
 
-    const viable = candidates
+    const viable = dedupeCandidates(candidates)
       .filter((candidate) => candidate.distance <= toleranceWorld)
       .sort((left, right) => {
         if (SNAP_PRIORITY[left.kind] !== SNAP_PRIORITY[right.kind]) {

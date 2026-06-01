@@ -47,6 +47,9 @@ const SNAP_MENU_LABELS: Record<CadSnapKind, string> = {
   'point-node': 'Points',
   endpoint: 'Endpoints',
   midpoint: 'Midpoints',
+  center: 'Centers',
+  'arc-midpoint': 'Arc Midpoints',
+  quadrant: 'Quadrants',
   intersection: 'Intersections',
   nearest: 'Nearest',
 };

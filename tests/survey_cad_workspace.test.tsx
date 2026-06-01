@@ -402,9 +402,15 @@ describe('SurveyCadWorkspace', () => {
       if (!snapMenuButton) throw new Error('Snap menu button not found');
       snapMenuButton.click();
     });
+    expect(container.querySelector('[data-survey-cad-snap-toggle="center"]')).not.toBeNull();
+    expect(container.querySelector('[data-survey-cad-snap-toggle="arc-midpoint"]')).not.toBeNull();
+    expect(container.querySelector('[data-survey-cad-snap-toggle="quadrant"]')).not.toBeNull();
     await act(async () => {
       (container.querySelector('[data-survey-cad-snap-toggle="point-node"]') as HTMLInputElement | null)?.click();
       (container.querySelector('[data-survey-cad-snap-toggle="endpoint"]') as HTMLInputElement | null)?.click();
+      (container.querySelector('[data-survey-cad-snap-toggle="center"]') as HTMLInputElement | null)?.click();
+      (container.querySelector('[data-survey-cad-snap-toggle="arc-midpoint"]') as HTMLInputElement | null)?.click();
+      (container.querySelector('[data-survey-cad-snap-toggle="quadrant"]') as HTMLInputElement | null)?.click();
       (container.querySelector('[data-survey-cad-snap-toggle="intersection"]') as HTMLInputElement | null)?.click();
       (container.querySelector('[data-survey-cad-snap-toggle="nearest"]') as HTMLInputElement | null)?.click();
     });
