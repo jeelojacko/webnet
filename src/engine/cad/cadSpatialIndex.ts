@@ -5,11 +5,13 @@ import {
   cadDistance,
   cadInfiniteLineIntersection,
   cadIntersectArcArc,
+  cadIntersectInfiniteLineArc,
   cadIntersectSegmentArc,
   cadMidpoint,
   cadPointOnCircle,
   cadProjectPointOntoInfiniteLine,
   cadSegmentIntersection,
+  cadTangentPointsFromExternalPointToArc,
   cadIsAngleOnArcSweep,
   type CadWorldPoint,
 } from './cadGeometry';
@@ -37,7 +39,8 @@ const SNAP_PRIORITY: Record<CadSnapKind, number> = {
   extension: 8,
   perpendicular: 9,
   parallel: 10,
-  nearest: 11,
+  tangent: 11,
+  nearest: 12,
 };
 
 const buildCandidate = (
@@ -179,6 +182,7 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
       'extension',
       'perpendicular',
       'parallel',
+      'tangent',
       'nearest',
     ],
     constructionContext = { active: false, basePoint: null },
@@ -336,6 +340,25 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
               ),
             );
           }
+          if (constructionContext.active && basePoint && allowed.has('tangent')) {
+            cadTangentPointsFromExternalPointToArc(
+              basePoint,
+              arc.center,
+              arc.radius,
+              arc.startAngleDeg,
+              arc.endAngleDeg,
+            ).forEach((tangentPoint) => {
+              candidates.push(
+                buildCandidate(
+                  'tangent',
+                  entity.id,
+                  tangentPoint,
+                  worldPoint,
+                  `${arc.label} tangent`,
+                ),
+              );
+            });
+          }
           break;
         }
         default:
@@ -429,6 +452,41 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
           );
         }
       }
+      segments.forEach((segment) => {
+        arcs.forEach((arc) => {
+          cadIntersectInfiniteLineArc(
+            segment.start,
+            segment.end,
+            arc.center,
+            arc.radius,
+            arc.startAngleDeg,
+            arc.endAngleDeg,
+          )
+            .filter((intersection) => !cadIntersectSegmentArc(
+              segment.start,
+              segment.end,
+              arc.center,
+              arc.radius,
+              arc.startAngleDeg,
+              arc.endAngleDeg,
+            ).some(
+              (exact) =>
+                Math.abs(exact.x - intersection.x) <= 1e-9 &&
+                Math.abs(exact.y - intersection.y) <= 1e-9,
+            ))
+            .forEach((intersection) => {
+              candidates.push(
+                buildCandidate(
+                  'apparent-intersection',
+                  `${segment.sourceEntityId}|${arc.sourceEntityId}`,
+                  intersection,
+                  worldPoint,
+                  `${segment.label} x ${arc.label} apparent`,
+                ),
+              );
+            });
+        });
+      });
     }
 
     const viable = dedupeCandidates(candidates)

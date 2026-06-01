@@ -55,6 +55,7 @@ const SNAP_MENU_LABELS: Record<CadSnapKind, string> = {
   extension: 'Extensions',
   perpendicular: 'Perpendicular',
   parallel: 'Parallel',
+  tangent: 'Tangent',
   nearest: 'Nearest',
 };
 

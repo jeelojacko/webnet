@@ -268,6 +268,7 @@ export type CadSnapKind =
   | 'extension'
   | 'perpendicular'
   | 'parallel'
+  | 'tangent'
   | 'nearest';
 
 export interface CadSnapCandidate {

@@ -372,6 +372,48 @@ export const cadIntersectSegmentArc = (
     cadIsAngleOnArcSweep(cadAngleDegFromCenter(center, point), startAngleDeg, endAngleDeg),
   );
 
+export const cadIntersectInfiniteLineCircle = (
+  start: CadWorldPoint,
+  end: CadWorldPoint,
+  center: CadWorldPoint,
+  radius: number,
+): CadWorldPoint[] => {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const fx = start.x - center.x;
+  const fy = start.y - center.y;
+  const a = dx * dx + dy * dy;
+  if (a <= 1e-12) return [];
+  const b = 2 * (fx * dx + fy * dy);
+  const c = fx * fx + fy * fy - radius * radius;
+  const discriminant = b * b - 4 * a * c;
+  if (discriminant < -1e-12) return [];
+  const root = Math.sqrt(Math.max(0, discriminant));
+  const candidates = [
+    (-b - root) / (2 * a),
+    (-b + root) / (2 * a),
+  ].map((t) => ({
+    x: start.x + dx * t,
+    y: start.y + dy * t,
+  }));
+  return dedupeCadPoints(candidates).sort((left, right) => {
+    if (Math.abs(left.x - right.x) > 1e-9) return left.x - right.x;
+    return left.y - right.y;
+  });
+};
+
+export const cadIntersectInfiniteLineArc = (
+  start: CadWorldPoint,
+  end: CadWorldPoint,
+  center: CadWorldPoint,
+  radius: number,
+  startAngleDeg: number,
+  endAngleDeg: number,
+): CadWorldPoint[] =>
+  cadIntersectInfiniteLineCircle(start, end, center, radius).filter((point) =>
+    cadIsAngleOnArcSweep(cadAngleDegFromCenter(center, point), startAngleDeg, endAngleDeg),
+  );
+
 export const cadIntersectArcArc = (
   firstCenter: CadWorldPoint,
   firstRadius: number,
@@ -416,6 +458,35 @@ export const cadIntersectArcArc = (
     return left.x - right.x;
   });
 };
+
+export const cadTangentPointsFromExternalPointToCircle = (
+  point: CadWorldPoint,
+  center: CadWorldPoint,
+  radius: number,
+): CadWorldPoint[] => {
+  const distanceToCenter = cadDistance(point, center);
+  if (distanceToCenter < radius - 1e-9 || radius <= 1e-12) return [];
+  if (Math.abs(distanceToCenter - radius) <= 1e-9) {
+    return [{ ...point }];
+  }
+  const angleToPointDeg = cadAngleDegFromCenter(center, point);
+  const offsetDeg = (Math.acos(Math.max(-1, Math.min(1, radius / distanceToCenter))) * 180) / Math.PI;
+  return dedupeCadPoints([
+    cadPointOnCircle(center, radius, angleToPointDeg + offsetDeg),
+    cadPointOnCircle(center, radius, angleToPointDeg - offsetDeg),
+  ]);
+};
+
+export const cadTangentPointsFromExternalPointToArc = (
+  point: CadWorldPoint,
+  center: CadWorldPoint,
+  radius: number,
+  startAngleDeg: number,
+  endAngleDeg: number,
+): CadWorldPoint[] =>
+  cadTangentPointsFromExternalPointToCircle(point, center, radius).filter((candidate) =>
+    cadIsAngleOnArcSweep(cadAngleDegFromCenter(center, candidate), startAngleDeg, endAngleDeg),
+  );
 
 export const cadOffsetLineSegment = (
   start: CadWorldPoint,

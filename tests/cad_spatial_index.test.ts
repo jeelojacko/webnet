@@ -335,4 +335,70 @@ describe('Survey CAD spatial index', () => {
     expect(arcPerpendicular?.x).toBeCloseTo(0, 6);
     expect(arcPerpendicular?.y).toBeCloseTo(10, 6);
   });
+
+  it('resolves tangent-to-arc and line-arc apparent intersections from construction context', () => {
+    const project = appendCadProjectEntities(
+      buildSurveyCadSpikeProject({
+        input,
+        instrumentLibrary: {},
+        parseOptions,
+        units: 'm',
+        result: null,
+      }),
+      [
+        {
+          id: 'line:high',
+          type: 'line',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          fromStationId: 'L1',
+          toStationId: 'L2',
+          fromX: 20,
+          fromY: 9,
+          toX: 22,
+          toY: 9,
+          sourceObservationIds: [],
+        },
+        {
+          id: 'arc:right',
+          type: 'arc',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          centerX: 0,
+          centerY: 0,
+          radius: 10,
+          startAngleDeg: 0,
+          endAngleDeg: 180,
+        },
+      ],
+    );
+    const index = buildCadSpatialIndex(project);
+
+    const tangent = index.queryNearestSnap(
+      { x: 8.7, y: 5.1 },
+      1,
+      ['tangent'],
+      { active: true, basePoint: { x: 0, y: 20 } },
+    );
+    expect(tangent?.kind).toBe('tangent');
+    expect(tangent?.sourceEntityId).toBe('arc:right');
+    expect(tangent?.x).toBeCloseTo(8.660254, 6);
+    expect(tangent?.y).toBeCloseTo(5, 6);
+
+    const apparentLineArc = index.queryNearestSnap(
+      { x: 4.4, y: 9.1 },
+      1,
+      ['apparent-intersection'],
+      { active: true, basePoint: { x: 0, y: 0 } },
+    );
+    expect(apparentLineArc?.kind).toBe('apparent-intersection');
+    expect(apparentLineArc?.label).toContain('L1-L2');
+    expect(apparentLineArc?.label).toContain('arc:right');
+    expect(apparentLineArc?.x).toBeCloseTo(Math.sqrt(19), 6);
+    expect(apparentLineArc?.y).toBeCloseTo(9, 6);
+  });
 });

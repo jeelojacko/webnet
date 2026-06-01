@@ -1,3 +1,5 @@
+- [x] Survey CAD tangent-snap + apparent-curve batch (June 2026): add command-context tangent snaps from active base point onto visible arcs/circles, and extend `apparent intersection` beyond line-line into honest line-arc cases.
+
 - [x] Survey CAD construction-snap batch (June 2026): add command-context construction snaps (`extension`, `perpendicular`, `parallel`, and line-like `apparent intersection`) so active draw/edit commands can lock onto derived geometry without turning those derived targets into always-on passive hover clutter.
 
 - [x] Survey CAD curve-snap expansion batch (June 2026): expand native snapping beyond point/end/mid/intersection/nearest with honest curve-aware snaps (`center`, arc endpoints, arc midpoint, quadrants, line-arc intersections, arc-arc intersections, and nearest-on-curve) while leaving construction-only snaps for a later command-context batch.

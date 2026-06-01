@@ -20,6 +20,7 @@ const SNAP_KIND_ORDER: CadSnapKind[] = [
   'extension',
   'perpendicular',
   'parallel',
+  'tangent',
   'nearest',
 ];
 
@@ -37,6 +38,7 @@ const DEFAULT_SNAP_PREFERENCES: CadSnapPreferences = {
   extension: true,
   perpendicular: true,
   parallel: true,
+  tangent: true,
   nearest: true,
 };
 

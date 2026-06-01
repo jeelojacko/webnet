@@ -409,6 +409,7 @@ describe('SurveyCadWorkspace', () => {
     expect(container.querySelector('[data-survey-cad-snap-toggle="extension"]')).not.toBeNull();
     expect(container.querySelector('[data-survey-cad-snap-toggle="perpendicular"]')).not.toBeNull();
     expect(container.querySelector('[data-survey-cad-snap-toggle="parallel"]')).not.toBeNull();
+    expect(container.querySelector('[data-survey-cad-snap-toggle="tangent"]')).not.toBeNull();
     await act(async () => {
       (container.querySelector('[data-survey-cad-snap-toggle="point-node"]') as HTMLInputElement | null)?.click();
       (container.querySelector('[data-survey-cad-snap-toggle="endpoint"]') as HTMLInputElement | null)?.click();
@@ -420,6 +421,7 @@ describe('SurveyCadWorkspace', () => {
       (container.querySelector('[data-survey-cad-snap-toggle="extension"]') as HTMLInputElement | null)?.click();
       (container.querySelector('[data-survey-cad-snap-toggle="perpendicular"]') as HTMLInputElement | null)?.click();
       (container.querySelector('[data-survey-cad-snap-toggle="parallel"]') as HTMLInputElement | null)?.click();
+      (container.querySelector('[data-survey-cad-snap-toggle="tangent"]') as HTMLInputElement | null)?.click();
       (container.querySelector('[data-survey-cad-snap-toggle="nearest"]') as HTMLInputElement | null)?.click();
     });
     await act(async () => {
