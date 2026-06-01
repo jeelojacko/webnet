@@ -624,6 +624,37 @@ describe('SurveyCadWorkspace', () => {
     container.remove();
   });
 
+  it('explains that ARC 3PT uses the through point to fix the arc side instead of Ctrl flip', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+        />,
+      );
+    });
+
+    await act(async () => {
+      clickButton(container, 'ARC');
+    });
+
+    expect(container.querySelector('[data-survey-cad-command-help]')?.textContent).toContain(
+      'through point fixes the arc side',
+    );
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
   it('commits ARC Start Center End from an off-radius final pick by keeping the chosen center and using the picked direction', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);

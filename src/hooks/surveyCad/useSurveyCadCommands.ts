@@ -401,8 +401,8 @@ const helpTextForSession = (session: CommandSession | null): string => {
         : 'TRAVERSE first station: click in the model space or type `x,y` / `LABEL=x,y`.';
     case 'ARC_3PT':
       return session.points.length < 2
-        ? 'ARC 3PT point input: click in the model space or type `x,y` / `LABEL=x,y`.'
-        : 'ARC 3PT end point: click in the model space or type `x,y` / `LABEL=x,y` to commit the arc.';
+        ? 'ARC 3PT point input: click in the model space or type `x,y` / `LABEL=x,y`. The through point fixes the arc side, so Ctrl flip is not used here.'
+        : 'ARC 3PT end point: click in the model space or type `x,y` / `LABEL=x,y` to commit the arc. The through point fixes the arc side, so Ctrl flip is not used here.';
     case 'ARC_SCE':
       return session.points.length < 2
         ? 'ARC Start-Center-End point input: click in the model space or type `x,y` / `LABEL=x,y`. Hold Ctrl to reverse the arc direction.'
