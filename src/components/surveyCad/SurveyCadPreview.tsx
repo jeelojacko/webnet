@@ -7,7 +7,7 @@ import type {
   CadSnapKind,
 } from '../../engine/cad/cadTypes';
 import type { CadParcelReportSummary } from '../../engine/cad/cadCogo';
-import { cadSignedSweepDeg } from '../../engine/cad/cadGeometry';
+import { cadClosestPointOnArc, cadSignedSweepDeg } from '../../engine/cad/cadGeometry';
 import type { CadSnapPreferences } from '../../hooks/surveyCad/useSurveyCadSnapping';
 
 interface SurveyCadPreviewProps {
@@ -319,13 +319,16 @@ const renderPrimitive = (
         <g key={primitive.id}>
           <line
             {...commonProps}
+            data-survey-cad-hit-target="true"
+            data-survey-cad-entity-id={primitive.sourceEntityId}
             x1={start.x}
             y1={start.y}
             x2={end.x}
             y2={end.y}
             stroke="transparent"
             strokeWidth={Math.max(12, primitive.strokeWidth + 10)}
-            opacity={0}
+            strokeOpacity={0.001}
+            pointerEvents="stroke"
           />
           <line
             x1={start.x}
@@ -347,11 +350,14 @@ const renderPrimitive = (
         <g key={primitive.id}>
           <path
             {...commonProps}
+            data-survey-cad-hit-target="true"
+            data-survey-cad-entity-id={primitive.sourceEntityId}
             d={path}
             fill="none"
             stroke="transparent"
             strokeWidth={Math.max(12, primitive.strokeWidth + 10)}
-            opacity={0}
+            strokeOpacity={0.001}
+            pointerEvents="stroke"
           />
           <path
             d={path}
@@ -371,11 +377,14 @@ const renderPrimitive = (
         <g key={primitive.id}>
           <circle
             {...commonProps}
+            data-survey-cad-hit-target="true"
+            data-survey-cad-entity-id={primitive.sourceEntityId}
             cx={point.x}
             cy={point.y}
             r={Math.max(8, primitive.radius + 5)}
             fill="transparent"
-            opacity={0}
+            fillOpacity={0.001}
+            pointerEvents="fill"
           />
           <circle
             cx={point.x}
@@ -692,7 +701,22 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
               const offsetY = (rect.height - contentHeight) / 2;
               const viewX = (event.clientX - rect.left - offsetX) / scaleFactor;
               const viewY = (event.clientY - rect.top - offsetY) / scaleFactor;
-              onConsumeInteractionPoint(unproject(viewX, viewY), undefined, { snapSourceSegmentId: sourceSegmentId });
+              const rawWorldPoint = unproject(viewX, viewY);
+              if (primitive.kind === 'arc') {
+                onConsumeInteractionPoint(
+                  cadClosestPointOnArc(
+                    rawWorldPoint,
+                    primitive.center,
+                    primitive.radius,
+                    primitive.startAngleDeg,
+                    primitive.endAngleDeg,
+                  ),
+                  undefined,
+                  { snapSourceSegmentId: sourceSegmentId },
+                );
+                return;
+              }
+              onConsumeInteractionPoint(rawWorldPoint, undefined, { snapSourceSegmentId: sourceSegmentId });
               return;
             }
             onSelectEntity(entityId, appendToSelection);

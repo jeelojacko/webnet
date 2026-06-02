@@ -1497,6 +1497,113 @@ describe('SurveyCadWorkspace', () => {
     container.remove();
   });
 
+  it('starts LINE from an arc-body hit target and exposes arc nearest snaps during drafting', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    const baseProject = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+    const persistedProject = {
+      ...baseProject,
+      entities: [
+        ...baseProject.entities,
+        {
+          id: 'arc:line-snap-test',
+          type: 'arc' as const,
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          centerX: 50,
+          centerY: 20,
+          radius: 12,
+          startAngleDeg: 0,
+          endAngleDeg: 180,
+        },
+      ],
+    };
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+          persistedState={{
+            version: 1,
+            sourceSignature: buildCadProjectSignature(baseProject),
+            project: persistedProject,
+          }}
+        />,
+      );
+    });
+
+    const preview = container.querySelector('[data-survey-cad-preview]') as SVGElement | null;
+    const background = container.querySelector('[data-survey-cad-background="true"]') as SVGRectElement | null;
+    const arcHitTarget = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="arc:line-snap-test"]',
+    ) as SVGPathElement | null;
+    if (!preview || !background || !arcHitTarget) throw new Error('Preview not found');
+    mockElementRect(preview);
+    mockElementRect(background);
+    mockElementRect(arcHitTarget);
+
+    const arcNearestStart = projectWorldToPreviewScreen(persistedProject.bounds!, { x: 57.2, y: 29.6 });
+    const lineEnd = projectWorldToPreviewScreen(persistedProject.bounds!, { x: 72, y: 22 });
+
+    await act(async () => {
+      clickButton(container, 'LINE');
+      preview.dispatchEvent(
+        new MouseEvent('mousemove', {
+          bubbles: true,
+          clientX: arcNearestStart.clientX,
+          clientY: arcNearestStart.clientY,
+        }),
+      );
+    });
+    expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent ?? '').toContain('Nearest');
+    expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent ?? '').toContain('arc:line-snap-test');
+
+    await act(async () => {
+      arcHitTarget.dispatchEvent(
+        new MouseEvent('click', {
+          bubbles: true,
+          clientX: arcNearestStart.clientX,
+          clientY: arcNearestStart.clientY,
+        }),
+      );
+      preview.dispatchEvent(
+        new MouseEvent('mousemove', {
+          bubbles: true,
+          clientX: lineEnd.clientX,
+          clientY: lineEnd.clientY,
+        }),
+      );
+      background.dispatchEvent(
+        new MouseEvent('click', {
+          bubbles: true,
+          clientX: lineEnd.clientX,
+          clientY: lineEnd.clientY,
+        }),
+      );
+    });
+
+    expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain('9 entities');
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
   it('shows a live line preview while drawing before the second click commits', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);

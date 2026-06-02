@@ -1,3 +1,5 @@
+- [x] Survey CAD arc-body hit-target batch (June 2026): make arc body clicks in active commands resolve to the closest point on the curve, and harden arc hit targets so operators can start or finish linework directly on arcs instead of only at endpoints.
+
 - [x] Survey CAD start-perpendicular + direction snap batch (June 2026): add a second `perpendicular` construction path from the captured start segment, restore practical local `parallel` pickup after the recent fail-closed scope change, and add low-priority 8-way direction snaps (`N/NE/E/SE/S/SW/W/NW`) as fallback drafting aids.
 
 - [x] Survey CAD fail-closed parallel scope batch (June 2026): make `parallel` snap fail closed when the active draw start cannot resolve a valid local seed segment, so preview never falls back to whole-drawing parallel grabs during line drafting.
