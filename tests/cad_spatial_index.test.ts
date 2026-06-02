@@ -300,7 +300,7 @@ describe('Survey CAD spatial index', () => {
       [
         {
           id: 'line:base',
-          type: 'line',
+          type: 'line' as const,
           layerId: 'observation-lines',
           styleId: 'style-observation-line',
           visible: true,
@@ -601,7 +601,7 @@ describe('Survey CAD spatial index', () => {
     expect(filteredApparent).toBeNull();
   });
 
-  it('keeps a locked construction snap while refining onto an on-line apparent intersection', () => {
+  it('rejects extension and apparent candidates whose guide path runs through other linework', () => {
     const project = appendCadProjectEntities(
       buildSurveyCadSpikeProject({
         input,
@@ -611,6 +611,83 @@ describe('Survey CAD spatial index', () => {
         result: null,
       }),
       [
+        {
+          id: 'line:base',
+          type: 'line',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          fromStationId: 'A',
+          toStationId: 'B',
+          fromX: 0,
+          fromY: 0,
+          toX: 10,
+          toY: 0,
+          sourceObservationIds: [],
+        },
+        {
+          id: 'line:blocked',
+          type: 'line',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          fromStationId: 'C',
+          toStationId: 'D',
+          fromX: 15,
+          fromY: -5,
+          toX: 15,
+          toY: 5,
+          sourceObservationIds: [],
+        },
+        {
+          id: 'line:far-horizontal',
+          type: 'line',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          fromStationId: 'E',
+          toStationId: 'F',
+          fromX: 30,
+          fromY: 8,
+          toX: 40,
+          toY: 8,
+          sourceObservationIds: [],
+        },
+      ],
+    );
+    const index = buildCadSpatialIndex(project);
+
+    const blockedExtension = index.queryNearestSnap(
+      { x: 20, y: 0.1 },
+      2,
+      ['extension'],
+      { active: true, basePoint: { x: 5, y: 5 }, scopeSeedSegmentId: 'line:base#0' },
+    );
+    expect(blockedExtension).toBeNull();
+
+    const blockedApparent = index.queryNearestSnap(
+      { x: 35, y: 0.2 },
+      3,
+      ['apparent-intersection'],
+      { active: true, basePoint: { x: 5, y: 5 }, scopeSeedSegmentId: 'line:base#0' },
+    );
+    expect(blockedApparent).toBeNull();
+  });
+
+  it('keeps a locked construction snap while refining onto an on-line apparent intersection', () => {
+    const baseProject = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+    const project: ReturnType<typeof buildSurveyCadSpikeProject> = {
+      ...baseProject,
+      entities: [
         {
           id: 'line:base',
           type: 'line',
@@ -628,7 +705,7 @@ describe('Survey CAD spatial index', () => {
         },
         {
           id: 'line:short-vertical',
-          type: 'line',
+          type: 'line' as const,
           layerId: 'observation-lines',
           styleId: 'style-observation-line',
           visible: true,
@@ -642,7 +719,7 @@ describe('Survey CAD spatial index', () => {
           sourceObservationIds: [],
         },
       ],
-    );
+    };
     const index = buildCadSpatialIndex(project);
 
     const compoundPerpendicular = index.queryNearestSnap(
@@ -661,18 +738,19 @@ describe('Survey CAD spatial index', () => {
   });
 
   it('resolves tangent-to-arc and line-arc apparent intersections from construction context', () => {
-    const project = appendCadProjectEntities(
-      buildSurveyCadSpikeProject({
-        input,
-        instrumentLibrary: {},
-        parseOptions,
-        units: 'm',
-        result: null,
-      }),
-      [
+    const baseProject = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+    const project: ReturnType<typeof buildSurveyCadSpikeProject> = {
+      ...baseProject,
+      entities: [
         {
           id: 'line:high',
-          type: 'line',
+          type: 'line' as const,
           layerId: 'observation-lines',
           styleId: 'style-observation-line',
           visible: true,
@@ -687,7 +765,7 @@ describe('Survey CAD spatial index', () => {
         },
         {
           id: 'arc:right',
-          type: 'arc',
+          type: 'arc' as const,
           layerId: 'observation-lines',
           styleId: 'style-observation-line',
           visible: true,
@@ -699,7 +777,7 @@ describe('Survey CAD spatial index', () => {
           endAngleDeg: 180,
         },
       ],
-    );
+    };
     const index = buildCadSpatialIndex(project);
 
     const tangent = index.queryNearestSnap(

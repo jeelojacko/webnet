@@ -298,6 +298,19 @@ const endpointKey = (point: CadWorldPoint): string => `${point.x.toFixed(6)}:${p
 const pointMatches = (left: CadWorldPoint, right: CadWorldPoint, tolerance = 1e-6): boolean =>
   cadDistance(left, right) <= tolerance;
 
+const segmentPathObstructed = (
+  pathStart: CadWorldPoint,
+  pathEnd: CadWorldPoint,
+  segments: CadSegmentRef[],
+  ignoredSegmentIds: Set<string>,
+): boolean =>
+  segments.some((segment) => {
+    if (ignoredSegmentIds.has(segment.segmentId)) return false;
+    const intersection = cadSegmentIntersection(pathStart, pathEnd, segment.start, segment.end);
+    if (!intersection) return false;
+    return !pointMatches(intersection, pathStart) && !pointMatches(intersection, pathEnd);
+  });
+
 const buildScopedSegmentIds = (
   segments: CadSegmentRef[],
   basePoint: CadWorldPoint | null,
@@ -433,6 +446,17 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
               }
               const extensionPoint = buildExtensionCandidate(segment, worldPoint);
               if (extensionPoint) {
+                const extensionAnchor = nearestSegmentEndpointToPoint(segment, extensionPoint);
+                if (
+                  segmentPathObstructed(
+                    extensionAnchor,
+                    extensionPoint,
+                    segments,
+                    new Set([segment.segmentId]),
+                  )
+                ) {
+                  return;
+                }
                 candidates.push(
                   buildCandidate(
                     'extension',
@@ -440,7 +464,7 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
                     extensionPoint,
                     worldPoint,
                     `${segment.label} ext`,
-                    [[nearestSegmentEndpointToPoint(segment, extensionPoint), extensionPoint]],
+                    [[extensionAnchor, extensionPoint]],
                     segment.segmentId,
                   ),
                 );
@@ -657,6 +681,14 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
           if (cadSegmentIntersection(left.start, left.end, right.start, right.end)) continue;
           const intersection = cadInfiniteLineIntersection(left.start, left.end, right.start, right.end);
           if (!intersection) continue;
+          const leftAnchor = nearestSegmentEndpointToPoint(left, intersection);
+          const rightAnchor = nearestSegmentEndpointToPoint(right, intersection);
+          if (
+            segmentPathObstructed(leftAnchor, intersection, segments, new Set([left.segmentId, right.segmentId])) ||
+            segmentPathObstructed(rightAnchor, intersection, segments, new Set([left.segmentId, right.segmentId]))
+          ) {
+            continue;
+          }
           candidates.push(
             buildCandidate(
               'apparent-intersection',
@@ -665,8 +697,8 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
               worldPoint,
               `${left.label} x ${right.label} apparent`,
               [
-                [nearestSegmentEndpointToPoint(left, intersection), intersection],
-                [nearestSegmentEndpointToPoint(right, intersection), intersection],
+                [leftAnchor, intersection],
+                [rightAnchor, intersection],
               ],
             ),
           );
@@ -699,6 +731,17 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
                 Math.abs(exact.y - intersection.y) <= 1e-9,
             ))
             .forEach((intersection) => {
+              const segmentAnchor = nearestSegmentEndpointToPoint(segment, intersection);
+              if (
+                segmentPathObstructed(
+                  segmentAnchor,
+                  intersection,
+                  segments,
+                  new Set([segment.segmentId]),
+                )
+              ) {
+                return;
+              }
               candidates.push(
                 buildCandidate(
                   'apparent-intersection',
@@ -707,7 +750,7 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
                   worldPoint,
                   `${segment.label} x ${arc.label} apparent`,
                   [
-                    [nearestSegmentEndpointToPoint(segment, intersection), intersection],
+                    [segmentAnchor, intersection],
                     [nearestArcEndpointToPoint(arc, intersection), intersection],
                   ],
                 ),

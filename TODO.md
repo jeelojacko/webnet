@@ -1,3 +1,5 @@
+- [x] Survey CAD obstructed-guide snap batch (June 2026): reject `extension` and `apparent intersection` candidates whose derived guide path runs through other existing linework, and keep the remaining valid local construction cases locked with focused engine/workspace coverage.
+
 - [x] Survey CAD snapped-start scope batch (June 2026): carry the captured snap segment through line-start/background-click input so construction snap scoping stays local even when the operator starts from midpoint/nearest-style line snaps.
 
 - [x] Survey CAD endpoint-scoped construction batch (June 2026): scope `parallel` to segments within one hop of the captured endpoint, scope line-based `extension` / `apparent intersection` to two hops, and stop polyline-wide remote segments from leaking into those snaps.
