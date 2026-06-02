@@ -1,3 +1,5 @@
+- [x] Survey CAD fail-closed parallel scope batch (June 2026): make `parallel` snap fail closed when the active draw start cannot resolve a valid local seed segment, so preview never falls back to whole-drawing parallel grabs during line drafting.
+
 - [x] Survey CAD line-body seed batch (June 2026): treat direct first clicks on visible linework as segment-seeded starts, so `LINE` preview keeps local parallel scope even when no explicit snap kind won the first click.
 
 - [x] Survey CAD command-start snap carryover batch (June 2026): keep the hovered snap alive when a draw command starts so an immediate first click still captures midpoint/nearest segment context instead of dropping back to raw world-point input and global parallel scope.

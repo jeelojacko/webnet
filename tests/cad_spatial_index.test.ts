@@ -346,6 +346,7 @@ describe('Survey CAD spatial index', () => {
     const index = buildCadSpatialIndex(project);
     const inactiveContext = { active: false, basePoint: null };
     const activeContext = { active: true, basePoint: { x: 5, y: 10 } };
+    const parallelContext = { active: true, basePoint: { x: 5, y: 10 }, scopeSeedSegmentId: 'line:base#0' };
 
     expect(index.queryNearestSnap({ x: 15, y: 0.1 }, 1, ['extension'], inactiveContext)).toBeNull();
 
@@ -359,7 +360,7 @@ describe('Survey CAD spatial index', () => {
     expect(perpendicular?.x).toBeCloseTo(5, 6);
     expect(perpendicular?.y).toBeCloseTo(0, 6);
 
-    const parallel = index.queryNearestSnap({ x: 15.1, y: 10.2 }, 1, ['parallel'], activeContext);
+    const parallel = index.queryNearestSnap({ x: 15.1, y: 10.2 }, 1, ['parallel'], parallelContext);
     expect(parallel?.kind).toBe('parallel');
     expect(parallel?.x).toBeCloseTo(15.1, 6);
     expect(parallel?.y).toBeCloseTo(10, 6);
@@ -482,6 +483,63 @@ describe('Survey CAD spatial index', () => {
         active: true,
         basePoint: { x: 5, y: 0 },
         scopeSeedSegmentId: 'pline:chain#0',
+      },
+    );
+    expect(filteredParallel).toBeNull();
+  });
+
+  it('fails closed for parallel snaps when an explicit construction seed cannot be resolved', () => {
+    const project = appendCadProjectEntities(
+      buildSurveyCadSpikeProject({
+        input,
+        instrumentLibrary: {},
+        parseOptions,
+        units: 'm',
+        result: null,
+      }),
+      [
+        {
+          id: 'line:base',
+          type: 'line',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          fromStationId: 'A',
+          toStationId: 'B',
+          fromX: 0,
+          fromY: 0,
+          toX: 10,
+          toY: 0,
+          sourceObservationIds: [],
+        },
+        {
+          id: 'line:remote',
+          type: 'line',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          fromStationId: 'R1',
+          toStationId: 'R2',
+          fromX: 0,
+          fromY: 20,
+          toX: 10,
+          toY: 20,
+          sourceObservationIds: [],
+        },
+      ],
+    );
+    const index = buildCadSpatialIndex(project);
+
+    const filteredParallel = index.queryNearestSnap(
+      { x: 5, y: 20.2 },
+      1,
+      ['parallel'],
+      {
+        active: true,
+        basePoint: { x: 5, y: 0 },
+        scopeSeedSegmentId: 'line:missing#0',
       },
     );
     expect(filteredParallel).toBeNull();

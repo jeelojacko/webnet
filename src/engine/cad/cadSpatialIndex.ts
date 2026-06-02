@@ -360,6 +360,15 @@ const buildScopedSegmentIds = (
   return visited;
 };
 
+const scopeAllowsSegment = (
+  scope: Set<string> | null,
+  segmentId: string,
+  requireScope: boolean,
+): boolean => {
+  if (scope) return scope.has(segmentId);
+  return !requireScope;
+};
+
 export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
   queryNearestSnap: (
     worldPoint,
@@ -400,6 +409,7 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
     const parallelScope = constructionContext.active ? buildScopedSegmentIds(segments, basePoint, scopeSeedSegmentId, 1) : null;
     const extensionScope = constructionContext.active ? buildScopedSegmentIds(segments, basePoint, scopeSeedSegmentId, 2) : null;
     const apparentScope = constructionContext.active ? buildScopedSegmentIds(segments, basePoint, scopeSeedSegmentId, 2) : null;
+    const requireExplicitScope = constructionContext.active && scopeSeedSegmentId != null;
 
     project.entities.forEach((entity) => {
       if (!entity.visible) return;
@@ -441,7 +451,7 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
               );
             }
             if (constructionContext.active && allowed.has('extension')) {
-              if (extensionScope && !extensionScope.has(segment.segmentId)) {
+              if (!scopeAllowsSegment(extensionScope, segment.segmentId, requireExplicitScope)) {
                 return;
               }
               const extensionPoint = buildExtensionCandidate(segment, worldPoint);
@@ -485,7 +495,7 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
               );
             }
             if (constructionContext.active && basePoint && allowed.has('parallel')) {
-              if (parallelScope && !parallelScope.has(segment.segmentId)) {
+              if (!scopeAllowsSegment(parallelScope, segment.segmentId, true)) {
                 return;
               }
               const parallelPoint = buildParallelCandidate(segment, basePoint, worldPoint);
@@ -673,8 +683,8 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
           const left = segments[leftIndex];
           const right = segments[rightIndex];
           if (
-            apparentScope &&
-            (!apparentScope.has(left.segmentId) || !apparentScope.has(right.segmentId))
+            !scopeAllowsSegment(apparentScope, left.segmentId, requireExplicitScope) ||
+            !scopeAllowsSegment(apparentScope, right.segmentId, requireExplicitScope)
           ) {
             continue;
           }
@@ -705,7 +715,7 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
         }
       }
       segments.forEach((segment) => {
-        if (apparentScope && !apparentScope.has(segment.segmentId)) {
+        if (!scopeAllowsSegment(apparentScope, segment.segmentId, requireExplicitScope)) {
           return;
         }
         arcs.forEach((arc) => {
