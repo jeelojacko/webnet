@@ -291,7 +291,6 @@ export interface CadSnapLock {
 export interface CadSnapConstructionContext {
   active: boolean;
   basePoint: CadDisplayPoint | null;
-  preferredParallelEntityIds?: string[] | null;
   lockedSnap?: CadSnapLock | null;
 }
 

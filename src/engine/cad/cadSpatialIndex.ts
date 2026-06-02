@@ -105,6 +105,7 @@ export interface CadSpatialIndex {
 }
 
 interface CadSegmentRef {
+  segmentId: string;
   sourceEntityId: string;
   start: CadWorldPoint;
   end: CadWorldPoint;
@@ -126,6 +127,7 @@ interface CadArcRef {
 
 const lineSegments = (line: CadLineEntity): CadSegmentRef[] => [
   {
+    segmentId: `${line.id}#0`,
     sourceEntityId: line.id,
     start: { x: line.fromX, y: line.fromY },
     end: { x: line.toX, y: line.toY },
@@ -145,6 +147,7 @@ const vertexEntitySegments = (
           (point): point is CadSegmentRef['start'] => point != null,
         );
   return points.slice(0, -1).map((vertex, index) => ({
+    segmentId: `${entity.id}#${index}`,
     sourceEntityId: entity.id,
     start: vertex,
     end: points[index + 1]!,
@@ -288,6 +291,56 @@ const nearestArcEndpointToPoint = (
 const sourceEntityIdIncludedInCandidate = (candidate: CadSnapCandidate, sourceEntityId: string): boolean =>
   candidate.sourceEntityId.split('|').includes(sourceEntityId);
 
+const endpointKey = (point: CadWorldPoint): string => `${point.x.toFixed(6)}:${point.y.toFixed(6)}`;
+
+const pointMatches = (left: CadWorldPoint, right: CadWorldPoint, tolerance = 1e-6): boolean =>
+  cadDistance(left, right) <= tolerance;
+
+const buildScopedSegmentIds = (
+  segments: CadSegmentRef[],
+  basePoint: CadWorldPoint | null,
+  maxDepth: number,
+): Set<string> | null => {
+  if (!basePoint) return null;
+  const segmentsById = new Map(segments.map((segment) => [segment.segmentId, segment]));
+  const endpointSegments = new Map<string, string[]>();
+  segments.forEach((segment) => {
+    [segment.start, segment.end].forEach((point) => {
+      const key = endpointKey(point);
+      const atPoint = endpointSegments.get(key);
+      if (atPoint) {
+        atPoint.push(segment.segmentId);
+      } else {
+        endpointSegments.set(key, [segment.segmentId]);
+      }
+    });
+  });
+
+  const seedIds = segments
+    .filter((segment) => pointMatches(basePoint, segment.start) || pointMatches(basePoint, segment.end))
+    .map((segment) => segment.segmentId);
+  if (seedIds.length === 0) return null;
+
+  const visited = new Set<string>();
+  const queue = seedIds.map((segmentId) => ({ segmentId, depth: 0 }));
+  while (queue.length > 0) {
+    const current = queue.shift();
+    if (!current || visited.has(current.segmentId)) continue;
+    visited.add(current.segmentId);
+    if (current.depth >= maxDepth) continue;
+    const segment = segmentsById.get(current.segmentId);
+    if (!segment) continue;
+    [segment.start, segment.end].forEach((point) => {
+      (endpointSegments.get(endpointKey(point)) ?? []).forEach((neighborId) => {
+        if (!visited.has(neighborId)) {
+          queue.push({ segmentId: neighborId, depth: current.depth + 1 });
+        }
+      });
+    });
+  }
+  return visited;
+};
+
 export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
   queryNearestSnap: (
     worldPoint,
@@ -324,9 +377,9 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
       .filter((entity): entity is CadArcEntity => entity.visible && entity.type === 'arc')
       .map((entity) => arcRefFromEntity(entity));
     const basePoint = constructionContext.active ? constructionContext.basePoint : null;
-    const preferredParallelEntityIds = constructionContext.preferredParallelEntityIds
-      ? new Set(constructionContext.preferredParallelEntityIds)
-      : null;
+    const parallelScope = constructionContext.active ? buildScopedSegmentIds(segments, basePoint, 1) : null;
+    const extensionScope = constructionContext.active ? buildScopedSegmentIds(segments, basePoint, 2) : null;
+    const apparentScope = constructionContext.active ? buildScopedSegmentIds(segments, basePoint, 2) : null;
 
     project.entities.forEach((entity) => {
       if (!entity.visible) return;
@@ -366,6 +419,9 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
               );
             }
             if (constructionContext.active && allowed.has('extension')) {
+              if (extensionScope && !extensionScope.has(segment.segmentId)) {
+                return;
+              }
               const extensionPoint = buildExtensionCandidate(segment, worldPoint);
               if (extensionPoint) {
                 candidates.push(
@@ -394,7 +450,7 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
               );
             }
             if (constructionContext.active && basePoint && allowed.has('parallel')) {
-              if (preferredParallelEntityIds && !preferredParallelEntityIds.has(segment.sourceEntityId)) {
+              if (parallelScope && !parallelScope.has(segment.segmentId)) {
                 return;
               }
               const parallelPoint = buildParallelCandidate(segment, basePoint, worldPoint);
@@ -580,6 +636,12 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
         for (let rightIndex = leftIndex + 1; rightIndex < segments.length; rightIndex += 1) {
           const left = segments[leftIndex];
           const right = segments[rightIndex];
+          if (
+            apparentScope &&
+            (!apparentScope.has(left.segmentId) || !apparentScope.has(right.segmentId))
+          ) {
+            continue;
+          }
           if (cadSegmentIntersection(left.start, left.end, right.start, right.end)) continue;
           const intersection = cadInfiniteLineIntersection(left.start, left.end, right.start, right.end);
           if (!intersection) continue;
@@ -599,6 +661,9 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
         }
       }
       segments.forEach((segment) => {
+        if (apparentScope && !apparentScope.has(segment.segmentId)) {
+          return;
+        }
         arcs.forEach((arc) => {
           const exactIntersections = cadIntersectSegmentArc(
             segment.start,

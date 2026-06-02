@@ -69,38 +69,6 @@ const isConstructionLockKind = (
   kind: CadSnapKind,
 ): kind is CadSnapLock['kind'] => CONSTRUCTION_LOCK_KINDS.has(kind);
 
-const pointsMatch = (
-  left: { x: number; y: number },
-  right: { x: number; y: number },
-  tolerance = 1e-6,
-): boolean => Math.abs(left.x - right.x) <= tolerance && Math.abs(left.y - right.y) <= tolerance;
-
-const attachedLineLikeEntityIdsAtPoint = (
-  project: CadProject,
-  point: { x: number; y: number } | null,
-): string[] | null => {
-  if (!point) return null;
-  const ids = new Set<string>();
-  project.entities.forEach((entity) => {
-    if (!entity.visible) return;
-    if (entity.type === 'line') {
-      if (
-        pointsMatch(point, { x: entity.fromX, y: entity.fromY }) ||
-        pointsMatch(point, { x: entity.toX, y: entity.toY })
-      ) {
-        ids.add(entity.id);
-      }
-      return;
-    }
-    if (entity.type === 'polyline' || entity.type === 'polygon' || entity.type === 'parcel') {
-      entity.vertices.forEach((vertex) => {
-        if (pointsMatch(point, vertex)) ids.add(entity.id);
-      });
-    }
-  });
-  return ids.size > 0 ? [...ids] : null;
-};
-
 export const useSurveyCadSnapping = (
   project: CadProject,
   constructionContext: CadSnapConstructionContext,
@@ -114,10 +82,6 @@ export const useSurveyCadSnapping = (
   const allowedKinds = useMemo(
     () => SNAP_KIND_ORDER.filter((kind) => snapPreferences[kind]),
     [snapPreferences],
-  );
-  const preferredParallelEntityIds = useMemo(
-    () => attachedLineLikeEntityIdsAtPoint(project, constructionContext.basePoint),
-    [constructionContext.basePoint, project],
   );
 
   useEffect(() => {
@@ -140,15 +104,14 @@ export const useSurveyCadSnapping = (
         return;
       }
       const nextSnap = spatialIndex.queryNearestSnap(
-          worldPoint,
-          dynamicToleranceWorld ?? toleranceWorld,
-          allowedKinds,
-          {
-            ...constructionContext,
-            preferredParallelEntityIds,
-            lockedSnap: options?.lockConstruction ? lockedConstructionSnap : null,
-          },
-        );
+        worldPoint,
+        dynamicToleranceWorld ?? toleranceWorld,
+        allowedKinds,
+        {
+          ...constructionContext,
+          lockedSnap: options?.lockConstruction ? lockedConstructionSnap : null,
+        },
+      );
       setActiveSnap(nextSnap);
       if (options?.lockConstruction) {
         const nextLock =

@@ -1,5 +1,7 @@
 # WebNet Survey CAD TODO
 
+- [x] Survey CAD endpoint-scoped construction batch (June 2026): scope `parallel` to segments within one hop of the captured endpoint, scope line-based `extension` / `apparent intersection` to two hops, and stop polyline-wide remote segments from leaking into those snaps.
+
 - [x] Survey CAD parallel-filter + shift-lock batch (June 2026): add `Shift` construction-lock during drafting, highlight the source line for active parallel snaps, and limit dynamic parallel candidates to linework attached at the captured start point when available.
 
 - [x] Survey CAD compound construction-snap batch (June 2026): let `perpendicular`, `extension`, and `parallel` stay locked while a second snap such as `intersection` or `apparent intersection` refines the final target on that same derived line.
