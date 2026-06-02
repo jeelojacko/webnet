@@ -444,6 +444,49 @@ describe('Survey CAD spatial index', () => {
     expect(filteredParallel).toBeNull();
   });
 
+  it('uses the captured start segment to scope parallel snaps even when the base point is not a graph endpoint', () => {
+    const project = appendCadProjectEntities(
+      buildSurveyCadSpikeProject({
+        input,
+        instrumentLibrary: {},
+        parseOptions,
+        units: 'm',
+        result: null,
+      }),
+      [
+        {
+          id: 'pline:chain',
+          type: 'polyline',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          closed: false,
+          vertices: [
+            { x: 0, y: 0 },
+            { x: 10, y: 0 },
+            { x: 20, y: 0 },
+            { x: 20, y: 20 },
+          ],
+          vertexLabels: ['P1', 'P2', 'P3', 'P4'],
+        },
+      ],
+    );
+    const index = buildCadSpatialIndex(project);
+
+    const filteredParallel = index.queryNearestSnap(
+      { x: 0.1, y: 15 },
+      1,
+      ['parallel'],
+      {
+        active: true,
+        basePoint: { x: 5, y: 0 },
+        scopeSeedSegmentId: 'pline:chain#0',
+      },
+    );
+    expect(filteredParallel).toBeNull();
+  });
+
   it('limits extension candidates to linework within two hops of the captured endpoint', () => {
     const project = appendCadProjectEntities(
       buildSurveyCadSpikeProject({

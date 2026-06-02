@@ -30,7 +30,11 @@ interface SurveyCadPreviewProps {
   onViewportChange: (_viewport: { zoom: number; panX: number; panY: number }) => void;
   onSelectEntity: (_entityId: string, _appendToSelection?: boolean) => void;
   onSelectEntities: (_entityIds: string[], _appendToSelection?: boolean) => void;
-  onConsumeInteractionPoint: (_worldPoint: { x: number; y: number }) => void;
+  onConsumeInteractionPoint: (
+    _worldPoint: { x: number; y: number },
+    _label?: string,
+    _options?: { snapSourceSegmentId?: string },
+  ) => void;
   onPointerWorldPointChange: (
     _worldPoint: { x: number; y: number } | null,
     _toleranceWorld?: number,
@@ -647,6 +651,14 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
         data-survey-cad-background="true"
         onClick={(event) => {
           if (!commandActive || didDrag) return;
+          if (activeSnap) {
+            onConsumeInteractionPoint(
+              { x: activeSnap.x, y: activeSnap.y },
+              activeSnap.label,
+              { snapSourceSegmentId: activeSnap.sourceSegmentId },
+            );
+            return;
+          }
           const screenPoint = screenPointFromMouseEvent(event);
           if (!screenPoint) return;
           onConsumeInteractionPoint(unproject(screenPoint.viewX, screenPoint.viewY));
@@ -658,7 +670,11 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
             if (commandActive) {
               if (didDrag) return;
               if (activeSnap) {
-                onConsumeInteractionPoint({ x: activeSnap.x, y: activeSnap.y });
+                onConsumeInteractionPoint(
+                  { x: activeSnap.x, y: activeSnap.y },
+                  activeSnap.label,
+                  { snapSourceSegmentId: activeSnap.sourceSegmentId },
+                );
                 return;
               }
               const svg = event.currentTarget.ownerSVGElement;

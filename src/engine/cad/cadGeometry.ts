@@ -7,6 +7,7 @@ export interface CadWorldPoint {
 
 export interface CadNamedPoint extends CadWorldPoint {
   label: string;
+  snapSourceSegmentId?: string;
 }
 
 export interface CadSegmentGeometry {

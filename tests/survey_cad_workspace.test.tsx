@@ -2,7 +2,7 @@
 
 import React, { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import SurveyCadWorkspace from '../src/components/SurveyCadWorkspace';
 import SurveyCadPreview from '../src/components/surveyCad/SurveyCadPreview';
 import { buildSurveyCadSpikeProject } from '../src/engine/cad/cadModel';
@@ -897,6 +897,96 @@ describe('SurveyCadWorkspace', () => {
       'border-color',
     );
     expect(container.querySelectorAll('[data-survey-cad-snap-guide]')).toHaveLength(2);
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('uses the active snap when clicking the background during command drafting', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+    const consumeInteractionPoint = vi.fn();
+
+    await act(async () => {
+      root.render(
+        <SurveyCadPreview
+          scene={{ primitives: [], bounds: { minX: 0, minY: 0, maxX: 10, maxY: 10 } }}
+          viewBounds={{ minX: 0, minY: 0, maxX: 10, maxY: 10 }}
+          selectedEntityIds={[]}
+          selectedParcelReport={null}
+          activeSnap={{
+            id: 'midpoint:pline:chain:P1-P2',
+            kind: 'midpoint',
+            sourceEntityId: 'pline:chain',
+            sourceSegmentId: 'pline:chain#0',
+            x: 5,
+            y: 0,
+            distance: 0.1,
+            label: 'P1-P2',
+          }}
+          commandPreviewPrimitives={[]}
+          commandStatusText=""
+          commandHelpText=""
+          commandModifierHint=""
+          constructionHint=""
+          snapPreferences={{
+            'point-node': true,
+            endpoint: true,
+            midpoint: true,
+            center: true,
+            'arc-midpoint': true,
+            quadrant: true,
+            intersection: true,
+            'apparent-intersection': true,
+            extension: true,
+            perpendicular: true,
+            parallel: true,
+            tangent: true,
+            nearest: true,
+          }}
+          commandInputValue=""
+          commandInputPlaceholder=""
+          commandInputEnabled={false}
+          viewport={{ zoom: 1, panX: 0, panY: 0 }}
+          commandActive
+          onViewportChange={() => null}
+          onSelectEntity={() => null}
+          onSelectEntities={() => null}
+          onConsumeInteractionPoint={consumeInteractionPoint}
+          onPointerWorldPointChange={() => null}
+          onSnapPreferenceChange={() => null}
+          onCommandInputChange={() => null}
+          onCommandInputEnter={() => null}
+          onCommandInputEscape={() => null}
+          onZoomExtents={() => null}
+        />,
+      );
+    });
+
+    const preview = container.querySelector('[data-survey-cad-preview]') as SVGElement | null;
+    const background = container.querySelector('[data-survey-cad-background="true"]') as SVGRectElement | null;
+    if (!preview || !background) throw new Error('Preview background not found');
+    mockElementRect(preview);
+    mockElementRect(background);
+
+    await act(async () => {
+      background.dispatchEvent(
+        new MouseEvent('click', {
+          bubbles: true,
+          clientX: 220,
+          clientY: 220,
+        }),
+      );
+    });
+
+    expect(consumeInteractionPoint).toHaveBeenCalledWith(
+      { x: 5, y: 0 },
+      'P1-P2',
+      { snapSourceSegmentId: 'pline:chain#0' },
+    );
 
     await act(async () => {
       root.unmount();

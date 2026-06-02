@@ -275,6 +275,7 @@ export interface CadSnapCandidate {
   id: string;
   kind: CadSnapKind;
   sourceEntityId: CadEntityId;
+  sourceSegmentId?: string;
   x: number;
   y: number;
   distance: number;
@@ -291,6 +292,7 @@ export interface CadSnapLock {
 export interface CadSnapConstructionContext {
   active: boolean;
   basePoint: CadDisplayPoint | null;
+  scopeSeedSegmentId?: string | null;
   lockedSnap?: CadSnapLock | null;
 }
 

@@ -84,10 +84,12 @@ const buildCandidate = (
   query: CadWorldPoint,
   label: string,
   guideSegments?: Array<[CadWorldPoint, CadWorldPoint]>,
+  sourceSegmentId?: string,
 ): CadSnapCandidate => ({
   id: `${kind}:${sourceEntityId}:${label}`,
   kind,
   sourceEntityId,
+  sourceSegmentId,
   x: point.x,
   y: point.y,
   distance: cadDistance(query, point),
@@ -299,9 +301,10 @@ const pointMatches = (left: CadWorldPoint, right: CadWorldPoint, tolerance = 1e-
 const buildScopedSegmentIds = (
   segments: CadSegmentRef[],
   basePoint: CadWorldPoint | null,
+  seedSegmentId: string | null | undefined,
   maxDepth: number,
 ): Set<string> | null => {
-  if (!basePoint) return null;
+  if (!basePoint && !seedSegmentId) return null;
   const segmentsById = new Map(segments.map((segment) => [segment.segmentId, segment]));
   const endpointSegments = new Map<string, string[]>();
   segments.forEach((segment) => {
@@ -316,9 +319,12 @@ const buildScopedSegmentIds = (
     });
   });
 
-  const seedIds = segments
+  const pointSeedIds = basePoint
+    ? segments
     .filter((segment) => pointMatches(basePoint, segment.start) || pointMatches(basePoint, segment.end))
-    .map((segment) => segment.segmentId);
+    .map((segment) => segment.segmentId)
+    : [];
+  const seedIds = [...new Set([...(seedSegmentId ? [seedSegmentId] : []), ...pointSeedIds])];
   if (seedIds.length === 0) return null;
 
   const visited = new Set<string>();
@@ -377,9 +383,10 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
       .filter((entity): entity is CadArcEntity => entity.visible && entity.type === 'arc')
       .map((entity) => arcRefFromEntity(entity));
     const basePoint = constructionContext.active ? constructionContext.basePoint : null;
-    const parallelScope = constructionContext.active ? buildScopedSegmentIds(segments, basePoint, 1) : null;
-    const extensionScope = constructionContext.active ? buildScopedSegmentIds(segments, basePoint, 2) : null;
-    const apparentScope = constructionContext.active ? buildScopedSegmentIds(segments, basePoint, 2) : null;
+    const scopeSeedSegmentId = constructionContext.scopeSeedSegmentId ?? null;
+    const parallelScope = constructionContext.active ? buildScopedSegmentIds(segments, basePoint, scopeSeedSegmentId, 1) : null;
+    const extensionScope = constructionContext.active ? buildScopedSegmentIds(segments, basePoint, scopeSeedSegmentId, 2) : null;
+    const apparentScope = constructionContext.active ? buildScopedSegmentIds(segments, basePoint, scopeSeedSegmentId, 2) : null;
 
     project.entities.forEach((entity) => {
       if (!entity.visible) return;
@@ -398,13 +405,13 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
           entitySegments(entity).forEach((segment) => {
             if (allowed.has('endpoint')) {
               candidates.push(
-                buildCandidate('endpoint', entity.id, segment.start, worldPoint, segment.startLabel),
-                buildCandidate('endpoint', entity.id, segment.end, worldPoint, segment.endLabel),
+                buildCandidate('endpoint', entity.id, segment.start, worldPoint, segment.startLabel, undefined, segment.segmentId),
+                buildCandidate('endpoint', entity.id, segment.end, worldPoint, segment.endLabel, undefined, segment.segmentId),
               );
             }
             if (allowed.has('midpoint')) {
               candidates.push(
-                buildCandidate('midpoint', entity.id, cadMidpoint(segment.start, segment.end), worldPoint, segment.label),
+                buildCandidate('midpoint', entity.id, cadMidpoint(segment.start, segment.end), worldPoint, segment.label, undefined, segment.segmentId),
               );
             }
             if (allowed.has('nearest')) {
@@ -415,6 +422,8 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
                   cadClosestPointOnSegment(worldPoint, segment.start, segment.end),
                   worldPoint,
                   segment.label,
+                  undefined,
+                  segment.segmentId,
                 ),
               );
             }
@@ -432,6 +441,7 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
                     worldPoint,
                     `${segment.label} ext`,
                     [[nearestSegmentEndpointToPoint(segment, extensionPoint), extensionPoint]],
+                    segment.segmentId,
                   ),
                 );
               }
@@ -446,6 +456,7 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
                   worldPoint,
                   `${segment.label} perp`,
                   [[basePoint, perpendicularPoint]],
+                  segment.segmentId,
                 ),
               );
             }
@@ -466,6 +477,7 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
                       [basePoint, parallelPoint],
                       [segment.start, segment.end],
                     ],
+                    segment.segmentId,
                   ),
                 );
               }

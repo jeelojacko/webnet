@@ -26,6 +26,8 @@ import type {
   CadSnapConstructionContext,
 } from '../../engine/cad/cadTypes';
 
+type CommandPoint = CadNamedPoint & { snapSourceSegmentId?: string };
+
 type ActiveCommandKey =
   | 'POINT'
   | 'COGO_POINT'
@@ -58,32 +60,32 @@ type CommandSession =
   | {
       key: 'COGO_POINT' | 'LINE' | 'INVERSE' | 'MOVE' | 'COPY';
       inputValue: string;
-      startPoint: CadNamedPoint | null;
+      startPoint: CommandPoint | null;
       resultText?: string;
     }
   | {
       key: 'PASTE';
       inputValue: string;
-      startPoint: CadNamedPoint;
+      startPoint: CommandPoint;
       sourceEntityIds: string[];
       resultText?: string;
     }
   | {
       key: 'PLINE';
       inputValue: string;
-      points: CadNamedPoint[];
+      points: CommandPoint[];
       resultText?: string;
     }
   | {
       key: 'TRAVERSE';
       inputValue: string;
-      points: CadNamedPoint[];
+      points: CommandPoint[];
       resultText?: string;
     }
   | {
       key: 'ARC_3PT';
       inputValue: string;
-      points: CadNamedPoint[];
+      points: CommandPoint[];
       resultText?: string;
     }
   | {
@@ -98,7 +100,7 @@ type CommandSession =
         | 'ARC_SED'
         | 'ARC_SER';
       inputValue: string;
-      points: CadNamedPoint[];
+      points: CommandPoint[];
       resultText?: string;
     }
   | {
@@ -110,9 +112,9 @@ type CommandSession =
   | {
       key: 'TANGENT_CURVE';
       inputValue: string;
-      piPoint: CadNamedPoint | null;
-      backTangentPoint: CadNamedPoint | null;
-      aheadTangentPoint: CadNamedPoint | null;
+      piPoint: CommandPoint | null;
+      backTangentPoint: CommandPoint | null;
+      aheadTangentPoint: CommandPoint | null;
       resultText?: string;
     };
 
@@ -182,7 +184,7 @@ interface UseSurveyCadCommandsResult {
   startInverseCommand: () => void;
   startMoveCommand: () => void;
   startCopyCommand: () => void;
-  startPasteCommand: (_sourceEntityIds: string[], _basePoint: CadNamedPoint) => void;
+  startPasteCommand: (_sourceEntityIds: string[], _basePoint: CommandPoint) => void;
   cancelCommand: () => void;
   finishCommand: () => void;
   setCommandInputValue: (_value: string) => void;
@@ -190,7 +192,11 @@ interface UseSurveyCadCommandsResult {
   backspaceCommandInputValue: () => void;
   submitCommandInput: () => void;
   useActiveSnap: () => void;
-  consumeInteractionPoint: (_point: { x: number; y: number }, _label?: string) => void;
+  consumeInteractionPoint: (
+    _point: { x: number; y: number },
+    _label?: string,
+    _options?: { snapSourceSegmentId?: string },
+  ) => void;
   handleEnterKey: () => void;
   handleEscapeKey: () => void;
 }
@@ -207,7 +213,7 @@ const splitLabelFromBody = (token: string): { label?: string; body: string } => 
   };
 };
 
-const parseAbsolutePoint = (token: string): CadNamedPoint | null => {
+const parseAbsolutePoint = (token: string): CommandPoint | null => {
   const { label, body } = splitLabelFromBody(token);
   if (body.length === 0) return null;
   const parts = body.split(',').map((part) => part.trim());
@@ -223,8 +229,8 @@ const parseAbsolutePoint = (token: string): CadNamedPoint | null => {
 
 const parseRelativeBearingDistance = (
   token: string,
-  basePoint: CadNamedPoint | null,
-): CadNamedPoint | null => {
+  basePoint: CommandPoint | null,
+): CommandPoint | null => {
   if (!basePoint) return null;
   const { label, body } = splitLabelFromBody(token);
   if (body.length === 0) return null;
@@ -518,10 +524,18 @@ export const useSurveyCadCommands = ({
       case 'MOVE':
       case 'COPY':
         return session.startPoint
-          ? { active: true, basePoint: { x: session.startPoint.x, y: session.startPoint.y } }
+          ? {
+              active: true,
+              basePoint: { x: session.startPoint.x, y: session.startPoint.y },
+              scopeSeedSegmentId: session.startPoint.snapSourceSegmentId ?? null,
+            }
           : { active: false, basePoint: null };
       case 'PASTE':
-        return { active: true, basePoint: { x: session.startPoint.x, y: session.startPoint.y } };
+        return {
+          active: true,
+          basePoint: { x: session.startPoint.x, y: session.startPoint.y },
+          scopeSeedSegmentId: session.startPoint.snapSourceSegmentId ?? null,
+        };
       case 'PLINE':
       case 'TRAVERSE':
       case 'ARC_3PT':
@@ -907,7 +921,7 @@ export const useSurveyCadCommands = ({
     }
   }, [previewPoint, reverseDirectionModifier, session]);
 
-const parseInputPoint = (inputValue: string, basePoint: CadNamedPoint | null): CadNamedPoint | null =>
+const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): CommandPoint | null =>
     parseRelativeBearingDistance(inputValue, basePoint) ?? parseAbsolutePoint(inputValue);
 
 
@@ -934,7 +948,7 @@ const parseInputPoint = (inputValue: string, basePoint: CadNamedPoint | null): C
   };
 
   const consumePoint = (
-    point: CadNamedPoint,
+    point: CommandPoint,
     options?: { suppressPointLabel?: boolean },
   ) => {
     setSession((current) => {
@@ -1568,17 +1582,19 @@ const parseInputPoint = (inputValue: string, basePoint: CadNamedPoint | null): C
           x: activeSnap.x,
           y: activeSnap.y,
           label: activeSnap.label,
+          snapSourceSegmentId: activeSnap.sourceSegmentId,
         },
         { suppressPointLabel: true },
       );
     },
-    consumeInteractionPoint: (point, label) => {
+    consumeInteractionPoint: (point, label, options) => {
       if (!session) return;
       consumePoint(
         {
           x: point.x,
           y: point.y,
           label: label ?? `${point.x.toFixed(3)},${point.y.toFixed(3)}`,
+          snapSourceSegmentId: options?.snapSourceSegmentId,
         },
         { suppressPointLabel: true },
       );

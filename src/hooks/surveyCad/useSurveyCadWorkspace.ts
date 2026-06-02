@@ -106,7 +106,11 @@ interface UseSurveyCadWorkspaceResult {
   backspaceCommandInputValue: () => void;
   submitCommandInput: () => void;
   useActiveSnap: () => void;
-  consumeInteractionPoint: (_worldPoint: { x: number; y: number }) => void;
+  consumeInteractionPoint: (
+    _worldPoint: { x: number; y: number },
+    _label?: string,
+    _options?: { snapSourceSegmentId?: string },
+  ) => void;
   handleEnterKey: () => void;
   handleEscapeKey: () => void;
   selectEntity: (_entityId: string, _appendToSelection?: boolean) => void;
@@ -269,6 +273,7 @@ export const useSurveyCadWorkspace = (
     setSnapConstructionContext((current) => {
       if (
         current.active === nextSnapConstructionContext.active &&
+        current.scopeSeedSegmentId === nextSnapConstructionContext.scopeSeedSegmentId &&
         current.basePoint?.x === nextSnapConstructionContext.basePoint?.x &&
         current.basePoint?.y === nextSnapConstructionContext.basePoint?.y
       ) {
