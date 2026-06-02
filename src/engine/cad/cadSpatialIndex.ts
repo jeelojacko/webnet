@@ -60,6 +60,23 @@ const SNAP_RANGE_MULTIPLIER: Record<CadSnapKind, number> = {
   nearest: 1,
 };
 
+const CONSTRUCTION_LOCK_KINDS: CadSnapKind[] = ['extension', 'perpendicular', 'parallel'];
+const CONSTRUCTION_REFINEMENT_PRIORITY: Record<CadSnapKind, number> = {
+  intersection: 0,
+  'apparent-intersection': 1,
+  endpoint: 2,
+  'point-node': 3,
+  midpoint: 4,
+  'arc-midpoint': 5,
+  center: 6,
+  quadrant: 7,
+  extension: 8,
+  perpendicular: 9,
+  parallel: 10,
+  tangent: 11,
+  nearest: 12,
+};
+
 const buildCandidate = (
   kind: CadSnapKind,
   sourceEntityId: string,
@@ -161,6 +178,60 @@ const dedupeCandidates = (candidates: CadSnapCandidate[]): CadSnapCandidate[] =>
     seen.add(key);
     return true;
   });
+};
+
+const candidateSort = (left: CadSnapCandidate, right: CadSnapCandidate): number => {
+  if (SNAP_PRIORITY[left.kind] !== SNAP_PRIORITY[right.kind]) {
+    return SNAP_PRIORITY[left.kind] - SNAP_PRIORITY[right.kind];
+  }
+  if (Math.abs(left.distance - right.distance) > 1e-9) return left.distance - right.distance;
+  return left.id.localeCompare(right.id, undefined, { numeric: true });
+};
+
+const pointOnCandidateLine = (
+  point: CadWorldPoint,
+  candidate: CadSnapCandidate,
+  toleranceWorld: number,
+): boolean => {
+  const constraintSegment = candidate.guideSegments?.[0];
+  if (!constraintSegment) return false;
+  const projection = cadProjectPointOntoInfiniteLine(point, constraintSegment[0], constraintSegment[1]).point;
+  return cadDistance(point, projection) <= Math.max(toleranceWorld * 0.08, 1e-6);
+};
+
+const mergeGuideSegments = (
+  primary: CadSnapCandidate,
+  secondary: CadSnapCandidate,
+): Array<[CadWorldPoint, CadWorldPoint]> | undefined => {
+  const seen = new Set<string>();
+  const merged = [...(primary.guideSegments ?? []), ...(secondary.guideSegments ?? [])].filter((segment) => {
+    const key = `${segment[0].x.toFixed(9)}:${segment[0].y.toFixed(9)}:${segment[1].x.toFixed(9)}:${segment[1].y.toFixed(9)}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  return merged.length > 0 ? merged : undefined;
+};
+
+const buildCompoundConstructionCandidate = (
+  primary: CadSnapCandidate,
+  secondary: CadSnapCandidate,
+): CadSnapCandidate => ({
+  ...secondary,
+  id: `${primary.id}|${secondary.id}`,
+  kind: primary.kind,
+  sourceEntityId: `${primary.sourceEntityId}|${secondary.sourceEntityId}`,
+  label: `${primary.label} + ${secondary.label}`,
+  guideSegments: mergeGuideSegments(primary, secondary),
+  compoundKinds: [primary.kind, secondary.kind],
+});
+
+const compoundCandidateSort = (left: CadSnapCandidate, right: CadSnapCandidate): number => {
+  if (CONSTRUCTION_REFINEMENT_PRIORITY[left.kind] !== CONSTRUCTION_REFINEMENT_PRIORITY[right.kind]) {
+    return CONSTRUCTION_REFINEMENT_PRIORITY[left.kind] - CONSTRUCTION_REFINEMENT_PRIORITY[right.kind];
+  }
+  if (Math.abs(left.distance - right.distance) > 1e-9) return left.distance - right.distance;
+  return left.id.localeCompare(right.id, undefined, { numeric: true });
 };
 
 const buildExtensionCandidate = (
@@ -581,13 +652,23 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
       .filter(
         (candidate) => candidate.distance <= toleranceWorld * SNAP_RANGE_MULTIPLIER[candidate.kind],
       )
-      .sort((left, right) => {
-        if (SNAP_PRIORITY[left.kind] !== SNAP_PRIORITY[right.kind]) {
-          return SNAP_PRIORITY[left.kind] - SNAP_PRIORITY[right.kind];
-        }
-        if (Math.abs(left.distance - right.distance) > 1e-9) return left.distance - right.distance;
-        return left.id.localeCompare(right.id, undefined, { numeric: true });
-      });
+      .sort(candidateSort);
+
+    const lockedConstructionCandidate = viable.find((candidate) =>
+      CONSTRUCTION_LOCK_KINDS.includes(candidate.kind),
+    );
+    if (lockedConstructionCandidate) {
+      const compoundCandidate = viable
+        .filter((candidate) =>
+          candidate.id !== lockedConstructionCandidate.id &&
+          candidate.kind !== 'nearest' &&
+          pointOnCandidateLine(candidate, lockedConstructionCandidate, toleranceWorld),
+        )
+        .sort(compoundCandidateSort)[0];
+      if (compoundCandidate) {
+        return buildCompoundConstructionCandidate(lockedConstructionCandidate, compoundCandidate);
+      }
+    }
     return viable[0] ?? null;
   },
 });

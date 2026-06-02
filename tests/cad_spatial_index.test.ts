@@ -386,6 +386,65 @@ describe('Survey CAD spatial index', () => {
     expect(arcPerpendicular?.y).toBeCloseTo(10, 6);
   });
 
+  it('keeps a locked construction snap while refining onto an on-line apparent intersection', () => {
+    const project = appendCadProjectEntities(
+      buildSurveyCadSpikeProject({
+        input,
+        instrumentLibrary: {},
+        parseOptions,
+        units: 'm',
+        result: null,
+      }),
+      [
+        {
+          id: 'line:base',
+          type: 'line',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          fromStationId: 'L1',
+          toStationId: 'L2',
+          fromX: 0,
+          fromY: 0,
+          toX: 10,
+          toY: 0,
+          sourceObservationIds: [],
+        },
+        {
+          id: 'line:short-vertical',
+          type: 'line',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          fromStationId: 'L3',
+          toStationId: 'L4',
+          fromX: 5,
+          fromY: 15,
+          toX: 5,
+          toY: 25,
+          sourceObservationIds: [],
+        },
+      ],
+    );
+    const index = buildCadSpatialIndex(project);
+
+    const compoundPerpendicular = index.queryNearestSnap(
+      { x: 5.1, y: 0.2 },
+      1,
+      ['perpendicular', 'apparent-intersection'],
+      { active: true, basePoint: { x: 5, y: 10 } },
+    );
+    expect(compoundPerpendicular?.kind).toBe('perpendicular');
+    expect(compoundPerpendicular?.compoundKinds).toEqual(['perpendicular', 'apparent-intersection']);
+    expect(compoundPerpendicular?.label).toContain('perp');
+    expect(compoundPerpendicular?.label).toContain('apparent');
+    expect(compoundPerpendicular?.x).toBeCloseTo(5, 6);
+    expect(compoundPerpendicular?.y).toBeCloseTo(0, 6);
+    expect(compoundPerpendicular?.guideSegments?.length).toBeGreaterThanOrEqual(3);
+  });
+
   it('resolves tangent-to-arc and line-arc apparent intersections from construction context', () => {
     const project = appendCadProjectEntities(
       buildSurveyCadSpikeProject({

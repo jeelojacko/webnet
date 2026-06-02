@@ -280,6 +280,7 @@ export interface CadSnapCandidate {
   distance: number;
   label: string;
   guideSegments?: Array<[CadDisplayPoint, CadDisplayPoint]>;
+  compoundKinds?: CadSnapKind[];
 }
 
 export interface CadSnapConstructionContext {

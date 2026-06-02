@@ -1,3 +1,5 @@
+- [x] Survey CAD compound construction-snap batch (June 2026): let `perpendicular`, `extension`, and `parallel` stay locked while a second snap such as `intersection` or `apparent intersection` refines the final target on that same derived line.
+
 - [x] Survey CAD snap-priority + zoom-tolerance batch (June 2026): make viewport snap range screen-scale-aware so it shrinks as operators zoom in, retune snap priority so endpoints then midpoints win cleanly, and stop `nearest`/arc-midpoint hover snaps from being swallowed by oversized world-space tolerance.
 
 - [x] Survey CAD snap-guide batch (June 2026): add ghost guide lines for construction-style snaps so tangent, extension, perpendicular, parallel, and apparent-intersection targets show the derived geometry that produced the snap.
