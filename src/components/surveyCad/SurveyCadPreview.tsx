@@ -297,13 +297,14 @@ const renderPrimitive = (
   onEntityClick: (
     _event: React.MouseEvent<SVGElement>,
     _entityId: string,
+    _sourceSegmentId?: string,
     _appendToSelection?: boolean,
   ) => void,
 ) => {
   const isSelected = selectedEntityIds.includes(primitive.sourceEntityId);
   const commonProps = {
     onClick: (event: React.MouseEvent<SVGElement>) =>
-      onEntityClick(event, primitive.sourceEntityId, event.shiftKey),
+      onEntityClick(event, primitive.sourceEntityId, primitive.sourceSegmentId, event.shiftKey),
     className: 'cursor-pointer',
   };
 
@@ -666,7 +667,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
       />
       <g>
         {scene.primitives.map((primitive) =>
-          renderPrimitive(primitive, selectedEntityIds, project, scale, (event, entityId, appendToSelection) => {
+          renderPrimitive(primitive, selectedEntityIds, project, scale, (event, entityId, sourceSegmentId, appendToSelection) => {
             if (commandActive) {
               if (didDrag) return;
               if (activeSnap) {
@@ -688,7 +689,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
               const offsetY = (rect.height - contentHeight) / 2;
               const viewX = (event.clientX - rect.left - offsetX) / scaleFactor;
               const viewY = (event.clientY - rect.top - offsetY) / scaleFactor;
-              onConsumeInteractionPoint(unproject(viewX, viewY));
+              onConsumeInteractionPoint(unproject(viewX, viewY), undefined, { snapSourceSegmentId: sourceSegmentId });
               return;
             }
             onSelectEntity(entityId, appendToSelection);

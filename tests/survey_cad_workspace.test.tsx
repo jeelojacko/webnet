@@ -1096,6 +1096,142 @@ describe('SurveyCadWorkspace', () => {
     container.remove();
   });
 
+  it('uses the clicked line body as the LINE start seed so parallel preview does not fall back to remote lines', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    const baseProject = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+    const persistedProject = {
+      ...baseProject,
+      entities: [
+        {
+          id: 'line:base',
+          type: 'line' as const,
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          fromStationId: 'L1',
+          toStationId: 'L2',
+          fromX: 0,
+          fromY: 0,
+          toX: 10,
+          toY: 0,
+          sourceObservationIds: [],
+        },
+        {
+          id: 'line:local',
+          type: 'line' as const,
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          fromStationId: 'L2',
+          toStationId: 'L3',
+          fromX: 10,
+          fromY: 0,
+          toX: 10,
+          toY: 10,
+          sourceObservationIds: [],
+        },
+        {
+          id: 'line:remote',
+          type: 'line' as const,
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          fromStationId: 'R1',
+          toStationId: 'R2',
+          fromX: 35,
+          fromY: -10,
+          toX: 35,
+          toY: 10,
+          sourceObservationIds: [],
+        },
+      ],
+    };
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+          persistedState={{
+            version: 1,
+            sourceSignature: buildCadProjectSignature(baseProject),
+            project: persistedProject,
+          }}
+        />,
+      );
+    });
+
+    const preview = container.querySelector('[data-survey-cad-preview]') as SVGElement | null;
+    if (!preview) throw new Error('Preview not found');
+    mockElementRect(preview);
+
+    await act(async () => {
+      const snapMenuButton = container.querySelector('[data-survey-cad-snap-menu-button]') as HTMLButtonElement | null;
+      if (!snapMenuButton) throw new Error('Snap menu button not found');
+      snapMenuButton.click();
+    });
+    await act(async () => {
+      (container.querySelector('[data-survey-cad-snap-toggle="point-node"]') as HTMLInputElement | null)?.click();
+      (container.querySelector('[data-survey-cad-snap-toggle="endpoint"]') as HTMLInputElement | null)?.click();
+      (container.querySelector('[data-survey-cad-snap-toggle="midpoint"]') as HTMLInputElement | null)?.click();
+      (container.querySelector('[data-survey-cad-snap-toggle="center"]') as HTMLInputElement | null)?.click();
+      (container.querySelector('[data-survey-cad-snap-toggle="arc-midpoint"]') as HTMLInputElement | null)?.click();
+      (container.querySelector('[data-survey-cad-snap-toggle="quadrant"]') as HTMLInputElement | null)?.click();
+      (container.querySelector('[data-survey-cad-snap-toggle="intersection"]') as HTMLInputElement | null)?.click();
+      (container.querySelector('[data-survey-cad-snap-toggle="apparent-intersection"]') as HTMLInputElement | null)?.click();
+      (container.querySelector('[data-survey-cad-snap-toggle="extension"]') as HTMLInputElement | null)?.click();
+      (container.querySelector('[data-survey-cad-snap-toggle="perpendicular"]') as HTMLInputElement | null)?.click();
+      (container.querySelector('[data-survey-cad-snap-toggle="tangent"]') as HTMLInputElement | null)?.click();
+      (container.querySelector('[data-survey-cad-snap-toggle="nearest"]') as HTMLInputElement | null)?.click();
+    });
+
+    const baseLineScreen = projectWorldToPreviewScreen(persistedProject.bounds!, { x: 5.2, y: 0.1 });
+    await act(async () => {
+      clickButton(container, 'LINE');
+      preview.dispatchEvent(
+        new MouseEvent('click', {
+          bubbles: true,
+          clientX: baseLineScreen.clientX,
+          clientY: baseLineScreen.clientY,
+        }),
+      );
+    });
+
+    const remoteScreen = projectWorldToPreviewScreen(persistedProject.bounds!, { x: 35.1, y: 0.2 });
+    await act(async () => {
+      preview.dispatchEvent(
+        new MouseEvent('mousemove', {
+          bubbles: true,
+          clientX: remoteScreen.clientX,
+          clientY: remoteScreen.clientY,
+        }),
+      );
+    });
+
+    const badgeText = container.querySelector('[data-survey-cad-snap-badge]')?.textContent ?? '';
+    expect(badgeText).not.toContain('R1-R2');
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
   it('renders tangent snap badge text and styling when tangent snap is active', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);

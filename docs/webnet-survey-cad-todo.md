@@ -1,5 +1,7 @@
 # WebNet Survey CAD TODO
 
+- [x] Survey CAD line-body seed batch (June 2026): treat direct first clicks on visible linework as segment-seeded starts, so `LINE` preview keeps local parallel scope even when no explicit snap kind won the first click.
+
 - [x] Survey CAD command-start snap carryover batch (June 2026): keep the hovered snap alive when a draw command starts so an immediate first click still captures midpoint/nearest segment context instead of dropping back to raw world-point input and global parallel scope.
 
 - [x] Survey CAD obstructed-guide snap batch (June 2026): reject `extension` and `apparent intersection` candidates whose derived guide path runs through other existing linework, and keep the remaining valid local construction cases locked with focused engine/workspace coverage.

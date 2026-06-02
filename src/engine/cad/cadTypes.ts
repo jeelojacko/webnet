@@ -199,6 +199,7 @@ export interface CadDisplayPrimitiveBase {
   id: string;
   layerId: string;
   sourceEntityId: CadEntityId;
+  sourceSegmentId?: string;
   stroke: string;
   fill?: string;
   opacity?: number;

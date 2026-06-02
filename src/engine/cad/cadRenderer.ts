@@ -61,6 +61,7 @@ const buildVertexPrimitives = (
     id: `primitive:${entity.id}:${index + 1}`,
     layerId: entity.layerId,
     sourceEntityId: entity.id,
+    sourceSegmentId: `${entity.id}#${index}`,
     stroke,
     points: [vertex, points[index + 1]!],
     strokeWidth: strokeWidth(project, entity, entity.type === 'parcel' ? 1.5 : 1.25),
@@ -231,6 +232,7 @@ const toPrimitives = (project: CadProject, entity: CadEntity): CadDisplayPrimiti
           id: `primitive:${entity.id}`,
           layerId: entity.layerId,
           sourceEntityId: entity.id,
+          sourceSegmentId: `${entity.id}#0`,
           stroke,
           points: [
             { x: entity.fromX, y: entity.fromY },
