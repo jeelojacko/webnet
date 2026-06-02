@@ -45,6 +45,9 @@ const SNAP_PRIORITY: Record<CadSnapKind, number> = {
   nearest: 13,
 };
 
+const PROXIMITY_PRIORITY_OVERRIDE_KINDS = new Set<CadSnapKind>(['nearest']);
+const PROXIMITY_PRIORITY_OVERRIDE_RATIO = 0.35;
+
 const SNAP_RANGE_MULTIPLIER: Record<CadSnapKind, number> = {
   endpoint: 0.85,
   'point-node': 0.8,
@@ -200,6 +203,19 @@ const dedupeCandidates = (candidates: CadSnapCandidate[]): CadSnapCandidate[] =>
 };
 
 const candidateSort = (left: CadSnapCandidate, right: CadSnapCandidate): number => {
+  if (Math.abs(left.distance - right.distance) > 1e-9) {
+    const leftOverridesPriority =
+      PROXIMITY_PRIORITY_OVERRIDE_KINDS.has(left.kind) &&
+      SNAP_PRIORITY[left.kind] > SNAP_PRIORITY[right.kind] &&
+      left.distance <= right.distance * PROXIMITY_PRIORITY_OVERRIDE_RATIO;
+    const rightOverridesPriority =
+      PROXIMITY_PRIORITY_OVERRIDE_KINDS.has(right.kind) &&
+      SNAP_PRIORITY[right.kind] > SNAP_PRIORITY[left.kind] &&
+      right.distance <= left.distance * PROXIMITY_PRIORITY_OVERRIDE_RATIO;
+    if (leftOverridesPriority !== rightOverridesPriority) {
+      return leftOverridesPriority ? -1 : 1;
+    }
+  }
   if (SNAP_PRIORITY[left.kind] !== SNAP_PRIORITY[right.kind]) {
     return SNAP_PRIORITY[left.kind] - SNAP_PRIORITY[right.kind];
   }

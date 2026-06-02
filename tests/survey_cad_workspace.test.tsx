@@ -603,6 +603,80 @@ describe('SurveyCadWorkspace', () => {
     container.remove();
   });
 
+  it('shows arc-body nearest during LINE on a small arc instead of letting endpoints steal the snap', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    const baseProject = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+    const persistedProject = {
+      ...baseProject,
+      entities: [
+        ...baseProject.entities,
+        {
+          id: 'arc:small-hover-test',
+          type: 'arc' as const,
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          centerX: 65,
+          centerY: 35,
+          radius: 1,
+          startAngleDeg: 0,
+          endAngleDeg: 180,
+        },
+      ],
+    };
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+          persistedState={{
+            version: 1,
+            sourceSignature: buildCadProjectSignature(baseProject),
+            project: persistedProject,
+          }}
+        />,
+      );
+    });
+
+    const preview = container.querySelector('[data-survey-cad-preview]') as SVGElement | null;
+    if (!preview) throw new Error('Preview not found');
+    mockElementRect(preview);
+
+    const arcBodyScreen = projectWorldToPreviewScreen(persistedProject.bounds!, { x: 65, y: 36 });
+    await act(async () => {
+      clickButton(container, 'LINE');
+      preview.dispatchEvent(
+        new MouseEvent('mousemove', {
+          bubbles: true,
+          clientX: arcBodyScreen.clientX,
+          clientY: arcBodyScreen.clientY,
+        }),
+      );
+    });
+
+    expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent).toContain('Nearest');
+    expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent).toContain('arc:small-hover-test');
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
   it('keeps perpendicular lock active while refining onto an apparent intersection during LINE input', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);

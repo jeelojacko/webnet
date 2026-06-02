@@ -288,6 +288,44 @@ describe('Survey CAD spatial index', () => {
     expect(nearest?.y).toBeCloseTo(9.6 + 20, 1);
   });
 
+  it('lets arc-body nearest beat arc endpoints when the cursor is clearly closer to the curve body', () => {
+    const project = appendCadProjectEntities(
+      buildSurveyCadSpikeProject({
+        input,
+        instrumentLibrary: {},
+        parseOptions,
+        units: 'm',
+        result: null,
+      }),
+      [
+        {
+          id: 'arc:small-priority-test',
+          type: 'arc',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          centerX: 0,
+          centerY: 0,
+          radius: 1,
+          startAngleDeg: 0,
+          endAngleDeg: 180,
+        },
+      ],
+    );
+    const index = buildCadSpatialIndex(project);
+
+    const snap = index.queryNearestSnap(
+      { x: 0, y: 1 },
+      2,
+      ['endpoint', 'arc-midpoint', 'nearest'],
+    );
+    expect(snap?.kind).toBe('nearest');
+    expect(snap?.sourceEntityId).toBe('arc:small-priority-test');
+    expect(snap?.x).toBeCloseTo(0, 6);
+    expect(snap?.y).toBeCloseTo(1, 6);
+  });
+
   it('resolves construction snaps only when active command context supplies a base point', () => {
     const project = appendCadProjectEntities(
       buildSurveyCadSpikeProject({

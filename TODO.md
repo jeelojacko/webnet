@@ -1,3 +1,5 @@
+- [x] Survey CAD arc-nearest priority batch (June 2026): let on-curve `nearest` override much farther exact snaps on small or dense arcs, so endpoint priority does not swallow the whole arc body during line drafting.
+
 - [x] Survey CAD arc-body hit-target batch (June 2026): make arc body clicks in active commands resolve to the closest point on the curve, and harden arc hit targets so operators can start or finish linework directly on arcs instead of only at endpoints.
 
 - [x] Survey CAD start-perpendicular + direction snap batch (June 2026): add a second `perpendicular` construction path from the captured start segment, restore practical local `parallel` pickup after the recent fail-closed scope change, and add low-priority 8-way direction snaps (`N/NE/E/SE/S/SW/W/NW`) as fallback drafting aids.
