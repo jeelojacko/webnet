@@ -1,5 +1,7 @@
 # WebNet Survey CAD TODO
 
+- [x] Survey CAD arc-snap audit batch (June 2026): lock command-created and constructor-built arc entities with shared on-body `arc-midpoint` / `nearest` regression coverage across the native arc command family, so future arc-command changes cannot silently break snapping on committed curves.
+
 - [x] Survey CAD arc-nearest priority batch (June 2026): let on-curve `nearest` override much farther exact snaps on small or dense arcs, so endpoint priority does not swallow the whole arc body during line drafting.
 
 - [x] Survey CAD arc-body hit-target batch (June 2026): make arc body clicks in active commands resolve to the closest point on the curve, and harden arc hit targets so operators can start or finish linework directly on arcs instead of only at endpoints.

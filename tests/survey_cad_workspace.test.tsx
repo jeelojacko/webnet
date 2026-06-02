@@ -1779,6 +1779,70 @@ describe('SurveyCadWorkspace', () => {
     container.remove();
   });
 
+  it('snaps LINE nearest onto an arc created by ARC 3PT', async () => {
+    const capture = createPersistedStateCapture();
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+          persistedState={null}
+          onPersistedStateChange={capture.onPersistedStateChange}
+        />,
+      );
+    });
+
+    const arcMenuButton = container.querySelector('[data-survey-cad-arc-menu-button]') as HTMLButtonElement | null;
+    const commandInput = container.querySelector('[data-survey-cad-command-input]') as HTMLInputElement | null;
+    const preview = container.querySelector('[data-survey-cad-preview]') as SVGElement | null;
+    if (!arcMenuButton || !commandInput || !preview) throw new Error('Arc menu, command input, or preview not found');
+    mockElementRect(preview);
+
+    await act(async () => {
+      arcMenuButton.click();
+    });
+    await act(async () => {
+      clickButton(container, '3 Point');
+      setTextInputValue(commandInput, '10,0');
+      pressKey(commandInput, 'Enter');
+      setTextInputValue(commandInput, '20,10');
+      pressKey(commandInput, 'Enter');
+      setTextInputValue(commandInput, '30,0');
+      pressKey(commandInput, 'Enter');
+    });
+
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain('ARC_3PT committed');
+    const persistedProject = capture.read()?.project;
+    if (!persistedProject?.bounds) throw new Error('Persisted project bounds not captured');
+
+    const arcBodyScreen = projectWorldToPreviewScreen(persistedProject.bounds, { x: 23, y: 8 });
+
+    await act(async () => {
+      clickButton(container, 'LINE');
+      preview.dispatchEvent(
+        new MouseEvent('mousemove', {
+          bubbles: true,
+          clientX: arcBodyScreen.clientX,
+          clientY: arcBodyScreen.clientY,
+        }),
+      );
+    });
+
+    expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent ?? '').toContain('Nearest');
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
   it('explains that ARC 3PT uses the through point to fix the arc side instead of Ctrl flip', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);

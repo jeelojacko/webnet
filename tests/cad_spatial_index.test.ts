@@ -3,6 +3,20 @@ import { appendCadProjectEntities } from '../src/engine/cad/cadProjectState';
 import { buildSurveyCadSpikeProject } from '../src/engine/cad/cadModel';
 import { buildCadSpatialIndex } from '../src/engine/cad/cadSpatialIndex';
 import { buildCadDisplayScene } from '../src/engine/cad/cadRenderer';
+import {
+  cadArcMidpoint,
+  cadBuildArcFromStartCenterAngle,
+  cadBuildArcFromStartCenterChord,
+  cadBuildArcFromStartCenterEnd,
+  cadBuildArcFromStartEndAngle,
+  cadBuildArcFromStartEndDirection,
+  cadBuildArcFromStartEndRadius,
+  cadBuildArcFromThreePoints,
+  cadBuildContinuedArc,
+  cadBuildTangentCurve,
+  cadPointOnCircle,
+  cadSignedSweepDeg,
+} from '../src/engine/cad/cadGeometry';
 import type { ParseOptions } from '../src/types';
 
 const input = ['.2D', 'C A 0 0 0 ! !', 'C B 100 0 0 ! !', 'C C 60 40 0', 'D A-C 72.1110255 0.005', 'D B-C 56.5685425 0.005'].join('\n');
@@ -324,6 +338,99 @@ describe('Survey CAD spatial index', () => {
     expect(snap?.sourceEntityId).toBe('arc:small-priority-test');
     expect(snap?.x).toBeCloseTo(0, 6);
     expect(snap?.y).toBeCloseTo(1, 6);
+  });
+
+  it('keeps arc-body midpoint and nearest snaps valid across all native arc constructors', () => {
+    const start = { x: 10, y: 0 };
+    const center = { x: 20, y: 0 };
+    const end = { x: 30, y: 0 };
+    const tangentSource = {
+      centerX: 20,
+      centerY: 0,
+      radius: 10,
+      startAngleDeg: 180,
+      endAngleDeg: 90,
+    };
+    const arcDefinitions = [
+      { label: 'ARC_3PT', definition: cadBuildArcFromThreePoints(start, { x: 20, y: 10 }, end) },
+      { label: 'ARC_SCE', definition: cadBuildArcFromStartCenterEnd(start, center, { x: 27, y: 7 }) },
+      { label: 'ARC_CSE', definition: cadBuildArcFromStartCenterEnd(start, center, { x: 27, y: 7 }) },
+      { label: 'ARC_SCA', definition: cadBuildArcFromStartCenterAngle(start, center, 90) },
+      { label: 'ARC_CSA', definition: cadBuildArcFromStartCenterAngle(start, center, 90) },
+      { label: 'ARC_SCL', definition: cadBuildArcFromStartCenterChord(start, center, 14.1421356237) },
+      { label: 'ARC_CSL', definition: cadBuildArcFromStartCenterChord(start, center, 14.1421356237) },
+      { label: 'ARC_SEA', definition: cadBuildArcFromStartEndAngle(start, end, 90) },
+      { label: 'ARC_SED', definition: cadBuildArcFromStartEndDirection(start, end, 45) },
+      { label: 'ARC_SER', definition: cadBuildArcFromStartEndRadius(start, end, 10) },
+      { label: 'CONTINUE_CURVE', definition: cadBuildContinuedArc(tangentSource, { x: 10, y: 20 }) },
+      {
+        label: 'TANGENT_CURVE',
+        definition: cadBuildTangentCurve({ x: 20, y: 20 }, { x: 20, y: 0 }, { x: 40, y: 20 }, 10),
+      },
+    ];
+
+    arcDefinitions.forEach(({ label, definition }, index) => {
+      expect(definition, `${label} should produce a valid arc definition for snap auditing`).not.toBeNull();
+      if (!definition) return;
+
+      const project = appendCadProjectEntities(
+        buildSurveyCadSpikeProject({
+          input,
+          instrumentLibrary: {},
+          parseOptions,
+          units: 'm',
+          result: null,
+        }),
+        [
+          {
+            id: `arc:audit:${index + 1}`,
+            type: 'arc' as const,
+            layerId: 'observation-lines',
+            styleId: 'style-observation-line',
+            visible: true,
+            locked: false,
+            centerX: definition.center.x,
+            centerY: definition.center.y,
+            radius: definition.radius,
+            startAngleDeg: definition.startAngleDeg,
+            endAngleDeg: definition.endAngleDeg,
+          },
+        ],
+      );
+      const indexer = buildCadSpatialIndex(project);
+
+      const midpoint = cadArcMidpoint(
+        definition.center,
+        definition.radius,
+        definition.startAngleDeg,
+        definition.endAngleDeg,
+      );
+      const midpointSnap = indexer.queryNearestSnap(
+        { x: midpoint.x + 0.1, y: midpoint.y + 0.1 },
+        1.5,
+        ['arc-midpoint', 'nearest'],
+      );
+      expect(midpointSnap?.sourceEntityId, `${label} should expose an on-body midpoint snap`).toBe(`arc:audit:${index + 1}`);
+      expect(['arc-midpoint', 'nearest']).toContain(midpointSnap?.kind);
+
+      const signedSweep = cadSignedSweepDeg(definition.startAngleDeg, definition.endAngleDeg);
+      const sampleAngleDeg = definition.startAngleDeg + signedSweep * 0.3;
+      const onCurvePoint = cadPointOnCircle(definition.center, definition.radius, sampleAngleDeg);
+      const radialVectorX = onCurvePoint.x - definition.center.x;
+      const radialVectorY = onCurvePoint.y - definition.center.y;
+      const radialLength = Math.hypot(radialVectorX, radialVectorY) || 1;
+      const nearCurveQuery = {
+        x: onCurvePoint.x + (radialVectorX / radialLength) * 0.35,
+        y: onCurvePoint.y + (radialVectorY / radialLength) * 0.35,
+      };
+      const nearestSnap = indexer.queryNearestSnap(
+        nearCurveQuery,
+        1.5,
+        ['endpoint', 'arc-midpoint', 'center', 'quadrant', 'nearest'],
+      );
+      expect(nearestSnap?.kind, `${label} should expose a usable on-body nearest snap`).toBe('nearest');
+      expect(nearestSnap?.sourceEntityId).toBe(`arc:audit:${index + 1}`);
+    });
   });
 
   it('resolves construction snaps only when active command context supplies a base point', () => {
