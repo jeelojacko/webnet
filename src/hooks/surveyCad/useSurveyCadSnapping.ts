@@ -21,6 +21,7 @@ const SNAP_KIND_ORDER: CadSnapKind[] = [
   'extension',
   'perpendicular',
   'parallel',
+  'direction',
   'tangent',
   'nearest',
 ];
@@ -39,6 +40,7 @@ const DEFAULT_SNAP_PREFERENCES: CadSnapPreferences = {
   extension: true,
   perpendicular: true,
   parallel: true,
+  direction: true,
   tangent: true,
   nearest: true,
 };
@@ -120,6 +122,7 @@ export const useSurveyCadSnapping = (
             ? {
                 kind: nextSnap.kind,
                 sourceEntityId: nextSnap.sourceEntityId.split('|')[0] ?? nextSnap.sourceEntityId,
+                sourceSegmentId: nextSnap.sourceSegmentId,
               }
             : null);
         setLockedConstructionSnap(nextLock);

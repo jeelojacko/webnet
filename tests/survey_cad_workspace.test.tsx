@@ -1048,7 +1048,6 @@ describe('SurveyCadWorkspace', () => {
     });
     await act(async () => {
       (container.querySelector('[data-survey-cad-snap-toggle="point-node"]') as HTMLInputElement | null)?.click();
-      (container.querySelector('[data-survey-cad-snap-toggle="endpoint"]') as HTMLInputElement | null)?.click();
       (container.querySelector('[data-survey-cad-snap-toggle="midpoint"]') as HTMLInputElement | null)?.click();
       (container.querySelector('[data-survey-cad-snap-toggle="center"]') as HTMLInputElement | null)?.click();
       (container.querySelector('[data-survey-cad-snap-toggle="arc-midpoint"]') as HTMLInputElement | null)?.click();
@@ -1274,6 +1273,7 @@ describe('SurveyCadWorkspace', () => {
             extension: true,
             perpendicular: true,
             parallel: true,
+            direction: true,
             tangent: true,
             nearest: true,
           }}
@@ -1349,6 +1349,7 @@ describe('SurveyCadWorkspace', () => {
             extension: true,
             perpendicular: true,
             parallel: true,
+            direction: true,
             tangent: true,
             nearest: true,
           }}

@@ -386,6 +386,28 @@ describe('Survey CAD spatial index', () => {
     expect(arcPerpendicular?.sourceEntityId).toBe('arc:upper');
     expect(arcPerpendicular?.x).toBeCloseTo(0, 6);
     expect(arcPerpendicular?.y).toBeCloseTo(10, 6);
+
+    const startPerpendicular = index.queryNearestSnap(
+      { x: 10.3, y: 6.5 },
+      1,
+      ['perpendicular'],
+      { active: true, basePoint: { x: 10, y: 0 }, scopeSeedSegmentId: 'line:base#0' },
+    );
+    expect(startPerpendicular?.kind).toBe('perpendicular');
+    expect(startPerpendicular?.sourceSegmentId).toBe('line:base#0');
+    expect(startPerpendicular?.label).toContain('start perp');
+    expect(startPerpendicular?.x).toBeCloseTo(10, 6);
+    expect(startPerpendicular?.y).toBeCloseTo(6.5, 6);
+
+    const direction = index.queryNearestSnap(
+      { x: 7.4, y: 7.1 },
+      1,
+      ['direction'],
+      { active: true, basePoint: { x: 0, y: 0 } },
+    );
+    expect(direction?.kind).toBe('direction');
+    expect(direction?.label).toContain('NE 045');
+    expect(direction?.x).toBeCloseTo(direction?.y ?? 0, 6);
   });
 
   it('limits parallel candidates to segments within one hop of the captured endpoint', () => {
@@ -486,6 +508,64 @@ describe('Survey CAD spatial index', () => {
       },
     );
     expect(filteredParallel).toBeNull();
+  });
+
+  it('keeps local parallel snaps available for attached linework after fail-closed scoping', () => {
+    const project = appendCadProjectEntities(
+      buildSurveyCadSpikeProject({
+        input,
+        instrumentLibrary: {},
+        parseOptions,
+        units: 'm',
+        result: null,
+      }),
+      [
+        {
+          id: 'line:base',
+          type: 'line',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          fromStationId: 'A',
+          toStationId: 'B',
+          fromX: 0,
+          fromY: 0,
+          toX: 10,
+          toY: 0,
+          sourceObservationIds: [],
+        },
+        {
+          id: 'line:attached-parallel',
+          type: 'line',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          fromStationId: 'B',
+          toStationId: 'C',
+          fromX: 10,
+          fromY: 0,
+          toX: 20,
+          toY: 0,
+          sourceObservationIds: [],
+        },
+      ],
+    );
+    const index = buildCadSpatialIndex(project);
+
+    const localParallel = index.queryNearestSnap(
+      { x: 16, y: 5.72 },
+      1,
+      ['parallel'],
+      {
+        active: true,
+        basePoint: { x: 10, y: 5 },
+        scopeSeedSegmentId: 'line:base#0',
+      },
+    );
+    expect(localParallel?.kind).toBe('parallel');
+    expect(localParallel?.y).toBeCloseTo(5, 6);
   });
 
   it('fails closed for parallel snaps when an explicit construction seed cannot be resolved', () => {

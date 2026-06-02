@@ -269,6 +269,7 @@ export type CadSnapKind =
   | 'extension'
   | 'perpendicular'
   | 'parallel'
+  | 'direction'
   | 'tangent'
   | 'nearest';
 
@@ -288,6 +289,7 @@ export interface CadSnapCandidate {
 export interface CadSnapLock {
   kind: 'extension' | 'perpendicular' | 'parallel';
   sourceEntityId: CadEntityId;
+  sourceSegmentId?: string;
 }
 
 export interface CadSnapConstructionContext {

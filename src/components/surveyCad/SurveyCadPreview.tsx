@@ -65,6 +65,7 @@ const SNAP_MENU_LABELS: Record<CadSnapKind, string> = {
   extension: 'Extensions',
   perpendicular: 'Perpendicular',
   parallel: 'Parallel',
+  direction: 'Directions',
   tangent: 'Tangent',
   nearest: 'Nearest',
 };
@@ -81,6 +82,7 @@ const SNAP_BADGE_LABELS: Record<CadSnapKind, string> = {
   extension: 'Extension',
   perpendicular: 'Perpendicular',
   parallel: 'Parallel',
+  direction: 'Direction',
   tangent: 'Tangent',
   nearest: 'Nearest',
 };
@@ -97,6 +99,7 @@ const SNAP_ACCENT_BY_KIND: Record<CadSnapKind, { stroke: string; fill: string; t
   extension: { stroke: '#14b8a6', fill: '#042f2e', text: '#ccfbf1' },
   perpendicular: { stroke: '#eab308', fill: '#422006', text: '#fef9c3' },
   parallel: { stroke: '#6366f1', fill: '#1e1b4b', text: '#e0e7ff' },
+  direction: { stroke: '#2dd4bf', fill: '#0f172a', text: '#ccfbf1' },
   tangent: { stroke: '#f43f5e', fill: '#4c0519', text: '#ffe4e6' },
   nearest: { stroke: '#94a3b8', fill: '#0f172a', text: '#e2e8f0' },
 };

@@ -40,8 +40,9 @@ const SNAP_PRIORITY: Record<CadSnapKind, number> = {
   extension: 8,
   perpendicular: 9,
   parallel: 10,
-  tangent: 11,
-  nearest: 12,
+  direction: 11,
+  tangent: 12,
+  nearest: 13,
 };
 
 const SNAP_RANGE_MULTIPLIER: Record<CadSnapKind, number> = {
@@ -54,8 +55,9 @@ const SNAP_RANGE_MULTIPLIER: Record<CadSnapKind, number> = {
   intersection: 0.65,
   'apparent-intersection': 0.6,
   extension: 0.6,
-  perpendicular: 0.6,
-  parallel: 0.6,
+  perpendicular: 0.75,
+  parallel: 0.8,
+  direction: 0.45,
   tangent: 0.6,
   nearest: 1,
 };
@@ -73,9 +75,21 @@ const CONSTRUCTION_REFINEMENT_PRIORITY: Record<CadSnapKind, number> = {
   extension: 8,
   perpendicular: 9,
   parallel: 10,
-  tangent: 11,
-  nearest: 12,
+  direction: 11,
+  tangent: 12,
+  nearest: 13,
 };
+
+const DIRECTION_SNAPS = [
+  { azimuthDeg: 0, label: 'N' },
+  { azimuthDeg: 45, label: 'NE' },
+  { azimuthDeg: 90, label: 'E' },
+  { azimuthDeg: 135, label: 'SE' },
+  { azimuthDeg: 180, label: 'S' },
+  { azimuthDeg: 225, label: 'SW' },
+  { azimuthDeg: 270, label: 'W' },
+  { azimuthDeg: 315, label: 'NW' },
+] as const;
 
 const buildCandidate = (
   kind: CadSnapKind,
@@ -261,6 +275,62 @@ const buildParallelCandidate = (
   return projection.point;
 };
 
+const buildPerpendicularThroughBaseCandidate = (
+  segment: CadSegmentRef,
+  basePoint: CadWorldPoint,
+  worldPoint: CadWorldPoint,
+): CadWorldPoint | null => {
+  const dx = segment.end.x - segment.start.x;
+  const dy = segment.end.y - segment.start.y;
+  if (Math.hypot(dx, dy) <= 1e-9) return null;
+  const directionEnd = {
+    x: basePoint.x - dy,
+    y: basePoint.y + dx,
+  };
+  return cadProjectPointOntoInfiniteLine(worldPoint, basePoint, directionEnd).point;
+};
+
+const cadAzimuthFromPoint = (
+  from: CadWorldPoint,
+  to: CadWorldPoint,
+): number => {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  return ((Math.atan2(dx, dy) * 180) / Math.PI + 360) % 360;
+};
+
+const buildDirectionCandidate = (
+  basePoint: CadWorldPoint,
+  worldPoint: CadWorldPoint,
+): { point: CadWorldPoint; azimuthDeg: number; label: string } | null => {
+  if (cadDistance(basePoint, worldPoint) <= 1e-9) return null;
+  const azimuthDeg = cadAzimuthFromPoint(basePoint, worldPoint);
+  const snapped = DIRECTION_SNAPS.reduce((best, current) => {
+    const delta = Math.abs((((azimuthDeg - current.azimuthDeg) % 360) + 540) % 360 - 180);
+    if (!best || delta < best.delta) {
+      return { ...current, delta };
+    }
+    return best;
+  }, null as ({ azimuthDeg: number; label: string; delta: number } | null));
+  if (!snapped) return null;
+  const direction = {
+    x: Math.sin((snapped.azimuthDeg * Math.PI) / 180),
+    y: Math.cos((snapped.azimuthDeg * Math.PI) / 180),
+  };
+  const distanceAlong = Math.max(
+    0,
+    (worldPoint.x - basePoint.x) * direction.x + (worldPoint.y - basePoint.y) * direction.y,
+  );
+  return {
+    point: {
+      x: basePoint.x + direction.x * distanceAlong,
+      y: basePoint.y + direction.y * distanceAlong,
+    },
+    azimuthDeg: snapped.azimuthDeg,
+    label: snapped.label,
+  };
+};
+
 const buildLockedConstructionPoint = (
   kind: 'extension' | 'perpendicular' | 'parallel',
   segment: CadSegmentRef,
@@ -406,6 +476,9 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
       .map((entity) => arcRefFromEntity(entity));
     const basePoint = constructionContext.active ? constructionContext.basePoint : null;
     const scopeSeedSegmentId = constructionContext.scopeSeedSegmentId ?? null;
+    const scopeSeedSegment = scopeSeedSegmentId
+      ? segments.find((segment) => segment.segmentId === scopeSeedSegmentId) ?? null
+      : null;
     const parallelScope = constructionContext.active ? buildScopedSegmentIds(segments, basePoint, scopeSeedSegmentId, 1) : null;
     const extensionScope = constructionContext.active ? buildScopedSegmentIds(segments, basePoint, scopeSeedSegmentId, 2) : null;
     const apparentScope = constructionContext.active ? buildScopedSegmentIds(segments, basePoint, scopeSeedSegmentId, 2) : null;
@@ -610,6 +683,42 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
       }
     });
 
+    if (constructionContext.active && basePoint && scopeSeedSegment && allowed.has('perpendicular')) {
+      const startPerpendicularPoint = buildPerpendicularThroughBaseCandidate(scopeSeedSegment, basePoint, worldPoint);
+      if (startPerpendicularPoint) {
+        candidates.push(
+          buildCandidate(
+            'perpendicular',
+            scopeSeedSegment.sourceEntityId,
+            startPerpendicularPoint,
+            worldPoint,
+            `${scopeSeedSegment.label} start perp`,
+            [
+              [basePoint, startPerpendicularPoint],
+              [scopeSeedSegment.start, scopeSeedSegment.end],
+            ],
+            scopeSeedSegment.segmentId,
+          ),
+        );
+      }
+    }
+
+    if (constructionContext.active && basePoint && allowed.has('direction')) {
+      const directionSnap = buildDirectionCandidate(basePoint, worldPoint);
+      if (directionSnap) {
+        candidates.push(
+          buildCandidate(
+            'direction',
+            'direction-guide',
+            directionSnap.point,
+            worldPoint,
+            `${directionSnap.label} ${directionSnap.azimuthDeg.toString().padStart(3, '0')}°`,
+            [[basePoint, directionSnap.point]],
+          ),
+        );
+      }
+    }
+
     if (allowed.has('intersection')) {
       for (let leftIndex = 0; leftIndex < segments.length; leftIndex += 1) {
         for (let rightIndex = leftIndex + 1; rightIndex < segments.length; rightIndex += 1) {
@@ -809,7 +918,10 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
 
     if (constructionContext.lockedSnap && basePoint) {
       const lockedSegment = segments.find(
-        (segment) => segment.sourceEntityId === constructionContext.lockedSnap?.sourceEntityId,
+        (segment) =>
+          (constructionContext.lockedSnap?.sourceSegmentId != null &&
+            segment.segmentId === constructionContext.lockedSnap.sourceSegmentId) ||
+          segment.sourceEntityId === constructionContext.lockedSnap?.sourceEntityId,
       );
       if (lockedSegment) {
         const lockedPoint = buildLockedConstructionPoint(
@@ -858,7 +970,9 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
         ? viable.find(
             (candidate) =>
               candidate.kind === constructionContext.lockedSnap?.kind &&
-              sourceEntityIdIncludedInCandidate(candidate, constructionContext.lockedSnap.sourceEntityId),
+              (constructionContext.lockedSnap.sourceSegmentId != null
+                ? candidate.sourceSegmentId === constructionContext.lockedSnap.sourceSegmentId
+                : sourceEntityIdIncludedInCandidate(candidate, constructionContext.lockedSnap.sourceEntityId)),
           ) ?? null
         : null) ??
       viable.find((candidate) =>
