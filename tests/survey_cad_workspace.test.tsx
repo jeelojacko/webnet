@@ -1,5 +1,6 @@
 /** @vitest-environment jsdom */
 
+import { readFileSync } from 'node:fs';
 import React, { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { describe, expect, it, vi } from 'vitest';
@@ -12,6 +13,7 @@ import type { ParseOptions } from '../src/types';
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const input = ['.2D', 'C A 0 0 0 ! !', 'C B 100 0 0 ! !', 'C C 60 40 0', 'D A-C 72.1110255 0.005', 'D B-C 56.5685425 0.005'].join('\n');
+const campInput = readFileSync('tests/fixtures/camp_design_preanalysis_input.dat', 'utf8');
 
 const parseOptions: ParseOptions = {
   units: 'm',
@@ -40,6 +42,12 @@ const parseOptions: ParseOptions = {
   normalize: true,
   faceNormalizationMode: 'on',
   lonSign: 'west-negative',
+};
+
+const campParseOptions: ParseOptions = {
+  ...parseOptions,
+  runMode: 'preanalysis',
+  preanalysisMode: true,
 };
 
 const mockElementRect = (element: Element): void => {
@@ -966,6 +974,121 @@ describe('SurveyCadWorkspace', () => {
     });
 
     expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent ?? '').not.toContain('Parallel');
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('preserves the hovered midpoint snap when LINE starts so immediate clicks keep startup parallel scope local', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    const baseProject = buildSurveyCadSpikeProject({
+      input: campInput,
+      instrumentLibrary: {},
+      parseOptions: campParseOptions,
+      units: 'm',
+      result: null,
+    });
+    const persistedProject = baseProject;
+    const startLine = persistedProject.entities.find(
+      (entity) => entity.type === 'line' && entity.id === 'line:GPS2|GPS5',
+    );
+    const remoteLine = persistedProject.entities.find(
+      (entity) => entity.type === 'line' && entity.id === 'line:119|120',
+    );
+    if (!startLine || startLine.type !== 'line' || !remoteLine || remoteLine.type !== 'line') {
+      throw new Error('Expected startup linework not found');
+    }
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={campInput}
+          instrumentLibrary={{}}
+          parseOptions={campParseOptions}
+          units="m"
+          result={null}
+          persistedState={{
+            version: 1,
+            sourceSignature: buildCadProjectSignature(baseProject),
+            project: persistedProject,
+          }}
+        />,
+      );
+    });
+
+    const preview = container.querySelector('[data-survey-cad-preview]') as SVGElement | null;
+    if (!preview) throw new Error('Preview not found');
+    mockElementRect(preview);
+
+    const midpointScreen = projectWorldToPreviewScreen(persistedProject.bounds!, {
+      x: (startLine.fromX + startLine.toX) / 2,
+      y: (startLine.fromY + startLine.toY) / 2,
+    });
+    await act(async () => {
+      preview.dispatchEvent(
+        new MouseEvent('mousemove', {
+          bubbles: true,
+          clientX: midpointScreen.clientX,
+          clientY: midpointScreen.clientY,
+        }),
+      );
+    });
+    expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent).toContain('Midpoint');
+    expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent).toContain('GPS2-GPS5');
+
+    await act(async () => {
+      const snapMenuButton = container.querySelector('[data-survey-cad-snap-menu-button]') as HTMLButtonElement | null;
+      if (!snapMenuButton) throw new Error('Snap menu button not found');
+      snapMenuButton.click();
+    });
+    await act(async () => {
+      (container.querySelector('[data-survey-cad-snap-toggle="point-node"]') as HTMLInputElement | null)?.click();
+      (container.querySelector('[data-survey-cad-snap-toggle="endpoint"]') as HTMLInputElement | null)?.click();
+      (container.querySelector('[data-survey-cad-snap-toggle="midpoint"]') as HTMLInputElement | null)?.click();
+      (container.querySelector('[data-survey-cad-snap-toggle="center"]') as HTMLInputElement | null)?.click();
+      (container.querySelector('[data-survey-cad-snap-toggle="arc-midpoint"]') as HTMLInputElement | null)?.click();
+      (container.querySelector('[data-survey-cad-snap-toggle="quadrant"]') as HTMLInputElement | null)?.click();
+      (container.querySelector('[data-survey-cad-snap-toggle="intersection"]') as HTMLInputElement | null)?.click();
+      (container.querySelector('[data-survey-cad-snap-toggle="apparent-intersection"]') as HTMLInputElement | null)?.click();
+      (container.querySelector('[data-survey-cad-snap-toggle="extension"]') as HTMLInputElement | null)?.click();
+      (container.querySelector('[data-survey-cad-snap-toggle="perpendicular"]') as HTMLInputElement | null)?.click();
+      (container.querySelector('[data-survey-cad-snap-toggle="tangent"]') as HTMLInputElement | null)?.click();
+      (container.querySelector('[data-survey-cad-snap-toggle="nearest"]') as HTMLInputElement | null)?.click();
+    });
+
+    await act(async () => {
+      clickButton(container, 'LINE');
+      preview.dispatchEvent(
+        new MouseEvent('click', {
+          bubbles: true,
+          clientX: midpointScreen.clientX,
+          clientY: midpointScreen.clientY,
+        }),
+      );
+    });
+
+    const remoteScreen = projectWorldToPreviewScreen(persistedProject.bounds!, {
+      x: (remoteLine.fromX + remoteLine.toX) / 2,
+      y: (remoteLine.fromY + remoteLine.toY) / 2,
+    });
+    await act(async () => {
+      preview.dispatchEvent(
+        new MouseEvent('mousemove', {
+          bubbles: true,
+          clientX: remoteScreen.clientX,
+          clientY: remoteScreen.clientY,
+        }),
+      );
+    });
+
+    const badgeText = container.querySelector('[data-survey-cad-snap-badge]')?.textContent ?? '';
+    expect(badgeText).not.toContain('119-120');
+    expect(badgeText).not.toContain('120-119');
 
     await act(async () => {
       root.unmount();

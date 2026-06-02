@@ -88,7 +88,7 @@ export const useSurveyCadSnapping = (
     setActiveSnap(null);
     setPointerWorldPoint(null);
     setLockedConstructionSnap(null);
-  }, [project, constructionContext.active, constructionContext.basePoint?.x, constructionContext.basePoint?.y]);
+  }, [project, constructionContext.basePoint?.x, constructionContext.basePoint?.y]);
 
   return {
     activeSnap,
