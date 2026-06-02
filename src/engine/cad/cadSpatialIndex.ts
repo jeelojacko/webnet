@@ -256,6 +256,23 @@ const buildParallelCandidate = (
   return projection.point;
 };
 
+const buildLockedConstructionPoint = (
+  kind: 'extension' | 'perpendicular' | 'parallel',
+  segment: CadSegmentRef,
+  basePoint: CadWorldPoint,
+  worldPoint: CadWorldPoint,
+): CadWorldPoint | null => {
+  if (kind === 'extension') {
+    return cadProjectPointOntoInfiniteLine(worldPoint, segment.start, segment.end).point;
+  }
+  if (kind === 'parallel') {
+    return buildParallelCandidate(segment, basePoint, worldPoint);
+  }
+  const foot = cadProjectPointOntoInfiniteLine(basePoint, segment.start, segment.end).point;
+  if (cadDistance(basePoint, foot) <= 1e-9) return foot;
+  return cadProjectPointOntoInfiniteLine(worldPoint, basePoint, foot).point;
+};
+
 const nearestSegmentEndpointToPoint = (
   segment: CadSegmentRef,
   point: CadWorldPoint,
@@ -267,6 +284,9 @@ const nearestArcEndpointToPoint = (
   point: CadWorldPoint,
 ): CadWorldPoint =>
   cadDistance(arc.startPoint, point) <= cadDistance(arc.endPoint, point) ? arc.startPoint : arc.endPoint;
+
+const sourceEntityIdIncludedInCandidate = (candidate: CadSnapCandidate, sourceEntityId: string): boolean =>
+  candidate.sourceEntityId.split('|').includes(sourceEntityId);
 
 export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
   queryNearestSnap: (
@@ -304,6 +324,9 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
       .filter((entity): entity is CadArcEntity => entity.visible && entity.type === 'arc')
       .map((entity) => arcRefFromEntity(entity));
     const basePoint = constructionContext.active ? constructionContext.basePoint : null;
+    const preferredParallelEntityIds = constructionContext.preferredParallelEntityIds
+      ? new Set(constructionContext.preferredParallelEntityIds)
+      : null;
 
     project.entities.forEach((entity) => {
       if (!entity.visible) return;
@@ -371,6 +394,9 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
               );
             }
             if (constructionContext.active && basePoint && allowed.has('parallel')) {
+              if (preferredParallelEntityIds && !preferredParallelEntityIds.has(segment.sourceEntityId)) {
+                return;
+              }
               const parallelPoint = buildParallelCandidate(segment, basePoint, worldPoint);
               if (parallelPoint) {
                 candidates.push(
@@ -380,7 +406,10 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
                     parallelPoint,
                     worldPoint,
                     `${segment.label} parallel`,
-                    [[basePoint, parallelPoint]],
+                    [
+                      [basePoint, parallelPoint],
+                      [segment.start, segment.end],
+                    ],
                   ),
                 );
               }
@@ -648,20 +677,70 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => ({
       }
     }
 
+    if (constructionContext.lockedSnap && basePoint) {
+      const lockedSegment = segments.find(
+        (segment) => segment.sourceEntityId === constructionContext.lockedSnap?.sourceEntityId,
+      );
+      if (lockedSegment) {
+        const lockedPoint = buildLockedConstructionPoint(
+          constructionContext.lockedSnap.kind,
+          lockedSegment,
+          basePoint,
+          worldPoint,
+        );
+        if (lockedPoint) {
+          candidates.push(
+            buildCandidate(
+              constructionContext.lockedSnap.kind,
+              lockedSegment.sourceEntityId,
+              lockedPoint,
+              worldPoint,
+              `${lockedSegment.label} ${
+                constructionContext.lockedSnap.kind === 'extension'
+                  ? 'ext'
+                  : constructionContext.lockedSnap.kind === 'parallel'
+                    ? 'parallel'
+                    : 'perp'
+              }`,
+              constructionContext.lockedSnap.kind === 'parallel'
+                ? [
+                    [basePoint, lockedPoint],
+                    [lockedSegment.start, lockedSegment.end],
+                  ]
+                : [
+                    [basePoint, lockedPoint],
+                    [lockedSegment.start, lockedSegment.end],
+                  ],
+            ),
+          );
+        }
+      }
+    }
+
     const viable = dedupeCandidates(candidates)
       .filter(
         (candidate) => candidate.distance <= toleranceWorld * SNAP_RANGE_MULTIPLIER[candidate.kind],
       )
       .sort(candidateSort);
 
-    const lockedConstructionCandidate = viable.find((candidate) =>
-      CONSTRUCTION_LOCK_KINDS.includes(candidate.kind),
-    );
+    const lockedConstructionCandidate =
+      (constructionContext.lockedSnap
+        ? viable.find(
+            (candidate) =>
+              candidate.kind === constructionContext.lockedSnap?.kind &&
+              sourceEntityIdIncludedInCandidate(candidate, constructionContext.lockedSnap.sourceEntityId),
+          ) ?? null
+        : null) ??
+      viable.find((candidate) =>
+        CONSTRUCTION_LOCK_KINDS.includes(candidate.kind),
+      ) ??
+      null;
     if (lockedConstructionCandidate) {
       const compoundCandidate = viable
         .filter((candidate) =>
           candidate.id !== lockedConstructionCandidate.id &&
           candidate.kind !== 'nearest' &&
+          !CONSTRUCTION_LOCK_KINDS.includes(candidate.kind) &&
           pointOnCandidateLine(candidate, lockedConstructionCandidate, toleranceWorld),
         )
         .sort(compoundCandidateSort)[0];

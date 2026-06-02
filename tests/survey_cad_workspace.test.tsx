@@ -708,6 +708,125 @@ describe('SurveyCadWorkspace', () => {
     container.remove();
   });
 
+  it('keeps a construction snap locked with Shift while hovering farther along the same derived line', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    const baseProject = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+    const persistedProject = {
+      ...baseProject,
+      entities: [
+        ...baseProject.entities,
+        {
+          id: 'line:base',
+          type: 'line' as const,
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          fromStationId: 'L1',
+          toStationId: 'L2',
+          fromX: 0,
+          fromY: 0,
+          toX: 10,
+          toY: 0,
+          sourceObservationIds: [],
+        },
+        {
+          id: 'line:remote-horizontal',
+          type: 'line' as const,
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          fromStationId: 'L5',
+          toStationId: 'L6',
+          fromX: 12,
+          fromY: 20,
+          toX: 18,
+          toY: 20,
+          sourceObservationIds: [],
+        },
+      ],
+    };
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+          persistedState={{
+            version: 1,
+            sourceSignature: buildCadProjectSignature(baseProject),
+            project: persistedProject,
+          }}
+        />,
+      );
+    });
+
+    const preview = container.querySelector('[data-survey-cad-preview]') as SVGElement | null;
+    const commandInput = container.querySelector('[data-survey-cad-command-input]') as HTMLInputElement | null;
+    if (!preview || !commandInput) throw new Error('Preview or command input not found');
+    mockElementRect(preview);
+
+    await act(async () => {
+      const snapMenuButton = container.querySelector('[data-survey-cad-snap-menu-button]') as HTMLButtonElement | null;
+      if (!snapMenuButton) throw new Error('Snap menu button not found');
+      snapMenuButton.click();
+    });
+    await act(async () => {
+      (container.querySelector('[data-survey-cad-snap-toggle="extension"]') as HTMLInputElement | null)?.click();
+    });
+
+    await act(async () => {
+      clickButton(container, 'LINE');
+      setTextInputValue(commandInput, '5,10');
+      pressKey(commandInput, 'Enter');
+    });
+
+    const initialPerpScreen = projectWorldToPreviewScreen(persistedProject.bounds!, { x: 5.2, y: 0.2 });
+    await act(async () => {
+      preview.dispatchEvent(
+        new MouseEvent('mousemove', {
+          bubbles: true,
+          clientX: initialPerpScreen.clientX,
+          clientY: initialPerpScreen.clientY,
+          shiftKey: true,
+        }),
+      );
+    });
+    expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent).toContain('Perpendicular');
+
+    const fartherScreen = projectWorldToPreviewScreen(persistedProject.bounds!, { x: 5.1, y: 19.8 });
+    await act(async () => {
+      preview.dispatchEvent(
+        new MouseEvent('mousemove', {
+          bubbles: true,
+          clientX: fartherScreen.clientX,
+          clientY: fartherScreen.clientY,
+          shiftKey: true,
+        }),
+      );
+    });
+
+    expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent).toContain('Perpendicular');
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
   it('renders tangent snap badge text and styling when tangent snap is active', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);

@@ -34,6 +34,7 @@ interface SurveyCadPreviewProps {
   onPointerWorldPointChange: (
     _worldPoint: { x: number; y: number } | null,
     _toleranceWorld?: number,
+    _options?: { lockConstruction?: boolean },
   ) => void;
   onSnapPreferenceChange: (_kind: CadSnapKind, _enabled: boolean) => void;
   onCommandInputChange: (_value: string) => void;
@@ -593,6 +594,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
           onPointerWorldPointChange(
             unproject(viewX, viewY),
             SNAP_TOLERANCE_SCREEN_UNITS / scale,
+            { lockConstruction: event.shiftKey },
           );
         }}
         onMouseUp={() => {

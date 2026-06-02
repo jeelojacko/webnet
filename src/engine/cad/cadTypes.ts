@@ -283,9 +283,16 @@ export interface CadSnapCandidate {
   compoundKinds?: CadSnapKind[];
 }
 
+export interface CadSnapLock {
+  kind: 'extension' | 'perpendicular' | 'parallel';
+  sourceEntityId: CadEntityId;
+}
+
 export interface CadSnapConstructionContext {
   active: boolean;
   basePoint: CadDisplayPoint | null;
+  preferredParallelEntityIds?: string[] | null;
+  lockedSnap?: CadSnapLock | null;
 }
 
 export interface MlightcadSpikeLayer {

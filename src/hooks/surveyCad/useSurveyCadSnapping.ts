@@ -4,6 +4,7 @@ import type {
   CadProject,
   CadSnapCandidate,
   CadSnapConstructionContext,
+  CadSnapLock,
   CadSnapKind,
 } from '../../engine/cad/cadTypes';
 
@@ -58,9 +59,47 @@ interface UseSurveyCadSnappingResult {
   updatePointerWorldPoint: (
     _worldPoint: { x: number; y: number } | null,
     _toleranceWorld?: number,
+    _options?: { lockConstruction?: boolean },
   ) => void;
   setSnapPreference: (_kind: CadSnapKind, _enabled: boolean) => void;
 }
+
+const CONSTRUCTION_LOCK_KINDS = new Set<CadSnapKind>(['extension', 'perpendicular', 'parallel']);
+const isConstructionLockKind = (
+  kind: CadSnapKind,
+): kind is CadSnapLock['kind'] => CONSTRUCTION_LOCK_KINDS.has(kind);
+
+const pointsMatch = (
+  left: { x: number; y: number },
+  right: { x: number; y: number },
+  tolerance = 1e-6,
+): boolean => Math.abs(left.x - right.x) <= tolerance && Math.abs(left.y - right.y) <= tolerance;
+
+const attachedLineLikeEntityIdsAtPoint = (
+  project: CadProject,
+  point: { x: number; y: number } | null,
+): string[] | null => {
+  if (!point) return null;
+  const ids = new Set<string>();
+  project.entities.forEach((entity) => {
+    if (!entity.visible) return;
+    if (entity.type === 'line') {
+      if (
+        pointsMatch(point, { x: entity.fromX, y: entity.fromY }) ||
+        pointsMatch(point, { x: entity.toX, y: entity.toY })
+      ) {
+        ids.add(entity.id);
+      }
+      return;
+    }
+    if (entity.type === 'polyline' || entity.type === 'polygon' || entity.type === 'parcel') {
+      entity.vertices.forEach((vertex) => {
+        if (pointsMatch(point, vertex)) ids.add(entity.id);
+      });
+    }
+  });
+  return ids.size > 0 ? [...ids] : null;
+};
 
 export const useSurveyCadSnapping = (
   project: CadProject,
@@ -70,35 +109,60 @@ export const useSurveyCadSnapping = (
   const [activeSnap, setActiveSnap] = useState<CadSnapCandidate | null>(null);
   const [pointerWorldPoint, setPointerWorldPoint] = useState<{ x: number; y: number } | null>(null);
   const [snapPreferences, setSnapPreferences] = useState<CadSnapPreferences>(DEFAULT_SNAP_PREFERENCES);
+  const [lockedConstructionSnap, setLockedConstructionSnap] = useState<CadSnapLock | null>(null);
   const toleranceWorld = useMemo(() => toleranceFromBounds(project), [project]);
   const allowedKinds = useMemo(
     () => SNAP_KIND_ORDER.filter((kind) => snapPreferences[kind]),
     [snapPreferences],
   );
+  const preferredParallelEntityIds = useMemo(
+    () => attachedLineLikeEntityIdsAtPoint(project, constructionContext.basePoint),
+    [constructionContext.basePoint, project],
+  );
 
   useEffect(() => {
     setActiveSnap(null);
     setPointerWorldPoint(null);
+    setLockedConstructionSnap(null);
   }, [project, constructionContext.active, constructionContext.basePoint?.x, constructionContext.basePoint?.y]);
 
   return {
     activeSnap,
     pointerWorldPoint,
     snapPreferences,
-    updatePointerWorldPoint: (worldPoint, dynamicToleranceWorld) => {
+    updatePointerWorldPoint: (worldPoint, dynamicToleranceWorld, options) => {
       setPointerWorldPoint(worldPoint);
       if (!worldPoint) {
         setActiveSnap(null);
+        if (!options?.lockConstruction) {
+          setLockedConstructionSnap(null);
+        }
         return;
       }
-      setActiveSnap(
-        spatialIndex.queryNearestSnap(
+      const nextSnap = spatialIndex.queryNearestSnap(
           worldPoint,
           dynamicToleranceWorld ?? toleranceWorld,
           allowedKinds,
-          constructionContext,
-        ),
-      );
+          {
+            ...constructionContext,
+            preferredParallelEntityIds,
+            lockedSnap: options?.lockConstruction ? lockedConstructionSnap : null,
+          },
+        );
+      setActiveSnap(nextSnap);
+      if (options?.lockConstruction) {
+        const nextLock =
+          lockedConstructionSnap ??
+          (nextSnap && isConstructionLockKind(nextSnap.kind)
+            ? {
+                kind: nextSnap.kind,
+                sourceEntityId: nextSnap.sourceEntityId.split('|')[0] ?? nextSnap.sourceEntityId,
+              }
+            : null);
+        setLockedConstructionSnap(nextLock);
+        return;
+      }
+      setLockedConstructionSnap(null);
     },
     setSnapPreference: (kind, enabled) => {
       setSnapPreferences((current) => {

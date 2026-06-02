@@ -363,6 +363,7 @@ describe('Survey CAD spatial index', () => {
     expect(parallel?.kind).toBe('parallel');
     expect(parallel?.x).toBeCloseTo(15.1, 6);
     expect(parallel?.y).toBeCloseTo(10, 6);
+    expect(parallel?.guideSegments).toHaveLength(2);
 
     const apparentIntersection = index.queryNearestSnap(
       { x: 20.1, y: 0.2 },
@@ -384,6 +385,80 @@ describe('Survey CAD spatial index', () => {
     expect(arcPerpendicular?.sourceEntityId).toBe('arc:upper');
     expect(arcPerpendicular?.x).toBeCloseTo(0, 6);
     expect(arcPerpendicular?.y).toBeCloseTo(10, 6);
+  });
+
+  it('limits parallel candidates to linework attached at the captured base point when available', () => {
+    const project = appendCadProjectEntities(
+      buildSurveyCadSpikeProject({
+        input,
+        instrumentLibrary: {},
+        parseOptions,
+        units: 'm',
+        result: null,
+      }),
+      [
+        {
+          id: 'line:attached-east',
+          type: 'line',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          fromStationId: 'L1',
+          toStationId: 'L2',
+          fromX: 0,
+          fromY: 0,
+          toX: 10,
+          toY: 0,
+          sourceObservationIds: [],
+        },
+        {
+          id: 'line:attached-west',
+          type: 'line',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          fromStationId: 'L3',
+          toStationId: 'L4',
+          fromX: 0,
+          fromY: 0,
+          toX: -10,
+          toY: 0,
+          sourceObservationIds: [],
+        },
+        {
+          id: 'line:remote-vertical',
+          type: 'line',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          fromStationId: 'L5',
+          toStationId: 'L6',
+          fromX: 40,
+          fromY: -20,
+          toX: 40,
+          toY: 20,
+          sourceObservationIds: [],
+        },
+      ],
+    );
+    const index = buildCadSpatialIndex(project);
+
+    const filteredParallel = index.queryNearestSnap(
+      { x: 18, y: 0.8 },
+      2,
+      ['parallel'],
+      {
+        active: true,
+        basePoint: { x: 0, y: 0 },
+        preferredParallelEntityIds: ['line:attached-east', 'line:attached-west'],
+      },
+    );
+    expect(filteredParallel?.kind).toBe('parallel');
+    expect(filteredParallel?.sourceEntityId).not.toBe('line:remote-vertical');
+    expect(filteredParallel?.guideSegments).toHaveLength(2);
   });
 
   it('keeps a locked construction snap while refining onto an on-line apparent intersection', () => {
