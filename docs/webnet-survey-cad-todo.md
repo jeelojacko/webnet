@@ -1,5 +1,7 @@
 # WebNet Survey CAD TODO
 
+- [x] Survey CAD direct arc-body click batch (June 2026): make the visible line/arc/point/ellipse geometry itself act as a command click target alongside the widened invisible hit targets, and add a real same-session `ARC 3PT -> LINE from arc body -> LINE to arc body` regression so arc snapping survives normal operator clicks.
+
 - [x] Survey CAD arc-snap audit batch (June 2026): lock command-created and constructor-built arc entities with shared on-body `arc-midpoint` / `nearest` regression coverage across the native arc command family, so future arc-command changes cannot silently break snapping on committed curves.
 
 - [x] Survey CAD arc-nearest priority batch (June 2026): let on-curve `nearest` override much farther exact snaps on small or dense arcs, so endpoint priority does not swallow the whole arc body during line drafting.

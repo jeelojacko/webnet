@@ -335,11 +335,12 @@ const renderPrimitive = (
             y1={start.y}
             x2={end.x}
             y2={end.y}
+            {...commonProps}
             stroke={isSelected ? '#fbbf24' : primitive.stroke}
             strokeWidth={isSelected ? primitive.strokeWidth + 1.1 : primitive.strokeWidth}
             opacity={primitive.opacity ?? 0.92}
             strokeDasharray={primitive.strokeDasharray}
-            pointerEvents="none"
+            pointerEvents="stroke"
           />
         </g>
       );
@@ -362,11 +363,12 @@ const renderPrimitive = (
           <path
             d={path}
             fill="none"
+            {...commonProps}
             stroke={isSelected ? '#fbbf24' : primitive.stroke}
             strokeWidth={isSelected ? primitive.strokeWidth + 1.1 : primitive.strokeWidth}
             opacity={primitive.opacity ?? 0.92}
             strokeDasharray={primitive.strokeDasharray}
-            pointerEvents="none"
+            pointerEvents="stroke"
           />
         </g>
       );
@@ -390,11 +392,12 @@ const renderPrimitive = (
             cx={point.x}
             cy={point.y}
             r={isSelected ? primitive.radius + 1.8 : primitive.radius}
+            {...commonProps}
             fill={isSelected ? '#fbbf24' : primitive.fill ?? primitive.stroke}
             stroke={isSelected ? '#fef3c7' : '#0f172a'}
             strokeWidth={1.2}
             opacity={primitive.opacity ?? 1}
-            pointerEvents="none"
+            pointerEvents="all"
           />
         </g>
       );
@@ -454,11 +457,12 @@ const renderPrimitive = (
             ry={Math.max(primitive.semiMinor * scale, 0.9)}
             transform={`rotate(${-primitive.thetaDeg} ${center.x} ${center.y})`}
             fill="none"
+            {...commonProps}
             stroke={isSelected ? '#fbbf24' : primitive.stroke}
             strokeWidth={isSelected ? primitive.strokeWidth + 0.8 : primitive.strokeWidth}
             opacity={primitive.opacity ?? 0.88}
             strokeDasharray={primitive.strokeDasharray}
-            pointerEvents="none"
+            pointerEvents="stroke"
           />
         </g>
       );
@@ -531,6 +535,20 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
         className="h-full w-full bg-slate-950 select-none"
         data-survey-cad-preview
+        onClick={(event) => {
+          if (!commandActive || didDrag || event.target !== event.currentTarget) return;
+          if (activeSnap) {
+            onConsumeInteractionPoint(
+              { x: activeSnap.x, y: activeSnap.y },
+              activeSnap.label,
+              { snapSourceSegmentId: activeSnap.sourceSegmentId },
+            );
+            return;
+          }
+          const screenPoint = screenPointFromMouseEvent(event);
+          if (!screenPoint) return;
+          onConsumeInteractionPoint(unproject(screenPoint.viewX, screenPoint.viewY));
+        }}
         onMouseLeave={() => {
           if (dragState.kind === 'none') onPointerWorldPointChange(null);
         }}
