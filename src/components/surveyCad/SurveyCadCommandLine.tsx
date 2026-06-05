@@ -1,4 +1,5 @@
 import React from 'react';
+import { flushSync } from 'react-dom';
 
 interface SurveyCadCommandLineProps {
   selectionCount: number;
@@ -84,27 +85,32 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   onRedo,
 }) => {
   const [arcMenuOpen, setArcMenuOpen] = React.useState(false);
+  const runImmediate = (action: () => void) => {
+    flushSync(() => {
+      action();
+    });
+  };
 
   return (
   <div className="flex min-h-0 items-center justify-between gap-3">
     <div className="flex flex-wrap items-center gap-1">
-      <button type="button" className={commandButtonClassName} onClick={onStartPoint} title="Point">
+      <button type="button" className={commandButtonClassName} onClick={() => runImmediate(onStartPoint)} title="Point">
         POINT
       </button>
-      <button type="button" className={commandButtonClassName} onClick={onStartCogoPoint} title="COGO Point">
+      <button type="button" className={commandButtonClassName} onClick={() => runImmediate(onStartCogoPoint)} title="COGO Point">
         COGO
       </button>
-      <button type="button" className={commandButtonClassName} onClick={onStartLine} title="Line">
+      <button type="button" className={commandButtonClassName} onClick={() => runImmediate(onStartLine)} title="Line">
         LINE
       </button>
-      <button type="button" className={commandButtonClassName} onClick={onStartPolyline} title="Polyline">
+      <button type="button" className={commandButtonClassName} onClick={() => runImmediate(onStartPolyline)} title="Polyline">
         PLINE
       </button>
-      <button type="button" className={commandButtonClassName} onClick={onStartTraverse} title="Traverse">
+      <button type="button" className={commandButtonClassName} onClick={() => runImmediate(onStartTraverse)} title="Traverse">
         TRAV
       </button>
       <div className="relative flex items-stretch" data-survey-cad-arc-tool>
-        <button type="button" className={commandButtonClassName} onClick={onStartArc3Point} title="Arc 3 Point">
+        <button type="button" className={commandButtonClassName} onClick={() => runImmediate(onStartArc3Point)} title="Arc 3 Point">
           ARC
         </button>
         <button
@@ -121,43 +127,43 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
             className="absolute left-0 top-full z-20 mt-1 grid min-w-56 gap-1 rounded border border-slate-700 bg-slate-950/95 p-2 shadow-xl"
             data-survey-cad-arc-menu
           >
-            <button type="button" className={arcMenuButtonClassName} onClick={() => { setArcMenuOpen(false); onStartArc3Point(); }}>
+            <button type="button" className={arcMenuButtonClassName} onClick={() => { setArcMenuOpen(false); runImmediate(onStartArc3Point); }}>
               3 Point
             </button>
-            <button type="button" className={arcMenuButtonClassName} onClick={() => { setArcMenuOpen(false); onStartArcStartCenterEnd(); }}>
+            <button type="button" className={arcMenuButtonClassName} onClick={() => { setArcMenuOpen(false); runImmediate(onStartArcStartCenterEnd); }}>
               Start Center End
             </button>
-            <button type="button" className={arcMenuButtonClassName} onClick={() => { setArcMenuOpen(false); onStartArcStartCenterAngle(); }}>
+            <button type="button" className={arcMenuButtonClassName} onClick={() => { setArcMenuOpen(false); runImmediate(onStartArcStartCenterAngle); }}>
               Start Center Angle
             </button>
-            <button type="button" className={arcMenuButtonClassName} onClick={() => { setArcMenuOpen(false); onStartArcStartCenterChord(); }}>
+            <button type="button" className={arcMenuButtonClassName} onClick={() => { setArcMenuOpen(false); runImmediate(onStartArcStartCenterChord); }}>
               Start Center Length
             </button>
-            <button type="button" className={arcMenuButtonClassName} onClick={() => { setArcMenuOpen(false); onStartArcStartEndAngle(); }}>
+            <button type="button" className={arcMenuButtonClassName} onClick={() => { setArcMenuOpen(false); runImmediate(onStartArcStartEndAngle); }}>
               Start End Angle
             </button>
-            <button type="button" className={arcMenuButtonClassName} onClick={() => { setArcMenuOpen(false); onStartArcStartEndDirection(); }}>
+            <button type="button" className={arcMenuButtonClassName} onClick={() => { setArcMenuOpen(false); runImmediate(onStartArcStartEndDirection); }}>
               Start End Direction
             </button>
-            <button type="button" className={arcMenuButtonClassName} onClick={() => { setArcMenuOpen(false); onStartArcStartEndRadius(); }}>
+            <button type="button" className={arcMenuButtonClassName} onClick={() => { setArcMenuOpen(false); runImmediate(onStartArcStartEndRadius); }}>
               Start End Radius
             </button>
-            <button type="button" className={arcMenuButtonClassName} onClick={() => { setArcMenuOpen(false); onStartArcCenterStartEnd(); }}>
+            <button type="button" className={arcMenuButtonClassName} onClick={() => { setArcMenuOpen(false); runImmediate(onStartArcCenterStartEnd); }}>
               Center Start End
             </button>
-            <button type="button" className={arcMenuButtonClassName} onClick={() => { setArcMenuOpen(false); onStartArcCenterStartAngle(); }}>
+            <button type="button" className={arcMenuButtonClassName} onClick={() => { setArcMenuOpen(false); runImmediate(onStartArcCenterStartAngle); }}>
               Center Start Angle
             </button>
-            <button type="button" className={arcMenuButtonClassName} onClick={() => { setArcMenuOpen(false); onStartArcCenterStartChord(); }}>
+            <button type="button" className={arcMenuButtonClassName} onClick={() => { setArcMenuOpen(false); runImmediate(onStartArcCenterStartChord); }}>
               Center Start Length
             </button>
-            <button type="button" className={arcMenuButtonClassName} onClick={() => { setArcMenuOpen(false); onStartTangentCurve(); }}>
+            <button type="button" className={arcMenuButtonClassName} onClick={() => { setArcMenuOpen(false); runImmediate(onStartTangentCurve); }}>
               Tangent Curve
             </button>
             <button
               type="button"
               className={arcMenuButtonClassName}
-              onClick={() => { setArcMenuOpen(false); onStartContinueCurve(); }}
+              onClick={() => { setArcMenuOpen(false); runImmediate(onStartContinueCurve); }}
               disabled={!canContinueCurve}
             >
               Continue Curve
@@ -165,13 +171,13 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
           </div>
         ) : null}
       </div>
-      <button type="button" className={commandButtonClassName} onClick={onStartInverse} title="Inverse">
+      <button type="button" className={commandButtonClassName} onClick={() => runImmediate(onStartInverse)} title="Inverse">
         INV
       </button>
       <button
         type="button"
         className={commandButtonClassName}
-        onClick={onStartMove}
+        onClick={() => runImmediate(onStartMove)}
         disabled={selectionCount === 0}
         title="Move"
       >
@@ -180,7 +186,7 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
       <button
         type="button"
         className={commandButtonClassName}
-        onClick={onStartCopy}
+        onClick={() => runImmediate(onStartCopy)}
         disabled={selectionCount === 0}
         title="Copy"
       >
@@ -189,7 +195,7 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
       <button
         type="button"
         className={commandButtonClassName}
-        onClick={onCreateIntersectionPoint}
+        onClick={() => runImmediate(onCreateIntersectionPoint)}
         disabled={!canCreateIntersectionPoint}
         title="Intersection Point"
       >
@@ -198,19 +204,19 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
       <button
         type="button"
         className={commandButtonClassName}
-        onClick={onCreateParcel}
+        onClick={() => runImmediate(onCreateParcel)}
         disabled={!canCreateParcel}
         title="Create Parcel"
       >
         PARCEL
       </button>
-      <button type="button" className={commandButtonClassName} onClick={onSelectAll} title="Select All">
+      <button type="button" className={commandButtonClassName} onClick={() => runImmediate(onSelectAll)} title="Select All">
         S-ALL
       </button>
       <button
         type="button"
         className={commandButtonClassName}
-        onClick={onClearSelection}
+        onClick={() => runImmediate(onClearSelection)}
         disabled={selectionCount === 0}
         title="Clear Selection"
       >
@@ -219,7 +225,7 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
       <button
         type="button"
         className={commandButtonClassName}
-        onClick={onErase}
+        onClick={() => runImmediate(onErase)}
         disabled={selectionCount === 0}
         title="Erase"
       >
@@ -228,7 +234,7 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
       <button
         type="button"
         className={commandButtonClassName}
-        onClick={onUndo}
+        onClick={() => runImmediate(onUndo)}
         disabled={!canUndo}
         title="Undo"
       >
@@ -237,7 +243,7 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
       <button
         type="button"
         className={commandButtonClassName}
-        onClick={onRedo}
+        onClick={() => runImmediate(onRedo)}
         disabled={!canRedo}
         title="Redo"
       >

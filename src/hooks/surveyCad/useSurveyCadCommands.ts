@@ -1,5 +1,4 @@
-import type { Dispatch, SetStateAction } from 'react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   buildCadInverseSummary,
   cadPointFromBearingDistance,
@@ -24,9 +23,14 @@ import type {
   CadArcEntity,
   CadSnapCandidate,
   CadSnapConstructionContext,
+  CadSnapKind,
 } from '../../engine/cad/cadTypes';
 
-type CommandPoint = CadNamedPoint & { snapSourceSegmentId?: string };
+type CommandPoint = CadNamedPoint & {
+  snapSourceSegmentId?: string;
+  snapSourceEntityId?: string;
+  snapKind?: CadSnapKind;
+};
 
 type ActiveCommandKey =
   | 'POINT'
@@ -125,7 +129,7 @@ interface UseSurveyCadCommandsArgs {
   selectionCount: number;
   selectedArcForContinue: CadArcEntity | null;
   reverseDirectionModifier: boolean;
-  setHistory: Dispatch<SetStateAction<CadHistoryState>>;
+  applyHistoryUpdate: (_updater: (_history: CadHistoryState) => CadHistoryState) => void;
 }
 
 export type CadCommandPreviewState =
@@ -162,7 +166,9 @@ interface UseSurveyCadCommandsResult {
   commandHelpText: string;
   commandPreview: CadCommandPreviewState | null;
   snapConstructionContext: CadSnapConstructionContext;
+  commandExpectsPointPick: boolean;
   canUseActiveSnap: boolean;
+  canCycleActiveSnap: boolean;
   canFinishCommand: boolean;
   startPointCommand: () => void;
   startCogoPointCommand: () => void;
@@ -195,13 +201,63 @@ interface UseSurveyCadCommandsResult {
   consumeInteractionPoint: (
     _point: { x: number; y: number },
     _label?: string,
-    _options?: { snapSourceSegmentId?: string },
+    _options?: { snapSourceSegmentId?: string; snapSourceEntityId?: string; snapKind?: CadSnapKind },
   ) => void;
   handleEnterKey: () => void;
   handleEscapeKey: () => void;
 }
 
 const isNumeric = (value: string): boolean => value.trim().length > 0 && Number.isFinite(Number(value));
+
+const ARC_TANGENT_SEED_KINDS = new Set<CadSnapKind>([
+  'nearest',
+  'endpoint',
+  'arc-midpoint',
+  'quadrant',
+  'center',
+]);
+
+const tangentSeedArcEntityIdFromPoint = (point: CommandPoint | null): string | null => {
+  if (!point?.snapSourceEntityId || !point.snapKind) return null;
+  if (!ARC_TANGENT_SEED_KINDS.has(point.snapKind)) return null;
+  return point.snapSourceEntityId;
+};
+
+const tangentSeedPointFromPoint = (
+  point: CommandPoint | null,
+): { x: number; y: number } | null =>
+  tangentSeedArcEntityIdFromPoint(point) ? { x: point!.x, y: point!.y } : null;
+
+const sessionExpectsPointPick = (session: CommandSession | null): boolean => {
+  if (!session) return false;
+  switch (session.key) {
+    case 'POINT':
+    case 'COGO_POINT':
+    case 'LINE':
+    case 'INVERSE':
+    case 'MOVE':
+    case 'COPY':
+    case 'PASTE':
+    case 'PLINE':
+    case 'TRAVERSE':
+    case 'ARC_3PT':
+    case 'CONTINUE_CURVE':
+      return true;
+    case 'ARC_SCE':
+    case 'ARC_CSE':
+      return session.points.length < 3;
+    case 'ARC_SCA':
+    case 'ARC_CSA':
+    case 'ARC_SCL':
+    case 'ARC_CSL':
+    case 'ARC_SEA':
+    case 'ARC_SED':
+    case 'ARC_SER':
+      return session.points.length < 2;
+    case 'TANGENT_CURVE':
+      return session.aheadTangentPoint == null;
+  }
+};
 
 const splitLabelFromBody = (token: string): { label?: string; body: string } => {
   const normalized = token.trim();
@@ -502,15 +558,33 @@ export const useSurveyCadCommands = ({
   selectionCount,
   selectedArcForContinue,
   reverseDirectionModifier,
-  setHistory,
+  applyHistoryUpdate,
 }: UseSurveyCadCommandsArgs): UseSurveyCadCommandsResult => {
   const [session, setSession] = useState<CommandSession | null>(null);
+  const sessionRef = useRef<CommandSession | null>(session);
+
+  useEffect(() => {
+    sessionRef.current = session;
+  }, [session]);
+
+  const replaceSession = (nextSession: CommandSession | null) => {
+    sessionRef.current = nextSession;
+    setSession(nextSession);
+  };
+
+  const updateSession = (
+    updater: (_session: CommandSession | null) => CommandSession | null,
+  ) => {
+    const nextSession = updater(sessionRef.current);
+    replaceSession(nextSession);
+  };
 
   const statusPrompt = useMemo(
     () => promptForSession(session, history.commandState.prompt),
     [history.commandState.prompt, session],
   );
   const helpText = useMemo(() => helpTextForSession(session), [session]);
+  const commandExpectsPointPick = useMemo(() => sessionExpectsPointPick(session), [session]);
   const snapConstructionContext = useMemo<CadSnapConstructionContext>(() => {
     if (!session) {
       return { active: false, basePoint: null };
@@ -521,20 +595,25 @@ export const useSurveyCadCommands = ({
       case 'COGO_POINT':
       case 'LINE':
       case 'INVERSE':
-      case 'MOVE':
-      case 'COPY':
         return session.startPoint
           ? {
               active: true,
               basePoint: { x: session.startPoint.x, y: session.startPoint.y },
               scopeSeedSegmentId: session.startPoint.snapSourceSegmentId ?? null,
+              tangentSeedArcEntityId: tangentSeedArcEntityIdFromPoint(session.startPoint),
+              tangentSeedPoint: tangentSeedPointFromPoint(session.startPoint),
             }
           : { active: false, basePoint: null };
+      case 'MOVE':
+      case 'COPY':
+        return { active: false, basePoint: null };
       case 'PASTE':
         return {
           active: true,
           basePoint: { x: session.startPoint.x, y: session.startPoint.y },
           scopeSeedSegmentId: session.startPoint.snapSourceSegmentId ?? null,
+          tangentSeedArcEntityId: tangentSeedArcEntityIdFromPoint(session.startPoint),
+          tangentSeedPoint: tangentSeedPointFromPoint(session.startPoint),
         };
       case 'PLINE':
       case 'TRAVERSE':
@@ -546,6 +625,12 @@ export const useSurveyCadCommands = ({
                 x: session.points[session.points.length - 1]!.x,
                 y: session.points[session.points.length - 1]!.y,
               },
+              tangentSeedArcEntityId: tangentSeedArcEntityIdFromPoint(
+                session.points[session.points.length - 1]!,
+              ),
+              tangentSeedPoint: tangentSeedPointFromPoint(
+                session.points[session.points.length - 1]!,
+              ),
             }
           : { active: false, basePoint: null };
       case 'ARC_SCE':
@@ -557,6 +642,12 @@ export const useSurveyCadCommands = ({
                 x: session.points[session.points.length - 1]!.x,
                 y: session.points[session.points.length - 1]!.y,
               },
+              tangentSeedArcEntityId: tangentSeedArcEntityIdFromPoint(
+                session.points[session.points.length - 1]!,
+              ),
+              tangentSeedPoint: tangentSeedPointFromPoint(
+                session.points[session.points.length - 1]!,
+              ),
             }
           : { active: false, basePoint: null };
       case 'ARC_SCA':
@@ -580,6 +671,8 @@ export const useSurveyCadCommands = ({
         return {
           active: true,
           basePoint: endPoint,
+          tangentSeedArcEntityId: session.sourceArc.id,
+          tangentSeedPoint: endPoint,
         };
       }
       case 'TANGENT_CURVE':
@@ -936,7 +1029,7 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
     metadata?: Record<string, unknown>,
   ) => {
     if (!arcDefinition) return false;
-    setHistory((existing) =>
+    applyHistoryUpdate((existing) =>
       runCadCommand(existing, {
         key: 'ARC_CREATE',
         modeLabel,
@@ -951,269 +1044,284 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
     point: CommandPoint,
     options?: { suppressPointLabel?: boolean },
   ) => {
-    setSession((current) => {
-      if (!current) return current;
-      if (current.key === 'POINT') {
-        setHistory((existing) =>
-          runCadCommand(existing, {
-            key: 'POINT',
-            x: point.x,
-            y: point.y,
-            label: options?.suppressPointLabel ? undefined : point.label,
-          }),
-        );
-        return null;
-      }
-      if (current.key === 'COGO_POINT') {
-        if (!current.startPoint) {
-          return {
-            ...current,
-            startPoint: point,
-            inputValue: '',
-            resultText: undefined,
-          };
-        }
-        const startPoint = current.startPoint;
-        const directionLabel = current.inputValue.trim() || point.label;
-        setHistory((existing) =>
-          runCadCommand(existing, {
-            key: 'COGO_POINT',
-            x: point.x,
-            y: point.y,
-            basisLabel: startPoint.label,
-            directionLabel,
-          }),
-        );
-        return null;
-      }
-      if (current.key === 'PLINE' || current.key === 'TRAVERSE') {
-        return {
+    const current = sessionRef.current;
+    if (!current) return;
+    if (current.key === 'POINT') {
+      applyHistoryUpdate((existing) =>
+        runCadCommand(existing, {
+          key: 'POINT',
+          x: point.x,
+          y: point.y,
+          label: options?.suppressPointLabel ? undefined : point.label,
+        }),
+      );
+      replaceSession(null);
+      return;
+    }
+    if (current.key === 'COGO_POINT') {
+      if (!current.startPoint) {
+        replaceSession({
           ...current,
-          points: [...current.points, point],
+          startPoint: point,
           inputValue: '',
           resultText: undefined,
-        };
+        });
+        return;
       }
-      if (current.key === 'ARC_3PT') {
-        const nextPoints = [...current.points, point];
-        if (nextPoints.length < 3) {
-          return {
-            ...current,
-            points: nextPoints,
-            inputValue: '',
-            resultText: undefined,
-          };
-        }
-        setHistory((existing) =>
-          runCadCommand(existing, {
-            key: 'ARC_3PT',
-            start: nextPoints[0]!,
-            through: nextPoints[1]!,
-            end: nextPoints[2]!,
-          }),
-        );
-        return null;
+      const directionLabel = current.inputValue.trim() || point.label;
+      applyHistoryUpdate((existing) =>
+        runCadCommand(existing, {
+          key: 'COGO_POINT',
+          x: point.x,
+          y: point.y,
+          basisLabel: current.startPoint!.label,
+          directionLabel,
+        }),
+      );
+      replaceSession(null);
+      return;
+    }
+    if (current.key === 'PLINE' || current.key === 'TRAVERSE') {
+      replaceSession({
+        ...current,
+        points: [...current.points, point],
+        inputValue: '',
+        resultText: undefined,
+      });
+      return;
+    }
+    if (current.key === 'ARC_3PT') {
+      const nextPoints = [...current.points, point];
+      if (nextPoints.length < 3) {
+        replaceSession({
+          ...current,
+          points: nextPoints,
+          inputValue: '',
+          resultText: undefined,
+        });
+        return;
       }
+      applyHistoryUpdate((existing) =>
+        runCadCommand(existing, {
+          key: 'ARC_3PT',
+          start: nextPoints[0]!,
+          through: nextPoints[1]!,
+          end: nextPoints[2]!,
+        }),
+      );
+      replaceSession(null);
+      return;
+    }
+    if (
+      current.key === 'ARC_SCE' ||
+      current.key === 'ARC_CSE' ||
+      current.key === 'ARC_SCA' ||
+      current.key === 'ARC_CSA' ||
+      current.key === 'ARC_SCL' ||
+      current.key === 'ARC_CSL' ||
+      current.key === 'ARC_SEA' ||
+      current.key === 'ARC_SED' ||
+      current.key === 'ARC_SER'
+    ) {
+      const nextPoints = [...current.points, point];
       if (
-        current.key === 'ARC_SCE' ||
-        current.key === 'ARC_CSE' ||
-        current.key === 'ARC_SCA' ||
-        current.key === 'ARC_CSA' ||
-        current.key === 'ARC_SCL' ||
-        current.key === 'ARC_CSL' ||
-        current.key === 'ARC_SEA' ||
-        current.key === 'ARC_SED' ||
-        current.key === 'ARC_SER'
+        ((current.key === 'ARC_SCE' || current.key === 'ARC_CSE') && nextPoints.length < 3) ||
+        current.key !== 'ARC_SCE' && current.key !== 'ARC_CSE' && nextPoints.length < 2
       ) {
-        const nextPoints = [...current.points, point];
-        if (
-          ((current.key === 'ARC_SCE' || current.key === 'ARC_CSE') && nextPoints.length < 3) ||
-          ((current.key !== 'ARC_SCE' && current.key !== 'ARC_CSE') && nextPoints.length < 2)
-        ) {
-          return {
-            ...current,
-            points: nextPoints,
-            inputValue: '',
-            resultText: undefined,
-          };
-        }
-        if (current.key === 'ARC_SCE' || current.key === 'ARC_CSE') {
-          const committed = commitArcDefinition(
-            current.key,
-            current.key === 'ARC_SCE'
-              ? cadBuildArcFromStartCenterEnd(
-                  nextPoints[0]!,
-                  nextPoints[1]!,
-                  nextPoints[2]!,
-                  reverseDirectionModifier,
-                )
-              : buildCenterFirstArcDefinition(
-                  'ARC_CSE',
-                  nextPoints,
-                  null,
-                  reverseDirectionModifier,
-                ),
-            {
-              startLabel: current.key === 'ARC_SCE' ? nextPoints[0]!.label : nextPoints[1]!.label,
-              centerLabel: current.key === 'ARC_SCE' ? nextPoints[1]!.label : nextPoints[0]!.label,
-              endLabel: nextPoints[2]!.label,
-            },
-          );
-          return committed
+        replaceSession({
+          ...current,
+          points: nextPoints,
+          inputValue: '',
+          resultText: undefined,
+        });
+        return;
+      }
+      if (current.key === 'ARC_SCE' || current.key === 'ARC_CSE') {
+        const committed = commitArcDefinition(
+          current.key,
+          current.key === 'ARC_SCE'
+            ? cadBuildArcFromStartCenterEnd(
+                nextPoints[0]!,
+                nextPoints[1]!,
+                nextPoints[2]!,
+                reverseDirectionModifier,
+              )
+            : buildCenterFirstArcDefinition('ARC_CSE', nextPoints, null, reverseDirectionModifier),
+          {
+            startLabel: current.key === 'ARC_SCE' ? nextPoints[0]!.label : nextPoints[1]!.label,
+            centerLabel: current.key === 'ARC_SCE' ? nextPoints[1]!.label : nextPoints[0]!.label,
+            endLabel: nextPoints[2]!.label,
+          },
+        );
+        replaceSession(
+          committed
             ? null
             : {
                 ...current,
                 points: nextPoints,
                 resultText: `${current.key === 'ARC_SCE' ? 'ARC SCE' : 'ARC CSE'} invalid. Adjust the points or hold Ctrl to reverse.`,
-              };
-        }
-        if (current.points.length < 2) {
-          return {
-            ...current,
-            points: nextPoints,
-            inputValue: '',
-            resultText: undefined,
-          };
-        }
-        return {
+              },
+        );
+        return;
+      }
+      if (current.points.length < 2) {
+        replaceSession({
           ...current,
-          resultText: 'This arc mode now needs a typed value. Enter it in the command bar.',
-        };
+          points: nextPoints,
+          inputValue: '',
+          resultText: undefined,
+        });
+        return;
       }
-      if (current.key === 'CONTINUE_CURVE') {
-        const committed = commitArcDefinition(
-          'CONTINUE_CURVE',
-          cadBuildContinuedArc(current.sourceArc, point, reverseDirectionModifier),
-          {
-            sourceArcId: current.sourceArc.id,
-            endLabel: point.label,
-          },
-        );
-        return committed
+      replaceSession({
+        ...current,
+        resultText: 'This arc mode now needs a typed value. Enter it in the command bar.',
+      });
+      return;
+    }
+    if (current.key === 'CONTINUE_CURVE') {
+      const committed = commitArcDefinition(
+        'CONTINUE_CURVE',
+        cadBuildContinuedArc(current.sourceArc, point, reverseDirectionModifier),
+        {
+          sourceArcId: current.sourceArc.id,
+          endLabel: point.label,
+        },
+      );
+      replaceSession(
+        committed
           ? null
-          : { ...current, resultText: 'Continue Curve invalid. Choose a different endpoint or hold Ctrl to reverse.' };
+          : {
+              ...current,
+              resultText: 'Continue Curve invalid. Choose a different endpoint or hold Ctrl to reverse.',
+            },
+      );
+      return;
+    }
+    if (current.key === 'TANGENT_CURVE') {
+      if (!current.piPoint) {
+        replaceSession({
+          ...current,
+          piPoint: point,
+          inputValue: '',
+          resultText: undefined,
+        });
+        return;
       }
-      if (current.key === 'TANGENT_CURVE') {
-        if (!current.piPoint) {
-          return {
-            ...current,
-            piPoint: point,
-            inputValue: '',
-            resultText: undefined,
-          };
-        }
-        if (!current.backTangentPoint) {
-          return {
-            ...current,
-            backTangentPoint: point,
-            inputValue: '',
-            resultText: undefined,
-          };
-        }
-        if (!current.aheadTangentPoint) {
-          return {
-            ...current,
-            aheadTangentPoint: point,
-            inputValue: '',
-            resultText: undefined,
-          };
-        }
-        return current;
+      if (!current.backTangentPoint) {
+        replaceSession({
+          ...current,
+          backTangentPoint: point,
+          inputValue: '',
+          resultText: undefined,
+        });
+        return;
       }
-      if (current.key === 'LINE') {
-        if (!current.startPoint) {
-          return {
-            ...current,
-            startPoint: point,
-            inputValue: '',
-            resultText: undefined,
-          };
-        }
-        const startPoint = current.startPoint;
-        setHistory((existing) =>
-          runCadCommand(existing, {
-            key: 'LINE',
-            start: startPoint,
-            end: point,
-          }),
-        );
-        return null;
+      if (!current.aheadTangentPoint) {
+        replaceSession({
+          ...current,
+          aheadTangentPoint: point,
+          inputValue: '',
+          resultText: undefined,
+        });
       }
-      if (current.key === 'MOVE' || current.key === 'COPY') {
-        if (!current.startPoint) {
-          return {
-            ...current,
-            startPoint: point,
-            inputValue: '',
-            resultText: undefined,
-          };
-        }
-        const deltaX = point.x - current.startPoint.x;
-        const deltaY = point.y - current.startPoint.y;
-        const transformKey: 'MOVE' | 'COPY' = current.key;
-        setHistory((existing) =>
-          runCadCommand(existing, {
-            key: transformKey,
-            deltaX,
-            deltaY,
-          }),
-        );
-        return null;
-      }
-      if (current.key === 'PASTE') {
-        const deltaX = point.x - current.startPoint.x;
-        const deltaY = point.y - current.startPoint.y;
-        setHistory((existing) =>
-          runCadCommand(existing, {
-            key: 'PASTE',
-            deltaX,
-            deltaY,
-            entityIds: current.sourceEntityIds,
-          }),
-        );
-        return null;
-      }
-      if (!('startPoint' in current)) {
-        return current;
-      }
+      return;
+    }
+    if (current.key === 'LINE') {
       if (!current.startPoint) {
-        return {
+        replaceSession({
           ...current,
           startPoint: point,
           inputValue: '',
           resultText: undefined,
-        };
+        });
+        return;
       }
-      const inverse = buildCadInverseSummary(current.startPoint, point);
-      return {
+      const startPoint = current.startPoint;
+      applyHistoryUpdate((existing) =>
+        runCadCommand(existing, {
+          key: 'LINE',
+          start: startPoint,
+          end: point,
+        }),
+      );
+      replaceSession(null);
+      return;
+    }
+    if (current.key === 'MOVE' || current.key === 'COPY') {
+      if (!current.startPoint) {
+        replaceSession({
+          ...current,
+          startPoint: point,
+          inputValue: '',
+          resultText: undefined,
+        });
+        return;
+      }
+      const startPoint = current.startPoint;
+      const transformKey: 'MOVE' | 'COPY' = current.key;
+      applyHistoryUpdate((existing) =>
+        runCadCommand(existing, {
+          key: transformKey,
+          deltaX: point.x - startPoint.x,
+          deltaY: point.y - startPoint.y,
+        }),
+      );
+      replaceSession(null);
+      return;
+    }
+    if (current.key === 'PASTE') {
+      const startPoint = current.startPoint;
+      applyHistoryUpdate((existing) =>
+        runCadCommand(existing, {
+          key: 'PASTE',
+          deltaX: point.x - startPoint.x,
+          deltaY: point.y - startPoint.y,
+          entityIds: current.sourceEntityIds,
+        }),
+      );
+      replaceSession(null);
+      return;
+    }
+    if (!('startPoint' in current)) return;
+    if (!current.startPoint) {
+      replaceSession({
         ...current,
-        startPoint: null,
+        startPoint: point,
         inputValue: '',
-        resultText: `INVERSE ${current.startPoint.label} -> ${point.label}: distance ${inverse.distance.toFixed(3)}, azimuth ${inverse.azimuthDeg.toFixed(4)} deg, bearing ${inverse.bearing}.`,
-      };
+        resultText: undefined,
+      });
+      return;
+    }
+    const inverse = buildCadInverseSummary(current.startPoint, point);
+    replaceSession({
+      ...current,
+      startPoint: null,
+      inputValue: '',
+      resultText: `INVERSE ${current.startPoint.label} -> ${point.label}: distance ${inverse.distance.toFixed(3)}, azimuth ${inverse.azimuthDeg.toFixed(4)} deg, bearing ${inverse.bearing}.`,
     });
   };
 
   const finishPolylineSession = () => {
     if (!session || session.key !== 'PLINE' || session.points.length < 2) return;
-    setHistory((existing) =>
+    applyHistoryUpdate((existing) =>
       runCadCommand(existing, {
         key: 'PLINE',
         vertices: session.points,
       }),
     );
-    setSession(null);
+    replaceSession(null);
   };
 
   const finishTraverseSession = () => {
     if (!session || session.key !== 'TRAVERSE' || session.points.length < 2) return;
-    setHistory((existing) =>
+    applyHistoryUpdate((existing) =>
       runCadCommand(existing, {
         key: 'TRAVERSE',
         vertices: session.points,
       }),
     );
-    setSession(null);
+    replaceSession(null);
   };
 
   const submitSessionInput = () => {
@@ -1254,7 +1362,7 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
       if (session.points.length < 2) {
         const parsed = parseInputPoint(session.inputValue, basePoint);
         if (!parsed) {
-          setSession({
+          replaceSession({
             ...session,
             resultText: 'Arc point input invalid. Use `x,y` or `LABEL=x,y` for the required points.',
           });
@@ -1329,10 +1437,10 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
             : session.points[1]!.label,
       });
       if (committed) {
-        setSession(null);
+        replaceSession(null);
         return;
       }
-      setSession({
+      replaceSession({
         ...session,
         resultText:
           session.key === 'ARC_SED'
@@ -1346,7 +1454,7 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
       const backTangentPoint = session.backTangentPoint;
       const aheadTangentPoint = session.aheadTangentPoint;
       if (!piPoint || !backTangentPoint || !aheadTangentPoint) {
-        setSession({
+        replaceSession({
           ...session,
           resultText: 'Tangent curve points incomplete. Capture PI, back, and ahead points first.',
         });
@@ -1354,13 +1462,13 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
       }
       const radius = Number(session.inputValue.trim());
       if (!Number.isFinite(radius) || radius <= 0) {
-        setSession({
+        replaceSession({
           ...session,
           resultText: 'Tangent curve radius invalid. Enter a positive numeric radius.',
         });
         return;
       }
-      setHistory((existing) =>
+      applyHistoryUpdate((existing) =>
         runCadCommand(existing, {
           key: 'TANGENT_CURVE',
           pi: piPoint,
@@ -1369,12 +1477,12 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
           radius,
         }),
       );
-      setSession(null);
+      replaceSession(null);
       return;
     }
     const parsed = parseInputPoint(session.inputValue, basePoint);
     if (!parsed) {
-      setSession({
+      replaceSession({
         ...session,
         resultText:
           session.key === 'POINT'
@@ -1403,7 +1511,7 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
   };
 
   const handleEscapeKey = () => {
-    setSession(null);
+    replaceSession(null);
   };
 
   return {
@@ -1413,108 +1521,110 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
     commandHelpText: helpText,
     commandPreview,
     snapConstructionContext,
+    commandExpectsPointPick,
     canUseActiveSnap:
       activeSnap != null &&
-      session != null &&
-      !(session.key === 'TANGENT_CURVE' && session.aheadTangentPoint != null),
+      commandExpectsPointPick,
+    canCycleActiveSnap:
+      commandExpectsPointPick,
     canFinishCommand:
       (session?.key === 'PLINE' || session?.key === 'TRAVERSE') &&
       session.points.length >= 2,
-    startPointCommand: () => setSession({ key: 'POINT', inputValue: '' }),
+    startPointCommand: () => replaceSession({ key: 'POINT', inputValue: '' }),
     startCogoPointCommand: () =>
-      setSession({
+      replaceSession({
         key: 'COGO_POINT',
         inputValue: '',
         startPoint: null,
       }),
     startLineCommand: () =>
-      setSession({
+      replaceSession({
         key: 'LINE',
         inputValue: '',
         startPoint: null,
       }),
     startPolylineCommand: () =>
-      setSession({
+      replaceSession({
         key: 'PLINE',
         inputValue: '',
         points: [],
       }),
     startTraverseCommand: () =>
-      setSession({
+      replaceSession({
         key: 'TRAVERSE',
         inputValue: '',
         points: [],
       }),
     startArc3PointCommand: () =>
-      setSession({
+      replaceSession({
         key: 'ARC_3PT',
         inputValue: '',
         points: [],
       }),
     startArcStartCenterEndCommand: () =>
-      setSession({
+      replaceSession({
         key: 'ARC_SCE',
         inputValue: '',
         points: [],
       }),
     startArcCenterStartEndCommand: () =>
-      setSession({
+      replaceSession({
         key: 'ARC_CSE',
         inputValue: '',
         points: [],
       }),
     startArcStartCenterAngleCommand: () =>
-      setSession({
+      replaceSession({
         key: 'ARC_SCA',
         inputValue: '',
         points: [],
       }),
     startArcCenterStartAngleCommand: () =>
-      setSession({
+      replaceSession({
         key: 'ARC_CSA',
         inputValue: '',
         points: [],
       }),
     startArcStartCenterChordCommand: () =>
-      setSession({
+      replaceSession({
         key: 'ARC_SCL',
         inputValue: '',
         points: [],
       }),
     startArcCenterStartChordCommand: () =>
-      setSession({
+      replaceSession({
         key: 'ARC_CSL',
         inputValue: '',
         points: [],
       }),
     startArcStartEndAngleCommand: () =>
-      setSession({
+      replaceSession({
         key: 'ARC_SEA',
         inputValue: '',
         points: [],
       }),
     startArcStartEndDirectionCommand: () =>
-      setSession({
+      replaceSession({
         key: 'ARC_SED',
         inputValue: '',
         points: [],
       }),
     startArcStartEndRadiusCommand: () =>
-      setSession({
+      replaceSession({
         key: 'ARC_SER',
         inputValue: '',
         points: [],
       }),
     startContinueCurveCommand: () => {
       if (!selectedArcForContinue) return;
-      setSession({
+      replaceSession({
         key: 'CONTINUE_CURVE',
         inputValue: '',
         sourceArc: selectedArcForContinue,
       });
     },
     startTangentCurveCommand: () =>
-      setSession({
+      replaceSession({
         key: 'TANGENT_CURVE',
         inputValue: '',
         piPoint: null,
@@ -1522,14 +1632,14 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
         aheadTangentPoint: null,
       }),
     startInverseCommand: () =>
-      setSession({
+      replaceSession({
         key: 'INVERSE',
         inputValue: '',
         startPoint: null,
       }),
     startMoveCommand: () => {
       if (selectionCount === 0) return;
-      setSession({
+      replaceSession({
         key: 'MOVE',
         inputValue: '',
         startPoint: null,
@@ -1537,7 +1647,7 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
     },
     startCopyCommand: () => {
       if (selectionCount === 0) return;
-      setSession({
+      replaceSession({
         key: 'COPY',
         inputValue: '',
         startPoint: null,
@@ -1545,14 +1655,14 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
     },
     startPasteCommand: (sourceEntityIds, basePoint) => {
       if (sourceEntityIds.length === 0) return;
-      setSession({
+      replaceSession({
         key: 'PASTE',
         inputValue: '',
         startPoint: basePoint,
         sourceEntityIds,
       });
     },
-    cancelCommand: () => setSession(null),
+    cancelCommand: () => replaceSession(null),
     finishCommand: () => {
       if (session?.key === 'PLINE') {
         finishPolylineSession();
@@ -1563,13 +1673,13 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
       }
     },
     setCommandInputValue: (value) =>
-      setSession((current) => (current ? { ...current, inputValue: value, resultText: undefined } : current)),
+      updateSession((current) => (current ? { ...current, inputValue: value, resultText: undefined } : current)),
     appendCommandInputValue: (value) =>
-      setSession((current) =>
+      updateSession((current) =>
         current ? { ...current, inputValue: `${current.inputValue}${value}`, resultText: undefined } : current,
       ),
     backspaceCommandInputValue: () =>
-      setSession((current) =>
+      updateSession((current) =>
         current
           ? { ...current, inputValue: current.inputValue.slice(0, -1), resultText: undefined }
           : current,
@@ -1583,6 +1693,8 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
           y: activeSnap.y,
           label: activeSnap.label,
           snapSourceSegmentId: activeSnap.sourceSegmentId,
+          snapSourceEntityId: activeSnap.sourceEntityId,
+          snapKind: activeSnap.kind,
         },
         { suppressPointLabel: true },
       );
@@ -1595,6 +1707,8 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
           y: point.y,
           label: label ?? `${point.x.toFixed(3)},${point.y.toFixed(3)}`,
           snapSourceSegmentId: options?.snapSourceSegmentId,
+          snapSourceEntityId: options?.snapSourceEntityId,
+          snapKind: options?.snapKind,
         },
         { suppressPointLabel: true },
       );

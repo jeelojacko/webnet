@@ -58,6 +58,9 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   const {
     cadProject: activeProject,
     displayScene,
+    gripHandles,
+    gripPreviewPrimitives,
+    activeGripHandleId,
     selectedEntityIds,
     selectedParcelReport,
     selectionCount,
@@ -68,10 +71,14 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     statusText,
     commandHelpText,
     commandPreviewPrimitives,
+    commandExpectsPointPick,
     canCreateIntersectionPoint,
     canCreateParcel,
     canContinueCurve,
+    isGripEditing,
+    canCycleActiveSnap,
     activeSnap,
+    nearbySnaps,
     snapConstructionContext,
     snapPreferences,
     historyDepth,
@@ -106,7 +113,12 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     handleEscapeKey,
     selectEntity,
     selectEntities,
+    startGripEdit,
+    updateGripEdit,
+    finishGripEdit,
+    cancelGripEdit,
     updatePointerWorldPoint,
+    cycleActiveSnap,
     setSnapPreference,
     selectAll,
     clearSelection,
@@ -193,6 +205,11 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         clearSelection();
         return;
       }
+      if (event.key === ' ' && (canCycleActiveSnap || isGripEditing) && nearbySnaps.length > 1) {
+        event.preventDefault();
+        cycleActiveSnap();
+        return;
+      }
       if (event.key === 'Control') {
         setReverseDirectionModifier(true);
       }
@@ -231,6 +248,18 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         handleEnterKey();
         return;
       }
+      if (
+        activeCommandKey == null &&
+        !modifierKey &&
+        !isEditableTarget(target) &&
+        !event.altKey &&
+        selectionCount > 0 &&
+        (event.key === 'Backspace' || event.key === 'Delete')
+      ) {
+        event.preventDefault();
+        eraseSelection();
+        return;
+      }
       if (activeCommandKey == null || modifierKey || isEditableTarget(target) || event.altKey) return;
       if (event.key === 'Backspace') {
         event.preventDefault();
@@ -260,8 +289,13 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     appendCommandInputValue,
     backspaceCommandInputValue,
     clearSelection,
+    canCycleActiveSnap,
+    isGripEditing,
+    cycleActiveSnap,
+    eraseSelection,
     handleEnterKey,
     handleEscapeKey,
+    nearbySnaps.length,
     copiedEntityIds,
     redo,
     selectedEntityIds,
@@ -323,6 +357,9 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             selectedParcelReport={selectedParcelReport}
             activeSnap={activeSnap}
             commandPreviewPrimitives={commandPreviewPrimitives}
+            gripHandles={gripHandles}
+            gripPreviewPrimitives={gripPreviewPrimitives}
+            activeGripHandleId={activeGripHandleId}
             commandStatusText={commandStatusText}
             commandHelpText={commandHelpText}
             commandModifierHint={commandModifierHint}
@@ -333,9 +370,14 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             commandInputEnabled={activeCommandKey != null}
             viewport={viewport}
             commandActive={activeCommandKey != null}
+            commandPointInputActive={commandExpectsPointPick}
             onViewportChange={setViewport}
             onSelectEntity={selectEntity}
             onSelectEntities={selectEntities}
+            onStartGripEdit={startGripEdit}
+            onUpdateGripEdit={updateGripEdit}
+            onFinishGripEdit={finishGripEdit}
+            onCancelGripEdit={cancelGripEdit}
             onConsumeInteractionPoint={consumeInteractionPoint}
             onPointerWorldPointChange={updatePointerWorldPoint}
             onSnapPreferenceChange={setSnapPreference}

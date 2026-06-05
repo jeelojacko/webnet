@@ -175,7 +175,7 @@ const cadCounterClockwiseDeltaDeg = (startAngleDeg: number, endAngleDeg: number)
 export const cadSignedSweepDeg = (startAngleDeg: number, endAngleDeg: number): number => {
   let sweep = endAngleDeg - startAngleDeg;
   while (sweep > 360) sweep -= 360;
-  while (sweep <= -360) sweep += 360;
+  while (sweep < -360) sweep += 360;
   return sweep;
 };
 
@@ -288,6 +288,27 @@ export const cadClosestPointOnArc = (
   const startPoint = cadPointOnCircle(center, radius, startAngleDeg);
   const endPoint = cadPointOnCircle(center, radius, endAngleDeg);
   return cadDistance(point, startPoint) <= cadDistance(point, endPoint) ? startPoint : endPoint;
+};
+
+export const cadProjectPointOntoCircle = (
+  point: CadWorldPoint,
+  center: CadWorldPoint,
+  fallbackRadius: number,
+): CadWorldPoint => {
+  const dx = point.x - center.x;
+  const dy = point.y - center.y;
+  const length = Math.hypot(dx, dy);
+  const radius = length > 1e-12 ? length : Math.max(fallbackRadius, 1e-6);
+  if (length <= 1e-12) {
+    return {
+      x: center.x + radius,
+      y: center.y,
+    };
+  }
+  return {
+    x: center.x + (dx / length) * radius,
+    y: center.y + (dy / length) * radius,
+  };
 };
 
 const cadChooseArcSweepAngles = (

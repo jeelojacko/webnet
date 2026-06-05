@@ -16,16 +16,26 @@ import { buildCadBounds, buildCadProjectSignature } from '../../engine/cad/cadPr
 import { cloneSurveyCadPersistedState } from '../../engine/cad/cadPersistence';
 import { buildMlightcadSpikeScene } from '../../engine/cad/cadMlightcadAdapter';
 import { buildCadDisplayScene } from '../../engine/cad/cadRenderer';
-import { createCadHistoryState, redoCadHistory, runCadCommand, undoCadHistory } from '../../engine/cad/cadUndoRedo';
+import {
+  createCadHistoryState,
+  redoCadHistory,
+  runCadCommand,
+  undoCadHistory,
+  type CadHistoryState,
+} from '../../engine/cad/cadUndoRedo';
+import { applyCadGripEdit, buildCadGripHandles } from '../../engine/cad/cadTransactions';
 import { useSurveyCadCommands, type CadCommandPreviewState } from './useSurveyCadCommands';
 import { useSurveyCadSnapping, type CadSnapPreferences } from './useSurveyCadSnapping';
 import type {
   CadArcEntity,
+  CadBounds,
   CadDisplayPrimitive,
+  CadGripHandle,
   CadPolylineEntity,
   CadProject,
   CadSnapCandidate,
   CadSnapConstructionContext,
+  CadSnapKind,
   SurveyCadPersistedState,
 } from '../../engine/cad/cadTypes';
 import type { CadEntityId } from '../../engine/cad/cadTypes';
@@ -34,6 +44,9 @@ interface UseSurveyCadWorkspaceResult {
   cadProject: CadProject;
   displayScene: ReturnType<typeof buildCadDisplayScene>;
   mlightcadScene: ReturnType<typeof buildMlightcadSpikeScene>;
+  gripHandles: CadGripHandle[];
+  gripPreviewPrimitives: CadDisplayPrimitive[];
+  activeGripHandleId: string | null;
   selectedEntityIds: string[];
   selectedEntities: ReturnType<typeof getSelectedCadEntities>;
   selectedParcelReport: CadParcelReportSummary | null;
@@ -67,12 +80,16 @@ interface UseSurveyCadWorkspaceResult {
   statusText: string;
   commandHelpText: string;
   commandPreviewPrimitives: CadDisplayPrimitive[];
+  commandExpectsPointPick: boolean;
   canUseActiveSnap: boolean;
+  canCycleActiveSnap: boolean;
   canFinishCommand: boolean;
   canCreateIntersectionPoint: boolean;
   canCreateParcel: boolean;
   canContinueCurve: boolean;
+  isGripEditing: boolean;
   activeSnap: CadSnapCandidate | null;
+  nearbySnaps: readonly CadSnapCandidate[];
   snapConstructionContext: CadSnapConstructionContext;
   snapPreferences: CadSnapPreferences;
   historyDepth: number;
@@ -109,17 +126,27 @@ interface UseSurveyCadWorkspaceResult {
   consumeInteractionPoint: (
     _worldPoint: { x: number; y: number },
     _label?: string,
-    _options?: { snapSourceSegmentId?: string },
+    _options?: { snapSourceSegmentId?: string; snapSourceEntityId?: string; snapKind?: CadSnapKind },
   ) => void;
   handleEnterKey: () => void;
   handleEscapeKey: () => void;
   selectEntity: (_entityId: string, _appendToSelection?: boolean) => void;
   selectEntities: (_entityIds: string[], _appendToSelection?: boolean) => void;
+  startGripEdit: (_handleId: string) => void;
+  updateGripEdit: (_worldPoint: { x: number; y: number }) => void;
+  finishGripEdit: (_worldPoint?: { x: number; y: number }) => void;
+  cancelGripEdit: () => void;
   updatePointerWorldPoint: (
     _worldPoint: { x: number; y: number } | null,
     _toleranceWorld?: number,
+    _options?: {
+      visibleBounds?: CadBounds | null;
+      lockConstruction?: boolean;
+      restrictedGripHandles?: readonly CadGripHandle[];
+    },
   ) => void;
   setSnapPreference: (_kind: keyof CadSnapPreferences, _enabled: boolean) => void;
+  cycleActiveSnap: () => void;
   selectAll: () => void;
   clearSelection: () => void;
   eraseSelection: () => void;
@@ -150,13 +177,29 @@ export const useSurveyCadWorkspace = (
       baseProject.entities[0] ? [baseProject.entities[0].id] : [],
     ),
   );
+  const historyRef = useRef(history);
+
+  useEffect(() => {
+    historyRef.current = history;
+  }, [history]);
+
+  const replaceHistory = (nextHistory: CadHistoryState) => {
+    historyRef.current = nextHistory;
+    setHistory(nextHistory);
+  };
+
+  const applyHistoryUpdate = (updater: (_history: CadHistoryState) => CadHistoryState) => {
+    const nextHistory = updater(historyRef.current);
+    historyRef.current = nextHistory;
+    setHistory(nextHistory);
+  };
 
   useEffect(() => {
     const nextSourceSignature =
       persistedState?.sourceSignature === projectSignature ? persistedState.sourceSignature : projectSignature;
     if (historySourceSignatureRef.current === nextSourceSignature) return;
     historySourceSignatureRef.current = nextSourceSignature;
-    setHistory(
+    replaceHistory(
       createCadHistoryState(
         persistedState?.sourceSignature === projectSignature && persistedProjectRef.current
           ? persistedProjectRef.current
@@ -168,6 +211,7 @@ export const useSurveyCadWorkspace = (
 
   const cadProject = history.present.project;
   const selection = history.present.selection;
+  const activeGripHandleRef = useRef<CadGripHandle | null>(null);
 
   const displayScene = useMemo(() => buildCadDisplayScene(cadProject), [cadProject]);
   const mlightcadScene = useMemo(() => buildMlightcadSpikeScene(cadProject), [cadProject]);
@@ -196,15 +240,29 @@ export const useSurveyCadWorkspace = (
       vertexLabels: selectedParcel.vertexLabels,
     });
   }, [selectedEntities]);
+  const [activeGripHandle, setActiveGripHandle] = useState<CadGripHandle | null>(null);
+  useEffect(() => {
+    activeGripHandleRef.current = activeGripHandle;
+  }, [activeGripHandle]);
+  const editableSelectedEntity = useMemo(
+    () =>
+      selectedEntities.length === 1 &&
+      ['line', 'polyline', 'polygon', 'parcel', 'arc'].includes(selectedEntities[0]!.type)
+        ? selectedEntities[0]!
+        : null,
+    [selectedEntities],
+  );
   const [snapConstructionContext, setSnapConstructionContext] = useState<CadSnapConstructionContext>({
     active: false,
     basePoint: null,
   });
   const {
     activeSnap,
+    nearbySnaps,
     pointerWorldPoint,
     snapPreferences,
-    updatePointerWorldPoint,
+    updatePointerWorldPoint: updatePointerWorldPointInternal,
+    cycleActiveSnap,
     setSnapPreference,
   } = useSurveyCadSnapping(cadProject, snapConstructionContext);
   const previewPoint = useMemo(
@@ -227,7 +285,9 @@ export const useSurveyCadWorkspace = (
     commandHelpText,
     commandPreview,
     snapConstructionContext: nextSnapConstructionContext,
+    commandExpectsPointPick,
     canUseActiveSnap,
+    canCycleActiveSnap,
     canFinishCommand,
     startPointCommand,
     startCogoPointCommand,
@@ -267,21 +327,38 @@ export const useSurveyCadWorkspace = (
     selectionCount: selection.selectedEntityIds.length,
     selectedArcForContinue,
     reverseDirectionModifier,
-    setHistory,
+    applyHistoryUpdate,
   });
   useEffect(() => {
     setSnapConstructionContext((current) => {
       if (
         current.active === nextSnapConstructionContext.active &&
         current.scopeSeedSegmentId === nextSnapConstructionContext.scopeSeedSegmentId &&
+        current.tangentSeedArcEntityId === nextSnapConstructionContext.tangentSeedArcEntityId &&
         current.basePoint?.x === nextSnapConstructionContext.basePoint?.x &&
-        current.basePoint?.y === nextSnapConstructionContext.basePoint?.y
+        current.basePoint?.y === nextSnapConstructionContext.basePoint?.y &&
+        current.tangentSeedPoint?.x === nextSnapConstructionContext.tangentSeedPoint?.x &&
+        current.tangentSeedPoint?.y === nextSnapConstructionContext.tangentSeedPoint?.y
       ) {
         return current;
       }
       return nextSnapConstructionContext;
     });
   }, [nextSnapConstructionContext]);
+  const updatePointerWorldPoint = (
+    worldPoint: { x: number; y: number } | null,
+    toleranceWorldOverride?: number,
+    options?: {
+      visibleBounds?: CadBounds | null;
+      lockConstruction?: boolean;
+      restrictedGripHandles?: readonly CadGripHandle[];
+    },
+  ) => {
+    updatePointerWorldPointInternal(worldPoint, toleranceWorldOverride, {
+      ...options,
+      restrictedGripHandles: options?.restrictedGripHandles ?? [],
+    });
+  };
   const commandPreviewPrimitives = useMemo<CadDisplayPrimitive[]>(() => {
     if (!commandPreview) return [] as CadDisplayPrimitive[];
     const previewStroke =
@@ -430,6 +507,49 @@ export const useSurveyCadWorkspace = (
         };
       });
   }, [activeCommandKey, commandPreview, displayScene.primitives, selection.selectedEntityIds]);
+  const gripHandles = useMemo(
+    () =>
+      activeCommandKey == null && editableSelectedEntity
+        ? buildCadGripHandles(editableSelectedEntity)
+        : [],
+    [activeCommandKey, editableSelectedEntity],
+  );
+  useEffect(() => {
+    if (activeCommandKey != null && activeGripHandle != null) {
+      setActiveGripHandle(null);
+    }
+  }, [activeCommandKey, activeGripHandle]);
+  useEffect(() => {
+    if (!activeGripHandle) return;
+    const nextHandle = gripHandles.find((handle) => handle.id === activeGripHandle.id) ?? null;
+    if (!nextHandle) {
+      setActiveGripHandle(null);
+    }
+  }, [activeGripHandle, gripHandles]);
+  const gripPreviewPrimitives = useMemo<CadDisplayPrimitive[]>(() => {
+    if (!activeGripHandle) return [];
+    const previewProject = applyCadGripEdit(cadProject, {
+      key: 'GRIP_EDIT',
+      entityId: activeGripHandle.entityId,
+      gripKind: activeGripHandle.kind,
+      x: activeGripHandle.x,
+      y: activeGripHandle.y,
+      vertexIndex: activeGripHandle.vertexIndex,
+    });
+    if (!previewProject) return [];
+    return buildCadDisplayScene(previewProject).primitives
+      .filter((primitive) => primitive.sourceEntityId === activeGripHandle.entityId)
+      .map((primitive) => ({
+        ...primitive,
+        stroke: '#22d3ee',
+        fill: primitive.kind === 'point' ? '#22d3ee' : primitive.fill,
+        opacity: 0.9,
+        strokeDasharray:
+          primitive.kind === 'text' || primitive.kind === 'point'
+            ? primitive.strokeDasharray
+            : primitive.strokeDasharray ?? '8 6',
+      }));
+  }, [activeGripHandle, cadProject]);
   const selectedLineLikes = useMemo(
     () => selectedEntities.filter(isCadLineLikeEntity),
     [selectedEntities],
@@ -459,6 +579,9 @@ export const useSurveyCadWorkspace = (
     cadProject,
     displayScene,
     mlightcadScene,
+    gripHandles,
+    gripPreviewPrimitives,
+    activeGripHandleId: activeGripHandle?.id ?? null,
     selectedEntityIds: selection.selectedEntityIds,
     selectedEntities,
     selectedParcelReport,
@@ -470,12 +593,16 @@ export const useSurveyCadWorkspace = (
     statusText: commandPrompt,
     commandHelpText,
     commandPreviewPrimitives,
+    commandExpectsPointPick,
     canUseActiveSnap,
+    canCycleActiveSnap,
     canFinishCommand,
     canCreateIntersectionPoint: selectedIntersection != null,
     canCreateParcel: selectedPolylineForParcel != null,
     canContinueCurve: selectedArcForContinue != null,
+    isGripEditing: activeGripHandle != null,
     activeSnap,
+    nearbySnaps,
     snapConstructionContext,
     snapPreferences,
     historyDepth: history.undoStack.length,
@@ -502,7 +629,7 @@ export const useSurveyCadWorkspace = (
     startCopyCommand,
     createIntersectionPoint: () => {
       if (!selectedIntersection || selectedLineLikes.length !== 2) return;
-      setHistory((current) =>
+      applyHistoryUpdate((current) =>
         runCadCommand(current, {
           key: 'INTERSECT_POINT',
           x: selectedIntersection.point.x,
@@ -514,7 +641,7 @@ export const useSurveyCadWorkspace = (
     },
     createParcelFromSelection: () => {
       if (!selectedPolylineForParcel) return;
-      setHistory((current) =>
+      applyHistoryUpdate((current) =>
         runCadCommand(current, {
           key: 'PARCEL_CREATE',
           sourceEntityId: selectedPolylineForParcel.id,
@@ -528,20 +655,27 @@ export const useSurveyCadWorkspace = (
     backspaceCommandInputValue,
     submitCommandInput,
     useActiveSnap,
-    consumeInteractionPoint: (worldPoint) => {
-      if (activeSnap) {
+    cycleActiveSnap,
+    consumeInteractionPoint: (worldPoint, label, options) => {
+      if (canUseActiveSnap && activeSnap) {
         consumeInteractionPoint(
           { x: activeSnap.x, y: activeSnap.y },
           activeSnap.label,
+          {
+            snapSourceSegmentId: activeSnap.sourceSegmentId,
+            snapSourceEntityId: activeSnap.sourceEntityId,
+            snapKind: activeSnap.kind,
+          },
         );
         return;
       }
-      consumeInteractionPoint(worldPoint);
+      consumeInteractionPoint(worldPoint, label, options);
     },
     handleEnterKey,
     handleEscapeKey,
     selectEntity: (entityId, appendToSelection = false) => {
-      setHistory((current) => {
+      setActiveGripHandle(null);
+      applyHistoryUpdate((current) => {
         const nextSelection =
           appendToSelection
             ? toggleCadSelectionEntity(current.present.project, current.present.selection, entityId)
@@ -561,7 +695,8 @@ export const useSurveyCadWorkspace = (
       });
     },
     selectEntities: (entityIds, appendToSelection = false) => {
-      setHistory((current) => {
+      setActiveGripHandle(null);
+      applyHistoryUpdate((current) => {
         const selectedIdSet = appendToSelection
           ? new Set<CadEntityId>([
               ...current.present.selection.selectedEntityIds,
@@ -587,7 +722,8 @@ export const useSurveyCadWorkspace = (
       });
     },
     selectAll: () => {
-      setHistory((current) => {
+      setActiveGripHandle(null);
+      applyHistoryUpdate((current) => {
         const nextSelection = selectAllCadEntities(current.present.project);
         return {
           ...current,
@@ -603,10 +739,64 @@ export const useSurveyCadWorkspace = (
         };
       });
     },
+    startGripEdit: (handleId) => {
+      const handle = gripHandles.find((candidate) => candidate.id === handleId) ?? null;
+      if (!handle) return;
+      activeGripHandleRef.current = handle;
+      setActiveGripHandle(handle);
+    },
+    updateGripEdit: (worldPoint) => {
+      const currentHandle = activeGripHandleRef.current;
+      if (!currentHandle) return;
+      const nextHandle = {
+        ...currentHandle,
+        x: worldPoint.x,
+        y: worldPoint.y,
+      };
+      activeGripHandleRef.current = nextHandle;
+      setActiveGripHandle((current) =>
+        current
+          ? {
+              ...current,
+              x: worldPoint.x,
+              y: worldPoint.y,
+            }
+          : current,
+      );
+    },
+    finishGripEdit: (worldPoint?: { x: number; y: number }) => {
+      const gripHandle = activeGripHandleRef.current;
+      if (!gripHandle) return;
+      const committedHandle =
+        worldPoint == null
+          ? gripHandle
+          : {
+              ...gripHandle,
+              x: worldPoint.x,
+              y: worldPoint.y,
+            };
+      applyHistoryUpdate((current) =>
+        runCadCommand(current, {
+          key: 'GRIP_EDIT',
+          entityId: committedHandle.entityId,
+          gripKind: committedHandle.kind,
+          x: committedHandle.x,
+          y: committedHandle.y,
+          vertexIndex: committedHandle.vertexIndex,
+        }),
+      );
+      activeGripHandleRef.current = null;
+      setActiveGripHandle(null);
+    },
+    cancelGripEdit: () => {
+      activeGripHandleRef.current = null;
+      setActiveGripHandle(null);
+    },
     updatePointerWorldPoint,
     setSnapPreference,
     clearSelection: () => {
-      setHistory((current) => ({
+      setActiveGripHandle(null);
+      applyHistoryUpdate((current) => ({
         ...current,
         present: {
           ...current.present,
@@ -620,7 +810,8 @@ export const useSurveyCadWorkspace = (
       }));
     },
     eraseSelection: () => {
-      setHistory((current) => runCadCommand(current, { key: 'ERASE' }));
+      setActiveGripHandle(null);
+      applyHistoryUpdate((current) => runCadCommand(current, { key: 'ERASE' }));
     },
     startPasteFromClipboard: (entityIds) => {
       const sourceEntities = history.present.project.entities.filter((entity) =>
@@ -638,10 +829,12 @@ export const useSurveyCadWorkspace = (
       );
     },
     undo: () => {
-      setHistory((current) => undoCadHistory(current));
+      setActiveGripHandle(null);
+      applyHistoryUpdate((current) => undoCadHistory(current));
     },
     redo: () => {
-      setHistory((current) => redoCadHistory(current));
+      setActiveGripHandle(null);
+      applyHistoryUpdate((current) => redoCadHistory(current));
     },
   };
 };

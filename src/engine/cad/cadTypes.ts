@@ -257,6 +257,23 @@ export interface CadDisplayScene {
   primitives: CadDisplayPrimitive[];
 }
 
+export type CadGripHandleKind =
+  | 'line-start'
+  | 'line-end'
+  | 'vertex'
+  | 'arc-start'
+  | 'arc-end'
+  | 'arc-radius';
+
+export interface CadGripHandle {
+  id: string;
+  entityId: CadEntityId;
+  kind: CadGripHandleKind;
+  x: number;
+  y: number;
+  vertexIndex?: number;
+}
+
 export type CadSnapKind =
   | 'point-node'
   | 'endpoint'
@@ -284,18 +301,22 @@ export interface CadSnapCandidate {
   label: string;
   guideSegments?: Array<[CadDisplayPoint, CadDisplayPoint]>;
   compoundKinds?: CadSnapKind[];
+  lockGuidePoint?: CadDisplayPoint;
 }
 
 export interface CadSnapLock {
-  kind: 'extension' | 'perpendicular' | 'parallel';
+  kind: 'extension' | 'perpendicular' | 'parallel' | 'tangent';
   sourceEntityId: CadEntityId;
   sourceSegmentId?: string;
+  guidePoint?: CadDisplayPoint;
 }
 
 export interface CadSnapConstructionContext {
   active: boolean;
   basePoint: CadDisplayPoint | null;
   scopeSeedSegmentId?: string | null;
+  tangentSeedArcEntityId?: string | null;
+  tangentSeedPoint?: CadDisplayPoint | null;
   lockedSnap?: CadSnapLock | null;
 }
 

@@ -1,3 +1,21 @@
+- [x] Survey CAD move snap-priority batch (June 2026): keep `MOVE` / `COPY` target picks on exact object snaps instead of command-context construction snaps so clicking a real point like `109` does not resolve to parallel/extension compounds and overshoot transforms.
+
+- [x] Survey CAD move-anchor + erase-hotkey batch (June 2026): keep mouse-picked MOVE base/target capture on the shared SVG frame so browser clicks land on the same snapped world point the operator sees, and let `Delete` / `Backspace` fire `ERASE` when entities are selected outside editable inputs.
+
+- [x] Survey CAD grip-edit batch (June 2026): add selection grips for lines, polylines, polygons, parcels, and arcs so selected geometry exposes draggable vertex/radius handles and commits deterministic handle-move edits with focused workspace coverage.
+
+- [x] Survey CAD global snap-cycle + exact-intersection + curve-perpendicular batch (June 2026): let any interactive point-pick command rotate nearby snaps with `Space`, make visible snap glyphs authoritative for left-click point capture, derive line-start perpendiculars from the tangent at captured curve starts, and strengthen exact intersection pickup in dense local views.
+
+- [x] Survey CAD snap-cycle + click-latch batch (June 2026): let active line drafting rotate through nearby snap candidates with `Space`, and latch any visible snap glyph so a click commits that snap even if the cursor drifts before release.
+
+- [x] Survey CAD zoom-depth + localized snap scope batch (June 2026): improve line/point/snap clickability, raise practical zoom depth far beyond the current cap, and restrict snap candidate reach as operators zoom into a local view so off-screen entities stop stealing snaps.
+
+- [x] Survey CAD locked-direction intersection batch (June 2026): let locked `perpendicular` / `parallel` / `tangent` line drafting refine onto nearby line and arc bodies by snapping to the true intersection along that held direction, and lock it with focused workspace regression coverage.
+
+- [x] Survey CAD tangent-line hold batch (June 2026): let line drafting keep a tangent guide when the start point comes from an arc, and lock a real workspace regression for tangent line attachment onto visible curves.
+
+- [x] Survey CAD arc render/snap alignment batch (June 2026): keep rendered SVG arc sweep on the same side as the world-space snap geometry so hovering and snapping on visible created curves works again.
+
 - [x] Survey CAD direct arc-body click batch (June 2026): make the visible line/arc/point/ellipse geometry itself act as a command click target alongside the widened invisible hit targets, and add a real same-session `ARC 3PT -> LINE from arc body -> LINE to arc body` regression so arc snapping survives normal operator clicks.
 
 - [x] Survey CAD arc-snap audit batch (June 2026): lock command-created and constructor-built arc entities with shared on-body `arc-midpoint` / `nearest` regression coverage across the full native arc command family, so future arc-command changes cannot silently break snapping on committed curves.

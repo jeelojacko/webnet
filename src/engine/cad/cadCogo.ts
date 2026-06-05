@@ -91,6 +91,34 @@ export const formatCadNorthAzimuthDms = (azimuthDeg: number): string => {
   return `${degrees}°${padInteger(minutes, 2)}'${padInteger(seconds, 2)}"`;
 };
 
+export const formatCadSweepDms = (sweepDeg: number): string => {
+  const absoluteSweep = Math.abs(sweepDeg);
+  const normalized =
+    Math.abs(absoluteSweep - 360) <= 1e-9
+      ? 360
+      : ((absoluteSweep % 360) + 360) % 360;
+  let degrees = Math.floor(normalized);
+  let minutesFloat = (normalized - degrees) * 60;
+  let minutes = Math.floor(minutesFloat);
+  let seconds = Math.round((minutesFloat - minutes) * 60);
+
+  if (seconds >= 60) {
+    seconds = 0;
+    minutes += 1;
+  }
+  if (minutes >= 60) {
+    minutes = 0;
+    degrees += 1;
+  }
+  if (degrees > 360) {
+    degrees = 360;
+    minutes = 0;
+    seconds = 0;
+  }
+
+  return `${degrees}°${padInteger(minutes, 2)}'${padInteger(seconds, 2)}"`;
+};
+
 export const formatCadBearing = (azimuthDeg: number): string => {
   const normalized = ((azimuthDeg % 360) + 360) % 360;
   let prefix: 'N' | 'S' = 'N';

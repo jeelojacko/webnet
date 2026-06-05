@@ -1,6 +1,8 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import type {
   CadBounds,
+  CadGripHandle,
   CadDisplayPrimitive,
   CadDisplayScene,
   CadSnapCandidate,
@@ -17,6 +19,9 @@ interface SurveyCadPreviewProps {
   selectedParcelReport: CadParcelReportSummary | null;
   activeSnap: CadSnapCandidate | null;
   commandPreviewPrimitives: readonly CadDisplayPrimitive[];
+  gripHandles?: readonly CadGripHandle[];
+  gripPreviewPrimitives?: readonly CadDisplayPrimitive[];
+  activeGripHandleId?: string | null;
   commandStatusText: string;
   commandHelpText: string;
   commandModifierHint: string;
@@ -27,18 +32,27 @@ interface SurveyCadPreviewProps {
   commandInputEnabled: boolean;
   viewport: { zoom: number; panX: number; panY: number };
   commandActive: boolean;
+  commandPointInputActive: boolean;
   onViewportChange: (_viewport: { zoom: number; panX: number; panY: number }) => void;
   onSelectEntity: (_entityId: string, _appendToSelection?: boolean) => void;
   onSelectEntities: (_entityIds: string[], _appendToSelection?: boolean) => void;
+  onStartGripEdit?: (_handleId: string) => void;
+  onUpdateGripEdit?: (_worldPoint: { x: number; y: number }) => void;
+  onFinishGripEdit?: (_worldPoint?: { x: number; y: number }) => void;
+  onCancelGripEdit?: () => void;
   onConsumeInteractionPoint: (
     _worldPoint: { x: number; y: number },
     _label?: string,
-    _options?: { snapSourceSegmentId?: string },
+    _options?: { snapSourceSegmentId?: string; snapSourceEntityId?: string; snapKind?: CadSnapKind },
   ) => void;
   onPointerWorldPointChange: (
     _worldPoint: { x: number; y: number } | null,
     _toleranceWorld?: number,
-    _options?: { lockConstruction?: boolean },
+    _options?: {
+      lockConstruction?: boolean;
+      visibleBounds?: CadBounds | null;
+      restrictedGripHandles?: readonly CadGripHandle[];
+    },
   ) => void;
   onSnapPreferenceChange: (_kind: CadSnapKind, _enabled: boolean) => void;
   onCommandInputChange: (_value: string) => void;
@@ -51,8 +65,10 @@ const WIDTH = 900;
 const HEIGHT = 520;
 const PADDING = 36;
 const MIN_ZOOM = 0.35;
-const MAX_ZOOM = 16;
-const SNAP_TOLERANCE_SCREEN_UNITS = 14;
+const MAX_ZOOM = 4096;
+const SNAP_TOLERANCE_SCREEN_UNITS = 18;
+const SNAP_TOLERANCE_SCREEN_MIN_UNITS = 5;
+const GRIP_SNAP_COMMIT_EPSILON = 1e-9;
 const SNAP_MENU_LABELS: Record<CadSnapKind, string> = {
   'point-node': 'Points',
   endpoint: 'Endpoints',
@@ -114,7 +130,8 @@ type ScreenBox = {
 type DragState =
   | { kind: 'none' }
   | { kind: 'pan'; startClientX: number; startClientY: number; startPanX: number; startPanY: number }
-  | { kind: 'box'; box: ScreenBox; appendToSelection: boolean };
+  | { kind: 'box'; box: ScreenBox; appendToSelection: boolean }
+  | { kind: 'grip'; handleId: string; startClientX: number; startClientY: number };
 
 const normalizeBounds = (bounds: CadBounds | null): CadBounds => {
   if (!bounds) {
@@ -153,6 +170,21 @@ const useProjector = (bounds: CadBounds | null, viewport: { zoom: number; panX: 
       }),
     };
   }, [bounds, viewport]);
+
+const visibleWorldBoundsFromViewport = (
+  unproject: (_viewX: number, _viewY: number) => { x: number; y: number },
+): CadBounds => {
+  const topLeft = unproject(0, 0);
+  const topRight = unproject(WIDTH, 0);
+  const bottomLeft = unproject(0, HEIGHT);
+  const bottomRight = unproject(WIDTH, HEIGHT);
+  return {
+    minX: Math.min(topLeft.x, topRight.x, bottomLeft.x, bottomRight.x),
+    minY: Math.min(topLeft.y, topRight.y, bottomLeft.y, bottomRight.y),
+    maxX: Math.max(topLeft.x, topRight.x, bottomLeft.x, bottomRight.x),
+    maxY: Math.max(topLeft.y, topRight.y, bottomLeft.y, bottomRight.y),
+  };
+};
 
 const primitiveBounds = (
   primitive: CadDisplayPrimitive,
@@ -265,7 +297,8 @@ const normalizeSweepAngles = (
     endAngleDeg: normalizedEnd,
     sweepDeg,
     largeArcFlag: sweepDeg > 180 ? 1 : 0,
-    sweepFlag: signedSweepDeg >= 0 ? 1 : 0,
+    // World Y points up, SVG Y points down. Invert sweep so visible path matches world-space snap geometry.
+    sweepFlag: signedSweepDeg >= 0 ? 0 : 1,
   };
 };
 
@@ -274,6 +307,18 @@ const arcPathFromPrimitive = (
   project: (_x: number, _y: number) => { x: number; y: number },
   scale: number,
 ): string => {
+  const signedSweepDeg = cadSignedSweepDeg(primitive.startAngleDeg, primitive.endAngleDeg);
+  if (Math.abs(Math.abs(signedSweepDeg) - 360) <= 1e-6) {
+    const center = project(primitive.center.x, primitive.center.y);
+    const radius = Math.max(primitive.radius * scale, 0.001);
+    const startPoint = project(primitive.center.x + primitive.radius, primitive.center.y);
+    const sweepFlag = signedSweepDeg >= 0 ? 0 : 1;
+    return [
+      `M ${startPoint.x} ${startPoint.y}`,
+      `A ${radius} ${radius} 0 1 ${sweepFlag} ${center.x - radius} ${center.y}`,
+      `A ${radius} ${radius} 0 1 ${sweepFlag} ${startPoint.x} ${startPoint.y}`,
+    ].join(' ');
+  }
   const { startAngleDeg, endAngleDeg, largeArcFlag, sweepFlag } = normalizeSweepAngles(
     primitive.startAngleDeg,
     primitive.endAngleDeg,
@@ -326,7 +371,7 @@ const renderPrimitive = (
             x2={end.x}
             y2={end.y}
             stroke="transparent"
-            strokeWidth={Math.max(12, primitive.strokeWidth + 10)}
+            strokeWidth={Math.max(16, primitive.strokeWidth + 14)}
             strokeOpacity={0.001}
             pointerEvents="stroke"
           />
@@ -356,7 +401,7 @@ const renderPrimitive = (
             d={path}
             fill="none"
             stroke="transparent"
-            strokeWidth={Math.max(12, primitive.strokeWidth + 10)}
+            strokeWidth={Math.max(16, primitive.strokeWidth + 14)}
             strokeOpacity={0.001}
             pointerEvents="stroke"
           />
@@ -383,7 +428,7 @@ const renderPrimitive = (
             data-survey-cad-entity-id={primitive.sourceEntityId}
             cx={point.x}
             cy={point.y}
-            r={Math.max(8, primitive.radius + 5)}
+            r={Math.max(10, primitive.radius + 7)}
             fill="transparent"
             fillOpacity={0.001}
             pointerEvents="fill"
@@ -447,7 +492,7 @@ const renderPrimitive = (
             transform={`rotate(${-primitive.thetaDeg} ${center.x} ${center.y})`}
             fill="none"
             stroke="transparent"
-            strokeWidth={Math.max(12, primitive.strokeWidth + 10)}
+            strokeWidth={Math.max(16, primitive.strokeWidth + 14)}
             opacity={0}
           />
           <ellipse
@@ -477,6 +522,9 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
   selectedParcelReport,
   activeSnap,
   commandPreviewPrimitives,
+  gripHandles = [],
+  gripPreviewPrimitives = [],
+  activeGripHandleId = null,
   commandStatusText,
   commandHelpText,
   commandModifierHint,
@@ -487,9 +535,14 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
   commandInputEnabled,
   viewport,
   commandActive,
+  commandPointInputActive,
   onViewportChange,
   onSelectEntity,
   onSelectEntities,
+  onStartGripEdit = () => undefined,
+  onUpdateGripEdit = () => undefined,
+  onFinishGripEdit = () => undefined,
+  onCancelGripEdit = () => undefined,
   onConsumeInteractionPoint,
   onPointerWorldPointChange,
   onSnapPreferenceChange,
@@ -499,23 +552,44 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
   onZoomExtents,
 }) => {
   const { baseScale, normalized, project, scale, unproject } = useProjector(viewBounds, viewport);
+  const visibleWorldBounds = useMemo(() => visibleWorldBoundsFromViewport(unproject), [unproject]);
+  const snapToleranceScreenUnits = useMemo(
+    () =>
+      Math.max(
+        SNAP_TOLERANCE_SCREEN_MIN_UNITS,
+        SNAP_TOLERANCE_SCREEN_UNITS - Math.max(0, Math.log2(Math.max(viewport.zoom, 1))) * 2.2,
+      ),
+    [viewport.zoom],
+  );
   const [dragState, setDragState] = useState<DragState>({ kind: 'none' });
   const [didDrag, setDidDrag] = useState(false);
   const [snapMenuOpen, setSnapMenuOpen] = useState(false);
   const selectionBox = dragState.kind === 'box' ? dragState.box : null;
   const middleMouseDownAtRef = useRef<number>(0);
+  const activeGripDragIdRef = useRef<string | null>(null);
+  const [armedSnap, setArmedSnap] = useState<CadSnapCandidate | null>(null);
   const commandInputRef = useRef<HTMLInputElement | null>(null);
+  const activeSnapRef = useRef<CadSnapCandidate | null>(activeSnap);
   const activeSnapAccent = activeSnap ? SNAP_ACCENT_BY_KIND[activeSnap.kind] : null;
+  const transientPreviewPrimitives = useMemo(
+    () => [...commandPreviewPrimitives, ...gripPreviewPrimitives],
+    [commandPreviewPrimitives, gripPreviewPrimitives],
+  );
 
   React.useEffect(() => {
     if (!commandInputEnabled) return;
     commandInputRef.current?.focus();
   }, [commandInputEnabled, commandActive]);
 
-  const screenPointFromMouseEvent = (
-    event: React.MouseEvent<SVGElement>,
+  useEffect(() => {
+    activeSnapRef.current = activeSnap;
+  }, [activeSnap]);
+
+  const screenPointFromClientPoint = (
+    rect: DOMRect,
+    clientX: number,
+    clientY: number,
   ): { rect: DOMRect; viewX: number; viewY: number } | null => {
-    const rect = event.currentTarget.getBoundingClientRect();
     if (rect.width <= 0 || rect.height <= 0) return null;
     const scaleFactor = Math.min(rect.width / WIDTH, rect.height / HEIGHT);
     const contentWidth = WIDTH * scaleFactor;
@@ -524,9 +598,141 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
     const offsetY = (rect.height - contentHeight) / 2;
     return {
       rect,
-      viewX: (event.clientX - rect.left - offsetX) / scaleFactor,
-      viewY: (event.clientY - rect.top - offsetY) / scaleFactor,
+      viewX: (clientX - rect.left - offsetX) / scaleFactor,
+      viewY: (clientY - rect.top - offsetY) / scaleFactor,
     };
+  };
+
+  const resolveGripCommitPoint = useCallback((rawWorldPoint: { x: number; y: number }) => {
+    const currentSnap = activeSnapRef.current;
+    const snapToleranceWorld = snapToleranceScreenUnits / scale;
+    if (
+      currentSnap &&
+      Math.hypot(currentSnap.x - rawWorldPoint.x, currentSnap.y - rawWorldPoint.y) <=
+        snapToleranceWorld + GRIP_SNAP_COMMIT_EPSILON
+    ) {
+      return { x: currentSnap.x, y: currentSnap.y };
+    }
+    return rawWorldPoint;
+  }, [scale, snapToleranceScreenUnits]);
+
+  const updateGripDragInteraction = useCallback(
+    (rawWorldPoint: { x: number; y: number }, shiftKey: boolean) => {
+      onPointerWorldPointChange(rawWorldPoint, snapToleranceScreenUnits / scale, {
+        lockConstruction: shiftKey,
+        visibleBounds: visibleWorldBounds,
+        restrictedGripHandles: [],
+      });
+      onUpdateGripEdit(rawWorldPoint);
+    },
+    [onPointerWorldPointChange, onUpdateGripEdit, scale, snapToleranceScreenUnits, visibleWorldBounds],
+  );
+
+  useEffect(() => {
+    if (dragState.kind !== 'grip') return;
+    const handleWindowMouseMove = (event: MouseEvent) => {
+      const svg = document.querySelector('[data-survey-cad-preview]') as SVGElement | null;
+      if (!svg) return;
+      const rect = svg.getBoundingClientRect();
+      const screenPoint = screenPointFromClientPoint(rect, event.clientX, event.clientY);
+      if (!screenPoint) return;
+      updateGripDragInteraction(unproject(screenPoint.viewX, screenPoint.viewY), event.shiftKey);
+    };
+    const handleWindowMouseUp = (event: MouseEvent) => {
+      if (activeGripDragIdRef.current == null) return;
+      const svg = document.querySelector('[data-survey-cad-preview]') as SVGElement | null;
+      if (!svg) return;
+      const rect = svg.getBoundingClientRect();
+      const screenPoint = screenPointFromClientPoint(rect, event.clientX, event.clientY);
+      if (!screenPoint) return;
+      const rawWorldPoint = unproject(screenPoint.viewX, screenPoint.viewY);
+      updateGripDragInteraction(rawWorldPoint, event.shiftKey);
+      activeGripDragIdRef.current = null;
+      onFinishGripEdit(resolveGripCommitPoint(rawWorldPoint));
+      setDidDrag(false);
+      setDragState({ kind: 'none' });
+    };
+    window.addEventListener('mousemove', handleWindowMouseMove);
+    window.addEventListener('mouseup', handleWindowMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleWindowMouseMove);
+      window.removeEventListener('mouseup', handleWindowMouseUp);
+    };
+  }, [dragState.kind, onFinishGripEdit, resolveGripCommitPoint, unproject, updateGripDragInteraction]);
+
+  const screenPointFromMouseEvent = (
+    event: React.MouseEvent<SVGElement>,
+  ): { rect: DOMRect; viewX: number; viewY: number } | null => {
+    const svgElement =
+      event.currentTarget instanceof SVGSVGElement
+        ? event.currentTarget
+        : event.currentTarget.ownerSVGElement ?? event.currentTarget;
+    return screenPointFromClientPoint(svgElement.getBoundingClientRect(), event.clientX, event.clientY);
+  };
+
+  const consumeSnapCandidate = (snapCandidate: CadSnapCandidate) => {
+    onConsumeInteractionPoint(
+      { x: snapCandidate.x, y: snapCandidate.y },
+      snapCandidate.label,
+      {
+        snapSourceSegmentId: snapCandidate.sourceSegmentId,
+        snapSourceEntityId: snapCandidate.sourceEntityId,
+        snapKind: snapCandidate.kind,
+      },
+    );
+  };
+
+  const consumeLatchedOrActiveSnap = (): boolean => {
+    const latchedSnap = armedSnap ?? activeSnap;
+    setArmedSnap(null);
+    if (!latchedSnap) return false;
+    consumeSnapCandidate(latchedSnap);
+    return true;
+  };
+
+  const handlePrimitiveCommandClick = (
+    event: React.MouseEvent<SVGElement>,
+    primitive: CadDisplayPrimitive,
+    sourceSegmentId?: string,
+  ) => {
+    if (didDrag) return;
+    if (consumeLatchedOrActiveSnap()) {
+      return;
+    }
+    const svg = event.currentTarget.ownerSVGElement;
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
+    const scaleFactor = Math.min(rect.width / WIDTH, rect.height / HEIGHT);
+    const contentWidth = WIDTH * scaleFactor;
+    const contentHeight = HEIGHT * scaleFactor;
+    const offsetX = (rect.width - contentWidth) / 2;
+    const offsetY = (rect.height - contentHeight) / 2;
+    const viewX = (event.clientX - rect.left - offsetX) / scaleFactor;
+    const viewY = (event.clientY - rect.top - offsetY) / scaleFactor;
+    const rawWorldPoint = unproject(viewX, viewY);
+    if (primitive.kind === 'arc') {
+      onConsumeInteractionPoint(
+        cadClosestPointOnArc(
+          rawWorldPoint,
+          primitive.center,
+          primitive.radius,
+          primitive.startAngleDeg,
+          primitive.endAngleDeg,
+        ),
+        undefined,
+        {
+          snapSourceSegmentId: sourceSegmentId,
+          snapSourceEntityId: primitive.sourceEntityId,
+          snapKind: 'nearest',
+        },
+      );
+      return;
+    }
+    onConsumeInteractionPoint(rawWorldPoint, undefined, {
+      snapSourceSegmentId: sourceSegmentId,
+      snapSourceEntityId: primitive.sourceEntityId,
+    });
   };
 
   return (
@@ -536,13 +742,8 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
         className="h-full w-full bg-slate-950 select-none"
         data-survey-cad-preview
         onClick={(event) => {
-          if (!commandActive || didDrag || event.target !== event.currentTarget) return;
-          if (activeSnap) {
-            onConsumeInteractionPoint(
-              { x: activeSnap.x, y: activeSnap.y },
-              activeSnap.label,
-              { snapSourceSegmentId: activeSnap.sourceSegmentId },
-            );
+          if (!commandPointInputActive || didDrag || event.target !== event.currentTarget) return;
+          if (consumeLatchedOrActiveSnap()) {
             return;
           }
           const screenPoint = screenPointFromMouseEvent(event);
@@ -550,6 +751,12 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
           onConsumeInteractionPoint(unproject(screenPoint.viewX, screenPoint.viewY));
         }}
         onMouseLeave={() => {
+          if (activeGripDragIdRef.current != null) {
+            activeGripDragIdRef.current = null;
+            onCancelGripEdit();
+            setDidDrag(false);
+            setDragState({ kind: 'none' });
+          }
           if (dragState.kind === 'none') onPointerWorldPointChange(null);
         }}
         onMouseDown={(event) => {
@@ -557,7 +764,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
           if (!screenPoint) return;
           if (event.button === 1) {
             event.preventDefault();
-            const now = Date.now();
+            const now = event.timeStamp;
             if (now - middleMouseDownAtRef.current <= 280) {
               middleMouseDownAtRef.current = 0;
               setDragState({ kind: 'none' });
@@ -574,6 +781,11 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
               startPanY: viewport.panY,
             });
             return;
+          }
+          if (event.button === 0 && commandPointInputActive && activeSnap) {
+            setArmedSnap(activeSnap);
+          } else if (event.button === 0) {
+            setArmedSnap(null);
           }
           const target = event.target as Element | null;
           if (
@@ -625,14 +837,32 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
                 currentY: viewY,
               },
             });
+          } else if (activeGripDragIdRef.current != null) {
+            if (
+              (dragState.kind === 'grip' &&
+                (Math.abs(event.clientX - dragState.startClientX) > 2 ||
+                  Math.abs(event.clientY - dragState.startClientY) > 2)) ||
+              dragState.kind !== 'grip'
+            ) {
+              setDidDrag(true);
+            }
           }
+          const rawWorldPoint = unproject(viewX, viewY);
           onPointerWorldPointChange(
-            unproject(viewX, viewY),
-            SNAP_TOLERANCE_SCREEN_UNITS / scale,
-            { lockConstruction: event.shiftKey },
+            rawWorldPoint,
+            snapToleranceScreenUnits / scale,
+            {
+              lockConstruction: event.shiftKey,
+              visibleBounds: visibleWorldBounds,
+              restrictedGripHandles:
+                !commandPointInputActive && activeGripDragIdRef.current == null ? gripHandles : [],
+            },
           );
+          if (activeGripDragIdRef.current != null) {
+            updateGripDragInteraction(rawWorldPoint, event.shiftKey);
+          }
         }}
-        onMouseUp={() => {
+        onMouseUp={(event) => {
           if (dragState.kind === 'box') {
             const minX = Math.min(dragState.box.anchorX, dragState.box.currentX);
             const maxX = Math.max(dragState.box.anchorX, dragState.box.currentX);
@@ -648,8 +878,21 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
               onSelectEntities(ids, dragState.appendToSelection);
             }
           }
+          if (activeGripDragIdRef.current != null) {
+            const screenPoint = screenPointFromMouseEvent(event);
+            activeGripDragIdRef.current = null;
+            onFinishGripEdit(
+              screenPoint ? resolveGripCommitPoint(unproject(screenPoint.viewX, screenPoint.viewY)) : undefined,
+            );
+          }
           if (dragState.kind === 'pan') {
             middleMouseDownAtRef.current = 0;
+          }
+          if (didDrag) {
+            setArmedSnap(null);
+          }
+          if (!commandPointInputActive) {
+            setArmedSnap(null);
           }
           setDidDrag(false);
           setDragState({ kind: 'none' });
@@ -681,13 +924,8 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
         fill="#020617"
         data-survey-cad-background="true"
         onClick={(event) => {
-          if (!commandActive || didDrag) return;
-          if (activeSnap) {
-            onConsumeInteractionPoint(
-              { x: activeSnap.x, y: activeSnap.y },
-              activeSnap.label,
-              { snapSourceSegmentId: activeSnap.sourceSegmentId },
-            );
+          if (!commandPointInputActive || didDrag) return;
+          if (consumeLatchedOrActiveSnap()) {
             return;
           }
           const screenPoint = screenPointFromMouseEvent(event);
@@ -695,54 +933,21 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
           onConsumeInteractionPoint(unproject(screenPoint.viewX, screenPoint.viewY));
         }}
       />
-      <g>
-        {scene.primitives.map((primitive) =>
-          renderPrimitive(primitive, selectedEntityIds, project, scale, (event, entityId, sourceSegmentId, appendToSelection) => {
-            if (commandActive) {
-              if (didDrag) return;
-              if (activeSnap) {
-                onConsumeInteractionPoint(
-                  { x: activeSnap.x, y: activeSnap.y },
-                  activeSnap.label,
-                  { snapSourceSegmentId: activeSnap.sourceSegmentId },
-                );
-                return;
-              }
-              const svg = event.currentTarget.ownerSVGElement;
-              if (!svg) return;
-              const rect = svg.getBoundingClientRect();
-              if (rect.width <= 0 || rect.height <= 0) return;
-              const scaleFactor = Math.min(rect.width / WIDTH, rect.height / HEIGHT);
-              const contentWidth = WIDTH * scaleFactor;
-              const contentHeight = HEIGHT * scaleFactor;
-              const offsetX = (rect.width - contentWidth) / 2;
-              const offsetY = (rect.height - contentHeight) / 2;
-              const viewX = (event.clientX - rect.left - offsetX) / scaleFactor;
-              const viewY = (event.clientY - rect.top - offsetY) / scaleFactor;
-              const rawWorldPoint = unproject(viewX, viewY);
-              if (primitive.kind === 'arc') {
-                onConsumeInteractionPoint(
-                  cadClosestPointOnArc(
-                    rawWorldPoint,
-                    primitive.center,
-                    primitive.radius,
-                    primitive.startAngleDeg,
-                    primitive.endAngleDeg,
-                  ),
-                  undefined,
-                  { snapSourceSegmentId: sourceSegmentId },
-                );
-                return;
-              }
-              onConsumeInteractionPoint(rawWorldPoint, undefined, { snapSourceSegmentId: sourceSegmentId });
+        <g>
+          {scene.primitives.map((primitive) =>
+            renderPrimitive(primitive, selectedEntityIds, project, scale, (event, entityId, sourceSegmentId, appendToSelection) => {
+            if (commandPointInputActive) {
+              handlePrimitiveCommandClick(event, primitive, sourceSegmentId);
               return;
             }
-            onSelectEntity(entityId, appendToSelection);
+            flushSync(() => {
+              onSelectEntity(entityId, appendToSelection);
+            });
           }),
         )}
-        {commandPreviewPrimitives.length > 0 ? (
+        {transientPreviewPrimitives.length > 0 ? (
           <g data-survey-cad-command-preview>
-            {commandPreviewPrimitives.map((primitive) =>
+            {transientPreviewPrimitives.map((primitive) =>
               primitive.kind === 'line' ? (
                 <line
                   key={primitive.id}
@@ -811,6 +1016,43 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
             )}
           </g>
         ) : null}
+        {gripHandles.length > 0 ? (
+          <g data-survey-cad-grip-handles>
+            {gripHandles.map((handle) => {
+              const point = project(handle.x, handle.y);
+              const isActive = activeGripHandleId === handle.id;
+              return (
+                <circle
+                  key={handle.id}
+                  data-survey-cad-grip-handle={handle.kind}
+                  data-survey-cad-grip-handle-id={handle.id}
+                  data-survey-cad-grip-entity-id={handle.entityId}
+                  cx={point.x}
+                  cy={point.y}
+                  r={isActive ? 7.2 : 5.8}
+                  fill={isActive ? '#22d3ee' : '#f8fafc'}
+                  stroke={isActive ? '#67e8f9' : '#0f172a'}
+                  strokeWidth={1.4}
+                  className="cursor-move"
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    setDidDrag(false);
+                    setArmedSnap(null);
+                    activeGripDragIdRef.current = handle.id;
+                    onStartGripEdit(handle.id);
+                    setDragState({
+                      kind: 'grip',
+                      handleId: handle.id,
+                      startClientX: event.clientX,
+                      startClientY: event.clientY,
+                    });
+                  }}
+                />
+              );
+            })}
+          </g>
+        ) : null}
         {activeSnap?.guideSegments?.length ? (
           <g data-survey-cad-snap-guides>
             {activeSnap.guideSegments.map((segment, index) => (
@@ -831,7 +1073,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
           </g>
         ) : null}
         {activeSnap ? (
-          <g data-survey-cad-snap-glyph>
+          <g data-survey-cad-snap-glyph pointerEvents="none">
             <circle
               cx={project(activeSnap.x, activeSnap.y).x}
               cy={project(activeSnap.x, activeSnap.y).y}

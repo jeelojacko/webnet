@@ -1,5 +1,9 @@
 # WebNet Survey CAD TODO
 
+- [x] Survey CAD move-anchor + erase-hotkey batch (June 2026): keep mouse-picked MOVE base/target capture on the shared SVG frame so browser clicks land on the same snapped world point the operator sees, and let `Delete` / `Backspace` fire `ERASE` when entities are selected outside editable inputs.
+
+- [x] Survey CAD grip-edit batch (June 2026): add selection grips for lines, polylines, polygons, parcels, and arcs so selected geometry exposes draggable vertex/radius handles and commits deterministic handle-move edits with focused workspace coverage.
+
 - [x] Survey CAD direct arc-body click batch (June 2026): make the visible line/arc/point/ellipse geometry itself act as a command click target alongside the widened invisible hit targets, and add a real same-session `ARC 3PT -> LINE from arc body -> LINE to arc body` regression so arc snapping survives normal operator clicks.
 
 - [x] Survey CAD arc-snap audit batch (June 2026): lock command-created and constructor-built arc entities with shared on-body `arc-midpoint` / `nearest` regression coverage across the native arc command family, so future arc-command changes cannot silently break snapping on committed curves.

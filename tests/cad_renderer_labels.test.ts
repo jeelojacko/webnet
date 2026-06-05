@@ -3,6 +3,7 @@ import { buildSurveyCadSpikeProject } from '../src/engine/cad/cadModel';
 import { executeCadCommand, type CadWorkspaceSnapshot } from '../src/engine/cad/cadTransactions';
 import { createCadSelectionState } from '../src/engine/cad/cadSelection';
 import { buildCadDisplayScene } from '../src/engine/cad/cadRenderer';
+import { cadSignedSweepDeg } from '../src/engine/cad/cadGeometry';
 import type { ParseOptions } from '../src/types';
 
 const input = ['.2D', 'C A 0 0 0 ! !', 'C B 100 0 0 ! !', 'C C 25 15 0 ! !'].join('\n');
@@ -181,5 +182,49 @@ describe('CAD renderer labels', () => {
     expect(arcLabel.text).toContain('L 157.080 m');
     expect(arcLabel.textAnchor).toBe('middle');
     expect(Math.abs(arcLabel.rotationDeg ?? 0)).toBeLessThanOrEqual(90);
+  });
+
+  it('preserves full-circle sweep and label text for clockwise and counterclockwise arcs', () => {
+    expect(cadSignedSweepDeg(180, -180)).toBe(-360);
+
+    const scene = buildCadDisplayScene({
+      ...createSnapshot().project,
+      entities: [
+        {
+          id: 'arc:full-ccw',
+          type: 'arc',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          centerX: 50,
+          centerY: 20,
+          radius: 12,
+          startAngleDeg: 0,
+          endAngleDeg: 360,
+        },
+        {
+          id: 'arc:full-cw',
+          type: 'arc',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          centerX: 80,
+          centerY: 20,
+          radius: 12,
+          startAngleDeg: 180,
+          endAngleDeg: -180,
+        },
+      ],
+    });
+
+    const labels = scene.primitives.filter((primitive) => primitive.kind === 'text');
+    expect(labels).toHaveLength(2);
+    labels.forEach((label) => {
+      if (label.kind !== 'text') return;
+      expect(label.text).toContain('360°00\'00"');
+      expect(label.text).toContain('L 75.398 m');
+    });
   });
 });

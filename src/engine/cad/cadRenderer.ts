@@ -10,6 +10,7 @@ import {
   buildCadInverseSummary,
   cadBuildParcelClosureSummary,
   formatCadNorthAzimuthDms,
+  formatCadSweepDms,
 } from './cadCogo';
 import { cadSignedSweepDeg } from './cadGeometry';
 
@@ -204,7 +205,7 @@ const buildArcLabelPrimitive = (
       x: entity.centerX + Math.cos(midAngleRad) * labelRadius,
       y: entity.centerY + Math.sin(midAngleRad) * labelRadius,
     },
-    text: `${formatCadNorthAzimuthDms(sweepDeg)}\nR ${entity.radius.toFixed(3)} m\nL ${arcLength.toFixed(3)} m`,
+    text: `${formatCadSweepDms(sweepDeg)}\nR ${entity.radius.toFixed(3)} m\nL ${arcLength.toFixed(3)} m`,
     fontSize: textFontSize(project, entity, 11),
     rotationDeg,
     textAnchor: 'middle',
