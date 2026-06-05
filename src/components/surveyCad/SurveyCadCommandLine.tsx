@@ -11,6 +11,7 @@ interface SurveyCadCommandLineProps {
   canCreateIntersectionPoint: boolean;
   canCreateParcel: boolean;
   canContinueCurve: boolean;
+  canTrimSelection: boolean;
   onStartPoint: () => void;
   onStartCogoPoint: () => void;
   onStartLine: () => void;
@@ -31,6 +32,7 @@ interface SurveyCadCommandLineProps {
   onStartInverse: () => void;
   onStartMove: () => void;
   onStartCopy: () => void;
+  onStartTrim: () => void;
   onCreateIntersectionPoint: () => void;
   onCreateParcel: () => void;
   onSelectAll: () => void;
@@ -56,6 +58,7 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   canCreateIntersectionPoint,
   canCreateParcel,
   canContinueCurve,
+  canTrimSelection,
   onStartPoint,
   onStartCogoPoint,
   onStartLine,
@@ -76,6 +79,7 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   onStartInverse,
   onStartMove,
   onStartCopy,
+  onStartTrim,
   onCreateIntersectionPoint,
   onCreateParcel,
   onSelectAll,
@@ -191,6 +195,15 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
         title="Copy"
       >
         COPY
+      </button>
+      <button
+        type="button"
+        className={commandButtonClassName}
+        onClick={() => runImmediate(onStartTrim)}
+        disabled={!canTrimSelection}
+        title="Trim"
+      >
+        TRIM
       </button>
       <button
         type="button"

@@ -75,6 +75,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     canCreateIntersectionPoint,
     canCreateParcel,
     canContinueCurve,
+    canTrimSelection,
     isGripEditing,
     canCycleActiveSnap,
     activeSnap,
@@ -103,6 +104,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     startInverseCommand,
     startMoveCommand,
     startCopyCommand,
+    startTrimCommand,
     createIntersectionPoint,
     createParcelFromSelection,
     setCommandInputValue,
@@ -138,6 +140,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     if (activeCommandKey === 'POINT') return 'Click in model space or type x,y / LABEL=x,y';
     if (activeCommandKey === 'COGO_POINT') return 'Click base/target or type @azimuth,distance';
     if (activeCommandKey === 'TRAVERSE') return 'Click start / next point or type bearing-distance';
+    if (activeCommandKey === 'TRIM') return 'Click side to trim. Enter or Esc ends trim';
     if (activeCommandKey?.startsWith('ARC_') || activeCommandKey === 'CONTINUE_CURVE') {
       return 'Pick arc points, then enter the required value. Hold Ctrl to reverse direction';
     }
@@ -339,8 +342,10 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               onStartInverse={startInverseCommand}
               onStartMove={startMoveCommand}
               onStartCopy={startCopyCommand}
+              onStartTrim={startTrimCommand}
               onCreateIntersectionPoint={createIntersectionPoint}
               onCreateParcel={createParcelFromSelection}
+              canTrimSelection={canTrimSelection}
               onSelectAll={selectAll}
               onClearSelection={clearSelection}
               onErase={eraseSelection}
@@ -367,7 +372,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             snapPreferences={snapPreferences}
             commandInputValue={commandInputValue}
             commandInputPlaceholder={commandInputPlaceholder}
-            commandInputEnabled={activeCommandKey != null}
+            commandInputEnabled={activeCommandKey != null && activeCommandKey !== 'TRIM'}
             viewport={viewport}
             commandActive={activeCommandKey != null}
             commandPointInputActive={commandExpectsPointPick}

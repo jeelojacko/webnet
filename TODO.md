@@ -1,3 +1,5 @@
+- [x] Survey CAD trim command batch (June 2026): add a Civil3D-style `TRIM` flow that uses selected linework as cutting edges, lets operators click the side of a line/polyline/arc to remove, commits deterministic split/shorten edits through command history, and locks it with focused CAD geometry/workspace coverage.
+
 - [x] Survey CAD move snap-priority batch (June 2026): keep `MOVE` / `COPY` target picks on exact object snaps instead of command-context construction snaps so clicking a real point like `109` does not resolve to parallel/extension compounds and overshoot transforms.
 
 - [x] Survey CAD move-anchor + erase-hotkey batch (June 2026): keep mouse-picked MOVE base/target capture on the shared SVG frame so browser clicks land on the same snapped world point the operator sees, and let `Delete` / `Backspace` fire `ERASE` when entities are selected outside editable inputs.

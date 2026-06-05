@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildSurveyCadSpikeProject } from '../src/engine/cad/cadModel';
+import { appendCadProjectEntities } from '../src/engine/cad/cadProjectState';
 import { createCadHistoryState, redoCadHistory, runCadCommand, undoCadHistory } from '../src/engine/cad/cadUndoRedo';
 import type { ParseOptions } from '../src/types';
 
@@ -359,5 +360,87 @@ describe('Survey CAD command history', () => {
         (entity) => entity.type === 'parcel' && entity.id === parcel.id,
       ),
     ).toBe(true);
+  });
+
+  it('trims a line between selected cutting edges and replays the split through undo/redo', () => {
+    const baseProject = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+    const project = appendCadProjectEntities(baseProject, [
+      {
+        id: 'line:trim-target',
+        type: 'line',
+        layerId: 'observation-lines',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        fromStationId: 'T1',
+        toStationId: 'T2',
+        fromX: 10,
+        fromY: 20,
+        toX: 90,
+        toY: 20,
+        sourceObservationIds: [],
+      },
+    ]);
+
+    const cuttingEdgeIds = project.entities
+      .filter((entity) => entity.type === 'line' && entity.id !== 'line:trim-target')
+      .map((entity) => entity.id);
+    expect(cuttingEdgeIds).toContain('line:A|C');
+    expect(cuttingEdgeIds).toContain('line:B|C');
+
+    const trimmedState = runCadCommand(
+      createCadHistoryState(project, cuttingEdgeIds),
+      {
+        key: 'TRIM',
+        cuttingEntityIds: cuttingEdgeIds,
+        targetEntityId: 'line:trim-target',
+        pickPoint: { x: 50, y: 20 },
+        targetSegmentId: 'line:trim-target#0',
+      },
+    );
+
+    const remainingTrimPieces = trimmedState.present.project.entities.filter(
+      (entity) => entity.type === 'line' && entity.fromY === 20 && entity.toY === 20,
+    );
+    expect(remainingTrimPieces).toHaveLength(2);
+    expect(trimmedState.present.project.entities.some((entity) => entity.id === 'line:trim-target')).toBe(false);
+    expect(
+      remainingTrimPieces.some(
+        (entity) =>
+          entity.type === 'line' &&
+          entity.fromX === 10 &&
+          entity.toX === 30,
+      ),
+    ).toBe(true);
+    expect(
+      remainingTrimPieces.some(
+        (entity) =>
+          entity.type === 'line' &&
+          entity.fromX === 80 &&
+          entity.toX === 90,
+      ),
+    ).toBe(true);
+    expect(trimmedState.commandState.prompt).toContain('TRIM committed');
+
+    const undoneState = undoCadHistory(trimmedState);
+    expect(
+      undoneState.present.project.entities.some((entity) => entity.id === 'line:trim-target'),
+    ).toBe(true);
+
+    const redoneState = redoCadHistory(undoneState);
+    expect(
+      redoneState.present.project.entities.some((entity) => entity.id === 'line:trim-target'),
+    ).toBe(false);
+    expect(
+      redoneState.present.project.entities.filter(
+        (entity) => entity.type === 'line' && entity.fromY === 20 && entity.toY === 20,
+      ),
+    ).toHaveLength(2);
   });
 });

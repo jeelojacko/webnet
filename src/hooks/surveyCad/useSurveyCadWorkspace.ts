@@ -74,6 +74,7 @@ interface UseSurveyCadWorkspaceResult {
     | 'INVERSE'
     | 'MOVE'
     | 'COPY'
+    | 'TRIM'
     | 'PASTE'
     | null;
   commandInputValue: string;
@@ -87,6 +88,7 @@ interface UseSurveyCadWorkspaceResult {
   canCreateIntersectionPoint: boolean;
   canCreateParcel: boolean;
   canContinueCurve: boolean;
+  canTrimSelection: boolean;
   isGripEditing: boolean;
   activeSnap: CadSnapCandidate | null;
   nearbySnaps: readonly CadSnapCandidate[];
@@ -114,6 +116,7 @@ interface UseSurveyCadWorkspaceResult {
   startInverseCommand: () => void;
   startMoveCommand: () => void;
   startCopyCommand: () => void;
+  startTrimCommand: () => void;
   createIntersectionPoint: () => void;
   createParcelFromSelection: () => void;
   cancelActiveCommand: () => void;
@@ -231,6 +234,18 @@ export const useSurveyCadWorkspace = (
       ) ?? null,
     [selectedEntities],
   );
+  const selectedLineLikes = useMemo(
+    () => selectedEntities.filter(isCadLineLikeEntity),
+    [selectedEntities],
+  );
+  const selectedTrimEntities = useMemo(
+    () => selectedEntities.filter((entity) => entity.type === 'line' || entity.type === 'polyline' || entity.type === 'arc'),
+    [selectedEntities],
+  );
+  const trimCuttingEntityIds = useMemo(
+    () => selectedTrimEntities.map((entity) => entity.id),
+    [selectedTrimEntities],
+  );
   const selectedParcelReport = useMemo(() => {
     const selectedParcel = selectedEntities.find((entity) => entity.type === 'parcel');
     if (!selectedParcel || selectedParcel.type !== 'parcel') return null;
@@ -309,6 +324,7 @@ export const useSurveyCadWorkspace = (
     startInverseCommand,
     startMoveCommand,
     startCopyCommand,
+    startTrimCommand,
     startPasteCommand,
     cancelCommand,
     finishCommand,
@@ -325,6 +341,7 @@ export const useSurveyCadWorkspace = (
     previewPoint,
     history,
     selectionCount: selection.selectedEntityIds.length,
+    trimCuttingEntityIds,
     selectedArcForContinue,
     reverseDirectionModifier,
     applyHistoryUpdate,
@@ -550,10 +567,6 @@ export const useSurveyCadWorkspace = (
             : primitive.strokeDasharray ?? '8 6',
       }));
   }, [activeGripHandle, cadProject]);
-  const selectedLineLikes = useMemo(
-    () => selectedEntities.filter(isCadLineLikeEntity),
-    [selectedEntities],
-  );
   const selectedIntersection = useMemo(() => {
     if (selectedLineLikes.length !== 2) return null;
     return cadIntersectLineLikeEntities(selectedLineLikes[0], selectedLineLikes[1]);
@@ -600,6 +613,7 @@ export const useSurveyCadWorkspace = (
     canCreateIntersectionPoint: selectedIntersection != null,
     canCreateParcel: selectedPolylineForParcel != null,
     canContinueCurve: selectedArcForContinue != null,
+    canTrimSelection: trimCuttingEntityIds.length > 0,
     isGripEditing: activeGripHandle != null,
     activeSnap,
     nearbySnaps,
@@ -627,6 +641,7 @@ export const useSurveyCadWorkspace = (
     startInverseCommand,
     startMoveCommand,
     startCopyCommand,
+    startTrimCommand,
     createIntersectionPoint: () => {
       if (!selectedIntersection || selectedLineLikes.length !== 2) return;
       applyHistoryUpdate((current) =>

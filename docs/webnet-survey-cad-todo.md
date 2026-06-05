@@ -1,5 +1,7 @@
 # WebNet Survey CAD TODO
 
+- [x] Survey CAD trim command batch (June 2026): add a Civil3D-style `TRIM` flow that uses selected linework as cutting edges, lets operators click the side of a line/polyline/arc to remove, commits deterministic split/shorten edits through command history, and locks it with focused CAD geometry/workspace coverage.
+
 - [x] Survey CAD move-anchor + erase-hotkey batch (June 2026): keep mouse-picked MOVE base/target capture on the shared SVG frame so browser clicks land on the same snapped world point the operator sees, and let `Delete` / `Backspace` fire `ERASE` when entities are selected outside editable inputs.
 
 - [x] Survey CAD grip-edit batch (June 2026): add selection grips for lines, polylines, polygons, parcels, and arcs so selected geometry exposes draggable vertex/radius handles and commits deterministic handle-move edits with focused workspace coverage.
@@ -126,7 +128,7 @@ Risks:
 - [x] Promote the CAD page to toolbar + model-space-only chrome and remove the duplicate results-area Survey CAD tab.
 - [x] Replace the temporary explicit `Select`/`Pan`/`Zoom Window` buttons with direct CAD-style viewport interaction: click select, directional drag-box selection, wheel zoom, middle-mouse pan, and middle-double-click zoom extents.
 - [x] Add `POINT`, `LINE`, `INVERSE`.
-- [x] Add `PLINE`, `MOVE`, `COPY`.
+- [x] Add `PLINE`, `MOVE`, `COPY`, `TRIM`.
 - [x] Add `ERASE`.
 - [x] Add full survey bearing/distance input path.
 - [x] Add coordinate input and azimuth-distance input path.

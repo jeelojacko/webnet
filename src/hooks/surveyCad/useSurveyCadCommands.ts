@@ -53,6 +53,7 @@ type ActiveCommandKey =
   | 'INVERSE'
   | 'MOVE'
   | 'COPY'
+  | 'TRIM'
   | 'PASTE';
 
 type CommandSession =
@@ -72,6 +73,12 @@ type CommandSession =
       inputValue: string;
       startPoint: CommandPoint;
       sourceEntityIds: string[];
+      resultText?: string;
+    }
+  | {
+      key: 'TRIM';
+      inputValue: string;
+      cuttingEntityIds: string[];
       resultText?: string;
     }
   | {
@@ -127,6 +134,7 @@ interface UseSurveyCadCommandsArgs {
   previewPoint: { x: number; y: number; label: string } | null;
   history: CadHistoryState;
   selectionCount: number;
+  trimCuttingEntityIds: string[];
   selectedArcForContinue: CadArcEntity | null;
   reverseDirectionModifier: boolean;
   applyHistoryUpdate: (_updater: (_history: CadHistoryState) => CadHistoryState) => void;
@@ -190,6 +198,7 @@ interface UseSurveyCadCommandsResult {
   startInverseCommand: () => void;
   startMoveCommand: () => void;
   startCopyCommand: () => void;
+  startTrimCommand: () => void;
   startPasteCommand: (_sourceEntityIds: string[], _basePoint: CommandPoint) => void;
   cancelCommand: () => void;
   finishCommand: () => void;
@@ -237,6 +246,7 @@ const sessionExpectsPointPick = (session: CommandSession | null): boolean => {
     case 'INVERSE':
     case 'MOVE':
     case 'COPY':
+    case 'TRIM':
     case 'PASTE':
     case 'PLINE':
     case 'TRAVERSE':
@@ -437,6 +447,9 @@ const promptForSession = (session: CommandSession | null, fallbackStatus: string
         (session.startPoint
           ? `COPY active. Base point ${session.startPoint.label} captured. Click the target point or enter \`@azimuth,distance\` / bearing-distance, then press Enter.`
           : 'COPY active. Click or enter the base point for the current selection.');
+    case 'TRIM':
+      return session.resultText ??
+        `TRIM active. ${session.cuttingEntityIds.length} cutting edge${session.cuttingEntityIds.length === 1 ? '' : 's'} selected. Click line, polyline, or arc portion to remove. Enter or Esc ends the command.`;
     case 'PASTE':
       return session.resultText ??
         `PASTE active. Clipboard base ${session.startPoint.label} captured. Click the insertion point or enter \`x,y\`, \`@azimuth,distance\`, or \`N45-00-00E,100\`, then press Enter.`;
@@ -524,6 +537,8 @@ const helpTextForSession = (session: CommandSession | null): string => {
       return session.startPoint
         ? 'COPY target point: `x,y`, `LABEL=x,y`, `@azimuth,distance`, or bearing-distance from the base point.'
         : 'COPY base point: click in the model space or type `x,y` / `LABEL=x,y`.';
+    case 'TRIM':
+      return 'TRIM uses current selected line/polyline/arc entities as cutting edges. Click the side of another line/polyline/arc to remove. Enter or Esc ends the trim loop.';
     case 'PASTE':
       return 'PASTE insertion point: click in the model space or type `x,y`, `LABEL=x,y`, `@azimuth,distance`, or bearing-distance from the clipboard base point.';
   }
@@ -556,6 +571,7 @@ export const useSurveyCadCommands = ({
   previewPoint,
   history,
   selectionCount,
+  trimCuttingEntityIds,
   selectedArcForContinue,
   reverseDirectionModifier,
   applyHistoryUpdate,
@@ -606,6 +622,7 @@ export const useSurveyCadCommands = ({
           : { active: false, basePoint: null };
       case 'MOVE':
       case 'COPY':
+      case 'TRIM':
         return { active: false, basePoint: null };
       case 'PASTE':
         return {
@@ -991,7 +1008,11 @@ export const useSurveyCadCommands = ({
         };
       case 'MOVE':
       case 'COPY':
+      case 'TRIM':
         if (!previewPoint) return null;
+        if (session.key === 'TRIM') {
+          return null;
+        }
         if (!session.startPoint) {
           return {
             kind: 'point',
@@ -1270,6 +1291,38 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
       replaceSession(null);
       return;
     }
+    if (current.key === 'TRIM') {
+      const targetEntityId = point.snapSourceEntityId;
+      if (!targetEntityId) {
+        replaceSession({
+          ...current,
+          resultText: 'TRIM needs a direct line, polyline, or arc body click. Background points do not trim.',
+        });
+        return;
+      }
+      let committed = false;
+      applyHistoryUpdate((existing) => {
+        const next = runCadCommand(existing, {
+          key: 'TRIM',
+          cuttingEntityIds: current.cuttingEntityIds,
+          targetEntityId,
+          pickPoint: { x: point.x, y: point.y },
+          targetSegmentId: point.snapSourceSegmentId,
+        });
+        committed = next !== existing;
+        return next;
+      });
+      replaceSession({
+        ...current,
+        inputValue: '',
+        resultText: committed
+          ? `TRIM committed on ${targetEntityId}. Click another object side to keep trimming, or press Enter/Esc to finish.`
+          : current.cuttingEntityIds.includes(targetEntityId)
+            ? 'TRIM ignored selected cutting edge. Click a different line, polyline, or arc to trim.'
+            : `TRIM found no removable span on ${targetEntityId}. Check cutting-edge selection and click a different side.`,
+      });
+      return;
+    }
     if (current.key === 'PASTE') {
       const startPoint = current.startPoint;
       applyHistoryUpdate((existing) =>
@@ -1498,6 +1551,10 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
 
   const handleEnterKey = () => {
     if (!session) return;
+    if (session.key === 'TRIM') {
+      replaceSession(null);
+      return;
+    }
     if (session.key === 'PLINE' && session.inputValue.trim().length === 0 && session.points.length >= 2) {
       finishPolylineSession();
       return;
@@ -1524,9 +1581,11 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
     commandExpectsPointPick,
     canUseActiveSnap:
       activeSnap != null &&
-      commandExpectsPointPick,
+      commandExpectsPointPick &&
+      session?.key !== 'TRIM',
     canCycleActiveSnap:
-      commandExpectsPointPick,
+      commandExpectsPointPick &&
+      session?.key !== 'TRIM',
     canFinishCommand:
       (session?.key === 'PLINE' || session?.key === 'TRAVERSE') &&
       session.points.length >= 2,
@@ -1653,6 +1712,14 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
         startPoint: null,
       });
     },
+    startTrimCommand: () => {
+      if (trimCuttingEntityIds.length === 0) return;
+      replaceSession({
+        key: 'TRIM',
+        inputValue: '',
+        cuttingEntityIds: trimCuttingEntityIds,
+      });
+    },
     startPasteCommand: (sourceEntityIds, basePoint) => {
       if (sourceEntityIds.length === 0) return;
       replaceSession({
@@ -1673,14 +1740,20 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
       }
     },
     setCommandInputValue: (value) =>
-      updateSession((current) => (current ? { ...current, inputValue: value, resultText: undefined } : current)),
+      updateSession((current) =>
+        current && current.key !== 'TRIM'
+          ? { ...current, inputValue: value, resultText: undefined }
+          : current,
+      ),
     appendCommandInputValue: (value) =>
       updateSession((current) =>
-        current ? { ...current, inputValue: `${current.inputValue}${value}`, resultText: undefined } : current,
+        current && current.key !== 'TRIM'
+          ? { ...current, inputValue: `${current.inputValue}${value}`, resultText: undefined }
+          : current,
       ),
     backspaceCommandInputValue: () =>
       updateSession((current) =>
-        current
+        current && current.key !== 'TRIM'
           ? { ...current, inputValue: current.inputValue.slice(0, -1), resultText: undefined }
           : current,
       ),

@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from 'vitest';
 import SurveyCadWorkspace from '../src/components/SurveyCadWorkspace';
 import SurveyCadPreview from '../src/components/surveyCad/SurveyCadPreview';
 import { buildSurveyCadSpikeProject } from '../src/engine/cad/cadModel';
-import { buildCadProjectSignature } from '../src/engine/cad/cadProjectState';
+import { appendCadProjectEntities, buildCadProjectSignature } from '../src/engine/cad/cadProjectState';
 import type { ParseOptions } from '../src/types';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -3880,6 +3880,120 @@ describe('SurveyCadWorkspace', () => {
     expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
       'azimuth 90.0000',
     );
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('runs TRIM from the command surface by using selected cutting edges and clicking the portion to remove', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+    const capture = createPersistedStateCapture();
+
+    const baseProject = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+    const trimProject = appendCadProjectEntities(baseProject, [
+      {
+        id: 'line:trim-target',
+        type: 'line',
+        layerId: 'observation-lines',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        fromStationId: 'T1',
+        toStationId: 'T2',
+        fromX: 10,
+        fromY: 20,
+        toX: 90,
+        toY: 20,
+        sourceObservationIds: [],
+      },
+    ]);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+          persistedState={{
+            version: 1,
+            sourceSignature: buildCadProjectSignature(baseProject),
+            project: trimProject,
+          }}
+          onPersistedStateChange={capture.onPersistedStateChange}
+        />,
+      );
+    });
+
+    const preview = container.querySelector('[data-survey-cad-preview]') as SVGElement | null;
+    const cutA = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="line:A|C"]',
+    ) as SVGLineElement | null;
+    const cutB = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="line:B|C"]',
+    ) as SVGLineElement | null;
+    const trimTarget = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="line:trim-target"]',
+    ) as SVGLineElement | null;
+    if (!preview || !cutA || !cutB || !trimTarget) throw new Error('Trim targets not found');
+    mockElementRect(preview);
+
+    const removePick = projectWorldToPreviewScreen(trimProject.bounds!, { x: 50, y: 20 });
+
+    await act(async () => {
+      cutA.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 0, clientY: 0 }));
+      cutB.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 0, clientY: 0, shiftKey: true }));
+      clickButton(container, 'TRIM');
+    });
+
+    expect(container.querySelector('[data-survey-cad-selection-count]')?.textContent).toContain('2 selected');
+
+    await act(async () => {
+      preview.dispatchEvent(
+        new MouseEvent('mousemove', {
+          bubbles: true,
+          clientX: removePick.clientX,
+          clientY: removePick.clientY,
+        }),
+      );
+      trimTarget.dispatchEvent(
+        new MouseEvent('mousedown', {
+          bubbles: true,
+          clientX: removePick.clientX,
+          clientY: removePick.clientY,
+          button: 0,
+        }),
+      );
+      trimTarget.dispatchEvent(
+        new MouseEvent('click', {
+          bubbles: true,
+          clientX: removePick.clientX,
+          clientY: removePick.clientY,
+          button: 0,
+        }),
+      );
+    });
+
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain('TRIM committed');
+
+    const trimmedLines = capture.read()?.project.entities.filter(
+      (entity) => entity.type === 'line' && entity.fromY === 20 && entity.toY === 20,
+    );
+    expect(trimmedLines).toHaveLength(2);
+    expect(trimmedLines?.some((entity) => entity.type === 'line' && entity.fromX === 10 && entity.toX === 30)).toBe(true);
+    expect(trimmedLines?.some((entity) => entity.type === 'line' && entity.fromX === 80 && entity.toX === 90)).toBe(true);
+    expect(capture.read()?.project.entities.some((entity) => entity.id === 'line:trim-target')).toBe(false);
 
     await act(async () => {
       root.unmount();

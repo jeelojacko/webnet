@@ -9,17 +9,27 @@ import {
   cadArcMidpoint,
   cadBuildArcFromThreePoints,
   cadBuildTangentCurve,
+  cadClosestPointOnArc,
+  cadClosestPointOnSegment,
+  cadDistance,
+  cadIntersectArcArc,
+  cadIntersectSegmentArc,
   cadNormalizeAngleDeg,
   cadPointOnCircle,
+  cadProjectPointOntoInfiniteLine,
   cadProjectPointOntoCircle,
+  cadSegmentIntersection,
+  cadSignedSweepDeg,
 } from './cadGeometry';
 import { appendCadProjectEntities, replaceCadProjectEntities } from './cadProjectState';
 import type { CadSelectionState } from './cadSelection';
 import type {
   CadEntity,
+  CadArcEntity,
   CadEntityId,
   CadGripHandle,
   CadGripHandleKind,
+  CadLineEntity,
   CadParcelEntity,
   CadPolylineEntity,
   CadProject,
@@ -44,6 +54,7 @@ export type CadCommandKey =
   | 'MOVE'
   | 'COPY'
   | 'PASTE'
+  | 'TRIM'
   | 'INTERSECT_POINT'
   | 'GRIP_EDIT';
 export type CadCommandPhase = 'idle' | 'committed';
@@ -136,6 +147,13 @@ export type CadCommand =
       entityIds: CadEntityId[];
     }
   | {
+      key: 'TRIM';
+      cuttingEntityIds: CadEntityId[];
+      targetEntityId: CadEntityId;
+      pickPoint: { x: number; y: number };
+      targetSegmentId?: string;
+    }
+  | {
       key: 'INTERSECT_POINT';
       x: number;
       y: number;
@@ -184,7 +202,7 @@ interface CadCommandDefinition<TCommand extends CadCommand> {
 const createIdleCommandState = (): CadCommandState => ({
   key: 'IDLE',
   phase: 'idle',
-  prompt: 'Ready. Use Select All, Clear Selection, ERASE, POINT, COGO PT, LINE, PLINE, TRAVERSE, ARC 3PT, TAN CURVE, MOVE, COPY, INTX, or INVERSE to exercise command history.',
+  prompt: 'Ready. Use Select All, Clear Selection, ERASE, POINT, COGO PT, LINE, PLINE, TRAVERSE, ARC 3PT, TAN CURVE, MOVE, COPY, TRIM, INTX, or INVERSE to exercise command history.',
 });
 
 const nextManualStationId = (project: CadProject): string => {
@@ -310,6 +328,451 @@ const getExpandedEntitiesByIds = (
 ): CadEntity[] => {
   const expandedIds = new Set(expandSelectedEntityIds(project, selectedEntityIds));
   return project.entities.filter((entity) => expandedIds.has(entity.id) && !entity.locked);
+};
+
+type CadTrimEntity = CadLineEntity | CadPolylineEntity | CadArcEntity;
+
+interface CadTrimSegmentRef {
+  segmentId: string;
+  start: { x: number; y: number };
+  end: { x: number; y: number };
+  startLabel: string;
+  endLabel: string;
+  startDistance: number;
+  length: number;
+}
+
+interface CadTrimInterval {
+  start: number;
+  end: number;
+}
+
+const TRIM_EPSILON = 1e-6;
+
+const isTrimmableEntity = (entity: CadEntity): entity is CadTrimEntity =>
+  entity.type === 'line' || entity.type === 'polyline' || entity.type === 'arc';
+
+const buildTrimSegments = (entity: CadLineEntity | CadPolylineEntity): CadTrimSegmentRef[] => {
+  if (entity.type === 'line') {
+    return [
+      {
+        segmentId: `${entity.id}#0`,
+        start: { x: entity.fromX, y: entity.fromY },
+        end: { x: entity.toX, y: entity.toY },
+        startLabel: entity.fromStationId,
+        endLabel: entity.toStationId,
+        startDistance: 0,
+        length: cadDistance({ x: entity.fromX, y: entity.fromY }, { x: entity.toX, y: entity.toY }),
+      },
+    ];
+  }
+
+  const segments: CadTrimSegmentRef[] = [];
+  let startDistance = 0;
+  entity.vertices.slice(0, -1).forEach((vertex, index) => {
+    const next = entity.vertices[index + 1]!;
+    const length = cadDistance(vertex, next);
+    segments.push({
+      segmentId: `${entity.id}#${index}`,
+      start: vertex,
+      end: next,
+      startLabel: entity.vertexLabels[index] ?? `V${index + 1}`,
+      endLabel: entity.vertexLabels[index + 1] ?? `V${index + 2}`,
+      startDistance,
+      length,
+    });
+    startDistance += length;
+  });
+  return segments;
+};
+
+const trimEntityTotalLength = (entity: CadLineEntity | CadPolylineEntity): number => {
+  const segments = buildTrimSegments(entity);
+  if (segments.length === 0) return 0;
+  const last = segments[segments.length - 1]!;
+  return last.startDistance + last.length;
+};
+
+const pointAtLinePosition = (
+  entity: CadLineEntity,
+  position: number,
+): { x: number; y: number } => {
+  const start = { x: entity.fromX, y: entity.fromY };
+  const end = { x: entity.toX, y: entity.toY };
+  const length = cadDistance(start, end);
+  if (length <= TRIM_EPSILON) return start;
+  const t = Math.max(0, Math.min(1, position / length));
+  return {
+    x: start.x + (end.x - start.x) * t,
+    y: start.y + (end.y - start.y) * t,
+  };
+};
+
+const pointAtPolylinePosition = (
+  entity: CadPolylineEntity,
+  position: number,
+): { x: number; y: number } => {
+  const segments = buildTrimSegments(entity);
+  if (segments.length === 0) return entity.vertices[0] ?? { x: 0, y: 0 };
+  const totalLength = trimEntityTotalLength(entity);
+  const clamped = Math.max(0, Math.min(totalLength, position));
+  const segment =
+    segments.find(
+      (candidate) => clamped <= candidate.startDistance + candidate.length + TRIM_EPSILON,
+    ) ?? segments[segments.length - 1]!;
+  if (segment.length <= TRIM_EPSILON) return segment.start;
+  const localDistance = Math.max(0, Math.min(segment.length, clamped - segment.startDistance));
+  const t = localDistance / segment.length;
+  return {
+    x: segment.start.x + (segment.end.x - segment.start.x) * t,
+    y: segment.start.y + (segment.end.y - segment.start.y) * t,
+  };
+};
+
+const arcPositionAtAngle = (
+  entity: CadArcEntity,
+  angleDeg: number,
+): number => {
+  const signedSweep = cadSignedSweepDeg(entity.startAngleDeg, entity.endAngleDeg);
+  const direction = signedSweep >= 0 ? 1 : -1;
+  const magnitude = Math.abs(signedSweep);
+  const normalizedStart = cadNormalizeAngleDeg(entity.startAngleDeg);
+  const normalizedAngle = cadNormalizeAngleDeg(angleDeg);
+  if (direction >= 0) {
+    return Math.min(
+      magnitude,
+      cadNormalizeAngleDeg(normalizedAngle - normalizedStart),
+    );
+  }
+  return Math.min(
+    magnitude,
+    cadNormalizeAngleDeg(normalizedStart - normalizedAngle),
+  );
+};
+
+const angleAtArcPosition = (entity: CadArcEntity, position: number): number => {
+  const signedSweep = cadSignedSweepDeg(entity.startAngleDeg, entity.endAngleDeg);
+  const magnitude = Math.abs(signedSweep);
+  const clamped = Math.max(0, Math.min(magnitude, position));
+  return entity.startAngleDeg + (signedSweep >= 0 ? clamped : -clamped);
+};
+
+const trimLabelForEntity = (entityId: string, pieceIndex: number, endpoint: 'S' | 'E'): string =>
+  `${entityId}:TR${pieceIndex}${endpoint}`;
+
+const addTrimPosition = (positions: number[], value: number, total: number) => {
+  if (value <= TRIM_EPSILON || value >= total - TRIM_EPSILON) return;
+  if (positions.some((existing) => Math.abs(existing - value) <= TRIM_EPSILON)) return;
+  positions.push(value);
+};
+
+const buildTrimKeepIntervals = (
+  intersections: number[],
+  pickPosition: number,
+  total: number,
+): CadTrimInterval[] => {
+  if (total <= TRIM_EPSILON) return [];
+  const boundaries = [0, ...intersections.filter((value) => value > TRIM_EPSILON && value < total - TRIM_EPSILON), total]
+    .sort((left, right) => left - right);
+  let removeIndex = -1;
+  for (let index = 0; index < boundaries.length - 1; index += 1) {
+    const start = boundaries[index]!;
+    const end = boundaries[index + 1]!;
+    if (pickPosition >= start - TRIM_EPSILON && pickPosition <= end + TRIM_EPSILON) {
+      removeIndex = index;
+      break;
+    }
+  }
+  if (removeIndex < 0) return [];
+  return boundaries
+    .slice(0, -1)
+    .map((start, index) => ({ start, end: boundaries[index + 1]! }))
+    .filter((interval, index) => index !== removeIndex && interval.end - interval.start > TRIM_EPSILON);
+};
+
+const buildTrimBoundaryEntities = (
+  project: CadProject,
+  entityIds: readonly CadEntityId[],
+): CadTrimEntity[] =>
+  entityIds
+    .map((entityId) => project.entities.find((entity) => entity.id === entityId))
+    .filter((entity): entity is CadTrimEntity => entity != null && isTrimmableEntity(entity) && !entity.locked);
+
+const buildTrimIntersectionsForLineLike = (
+  target: CadLineEntity | CadPolylineEntity,
+  boundaries: readonly CadTrimEntity[],
+): number[] => {
+  const positions: number[] = [];
+  const segments = buildTrimSegments(target);
+  const totalLength = trimEntityTotalLength(target);
+  boundaries.forEach((boundary) => {
+    if (boundary.id === target.id) return;
+    if (boundary.type === 'arc') {
+      segments.forEach((segment) => {
+        cadIntersectSegmentArc(
+          segment.start,
+          segment.end,
+          { x: boundary.centerX, y: boundary.centerY },
+          boundary.radius,
+          boundary.startAngleDeg,
+          boundary.endAngleDeg,
+        ).forEach((point) => {
+          addTrimPosition(
+            positions,
+            segment.startDistance + cadDistance(segment.start, point),
+            totalLength,
+          );
+        });
+      });
+      return;
+    }
+    const boundarySegments = buildTrimSegments(boundary);
+    segments.forEach((targetSegment) => {
+      boundarySegments.forEach((boundarySegment) => {
+        const point = cadSegmentIntersection(
+          targetSegment.start,
+          targetSegment.end,
+          boundarySegment.start,
+          boundarySegment.end,
+        );
+        if (!point) return;
+        addTrimPosition(
+          positions,
+          targetSegment.startDistance + cadDistance(targetSegment.start, point),
+          totalLength,
+        );
+      });
+    });
+  });
+  return positions.sort((left, right) => left - right);
+};
+
+const buildTrimIntersectionsForArc = (
+  target: CadArcEntity,
+  boundaries: readonly CadTrimEntity[],
+): number[] => {
+  const positions: number[] = [];
+  const totalSweep = Math.abs(cadSignedSweepDeg(target.startAngleDeg, target.endAngleDeg));
+  boundaries.forEach((boundary) => {
+    if (boundary.id === target.id) return;
+    if (boundary.type === 'arc') {
+      cadIntersectArcArc(
+        { x: target.centerX, y: target.centerY },
+        target.radius,
+        target.startAngleDeg,
+        target.endAngleDeg,
+        { x: boundary.centerX, y: boundary.centerY },
+        boundary.radius,
+        boundary.startAngleDeg,
+        boundary.endAngleDeg,
+      ).forEach((point) => {
+        addTrimPosition(
+          positions,
+          arcPositionAtAngle(
+            target,
+            cadAngleDegFromCenter({ x: target.centerX, y: target.centerY }, point),
+          ),
+          totalSweep,
+        );
+      });
+      return;
+    }
+    buildTrimSegments(boundary).forEach((segment) => {
+      cadIntersectSegmentArc(
+        segment.start,
+        segment.end,
+        { x: target.centerX, y: target.centerY },
+        target.radius,
+        target.startAngleDeg,
+        target.endAngleDeg,
+      ).forEach((point) => {
+        addTrimPosition(
+          positions,
+          arcPositionAtAngle(
+            target,
+            cadAngleDegFromCenter({ x: target.centerX, y: target.centerY }, point),
+          ),
+          totalSweep,
+        );
+      });
+    });
+  });
+  return positions.sort((left, right) => left - right);
+};
+
+const buildTrimmedLinePieces = (
+  entity: CadLineEntity,
+  intervals: readonly CadTrimInterval[],
+): CadLineEntity[] => {
+  const totalLength = trimEntityTotalLength(entity);
+  return intervals.flatMap((interval, index) => {
+    const start = pointAtLinePosition(entity, interval.start);
+    const end = pointAtLinePosition(entity, interval.end);
+    if (cadDistance(start, end) <= TRIM_EPSILON) return [];
+    const preserveId = intervals.length === 1;
+    return [{
+      ...entity,
+      id: preserveId ? entity.id : createStableRuntimeId('cad-line'),
+      fromStationId:
+        interval.start <= TRIM_EPSILON ? entity.fromStationId : trimLabelForEntity(entity.id, index + 1, 'S'),
+      toStationId:
+        interval.end >= totalLength - TRIM_EPSILON ? entity.toStationId : trimLabelForEntity(entity.id, index + 1, 'E'),
+      fromX: start.x,
+      fromY: start.y,
+      toX: end.x,
+      toY: end.y,
+      metadata: {
+        ...entity.metadata,
+        createdBy: 'TRIM',
+        manual: true,
+      },
+    }];
+  });
+};
+
+const buildTrimmedPolylinePieces = (
+  entity: CadPolylineEntity,
+  intervals: readonly CadTrimInterval[],
+): CadPolylineEntity[] => {
+  const totalLength = trimEntityTotalLength(entity);
+  const vertexDistances = buildTrimSegments(entity).map((segment) => segment.startDistance);
+  vertexDistances.push(totalLength);
+  return intervals.flatMap((interval, index) => {
+    const points = [pointAtPolylinePosition(entity, interval.start)];
+    const labels = [
+      interval.start <= TRIM_EPSILON
+        ? entity.vertexLabels[0] ?? 'V1'
+        : trimLabelForEntity(entity.id, index + 1, 'S'),
+    ];
+    entity.vertices.forEach((vertex, vertexIndex) => {
+      const distance = vertexDistances[vertexIndex] ?? 0;
+      if (distance <= interval.start + TRIM_EPSILON || distance >= interval.end - TRIM_EPSILON) return;
+      points.push(vertex);
+      labels.push(entity.vertexLabels[vertexIndex] ?? `V${vertexIndex + 1}`);
+    });
+    const endPoint = pointAtPolylinePosition(entity, interval.end);
+    if (cadDistance(points[points.length - 1]!, endPoint) > TRIM_EPSILON) {
+      points.push(endPoint);
+      labels.push(
+        interval.end >= totalLength - TRIM_EPSILON
+          ? entity.vertexLabels[entity.vertexLabels.length - 1] ?? `V${entity.vertexLabels.length}`
+          : trimLabelForEntity(entity.id, index + 1, 'E'),
+      );
+    } else if (interval.end >= totalLength - TRIM_EPSILON) {
+      labels[labels.length - 1] = entity.vertexLabels[entity.vertexLabels.length - 1] ?? `V${entity.vertexLabels.length}`;
+    }
+    if (points.length < 2) return [];
+    const preserveId = intervals.length === 1;
+    return [{
+      ...entity,
+      id: preserveId ? entity.id : createStableRuntimeId('cad-polyline'),
+      vertices: points,
+      vertexLabels: labels,
+      metadata: {
+        ...entity.metadata,
+        createdBy: 'TRIM',
+        manual: true,
+      },
+    }];
+  });
+};
+
+const buildTrimmedArcPieces = (
+  entity: CadArcEntity,
+  intervals: readonly CadTrimInterval[],
+): CadArcEntity[] => {
+  const totalSweep = Math.abs(cadSignedSweepDeg(entity.startAngleDeg, entity.endAngleDeg));
+  return intervals.flatMap((interval, index) => {
+    if (interval.end - interval.start <= TRIM_EPSILON) return [];
+    const preserveId = intervals.length === 1;
+    return [{
+      ...entity,
+      id: preserveId ? entity.id : createStableRuntimeId('cad-arc'),
+      startAngleDeg: angleAtArcPosition(entity, interval.start),
+      endAngleDeg: angleAtArcPosition(entity, interval.end),
+      metadata: {
+        ...entity.metadata,
+        createdBy: 'TRIM',
+        manual: true,
+        trimPiece: index + 1,
+        trimmedFromArcId: entity.id,
+        trimmedTotalSweepDeg: totalSweep,
+      },
+    }];
+  });
+};
+
+const buildTrimmedEntityPieces = (
+  entity: CadTrimEntity,
+  boundaries: readonly CadTrimEntity[],
+  pickPoint: { x: number; y: number },
+  targetSegmentId?: string,
+): CadEntity[] => {
+  if (entity.type === 'line') {
+    const intersections = buildTrimIntersectionsForLineLike(entity, boundaries);
+    if (intersections.length === 0) return [];
+    const start = { x: entity.fromX, y: entity.fromY };
+    const end = { x: entity.toX, y: entity.toY };
+    const projection =
+      targetSegmentId === `${entity.id}#0`
+        ? cadProjectPointOntoInfiniteLine(pickPoint, start, end)
+        : cadProjectPointOntoInfiniteLine(cadClosestPointOnSegment(pickPoint, start, end), start, end);
+    const pickPosition = cadDistance(start, projection.point);
+    return buildTrimmedLinePieces(
+      entity,
+      buildTrimKeepIntervals(intersections, pickPosition, trimEntityTotalLength(entity)),
+    );
+  }
+
+  if (entity.type === 'polyline') {
+    const intersections = buildTrimIntersectionsForLineLike(entity, boundaries);
+    if (intersections.length === 0) return [];
+    const segments = buildTrimSegments(entity);
+    const pickedSegment =
+      (targetSegmentId
+        ? segments.find((segment) => segment.segmentId === targetSegmentId)
+        : null) ??
+      segments
+        .map((segment) => ({
+          segment,
+          point: cadClosestPointOnSegment(pickPoint, segment.start, segment.end),
+        }))
+        .sort(
+          (left, right) =>
+            cadDistance(left.point, pickPoint) - cadDistance(right.point, pickPoint),
+        )[0]?.segment ??
+      null;
+    if (!pickedSegment) return [];
+    const projectedPoint = cadClosestPointOnSegment(pickPoint, pickedSegment.start, pickedSegment.end);
+    const pickPosition =
+      pickedSegment.startDistance + cadDistance(pickedSegment.start, projectedPoint);
+    return buildTrimmedPolylinePieces(
+      entity,
+      buildTrimKeepIntervals(intersections, pickPosition, trimEntityTotalLength(entity)),
+    );
+  }
+
+  const intersections = buildTrimIntersectionsForArc(entity, boundaries);
+  if (intersections.length === 0) return [];
+  const closestPoint = cadClosestPointOnArc(
+    pickPoint,
+    { x: entity.centerX, y: entity.centerY },
+    entity.radius,
+    entity.startAngleDeg,
+    entity.endAngleDeg,
+  );
+  const pickPosition = arcPositionAtAngle(
+    entity,
+    cadAngleDegFromCenter({ x: entity.centerX, y: entity.centerY }, closestPoint),
+  );
+  return buildTrimmedArcPieces(
+    entity,
+    buildTrimKeepIntervals(
+      intersections,
+      pickPosition,
+      Math.abs(cadSignedSweepDeg(entity.startAngleDeg, entity.endAngleDeg)),
+    ),
+  );
 };
 
 const translateEntity = (entity: CadEntity, deltaX: number, deltaY: number): CadEntity => {
@@ -1384,6 +1847,63 @@ const pasteCommand: CadCommandDefinition<{
   },
 };
 
+const trimCommand: CadCommandDefinition<{
+  key: 'TRIM';
+  cuttingEntityIds: CadEntityId[];
+  targetEntityId: CadEntityId;
+  pickPoint: { x: number; y: number };
+  targetSegmentId?: string;
+}> = {
+  key: 'TRIM',
+  execute: (snapshot, command) => {
+    const cuttingEntities = buildTrimBoundaryEntities(snapshot.project, command.cuttingEntityIds);
+    if (cuttingEntities.length === 0) return null;
+    if (cuttingEntities.some((entity) => entity.id === command.targetEntityId)) return null;
+    const targetEntity = snapshot.project.entities.find(
+      (entity): entity is CadTrimEntity =>
+        entity.id === command.targetEntityId && isTrimmableEntity(entity) && !entity.locked,
+    );
+    if (!targetEntity) return null;
+
+    const trimmedPieces = buildTrimmedEntityPieces(
+      targetEntity,
+      cuttingEntities,
+      command.pickPoint,
+      command.targetSegmentId,
+    );
+    if (trimmedPieces.length === 0) return null;
+
+    const nextProject = replaceCadProjectEntities(
+      snapshot.project,
+      snapshot.project.entities.flatMap((entity) => {
+        if (entity.id !== targetEntity.id) return [entity];
+        return trimmedPieces;
+      }),
+    );
+    const preservedTargetId = trimmedPieces.some((entity) => entity.id === targetEntity.id);
+    const cuttingSelectionIds = cuttingEntities
+      .filter((entity) => nextProject.entities.some((candidate) => candidate.id === entity.id))
+      .map((entity) => entity.id);
+
+    return {
+      nextSnapshot: {
+        project: nextProject,
+        selection: createCadSelectionState(nextProject, cuttingSelectionIds),
+      },
+      commandState: {
+        key: 'TRIM',
+        phase: 'committed',
+        prompt: `TRIM committed on ${targetEntity.id}. ${trimmedPieces.length} piece${trimmedPieces.length === 1 ? '' : 's'} remain.`,
+      },
+      transactionLabel: `TRIM (${targetEntity.id})`,
+      addedEntityIds: trimmedPieces
+        .map((entity) => entity.id)
+        .filter((entityId) => entityId !== targetEntity.id),
+      removedEntityIds: preservedTargetId ? [] : [targetEntity.id],
+    };
+  },
+};
+
 const intersectPointCommand: CadCommandDefinition<{
   key: 'INTERSECT_POINT';
   x: number;
@@ -1464,6 +1984,7 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   MOVE: moveCommand as CadCommandDefinition<CadCommand>,
   COPY: copyCommand as CadCommandDefinition<CadCommand>,
   PASTE: pasteCommand as CadCommandDefinition<CadCommand>,
+  TRIM: trimCommand as CadCommandDefinition<CadCommand>,
   INTERSECT_POINT: intersectPointCommand as CadCommandDefinition<CadCommand>,
   GRIP_EDIT: gripEditCommand as CadCommandDefinition<CadCommand>,
 };
