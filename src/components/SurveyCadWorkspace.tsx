@@ -71,6 +71,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     statusText,
     commandHelpText,
     commandPreviewPrimitives,
+    commandEntityOpacityOverrides,
     commandExpectsPointPick,
     canCreateIntersectionPoint,
     canCreateParcel,
@@ -120,6 +121,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     finishGripEdit,
     cancelGripEdit,
     updatePointerWorldPoint,
+    setCommandHoverTarget,
     cycleActiveSnap,
     setSnapPreference,
     selectAll,
@@ -373,6 +375,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             commandInputValue={commandInputValue}
             commandInputPlaceholder={commandInputPlaceholder}
             commandInputEnabled={activeCommandKey != null && activeCommandKey !== 'TRIM'}
+            commandEntityOpacityOverrides={commandEntityOpacityOverrides}
             viewport={viewport}
             commandActive={activeCommandKey != null}
             commandPointInputActive={commandExpectsPointPick}
@@ -385,6 +388,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             onCancelGripEdit={cancelGripEdit}
             onConsumeInteractionPoint={consumeInteractionPoint}
             onPointerWorldPointChange={updatePointerWorldPoint}
+            onCommandHoverTargetChange={setCommandHoverTarget}
             onSnapPreferenceChange={setSnapPreference}
             onCommandInputChange={setCommandInputValue}
             onCommandInputEnter={handleEnterKey}

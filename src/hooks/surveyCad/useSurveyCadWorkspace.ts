@@ -23,7 +23,11 @@ import {
   undoCadHistory,
   type CadHistoryState,
 } from '../../engine/cad/cadUndoRedo';
-import { applyCadGripEdit, buildCadGripHandles } from '../../engine/cad/cadTransactions';
+import {
+  applyCadGripEdit,
+  buildCadGripHandles,
+  buildCadTrimPreview,
+} from '../../engine/cad/cadTransactions';
 import { useSurveyCadCommands, type CadCommandPreviewState } from './useSurveyCadCommands';
 import { useSurveyCadSnapping, type CadSnapPreferences } from './useSurveyCadSnapping';
 import type {
@@ -81,6 +85,7 @@ interface UseSurveyCadWorkspaceResult {
   statusText: string;
   commandHelpText: string;
   commandPreviewPrimitives: CadDisplayPrimitive[];
+  commandEntityOpacityOverrides: Record<string, number>;
   commandExpectsPointPick: boolean;
   canUseActiveSnap: boolean;
   canCycleActiveSnap: boolean;
@@ -148,6 +153,7 @@ interface UseSurveyCadWorkspaceResult {
       restrictedGripHandles?: readonly CadGripHandle[];
     },
   ) => void;
+  setCommandHoverTarget: (_hoverTarget: CommandHoverTarget | null) => void;
   setSnapPreference: (_kind: keyof CadSnapPreferences, _enabled: boolean) => void;
   cycleActiveSnap: () => void;
   selectAll: () => void;
@@ -156,6 +162,12 @@ interface UseSurveyCadWorkspaceResult {
   startPasteFromClipboard: (_entityIds: string[]) => void;
   undo: () => void;
   redo: () => void;
+}
+
+interface CommandHoverTarget {
+  entityId: string;
+  segmentId?: string;
+  point: { x: number; y: number };
 }
 
 export const useSurveyCadWorkspace = (
@@ -271,6 +283,7 @@ export const useSurveyCadWorkspace = (
     active: false,
     basePoint: null,
   });
+  const [commandHoverTarget, setCommandHoverTargetState] = useState<CommandHoverTarget | null>(null);
   const {
     activeSnap,
     nearbySnaps,
@@ -362,6 +375,10 @@ export const useSurveyCadWorkspace = (
       return nextSnapConstructionContext;
     });
   }, [nextSnapConstructionContext]);
+  useEffect(() => {
+    if (activeCommandKey === 'TRIM') return;
+    setCommandHoverTargetState(null);
+  }, [activeCommandKey]);
   const updatePointerWorldPoint = (
     worldPoint: { x: number; y: number } | null,
     toleranceWorldOverride?: number,
@@ -524,6 +541,28 @@ export const useSurveyCadWorkspace = (
         };
       });
   }, [activeCommandKey, commandPreview, displayScene.primitives, selection.selectedEntityIds]);
+  const trimPreview = useMemo(() => {
+    if (activeCommandKey !== 'TRIM' || !commandHoverTarget) return null;
+    return buildCadTrimPreview(
+      cadProject,
+      trimCuttingEntityIds,
+      commandHoverTarget.entityId,
+      commandHoverTarget.point,
+      commandHoverTarget.segmentId,
+    );
+  }, [activeCommandKey, cadProject, commandHoverTarget, trimCuttingEntityIds]);
+  const trimPreviewPrimitives = useMemo<CadDisplayPrimitive[]>(() => {
+    if (!trimPreview) return [];
+    return buildCadDisplayScene({
+      ...cadProject,
+      entities: trimPreview.previewEntities,
+      bounds: buildCadBounds(trimPreview.previewEntities),
+    }).primitives;
+  }, [cadProject, trimPreview]);
+  const commandEntityOpacityOverrides = useMemo<Record<string, number>>(
+    () => (trimPreview ? { [trimPreview.targetEntityId]: 0.22 } : {}),
+    [trimPreview],
+  );
   const gripHandles = useMemo(
     () =>
       activeCommandKey == null && editableSelectedEntity
@@ -605,7 +644,8 @@ export const useSurveyCadWorkspace = (
     commandInputValue,
     statusText: commandPrompt,
     commandHelpText,
-    commandPreviewPrimitives,
+    commandPreviewPrimitives: [...commandPreviewPrimitives, ...trimPreviewPrimitives],
+    commandEntityOpacityOverrides,
     commandExpectsPointPick,
     canUseActiveSnap,
     canCycleActiveSnap,
@@ -850,6 +890,19 @@ export const useSurveyCadWorkspace = (
     redo: () => {
       setActiveGripHandle(null);
       applyHistoryUpdate((current) => redoCadHistory(current));
+    },
+    setCommandHoverTarget: (hoverTarget) => {
+      setCommandHoverTargetState((current) => {
+        if (
+          current?.entityId === hoverTarget?.entityId &&
+          current?.segmentId === hoverTarget?.segmentId &&
+          current?.point.x === hoverTarget?.point.x &&
+          current?.point.y === hoverTarget?.point.y
+        ) {
+          return current;
+        }
+        return hoverTarget;
+      });
     },
   };
 };

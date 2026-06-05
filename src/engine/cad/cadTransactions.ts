@@ -347,6 +347,12 @@ interface CadTrimInterval {
   end: number;
 }
 
+interface CadTrimPieceBuildOptions {
+  preserveOriginalIdWhenSingle?: boolean;
+  idForPiece?: (_index: number) => string;
+  includeTrimMetadata?: boolean;
+}
+
 const TRIM_EPSILON = 1e-6;
 
 const isTrimmableEntity = (entity: CadEntity): entity is CadTrimEntity =>
@@ -603,16 +609,18 @@ const buildTrimIntersectionsForArc = (
 const buildTrimmedLinePieces = (
   entity: CadLineEntity,
   intervals: readonly CadTrimInterval[],
+  options?: CadTrimPieceBuildOptions,
 ): CadLineEntity[] => {
   const totalLength = trimEntityTotalLength(entity);
   return intervals.flatMap((interval, index) => {
     const start = pointAtLinePosition(entity, interval.start);
     const end = pointAtLinePosition(entity, interval.end);
     if (cadDistance(start, end) <= TRIM_EPSILON) return [];
-    const preserveId = intervals.length === 1;
+    const preserveId =
+      intervals.length === 1 && (options?.preserveOriginalIdWhenSingle ?? true);
     return [{
       ...entity,
-      id: preserveId ? entity.id : createStableRuntimeId('cad-line'),
+      id: preserveId ? entity.id : options?.idForPiece?.(index) ?? createStableRuntimeId('cad-line'),
       fromStationId:
         interval.start <= TRIM_EPSILON ? entity.fromStationId : trimLabelForEntity(entity.id, index + 1, 'S'),
       toStationId:
@@ -621,11 +629,14 @@ const buildTrimmedLinePieces = (
       fromY: start.y,
       toX: end.x,
       toY: end.y,
-      metadata: {
-        ...entity.metadata,
-        createdBy: 'TRIM',
-        manual: true,
-      },
+      metadata:
+        options?.includeTrimMetadata === false
+          ? entity.metadata
+          : {
+              ...entity.metadata,
+              createdBy: 'TRIM',
+              manual: true,
+            },
     }];
   });
 };
@@ -633,6 +644,7 @@ const buildTrimmedLinePieces = (
 const buildTrimmedPolylinePieces = (
   entity: CadPolylineEntity,
   intervals: readonly CadTrimInterval[],
+  options?: CadTrimPieceBuildOptions,
 ): CadPolylineEntity[] => {
   const totalLength = trimEntityTotalLength(entity);
   const vertexDistances = buildTrimSegments(entity).map((segment) => segment.startDistance);
@@ -662,17 +674,24 @@ const buildTrimmedPolylinePieces = (
       labels[labels.length - 1] = entity.vertexLabels[entity.vertexLabels.length - 1] ?? `V${entity.vertexLabels.length}`;
     }
     if (points.length < 2) return [];
-    const preserveId = intervals.length === 1;
+    const preserveId =
+      intervals.length === 1 && (options?.preserveOriginalIdWhenSingle ?? true);
     return [{
       ...entity,
-      id: preserveId ? entity.id : createStableRuntimeId('cad-polyline'),
+      id:
+        preserveId
+          ? entity.id
+          : options?.idForPiece?.(index) ?? createStableRuntimeId('cad-polyline'),
       vertices: points,
       vertexLabels: labels,
-      metadata: {
-        ...entity.metadata,
-        createdBy: 'TRIM',
-        manual: true,
-      },
+      metadata:
+        options?.includeTrimMetadata === false
+          ? entity.metadata
+          : {
+              ...entity.metadata,
+              createdBy: 'TRIM',
+              manual: true,
+            },
     }];
   });
 };
@@ -680,24 +699,29 @@ const buildTrimmedPolylinePieces = (
 const buildTrimmedArcPieces = (
   entity: CadArcEntity,
   intervals: readonly CadTrimInterval[],
+  options?: CadTrimPieceBuildOptions,
 ): CadArcEntity[] => {
   const totalSweep = Math.abs(cadSignedSweepDeg(entity.startAngleDeg, entity.endAngleDeg));
   return intervals.flatMap((interval, index) => {
     if (interval.end - interval.start <= TRIM_EPSILON) return [];
-    const preserveId = intervals.length === 1;
+    const preserveId =
+      intervals.length === 1 && (options?.preserveOriginalIdWhenSingle ?? true);
     return [{
       ...entity,
-      id: preserveId ? entity.id : createStableRuntimeId('cad-arc'),
+      id: preserveId ? entity.id : options?.idForPiece?.(index) ?? createStableRuntimeId('cad-arc'),
       startAngleDeg: angleAtArcPosition(entity, interval.start),
       endAngleDeg: angleAtArcPosition(entity, interval.end),
-      metadata: {
-        ...entity.metadata,
-        createdBy: 'TRIM',
-        manual: true,
-        trimPiece: index + 1,
-        trimmedFromArcId: entity.id,
-        trimmedTotalSweepDeg: totalSweep,
-      },
+      metadata:
+        options?.includeTrimMetadata === false
+          ? entity.metadata
+          : {
+              ...entity.metadata,
+              createdBy: 'TRIM',
+              manual: true,
+              trimPiece: index + 1,
+              trimmedFromArcId: entity.id,
+              trimmedTotalSweepDeg: totalSweep,
+            },
     }];
   });
 };
@@ -707,6 +731,7 @@ const buildTrimmedEntityPieces = (
   boundaries: readonly CadTrimEntity[],
   pickPoint: { x: number; y: number },
   targetSegmentId?: string,
+  options?: CadTrimPieceBuildOptions,
 ): CadEntity[] => {
   if (entity.type === 'line') {
     const intersections = buildTrimIntersectionsForLineLike(entity, boundaries);
@@ -721,6 +746,7 @@ const buildTrimmedEntityPieces = (
     return buildTrimmedLinePieces(
       entity,
       buildTrimKeepIntervals(intersections, pickPosition, trimEntityTotalLength(entity)),
+      options,
     );
   }
 
@@ -749,6 +775,7 @@ const buildTrimmedEntityPieces = (
     return buildTrimmedPolylinePieces(
       entity,
       buildTrimKeepIntervals(intersections, pickPosition, trimEntityTotalLength(entity)),
+      options,
     );
   }
 
@@ -772,7 +799,46 @@ const buildTrimmedEntityPieces = (
       pickPosition,
       Math.abs(cadSignedSweepDeg(entity.startAngleDeg, entity.endAngleDeg)),
     ),
+    options,
   );
+};
+
+export interface CadTrimPreview {
+  targetEntityId: CadEntityId;
+  previewEntities: CadEntity[];
+}
+
+export const buildCadTrimPreview = (
+  project: CadProject,
+  cuttingEntityIds: readonly CadEntityId[],
+  targetEntityId: CadEntityId,
+  pickPoint: { x: number; y: number },
+  targetSegmentId?: string,
+): CadTrimPreview | null => {
+  const cuttingEntities = buildTrimBoundaryEntities(project, cuttingEntityIds);
+  if (cuttingEntities.length === 0) return null;
+  if (cuttingEntities.some((entity) => entity.id === targetEntityId)) return null;
+  const targetEntity = project.entities.find(
+    (entity): entity is CadTrimEntity =>
+      entity.id === targetEntityId && isTrimmableEntity(entity) && !entity.locked,
+  );
+  if (!targetEntity) return null;
+  const previewEntities = buildTrimmedEntityPieces(
+    targetEntity,
+    cuttingEntities,
+    pickPoint,
+    targetSegmentId,
+    {
+      preserveOriginalIdWhenSingle: false,
+      idForPiece: (index) => `${targetEntity.id}:trim-preview:${index + 1}`,
+      includeTrimMetadata: false,
+    },
+  );
+  if (previewEntities.length === 0) return null;
+  return {
+    targetEntityId: targetEntity.id,
+    previewEntities,
+  };
 };
 
 const translateEntity = (entity: CadEntity, deltaX: number, deltaY: number): CadEntity => {

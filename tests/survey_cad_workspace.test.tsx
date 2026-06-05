@@ -3968,6 +3968,26 @@ describe('SurveyCadWorkspace', () => {
         }),
       );
       trimTarget.dispatchEvent(
+        new MouseEvent('mousemove', {
+          bubbles: true,
+          clientX: removePick.clientX,
+          clientY: removePick.clientY,
+        }),
+      );
+    });
+
+    const dimmedTarget = container.querySelector(
+      '[data-survey-cad-render-entity-id="line:trim-target"]',
+    ) as SVGLineElement | null;
+    const trimPreviewLines = Array.from(
+      container.querySelectorAll('[data-survey-cad-command-preview-line]'),
+    ) as SVGLineElement[];
+
+    expect(dimmedTarget?.getAttribute('opacity')).toBe('0.22');
+    expect(trimPreviewLines).toHaveLength(2);
+
+    await act(async () => {
+      trimTarget.dispatchEvent(
         new MouseEvent('mousedown', {
           bubbles: true,
           clientX: removePick.clientX,

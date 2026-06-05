@@ -30,6 +30,7 @@ interface SurveyCadPreviewProps {
   commandInputValue: string;
   commandInputPlaceholder: string;
   commandInputEnabled: boolean;
+  commandEntityOpacityOverrides?: Readonly<Record<string, number>>;
   viewport: { zoom: number; panX: number; panY: number };
   commandActive: boolean;
   commandPointInputActive: boolean;
@@ -53,6 +54,9 @@ interface SurveyCadPreviewProps {
       visibleBounds?: CadBounds | null;
       restrictedGripHandles?: readonly CadGripHandle[];
     },
+  ) => void;
+  onCommandHoverTargetChange?: (
+    _hoverTarget: { entityId: string; segmentId?: string; point: { x: number; y: number } } | null,
   ) => void;
   onSnapPreferenceChange: (_kind: CadSnapKind, _enabled: boolean) => void;
   onCommandInputChange: (_value: string) => void;
@@ -340,6 +344,7 @@ const arcPathFromPrimitive = (
 const renderPrimitive = (
   primitive: CadDisplayPrimitive,
   selectedEntityIds: readonly string[],
+  entityOpacityOverrides: Readonly<Record<string, number>>,
   project: (_x: number, _y: number) => { x: number; y: number },
   scale: number,
   onEntityClick: (
@@ -348,11 +353,20 @@ const renderPrimitive = (
     _sourceSegmentId?: string,
     _appendToSelection?: boolean,
   ) => void,
+  onEntityHover?: (
+    _event: React.MouseEvent<SVGElement>,
+    _primitive: CadDisplayPrimitive,
+    _sourceSegmentId?: string,
+  ) => void,
+  onEntityLeave?: () => void,
 ) => {
   const isSelected = selectedEntityIds.includes(primitive.sourceEntityId);
   const commonProps = {
     onClick: (event: React.MouseEvent<SVGElement>) =>
       onEntityClick(event, primitive.sourceEntityId, primitive.sourceSegmentId, event.shiftKey),
+    onMouseMove: (event: React.MouseEvent<SVGElement>) =>
+      onEntityHover?.(event, primitive, primitive.sourceSegmentId),
+    onMouseLeave: () => onEntityLeave?.(),
     className: 'cursor-pointer',
   };
 
@@ -381,9 +395,10 @@ const renderPrimitive = (
             x2={end.x}
             y2={end.y}
             {...commonProps}
+            data-survey-cad-render-entity-id={primitive.sourceEntityId}
             stroke={isSelected ? '#fbbf24' : primitive.stroke}
             strokeWidth={isSelected ? primitive.strokeWidth + 1.1 : primitive.strokeWidth}
-            opacity={primitive.opacity ?? 0.92}
+            opacity={entityOpacityOverrides[primitive.sourceEntityId] ?? primitive.opacity ?? 0.92}
             strokeDasharray={primitive.strokeDasharray}
             pointerEvents="stroke"
           />
@@ -409,9 +424,10 @@ const renderPrimitive = (
             d={path}
             fill="none"
             {...commonProps}
+            data-survey-cad-render-entity-id={primitive.sourceEntityId}
             stroke={isSelected ? '#fbbf24' : primitive.stroke}
             strokeWidth={isSelected ? primitive.strokeWidth + 1.1 : primitive.strokeWidth}
-            opacity={primitive.opacity ?? 0.92}
+            opacity={entityOpacityOverrides[primitive.sourceEntityId] ?? primitive.opacity ?? 0.92}
             strokeDasharray={primitive.strokeDasharray}
             pointerEvents="stroke"
           />
@@ -438,10 +454,11 @@ const renderPrimitive = (
             cy={point.y}
             r={isSelected ? primitive.radius + 1.8 : primitive.radius}
             {...commonProps}
+            data-survey-cad-render-entity-id={primitive.sourceEntityId}
             fill={isSelected ? '#fbbf24' : primitive.fill ?? primitive.stroke}
             stroke={isSelected ? '#fef3c7' : '#0f172a'}
             strokeWidth={1.2}
-            opacity={primitive.opacity ?? 1}
+            opacity={entityOpacityOverrides[primitive.sourceEntityId] ?? primitive.opacity ?? 1}
             pointerEvents="all"
           />
         </g>
@@ -455,11 +472,12 @@ const renderPrimitive = (
         <text
           key={primitive.id}
           {...commonProps}
+          data-survey-cad-render-entity-id={primitive.sourceEntityId}
           x={displayX}
           y={displayY}
           fill={isSelected ? '#fbbf24' : primitive.stroke}
           fontSize={primitive.fontSize}
-          opacity={primitive.opacity ?? 1}
+          opacity={entityOpacityOverrides[primitive.sourceEntityId] ?? primitive.opacity ?? 1}
           textAnchor={primitive.textAnchor ?? 'start'}
           transform={
             primitive.rotationDeg != null
@@ -503,9 +521,10 @@ const renderPrimitive = (
             transform={`rotate(${-primitive.thetaDeg} ${center.x} ${center.y})`}
             fill="none"
             {...commonProps}
+            data-survey-cad-render-entity-id={primitive.sourceEntityId}
             stroke={isSelected ? '#fbbf24' : primitive.stroke}
             strokeWidth={isSelected ? primitive.strokeWidth + 0.8 : primitive.strokeWidth}
-            opacity={primitive.opacity ?? 0.88}
+            opacity={entityOpacityOverrides[primitive.sourceEntityId] ?? primitive.opacity ?? 0.88}
             strokeDasharray={primitive.strokeDasharray}
             pointerEvents="stroke"
           />
@@ -533,6 +552,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
   commandInputValue,
   commandInputPlaceholder,
   commandInputEnabled,
+  commandEntityOpacityOverrides = {},
   viewport,
   commandActive,
   commandPointInputActive,
@@ -545,6 +565,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
   onCancelGripEdit = () => undefined,
   onConsumeInteractionPoint,
   onPointerWorldPointChange,
+  onCommandHoverTargetChange = () => undefined,
   onSnapPreferenceChange,
   onCommandInputChange,
   onCommandInputEnter,
@@ -735,6 +756,35 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
     });
   };
 
+  const handlePrimitiveCommandHover = (
+    event: React.MouseEvent<SVGElement>,
+    primitive: CadDisplayPrimitive,
+    sourceSegmentId?: string,
+  ) => {
+    if (!commandPointInputActive) {
+      onCommandHoverTargetChange(null);
+      return;
+    }
+    const screenPoint = screenPointFromMouseEvent(event);
+    if (!screenPoint) return;
+    const rawWorldPoint = unproject(screenPoint.viewX, screenPoint.viewY);
+    const point =
+      primitive.kind === 'arc'
+        ? cadClosestPointOnArc(
+            rawWorldPoint,
+            primitive.center,
+            primitive.radius,
+            primitive.startAngleDeg,
+            primitive.endAngleDeg,
+          )
+        : rawWorldPoint;
+    onCommandHoverTargetChange({
+      entityId: primitive.sourceEntityId,
+      segmentId: sourceSegmentId,
+      point,
+    });
+  };
+
   return (
     <div className="relative h-full w-full bg-slate-950" data-survey-cad-preview-shell>
       <svg
@@ -751,6 +801,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
           onConsumeInteractionPoint(unproject(screenPoint.viewX, screenPoint.viewY));
         }}
         onMouseLeave={() => {
+          onCommandHoverTargetChange(null);
           if (activeGripDragIdRef.current != null) {
             activeGripDragIdRef.current = null;
             onCancelGripEdit();
@@ -848,6 +899,13 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
             }
           }
           const rawWorldPoint = unproject(viewX, viewY);
+          const target = event.target as Element | null;
+          if (
+            commandPointInputActive &&
+            (target == null || target.getAttribute('data-survey-cad-background') === 'true')
+          ) {
+            onCommandHoverTargetChange(null);
+          }
           onPointerWorldPointChange(
             rawWorldPoint,
             snapToleranceScreenUnits / scale,
@@ -935,15 +993,24 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
       />
         <g>
           {scene.primitives.map((primitive) =>
-            renderPrimitive(primitive, selectedEntityIds, project, scale, (event, entityId, sourceSegmentId, appendToSelection) => {
-            if (commandPointInputActive) {
-              handlePrimitiveCommandClick(event, primitive, sourceSegmentId);
-              return;
-            }
-            flushSync(() => {
-              onSelectEntity(entityId, appendToSelection);
-            });
-          }),
+            renderPrimitive(
+              primitive,
+              selectedEntityIds,
+              commandEntityOpacityOverrides,
+              project,
+              scale,
+              (event, entityId, sourceSegmentId, appendToSelection) => {
+                if (commandPointInputActive) {
+                  handlePrimitiveCommandClick(event, primitive, sourceSegmentId);
+                  return;
+                }
+                flushSync(() => {
+                  onSelectEntity(entityId, appendToSelection);
+                });
+              },
+              handlePrimitiveCommandHover,
+              () => onCommandHoverTargetChange(null),
+            ),
         )}
         {transientPreviewPrimitives.length > 0 ? (
           <g data-survey-cad-command-preview>
