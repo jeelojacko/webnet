@@ -219,6 +219,15 @@ describe('Survey CAD command history', () => {
     });
     expect(cogoPointState.present.project.entities.some((entity) => entity.id === 'pt:CAD1')).toBe(true);
     expect(cogoPointState.commandState.prompt).toContain('COGO_POINT committed');
+    expect(cogoPointState.present.project.cogoComputations).toHaveLength(1);
+    expect(cogoPointState.present.project.cogoComputations[0]?.toolKey).toBe('COGO_POINT');
+    const cogoPoint = cogoPointState.present.project.entities.find(
+      (entity) => entity.type === 'survey-point' && entity.stationId === 'CAD1',
+    );
+    expect(cogoPoint?.metadata?.cogo).toMatchObject({
+      toolKey: 'COGO_POINT',
+      sourcePointIds: ['A'],
+    });
 
     const intersectionState = runCadCommand(cogoPointState, {
       key: 'INTERSECT_POINT',
@@ -227,6 +236,8 @@ describe('Survey CAD command history', () => {
       firstLabel: 'line:A-C',
       secondLabel: 'line:B-C',
     });
+    expect(intersectionState.present.project.cogoComputations).toHaveLength(2);
+    expect(intersectionState.present.project.cogoComputations[1]?.toolKey).toBe('INTERSECT_POINT');
     expect(
       intersectionState.present.project.entities.some(
         (entity) => entity.type === 'survey-point' && entity.stationId === 'CAD2',
@@ -280,6 +291,10 @@ describe('Survey CAD command history', () => {
     const tangentArc = tangentState.present.project.entities.find(
       (entity) => entity.type === 'arc' && entity.id !== threePointArc.id,
     );
+    expect(tangentState.present.project.cogoComputations.map((entry) => entry.toolKey)).toEqual([
+      'ARC_CREATE',
+      'TANGENT_CURVE',
+    ]);
     expect(tangentArc?.type).toBe('arc');
     if (tangentArc?.type !== 'arc') throw new Error('Tangent curve arc missing');
     expect(tangentArc.centerX).toBeCloseTo(-10, 6);
@@ -343,6 +358,14 @@ describe('Survey CAD command history', () => {
     const parcel = parcelState.present.project.entities.find((entity) => entity.type === 'parcel');
     expect(parcel?.type).toBe('parcel');
     if (parcel?.type !== 'parcel') throw new Error('Parcel missing');
+    expect(parcelState.present.project.cogoComputations.map((entry) => entry.toolKey)).toEqual([
+      'TRAVERSE',
+      'PARCEL_CREATE',
+    ]);
+    expect(parcel.metadata?.cogo).toMatchObject({
+      toolKey: 'PARCEL_CREATE',
+      sourceEntityIds: [traversePolyline.id],
+    });
     expect(parcel.areaSquareMeters).toBeCloseTo(187.5, 6);
     expect(parcel.perimeterMeters).toBeCloseTo(69.154759, 6);
     expect(parcel.closureDistanceMeters).toBeCloseTo(0, 6);

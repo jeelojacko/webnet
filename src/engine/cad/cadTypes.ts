@@ -1,4 +1,5 @@
 import type { ParseOptions, StationErrorEllipse, StationId, UnitsMode } from '../../types';
+import type { CadCogoComputation } from './cadCogoTypes';
 
 export type CadEntityId = string;
 export type CadLayerId = string;
@@ -118,6 +119,35 @@ export interface CadArcEntity extends CadBaseEntity {
   endAngleDeg: number;
 }
 
+export type CadAlignmentElement =
+  | {
+      kind: 'line';
+      start: CadDisplayPoint;
+      end: CadDisplayPoint;
+      sourceEntityId?: CadEntityId;
+    }
+  | {
+      kind: 'arc';
+      center: CadDisplayPoint;
+      radius: number;
+      startAngleDeg: number;
+      endAngleDeg: number;
+      sourceEntityId?: CadEntityId;
+    };
+
+export interface CadStationEquation {
+  backStation: number;
+  aheadStation: number;
+}
+
+export interface CadAlignmentEntity extends CadBaseEntity {
+  type: 'alignment';
+  name: string;
+  elements: CadAlignmentElement[];
+  startStation: number;
+  stationEquations?: CadStationEquation[];
+}
+
 export interface CadPolygonEntity extends CadBaseEntity {
   type: 'polygon';
   vertices: CadDisplayPoint[];
@@ -159,6 +189,7 @@ export type CadEntity =
   | CadLineEntity
   | CadPolylineEntity
   | CadArcEntity
+  | CadAlignmentEntity
   | CadPolygonEntity
   | CadParcelEntity
   | CadTextEntity
@@ -174,13 +205,14 @@ export interface CadProjectMetadata {
 }
 
 export interface CadProject {
-  version: 1;
+  version: 1 | 2;
   id: string;
   name: string;
   metadata: CadProjectMetadata;
   layers: CadLayer[];
   styleLibrary: CadStyleLibrary;
   entities: CadEntity[];
+  cogoComputations: CadCogoComputation[];
   bounds: CadBounds | null;
 }
 

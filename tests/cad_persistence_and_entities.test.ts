@@ -7,7 +7,7 @@ import { buildCadDisplayScene } from '../src/engine/cad/cadRenderer';
 import type { CadProject, SurveyCadPersistedState } from '../src/engine/cad/cadTypes';
 
 const project: CadProject = {
-  version: 1,
+  version: 2,
   id: 'cad-project-fixtures',
   name: 'CAD Fixture Project',
   metadata: {
@@ -80,6 +80,7 @@ const project: CadProject = {
       perimeterMeters: 55,
     },
   ],
+  cogoComputations: [],
   bounds: null,
 };
 
@@ -128,12 +129,42 @@ describe('Survey CAD persistence and entity families', () => {
     };
 
     const cloned = cloneSurveyCadPersistedState(state);
-    expect(cloned).toEqual(state);
+    expect(cloned).toEqual({
+      ...state,
+      project: {
+        ...state.project,
+        version: 2,
+        cogoComputations: [],
+      },
+    });
     expect(cloned).not.toBe(state);
     expect(cloned.project).not.toBe(state.project);
 
     const sanitized = sanitizeSurveyCadPersistedState(state);
-    expect(sanitized).toEqual(state);
+    expect(sanitized).toEqual({
+      ...state,
+      project: {
+        ...state.project,
+        version: 2,
+        cogoComputations: [],
+      },
+    });
     expect(sanitizeSurveyCadPersistedState({ version: 2 })).toBeUndefined();
+  });
+
+  it('migrates persisted version 1 CAD projects to project version 2 with COGO history', () => {
+    const legacyState = {
+      version: 1,
+      sourceSignature: 'legacy-signature',
+      project: {
+        ...project,
+        version: 1,
+        cogoComputations: undefined,
+      },
+    };
+
+    const sanitized = sanitizeSurveyCadPersistedState(legacyState);
+    expect(sanitized?.project.version).toBe(2);
+    expect(sanitized?.project.cogoComputations).toEqual([]);
   });
 });

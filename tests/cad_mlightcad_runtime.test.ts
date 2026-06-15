@@ -41,6 +41,11 @@ const parseOptions: ParseOptions = {
 
 const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
 
+const pointOnArc = (center: { x: number; y: number }, radius: number, angleDeg: number) => ({
+  x: center.x + Math.cos(toRadians(angleDeg)) * radius,
+  y: center.y + Math.sin(toRadians(angleDeg)) * radius,
+});
+
 const loadRuntime = async () => import(runtimeModuleUrl.href);
 
 const appendRuntimeEntity = (
@@ -82,6 +87,28 @@ const appendRuntimeEntity = (
         polyline.addVertexAt(index, { x: vertex.x, y: vertex.y });
       });
       polyline.closed = entity.type === 'polyline' ? entity.closed : true;
+      runtimeEntity = polyline;
+      break;
+    }
+    case 'alignment': {
+      const polyline = new runtime.AcDbPolyline();
+      let vertexIndex = 0;
+      entity.elements.forEach((element) => {
+        if (element.kind === 'line') {
+          polyline.addVertexAt(vertexIndex, { x: element.start.x, y: element.start.y });
+          vertexIndex += 1;
+          polyline.addVertexAt(vertexIndex, { x: element.end.x, y: element.end.y });
+          vertexIndex += 1;
+          return;
+        }
+        const start = pointOnArc(element.center, element.radius, element.startAngleDeg);
+        const end = pointOnArc(element.center, element.radius, element.endAngleDeg);
+        polyline.addVertexAt(vertexIndex, start);
+        vertexIndex += 1;
+        polyline.addVertexAt(vertexIndex, end);
+        vertexIndex += 1;
+      });
+      polyline.closed = false;
       runtimeEntity = polyline;
       break;
     }

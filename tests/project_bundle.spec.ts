@@ -61,7 +61,7 @@ describe('project bundle serialization', () => {
           version: 1,
           sourceSignature: 'survey-cad-signature',
           project: {
-            version: 1,
+            version: 2,
             id: 'cad-project',
             name: 'Survey CAD Bundle',
             metadata: {
@@ -104,6 +104,7 @@ describe('project bundle serialization', () => {
                 parcelName: 'Lot 1',
               },
             ],
+            cogoComputations: [],
             bounds: {
               minX: 0,
               minY: 0,

@@ -27,11 +27,13 @@ Current implemented spike slice:
 - first parcel-promotion command: `PARCEL_CREATE` from a selected native polyline/traverse seam
 - first interactive query command: `INVERSE`
 - undo/redo replay over snapshot-backed transaction entries
+- project-level COGO computation history stored separately from undo/redo, with structured report rows and provenance for command-created COGO geometry
 - typed coordinate input plus `@azimuth,distance` and survey bearing-distance input after a first point
 - tangent-curve radius entry after snapped or typed PI/back/ahead points
 - split arc tool with default `ARC` + dropdown modes similar to survey/Civil workflows
 - `Ctrl` acts as reverse-direction modifier for the supported arc constructors
 - inverse status now reports distance, azimuth, and survey bearing together
+- COGO-producing command commits now preserve `metadata.createdBy` and add structured COGO provenance metadata to created geometry where applicable
 - dedicated workspace viewport controls now follow direct CAD-style interaction: wheel zoom, middle-mouse pan, middle-double-click zoom extents, click selection, and left-to-right window vs right-to-left crossing drag-box selection
 - command commit/cancel now leans on direct picks plus keyboard flow: viewport clicks capture points, `Enter` submits typed input or finishes `PLINE` on an empty prompt, and `Escape` cancels the active command or clears selection
 - in-progress commands now paint live preview geometry in the viewport for line/polyline/curve and translate-style edit flows before commit

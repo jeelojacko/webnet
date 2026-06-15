@@ -69,6 +69,39 @@ const toMlightcadEntity = (entity: CadEntity): MlightcadSpikeEntity => {
           nativeType: entity.type,
         },
       };
+    case 'alignment':
+      return {
+        objectId: entity.id,
+        type: 'AcDbPolyline',
+        layer: entity.layerId,
+        visible: entity.visible,
+        geometry: {
+          name: entity.name,
+          startStation: entity.startStation,
+          elements: entity.elements.map((element) =>
+            element.kind === 'line'
+              ? {
+                  kind: 'line',
+                  startPoint: { x: element.start.x, y: element.start.y, z: 0 },
+                  endPoint: { x: element.end.x, y: element.end.y, z: 0 },
+                  sourceEntityId: element.sourceEntityId,
+                }
+              : {
+                  kind: 'arc',
+                  center: { x: element.center.x, y: element.center.y, z: 0 },
+                  radius: element.radius,
+                  startAngleDeg: element.startAngleDeg,
+                  endAngleDeg: element.endAngleDeg,
+                  sourceEntityId: element.sourceEntityId,
+                },
+          ),
+          stationEquations: entity.stationEquations ?? [],
+        },
+        metadata: {
+          nativeEntityId: entity.id,
+          nativeType: entity.type,
+        },
+      };
     case 'text':
       return {
         objectId: entity.id,

@@ -270,6 +270,34 @@ const toPrimitives = (project: CadProject, entity: CadEntity): CadDisplayPrimiti
         },
         ...buildArcLabelPrimitive(project, entity),
       ];
+    case 'alignment':
+      return entity.elements.flatMap((element, index): CadDisplayPrimitive[] => {
+        if (element.kind === 'line') {
+          return [{
+            kind: 'line',
+            id: `primitive:${entity.id}:${index + 1}`,
+            layerId: entity.layerId,
+            sourceEntityId: entity.id,
+            sourceSegmentId: `${entity.id}#${index}`,
+            stroke,
+            points: [element.start, element.end],
+            strokeWidth: strokeWidth(project, entity, 1.5),
+          }];
+        }
+        return [{
+          kind: 'arc',
+          id: `primitive:${entity.id}:${index + 1}`,
+          layerId: entity.layerId,
+          sourceEntityId: entity.id,
+          sourceSegmentId: `${entity.id}#${index}`,
+          stroke,
+          center: element.center,
+          radius: element.radius,
+          startAngleDeg: element.startAngleDeg,
+          endAngleDeg: element.endAngleDeg,
+          strokeWidth: strokeWidth(project, entity, 1.5),
+        }];
+      });
     case 'text':
       return [{
         kind: 'text',

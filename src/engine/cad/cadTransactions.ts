@@ -4,6 +4,7 @@ import {
   selectAllCadEntities,
 } from './cadSelection';
 import { cadBuildParcelClosureSummary } from './cadCogo';
+import { buildCadCogoComputation, buildCadCogoEntityMetadata } from './cadCogoTypes';
 import {
   cadAngleDegFromCenter,
   cadArcMidpoint,
@@ -21,8 +22,13 @@ import {
   cadSegmentIntersection,
   cadSignedSweepDeg,
 } from './cadGeometry';
-import { appendCadProjectEntities, replaceCadProjectEntities } from './cadProjectState';
+import {
+  appendCadProjectCogoComputation,
+  appendCadProjectEntities,
+  replaceCadProjectEntities,
+} from './cadProjectState';
 import type { CadSelectionState } from './cadSelection';
+import type { CadCogoToolKey } from './cadCogoTypes';
 import type {
   CadEntity,
   CadArcEntity,
@@ -297,6 +303,60 @@ const compactManualPointEntities = (
   entities: Array<CadSurveyPointEntity | CadTextEntity | null>,
 ): Array<CadSurveyPointEntity | CadTextEntity> =>
   entities.filter((entity): entity is CadSurveyPointEntity | CadTextEntity => entity != null);
+
+const createCogoProvenance = ({
+  toolKey,
+  summary,
+  sourceEntityIds,
+  sourcePointIds,
+  inputs,
+  parameters,
+}: {
+  toolKey: CadCogoToolKey;
+  summary: string;
+  sourceEntityIds?: CadEntityId[];
+  sourcePointIds?: string[];
+  inputs: Record<string, unknown>;
+  parameters?: Record<string, unknown>;
+}) => ({
+  id: createStableRuntimeId('cad-cogo'),
+  toolKey,
+  inputs,
+  parameters,
+  sourceEntityIds,
+  sourcePointIds,
+  resultSummary: summary,
+});
+
+const appendCogoComputation = ({
+  project,
+  provenance,
+  title,
+  summary,
+  rows,
+  createdEntities,
+}: {
+  project: CadProject;
+  provenance: ReturnType<typeof createCogoProvenance>;
+  title: string;
+  summary: string;
+  rows: Array<{ label: string; value: string; unit?: string }>;
+  createdEntities: CadEntity[];
+}): CadProject => {
+  return appendCadProjectCogoComputation(
+    project,
+    buildCadCogoComputation({
+      createdEntities,
+      report: {
+        title,
+        summary,
+        rows,
+      },
+      warnings: [],
+      provenance,
+    }),
+  );
+};
 
 const expandSelectedEntityIds = (
   project: CadProject,
@@ -873,6 +933,22 @@ const translateEntity = (entity: CadEntity, deltaX: number, deltaY: number): Cad
         centerX: entity.centerX + deltaX,
         centerY: entity.centerY + deltaY,
       };
+    case 'alignment':
+      return {
+        ...entity,
+        elements: entity.elements.map((element) =>
+          element.kind === 'line'
+            ? {
+                ...element,
+                start: { x: element.start.x + deltaX, y: element.start.y + deltaY },
+                end: { x: element.end.x + deltaX, y: element.end.y + deltaY },
+              }
+            : {
+                ...element,
+                center: { x: element.center.x + deltaX, y: element.center.y + deltaY },
+              },
+        ),
+      };
     case 'text':
       return {
         ...entity,
@@ -1245,6 +1321,29 @@ const buildCopiedEntities = (
           },
         });
         break;
+      case 'alignment':
+        copiedEntities.push({
+          ...entity,
+          id: createStableRuntimeId('cad-alignment'),
+          elements: entity.elements.map((element) =>
+            element.kind === 'line'
+              ? {
+                  ...element,
+                  start: { x: element.start.x + deltaX, y: element.start.y + deltaY },
+                  end: { x: element.end.x + deltaX, y: element.end.y + deltaY },
+                }
+              : {
+                  ...element,
+                  center: { x: element.center.x + deltaX, y: element.center.y + deltaY },
+                },
+          ),
+          metadata: {
+            ...entity.metadata,
+            createdBy: 'COPY',
+            manual: true,
+          },
+        });
+        break;
       case 'text':
         copiedEntities.push({
           ...entity,
@@ -1400,24 +1499,60 @@ const cogoPointCommand: CadCommandDefinition<{
 }> = {
   key: 'COGO_POINT',
   execute: (snapshot, command) => {
+    const summary = `Created point from ${command.basisLabel} using ${command.directionLabel}`;
+    const provenance = createCogoProvenance({
+      toolKey: 'COGO_POINT',
+      summary,
+      sourcePointIds: [command.basisLabel],
+      inputs: {
+        basisLabel: command.basisLabel,
+        directionLabel: command.directionLabel,
+      },
+      parameters: {
+        x: command.x,
+        y: command.y,
+      },
+    });
     const entities = createManualPointEntities(snapshot.project, command.x, command.y, command.label);
-    const appendedEntities = compactManualPointEntities([entities.point, entities.label]);
-    const nextProject = appendCadProjectEntities(
+    const pointEntity: CadSurveyPointEntity = {
+      ...entities.point,
+      metadata: buildCadCogoEntityMetadata(entities.point.metadata, provenance),
+    };
+    const labelEntity = entities.label
+      ? {
+          ...entities.label,
+          metadata: buildCadCogoEntityMetadata(entities.label.metadata, provenance),
+        }
+      : null;
+    const appendedEntities = compactManualPointEntities([pointEntity, labelEntity]);
+    const nextProjectWithEntities = appendCadProjectEntities(
       snapshot.project,
       appendedEntities,
     );
+    const nextProject = appendCogoComputation({
+      project: nextProjectWithEntities,
+      provenance,
+      title: 'COGO Point',
+      summary,
+      rows: [
+        { label: 'Point', value: pointEntity.stationId },
+        { label: 'Northing', value: command.y.toFixed(3), unit: 'm' },
+        { label: 'Easting', value: command.x.toFixed(3), unit: 'm' },
+      ],
+      createdEntities: appendedEntities,
+    });
     return {
       nextSnapshot: {
         project: nextProject,
-        selection: createCadSelectionState(nextProject, [entities.point.id]),
+        selection: createCadSelectionState(nextProject, [pointEntity.id]),
       },
       commandState: {
         key: 'COGO_POINT',
         phase: 'committed',
         prompt: `COGO_POINT committed from ${command.basisLabel} using ${command.directionLabel}.`,
       },
-      transactionLabel: `COGO_POINT (${entities.point.stationId})`,
-      addedEntityIds: [entities.point.id, entities.label?.id].filter(
+      transactionLabel: `COGO_POINT (${pointEntity.stationId})`,
+      addedEntityIds: [pointEntity.id, labelEntity?.id].filter(
         (entityId): entityId is string => entityId != null,
       ),
       removedEntityIds: [],
@@ -1545,6 +1680,22 @@ const traverseCommand: CadCommandDefinition<{
     });
     if (vertices.length < 2) return null;
 
+    const totalLength = vertices.slice(0, -1).reduce(
+      (sum, vertex, index) => sum + cadDistance(vertex, vertices[index + 1]!),
+      0,
+    );
+    const summary = `Created traverse with ${vertices.length} stations`;
+    const provenance = createCogoProvenance({
+      toolKey: 'TRAVERSE',
+      summary,
+      sourcePointIds: vertices.map((vertex) => vertex.label),
+      inputs: {
+        vertices,
+      },
+      parameters: {
+        totalLength,
+      },
+    });
     let workingProject = snapshot.project;
     const createdEntities: CadEntity[] = [];
     const vertexLabels: string[] = [];
@@ -1559,9 +1710,13 @@ const traverseCommand: CadCommandDefinition<{
         includeTextLabel: false,
         createdBy: 'TRAVERSE',
       });
-      workingProject = appendCadProjectEntities(workingProject, [pointBundle.point]);
-      createdEntities.push(pointBundle.point);
-      vertexLabels.push(pointBundle.point.stationId);
+      const pointEntity: CadSurveyPointEntity = {
+        ...pointBundle.point,
+        metadata: buildCadCogoEntityMetadata(pointBundle.point.metadata, provenance),
+      };
+      workingProject = appendCadProjectEntities(workingProject, [pointEntity]);
+      createdEntities.push(pointEntity);
+      vertexLabels.push(pointEntity.stationId);
     });
 
     const polylineEntity: CadPolylineEntity = {
@@ -1574,12 +1729,23 @@ const traverseCommand: CadCommandDefinition<{
       vertices: vertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
       vertexLabels,
       closed: false,
-      metadata: {
+      metadata: buildCadCogoEntityMetadata({
         createdBy: 'TRAVERSE',
         manual: true,
-      },
+      }, provenance),
     };
-    const nextProject = appendCadProjectEntities(workingProject, [polylineEntity]);
+    const nextProjectWithEntities = appendCadProjectEntities(workingProject, [polylineEntity]);
+    const nextProject = appendCogoComputation({
+      project: nextProjectWithEntities,
+      provenance,
+      title: 'Traverse',
+      summary,
+      rows: [
+        { label: 'Stations', value: vertices.length.toString() },
+        { label: 'Total length', value: totalLength.toFixed(3), unit: 'm' },
+      ],
+      createdEntities: [...createdEntities, polylineEntity],
+    });
     return {
       nextSnapshot: {
         project: nextProject,
@@ -1607,6 +1773,20 @@ const arc3ptCommand: CadCommandDefinition<{
   execute: (snapshot, command) => {
     const arcDefinition = cadBuildArcFromThreePoints(command.start, command.through, command.end);
     if (!arcDefinition) return null;
+    const summary = `Created arc through ${command.start.label}, ${command.through.label}, ${command.end.label}`;
+    const provenance = createCogoProvenance({
+      toolKey: 'ARC_CREATE',
+      summary,
+      sourcePointIds: [command.start.label, command.through.label, command.end.label],
+      inputs: {
+        start: command.start,
+        through: command.through,
+        end: command.end,
+      },
+      parameters: {
+        mode: 'ARC_3PT',
+      },
+    });
     const arcEntity: CadEntity = {
       id: createStableRuntimeId('cad-arc'),
       type: 'arc',
@@ -1619,15 +1799,26 @@ const arc3ptCommand: CadCommandDefinition<{
       radius: arcDefinition.radius,
       startAngleDeg: arcDefinition.startAngleDeg,
       endAngleDeg: arcDefinition.endAngleDeg,
-      metadata: {
+      metadata: buildCadCogoEntityMetadata({
         createdBy: 'ARC_3PT',
         manual: true,
         startLabel: command.start.label,
         throughLabel: command.through.label,
         endLabel: command.end.label,
-      },
+      }, provenance),
     };
-    const nextProject = appendCadProjectEntities(snapshot.project, [arcEntity]);
+    const nextProjectWithEntities = appendCadProjectEntities(snapshot.project, [arcEntity]);
+    const nextProject = appendCogoComputation({
+      project: nextProjectWithEntities,
+      provenance,
+      title: 'Arc 3 Point',
+      summary,
+      rows: [
+        { label: 'Radius', value: arcDefinition.radius.toFixed(3), unit: 'm' },
+        { label: 'Delta', value: arcDefinition.deltaDeg.toFixed(6), unit: 'deg' },
+      ],
+      createdEntities: [arcEntity],
+    });
     return {
       nextSnapshot: {
         project: nextProject,
@@ -1658,6 +1849,16 @@ const arcCreateCommand: CadCommandDefinition<{
 }> = {
   key: 'ARC_CREATE',
   execute: (snapshot, command) => {
+    const summary = `${command.modeLabel} created radius ${command.definition.radius.toFixed(3)} m`;
+    const provenance = createCogoProvenance({
+      toolKey: 'ARC_CREATE',
+      summary,
+      inputs: {
+        modeLabel: command.modeLabel,
+        definition: command.definition,
+      },
+      parameters: command.metadata,
+    });
     const arcEntity: CadEntity = {
       id: createStableRuntimeId('cad-arc'),
       type: 'arc',
@@ -1670,13 +1871,25 @@ const arcCreateCommand: CadCommandDefinition<{
       radius: command.definition.radius,
       startAngleDeg: command.definition.startAngleDeg,
       endAngleDeg: command.definition.endAngleDeg,
-      metadata: {
+      metadata: buildCadCogoEntityMetadata({
         createdBy: command.modeLabel,
         manual: true,
         ...(command.metadata ?? {}),
-      },
+      }, provenance),
     };
-    const nextProject = appendCadProjectEntities(snapshot.project, [arcEntity]);
+    const nextProjectWithEntities = appendCadProjectEntities(snapshot.project, [arcEntity]);
+    const nextProject = appendCogoComputation({
+      project: nextProjectWithEntities,
+      provenance,
+      title: command.modeLabel,
+      summary,
+      rows: [
+        { label: 'Radius', value: command.definition.radius.toFixed(3), unit: 'm' },
+        { label: 'Start angle', value: command.definition.startAngleDeg.toFixed(6), unit: 'deg' },
+        { label: 'End angle', value: command.definition.endAngleDeg.toFixed(6), unit: 'deg' },
+      ],
+      createdEntities: [arcEntity],
+    });
     return {
       nextSnapshot: {
         project: nextProject,
@@ -1710,6 +1923,20 @@ const tangentCurveCommand: CadCommandDefinition<{
       command.radius,
     );
     if (!arcDefinition) return null;
+    const summary = `Created tangent curve at ${command.pi.label} with radius ${command.radius.toFixed(3)} m`;
+    const provenance = createCogoProvenance({
+      toolKey: 'TANGENT_CURVE',
+      summary,
+      sourcePointIds: [command.pi.label, command.backTangentPoint.label, command.aheadTangentPoint.label],
+      inputs: {
+        pi: command.pi,
+        backTangentPoint: command.backTangentPoint,
+        aheadTangentPoint: command.aheadTangentPoint,
+      },
+      parameters: {
+        radius: command.radius,
+      },
+    });
     const arcEntity: CadEntity = {
       id: createStableRuntimeId('cad-arc'),
       type: 'arc',
@@ -1722,15 +1949,27 @@ const tangentCurveCommand: CadCommandDefinition<{
       radius: arcDefinition.radius,
       startAngleDeg: arcDefinition.startAngleDeg,
       endAngleDeg: arcDefinition.endAngleDeg,
-      metadata: {
+      metadata: buildCadCogoEntityMetadata({
         createdBy: 'TANGENT_CURVE',
         manual: true,
         piLabel: command.pi.label,
         backLabel: command.backTangentPoint.label,
         aheadLabel: command.aheadTangentPoint.label,
-      },
+      }, provenance),
     };
-    const nextProject = appendCadProjectEntities(snapshot.project, [arcEntity]);
+    const nextProjectWithEntities = appendCadProjectEntities(snapshot.project, [arcEntity]);
+    const nextProject = appendCogoComputation({
+      project: nextProjectWithEntities,
+      provenance,
+      title: 'Tangent Curve',
+      summary,
+      rows: [
+        { label: 'PI', value: command.pi.label },
+        { label: 'Radius', value: command.radius.toFixed(3), unit: 'm' },
+        { label: 'Delta', value: arcDefinition.deltaDeg.toFixed(6), unit: 'deg' },
+      ],
+      createdEntities: [arcEntity],
+    });
     return {
       nextSnapshot: {
         project: nextProject,
@@ -1773,6 +2012,21 @@ const parcelCreateCommand: CadCommandDefinition<{
         ? sourcePolyline.vertexLabels.slice(0, -1)
         : sourcePolyline.vertexLabels;
     const parcelName = nextParcelName(snapshot.project);
+    const summary = `Created ${parcelName} from ${sourcePolyline.id}`;
+    const provenance = createCogoProvenance({
+      toolKey: 'PARCEL_CREATE',
+      summary,
+      sourceEntityIds: [sourcePolyline.id],
+      sourcePointIds: ringLabels,
+      inputs: {
+        sourceEntityId: sourcePolyline.id,
+      },
+      parameters: {
+        areaSquareMeters: metrics.areaSquareMeters,
+        perimeterMeters: metrics.perimeterMeters,
+        closureDistanceMeters: metrics.closureDistanceMeters,
+      },
+    });
     const parcelEntity: CadParcelEntity = {
       id: createStableRuntimeId('cad-parcel'),
       type: 'parcel',
@@ -1788,13 +2042,26 @@ const parcelCreateCommand: CadCommandDefinition<{
       closureDeltaX: metrics.closureDeltaX,
       closureDeltaY: metrics.closureDeltaY,
       closureDistanceMeters: metrics.closureDistanceMeters,
-      metadata: {
+      metadata: buildCadCogoEntityMetadata({
         createdBy: 'PARCEL_CREATE',
         manual: true,
         sourceEntityId: sourcePolyline.id,
-      },
+      }, provenance),
     };
-    const nextProject = appendCadProjectEntities(snapshot.project, [parcelEntity]);
+    const nextProjectWithEntities = appendCadProjectEntities(snapshot.project, [parcelEntity]);
+    const nextProject = appendCogoComputation({
+      project: nextProjectWithEntities,
+      provenance,
+      title: 'Parcel Create',
+      summary,
+      rows: [
+        { label: 'Parcel', value: parcelName },
+        { label: 'Area', value: metrics.areaSquareMeters.toFixed(3), unit: 'm2' },
+        { label: 'Perimeter', value: metrics.perimeterMeters.toFixed(3), unit: 'm' },
+        { label: 'Closure', value: metrics.closureDistanceMeters.toFixed(3), unit: 'm' },
+      ],
+      createdEntities: [parcelEntity],
+    });
     return {
       nextSnapshot: {
         project: nextProject,
@@ -1980,24 +2247,59 @@ const intersectPointCommand: CadCommandDefinition<{
 }> = {
   key: 'INTERSECT_POINT',
   execute: (snapshot, command) => {
+    const summary = `Created point at ${command.firstLabel} x ${command.secondLabel}`;
+    const provenance = createCogoProvenance({
+      toolKey: 'INTERSECT_POINT',
+      summary,
+      inputs: {
+        firstLabel: command.firstLabel,
+        secondLabel: command.secondLabel,
+      },
+      parameters: {
+        x: command.x,
+        y: command.y,
+      },
+    });
     const entities = createManualPointEntities(snapshot.project, command.x, command.y, command.label);
-    const appendedEntities = compactManualPointEntities([entities.point, entities.label]);
-    const nextProject = appendCadProjectEntities(
+    const pointEntity: CadSurveyPointEntity = {
+      ...entities.point,
+      metadata: buildCadCogoEntityMetadata(entities.point.metadata, provenance),
+    };
+    const labelEntity = entities.label
+      ? {
+          ...entities.label,
+          metadata: buildCadCogoEntityMetadata(entities.label.metadata, provenance),
+        }
+      : null;
+    const appendedEntities = compactManualPointEntities([pointEntity, labelEntity]);
+    const nextProjectWithEntities = appendCadProjectEntities(
       snapshot.project,
       appendedEntities,
     );
+    const nextProject = appendCogoComputation({
+      project: nextProjectWithEntities,
+      provenance,
+      title: 'Intersection Point',
+      summary,
+      rows: [
+        { label: 'Point', value: pointEntity.stationId },
+        { label: 'Northing', value: command.y.toFixed(3), unit: 'm' },
+        { label: 'Easting', value: command.x.toFixed(3), unit: 'm' },
+      ],
+      createdEntities: appendedEntities,
+    });
     return {
       nextSnapshot: {
         project: nextProject,
-        selection: createCadSelectionState(nextProject, [entities.point.id]),
+        selection: createCadSelectionState(nextProject, [pointEntity.id]),
       },
       commandState: {
         key: 'INTERSECT_POINT',
         phase: 'committed',
         prompt: `INTERSECT_POINT committed at ${command.firstLabel} x ${command.secondLabel}.`,
       },
-      transactionLabel: `INTERSECT_POINT (${entities.point.stationId})`,
-      addedEntityIds: [entities.point.id, entities.label?.id].filter(
+      transactionLabel: `INTERSECT_POINT (${pointEntity.stationId})`,
+      addedEntityIds: [pointEntity.id, labelEntity?.id].filter(
         (entityId): entityId is string => entityId != null,
       ),
       removedEntityIds: [],

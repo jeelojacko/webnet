@@ -1,18 +1,31 @@
 import { cadIsAngleOnArcSweep } from './cadGeometry';
+import type { CadCogoComputation } from './cadCogoTypes';
 import type { CadBounds, CadEntity, CadProject } from './cadTypes';
 
-const arcEndPoints = (entity: Extract<CadEntity, { type: 'arc' }>): Array<{ x: number; y: number }> => {
-  const sampleAngles = [entity.startAngleDeg, entity.endAngleDeg];
+const arcEndPoints = ({
+  centerX,
+  centerY,
+  radius,
+  startAngleDeg,
+  endAngleDeg,
+}: {
+  centerX: number;
+  centerY: number;
+  radius: number;
+  startAngleDeg: number;
+  endAngleDeg: number;
+}): Array<{ x: number; y: number }> => {
+  const sampleAngles = [startAngleDeg, endAngleDeg];
   [0, 90, 180, 270].forEach((candidate) => {
-    if (cadIsAngleOnArcSweep(candidate, entity.startAngleDeg, entity.endAngleDeg)) {
+    if (cadIsAngleOnArcSweep(candidate, startAngleDeg, endAngleDeg)) {
       sampleAngles.push(candidate);
     }
   });
   return sampleAngles.map((angleDeg) => {
     const radians = (angleDeg * Math.PI) / 180;
     return {
-      x: entity.centerX + Math.cos(radians) * entity.radius,
-      y: entity.centerY + Math.sin(radians) * entity.radius,
+      x: centerX + Math.cos(radians) * radius,
+      y: centerY + Math.sin(radians) * radius,
     };
   });
 };
@@ -48,6 +61,22 @@ export const buildCadBounds = (entities: CadEntity[]): CadBounds | null => {
       case 'arc':
         arcEndPoints(entity).forEach((point) => includePoint(point.x, point.y));
         break;
+      case 'alignment':
+        entity.elements.forEach((element) => {
+          if (element.kind === 'line') {
+            includePoint(element.start.x, element.start.y);
+            includePoint(element.end.x, element.end.y);
+            return;
+          }
+          arcEndPoints({
+            centerX: element.center.x,
+            centerY: element.center.y,
+            radius: element.radius,
+            startAngleDeg: element.startAngleDeg,
+            endAngleDeg: element.endAngleDeg,
+          }).forEach((point) => includePoint(point.x, point.y));
+        });
+        break;
       case 'error-ellipse':
         includePoint(entity.centerX - entity.semiMajor, entity.centerY - entity.semiMajor);
         includePoint(entity.centerX + entity.semiMajor, entity.centerY + entity.semiMajor);
@@ -77,6 +106,14 @@ export const appendCadProjectEntities = (
   project: CadProject,
   entitiesToAppend: CadEntity[],
 ): CadProject => replaceCadProjectEntities(project, [...project.entities, ...entitiesToAppend]);
+
+export const appendCadProjectCogoComputation = (
+  project: CadProject,
+  computation: CadCogoComputation,
+): CadProject => ({
+  ...project,
+  cogoComputations: [...(project.cogoComputations ?? []), computation],
+});
 
 export const buildCadProjectSignature = (project: CadProject): string =>
   JSON.stringify(project);

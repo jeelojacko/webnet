@@ -85,7 +85,7 @@ const surveyCadState: SurveyCadPersistedState = {
   version: 1,
   sourceSignature: 'base-project-signature',
   project: {
-    version: 1,
+    version: 2,
     id: 'cad-project-1',
     name: 'Survey CAD Project',
     metadata: {
@@ -131,6 +131,7 @@ const surveyCadState: SurveyCadPersistedState = {
         perimeterMeters: 240,
       },
     ],
+    cogoComputations: [],
     bounds: { minX: 0, minY: 0, maxX: 100, maxY: 40 },
   },
 };

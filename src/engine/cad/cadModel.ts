@@ -168,7 +168,7 @@ const buildCadProjectFromParsed = (
   ];
 
   return {
-    version: 1,
+    version: 2,
     id: 'survey-cad-spike-project',
     name: source === 'adjustment-result' ? 'Adjusted Survey CAD Spike' : 'Parsed Survey CAD Spike',
     metadata: {
@@ -182,6 +182,7 @@ const buildCadProjectFromParsed = (
     layers: DEFAULT_CAD_LAYERS,
     styleLibrary: DEFAULT_CAD_STYLE_LIBRARY,
     entities,
+    cogoComputations: [],
     bounds: buildCadBounds(entities),
   };
 };

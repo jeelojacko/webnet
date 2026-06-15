@@ -16,6 +16,19 @@ const clonePoint = (point: CadDisplayPoint): CadDisplayPoint => ({
   y: point.y,
 });
 
+const cloneJsonValue = <TValue>(value: TValue): TValue => {
+  if (Array.isArray(value)) return value.map((entry) => cloneJsonValue(entry)) as TValue;
+  if (isRecord(value)) {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, entry]) => [key, cloneJsonValue(entry)]),
+    ) as TValue;
+  }
+  return value;
+};
+
+const cloneMetadata = (metadata: Record<string, unknown> | undefined): Record<string, unknown> | undefined =>
+  metadata ? cloneJsonValue(metadata) : undefined;
+
 const cloneBounds = (bounds: CadBounds | null): CadBounds | null =>
   bounds
     ? {
@@ -41,7 +54,7 @@ export const cloneCadEntity = (entity: CadEntity): CadEntity => {
       return {
         ...entity,
         errorEllipse: entity.errorEllipse ? { ...entity.errorEllipse } : undefined,
-        metadata: entity.metadata ? { ...entity.metadata } : undefined,
+        metadata: cloneMetadata(entity.metadata),
       };
     case 'line':
     case 'text':
@@ -49,7 +62,25 @@ export const cloneCadEntity = (entity: CadEntity): CadEntity => {
     case 'arc':
       return {
         ...entity,
-        metadata: entity.metadata ? { ...entity.metadata } : undefined,
+        metadata: cloneMetadata(entity.metadata),
+      };
+    case 'alignment':
+      return {
+        ...entity,
+        elements: entity.elements.map((element) =>
+          element.kind === 'line'
+            ? {
+                ...element,
+                start: clonePoint(element.start),
+                end: clonePoint(element.end),
+              }
+            : {
+                ...element,
+                center: clonePoint(element.center),
+              },
+        ),
+        stationEquations: entity.stationEquations?.map((equation) => ({ ...equation })),
+        metadata: cloneMetadata(entity.metadata),
       };
     case 'polyline':
     case 'polygon':
@@ -58,19 +89,20 @@ export const cloneCadEntity = (entity: CadEntity): CadEntity => {
         ...entity,
         vertices: entity.vertices.map(clonePoint),
         vertexLabels: [...entity.vertexLabels],
-        metadata: entity.metadata ? { ...entity.metadata } : undefined,
+        metadata: cloneMetadata(entity.metadata),
       };
   }
 };
 
 export const cloneCadProject = (project: CadProject): CadProject => ({
-  version: 1,
+  version: 2,
   id: project.id,
   name: project.name,
   metadata: { ...project.metadata },
   layers: project.layers.map(cloneLayer),
   styleLibrary: cloneStyleLibrary(project.styleLibrary),
   entities: project.entities.map(cloneCadEntity),
+  cogoComputations: (project.cogoComputations ?? []).map((computation) => cloneJsonValue(computation)),
   bounds: cloneBounds(project.bounds),
 });
 
@@ -87,6 +119,9 @@ export const sanitizeSurveyCadPersistedState = (
 ): SurveyCadPersistedState | undefined => {
   if (!isRecord(value)) return undefined;
   if (value.version !== 1 || typeof value.sourceSignature !== 'string' || !isRecord(value.project)) {
+    return undefined;
+  }
+  if (value.project.version !== 1 && value.project.version !== 2) {
     return undefined;
   }
   try {

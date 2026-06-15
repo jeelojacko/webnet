@@ -1,3 +1,5 @@
+- [x] Survey CAD COGO foundation batch (June 2026): add shared COGO result/report/provenance types, project-level persisted COGO computation history, versioned CAD project migration, native alignment entity foundation, and command-history integration for existing COGO-producing commands.
+
 - [x] Survey CAD trim preview batch (June 2026): while `TRIM` is active, dim the hovered removable span and overlay the surviving geometry so operators can preview exactly what will remain before they click.
 
 - [x] Survey CAD trim command batch (June 2026): add a Civil3D-style `TRIM` flow that uses selected linework as cutting edges, lets operators click the side of a line/polyline/arc to remove, commits deterministic split/shorten edits through command history, and locks it with focused CAD geometry/workspace coverage.

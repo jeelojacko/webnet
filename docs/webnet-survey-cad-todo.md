@@ -1,5 +1,22 @@
 # WebNet Survey CAD TODO
 
+- [x] Survey CAD COGO foundation batch (June 2026): add shared COGO result/report/provenance types, project-level persisted COGO computation history, versioned CAD project migration, native alignment entity foundation, and command-history integration for existing COGO-producing commands.
+
+## COGO Expansion Checklist
+- [x] COGO foundation batch: add shared `CadCogoResult`, report/warning/provenance types, persisted `cogoComputations`, migration coverage, and command-history integration.
+- [ ] COGO report panel batch: add selected/latest computation panel for inverse, intersections, curve results, traverse closure, parcels, and exportable TXT/CSV/Markdown output.
+- [ ] Core point-line batch: add multi-point inverse, bearing-only report, distance-only report, turned angle + distance, deflection angle + distance, point at distance/fraction along line, extend line, offset point, and command UI.
+- [ ] Intersection batch: add bearing-bearing, bearing-distance, distance-distance, line-circle, offset intersection, perpendicular intersection, and skew intersection with deterministic alternative selection.
+- [ ] Curve calculator batch: add full curve parameter solver, radial bearing, point on curve by arc/chord distance, curve subdivision, offset curve, PI-radius-delta, chord-bearing constructors, reverse/compound curve workflows.
+- [ ] Traverse editor batch: replace simple sequential `TRAVERSE` entry with table-style open/closed/point-to-point/sideshot editor, live geometry creation, closure report, and editable leg rows.
+- [ ] Traverse adjustment batch: add angular balance, compass/Bowditch, transit rule, and optional Crandall as CAD-only coordinate balancing tools.
+- [ ] Deed/batch COGO batch: add parser for pasted bearing-distance/curve calls, preview rows, warnings, generated points/lines/arcs, and reproducible computation history.
+- [ ] Alignment/stationing batch: add alignment entities from selected line/arc chains, station at point, station-offset point creation, point-to-station/offset projection, station equations, offset alignments, station interval points, and labels.
+- [ ] Parcel tools batch: add area by picked point sequence, area unit conversion, create parcel from closed selected linework, split by line/bearing/area, hinged/sliding area, gap/overlap detection, and line/curve parcel tables.
+- [ ] Transform tools batch: add rotate, scale, mirror, two-point rotate+translate, 2D Helmert, affine transform, grid-ground scaling from origin, set/add/interpolate elevation.
+- [ ] Annotation/report batch: add bearing-distance labels, richer curve labels, line/curve tables, point reports, inverse reports, traverse reports, parcel reports, COGO history log, and export computation report.
+- [ ] High-end backlog batch: add least-squares traverse/network handoff, spiral/clothoid tools, best-fit line/arc, dependency graph updates, legal description generator, and field/stakeout export package.
+
 - [x] Survey CAD trim command batch (June 2026): add a Civil3D-style `TRIM` flow that uses selected linework as cutting edges, lets operators click the side of a line/polyline/arc to remove, commits deterministic split/shorten edits through command history, and locks it with focused CAD geometry/workspace coverage.
 
 - [x] Survey CAD move-anchor + erase-hotkey batch (June 2026): keep mouse-picked MOVE base/target capture on the shared SVG frame so browser clicks land on the same snapped world point the operator sees, and let `Delete` / `Backspace` fire `ERASE` when entities are selected outside editable inputs.

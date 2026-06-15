@@ -140,18 +140,19 @@ Representative areas:
 - workspace shell and toolbar components
 
 Current Survey CAD spike seams:
-- `src/engine/cad/cadTypes.ts` defines native CAD entities, now including arc, polyline, polygon, and parcel families plus persisted Survey CAD project-state payloads
+- `src/engine/cad/cadTypes.ts` defines native CAD entities, now including arc, polyline, polygon, parcel, and alignment families plus persisted Survey CAD project-state payloads with a versioned COGO computation log
+- `src/engine/cad/cadCogoTypes.ts` defines the shared COGO result/report/warning/provenance shape used by command-created computations and the persisted CAD project computation log
 - `src/engine/cad/cadModel.ts` builds a native CAD project from current WebNet input or solved results
 - `src/engine/cad/cadProjectState.ts` owns CAD project bounds/signature helpers used by renderer and history layers
 - `src/engine/cad/cadPersistence.ts` owns deterministic clone/sanitize helpers for Survey CAD state persisted through WebNet project files, bundles, and recovery state
 - `src/engine/cad/cadLayers.ts` and `src/engine/cad/cadStyles.ts` define the current default layer/style/linetype/symbol tables for the spike
-- `src/engine/cad/cadCogo.ts` owns the first explicit COGO helper layer for inverse summaries, survey bearing formatting, bearing-distance point creation, and line-like intersections
+- `src/engine/cad/cadCogo.ts` owns the first explicit COGO helper layer for inverse summaries, survey bearing formatting, bearing-distance point creation, line-like intersections, curve metrics, and parcel reports
 - `src/engine/cad/cadSelection.ts` owns deterministic selection-set state over native entity IDs
 - `src/engine/cad/cadSpatialIndex.ts` owns snap/select candidate search over native CAD entities, including viewport-filtered passive snap queries, stronger exact-intersection pickup, line/polyline segment snapping, and both segment-seeded and curve-tangent-seeded construction refinements
 - `src/engine/cad/cadGeometry.ts` owns reusable 2D CAD geometry helpers such as inverse, midpoint, segment nearest-point, intersection, and azimuth-distance resolution
 - `src/engine/cad/cadRenderer.ts` converts native entities into renderer-neutral display primitives
 - `src/engine/cad/cadMlightcadAdapter.ts` converts the same native entities into an inferred `mlightcad`-target scene contract while preserving native IDs
-- `src/engine/cad/cadTransactions.ts` and `src/engine/cad/cadUndoRedo.ts` own the first command registry, transaction journal, and undo/redo replay seam, now including explicit `COGO_POINT` and `INTERSECT_POINT` commits
+- `src/engine/cad/cadTransactions.ts` and `src/engine/cad/cadUndoRedo.ts` own the first command registry, transaction journal, and undo/redo replay seam, now including explicit `COGO_POINT` and `INTERSECT_POINT` commits plus COGO computation provenance records for command-created COGO geometry
 - `src/hooks/surveyCad/useSurveyCadCommands.ts` owns interactive command sessions for typed input plus snap-fed `POINT`, `COGO PT`, `LINE`, `PLINE`, `INVERSE`, `MOVE`, `COPY`, and selection-seeded `TRIM`, including coordinate, azimuth-distance, survey bearing-distance entry, point-pick phase state, trim target picks against stored cutting edges, and construction seed context such as captured segment ids and exact curve-start tangent seeds
 - `src/hooks/surveyCad/useSurveyCadWorkspace.ts` wires native CAD project state into selection, grip-edit state, command history, renderer outputs, and persisted Survey CAD workspace state for the Survey CAD workspace
 - `src/hooks/surveyCad/useSurveyCadSnapping.ts` resolves point-node / endpoint / midpoint / nearest snaps from the native spatial index and now feeds viewport-visible bounds plus screen-derived tolerance into that query path so deep zoom keeps snap reach local, while also exposing cursor-local nearby snap candidates for keyboard cycling
