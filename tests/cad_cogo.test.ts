@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildCadInverseSummary,
+  buildCadDistanceSummary,
+  buildCadMultiInverseSummary,
   cadBuildArcFromThreePoints,
   cadBuildCurveMetricsFromArcLength,
   cadBuildCurveMetricsFromChordLength,
@@ -11,10 +13,16 @@ import {
   cadBuildParallelLine,
   cadBuildPerpendicularFoot,
   cadBuildTangentCurve,
+  cadComputeDeflectionAnglePoint,
+  cadComputeTurnedAnglePoint,
+  cadExtendLineByDistance,
   cadIntersectLineLikeEntities,
   cadIntersectArcEntities,
   cadIntersectLineArcEntity,
   cadOffsetLineSegment,
+  cadOffsetPointFromLine,
+  cadPointAtDistanceAlongLine,
+  cadPointAtFractionAlongLine,
   cadPointFromBearingDistance,
   formatCadBearing,
 } from '../src/engine/cad/cadCogo';
@@ -44,6 +52,67 @@ describe('Survey CAD COGO helpers', () => {
     expect(point).not.toBeNull();
     expect(point?.x ?? Number.NaN).toBeCloseTo(70.710678, 6);
     expect(point?.y ?? Number.NaN).toBeCloseTo(-70.710678, 6);
+  });
+
+  it('builds distance-only and multi-inverse summaries', () => {
+    const distance = buildCadDistanceSummary({ x: 10, y: 20 }, { x: 25, y: 55 });
+    expect(distance.deltaX).toBeCloseTo(15, 6);
+    expect(distance.deltaY).toBeCloseTo(35, 6);
+    expect(distance.distance2d).toBeCloseTo(Math.hypot(15, 35), 6);
+
+    const multi = buildCadMultiInverseSummary([
+      { x: 0, y: 0, label: 'A' },
+      { x: 0, y: 10, label: 'B' },
+      { x: 10, y: 10, label: 'C' },
+    ]);
+    expect(multi.legs).toHaveLength(2);
+    expect(multi.legs[0]?.bearing).toBe('N00-00-00.00E');
+    expect(multi.legs[1]?.bearing).toBe('N90-00-00.00E');
+    expect(multi.totalDistance).toBeCloseTo(20, 6);
+  });
+
+  it('builds turned-angle, deflection, along-line, extend, and offset-point helpers', () => {
+    const turned = cadComputeTurnedAnglePoint({
+      occupyPoint: { x: 0, y: 0 },
+      backsightPoint: { x: 0, y: 10 },
+      angleDeg: 90,
+      distance: 25,
+      side: 'right',
+    });
+    expect(turned.x).toBeCloseTo(25, 6);
+    expect(turned.y).toBeCloseTo(0, 6);
+
+    const deflected = cadComputeDeflectionAnglePoint({
+      lineStart: { x: 0, y: 0 },
+      lineEnd: { x: 0, y: 10 },
+      angleDeg: 45,
+      distance: 10,
+      side: 'right',
+    });
+    expect(deflected.x).toBeCloseTo(7.0710678, 6);
+    expect(deflected.y).toBeCloseTo(17.0710678, 6);
+
+    const along = cadPointAtDistanceAlongLine({ x: 0, y: 0 }, { x: 0, y: 100 }, 25);
+    expect(along?.x ?? Number.NaN).toBeCloseTo(0, 6);
+    expect(along?.y ?? Number.NaN).toBeCloseTo(25, 6);
+
+    const fraction = cadPointAtFractionAlongLine({ x: 0, y: 0 }, { x: 20, y: 0 }, 0.25);
+    expect(fraction?.x ?? Number.NaN).toBeCloseTo(5, 6);
+    expect(fraction?.y ?? Number.NaN).toBeCloseTo(0, 6);
+
+    const extended = cadExtendLineByDistance({ x: 0, y: 0 }, { x: 0, y: 20 }, 10);
+    expect(extended?.x ?? Number.NaN).toBeCloseTo(0, 6);
+    expect(extended?.y ?? Number.NaN).toBeCloseTo(30, 6);
+
+    const offsetPoint = cadOffsetPointFromLine({
+      lineStart: { x: 0, y: 0 },
+      lineEnd: { x: 0, y: 20 },
+      alongDistance: 10,
+      offsetDistance: 5,
+      side: 'left',
+    });
+    expect(offsetPoint?.x ?? Number.NaN).toBeCloseTo(-5, 6);
+    expect(offsetPoint?.y ?? Number.NaN).toBeCloseTo(10, 6);
   });
 
   it('finds deterministic line-like intersections', () => {

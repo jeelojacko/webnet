@@ -60,6 +60,7 @@ interface UseSurveyCadWorkspaceResult {
   selectionCount: number;
   canUndo: boolean;
   canRedo: boolean;
+  canUseSelectedLineCoreCogo: boolean;
   activeCommandKey:
     | 'POINT'
     | 'COGO_POINT'
@@ -79,6 +80,14 @@ interface UseSurveyCadWorkspaceResult {
     | 'CONTINUE_CURVE'
     | 'TANGENT_CURVE'
     | 'INVERSE'
+    | 'MULTI_INVERSE'
+    | 'BEARING_REPORT'
+    | 'DISTANCE_REPORT'
+    | 'TURNED_POINT'
+    | 'DEFLECT_POINT'
+    | 'POINT_ALONG_LINE'
+    | 'EXTEND_LINE'
+    | 'OFFSET_POINT'
     | 'MOVE'
     | 'COPY'
     | 'TRIM'
@@ -122,6 +131,14 @@ interface UseSurveyCadWorkspaceResult {
   startContinueCurveCommand: () => void;
   startTangentCurveCommand: () => void;
   startInverseCommand: () => void;
+  startMultiInverseCommand: () => void;
+  startBearingReportCommand: () => void;
+  startDistanceReportCommand: () => void;
+  startTurnedPointCommand: () => void;
+  startDeflectionPointCommand: () => void;
+  startPointAlongLineCommand: () => void;
+  startExtendLineCommand: () => void;
+  startOffsetPointCommand: () => void;
   startMoveCommand: () => void;
   startCopyCommand: () => void;
   startTrimCommand: () => void;
@@ -266,6 +283,13 @@ export const useSurveyCadWorkspace = (
     () => selectedEntities.filter(isCadLineLikeEntity),
     [selectedEntities],
   );
+  const selectedLineForCoreCogo = useMemo(
+    () =>
+      selectedEntities.length === 1 && selectedEntities[0]?.type === 'line'
+        ? selectedEntities[0]
+        : null,
+    [selectedEntities],
+  );
   const selectedTrimEntities = useMemo(
     () => selectedEntities.filter((entity) => entity.type === 'line' || entity.type === 'polyline' || entity.type === 'arc'),
     [selectedEntities],
@@ -380,6 +404,14 @@ export const useSurveyCadWorkspace = (
     startContinueCurveCommand,
     startTangentCurveCommand,
     startInverseCommand,
+    startMultiInverseCommand,
+    startBearingReportCommand,
+    startDistanceReportCommand,
+    startTurnedPointCommand,
+    startDeflectionPointCommand,
+    startPointAlongLineCommand,
+    startExtendLineCommand,
+    startOffsetPointCommand,
     startMoveCommand,
     startCopyCommand,
     startTrimCommand,
@@ -401,6 +433,7 @@ export const useSurveyCadWorkspace = (
     selectionCount: selection.selectedEntityIds.length,
     trimCuttingEntityIds,
     selectedArcForContinue,
+    selectedLineForCoreCogo,
     reverseDirectionModifier,
     applyHistoryUpdate,
     onReportComputation: setReportedComputation,
@@ -692,6 +725,7 @@ export const useSurveyCadWorkspace = (
     selectionCount: selection.selectedEntityIds.length,
     canUndo: history.undoStack.length > 0,
     canRedo: history.redoStack.length > 0,
+    canUseSelectedLineCoreCogo: selectedLineForCoreCogo != null,
     activeCommandKey,
     commandInputValue,
     statusText: commandPrompt,
@@ -731,6 +765,14 @@ export const useSurveyCadWorkspace = (
     startContinueCurveCommand,
     startTangentCurveCommand,
     startInverseCommand,
+    startMultiInverseCommand,
+    startBearingReportCommand,
+    startDistanceReportCommand,
+    startTurnedPointCommand,
+    startDeflectionPointCommand,
+    startPointAlongLineCommand,
+    startExtendLineCommand,
+    startOffsetPointCommand,
     startMoveCommand,
     startCopyCommand,
     startTrimCommand,

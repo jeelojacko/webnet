@@ -26,6 +26,7 @@ Current implemented spike slice:
 - first traverse-entry command: `TRAVERSE`
 - first parcel-promotion command: `PARCEL_CREATE` from a selected native polyline/traverse seam
 - first interactive query command: `INVERSE`
+- point-line COGO toolbar family now adds `MULTI_INVERSE`, bearing-only and distance-only reports, turned-angle point creation, and selected-line deflection / point-along / extend / offset-point tools on the same command-input/report seam
 - undo/redo replay over snapshot-backed transaction entries
 - project-level COGO computation history stored separately from undo/redo, with structured report rows and provenance for command-created COGO geometry
 - selected/latest COGO overlay now surfaces persisted command reports plus live `INVERSE` query reports, with TXT/CSV/Markdown export-preview formatting kept separate from the underlying CAD state

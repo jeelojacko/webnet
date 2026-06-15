@@ -3904,6 +3904,107 @@ describe('SurveyCadWorkspace', () => {
     container.remove();
   });
 
+  it('reports a multi-point inverse sequence from the point-line COGO menu', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+        />,
+      );
+    });
+
+    const commandInput = container.querySelector('[data-survey-cad-command-input]') as HTMLInputElement | null;
+    if (!commandInput) throw new Error('Command input not found');
+
+    await act(async () => {
+      clickButton(container, 'P/L');
+      setTextInputValue(commandInput, 'A=0,0');
+      pressKey(commandInput, 'Enter');
+      setTextInputValue(commandInput, 'B=0,10');
+      pressKey(commandInput, 'Enter');
+      setTextInputValue(commandInput, 'C=10,10');
+      pressKey(commandInput, 'Enter');
+      setTextInputValue(commandInput, '');
+      pressKey(commandInput, 'Enter');
+    });
+
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+      'MULTI_INVERSE reported 2 legs',
+    );
+    expect(container.querySelector('[data-survey-cad-cogo-panel-title]')?.textContent).toContain(
+      'Multi-Point Inverse',
+    );
+    expect(container.querySelector('[data-survey-cad-cogo-export-preview]')?.textContent).toContain(
+      'Total distance: 20.000 m',
+    );
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('creates a point along a selected line from the point-line COGO menu', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+        />,
+      );
+    });
+
+    const hitTarget = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="line:A|C"]',
+    ) as SVGLineElement | null;
+    const commandInput = container.querySelector('[data-survey-cad-command-input]') as HTMLInputElement | null;
+    if (!hitTarget || !commandInput) throw new Error('Expected line hit target and command input');
+
+    await act(async () => {
+      hitTarget.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    expect(container.querySelector('[data-survey-cad-selection-count]')?.textContent).toContain('1 selected');
+
+    await act(async () => {
+      (container.querySelector('[data-survey-cad-core-cogo-menu-button]') as HTMLButtonElement | null)?.click();
+    });
+    await act(async () => {
+      clickButton(container, 'Point Along Line');
+      setTextInputValue(commandInput, '50%');
+      pressKey(commandInput, 'Enter');
+    });
+
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+      'POINT committed',
+    );
+    expect(container.querySelector('[data-survey-cad-cogo-panel-title]')?.textContent).toContain(
+      'Point Along Line',
+    );
+    expect(container.querySelector('[data-survey-cad-cogo-export-preview]')?.textContent).toContain(
+      'Fraction: 50.000 %',
+    );
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
   it('runs TRIM from the command surface by using selected cutting edges and clicking the portion to remove', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);

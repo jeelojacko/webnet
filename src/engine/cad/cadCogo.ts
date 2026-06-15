@@ -26,6 +26,22 @@ export interface CadInverseSummary {
   bearing: string;
 }
 
+export interface CadDistanceSummary {
+  deltaX: number;
+  deltaY: number;
+  distance2d: number;
+}
+
+export interface CadMultiInverseLegSummary extends CadInverseSummary {
+  fromLabel: string;
+  toLabel: string;
+}
+
+export interface CadMultiInverseSummary {
+  legs: CadMultiInverseLegSummary[];
+  totalDistance: number;
+}
+
 interface CadSegmentRef {
   start: CadWorldPoint;
   end: CadWorldPoint;
@@ -179,6 +195,35 @@ export const buildCadInverseSummary = (
   };
 };
 
+export const buildCadDistanceSummary = (
+  from: CadWorldPoint,
+  to: CadWorldPoint,
+): CadDistanceSummary => ({
+  deltaX: to.x - from.x,
+  deltaY: to.y - from.y,
+  distance2d: cadDistance(from, to),
+});
+
+export const buildCadMultiInverseSummary = (
+  points: readonly CadNamedPoint[],
+): CadMultiInverseSummary => {
+  const legs: CadMultiInverseLegSummary[] = [];
+  for (let index = 0; index < points.length - 1; index += 1) {
+    const from = points[index]!;
+    const to = points[index + 1]!;
+    const inverse = buildCadInverseSummary(from, to);
+    legs.push({
+      ...inverse,
+      fromLabel: from.label,
+      toLabel: to.label,
+    });
+  }
+  return {
+    legs,
+    totalDistance: legs.reduce((sum, leg) => sum + leg.distance, 0),
+  };
+};
+
 export const cadPointFromBearingDistance = (
   from: CadWorldPoint,
   bearing: string,
@@ -187,6 +232,105 @@ export const cadPointFromBearingDistance = (
   const azimuthDeg = cadParseBearingDegrees(bearing);
   if (azimuthDeg == null) return null;
   return cadPointFromAzimuthDistance(from, azimuthDeg, distance);
+};
+
+export const cadComputeTurnedAnglePoint = ({
+  occupyPoint,
+  backsightPoint,
+  angleDeg,
+  distance,
+  side,
+}: {
+  occupyPoint: CadWorldPoint;
+  backsightPoint: CadWorldPoint;
+  angleDeg: number;
+  distance: number;
+  side: 'left' | 'right';
+}): CadWorldPoint => {
+  const backsightAzimuth = cadAzimuthDeg(occupyPoint, backsightPoint);
+  const forwardAzimuth = side === 'right' ? backsightAzimuth + angleDeg : backsightAzimuth - angleDeg;
+  return cadPointFromAzimuthDistance(occupyPoint, forwardAzimuth, distance);
+};
+
+export const cadComputeDeflectionAnglePoint = ({
+  lineStart,
+  lineEnd,
+  angleDeg,
+  distance,
+  side,
+}: {
+  lineStart: CadWorldPoint;
+  lineEnd: CadWorldPoint;
+  angleDeg: number;
+  distance: number;
+  side: 'left' | 'right';
+}): CadWorldPoint => {
+  const tangentAzimuth = cadAzimuthDeg(lineStart, lineEnd);
+  const forwardAzimuth = side === 'right' ? tangentAzimuth + angleDeg : tangentAzimuth - angleDeg;
+  return cadPointFromAzimuthDistance(lineEnd, forwardAzimuth, distance);
+};
+
+export const cadPointAtDistanceAlongLine = (
+  start: CadWorldPoint,
+  end: CadWorldPoint,
+  distanceAlong: number,
+): CadWorldPoint | null => {
+  const length = cadDistance(start, end);
+  if (!Number.isFinite(distanceAlong) || length <= 1e-12) return null;
+  const ratio = distanceAlong / length;
+  return {
+    x: start.x + (end.x - start.x) * ratio,
+    y: start.y + (end.y - start.y) * ratio,
+  };
+};
+
+export const cadPointAtFractionAlongLine = (
+  start: CadWorldPoint,
+  end: CadWorldPoint,
+  fraction: number,
+): CadWorldPoint | null => {
+  if (!Number.isFinite(fraction)) return null;
+  return {
+    x: start.x + (end.x - start.x) * fraction,
+    y: start.y + (end.y - start.y) * fraction,
+  };
+};
+
+export const cadExtendLineByDistance = (
+  start: CadWorldPoint,
+  end: CadWorldPoint,
+  distance: number,
+): CadWorldPoint | null => {
+  const length = cadDistance(start, end);
+  if (!Number.isFinite(distance) || length <= 1e-12) return null;
+  return cadPointAtDistanceAlongLine(start, end, length + distance);
+};
+
+export const cadOffsetPointFromLine = ({
+  lineStart,
+  lineEnd,
+  alongDistance,
+  offsetDistance,
+  side,
+}: {
+  lineStart: CadWorldPoint;
+  lineEnd: CadWorldPoint;
+  alongDistance: number;
+  offsetDistance: number;
+  side: 'left' | 'right';
+}): CadWorldPoint | null => {
+  const basePoint = cadPointAtDistanceAlongLine(lineStart, lineEnd, alongDistance);
+  const lineLength = cadDistance(lineStart, lineEnd);
+  if (!basePoint || lineLength <= 1e-12 || !Number.isFinite(offsetDistance)) return null;
+  const unitX = (lineEnd.x - lineStart.x) / lineLength;
+  const unitY = (lineEnd.y - lineStart.y) / lineLength;
+  const leftX = -unitY;
+  const leftY = unitX;
+  const multiplier = side === 'left' ? 1 : -1;
+  return {
+    x: basePoint.x + leftX * offsetDistance * multiplier,
+    y: basePoint.y + leftY * offsetDistance * multiplier,
+  };
 };
 
 const lineEntitySegments = (entity: CadLineEntity): CadSegmentRef[] => [

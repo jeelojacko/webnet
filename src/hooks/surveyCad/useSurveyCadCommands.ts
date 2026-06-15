@@ -1,6 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { dmsToRad } from '../../engine/angles';
 import {
+  buildCadDistanceSummary,
   buildCadInverseSummary,
+  buildCadMultiInverseSummary,
+  cadComputeDeflectionAnglePoint,
+  cadComputeTurnedAnglePoint,
+  cadExtendLineByDistance,
+  cadOffsetPointFromLine,
+  cadPointAtDistanceAlongLine,
+  cadPointAtFractionAlongLine,
   formatCadBearing,
   cadPointFromBearingDistance,
 } from '../../engine/cad/cadCogo';
@@ -23,6 +32,7 @@ import {
 import { runCadCommand, type CadHistoryState } from '../../engine/cad/cadUndoRedo';
 import type {
   CadArcEntity,
+  CadLineEntity,
   CadSnapCandidate,
   CadSnapConstructionContext,
   CadSnapKind,
@@ -53,6 +63,14 @@ type ActiveCommandKey =
   | 'CONTINUE_CURVE'
   | 'TANGENT_CURVE'
   | 'INVERSE'
+  | 'MULTI_INVERSE'
+  | 'BEARING_REPORT'
+  | 'DISTANCE_REPORT'
+  | 'TURNED_POINT'
+  | 'DEFLECT_POINT'
+  | 'POINT_ALONG_LINE'
+  | 'EXTEND_LINE'
+  | 'OFFSET_POINT'
   | 'MOVE'
   | 'COPY'
   | 'TRIM'
@@ -68,6 +86,32 @@ type CommandSession =
       key: 'COGO_POINT' | 'LINE' | 'INVERSE' | 'MOVE' | 'COPY';
       inputValue: string;
       startPoint: CommandPoint | null;
+      resultText?: string;
+    }
+  | {
+      key: 'BEARING_REPORT' | 'DISTANCE_REPORT';
+      inputValue: string;
+      startPoint: CommandPoint | null;
+      resultText?: string;
+    }
+  | {
+      key: 'MULTI_INVERSE';
+      inputValue: string;
+      points: CommandPoint[];
+      resultText?: string;
+    }
+  | {
+      key: 'TURNED_POINT';
+      inputValue: string;
+      occupyPoint: CommandPoint | null;
+      backsightPoint: CommandPoint | null;
+      resultText?: string;
+    }
+  | {
+      key: 'DEFLECT_POINT' | 'POINT_ALONG_LINE' | 'EXTEND_LINE' | 'OFFSET_POINT';
+      inputValue: string;
+      lineStart: CommandPoint;
+      lineEnd: CommandPoint;
       resultText?: string;
     }
   | {
@@ -138,6 +182,7 @@ interface UseSurveyCadCommandsArgs {
   selectionCount: number;
   trimCuttingEntityIds: string[];
   selectedArcForContinue: CadArcEntity | null;
+  selectedLineForCoreCogo: CadLineEntity | null;
   reverseDirectionModifier: boolean;
   applyHistoryUpdate: (_updater: (_history: CadHistoryState) => CadHistoryState) => void;
   onReportComputation?: (
@@ -201,6 +246,14 @@ interface UseSurveyCadCommandsResult {
   startContinueCurveCommand: () => void;
   startTangentCurveCommand: () => void;
   startInverseCommand: () => void;
+  startMultiInverseCommand: () => void;
+  startBearingReportCommand: () => void;
+  startDistanceReportCommand: () => void;
+  startTurnedPointCommand: () => void;
+  startDeflectionPointCommand: () => void;
+  startPointAlongLineCommand: () => void;
+  startExtendLineCommand: () => void;
+  startOffsetPointCommand: () => void;
   startMoveCommand: () => void;
   startCopyCommand: () => void;
   startTrimCommand: () => void;
@@ -249,12 +302,15 @@ const sessionExpectsPointPick = (session: CommandSession | null): boolean => {
     case 'COGO_POINT':
     case 'LINE':
     case 'INVERSE':
+    case 'BEARING_REPORT':
+    case 'DISTANCE_REPORT':
     case 'MOVE':
     case 'COPY':
     case 'TRIM':
     case 'PASTE':
     case 'PLINE':
     case 'TRAVERSE':
+    case 'MULTI_INVERSE':
     case 'ARC_3PT':
     case 'CONTINUE_CURVE':
       return true;
@@ -271,6 +327,13 @@ const sessionExpectsPointPick = (session: CommandSession | null): boolean => {
       return session.points.length < 2;
     case 'TANGENT_CURVE':
       return session.aheadTangentPoint == null;
+    case 'TURNED_POINT':
+      return session.backsightPoint == null;
+    case 'DEFLECT_POINT':
+    case 'POINT_ALONG_LINE':
+    case 'EXTEND_LINE':
+    case 'OFFSET_POINT':
+      return false;
   }
 };
 
@@ -327,6 +390,66 @@ const parseRelativeBearingDistance = (
   return {
     ...point,
     label: label || `${prefixed ? '@' : ''}${directionToken},${distance}`,
+  };
+};
+
+const parseAngleValueDeg = (token: string): number | null => {
+  const trimmed = token.trim();
+  if (trimmed.length === 0) return null;
+  if (/^[+-]?\d{1,3}-\d{1,2}-\d{1,2}(?:\.\d+)?$/.test(trimmed)) {
+    return (dmsToRad(trimmed) * 180) / Math.PI;
+  }
+  const numeric = Number(trimmed);
+  return Number.isFinite(numeric) ? numeric : null;
+};
+
+const parseLeftRightAngleDistance = (
+  token: string,
+): { label?: string; side: 'left' | 'right'; angleDeg: number; distance: number } | null => {
+  const { label, body } = splitLabelFromBody(token);
+  const match = /^([LR])\s*([^,]+)\s*,\s*([-+]?\d*\.?\d+)\s*$/i.exec(body);
+  if (!match) return null;
+  const angleDeg = parseAngleValueDeg(match[2] ?? '');
+  const distance = Number(match[3]);
+  if (angleDeg == null || !Number.isFinite(distance) || distance <= 0) return null;
+  return {
+    label,
+    side: (match[1] ?? '').toUpperCase() === 'L' ? 'left' : 'right',
+    angleDeg,
+    distance,
+  };
+};
+
+const parseDistanceOrPercent = (
+  token: string,
+): { label?: string; distance?: number; fraction?: number } | null => {
+  const { label, body } = splitLabelFromBody(token);
+  const trimmed = body.trim();
+  if (trimmed.endsWith('%')) {
+    const percent = Number(trimmed.slice(0, -1));
+    if (!Number.isFinite(percent)) return null;
+    return { label, fraction: percent / 100 };
+  }
+  const distance = Number(trimmed);
+  if (!Number.isFinite(distance)) return null;
+  return { label, distance };
+};
+
+const parseOffsetPointInput = (
+  token: string,
+): { label?: string; side: 'left' | 'right'; offsetDistance: number; alongDistance?: number; alongFraction?: number } | null => {
+  const { label, body } = splitLabelFromBody(token);
+  const match = /^([LR])\s*([-+]?\d*\.?\d+)\s*,\s*(.+)$/i.exec(body);
+  if (!match) return null;
+  const offsetDistance = Number(match[2]);
+  const along = parseDistanceOrPercent(match[3] ?? '');
+  if (!Number.isFinite(offsetDistance) || !along) return null;
+  return {
+    label,
+    side: (match[1] ?? '').toUpperCase() === 'L' ? 'left' : 'right',
+    offsetDistance,
+    alongDistance: along.distance,
+    alongFraction: along.fraction,
   };
 };
 
@@ -442,6 +565,40 @@ const promptForSession = (session: CommandSession | null, fallbackStatus: string
         (session.startPoint
           ? `INVERSE active. Start at ${session.startPoint.label}. Click the end point or enter \`x,y\`, \`@azimuth,distance\`, or \`N45-00-00E,100\`, then press Enter.`
           : 'INVERSE active. Click or enter the first point.');
+    case 'MULTI_INVERSE':
+      return session.resultText ??
+        (session.points.length > 0
+          ? `MULTI_INVERSE active. ${session.points.length} point${session.points.length === 1 ? '' : 's'} captured. Click the next point or press Enter on an empty input to report the sequence.`
+          : 'MULTI_INVERSE active. Click or enter the first point.');
+    case 'BEARING_REPORT':
+      return session.resultText ??
+        (session.startPoint
+          ? `BEARING report active. Start at ${session.startPoint.label}. Click the end point or enter \`x,y\`, \`@azimuth,distance\`, or \`N45-00-00E,100\`.`
+          : 'BEARING report active. Click or enter the first point.');
+    case 'DISTANCE_REPORT':
+      return session.resultText ??
+        (session.startPoint
+          ? `DISTANCE report active. Start at ${session.startPoint.label}. Click the end point or enter \`x,y\`, \`@azimuth,distance\`, or \`N45-00-00E,100\`.`
+          : 'DISTANCE report active. Click or enter the first point.');
+    case 'TURNED_POINT':
+      return session.resultText ??
+        (session.occupyPoint == null
+          ? 'TURNED_POINT active. Click or enter the occupied point.'
+          : session.backsightPoint == null
+            ? `TURNED_POINT active. Occupied point ${session.occupyPoint.label} captured. Click or enter the backsight point.`
+            : `TURNED_POINT active. Enter \`Langle,distance\` or \`Rangle,distance\` from ${session.occupyPoint.label}.`);
+    case 'DEFLECT_POINT':
+      return session.resultText ??
+        `DEFLECT_POINT active. Selected line ${session.lineStart.label}-${session.lineEnd.label}. Enter \`Langle,distance\` or \`Rangle,distance\`.`;
+    case 'POINT_ALONG_LINE':
+      return session.resultText ??
+        `POINT_ALONG_LINE active. Selected line ${session.lineStart.label}-${session.lineEnd.label}. Enter distance or percent like \`25\` or \`50%\`.`;
+    case 'EXTEND_LINE':
+      return session.resultText ??
+        `EXTEND_LINE active. Selected line ${session.lineStart.label}-${session.lineEnd.label}. Enter extension distance.`;
+    case 'OFFSET_POINT':
+      return session.resultText ??
+        `OFFSET_POINT active. Selected line ${session.lineStart.label}-${session.lineEnd.label}. Enter \`Loffset,along\` or \`Roffset,along\`, with along as distance or percent.`;
     case 'MOVE':
       return session.resultText ??
         (session.startPoint
@@ -534,6 +691,30 @@ const helpTextForSession = (session: CommandSession | null): string => {
       return session.startPoint
         ? 'INVERSE second point: `x,y`, `LABEL=x,y`, `@azimuth,distance`, or bearing-distance from the first point.'
         : 'INVERSE first point: click in the model space or type `x,y` / `LABEL=x,y`.';
+    case 'MULTI_INVERSE':
+      return session.points.length > 0
+        ? 'MULTI_INVERSE next point: click in model space or type `x,y` / relative bearing-distance. Press Enter on an empty input to finish the report.'
+        : 'MULTI_INVERSE first point: click in model space or type `x,y` / `LABEL=x,y`.';
+    case 'BEARING_REPORT':
+      return session.startPoint
+        ? 'BEARING report second point: `x,y`, `LABEL=x,y`, `@azimuth,distance`, or bearing-distance from the first point.'
+        : 'BEARING report first point: click in the model space or type `x,y` / `LABEL=x,y`.';
+    case 'DISTANCE_REPORT':
+      return session.startPoint
+        ? 'DISTANCE report second point: `x,y`, `LABEL=x,y`, `@azimuth,distance`, or bearing-distance from the first point.'
+        : 'DISTANCE report first point: click in the model space or type `x,y` / `LABEL=x,y`.';
+    case 'TURNED_POINT':
+      return session.backsightPoint
+        ? 'TURNED_POINT value input: enter `Langle,distance` or `Rangle,distance`. Angle accepts decimal degrees or `dd-mm-ss`.'
+        : 'TURNED_POINT point input: click in model space or type `x,y` / `LABEL=x,y` for occupied and backsight points.';
+    case 'DEFLECT_POINT':
+      return 'DEFLECT_POINT value input: enter `Langle,distance` or `Rangle,distance`. Angle accepts decimal degrees or `dd-mm-ss`.';
+    case 'POINT_ALONG_LINE':
+      return 'POINT_ALONG_LINE input: enter distance from start, or percent like `50%`.';
+    case 'EXTEND_LINE':
+      return 'EXTEND_LINE input: enter extension distance from the selected line end.';
+    case 'OFFSET_POINT':
+      return 'OFFSET_POINT input: enter `Loffset,along` or `Roffset,along`; along may be distance or percent like `50%`.';
     case 'MOVE':
       return session.startPoint
         ? 'MOVE target point: `x,y`, `LABEL=x,y`, `@azimuth,distance`, or bearing-distance from the base point.'
@@ -578,12 +759,31 @@ export const useSurveyCadCommands = ({
   selectionCount,
   trimCuttingEntityIds,
   selectedArcForContinue,
+  selectedLineForCoreCogo,
   reverseDirectionModifier,
   applyHistoryUpdate,
   onReportComputation,
 }: UseSurveyCadCommandsArgs): UseSurveyCadCommandsResult => {
   const [session, setSession] = useState<CommandSession | null>(null);
   const sessionRef = useRef<CommandSession | null>(session);
+  const selectedLineCommandPoints = useMemo(
+    () =>
+      selectedLineForCoreCogo
+        ? {
+            start: {
+              x: selectedLineForCoreCogo.fromX,
+              y: selectedLineForCoreCogo.fromY,
+              label: selectedLineForCoreCogo.fromStationId,
+            } as CommandPoint,
+            end: {
+              x: selectedLineForCoreCogo.toX,
+              y: selectedLineForCoreCogo.toY,
+              label: selectedLineForCoreCogo.toStationId,
+            } as CommandPoint,
+          }
+        : null,
+    [selectedLineForCoreCogo],
+  );
 
   useEffect(() => {
     sessionRef.current = session;
@@ -606,6 +806,32 @@ export const useSurveyCadCommands = ({
     replaceSession(nextSession);
   };
 
+  const publishReport = (
+    toolKey: string,
+    title: string,
+    summary: string,
+    rows: Array<{ label: string; value: string; unit?: string }>,
+  ) => {
+    onReportComputation?.(
+      buildCadCogoComputation({
+        createdEntities: [],
+        report: {
+          title,
+          summary,
+          rows,
+        },
+        warnings: [],
+        provenance: {
+          id: `${toolKey}:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`,
+          toolKey,
+          inputs: {},
+          resultSummary: summary,
+          createdAtIso: new Date().toISOString(),
+        },
+      }),
+    );
+  };
+
   const statusPrompt = useMemo(
     () => promptForSession(session, history.commandState.prompt),
     [history.commandState.prompt, session],
@@ -622,6 +848,8 @@ export const useSurveyCadCommands = ({
       case 'COGO_POINT':
       case 'LINE':
       case 'INVERSE':
+      case 'BEARING_REPORT':
+      case 'DISTANCE_REPORT':
         return session.startPoint
           ? {
               active: true,
@@ -631,6 +859,30 @@ export const useSurveyCadCommands = ({
               tangentSeedPoint: tangentSeedPointFromPoint(session.startPoint),
             }
           : { active: false, basePoint: null };
+      case 'MULTI_INVERSE':
+        return session.points.length > 0
+          ? {
+              active: true,
+              basePoint: {
+                x: session.points[session.points.length - 1]!.x,
+                y: session.points[session.points.length - 1]!.y,
+              },
+            }
+          : { active: false, basePoint: null };
+      case 'TURNED_POINT':
+        return session.backsightPoint
+          ? { active: false, basePoint: null }
+          : session.occupyPoint
+            ? {
+                active: true,
+                basePoint: { x: session.occupyPoint.x, y: session.occupyPoint.y },
+              }
+            : { active: false, basePoint: null };
+      case 'DEFLECT_POINT':
+      case 'POINT_ALONG_LINE':
+      case 'EXTEND_LINE':
+      case 'OFFSET_POINT':
+        return { active: false, basePoint: null };
       case 'MOVE':
       case 'COPY':
       case 'TRIM':
@@ -725,6 +977,8 @@ export const useSurveyCadCommands = ({
       case 'COGO_POINT':
       case 'LINE':
       case 'INVERSE':
+      case 'BEARING_REPORT':
+      case 'DISTANCE_REPORT':
         if (!previewPoint) return null;
         if (!session.startPoint) {
           return {
@@ -739,6 +993,44 @@ export const useSurveyCadCommands = ({
             { x: previewPoint.x, y: previewPoint.y },
           ],
         };
+      case 'MULTI_INVERSE':
+        if (!previewPoint) return null;
+        if (session.points.length === 0) {
+          return {
+            kind: 'point',
+            point: { x: previewPoint.x, y: previewPoint.y },
+          };
+        }
+        return {
+          kind: 'polyline',
+          points: [
+            ...session.points.map((point) => ({ x: point.x, y: point.y })),
+            { x: previewPoint.x, y: previewPoint.y },
+          ],
+        };
+      case 'TURNED_POINT':
+        if (!previewPoint) return null;
+        if (session.occupyPoint == null) {
+          return {
+            kind: 'point',
+            point: { x: previewPoint.x, y: previewPoint.y },
+          };
+        }
+        if (session.backsightPoint == null) {
+          return {
+            kind: 'line',
+            points: [
+              { x: session.occupyPoint.x, y: session.occupyPoint.y },
+              { x: previewPoint.x, y: previewPoint.y },
+            ],
+          };
+        }
+        return null;
+      case 'DEFLECT_POINT':
+      case 'POINT_ALONG_LINE':
+      case 'EXTEND_LINE':
+      case 'OFFSET_POINT':
+        return null;
       case 'PLINE':
       case 'TRAVERSE':
         if (!previewPoint) return null;
@@ -1113,6 +1405,88 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
       replaceSession(null);
       return;
     }
+    if (current.key === 'MULTI_INVERSE') {
+      replaceSession({
+        ...current,
+        points: [...current.points, point],
+        inputValue: '',
+        resultText: undefined,
+      });
+      return;
+    }
+    if (current.key === 'BEARING_REPORT' || current.key === 'DISTANCE_REPORT') {
+      if (!current.startPoint) {
+        replaceSession({
+          ...current,
+          startPoint: point,
+          inputValue: '',
+          resultText: undefined,
+        });
+        return;
+      }
+      const startPoint = current.startPoint;
+      const inverse = buildCadInverseSummary(startPoint, point);
+      const distance = buildCadDistanceSummary(startPoint, point);
+      if (current.key === 'BEARING_REPORT') {
+        publishReport(
+          'BEARING_REPORT',
+          'Bearing Between Points',
+          `Computed bearing from ${startPoint.label} to ${point.label}`,
+          [
+            { label: 'From', value: startPoint.label },
+            { label: 'To', value: point.label },
+            { label: 'Bearing', value: inverse.bearing },
+            { label: 'Azimuth', value: inverse.azimuthDeg.toFixed(4), unit: 'deg' },
+          ],
+        );
+        replaceSession({
+          ...current,
+          startPoint: null,
+          inputValue: '',
+          resultText: `BEARING ${startPoint.label} -> ${point.label}: ${inverse.bearing}, azimuth ${inverse.azimuthDeg.toFixed(4)} deg.`,
+        });
+        return;
+      }
+      publishReport(
+        'DISTANCE_REPORT',
+        'Distance Between Points',
+        `Computed distance from ${startPoint.label} to ${point.label}`,
+        [
+          { label: 'From', value: startPoint.label },
+          { label: 'To', value: point.label },
+          { label: 'Distance', value: distance.distance2d.toFixed(3), unit: 'm' },
+          { label: 'dE', value: distance.deltaX.toFixed(3), unit: 'm' },
+          { label: 'dN', value: distance.deltaY.toFixed(3), unit: 'm' },
+        ],
+      );
+      replaceSession({
+        ...current,
+        startPoint: null,
+        inputValue: '',
+        resultText: `DISTANCE ${startPoint.label} -> ${point.label}: ${distance.distance2d.toFixed(3)} m.`,
+      });
+      return;
+    }
+    if (current.key === 'TURNED_POINT') {
+      if (!current.occupyPoint) {
+        replaceSession({
+          ...current,
+          occupyPoint: point,
+          inputValue: '',
+          resultText: undefined,
+        });
+        return;
+      }
+      if (!current.backsightPoint) {
+        replaceSession({
+          ...current,
+          backsightPoint: point,
+          inputValue: '',
+          resultText: undefined,
+        });
+      }
+      return;
+    }
     if (current.key === 'PLINE' || current.key === 'TRAVERSE') {
       replaceSession({
         ...current,
@@ -1417,6 +1791,257 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
 
   const submitSessionInput = () => {
     if (!session) return;
+    if (session.key === 'MULTI_INVERSE') {
+      if (session.inputValue.trim().length === 0) {
+        if (session.points.length < 2) return;
+        const multi = buildCadMultiInverseSummary(session.points);
+        publishReport(
+          'MULTI_INVERSE',
+          'Multi-Point Inverse',
+          `Computed ${multi.legs.length} inverse leg${multi.legs.length === 1 ? '' : 's'}`,
+          [
+            ...multi.legs.flatMap((leg, index) => ([
+              { label: `Leg ${index + 1}`, value: `${leg.fromLabel} -> ${leg.toLabel}` },
+              { label: `Leg ${index + 1} Bearing`, value: leg.bearing },
+              { label: `Leg ${index + 1} Distance`, value: leg.distance.toFixed(3), unit: 'm' },
+            ])),
+            { label: 'Total distance', value: multi.totalDistance.toFixed(3), unit: 'm' },
+          ],
+        );
+        replaceSession({
+          ...session,
+          points: [],
+          resultText: `MULTI_INVERSE reported ${multi.legs.length} legs, total ${multi.totalDistance.toFixed(3)} m.`,
+        });
+        return;
+      }
+      const parsedPoint = parseInputPoint(session.inputValue, session.points[session.points.length - 1] ?? null);
+      if (!parsedPoint) {
+        replaceSession({
+          ...session,
+          resultText: 'MULTI_INVERSE point input invalid. Use `x,y`, `LABEL=x,y`, `@azimuth,distance`, or survey bearing-distance.',
+        });
+        return;
+      }
+      consumePoint(parsedPoint);
+      return;
+    }
+    if (session.key === 'TURNED_POINT') {
+      if (session.occupyPoint == null || session.backsightPoint == null) {
+        const parsedPoint = parseInputPoint(session.inputValue, session.occupyPoint);
+        if (!parsedPoint) {
+          replaceSession({
+            ...session,
+            resultText: 'TURNED_POINT point input invalid. Use `x,y` or `LABEL=x,y`.',
+          });
+          return;
+        }
+        consumePoint(parsedPoint);
+        return;
+      }
+      const parsed = parseLeftRightAngleDistance(session.inputValue);
+      if (!parsed) {
+        replaceSession({
+          ...session,
+          resultText: 'TURNED_POINT input invalid. Use `Langle,distance` or `Rangle,distance`.',
+        });
+        return;
+      }
+      const point = cadComputeTurnedAnglePoint({
+        occupyPoint: session.occupyPoint,
+        backsightPoint: session.backsightPoint,
+        angleDeg: parsed.angleDeg,
+        distance: parsed.distance,
+        side: parsed.side,
+      });
+      applyHistoryUpdate((existing) =>
+        runCadCommand(existing, {
+          key: 'POINT',
+          x: point.x,
+          y: point.y,
+          label: parsed.label,
+        }),
+      );
+      publishReport(
+        'TURNED_POINT',
+        'Turned Angle + Distance',
+        `Created point from ${session.occupyPoint.label} using ${parsed.side} angle`,
+        [
+          { label: 'Occupy', value: session.occupyPoint.label },
+          { label: 'Backsight', value: session.backsightPoint.label },
+          { label: 'Turn', value: `${parsed.side} ${parsed.angleDeg.toFixed(4)} deg` },
+          { label: 'Distance', value: parsed.distance.toFixed(3), unit: 'm' },
+          { label: 'Northing', value: point.y.toFixed(3), unit: 'm' },
+          { label: 'Easting', value: point.x.toFixed(3), unit: 'm' },
+        ],
+      );
+      replaceSession(null);
+      return;
+    }
+    if (
+      session.key === 'DEFLECT_POINT' ||
+      session.key === 'POINT_ALONG_LINE' ||
+      session.key === 'EXTEND_LINE' ||
+      session.key === 'OFFSET_POINT'
+    ) {
+      if (session.key === 'DEFLECT_POINT') {
+        const parsed = parseLeftRightAngleDistance(session.inputValue);
+        if (!parsed) {
+          replaceSession({
+            ...session,
+            resultText: 'DEFLECT_POINT input invalid. Use `Langle,distance` or `Rangle,distance`.',
+          });
+          return;
+        }
+        const point = cadComputeDeflectionAnglePoint({
+          lineStart: session.lineStart,
+          lineEnd: session.lineEnd,
+          angleDeg: parsed.angleDeg,
+          distance: parsed.distance,
+          side: parsed.side,
+        });
+        applyHistoryUpdate((existing) =>
+          runCadCommand(existing, {
+            key: 'POINT',
+            x: point.x,
+            y: point.y,
+            label: parsed.label,
+          }),
+        );
+        publishReport(
+          'DEFLECT_POINT',
+          'Deflection Angle + Distance',
+          `Created deflection point from ${session.lineStart.label}-${session.lineEnd.label}`,
+          [
+            { label: 'Line', value: `${session.lineStart.label}-${session.lineEnd.label}` },
+            { label: 'Deflection', value: `${parsed.side} ${parsed.angleDeg.toFixed(4)} deg` },
+            { label: 'Distance', value: parsed.distance.toFixed(3), unit: 'm' },
+            { label: 'Northing', value: point.y.toFixed(3), unit: 'm' },
+            { label: 'Easting', value: point.x.toFixed(3), unit: 'm' },
+          ],
+        );
+        replaceSession(null);
+        return;
+      }
+      if (session.key === 'POINT_ALONG_LINE') {
+        const parsed = parseDistanceOrPercent(session.inputValue);
+        const point =
+          parsed?.fraction != null
+            ? cadPointAtFractionAlongLine(session.lineStart, session.lineEnd, parsed.fraction)
+            : parsed?.distance != null
+              ? cadPointAtDistanceAlongLine(session.lineStart, session.lineEnd, parsed.distance)
+              : null;
+        if (!parsed || !point) {
+          replaceSession({
+            ...session,
+            resultText: 'POINT_ALONG_LINE input invalid. Use distance or percent like `25` or `50%`.',
+          });
+          return;
+        }
+        applyHistoryUpdate((existing) =>
+          runCadCommand(existing, {
+            key: 'POINT',
+            x: point.x,
+            y: point.y,
+            label: parsed.label,
+          }),
+        );
+        publishReport(
+          'POINT_ALONG_LINE',
+          'Point Along Line',
+          `Created point along ${session.lineStart.label}-${session.lineEnd.label}`,
+          [
+            { label: 'Line', value: `${session.lineStart.label}-${session.lineEnd.label}` },
+            parsed.fraction != null
+              ? { label: 'Fraction', value: (parsed.fraction * 100).toFixed(3), unit: '%' }
+              : { label: 'Distance', value: (parsed.distance ?? 0).toFixed(3), unit: 'm' },
+            { label: 'Northing', value: point.y.toFixed(3), unit: 'm' },
+            { label: 'Easting', value: point.x.toFixed(3), unit: 'm' },
+          ],
+        );
+        replaceSession(null);
+        return;
+      }
+      if (session.key === 'EXTEND_LINE') {
+        const distance = Number(session.inputValue.trim());
+        const point = Number.isFinite(distance)
+          ? cadExtendLineByDistance(session.lineStart, session.lineEnd, distance)
+          : null;
+        if (!point) {
+          replaceSession({
+            ...session,
+            resultText: 'EXTEND_LINE input invalid. Enter a positive extension distance.',
+          });
+          return;
+        }
+        applyHistoryUpdate((existing) =>
+          runCadCommand(existing, {
+            key: 'LINE',
+            start: session.lineEnd,
+            end: {
+              ...point,
+              label: `${session.lineEnd.label}+${distance.toFixed(3)}`,
+            },
+          }),
+        );
+        publishReport(
+          'EXTEND_LINE',
+          'Extend Line by Distance',
+          `Extended ${session.lineStart.label}-${session.lineEnd.label} by ${distance.toFixed(3)} m`,
+          [
+            { label: 'Line', value: `${session.lineStart.label}-${session.lineEnd.label}` },
+            { label: 'Extension', value: distance.toFixed(3), unit: 'm' },
+            { label: 'End Northing', value: point.y.toFixed(3), unit: 'm' },
+            { label: 'End Easting', value: point.x.toFixed(3), unit: 'm' },
+          ],
+        );
+        replaceSession(null);
+        return;
+      }
+      const parsed = parseOffsetPointInput(session.inputValue);
+      const lineLength = buildCadDistanceSummary(session.lineStart, session.lineEnd).distance2d;
+      const alongDistance =
+        parsed?.alongFraction != null ? parsed.alongFraction * lineLength : parsed?.alongDistance;
+      const point =
+        parsed && alongDistance != null
+          ? cadOffsetPointFromLine({
+              lineStart: session.lineStart,
+              lineEnd: session.lineEnd,
+              alongDistance,
+              offsetDistance: parsed.offsetDistance,
+              side: parsed.side,
+            })
+          : null;
+      if (!parsed || alongDistance == null || !point) {
+        replaceSession({
+          ...session,
+          resultText: 'OFFSET_POINT input invalid. Use `Loffset,along` or `Roffset,along`.',
+        });
+        return;
+      }
+      applyHistoryUpdate((existing) =>
+        runCadCommand(existing, {
+          key: 'POINT',
+          x: point.x,
+          y: point.y,
+          label: parsed.label,
+        }),
+      );
+      publishReport(
+        'OFFSET_POINT',
+        'Offset Point',
+        `Created offset point from ${session.lineStart.label}-${session.lineEnd.label}`,
+        [
+          { label: 'Line', value: `${session.lineStart.label}-${session.lineEnd.label}` },
+          { label: 'Offset', value: `${parsed.side} ${parsed.offsetDistance.toFixed(3)} m` },
+          { label: 'Along', value: alongDistance.toFixed(3), unit: 'm' },
+          { label: 'Northing', value: point.y.toFixed(3), unit: 'm' },
+          { label: 'Easting', value: point.x.toFixed(3), unit: 'm' },
+        ],
+      );
+      replaceSession(null);
+      return;
+    }
     const basePoint =
       session.key === 'PLINE' ||
       session.key === 'TRAVERSE' ||
@@ -1601,6 +2226,10 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
       finishTraverseSession();
       return;
     }
+    if (session.key === 'MULTI_INVERSE' && session.inputValue.trim().length === 0 && session.points.length >= 2) {
+      submitSessionInput();
+      return;
+    }
     if (session.inputValue.trim().length === 0) return;
     submitSessionInput();
   };
@@ -1734,6 +2363,67 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
         inputValue: '',
         startPoint: null,
       }),
+    startMultiInverseCommand: () =>
+      beginSession({
+        key: 'MULTI_INVERSE',
+        inputValue: '',
+        points: [],
+      }),
+    startBearingReportCommand: () =>
+      beginSession({
+        key: 'BEARING_REPORT',
+        inputValue: '',
+        startPoint: null,
+      }),
+    startDistanceReportCommand: () =>
+      beginSession({
+        key: 'DISTANCE_REPORT',
+        inputValue: '',
+        startPoint: null,
+      }),
+    startTurnedPointCommand: () =>
+      beginSession({
+        key: 'TURNED_POINT',
+        inputValue: '',
+        occupyPoint: null,
+        backsightPoint: null,
+      }),
+    startDeflectionPointCommand: () => {
+      if (!selectedLineCommandPoints) return;
+      beginSession({
+        key: 'DEFLECT_POINT',
+        inputValue: '',
+        lineStart: selectedLineCommandPoints.start,
+        lineEnd: selectedLineCommandPoints.end,
+      });
+    },
+    startPointAlongLineCommand: () => {
+      if (!selectedLineCommandPoints) return;
+      beginSession({
+        key: 'POINT_ALONG_LINE',
+        inputValue: '',
+        lineStart: selectedLineCommandPoints.start,
+        lineEnd: selectedLineCommandPoints.end,
+      });
+    },
+    startExtendLineCommand: () => {
+      if (!selectedLineCommandPoints) return;
+      beginSession({
+        key: 'EXTEND_LINE',
+        inputValue: '',
+        lineStart: selectedLineCommandPoints.start,
+        lineEnd: selectedLineCommandPoints.end,
+      });
+    },
+    startOffsetPointCommand: () => {
+      if (!selectedLineCommandPoints) return;
+      beginSession({
+        key: 'OFFSET_POINT',
+        inputValue: '',
+        lineStart: selectedLineCommandPoints.start,
+        lineEnd: selectedLineCommandPoints.end,
+      });
+    },
     startMoveCommand: () => {
       if (selectionCount === 0) return;
       beginSession({

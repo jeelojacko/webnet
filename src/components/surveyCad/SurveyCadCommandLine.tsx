@@ -8,6 +8,7 @@ interface SurveyCadCommandLineProps {
   canRedo: boolean;
   historyDepth: number;
   redoDepth: number;
+  canUseSelectedLineCoreCogo: boolean;
   canCreateIntersectionPoint: boolean;
   canCreateParcel: boolean;
   canContinueCurve: boolean;
@@ -30,6 +31,14 @@ interface SurveyCadCommandLineProps {
   onStartContinueCurve: () => void;
   onStartTangentCurve: () => void;
   onStartInverse: () => void;
+  onStartMultiInverse: () => void;
+  onStartBearingReport: () => void;
+  onStartDistanceReport: () => void;
+  onStartTurnedPoint: () => void;
+  onStartDeflectionPoint: () => void;
+  onStartPointAlongLine: () => void;
+  onStartExtendLine: () => void;
+  onStartOffsetPoint: () => void;
   onStartMove: () => void;
   onStartCopy: () => void;
   onStartTrim: () => void;
@@ -55,6 +64,7 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   canRedo,
   historyDepth,
   redoDepth,
+  canUseSelectedLineCoreCogo,
   canCreateIntersectionPoint,
   canCreateParcel,
   canContinueCurve,
@@ -77,6 +87,14 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   onStartContinueCurve,
   onStartTangentCurve,
   onStartInverse,
+  onStartMultiInverse,
+  onStartBearingReport,
+  onStartDistanceReport,
+  onStartTurnedPoint,
+  onStartDeflectionPoint,
+  onStartPointAlongLine,
+  onStartExtendLine,
+  onStartOffsetPoint,
   onStartMove,
   onStartCopy,
   onStartTrim,
@@ -89,6 +107,7 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   onRedo,
 }) => {
   const [arcMenuOpen, setArcMenuOpen] = React.useState(false);
+  const [coreCogoMenuOpen, setCoreCogoMenuOpen] = React.useState(false);
   const runImmediate = (action: () => void) => {
     flushSync(() => {
       action();
@@ -178,6 +197,71 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
       <button type="button" className={commandButtonClassName} onClick={() => runImmediate(onStartInverse)} title="Inverse">
         INV
       </button>
+      <div className="relative flex items-stretch" data-survey-cad-core-cogo-tool>
+        <button type="button" className={commandButtonClassName} onClick={() => runImmediate(onStartMultiInverse)} title="Multi Inverse">
+          P/L
+        </button>
+        <button
+          type="button"
+          className={commandButtonClassName}
+          onClick={() => setCoreCogoMenuOpen((current) => !current)}
+          title="Point-Line COGO"
+          data-survey-cad-core-cogo-menu-button
+        >
+          ▾
+        </button>
+        {coreCogoMenuOpen ? (
+          <div
+            className="absolute left-0 top-full z-20 mt-1 grid min-w-56 gap-1 rounded border border-slate-700 bg-slate-950/95 p-2 shadow-xl"
+            data-survey-cad-core-cogo-menu
+          >
+            <button type="button" className={arcMenuButtonClassName} onClick={() => { setCoreCogoMenuOpen(false); runImmediate(onStartMultiInverse); }}>
+              Multi Inverse
+            </button>
+            <button type="button" className={arcMenuButtonClassName} onClick={() => { setCoreCogoMenuOpen(false); runImmediate(onStartBearingReport); }}>
+              Bearing Report
+            </button>
+            <button type="button" className={arcMenuButtonClassName} onClick={() => { setCoreCogoMenuOpen(false); runImmediate(onStartDistanceReport); }}>
+              Distance Report
+            </button>
+            <button type="button" className={arcMenuButtonClassName} onClick={() => { setCoreCogoMenuOpen(false); runImmediate(onStartTurnedPoint); }}>
+              Turned Point
+            </button>
+            <button
+              type="button"
+              className={arcMenuButtonClassName}
+              onClick={() => { setCoreCogoMenuOpen(false); runImmediate(onStartDeflectionPoint); }}
+              disabled={!canUseSelectedLineCoreCogo}
+            >
+              Deflection Point
+            </button>
+            <button
+              type="button"
+              className={arcMenuButtonClassName}
+              onClick={() => { setCoreCogoMenuOpen(false); runImmediate(onStartPointAlongLine); }}
+              disabled={!canUseSelectedLineCoreCogo}
+            >
+              Point Along Line
+            </button>
+            <button
+              type="button"
+              className={arcMenuButtonClassName}
+              onClick={() => { setCoreCogoMenuOpen(false); runImmediate(onStartExtendLine); }}
+              disabled={!canUseSelectedLineCoreCogo}
+            >
+              Extend Line
+            </button>
+            <button
+              type="button"
+              className={arcMenuButtonClassName}
+              onClick={() => { setCoreCogoMenuOpen(false); runImmediate(onStartOffsetPoint); }}
+              disabled={!canUseSelectedLineCoreCogo}
+            >
+              Offset Point
+            </button>
+          </div>
+        ) : null}
+      </div>
       <button
         type="button"
         className={commandButtonClassName}
