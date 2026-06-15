@@ -9,6 +9,7 @@ interface SurveyCadCommandLineProps {
   historyDepth: number;
   redoDepth: number;
   canUseSelectedLineCoreCogo: boolean;
+  canUseSelectedLinePairIntersection: boolean;
   canCreateIntersectionPoint: boolean;
   canCreateParcel: boolean;
   canContinueCurve: boolean;
@@ -39,6 +40,13 @@ interface SurveyCadCommandLineProps {
   onStartPointAlongLine: () => void;
   onStartExtendLine: () => void;
   onStartOffsetPoint: () => void;
+  onStartBearingBearingIntersection: () => void;
+  onStartBearingDistanceIntersection: () => void;
+  onStartDistanceDistanceIntersection: () => void;
+  onStartLineCircleIntersection: () => void;
+  onStartPerpendicularIntersection: () => void;
+  onStartOffsetIntersection: () => void;
+  onStartSkewIntersection: () => void;
   onStartMove: () => void;
   onStartCopy: () => void;
   onStartTrim: () => void;
@@ -65,6 +73,7 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   historyDepth,
   redoDepth,
   canUseSelectedLineCoreCogo,
+  canUseSelectedLinePairIntersection,
   canCreateIntersectionPoint,
   canCreateParcel,
   canContinueCurve,
@@ -95,6 +104,13 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   onStartPointAlongLine,
   onStartExtendLine,
   onStartOffsetPoint,
+  onStartBearingBearingIntersection,
+  onStartBearingDistanceIntersection,
+  onStartDistanceDistanceIntersection,
+  onStartLineCircleIntersection,
+  onStartPerpendicularIntersection,
+  onStartOffsetIntersection,
+  onStartSkewIntersection,
   onStartMove,
   onStartCopy,
   onStartTrim,
@@ -108,6 +124,7 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
 }) => {
   const [arcMenuOpen, setArcMenuOpen] = React.useState(false);
   const [coreCogoMenuOpen, setCoreCogoMenuOpen] = React.useState(false);
+  const [intersectionMenuOpen, setIntersectionMenuOpen] = React.useState(false);
   const runImmediate = (action: () => void) => {
     flushSync(() => {
       action();
@@ -289,15 +306,74 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
       >
         TRIM
       </button>
-      <button
-        type="button"
-        className={commandButtonClassName}
-        onClick={() => runImmediate(onCreateIntersectionPoint)}
-        disabled={!canCreateIntersectionPoint}
-        title="Intersection Point"
-      >
-        INTX
-      </button>
+      <div className="relative flex items-stretch" data-survey-cad-intersection-tool>
+        <button
+          type="button"
+          className={commandButtonClassName}
+          onClick={() => runImmediate(onCreateIntersectionPoint)}
+          disabled={!canCreateIntersectionPoint}
+          title="Intersection Point"
+        >
+          INTX
+        </button>
+        <button
+          type="button"
+          className={commandButtonClassName}
+          onClick={() => setIntersectionMenuOpen((current) => !current)}
+          title="Intersection Tools"
+          data-survey-cad-intersection-menu-button
+        >
+          ▾
+        </button>
+        {intersectionMenuOpen ? (
+          <div
+            className="absolute left-0 top-full z-20 mt-1 grid min-w-56 gap-1 rounded border border-slate-700 bg-slate-950/95 p-2 shadow-xl"
+            data-survey-cad-intersection-menu
+          >
+            <button type="button" className={arcMenuButtonClassName} onClick={() => { setIntersectionMenuOpen(false); runImmediate(onStartBearingBearingIntersection); }}>
+              Bearing-Bearing
+            </button>
+            <button type="button" className={arcMenuButtonClassName} onClick={() => { setIntersectionMenuOpen(false); runImmediate(onStartBearingDistanceIntersection); }}>
+              Bearing-Distance
+            </button>
+            <button type="button" className={arcMenuButtonClassName} onClick={() => { setIntersectionMenuOpen(false); runImmediate(onStartDistanceDistanceIntersection); }}>
+              Distance-Distance
+            </button>
+            <button
+              type="button"
+              className={arcMenuButtonClassName}
+              onClick={() => { setIntersectionMenuOpen(false); runImmediate(onStartLineCircleIntersection); }}
+              disabled={!canUseSelectedLineCoreCogo}
+            >
+              Line-Circle
+            </button>
+            <button
+              type="button"
+              className={arcMenuButtonClassName}
+              onClick={() => { setIntersectionMenuOpen(false); runImmediate(onStartPerpendicularIntersection); }}
+              disabled={!canUseSelectedLineCoreCogo}
+            >
+              Perpendicular
+            </button>
+            <button
+              type="button"
+              className={arcMenuButtonClassName}
+              onClick={() => { setIntersectionMenuOpen(false); runImmediate(onStartOffsetIntersection); }}
+              disabled={!canUseSelectedLinePairIntersection}
+            >
+              Offset Intersection
+            </button>
+            <button
+              type="button"
+              className={arcMenuButtonClassName}
+              onClick={() => { setIntersectionMenuOpen(false); runImmediate(onStartSkewIntersection); }}
+              disabled={!canUseSelectedLineCoreCogo}
+            >
+              Skew Intersection
+            </button>
+          </div>
+        ) : null}
+      </div>
       <button
         type="button"
         className={commandButtonClassName}

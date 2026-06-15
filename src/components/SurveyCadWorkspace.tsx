@@ -70,6 +70,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     canUndo,
     canRedo,
     canUseSelectedLineCoreCogo,
+    canUseSelectedLinePairIntersection,
     activeCommandKey,
     commandInputValue,
     statusText,
@@ -115,6 +116,13 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     startPointAlongLineCommand,
     startExtendLineCommand,
     startOffsetPointCommand,
+    startBearingBearingIntersectionCommand,
+    startBearingDistanceIntersectionCommand,
+    startDistanceDistanceIntersectionCommand,
+    startLineCircleIntersectionCommand,
+    startPerpendicularIntersectionCommand,
+    startOffsetIntersectionCommand,
+    startSkewIntersectionCommand,
     startMoveCommand,
     startCopyCommand,
     startTrimCommand,
@@ -160,6 +168,13 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     if (activeCommandKey === 'POINT_ALONG_LINE') return 'Type distance or percent like 25 or 50% from selected line';
     if (activeCommandKey === 'EXTEND_LINE') return 'Type extension distance from selected line end';
     if (activeCommandKey === 'OFFSET_POINT') return 'Type Loffset,along or Roffset,along from selected line';
+    if (activeCommandKey === 'BEARING_BEARING_INTX') return 'Pick two points, then type bearing1;bearing2';
+    if (activeCommandKey === 'BEARING_DISTANCE_INTX') return 'Pick bearing point and center, then type bearing;distance';
+    if (activeCommandKey === 'DISTANCE_DISTANCE_INTX') return 'Pick two centers, then type distance1,distance2';
+    if (activeCommandKey === 'LINE_CIRCLE_INTX') return 'Select a line, pick a center point, then type radius';
+    if (activeCommandKey === 'PERP_INTX') return 'Select a line, then pick the external point';
+    if (activeCommandKey === 'OFFSET_INTX') return 'Select two lines, then type Loff1,Roff2';
+    if (activeCommandKey === 'SKEW_INTX') return 'Select a line, pick a source point, then type Langle or Rangle';
     if (activeCommandKey === 'TRIM') return 'Click side to trim. Enter or Esc ends trim';
     if (activeCommandKey?.startsWith('ARC_') || activeCommandKey === 'CONTINUE_CURVE') {
       return 'Pick arc points, then enter the required value. Hold Ctrl to reverse direction';
@@ -340,6 +355,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               historyDepth={historyDepth}
               redoDepth={redoDepth}
               canUseSelectedLineCoreCogo={canUseSelectedLineCoreCogo}
+              canUseSelectedLinePairIntersection={canUseSelectedLinePairIntersection}
               canCreateIntersectionPoint={canCreateIntersectionPoint}
               canCreateParcel={canCreateParcel}
               canContinueCurve={canContinueCurve}
@@ -369,6 +385,13 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               onStartPointAlongLine={startPointAlongLineCommand}
               onStartExtendLine={startExtendLineCommand}
               onStartOffsetPoint={startOffsetPointCommand}
+              onStartBearingBearingIntersection={startBearingBearingIntersectionCommand}
+              onStartBearingDistanceIntersection={startBearingDistanceIntersectionCommand}
+              onStartDistanceDistanceIntersection={startDistanceDistanceIntersectionCommand}
+              onStartLineCircleIntersection={startLineCircleIntersectionCommand}
+              onStartPerpendicularIntersection={startPerpendicularIntersectionCommand}
+              onStartOffsetIntersection={startOffsetIntersectionCommand}
+              onStartSkewIntersection={startSkewIntersectionCommand}
               onStartMove={startMoveCommand}
               onStartCopy={startCopyCommand}
               onStartTrim={startTrimCommand}

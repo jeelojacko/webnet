@@ -16,7 +16,14 @@ import {
   cadComputeDeflectionAnglePoint,
   cadComputeTurnedAnglePoint,
   cadExtendLineByDistance,
+  cadIntersectBearingDistance,
+  cadIntersectBearings,
+  cadIntersectDistanceDistance,
   cadIntersectLineLikeEntities,
+  cadIntersectLineCircle,
+  cadIntersectOffsetLines,
+  cadIntersectPerpendicular,
+  cadIntersectSkew,
   cadIntersectArcEntities,
   cadIntersectLineArcEntity,
   cadOffsetLineSegment,
@@ -113,6 +120,83 @@ describe('Survey CAD COGO helpers', () => {
     });
     expect(offsetPoint?.x ?? Number.NaN).toBeCloseTo(-5, 6);
     expect(offsetPoint?.y ?? Number.NaN).toBeCloseTo(10, 6);
+  });
+
+  it('builds survey intersection helpers with deterministic alternatives', () => {
+    const bearingBearing = cadIntersectBearings({
+      firstPoint: { x: 0, y: 0 },
+      firstBearing: 'N45-00-00E',
+      secondPoint: { x: 10, y: 0 },
+      secondBearing: 'N45-00-00W',
+      firstLabel: 'A',
+      secondLabel: 'B',
+    });
+    expect(bearingBearing?.point.x ?? Number.NaN).toBeCloseTo(5, 6);
+    expect(bearingBearing?.point.y ?? Number.NaN).toBeCloseTo(5, 6);
+
+    const bearingDistance = cadIntersectBearingDistance({
+      bearingPoint: { x: 0, y: 0 },
+      bearing: 'N00-00-00E',
+      distancePoint: { x: 3, y: 5 },
+      distance: 5,
+      bearingLabel: 'A',
+      distanceLabel: 'B',
+    });
+    expect(bearingDistance).toHaveLength(2);
+    expect(bearingDistance[0]?.point.y ?? Number.NaN).toBeGreaterThan(bearingDistance[1]?.point.y ?? Number.NaN);
+
+    const distanceDistance = cadIntersectDistanceDistance({
+      firstPoint: { x: 0, y: 0 },
+      firstDistance: 5,
+      secondPoint: { x: 4, y: 0 },
+      secondDistance: 5,
+      firstLabel: 'A',
+      secondLabel: 'B',
+    });
+    expect(distanceDistance).toHaveLength(2);
+    expect(distanceDistance[0]?.point.y ?? Number.NaN).toBeCloseTo(Math.sqrt(21), 6);
+    expect(distanceDistance[1]?.point.y ?? Number.NaN).toBeCloseTo(-Math.sqrt(21), 6);
+
+    const lineCircle = cadIntersectLineCircle({
+      lineStart: { x: -10, y: 0 },
+      lineEnd: { x: 10, y: 0 },
+      center: { x: 0, y: 0 },
+      radius: 5,
+      lineLabel: 'L1',
+      centerLabel: 'C1',
+    });
+    expect(lineCircle).toHaveLength(2);
+    expect(lineCircle[0]?.point.x ?? Number.NaN).toBeCloseTo(-5, 6);
+    expect(lineCircle[1]?.point.x ?? Number.NaN).toBeCloseTo(5, 6);
+
+    const perpendicular = cadIntersectPerpendicular({
+      lineStart: { x: 0, y: 0 },
+      lineEnd: { x: 10, y: 0 },
+      fromPoint: { x: 3, y: 7 },
+    });
+    expect(perpendicular?.point.x ?? Number.NaN).toBeCloseTo(3, 6);
+    expect(perpendicular?.point.y ?? Number.NaN).toBeCloseTo(0, 6);
+
+    const offset = cadIntersectOffsetLines({
+      firstLineStart: { x: 0, y: 0 },
+      firstLineEnd: { x: 10, y: 0 },
+      firstOffset: 2,
+      secondLineStart: { x: 0, y: 0 },
+      secondLineEnd: { x: 0, y: 10 },
+      secondOffset: -3,
+    });
+    expect(offset?.point.x ?? Number.NaN).toBeCloseTo(3, 6);
+    expect(offset?.point.y ?? Number.NaN).toBeCloseTo(2, 6);
+
+    const skew = cadIntersectSkew({
+      lineStart: { x: 0, y: 0 },
+      lineEnd: { x: 20, y: 0 },
+      fromPoint: { x: 10, y: 10 },
+      angleDeg: 45,
+      side: 'right',
+    });
+    expect(skew?.point.x ?? Number.NaN).toBeCloseTo(20, 6);
+    expect(skew?.point.y ?? Number.NaN).toBeCloseTo(0, 6);
   });
 
   it('finds deterministic line-like intersections', () => {

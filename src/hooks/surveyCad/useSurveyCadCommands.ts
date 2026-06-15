@@ -7,6 +7,13 @@ import {
   cadComputeDeflectionAnglePoint,
   cadComputeTurnedAnglePoint,
   cadExtendLineByDistance,
+  cadIntersectBearingDistance,
+  cadIntersectBearings,
+  cadIntersectDistanceDistance,
+  cadIntersectLineCircle,
+  cadIntersectOffsetLines,
+  cadIntersectPerpendicular,
+  cadIntersectSkew,
   cadOffsetPointFromLine,
   cadPointAtDistanceAlongLine,
   cadPointAtFractionAlongLine,
@@ -71,6 +78,13 @@ type ActiveCommandKey =
   | 'POINT_ALONG_LINE'
   | 'EXTEND_LINE'
   | 'OFFSET_POINT'
+  | 'BEARING_BEARING_INTX'
+  | 'BEARING_DISTANCE_INTX'
+  | 'DISTANCE_DISTANCE_INTX'
+  | 'LINE_CIRCLE_INTX'
+  | 'PERP_INTX'
+  | 'OFFSET_INTX'
+  | 'SKEW_INTX'
   | 'MOVE'
   | 'COPY'
   | 'TRIM'
@@ -112,6 +126,30 @@ type CommandSession =
       inputValue: string;
       lineStart: CommandPoint;
       lineEnd: CommandPoint;
+      resultText?: string;
+    }
+  | {
+      key: 'BEARING_BEARING_INTX' | 'BEARING_DISTANCE_INTX' | 'DISTANCE_DISTANCE_INTX';
+      inputValue: string;
+      firstPoint: CommandPoint | null;
+      secondPoint: CommandPoint | null;
+      resultText?: string;
+    }
+  | {
+      key: 'LINE_CIRCLE_INTX' | 'PERP_INTX' | 'SKEW_INTX';
+      inputValue: string;
+      lineStart: CommandPoint;
+      lineEnd: CommandPoint;
+      targetPoint: CommandPoint | null;
+      resultText?: string;
+    }
+  | {
+      key: 'OFFSET_INTX';
+      inputValue: string;
+      firstLineStart: CommandPoint;
+      firstLineEnd: CommandPoint;
+      secondLineStart: CommandPoint;
+      secondLineEnd: CommandPoint;
       resultText?: string;
     }
   | {
@@ -183,6 +221,7 @@ interface UseSurveyCadCommandsArgs {
   trimCuttingEntityIds: string[];
   selectedArcForContinue: CadArcEntity | null;
   selectedLineForCoreCogo: CadLineEntity | null;
+  selectedLinePairForIntersection: [CadLineEntity, CadLineEntity] | null;
   reverseDirectionModifier: boolean;
   applyHistoryUpdate: (_updater: (_history: CadHistoryState) => CadHistoryState) => void;
   onReportComputation?: (
@@ -254,6 +293,13 @@ interface UseSurveyCadCommandsResult {
   startPointAlongLineCommand: () => void;
   startExtendLineCommand: () => void;
   startOffsetPointCommand: () => void;
+  startBearingBearingIntersectionCommand: () => void;
+  startBearingDistanceIntersectionCommand: () => void;
+  startDistanceDistanceIntersectionCommand: () => void;
+  startLineCircleIntersectionCommand: () => void;
+  startPerpendicularIntersectionCommand: () => void;
+  startOffsetIntersectionCommand: () => void;
+  startSkewIntersectionCommand: () => void;
   startMoveCommand: () => void;
   startCopyCommand: () => void;
   startTrimCommand: () => void;
@@ -311,6 +357,9 @@ const sessionExpectsPointPick = (session: CommandSession | null): boolean => {
     case 'PLINE':
     case 'TRAVERSE':
     case 'MULTI_INVERSE':
+    case 'BEARING_BEARING_INTX':
+    case 'BEARING_DISTANCE_INTX':
+    case 'DISTANCE_DISTANCE_INTX':
     case 'ARC_3PT':
     case 'CONTINUE_CURVE':
       return true;
@@ -329,6 +378,11 @@ const sessionExpectsPointPick = (session: CommandSession | null): boolean => {
       return session.aheadTangentPoint == null;
     case 'TURNED_POINT':
       return session.backsightPoint == null;
+    case 'LINE_CIRCLE_INTX':
+    case 'PERP_INTX':
+    case 'SKEW_INTX':
+      return session.targetPoint == null;
+    case 'OFFSET_INTX':
     case 'DEFLECT_POINT':
     case 'POINT_ALONG_LINE':
     case 'EXTEND_LINE':
@@ -450,6 +504,69 @@ const parseOffsetPointInput = (
     offsetDistance,
     alongDistance: along.distance,
     alongFraction: along.fraction,
+  };
+};
+
+const parseDualBearingInput = (
+  token: string,
+): { firstBearing: string; secondBearing: string } | null => {
+  const parts = token.split(/[;|]/).map((part) => part.trim()).filter((part) => part.length > 0);
+  if (parts.length !== 2) return null;
+  if (cadParseBearingDegrees(parts[0]) == null || cadParseBearingDegrees(parts[1]) == null) return null;
+  return {
+    firstBearing: parts[0]!,
+    secondBearing: parts[1]!,
+  };
+};
+
+const parseBearingDistanceIntersectionInput = (
+  token: string,
+): { bearing: string; distance: number } | null => {
+  const parts = token.split(/[;|]/).map((part) => part.trim()).filter((part) => part.length > 0);
+  if (parts.length !== 2) return null;
+  const distance = Number(parts[1]);
+  if (cadParseBearingDegrees(parts[0]) == null || !Number.isFinite(distance) || distance < 0) return null;
+  return {
+    bearing: parts[0]!,
+    distance,
+  };
+};
+
+const parseDistancePairInput = (
+  token: string,
+): { firstDistance: number; secondDistance: number } | null => {
+  const parts = token.split(',').map((part) => part.trim());
+  if (parts.length !== 2) return null;
+  const firstDistance = Number(parts[0]);
+  const secondDistance = Number(parts[1]);
+  if (!Number.isFinite(firstDistance) || !Number.isFinite(secondDistance)) return null;
+  return { firstDistance, secondDistance };
+};
+
+const parseSideDistanceInput = (
+  token: string,
+): { side: 'left' | 'right'; distance: number } | null => {
+  const match = /^([LR])\s*([-+]?\d*\.?\d+)\s*$/i.exec(token.trim());
+  if (!match) return null;
+  const distance = Number(match[2]);
+  if (!Number.isFinite(distance)) return null;
+  return {
+    side: (match[1] ?? '').toUpperCase() === 'L' ? 'left' : 'right',
+    distance,
+  };
+};
+
+const parseDualOffsetInput = (
+  token: string,
+): { firstOffset: number; secondOffset: number } | null => {
+  const parts = token.split(',').map((part) => part.trim());
+  if (parts.length !== 2) return null;
+  const first = parseSideDistanceInput(parts[0] ?? '');
+  const second = parseSideDistanceInput(parts[1] ?? '');
+  if (!first || !second) return null;
+  return {
+    firstOffset: first.side === 'left' ? first.distance : -first.distance,
+    secondOffset: second.side === 'left' ? second.distance : -second.distance,
   };
 };
 
@@ -599,6 +716,45 @@ const promptForSession = (session: CommandSession | null, fallbackStatus: string
     case 'OFFSET_POINT':
       return session.resultText ??
         `OFFSET_POINT active. Selected line ${session.lineStart.label}-${session.lineEnd.label}. Enter \`Loffset,along\` or \`Roffset,along\`, with along as distance or percent.`;
+    case 'BEARING_BEARING_INTX':
+      return session.resultText ??
+        (session.firstPoint == null
+          ? 'BEARING_BEARING_INTX active. Click or enter the first origin point.'
+          : session.secondPoint == null
+            ? `BEARING_BEARING_INTX active. First origin ${session.firstPoint.label} captured. Click or enter the second origin point.`
+            : `BEARING_BEARING_INTX active. Enter \`bearing1;bearing2\` from ${session.firstPoint.label} and ${session.secondPoint.label}.`);
+    case 'BEARING_DISTANCE_INTX':
+      return session.resultText ??
+        (session.firstPoint == null
+          ? 'BEARING_DISTANCE_INTX active. Click or enter the bearing origin point.'
+          : session.secondPoint == null
+            ? `BEARING_DISTANCE_INTX active. Bearing origin ${session.firstPoint.label} captured. Click or enter the distance center point.`
+            : `BEARING_DISTANCE_INTX active. Enter \`bearing;distance\` from ${session.firstPoint.label} against ${session.secondPoint.label}.`);
+    case 'DISTANCE_DISTANCE_INTX':
+      return session.resultText ??
+        (session.firstPoint == null
+          ? 'DISTANCE_DISTANCE_INTX active. Click or enter the first center point.'
+          : session.secondPoint == null
+            ? `DISTANCE_DISTANCE_INTX active. First center ${session.firstPoint.label} captured. Click or enter the second center point.`
+            : `DISTANCE_DISTANCE_INTX active. Enter \`distance1,distance2\` from ${session.firstPoint.label} and ${session.secondPoint.label}.`);
+    case 'LINE_CIRCLE_INTX':
+      return session.resultText ??
+        (session.targetPoint == null
+          ? `LINE_CIRCLE_INTX active. Selected line ${session.lineStart.label}-${session.lineEnd.label}. Click or enter the circle center point.`
+          : `LINE_CIRCLE_INTX active. Enter the radius from center ${session.targetPoint.label}.`);
+    case 'PERP_INTX':
+      return session.resultText ??
+        (session.targetPoint == null
+          ? `PERP_INTX active. Selected line ${session.lineStart.label}-${session.lineEnd.label}. Click or enter the external point.`
+          : `PERP_INTX active. Press Enter to create the perpendicular foot from ${session.targetPoint.label}.`);
+    case 'OFFSET_INTX':
+      return session.resultText ??
+        `OFFSET_INTX active. Enter \`Loff1,Roff2\` for ${session.firstLineStart.label}-${session.firstLineEnd.label} and ${session.secondLineStart.label}-${session.secondLineEnd.label}.`;
+    case 'SKEW_INTX':
+      return session.resultText ??
+        (session.targetPoint == null
+          ? `SKEW_INTX active. Selected line ${session.lineStart.label}-${session.lineEnd.label}. Click or enter the source point.`
+          : `SKEW_INTX active. Enter \`Langle\` or \`Rangle\` from ${session.targetPoint.label}.`);
     case 'MOVE':
       return session.resultText ??
         (session.startPoint
@@ -715,6 +871,32 @@ const helpTextForSession = (session: CommandSession | null): string => {
       return 'EXTEND_LINE input: enter extension distance from the selected line end.';
     case 'OFFSET_POINT':
       return 'OFFSET_POINT input: enter `Loffset,along` or `Roffset,along`; along may be distance or percent like `50%`.';
+    case 'BEARING_BEARING_INTX':
+      return session.secondPoint
+        ? 'BEARING_BEARING_INTX input: enter `bearing1;bearing2`, for example `N45-00-00E;S10-00-00E`.'
+        : 'BEARING_BEARING_INTX point input: click in model space or type `x,y` / `LABEL=x,y` for both origin points.';
+    case 'BEARING_DISTANCE_INTX':
+      return session.secondPoint
+        ? 'BEARING_DISTANCE_INTX input: enter `bearing;distance`, for example `N45-00-00E;25.000`.'
+        : 'BEARING_DISTANCE_INTX point input: click in model space or type `x,y` / `LABEL=x,y` for the bearing origin and distance center.';
+    case 'DISTANCE_DISTANCE_INTX':
+      return session.secondPoint
+        ? 'DISTANCE_DISTANCE_INTX input: enter `distance1,distance2`.'
+        : 'DISTANCE_DISTANCE_INTX point input: click in model space or type `x,y` / `LABEL=x,y` for both circle centers.';
+    case 'LINE_CIRCLE_INTX':
+      return session.targetPoint
+        ? 'LINE_CIRCLE_INTX input: enter the circle radius as a positive number.'
+        : 'LINE_CIRCLE_INTX point input: click in model space or type `x,y` / `LABEL=x,y` for the circle center.';
+    case 'PERP_INTX':
+      return session.targetPoint
+        ? 'PERP_INTX creates the perpendicular foot immediately after the external point is captured.'
+        : 'PERP_INTX point input: click in model space or type `x,y` / `LABEL=x,y` for the external point.';
+    case 'OFFSET_INTX':
+      return 'OFFSET_INTX input: enter `Loff1,Roff2` style offsets for the two selected lines.';
+    case 'SKEW_INTX':
+      return session.targetPoint
+        ? 'SKEW_INTX input: enter `Langle` or `Rangle`, for example `R30`.'
+        : 'SKEW_INTX point input: click in model space or type `x,y` / `LABEL=x,y` for the source point.';
     case 'MOVE':
       return session.startPoint
         ? 'MOVE target point: `x,y`, `LABEL=x,y`, `@azimuth,distance`, or bearing-distance from the base point.'
@@ -760,6 +942,7 @@ export const useSurveyCadCommands = ({
   trimCuttingEntityIds,
   selectedArcForContinue,
   selectedLineForCoreCogo,
+  selectedLinePairForIntersection,
   reverseDirectionModifier,
   applyHistoryUpdate,
   onReportComputation,
@@ -783,6 +966,38 @@ export const useSurveyCadCommands = ({
           }
         : null,
     [selectedLineForCoreCogo],
+  );
+  const selectedLinePairCommandPoints = useMemo(
+    () =>
+      selectedLinePairForIntersection
+        ? {
+            first: {
+              start: {
+                x: selectedLinePairForIntersection[0].fromX,
+                y: selectedLinePairForIntersection[0].fromY,
+                label: selectedLinePairForIntersection[0].fromStationId,
+              } as CommandPoint,
+              end: {
+                x: selectedLinePairForIntersection[0].toX,
+                y: selectedLinePairForIntersection[0].toY,
+                label: selectedLinePairForIntersection[0].toStationId,
+              } as CommandPoint,
+            },
+            second: {
+              start: {
+                x: selectedLinePairForIntersection[1].fromX,
+                y: selectedLinePairForIntersection[1].fromY,
+                label: selectedLinePairForIntersection[1].fromStationId,
+              } as CommandPoint,
+              end: {
+                x: selectedLinePairForIntersection[1].toX,
+                y: selectedLinePairForIntersection[1].toY,
+                label: selectedLinePairForIntersection[1].toStationId,
+              } as CommandPoint,
+            },
+          }
+        : null,
+    [selectedLinePairForIntersection],
   );
 
   useEffect(() => {
@@ -811,6 +1026,7 @@ export const useSurveyCadCommands = ({
     title: string,
     summary: string,
     rows: Array<{ label: string; value: string; unit?: string }>,
+    alternatives: Array<{ id: string; label: string; point?: { x: number; y: number } }> = [],
   ) => {
     onReportComputation?.(
       buildCadCogoComputation({
@@ -821,6 +1037,7 @@ export const useSurveyCadCommands = ({
           rows,
         },
         warnings: [],
+        alternatives,
         provenance: {
           id: `${toolKey}:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`,
           toolKey,
@@ -869,6 +1086,17 @@ export const useSurveyCadCommands = ({
               },
             }
           : { active: false, basePoint: null };
+      case 'BEARING_BEARING_INTX':
+      case 'BEARING_DISTANCE_INTX':
+      case 'DISTANCE_DISTANCE_INTX':
+        return session.secondPoint
+          ? { active: false, basePoint: null }
+          : session.firstPoint
+            ? {
+                active: true,
+                basePoint: { x: session.firstPoint.x, y: session.firstPoint.y },
+              }
+            : { active: false, basePoint: null };
       case 'TURNED_POINT':
         return session.backsightPoint
           ? { active: false, basePoint: null }
@@ -882,7 +1110,17 @@ export const useSurveyCadCommands = ({
       case 'POINT_ALONG_LINE':
       case 'EXTEND_LINE':
       case 'OFFSET_POINT':
+      case 'OFFSET_INTX':
         return { active: false, basePoint: null };
+      case 'LINE_CIRCLE_INTX':
+      case 'PERP_INTX':
+      case 'SKEW_INTX':
+        return session.targetPoint
+          ? { active: false, basePoint: null }
+          : {
+              active: true,
+              basePoint: { x: session.lineEnd.x, y: session.lineEnd.y },
+            };
       case 'MOVE':
       case 'COPY':
       case 'TRIM':
@@ -978,18 +1216,36 @@ export const useSurveyCadCommands = ({
       case 'LINE':
       case 'INVERSE':
       case 'BEARING_REPORT':
+      case 'BEARING_BEARING_INTX':
+      case 'BEARING_DISTANCE_INTX':
+      case 'DISTANCE_DISTANCE_INTX':
       case 'DISTANCE_REPORT':
         if (!previewPoint) return null;
-        if (!session.startPoint) {
+        if ('startPoint' in session && !session.startPoint) {
           return {
             kind: 'point',
             point: { x: previewPoint.x, y: previewPoint.y },
           };
         }
+        if ('firstPoint' in session && !session.firstPoint) {
+          return {
+            kind: 'point',
+            point: { x: previewPoint.x, y: previewPoint.y },
+          };
+        }
+        if ('firstPoint' in session && session.firstPoint && !session.secondPoint) {
+          return {
+            kind: 'line',
+            points: [
+              { x: session.firstPoint.x, y: session.firstPoint.y },
+              { x: previewPoint.x, y: previewPoint.y },
+            ],
+          };
+        }
         return {
           kind: 'line',
           points: [
-            { x: session.startPoint.x, y: session.startPoint.y },
+            { x: ('startPoint' in session ? session.startPoint!.x : session.firstPoint!.x), y: ('startPoint' in session ? session.startPoint!.y : session.firstPoint!.y) },
             { x: previewPoint.x, y: previewPoint.y },
           ],
         };
@@ -1030,7 +1286,19 @@ export const useSurveyCadCommands = ({
       case 'POINT_ALONG_LINE':
       case 'EXTEND_LINE':
       case 'OFFSET_POINT':
+      case 'OFFSET_INTX':
         return null;
+      case 'LINE_CIRCLE_INTX':
+      case 'PERP_INTX':
+      case 'SKEW_INTX':
+        if (!previewPoint || session.targetPoint != null) return null;
+        return {
+          kind: 'line',
+          points: [
+            { x: session.lineEnd.x, y: session.lineEnd.y },
+            { x: previewPoint.x, y: previewPoint.y },
+          ],
+        };
       case 'PLINE':
       case 'TRAVERSE':
         if (!previewPoint) return null;
@@ -1485,6 +1753,82 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
           resultText: undefined,
         });
       }
+      return;
+    }
+    if (
+      current.key === 'BEARING_BEARING_INTX' ||
+      current.key === 'BEARING_DISTANCE_INTX' ||
+      current.key === 'DISTANCE_DISTANCE_INTX'
+    ) {
+      if (!current.firstPoint) {
+        replaceSession({
+          ...current,
+          firstPoint: point,
+          inputValue: '',
+          resultText: undefined,
+        });
+        return;
+      }
+      if (!current.secondPoint) {
+        replaceSession({
+          ...current,
+          secondPoint: point,
+          inputValue: '',
+          resultText: undefined,
+        });
+      }
+      return;
+    }
+    if (current.key === 'LINE_CIRCLE_INTX' || current.key === 'SKEW_INTX') {
+      if (!current.targetPoint) {
+        replaceSession({
+          ...current,
+          targetPoint: point,
+          inputValue: '',
+          resultText: undefined,
+        });
+      }
+      return;
+    }
+    if (current.key === 'PERP_INTX') {
+      const solution = cadIntersectPerpendicular({
+        lineStart: current.lineStart,
+        lineEnd: current.lineEnd,
+        fromPoint: point,
+        lineLabel: `${current.lineStart.label}-${current.lineEnd.label}`,
+        pointLabel: point.label,
+      });
+      if (!solution) {
+        replaceSession({
+          ...current,
+          resultText: 'PERP_INTX could not compute a perpendicular foot from that point.',
+        });
+        return;
+      }
+      applyHistoryUpdate((existing) =>
+        runCadCommand(existing, {
+          key: 'POINT',
+          x: solution.point.x,
+          y: solution.point.y,
+        }),
+      );
+      publishReport(
+        'PERP_INTX',
+        'Perpendicular Intersection',
+        `Computed perpendicular foot from ${point.label} to ${current.lineStart.label}-${current.lineEnd.label}`,
+          [
+            { label: 'Point', value: point.label },
+            { label: 'Line', value: `${current.lineStart.label}-${current.lineEnd.label}` },
+            { label: 'Northing', value: solution.point.y.toFixed(3), unit: 'm' },
+            { label: 'Easting', value: solution.point.x.toFixed(3), unit: 'm' },
+            {
+              label: 'Offset',
+              value: buildCadDistanceSummary(point, solution.point).distance2d.toFixed(3),
+              unit: 'm',
+            },
+          ],
+        );
+      replaceSession(null);
       return;
     }
     if (current.key === 'PLINE' || current.key === 'TRAVERSE') {
@@ -2042,6 +2386,326 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
       replaceSession(null);
       return;
     }
+    if (
+      session.key === 'BEARING_BEARING_INTX' ||
+      session.key === 'BEARING_DISTANCE_INTX' ||
+      session.key === 'DISTANCE_DISTANCE_INTX'
+    ) {
+      if (session.firstPoint == null || session.secondPoint == null) {
+        const parsedPoint = parseInputPoint(session.inputValue, session.firstPoint);
+        if (!parsedPoint) {
+          replaceSession({
+            ...session,
+            resultText: `${session.key} point input invalid. Use \`x,y\` or \`LABEL=x,y\`.`,
+          });
+          return;
+        }
+        consumePoint(parsedPoint);
+        return;
+      }
+
+      if (session.key === 'BEARING_BEARING_INTX') {
+        const parsed = parseDualBearingInput(session.inputValue);
+        const solution =
+          parsed &&
+          cadIntersectBearings({
+            firstPoint: session.firstPoint,
+            firstBearing: parsed.firstBearing,
+            secondPoint: session.secondPoint,
+            secondBearing: parsed.secondBearing,
+            firstLabel: session.firstPoint.label,
+            secondLabel: session.secondPoint.label,
+          });
+        if (!parsed || !solution) {
+          replaceSession({
+            ...session,
+            resultText: 'BEARING_BEARING_INTX input invalid. Use `bearing1;bearing2` with non-parallel bearings.',
+          });
+          return;
+        }
+        applyHistoryUpdate((existing) =>
+          runCadCommand(existing, {
+            key: 'POINT',
+            x: solution.point.x,
+            y: solution.point.y,
+          }),
+        );
+        publishReport(
+          'BEARING_BEARING_INTX',
+          'Bearing-Bearing Intersection',
+          `Computed bearing intersection from ${session.firstPoint.label} and ${session.secondPoint.label}`,
+          [
+            { label: 'Origin 1', value: session.firstPoint.label },
+            { label: 'Bearing 1', value: parsed.firstBearing },
+            { label: 'Origin 2', value: session.secondPoint.label },
+            { label: 'Bearing 2', value: parsed.secondBearing },
+            { label: 'Northing', value: solution.point.y.toFixed(3), unit: 'm' },
+            { label: 'Easting', value: solution.point.x.toFixed(3), unit: 'm' },
+          ],
+        );
+        replaceSession(null);
+        return;
+      }
+
+      if (session.key === 'BEARING_DISTANCE_INTX') {
+        const parsed = parseBearingDistanceIntersectionInput(session.inputValue);
+        const solutions =
+          parsed
+            ? cadIntersectBearingDistance({
+                bearingPoint: session.firstPoint,
+                bearing: parsed.bearing,
+                distancePoint: session.secondPoint,
+                distance: parsed.distance,
+                bearingLabel: session.firstPoint.label,
+                distanceLabel: session.secondPoint.label,
+              })
+            : [];
+        const primary = solutions[0];
+        if (!parsed || !primary) {
+          replaceSession({
+            ...session,
+            resultText: 'BEARING_DISTANCE_INTX input invalid. Use `bearing;distance` and a solvable radius.',
+          });
+          return;
+        }
+        applyHistoryUpdate((existing) =>
+          runCadCommand(existing, {
+            key: 'POINT',
+            x: primary.point.x,
+            y: primary.point.y,
+          }),
+        );
+        publishReport(
+          'BEARING_DISTANCE_INTX',
+          'Bearing-Distance Intersection',
+          `Computed bearing-distance intersection from ${session.firstPoint.label} and ${session.secondPoint.label}`,
+          [
+            { label: 'Bearing origin', value: session.firstPoint.label },
+            { label: 'Bearing', value: parsed.bearing },
+            { label: 'Distance center', value: session.secondPoint.label },
+            { label: 'Radius', value: parsed.distance.toFixed(3), unit: 'm' },
+            { label: 'Chosen Northing', value: primary.point.y.toFixed(3), unit: 'm' },
+            { label: 'Chosen Easting', value: primary.point.x.toFixed(3), unit: 'm' },
+          ],
+          solutions.slice(1).map((solution, index) => ({
+            id: `bd-alt-${index + 2}`,
+            label: `${solution.label}: N ${solution.point.y.toFixed(3)} E ${solution.point.x.toFixed(3)}`,
+            point: solution.point,
+          })),
+        );
+        replaceSession(null);
+        return;
+      }
+
+      const parsed = parseDistancePairInput(session.inputValue);
+      const solutions =
+        parsed
+          ? cadIntersectDistanceDistance({
+              firstPoint: session.firstPoint,
+              firstDistance: parsed.firstDistance,
+              secondPoint: session.secondPoint,
+              secondDistance: parsed.secondDistance,
+              firstLabel: session.firstPoint.label,
+              secondLabel: session.secondPoint.label,
+            })
+          : [];
+      const primary = solutions[0];
+      if (!parsed || !primary) {
+        replaceSession({
+          ...session,
+          resultText: 'DISTANCE_DISTANCE_INTX input invalid. Use `distance1,distance2` with intersecting circles.',
+        });
+        return;
+      }
+      applyHistoryUpdate((existing) =>
+        runCadCommand(existing, {
+          key: 'POINT',
+          x: primary.point.x,
+          y: primary.point.y,
+        }),
+      );
+      publishReport(
+        'DISTANCE_DISTANCE_INTX',
+        'Distance-Distance Intersection',
+        `Computed distance-distance intersection from ${session.firstPoint.label} and ${session.secondPoint.label}`,
+        [
+          { label: 'Center 1', value: session.firstPoint.label },
+          { label: 'Radius 1', value: parsed.firstDistance.toFixed(3), unit: 'm' },
+          { label: 'Center 2', value: session.secondPoint.label },
+          { label: 'Radius 2', value: parsed.secondDistance.toFixed(3), unit: 'm' },
+          { label: 'Chosen Northing', value: primary.point.y.toFixed(3), unit: 'm' },
+          { label: 'Chosen Easting', value: primary.point.x.toFixed(3), unit: 'm' },
+        ],
+        solutions.slice(1).map((solution, index) => ({
+          id: `dd-alt-${index + 2}`,
+          label: `${solution.label}: N ${solution.point.y.toFixed(3)} E ${solution.point.x.toFixed(3)}`,
+          point: solution.point,
+        })),
+      );
+      replaceSession(null);
+      return;
+    }
+    if (
+      session.key === 'LINE_CIRCLE_INTX' ||
+      session.key === 'OFFSET_INTX' ||
+      session.key === 'SKEW_INTX'
+    ) {
+      if (session.key === 'LINE_CIRCLE_INTX') {
+        if (session.targetPoint == null) {
+          const parsedPoint = parseInputPoint(session.inputValue, session.lineEnd);
+          if (!parsedPoint) {
+            replaceSession({
+              ...session,
+              resultText: 'LINE_CIRCLE_INTX center input invalid. Use `x,y` or `LABEL=x,y`.',
+            });
+            return;
+          }
+          consumePoint(parsedPoint);
+          return;
+        }
+        const radius = Number(session.inputValue.trim());
+        const solutions = Number.isFinite(radius)
+          ? cadIntersectLineCircle({
+              lineStart: session.lineStart,
+              lineEnd: session.lineEnd,
+              center: session.targetPoint,
+              radius,
+              lineLabel: `${session.lineStart.label}-${session.lineEnd.label}`,
+              centerLabel: session.targetPoint.label,
+            })
+          : [];
+        const primary = solutions[0];
+        if (!primary) {
+          replaceSession({
+            ...session,
+            resultText: 'LINE_CIRCLE_INTX radius invalid or no intersection found.',
+          });
+          return;
+        }
+        applyHistoryUpdate((existing) =>
+          runCadCommand(existing, {
+            key: 'POINT',
+            x: primary.point.x,
+            y: primary.point.y,
+          }),
+        );
+        publishReport(
+          'LINE_CIRCLE_INTX',
+          'Line-Circle Intersection',
+          `Computed line-circle intersection on ${session.lineStart.label}-${session.lineEnd.label}`,
+          [
+            { label: 'Line', value: `${session.lineStart.label}-${session.lineEnd.label}` },
+            { label: 'Center', value: session.targetPoint.label },
+            { label: 'Radius', value: radius.toFixed(3), unit: 'm' },
+            { label: 'Chosen Northing', value: primary.point.y.toFixed(3), unit: 'm' },
+            { label: 'Chosen Easting', value: primary.point.x.toFixed(3), unit: 'm' },
+          ],
+          solutions.slice(1).map((solution, index) => ({
+            id: `lc-alt-${index + 2}`,
+            label: `${solution.label}: N ${solution.point.y.toFixed(3)} E ${solution.point.x.toFixed(3)}`,
+            point: solution.point,
+          })),
+        );
+        replaceSession(null);
+        return;
+      }
+      if (session.key === 'OFFSET_INTX') {
+        const parsed = parseDualOffsetInput(session.inputValue);
+        const solution =
+          parsed &&
+          cadIntersectOffsetLines({
+            firstLineStart: session.firstLineStart,
+            firstLineEnd: session.firstLineEnd,
+            firstOffset: parsed.firstOffset,
+            secondLineStart: session.secondLineStart,
+            secondLineEnd: session.secondLineEnd,
+            secondOffset: parsed.secondOffset,
+            firstLabel: `${session.firstLineStart.label}-${session.firstLineEnd.label}`,
+            secondLabel: `${session.secondLineStart.label}-${session.secondLineEnd.label}`,
+          });
+        if (!parsed || !solution) {
+          replaceSession({
+            ...session,
+            resultText: 'OFFSET_INTX input invalid. Use `Loff1,Roff2` with non-parallel offset lines.',
+          });
+          return;
+        }
+        applyHistoryUpdate((existing) =>
+          runCadCommand(existing, {
+            key: 'POINT',
+            x: solution.point.x,
+            y: solution.point.y,
+          }),
+        );
+        publishReport(
+          'OFFSET_INTX',
+          'Offset Intersection',
+          `Computed offset intersection from two selected lines`,
+          [
+            { label: 'Line 1', value: `${session.firstLineStart.label}-${session.firstLineEnd.label}` },
+            { label: 'Offset 1', value: parsed.firstOffset.toFixed(3), unit: 'm' },
+            { label: 'Line 2', value: `${session.secondLineStart.label}-${session.secondLineEnd.label}` },
+            { label: 'Offset 2', value: parsed.secondOffset.toFixed(3), unit: 'm' },
+            { label: 'Northing', value: solution.point.y.toFixed(3), unit: 'm' },
+            { label: 'Easting', value: solution.point.x.toFixed(3), unit: 'm' },
+          ],
+        );
+        replaceSession(null);
+        return;
+      }
+      if (session.targetPoint == null) {
+        const parsedPoint = parseInputPoint(session.inputValue, session.lineEnd);
+        if (!parsedPoint) {
+          replaceSession({
+            ...session,
+            resultText: 'SKEW_INTX point input invalid. Use `x,y` or `LABEL=x,y`.',
+          });
+          return;
+        }
+        consumePoint(parsedPoint);
+        return;
+      }
+      const parsed = parseSideDistanceInput(session.inputValue);
+      const solution =
+        parsed &&
+        cadIntersectSkew({
+          lineStart: session.lineStart,
+          lineEnd: session.lineEnd,
+          fromPoint: session.targetPoint,
+          angleDeg: parsed.distance,
+          side: parsed.side,
+          lineLabel: `${session.lineStart.label}-${session.lineEnd.label}`,
+          pointLabel: session.targetPoint.label,
+        });
+      if (!parsed || !solution) {
+        replaceSession({
+          ...session,
+          resultText: 'SKEW_INTX input invalid. Use `Langle` or `Rangle` with a non-parallel skew.',
+        });
+        return;
+      }
+      applyHistoryUpdate((existing) =>
+        runCadCommand(existing, {
+          key: 'POINT',
+          x: solution.point.x,
+          y: solution.point.y,
+        }),
+      );
+      publishReport(
+        'SKEW_INTX',
+        'Skew Intersection',
+        `Computed skew intersection from ${session.targetPoint.label} onto ${session.lineStart.label}-${session.lineEnd.label}`,
+        [
+          { label: 'Source point', value: session.targetPoint.label },
+          { label: 'Line', value: `${session.lineStart.label}-${session.lineEnd.label}` },
+          { label: 'Skew', value: `${parsed.side} ${parsed.distance.toFixed(4)} deg` },
+          { label: 'Northing', value: solution.point.y.toFixed(3), unit: 'm' },
+          { label: 'Easting', value: solution.point.x.toFixed(3), unit: 'm' },
+        ],
+      );
+      replaceSession(null);
+      return;
+    }
     const basePoint =
       session.key === 'PLINE' ||
       session.key === 'TRAVERSE' ||
@@ -2422,6 +3086,68 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
         inputValue: '',
         lineStart: selectedLineCommandPoints.start,
         lineEnd: selectedLineCommandPoints.end,
+      });
+    },
+    startBearingBearingIntersectionCommand: () =>
+      beginSession({
+        key: 'BEARING_BEARING_INTX',
+        inputValue: '',
+        firstPoint: null,
+        secondPoint: null,
+      }),
+    startBearingDistanceIntersectionCommand: () =>
+      beginSession({
+        key: 'BEARING_DISTANCE_INTX',
+        inputValue: '',
+        firstPoint: null,
+        secondPoint: null,
+      }),
+    startDistanceDistanceIntersectionCommand: () =>
+      beginSession({
+        key: 'DISTANCE_DISTANCE_INTX',
+        inputValue: '',
+        firstPoint: null,
+        secondPoint: null,
+      }),
+    startLineCircleIntersectionCommand: () => {
+      if (!selectedLineCommandPoints) return;
+      beginSession({
+        key: 'LINE_CIRCLE_INTX',
+        inputValue: '',
+        lineStart: selectedLineCommandPoints.start,
+        lineEnd: selectedLineCommandPoints.end,
+        targetPoint: null,
+      });
+    },
+    startPerpendicularIntersectionCommand: () => {
+      if (!selectedLineCommandPoints) return;
+      beginSession({
+        key: 'PERP_INTX',
+        inputValue: '',
+        lineStart: selectedLineCommandPoints.start,
+        lineEnd: selectedLineCommandPoints.end,
+        targetPoint: null,
+      });
+    },
+    startOffsetIntersectionCommand: () => {
+      if (!selectedLinePairCommandPoints) return;
+      beginSession({
+        key: 'OFFSET_INTX',
+        inputValue: '',
+        firstLineStart: selectedLinePairCommandPoints.first.start,
+        firstLineEnd: selectedLinePairCommandPoints.first.end,
+        secondLineStart: selectedLinePairCommandPoints.second.start,
+        secondLineEnd: selectedLinePairCommandPoints.second.end,
+      });
+    },
+    startSkewIntersectionCommand: () => {
+      if (!selectedLineCommandPoints) return;
+      beginSession({
+        key: 'SKEW_INTX',
+        inputValue: '',
+        lineStart: selectedLineCommandPoints.start,
+        lineEnd: selectedLineCommandPoints.end,
+        targetPoint: null,
       });
     },
     startMoveCommand: () => {

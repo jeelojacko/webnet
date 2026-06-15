@@ -4005,6 +4005,55 @@ describe('SurveyCadWorkspace', () => {
     container.remove();
   });
 
+  it('reports bearing-distance intersection alternatives from the intersection menu', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+        />,
+      );
+    });
+
+    const commandInput = container.querySelector('[data-survey-cad-command-input]') as HTMLInputElement | null;
+    if (!commandInput) throw new Error('Expected command input');
+
+    await act(async () => {
+      (container.querySelector('[data-survey-cad-intersection-menu-button]') as HTMLButtonElement | null)?.click();
+    });
+    await act(async () => {
+      clickButton(container, 'Bearing-Distance');
+      setTextInputValue(commandInput, 'A=0,0');
+      pressKey(commandInput, 'Enter');
+      setTextInputValue(commandInput, 'B=3,5');
+      pressKey(commandInput, 'Enter');
+      setTextInputValue(commandInput, 'N00-00-00E;5');
+      pressKey(commandInput, 'Enter');
+    });
+
+    expect(container.querySelector('[data-survey-cad-cogo-panel-title]')?.textContent).toContain(
+      'Bearing-Distance Intersection',
+    );
+    expect(container.querySelector('[data-survey-cad-cogo-panel-summary]')?.textContent).toContain(
+      'bearing-distance intersection',
+    );
+    expect(container.querySelector('[data-survey-cad-cogo-panel-alternatives]')?.textContent).toContain(
+      'Alternative',
+    );
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
   it('runs TRIM from the command surface by using selected cutting edges and clicking the portion to remove', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);

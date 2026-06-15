@@ -10,10 +10,14 @@ import {
   cadAzimuthDeg,
   cadDistance,
   cadIntersectArcArc,
+  cadIntersectCircleCircle,
+  cadIntersectInfiniteLineCircle,
   cadIntersectSegmentArc,
+  cadInfiniteLineIntersection,
   cadOffsetLineSegment as offsetLineSegmentGeometry,
   cadParseBearingDegrees,
   cadPointFromAzimuthDistance,
+  cadProjectPointOntoInfiniteLine,
   cadSegmentIntersection,
   type CadNamedPoint,
   type CadWorldPoint,
@@ -40,6 +44,11 @@ export interface CadMultiInverseLegSummary extends CadInverseSummary {
 export interface CadMultiInverseSummary {
   legs: CadMultiInverseLegSummary[];
   totalDistance: number;
+}
+
+export interface CadIntersectionSolution {
+  point: CadWorldPoint;
+  label: string;
 }
 
 interface CadSegmentRef {
@@ -330,6 +339,215 @@ export const cadOffsetPointFromLine = ({
   return {
     x: basePoint.x + leftX * offsetDistance * multiplier,
     y: basePoint.y + leftY * offsetDistance * multiplier,
+  };
+};
+
+const sortIntersectionSolutions = (
+  solutions: readonly CadIntersectionSolution[],
+): CadIntersectionSolution[] =>
+  [...solutions].sort((left, right) => {
+    if (Math.abs(right.point.y - left.point.y) > 1e-9) return right.point.y - left.point.y;
+    if (Math.abs(left.point.x - right.point.x) > 1e-9) return left.point.x - right.point.x;
+    return left.label.localeCompare(right.label);
+  });
+
+export const cadIntersectBearings = ({
+  firstPoint,
+  firstBearing,
+  secondPoint,
+  secondBearing,
+  firstLabel = 'A',
+  secondLabel = 'B',
+}: {
+  firstPoint: CadWorldPoint;
+  firstBearing: string;
+  secondPoint: CadWorldPoint;
+  secondBearing: string;
+  firstLabel?: string;
+  secondLabel?: string;
+}): CadIntersectionSolution | null => {
+  const firstAzimuthDeg = cadParseBearingDegrees(firstBearing);
+  const secondAzimuthDeg = cadParseBearingDegrees(secondBearing);
+  if (firstAzimuthDeg == null || secondAzimuthDeg == null) return null;
+  const firstAhead = cadPointFromAzimuthDistance(firstPoint, firstAzimuthDeg, 1);
+  const secondAhead = cadPointFromAzimuthDistance(secondPoint, secondAzimuthDeg, 1);
+  const point = cadInfiniteLineIntersection(firstPoint, firstAhead, secondPoint, secondAhead);
+  if (!point) return null;
+  return {
+    point,
+    label: `${firstLabel} ${firstBearing} x ${secondLabel} ${secondBearing}`,
+  };
+};
+
+export const cadIntersectBearingDistance = ({
+  bearingPoint,
+  bearing,
+  distancePoint,
+  distance,
+  bearingLabel = 'A',
+  distanceLabel = 'B',
+}: {
+  bearingPoint: CadWorldPoint;
+  bearing: string;
+  distancePoint: CadWorldPoint;
+  distance: number;
+  bearingLabel?: string;
+  distanceLabel?: string;
+}): CadIntersectionSolution[] => {
+  const azimuthDeg = cadParseBearingDegrees(bearing);
+  if (azimuthDeg == null || !Number.isFinite(distance) || distance < 0) return [];
+  return sortIntersectionSolutions(
+    cadIntersectInfiniteLineCircle(
+      bearingPoint,
+      cadPointFromAzimuthDistance(bearingPoint, azimuthDeg, 1),
+      distancePoint,
+      distance,
+    ).map((point, index) => ({
+      point,
+      label: `${bearingLabel} ${bearing} x ${distanceLabel} r=${distance.toFixed(3)} (${index + 1})`,
+    })),
+  );
+};
+
+export const cadIntersectDistanceDistance = ({
+  firstPoint,
+  firstDistance,
+  secondPoint,
+  secondDistance,
+  firstLabel = 'A',
+  secondLabel = 'B',
+}: {
+  firstPoint: CadWorldPoint;
+  firstDistance: number;
+  secondPoint: CadWorldPoint;
+  secondDistance: number;
+  firstLabel?: string;
+  secondLabel?: string;
+}): CadIntersectionSolution[] => {
+  if (
+    !Number.isFinite(firstDistance) ||
+    !Number.isFinite(secondDistance) ||
+    firstDistance < 0 ||
+    secondDistance < 0
+  ) {
+    return [];
+  }
+  return sortIntersectionSolutions(
+    cadIntersectCircleCircle(firstPoint, firstDistance, secondPoint, secondDistance).map((point, index) => ({
+      point,
+      label: `${firstLabel} r=${firstDistance.toFixed(3)} x ${secondLabel} r=${secondDistance.toFixed(3)} (${index + 1})`,
+    })),
+  );
+};
+
+export const cadIntersectLineCircle = ({
+  lineStart,
+  lineEnd,
+  center,
+  radius,
+  lineLabel = 'Line',
+  centerLabel = 'Center',
+}: {
+  lineStart: CadWorldPoint;
+  lineEnd: CadWorldPoint;
+  center: CadWorldPoint;
+  radius: number;
+  lineLabel?: string;
+  centerLabel?: string;
+}): CadIntersectionSolution[] => {
+  if (!Number.isFinite(radius) || radius < 0) return [];
+  return sortIntersectionSolutions(
+    cadIntersectInfiniteLineCircle(lineStart, lineEnd, center, radius).map((point, index) => ({
+      point,
+      label: `${lineLabel} x ${centerLabel} r=${radius.toFixed(3)} (${index + 1})`,
+    })),
+  );
+};
+
+export const cadIntersectOffsetLines = ({
+  firstLineStart,
+  firstLineEnd,
+  firstOffset,
+  secondLineStart,
+  secondLineEnd,
+  secondOffset,
+  firstLabel = 'L1',
+  secondLabel = 'L2',
+}: {
+  firstLineStart: CadWorldPoint;
+  firstLineEnd: CadWorldPoint;
+  firstOffset: number;
+  secondLineStart: CadWorldPoint;
+  secondLineEnd: CadWorldPoint;
+  secondOffset: number;
+  firstLabel?: string;
+  secondLabel?: string;
+}): CadIntersectionSolution | null => {
+  const firstOffsetLine = cadOffsetLineSegment(firstLineStart, firstLineEnd, firstOffset);
+  const secondOffsetLine = cadOffsetLineSegment(secondLineStart, secondLineEnd, secondOffset);
+  const point = cadInfiniteLineIntersection(
+    firstOffsetLine.start,
+    firstOffsetLine.end,
+    secondOffsetLine.start,
+    secondOffsetLine.end,
+  );
+  if (!point) return null;
+  return {
+    point,
+    label: `${firstLabel} off ${firstOffset.toFixed(3)} x ${secondLabel} off ${secondOffset.toFixed(3)}`,
+  };
+};
+
+export const cadIntersectPerpendicular = ({
+  lineStart,
+  lineEnd,
+  fromPoint,
+  lineLabel = 'Line',
+  pointLabel = 'Point',
+}: {
+  lineStart: CadWorldPoint;
+  lineEnd: CadWorldPoint;
+  fromPoint: CadWorldPoint;
+  lineLabel?: string;
+  pointLabel?: string;
+}): CadIntersectionSolution | null => {
+  const projection = cadProjectPointOntoInfiniteLine(fromPoint, lineStart, lineEnd);
+  return {
+    point: projection.point,
+    label: `${pointLabel} perp ${lineLabel}`,
+  };
+};
+
+export const cadIntersectSkew = ({
+  lineStart,
+  lineEnd,
+  fromPoint,
+  angleDeg,
+  side,
+  lineLabel = 'Line',
+  pointLabel = 'Point',
+}: {
+  lineStart: CadWorldPoint;
+  lineEnd: CadWorldPoint;
+  fromPoint: CadWorldPoint;
+  angleDeg: number;
+  side: 'left' | 'right';
+  lineLabel?: string;
+  pointLabel?: string;
+}): CadIntersectionSolution | null => {
+  if (!Number.isFinite(angleDeg)) return null;
+  const lineAzimuth = cadAzimuthDeg(lineStart, lineEnd);
+  const skewAzimuth = side === 'left' ? lineAzimuth - angleDeg : lineAzimuth + angleDeg;
+  const point = cadInfiniteLineIntersection(
+    lineStart,
+    lineEnd,
+    fromPoint,
+    cadPointFromAzimuthDistance(fromPoint, skewAzimuth, 1),
+  );
+  if (!point) return null;
+  return {
+    point,
+    label: `${pointLabel} skew ${side} ${angleDeg.toFixed(4)} on ${lineLabel}`,
   };
 };
 

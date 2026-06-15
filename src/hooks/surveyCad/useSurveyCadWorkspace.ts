@@ -36,6 +36,7 @@ import type {
   CadBounds,
   CadDisplayPrimitive,
   CadGripHandle,
+  CadLineEntity,
   CadPolylineEntity,
   CadProject,
   CadSnapCandidate,
@@ -61,6 +62,7 @@ interface UseSurveyCadWorkspaceResult {
   canUndo: boolean;
   canRedo: boolean;
   canUseSelectedLineCoreCogo: boolean;
+  canUseSelectedLinePairIntersection: boolean;
   activeCommandKey:
     | 'POINT'
     | 'COGO_POINT'
@@ -88,6 +90,13 @@ interface UseSurveyCadWorkspaceResult {
     | 'POINT_ALONG_LINE'
     | 'EXTEND_LINE'
     | 'OFFSET_POINT'
+    | 'BEARING_BEARING_INTX'
+    | 'BEARING_DISTANCE_INTX'
+    | 'DISTANCE_DISTANCE_INTX'
+    | 'LINE_CIRCLE_INTX'
+    | 'PERP_INTX'
+    | 'OFFSET_INTX'
+    | 'SKEW_INTX'
     | 'MOVE'
     | 'COPY'
     | 'TRIM'
@@ -139,6 +148,13 @@ interface UseSurveyCadWorkspaceResult {
   startPointAlongLineCommand: () => void;
   startExtendLineCommand: () => void;
   startOffsetPointCommand: () => void;
+  startBearingBearingIntersectionCommand: () => void;
+  startBearingDistanceIntersectionCommand: () => void;
+  startDistanceDistanceIntersectionCommand: () => void;
+  startLineCircleIntersectionCommand: () => void;
+  startPerpendicularIntersectionCommand: () => void;
+  startOffsetIntersectionCommand: () => void;
+  startSkewIntersectionCommand: () => void;
   startMoveCommand: () => void;
   startCopyCommand: () => void;
   startTrimCommand: () => void;
@@ -290,6 +306,15 @@ export const useSurveyCadWorkspace = (
         : null,
     [selectedEntities],
   );
+  const selectedLinePairForIntersection = useMemo(
+    () =>
+      selectedEntities.length === 2 &&
+      selectedEntities[0]?.type === 'line' &&
+      selectedEntities[1]?.type === 'line'
+        ? [selectedEntities[0], selectedEntities[1]] as [CadLineEntity, CadLineEntity]
+        : null,
+    [selectedEntities],
+  );
   const selectedTrimEntities = useMemo(
     () => selectedEntities.filter((entity) => entity.type === 'line' || entity.type === 'polyline' || entity.type === 'arc'),
     [selectedEntities],
@@ -412,6 +437,13 @@ export const useSurveyCadWorkspace = (
     startPointAlongLineCommand,
     startExtendLineCommand,
     startOffsetPointCommand,
+    startBearingBearingIntersectionCommand,
+    startBearingDistanceIntersectionCommand,
+    startDistanceDistanceIntersectionCommand,
+    startLineCircleIntersectionCommand,
+    startPerpendicularIntersectionCommand,
+    startOffsetIntersectionCommand,
+    startSkewIntersectionCommand,
     startMoveCommand,
     startCopyCommand,
     startTrimCommand,
@@ -434,6 +466,7 @@ export const useSurveyCadWorkspace = (
     trimCuttingEntityIds,
     selectedArcForContinue,
     selectedLineForCoreCogo,
+    selectedLinePairForIntersection,
     reverseDirectionModifier,
     applyHistoryUpdate,
     onReportComputation: setReportedComputation,
@@ -726,6 +759,7 @@ export const useSurveyCadWorkspace = (
     canUndo: history.undoStack.length > 0,
     canRedo: history.redoStack.length > 0,
     canUseSelectedLineCoreCogo: selectedLineForCoreCogo != null,
+    canUseSelectedLinePairIntersection: selectedLinePairForIntersection != null,
     activeCommandKey,
     commandInputValue,
     statusText: commandPrompt,
@@ -773,6 +807,13 @@ export const useSurveyCadWorkspace = (
     startPointAlongLineCommand,
     startExtendLineCommand,
     startOffsetPointCommand,
+    startBearingBearingIntersectionCommand,
+    startBearingDistanceIntersectionCommand,
+    startDistanceDistanceIntersectionCommand,
+    startLineCircleIntersectionCommand,
+    startPerpendicularIntersectionCommand,
+    startOffsetIntersectionCommand,
+    startSkewIntersectionCommand,
     startMoveCommand,
     startCopyCommand,
     startTrimCommand,

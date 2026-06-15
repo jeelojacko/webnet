@@ -1,3 +1,5 @@
+- [x] Survey CAD intersection batch (June 2026): add dedicated bearing-bearing, bearing-distance, distance-distance, line-circle, perpendicular, offset, and skew intersection calculators with deterministic alternative ordering, native command-menu entry points, and focused report/workspace coverage.
+
 - [x] Survey CAD core point-line batch (June 2026): add multi-point inverse, bearing-only and distance-only reports, turned/deflection point tools, point-along and offset-point calculators, extend-line helper flow, and the command UI/report coverage for them.
 
 - [x] Survey CAD COGO report panel batch (June 2026): add a selected/latest COGO result overlay in the native CAD workspace, bridge live `INVERSE` query output into the shared report model, and add exportable TXT/CSV/Markdown report previews for persisted computation history.
