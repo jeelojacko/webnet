@@ -16,6 +16,7 @@ import { buildCadBounds, buildCadProjectSignature } from '../../engine/cad/cadPr
 import { cloneSurveyCadPersistedState } from '../../engine/cad/cadPersistence';
 import { buildMlightcadSpikeScene } from '../../engine/cad/cadMlightcadAdapter';
 import { buildCadDisplayScene } from '../../engine/cad/cadRenderer';
+import type { CadCogoComputation } from '../../engine/cad/cadCogoTypes';
 import {
   createCadHistoryState,
   redoCadHistory,
@@ -54,6 +55,8 @@ interface UseSurveyCadWorkspaceResult {
   selectedEntityIds: string[];
   selectedEntities: ReturnType<typeof getSelectedCadEntities>;
   selectedParcelReport: CadParcelReportSummary | null;
+  activeCogoComputation: CadCogoComputation | null;
+  activeCogoComputationSource: 'selected' | 'latest' | null;
   selectionCount: number;
   canUndo: boolean;
   canRedo: boolean;
@@ -170,6 +173,19 @@ interface CommandHoverTarget {
   point: { x: number; y: number };
 }
 
+const cogoProvenanceIdFromEntity = (entity: ReturnType<typeof getSelectedCadEntities>[number]): string | null => {
+  const cogoMetadata = entity.metadata?.cogo;
+  if (
+    typeof cogoMetadata !== 'object' ||
+    cogoMetadata == null ||
+    !('provenanceId' in cogoMetadata) ||
+    typeof cogoMetadata.provenanceId !== 'string'
+  ) {
+    return null;
+  }
+  return cogoMetadata.provenanceId;
+};
+
 export const useSurveyCadWorkspace = (
   baseProject: CadProject,
   persistedState: SurveyCadPersistedState | null,
@@ -267,6 +283,35 @@ export const useSurveyCadWorkspace = (
       vertexLabels: selectedParcel.vertexLabels,
     });
   }, [selectedEntities]);
+  const [reportedComputation, setReportedComputation] = useState<CadCogoComputation | null>(null);
+  const latestPersistedCogoComputation = useMemo(
+    () => cadProject.cogoComputations[cadProject.cogoComputations.length - 1] ?? null,
+    [cadProject.cogoComputations],
+  );
+  const selectedCogoComputation = useMemo(() => {
+    const selectedProvenanceIds = new Set(
+      selectedEntities
+        .map((entity) => cogoProvenanceIdFromEntity(entity))
+        .filter((value): value is string => value != null),
+    );
+    if (selectedProvenanceIds.size === 0) return null;
+    for (let index = cadProject.cogoComputations.length - 1; index >= 0; index -= 1) {
+      const computation = cadProject.cogoComputations[index];
+      if (computation && selectedProvenanceIds.has(computation.id)) {
+        return computation;
+      }
+    }
+    return null;
+  }, [cadProject.cogoComputations, selectedEntities]);
+  const activeCogoComputation = reportedComputation ?? selectedCogoComputation ?? latestPersistedCogoComputation;
+  const activeCogoComputationSource: 'selected' | 'latest' | null =
+    reportedComputation != null
+      ? 'latest'
+      : selectedCogoComputation != null
+      ? 'selected'
+      : activeCogoComputation != null
+        ? 'latest'
+        : null;
   const [activeGripHandle, setActiveGripHandle] = useState<CadGripHandle | null>(null);
   useEffect(() => {
     activeGripHandleRef.current = activeGripHandle;
@@ -358,7 +403,12 @@ export const useSurveyCadWorkspace = (
     selectedArcForContinue,
     reverseDirectionModifier,
     applyHistoryUpdate,
+    onReportComputation: setReportedComputation,
   });
+  useEffect(() => {
+    if (activeCommandKey == null || activeCommandKey === 'INVERSE') return;
+    setReportedComputation(null);
+  }, [activeCommandKey]);
   useEffect(() => {
     setSnapConstructionContext((current) => {
       if (
@@ -637,6 +687,8 @@ export const useSurveyCadWorkspace = (
     selectedEntityIds: selection.selectedEntityIds,
     selectedEntities,
     selectedParcelReport,
+    activeCogoComputation,
+    activeCogoComputationSource,
     selectionCount: selection.selectedEntityIds.length,
     canUndo: history.undoStack.length > 0,
     canRedo: history.redoStack.length > 0,

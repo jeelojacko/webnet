@@ -17,6 +17,7 @@ interface SurveyCadPreviewProps {
   viewBounds: CadBounds | null;
   selectedEntityIds: readonly string[];
   selectedParcelReport: CadParcelReportSummary | null;
+  hasTopRightOverlay?: boolean;
   activeSnap: CadSnapCandidate | null;
   commandPreviewPrimitives: readonly CadDisplayPrimitive[];
   gripHandles?: readonly CadGripHandle[];
@@ -539,6 +540,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
   viewBounds,
   selectedEntityIds,
   selectedParcelReport,
+  hasTopRightOverlay = false,
   activeSnap,
   commandPreviewPrimitives,
   gripHandles = [],
@@ -1281,7 +1283,9 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
       </div>
       {selectedParcelReport ? (
         <div
-          className="pointer-events-none absolute right-3 top-16 z-10 max-h-[calc(100%-8rem)] w-[19rem] overflow-hidden rounded border border-slate-800/80 bg-slate-950/88 p-3 text-[11px] text-slate-200 shadow-xl backdrop-blur-[1px]"
+          className={`pointer-events-none absolute right-3 z-10 max-h-[calc(100%-8rem)] w-[19rem] overflow-hidden rounded border border-slate-800/80 bg-slate-950/88 p-3 text-[11px] text-slate-200 shadow-xl backdrop-blur-[1px] ${
+            hasTopRightOverlay ? 'top-[22rem]' : 'top-16'
+          }`}
           data-survey-cad-parcel-report
         >
           <div className="pb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-cyan-200">

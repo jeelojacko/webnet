@@ -1,3 +1,5 @@
+- [x] Survey CAD COGO report panel batch (June 2026): add a selected/latest COGO result overlay in the native CAD workspace, bridge live `INVERSE` query output into the shared report model, and add exportable TXT/CSV/Markdown report previews for persisted computation history.
+
 - [x] Survey CAD COGO foundation batch (June 2026): add shared COGO result/report/provenance types, project-level persisted COGO computation history, versioned CAD project migration, native alignment entity foundation, and command-history integration for existing COGO-producing commands.
 
 - [x] Survey CAD trim preview batch (June 2026): while `TRIM` is active, dim the hovered removable span and overlay the surviving geometry so operators can preview exactly what will remain before they click.

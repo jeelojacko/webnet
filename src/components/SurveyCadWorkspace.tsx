@@ -5,6 +5,7 @@ import type { CadBounds, SurveyCadPersistedState } from '../engine/cad/cadTypes'
 import { noteUiTabReady } from '../hooks/useUiPerfMonitor';
 import { useSurveyCadWorkspace } from '../hooks/surveyCad/useSurveyCadWorkspace';
 import SurveyCadCommandLine from './surveyCad/SurveyCadCommandLine';
+import SurveyCadCogoPanel from './surveyCad/SurveyCadCogoPanel';
 import SurveyCadPreview from './surveyCad/SurveyCadPreview';
 
 interface SurveyCadWorkspaceProps {
@@ -63,6 +64,8 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     activeGripHandleId,
     selectedEntityIds,
     selectedParcelReport,
+    activeCogoComputation,
+    activeCogoComputationSource,
     selectionCount,
     canUndo,
     canRedo,
@@ -357,11 +360,18 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           </div>
         </div>
         <div className="h-full">
+          {activeCogoComputation && activeCogoComputationSource ? (
+            <SurveyCadCogoPanel
+              computation={activeCogoComputation}
+              sourceLabel={activeCogoComputationSource}
+            />
+          ) : null}
           <SurveyCadPreview
             scene={displayScene}
             viewBounds={viewBounds}
             selectedEntityIds={selectedEntityIds}
             selectedParcelReport={selectedParcelReport}
+            hasTopRightOverlay={activeCogoComputation != null}
             activeSnap={activeSnap}
             commandPreviewPrimitives={commandPreviewPrimitives}
             gripHandles={gripHandles}

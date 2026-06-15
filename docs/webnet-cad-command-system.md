@@ -28,6 +28,7 @@ Current implemented spike slice:
 - first interactive query command: `INVERSE`
 - undo/redo replay over snapshot-backed transaction entries
 - project-level COGO computation history stored separately from undo/redo, with structured report rows and provenance for command-created COGO geometry
+- selected/latest COGO overlay now surfaces persisted command reports plus live `INVERSE` query reports, with TXT/CSV/Markdown export-preview formatting kept separate from the underlying CAD state
 - typed coordinate input plus `@azimuth,distance` and survey bearing-distance input after a first point
 - tangent-curve radius entry after snapped or typed PI/back/ahead points
 - split arc tool with default `ARC` + dropdown modes similar to survey/Civil workflows

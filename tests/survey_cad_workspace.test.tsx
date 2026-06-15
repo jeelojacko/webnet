@@ -3880,6 +3880,23 @@ describe('SurveyCadWorkspace', () => {
     expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
       'azimuth 90.0000',
     );
+    expect(container.querySelector('[data-survey-cad-cogo-panel]')).not.toBeNull();
+    expect(container.querySelector('[data-survey-cad-cogo-panel-title]')?.textContent).toContain(
+      'Inverse',
+    );
+    expect(container.querySelector('[data-survey-cad-cogo-panel-source]')?.textContent).toContain(
+      'Latest COGO Result',
+    );
+    expect(container.querySelector('[data-survey-cad-cogo-export-preview]')?.textContent).toContain(
+      'Distance: 100.000 m',
+    );
+
+    await act(async () => {
+      (container.querySelector('[data-survey-cad-cogo-format="csv"]') as HTMLButtonElement | null)?.click();
+    });
+    expect(container.querySelector('[data-survey-cad-cogo-export-preview]')?.textContent).toContain(
+      'section,label,value,unit',
+    );
 
     await act(async () => {
       root.unmount();
@@ -4241,6 +4258,12 @@ describe('SurveyCadWorkspace', () => {
     expect(container.textContent).toContain('69.155 m');
     expect(container.querySelector('[data-survey-cad-parcel-report]')?.textContent).toContain(
       'Closure',
+    );
+    expect(container.querySelector('[data-survey-cad-cogo-panel-title]')?.textContent).toContain(
+      'Parcel Create',
+    );
+    expect(container.querySelector('[data-survey-cad-cogo-panel-source]')?.textContent).toContain(
+      'Selected COGO Result',
     );
     expect(container.querySelector('[data-survey-cad-parcel-report]')?.textContent).toContain(
       'A-V2',

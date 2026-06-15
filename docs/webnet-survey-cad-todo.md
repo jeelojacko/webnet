@@ -1,10 +1,12 @@
 # WebNet Survey CAD TODO
 
+- [x] Survey CAD COGO report panel batch (June 2026): add a selected/latest COGO result overlay in the native CAD workspace, bridge live `INVERSE` query output into the shared report model, and add exportable TXT/CSV/Markdown report previews for persisted computation history.
+
 - [x] Survey CAD COGO foundation batch (June 2026): add shared COGO result/report/provenance types, project-level persisted COGO computation history, versioned CAD project migration, native alignment entity foundation, and command-history integration for existing COGO-producing commands.
 
 ## COGO Expansion Checklist
 - [x] COGO foundation batch: add shared `CadCogoResult`, report/warning/provenance types, persisted `cogoComputations`, migration coverage, and command-history integration.
-- [ ] COGO report panel batch: add selected/latest computation panel for inverse, intersections, curve results, traverse closure, parcels, and exportable TXT/CSV/Markdown output.
+- [x] COGO report panel batch: add selected/latest computation panel for inverse, intersections, curve results, traverse closure, parcels, and exportable TXT/CSV/Markdown output.
 - [ ] Core point-line batch: add multi-point inverse, bearing-only report, distance-only report, turned angle + distance, deflection angle + distance, point at distance/fraction along line, extend line, offset point, and command UI.
 - [ ] Intersection batch: add bearing-bearing, bearing-distance, distance-distance, line-circle, offset intersection, perpendicular intersection, and skew intersection with deterministic alternative selection.
 - [ ] Curve calculator batch: add full curve parameter solver, radial bearing, point on curve by arc/chord distance, curve subdivision, offset curve, PI-radius-delta, chord-bearing constructors, reverse/compound curve workflows.
@@ -178,7 +180,7 @@ Acceptance criteria:
 - closure, area, perimeter, bearings, and distances update with edits
 
 Current phase note:
-- the native CAD workspace now runs direct `TRAVERSE` command entry, can promote a selected traverse/polyline into a first `PARCEL` entity with area/perimeter/closure metrics plus centroid label text, shows a selected-parcel closure report overlay with area/perimeter/closure/course rows, and now covers geometry-tied traverse/parcel/arc labeling for the current Phase 4 scope
+- the native CAD workspace now runs direct `TRAVERSE` command entry, can promote a selected traverse/polyline into a first `PARCEL` entity with area/perimeter/closure metrics plus centroid label text, shows a selected-parcel closure report overlay with area/perimeter/closure/course rows, now also shows a selected/latest COGO computation overlay with TXT/CSV/Markdown export preview for persisted command results plus live `INVERSE` queries, and now covers geometry-tied traverse/parcel/arc labeling for the current Phase 4 scope
 
 ## Phase 5: Point import and field-to-finish
 - [ ] Define feature-code library format.

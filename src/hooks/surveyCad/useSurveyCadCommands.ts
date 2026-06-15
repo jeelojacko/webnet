@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   buildCadInverseSummary,
+  formatCadBearing,
   cadPointFromBearingDistance,
 } from '../../engine/cad/cadCogo';
+import { buildCadCogoComputation } from '../../engine/cad/cadCogoTypes';
 import {
   cadArcEndPoint,
   cadBuildArcFromStartCenterAngle,
@@ -138,6 +140,9 @@ interface UseSurveyCadCommandsArgs {
   selectedArcForContinue: CadArcEntity | null;
   reverseDirectionModifier: boolean;
   applyHistoryUpdate: (_updater: (_history: CadHistoryState) => CadHistoryState) => void;
+  onReportComputation?: (
+    _computation: ReturnType<typeof buildCadCogoComputation> | null,
+  ) => void;
 }
 
 export type CadCommandPreviewState =
@@ -575,6 +580,7 @@ export const useSurveyCadCommands = ({
   selectedArcForContinue,
   reverseDirectionModifier,
   applyHistoryUpdate,
+  onReportComputation,
 }: UseSurveyCadCommandsArgs): UseSurveyCadCommandsResult => {
   const [session, setSession] = useState<CommandSession | null>(null);
   const sessionRef = useRef<CommandSession | null>(session);
@@ -592,6 +598,11 @@ export const useSurveyCadCommands = ({
     updater: (_session: CommandSession | null) => CommandSession | null,
   ) => {
     const nextSession = updater(sessionRef.current);
+    replaceSession(nextSession);
+  };
+
+  const beginSession = (nextSession: CommandSession) => {
+    onReportComputation?.(null);
     replaceSession(nextSession);
   };
 
@@ -1347,6 +1358,33 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
       return;
     }
     const inverse = buildCadInverseSummary(current.startPoint, point);
+    onReportComputation?.(
+      buildCadCogoComputation({
+        createdEntities: [],
+        report: {
+          title: 'Inverse',
+          summary: `Computed inverse from ${current.startPoint.label} to ${point.label}`,
+          rows: [
+            { label: 'From', value: current.startPoint.label },
+            { label: 'To', value: point.label },
+            { label: 'Distance', value: inverse.distance.toFixed(3), unit: 'm' },
+            { label: 'Azimuth', value: inverse.azimuthDeg.toFixed(4), unit: 'deg' },
+            { label: 'Bearing', value: formatCadBearing(inverse.azimuthDeg) },
+          ],
+        },
+        warnings: [],
+        provenance: {
+          id: `inverse:${current.startPoint.label}:${point.label}:${inverse.distance.toFixed(6)}:${inverse.azimuthDeg.toFixed(6)}`,
+          toolKey: 'INVERSE',
+          inputs: {
+            from: current.startPoint,
+            to: point,
+          },
+          resultSummary: `Inverse ${current.startPoint.label} to ${point.label}`,
+          createdAtIso: new Date().toISOString(),
+        },
+      }),
+    );
     replaceSession({
       ...current,
       startPoint: null,
@@ -1589,101 +1627,101 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
     canFinishCommand:
       (session?.key === 'PLINE' || session?.key === 'TRAVERSE') &&
       session.points.length >= 2,
-    startPointCommand: () => replaceSession({ key: 'POINT', inputValue: '' }),
+    startPointCommand: () => beginSession({ key: 'POINT', inputValue: '' }),
     startCogoPointCommand: () =>
-      replaceSession({
+      beginSession({
         key: 'COGO_POINT',
         inputValue: '',
         startPoint: null,
       }),
     startLineCommand: () =>
-      replaceSession({
+      beginSession({
         key: 'LINE',
         inputValue: '',
         startPoint: null,
       }),
     startPolylineCommand: () =>
-      replaceSession({
+      beginSession({
         key: 'PLINE',
         inputValue: '',
         points: [],
       }),
     startTraverseCommand: () =>
-      replaceSession({
+      beginSession({
         key: 'TRAVERSE',
         inputValue: '',
         points: [],
       }),
     startArc3PointCommand: () =>
-      replaceSession({
+      beginSession({
         key: 'ARC_3PT',
         inputValue: '',
         points: [],
       }),
     startArcStartCenterEndCommand: () =>
-      replaceSession({
+      beginSession({
         key: 'ARC_SCE',
         inputValue: '',
         points: [],
       }),
     startArcCenterStartEndCommand: () =>
-      replaceSession({
+      beginSession({
         key: 'ARC_CSE',
         inputValue: '',
         points: [],
       }),
     startArcStartCenterAngleCommand: () =>
-      replaceSession({
+      beginSession({
         key: 'ARC_SCA',
         inputValue: '',
         points: [],
       }),
     startArcCenterStartAngleCommand: () =>
-      replaceSession({
+      beginSession({
         key: 'ARC_CSA',
         inputValue: '',
         points: [],
       }),
     startArcStartCenterChordCommand: () =>
-      replaceSession({
+      beginSession({
         key: 'ARC_SCL',
         inputValue: '',
         points: [],
       }),
     startArcCenterStartChordCommand: () =>
-      replaceSession({
+      beginSession({
         key: 'ARC_CSL',
         inputValue: '',
         points: [],
       }),
     startArcStartEndAngleCommand: () =>
-      replaceSession({
+      beginSession({
         key: 'ARC_SEA',
         inputValue: '',
         points: [],
       }),
     startArcStartEndDirectionCommand: () =>
-      replaceSession({
+      beginSession({
         key: 'ARC_SED',
         inputValue: '',
         points: [],
       }),
     startArcStartEndRadiusCommand: () =>
-      replaceSession({
+      beginSession({
         key: 'ARC_SER',
         inputValue: '',
         points: [],
       }),
     startContinueCurveCommand: () => {
       if (!selectedArcForContinue) return;
-      replaceSession({
+      beginSession({
         key: 'CONTINUE_CURVE',
         inputValue: '',
         sourceArc: selectedArcForContinue,
       });
     },
     startTangentCurveCommand: () =>
-      replaceSession({
+      beginSession({
         key: 'TANGENT_CURVE',
         inputValue: '',
         piPoint: null,
@@ -1691,14 +1729,14 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
         aheadTangentPoint: null,
       }),
     startInverseCommand: () =>
-      replaceSession({
+      beginSession({
         key: 'INVERSE',
         inputValue: '',
         startPoint: null,
       }),
     startMoveCommand: () => {
       if (selectionCount === 0) return;
-      replaceSession({
+      beginSession({
         key: 'MOVE',
         inputValue: '',
         startPoint: null,
@@ -1706,7 +1744,7 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
     },
     startCopyCommand: () => {
       if (selectionCount === 0) return;
-      replaceSession({
+      beginSession({
         key: 'COPY',
         inputValue: '',
         startPoint: null,
@@ -1714,7 +1752,7 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
     },
     startTrimCommand: () => {
       if (trimCuttingEntityIds.length === 0) return;
-      replaceSession({
+      beginSession({
         key: 'TRIM',
         inputValue: '',
         cuttingEntityIds: trimCuttingEntityIds,
@@ -1722,7 +1760,7 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
     },
     startPasteCommand: (sourceEntityIds, basePoint) => {
       if (sourceEntityIds.length === 0) return;
-      replaceSession({
+      beginSession({
         key: 'PASTE',
         inputValue: '',
         startPoint: basePoint,
