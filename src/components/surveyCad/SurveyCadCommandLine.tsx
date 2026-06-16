@@ -10,6 +10,7 @@ interface SurveyCadCommandLineProps {
   redoDepth: number;
   canUseSelectedLineCoreCogo: boolean;
   canUseSelectedLinePairIntersection: boolean;
+  canUseSelectedArcCurveCogo: boolean;
   canCreateIntersectionPoint: boolean;
   canCreateParcel: boolean;
   canContinueCurve: boolean;
@@ -40,6 +41,15 @@ interface SurveyCadCommandLineProps {
   onStartPointAlongLine: () => void;
   onStartExtendLine: () => void;
   onStartOffsetPoint: () => void;
+  onStartCurveSolver: () => void;
+  onStartRadialBearing: () => void;
+  onStartPointOnCurve: () => void;
+  onStartSubdivideCurve: () => void;
+  onStartOffsetCurve: () => void;
+  onStartPiCurve: () => void;
+  onStartChordBearingCurve: () => void;
+  onStartReverseCurve: () => void;
+  onStartCompoundCurve: () => void;
   onStartBearingBearingIntersection: () => void;
   onStartBearingDistanceIntersection: () => void;
   onStartDistanceDistanceIntersection: () => void;
@@ -74,6 +84,7 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   redoDepth,
   canUseSelectedLineCoreCogo,
   canUseSelectedLinePairIntersection,
+  canUseSelectedArcCurveCogo,
   canCreateIntersectionPoint,
   canCreateParcel,
   canContinueCurve,
@@ -104,6 +115,15 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   onStartPointAlongLine,
   onStartExtendLine,
   onStartOffsetPoint,
+  onStartCurveSolver,
+  onStartRadialBearing,
+  onStartPointOnCurve,
+  onStartSubdivideCurve,
+  onStartOffsetCurve,
+  onStartPiCurve,
+  onStartChordBearingCurve,
+  onStartReverseCurve,
+  onStartCompoundCurve,
   onStartBearingBearingIntersection,
   onStartBearingDistanceIntersection,
   onStartDistanceDistanceIntersection,
@@ -124,6 +144,7 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
 }) => {
   const [arcMenuOpen, setArcMenuOpen] = React.useState(false);
   const [coreCogoMenuOpen, setCoreCogoMenuOpen] = React.useState(false);
+  const [curveMenuOpen, setCurveMenuOpen] = React.useState(false);
   const [intersectionMenuOpen, setIntersectionMenuOpen] = React.useState(false);
   const runImmediate = (action: () => void) => {
     flushSync(() => {
@@ -275,6 +296,84 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
               disabled={!canUseSelectedLineCoreCogo}
             >
               Offset Point
+            </button>
+          </div>
+        ) : null}
+      </div>
+      <div className="relative flex items-stretch" data-survey-cad-curve-tool>
+        <button type="button" className={commandButtonClassName} onClick={() => runImmediate(onStartCurveSolver)} title="Curve Calculator">
+          CURVE
+        </button>
+        <button
+          type="button"
+          className={commandButtonClassName}
+          onClick={() => setCurveMenuOpen((current) => !current)}
+          title="Curve Tools"
+          data-survey-cad-curve-menu-button
+        >
+          ▾
+        </button>
+        {curveMenuOpen ? (
+          <div
+            className="absolute left-0 top-full z-20 mt-1 grid min-w-56 gap-1 rounded border border-slate-700 bg-slate-950/95 p-2 shadow-xl"
+            data-survey-cad-curve-menu
+          >
+            <button type="button" className={arcMenuButtonClassName} onClick={() => { setCurveMenuOpen(false); runImmediate(onStartCurveSolver); }}>
+              Curve Calculator
+            </button>
+            <button type="button" className={arcMenuButtonClassName} onClick={() => { setCurveMenuOpen(false); runImmediate(onStartPiCurve); }}>
+              PI Radius Delta
+            </button>
+            <button type="button" className={arcMenuButtonClassName} onClick={() => { setCurveMenuOpen(false); runImmediate(onStartChordBearingCurve); }}>
+              Chord Bearing Curve
+            </button>
+            <button
+              type="button"
+              className={arcMenuButtonClassName}
+              onClick={() => { setCurveMenuOpen(false); runImmediate(onStartRadialBearing); }}
+              disabled={!canUseSelectedArcCurveCogo}
+            >
+              Radial Bearing
+            </button>
+            <button
+              type="button"
+              className={arcMenuButtonClassName}
+              onClick={() => { setCurveMenuOpen(false); runImmediate(onStartPointOnCurve); }}
+              disabled={!canUseSelectedArcCurveCogo}
+            >
+              Point On Curve
+            </button>
+            <button
+              type="button"
+              className={arcMenuButtonClassName}
+              onClick={() => { setCurveMenuOpen(false); runImmediate(onStartSubdivideCurve); }}
+              disabled={!canUseSelectedArcCurveCogo}
+            >
+              Subdivide Curve
+            </button>
+            <button
+              type="button"
+              className={arcMenuButtonClassName}
+              onClick={() => { setCurveMenuOpen(false); runImmediate(onStartOffsetCurve); }}
+              disabled={!canUseSelectedArcCurveCogo}
+            >
+              Offset Curve
+            </button>
+            <button
+              type="button"
+              className={arcMenuButtonClassName}
+              onClick={() => { setCurveMenuOpen(false); runImmediate(onStartReverseCurve); }}
+              disabled={!canUseSelectedArcCurveCogo}
+            >
+              Reverse Curve
+            </button>
+            <button
+              type="button"
+              className={arcMenuButtonClassName}
+              onClick={() => { setCurveMenuOpen(false); runImmediate(onStartCompoundCurve); }}
+              disabled={!canUseSelectedArcCurveCogo}
+            >
+              Compound Curve
             </button>
           </div>
         ) : null}

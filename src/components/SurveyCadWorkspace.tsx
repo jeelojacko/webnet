@@ -71,6 +71,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     canRedo,
     canUseSelectedLineCoreCogo,
     canUseSelectedLinePairIntersection,
+    canUseSelectedArcCurveCogo,
     activeCommandKey,
     commandInputValue,
     statusText,
@@ -116,6 +117,15 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     startPointAlongLineCommand,
     startExtendLineCommand,
     startOffsetPointCommand,
+    startCurveSolverCommand,
+    startRadialBearingCommand,
+    startPointOnCurveCommand,
+    startSubdivideCurveCommand,
+    startOffsetCurveCommand,
+    startPiCurveCommand,
+    startChordBearingCurveCommand,
+    startReverseCurveCommand,
+    startCompoundCurveCommand,
     startBearingBearingIntersectionCommand,
     startBearingDistanceIntersectionCommand,
     startDistanceDistanceIntersectionCommand,
@@ -168,6 +178,15 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     if (activeCommandKey === 'POINT_ALONG_LINE') return 'Type distance or percent like 25 or 50% from selected line';
     if (activeCommandKey === 'EXTEND_LINE') return 'Type extension distance from selected line end';
     if (activeCommandKey === 'OFFSET_POINT') return 'Type Loffset,along or Roffset,along from selected line';
+    if (activeCommandKey === 'CURVE_SOLVER') return 'Type param1,param2,value1,value2 like radius,delta,200,60';
+    if (activeCommandKey === 'RADIAL_BEARING') return 'Type PC, PT, or MID from selected arc';
+    if (activeCommandKey === 'POINT_ON_CURVE') return 'Type ARC,distance or CHORD,distance from selected arc start';
+    if (activeCommandKey === 'SUBDIVIDE_CURVE') return 'Type EQUAL,count or ARC/CHORD interval for selected arc';
+    if (activeCommandKey === 'OFFSET_CURVE') return 'Type Ldistance or Rdistance from selected arc';
+    if (activeCommandKey === 'PI_CURVE') return 'Pick PI/back tangent, then type Lradius,delta or Rradius,delta';
+    if (activeCommandKey === 'CHORD_BEARING_CURVE') return 'Pick start, then type bearing,chord,radius,L|R';
+    if (activeCommandKey === 'REVERSE_CURVE') return 'Type Lradius,delta or Rradius,delta from selected arc';
+    if (activeCommandKey === 'COMPOUND_CURVE') return 'Type Lradius,delta or Rradius,delta from selected arc';
     if (activeCommandKey === 'BEARING_BEARING_INTX') return 'Pick two points, then type bearing1;bearing2';
     if (activeCommandKey === 'BEARING_DISTANCE_INTX') return 'Pick bearing point and center, then type bearing;distance';
     if (activeCommandKey === 'DISTANCE_DISTANCE_INTX') return 'Pick two centers, then type distance1,distance2';
@@ -356,6 +375,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               redoDepth={redoDepth}
               canUseSelectedLineCoreCogo={canUseSelectedLineCoreCogo}
               canUseSelectedLinePairIntersection={canUseSelectedLinePairIntersection}
+              canUseSelectedArcCurveCogo={canUseSelectedArcCurveCogo}
               canCreateIntersectionPoint={canCreateIntersectionPoint}
               canCreateParcel={canCreateParcel}
               canContinueCurve={canContinueCurve}
@@ -385,6 +405,15 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               onStartPointAlongLine={startPointAlongLineCommand}
               onStartExtendLine={startExtendLineCommand}
               onStartOffsetPoint={startOffsetPointCommand}
+              onStartCurveSolver={startCurveSolverCommand}
+              onStartRadialBearing={startRadialBearingCommand}
+              onStartPointOnCurve={startPointOnCurveCommand}
+              onStartSubdivideCurve={startSubdivideCurveCommand}
+              onStartOffsetCurve={startOffsetCurveCommand}
+              onStartPiCurve={startPiCurveCommand}
+              onStartChordBearingCurve={startChordBearingCurveCommand}
+              onStartReverseCurve={startReverseCurveCommand}
+              onStartCompoundCurve={startCompoundCurveCommand}
               onStartBearingBearingIntersection={startBearingBearingIntersectionCommand}
               onStartBearingDistanceIntersection={startBearingDistanceIntersectionCommand}
               onStartDistanceDistanceIntersection={startDistanceDistanceIntersectionCommand}

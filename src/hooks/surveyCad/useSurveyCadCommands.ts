@@ -1,12 +1,22 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { dmsToRad } from '../../engine/angles';
 import {
+  cadArcPointByArcDistance,
+  cadArcPointByChordDistance,
+  cadArcSubdivisionPoints,
+  cadBuildArcFromChordBearingRadius,
+  cadBuildArcFromPiRadiusDelta,
+  cadBuildCompoundCurve,
   buildCadDistanceSummary,
   buildCadInverseSummary,
   buildCadMultiInverseSummary,
+  cadBuildCurveMetricsSummaryFromRadiusDelta,
   cadComputeDeflectionAnglePoint,
   cadComputeTurnedAnglePoint,
   cadExtendLineByDistance,
+  cadOffsetArc,
+  cadRadialBearingAtArcAngle,
+  cadSolveCurveMetrics,
   cadIntersectBearingDistance,
   cadIntersectBearings,
   cadIntersectDistanceDistance,
@@ -14,6 +24,7 @@ import {
   cadIntersectOffsetLines,
   cadIntersectPerpendicular,
   cadIntersectSkew,
+  cadBuildReverseCurve,
   cadOffsetPointFromLine,
   cadPointAtDistanceAlongLine,
   cadPointAtFractionAlongLine,
@@ -34,6 +45,7 @@ import {
   cadBuildTangentCurve,
   cadParseBearingDegrees,
   cadPointFromAzimuthDistance,
+  cadSignedSweepDeg,
   type CadNamedPoint,
 } from '../../engine/cad/cadGeometry';
 import { runCadCommand, type CadHistoryState } from '../../engine/cad/cadUndoRedo';
@@ -78,6 +90,15 @@ type ActiveCommandKey =
   | 'POINT_ALONG_LINE'
   | 'EXTEND_LINE'
   | 'OFFSET_POINT'
+  | 'CURVE_SOLVER'
+  | 'RADIAL_BEARING'
+  | 'POINT_ON_CURVE'
+  | 'SUBDIVIDE_CURVE'
+  | 'OFFSET_CURVE'
+  | 'PI_CURVE'
+  | 'CHORD_BEARING_CURVE'
+  | 'REVERSE_CURVE'
+  | 'COMPOUND_CURVE'
   | 'BEARING_BEARING_INTX'
   | 'BEARING_DISTANCE_INTX'
   | 'DISTANCE_DISTANCE_INTX'
@@ -126,6 +147,30 @@ type CommandSession =
       inputValue: string;
       lineStart: CommandPoint;
       lineEnd: CommandPoint;
+      resultText?: string;
+    }
+  | {
+      key: 'CURVE_SOLVER';
+      inputValue: string;
+      resultText?: string;
+    }
+  | {
+      key: 'RADIAL_BEARING' | 'POINT_ON_CURVE' | 'SUBDIVIDE_CURVE' | 'OFFSET_CURVE' | 'REVERSE_CURVE' | 'COMPOUND_CURVE';
+      inputValue: string;
+      arc: CadArcEntity;
+      resultText?: string;
+    }
+  | {
+      key: 'PI_CURVE';
+      inputValue: string;
+      piPoint: CommandPoint | null;
+      backTangentPoint: CommandPoint | null;
+      resultText?: string;
+    }
+  | {
+      key: 'CHORD_BEARING_CURVE';
+      inputValue: string;
+      startPoint: CommandPoint | null;
       resultText?: string;
     }
   | {
@@ -220,6 +265,7 @@ interface UseSurveyCadCommandsArgs {
   selectionCount: number;
   trimCuttingEntityIds: string[];
   selectedArcForContinue: CadArcEntity | null;
+  selectedArcForCurveCogo: CadArcEntity | null;
   selectedLineForCoreCogo: CadLineEntity | null;
   selectedLinePairForIntersection: [CadLineEntity, CadLineEntity] | null;
   reverseDirectionModifier: boolean;
@@ -293,6 +339,15 @@ interface UseSurveyCadCommandsResult {
   startPointAlongLineCommand: () => void;
   startExtendLineCommand: () => void;
   startOffsetPointCommand: () => void;
+  startCurveSolverCommand: () => void;
+  startRadialBearingCommand: () => void;
+  startPointOnCurveCommand: () => void;
+  startSubdivideCurveCommand: () => void;
+  startOffsetCurveCommand: () => void;
+  startPiCurveCommand: () => void;
+  startChordBearingCurveCommand: () => void;
+  startReverseCurveCommand: () => void;
+  startCompoundCurveCommand: () => void;
   startBearingBearingIntersectionCommand: () => void;
   startBearingDistanceIntersectionCommand: () => void;
   startDistanceDistanceIntersectionCommand: () => void;
@@ -360,6 +415,7 @@ const sessionExpectsPointPick = (session: CommandSession | null): boolean => {
     case 'BEARING_BEARING_INTX':
     case 'BEARING_DISTANCE_INTX':
     case 'DISTANCE_DISTANCE_INTX':
+    case 'CHORD_BEARING_CURVE':
     case 'ARC_3PT':
     case 'CONTINUE_CURVE':
       return true;
@@ -378,10 +434,19 @@ const sessionExpectsPointPick = (session: CommandSession | null): boolean => {
       return session.aheadTangentPoint == null;
     case 'TURNED_POINT':
       return session.backsightPoint == null;
+    case 'PI_CURVE':
+      return session.backTangentPoint == null;
     case 'LINE_CIRCLE_INTX':
     case 'PERP_INTX':
     case 'SKEW_INTX':
       return session.targetPoint == null;
+    case 'CURVE_SOLVER':
+    case 'RADIAL_BEARING':
+    case 'POINT_ON_CURVE':
+    case 'SUBDIVIDE_CURVE':
+    case 'OFFSET_CURVE':
+    case 'REVERSE_CURVE':
+    case 'COMPOUND_CURVE':
     case 'OFFSET_INTX':
     case 'DEFLECT_POINT':
     case 'POINT_ALONG_LINE':
@@ -570,6 +635,137 @@ const parseDualOffsetInput = (
   };
 };
 
+const parseCurveSolverInput = (
+  token: string,
+):
+  | {
+      pair:
+        | 'radius-delta'
+        | 'radius-arc'
+        | 'radius-chord'
+        | 'radius-tangent'
+        | 'delta-arc'
+        | 'delta-chord'
+        | 'delta-tangent'
+        | 'arc-chord'
+        | 'arc-tangent'
+        | 'chord-tangent';
+      firstValue: number;
+      secondValue: number;
+    }
+  | null => {
+  const parts = token.split(',').map((part) => part.trim());
+  if (parts.length !== 4) return null;
+  const pair = `${parts[0].toLowerCase()}-${parts[1].toLowerCase()}` as
+    | 'radius-delta'
+    | 'radius-arc'
+    | 'radius-chord'
+    | 'radius-tangent'
+    | 'delta-arc'
+    | 'delta-chord'
+    | 'delta-tangent'
+    | 'arc-chord'
+    | 'arc-tangent'
+    | 'chord-tangent';
+  const allowedPairs = new Set([
+    'radius-delta',
+    'radius-arc',
+    'radius-chord',
+    'radius-tangent',
+    'delta-arc',
+    'delta-chord',
+    'delta-tangent',
+    'arc-chord',
+    'arc-tangent',
+    'chord-tangent',
+  ]);
+  if (!allowedPairs.has(pair)) return null;
+  const firstValue = Number(parts[2]);
+  const secondValue = Number(parts[3]);
+  if (!Number.isFinite(firstValue) || !Number.isFinite(secondValue)) return null;
+  return { pair, firstValue, secondValue };
+};
+
+const parseCurveSideRadiusDeltaInput = (
+  token: string,
+): { side: 'left' | 'right'; radius: number; deltaDeg: number } | null => {
+  const match = /^([LR])\s*([-+]?\d*\.?\d+)\s*,\s*([^,]+)\s*$/i.exec(token.trim());
+  if (!match) return null;
+  const radius = Number(match[2]);
+  const deltaDeg = parseAngleValueDeg(match[3] ?? '');
+  if (!Number.isFinite(radius) || radius <= 0 || deltaDeg == null || deltaDeg <= 0) return null;
+  return {
+    side: (match[1] ?? '').toUpperCase() === 'L' ? 'left' : 'right',
+    radius,
+    deltaDeg,
+  };
+};
+
+const parseCurveMeasureInput = (
+  token: string,
+): { mode: 'arc' | 'chord'; distance: number } | null => {
+  const match = /^(ARC|CHORD)\s*[,; ]\s*([-+]?\d*\.?\d+)\s*$/i.exec(token.trim());
+  if (!match) return null;
+  const distance = Number(match[2]);
+  if (!Number.isFinite(distance) || distance < 0) return null;
+  return {
+    mode: (match[1] ?? '').toUpperCase() === 'ARC' ? 'arc' : 'chord',
+    distance,
+  };
+};
+
+const parseCurveSubdivisionInput = (
+  token: string,
+): { mode: 'equal' | 'arc' | 'chord'; value: number } | null => {
+  const match = /^(EQUAL|ARC|CHORD)\s*[,; ]\s*([-+]?\d*\.?\d+)\s*$/i.exec(token.trim());
+  if (!match) return null;
+  const value = Number(match[2]);
+  if (!Number.isFinite(value) || value <= 0) return null;
+  return {
+    mode: (match[1] ?? '').toLowerCase() as 'equal' | 'arc' | 'chord',
+    value,
+  };
+};
+
+const parseOffsetArcInput = (
+  token: string,
+): { side: 'left' | 'right'; offsetDistance: number } | null => {
+  const match = /^([LR])\s*([-+]?\d*\.?\d+)\s*$/i.exec(token.trim());
+  if (!match) return null;
+  const offsetDistance = Number(match[2]);
+  if (!Number.isFinite(offsetDistance) || offsetDistance <= 0) return null;
+  return {
+    side: (match[1] ?? '').toUpperCase() === 'L' ? 'left' : 'right',
+    offsetDistance,
+  };
+};
+
+const parseChordBearingCurveInput = (
+  token: string,
+): { chordBearing: string; chordDistance: number; radius: number; side: 'left' | 'right' } | null => {
+  const parts = token.split(',').map((part) => part.trim());
+  if (parts.length !== 4) return null;
+  const chordDistance = Number(parts[1]);
+  const radius = Number(parts[2]);
+  const sideToken = parts[3]?.toUpperCase();
+  if (
+    cadParseBearingDegrees(parts[0] ?? '') == null ||
+    !Number.isFinite(chordDistance) ||
+    chordDistance <= 0 ||
+    !Number.isFinite(radius) ||
+    radius <= 0 ||
+    (sideToken !== 'L' && sideToken !== 'R')
+  ) {
+    return null;
+  }
+  return {
+    chordBearing: parts[0]!,
+    chordDistance,
+    radius,
+    side: sideToken === 'L' ? 'left' : 'right',
+  };
+};
+
 const promptForSession = (session: CommandSession | null, fallbackStatus: string): string => {
   if (!session) return fallbackStatus;
   switch (session.key) {
@@ -716,6 +912,32 @@ const promptForSession = (session: CommandSession | null, fallbackStatus: string
     case 'OFFSET_POINT':
       return session.resultText ??
         `OFFSET_POINT active. Selected line ${session.lineStart.label}-${session.lineEnd.label}. Enter \`Loffset,along\` or \`Roffset,along\`, with along as distance or percent.`;
+    case 'CURVE_SOLVER':
+      return session.resultText ?? 'CURVE_SOLVER active. Enter `param1,param2,value1,value2` such as `radius,delta,200,60`.';
+    case 'RADIAL_BEARING':
+      return session.resultText ?? `RADIAL_BEARING active. Selected arc ${session.arc.id}. Enter \`PC\`, \`PT\`, or \`MID\`.`;
+    case 'POINT_ON_CURVE':
+      return session.resultText ?? `POINT_ON_CURVE active. Selected arc ${session.arc.id}. Enter \`ARC,distance\` or \`CHORD,distance\`.`;
+    case 'SUBDIVIDE_CURVE':
+      return session.resultText ?? `SUBDIVIDE_CURVE active. Selected arc ${session.arc.id}. Enter \`EQUAL,count\`, \`ARC,interval\`, or \`CHORD,interval\`.`;
+    case 'OFFSET_CURVE':
+      return session.resultText ?? `OFFSET_CURVE active. Selected arc ${session.arc.id}. Enter \`Ldistance\` or \`Rdistance\`.`;
+    case 'PI_CURVE':
+      return session.resultText ??
+        (session.piPoint == null
+          ? 'PI_CURVE active. Click or enter the PI point.'
+          : session.backTangentPoint == null
+            ? `PI_CURVE active. PI ${session.piPoint.label} captured. Click or enter the back tangent point.`
+            : `PI_CURVE active. Enter \`Lradius,delta\` or \`Rradius,delta\` from PI ${session.piPoint.label}.`);
+    case 'CHORD_BEARING_CURVE':
+      return session.resultText ??
+        (session.startPoint == null
+          ? 'CHORD_BEARING_CURVE active. Click or enter the start point.'
+          : `CHORD_BEARING_CURVE active. Enter \`bearing,chord,radius,L|R\` from ${session.startPoint.label}.`);
+    case 'REVERSE_CURVE':
+      return session.resultText ?? `REVERSE_CURVE active. Selected arc ${session.arc.id}. Enter \`Lradius,delta\` or \`Rradius,delta\`.`;
+    case 'COMPOUND_CURVE':
+      return session.resultText ?? `COMPOUND_CURVE active. Selected arc ${session.arc.id}. Enter \`Lradius,delta\` or \`Rradius,delta\`.`;
     case 'BEARING_BEARING_INTX':
       return session.resultText ??
         (session.firstPoint == null
@@ -871,6 +1093,28 @@ const helpTextForSession = (session: CommandSession | null): string => {
       return 'EXTEND_LINE input: enter extension distance from the selected line end.';
     case 'OFFSET_POINT':
       return 'OFFSET_POINT input: enter `Loffset,along` or `Roffset,along`; along may be distance or percent like `50%`.';
+    case 'CURVE_SOLVER':
+      return 'CURVE_SOLVER input: enter `param1,param2,value1,value2`, for example `radius,delta,200,60` or `arc,chord,125,120`.';
+    case 'RADIAL_BEARING':
+      return 'RADIAL_BEARING input: enter `PC`, `PT`, or `MID` for the selected arc.';
+    case 'POINT_ON_CURVE':
+      return 'POINT_ON_CURVE input: enter `ARC,distance` or `CHORD,distance` from the selected arc start.';
+    case 'SUBDIVIDE_CURVE':
+      return 'SUBDIVIDE_CURVE input: enter `EQUAL,count`, `ARC,interval`, or `CHORD,interval`.';
+    case 'OFFSET_CURVE':
+      return 'OFFSET_CURVE input: enter `Ldistance` or `Rdistance` from the selected arc.';
+    case 'PI_CURVE':
+      return session.backTangentPoint
+        ? 'PI_CURVE value input: enter `Lradius,delta` or `Rradius,delta`.'
+        : 'PI_CURVE point input: click in model space or type `x,y` / `LABEL=x,y` for PI and back tangent points.';
+    case 'CHORD_BEARING_CURVE':
+      return session.startPoint
+        ? 'CHORD_BEARING_CURVE input: enter `bearing,chord,radius,L|R`.'
+        : 'CHORD_BEARING_CURVE point input: click in the model space or type `x,y` / `LABEL=x,y` for the start point.';
+    case 'REVERSE_CURVE':
+      return 'REVERSE_CURVE input: enter `Lradius,delta` or `Rradius,delta` to continue opposite the selected arc.';
+    case 'COMPOUND_CURVE':
+      return 'COMPOUND_CURVE input: enter `Lradius,delta` or `Rradius,delta` to continue same-side from the selected arc.';
     case 'BEARING_BEARING_INTX':
       return session.secondPoint
         ? 'BEARING_BEARING_INTX input: enter `bearing1;bearing2`, for example `N45-00-00E;S10-00-00E`.'
@@ -941,6 +1185,7 @@ export const useSurveyCadCommands = ({
   selectionCount,
   trimCuttingEntityIds,
   selectedArcForContinue,
+  selectedArcForCurveCogo,
   selectedLineForCoreCogo,
   selectedLinePairForIntersection,
   reverseDirectionModifier,
@@ -1097,6 +1342,13 @@ export const useSurveyCadCommands = ({
                 basePoint: { x: session.firstPoint.x, y: session.firstPoint.y },
               }
             : { active: false, basePoint: null };
+      case 'CHORD_BEARING_CURVE':
+        return session.startPoint
+          ? {
+              active: true,
+              basePoint: { x: session.startPoint.x, y: session.startPoint.y },
+            }
+          : { active: false, basePoint: null };
       case 'TURNED_POINT':
         return session.backsightPoint
           ? { active: false, basePoint: null }
@@ -1110,8 +1362,24 @@ export const useSurveyCadCommands = ({
       case 'POINT_ALONG_LINE':
       case 'EXTEND_LINE':
       case 'OFFSET_POINT':
+      case 'CURVE_SOLVER':
+      case 'RADIAL_BEARING':
+      case 'POINT_ON_CURVE':
+      case 'SUBDIVIDE_CURVE':
+      case 'OFFSET_CURVE':
+      case 'REVERSE_CURVE':
+      case 'COMPOUND_CURVE':
       case 'OFFSET_INTX':
         return { active: false, basePoint: null };
+      case 'PI_CURVE':
+        return session.backTangentPoint
+          ? { active: false, basePoint: null }
+          : session.piPoint
+            ? {
+                active: true,
+                basePoint: { x: session.piPoint.x, y: session.piPoint.y },
+              }
+            : { active: false, basePoint: null };
       case 'LINE_CIRCLE_INTX':
       case 'PERP_INTX':
       case 'SKEW_INTX':
@@ -1218,6 +1486,7 @@ export const useSurveyCadCommands = ({
       case 'BEARING_REPORT':
       case 'BEARING_BEARING_INTX':
       case 'BEARING_DISTANCE_INTX':
+      case 'CHORD_BEARING_CURVE':
       case 'DISTANCE_DISTANCE_INTX':
       case 'DISTANCE_REPORT':
         if (!previewPoint) return null;
@@ -1282,10 +1551,35 @@ export const useSurveyCadCommands = ({
           };
         }
         return null;
+      case 'PI_CURVE':
+        if (!previewPoint) return null;
+        if (session.piPoint == null) {
+          return {
+            kind: 'point',
+            point: { x: previewPoint.x, y: previewPoint.y },
+          };
+        }
+        if (session.backTangentPoint == null) {
+          return {
+            kind: 'line',
+            points: [
+              { x: session.piPoint.x, y: session.piPoint.y },
+              { x: previewPoint.x, y: previewPoint.y },
+            ],
+          };
+        }
+        return null;
       case 'DEFLECT_POINT':
       case 'POINT_ALONG_LINE':
       case 'EXTEND_LINE':
       case 'OFFSET_POINT':
+      case 'CURVE_SOLVER':
+      case 'RADIAL_BEARING':
+      case 'POINT_ON_CURVE':
+      case 'SUBDIVIDE_CURVE':
+      case 'OFFSET_CURVE':
+      case 'REVERSE_CURVE':
+      case 'COMPOUND_CURVE':
       case 'OFFSET_INTX':
         return null;
       case 'LINE_CIRCLE_INTX':
@@ -1749,6 +2043,37 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
         replaceSession({
           ...current,
           backsightPoint: point,
+          inputValue: '',
+          resultText: undefined,
+        });
+      }
+      return;
+    }
+    if (current.key === 'PI_CURVE') {
+      if (!current.piPoint) {
+        replaceSession({
+          ...current,
+          piPoint: point,
+          inputValue: '',
+          resultText: undefined,
+        });
+        return;
+      }
+      if (!current.backTangentPoint) {
+        replaceSession({
+          ...current,
+          backTangentPoint: point,
+          inputValue: '',
+          resultText: undefined,
+        });
+      }
+      return;
+    }
+    if (current.key === 'CHORD_BEARING_CURVE') {
+      if (!current.startPoint) {
+        replaceSession({
+          ...current,
+          startPoint: point,
           inputValue: '',
           resultText: undefined,
         });
@@ -2381,6 +2706,330 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
           { label: 'Along', value: alongDistance.toFixed(3), unit: 'm' },
           { label: 'Northing', value: point.y.toFixed(3), unit: 'm' },
           { label: 'Easting', value: point.x.toFixed(3), unit: 'm' },
+        ],
+      );
+      replaceSession(null);
+      return;
+    }
+    if (session.key === 'CURVE_SOLVER') {
+      const parsed = parseCurveSolverInput(session.inputValue);
+      const solution = parsed ? cadSolveCurveMetrics(parsed) : null;
+      if (!parsed || !solution) {
+        replaceSession({
+          ...session,
+          resultText: 'CURVE_SOLVER input invalid. Use `param1,param2,value1,value2` with a solvable pair.',
+        });
+        return;
+      }
+      publishReport(
+        'CURVE_SOLVER',
+        'Curve Calculator',
+        `Solved curve from ${parsed.pair}`,
+        [
+          { label: 'Pair', value: parsed.pair },
+          { label: 'Radius', value: solution.radius.toFixed(3), unit: 'm' },
+          { label: 'Delta', value: solution.deltaDeg.toFixed(4), unit: 'deg' },
+          { label: 'Arc Length', value: solution.arcLength.toFixed(3), unit: 'm' },
+          { label: 'Chord Length', value: solution.chordLength.toFixed(3), unit: 'm' },
+          { label: 'Tangent Length', value: solution.tangentLength.toFixed(3), unit: 'm' },
+          { label: 'External', value: solution.externalDistance.toFixed(3), unit: 'm' },
+          { label: 'Middle Ordinate', value: solution.middleOrdinate.toFixed(3), unit: 'm' },
+        ],
+      );
+      replaceSession({
+        ...session,
+        inputValue: '',
+        resultText: `CURVE_SOLVER solved ${parsed.pair}: R ${solution.radius.toFixed(3)} m, Δ ${solution.deltaDeg.toFixed(4)} deg.`,
+      });
+      return;
+    }
+    if (
+      session.key === 'RADIAL_BEARING' ||
+      session.key === 'POINT_ON_CURVE' ||
+      session.key === 'SUBDIVIDE_CURVE' ||
+      session.key === 'OFFSET_CURVE' ||
+      session.key === 'REVERSE_CURVE' ||
+      session.key === 'COMPOUND_CURVE'
+    ) {
+      if (session.key === 'RADIAL_BEARING') {
+        const token = session.inputValue.trim().toUpperCase();
+        const angleDeg =
+          token === 'PC'
+            ? session.arc.startAngleDeg
+            : token === 'PT'
+              ? session.arc.endAngleDeg
+              : token === 'MID'
+                ? session.arc.startAngleDeg + cadSignedSweepDeg(session.arc.startAngleDeg, session.arc.endAngleDeg) / 2
+                : null;
+        if (angleDeg == null) {
+          replaceSession({
+            ...session,
+            resultText: 'RADIAL_BEARING input invalid. Use `PC`, `PT`, or `MID`.',
+          });
+          return;
+        }
+        const bearing = cadRadialBearingAtArcAngle({ arc: session.arc, angleDeg });
+        publishReport(
+          'RADIAL_BEARING',
+          'Radial Bearing',
+          `Computed radial bearing on ${session.arc.id}`,
+          [
+            { label: 'Arc', value: session.arc.id },
+            { label: 'Location', value: token },
+            { label: 'Bearing', value: bearing },
+          ],
+        );
+        replaceSession({
+          ...session,
+          inputValue: '',
+          resultText: `RADIAL_BEARING ${session.arc.id} ${token}: ${bearing}.`,
+        });
+        return;
+      }
+      if (session.key === 'POINT_ON_CURVE') {
+        const parsed = parseCurveMeasureInput(session.inputValue);
+        const point =
+          parsed?.mode === 'arc'
+            ? cadArcPointByArcDistance(session.arc, parsed.distance)
+            : parsed?.mode === 'chord'
+              ? cadArcPointByChordDistance(session.arc, parsed.distance)
+              : null;
+        if (!parsed || !point) {
+          replaceSession({
+            ...session,
+            resultText: 'POINT_ON_CURVE input invalid. Use `ARC,distance` or `CHORD,distance` within the selected arc.',
+          });
+          return;
+        }
+        applyHistoryUpdate((existing) =>
+          runCadCommand(existing, {
+            key: 'POINT',
+            x: point.x,
+            y: point.y,
+          }),
+        );
+        publishReport(
+          'POINT_ON_CURVE',
+          'Point On Curve',
+          `Created point on ${session.arc.id}`,
+          [
+            { label: 'Arc', value: session.arc.id },
+            { label: 'Mode', value: parsed.mode.toUpperCase() },
+            { label: 'Distance', value: parsed.distance.toFixed(3), unit: 'm' },
+            { label: 'Northing', value: point.y.toFixed(3), unit: 'm' },
+            { label: 'Easting', value: point.x.toFixed(3), unit: 'm' },
+          ],
+        );
+        replaceSession(null);
+        return;
+      }
+      if (session.key === 'SUBDIVIDE_CURVE') {
+        const parsed = parseCurveSubdivisionInput(session.inputValue);
+        const points = parsed ? cadArcSubdivisionPoints({ arc: session.arc, mode: parsed.mode, value: parsed.value }) : [];
+        if (!parsed || points.length === 0) {
+          replaceSession({
+            ...session,
+            resultText: 'SUBDIVIDE_CURVE input invalid. Use `EQUAL,count`, `ARC,interval`, or `CHORD,interval` that yields interior points.',
+          });
+          return;
+        }
+        applyHistoryUpdate((existing) =>
+          points.reduce(
+            (current, point, index) =>
+              runCadCommand(current, {
+                key: 'POINT',
+                x: point.x,
+                y: point.y,
+                label: `${session.arc.id}-${index + 1}`,
+              }),
+            existing,
+          ),
+        );
+        publishReport(
+          'SUBDIVIDE_CURVE',
+          'Curve Subdivision',
+          `Created ${points.length} subdivision point${points.length === 1 ? '' : 's'} on ${session.arc.id}`,
+          [
+            { label: 'Arc', value: session.arc.id },
+            { label: 'Mode', value: parsed.mode.toUpperCase() },
+            { label: 'Value', value: parsed.value.toFixed(3) },
+            { label: 'Points', value: points.length.toString() },
+          ],
+        );
+        replaceSession(null);
+        return;
+      }
+      if (session.key === 'OFFSET_CURVE') {
+        const parsed = parseOffsetArcInput(session.inputValue);
+        const definition =
+          parsed &&
+          cadOffsetArc({
+            arc: session.arc,
+            offsetDistance: parsed.offsetDistance,
+            side: parsed.side,
+          });
+        if (!parsed || !definition) {
+          replaceSession({
+            ...session,
+            resultText: 'OFFSET_CURVE input invalid. Use `Ldistance` or `Rdistance` with a valid remaining radius.',
+          });
+          return;
+        }
+        commitArcDefinition('OFFSET_CURVE', {
+          center: definition.center,
+          radius: definition.radius,
+          startAngleDeg: definition.startAngleDeg,
+          endAngleDeg: definition.endAngleDeg,
+        });
+        publishReport(
+          'OFFSET_CURVE',
+          'Offset Curve',
+          `Created offset curve from ${session.arc.id}`,
+          [
+            { label: 'Arc', value: session.arc.id },
+            { label: 'Offset', value: `${parsed.side} ${parsed.offsetDistance.toFixed(3)} m` },
+            { label: 'Radius', value: definition.radius.toFixed(3), unit: 'm' },
+          ],
+        );
+        replaceSession(null);
+        return;
+      }
+      const parsed = parseCurveSideRadiusDeltaInput(session.inputValue);
+      const definition =
+        parsed &&
+        (session.key === 'REVERSE_CURVE'
+          ? cadBuildReverseCurve({
+              sourceArc: session.arc,
+              radius: parsed.radius,
+              deltaDeg: parsed.deltaDeg,
+            })
+          : cadBuildCompoundCurve({
+              sourceArc: session.arc,
+              radius: parsed.radius,
+              deltaDeg: parsed.deltaDeg,
+            }));
+      if (!parsed || !definition) {
+        replaceSession({
+          ...session,
+          resultText: `${session.key} input invalid. Use \`Lradius,delta\` or \`Rradius,delta\` with a valid curve.`,
+        });
+        return;
+      }
+      commitArcDefinition(session.key, definition, {
+        sourceArcId: session.arc.id,
+        side: parsed.side,
+        radius: parsed.radius,
+        deltaDeg: parsed.deltaDeg,
+      });
+      publishReport(
+        session.key,
+        session.key === 'REVERSE_CURVE' ? 'Reverse Curve' : 'Compound Curve',
+        `Created ${session.key === 'REVERSE_CURVE' ? 'reverse' : 'compound'} curve from ${session.arc.id}`,
+        [
+          { label: 'Source Arc', value: session.arc.id },
+          { label: 'Radius', value: parsed.radius.toFixed(3), unit: 'm' },
+          { label: 'Delta', value: parsed.deltaDeg.toFixed(4), unit: 'deg' },
+        ],
+      );
+      replaceSession(null);
+      return;
+    }
+    if (session.key === 'PI_CURVE') {
+      if (session.piPoint == null || session.backTangentPoint == null) {
+        const parsedPoint = parseInputPoint(session.inputValue, session.piPoint);
+        if (!parsedPoint) {
+          replaceSession({
+            ...session,
+            resultText: 'PI_CURVE point input invalid. Use `x,y` or `LABEL=x,y`.',
+          });
+          return;
+        }
+        consumePoint(parsedPoint);
+        return;
+      }
+      const parsed = parseCurveSideRadiusDeltaInput(session.inputValue);
+      const definition =
+        parsed &&
+        cadBuildArcFromPiRadiusDelta({
+          piPoint: session.piPoint,
+          backTangentPoint: session.backTangentPoint,
+          radius: parsed.radius,
+          deltaDeg: parsed.deltaDeg,
+          side: parsed.side,
+        });
+      const summary = parsed ? cadBuildCurveMetricsSummaryFromRadiusDelta(parsed.radius, parsed.deltaDeg) : null;
+      if (!parsed || !definition || !summary) {
+        replaceSession({
+          ...session,
+          resultText: 'PI_CURVE input invalid. Use `Lradius,delta` or `Rradius,delta` with a valid tangent setup.',
+        });
+        return;
+      }
+      commitArcDefinition('PI_CURVE', definition, {
+        piLabel: session.piPoint.label,
+        backTangentLabel: session.backTangentPoint.label,
+        side: parsed.side,
+      });
+      publishReport(
+        'PI_CURVE',
+        'PI Radius Delta Curve',
+        `Created PI-radius-delta curve from ${session.piPoint.label}`,
+        [
+          { label: 'PI', value: session.piPoint.label },
+          { label: 'Back Tangent', value: session.backTangentPoint.label },
+          { label: 'Radius', value: parsed.radius.toFixed(3), unit: 'm' },
+          { label: 'Delta', value: parsed.deltaDeg.toFixed(4), unit: 'deg' },
+          { label: 'Tangent', value: summary.tangentLength.toFixed(3), unit: 'm' },
+        ],
+      );
+      replaceSession(null);
+      return;
+    }
+    if (session.key === 'CHORD_BEARING_CURVE') {
+      if (session.startPoint == null) {
+        const parsedPoint = parseInputPoint(session.inputValue, null);
+        if (!parsedPoint) {
+          replaceSession({
+            ...session,
+            resultText: 'CHORD_BEARING_CURVE start input invalid. Use `x,y` or `LABEL=x,y`.',
+          });
+          return;
+        }
+        consumePoint(parsedPoint);
+        return;
+      }
+      const parsed = parseChordBearingCurveInput(session.inputValue);
+      const definition =
+        parsed &&
+        cadBuildArcFromChordBearingRadius({
+          startPoint: session.startPoint,
+          chordBearing: parsed.chordBearing,
+          chordDistance: parsed.chordDistance,
+          radius: parsed.radius,
+          side: parsed.side,
+        });
+      if (!parsed || !definition) {
+        replaceSession({
+          ...session,
+          resultText: 'CHORD_BEARING_CURVE input invalid. Use `bearing,chord,radius,L|R` with a valid radius.',
+        });
+        return;
+      }
+      commitArcDefinition('CHORD_BEARING_CURVE', definition, {
+        startLabel: session.startPoint.label,
+        chordBearing: parsed.chordBearing,
+        chordDistance: parsed.chordDistance,
+        side: parsed.side,
+      });
+      publishReport(
+        'CHORD_BEARING_CURVE',
+        'Chord Bearing Curve',
+        `Created curve from ${session.startPoint.label}`,
+        [
+          { label: 'Start', value: session.startPoint.label },
+          { label: 'Chord Bearing', value: parsed.chordBearing },
+          { label: 'Chord Length', value: parsed.chordDistance.toFixed(3), unit: 'm' },
+          { label: 'Radius', value: parsed.radius.toFixed(3), unit: 'm' },
         ],
       );
       replaceSession(null);
@@ -3086,6 +3735,72 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
         inputValue: '',
         lineStart: selectedLineCommandPoints.start,
         lineEnd: selectedLineCommandPoints.end,
+      });
+    },
+    startCurveSolverCommand: () =>
+      beginSession({
+        key: 'CURVE_SOLVER',
+        inputValue: '',
+      }),
+    startRadialBearingCommand: () => {
+      if (!selectedArcForCurveCogo) return;
+      beginSession({
+        key: 'RADIAL_BEARING',
+        inputValue: '',
+        arc: selectedArcForCurveCogo,
+      });
+    },
+    startPointOnCurveCommand: () => {
+      if (!selectedArcForCurveCogo) return;
+      beginSession({
+        key: 'POINT_ON_CURVE',
+        inputValue: '',
+        arc: selectedArcForCurveCogo,
+      });
+    },
+    startSubdivideCurveCommand: () => {
+      if (!selectedArcForCurveCogo) return;
+      beginSession({
+        key: 'SUBDIVIDE_CURVE',
+        inputValue: '',
+        arc: selectedArcForCurveCogo,
+      });
+    },
+    startOffsetCurveCommand: () => {
+      if (!selectedArcForCurveCogo) return;
+      beginSession({
+        key: 'OFFSET_CURVE',
+        inputValue: '',
+        arc: selectedArcForCurveCogo,
+      });
+    },
+    startPiCurveCommand: () =>
+      beginSession({
+        key: 'PI_CURVE',
+        inputValue: '',
+        piPoint: null,
+        backTangentPoint: null,
+      }),
+    startChordBearingCurveCommand: () =>
+      beginSession({
+        key: 'CHORD_BEARING_CURVE',
+        inputValue: '',
+        startPoint: null,
+      }),
+    startReverseCurveCommand: () => {
+      if (!selectedArcForCurveCogo) return;
+      beginSession({
+        key: 'REVERSE_CURVE',
+        inputValue: '',
+        arc: selectedArcForCurveCogo,
+      });
+    },
+    startCompoundCurveCommand: () => {
+      if (!selectedArcForCurveCogo) return;
+      beginSession({
+        key: 'COMPOUND_CURVE',
+        inputValue: '',
+        arc: selectedArcForCurveCogo,
       });
     },
     startBearingBearingIntersectionCommand: () =>

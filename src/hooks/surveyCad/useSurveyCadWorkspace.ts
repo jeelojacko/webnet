@@ -63,6 +63,7 @@ interface UseSurveyCadWorkspaceResult {
   canRedo: boolean;
   canUseSelectedLineCoreCogo: boolean;
   canUseSelectedLinePairIntersection: boolean;
+  canUseSelectedArcCurveCogo: boolean;
   activeCommandKey:
     | 'POINT'
     | 'COGO_POINT'
@@ -90,6 +91,15 @@ interface UseSurveyCadWorkspaceResult {
     | 'POINT_ALONG_LINE'
     | 'EXTEND_LINE'
     | 'OFFSET_POINT'
+    | 'CURVE_SOLVER'
+    | 'RADIAL_BEARING'
+    | 'POINT_ON_CURVE'
+    | 'SUBDIVIDE_CURVE'
+    | 'OFFSET_CURVE'
+    | 'PI_CURVE'
+    | 'CHORD_BEARING_CURVE'
+    | 'REVERSE_CURVE'
+    | 'COMPOUND_CURVE'
     | 'BEARING_BEARING_INTX'
     | 'BEARING_DISTANCE_INTX'
     | 'DISTANCE_DISTANCE_INTX'
@@ -148,6 +158,15 @@ interface UseSurveyCadWorkspaceResult {
   startPointAlongLineCommand: () => void;
   startExtendLineCommand: () => void;
   startOffsetPointCommand: () => void;
+  startCurveSolverCommand: () => void;
+  startRadialBearingCommand: () => void;
+  startPointOnCurveCommand: () => void;
+  startSubdivideCurveCommand: () => void;
+  startOffsetCurveCommand: () => void;
+  startPiCurveCommand: () => void;
+  startChordBearingCurveCommand: () => void;
+  startReverseCurveCommand: () => void;
+  startCompoundCurveCommand: () => void;
   startBearingBearingIntersectionCommand: () => void;
   startBearingDistanceIntersectionCommand: () => void;
   startDistanceDistanceIntersectionCommand: () => void;
@@ -437,6 +456,15 @@ export const useSurveyCadWorkspace = (
     startPointAlongLineCommand,
     startExtendLineCommand,
     startOffsetPointCommand,
+    startCurveSolverCommand,
+    startRadialBearingCommand,
+    startPointOnCurveCommand,
+    startSubdivideCurveCommand,
+    startOffsetCurveCommand,
+    startPiCurveCommand,
+    startChordBearingCurveCommand,
+    startReverseCurveCommand,
+    startCompoundCurveCommand,
     startBearingBearingIntersectionCommand,
     startBearingDistanceIntersectionCommand,
     startDistanceDistanceIntersectionCommand,
@@ -465,6 +493,7 @@ export const useSurveyCadWorkspace = (
     selectionCount: selection.selectedEntityIds.length,
     trimCuttingEntityIds,
     selectedArcForContinue,
+    selectedArcForCurveCogo: selectedArcForContinue,
     selectedLineForCoreCogo,
     selectedLinePairForIntersection,
     reverseDirectionModifier,
@@ -760,6 +789,7 @@ export const useSurveyCadWorkspace = (
     canRedo: history.redoStack.length > 0,
     canUseSelectedLineCoreCogo: selectedLineForCoreCogo != null,
     canUseSelectedLinePairIntersection: selectedLinePairForIntersection != null,
+    canUseSelectedArcCurveCogo: selectedArcForContinue != null,
     activeCommandKey,
     commandInputValue,
     statusText: commandPrompt,
@@ -807,6 +837,15 @@ export const useSurveyCadWorkspace = (
     startPointAlongLineCommand,
     startExtendLineCommand,
     startOffsetPointCommand,
+    startCurveSolverCommand,
+    startRadialBearingCommand,
+    startPointOnCurveCommand,
+    startSubdivideCurveCommand,
+    startOffsetCurveCommand,
+    startPiCurveCommand,
+    startChordBearingCurveCommand,
+    startReverseCurveCommand,
+    startCompoundCurveCommand,
     startBearingBearingIntersectionCommand,
     startBearingDistanceIntersectionCommand,
     startDistanceDistanceIntersectionCommand,

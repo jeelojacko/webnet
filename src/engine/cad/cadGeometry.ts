@@ -247,6 +247,13 @@ export const cadBuildCurveMetricsFromTangentLength = (
   return cadCreateCurveMetrics(radius, deltaDeg);
 };
 
+export const cadArcStartPoint = (
+  arc: Pick<CadArcEntity, 'centerX' | 'centerY' | 'radius' | 'startAngleDeg'>,
+): CadWorldPoint => ({
+  x: arc.centerX + Math.cos((arc.startAngleDeg * Math.PI) / 180) * arc.radius,
+  y: arc.centerY + Math.sin((arc.startAngleDeg * Math.PI) / 180) * arc.radius,
+});
+
 export const cadIsAngleOnArcSweep = (
   angleDeg: number,
   startAngleDeg: number,
@@ -821,6 +828,51 @@ export const cadBuildArcFromStartEndDirection = (
   };
   const signedSweep = tangentMatches(ccwTangentAzimuth) ? ccwDelta : ccwDelta - 360;
   return cadBuildArcFromCenterSweep(center, cadDistance(center, startPoint), startAngleDeg, signedSweep);
+};
+
+export const cadBuildArcFromStartTangentRadiusDelta = (
+  startPoint: CadWorldPoint,
+  tangentAzimuthDeg: number,
+  radius: number,
+  deltaDeg: number,
+  side: 'left' | 'right',
+): CadArcDefinition | null => {
+  if (
+    !Number.isFinite(tangentAzimuthDeg) ||
+    !Number.isFinite(radius) ||
+    !Number.isFinite(deltaDeg) ||
+    radius <= 1e-12 ||
+    Math.abs(deltaDeg) <= 1e-9 ||
+    Math.abs(deltaDeg) >= 360 - 1e-9
+  ) {
+    return null;
+  }
+  const tangentRadians = (tangentAzimuthDeg * Math.PI) / 180;
+  const tangent = {
+    x: Math.sin(tangentRadians),
+    y: Math.cos(tangentRadians),
+  };
+  const leftNormal = {
+    x: -tangent.y,
+    y: tangent.x,
+  };
+  const center =
+    side === 'left'
+      ? {
+          x: startPoint.x + leftNormal.x * radius,
+          y: startPoint.y + leftNormal.y * radius,
+        }
+      : {
+          x: startPoint.x - leftNormal.x * radius,
+          y: startPoint.y - leftNormal.y * radius,
+        };
+  const startAngleDeg = cadAngleDegFromCenter(center, startPoint);
+  return cadBuildArcFromCenterSweep(
+    center,
+    radius,
+    startAngleDeg,
+    side === 'left' ? Math.abs(deltaDeg) : -Math.abs(deltaDeg),
+  );
 };
 
 export const cadArcEndPoint = (arc: Pick<CadArcEntity, 'centerX' | 'centerY' | 'radius' | 'endAngleDeg'>): CadWorldPoint => ({

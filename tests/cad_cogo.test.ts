@@ -4,15 +4,23 @@ import {
   buildCadDistanceSummary,
   buildCadMultiInverseSummary,
   cadBuildArcFromThreePoints,
+  cadBuildArcFromChordBearingRadius,
+  cadBuildArcFromPiRadiusDelta,
+  cadBuildCompoundCurve,
+  cadBuildCurveMetricsSummaryFromRadiusDelta,
   cadBuildCurveMetricsFromArcLength,
   cadBuildCurveMetricsFromChordLength,
   cadBuildCurveMetricsFromRadiusDelta,
   cadBuildCurveMetricsFromTangentLength,
   cadBuildParcelClosureSummary,
   cadBuildParcelReportSummary,
+  cadBuildReverseCurve,
   cadBuildParallelLine,
   cadBuildPerpendicularFoot,
   cadBuildTangentCurve,
+  cadArcPointByArcDistance,
+  cadArcPointByChordDistance,
+  cadArcSubdivisionPoints,
   cadComputeDeflectionAnglePoint,
   cadComputeTurnedAnglePoint,
   cadExtendLineByDistance,
@@ -27,10 +35,13 @@ import {
   cadIntersectArcEntities,
   cadIntersectLineArcEntity,
   cadOffsetLineSegment,
+  cadOffsetArc,
   cadOffsetPointFromLine,
   cadPointAtDistanceAlongLine,
   cadPointAtFractionAlongLine,
   cadPointFromBearingDistance,
+  cadRadialBearingAtArcAngle,
+  cadSolveCurveMetrics,
   formatCadBearing,
 } from '../src/engine/cad/cadCogo';
 import {
@@ -341,6 +352,27 @@ describe('Survey CAD COGO helpers', () => {
     expect(byTangent?.deltaDeg ?? Number.NaN).toBeCloseTo(60, 6);
   });
 
+  it('solves richer curve summaries from common parameter pairs', () => {
+    const radiusDelta = cadBuildCurveMetricsSummaryFromRadiusDelta(200, 60);
+    expect(radiusDelta?.externalDistance ?? Number.NaN).toBeCloseTo(30.940108, 6);
+    expect(radiusDelta?.middleOrdinate ?? Number.NaN).toBeCloseTo(26.794919, 6);
+
+    const arcChord = cadSolveCurveMetrics({
+      pair: 'arc-chord',
+      firstValue: radiusDelta?.arcLength ?? Number.NaN,
+      secondValue: radiusDelta?.chordLength ?? Number.NaN,
+    });
+    expect(arcChord?.radius ?? Number.NaN).toBeCloseTo(200, 6);
+    expect(arcChord?.deltaDeg ?? Number.NaN).toBeCloseTo(60, 6);
+
+    const deltaTangent = cadSolveCurveMetrics({
+      pair: 'delta-tangent',
+      firstValue: 60,
+      secondValue: radiusDelta?.tangentLength ?? Number.NaN,
+    });
+    expect(deltaTangent?.radius ?? Number.NaN).toBeCloseTo(200, 6);
+  });
+
   it('builds deterministic three-point and tangent-curve arc definitions', () => {
     const threePoint = cadBuildArcFromThreePoints(
       { x: 5, y: 0 },
@@ -425,6 +457,72 @@ describe('Survey CAD COGO helpers', () => {
       radius: 10,
       endAngleDeg: 90,
     }).x).toBeCloseTo(0, 6);
+  });
+
+  it('builds PI-radius-delta, chord-bearing, reverse, and compound curve workflows', () => {
+    const piCurve = cadBuildArcFromPiRadiusDelta({
+      piPoint: { x: 0, y: 0 },
+      backTangentPoint: { x: -10, y: 0 },
+      radius: 10,
+      deltaDeg: 90,
+      side: 'left',
+    });
+    expect(piCurve?.radius ?? Number.NaN).toBeCloseTo(10, 6);
+
+    const chordBearing = cadBuildArcFromChordBearingRadius({
+      startPoint: { x: 0, y: 0 },
+      chordBearing: 'N90-00-00E',
+      chordDistance: 10,
+      radius: 10,
+      side: 'left',
+    });
+    expect(chordBearing?.radius ?? Number.NaN).toBeCloseTo(10, 6);
+
+    const sourceArc = {
+      centerX: 0,
+      centerY: 0,
+      radius: 10,
+      startAngleDeg: 0,
+      endAngleDeg: 90,
+    };
+    const reverse = cadBuildReverseCurve({
+      sourceArc,
+      radius: 8,
+      deltaDeg: 45,
+    });
+    const compound = cadBuildCompoundCurve({
+      sourceArc,
+      radius: 12,
+      deltaDeg: 45,
+    });
+    expect(reverse).not.toBeNull();
+    expect(compound).not.toBeNull();
+  });
+
+  it('computes radial bearing, point-on-curve, subdivision, and offset-curve helpers', () => {
+    const arc = {
+      centerX: 0,
+      centerY: 0,
+      radius: 10,
+      startAngleDeg: 0,
+      endAngleDeg: 90,
+    };
+
+    expect(cadRadialBearingAtArcAngle({ arc, angleDeg: 0 })).toBe('N90-00-00.00E');
+
+    const byArc = cadArcPointByArcDistance(arc, (Math.PI * 10) / 4);
+    expect(byArc?.x ?? Number.NaN).toBeCloseTo(Math.sqrt(50), 6);
+    expect(byArc?.y ?? Number.NaN).toBeCloseTo(Math.sqrt(50), 6);
+
+    const byChord = cadArcPointByChordDistance(arc, 10);
+    expect(byChord?.x ?? Number.NaN).toBeCloseTo(5, 6);
+    expect(byChord?.y ?? Number.NaN).toBeCloseTo(8.660254, 6);
+
+    const equalPoints = cadArcSubdivisionPoints({ arc, mode: 'equal', value: 4 });
+    expect(equalPoints).toHaveLength(3);
+
+    const offset = cadOffsetArc({ arc, offsetDistance: 2, side: 'right' });
+    expect(offset?.radius ?? Number.NaN).toBeCloseTo(12, 6);
   });
 
   it('keeps the picked center and projects start-center-end endpoint direction onto the arc radius', () => {

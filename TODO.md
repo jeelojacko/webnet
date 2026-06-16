@@ -1,3 +1,5 @@
+- [x] Survey CAD curve calculator batch (June 2026): add shared curve-solver/report math, selected-arc radial bearing and point-on-curve/subdivision/offset tools, typed PI-radius-delta and chord-bearing constructors, reverse/compound continuations, and focused CAD math/workspace coverage.
+
 - [x] Survey CAD intersection batch (June 2026): add dedicated bearing-bearing, bearing-distance, distance-distance, line-circle, perpendicular, offset, and skew intersection calculators with deterministic alternative ordering, native command-menu entry points, and focused report/workspace coverage.
 
 - [x] Survey CAD core point-line batch (June 2026): add multi-point inverse, bearing-only and distance-only reports, turned/deflection point tools, point-along and offset-point calculators, extend-line helper flow, and the command UI/report coverage for them.
