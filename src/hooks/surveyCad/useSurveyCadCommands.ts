@@ -63,6 +63,22 @@ type CommandPoint = CadNamedPoint & {
   snapKind?: CadSnapKind;
 };
 
+type TraverseDraftMode = 'open' | 'closed' | 'point-to-point';
+
+interface TraverseSideshotDraft {
+  occupyLabel: string;
+  backsightLabel: string;
+  side: 'left' | 'right';
+  angleDeg: number;
+  distance: number;
+  inputValue: string;
+  point: {
+    label: string;
+    x: number;
+    y: number;
+  };
+}
+
 type ActiveCommandKey =
   | 'POINT'
   | 'COGO_POINT'
@@ -220,6 +236,10 @@ type CommandSession =
       key: 'TRAVERSE';
       inputValue: string;
       points: CommandPoint[];
+      legInputs: string[];
+      mode: TraverseDraftMode;
+      closePoint: CommandPoint | null;
+      sideshots: TraverseSideshotDraft[];
       resultText?: string;
     }
   | {
@@ -308,11 +328,32 @@ interface UseSurveyCadCommandsResult {
   commandPrompt: string;
   commandHelpText: string;
   commandPreview: CadCommandPreviewState | null;
+  activeTraverseDraft: {
+    points: Array<{ label: string; x: number; y: number }>;
+    mode: TraverseDraftMode;
+    closePoint: { label: string; x: number; y: number } | null;
+    legs: Array<{
+      fromLabel: string;
+      toLabel: string;
+      bearing: string;
+      distance: number;
+      inputValue: string;
+    }>;
+    sideshots: TraverseSideshotDraft[];
+    totalLength: number;
+    closureTargetLabel: string | null;
+    closureDeltaX: number | null;
+    closureDeltaY: number | null;
+    closureDistance: number | null;
+    closureBearing: string | null;
+    closureRatio: number | null;
+  } | null;
   snapConstructionContext: CadSnapConstructionContext;
   commandExpectsPointPick: boolean;
   canUseActiveSnap: boolean;
   canCycleActiveSnap: boolean;
   canFinishCommand: boolean;
+  canCloseTraverseDraft: boolean;
   startPointCommand: () => void;
   startCogoPointCommand: () => void;
   startLineCommand: () => void;
@@ -366,6 +407,17 @@ interface UseSurveyCadCommandsResult {
   backspaceCommandInputValue: () => void;
   submitCommandInput: () => void;
   useActiveSnap: () => void;
+  editTraverseDraftLeg: (_legIndex: number) => void;
+  replaceTraverseDraftLeg: (_legIndex: number, _inputValue: string) => boolean;
+  appendTraverseDraftPoint: (_inputValue: string) => boolean;
+  insertTraverseDraftLeg: (_legIndex: number, _inputValue: string) => boolean;
+  moveTraverseDraftLeg: (_legIndex: number, _direction: -1 | 1) => boolean;
+  setTraverseDraftMode: (_mode: TraverseDraftMode) => void;
+  setTraverseDraftClosePoint: (_point: CommandPoint | null) => void;
+  addTraverseDraftSideshot: (_occupyPointIndex: number, _inputValue: string) => boolean;
+  removeTraverseDraftSideshot: (_sideshotIndex: number) => void;
+  rewindTraverseDraftToPointCount: (_pointCount: number) => void;
+  closeTraverseDraftLoop: () => void;
   consumeInteractionPoint: (
     _point: { x: number; y: number },
     _label?: string,
@@ -395,6 +447,11 @@ const tangentSeedPointFromPoint = (
   point: CommandPoint | null,
 ): { x: number; y: number } | null =>
   tangentSeedArcEntityIdFromPoint(point) ? { x: point!.x, y: point!.y } : null;
+
+const buildTraverseLegInputFromPoints = (fromPoint: CommandPoint, toPoint: CommandPoint): string => {
+  const inverse = buildCadInverseSummary(fromPoint, toPoint);
+  return `${inverse.bearing},${inverse.distance.toFixed(3)}`;
+};
 
 const sessionExpectsPointPick = (session: CommandSession | null): boolean => {
   if (!session) return false;
@@ -789,7 +846,7 @@ const promptForSession = (session: CommandSession | null, fallbackStatus: string
     case 'TRAVERSE':
       return session.resultText ??
         (session.points.length > 0
-          ? `TRAVERSE active. ${session.points.length} station${session.points.length === 1 ? '' : 's'} captured. Enter the next leg as \`@azimuth,distance\` or bearing-distance, or click another point.`
+          ? `TRAVERSE ${session.mode} active. ${session.points.length} station${session.points.length === 1 ? '' : 's'} captured. Enter the next leg as \`@azimuth,distance\` or bearing-distance, or click another point.`
           : 'TRAVERSE active. Click or enter the first station.');
     case 'ARC_3PT':
       return session.resultText ??
@@ -1017,7 +1074,9 @@ const helpTextForSession = (session: CommandSession | null): string => {
         : 'PLINE first vertex: click in the model space or type `x,y` / `LABEL=x,y`.';
     case 'TRAVERSE':
       return session.points.length > 0
-        ? 'TRAVERSE next leg: click the next station, or type `@azimuth,distance` / `N45-00-00E,100` from the last station. Press Enter on an empty input to finish after 2+ stations.'
+        ? session.mode === 'point-to-point'
+          ? 'TRAVERSE next leg: click the next station, or type `@azimuth,distance` / `N45-00-00E,100` from the last station. Select a survey point as the close target before finishing point-to-point traverse.'
+          : 'TRAVERSE next leg: click the next station, or type `@azimuth,distance` / `N45-00-00E,100` from the last station. Press Enter on an empty input to finish after 2+ stations.'
         : 'TRAVERSE first station: click in the model space or type `x,y` / `LABEL=x,y`.';
     case 'ARC_3PT':
       return session.points.length < 2
@@ -1177,6 +1236,9 @@ const buildCenterFirstArcDefinition = (
     ? cadBuildArcFromStartCenterAngle(points[1]!, points[0]!, value, reverseDirectionModifier)
     : cadBuildArcFromStartCenterChord(points[1]!, points[0]!, value, reverseDirectionModifier);
 };
+
+const commandPointsMatch = (first: CadNamedPoint, second: CadNamedPoint): boolean =>
+  Math.abs(first.x - second.x) <= 1e-9 && Math.abs(first.y - second.y) <= 1e-9;
 
 export const useSurveyCadCommands = ({
   activeSnap,
@@ -2157,12 +2219,28 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
       return;
     }
     if (current.key === 'PLINE' || current.key === 'TRAVERSE') {
-      replaceSession({
-        ...current,
-        points: [...current.points, point],
-        inputValue: '',
-        resultText: undefined,
-      });
+      replaceSession(
+        current.key === 'TRAVERSE'
+          ? {
+              ...current,
+              points: [...current.points, point],
+              legInputs:
+                current.points.length === 0
+                  ? current.legInputs
+                  : [
+                      ...current.legInputs,
+                      buildTraverseLegInputFromPoints(current.points[current.points.length - 1]!, point),
+                    ],
+              inputValue: '',
+              resultText: undefined,
+            }
+          : {
+              ...current,
+              points: [...current.points, point],
+              inputValue: '',
+              resultText: undefined,
+            },
+      );
       return;
     }
     if (current.key === 'ARC_3PT') {
@@ -2449,13 +2527,80 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
 
   const finishTraverseSession = () => {
     if (!session || session.key !== 'TRAVERSE' || session.points.length < 2) return;
+    const traverseVertices =
+      session.mode === 'closed'
+        ? commandPointsMatch(session.points[0]!, session.points[session.points.length - 1]!)
+          ? session.points
+          : [...session.points, session.points[0]!]
+        : session.mode === 'point-to-point' && session.closePoint
+          ? commandPointsMatch(session.closePoint, session.points[session.points.length - 1]!)
+            ? session.points
+            : [...session.points, session.closePoint]
+          : session.points;
     applyHistoryUpdate((existing) =>
       runCadCommand(existing, {
         key: 'TRAVERSE',
-        vertices: session.points,
+        vertices: traverseVertices,
+        mode: session.mode,
+        closePoint:
+          session.mode === 'point-to-point' && session.closePoint
+            ? {
+                x: session.closePoint.x,
+                y: session.closePoint.y,
+                label: session.closePoint.label,
+              }
+            : undefined,
+        sideshots: session.sideshots.map((sideshot) => ({
+          occupyLabel: sideshot.occupyLabel,
+          backsightLabel: sideshot.backsightLabel,
+          side: sideshot.side,
+          angleDeg: sideshot.angleDeg,
+          distance: sideshot.distance,
+          point: sideshot.point,
+        })),
       }),
     );
     replaceSession(null);
+  };
+
+  const filterTraverseSideshotsForPoints = (
+    points: CommandPoint[],
+    sideshots: TraverseSideshotDraft[],
+  ): TraverseSideshotDraft[] =>
+    sideshots.filter((shot) =>
+      points.some((point, index, sourcePoints) =>
+        point.label === shot.occupyLabel && index > 0 && sourcePoints[index - 1]?.label === shot.backsightLabel,
+      ),
+    );
+
+  const rebuildTraverseDraftFromLegInputs = (
+    current: Extract<CommandSession, { key: 'TRAVERSE' }>,
+    legInputs: string[],
+    resultText?: string,
+  ): Extract<CommandSession, { key: 'TRAVERSE' }> | null => {
+    const startPoint = current.points[0] ?? null;
+    if (!startPoint) return current;
+    const nextPoints: CommandPoint[] = [startPoint];
+    for (const legInput of legInputs) {
+      const parsedPoint = parseInputPoint(legInput, nextPoints[nextPoints.length - 1] ?? null);
+      if (!parsedPoint) {
+        replaceSession({
+          ...current,
+          resultText:
+            'Traverse row update failed because one of the leg inputs is invalid. Use coordinates or bearing-distance values.',
+        });
+        return null;
+      }
+      nextPoints.push(parsedPoint);
+    }
+    return {
+      ...current,
+      points: nextPoints,
+      legInputs,
+      sideshots: filterTraverseSideshotsForPoints(nextPoints, current.sideshots),
+      inputValue: '',
+      resultText,
+    };
   };
 
   const submitSessionInput = () => {
@@ -3355,9 +3500,36 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
       replaceSession(null);
       return;
     }
+    if (session.key === 'TRAVERSE') {
+      const rawInput = session.inputValue.trim();
+      const parsedPoint =
+        session.points.length === 0
+          ? parseAbsolutePoint(rawInput)
+          : parseInputPoint(rawInput, session.points[session.points.length - 1] ?? null);
+      if (!parsedPoint) {
+        replaceSession({
+          ...session,
+          resultText:
+            session.points.length === 0
+              ? 'Traverse start input invalid. Use `x,y` or `LABEL=x,y`.'
+              : 'Traverse leg input invalid. Use `x,y`, `LABEL=x,y`, `@azimuth,distance`, or survey bearing-distance like `N45-00-00E,100`.',
+        });
+        return;
+      }
+      replaceSession({
+        ...session,
+        points: [...session.points, parsedPoint],
+        legInputs:
+          session.points.length === 0
+            ? session.legInputs
+            : [...session.legInputs, rawInput],
+        inputValue: '',
+        resultText: undefined,
+      });
+      return;
+    }
     const basePoint =
       session.key === 'PLINE' ||
-      session.key === 'TRAVERSE' ||
       session.key === 'ARC_3PT' ||
       session.key === 'ARC_SCE' ||
       session.key === 'ARC_CSE' ||
@@ -3536,6 +3708,13 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
       return;
     }
     if (session.key === 'TRAVERSE' && session.inputValue.trim().length === 0 && session.points.length >= 2) {
+      if (session.mode === 'point-to-point' && session.closePoint == null) {
+        replaceSession({
+          ...session,
+          resultText: 'Point-to-point traverse needs a selected close target before finishing.',
+        });
+        return;
+      }
       finishTraverseSession();
       return;
     }
@@ -3551,12 +3730,329 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
     replaceSession(null);
   };
 
+  const setTraverseDraftMode = (mode: TraverseDraftMode) => {
+    const current = sessionRef.current;
+    if (!current || current.key !== 'TRAVERSE') return;
+    const isExplicitlyClosed =
+      current.points.length >= 2 &&
+      commandPointsMatch(current.points[0]!, current.points[current.points.length - 1]!) &&
+      current.legInputs.length === current.points.length - 1;
+    replaceSession({
+      ...current,
+      points:
+        mode !== 'closed' && isExplicitlyClosed
+          ? current.points.slice(0, -1)
+          : current.points,
+      legInputs:
+        mode !== 'closed' && isExplicitlyClosed
+          ? current.legInputs.slice(0, -1)
+          : current.legInputs,
+      mode,
+      closePoint: mode === 'point-to-point' ? current.closePoint : null,
+      inputValue: '',
+      resultText: undefined,
+    });
+  };
+
+  const setTraverseDraftClosePoint = (point: CommandPoint | null) => {
+    const current = sessionRef.current;
+    if (!current || current.key !== 'TRAVERSE') return;
+    replaceSession({
+      ...current,
+      closePoint: point,
+      resultText:
+        point == null
+          ? 'Cleared traverse close target.'
+          : `Traverse will close onto ${point.label}.`,
+    });
+  };
+
+  const addTraverseDraftSideshot = (occupyPointIndex: number, inputValue: string) => {
+    const current = sessionRef.current;
+    if (!current || current.key !== 'TRAVERSE') return false;
+    const occupyPoint = current.points[occupyPointIndex];
+    const backsightPoint = current.points[occupyPointIndex - 1];
+    if (!occupyPoint || !backsightPoint) return false;
+    const parsed = parseLeftRightAngleDistance(inputValue);
+    if (!parsed) {
+      replaceSession({
+        ...current,
+        resultText: 'Sideshot input invalid. Use `Langle,distance` or `Rangle,distance`.',
+      });
+      return false;
+    }
+    const point = cadComputeTurnedAnglePoint({
+      occupyPoint,
+      backsightPoint,
+      angleDeg: parsed.angleDeg,
+      distance: parsed.distance,
+      side: parsed.side,
+    });
+    replaceSession({
+      ...current,
+      sideshots: [
+        ...current.sideshots,
+        {
+          occupyLabel: occupyPoint.label,
+          backsightLabel: backsightPoint.label,
+          side: parsed.side,
+          angleDeg: parsed.angleDeg,
+          distance: parsed.distance,
+          inputValue,
+          point: {
+            label:
+              parsed.label ??
+              `${occupyPoint.label}-SS${(current.sideshots.filter((shot) => shot.occupyLabel === occupyPoint.label).length + 1).toString()}`,
+            x: point.x,
+            y: point.y,
+          },
+        },
+      ],
+      resultText: `Added sideshot from ${occupyPoint.label} with backsight ${backsightPoint.label}.`,
+    });
+    return true;
+  };
+
+  const removeTraverseDraftSideshot = (sideshotIndex: number) => {
+    const current = sessionRef.current;
+    if (!current || current.key !== 'TRAVERSE') return;
+    replaceSession({
+      ...current,
+      sideshots: current.sideshots.filter((_, index) => index !== sideshotIndex),
+      resultText: undefined,
+    });
+  };
+
+  const rewindTraverseDraftToPointCount = (pointCount: number) => {
+    const current = sessionRef.current;
+    if (!current || current.key !== 'TRAVERSE') return;
+    const nextCount = Math.max(0, Math.min(pointCount, current.points.length));
+    const nextPoints = current.points.slice(0, nextCount);
+    replaceSession({
+      ...current,
+      points: nextPoints,
+      legInputs: current.legInputs.slice(0, Math.max(0, nextCount - 1)),
+      sideshots: filterTraverseSideshotsForPoints(nextPoints, current.sideshots),
+      inputValue: '',
+      resultText: undefined,
+    });
+  };
+
+  const editTraverseDraftLeg = (legIndex: number) => {
+    const current = sessionRef.current;
+    if (!current || current.key !== 'TRAVERSE') return;
+    const fromPoint = current.points[legIndex];
+    const toPoint = current.points[legIndex + 1];
+    if (!fromPoint || !toPoint) return;
+    const inverse = buildCadInverseSummary(fromPoint, toPoint);
+    replaceSession({
+      ...current,
+      points: current.points.slice(0, legIndex + 1),
+      legInputs: current.legInputs.slice(0, legIndex),
+      inputValue: current.legInputs[legIndex] ?? `${inverse.bearing},${inverse.distance.toFixed(3)}`,
+      resultText: `Editing leg ${fromPoint.label} -> ${toPoint.label}. Update the command value and press Enter to replace downstream traverse geometry.`,
+    });
+  };
+
+  const replaceTraverseDraftLeg = (legIndex: number, inputValue: string) => {
+    const current = sessionRef.current;
+    if (!current || current.key !== 'TRAVERSE') return false;
+    const nextLegInputs = current.legInputs.map((legInput, index) =>
+      index === legIndex ? inputValue : legInput,
+    );
+    const rebuilt = rebuildTraverseDraftFromLegInputs(
+      current,
+      nextLegInputs,
+      `Replaced leg ${legIndex + 1}. Continue editing rows or press Enter on blank input to finish.`,
+    );
+    if (!rebuilt) {
+      replaceSession({
+        ...current,
+        resultText:
+          'Traverse leg input invalid. Use `x,y`, `LABEL=x,y`, `@azimuth,distance`, or survey bearing-distance like `N45-00-00E,100`.',
+      });
+      return false;
+    }
+    replaceSession(rebuilt);
+    return true;
+  };
+
+  const appendTraverseDraftPoint = (inputValue: string) => {
+    const current = sessionRef.current;
+    if (!current || current.key !== 'TRAVERSE') return false;
+    const parsedPoint =
+      current.points.length === 0
+        ? parseAbsolutePoint(inputValue)
+        : parseInputPoint(inputValue, current.points[current.points.length - 1] ?? null);
+    if (!parsedPoint) {
+      replaceSession({
+        ...current,
+        resultText:
+          current.points.length === 0
+            ? 'Traverse start input invalid. Use `x,y` or `LABEL=x,y`.'
+            : 'Traverse leg input invalid. Use `x,y`, `LABEL=x,y`, `@azimuth,distance`, or survey bearing-distance like `N45-00-00E,100`.',
+      });
+      return false;
+    }
+    replaceSession({
+      ...current,
+      points: [...current.points, parsedPoint],
+      legInputs:
+        current.points.length === 0
+          ? current.legInputs
+          : [...current.legInputs, inputValue],
+      inputValue: '',
+      resultText: undefined,
+    });
+    return true;
+  };
+
+  const insertTraverseDraftLeg = (legIndex: number, inputValue: string) => {
+    const current = sessionRef.current;
+    if (!current || current.key !== 'TRAVERSE' || current.points.length === 0) return false;
+    const nextLegInputs = [...current.legInputs];
+    nextLegInputs.splice(legIndex, 0, inputValue);
+    const rebuilt = rebuildTraverseDraftFromLegInputs(
+      current,
+      nextLegInputs,
+      `Inserted leg ${legIndex + 1}. Downstream traverse rows were rebuilt from the updated sequence.`,
+    );
+    if (!rebuilt) {
+      replaceSession({
+        ...current,
+        resultText:
+          'Traverse leg input invalid. Use `x,y`, `LABEL=x,y`, `@azimuth,distance`, or survey bearing-distance like `N45-00-00E,100`.',
+      });
+      return false;
+    }
+    replaceSession(rebuilt);
+    return true;
+  };
+
+  const moveTraverseDraftLeg = (legIndex: number, direction: -1 | 1) => {
+    const current = sessionRef.current;
+    if (!current || current.key !== 'TRAVERSE') return false;
+    const swapIndex = legIndex + direction;
+    if (legIndex < 0 || legIndex >= current.legInputs.length || swapIndex < 0 || swapIndex >= current.legInputs.length) {
+      return false;
+    }
+    const nextLegInputs = [...current.legInputs];
+    const [moved] = nextLegInputs.splice(legIndex, 1);
+    nextLegInputs.splice(swapIndex, 0, moved!);
+    const rebuilt = rebuildTraverseDraftFromLegInputs(
+      current,
+      nextLegInputs,
+      `Moved leg ${legIndex + 1} ${direction < 0 ? 'up' : 'down'} and rebuilt downstream traverse geometry.`,
+    );
+    if (!rebuilt) return false;
+    replaceSession(rebuilt);
+    return true;
+  };
+
+  const closeTraverseDraftLoop = () => {
+    const current = sessionRef.current;
+    if (!current || current.key !== 'TRAVERSE' || current.points.length < 3) return;
+    const firstPoint = current.points[0]!;
+    const lastPoint = current.points[current.points.length - 1]!;
+    if (commandPointsMatch(firstPoint, lastPoint)) {
+      return;
+    }
+    replaceSession({
+      ...current,
+      mode: 'closed',
+      points: [...current.points, firstPoint],
+      legInputs: [...current.legInputs, buildTraverseLegInputFromPoints(lastPoint, firstPoint)],
+      inputValue: '',
+      resultText: undefined,
+    });
+  };
+
+  const activeTraverseDraft = useMemo(() => {
+    if (session?.key !== 'TRAVERSE') return null;
+    const points = session.points.map((point) => ({
+      label: point.label,
+      x: point.x,
+      y: point.y,
+    }));
+    const legs = session.points.slice(1).map((point, index) => {
+      const fromPoint = session.points[index]!;
+      const inverse = buildCadInverseSummary(fromPoint, point);
+      return {
+        fromLabel: fromPoint.label,
+        toLabel: point.label,
+        bearing: inverse.bearing,
+        distance: inverse.distance,
+        inputValue: session.legInputs[index] ?? `${inverse.bearing},${inverse.distance.toFixed(3)}`,
+      };
+    });
+    const totalLength = legs.reduce((sum, leg) => sum + leg.distance, 0);
+    const closureTarget =
+      session.mode === 'closed'
+        ? session.points[0] ?? null
+        : session.mode === 'point-to-point'
+          ? session.closePoint
+          : session.points.length > 0
+            ? session.points[0]!
+            : null;
+    if (session.points.length < 2) {
+      return {
+        points,
+        mode: session.mode,
+        closePoint: session.closePoint
+          ? { label: session.closePoint.label, x: session.closePoint.x, y: session.closePoint.y }
+          : null,
+        legs,
+        sideshots: session.sideshots,
+        totalLength,
+        closureTargetLabel: closureTarget?.label ?? null,
+        closureDeltaX: null,
+        closureDeltaY: null,
+        closureDistance: null,
+        closureBearing: null,
+        closureRatio: null,
+      };
+    }
+    const closureTargetPoint = closureTarget;
+    const lastPoint = session.points[session.points.length - 1]!;
+    const closureDistance =
+      closureTargetPoint == null ? null : buildCadDistanceSummary(lastPoint, closureTargetPoint).distance2d;
+    const closureDelta =
+      closureTargetPoint == null ? null : buildCadDistanceSummary(lastPoint, closureTargetPoint);
+    const closureBearing =
+      closureTargetPoint && closureDistance != null && closureDistance > 1e-9
+        ? buildCadInverseSummary(
+            lastPoint,
+            closureTargetPoint,
+          ).bearing
+        : null;
+    return {
+      points,
+      mode: session.mode,
+      closePoint: session.closePoint
+        ? { label: session.closePoint.label, x: session.closePoint.x, y: session.closePoint.y }
+        : null,
+      legs,
+      sideshots: session.sideshots,
+      totalLength,
+      closureTargetLabel: closureTargetPoint?.label ?? null,
+      closureDeltaX: closureDelta?.deltaX ?? null,
+      closureDeltaY: closureDelta?.deltaY ?? null,
+      closureDistance,
+      closureBearing,
+      closureRatio:
+        closureDistance != null && closureDistance > 1e-9 && totalLength > 0
+          ? totalLength / closureDistance
+          : null,
+    };
+  }, [session]);
+
   return {
     activeCommandKey: session?.key ?? null,
     commandInputValue: session?.inputValue ?? '',
     commandPrompt: statusPrompt,
     commandHelpText: helpText,
     commandPreview,
+    activeTraverseDraft,
     snapConstructionContext,
     commandExpectsPointPick,
     canUseActiveSnap:
@@ -3567,8 +4063,17 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
       commandExpectsPointPick &&
       session?.key !== 'TRIM',
     canFinishCommand:
-      (session?.key === 'PLINE' || session?.key === 'TRAVERSE') &&
-      session.points.length >= 2,
+      session?.key === 'PLINE'
+        ? session.points.length >= 2
+        : session?.key === 'TRAVERSE'
+          ? session.points.length >= 2 &&
+            (session.mode !== 'point-to-point' || session.closePoint != null)
+          : false,
+    canCloseTraverseDraft:
+      session?.key === 'TRAVERSE' &&
+      session.points.length >= 3 &&
+      (Math.abs(session.points[0]!.x - session.points[session.points.length - 1]!.x) > 1e-9 ||
+        Math.abs(session.points[0]!.y - session.points[session.points.length - 1]!.y) > 1e-9),
     startPointCommand: () => beginSession({ key: 'POINT', inputValue: '' }),
     startCogoPointCommand: () =>
       beginSession({
@@ -3593,6 +4098,10 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
         key: 'TRAVERSE',
         inputValue: '',
         points: [],
+        legInputs: [],
+        mode: 'open',
+        closePoint: null,
+        sideshots: [],
       }),
     startArc3PointCommand: () =>
       beginSession({
@@ -3941,6 +4450,17 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
         { suppressPointLabel: true },
       );
     },
+    editTraverseDraftLeg,
+    replaceTraverseDraftLeg,
+    appendTraverseDraftPoint,
+    insertTraverseDraftLeg,
+    moveTraverseDraftLeg,
+    setTraverseDraftMode,
+    setTraverseDraftClosePoint,
+    addTraverseDraftSideshot,
+    removeTraverseDraftSideshot,
+    rewindTraverseDraftToPointCount,
+    closeTraverseDraftLoop,
     consumeInteractionPoint: (point, label, options) => {
       if (!session) return;
       consumePoint(

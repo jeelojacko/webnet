@@ -385,6 +385,73 @@ describe('Survey CAD command history', () => {
     ).toBe(true);
   });
 
+  it('commits point-to-point traverses with sideshots into geometry and persisted COGO history', () => {
+    const project = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+
+    const traverseState = runCadCommand(createCadHistoryState(project), {
+      key: 'TRAVERSE',
+      mode: 'point-to-point',
+      closePoint: { x: 100, y: 0, label: 'B' },
+      vertices: [
+        { x: 0, y: 0, label: 'A' },
+        { x: 20, y: 20, label: 'P1' },
+        { x: 100, y: 0, label: 'B' },
+      ],
+      sideshots: [
+        {
+          occupyLabel: 'P1',
+          backsightLabel: 'A',
+          side: 'left',
+          angleDeg: 45,
+          distance: 10,
+          point: { x: 20, y: 30, label: 'SS1' },
+        },
+      ],
+    });
+
+    const traversePolyline = traverseState.present.project.entities.find(
+      (entity) => entity.type === 'polyline' && entity.vertexLabels.includes('P1') && entity.vertexLabels.includes('B'),
+    );
+    expect(traversePolyline?.type).toBe('polyline');
+    if (traversePolyline?.type !== 'polyline') throw new Error('Traverse polyline missing');
+    expect(traversePolyline.closed).toBe(false);
+    expect(
+      traverseState.present.project.entities.some(
+        (entity) => entity.type === 'survey-point' && entity.stationId === 'SS1',
+      ),
+    ).toBe(true);
+    expect(
+      traverseState.present.project.entities.some(
+        (entity) => entity.type === 'line' && entity.toStationId === 'SS1',
+      ),
+    ).toBe(true);
+
+    const traverseComputation = traverseState.present.project.cogoComputations.at(-1);
+    expect(traverseComputation?.toolKey).toBe('TRAVERSE');
+    expect(traverseComputation?.report.rows.some((row) => row.label === 'Mode' && row.value === 'point-to-point')).toBe(true);
+    expect(traverseComputation?.report.rows.some((row) => row.label === 'Sideshots' && row.value === '1')).toBe(true);
+
+    const undoneState = undoCadHistory(traverseState);
+    expect(
+      undoneState.present.project.entities.some(
+        (entity) => entity.type === 'survey-point' && entity.stationId === 'SS1',
+      ),
+    ).toBe(false);
+
+    const redoneState = redoCadHistory(undoneState);
+    expect(
+      redoneState.present.project.entities.some(
+        (entity) => entity.type === 'survey-point' && entity.stationId === 'SS1',
+      ),
+    ).toBe(true);
+  });
+
   it('trims a line between selected cutting edges and replays the split through undo/redo', () => {
     const baseProject = buildSurveyCadSpikeProject({
       input,

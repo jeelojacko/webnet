@@ -107,6 +107,16 @@ export type CadCommand =
   | {
       key: 'TRAVERSE';
       vertices: { x: number; y: number; label: string }[];
+      mode?: 'open' | 'closed' | 'point-to-point';
+      closePoint?: { x: number; y: number; label: string };
+      sideshots?: Array<{
+        occupyLabel: string;
+        backsightLabel: string;
+        side: 'left' | 'right';
+        angleDeg: number;
+        distance: number;
+        point: { label: string; x: number; y: number };
+      }>;
     }
   | {
       key: 'ARC_3PT';
@@ -1670,6 +1680,16 @@ const polylineCommand: CadCommandDefinition<{
 const traverseCommand: CadCommandDefinition<{
   key: 'TRAVERSE';
   vertices: { x: number; y: number; label: string }[];
+  mode?: 'open' | 'closed' | 'point-to-point';
+  closePoint?: { x: number; y: number; label: string };
+  sideshots?: Array<{
+    occupyLabel: string;
+    backsightLabel: string;
+    side: 'left' | 'right';
+    angleDeg: number;
+    distance: number;
+    point: { label: string; x: number; y: number };
+  }>;
 }> = {
   key: 'TRAVERSE',
   execute: (snapshot, command) => {
@@ -1684,6 +1704,13 @@ const traverseCommand: CadCommandDefinition<{
       (sum, vertex, index) => sum + cadDistance(vertex, vertices[index + 1]!),
       0,
     );
+    const firstVertex = vertices[0]!;
+    const lastVertex = vertices[vertices.length - 1]!;
+    const closureDeltaX = firstVertex.x - lastVertex.x;
+    const closureDeltaY = firstVertex.y - lastVertex.y;
+    const closureDistance = Math.hypot(closureDeltaX, closureDeltaY);
+    const closureRatio = closureDistance > 1e-9 ? totalLength / closureDistance : null;
+    const traverseMode = command.mode ?? 'open';
     const summary = `Created traverse with ${vertices.length} stations`;
     const provenance = createCogoProvenance({
       toolKey: 'TRAVERSE',
@@ -1691,9 +1718,13 @@ const traverseCommand: CadCommandDefinition<{
       sourcePointIds: vertices.map((vertex) => vertex.label),
       inputs: {
         vertices,
+        mode: traverseMode,
+        closePoint: command.closePoint,
+        sideshots: command.sideshots ?? [],
       },
       parameters: {
         totalLength,
+        closureDistance,
       },
     });
     let workingProject = snapshot.project;
@@ -1719,6 +1750,66 @@ const traverseCommand: CadCommandDefinition<{
       vertexLabels.push(pointEntity.stationId);
     });
 
+    (command.sideshots ?? []).forEach((sideshot) => {
+      const existingPoint = findExistingTraversePoint(workingProject, sideshot.point);
+      if (existingPoint) return;
+      const pointBundle = createManualPointEntities(
+        workingProject,
+        sideshot.point.x,
+        sideshot.point.y,
+        sideshot.point.label,
+        {
+          includeTextLabel: false,
+          createdBy: 'TRAVERSE',
+        },
+      );
+      const pointEntity: CadSurveyPointEntity = {
+        ...pointBundle.point,
+        metadata: buildCadCogoEntityMetadata({
+          ...pointBundle.point.metadata,
+          traverseSideshot: {
+            occupyLabel: sideshot.occupyLabel,
+            backsightLabel: sideshot.backsightLabel,
+            side: sideshot.side,
+            angleDeg: sideshot.angleDeg,
+            distance: sideshot.distance,
+          },
+        }, provenance),
+      };
+      workingProject = appendCadProjectEntities(workingProject, [pointEntity]);
+      createdEntities.push(pointEntity);
+
+      const occupyPoint = vertices.find((vertex) => vertex.label === sideshot.occupyLabel);
+      if (!occupyPoint) return;
+      const lineEntity: CadEntity = {
+        id: createStableRuntimeId('cad-traverse-sideshot'),
+        type: 'line',
+        layerId: 'observation-lines',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        fromStationId: sideshot.occupyLabel,
+        toStationId: pointEntity.stationId,
+        fromX: occupyPoint.x,
+        fromY: occupyPoint.y,
+        toX: pointEntity.x,
+        toY: pointEntity.y,
+        sourceObservationIds: [],
+        metadata: buildCadCogoEntityMetadata({
+          createdBy: 'TRAVERSE',
+          manual: true,
+          traverseSideshot: {
+            backsightLabel: sideshot.backsightLabel,
+            side: sideshot.side,
+            angleDeg: sideshot.angleDeg,
+            distance: sideshot.distance,
+          },
+        }, provenance),
+      };
+      workingProject = appendCadProjectEntities(workingProject, [lineEntity]);
+      createdEntities.push(lineEntity);
+    });
+
     const polylineEntity: CadPolylineEntity = {
       id: createStableRuntimeId('cad-traverse'),
       type: 'polyline',
@@ -1728,10 +1819,12 @@ const traverseCommand: CadCommandDefinition<{
       locked: false,
       vertices: vertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
       vertexLabels,
-      closed: false,
+      closed: traverseMode === 'closed',
       metadata: buildCadCogoEntityMetadata({
         createdBy: 'TRAVERSE',
         manual: true,
+        traverseMode,
+        sideshotCount: command.sideshots?.length ?? 0,
       }, provenance),
     };
     const nextProjectWithEntities = appendCadProjectEntities(workingProject, [polylineEntity]);
@@ -1742,7 +1835,13 @@ const traverseCommand: CadCommandDefinition<{
       summary,
       rows: [
         { label: 'Stations', value: vertices.length.toString() },
+        { label: 'Mode', value: traverseMode },
         { label: 'Total length', value: totalLength.toFixed(3), unit: 'm' },
+        { label: 'Closure dE', value: closureDeltaX.toFixed(3), unit: 'm' },
+        { label: 'Closure dN', value: closureDeltaY.toFixed(3), unit: 'm' },
+        { label: 'Closure', value: closureDistance.toFixed(3), unit: 'm' },
+        { label: 'Closure ratio', value: closureRatio == null ? '--' : `1:${closureRatio.toFixed(0)}` },
+        { label: 'Sideshots', value: (command.sideshots?.length ?? 0).toString() },
       ],
       createdEntities: [...createdEntities, polylineEntity],
     });
@@ -1754,7 +1853,7 @@ const traverseCommand: CadCommandDefinition<{
       commandState: {
         key: 'TRAVERSE',
         phase: 'committed',
-        prompt: `TRAVERSE committed with ${vertices.length} stations.`,
+        prompt: `TRAVERSE committed with ${vertices.length} stations. Closure ${closureDistance.toFixed(3)} m.`,
       },
       transactionLabel: `TRAVERSE (${vertices.length})`,
       addedEntityIds: [...createdEntities.map((entity) => entity.id), polylineEntity.id],

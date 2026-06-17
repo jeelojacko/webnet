@@ -58,6 +58,38 @@ interface UseSurveyCadWorkspaceResult {
   selectedParcelReport: CadParcelReportSummary | null;
   activeCogoComputation: CadCogoComputation | null;
   activeCogoComputationSource: 'selected' | 'latest' | null;
+  activeTraverseDraft: {
+    points: Array<{ label: string; x: number; y: number }>;
+    mode: 'open' | 'closed' | 'point-to-point';
+    closePoint: { label: string; x: number; y: number } | null;
+    legs: Array<{
+      fromLabel: string;
+      toLabel: string;
+      bearing: string;
+      distance: number;
+      inputValue: string;
+    }>;
+    sideshots: Array<{
+      occupyLabel: string;
+      backsightLabel: string;
+      side: 'left' | 'right';
+      angleDeg: number;
+      distance: number;
+      inputValue: string;
+      point: {
+        label: string;
+        x: number;
+        y: number;
+      };
+    }>;
+    totalLength: number;
+    closureTargetLabel: string | null;
+    closureDeltaX: number | null;
+    closureDeltaY: number | null;
+    closureDistance: number | null;
+    closureBearing: string | null;
+    closureRatio: number | null;
+  } | null;
   selectionCount: number;
   canUndo: boolean;
   canRedo: boolean;
@@ -121,6 +153,7 @@ interface UseSurveyCadWorkspaceResult {
   canUseActiveSnap: boolean;
   canCycleActiveSnap: boolean;
   canFinishCommand: boolean;
+  canCloseTraverseDraft: boolean;
   canCreateIntersectionPoint: boolean;
   canCreateParcel: boolean;
   canContinueCurve: boolean;
@@ -186,6 +219,21 @@ interface UseSurveyCadWorkspaceResult {
   backspaceCommandInputValue: () => void;
   submitCommandInput: () => void;
   useActiveSnap: () => void;
+  editTraverseDraftLeg: (_legIndex: number) => void;
+  replaceTraverseDraftLeg: (_legIndex: number, _inputValue: string) => boolean;
+  appendTraverseDraftPoint: (_inputValue: string) => boolean;
+  insertTraverseDraftLeg: (_legIndex: number, _inputValue: string) => boolean;
+  moveTraverseDraftLeg: (_legIndex: number, _direction: -1 | 1) => boolean;
+  setTraverseDraftMode: (_mode: 'open' | 'closed' | 'point-to-point') => void;
+  setTraverseDraftClosePoint: (_point: {
+    label: string;
+    x: number;
+    y: number;
+  } | null) => void;
+  addTraverseDraftSideshot: (_occupyPointIndex: number, _inputValue: string) => boolean;
+  removeTraverseDraftSideshot: (_sideshotIndex: number) => void;
+  rewindTraverseDraftToPointCount: (_pointCount: number) => void;
+  closeTraverseDraftLoop: () => void;
   consumeInteractionPoint: (
     _worldPoint: { x: number; y: number },
     _label?: string,
@@ -425,11 +473,13 @@ export const useSurveyCadWorkspace = (
     commandPrompt,
     commandHelpText,
     commandPreview,
+    activeTraverseDraft,
     snapConstructionContext: nextSnapConstructionContext,
     commandExpectsPointPick,
     canUseActiveSnap,
     canCycleActiveSnap,
     canFinishCommand,
+    canCloseTraverseDraft,
     startPointCommand,
     startCogoPointCommand,
     startLineCommand,
@@ -483,6 +533,17 @@ export const useSurveyCadWorkspace = (
     backspaceCommandInputValue,
     submitCommandInput,
     useActiveSnap,
+    editTraverseDraftLeg,
+    replaceTraverseDraftLeg,
+    appendTraverseDraftPoint,
+    insertTraverseDraftLeg,
+    moveTraverseDraftLeg,
+    setTraverseDraftMode,
+    setTraverseDraftClosePoint,
+    addTraverseDraftSideshot,
+    removeTraverseDraftSideshot,
+    rewindTraverseDraftToPointCount,
+    closeTraverseDraftLoop,
     consumeInteractionPoint,
     handleEnterKey,
     handleEscapeKey,
@@ -784,6 +845,7 @@ export const useSurveyCadWorkspace = (
     selectedParcelReport,
     activeCogoComputation,
     activeCogoComputationSource,
+    activeTraverseDraft,
     selectionCount: selection.selectedEntityIds.length,
     canUndo: history.undoStack.length > 0,
     canRedo: history.redoStack.length > 0,
@@ -800,6 +862,7 @@ export const useSurveyCadWorkspace = (
     canUseActiveSnap,
     canCycleActiveSnap,
     canFinishCommand,
+    canCloseTraverseDraft,
     canCreateIntersectionPoint: selectedIntersection != null,
     canCreateParcel: selectedPolylineForParcel != null,
     canContinueCurve: selectedArcForContinue != null,
@@ -884,6 +947,17 @@ export const useSurveyCadWorkspace = (
     backspaceCommandInputValue,
     submitCommandInput,
     useActiveSnap,
+    editTraverseDraftLeg,
+    replaceTraverseDraftLeg,
+    appendTraverseDraftPoint,
+    insertTraverseDraftLeg,
+    moveTraverseDraftLeg,
+    setTraverseDraftMode,
+    setTraverseDraftClosePoint,
+    addTraverseDraftSideshot,
+    removeTraverseDraftSideshot,
+    rewindTraverseDraftToPointCount,
+    closeTraverseDraftLoop,
     cycleActiveSnap,
     consumeInteractionPoint: (worldPoint, label, options) => {
       if (canUseActiveSnap && activeSnap) {

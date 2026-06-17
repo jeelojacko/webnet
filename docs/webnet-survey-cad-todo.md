@@ -10,7 +10,7 @@
 - [x] Core point-line batch: add multi-point inverse, bearing-only report, distance-only report, turned angle + distance, deflection angle + distance, point at distance/fraction along line, extend line, offset point, and command UI.
 - [x] Intersection batch: add bearing-bearing, bearing-distance, distance-distance, line-circle, offset intersection, perpendicular intersection, and skew intersection with deterministic alternative selection.
 - [x] Curve calculator batch: add full curve parameter solver, radial bearing, point on curve by arc/chord distance, curve subdivision, offset curve, PI-radius-delta, chord-bearing constructors, reverse/compound curve workflows.
-- [ ] Traverse editor batch: replace simple sequential `TRAVERSE` entry with table-style open/closed/point-to-point/sideshot editor, live geometry creation, closure report, and editable leg rows.
+- [x] Traverse editor batch: replace simple sequential `TRAVERSE` entry with table-style open/closed/point-to-point/sideshot editor, live geometry creation, closure report, editable leg rows, and row insert/reorder controls.
 - [ ] Traverse adjustment batch: add angular balance, compass/Bowditch, transit rule, and optional Crandall as CAD-only coordinate balancing tools.
 - [ ] Deed/batch COGO batch: add parser for pasted bearing-distance/curve calls, preview rows, warnings, generated points/lines/arcs, and reproducible computation history.
 - [ ] Alignment/stationing batch: add alignment entities from selected line/arc chains, station at point, station-offset point creation, point-to-station/offset projection, station equations, offset alignments, station interval points, and labels.
