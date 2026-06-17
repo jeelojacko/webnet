@@ -20,6 +20,7 @@ interface SurveyCadCommandLineProps {
   onStartLine: () => void;
   onStartPolyline: () => void;
   onStartTraverse: () => void;
+  onStartBatchCogo: () => void;
   onStartArc3Point: () => void;
   onStartArcStartCenterEnd: () => void;
   onStartArcCenterStartEnd: () => void;
@@ -94,6 +95,7 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   onStartLine,
   onStartPolyline,
   onStartTraverse,
+  onStartBatchCogo,
   onStartArc3Point,
   onStartArcStartCenterEnd,
   onStartArcCenterStartEnd,
@@ -169,6 +171,9 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
       </button>
       <button type="button" className={commandButtonClassName} onClick={() => runImmediate(onStartTraverse)} title="Traverse">
         TRAV
+      </button>
+      <button type="button" className={commandButtonClassName} onClick={() => runImmediate(onStartBatchCogo)} title="Batch COGO">
+        DEED
       </button>
       <div className="relative flex items-stretch" data-survey-cad-arc-tool>
         <button type="button" className={commandButtonClassName} onClick={() => runImmediate(onStartArc3Point)} title="Arc 3 Point">

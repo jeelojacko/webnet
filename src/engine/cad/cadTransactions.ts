@@ -4,6 +4,11 @@ import {
   selectAllCadEntities,
 } from './cadSelection';
 import { cadBuildParcelClosureSummary } from './cadCogo';
+import {
+  buildCadBatchCogoReportRows,
+  buildCadBatchCogoSummary,
+  type CadBatchCogoDraft,
+} from './cadBatchCogo';
 import { buildCadCogoComputation, buildCadCogoEntityMetadata } from './cadCogoTypes';
 import {
   cadAngleDegFromCenter,
@@ -53,6 +58,7 @@ export type CadCommandKey =
   | 'LINE'
   | 'PLINE'
   | 'TRAVERSE'
+  | 'BATCH_COGO'
   | 'ARC_3PT'
   | 'ARC_CREATE'
   | 'TANGENT_CURVE'
@@ -127,6 +133,10 @@ export type CadCommand =
         adjustedClosureBearing: string | null;
         angularCorrectionPerLegSec: number | null;
       };
+    }
+  | {
+      key: 'BATCH_COGO';
+      draft: CadBatchCogoDraft;
     }
   | {
       key: 'ARC_3PT';
@@ -1642,6 +1652,39 @@ const findExistingTraversePoint = (
       Math.abs(entity.y - vertex.y) <= 1e-9,
   ) ?? null;
 
+const ensureNamedPointEntity = (
+  project: CadProject,
+  point: { x: number; y: number; label: string },
+  provenance: ReturnType<typeof createCogoProvenance>,
+): {
+  project: CadProject;
+  pointEntity: CadSurveyPointEntity;
+  createdPoint: CadSurveyPointEntity | null;
+} => {
+  const existingPoint = findExistingTraversePoint(project, point);
+  if (existingPoint) {
+    return {
+      project,
+      pointEntity: existingPoint,
+      createdPoint: null,
+    };
+  }
+
+  const pointBundle = createManualPointEntities(project, point.x, point.y, point.label, {
+    includeTextLabel: false,
+    createdBy: 'BATCH_COGO',
+  });
+  const pointEntity: CadSurveyPointEntity = {
+    ...pointBundle.point,
+    metadata: buildCadCogoEntityMetadata(pointBundle.point.metadata, provenance),
+  };
+  return {
+    project: appendCadProjectEntities(project, [pointEntity]),
+    pointEntity,
+    createdPoint: pointEntity,
+  };
+};
+
 const polylineCommand: CadCommandDefinition<{
   key: 'PLINE';
   vertices: { x: number; y: number; label: string }[];
@@ -1899,6 +1942,165 @@ const traverseCommand: CadCommandDefinition<{
       },
       transactionLabel: `TRAVERSE (${vertices.length})`,
       addedEntityIds: [...createdEntities.map((entity) => entity.id), polylineEntity.id],
+      removedEntityIds: [],
+    };
+  },
+};
+
+const batchCogoCommand: CadCommandDefinition<{
+  key: 'BATCH_COGO';
+  draft: CadBatchCogoDraft;
+}> = {
+  key: 'BATCH_COGO',
+  execute: (snapshot, command) => {
+    if (!command.draft.canCommit || !command.draft.startPoint) return null;
+    const summary = buildCadBatchCogoSummary(command.draft);
+    const provenance = createCogoProvenance({
+      toolKey: 'BATCH_COGO',
+      summary,
+      sourcePointIds: command.draft.startPoint ? [command.draft.startPoint.label] : [],
+      inputs: {
+        sourceText: command.draft.sourceText,
+        startPoint: command.draft.startPoint,
+        startPointSource: command.draft.startPointSource,
+        previewRows: command.draft.previewRows,
+        operations: command.draft.operations.map((operation) =>
+          operation.kind === 'line'
+            ? {
+                kind: operation.kind,
+                lineNumber: operation.lineNumber,
+                from: operation.from,
+                to: operation.to,
+                bearing: operation.bearing,
+                distance: operation.distance,
+              }
+            : {
+                kind: operation.kind,
+                lineNumber: operation.lineNumber,
+                from: operation.from,
+                to: operation.to,
+                side: operation.side,
+                radius: operation.radius,
+                deltaDeg: operation.deltaDeg,
+              },
+        ),
+      },
+      parameters: {
+        rowsParsed: command.draft.previewRows.length,
+        pointCount: command.draft.generatedPointCount,
+        lineCount: command.draft.generatedLineCount,
+        arcCount: command.draft.generatedArcCount,
+      },
+    });
+
+    let workingProject = snapshot.project;
+    const createdEntities: CadEntity[] = [];
+    const startResult = ensureNamedPointEntity(workingProject, command.draft.startPoint, provenance);
+    workingProject = startResult.project;
+    if (startResult.createdPoint) {
+      createdEntities.push(startResult.createdPoint);
+    }
+
+    for (const operation of command.draft.operations) {
+      const fromPointEntityResult = ensureNamedPointEntity(workingProject, operation.from, provenance);
+      workingProject = fromPointEntityResult.project;
+      if (fromPointEntityResult.createdPoint) {
+        createdEntities.push(fromPointEntityResult.createdPoint);
+      }
+
+      const toPointEntityResult = ensureNamedPointEntity(workingProject, operation.to, provenance);
+      workingProject = toPointEntityResult.project;
+      if (toPointEntityResult.createdPoint) {
+        createdEntities.push(toPointEntityResult.createdPoint);
+      }
+
+      if (operation.kind === 'line') {
+        const lineEntity: CadLineEntity = {
+          id: createStableRuntimeId('cad-batch-cogo-line'),
+          type: 'line',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          fromStationId: fromPointEntityResult.pointEntity.stationId,
+          toStationId: toPointEntityResult.pointEntity.stationId,
+          fromX: operation.from.x,
+          fromY: operation.from.y,
+          toX: operation.to.x,
+          toY: operation.to.y,
+          sourceObservationIds: [],
+          metadata: buildCadCogoEntityMetadata(
+            {
+              createdBy: 'BATCH_COGO',
+              manual: true,
+              batchRow: operation.lineNumber,
+              batchKind: 'line',
+            },
+            provenance,
+          ),
+        };
+        workingProject = appendCadProjectEntities(workingProject, [lineEntity]);
+        createdEntities.push(lineEntity);
+        continue;
+      }
+
+      const arcEntity: CadArcEntity = {
+        id: createStableRuntimeId('cad-batch-cogo-arc'),
+        type: 'arc',
+        layerId: 'observation-lines',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        centerX: operation.definition.center.x,
+        centerY: operation.definition.center.y,
+        radius: operation.definition.radius,
+        startAngleDeg: operation.definition.startAngleDeg,
+        endAngleDeg: operation.definition.endAngleDeg,
+        metadata: buildCadCogoEntityMetadata(
+          {
+            createdBy: 'BATCH_COGO',
+            manual: true,
+            batchRow: operation.lineNumber,
+            batchKind: 'curve',
+            fromStationId: fromPointEntityResult.pointEntity.stationId,
+            toStationId: toPointEntityResult.pointEntity.stationId,
+            curveSide: operation.side,
+            deltaDeg: operation.deltaDeg,
+          },
+          provenance,
+        ),
+      };
+      workingProject = appendCadProjectEntities(workingProject, [arcEntity]);
+      createdEntities.push(arcEntity);
+    }
+
+    const nextProject = appendCadProjectCogoComputation(
+      workingProject,
+      buildCadCogoComputation({
+        createdEntities,
+        report: {
+          title: 'Batch COGO',
+          summary,
+          rows: buildCadBatchCogoReportRows(command.draft),
+        },
+        warnings: command.draft.warnings,
+        provenance,
+      }),
+    );
+
+    const selectedEntityIds = createdEntities.length > 0 ? [createdEntities[createdEntities.length - 1]!.id] : [];
+    return {
+      nextSnapshot: {
+        project: nextProject,
+        selection: createCadSelectionState(nextProject, selectedEntityIds),
+      },
+      commandState: {
+        key: 'BATCH_COGO',
+        phase: 'committed',
+        prompt: `BATCH_COGO committed with ${command.draft.previewRows.length} parsed row${command.draft.previewRows.length === 1 ? '' : 's'}.`,
+      },
+      transactionLabel: `BATCH_COGO (${command.draft.previewRows.length})`,
+      addedEntityIds: createdEntities.map((entity) => entity.id),
       removedEntityIds: [],
     };
   },
@@ -2486,6 +2688,7 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   LINE: lineCommand as CadCommandDefinition<CadCommand>,
   PLINE: polylineCommand as CadCommandDefinition<CadCommand>,
   TRAVERSE: traverseCommand as CadCommandDefinition<CadCommand>,
+  BATCH_COGO: batchCogoCommand as CadCommandDefinition<CadCommand>,
   ARC_3PT: arc3ptCommand as CadCommandDefinition<CadCommand>,
   ARC_CREATE: arcCreateCommand as CadCommandDefinition<CadCommand>,
   TANGENT_CURVE: tangentCurveCommand as CadCommandDefinition<CadCommand>,

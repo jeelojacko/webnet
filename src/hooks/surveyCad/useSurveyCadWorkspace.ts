@@ -58,6 +58,28 @@ interface UseSurveyCadWorkspaceResult {
   selectedParcelReport: CadParcelReportSummary | null;
   activeCogoComputation: CadCogoComputation | null;
   activeCogoComputationSource: 'selected' | 'latest' | null;
+  activeBatchCogoDraft: {
+    inputValue: string;
+    startPoint: { label: string; x: number; y: number } | null;
+    startPointSource: 'selected' | 'input' | null;
+    endPoint: { label: string; x: number; y: number } | null;
+    previewRows: Array<{
+      lineNumber: number;
+      input: string;
+      kind: 'start' | 'line' | 'curve';
+      status: 'ok' | 'warning' | 'error';
+      summary: string;
+    }>;
+    warnings: Array<{
+      code: string;
+      message: string;
+      severity: 'info' | 'warning' | 'error';
+    }>;
+    generatedPointCount: number;
+    generatedLineCount: number;
+    generatedArcCount: number;
+    canCommit: boolean;
+  } | null;
   activeTraverseDraft: {
     points: Array<{ label: string; x: number; y: number }>;
     mode: 'open' | 'closed' | 'point-to-point';
@@ -111,6 +133,7 @@ interface UseSurveyCadWorkspaceResult {
     | 'LINE'
     | 'PLINE'
     | 'TRAVERSE'
+    | 'BATCH_COGO'
     | 'ARC_3PT'
     | 'ARC_SCE'
     | 'ARC_CSE'
@@ -179,6 +202,7 @@ interface UseSurveyCadWorkspaceResult {
   startLineCommand: () => void;
   startPolylineCommand: () => void;
   startTraverseCommand: () => void;
+  startBatchCogoCommand: () => void;
   startArc3PointCommand: () => void;
   startArcStartCenterEndCommand: () => void;
   startArcCenterStartEndCommand: () => void;
@@ -245,6 +269,8 @@ interface UseSurveyCadWorkspaceResult {
   removeTraverseDraftSideshot: (_sideshotIndex: number) => void;
   rewindTraverseDraftToPointCount: (_pointCount: number) => void;
   closeTraverseDraftLoop: () => void;
+  setBatchCogoInputValue: (_value: string) => void;
+  commitBatchCogoDraft: () => void;
   consumeInteractionPoint: (
     _worldPoint: { x: number; y: number },
     _label?: string,
@@ -384,6 +410,13 @@ export const useSurveyCadWorkspace = (
         : null,
     [selectedEntities],
   );
+  const selectedSurveyPointForBatchCogo = useMemo(
+    () =>
+      selectedEntities.length === 1 && selectedEntities[0]?.type === 'survey-point'
+        ? selectedEntities[0]
+        : null,
+    [selectedEntities],
+  );
   const selectedLinePairForIntersection = useMemo(
     () =>
       selectedEntities.length === 2 &&
@@ -484,6 +517,7 @@ export const useSurveyCadWorkspace = (
     commandPrompt,
     commandHelpText,
     commandPreview,
+    activeBatchCogoDraft,
     activeTraverseDraft,
     snapConstructionContext: nextSnapConstructionContext,
     commandExpectsPointPick,
@@ -496,6 +530,7 @@ export const useSurveyCadWorkspace = (
     startLineCommand,
     startPolylineCommand,
     startTraverseCommand,
+    startBatchCogoCommand,
     startArc3PointCommand,
     startArcStartCenterEndCommand,
     startArcCenterStartEndCommand,
@@ -557,6 +592,8 @@ export const useSurveyCadWorkspace = (
     removeTraverseDraftSideshot,
     rewindTraverseDraftToPointCount,
     closeTraverseDraftLoop,
+    setBatchCogoInputValue,
+    commitBatchCogoDraft,
     consumeInteractionPoint,
     handleEnterKey,
     handleEscapeKey,
@@ -570,6 +607,13 @@ export const useSurveyCadWorkspace = (
     selectedArcForCurveCogo: selectedArcForContinue,
     selectedLineForCoreCogo,
     selectedLinePairForIntersection,
+    selectedStartPointForBatchCogo: selectedSurveyPointForBatchCogo
+      ? {
+          x: selectedSurveyPointForBatchCogo.x,
+          y: selectedSurveyPointForBatchCogo.y,
+          label: selectedSurveyPointForBatchCogo.stationId,
+        }
+      : null,
     reverseDirectionModifier,
     applyHistoryUpdate,
     onReportComputation: setReportedComputation,
@@ -677,6 +721,9 @@ export const useSurveyCadWorkspace = (
         opacity: previewOpacity,
         strokeDasharray: '8 6',
       }));
+    }
+    if (commandPreview.kind === 'primitives') {
+      return commandPreview.primitives;
     }
     const previewSourceEntityIds =
       commandPreview.kind === 'translate-selection'
@@ -858,6 +905,7 @@ export const useSurveyCadWorkspace = (
     selectedParcelReport,
     activeCogoComputation,
     activeCogoComputationSource,
+    activeBatchCogoDraft,
     activeTraverseDraft,
     selectionCount: selection.selectedEntityIds.length,
     canUndo: history.undoStack.length > 0,
@@ -892,6 +940,7 @@ export const useSurveyCadWorkspace = (
     startLineCommand,
     startPolylineCommand,
     startTraverseCommand,
+    startBatchCogoCommand,
     startArc3PointCommand,
     startArcStartCenterEndCommand,
     startArcCenterStartEndCommand,
@@ -973,6 +1022,8 @@ export const useSurveyCadWorkspace = (
     removeTraverseDraftSideshot,
     rewindTraverseDraftToPointCount,
     closeTraverseDraftLoop,
+    setBatchCogoInputValue,
+    commitBatchCogoDraft,
     cycleActiveSnap,
     consumeInteractionPoint: (worldPoint, label, options) => {
       if (canUseActiveSnap && activeSnap) {

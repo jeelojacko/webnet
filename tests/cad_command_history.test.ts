@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { cadDraftBatchCogo } from '../src/engine/cad/cadBatchCogo';
 import { buildSurveyCadSpikeProject } from '../src/engine/cad/cadModel';
 import { appendCadProjectEntities } from '../src/engine/cad/cadProjectState';
 import { createCadHistoryState, redoCadHistory, runCadCommand, undoCadHistory } from '../src/engine/cad/cadUndoRedo';
@@ -504,6 +505,59 @@ describe('Survey CAD command history', () => {
         method: 'bowditch',
       },
     });
+  });
+
+  it('commits batch deed cogo rows with persisted provenance and undo/redo support', () => {
+    const project = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+
+    const draft = cadDraftBatchCogo({
+      sourceText: ['START POB=1000,1000', 'P1=N45-00-00E,100', 'CURVE RIGHT R 50 DELTA 30'].join('\n'),
+    });
+    expect(draft.canCommit).toBe(true);
+
+    const batchState = runCadCommand(createCadHistoryState(project), {
+      key: 'BATCH_COGO',
+      draft,
+    });
+
+    const batchComputation = batchState.present.project.cogoComputations.at(-1);
+    expect(batchComputation?.toolKey).toBe('BATCH_COGO');
+    expect(batchComputation?.report.rows.some((row) => row.label === 'Arcs' && row.value === '1')).toBe(true);
+    expect(batchComputation?.provenance.inputs).toMatchObject({
+      sourceText: draft.sourceText,
+      startPointSource: 'input',
+    });
+    expect(
+      batchState.present.project.entities.some(
+        (entity) => entity.type === 'survey-point' && entity.stationId === 'POB',
+      ),
+    ).toBe(true);
+    expect(
+      batchState.present.project.entities.some((entity) => entity.type === 'line'),
+    ).toBe(true);
+    expect(
+      batchState.present.project.entities.some((entity) => entity.type === 'arc'),
+    ).toBe(true);
+
+    const undoneState = undoCadHistory(batchState);
+    expect(
+      undoneState.present.project.entities.some(
+        (entity) => entity.type === 'survey-point' && entity.stationId === 'POB',
+      ),
+    ).toBe(false);
+
+    const redoneState = redoCadHistory(undoneState);
+    expect(
+      redoneState.present.project.entities.some(
+        (entity) => entity.type === 'survey-point' && entity.stationId === 'POB',
+      ),
+    ).toBe(true);
   });
 
   it('trims a line between selected cutting edges and replays the split through undo/redo', () => {

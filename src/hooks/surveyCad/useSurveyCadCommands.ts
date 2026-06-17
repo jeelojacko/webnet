@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { dmsToRad } from '../../engine/angles';
 import {
+  cadDraftBatchCogo,
+  type CadBatchCogoDraft,
+} from '../../engine/cad/cadBatchCogo';
+import {
   cadArcPointByArcDistance,
   cadArcPointByChordDistance,
   cadArcSubdivisionPoints,
@@ -54,6 +58,7 @@ import {
 import { runCadCommand, type CadHistoryState } from '../../engine/cad/cadUndoRedo';
 import type {
   CadArcEntity,
+  CadDisplayPrimitive,
   CadLineEntity,
   CadSnapCandidate,
   CadSnapConstructionContext,
@@ -130,6 +135,7 @@ type ActiveCommandKey =
   | 'PERP_INTX'
   | 'OFFSET_INTX'
   | 'SKEW_INTX'
+  | 'BATCH_COGO'
   | 'MOVE'
   | 'COPY'
   | 'TRIM'
@@ -222,6 +228,12 @@ type CommandSession =
       resultText?: string;
     }
   | {
+      key: 'BATCH_COGO';
+      inputValue: string;
+      draft: CadBatchCogoDraft;
+      resultText?: string;
+    }
+  | {
       key: 'PASTE';
       inputValue: string;
       startPoint: CommandPoint;
@@ -298,6 +310,7 @@ interface UseSurveyCadCommandsArgs {
   selectedArcForCurveCogo: CadArcEntity | null;
   selectedLineForCoreCogo: CadLineEntity | null;
   selectedLinePairForIntersection: [CadLineEntity, CadLineEntity] | null;
+  selectedStartPointForBatchCogo: CommandPoint | null;
   reverseDirectionModifier: boolean;
   applyHistoryUpdate: (_updater: (_history: CadHistoryState) => CadHistoryState) => void;
   onReportComputation?: (
@@ -330,6 +343,10 @@ export type CadCommandPreviewState =
       deltaX: number;
       deltaY: number;
       sourceEntityIds?: string[];
+    }
+  | {
+      kind: 'primitives';
+      primitives: CadDisplayPrimitive[];
     };
 
 interface UseSurveyCadCommandsResult {
@@ -338,6 +355,28 @@ interface UseSurveyCadCommandsResult {
   commandPrompt: string;
   commandHelpText: string;
   commandPreview: CadCommandPreviewState | null;
+  activeBatchCogoDraft: {
+    inputValue: string;
+    startPoint: { label: string; x: number; y: number } | null;
+    startPointSource: 'selected' | 'input' | null;
+    endPoint: { label: string; x: number; y: number } | null;
+    previewRows: Array<{
+      lineNumber: number;
+      input: string;
+      kind: 'start' | 'line' | 'curve';
+      status: 'ok' | 'warning' | 'error';
+      summary: string;
+    }>;
+    warnings: Array<{
+      code: string;
+      message: string;
+      severity: 'info' | 'warning' | 'error';
+    }>;
+    generatedPointCount: number;
+    generatedLineCount: number;
+    generatedArcCount: number;
+    canCommit: boolean;
+  } | null;
   activeTraverseDraft: {
     points: Array<{ label: string; x: number; y: number }>;
     mode: TraverseDraftMode;
@@ -378,6 +417,7 @@ interface UseSurveyCadCommandsResult {
   startLineCommand: () => void;
   startPolylineCommand: () => void;
   startTraverseCommand: () => void;
+  startBatchCogoCommand: () => void;
   startArc3PointCommand: () => void;
   startArcStartCenterEndCommand: () => void;
   startArcCenterStartEndCommand: () => void;
@@ -439,6 +479,8 @@ interface UseSurveyCadCommandsResult {
   removeTraverseDraftSideshot: (_sideshotIndex: number) => void;
   rewindTraverseDraftToPointCount: (_pointCount: number) => void;
   closeTraverseDraftLoop: () => void;
+  setBatchCogoInputValue: (_value: string) => void;
+  commitBatchCogoDraft: () => void;
   consumeInteractionPoint: (
     _point: { x: number; y: number },
     _label?: string,
@@ -565,6 +607,7 @@ const sessionExpectsPointPick = (session: CommandSession | null): boolean => {
     case 'POINT_ALONG_LINE':
     case 'EXTEND_LINE':
     case 'OFFSET_POINT':
+    case 'BATCH_COGO':
       return false;
   }
 };
@@ -904,6 +947,9 @@ const promptForSession = (session: CommandSession | null, fallbackStatus: string
         (session.points.length > 0
           ? `TRAVERSE ${session.mode} active. ${session.points.length} station${session.points.length === 1 ? '' : 's'} captured. Enter the next leg as \`@azimuth,distance\` or bearing-distance, or click another point.`
           : 'TRAVERSE active. Click or enter the first station.');
+    case 'BATCH_COGO':
+      return session.resultText ??
+        `BATCH_COGO active. Paste deed calls in the batch panel. Use a selected start point or begin with \`START LABEL=x,y\`.`;
     case 'ARC_3PT':
       return session.resultText ??
         (session.points.length === 0
@@ -1134,6 +1180,8 @@ const helpTextForSession = (session: CommandSession | null): string => {
           ? 'TRAVERSE next leg: click the next station, or type `@azimuth,distance` / `N45-00-00E,100` from the last station. Select a survey point as the close target before finishing point-to-point traverse.'
           : 'TRAVERSE next leg: click the next station, or type `@azimuth,distance` / `N45-00-00E,100` from the last station. Press Enter on an empty input to finish after 2+ stations.'
         : 'TRAVERSE first station: click in the model space or type `x,y` / `LABEL=x,y`.';
+    case 'BATCH_COGO':
+      return 'BATCH_COGO input lives in the batch panel. Supported rows: `START LABEL=x,y`, deed bearing-distance like `N 35°24\'10" E 125.32`, `LABEL=N45-00-00E,100`, `@45,100`, and tangent curves like `CURVE LEFT R 50 DELTA 30`.';
     case 'ARC_3PT':
       return session.points.length < 2
         ? 'ARC 3PT point input: click in the model space or type `x,y` / `LABEL=x,y`. The through point fixes the arc side, so Ctrl flip is not used here.'
@@ -1306,6 +1354,7 @@ export const useSurveyCadCommands = ({
   selectedArcForCurveCogo,
   selectedLineForCoreCogo,
   selectedLinePairForIntersection,
+  selectedStartPointForBatchCogo,
   reverseDirectionModifier,
   applyHistoryUpdate,
   onReportComputation,
@@ -1412,6 +1461,21 @@ export const useSurveyCadCommands = ({
     );
   };
 
+  const buildBatchCogoDraftForInput = (
+    inputValue: string,
+    startPoint: CommandPoint | null = selectedStartPointForBatchCogo,
+  ) =>
+    cadDraftBatchCogo({
+      sourceText: inputValue,
+      selectedStartPoint: startPoint
+        ? {
+            x: startPoint.x,
+            y: startPoint.y,
+            label: startPoint.label,
+          }
+        : null,
+    });
+
   const statusPrompt = useMemo(
     () => promptForSession(session, history.commandState.prompt),
     [history.commandState.prompt, session],
@@ -1480,6 +1544,7 @@ export const useSurveyCadCommands = ({
       case 'POINT_ALONG_LINE':
       case 'EXTEND_LINE':
       case 'OFFSET_POINT':
+      case 'BATCH_COGO':
       case 'CURVE_SOLVER':
       case 'RADIAL_BEARING':
       case 'POINT_ON_CURVE':
@@ -2015,6 +2080,13 @@ export const useSurveyCadCommands = ({
           deltaY: previewPoint.y - session.startPoint.y,
           sourceEntityIds: session.sourceEntityIds,
         };
+      case 'BATCH_COGO':
+        return session.draft.previewPrimitives.length > 0
+          ? {
+              kind: 'primitives',
+              primitives: session.draft.previewPrimitives,
+            }
+          : null;
     }
   }, [previewPoint, reverseDirectionModifier, session]);
 
@@ -3805,6 +3877,27 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
     replaceSession(null);
   };
 
+  const commitBatchCogoDraft = () => {
+    const current = sessionRef.current;
+    if (!current || current.key !== 'BATCH_COGO') return;
+    if (!current.draft.canCommit) {
+      replaceSession({
+        ...current,
+        resultText:
+          current.draft.previewRows.find((row) => row.status === 'error')?.summary ??
+          'BATCH_COGO draft is incomplete. Add a start point and at least one valid row.',
+      });
+      return;
+    }
+    applyHistoryUpdate((existing) =>
+      runCadCommand(existing, {
+        key: 'BATCH_COGO',
+        draft: current.draft,
+      }),
+    );
+    replaceSession(null);
+  };
+
   const setTraverseDraftMode = (mode: TraverseDraftMode) => {
     const current = sessionRef.current;
     if (!current || current.key !== 'TRAVERSE') return;
@@ -4215,12 +4308,29 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
     };
   }, [session]);
 
+  const activeBatchCogoDraft = useMemo(() => {
+    if (!session || session.key !== 'BATCH_COGO') return null;
+    return {
+      inputValue: session.inputValue,
+      startPoint: session.draft.startPoint,
+      startPointSource: session.draft.startPointSource,
+      endPoint: session.draft.endPoint,
+      previewRows: session.draft.previewRows,
+      warnings: session.draft.warnings,
+      generatedPointCount: session.draft.generatedPointCount,
+      generatedLineCount: session.draft.generatedLineCount,
+      generatedArcCount: session.draft.generatedArcCount,
+      canCommit: session.draft.canCommit,
+    };
+  }, [session]);
+
   return {
     activeCommandKey: session?.key ?? null,
     commandInputValue: session?.inputValue ?? '',
     commandPrompt: statusPrompt,
     commandHelpText: helpText,
     commandPreview,
+    activeBatchCogoDraft,
     activeTraverseDraft,
     snapConstructionContext,
     commandExpectsPointPick,
@@ -4237,7 +4347,9 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
         : session?.key === 'TRAVERSE'
           ? session.points.length >= 2 &&
             (session.mode !== 'point-to-point' || session.closePoint != null)
-          : false,
+          : session?.key === 'BATCH_COGO'
+            ? session.draft.canCommit
+            : false,
     canCloseTraverseDraft:
       session?.key === 'TRAVERSE' &&
       session.points.length >= 3 &&
@@ -4273,6 +4385,12 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
         closePoint: null,
         sideshots: [],
         adjustment: null,
+      }),
+    startBatchCogoCommand: () =>
+      beginSession({
+        key: 'BATCH_COGO',
+        inputValue: '',
+        draft: buildBatchCogoDraftForInput(''),
       }),
     startArc3PointCommand: () =>
       beginSession({
@@ -4586,6 +4704,10 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
       }
       if (session?.key === 'TRAVERSE') {
         finishTraverseSession();
+        return;
+      }
+      if (session?.key === 'BATCH_COGO') {
+        commitBatchCogoDraft();
       }
     },
     setCommandInputValue: (value) =>
@@ -4634,6 +4756,18 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
     removeTraverseDraftSideshot,
     rewindTraverseDraftToPointCount,
     closeTraverseDraftLoop,
+    setBatchCogoInputValue: (value) =>
+      updateSession((current) =>
+        current && current.key === 'BATCH_COGO'
+          ? {
+              ...current,
+              inputValue: value,
+              draft: buildBatchCogoDraftForInput(value),
+              resultText: undefined,
+            }
+          : current,
+      ),
+    commitBatchCogoDraft,
     consumeInteractionPoint: (point, label, options) => {
       if (!session) return;
       consumePoint(

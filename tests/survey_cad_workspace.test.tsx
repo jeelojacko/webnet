@@ -95,6 +95,15 @@ const setTextInputValue = (inputElement: HTMLInputElement, value: string): void 
   inputElement.dispatchEvent(new Event('input', { bubbles: true }));
 };
 
+const setTextAreaValue = (inputElement: HTMLTextAreaElement, value: string): void => {
+  const setter = Object.getOwnPropertyDescriptor(
+    window.HTMLTextAreaElement.prototype,
+    'value',
+  )?.set;
+  setter?.call(inputElement, value);
+  inputElement.dispatchEvent(new Event('input', { bubbles: true }));
+};
+
 const pressKey = (
   target: EventTarget,
   key: string,
@@ -4872,6 +4881,60 @@ describe('SurveyCadWorkspace', () => {
     const latestComputation = persistedCapture.read()?.project.cogoComputations.at(-1);
     expect(latestComputation?.toolKey).toBe('TRAVERSE');
     expect(latestComputation?.report.rows.some((row) => row.label === 'Adjustment' && row.value === 'bowditch')).toBe(true);
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('previews and commits batch deed cogo rows from the native batch panel', async () => {
+    const persistedCapture = createPersistedStateCapture();
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+          persistedState={null}
+          onPersistedStateChange={persistedCapture.onPersistedStateChange}
+        />,
+      );
+    });
+
+    await act(async () => {
+      clickButton(container, 'DEED');
+    });
+
+    const batchInput = container.querySelector('[data-survey-cad-batch-cogo-input]') as HTMLTextAreaElement | null;
+    if (!batchInput) throw new Error('Batch COGO input not found');
+
+    await act(async () => {
+      setTextAreaValue(
+        batchInput,
+        ['START POB=1000,1000', 'P1=N45-00-00E,100', 'CURVE RIGHT R 50 DELTA 30'].join('\n'),
+      );
+    });
+
+    expect(container.querySelector('[data-survey-cad-batch-cogo-draft]')?.textContent).toContain('POB');
+    expect(container.querySelectorAll('[data-survey-cad-batch-cogo-row]')).toHaveLength(3);
+    expect(container.querySelector('[data-survey-cad-batch-cogo-end]')?.textContent).toBe('P2');
+
+    await act(async () => {
+      (container.querySelector('[data-survey-cad-batch-cogo-commit]') as HTMLButtonElement | null)?.click();
+    });
+
+    expect(container.querySelector('[data-survey-cad-batch-cogo-draft]')).toBeNull();
+    expect(persistedCapture.read()?.project.cogoComputations.at(-1)?.toolKey).toBe('BATCH_COGO');
+    expect(
+      persistedCapture.read()?.project.entities.some((entity) => entity.type === 'arc'),
+    ).toBe(true);
 
     await act(async () => {
       root.unmount();

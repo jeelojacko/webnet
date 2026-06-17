@@ -74,6 +74,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     selectedParcelReport,
     activeCogoComputation,
     activeCogoComputationSource,
+    activeBatchCogoDraft,
     activeTraverseDraft,
     selectionCount,
     canUndo,
@@ -107,6 +108,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     startLineCommand,
     startPolylineCommand,
     startTraverseCommand,
+    startBatchCogoCommand,
     startArc3PointCommand,
     startArcStartCenterEndCommand,
     startArcCenterStartEndCommand,
@@ -167,6 +169,8 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     removeTraverseDraftSideshot,
     rewindTraverseDraftToPointCount,
     closeTraverseDraftLoop,
+    setBatchCogoInputValue,
+    commitBatchCogoDraft,
     selectEntity,
     selectEntities,
     startGripEdit,
@@ -313,6 +317,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     if (activeCommandKey === 'POINT') return 'Click in model space or type x,y / LABEL=x,y';
     if (activeCommandKey === 'COGO_POINT') return 'Click base/target or type @azimuth,distance';
     if (activeCommandKey === 'TRAVERSE') return 'Click start / next point or type bearing-distance';
+    if (activeCommandKey === 'BATCH_COGO') return 'Use batch COGO panel for pasted deed rows';
     if (activeCommandKey === 'MULTI_INVERSE') return 'Click point sequence or type x,y / bearing-distance';
     if (activeCommandKey === 'TURNED_POINT') return 'Pick occupy/backsight, then type Langle,distance or Rangle,distance';
     if (activeCommandKey === 'DEFLECT_POINT') return 'Type Langle,distance or Rangle,distance from selected line';
@@ -525,6 +530,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               onStartLine={startLineCommand}
               onStartPolyline={startPolylineCommand}
               onStartTraverse={startTraverseCommand}
+              onStartBatchCogo={startBatchCogoCommand}
               onStartArc3Point={startArc3PointCommand}
               onStartArcStartCenterEnd={startArcStartCenterEndCommand}
               onStartArcCenterStartEnd={startArcCenterStartEndCommand}
@@ -582,6 +588,94 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               computation={activeCogoComputation}
               sourceLabel={activeCogoComputationSource}
             />
+          ) : null}
+          {activeBatchCogoDraft ? (
+            <div
+              className="absolute right-4 top-20 z-20 w-[28rem] rounded border border-slate-700/80 bg-slate-950/90 p-3 text-xs text-slate-100 shadow-xl"
+              data-survey-cad-batch-cogo-draft
+            >
+              <div className="mb-2 flex items-center justify-between">
+                <span className="font-semibold tracking-wide text-cyan-200">Batch COGO</span>
+                <span className="text-slate-400">
+                  {activeBatchCogoDraft.generatedPointCount} pts / {activeBatchCogoDraft.generatedLineCount} lines / {activeBatchCogoDraft.generatedArcCount} arcs
+                </span>
+              </div>
+              <div className="mb-2 grid grid-cols-[auto,1fr] gap-x-3 gap-y-1 text-[11px] text-slate-300">
+                <span>Start</span>
+                <span data-survey-cad-batch-cogo-start>
+                  {activeBatchCogoDraft.startPoint
+                    ? `${activeBatchCogoDraft.startPoint.label} (${activeBatchCogoDraft.startPointSource ?? 'input'})`
+                    : '--'}
+                </span>
+                <span>End</span>
+                <span data-survey-cad-batch-cogo-end>{activeBatchCogoDraft.endPoint?.label ?? '--'}</span>
+              </div>
+              <textarea
+                className="mb-2 h-32 w-full rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-100 outline-none focus:border-cyan-400"
+                placeholder={'START POB=1000,1000\nP1=N45-00-00E,100\nCURVE RIGHT R 50 DELTA 30'}
+                value={activeBatchCogoDraft.inputValue}
+                onChange={(event) => setBatchCogoInputValue(event.target.value)}
+                data-survey-cad-batch-cogo-input
+              />
+              <div className="mb-2 flex gap-2">
+                <button
+                  type="button"
+                  className="pointer-events-auto rounded border border-slate-700 px-2 py-1 text-[11px] text-slate-200 enabled:hover:border-cyan-400 enabled:hover:text-cyan-200 disabled:cursor-not-allowed disabled:opacity-40"
+                  onClick={commitBatchCogoDraft}
+                  disabled={!activeBatchCogoDraft.canCommit}
+                  data-survey-cad-batch-cogo-commit
+                >
+                  Commit
+                </button>
+                <button
+                  type="button"
+                  className="pointer-events-auto rounded border border-slate-700 px-2 py-1 text-[11px] text-slate-200 hover:border-cyan-400 hover:text-cyan-200"
+                  onClick={handleEscapeKey}
+                  data-survey-cad-batch-cogo-cancel
+                >
+                  Cancel
+                </button>
+              </div>
+              <div className="mb-2 max-h-40 overflow-auto rounded border border-slate-800/80 bg-slate-900/60 p-2 text-[11px]">
+                {activeBatchCogoDraft.previewRows.length === 0 ? (
+                  <div className="text-slate-400">Paste deed rows to preview generated geometry.</div>
+                ) : (
+                  activeBatchCogoDraft.previewRows.map((row) => (
+                    <div
+                      key={`${row.lineNumber}:${row.input}`}
+                      className="mb-1 border-b border-slate-800/70 pb-1 last:mb-0 last:border-b-0 last:pb-0"
+                      data-survey-cad-batch-cogo-row
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-slate-200">
+                          Row {row.lineNumber} · {row.kind}
+                        </span>
+                        <span
+                          className={
+                            row.status === 'ok'
+                              ? 'text-cyan-200'
+                              : row.status === 'warning'
+                                ? 'text-amber-200'
+                                : 'text-rose-200'
+                          }
+                        >
+                          {row.status}
+                        </span>
+                      </div>
+                      <div className="text-slate-400">{row.input}</div>
+                      <div>{row.summary}</div>
+                    </div>
+                  ))
+                )}
+              </div>
+              {activeBatchCogoDraft.warnings.length > 0 ? (
+                <div className="rounded border border-amber-900/60 bg-amber-950/20 p-2 text-[11px] text-amber-100" data-survey-cad-batch-cogo-warnings>
+                  {activeBatchCogoDraft.warnings.map((warning) => (
+                    <div key={`${warning.code}:${warning.message}`}>[{warning.severity}] {warning.message}</div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
           ) : null}
           {activeTraverseDraft ? (
             <div
@@ -1078,7 +1172,9 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             viewBounds={viewBounds}
             selectedEntityIds={selectedEntityIds}
             selectedParcelReport={selectedParcelReport}
-            hasTopRightOverlay={activeCogoComputation != null || activeTraverseDraft != null}
+            hasTopRightOverlay={
+              activeCogoComputation != null || activeBatchCogoDraft != null || activeTraverseDraft != null
+            }
             activeSnap={activeSnap}
             commandPreviewPrimitives={commandPreviewPrimitives}
             gripHandles={gripHandles}
@@ -1091,7 +1187,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             snapPreferences={snapPreferences}
             commandInputValue={commandInputValue}
             commandInputPlaceholder={commandInputPlaceholder}
-            commandInputEnabled={activeCommandKey != null && activeCommandKey !== 'TRIM'}
+            commandInputEnabled={activeCommandKey != null && activeCommandKey !== 'TRIM' && activeCommandKey !== 'BATCH_COGO'}
             commandEntityOpacityOverrides={commandEntityOpacityOverrides}
             viewport={viewport}
             commandActive={activeCommandKey != null}

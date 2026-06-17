@@ -54,6 +54,11 @@ import {
   cadBuildArcFromStartEndRadius,
   cadBuildContinuedArc,
 } from '../src/engine/cad/cadGeometry';
+import {
+  buildCadBatchCogoReportRows,
+  buildCadBatchCogoSummary,
+  cadDraftBatchCogo,
+} from '../src/engine/cad/cadBatchCogo';
 
 describe('Survey CAD COGO helpers', () => {
   it('builds inverse summaries with azimuth and survey bearing formatting', () => {
@@ -236,6 +241,38 @@ describe('Survey CAD COGO helpers', () => {
     });
     expect(skew?.point.x ?? Number.NaN).toBeCloseTo(20, 6);
     expect(skew?.point.y ?? Number.NaN).toBeCloseTo(0, 6);
+  });
+
+  it('parses batch deed rows with explicit start, deed bearings, and tangent curves', () => {
+    const draft = cadDraftBatchCogo({
+      sourceText: [
+        'START POB=1000,1000',
+        'P1=N 45°00\'00" E 100',
+        'CURVE RIGHT R 50 DELTA 30-00-00',
+      ].join('\n'),
+    });
+
+    expect(draft.canCommit).toBe(true);
+    expect(draft.startPoint?.label).toBe('POB');
+    expect(draft.generatedPointCount).toBe(3);
+    expect(draft.generatedLineCount).toBe(1);
+    expect(draft.generatedArcCount).toBe(1);
+    expect(draft.previewRows.map((row) => row.status)).toEqual(['ok', 'ok', 'ok']);
+    expect(draft.endPoint?.label).toBe('P2');
+    expect(buildCadBatchCogoSummary(draft)).toContain('Generated 3 points');
+    expect(buildCadBatchCogoReportRows(draft).some((row) => row.label === 'Arcs' && row.value === '1')).toBe(
+      true,
+    );
+  });
+
+  it('rejects curve-only batch deed rows without an incoming tangent', () => {
+    const draft = cadDraftBatchCogo({
+      sourceText: ['START POB=0,0', 'CURVE LEFT R 50 DELTA 20'].join('\n'),
+    });
+
+    expect(draft.canCommit).toBe(false);
+    expect(draft.previewRows[1]?.status).toBe('error');
+    expect(draft.previewRows[1]?.summary).toContain('incoming tangent');
   });
 
   it('finds deterministic line-like intersections', () => {
