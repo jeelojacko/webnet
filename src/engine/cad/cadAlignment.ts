@@ -53,6 +53,14 @@ export interface CadAlignmentProjection {
   elementKind: CadAlignmentElement['kind'];
 }
 
+export interface CadAlignmentStationOffsetPoint {
+  point: CadDisplayPoint;
+  station: number;
+  offset: number;
+  elementIndex: number;
+  elementKind: CadAlignmentElement['kind'];
+}
+
 const isAlignmentElementArray = (
   alignment: Pick<CadAlignmentEntity, 'elements'> | Pick<CadAlignmentEntity, 'elements' | 'startStation'> | readonly CadAlignmentElement[],
 ): alignment is readonly CadAlignmentElement[] => Array.isArray(alignment);
@@ -272,6 +280,101 @@ export const cadPointAtAlignmentStation = (
   if (Math.abs(localStation - traversed) <= 1e-9) {
     return alignmentElementEndPoint(elements[elements.length - 1]!);
   }
+  return null;
+};
+
+export const cadPointAtAlignmentStationOffset = (
+  alignment: Pick<CadAlignmentEntity, 'elements' | 'startStation'> | readonly CadAlignmentElement[],
+  station: number,
+  offset: number,
+): CadAlignmentStationOffsetPoint | null => {
+  const elements: readonly CadAlignmentElement[] =
+    isAlignmentElementArray(alignment) ? alignment : alignment.elements;
+  const startStation = !isAlignmentElementArray(alignment) && 'startStation' in alignment ? alignment.startStation : 0;
+  if (elements.length === 0 || !Number.isFinite(station) || !Number.isFinite(offset)) return null;
+
+  const localStation = station - startStation;
+  if (localStation < -1e-9) return null;
+
+  let traversed = 0;
+  for (let elementIndex = 0; elementIndex < elements.length; elementIndex += 1) {
+    const element = elements[elementIndex]!;
+    const elementLength = alignmentElementLength(element);
+    const nextTraversed = traversed + elementLength;
+    if (localStation <= nextTraversed + 1e-9) {
+      const distanceAlong = Math.max(0, Math.min(elementLength, localStation - traversed));
+      if (element.kind === 'line') {
+        if (elementLength <= 1e-12) return null;
+        const ratio = distanceAlong / elementLength;
+        const pointOnLine = {
+          x: element.start.x + (element.end.x - element.start.x) * ratio,
+          y: element.start.y + (element.end.y - element.start.y) * ratio,
+        };
+        const dx = element.end.x - element.start.x;
+        const dy = element.end.y - element.start.y;
+        const leftNormalX = -dy / elementLength;
+        const leftNormalY = dx / elementLength;
+        return {
+          point: {
+            x: pointOnLine.x + leftNormalX * offset,
+            y: pointOnLine.y + leftNormalY * offset,
+          },
+          station,
+          offset,
+          elementIndex,
+          elementKind: 'line',
+        };
+      }
+
+      const sweepDeg = cadSignedSweepDeg(element.startAngleDeg, element.endAngleDeg);
+      const direction = sweepDeg >= 0 ? 1 : -1;
+      const deltaDeg = (distanceAlong / element.radius) * (180 / Math.PI) * direction;
+      const angleDeg = cadNormalizeAngleDeg(element.startAngleDeg + deltaDeg);
+      const radialDistance = sweepDeg >= 0 ? element.radius - offset : element.radius + offset;
+      if (!Number.isFinite(radialDistance) || radialDistance < 0) return null;
+      return {
+        point: cadPointOnCircle(element.center, radialDistance, angleDeg),
+        station,
+        offset,
+        elementIndex,
+        elementKind: 'arc',
+      };
+    }
+    traversed = nextTraversed;
+  }
+
+  if (Math.abs(localStation - traversed) <= 1e-9) {
+    const lastElement = elements[elements.length - 1]!;
+    if (lastElement.kind === 'line') {
+      const elementLength = alignmentElementLength(lastElement);
+      if (elementLength <= 1e-12) return null;
+      const dx = lastElement.end.x - lastElement.start.x;
+      const dy = lastElement.end.y - lastElement.start.y;
+      const leftNormalX = -dy / elementLength;
+      const leftNormalY = dx / elementLength;
+      return {
+        point: {
+          x: lastElement.end.x + leftNormalX * offset,
+          y: lastElement.end.y + leftNormalY * offset,
+        },
+        station,
+        offset,
+        elementIndex: elements.length - 1,
+        elementKind: 'line',
+      };
+    }
+    const sweepDeg = cadSignedSweepDeg(lastElement.startAngleDeg, lastElement.endAngleDeg);
+    const radialDistance = sweepDeg >= 0 ? lastElement.radius - offset : lastElement.radius + offset;
+    if (!Number.isFinite(radialDistance) || radialDistance < 0) return null;
+    return {
+      point: cadPointOnCircle(lastElement.center, radialDistance, lastElement.endAngleDeg),
+      station,
+      offset,
+      elementIndex: elements.length - 1,
+      elementKind: 'arc',
+    };
+  }
+
   return null;
 };
 

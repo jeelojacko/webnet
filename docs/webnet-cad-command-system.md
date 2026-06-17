@@ -26,6 +26,7 @@ Current implemented spike slice:
 - first traverse-entry command: `TRAVERSE`
 - first alignment-promotion command: `ALIGNMENT_CREATE` from a selected native line/arc chain
 - first alignment station-report command: `ALIGNMENT_STATION_REPORT` from a selected native alignment + point pair
+- first alignment station-offset point command: `ALIGNMENT_OFFSET_POINT` from a selected native alignment plus typed `station,offset`
 - first parcel-promotion command: `PARCEL_CREATE` from a selected native polyline/traverse seam
 - first interactive query command: `INVERSE`
 - point-line COGO toolbar family now adds `MULTI_INVERSE`, bearing-only and distance-only reports, turned-angle point creation, and selected-line deflection / point-along / extend / offset-point tools on the same command-input/report seam
@@ -34,6 +35,7 @@ Current implemented spike slice:
 - deed-entry toolbar flow now adds `DEED` / `BATCH_COGO`, which opens a native batch panel for pasted `START`, bearing-distance, and tangent-curve rows, previews parsed rows plus generated point/line/arc geometry before commit, and persists the committed batch as one shared COGO computation
 - selection-driven toolbar flow now also adds `ALIGN`, which validates a selected open line/arc chain, snapshots it into a native alignment entity, and persists a shared COGO report/provenance record for later stationing work
 - selection-driven toolbar flow now also adds `STA`, which projects a selected survey point onto a selected native alignment, reports station/offset plus projected coordinates, and persists that stationing result through the shared COGO history seam
+- selection-driven toolbar flow now also adds `STA PT`, which starts a typed station-offset point command from a selected native alignment, previews the resolved point, and persists the created point plus report rows through the shared history seam
 - undo/redo replay over snapshot-backed transaction entries
 - project-level COGO computation history stored separately from undo/redo, with structured report rows and provenance for command-created COGO geometry
 - selected/latest COGO overlay now surfaces persisted command reports plus live `INVERSE` query reports, with TXT/CSV/Markdown export-preview formatting kept separate from the underlying CAD state

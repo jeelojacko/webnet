@@ -55,8 +55,10 @@ import {
   cadSignedSweepDeg,
   type CadNamedPoint,
 } from '../../engine/cad/cadGeometry';
+import { cadPointAtAlignmentStationOffset } from '../../engine/cad/cadAlignment';
 import { runCadCommand, type CadHistoryState } from '../../engine/cad/cadUndoRedo';
 import type {
+  CadAlignmentEntity,
   CadArcEntity,
   CadDisplayPrimitive,
   CadLineEntity,
@@ -119,6 +121,7 @@ type ActiveCommandKey =
   | 'POINT_ALONG_LINE'
   | 'EXTEND_LINE'
   | 'OFFSET_POINT'
+  | 'ALIGNMENT_OFFSET_POINT'
   | 'CURVE_SOLVER'
   | 'RADIAL_BEARING'
   | 'POINT_ON_CURVE'
@@ -177,6 +180,12 @@ type CommandSession =
       inputValue: string;
       lineStart: CommandPoint;
       lineEnd: CommandPoint;
+      resultText?: string;
+    }
+  | {
+      key: 'ALIGNMENT_OFFSET_POINT';
+      inputValue: string;
+      alignment: CadAlignmentEntity;
       resultText?: string;
     }
   | {
@@ -310,6 +319,7 @@ interface UseSurveyCadCommandsArgs {
   selectedArcForCurveCogo: CadArcEntity | null;
   selectedLineForCoreCogo: CadLineEntity | null;
   selectedLinePairForIntersection: [CadLineEntity, CadLineEntity] | null;
+  selectedAlignmentForStationing: CadAlignmentEntity | null;
   selectedStartPointForBatchCogo: CommandPoint | null;
   reverseDirectionModifier: boolean;
   applyHistoryUpdate: (_updater: (_history: CadHistoryState) => CadHistoryState) => void;
@@ -439,6 +449,7 @@ interface UseSurveyCadCommandsResult {
   startPointAlongLineCommand: () => void;
   startExtendLineCommand: () => void;
   startOffsetPointCommand: () => void;
+  startAlignmentOffsetPointCommand: () => void;
   startCurveSolverCommand: () => void;
   startRadialBearingCommand: () => void;
   startPointOnCurveCommand: () => void;
@@ -603,6 +614,7 @@ const sessionExpectsPointPick = (session: CommandSession | null): boolean => {
     case 'REVERSE_CURVE':
     case 'COMPOUND_CURVE':
     case 'OFFSET_INTX':
+    case 'ALIGNMENT_OFFSET_POINT':
     case 'DEFLECT_POINT':
     case 'POINT_ALONG_LINE':
     case 'EXTEND_LINE':
@@ -760,6 +772,18 @@ const parseOffsetPointInput = (
     alongDistance: along.distance,
     alongFraction: along.fraction,
   };
+};
+
+const parseAlignmentStationOffsetInput = (
+  token: string,
+): { label?: string; station: number; offset: number } | null => {
+  const { label, body } = splitLabelFromBody(token);
+  const parts = body.split(',').map((part) => part.trim());
+  if (parts.length !== 2) return null;
+  const station = Number(parts[0]);
+  const offset = Number(parts[1]);
+  if (!Number.isFinite(station) || !Number.isFinite(offset)) return null;
+  return { label, station, offset };
 };
 
 const parseDualBearingInput = (
@@ -1105,6 +1129,9 @@ const promptForSession = (session: CommandSession | null, fallbackStatus: string
     case 'OFFSET_POINT':
       return session.resultText ??
         `OFFSET_POINT active. Selected line ${session.lineStart.label}-${session.lineEnd.label}. Enter \`Loffset,along\` or \`Roffset,along\`, with along as distance or percent.`;
+    case 'ALIGNMENT_OFFSET_POINT':
+      return session.resultText ??
+        `ALIGNMENT_OFFSET_POINT active. Selected alignment ${session.alignment.name}. Enter \`station,offset\` or \`LABEL=station,offset\`.`;
     case 'CURVE_SOLVER':
       return session.resultText ?? 'CURVE_SOLVER active. Enter `param1,param2,value1,value2` such as `radius,delta,200,60`.';
     case 'RADIAL_BEARING':
@@ -1290,6 +1317,8 @@ const helpTextForSession = (session: CommandSession | null): string => {
       return 'EXTEND_LINE input: enter extension distance from the selected line end.';
     case 'OFFSET_POINT':
       return 'OFFSET_POINT input: enter `Loffset,along` or `Roffset,along`; along may be distance or percent like `50%`.';
+    case 'ALIGNMENT_OFFSET_POINT':
+      return 'ALIGNMENT_OFFSET_POINT input: enter `station,offset` or `LABEL=station,offset`. Positive offset follows the current station report sign.';
     case 'CURVE_SOLVER':
       return 'CURVE_SOLVER input: enter `param1,param2,value1,value2`, for example `radius,delta,200,60` or `arc,chord,125,120`.';
     case 'RADIAL_BEARING':
@@ -1388,6 +1417,7 @@ export const useSurveyCadCommands = ({
   selectedArcForCurveCogo,
   selectedLineForCoreCogo,
   selectedLinePairForIntersection,
+  selectedAlignmentForStationing,
   selectedStartPointForBatchCogo,
   reverseDirectionModifier,
   applyHistoryUpdate,
@@ -1578,6 +1608,7 @@ export const useSurveyCadCommands = ({
       case 'POINT_ALONG_LINE':
       case 'EXTEND_LINE':
       case 'OFFSET_POINT':
+      case 'ALIGNMENT_OFFSET_POINT':
       case 'BATCH_COGO':
       case 'CURVE_SOLVER':
       case 'RADIAL_BEARING':
@@ -1799,6 +1830,21 @@ export const useSurveyCadCommands = ({
       case 'COMPOUND_CURVE':
       case 'OFFSET_INTX':
         return null;
+      case 'ALIGNMENT_OFFSET_POINT': {
+        const parsed = parseAlignmentStationOffsetInput(session.inputValue);
+        const point = parsed
+          ? cadPointAtAlignmentStationOffset(session.alignment, parsed.station, parsed.offset)
+          : null;
+        return point
+          ? {
+              kind: 'point',
+              point: {
+                x: point.point.x,
+                y: point.point.y,
+              },
+            }
+          : null;
+      }
       case 'LINE_CIRCLE_INTX':
       case 'PERP_INTX':
       case 'SKEW_INTX':
@@ -2886,8 +2932,33 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
       session.key === 'DEFLECT_POINT' ||
       session.key === 'POINT_ALONG_LINE' ||
       session.key === 'EXTEND_LINE' ||
-      session.key === 'OFFSET_POINT'
+      session.key === 'OFFSET_POINT' ||
+      session.key === 'ALIGNMENT_OFFSET_POINT'
     ) {
+      if (session.key === 'ALIGNMENT_OFFSET_POINT') {
+        const parsed = parseAlignmentStationOffsetInput(session.inputValue);
+        const point = parsed
+          ? cadPointAtAlignmentStationOffset(session.alignment, parsed.station, parsed.offset)
+          : null;
+        if (!parsed || !point) {
+          replaceSession({
+            ...session,
+            resultText: 'ALIGNMENT_OFFSET_POINT input invalid. Use `station,offset` or `LABEL=station,offset` within the selected alignment range.',
+          });
+          return;
+        }
+        applyHistoryUpdate((existing) =>
+          runCadCommand(existing, {
+            key: 'ALIGNMENT_OFFSET_POINT',
+            alignmentEntityId: session.alignment.id,
+            station: parsed.station,
+            offset: parsed.offset,
+            label: parsed.label,
+          }),
+        );
+        replaceSession(null);
+        return;
+      }
       if (session.key === 'DEFLECT_POINT') {
         const parsed = parseLeftRightAngleDistance(session.inputValue);
         if (!parsed) {
@@ -4584,6 +4655,14 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
         inputValue: '',
         lineStart: selectedLineCommandPoints.start,
         lineEnd: selectedLineCommandPoints.end,
+      });
+    },
+    startAlignmentOffsetPointCommand: () => {
+      if (!selectedAlignmentForStationing) return;
+      beginSession({
+        key: 'ALIGNMENT_OFFSET_POINT',
+        inputValue: '',
+        alignment: selectedAlignmentForStationing,
       });
     },
     startCurveSolverCommand: () =>

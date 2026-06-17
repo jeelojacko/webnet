@@ -354,6 +354,70 @@ describe('Survey CAD command history', () => {
     expect(redoneState.present.project.cogoComputations.some((entry) => entry.toolKey === 'ALIGNMENT_STATION')).toBe(true);
   });
 
+  it('creates alignment station-offset points through history with persisted provenance', () => {
+    const project = appendCadProjectEntities(
+      buildSurveyCadSpikeProject({
+        input,
+        instrumentLibrary: {},
+        parseOptions,
+        units: 'm',
+        result: null,
+      }),
+      [
+        {
+          id: 'alignment:test',
+          type: 'alignment',
+          layerId: 'planning',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          name: 'ALIGN1',
+          startStation: 100,
+          elements: [
+            {
+              kind: 'line',
+              start: { x: 0, y: 0 },
+              end: { x: 60, y: 40 },
+            },
+          ],
+        },
+      ],
+    );
+
+    const pointState = runCadCommand(createCadHistoryState(project), {
+      key: 'ALIGNMENT_OFFSET_POINT',
+      alignmentEntityId: 'alignment:test',
+      station: 110,
+      offset: 5,
+      label: 'SO1',
+    });
+    const pointEntity = pointState.present.project.entities.find(
+      (entity): entity is Extract<(typeof pointState.present.project.entities)[number], { type: 'survey-point' }> =>
+        entity.type === 'survey-point' && entity.stationId === 'SO1',
+    );
+    expect(pointEntity?.type).toBe('survey-point');
+    expect(pointEntity?.x ?? Number.NaN).toBeCloseTo(5.54700196, 6);
+    expect(pointEntity?.y ?? Number.NaN).toBeCloseTo(9.70725343, 6);
+    expect(pointState.present.project.cogoComputations.at(-1)?.toolKey).toBe('ALIGNMENT_POINT');
+    expect(pointState.present.project.cogoComputations.at(-1)?.report.title).toBe(
+      'Alignment Station Offset Point',
+    );
+
+    const undoneState = undoCadHistory(pointState);
+    expect(
+      undoneState.present.project.entities.some(
+        (entity) => entity.type === 'survey-point' && entity.stationId === 'SO1',
+      ),
+    ).toBe(false);
+
+    const redoneState = redoCadHistory(undoneState);
+    expect(
+      redoneState.present.project.entities.some(
+        (entity) => entity.type === 'survey-point' && entity.stationId === 'SO1',
+      ),
+    ).toBe(true);
+  });
+
   it('creates three-point and tangent-curve arc entities through history with undo/redo', () => {
     const project = buildSurveyCadSpikeProject({
       input,

@@ -94,6 +94,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     canCreateIntersectionPoint,
     canCreateAlignment,
     canReportAlignmentStation,
+    canCreateAlignmentOffsetPoint,
     canCreateParcel,
     canContinueCurve,
     canTrimSelection,
@@ -132,6 +133,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     startPointAlongLineCommand,
     startExtendLineCommand,
     startOffsetPointCommand,
+    startAlignmentOffsetPointCommand,
     startCurveSolverCommand,
     startRadialBearingCommand,
     startPointOnCurveCommand,
@@ -328,6 +330,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     if (activeCommandKey === 'POINT_ALONG_LINE') return 'Type distance or percent like 25 or 50% from selected line';
     if (activeCommandKey === 'EXTEND_LINE') return 'Type extension distance from selected line end';
     if (activeCommandKey === 'OFFSET_POINT') return 'Type Loffset,along or Roffset,along from selected line';
+    if (activeCommandKey === 'ALIGNMENT_OFFSET_POINT') return 'Type station,offset or LABEL=station,offset from selected alignment';
     if (activeCommandKey === 'CURVE_SOLVER') return 'Type param1,param2,value1,value2 like radius,delta,200,60';
     if (activeCommandKey === 'RADIAL_BEARING') return 'Type PC, PT, or MID from selected arc';
     if (activeCommandKey === 'POINT_ON_CURVE') return 'Type ARC,distance or CHORD,distance from selected arc start';
@@ -529,6 +532,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               canCreateIntersectionPoint={canCreateIntersectionPoint}
               canCreateAlignment={canCreateAlignment}
               canReportAlignmentStation={canReportAlignmentStation}
+              canCreateAlignmentOffsetPoint={canCreateAlignmentOffsetPoint}
               canCreateParcel={canCreateParcel}
               canContinueCurve={canContinueCurve}
               onStartPoint={startPointCommand}
@@ -558,6 +562,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               onStartPointAlongLine={startPointAlongLineCommand}
               onStartExtendLine={startExtendLineCommand}
               onStartOffsetPoint={startOffsetPointCommand}
+              onStartAlignmentOffsetPoint={startAlignmentOffsetPointCommand}
               onStartCurveSolver={startCurveSolverCommand}
               onStartRadialBearing={startRadialBearingCommand}
               onStartPointOnCurve={startPointOnCurveCommand}
