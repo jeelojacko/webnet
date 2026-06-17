@@ -5065,6 +5065,91 @@ describe('SurveyCadWorkspace', () => {
     container.remove();
   });
 
+  it('creates an alignment from a selected line-arc chain and reports it through the COGO panel', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+    const capture = createPersistedStateCapture();
+
+    const baseProject = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+    const alignmentProject = appendCadProjectEntities(baseProject, [
+      {
+        id: 'arc:alignment-ui-test',
+        type: 'arc',
+        layerId: 'planning',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        centerX: 60,
+        centerY: 60,
+        radius: 20,
+        startAngleDeg: -90,
+        endAngleDeg: 0,
+      },
+    ]);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+          persistedState={{
+            version: 1,
+            sourceSignature: buildCadProjectSignature(baseProject),
+            project: alignmentProject,
+          }}
+          onPersistedStateChange={capture.onPersistedStateChange}
+        />,
+      );
+    });
+
+    const lineTarget = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="line:A|C"]',
+    ) as SVGLineElement | null;
+    const arcTarget = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="arc:alignment-ui-test"]',
+    ) as SVGPathElement | null;
+    if (!lineTarget || !arcTarget) throw new Error('Alignment selection targets not found');
+
+    await act(async () => {
+      lineTarget.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 0, clientY: 0 }));
+      arcTarget.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 0, clientY: 0, shiftKey: true }));
+    });
+
+    expect(container.querySelector('[data-survey-cad-selection-count]')?.textContent).toContain('2 selected');
+
+    await act(async () => {
+      clickButton(container, 'ALIGN');
+    });
+
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+      'ALIGNMENT_CREATE committed',
+    );
+    expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain('10 entities');
+    expect(container.querySelector('[data-survey-cad-cogo-panel-title]')?.textContent).toContain(
+      'Alignment Create',
+    );
+    expect(container.querySelector('[data-survey-cad-cogo-panel-summary]')?.textContent).toContain('Created alignment');
+
+    const persisted = capture.read();
+    expect(persisted?.project.entities.some((entity) => entity.type === 'alignment')).toBe(true);
+    expect(persisted?.project.cogoComputations.at(-1)?.toolKey).toBe('ALIGNMENT');
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
   it('routes keyboard typing into the active command input without requiring an input click first', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);

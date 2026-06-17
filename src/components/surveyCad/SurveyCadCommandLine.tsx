@@ -12,6 +12,7 @@ interface SurveyCadCommandLineProps {
   canUseSelectedLinePairIntersection: boolean;
   canUseSelectedArcCurveCogo: boolean;
   canCreateIntersectionPoint: boolean;
+  canCreateAlignment: boolean;
   canCreateParcel: boolean;
   canContinueCurve: boolean;
   canTrimSelection: boolean;
@@ -62,6 +63,7 @@ interface SurveyCadCommandLineProps {
   onStartCopy: () => void;
   onStartTrim: () => void;
   onCreateIntersectionPoint: () => void;
+  onCreateAlignment: () => void;
   onCreateParcel: () => void;
   onSelectAll: () => void;
   onClearSelection: () => void;
@@ -87,6 +89,7 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   canUseSelectedLinePairIntersection,
   canUseSelectedArcCurveCogo,
   canCreateIntersectionPoint,
+  canCreateAlignment,
   canCreateParcel,
   canContinueCurve,
   canTrimSelection,
@@ -137,6 +140,7 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   onStartCopy,
   onStartTrim,
   onCreateIntersectionPoint,
+  onCreateAlignment,
   onCreateParcel,
   onSelectAll,
   onClearSelection,
@@ -478,6 +482,15 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
           </div>
         ) : null}
       </div>
+      <button
+        type="button"
+        className={commandButtonClassName}
+        onClick={() => runImmediate(onCreateAlignment)}
+        disabled={!canCreateAlignment}
+        title="Create Alignment"
+      >
+        ALIGN
+      </button>
       <button
         type="button"
         className={commandButtonClassName}

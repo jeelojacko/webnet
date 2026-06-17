@@ -9,6 +9,7 @@ import {
   buildCadBatchCogoSummary,
   type CadBatchCogoDraft,
 } from './cadBatchCogo';
+import { cadBuildAlignmentDraft } from './cadAlignment';
 import { buildCadCogoComputation, buildCadCogoEntityMetadata } from './cadCogoTypes';
 import {
   cadAngleDegFromCenter,
@@ -62,6 +63,7 @@ export type CadCommandKey =
   | 'ARC_3PT'
   | 'ARC_CREATE'
   | 'TANGENT_CURVE'
+  | 'ALIGNMENT_CREATE'
   | 'PARCEL_CREATE'
   | 'MOVE'
   | 'COPY'
@@ -163,6 +165,12 @@ export type CadCommand =
       radius: number;
     }
   | {
+      key: 'ALIGNMENT_CREATE';
+      sourceEntityIds: CadEntityId[];
+      name?: string;
+      startStation?: number;
+    }
+  | {
       key: 'PARCEL_CREATE';
       sourceEntityId: CadEntityId;
     }
@@ -238,7 +246,7 @@ interface CadCommandDefinition<TCommand extends CadCommand> {
 const createIdleCommandState = (): CadCommandState => ({
   key: 'IDLE',
   phase: 'idle',
-  prompt: 'Ready. Use Select All, Clear Selection, ERASE, POINT, COGO PT, LINE, PLINE, TRAVERSE, ARC 3PT, TAN CURVE, MOVE, COPY, TRIM, INTX, or INVERSE to exercise command history.',
+  prompt: 'Ready. Use Select All, Clear Selection, ERASE, POINT, COGO PT, LINE, PLINE, TRAVERSE, DEED, ARC 3PT, TAN CURVE, ALIGN, PARCEL, MOVE, COPY, TRIM, INTX, or INVERSE to exercise command history.',
 });
 
 const nextManualStationId = (project: CadProject): string => {
@@ -261,6 +269,17 @@ const nextParcelName = (project: CadProject): string => {
     maxSequence = Math.max(maxSequence, Number(match[1]));
   });
   return `Parcel ${maxSequence + 1}`;
+};
+
+const nextAlignmentName = (project: CadProject): string => {
+  let maxSequence = 0;
+  project.entities.forEach((entity) => {
+    if (entity.type !== 'alignment') return;
+    const match = /^ALIGN(\d+)$/i.exec(entity.name.trim());
+    if (!match) return;
+    maxSequence = Math.max(maxSequence, Number(match[1]));
+  });
+  return `ALIGN${maxSequence + 1}`;
 };
 
 const stationIdExists = (project: CadProject, stationId: string): boolean =>
@@ -2330,6 +2349,87 @@ const tangentCurveCommand: CadCommandDefinition<{
   },
 };
 
+const alignmentCreateCommand: CadCommandDefinition<{
+  key: 'ALIGNMENT_CREATE';
+  sourceEntityIds: CadEntityId[];
+  name?: string;
+  startStation?: number;
+}> = {
+  key: 'ALIGNMENT_CREATE',
+  execute: (snapshot, command) => {
+    const sourceEntities = snapshot.project.entities.filter(
+      (entity): entity is CadLineEntity | CadArcEntity =>
+        command.sourceEntityIds.includes(entity.id) && (entity.type === 'line' || entity.type === 'arc'),
+    );
+    const draft = cadBuildAlignmentDraft(sourceEntities);
+    if (!draft) return null;
+
+    const alignmentName = command.name?.trim() || nextAlignmentName(snapshot.project);
+    const startStation = command.startStation ?? 0;
+    const summary = `Created alignment ${alignmentName} from ${draft.elements.length} element${draft.elements.length === 1 ? '' : 's'} (${draft.totalLength.toFixed(3)} m)`;
+    const provenance = createCogoProvenance({
+      toolKey: 'ALIGNMENT',
+      summary,
+      sourceEntityIds: draft.sourceEntityIds,
+      inputs: {
+        sourceEntityIds: draft.sourceEntityIds,
+        alignmentName,
+      },
+      parameters: {
+        startStation,
+      },
+    });
+    const alignmentEntity: CadEntity = {
+      id: createStableRuntimeId('cad-alignment'),
+      type: 'alignment',
+      layerId: 'planning',
+      styleId: 'style-observation-line',
+      visible: true,
+      locked: false,
+      name: alignmentName,
+      elements: draft.elements,
+      startStation,
+      metadata: buildCadCogoEntityMetadata({
+        createdBy: 'ALIGNMENT_CREATE',
+        manual: true,
+        sourceEntityIds: draft.sourceEntityIds,
+      }, provenance),
+    };
+    const nextProjectWithEntities = appendCadProjectEntities(snapshot.project, [alignmentEntity]);
+    const nextProject = appendCogoComputation({
+      project: nextProjectWithEntities,
+      provenance,
+      title: 'Alignment Create',
+      summary,
+      rows: [
+        { label: 'Alignment', value: alignmentName },
+        { label: 'Elements', value: String(draft.elements.length) },
+        { label: 'Start station', value: startStation.toFixed(3), unit: 'm' },
+        { label: 'End station', value: (startStation + draft.totalLength).toFixed(3), unit: 'm' },
+        { label: 'Length', value: draft.totalLength.toFixed(3), unit: 'm' },
+        { label: 'Start point', value: `${draft.startPoint.x.toFixed(3)}, ${draft.startPoint.y.toFixed(3)}` },
+        { label: 'End point', value: `${draft.endPoint.x.toFixed(3)}, ${draft.endPoint.y.toFixed(3)}` },
+      ],
+      createdEntities: [alignmentEntity],
+    });
+
+    return {
+      nextSnapshot: {
+        project: nextProject,
+        selection: createCadSelectionState(nextProject, [alignmentEntity.id]),
+      },
+      commandState: {
+        key: 'ALIGNMENT_CREATE',
+        phase: 'committed',
+        prompt: `ALIGNMENT_CREATE committed for ${alignmentName}. Length ${draft.totalLength.toFixed(3)} m.`,
+      },
+      transactionLabel: `ALIGNMENT_CREATE (${alignmentName})`,
+      addedEntityIds: [alignmentEntity.id],
+      removedEntityIds: [],
+    };
+  },
+};
+
 const parcelCreateCommand: CadCommandDefinition<{
   key: 'PARCEL_CREATE';
   sourceEntityId: CadEntityId;
@@ -2692,6 +2792,7 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   ARC_3PT: arc3ptCommand as CadCommandDefinition<CadCommand>,
   ARC_CREATE: arcCreateCommand as CadCommandDefinition<CadCommand>,
   TANGENT_CURVE: tangentCurveCommand as CadCommandDefinition<CadCommand>,
+  ALIGNMENT_CREATE: alignmentCreateCommand as CadCommandDefinition<CadCommand>,
   PARCEL_CREATE: parcelCreateCommand as CadCommandDefinition<CadCommand>,
   MOVE: moveCommand as CadCommandDefinition<CadCommand>,
   COPY: copyCommand as CadCommandDefinition<CadCommand>,

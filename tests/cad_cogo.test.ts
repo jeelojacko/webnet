@@ -59,6 +59,12 @@ import {
   buildCadBatchCogoSummary,
   cadDraftBatchCogo,
 } from '../src/engine/cad/cadBatchCogo';
+import {
+  cadAlignmentLength,
+  cadBuildAlignmentDraft,
+  cadPointAtAlignmentStation,
+  cadProjectPointToAlignment,
+} from '../src/engine/cad/cadAlignment';
 
 describe('Survey CAD COGO helpers', () => {
   it('builds inverse summaries with azimuth and survey bearing formatting', () => {
@@ -273,6 +279,83 @@ describe('Survey CAD COGO helpers', () => {
     expect(draft.canCommit).toBe(false);
     expect(draft.previewRows[1]?.status).toBe('error');
     expect(draft.previewRows[1]?.summary).toContain('incoming tangent');
+  });
+
+  it('builds deterministic alignment chains from selected line and arc entities', () => {
+    const alignment = cadBuildAlignmentDraft([
+      {
+        id: 'arc:test',
+        type: 'arc',
+        layerId: 'planning',
+        visible: true,
+        locked: false,
+        centerX: 10,
+        centerY: 10,
+        radius: Math.sqrt(200),
+        startAngleDeg: -45,
+        endAngleDeg: 45,
+      },
+      {
+        id: 'line:test',
+        type: 'line',
+        layerId: 'planning',
+        visible: true,
+        locked: false,
+        fromStationId: 'A',
+        toStationId: 'B',
+        fromX: 0,
+        fromY: 0,
+        toX: 20,
+        toY: 0,
+        sourceObservationIds: [],
+      },
+    ]);
+
+    expect(alignment).not.toBeNull();
+    expect(alignment?.elements).toHaveLength(2);
+    expect(alignment?.elements[0]?.kind).toBe('line');
+    expect(alignment?.elements[1]?.kind).toBe('arc');
+    expect(alignment?.startPoint).toEqual({ x: 0, y: 0 });
+    expect(alignment?.endPoint.x ?? Number.NaN).toBeCloseTo(20, 6);
+    expect(alignment?.endPoint.y ?? Number.NaN).toBeCloseTo(20, 6);
+    expect(cadAlignmentLength(alignment?.elements ?? [])).toBeCloseTo(alignment?.totalLength ?? Number.NaN, 6);
+  });
+
+  it('projects stations on alignment line and arc elements', () => {
+    const elements = [
+      {
+        kind: 'line',
+        start: { x: 0, y: 0 },
+        end: { x: 10, y: 0 },
+      },
+      {
+        kind: 'arc',
+        center: { x: 10, y: 10 },
+        radius: 10,
+        startAngleDeg: -90,
+        endAngleDeg: 0,
+      },
+    ] as const;
+
+    const lineProjection = cadProjectPointToAlignment(elements, { x: 4, y: 3 });
+    expect(lineProjection).not.toBeNull();
+    expect(lineProjection?.station ?? Number.NaN).toBeCloseTo(4, 6);
+    expect(lineProjection?.offset ?? Number.NaN).toBeCloseTo(3, 6);
+
+    const arcProjection = cadProjectPointToAlignment(elements, {
+      x: 10 + Math.cos((-45 * Math.PI) / 180) * 10,
+      y: 10 + Math.sin((-45 * Math.PI) / 180) * 10,
+    });
+    expect(arcProjection).not.toBeNull();
+    expect(arcProjection?.station ?? Number.NaN).toBeGreaterThan(10);
+    expect(arcProjection?.offset ?? Number.NaN).toBeCloseTo(0, 6);
+
+    const pointAtStation = cadPointAtAlignmentStation(
+      { elements: [...elements], startStation: 100 },
+      100 + 10 + Math.PI * 5,
+    );
+    expect(pointAtStation?.x ?? Number.NaN).toBeCloseTo(20, 6);
+    expect(pointAtStation?.y ?? Number.NaN).toBeCloseTo(10, 6);
   });
 
   it('finds deterministic line-like intersections', () => {

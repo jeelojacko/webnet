@@ -24,12 +24,14 @@ Current implemented spike slice:
 - command registry/history seam
 - first committed commands: `SELECT_ALL`, `CLEAR_SELECTION`, `ERASE`, `POINT`, `COGO_POINT`, `LINE`, `PLINE`, `ARC_3PT`, split-button arc creation modes (`Start Center End`, `Start Center Angle`, `Start Center Length`, `Start End Angle`, `Start End Direction`, `Start End Radius`, `Continue Curve`), `TANGENT_CURVE`, `MOVE`, `COPY`, `INTERSECT_POINT`
 - first traverse-entry command: `TRAVERSE`
+- first alignment-promotion command: `ALIGNMENT_CREATE` from a selected native line/arc chain
 - first parcel-promotion command: `PARCEL_CREATE` from a selected native polyline/traverse seam
 - first interactive query command: `INVERSE`
 - point-line COGO toolbar family now adds `MULTI_INVERSE`, bearing-only and distance-only reports, turned-angle point creation, and selected-line deflection / point-along / extend / offset-point tools on the same command-input/report seam
 - intersection toolbar family now extends `INTX` with bearing-bearing, bearing-distance, distance-distance, selected-line line-circle/perpendicular/skew, and selected-two-line offset-intersection calculators, while keeping deterministic alternative ordering in the shared COGO report overlay
 - curve toolbar family now adds `CURVE_SOLVER`, selected-arc radial-bearing / point-on-curve / subdivision / offset tools, typed `PI_CURVE` and `CHORD_BEARING_CURVE` constructors, plus selected-arc `REVERSE_CURVE` and `COMPOUND_CURVE` continuation workflows on the same command-input/report seam
 - deed-entry toolbar flow now adds `DEED` / `BATCH_COGO`, which opens a native batch panel for pasted `START`, bearing-distance, and tangent-curve rows, previews parsed rows plus generated point/line/arc geometry before commit, and persists the committed batch as one shared COGO computation
+- selection-driven toolbar flow now also adds `ALIGN`, which validates a selected open line/arc chain, snapshots it into a native alignment entity, and persists a shared COGO report/provenance record for later stationing work
 - undo/redo replay over snapshot-backed transaction entries
 - project-level COGO computation history stored separately from undo/redo, with structured report rows and provenance for command-created COGO geometry
 - selected/latest COGO overlay now surfaces persisted command reports plus live `INVERSE` query reports, with TXT/CSV/Markdown export-preview formatting kept separate from the underlying CAD state

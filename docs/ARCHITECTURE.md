@@ -144,6 +144,7 @@ Current Survey CAD spike seams:
 - `src/engine/cad/cadCogoTypes.ts` defines the shared COGO result/report/warning/provenance shape used by command-created computations and the persisted CAD project computation log
 - `src/engine/cad/cadCogoReports.ts` formats persisted or live COGO computations into export-preview text for TXT/CSV/Markdown output without changing the underlying CAD project state
 - `src/engine/cad/cadBatchCogo.ts` owns the pasted deed/batch parser for `START`, bearing-distance, and tangent-curve rows plus preview-row, warning, and preview-geometry assembly before the command layer commits anything
+- `src/engine/cad/cadAlignment.ts` owns selected line/arc chain ordering plus reusable alignment length, station, point-at-station, and point-to-alignment projection helpers for the native stationing workflows
 - `src/engine/cad/cadModel.ts` builds a native CAD project from current WebNet input or solved results
 - `src/engine/cad/cadProjectState.ts` owns CAD project bounds/signature helpers used by renderer and history layers
 - `src/engine/cad/cadPersistence.ts` owns deterministic clone/sanitize helpers for Survey CAD state persisted through WebNet project files, bundles, and recovery state

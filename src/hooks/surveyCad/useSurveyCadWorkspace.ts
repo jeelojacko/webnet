@@ -5,6 +5,7 @@ import {
   isCadLineLikeEntity,
   type CadParcelReportSummary,
 } from '../../engine/cad/cadCogo';
+import { cadBuildAlignmentDraft } from '../../engine/cad/cadAlignment';
 import {
   clearCadSelection,
   getSelectedCadEntities,
@@ -187,6 +188,7 @@ interface UseSurveyCadWorkspaceResult {
   canFinishCommand: boolean;
   canCloseTraverseDraft: boolean;
   canCreateIntersectionPoint: boolean;
+  canCreateAlignment: boolean;
   canCreateParcel: boolean;
   canContinueCurve: boolean;
   canTrimSelection: boolean;
@@ -244,6 +246,7 @@ interface UseSurveyCadWorkspaceResult {
   startCopyCommand: () => void;
   startTrimCommand: () => void;
   createIntersectionPoint: () => void;
+  createAlignmentFromSelection: () => void;
   createParcelFromSelection: () => void;
   cancelActiveCommand: () => void;
   finishActiveCommand: () => void;
@@ -402,6 +405,20 @@ export const useSurveyCadWorkspace = (
   const selectedLineLikes = useMemo(
     () => selectedEntities.filter(isCadLineLikeEntity),
     [selectedEntities],
+  );
+  const selectedAlignmentSources = useMemo(
+    () =>
+      selectedEntities.filter(
+        (entity): entity is CadLineEntity | CadArcEntity => entity.type === 'line' || entity.type === 'arc',
+      ),
+    [selectedEntities],
+  );
+  const selectedAlignmentDraft = useMemo(
+    () =>
+      selectedAlignmentSources.length === selectedEntities.length
+        ? cadBuildAlignmentDraft(selectedAlignmentSources)
+        : null,
+    [selectedAlignmentSources, selectedEntities],
   );
   const selectedLineForCoreCogo = useMemo(
     () =>
@@ -925,6 +942,7 @@ export const useSurveyCadWorkspace = (
     canFinishCommand,
     canCloseTraverseDraft,
     canCreateIntersectionPoint: selectedIntersection != null,
+    canCreateAlignment: selectedAlignmentDraft != null,
     canCreateParcel: selectedPolylineForParcel != null,
     canContinueCurve: selectedArcForContinue != null,
     canTrimSelection: trimCuttingEntityIds.length > 0,
@@ -990,6 +1008,15 @@ export const useSurveyCadWorkspace = (
           y: selectedIntersection.point.y,
           firstLabel: selectedLineLikes[0].id,
           secondLabel: selectedLineLikes[1].id,
+        }),
+      );
+    },
+    createAlignmentFromSelection: () => {
+      if (!selectedAlignmentDraft) return;
+      applyHistoryUpdate((current) =>
+        runCadCommand(current, {
+          key: 'ALIGNMENT_CREATE',
+          sourceEntityIds: selectedAlignmentDraft.sourceEntityIds,
         }),
       );
     },

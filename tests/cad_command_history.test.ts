@@ -260,6 +260,55 @@ describe('Survey CAD command history', () => {
     ).toBe(true);
   });
 
+  it('creates alignments from selected line and arc chains and replays them via undo/redo', () => {
+    const project = appendCadProjectEntities(
+      buildSurveyCadSpikeProject({
+        input,
+        instrumentLibrary: {},
+        parseOptions,
+        units: 'm',
+        result: null,
+      }),
+      [
+        {
+          id: 'arc:alignment-test',
+          type: 'arc',
+          layerId: 'planning',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          centerX: 60,
+          centerY: 60,
+          radius: 20,
+          startAngleDeg: -90,
+          endAngleDeg: 0,
+        },
+      ],
+    );
+
+    const alignmentState = runCadCommand(
+      createCadHistoryState(project),
+      {
+        key: 'ALIGNMENT_CREATE',
+        sourceEntityIds: ['line:A|C', 'arc:alignment-test'],
+      },
+    );
+    const alignment = alignmentState.present.project.entities.find((entity) => entity.type === 'alignment');
+    expect(alignment?.type).toBe('alignment');
+    expect(alignmentState.commandState.prompt).toContain('ALIGNMENT_CREATE committed');
+    expect(alignmentState.present.project.cogoComputations.at(-1)?.toolKey).toBe('ALIGNMENT');
+    expect(alignment?.metadata?.cogo).toMatchObject({
+      toolKey: 'ALIGNMENT',
+      sourceEntityIds: ['line:A|C', 'arc:alignment-test'],
+    });
+
+    const undoneState = undoCadHistory(alignmentState);
+    expect(undoneState.present.project.entities.some((entity) => entity.type === 'alignment')).toBe(false);
+
+    const redoneState = redoCadHistory(undoneState);
+    expect(redoneState.present.project.entities.some((entity) => entity.type === 'alignment')).toBe(true);
+  });
+
   it('creates three-point and tangent-curve arc entities through history with undo/redo', () => {
     const project = buildSurveyCadSpikeProject({
       input,
