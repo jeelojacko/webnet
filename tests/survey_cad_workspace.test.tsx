@@ -4821,6 +4821,64 @@ describe('SurveyCadWorkspace', () => {
     container.remove();
   });
 
+  it('applies Bowditch adjustment in the traverse draft and persists the adjustment report on commit', async () => {
+    const persistedCapture = createPersistedStateCapture();
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+          persistedState={null}
+          onPersistedStateChange={persistedCapture.onPersistedStateChange}
+        />,
+      );
+    });
+
+    await act(async () => {
+      clickButton(container, 'TRAV');
+      (container.querySelector('[data-survey-cad-traverse-mode-closed]') as HTMLButtonElement | null)?.click();
+    });
+
+    const nextInput = container.querySelector('[data-survey-cad-traverse-next-input]') as HTMLInputElement | null;
+    if (!nextInput) throw new Error('Traverse next-leg input not found');
+
+    await act(async () => {
+      setTextInputValue(nextInput, 'A=0,0');
+      (container.querySelector('[data-survey-cad-traverse-next-add]') as HTMLButtonElement | null)?.click();
+      setTextInputValue(nextInput, 'N90-00-00E,100');
+      (container.querySelector('[data-survey-cad-traverse-next-add]') as HTMLButtonElement | null)?.click();
+      setTextInputValue(nextInput, 'N0-00-00E,98');
+      (container.querySelector('[data-survey-cad-traverse-next-add]') as HTMLButtonElement | null)?.click();
+    });
+
+    await act(async () => {
+      (container.querySelector('[data-survey-cad-traverse-adjust-bowditch]') as HTMLButtonElement | null)?.click();
+    });
+
+    expect(container.querySelector('[data-survey-cad-traverse-adjustment-method]')?.textContent).toBe('bowditch');
+    expect(container.querySelector('[data-survey-cad-traverse-adjustment-report]')?.textContent).toContain('0.000 m');
+
+    await act(async () => {
+      (container.querySelector('[data-survey-cad-traverse-finish]') as HTMLButtonElement | null)?.click();
+    });
+
+    const latestComputation = persistedCapture.read()?.project.cogoComputations.at(-1);
+    expect(latestComputation?.toolKey).toBe('TRAVERSE');
+    expect(latestComputation?.report.rows.some((row) => row.label === 'Adjustment' && row.value === 'bowditch')).toBe(true);
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
   it('runs a first TRAVERSE workflow and finishes it with Enter on an empty prompt', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);

@@ -34,6 +34,7 @@ Current implemented spike slice:
 - selected/latest COGO overlay now surfaces persisted command reports plus live `INVERSE` query reports, with TXT/CSV/Markdown export-preview formatting kept separate from the underlying CAD state
 - typed coordinate input plus `@azimuth,distance` and survey bearing-distance input after a first point
 - active `TRAVERSE` drafting now exposes a right-side draft editor with append/edit/insert/reorder leg rows, open/closed/point-to-point mode toggles, selected-point close targets, closure metrics, panel-native finish/cancel controls, and sideshot rows while still committing through the same command-history seam
+- that same traverse draft editor now also exposes angular-balance, Bowditch, and transit adjustment controls against the active closure target, and committed adjusted traverses persist the chosen method plus closure rows into shared COGO history
 - tangent-curve radius entry after snapped or typed PI/back/ahead points
 - split arc tool with default `ARC` + dropdown modes similar to survey/Civil workflows
 - `Ctrl` acts as reverse-direction modifier for the supported arc constructors

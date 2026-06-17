@@ -28,7 +28,7 @@ import {
   replaceCadProjectEntities,
 } from './cadProjectState';
 import type { CadSelectionState } from './cadSelection';
-import type { CadCogoToolKey } from './cadCogoTypes';
+import type { CadCogoReportRow, CadCogoToolKey } from './cadCogoTypes';
 import type {
   CadEntity,
   CadArcEntity,
@@ -107,6 +107,7 @@ export type CadCommand =
   | {
       key: 'TRAVERSE';
       vertices: { x: number; y: number; label: string }[];
+      rawVertices?: { x: number; y: number; label: string }[];
       mode?: 'open' | 'closed' | 'point-to-point';
       closePoint?: { x: number; y: number; label: string };
       sideshots?: Array<{
@@ -117,6 +118,15 @@ export type CadCommand =
         distance: number;
         point: { label: string; x: number; y: number };
       }>;
+      adjustment?: {
+        method: 'angular' | 'bowditch' | 'transit';
+        targetLabel: string;
+        rawClosureDistance: number;
+        adjustedClosureDistance: number;
+        rawClosureBearing: string | null;
+        adjustedClosureBearing: string | null;
+        angularCorrectionPerLegSec: number | null;
+      };
     }
   | {
       key: 'ARC_3PT';
@@ -1680,6 +1690,7 @@ const polylineCommand: CadCommandDefinition<{
 const traverseCommand: CadCommandDefinition<{
   key: 'TRAVERSE';
   vertices: { x: number; y: number; label: string }[];
+  rawVertices?: { x: number; y: number; label: string }[];
   mode?: 'open' | 'closed' | 'point-to-point';
   closePoint?: { x: number; y: number; label: string };
   sideshots?: Array<{
@@ -1690,6 +1701,15 @@ const traverseCommand: CadCommandDefinition<{
     distance: number;
     point: { label: string; x: number; y: number };
   }>;
+  adjustment?: {
+    method: 'angular' | 'bowditch' | 'transit';
+    targetLabel: string;
+    rawClosureDistance: number;
+    adjustedClosureDistance: number;
+    rawClosureBearing: string | null;
+    adjustedClosureBearing: string | null;
+    angularCorrectionPerLegSec: number | null;
+  };
 }> = {
   key: 'TRAVERSE',
   execute: (snapshot, command) => {
@@ -1718,9 +1738,11 @@ const traverseCommand: CadCommandDefinition<{
       sourcePointIds: vertices.map((vertex) => vertex.label),
       inputs: {
         vertices,
+        rawVertices: command.rawVertices ?? vertices,
         mode: traverseMode,
         closePoint: command.closePoint,
         sideshots: command.sideshots ?? [],
+        adjustment: command.adjustment ?? null,
       },
       parameters: {
         totalLength,
@@ -1825,8 +1847,27 @@ const traverseCommand: CadCommandDefinition<{
         manual: true,
         traverseMode,
         sideshotCount: command.sideshots?.length ?? 0,
+        traverseAdjustmentMethod: command.adjustment?.method ?? null,
       }, provenance),
     };
+    const adjustmentRows: CadCogoReportRow[] =
+      command.adjustment == null
+        ? []
+        : [
+            { label: 'Adjustment', value: command.adjustment.method },
+            { label: 'Adjustment target', value: command.adjustment.targetLabel },
+            { label: 'Raw closure', value: command.adjustment.rawClosureDistance.toFixed(3), unit: 'm' },
+            { label: 'Adjusted closure', value: command.adjustment.adjustedClosureDistance.toFixed(3), unit: 'm' },
+            { label: 'Raw closure bearing', value: command.adjustment.rawClosureBearing ?? '--' },
+            { label: 'Adjusted closure bearing', value: command.adjustment.adjustedClosureBearing ?? '--' },
+            {
+              label: 'Angular correction / leg',
+              value:
+                command.adjustment.angularCorrectionPerLegSec == null
+                  ? '--'
+                  : `${command.adjustment.angularCorrectionPerLegSec.toFixed(2)}"`,
+            },
+          ];
     const nextProjectWithEntities = appendCadProjectEntities(workingProject, [polylineEntity]);
     const nextProject = appendCogoComputation({
       project: nextProjectWithEntities,
@@ -1842,6 +1883,7 @@ const traverseCommand: CadCommandDefinition<{
         { label: 'Closure', value: closureDistance.toFixed(3), unit: 'm' },
         { label: 'Closure ratio', value: closureRatio == null ? '--' : `1:${closureRatio.toFixed(0)}` },
         { label: 'Sideshots', value: (command.sideshots?.length ?? 0).toString() },
+        ...adjustmentRows,
       ],
       createdEntities: [...createdEntities, polylineEntity],
     });

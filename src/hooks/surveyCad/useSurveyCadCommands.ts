@@ -4,6 +4,7 @@ import {
   cadArcPointByArcDistance,
   cadArcPointByChordDistance,
   cadArcSubdivisionPoints,
+  cadAdjustTraverse,
   cadBuildArcFromChordBearingRadius,
   cadBuildArcFromPiRadiusDelta,
   cadBuildCompoundCurve,
@@ -30,6 +31,8 @@ import {
   cadPointAtFractionAlongLine,
   formatCadBearing,
   cadPointFromBearingDistance,
+  type CadTraverseAdjustmentMethod,
+  type CadTraverseAdjustmentSummary,
 } from '../../engine/cad/cadCogo';
 import { buildCadCogoComputation } from '../../engine/cad/cadCogoTypes';
 import {
@@ -77,6 +80,11 @@ interface TraverseSideshotDraft {
     x: number;
     y: number;
   };
+}
+
+interface TraverseAdjustmentDraft {
+  method: CadTraverseAdjustmentMethod;
+  summary: CadTraverseAdjustmentSummary;
 }
 
 type ActiveCommandKey =
@@ -236,10 +244,12 @@ type CommandSession =
       key: 'TRAVERSE';
       inputValue: string;
       points: CommandPoint[];
+      inputPoints: CommandPoint[];
       legInputs: string[];
       mode: TraverseDraftMode;
       closePoint: CommandPoint | null;
       sideshots: TraverseSideshotDraft[];
+      adjustment: TraverseAdjustmentDraft | null;
       resultText?: string;
     }
   | {
@@ -347,6 +357,15 @@ interface UseSurveyCadCommandsResult {
     closureDistance: number | null;
     closureBearing: string | null;
     closureRatio: number | null;
+    adjustment: {
+      method: CadTraverseAdjustmentMethod;
+      targetLabel: string;
+      rawClosureDistance: number;
+      adjustedClosureDistance: number;
+      rawClosureBearing: string | null;
+      adjustedClosureBearing: string | null;
+      angularCorrectionPerLegSec: number | null;
+    } | null;
   } | null;
   snapConstructionContext: CadSnapConstructionContext;
   commandExpectsPointPick: boolean;
@@ -412,6 +431,8 @@ interface UseSurveyCadCommandsResult {
   appendTraverseDraftPoint: (_inputValue: string) => boolean;
   insertTraverseDraftLeg: (_legIndex: number, _inputValue: string) => boolean;
   moveTraverseDraftLeg: (_legIndex: number, _direction: -1 | 1) => boolean;
+  applyTraverseDraftAdjustment: (_method: CadTraverseAdjustmentMethod) => boolean;
+  clearTraverseDraftAdjustment: () => void;
   setTraverseDraftMode: (_mode: TraverseDraftMode) => void;
   setTraverseDraftClosePoint: (_point: CommandPoint | null) => void;
   addTraverseDraftSideshot: (_occupyPointIndex: number, _inputValue: string) => boolean;
@@ -451,6 +472,41 @@ const tangentSeedPointFromPoint = (
 const buildTraverseLegInputFromPoints = (fromPoint: CommandPoint, toPoint: CommandPoint): string => {
   const inverse = buildCadInverseSummary(fromPoint, toPoint);
   return `${inverse.bearing},${inverse.distance.toFixed(3)}`;
+};
+
+const buildTraverseClosureTarget = (
+  mode: TraverseDraftMode,
+  inputPoints: readonly CommandPoint[],
+  closePoint: CommandPoint | null,
+): CommandPoint | null => {
+  if (mode === 'closed') return inputPoints[0] ?? null;
+  if (mode === 'point-to-point') return closePoint;
+  return inputPoints.length > 0 ? inputPoints[0]! : null;
+};
+
+const recalculateTraverseSideshotPoint = (
+  points: readonly CommandPoint[],
+  sideshot: TraverseSideshotDraft,
+): TraverseSideshotDraft => {
+  const occupyIndex = points.findIndex((point) => point.label === sideshot.occupyLabel);
+  const occupyPoint = occupyIndex > 0 ? points[occupyIndex] ?? null : null;
+  const backsightPoint = occupyIndex > 0 ? points[occupyIndex - 1] ?? null : null;
+  if (!occupyPoint || !backsightPoint) return sideshot;
+  const nextPoint = cadComputeTurnedAnglePoint({
+    occupyPoint,
+    backsightPoint,
+    angleDeg: sideshot.angleDeg,
+    distance: sideshot.distance,
+    side: sideshot.side,
+  });
+  return {
+    ...sideshot,
+    point: {
+      label: sideshot.point.label,
+      x: nextPoint.x,
+      y: nextPoint.y,
+    },
+  };
 };
 
 const sessionExpectsPointPick = (session: CommandSession | null): boolean => {
@@ -2223,14 +2279,16 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
         current.key === 'TRAVERSE'
           ? {
               ...current,
-              points: [...current.points, point],
+              points: [...current.inputPoints, point],
+              inputPoints: [...current.inputPoints, point],
               legInputs:
-                current.points.length === 0
+                current.inputPoints.length === 0
                   ? current.legInputs
                   : [
                       ...current.legInputs,
-                      buildTraverseLegInputFromPoints(current.points[current.points.length - 1]!, point),
+                      buildTraverseLegInputFromPoints(current.inputPoints[current.inputPoints.length - 1]!, point),
                     ],
+              adjustment: null,
               inputValue: '',
               resultText: undefined,
             }
@@ -2541,6 +2599,7 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
       runCadCommand(existing, {
         key: 'TRAVERSE',
         vertices: traverseVertices,
+        rawVertices: session.inputPoints,
         mode: session.mode,
         closePoint:
           session.mode === 'point-to-point' && session.closePoint
@@ -2556,8 +2615,20 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
           side: sideshot.side,
           angleDeg: sideshot.angleDeg,
           distance: sideshot.distance,
-          point: sideshot.point,
+          point: recalculateTraverseSideshotPoint(session.points, sideshot).point,
         })),
+        adjustment:
+          session.adjustment == null
+            ? undefined
+            : {
+                method: session.adjustment.method,
+                targetLabel: session.adjustment.summary.targetLabel,
+                rawClosureDistance: session.adjustment.summary.rawClosureDistanceMeters,
+                adjustedClosureDistance: session.adjustment.summary.adjustedClosureDistanceMeters,
+                rawClosureBearing: session.adjustment.summary.rawClosureBearing,
+                adjustedClosureBearing: session.adjustment.summary.adjustedClosureBearing,
+                angularCorrectionPerLegSec: session.adjustment.summary.angularCorrectionPerLegSec,
+              },
       }),
     );
     replaceSession(null);
@@ -2596,8 +2667,10 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
     return {
       ...current,
       points: nextPoints,
+      inputPoints: nextPoints,
       legInputs,
       sideshots: filterTraverseSideshotsForPoints(nextPoints, current.sideshots),
+      adjustment: null,
       inputValue: '',
       resultText,
     };
@@ -3503,14 +3576,14 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
     if (session.key === 'TRAVERSE') {
       const rawInput = session.inputValue.trim();
       const parsedPoint =
-        session.points.length === 0
+        session.inputPoints.length === 0
           ? parseAbsolutePoint(rawInput)
-          : parseInputPoint(rawInput, session.points[session.points.length - 1] ?? null);
+          : parseInputPoint(rawInput, session.inputPoints[session.inputPoints.length - 1] ?? null);
       if (!parsedPoint) {
         replaceSession({
           ...session,
           resultText:
-            session.points.length === 0
+            session.inputPoints.length === 0
               ? 'Traverse start input invalid. Use `x,y` or `LABEL=x,y`.'
               : 'Traverse leg input invalid. Use `x,y`, `LABEL=x,y`, `@azimuth,distance`, or survey bearing-distance like `N45-00-00E,100`.',
         });
@@ -3518,11 +3591,13 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
       }
       replaceSession({
         ...session,
-        points: [...session.points, parsedPoint],
+        points: [...session.inputPoints, parsedPoint],
+        inputPoints: [...session.inputPoints, parsedPoint],
         legInputs:
-          session.points.length === 0
+          session.inputPoints.length === 0
             ? session.legInputs
             : [...session.legInputs, rawInput],
+        adjustment: null,
         inputValue: '',
         resultText: undefined,
       });
@@ -3734,21 +3809,24 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
     const current = sessionRef.current;
     if (!current || current.key !== 'TRAVERSE') return;
     const isExplicitlyClosed =
-      current.points.length >= 2 &&
-      commandPointsMatch(current.points[0]!, current.points[current.points.length - 1]!) &&
-      current.legInputs.length === current.points.length - 1;
+      current.inputPoints.length >= 2 &&
+      commandPointsMatch(current.inputPoints[0]!, current.inputPoints[current.inputPoints.length - 1]!) &&
+      current.legInputs.length === current.inputPoints.length - 1;
+    const nextInputPoints =
+      mode !== 'closed' && isExplicitlyClosed
+        ? current.inputPoints.slice(0, -1)
+        : current.inputPoints;
     replaceSession({
       ...current,
-      points:
-        mode !== 'closed' && isExplicitlyClosed
-          ? current.points.slice(0, -1)
-          : current.points,
+      points: nextInputPoints,
+      inputPoints: nextInputPoints,
       legInputs:
         mode !== 'closed' && isExplicitlyClosed
           ? current.legInputs.slice(0, -1)
           : current.legInputs,
       mode,
       closePoint: mode === 'point-to-point' ? current.closePoint : null,
+      adjustment: null,
       inputValue: '',
       resultText: undefined,
     });
@@ -3760,6 +3838,7 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
     replaceSession({
       ...current,
       closePoint: point,
+      adjustment: null,
       resultText:
         point == null
           ? 'Cleared traverse close target.'
@@ -3808,6 +3887,15 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
           },
         },
       ],
+      adjustment: current.adjustment
+        ? {
+            ...current.adjustment,
+            summary: {
+              ...current.adjustment.summary,
+              adjustedPoints: current.adjustment.summary.adjustedPoints,
+            },
+          }
+        : null,
       resultText: `Added sideshot from ${occupyPoint.label} with backsight ${backsightPoint.label}.`,
     });
     return true;
@@ -3826,13 +3914,15 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
   const rewindTraverseDraftToPointCount = (pointCount: number) => {
     const current = sessionRef.current;
     if (!current || current.key !== 'TRAVERSE') return;
-    const nextCount = Math.max(0, Math.min(pointCount, current.points.length));
-    const nextPoints = current.points.slice(0, nextCount);
+    const nextCount = Math.max(0, Math.min(pointCount, current.inputPoints.length));
+    const nextPoints = current.inputPoints.slice(0, nextCount);
     replaceSession({
       ...current,
       points: nextPoints,
+      inputPoints: nextPoints,
       legInputs: current.legInputs.slice(0, Math.max(0, nextCount - 1)),
       sideshots: filterTraverseSideshotsForPoints(nextPoints, current.sideshots),
+      adjustment: null,
       inputValue: '',
       resultText: undefined,
     });
@@ -3847,9 +3937,11 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
     const inverse = buildCadInverseSummary(fromPoint, toPoint);
     replaceSession({
       ...current,
-      points: current.points.slice(0, legIndex + 1),
+      points: current.inputPoints.slice(0, legIndex + 1),
+      inputPoints: current.inputPoints.slice(0, legIndex + 1),
       legInputs: current.legInputs.slice(0, legIndex),
       inputValue: current.legInputs[legIndex] ?? `${inverse.bearing},${inverse.distance.toFixed(3)}`,
+      adjustment: null,
       resultText: `Editing leg ${fromPoint.label} -> ${toPoint.label}. Update the command value and press Enter to replace downstream traverse geometry.`,
     });
   };
@@ -3896,11 +3988,13 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
     }
     replaceSession({
       ...current,
-      points: [...current.points, parsedPoint],
+      points: [...current.inputPoints, parsedPoint],
+      inputPoints: [...current.inputPoints, parsedPoint],
       legInputs:
-        current.points.length === 0
+        current.inputPoints.length === 0
           ? current.legInputs
           : [...current.legInputs, inputValue],
+      adjustment: null,
       inputValue: '',
       resultText: undefined,
     });
@@ -3949,19 +4043,77 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
     return true;
   };
 
+  const applyTraverseDraftAdjustment = (method: CadTraverseAdjustmentMethod) => {
+    const current = sessionRef.current;
+    if (!current || current.key !== 'TRAVERSE') return false;
+    const targetPoint = buildTraverseClosureTarget(current.mode, current.inputPoints, current.closePoint);
+    if (!targetPoint || current.inputPoints.length < 2) {
+      replaceSession({
+        ...current,
+        resultText: 'Traverse adjustment needs at least two stations and a closure target.',
+      });
+      return false;
+    }
+    const summary = cadAdjustTraverse({
+      points: current.inputPoints,
+      targetPoint,
+      method,
+    });
+    if (!summary) {
+      replaceSession({
+        ...current,
+        resultText: 'Traverse adjustment could not be computed from the current draft.',
+      });
+      return false;
+    }
+    const adjustedPoints = summary.adjustedPoints.map((point, index) => ({
+      ...point,
+      snapSourceEntityId: current.inputPoints[index]?.snapSourceEntityId,
+      snapSourceSegmentId: current.inputPoints[index]?.snapSourceSegmentId,
+      snapKind: current.inputPoints[index]?.snapKind,
+    }));
+    replaceSession({
+      ...current,
+      points: adjustedPoints,
+      adjustment: {
+        method,
+        summary,
+      },
+      resultText:
+        method === 'angular'
+          ? `Applied angular balance. Remaining closure ${summary.adjustedClosureDistanceMeters.toFixed(3)} m.`
+          : `Applied ${method === 'bowditch' ? 'Bowditch' : 'transit'} adjustment. Closure ${summary.adjustedClosureDistanceMeters.toFixed(3)} m.`,
+    });
+    return true;
+  };
+
+  const clearTraverseDraftAdjustment = () => {
+    const current = sessionRef.current;
+    if (!current || current.key !== 'TRAVERSE' || current.adjustment == null) return;
+    replaceSession({
+      ...current,
+      points: current.inputPoints,
+      adjustment: null,
+      resultText: 'Cleared traverse adjustment and restored entered geometry.',
+    });
+  };
+
   const closeTraverseDraftLoop = () => {
     const current = sessionRef.current;
-    if (!current || current.key !== 'TRAVERSE' || current.points.length < 3) return;
-    const firstPoint = current.points[0]!;
-    const lastPoint = current.points[current.points.length - 1]!;
+    if (!current || current.key !== 'TRAVERSE' || current.inputPoints.length < 3) return;
+    const firstPoint = current.inputPoints[0]!;
+    const lastPoint = current.inputPoints[current.inputPoints.length - 1]!;
     if (commandPointsMatch(firstPoint, lastPoint)) {
       return;
     }
+    const nextInputPoints = [...current.inputPoints, firstPoint];
     replaceSession({
       ...current,
       mode: 'closed',
-      points: [...current.points, firstPoint],
+      points: nextInputPoints,
+      inputPoints: nextInputPoints,
       legInputs: [...current.legInputs, buildTraverseLegInputFromPoints(lastPoint, firstPoint)],
+      adjustment: null,
       inputValue: '',
       resultText: undefined,
     });
@@ -3986,14 +4138,7 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
       };
     });
     const totalLength = legs.reduce((sum, leg) => sum + leg.distance, 0);
-    const closureTarget =
-      session.mode === 'closed'
-        ? session.points[0] ?? null
-        : session.mode === 'point-to-point'
-          ? session.closePoint
-          : session.points.length > 0
-            ? session.points[0]!
-            : null;
+    const closureTarget = buildTraverseClosureTarget(session.mode, session.inputPoints, session.closePoint);
     if (session.points.length < 2) {
       return {
         points,
@@ -4002,7 +4147,7 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
           ? { label: session.closePoint.label, x: session.closePoint.x, y: session.closePoint.y }
           : null,
         legs,
-        sideshots: session.sideshots,
+        sideshots: session.sideshots.map((sideshot) => recalculateTraverseSideshotPoint(session.points, sideshot)),
         totalLength,
         closureTargetLabel: closureTarget?.label ?? null,
         closureDeltaX: null,
@@ -4010,6 +4155,18 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
         closureDistance: null,
         closureBearing: null,
         closureRatio: null,
+        adjustment:
+          session.adjustment == null
+            ? null
+            : {
+                method: session.adjustment.method,
+                targetLabel: session.adjustment.summary.targetLabel,
+                rawClosureDistance: session.adjustment.summary.rawClosureDistanceMeters,
+                adjustedClosureDistance: session.adjustment.summary.adjustedClosureDistanceMeters,
+                rawClosureBearing: session.adjustment.summary.rawClosureBearing,
+                adjustedClosureBearing: session.adjustment.summary.adjustedClosureBearing,
+                angularCorrectionPerLegSec: session.adjustment.summary.angularCorrectionPerLegSec,
+              },
       };
     }
     const closureTargetPoint = closureTarget;
@@ -4032,7 +4189,7 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
         ? { label: session.closePoint.label, x: session.closePoint.x, y: session.closePoint.y }
         : null,
       legs,
-      sideshots: session.sideshots,
+      sideshots: session.sideshots.map((sideshot) => recalculateTraverseSideshotPoint(session.points, sideshot)),
       totalLength,
       closureTargetLabel: closureTargetPoint?.label ?? null,
       closureDeltaX: closureDelta?.deltaX ?? null,
@@ -4043,6 +4200,18 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
         closureDistance != null && closureDistance > 1e-9 && totalLength > 0
           ? totalLength / closureDistance
           : null,
+      adjustment:
+        session.adjustment == null
+          ? null
+          : {
+              method: session.adjustment.method,
+              targetLabel: session.adjustment.summary.targetLabel,
+              rawClosureDistance: session.adjustment.summary.rawClosureDistanceMeters,
+              adjustedClosureDistance: session.adjustment.summary.adjustedClosureDistanceMeters,
+              rawClosureBearing: session.adjustment.summary.rawClosureBearing,
+              adjustedClosureBearing: session.adjustment.summary.adjustedClosureBearing,
+              angularCorrectionPerLegSec: session.adjustment.summary.angularCorrectionPerLegSec,
+            },
     };
   }, [session]);
 
@@ -4098,10 +4267,12 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
         key: 'TRAVERSE',
         inputValue: '',
         points: [],
+        inputPoints: [],
         legInputs: [],
         mode: 'open',
         closePoint: null,
         sideshots: [],
+        adjustment: null,
       }),
     startArc3PointCommand: () =>
       beginSession({
@@ -4455,6 +4626,8 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
     appendTraverseDraftPoint,
     insertTraverseDraftLeg,
     moveTraverseDraftLeg,
+    applyTraverseDraftAdjustment,
+    clearTraverseDraftAdjustment,
     setTraverseDraftMode,
     setTraverseDraftClosePoint,
     addTraverseDraftSideshot,

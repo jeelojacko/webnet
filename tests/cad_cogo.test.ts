@@ -18,6 +18,7 @@ import {
   cadBuildParallelLine,
   cadBuildPerpendicularFoot,
   cadBuildTangentCurve,
+  cadAdjustTraverse,
   cadArcPointByArcDistance,
   cadArcPointByChordDistance,
   cadArcSubdivisionPoints,
@@ -131,6 +132,33 @@ describe('Survey CAD COGO helpers', () => {
     });
     expect(offsetPoint?.x ?? Number.NaN).toBeCloseTo(-5, 6);
     expect(offsetPoint?.y ?? Number.NaN).toBeCloseTo(10, 6);
+  });
+
+  it('balances traverses with angular, Bowditch, and transit methods', () => {
+    const points = [
+      { label: 'A', x: 0, y: 0 },
+      { label: 'B', x: 100, y: 0 },
+      { label: 'C', x: 100, y: 98 },
+    ] as const;
+    const target = { label: 'A', x: 0, y: 0 };
+
+    const angular = cadAdjustTraverse({ points, targetPoint: target, method: 'angular' });
+    expect(angular).not.toBeNull();
+    expect(angular?.angularCorrectionPerLegSec ?? Number.NaN).not.toBe(0);
+    expect(angular?.adjustedPoints).toHaveLength(points.length);
+    expect(angular?.adjustedClosureDistanceMeters ?? Number.NaN).toBeGreaterThan(0);
+
+    const bowditch = cadAdjustTraverse({ points, targetPoint: target, method: 'bowditch' });
+    expect(bowditch).not.toBeNull();
+    expect(bowditch?.adjustedClosureDistanceMeters ?? Number.NaN).toBeCloseTo(0, 6);
+    expect(bowditch?.adjustedPoints.at(-1)?.x ?? Number.NaN).toBeCloseTo(0, 6);
+    expect(bowditch?.adjustedPoints.at(-1)?.y ?? Number.NaN).toBeCloseTo(0, 6);
+
+    const transit = cadAdjustTraverse({ points, targetPoint: target, method: 'transit' });
+    expect(transit).not.toBeNull();
+    expect(transit?.adjustedClosureDistanceMeters ?? Number.NaN).toBeCloseTo(0, 6);
+    expect(transit?.legs[0]?.correctionX ?? Number.NaN).toBeCloseTo(-100, 6);
+    expect(transit?.legs[1]?.correctionY ?? Number.NaN).toBeCloseTo(-98, 6);
   });
 
   it('builds survey intersection helpers with deterministic alternatives', () => {

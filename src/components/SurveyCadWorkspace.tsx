@@ -158,6 +158,8 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     appendTraverseDraftPoint,
     insertTraverseDraftLeg,
     moveTraverseDraftLeg,
+    applyTraverseDraftAdjustment,
+    clearTraverseDraftAdjustment,
     replaceTraverseDraftLeg,
     setTraverseDraftMode,
     setTraverseDraftClosePoint,
@@ -917,6 +919,84 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
                   <span>Closure Ratio</span>
                   <span>{activeTraverseDraft.closureRatio == null ? '--' : `1:${activeTraverseDraft.closureRatio.toFixed(0)}`}</span>
                 </div>
+              </div>
+              <div className="mt-3 border-t border-slate-800/80 pt-2 text-slate-300">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="font-semibold text-cyan-200">Adjustment</span>
+                  <span data-survey-cad-traverse-adjustment-method>
+                    {activeTraverseDraft.adjustment?.method ?? '--'}
+                  </span>
+                </div>
+                <div className="mb-2 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    className="pointer-events-auto rounded border border-slate-700 px-2 py-1 text-[11px] text-slate-200 enabled:hover:border-cyan-400 enabled:hover:text-cyan-200 disabled:cursor-not-allowed disabled:opacity-40"
+                    onClick={() => applyTraverseDraftAdjustment('angular')}
+                    disabled={activeTraverseDraft.mode === 'open' || activeTraverseDraft.points.length < 2 || activeTraverseDraft.closureTargetLabel == null}
+                    data-survey-cad-traverse-adjust-angular
+                  >
+                    Angular
+                  </button>
+                  <button
+                    type="button"
+                    className="pointer-events-auto rounded border border-slate-700 px-2 py-1 text-[11px] text-slate-200 enabled:hover:border-cyan-400 enabled:hover:text-cyan-200 disabled:cursor-not-allowed disabled:opacity-40"
+                    onClick={() => applyTraverseDraftAdjustment('bowditch')}
+                    disabled={activeTraverseDraft.mode === 'open' || activeTraverseDraft.points.length < 2 || activeTraverseDraft.closureTargetLabel == null}
+                    data-survey-cad-traverse-adjust-bowditch
+                  >
+                    Bowditch
+                  </button>
+                  <button
+                    type="button"
+                    className="pointer-events-auto rounded border border-slate-700 px-2 py-1 text-[11px] text-slate-200 enabled:hover:border-cyan-400 enabled:hover:text-cyan-200 disabled:cursor-not-allowed disabled:opacity-40"
+                    onClick={() => applyTraverseDraftAdjustment('transit')}
+                    disabled={activeTraverseDraft.mode === 'open' || activeTraverseDraft.points.length < 2 || activeTraverseDraft.closureTargetLabel == null}
+                    data-survey-cad-traverse-adjust-transit
+                  >
+                    Transit
+                  </button>
+                  <button
+                    type="button"
+                    className="pointer-events-auto rounded border border-slate-700 px-2 py-1 text-[11px] text-slate-200 enabled:hover:border-cyan-400 enabled:hover:text-cyan-200 disabled:cursor-not-allowed disabled:opacity-40"
+                    onClick={clearTraverseDraftAdjustment}
+                    disabled={activeTraverseDraft.adjustment == null}
+                    data-survey-cad-traverse-adjust-clear
+                  >
+                    Clear
+                  </button>
+                </div>
+                {activeTraverseDraft.adjustment ? (
+                  <div className="space-y-1 text-[11px]" data-survey-cad-traverse-adjustment-report>
+                    <div className="flex justify-between">
+                      <span>Raw closure</span>
+                      <span>{activeTraverseDraft.adjustment.rawClosureDistance.toFixed(3)} m</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Adjusted closure</span>
+                      <span>{activeTraverseDraft.adjustment.adjustedClosureDistance.toFixed(3)} m</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Raw bearing</span>
+                      <span>{activeTraverseDraft.adjustment.rawClosureBearing ?? '--'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Adjusted bearing</span>
+                      <span>{activeTraverseDraft.adjustment.adjustedClosureBearing ?? '--'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Angular / leg</span>
+                      <span>
+                        {activeTraverseDraft.adjustment.angularCorrectionPerLegSec == null
+                          ? '--'
+                          : `${activeTraverseDraft.adjustment.angularCorrectionPerLegSec.toFixed(2)}"`}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-[11px] text-slate-400">
+                    Apply angular, Bowditch, or transit balance against the current closure target before commit.
+                  </div>
+                )}
               </div>
               <div className="mt-3 border-t border-slate-800/80 pt-2 text-slate-300">
                 <div className="mb-2 flex items-center justify-between">

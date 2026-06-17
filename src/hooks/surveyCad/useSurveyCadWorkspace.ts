@@ -89,6 +89,15 @@ interface UseSurveyCadWorkspaceResult {
     closureDistance: number | null;
     closureBearing: string | null;
     closureRatio: number | null;
+    adjustment: {
+      method: 'angular' | 'bowditch' | 'transit';
+      targetLabel: string;
+      rawClosureDistance: number;
+      adjustedClosureDistance: number;
+      rawClosureBearing: string | null;
+      adjustedClosureBearing: string | null;
+      angularCorrectionPerLegSec: number | null;
+    } | null;
   } | null;
   selectionCount: number;
   canUndo: boolean;
@@ -224,6 +233,8 @@ interface UseSurveyCadWorkspaceResult {
   appendTraverseDraftPoint: (_inputValue: string) => boolean;
   insertTraverseDraftLeg: (_legIndex: number, _inputValue: string) => boolean;
   moveTraverseDraftLeg: (_legIndex: number, _direction: -1 | 1) => boolean;
+  applyTraverseDraftAdjustment: (_method: 'angular' | 'bowditch' | 'transit') => boolean;
+  clearTraverseDraftAdjustment: () => void;
   setTraverseDraftMode: (_mode: 'open' | 'closed' | 'point-to-point') => void;
   setTraverseDraftClosePoint: (_point: {
     label: string;
@@ -538,6 +549,8 @@ export const useSurveyCadWorkspace = (
     appendTraverseDraftPoint,
     insertTraverseDraftLeg,
     moveTraverseDraftLeg,
+    applyTraverseDraftAdjustment,
+    clearTraverseDraftAdjustment,
     setTraverseDraftMode,
     setTraverseDraftClosePoint,
     addTraverseDraftSideshot,
@@ -952,6 +965,8 @@ export const useSurveyCadWorkspace = (
     appendTraverseDraftPoint,
     insertTraverseDraftLeg,
     moveTraverseDraftLeg,
+    applyTraverseDraftAdjustment,
+    clearTraverseDraftAdjustment,
     setTraverseDraftMode,
     setTraverseDraftClosePoint,
     addTraverseDraftSideshot,

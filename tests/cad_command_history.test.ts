@@ -452,6 +452,60 @@ describe('Survey CAD command history', () => {
     ).toBe(true);
   });
 
+  it('persists traverse adjustment provenance and metadata when an adjusted traverse commits', () => {
+    const project = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+
+    const traverseState = runCadCommand(createCadHistoryState(project), {
+      key: 'TRAVERSE',
+      mode: 'closed',
+      rawVertices: [
+        { x: 0, y: 0, label: 'A' },
+        { x: 100, y: 0, label: 'B' },
+        { x: 100, y: 98, label: 'C' },
+      ],
+      vertices: [
+        { x: 0, y: 0, label: 'A' },
+        { x: 50, y: 0, label: 'B' },
+        { x: 0, y: 0, label: 'C' },
+      ],
+      adjustment: {
+        method: 'bowditch',
+        targetLabel: 'A',
+        rawClosureDistance: 140.0142849854971,
+        adjustedClosureDistance: 0,
+        rawClosureBearing: 'S45-34-27.69W',
+        adjustedClosureBearing: null,
+        angularCorrectionPerLegSec: null,
+      },
+    });
+
+    const traversePolyline = traverseState.present.project.entities.find(
+      (entity) => entity.type === 'polyline',
+    );
+    expect(traversePolyline?.type).toBe('polyline');
+    if (traversePolyline?.type !== 'polyline') throw new Error('Traverse polyline missing');
+    expect(traversePolyline.metadata?.traverseAdjustmentMethod).toBe('bowditch');
+
+    const traverseComputation = traverseState.present.project.cogoComputations.at(-1);
+    expect(traverseComputation?.report.rows.some((row) => row.label === 'Adjustment' && row.value === 'bowditch')).toBe(true);
+    expect(traverseComputation?.provenance.inputs).toMatchObject({
+      rawVertices: [
+        { x: 0, y: 0, label: 'A' },
+        { x: 100, y: 0, label: 'B' },
+        { x: 100, y: 98, label: 'C' },
+      ],
+      adjustment: {
+        method: 'bowditch',
+      },
+    });
+  });
+
   it('trims a line between selected cutting edges and replays the split through undo/redo', () => {
     const baseProject = buildSurveyCadSpikeProject({
       input,
