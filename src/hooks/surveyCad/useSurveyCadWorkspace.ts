@@ -33,6 +33,7 @@ import {
 import { useSurveyCadCommands, type CadCommandPreviewState } from './useSurveyCadCommands';
 import { useSurveyCadSnapping, type CadSnapPreferences } from './useSurveyCadSnapping';
 import type {
+  CadAlignmentEntity,
   CadArcEntity,
   CadBounds,
   CadDisplayPrimitive,
@@ -40,6 +41,7 @@ import type {
   CadLineEntity,
   CadPolylineEntity,
   CadProject,
+  CadSurveyPointEntity,
   CadSnapCandidate,
   CadSnapConstructionContext,
   CadSnapKind,
@@ -189,6 +191,7 @@ interface UseSurveyCadWorkspaceResult {
   canCloseTraverseDraft: boolean;
   canCreateIntersectionPoint: boolean;
   canCreateAlignment: boolean;
+  canReportAlignmentStation: boolean;
   canCreateParcel: boolean;
   canContinueCurve: boolean;
   canTrimSelection: boolean;
@@ -247,6 +250,7 @@ interface UseSurveyCadWorkspaceResult {
   startTrimCommand: () => void;
   createIntersectionPoint: () => void;
   createAlignmentFromSelection: () => void;
+  reportAlignmentStationFromSelection: () => void;
   createParcelFromSelection: () => void;
   cancelActiveCommand: () => void;
   finishActiveCommand: () => void;
@@ -432,6 +436,14 @@ export const useSurveyCadWorkspace = (
       selectedEntities.length === 1 && selectedEntities[0]?.type === 'survey-point'
         ? selectedEntities[0]
         : null,
+    [selectedEntities],
+  );
+  const selectedAlignmentForStationing = useMemo(
+    () => selectedEntities.find((entity): entity is CadAlignmentEntity => entity.type === 'alignment') ?? null,
+    [selectedEntities],
+  );
+  const selectedSurveyPointForStationing = useMemo(
+    () => selectedEntities.find((entity): entity is CadSurveyPointEntity => entity.type === 'survey-point') ?? null,
     [selectedEntities],
   );
   const selectedLinePairForIntersection = useMemo(
@@ -943,6 +955,10 @@ export const useSurveyCadWorkspace = (
     canCloseTraverseDraft,
     canCreateIntersectionPoint: selectedIntersection != null,
     canCreateAlignment: selectedAlignmentDraft != null,
+    canReportAlignmentStation:
+      selectedEntities.length === 2 &&
+      selectedAlignmentForStationing != null &&
+      selectedSurveyPointForStationing != null,
     canCreateParcel: selectedPolylineForParcel != null,
     canContinueCurve: selectedArcForContinue != null,
     canTrimSelection: trimCuttingEntityIds.length > 0,
@@ -1017,6 +1033,22 @@ export const useSurveyCadWorkspace = (
         runCadCommand(current, {
           key: 'ALIGNMENT_CREATE',
           sourceEntityIds: selectedAlignmentDraft.sourceEntityIds,
+        }),
+      );
+    },
+    reportAlignmentStationFromSelection: () => {
+      if (
+        selectedEntities.length !== 2 ||
+        !selectedAlignmentForStationing ||
+        !selectedSurveyPointForStationing
+      ) {
+        return;
+      }
+      applyHistoryUpdate((current) =>
+        runCadCommand(current, {
+          key: 'ALIGNMENT_STATION_REPORT',
+          alignmentEntityId: selectedAlignmentForStationing.id,
+          pointEntityId: selectedSurveyPointForStationing.id,
         }),
       );
     },

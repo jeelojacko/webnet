@@ -4457,7 +4457,7 @@ describe('SurveyCadWorkspace', () => {
 
     expect(container.querySelector('[data-survey-cad-traverse-draft]')).not.toBeNull();
     expect(container.querySelectorAll('[data-survey-cad-traverse-leg]')).toHaveLength(2);
-    expect(container.querySelector('[data-survey-cad-traverse-draft]')?.textContent).toContain('A - N90-00-00E,25');
+    expect(container.querySelector('[data-survey-cad-traverse-draft]')?.textContent).toContain('A - tp1');
     expect(container.querySelector('[data-survey-cad-traverse-closure]')?.textContent).toContain('29.155 m');
 
     await act(async () => {
@@ -4817,6 +4817,8 @@ describe('SurveyCadWorkspace', () => {
     });
 
     expect(container.querySelectorAll('[data-survey-cad-traverse-leg]')).toHaveLength(2);
+    expect(container.querySelector('[data-survey-cad-traverse-draft]')?.textContent).toContain('tp1');
+    expect(container.querySelector('[data-survey-cad-traverse-draft]')?.textContent).toContain('tp2');
 
     await act(async () => {
       (container.querySelector('[data-survey-cad-traverse-finish]') as HTMLButtonElement | null)?.click();
@@ -5052,7 +5054,7 @@ describe('SurveyCadWorkspace', () => {
       'Selected COGO Result',
     );
     expect(container.querySelector('[data-survey-cad-parcel-report]')?.textContent).toContain(
-      'A-V2',
+      'A-tp1',
     );
     expect(container.querySelector('[data-survey-cad-parcel-report]')?.textContent).toContain(
       '90°00\'00"',
@@ -5143,6 +5145,90 @@ describe('SurveyCadWorkspace', () => {
     const persisted = capture.read();
     expect(persisted?.project.entities.some((entity) => entity.type === 'alignment')).toBe(true);
     expect(persisted?.project.cogoComputations.at(-1)?.toolKey).toBe('ALIGNMENT');
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('reports station and offset from a selected point onto a selected alignment', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+    const capture = createPersistedStateCapture();
+
+    const baseProject = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+    const stationProject = appendCadProjectEntities(baseProject, [
+      {
+        id: 'alignment:station-ui-test',
+        type: 'alignment',
+        layerId: 'planning',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        name: 'ALIGN1',
+        startStation: 100,
+        elements: [
+          {
+            kind: 'line',
+            start: { x: 0, y: 0 },
+            end: { x: 60, y: 40 },
+          },
+        ],
+      },
+    ]);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+          persistedState={{
+            version: 1,
+            sourceSignature: buildCadProjectSignature(baseProject),
+            project: stationProject,
+          }}
+          onPersistedStateChange={capture.onPersistedStateChange}
+        />,
+      );
+    });
+
+    const alignmentTarget = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="alignment:station-ui-test"]',
+    ) as SVGElement | null;
+    const pointTarget = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="pt:C"]',
+    ) as SVGElement | null;
+    if (!alignmentTarget || !pointTarget) throw new Error('Alignment station targets not found');
+
+    await act(async () => {
+      alignmentTarget.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 0, clientY: 0 }));
+      pointTarget.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 0, clientY: 0, shiftKey: true }));
+      clickButton(container, 'STA');
+    });
+
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+      'ALIGNMENT_STATION committed',
+    );
+    expect(container.querySelector('[data-survey-cad-cogo-panel-title]')?.textContent).toContain(
+      'Alignment Station',
+    );
+    expect(container.querySelector('[data-survey-cad-cogo-panel-summary]')?.textContent).toContain(
+      'Projected C onto ALIGN1',
+    );
+
+    const persisted = capture.read();
+    expect(persisted?.project.cogoComputations.at(-1)?.toolKey).toBe('ALIGNMENT_STATION');
 
     await act(async () => {
       root.unmount();

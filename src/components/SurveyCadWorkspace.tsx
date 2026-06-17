@@ -93,6 +93,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     canFinishCommand,
     canCreateIntersectionPoint,
     canCreateAlignment,
+    canReportAlignmentStation,
     canCreateParcel,
     canContinueCurve,
     canTrimSelection,
@@ -152,6 +153,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     startTrimCommand,
     createIntersectionPoint,
     createAlignmentFromSelection,
+    reportAlignmentStationFromSelection,
     createParcelFromSelection,
     setCommandInputValue,
     appendCommandInputValue,
@@ -526,6 +528,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               canUseSelectedArcCurveCogo={canUseSelectedArcCurveCogo}
               canCreateIntersectionPoint={canCreateIntersectionPoint}
               canCreateAlignment={canCreateAlignment}
+              canReportAlignmentStation={canReportAlignmentStation}
               canCreateParcel={canCreateParcel}
               canContinueCurve={canContinueCurve}
               onStartPoint={startPointCommand}
@@ -576,6 +579,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               onStartTrim={startTrimCommand}
               onCreateIntersectionPoint={createIntersectionPoint}
               onCreateAlignment={createAlignmentFromSelection}
+              onReportAlignmentStation={reportAlignmentStationFromSelection}
               onCreateParcel={createParcelFromSelection}
               canTrimSelection={canTrimSelection}
               onSelectAll={selectAll}

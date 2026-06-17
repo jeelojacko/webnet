@@ -309,6 +309,51 @@ describe('Survey CAD command history', () => {
     expect(redoneState.present.project.entities.some((entity) => entity.type === 'alignment')).toBe(true);
   });
 
+  it('persists alignment station reports for selected alignment and point geometry', () => {
+    const project = appendCadProjectEntities(
+      buildSurveyCadSpikeProject({
+        input,
+        instrumentLibrary: {},
+        parseOptions,
+        units: 'm',
+        result: null,
+      }),
+      [
+        {
+          id: 'alignment:test',
+          type: 'alignment',
+          layerId: 'planning',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          name: 'ALIGN1',
+          startStation: 100,
+          elements: [
+            {
+              kind: 'line',
+              start: { x: 0, y: 0 },
+              end: { x: 60, y: 40 },
+            },
+          ],
+        },
+      ],
+    );
+
+    const reportState = runCadCommand(createCadHistoryState(project), {
+      key: 'ALIGNMENT_STATION_REPORT',
+      alignmentEntityId: 'alignment:test',
+      pointEntityId: 'pt:C',
+    });
+    expect(reportState.present.project.cogoComputations.at(-1)?.toolKey).toBe('ALIGNMENT_STATION');
+    expect(reportState.present.project.cogoComputations.at(-1)?.report.title).toBe('Alignment Station');
+
+    const undoneState = undoCadHistory(reportState);
+    expect(undoneState.present.project.cogoComputations.some((entry) => entry.toolKey === 'ALIGNMENT_STATION')).toBe(false);
+
+    const redoneState = redoCadHistory(undoneState);
+    expect(redoneState.present.project.cogoComputations.some((entry) => entry.toolKey === 'ALIGNMENT_STATION')).toBe(true);
+  });
+
   it('creates three-point and tangent-curve arc entities through history with undo/redo', () => {
     const project = buildSurveyCadSpikeProject({
       input,
@@ -554,6 +599,50 @@ describe('Survey CAD command history', () => {
         method: 'bowditch',
       },
     });
+  });
+
+  it('keeps traverse-created unnamed points on simple tp labels', () => {
+    const project = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+
+    const traverseState = runCadCommand(createCadHistoryState(project), {
+      key: 'TRAVERSE',
+      vertices: [
+        { x: 0, y: 0, label: 'tp1' },
+        { x: 25, y: 0, label: 'tp2' },
+        { x: 25, y: 15, label: 'tp3' },
+      ],
+      rawVertices: [
+        { x: 0, y: 0, label: 'tp1' },
+        { x: 25, y: 0, label: 'tp2' },
+        { x: 25, y: 15, label: 'tp3' },
+      ],
+    });
+
+    const traversePolyline = traverseState.present.project.entities.find(
+      (entity) => entity.type === 'polyline' && entity.vertexLabels.join(',') === 'tp1,tp2,tp3',
+    );
+    expect(traversePolyline?.type).toBe('polyline');
+    expect(
+      traverseState.present.project.entities.some(
+        (entity) => entity.type === 'survey-point' && entity.stationId === 'tp1',
+      ),
+    ).toBe(true);
+    expect(
+      traverseState.present.project.entities.some(
+        (entity) => entity.type === 'survey-point' && entity.stationId === 'tp2',
+      ),
+    ).toBe(true);
+    expect(
+      traverseState.present.project.entities.some(
+        (entity) => entity.type === 'survey-point' && entity.stationId === 'tp3',
+      ),
+    ).toBe(true);
   });
 
   it('commits batch deed cogo rows with persisted provenance and undo/redo support', () => {

@@ -9,7 +9,7 @@ import {
   buildCadBatchCogoSummary,
   type CadBatchCogoDraft,
 } from './cadBatchCogo';
-import { cadBuildAlignmentDraft } from './cadAlignment';
+import { cadBuildAlignmentDraft, cadProjectPointToAlignment } from './cadAlignment';
 import { buildCadCogoComputation, buildCadCogoEntityMetadata } from './cadCogoTypes';
 import {
   cadAngleDegFromCenter,
@@ -64,6 +64,7 @@ export type CadCommandKey =
   | 'ARC_CREATE'
   | 'TANGENT_CURVE'
   | 'ALIGNMENT_CREATE'
+  | 'ALIGNMENT_STATION_REPORT'
   | 'PARCEL_CREATE'
   | 'MOVE'
   | 'COPY'
@@ -169,6 +170,11 @@ export type CadCommand =
       sourceEntityIds: CadEntityId[];
       name?: string;
       startStation?: number;
+    }
+  | {
+      key: 'ALIGNMENT_STATION_REPORT';
+      alignmentEntityId: CadEntityId;
+      pointEntityId: CadEntityId;
     }
   | {
       key: 'PARCEL_CREATE';
@@ -2430,6 +2436,76 @@ const alignmentCreateCommand: CadCommandDefinition<{
   },
 };
 
+const alignmentStationReportCommand: CadCommandDefinition<{
+  key: 'ALIGNMENT_STATION_REPORT';
+  alignmentEntityId: CadEntityId;
+  pointEntityId: CadEntityId;
+}> = {
+  key: 'ALIGNMENT_STATION_REPORT',
+  execute: (snapshot, command) => {
+    const alignmentEntity = snapshot.project.entities.find(
+      (entity): entity is Extract<CadEntity, { type: 'alignment' }> =>
+        entity.type === 'alignment' && entity.id === command.alignmentEntityId,
+    );
+    const pointEntity = snapshot.project.entities.find(
+      (entity): entity is CadSurveyPointEntity =>
+        entity.type === 'survey-point' && entity.id === command.pointEntityId,
+    );
+    if (!alignmentEntity || !pointEntity) return null;
+    const projection = cadProjectPointToAlignment(alignmentEntity, {
+      x: pointEntity.x,
+      y: pointEntity.y,
+    });
+    if (!projection) return null;
+
+    const summary = `Projected ${pointEntity.stationId} onto ${alignmentEntity.name} at station ${projection.station.toFixed(3)}`;
+    const provenance = createCogoProvenance({
+      toolKey: 'ALIGNMENT_STATION',
+      summary,
+      sourceEntityIds: [alignmentEntity.id, pointEntity.id],
+      sourcePointIds: [pointEntity.stationId],
+      inputs: {
+        alignmentEntityId: alignmentEntity.id,
+        pointEntityId: pointEntity.id,
+      },
+      parameters: {
+        station: projection.station,
+        offset: projection.offset,
+      },
+    });
+    const nextProject = appendCogoComputation({
+      project: snapshot.project,
+      provenance,
+      title: 'Alignment Station',
+      summary,
+      rows: [
+        { label: 'Alignment', value: alignmentEntity.name },
+        { label: 'Point', value: pointEntity.stationId },
+        { label: 'Station', value: projection.station.toFixed(3), unit: 'm' },
+        { label: 'Offset', value: projection.offset.toFixed(3), unit: 'm' },
+        { label: 'Projected Northing', value: projection.point.y.toFixed(3), unit: 'm' },
+        { label: 'Projected Easting', value: projection.point.x.toFixed(3), unit: 'm' },
+        { label: 'Element', value: `${projection.elementKind} ${projection.elementIndex + 1}` },
+      ],
+      createdEntities: [],
+    });
+    return {
+      nextSnapshot: {
+        project: nextProject,
+        selection: snapshot.selection,
+      },
+      commandState: {
+        key: 'ALIGNMENT_STATION_REPORT',
+        phase: 'committed',
+        prompt: `ALIGNMENT_STATION committed for ${pointEntity.stationId} on ${alignmentEntity.name}.`,
+      },
+      transactionLabel: `ALIGNMENT_STATION (${pointEntity.stationId})`,
+      addedEntityIds: [],
+      removedEntityIds: [],
+    };
+  },
+};
+
 const parcelCreateCommand: CadCommandDefinition<{
   key: 'PARCEL_CREATE';
   sourceEntityId: CadEntityId;
@@ -2793,6 +2869,7 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   ARC_CREATE: arcCreateCommand as CadCommandDefinition<CadCommand>,
   TANGENT_CURVE: tangentCurveCommand as CadCommandDefinition<CadCommand>,
   ALIGNMENT_CREATE: alignmentCreateCommand as CadCommandDefinition<CadCommand>,
+  ALIGNMENT_STATION_REPORT: alignmentStationReportCommand as CadCommandDefinition<CadCommand>,
   PARCEL_CREATE: parcelCreateCommand as CadCommandDefinition<CadCommand>,
   MOVE: moveCommand as CadCommandDefinition<CadCommand>,
   COPY: copyCommand as CadCommandDefinition<CadCommand>,
