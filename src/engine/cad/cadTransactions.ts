@@ -10,6 +10,8 @@ import {
   type CadBatchCogoDraft,
 } from './cadBatchCogo';
 import {
+  cadAlignmentLength,
+  cadBuildAlignmentStationPoints,
   cadBuildAlignmentDraft,
   cadPointAtAlignmentStationOffset,
   cadProjectPointToAlignment,
@@ -70,6 +72,7 @@ export type CadCommandKey =
   | 'ALIGNMENT_CREATE'
   | 'ALIGNMENT_STATION_REPORT'
   | 'ALIGNMENT_OFFSET_POINT'
+  | 'ALIGNMENT_INTERVAL_POINTS'
   | 'PARCEL_CREATE'
   | 'MOVE'
   | 'COPY'
@@ -189,6 +192,14 @@ export type CadCommand =
       label?: string;
     }
   | {
+      key: 'ALIGNMENT_INTERVAL_POINTS';
+      alignmentEntityId: CadEntityId;
+      interval: number;
+      startStation?: number;
+      endStation?: number;
+      labelPrefix?: string;
+    }
+  | {
       key: 'PARCEL_CREATE';
       sourceEntityId: CadEntityId;
     }
@@ -264,7 +275,7 @@ interface CadCommandDefinition<TCommand extends CadCommand> {
 const createIdleCommandState = (): CadCommandState => ({
   key: 'IDLE',
   phase: 'idle',
-  prompt: 'Ready. Use Select All, Clear Selection, ERASE, POINT, COGO PT, LINE, PLINE, TRAVERSE, DEED, ARC 3PT, TAN CURVE, ALIGN, STA, STA PT, PARCEL, MOVE, COPY, TRIM, INTX, or INVERSE to exercise command history.',
+  prompt: 'Ready. Use Select All, Clear Selection, ERASE, POINT, COGO PT, LINE, PLINE, TRAVERSE, DEED, ARC 3PT, TAN CURVE, ALIGN, STA, STA PT, STA INT, PARCEL, MOVE, COPY, TRIM, INTX, or INVERSE to exercise command history.',
 });
 
 const nextManualStationId = (project: CadProject): string => {
@@ -2603,6 +2614,117 @@ const alignmentOffsetPointCommand: CadCommandDefinition<{
   },
 };
 
+const alignmentIntervalPointsCommand: CadCommandDefinition<{
+  key: 'ALIGNMENT_INTERVAL_POINTS';
+  alignmentEntityId: CadEntityId;
+  interval: number;
+  startStation?: number;
+  endStation?: number;
+  labelPrefix?: string;
+}> = {
+  key: 'ALIGNMENT_INTERVAL_POINTS',
+  execute: (snapshot, command) => {
+    const alignmentEntity = snapshot.project.entities.find(
+      (entity): entity is Extract<CadEntity, { type: 'alignment' }> =>
+        entity.type === 'alignment' && entity.id === command.alignmentEntityId,
+    );
+    if (!alignmentEntity) return null;
+    const stationPoints = cadBuildAlignmentStationPoints(alignmentEntity, {
+      startStation: command.startStation,
+      endStation: command.endStation,
+      interval: command.interval,
+      includeStart: true,
+      includeEnd: true,
+    });
+    if (stationPoints.length === 0) return null;
+
+    const prefix = command.labelPrefix?.trim();
+    const summary = `Created ${stationPoints.length} alignment interval point${stationPoints.length === 1 ? '' : 's'} on ${alignmentEntity.name}`;
+    const provenance = createCogoProvenance({
+      toolKey: 'ALIGNMENT_INTERVALS',
+      summary,
+      sourceEntityIds: [alignmentEntity.id],
+      inputs: {
+        alignmentEntityId: alignmentEntity.id,
+        alignmentName: alignmentEntity.name,
+        labelPrefix: prefix ?? null,
+      },
+      parameters: {
+        interval: command.interval,
+        startStation: command.startStation ?? alignmentEntity.startStation,
+        endStation: command.endStation ?? alignmentEntity.startStation + cadAlignmentLength(alignmentEntity),
+      },
+    });
+    let workingProject = snapshot.project;
+    const createdEntities: CadEntity[] = [];
+    const selectedPointIds: CadEntityId[] = [];
+    stationPoints.forEach((stationPoint, index) => {
+      const label = prefix ? `${prefix}${index + 1}` : undefined;
+      const pointBundle = createManualPointEntities(
+        workingProject,
+        stationPoint.point.x,
+        stationPoint.point.y,
+        label,
+        {
+          createdBy: 'ALIGNMENT_INTERVAL_POINTS',
+        },
+      );
+      const pointEntity: CadSurveyPointEntity = {
+        ...pointBundle.point,
+        metadata: buildCadCogoEntityMetadata(pointBundle.point.metadata, provenance),
+      };
+      const labelEntity = pointBundle.label
+        ? {
+            ...pointBundle.label,
+            metadata: buildCadCogoEntityMetadata(pointBundle.label.metadata, provenance),
+          }
+        : null;
+      const entities = compactManualPointEntities([pointEntity, labelEntity]);
+      workingProject = appendCadProjectEntities(workingProject, entities);
+      createdEntities.push(...entities);
+      selectedPointIds.push(pointEntity.id);
+    });
+    const startStation = command.startStation ?? alignmentEntity.startStation;
+    const endStation = command.endStation ?? alignmentEntity.startStation + cadAlignmentLength(alignmentEntity);
+    const nextProject = appendCogoComputation({
+      project: workingProject,
+      provenance: {
+        ...provenance,
+        parameters: {
+          interval: command.interval,
+          startStation,
+          endStation,
+          pointCount: stationPoints.length,
+        },
+      },
+      title: 'Alignment Interval Points',
+      summary,
+      rows: [
+        { label: 'Alignment', value: alignmentEntity.name },
+        { label: 'Start station', value: startStation.toFixed(3), unit: 'm' },
+        { label: 'End station', value: endStation.toFixed(3), unit: 'm' },
+        { label: 'Interval', value: command.interval.toFixed(3), unit: 'm' },
+        { label: 'Points', value: String(stationPoints.length) },
+      ],
+      createdEntities,
+    });
+    return {
+      nextSnapshot: {
+        project: nextProject,
+        selection: createCadSelectionState(nextProject, selectedPointIds),
+      },
+      commandState: {
+        key: 'ALIGNMENT_INTERVAL_POINTS',
+        phase: 'committed',
+        prompt: `ALIGNMENT_INTERVAL_POINTS committed with ${stationPoints.length} point${stationPoints.length === 1 ? '' : 's'} on ${alignmentEntity.name}.`,
+      },
+      transactionLabel: `ALIGNMENT_INTERVAL_POINTS (${stationPoints.length})`,
+      addedEntityIds: createdEntities.map((entity) => entity.id),
+      removedEntityIds: [],
+    };
+  },
+};
+
 const parcelCreateCommand: CadCommandDefinition<{
   key: 'PARCEL_CREATE';
   sourceEntityId: CadEntityId;
@@ -2968,6 +3090,7 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   ALIGNMENT_CREATE: alignmentCreateCommand as CadCommandDefinition<CadCommand>,
   ALIGNMENT_STATION_REPORT: alignmentStationReportCommand as CadCommandDefinition<CadCommand>,
   ALIGNMENT_OFFSET_POINT: alignmentOffsetPointCommand as CadCommandDefinition<CadCommand>,
+  ALIGNMENT_INTERVAL_POINTS: alignmentIntervalPointsCommand as CadCommandDefinition<CadCommand>,
   PARCEL_CREATE: parcelCreateCommand as CadCommandDefinition<CadCommand>,
   MOVE: moveCommand as CadCommandDefinition<CadCommand>,
   COPY: copyCommand as CadCommandDefinition<CadCommand>,

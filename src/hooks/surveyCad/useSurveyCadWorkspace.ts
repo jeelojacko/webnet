@@ -159,6 +159,7 @@ interface UseSurveyCadWorkspaceResult {
     | 'EXTEND_LINE'
     | 'OFFSET_POINT'
     | 'ALIGNMENT_OFFSET_POINT'
+    | 'ALIGNMENT_INTERVAL_POINTS'
     | 'CURVE_SOLVER'
     | 'RADIAL_BEARING'
     | 'POINT_ON_CURVE'
@@ -194,6 +195,7 @@ interface UseSurveyCadWorkspaceResult {
   canCreateAlignment: boolean;
   canReportAlignmentStation: boolean;
   canCreateAlignmentOffsetPoint: boolean;
+  canCreateAlignmentIntervalPoints: boolean;
   canCreateParcel: boolean;
   canContinueCurve: boolean;
   canTrimSelection: boolean;
@@ -232,6 +234,7 @@ interface UseSurveyCadWorkspaceResult {
   startExtendLineCommand: () => void;
   startOffsetPointCommand: () => void;
   startAlignmentOffsetPointCommand: () => void;
+  startAlignmentIntervalPointsCommand: () => void;
   startCurveSolverCommand: () => void;
   startRadialBearingCommand: () => void;
   startPointOnCurveCommand: () => void;
@@ -585,6 +588,7 @@ export const useSurveyCadWorkspace = (
     startExtendLineCommand,
     startOffsetPointCommand,
     startAlignmentOffsetPointCommand,
+    startAlignmentIntervalPointsCommand,
     startCurveSolverCommand,
     startRadialBearingCommand,
     startPointOnCurveCommand,
@@ -966,6 +970,8 @@ export const useSurveyCadWorkspace = (
       selectedSurveyPointForStationing != null,
     canCreateAlignmentOffsetPoint:
       selectedEntities.length === 1 && selectedAlignmentForStationing != null,
+    canCreateAlignmentIntervalPoints:
+      selectedEntities.length === 1 && selectedAlignmentForStationing != null,
     canCreateParcel: selectedPolylineForParcel != null,
     canContinueCurve: selectedArcForContinue != null,
     canTrimSelection: trimCuttingEntityIds.length > 0,
@@ -1004,6 +1010,7 @@ export const useSurveyCadWorkspace = (
     startExtendLineCommand,
     startOffsetPointCommand,
     startAlignmentOffsetPointCommand,
+    startAlignmentIntervalPointsCommand,
     startCurveSolverCommand,
     startRadialBearingCommand,
     startPointOnCurveCommand,

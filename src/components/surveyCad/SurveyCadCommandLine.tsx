@@ -15,6 +15,7 @@ interface SurveyCadCommandLineProps {
   canCreateAlignment: boolean;
   canReportAlignmentStation: boolean;
   canCreateAlignmentOffsetPoint: boolean;
+  canCreateAlignmentIntervalPoints: boolean;
   canCreateParcel: boolean;
   canContinueCurve: boolean;
   canTrimSelection: boolean;
@@ -46,6 +47,7 @@ interface SurveyCadCommandLineProps {
   onStartExtendLine: () => void;
   onStartOffsetPoint: () => void;
   onStartAlignmentOffsetPoint: () => void;
+  onStartAlignmentIntervalPoints: () => void;
   onStartCurveSolver: () => void;
   onStartRadialBearing: () => void;
   onStartPointOnCurve: () => void;
@@ -96,6 +98,7 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   canCreateAlignment,
   canReportAlignmentStation,
   canCreateAlignmentOffsetPoint,
+  canCreateAlignmentIntervalPoints,
   canCreateParcel,
   canContinueCurve,
   canTrimSelection,
@@ -127,6 +130,7 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   onStartExtendLine,
   onStartOffsetPoint,
   onStartAlignmentOffsetPoint,
+  onStartAlignmentIntervalPoints,
   onStartCurveSolver,
   onStartRadialBearing,
   onStartPointOnCurve,
@@ -516,6 +520,15 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
         title="Alignment Station Offset Point"
       >
         STA PT
+      </button>
+      <button
+        type="button"
+        className={commandButtonClassName}
+        onClick={() => runImmediate(onStartAlignmentIntervalPoints)}
+        disabled={!canCreateAlignmentIntervalPoints}
+        title="Alignment Station Interval Points"
+      >
+        STA INT
       </button>
       <button
         type="button"

@@ -61,6 +61,11 @@ export interface CadAlignmentStationOffsetPoint {
   elementKind: CadAlignmentElement['kind'];
 }
 
+export interface CadAlignmentStationPoint {
+  point: CadDisplayPoint;
+  station: number;
+}
+
 const isAlignmentElementArray = (
   alignment: Pick<CadAlignmentEntity, 'elements'> | Pick<CadAlignmentEntity, 'elements' | 'startStation'> | readonly CadAlignmentElement[],
 ): alignment is readonly CadAlignmentElement[] => Array.isArray(alignment);
@@ -459,4 +464,57 @@ export const cadProjectPointToAlignment = (
     stationBase += alignmentElementLength(element);
   });
   return best;
+};
+
+export const cadBuildAlignmentStationPoints = (
+  alignment: Pick<CadAlignmentEntity, 'elements' | 'startStation'> | readonly CadAlignmentElement[],
+  options: {
+    startStation?: number;
+    endStation?: number;
+    interval: number;
+    includeStart?: boolean;
+    includeEnd?: boolean;
+  },
+): CadAlignmentStationPoint[] => {
+  const elements: readonly CadAlignmentElement[] =
+    isAlignmentElementArray(alignment) ? alignment : alignment.elements;
+  const defaultStartStation =
+    !isAlignmentElementArray(alignment) && 'startStation' in alignment ? alignment.startStation : 0;
+  const totalLength = cadAlignmentLength(elements);
+  const defaultEndStation = defaultStartStation + totalLength;
+  const startStation = options.startStation ?? defaultStartStation;
+  const endStation = options.endStation ?? defaultEndStation;
+  const interval = options.interval;
+  const includeStart = options.includeStart ?? true;
+  const includeEnd = options.includeEnd ?? true;
+  if (
+    elements.length === 0 ||
+    !Number.isFinite(interval) ||
+    interval <= 0 ||
+    !Number.isFinite(startStation) ||
+    !Number.isFinite(endStation) ||
+    endStation < startStation - 1e-9
+  ) {
+    return [];
+  }
+
+  const stations: number[] = [];
+  if (includeStart) stations.push(startStation);
+
+  let nextStation = startStation + interval;
+  while (nextStation < endStation - 1e-9) {
+    stations.push(nextStation);
+    nextStation += interval;
+  }
+
+  if (includeEnd && (stations.length === 0 || Math.abs(stations[stations.length - 1]! - endStation) > 1e-9)) {
+    stations.push(endStation);
+  }
+
+  return stations
+    .map((station) => {
+      const point = cadPointAtAlignmentStation(alignment, station);
+      return point ? { station, point } : null;
+    })
+    .filter((value): value is CadAlignmentStationPoint => value != null);
 };

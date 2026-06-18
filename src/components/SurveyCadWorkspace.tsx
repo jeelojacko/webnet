@@ -95,6 +95,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     canCreateAlignment,
     canReportAlignmentStation,
     canCreateAlignmentOffsetPoint,
+    canCreateAlignmentIntervalPoints,
     canCreateParcel,
     canContinueCurve,
     canTrimSelection,
@@ -134,6 +135,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     startExtendLineCommand,
     startOffsetPointCommand,
     startAlignmentOffsetPointCommand,
+    startAlignmentIntervalPointsCommand,
     startCurveSolverCommand,
     startRadialBearingCommand,
     startPointOnCurveCommand,
@@ -331,6 +333,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     if (activeCommandKey === 'EXTEND_LINE') return 'Type extension distance from selected line end';
     if (activeCommandKey === 'OFFSET_POINT') return 'Type Loffset,along or Roffset,along from selected line';
     if (activeCommandKey === 'ALIGNMENT_OFFSET_POINT') return 'Type station,offset or LABEL=station,offset from selected alignment';
+    if (activeCommandKey === 'ALIGNMENT_INTERVAL_POINTS') return 'Type interval or start,end,interval from selected alignment';
     if (activeCommandKey === 'CURVE_SOLVER') return 'Type param1,param2,value1,value2 like radius,delta,200,60';
     if (activeCommandKey === 'RADIAL_BEARING') return 'Type PC, PT, or MID from selected arc';
     if (activeCommandKey === 'POINT_ON_CURVE') return 'Type ARC,distance or CHORD,distance from selected arc start';
@@ -533,6 +536,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               canCreateAlignment={canCreateAlignment}
               canReportAlignmentStation={canReportAlignmentStation}
               canCreateAlignmentOffsetPoint={canCreateAlignmentOffsetPoint}
+              canCreateAlignmentIntervalPoints={canCreateAlignmentIntervalPoints}
               canCreateParcel={canCreateParcel}
               canContinueCurve={canContinueCurve}
               onStartPoint={startPointCommand}
@@ -563,6 +567,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               onStartExtendLine={startExtendLineCommand}
               onStartOffsetPoint={startOffsetPointCommand}
               onStartAlignmentOffsetPoint={startAlignmentOffsetPointCommand}
+              onStartAlignmentIntervalPoints={startAlignmentIntervalPointsCommand}
               onStartCurveSolver={startCurveSolverCommand}
               onStartRadialBearing={startRadialBearingCommand}
               onStartPointOnCurve={startPointOnCurveCommand}

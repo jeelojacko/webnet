@@ -418,6 +418,67 @@ describe('Survey CAD command history', () => {
     ).toBe(true);
   });
 
+  it('creates alignment interval points through history with persisted provenance', () => {
+    const project = appendCadProjectEntities(
+      buildSurveyCadSpikeProject({
+        input,
+        instrumentLibrary: {},
+        parseOptions,
+        units: 'm',
+        result: null,
+      }),
+      [
+        {
+          id: 'alignment:test',
+          type: 'alignment',
+          layerId: 'planning',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          name: 'ALIGN1',
+          startStation: 100,
+          elements: [
+            {
+              kind: 'line',
+              start: { x: 0, y: 0 },
+              end: { x: 60, y: 40 },
+            },
+          ],
+        },
+      ],
+    );
+
+    const pointState = runCadCommand(createCadHistoryState(project), {
+      key: 'ALIGNMENT_INTERVAL_POINTS',
+      alignmentEntityId: 'alignment:test',
+      startStation: 100,
+      endStation: 130,
+      interval: 10,
+      labelPrefix: 'INT',
+    });
+    expect(
+      pointState.present.project.entities.filter(
+        (entity) => entity.type === 'survey-point' && /^INT\d+$/.test(entity.stationId),
+      ),
+    ).toHaveLength(4);
+    expect(pointState.present.project.cogoComputations.at(-1)?.toolKey).toBe('ALIGNMENT_INTERVALS');
+    expect(pointState.present.project.cogoComputations.at(-1)?.report.title).toBe('Alignment Interval Points');
+
+    const undoneState = undoCadHistory(pointState);
+    expect(
+      undoneState.present.project.entities.some(
+        (entity) => entity.type === 'survey-point' && /^INT\d+$/.test(entity.stationId),
+      ),
+    ).toBe(false);
+
+    const redoneState = redoCadHistory(undoneState);
+    expect(
+      redoneState.present.project.entities.filter(
+        (entity) => entity.type === 'survey-point' && /^INT\d+$/.test(entity.stationId),
+      ),
+    ).toHaveLength(4);
+  });
+
   it('creates three-point and tangent-curve arc entities through history with undo/redo', () => {
     const project = buildSurveyCadSpikeProject({
       input,

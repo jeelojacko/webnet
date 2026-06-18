@@ -55,7 +55,10 @@ import {
   cadSignedSweepDeg,
   type CadNamedPoint,
 } from '../../engine/cad/cadGeometry';
-import { cadPointAtAlignmentStationOffset } from '../../engine/cad/cadAlignment';
+import {
+  cadBuildAlignmentStationPoints,
+  cadPointAtAlignmentStationOffset,
+} from '../../engine/cad/cadAlignment';
 import { runCadCommand, type CadHistoryState } from '../../engine/cad/cadUndoRedo';
 import type {
   CadAlignmentEntity,
@@ -122,6 +125,7 @@ type ActiveCommandKey =
   | 'EXTEND_LINE'
   | 'OFFSET_POINT'
   | 'ALIGNMENT_OFFSET_POINT'
+  | 'ALIGNMENT_INTERVAL_POINTS'
   | 'CURVE_SOLVER'
   | 'RADIAL_BEARING'
   | 'POINT_ON_CURVE'
@@ -184,6 +188,12 @@ type CommandSession =
     }
   | {
       key: 'ALIGNMENT_OFFSET_POINT';
+      inputValue: string;
+      alignment: CadAlignmentEntity;
+      resultText?: string;
+    }
+  | {
+      key: 'ALIGNMENT_INTERVAL_POINTS';
       inputValue: string;
       alignment: CadAlignmentEntity;
       resultText?: string;
@@ -450,6 +460,7 @@ interface UseSurveyCadCommandsResult {
   startExtendLineCommand: () => void;
   startOffsetPointCommand: () => void;
   startAlignmentOffsetPointCommand: () => void;
+  startAlignmentIntervalPointsCommand: () => void;
   startCurveSolverCommand: () => void;
   startRadialBearingCommand: () => void;
   startPointOnCurveCommand: () => void;
@@ -615,6 +626,7 @@ const sessionExpectsPointPick = (session: CommandSession | null): boolean => {
     case 'COMPOUND_CURVE':
     case 'OFFSET_INTX':
     case 'ALIGNMENT_OFFSET_POINT':
+    case 'ALIGNMENT_INTERVAL_POINTS':
     case 'DEFLECT_POINT':
     case 'POINT_ALONG_LINE':
     case 'EXTEND_LINE':
@@ -784,6 +796,42 @@ const parseAlignmentStationOffsetInput = (
   const offset = Number(parts[1]);
   if (!Number.isFinite(station) || !Number.isFinite(offset)) return null;
   return { label, station, offset };
+};
+
+const parseAlignmentIntervalInput = (
+  token: string,
+): { labelPrefix?: string; startStation?: number; endStation?: number; interval: number } | null => {
+  const { label, body } = splitLabelFromBody(token);
+  const parts = body.split(',').map((part) => part.trim());
+  if (parts.length === 1) {
+    const interval = Number(parts[0]);
+    if (!Number.isFinite(interval) || interval <= 0) return null;
+    return {
+      labelPrefix: label,
+      interval,
+    };
+  }
+  if (parts.length === 3) {
+    const startStation = Number(parts[0]);
+    const endStation = Number(parts[1]);
+    const interval = Number(parts[2]);
+    if (
+      !Number.isFinite(startStation) ||
+      !Number.isFinite(endStation) ||
+      !Number.isFinite(interval) ||
+      interval <= 0 ||
+      endStation < startStation
+    ) {
+      return null;
+    }
+    return {
+      labelPrefix: label,
+      startStation,
+      endStation,
+      interval,
+    };
+  }
+  return null;
 };
 
 const parseDualBearingInput = (
@@ -1132,6 +1180,9 @@ const promptForSession = (session: CommandSession | null, fallbackStatus: string
     case 'ALIGNMENT_OFFSET_POINT':
       return session.resultText ??
         `ALIGNMENT_OFFSET_POINT active. Selected alignment ${session.alignment.name}. Enter \`station,offset\` or \`LABEL=station,offset\`.`;
+    case 'ALIGNMENT_INTERVAL_POINTS':
+      return session.resultText ??
+        `ALIGNMENT_INTERVAL_POINTS active. Selected alignment ${session.alignment.name}. Enter \`interval\` or \`start,end,interval\`, with optional \`LABEL=\` prefix.`;
     case 'CURVE_SOLVER':
       return session.resultText ?? 'CURVE_SOLVER active. Enter `param1,param2,value1,value2` such as `radius,delta,200,60`.';
     case 'RADIAL_BEARING':
@@ -1319,6 +1370,8 @@ const helpTextForSession = (session: CommandSession | null): string => {
       return 'OFFSET_POINT input: enter `Loffset,along` or `Roffset,along`; along may be distance or percent like `50%`.';
     case 'ALIGNMENT_OFFSET_POINT':
       return 'ALIGNMENT_OFFSET_POINT input: enter `station,offset` or `LABEL=station,offset`. Positive offset follows the current station report sign.';
+    case 'ALIGNMENT_INTERVAL_POINTS':
+      return 'ALIGNMENT_INTERVAL_POINTS input: enter `interval` for full alignment coverage or `start,end,interval`; optional `LABEL=` sets a point-label prefix.';
     case 'CURVE_SOLVER':
       return 'CURVE_SOLVER input: enter `param1,param2,value1,value2`, for example `radius,delta,200,60` or `arc,chord,125,120`.';
     case 'RADIAL_BEARING':
@@ -1609,6 +1662,7 @@ export const useSurveyCadCommands = ({
       case 'EXTEND_LINE':
       case 'OFFSET_POINT':
       case 'ALIGNMENT_OFFSET_POINT':
+      case 'ALIGNMENT_INTERVAL_POINTS':
       case 'BATCH_COGO':
       case 'CURVE_SOLVER':
       case 'RADIAL_BEARING':
@@ -1830,6 +1884,34 @@ export const useSurveyCadCommands = ({
       case 'COMPOUND_CURVE':
       case 'OFFSET_INTX':
         return null;
+      case 'ALIGNMENT_INTERVAL_POINTS': {
+        const parsed = parseAlignmentIntervalInput(session.inputValue);
+        const points = parsed
+          ? cadBuildAlignmentStationPoints(session.alignment, {
+              startStation: parsed.startStation,
+              endStation: parsed.endStation,
+              interval: parsed.interval,
+              includeStart: true,
+              includeEnd: true,
+            })
+          : [];
+        return points.length === 0
+          ? null
+          : {
+              kind: 'primitives',
+              primitives: points.map((stationPoint, index) => ({
+                kind: 'point' as const,
+                id: `preview:alignment-interval:${index + 1}`,
+                layerId: 'preview',
+                sourceEntityId: `preview:alignment-interval:${index + 1}`,
+                stroke: '#22d3ee',
+                fill: '#22d3ee',
+                point: stationPoint.point,
+                radius: 2.4,
+                opacity: 0.85,
+              })),
+            };
+      }
       case 'ALIGNMENT_OFFSET_POINT': {
         const parsed = parseAlignmentStationOffsetInput(session.inputValue);
         const point = parsed
@@ -3113,6 +3195,37 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
           { label: 'Northing', value: point.y.toFixed(3), unit: 'm' },
           { label: 'Easting', value: point.x.toFixed(3), unit: 'm' },
         ],
+      );
+      replaceSession(null);
+      return;
+    }
+    if (session.key === 'ALIGNMENT_INTERVAL_POINTS') {
+      const parsed = parseAlignmentIntervalInput(session.inputValue);
+      const points = parsed
+        ? cadBuildAlignmentStationPoints(session.alignment, {
+            startStation: parsed.startStation,
+            endStation: parsed.endStation,
+            interval: parsed.interval,
+            includeStart: true,
+            includeEnd: true,
+          })
+        : [];
+      if (!parsed || points.length === 0) {
+        replaceSession({
+          ...session,
+          resultText: 'ALIGNMENT_INTERVAL_POINTS input invalid. Use `interval` or `start,end,interval` within the selected alignment range.',
+        });
+        return;
+      }
+      applyHistoryUpdate((existing) =>
+        runCadCommand(existing, {
+          key: 'ALIGNMENT_INTERVAL_POINTS',
+          alignmentEntityId: session.alignment.id,
+          interval: parsed.interval,
+          startStation: parsed.startStation,
+          endStation: parsed.endStation,
+          labelPrefix: parsed.labelPrefix,
+        }),
       );
       replaceSession(null);
       return;
@@ -4661,6 +4774,14 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
       if (!selectedAlignmentForStationing) return;
       beginSession({
         key: 'ALIGNMENT_OFFSET_POINT',
+        inputValue: '',
+        alignment: selectedAlignmentForStationing,
+      });
+    },
+    startAlignmentIntervalPointsCommand: () => {
+      if (!selectedAlignmentForStationing) return;
+      beginSession({
+        key: 'ALIGNMENT_INTERVAL_POINTS',
         inputValue: '',
         alignment: selectedAlignmentForStationing,
       });

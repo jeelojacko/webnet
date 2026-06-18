@@ -61,6 +61,7 @@ import {
 } from '../src/engine/cad/cadBatchCogo';
 import {
   cadAlignmentLength,
+  cadBuildAlignmentStationPoints,
   cadBuildAlignmentDraft,
   cadPointAtAlignmentStationOffset,
   cadPointAtAlignmentStation,
@@ -373,6 +374,17 @@ describe('Survey CAD COGO helpers', () => {
     );
     expect(arcOffsetPoint?.point.x ?? Number.NaN).toBeCloseTo(18, 6);
     expect(arcOffsetPoint?.point.y ?? Number.NaN).toBeCloseTo(10, 6);
+
+    const stationPoints = cadBuildAlignmentStationPoints(
+      { elements: [...elements], startStation: 100 },
+      { startStation: 100, endStation: 100 + 10 + Math.PI * 5, interval: 5 },
+    );
+    expect(stationPoints).toHaveLength(7);
+    expect(stationPoints[0]?.station ?? Number.NaN).toBeCloseTo(100, 6);
+    expect(stationPoints[1]?.point.x ?? Number.NaN).toBeCloseTo(5, 6);
+    expect(stationPoints[1]?.point.y ?? Number.NaN).toBeCloseTo(0, 6);
+    expect(stationPoints.at(-1)?.point.x ?? Number.NaN).toBeCloseTo(20, 6);
+    expect(stationPoints.at(-1)?.point.y ?? Number.NaN).toBeCloseTo(10, 6);
   });
 
   it('finds deterministic line-like intersections', () => {
