@@ -158,6 +158,7 @@ interface UseSurveyCadWorkspaceResult {
     | 'POINT_ALONG_LINE'
     | 'EXTEND_LINE'
     | 'OFFSET_POINT'
+    | 'ALIGNMENT_OFFSET_CREATE'
     | 'ALIGNMENT_STATION_EQUATION'
     | 'ALIGNMENT_OFFSET_POINT'
     | 'ALIGNMENT_INTERVAL_POINTS'
@@ -195,6 +196,7 @@ interface UseSurveyCadWorkspaceResult {
   canCreateIntersectionPoint: boolean;
   canCreateAlignment: boolean;
   canReportAlignmentStation: boolean;
+  canCreateAlignmentOffset: boolean;
   canCreateAlignmentStationEquation: boolean;
   canCreateAlignmentOffsetPoint: boolean;
   canCreateAlignmentIntervalPoints: boolean;
@@ -235,6 +237,7 @@ interface UseSurveyCadWorkspaceResult {
   startPointAlongLineCommand: () => void;
   startExtendLineCommand: () => void;
   startOffsetPointCommand: () => void;
+  startAlignmentOffsetCreateCommand: () => void;
   startAlignmentStationEquationCommand: () => void;
   startAlignmentOffsetPointCommand: () => void;
   startAlignmentIntervalPointsCommand: () => void;
@@ -590,6 +593,7 @@ export const useSurveyCadWorkspace = (
     startPointAlongLineCommand,
     startExtendLineCommand,
     startOffsetPointCommand,
+    startAlignmentOffsetCreateCommand,
     startAlignmentStationEquationCommand,
     startAlignmentOffsetPointCommand,
     startAlignmentIntervalPointsCommand,
@@ -972,6 +976,8 @@ export const useSurveyCadWorkspace = (
       selectedEntities.length === 2 &&
       selectedAlignmentForStationing != null &&
       selectedSurveyPointForStationing != null,
+    canCreateAlignmentOffset:
+      selectedEntities.length === 1 && selectedAlignmentForStationing != null,
     canCreateAlignmentStationEquation:
       selectedEntities.length === 1 && selectedAlignmentForStationing != null,
     canCreateAlignmentOffsetPoint:
@@ -1015,6 +1021,7 @@ export const useSurveyCadWorkspace = (
     startPointAlongLineCommand,
     startExtendLineCommand,
     startOffsetPointCommand,
+    startAlignmentOffsetCreateCommand,
     startAlignmentStationEquationCommand,
     startAlignmentOffsetPointCommand,
     startAlignmentIntervalPointsCommand,

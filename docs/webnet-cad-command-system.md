@@ -25,6 +25,7 @@ Current implemented spike slice:
 - first committed commands: `SELECT_ALL`, `CLEAR_SELECTION`, `ERASE`, `POINT`, `COGO_POINT`, `LINE`, `PLINE`, `ARC_3PT`, split-button arc creation modes (`Start Center End`, `Start Center Angle`, `Start Center Length`, `Start End Angle`, `Start End Direction`, `Start End Radius`, `Continue Curve`), `TANGENT_CURVE`, `MOVE`, `COPY`, `INTERSECT_POINT`
 - first traverse-entry command: `TRAVERSE`
 - first alignment-promotion command: `ALIGNMENT_CREATE` from a selected native line/arc chain
+- first alignment-offset command: `ALIGNMENT_OFFSET_CREATE` from a selected native alignment plus typed `offset` or `NAME=offset`
 - first alignment station-report command: `ALIGNMENT_STATION_REPORT` from a selected native alignment + point pair
 - first alignment station-equation command: `ALIGNMENT_STATION_EQUATION` from a selected native alignment plus typed `backStation,aheadStation`
 - first alignment station-offset point command: `ALIGNMENT_OFFSET_POINT` from a selected native alignment plus typed `station,offset`
@@ -36,6 +37,7 @@ Current implemented spike slice:
 - curve toolbar family now adds `CURVE_SOLVER`, selected-arc radial-bearing / point-on-curve / subdivision / offset tools, typed `PI_CURVE` and `CHORD_BEARING_CURVE` constructors, plus selected-arc `REVERSE_CURVE` and `COMPOUND_CURVE` continuation workflows on the same command-input/report seam
 - deed-entry toolbar flow now adds `DEED` / `BATCH_COGO`, which opens a native batch panel for pasted `START`, bearing-distance, and tangent-curve rows, previews parsed rows plus generated point/line/arc geometry before commit, and persists the committed batch as one shared COGO computation
 - selection-driven toolbar flow now also adds `ALIGN`, which validates a selected open line/arc chain, snapshots it into a native alignment entity, and persists a shared COGO report/provenance record for later stationing work
+- selection-driven toolbar flow now also adds `ALIGN OFF`, which starts a typed offset-alignment command from a selected native alignment, previews the derived line/arc chain, and commits a new native alignment plus shared COGO provenance/history when the offset can be resolved continuously
 - selection-driven toolbar flow now also adds `STA`, which projects a selected survey point onto a selected native alignment, reports station/offset plus projected coordinates, and persists that stationing result through the shared COGO history seam
 - selection-driven toolbar flow now also adds `STA EQ`, which starts a typed station-equation command from a selected native alignment, persists the resolved raw-station break plus displayed back/ahead station values onto the alignment, and feeds those equations back into later station-report, station-point, and station-interval commands
 - selection-driven toolbar flow now also adds `STA PT`, which starts a typed station-offset point command from a selected native alignment, previews the resolved point, and persists the created point plus report rows through the shared history seam

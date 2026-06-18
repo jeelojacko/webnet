@@ -57,6 +57,7 @@ import {
 } from '../../engine/cad/cadGeometry';
 import {
   cadBuildAlignmentStationPoints,
+  cadBuildOffsetAlignmentDraft,
   cadPointAtAlignmentStationOffset,
 } from '../../engine/cad/cadAlignment';
 import { runCadCommand, type CadHistoryState } from '../../engine/cad/cadUndoRedo';
@@ -124,6 +125,7 @@ type ActiveCommandKey =
   | 'POINT_ALONG_LINE'
   | 'EXTEND_LINE'
   | 'OFFSET_POINT'
+  | 'ALIGNMENT_OFFSET_CREATE'
   | 'ALIGNMENT_STATION_EQUATION'
   | 'ALIGNMENT_OFFSET_POINT'
   | 'ALIGNMENT_INTERVAL_POINTS'
@@ -185,6 +187,12 @@ type CommandSession =
       inputValue: string;
       lineStart: CommandPoint;
       lineEnd: CommandPoint;
+      resultText?: string;
+    }
+  | {
+      key: 'ALIGNMENT_OFFSET_CREATE';
+      inputValue: string;
+      alignment: CadAlignmentEntity;
       resultText?: string;
     }
   | {
@@ -466,6 +474,7 @@ interface UseSurveyCadCommandsResult {
   startPointAlongLineCommand: () => void;
   startExtendLineCommand: () => void;
   startOffsetPointCommand: () => void;
+  startAlignmentOffsetCreateCommand: () => void;
   startAlignmentStationEquationCommand: () => void;
   startAlignmentOffsetPointCommand: () => void;
   startAlignmentIntervalPointsCommand: () => void;
@@ -633,6 +642,7 @@ const sessionExpectsPointPick = (session: CommandSession | null): boolean => {
     case 'REVERSE_CURVE':
     case 'COMPOUND_CURVE':
     case 'OFFSET_INTX':
+    case 'ALIGNMENT_OFFSET_CREATE':
     case 'ALIGNMENT_STATION_EQUATION':
     case 'ALIGNMENT_OFFSET_POINT':
     case 'ALIGNMENT_INTERVAL_POINTS':
@@ -805,6 +815,15 @@ const parseAlignmentStationOffsetInput = (
   const offset = Number(parts[1]);
   if (!Number.isFinite(station) || !Number.isFinite(offset)) return null;
   return { label, station, offset };
+};
+
+const parseAlignmentOffsetCreateInput = (
+  token: string,
+): { name?: string; offset: number } | null => {
+  const { label, body } = splitLabelFromBody(token);
+  const offset = Number(body.trim());
+  if (!Number.isFinite(offset) || Math.abs(offset) <= 1e-9) return null;
+  return { name: label, offset };
 };
 
 const parseAlignmentStationEquationInput = (
@@ -1200,6 +1219,9 @@ const promptForSession = (session: CommandSession | null, fallbackStatus: string
     case 'OFFSET_POINT':
       return session.resultText ??
         `OFFSET_POINT active. Selected line ${session.lineStart.label}-${session.lineEnd.label}. Enter \`Loffset,along\` or \`Roffset,along\`, with along as distance or percent.`;
+    case 'ALIGNMENT_OFFSET_CREATE':
+      return session.resultText ??
+        `ALIGNMENT_OFFSET_CREATE active. Selected alignment ${session.alignment.name}. Enter \`offset\` or \`NAME=offset\`.`;
     case 'ALIGNMENT_STATION_EQUATION':
       return session.resultText ??
         `ALIGNMENT_STATION_EQUATION active. Selected alignment ${session.alignment.name}. Enter \`backStation,aheadStation\`.`;
@@ -1394,6 +1416,8 @@ const helpTextForSession = (session: CommandSession | null): string => {
       return 'EXTEND_LINE input: enter extension distance from the selected line end.';
     case 'OFFSET_POINT':
       return 'OFFSET_POINT input: enter `Loffset,along` or `Roffset,along`; along may be distance or percent like `50%`.';
+    case 'ALIGNMENT_OFFSET_CREATE':
+      return 'ALIGNMENT_OFFSET_CREATE input: enter `offset` or `NAME=offset`. Positive offset follows the current station report sign.';
     case 'ALIGNMENT_STATION_EQUATION':
       return 'ALIGNMENT_STATION_EQUATION input: enter `backStation,aheadStation`; ahead must stay at or above back.';
     case 'ALIGNMENT_OFFSET_POINT':
@@ -1689,6 +1713,7 @@ export const useSurveyCadCommands = ({
       case 'POINT_ALONG_LINE':
       case 'EXTEND_LINE':
       case 'OFFSET_POINT':
+      case 'ALIGNMENT_OFFSET_CREATE':
       case 'ALIGNMENT_STATION_EQUATION':
       case 'ALIGNMENT_OFFSET_POINT':
       case 'ALIGNMENT_INTERVAL_POINTS':
@@ -1913,6 +1938,42 @@ export const useSurveyCadCommands = ({
       case 'COMPOUND_CURVE':
       case 'OFFSET_INTX':
         return null;
+      case 'ALIGNMENT_OFFSET_CREATE': {
+        const parsed = parseAlignmentOffsetCreateInput(session.inputValue);
+        const draft = parsed ? cadBuildOffsetAlignmentDraft(session.alignment, parsed.offset) : null;
+        if (!draft) return null;
+        return {
+          kind: 'primitives',
+          primitives: draft.elements.map((element, index) =>
+            element.kind === 'line'
+              ? {
+                  kind: 'line' as const,
+                  id: `preview:alignment-offset:${index + 1}`,
+                  layerId: 'preview',
+                  sourceEntityId: `preview:alignment-offset:${index + 1}`,
+                  stroke: '#22d3ee',
+                  points: [element.start, element.end],
+                  strokeWidth: 1.5,
+                  opacity: 0.85,
+                  strokeDasharray: '8 6',
+                }
+              : {
+                  kind: 'arc' as const,
+                  id: `preview:alignment-offset:${index + 1}`,
+                  layerId: 'preview',
+                  sourceEntityId: `preview:alignment-offset:${index + 1}`,
+                  stroke: '#22d3ee',
+                  center: element.center,
+                  radius: element.radius,
+                  startAngleDeg: element.startAngleDeg,
+                  endAngleDeg: element.endAngleDeg,
+                  strokeWidth: 1.5,
+                  opacity: 0.85,
+                  strokeDasharray: '8 6',
+                },
+          ),
+        };
+      }
       case 'ALIGNMENT_STATION_EQUATION':
         return null;
       case 'ALIGNMENT_INTERVAL_POINTS': {
@@ -3226,6 +3287,27 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
           { label: 'Northing', value: point.y.toFixed(3), unit: 'm' },
           { label: 'Easting', value: point.x.toFixed(3), unit: 'm' },
         ],
+      );
+      replaceSession(null);
+      return;
+    }
+    if (session.key === 'ALIGNMENT_OFFSET_CREATE') {
+      const parsed = parseAlignmentOffsetCreateInput(session.inputValue);
+      const draft = parsed ? cadBuildOffsetAlignmentDraft(session.alignment, parsed.offset) : null;
+      if (!parsed || !draft) {
+        replaceSession({
+          ...session,
+          resultText: 'ALIGNMENT_OFFSET_CREATE input invalid. Use `offset` or `NAME=offset` for a buildable selected alignment.',
+        });
+        return;
+      }
+      applyHistoryUpdate((existing) =>
+        runCadCommand(existing, {
+          key: 'ALIGNMENT_OFFSET_CREATE',
+          alignmentEntityId: session.alignment.id,
+          offset: parsed.offset,
+          name: parsed.name,
+        }),
       );
       replaceSession(null);
       return;
@@ -4819,6 +4901,14 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
         inputValue: '',
         lineStart: selectedLineCommandPoints.start,
         lineEnd: selectedLineCommandPoints.end,
+      });
+    },
+    startAlignmentOffsetCreateCommand: () => {
+      if (!selectedAlignmentForStationing) return;
+      beginSession({
+        key: 'ALIGNMENT_OFFSET_CREATE',
+        inputValue: '',
+        alignment: selectedAlignmentForStationing,
       });
     },
     startAlignmentStationEquationCommand: () => {

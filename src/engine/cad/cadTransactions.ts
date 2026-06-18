@@ -12,6 +12,7 @@ import {
 import {
   cadAlignmentDisplayStationToRawStation,
   cadAlignmentEndStation,
+  cadBuildOffsetAlignmentDraft,
   cadBuildAlignmentStationPoints,
   cadBuildAlignmentDraft,
   cadPointAtAlignmentStationOffset,
@@ -71,6 +72,7 @@ export type CadCommandKey =
   | 'ARC_CREATE'
   | 'TANGENT_CURVE'
   | 'ALIGNMENT_CREATE'
+  | 'ALIGNMENT_OFFSET_CREATE'
   | 'ALIGNMENT_STATION_REPORT'
   | 'ALIGNMENT_STATION_EQUATION'
   | 'ALIGNMENT_OFFSET_POINT'
@@ -182,6 +184,12 @@ export type CadCommand =
       startStation?: number;
     }
   | {
+      key: 'ALIGNMENT_OFFSET_CREATE';
+      alignmentEntityId: CadEntityId;
+      offset: number;
+      name?: string;
+    }
+  | {
       key: 'ALIGNMENT_STATION_REPORT';
       alignmentEntityId: CadEntityId;
       pointEntityId: CadEntityId;
@@ -283,7 +291,7 @@ interface CadCommandDefinition<TCommand extends CadCommand> {
 const createIdleCommandState = (): CadCommandState => ({
   key: 'IDLE',
   phase: 'idle',
-  prompt: 'Ready. Use Select All, Clear Selection, ERASE, POINT, COGO PT, LINE, PLINE, TRAVERSE, DEED, ARC 3PT, TAN CURVE, ALIGN, STA, STA EQ, STA PT, STA INT, PARCEL, MOVE, COPY, TRIM, INTX, or INVERSE to exercise command history.',
+  prompt: 'Ready. Use Select All, Clear Selection, ERASE, POINT, COGO PT, LINE, PLINE, TRAVERSE, DEED, ARC 3PT, TAN CURVE, ALIGN, ALIGN OFF, STA, STA EQ, STA PT, STA INT, PARCEL, MOVE, COPY, TRIM, INTX, or INVERSE to exercise command history.',
 });
 
 const nextManualStationId = (project: CadProject): string => {
@@ -2467,6 +2475,92 @@ const alignmentCreateCommand: CadCommandDefinition<{
   },
 };
 
+const alignmentOffsetCreateCommand: CadCommandDefinition<{
+  key: 'ALIGNMENT_OFFSET_CREATE';
+  alignmentEntityId: CadEntityId;
+  offset: number;
+  name?: string;
+}> = {
+  key: 'ALIGNMENT_OFFSET_CREATE',
+  execute: (snapshot, command) => {
+    const sourceAlignment = snapshot.project.entities.find(
+      (entity): entity is Extract<CadEntity, { type: 'alignment' }> =>
+        entity.type === 'alignment' && entity.id === command.alignmentEntityId,
+    );
+    if (!sourceAlignment || !Number.isFinite(command.offset) || Math.abs(command.offset) <= 1e-9) {
+      return null;
+    }
+
+    const draft = cadBuildOffsetAlignmentDraft(sourceAlignment, command.offset);
+    if (!draft) return null;
+
+    const alignmentName = command.name?.trim() || nextAlignmentName(snapshot.project);
+    const summary = `Created offset alignment ${alignmentName} from ${sourceAlignment.name} at ${command.offset.toFixed(3)} m`;
+    const provenance = createCogoProvenance({
+      toolKey: 'ALIGNMENT_OFFSET',
+      summary,
+      sourceEntityIds: [sourceAlignment.id],
+      inputs: {
+        alignmentEntityId: sourceAlignment.id,
+        alignmentName: sourceAlignment.name,
+      },
+      parameters: {
+        offset: command.offset,
+        createdAlignmentName: alignmentName,
+      },
+    });
+    const alignmentEntity: CadEntity = {
+      id: createStableRuntimeId('cad-alignment'),
+      type: 'alignment',
+      layerId: 'planning',
+      styleId: 'style-observation-line',
+      visible: true,
+      locked: false,
+      name: alignmentName,
+      elements: draft.elements,
+      startStation: sourceAlignment.startStation,
+      stationEquations: sourceAlignment.stationEquations?.map((equation) => ({ ...equation })),
+      metadata: buildCadCogoEntityMetadata({
+        createdBy: 'ALIGNMENT_OFFSET_CREATE',
+        manual: true,
+        sourceEntityIds: [sourceAlignment.id],
+      }, provenance),
+    };
+    const nextProjectWithEntities = appendCadProjectEntities(snapshot.project, [alignmentEntity]);
+    const endStation = cadAlignmentEndStation(alignmentEntity) ?? alignmentEntity.startStation;
+    const nextProject = appendCogoComputation({
+      project: nextProjectWithEntities,
+      provenance,
+      title: 'Offset Alignment',
+      summary,
+      rows: [
+        { label: 'Source alignment', value: sourceAlignment.name },
+        { label: 'Offset alignment', value: alignmentName },
+        { label: 'Offset', value: command.offset.toFixed(3), unit: 'm' },
+        { label: 'Start station', value: alignmentEntity.startStation.toFixed(3), unit: 'm' },
+        { label: 'End station', value: endStation.toFixed(3), unit: 'm' },
+        { label: 'Length', value: draft.totalLength.toFixed(3), unit: 'm' },
+      ],
+      createdEntities: [alignmentEntity],
+    });
+
+    return {
+      nextSnapshot: {
+        project: nextProject,
+        selection: createCadSelectionState(nextProject, [alignmentEntity.id]),
+      },
+      commandState: {
+        key: 'ALIGNMENT_OFFSET_CREATE',
+        phase: 'committed',
+        prompt: `ALIGNMENT_OFFSET_CREATE committed for ${alignmentName}.`,
+      },
+      transactionLabel: `ALIGNMENT_OFFSET_CREATE (${alignmentName})`,
+      addedEntityIds: [alignmentEntity.id],
+      removedEntityIds: [],
+    };
+  },
+};
+
 const alignmentStationReportCommand: CadCommandDefinition<{
   key: 'ALIGNMENT_STATION_REPORT';
   alignmentEntityId: CadEntityId;
@@ -3205,6 +3299,7 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   ARC_CREATE: arcCreateCommand as CadCommandDefinition<CadCommand>,
   TANGENT_CURVE: tangentCurveCommand as CadCommandDefinition<CadCommand>,
   ALIGNMENT_CREATE: alignmentCreateCommand as CadCommandDefinition<CadCommand>,
+  ALIGNMENT_OFFSET_CREATE: alignmentOffsetCreateCommand as CadCommandDefinition<CadCommand>,
   ALIGNMENT_STATION_REPORT: alignmentStationReportCommand as CadCommandDefinition<CadCommand>,
   ALIGNMENT_STATION_EQUATION: alignmentStationEquationCommand as CadCommandDefinition<CadCommand>,
   ALIGNMENT_OFFSET_POINT: alignmentOffsetPointCommand as CadCommandDefinition<CadCommand>,

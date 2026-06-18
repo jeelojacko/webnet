@@ -64,6 +64,7 @@ import {
   cadAlignmentEndStation,
   cadAlignmentLength,
   cadAlignmentRawStationToDisplayStation,
+  cadBuildOffsetAlignmentDraft,
   cadBuildAlignmentStationPoints,
   cadBuildAlignmentDraft,
   cadPointAtAlignmentStationOffset,
@@ -405,6 +406,50 @@ describe('Survey CAD COGO helpers', () => {
     const equationPoint = cadPointAtAlignmentStation(equationAlignment, 125);
     expect(equationPoint?.x ?? Number.NaN).toBeCloseTo(14.794255386, 6);
     expect(equationPoint?.y ?? Number.NaN).toBeCloseTo(1.224174381, 6);
+  });
+
+  it('builds continuous offset alignments from tangent line-arc chains', () => {
+    const draft = cadBuildOffsetAlignmentDraft(
+      {
+        elements: [
+          {
+            kind: 'line',
+            start: { x: 0, y: 0 },
+            end: { x: 100, y: 0 },
+          },
+          {
+            kind: 'arc',
+            center: { x: 100, y: 50 },
+            radius: 50,
+            startAngleDeg: -90,
+            endAngleDeg: 0,
+          },
+        ],
+        startStation: 0,
+      },
+      10,
+    );
+
+    expect(draft).not.toBeNull();
+    expect(draft?.elements).toHaveLength(2);
+    expect(draft?.elements[0]).toEqual({
+      kind: 'line',
+      start: { x: 0, y: 10 },
+      end: { x: 100, y: 10 },
+      sourceEntityId: undefined,
+    });
+    expect(draft?.elements[1]?.kind).toBe('arc');
+    if (!draft || draft.elements[1]?.kind !== 'arc') {
+      throw new Error('Expected offset arc element');
+    }
+    expect(draft.elements[1].radius).toBeCloseTo(40, 6);
+    expect(draft.elements[1].startAngleDeg).toBeCloseTo(270, 6);
+    expect(draft.elements[1].endAngleDeg).toBeCloseTo(360, 6);
+    expect(draft.startPoint.x).toBeCloseTo(0, 6);
+    expect(draft.startPoint.y).toBeCloseTo(10, 6);
+    expect(draft.endPoint.x).toBeCloseTo(140, 6);
+    expect(draft.endPoint.y).toBeCloseTo(50, 6);
+    expect(draft.totalLength).toBeCloseTo(100 + 20 * Math.PI, 6);
   });
 
   it('finds deterministic line-like intersections', () => {

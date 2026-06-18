@@ -493,6 +493,79 @@ describe('Survey CAD command history', () => {
     ).toBe(true);
   });
 
+  it('creates offset alignments through history with persisted provenance', () => {
+    const project = appendCadProjectEntities(
+      buildSurveyCadSpikeProject({
+        input,
+        instrumentLibrary: {},
+        parseOptions,
+        units: 'm',
+        result: null,
+      }),
+      [
+        {
+          id: 'alignment:test',
+          type: 'alignment',
+          layerId: 'planning',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          name: 'ALIGN1',
+          startStation: 100,
+          stationEquations: [{ backStation: 110, aheadStation: 120, rawStation: 110 }],
+          elements: [
+            {
+              kind: 'line',
+              start: { x: 0, y: 0 },
+              end: { x: 100, y: 0 },
+            },
+            {
+              kind: 'arc',
+              center: { x: 100, y: 50 },
+              radius: 50,
+              startAngleDeg: -90,
+              endAngleDeg: 0,
+            },
+          ],
+        },
+      ],
+    );
+
+    const offsetState = runCadCommand(createCadHistoryState(project), {
+      key: 'ALIGNMENT_OFFSET_CREATE',
+      alignmentEntityId: 'alignment:test',
+      offset: 10,
+    });
+    const offsetAlignment = offsetState.present.project.entities.find(
+      (entity): entity is Extract<(typeof offsetState.present.project.entities)[number], { type: 'alignment' }> =>
+        entity.type === 'alignment' && entity.id !== 'alignment:test',
+    );
+    expect(offsetAlignment?.name).toBe('ALIGN2');
+    expect(offsetAlignment?.startStation).toBe(100);
+    expect(offsetAlignment?.stationEquations).toEqual([
+      { backStation: 110, aheadStation: 120, rawStation: 110 },
+    ]);
+    expect(offsetAlignment?.elements).toHaveLength(2);
+    expect(offsetAlignment?.elements[0]).toEqual({
+      kind: 'line',
+      start: { x: 0, y: 10 },
+      end: { x: 100, y: 10 },
+      sourceEntityId: undefined,
+    });
+    expect(offsetState.present.project.cogoComputations.at(-1)?.toolKey).toBe('ALIGNMENT_OFFSET');
+    expect(offsetState.present.project.cogoComputations.at(-1)?.report.title).toBe('Offset Alignment');
+
+    const undoneState = undoCadHistory(offsetState);
+    expect(
+      undoneState.present.project.entities.filter((entity) => entity.type === 'alignment'),
+    ).toHaveLength(1);
+
+    const redoneState = redoCadHistory(undoneState);
+    expect(
+      redoneState.present.project.entities.filter((entity) => entity.type === 'alignment'),
+    ).toHaveLength(2);
+  });
+
   it('creates alignment interval points through history with persisted provenance', () => {
     const project = appendCadProjectEntities(
       buildSurveyCadSpikeProject({

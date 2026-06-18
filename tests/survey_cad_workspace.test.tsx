@@ -5488,6 +5488,96 @@ describe('SurveyCadWorkspace', () => {
     container.remove();
   });
 
+  it('creates an offset alignment from a selected alignment', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+    const capture = createPersistedStateCapture();
+
+    const baseProject = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+    const stationProject = appendCadProjectEntities(baseProject, [
+      {
+        id: 'alignment:station-ui-test',
+        type: 'alignment',
+        layerId: 'planning',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        name: 'ALIGN1',
+        startStation: 100,
+        elements: [
+          {
+            kind: 'line',
+            start: { x: 0, y: 0 },
+            end: { x: 100, y: 0 },
+          },
+          {
+            kind: 'arc',
+            center: { x: 100, y: 50 },
+            radius: 50,
+            startAngleDeg: -90,
+            endAngleDeg: 0,
+          },
+        ],
+      },
+    ]);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+          persistedState={{
+            version: 1,
+            sourceSignature: buildCadProjectSignature(baseProject),
+            project: stationProject,
+          }}
+          onPersistedStateChange={capture.onPersistedStateChange}
+        />,
+      );
+    });
+
+    const alignmentTarget = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="alignment:station-ui-test"]',
+    ) as SVGElement | null;
+    const commandInput = container.querySelector('[data-survey-cad-command-input]') as HTMLInputElement | null;
+    if (!alignmentTarget || !commandInput) throw new Error('Offset alignment controls not found');
+
+    await act(async () => {
+      alignmentTarget.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 0, clientY: 0 }));
+      clickButton(container, 'ALIGN OFF');
+      setTextInputValue(commandInput, '10');
+      pressKey(commandInput, 'Enter');
+    });
+
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+      'ALIGNMENT_OFFSET_CREATE committed',
+    );
+    expect(container.querySelector('[data-survey-cad-cogo-panel-title]')?.textContent).toContain(
+      'Offset Alignment',
+    );
+
+    const persisted = capture.read();
+    const alignments = persisted?.project.entities.filter((entity) => entity.type === 'alignment') ?? [];
+    expect(alignments).toHaveLength(2);
+    expect(alignments[1] && 'name' in alignments[1] ? alignments[1].name : null).toBe('ALIGN2');
+    expect(persisted?.project.cogoComputations.at(-1)?.toolKey).toBe('ALIGNMENT_OFFSET');
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
   it('routes keyboard typing into the active command input without requiring an input click first', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);

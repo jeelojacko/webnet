@@ -2,7 +2,7 @@
 
 - [x] Survey CAD deed/batch COGO batch (June 2026): add a native `DEED` / `BATCH_COGO` panel with pasted `START`, bearing-distance, and tangent-curve row parsing, live preview rows/warnings plus generated point/line/arc preview geometry, and persisted computation history on the shared CAD command seam.
 
-- [ ] Survey CAD alignment/stationing batch (June 2026): current slice: create native `ALIGN` from selected line/arc chains, add selection-driven `STA` station/offset reporting for `alignment + point`, add typed `STA PT` station-offset point creation plus `STA INT` station-interval point creation from a selected alignment, add persisted `STA EQ` station-equation editing on native alignments, and keep shared alignment length/station/projection helpers ready for later offset alignments.
+- [ ] Survey CAD alignment/stationing batch (June 2026): current slice: create native `ALIGN` from selected line/arc chains, add selection-driven `STA` station/offset reporting for `alignment + point`, add typed `STA PT` station-offset point creation plus `STA INT` station-interval point creation from a selected alignment, add persisted `STA EQ` station-equation editing on native alignments, add typed `ALIGN OFF` offset-alignment creation from a selected native alignment, and keep shared alignment length/station/projection helpers ready for later labels/refinements.
 
 - [x] Survey CAD traverse adjustment batch (June 2026): add draft-panel angular balance plus Bowditch/transit closure adjustment on top of the native traverse editor, persist adjustment provenance/report rows through command history, and leave optional Crandall balancing for a later high-end pass.
 
