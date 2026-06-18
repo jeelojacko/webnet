@@ -138,6 +138,7 @@ export type CadAlignmentElement =
 export interface CadStationEquation {
   backStation: number;
   aheadStation: number;
+  rawStation?: number;
 }
 
 export interface CadAlignmentEntity extends CadBaseEntity {

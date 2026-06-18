@@ -17,6 +17,7 @@ import type {
   CadDisplayPoint,
   CadEntityId,
   CadLineEntity,
+  CadStationEquation,
 } from './cadTypes';
 
 const ALIGNMENT_POINT_TOLERANCE = 1e-6;
@@ -66,6 +67,12 @@ export interface CadAlignmentStationPoint {
   station: number;
 }
 
+interface CadResolvedStationEquation extends CadStationEquation {
+  rawStation: number;
+  deltaBefore: number;
+  deltaAfter: number;
+}
+
 const isAlignmentElementArray = (
   alignment: Pick<CadAlignmentEntity, 'elements'> | Pick<CadAlignmentEntity, 'elements' | 'startStation'> | readonly CadAlignmentElement[],
 ): alignment is readonly CadAlignmentElement[] => Array.isArray(alignment);
@@ -112,12 +119,140 @@ const alignmentElementLength = (element: CadAlignmentElement): number =>
     ? cadDistance(element.start, element.end)
     : (Math.abs(cadSignedSweepDeg(element.startAngleDeg, element.endAngleDeg)) * Math.PI * element.radius) / 180;
 
+const getAlignmentElements = (
+  alignment: Pick<CadAlignmentEntity, 'elements'> | Pick<CadAlignmentEntity, 'elements' | 'startStation'> | readonly CadAlignmentElement[],
+): readonly CadAlignmentElement[] => (isAlignmentElementArray(alignment) ? alignment : alignment.elements);
+
+const getAlignmentStartStation = (
+  alignment: Pick<CadAlignmentEntity, 'elements'> | Pick<CadAlignmentEntity, 'elements' | 'startStation'> | readonly CadAlignmentElement[],
+): number => (!isAlignmentElementArray(alignment) && 'startStation' in alignment ? alignment.startStation : 0);
+
+const getAlignmentStationEquations = (
+  alignment:
+    | Pick<CadAlignmentEntity, 'elements' | 'startStation' | 'stationEquations'>
+    | readonly CadAlignmentElement[],
+): readonly CadStationEquation[] =>
+  !isAlignmentElementArray(alignment) && 'stationEquations' in alignment && Array.isArray(alignment.stationEquations)
+    ? alignment.stationEquations
+    : [];
+
+const resolveAlignmentStationEquations = (
+  alignment:
+    | Pick<CadAlignmentEntity, 'elements' | 'startStation' | 'stationEquations'>
+    | readonly CadAlignmentElement[],
+): CadResolvedStationEquation[] | null => {
+  const startStation = getAlignmentStartStation(alignment);
+  const endRawStation = startStation + cadAlignmentLength(getAlignmentElements(alignment));
+  const equations = [...getAlignmentStationEquations(alignment)];
+  if (equations.length === 0) return [];
+
+  const resolved: CadResolvedStationEquation[] = [];
+  let deltaBefore = 0;
+  let previousRawStation = startStation;
+  for (const equation of equations) {
+    if (!Number.isFinite(equation.backStation) || !Number.isFinite(equation.aheadStation)) {
+      return null;
+    }
+    const rawStation = equation.rawStation ?? equation.backStation - deltaBefore;
+    if (
+      !Number.isFinite(rawStation) ||
+      rawStation < startStation - 1e-9 ||
+      rawStation > endRawStation + 1e-9 ||
+      rawStation < previousRawStation - 1e-9
+    ) {
+      return null;
+    }
+    const deltaAfter = deltaBefore + (equation.aheadStation - equation.backStation);
+    resolved.push({
+      ...equation,
+      rawStation,
+      deltaBefore,
+      deltaAfter,
+    });
+    deltaBefore = deltaAfter;
+    previousRawStation = rawStation;
+  }
+  return resolved;
+};
+
 export const cadAlignmentLength = (alignment: Pick<CadAlignmentEntity, 'elements'> | readonly CadAlignmentElement[]): number => {
-  const elements: readonly CadAlignmentElement[] = isAlignmentElementArray(alignment) ? alignment : alignment.elements;
+  const elements = getAlignmentElements(alignment);
   return elements.reduce(
     (total: number, element: CadAlignmentElement) => total + alignmentElementLength(element),
     0,
   );
+};
+
+export const cadAlignmentEndStation = (
+  alignment:
+    | Pick<CadAlignmentEntity, 'elements' | 'startStation' | 'stationEquations'>
+    | readonly CadAlignmentElement[],
+): number | null => {
+  const startStation = getAlignmentStartStation(alignment);
+  const totalLength = cadAlignmentLength(getAlignmentElements(alignment));
+  const resolvedEquations = resolveAlignmentStationEquations(alignment);
+  if (resolvedEquations == null) return null;
+  const deltaAfter = resolvedEquations[resolvedEquations.length - 1]?.deltaAfter ?? 0;
+  return startStation + totalLength + deltaAfter;
+};
+
+export const cadAlignmentRawStationToDisplayStation = (
+  alignment:
+    | Pick<CadAlignmentEntity, 'elements' | 'startStation' | 'stationEquations'>
+    | readonly CadAlignmentElement[],
+  rawStation: number,
+): number | null => {
+  if (!Number.isFinite(rawStation)) return null;
+  const startStation = getAlignmentStartStation(alignment);
+  const endRawStation = startStation + cadAlignmentLength(getAlignmentElements(alignment));
+  if (rawStation < startStation - 1e-9 || rawStation > endRawStation + 1e-9) return null;
+  const resolvedEquations = resolveAlignmentStationEquations(alignment);
+  if (resolvedEquations == null) return null;
+
+  let delta = 0;
+  for (const equation of resolvedEquations) {
+    if (rawStation < equation.rawStation - 1e-9) {
+      return rawStation + delta;
+    }
+    if (Math.abs(rawStation - equation.rawStation) <= 1e-9) {
+      return equation.aheadStation;
+    }
+    delta = equation.deltaAfter;
+  }
+  return rawStation + delta;
+};
+
+export const cadAlignmentDisplayStationToRawStation = (
+  alignment:
+    | Pick<CadAlignmentEntity, 'elements' | 'startStation' | 'stationEquations'>
+    | readonly CadAlignmentElement[],
+  station: number,
+): number | null => {
+  if (!Number.isFinite(station)) return null;
+  const startStation = getAlignmentStartStation(alignment);
+  const endRawStation = startStation + cadAlignmentLength(getAlignmentElements(alignment));
+  const resolvedEquations = resolveAlignmentStationEquations(alignment);
+  if (resolvedEquations == null) return null;
+
+  let delta = 0;
+  let displayStart = startStation;
+  for (const equation of resolvedEquations) {
+    if (station >= displayStart - 1e-9 && station <= equation.backStation + 1e-9) {
+      return Math.max(startStation, Math.min(endRawStation, station - delta));
+    }
+    if (station > equation.backStation + 1e-9 && station < equation.aheadStation - 1e-9) {
+      return null;
+    }
+    if (Math.abs(station - equation.aheadStation) <= 1e-9) {
+      return equation.rawStation;
+    }
+    delta = equation.deltaAfter;
+    displayStart = equation.aheadStation;
+  }
+
+  const endDisplayStation = endRawStation + delta;
+  if (station < displayStart - 1e-9 || station > endDisplayStation + 1e-9) return null;
+  return Math.max(startStation, Math.min(endRawStation, station - delta));
 };
 
 const alignmentElementStartPoint = (element: CadAlignmentElement): CadDisplayPoint =>
@@ -247,14 +382,17 @@ export const cadBuildAlignmentDraft = (
 };
 
 export const cadPointAtAlignmentStation = (
-  alignment: Pick<CadAlignmentEntity, 'elements' | 'startStation'> | readonly CadAlignmentElement[],
+  alignment:
+    | Pick<CadAlignmentEntity, 'elements' | 'startStation' | 'stationEquations'>
+    | readonly CadAlignmentElement[],
   station: number,
 ): CadDisplayPoint | null => {
-  const elements: readonly CadAlignmentElement[] =
-    isAlignmentElementArray(alignment) ? alignment : alignment.elements;
-  const startStation = !isAlignmentElementArray(alignment) && 'startStation' in alignment ? alignment.startStation : 0;
+  const elements = getAlignmentElements(alignment);
+  const startStation = getAlignmentStartStation(alignment);
   if (elements.length === 0) return null;
-  const localStation = station - startStation;
+  const rawStation = cadAlignmentDisplayStationToRawStation(alignment, station);
+  if (rawStation == null) return null;
+  const localStation = rawStation - startStation;
   if (!Number.isFinite(localStation) || localStation < -1e-9) return null;
 
   let traversed = 0;
@@ -289,16 +427,19 @@ export const cadPointAtAlignmentStation = (
 };
 
 export const cadPointAtAlignmentStationOffset = (
-  alignment: Pick<CadAlignmentEntity, 'elements' | 'startStation'> | readonly CadAlignmentElement[],
+  alignment:
+    | Pick<CadAlignmentEntity, 'elements' | 'startStation' | 'stationEquations'>
+    | readonly CadAlignmentElement[],
   station: number,
   offset: number,
 ): CadAlignmentStationOffsetPoint | null => {
-  const elements: readonly CadAlignmentElement[] =
-    isAlignmentElementArray(alignment) ? alignment : alignment.elements;
-  const startStation = !isAlignmentElementArray(alignment) && 'startStation' in alignment ? alignment.startStation : 0;
+  const elements = getAlignmentElements(alignment);
+  const startStation = getAlignmentStartStation(alignment);
   if (elements.length === 0 || !Number.isFinite(station) || !Number.isFinite(offset)) return null;
 
-  const localStation = station - startStation;
+  const rawStation = cadAlignmentDisplayStationToRawStation(alignment, station);
+  if (rawStation == null) return null;
+  const localStation = rawStation - startStation;
   if (localStation < -1e-9) return null;
 
   let traversed = 0;
@@ -443,17 +584,19 @@ const projectPointToArcElement = (
 };
 
 export const cadProjectPointToAlignment = (
-  alignment: Pick<CadAlignmentEntity, 'elements' | 'startStation'> | readonly CadAlignmentElement[],
+  alignment:
+    | Pick<CadAlignmentEntity, 'elements' | 'startStation' | 'stationEquations'>
+    | readonly CadAlignmentElement[],
   point: CadDisplayPoint,
 ): CadAlignmentProjection | null => {
-  const elements: readonly CadAlignmentElement[] =
-    isAlignmentElementArray(alignment) ? alignment : alignment.elements;
-  const startStation = !isAlignmentElementArray(alignment) && 'startStation' in alignment ? alignment.startStation : 0;
+  const elements = getAlignmentElements(alignment);
+  const startStation = getAlignmentStartStation(alignment);
   if (elements.length === 0) return null;
 
   let best: CadAlignmentProjection | null = null;
   let stationBase = startStation;
-  elements.forEach((element: CadAlignmentElement, elementIndex: number) => {
+  for (let elementIndex = 0; elementIndex < elements.length; elementIndex += 1) {
+    const element = elements[elementIndex]!;
     const projection =
       element.kind === 'line'
         ? projectPointToLineElement(element, point, stationBase, elementIndex)
@@ -462,12 +605,21 @@ export const cadProjectPointToAlignment = (
       best = projection;
     }
     stationBase += alignmentElementLength(element);
-  });
-  return best;
+  }
+  if (best == null) return null;
+  const displayStation = cadAlignmentRawStationToDisplayStation(alignment, best.station);
+  return displayStation == null
+    ? null
+    : {
+        ...best,
+        station: displayStation,
+      };
 };
 
 export const cadBuildAlignmentStationPoints = (
-  alignment: Pick<CadAlignmentEntity, 'elements' | 'startStation'> | readonly CadAlignmentElement[],
+  alignment:
+    | Pick<CadAlignmentEntity, 'elements' | 'startStation' | 'stationEquations'>
+    | readonly CadAlignmentElement[],
   options: {
     startStation?: number;
     endStation?: number;
@@ -476,14 +628,11 @@ export const cadBuildAlignmentStationPoints = (
     includeEnd?: boolean;
   },
 ): CadAlignmentStationPoint[] => {
-  const elements: readonly CadAlignmentElement[] =
-    isAlignmentElementArray(alignment) ? alignment : alignment.elements;
-  const defaultStartStation =
-    !isAlignmentElementArray(alignment) && 'startStation' in alignment ? alignment.startStation : 0;
-  const totalLength = cadAlignmentLength(elements);
-  const defaultEndStation = defaultStartStation + totalLength;
+  const elements = getAlignmentElements(alignment);
+  const defaultStartStation = getAlignmentStartStation(alignment);
+  const defaultEndStation = cadAlignmentEndStation(alignment);
   const startStation = options.startStation ?? defaultStartStation;
-  const endStation = options.endStation ?? defaultEndStation;
+  const endStation = options.endStation ?? defaultEndStation ?? defaultStartStation;
   const interval = options.interval;
   const includeStart = options.includeStart ?? true;
   const includeEnd = options.includeEnd ?? true;
@@ -492,6 +641,7 @@ export const cadBuildAlignmentStationPoints = (
     !Number.isFinite(interval) ||
     interval <= 0 ||
     !Number.isFinite(startStation) ||
+    endStation == null ||
     !Number.isFinite(endStation) ||
     endStation < startStation - 1e-9
   ) {

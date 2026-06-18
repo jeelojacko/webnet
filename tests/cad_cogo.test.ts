@@ -60,7 +60,10 @@ import {
   cadDraftBatchCogo,
 } from '../src/engine/cad/cadBatchCogo';
 import {
+  cadAlignmentDisplayStationToRawStation,
+  cadAlignmentEndStation,
   cadAlignmentLength,
+  cadAlignmentRawStationToDisplayStation,
   cadBuildAlignmentStationPoints,
   cadBuildAlignmentDraft,
   cadPointAtAlignmentStationOffset,
@@ -385,6 +388,23 @@ describe('Survey CAD COGO helpers', () => {
     expect(stationPoints[1]?.point.y ?? Number.NaN).toBeCloseTo(0, 6);
     expect(stationPoints.at(-1)?.point.x ?? Number.NaN).toBeCloseTo(20, 6);
     expect(stationPoints.at(-1)?.point.y ?? Number.NaN).toBeCloseTo(10, 6);
+
+    const equationAlignment = {
+      elements: [...elements],
+      startStation: 100,
+      stationEquations: [{ backStation: 110, aheadStation: 120, rawStation: 110 }],
+    };
+    expect(cadAlignmentDisplayStationToRawStation(equationAlignment, 100)).toBeCloseTo(100, 6);
+    expect(cadAlignmentDisplayStationToRawStation(equationAlignment, 110)).toBeCloseTo(110, 6);
+    expect(cadAlignmentDisplayStationToRawStation(equationAlignment, 115)).toBeNull();
+    expect(cadAlignmentDisplayStationToRawStation(equationAlignment, 120)).toBeCloseTo(110, 6);
+    expect(cadAlignmentRawStationToDisplayStation(equationAlignment, 110)).toBeCloseTo(120, 6);
+    expect(cadAlignmentRawStationToDisplayStation(equationAlignment, 125)).toBeCloseTo(135, 6);
+    expect(cadAlignmentEndStation(equationAlignment)).toBeCloseTo(100 + 10 + Math.PI * 5 + 10, 6);
+
+    const equationPoint = cadPointAtAlignmentStation(equationAlignment, 125);
+    expect(equationPoint?.x ?? Number.NaN).toBeCloseTo(14.794255386, 6);
+    expect(equationPoint?.y ?? Number.NaN).toBeCloseTo(1.224174381, 6);
   });
 
   it('finds deterministic line-like intersections', () => {

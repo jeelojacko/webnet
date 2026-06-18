@@ -158,6 +158,7 @@ interface UseSurveyCadWorkspaceResult {
     | 'POINT_ALONG_LINE'
     | 'EXTEND_LINE'
     | 'OFFSET_POINT'
+    | 'ALIGNMENT_STATION_EQUATION'
     | 'ALIGNMENT_OFFSET_POINT'
     | 'ALIGNMENT_INTERVAL_POINTS'
     | 'CURVE_SOLVER'
@@ -194,6 +195,7 @@ interface UseSurveyCadWorkspaceResult {
   canCreateIntersectionPoint: boolean;
   canCreateAlignment: boolean;
   canReportAlignmentStation: boolean;
+  canCreateAlignmentStationEquation: boolean;
   canCreateAlignmentOffsetPoint: boolean;
   canCreateAlignmentIntervalPoints: boolean;
   canCreateParcel: boolean;
@@ -233,6 +235,7 @@ interface UseSurveyCadWorkspaceResult {
   startPointAlongLineCommand: () => void;
   startExtendLineCommand: () => void;
   startOffsetPointCommand: () => void;
+  startAlignmentStationEquationCommand: () => void;
   startAlignmentOffsetPointCommand: () => void;
   startAlignmentIntervalPointsCommand: () => void;
   startCurveSolverCommand: () => void;
@@ -587,6 +590,7 @@ export const useSurveyCadWorkspace = (
     startPointAlongLineCommand,
     startExtendLineCommand,
     startOffsetPointCommand,
+    startAlignmentStationEquationCommand,
     startAlignmentOffsetPointCommand,
     startAlignmentIntervalPointsCommand,
     startCurveSolverCommand,
@@ -968,6 +972,8 @@ export const useSurveyCadWorkspace = (
       selectedEntities.length === 2 &&
       selectedAlignmentForStationing != null &&
       selectedSurveyPointForStationing != null,
+    canCreateAlignmentStationEquation:
+      selectedEntities.length === 1 && selectedAlignmentForStationing != null,
     canCreateAlignmentOffsetPoint:
       selectedEntities.length === 1 && selectedAlignmentForStationing != null,
     canCreateAlignmentIntervalPoints:
@@ -1009,6 +1015,7 @@ export const useSurveyCadWorkspace = (
     startPointAlongLineCommand,
     startExtendLineCommand,
     startOffsetPointCommand,
+    startAlignmentStationEquationCommand,
     startAlignmentOffsetPointCommand,
     startAlignmentIntervalPointsCommand,
     startCurveSolverCommand,

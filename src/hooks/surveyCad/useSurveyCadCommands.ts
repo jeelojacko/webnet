@@ -124,6 +124,7 @@ type ActiveCommandKey =
   | 'POINT_ALONG_LINE'
   | 'EXTEND_LINE'
   | 'OFFSET_POINT'
+  | 'ALIGNMENT_STATION_EQUATION'
   | 'ALIGNMENT_OFFSET_POINT'
   | 'ALIGNMENT_INTERVAL_POINTS'
   | 'CURVE_SOLVER'
@@ -184,6 +185,12 @@ type CommandSession =
       inputValue: string;
       lineStart: CommandPoint;
       lineEnd: CommandPoint;
+      resultText?: string;
+    }
+  | {
+      key: 'ALIGNMENT_STATION_EQUATION';
+      inputValue: string;
+      alignment: CadAlignmentEntity;
       resultText?: string;
     }
   | {
@@ -459,6 +466,7 @@ interface UseSurveyCadCommandsResult {
   startPointAlongLineCommand: () => void;
   startExtendLineCommand: () => void;
   startOffsetPointCommand: () => void;
+  startAlignmentStationEquationCommand: () => void;
   startAlignmentOffsetPointCommand: () => void;
   startAlignmentIntervalPointsCommand: () => void;
   startCurveSolverCommand: () => void;
@@ -625,6 +633,7 @@ const sessionExpectsPointPick = (session: CommandSession | null): boolean => {
     case 'REVERSE_CURVE':
     case 'COMPOUND_CURVE':
     case 'OFFSET_INTX':
+    case 'ALIGNMENT_STATION_EQUATION':
     case 'ALIGNMENT_OFFSET_POINT':
     case 'ALIGNMENT_INTERVAL_POINTS':
     case 'DEFLECT_POINT':
@@ -796,6 +805,20 @@ const parseAlignmentStationOffsetInput = (
   const offset = Number(parts[1]);
   if (!Number.isFinite(station) || !Number.isFinite(offset)) return null;
   return { label, station, offset };
+};
+
+const parseAlignmentStationEquationInput = (
+  token: string,
+): { backStation: number; aheadStation: number } | null => {
+  const { body } = splitLabelFromBody(token);
+  const parts = body.split(',').map((part) => part.trim());
+  if (parts.length !== 2) return null;
+  const backStation = Number(parts[0]);
+  const aheadStation = Number(parts[1]);
+  if (!Number.isFinite(backStation) || !Number.isFinite(aheadStation) || aheadStation < backStation) {
+    return null;
+  }
+  return { backStation, aheadStation };
 };
 
 const parseAlignmentIntervalInput = (
@@ -1177,6 +1200,9 @@ const promptForSession = (session: CommandSession | null, fallbackStatus: string
     case 'OFFSET_POINT':
       return session.resultText ??
         `OFFSET_POINT active. Selected line ${session.lineStart.label}-${session.lineEnd.label}. Enter \`Loffset,along\` or \`Roffset,along\`, with along as distance or percent.`;
+    case 'ALIGNMENT_STATION_EQUATION':
+      return session.resultText ??
+        `ALIGNMENT_STATION_EQUATION active. Selected alignment ${session.alignment.name}. Enter \`backStation,aheadStation\`.`;
     case 'ALIGNMENT_OFFSET_POINT':
       return session.resultText ??
         `ALIGNMENT_OFFSET_POINT active. Selected alignment ${session.alignment.name}. Enter \`station,offset\` or \`LABEL=station,offset\`.`;
@@ -1368,6 +1394,8 @@ const helpTextForSession = (session: CommandSession | null): string => {
       return 'EXTEND_LINE input: enter extension distance from the selected line end.';
     case 'OFFSET_POINT':
       return 'OFFSET_POINT input: enter `Loffset,along` or `Roffset,along`; along may be distance or percent like `50%`.';
+    case 'ALIGNMENT_STATION_EQUATION':
+      return 'ALIGNMENT_STATION_EQUATION input: enter `backStation,aheadStation`; ahead must stay at or above back.';
     case 'ALIGNMENT_OFFSET_POINT':
       return 'ALIGNMENT_OFFSET_POINT input: enter `station,offset` or `LABEL=station,offset`. Positive offset follows the current station report sign.';
     case 'ALIGNMENT_INTERVAL_POINTS':
@@ -1661,6 +1689,7 @@ export const useSurveyCadCommands = ({
       case 'POINT_ALONG_LINE':
       case 'EXTEND_LINE':
       case 'OFFSET_POINT':
+      case 'ALIGNMENT_STATION_EQUATION':
       case 'ALIGNMENT_OFFSET_POINT':
       case 'ALIGNMENT_INTERVAL_POINTS':
       case 'BATCH_COGO':
@@ -1883,6 +1912,8 @@ export const useSurveyCadCommands = ({
       case 'REVERSE_CURVE':
       case 'COMPOUND_CURVE':
       case 'OFFSET_INTX':
+        return null;
+      case 'ALIGNMENT_STATION_EQUATION':
         return null;
       case 'ALIGNMENT_INTERVAL_POINTS': {
         const parsed = parseAlignmentIntervalInput(session.inputValue);
@@ -3195,6 +3226,26 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
           { label: 'Northing', value: point.y.toFixed(3), unit: 'm' },
           { label: 'Easting', value: point.x.toFixed(3), unit: 'm' },
         ],
+      );
+      replaceSession(null);
+      return;
+    }
+    if (session.key === 'ALIGNMENT_STATION_EQUATION') {
+      const parsed = parseAlignmentStationEquationInput(session.inputValue);
+      if (!parsed) {
+        replaceSession({
+          ...session,
+          resultText: 'ALIGNMENT_STATION_EQUATION input invalid. Use `backStation,aheadStation`, with ahead at or above back.',
+        });
+        return;
+      }
+      applyHistoryUpdate((existing) =>
+        runCadCommand(existing, {
+          key: 'ALIGNMENT_STATION_EQUATION',
+          alignmentEntityId: session.alignment.id,
+          backStation: parsed.backStation,
+          aheadStation: parsed.aheadStation,
+        }),
       );
       replaceSession(null);
       return;
@@ -4768,6 +4819,14 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
         inputValue: '',
         lineStart: selectedLineCommandPoints.start,
         lineEnd: selectedLineCommandPoints.end,
+      });
+    },
+    startAlignmentStationEquationCommand: () => {
+      if (!selectedAlignmentForStationing) return;
+      beginSession({
+        key: 'ALIGNMENT_STATION_EQUATION',
+        inputValue: '',
+        alignment: selectedAlignmentForStationing,
       });
     },
     startAlignmentOffsetPointCommand: () => {

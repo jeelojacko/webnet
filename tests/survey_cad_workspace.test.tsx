@@ -5317,6 +5317,92 @@ describe('SurveyCadWorkspace', () => {
     container.remove();
   });
 
+  it('adds a station equation to a selected alignment', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+    const capture = createPersistedStateCapture();
+
+    const baseProject = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+    const stationProject = appendCadProjectEntities(baseProject, [
+      {
+        id: 'alignment:station-ui-test',
+        type: 'alignment',
+        layerId: 'planning',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        name: 'ALIGN1',
+        startStation: 100,
+        elements: [
+          {
+            kind: 'line',
+            start: { x: 0, y: 0 },
+            end: { x: 60, y: 40 },
+          },
+        ],
+      },
+    ]);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+          persistedState={{
+            version: 1,
+            sourceSignature: buildCadProjectSignature(baseProject),
+            project: stationProject,
+          }}
+          onPersistedStateChange={capture.onPersistedStateChange}
+        />,
+      );
+    });
+
+    const alignmentTarget = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="alignment:station-ui-test"]',
+    ) as SVGElement | null;
+    const commandInput = container.querySelector('[data-survey-cad-command-input]') as HTMLInputElement | null;
+    if (!alignmentTarget || !commandInput) throw new Error('Alignment station equation controls not found');
+
+    await act(async () => {
+      alignmentTarget.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 0, clientY: 0 }));
+      clickButton(container, 'STA EQ');
+      setTextInputValue(commandInput, '110,120');
+      pressKey(commandInput, 'Enter');
+    });
+
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+      'ALIGNMENT_STATION_EQUATION committed',
+    );
+    expect(container.querySelector('[data-survey-cad-cogo-panel-title]')?.textContent).toContain(
+      'Alignment Station Equation',
+    );
+
+    const persisted = capture.read();
+    const alignmentEntity = persisted?.project.entities.find(
+      (entity) => entity.type === 'alignment' && entity.id === 'alignment:station-ui-test',
+    );
+    expect(alignmentEntity && 'stationEquations' in alignmentEntity ? alignmentEntity.stationEquations : null).toEqual([
+      { backStation: 110, aheadStation: 120, rawStation: 110 },
+    ]);
+    expect(persisted?.project.cogoComputations.at(-1)?.toolKey).toBe('ALIGNMENT_STATION_EQUATION');
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
   it('creates interval points from a selected alignment', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);

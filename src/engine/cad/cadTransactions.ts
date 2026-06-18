@@ -10,7 +10,8 @@ import {
   type CadBatchCogoDraft,
 } from './cadBatchCogo';
 import {
-  cadAlignmentLength,
+  cadAlignmentDisplayStationToRawStation,
+  cadAlignmentEndStation,
   cadBuildAlignmentStationPoints,
   cadBuildAlignmentDraft,
   cadPointAtAlignmentStationOffset,
@@ -71,6 +72,7 @@ export type CadCommandKey =
   | 'TANGENT_CURVE'
   | 'ALIGNMENT_CREATE'
   | 'ALIGNMENT_STATION_REPORT'
+  | 'ALIGNMENT_STATION_EQUATION'
   | 'ALIGNMENT_OFFSET_POINT'
   | 'ALIGNMENT_INTERVAL_POINTS'
   | 'PARCEL_CREATE'
@@ -185,6 +187,12 @@ export type CadCommand =
       pointEntityId: CadEntityId;
     }
   | {
+      key: 'ALIGNMENT_STATION_EQUATION';
+      alignmentEntityId: CadEntityId;
+      backStation: number;
+      aheadStation: number;
+    }
+  | {
       key: 'ALIGNMENT_OFFSET_POINT';
       alignmentEntityId: CadEntityId;
       station: number;
@@ -275,7 +283,7 @@ interface CadCommandDefinition<TCommand extends CadCommand> {
 const createIdleCommandState = (): CadCommandState => ({
   key: 'IDLE',
   phase: 'idle',
-  prompt: 'Ready. Use Select All, Clear Selection, ERASE, POINT, COGO PT, LINE, PLINE, TRAVERSE, DEED, ARC 3PT, TAN CURVE, ALIGN, STA, STA PT, STA INT, PARCEL, MOVE, COPY, TRIM, INTX, or INVERSE to exercise command history.',
+  prompt: 'Ready. Use Select All, Clear Selection, ERASE, POINT, COGO PT, LINE, PLINE, TRAVERSE, DEED, ARC 3PT, TAN CURVE, ALIGN, STA, STA EQ, STA PT, STA INT, PARCEL, MOVE, COPY, TRIM, INTX, or INVERSE to exercise command history.',
 });
 
 const nextManualStationId = (project: CadProject): string => {
@@ -2529,6 +2537,115 @@ const alignmentStationReportCommand: CadCommandDefinition<{
   },
 };
 
+const alignmentStationEquationCommand: CadCommandDefinition<{
+  key: 'ALIGNMENT_STATION_EQUATION';
+  alignmentEntityId: CadEntityId;
+  backStation: number;
+  aheadStation: number;
+}> = {
+  key: 'ALIGNMENT_STATION_EQUATION',
+  execute: (snapshot, command) => {
+    const alignmentEntity = snapshot.project.entities.find(
+      (entity): entity is Extract<CadEntity, { type: 'alignment' }> =>
+        entity.type === 'alignment' && entity.id === command.alignmentEntityId,
+    );
+    if (!alignmentEntity) return null;
+    if (
+      !Number.isFinite(command.backStation) ||
+      !Number.isFinite(command.aheadStation) ||
+      command.aheadStation < command.backStation - 1e-9
+    ) {
+      return null;
+    }
+
+    const rawStation = cadAlignmentDisplayStationToRawStation(alignmentEntity, command.backStation);
+    if (rawStation == null) return null;
+    if (
+      (alignmentEntity.stationEquations ?? []).some((equation) =>
+        Math.abs((equation.rawStation ?? Number.NaN) - rawStation) <= 1e-9,
+      )
+    ) {
+      return null;
+    }
+
+    const updatedAlignment: Extract<CadEntity, { type: 'alignment' }> = {
+      ...alignmentEntity,
+      stationEquations: [
+        ...(alignmentEntity.stationEquations ?? []),
+        {
+          backStation: command.backStation,
+          aheadStation: command.aheadStation,
+          rawStation,
+        },
+      ].sort((left, right) => {
+        const leftRaw = left.rawStation ?? left.backStation;
+        const rightRaw = right.rawStation ?? right.backStation;
+        return leftRaw - rightRaw;
+      }),
+    };
+
+    const summary = `Added station equation ${command.backStation.toFixed(3)} ahead ${command.aheadStation.toFixed(3)} on ${alignmentEntity.name}`;
+    const provenance = createCogoProvenance({
+      toolKey: 'ALIGNMENT_STATION_EQUATION',
+      sourceEntityIds: [alignmentEntity.id],
+      inputs: {
+        alignmentEntityId: alignmentEntity.id,
+        alignmentName: alignmentEntity.name,
+      },
+      parameters: {
+        alignmentEntityId: alignmentEntity.id,
+        alignmentName: alignmentEntity.name,
+        backStation: command.backStation,
+        aheadStation: command.aheadStation,
+        rawStation,
+      },
+      summary,
+    });
+    updatedAlignment.metadata = buildCadCogoEntityMetadata(updatedAlignment.metadata, provenance);
+
+    const nextProjectWithAlignment = replaceCadProjectEntities(
+      snapshot.project,
+      snapshot.project.entities.map((entity) => (entity.id === updatedAlignment.id ? updatedAlignment : entity)),
+    );
+    const nextProject = appendCadProjectCogoComputation(
+      nextProjectWithAlignment,
+      buildCadCogoComputation({
+        createdEntities: [],
+        updatedEntities: [updatedAlignment],
+        removedEntityIds: [],
+        report: {
+          title: 'Alignment Station Equation',
+          summary,
+          rows: [
+            { label: 'Alignment', value: alignmentEntity.name },
+            { label: 'Back station', value: command.backStation.toFixed(3) },
+            { label: 'Ahead station', value: command.aheadStation.toFixed(3) },
+            { label: 'Raw station', value: rawStation.toFixed(3) },
+            { label: 'Equation count', value: String(updatedAlignment.stationEquations?.length ?? 0) },
+          ],
+        },
+        warnings: [],
+        provenance,
+      }),
+    );
+
+    return {
+      nextSnapshot: {
+        project: nextProject,
+        selection: createCadSelectionState(nextProject, [updatedAlignment.id]),
+      },
+      commandState: {
+        key: 'ALIGNMENT_STATION_EQUATION',
+        phase: 'committed',
+        prompt: `ALIGNMENT_STATION_EQUATION committed for ${alignmentEntity.name}.`,
+      },
+      transactionLabel: `ALIGNMENT_STATION_EQUATION (${alignmentEntity.name})`,
+      addedEntityIds: [],
+      removedEntityIds: [],
+    };
+  },
+};
+
 const alignmentOffsetPointCommand: CadCommandDefinition<{
   key: 'ALIGNMENT_OFFSET_POINT';
   alignmentEntityId: CadEntityId;
@@ -2652,7 +2769,7 @@ const alignmentIntervalPointsCommand: CadCommandDefinition<{
       parameters: {
         interval: command.interval,
         startStation: command.startStation ?? alignmentEntity.startStation,
-        endStation: command.endStation ?? alignmentEntity.startStation + cadAlignmentLength(alignmentEntity),
+        endStation: command.endStation ?? cadAlignmentEndStation(alignmentEntity) ?? alignmentEntity.startStation,
       },
     });
     let workingProject = snapshot.project;
@@ -2685,7 +2802,7 @@ const alignmentIntervalPointsCommand: CadCommandDefinition<{
       selectedPointIds.push(pointEntity.id);
     });
     const startStation = command.startStation ?? alignmentEntity.startStation;
-    const endStation = command.endStation ?? alignmentEntity.startStation + cadAlignmentLength(alignmentEntity);
+    const endStation = command.endStation ?? cadAlignmentEndStation(alignmentEntity) ?? alignmentEntity.startStation;
     const nextProject = appendCogoComputation({
       project: workingProject,
       provenance: {
@@ -3089,6 +3206,7 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   TANGENT_CURVE: tangentCurveCommand as CadCommandDefinition<CadCommand>,
   ALIGNMENT_CREATE: alignmentCreateCommand as CadCommandDefinition<CadCommand>,
   ALIGNMENT_STATION_REPORT: alignmentStationReportCommand as CadCommandDefinition<CadCommand>,
+  ALIGNMENT_STATION_EQUATION: alignmentStationEquationCommand as CadCommandDefinition<CadCommand>,
   ALIGNMENT_OFFSET_POINT: alignmentOffsetPointCommand as CadCommandDefinition<CadCommand>,
   ALIGNMENT_INTERVAL_POINTS: alignmentIntervalPointsCommand as CadCommandDefinition<CadCommand>,
   PARCEL_CREATE: parcelCreateCommand as CadCommandDefinition<CadCommand>,

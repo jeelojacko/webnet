@@ -418,6 +418,81 @@ describe('Survey CAD command history', () => {
     ).toBe(true);
   });
 
+  it('adds alignment station equations through history and applies them to later station input', () => {
+    const project = appendCadProjectEntities(
+      buildSurveyCadSpikeProject({
+        input,
+        instrumentLibrary: {},
+        parseOptions,
+        units: 'm',
+        result: null,
+      }),
+      [
+        {
+          id: 'alignment:test',
+          type: 'alignment',
+          layerId: 'planning',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          name: 'ALIGN1',
+          startStation: 100,
+          elements: [
+            {
+              kind: 'line',
+              start: { x: 0, y: 0 },
+              end: { x: 60, y: 40 },
+            },
+          ],
+        },
+      ],
+    );
+
+    const equationState = runCadCommand(createCadHistoryState(project), {
+      key: 'ALIGNMENT_STATION_EQUATION',
+      alignmentEntityId: 'alignment:test',
+      backStation: 110,
+      aheadStation: 120,
+    });
+    const alignmentEntity = equationState.present.project.entities.find(
+      (entity): entity is Extract<(typeof equationState.present.project.entities)[number], { type: 'alignment' }> =>
+        entity.type === 'alignment' && entity.id === 'alignment:test',
+    );
+    expect(alignmentEntity?.stationEquations).toEqual([
+      { backStation: 110, aheadStation: 120, rawStation: 110 },
+    ]);
+    expect(equationState.present.project.cogoComputations.at(-1)?.toolKey).toBe('ALIGNMENT_STATION_EQUATION');
+    expect(equationState.present.project.cogoComputations.at(-1)?.report.title).toBe('Alignment Station Equation');
+
+    const pointState = runCadCommand(equationState, {
+      key: 'ALIGNMENT_OFFSET_POINT',
+      alignmentEntityId: 'alignment:test',
+      station: 125,
+      offset: 0,
+      label: 'SEQ1',
+    });
+    const pointEntity = pointState.present.project.entities.find(
+      (entity): entity is Extract<(typeof pointState.present.project.entities)[number], { type: 'survey-point' }> =>
+        entity.type === 'survey-point' && entity.stationId === 'SEQ1',
+    );
+    expect(pointEntity?.x ?? Number.NaN).toBeCloseTo(12.48075442, 6);
+    expect(pointEntity?.y ?? Number.NaN).toBeCloseTo(8.32050294, 6);
+
+    const undoneState = undoCadHistory(pointState);
+    expect(
+      undoneState.present.project.entities.some(
+        (entity) => entity.type === 'survey-point' && entity.stationId === 'SEQ1',
+      ),
+    ).toBe(false);
+
+    const redoneState = redoCadHistory(undoneState);
+    expect(
+      redoneState.present.project.entities.some(
+        (entity) => entity.type === 'survey-point' && entity.stationId === 'SEQ1',
+      ),
+    ).toBe(true);
+  });
+
   it('creates alignment interval points through history with persisted provenance', () => {
     const project = appendCadProjectEntities(
       buildSurveyCadSpikeProject({

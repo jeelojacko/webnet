@@ -94,6 +94,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     canCreateIntersectionPoint,
     canCreateAlignment,
     canReportAlignmentStation,
+    canCreateAlignmentStationEquation,
     canCreateAlignmentOffsetPoint,
     canCreateAlignmentIntervalPoints,
     canCreateParcel,
@@ -134,6 +135,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     startPointAlongLineCommand,
     startExtendLineCommand,
     startOffsetPointCommand,
+    startAlignmentStationEquationCommand,
     startAlignmentOffsetPointCommand,
     startAlignmentIntervalPointsCommand,
     startCurveSolverCommand,
@@ -332,6 +334,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     if (activeCommandKey === 'POINT_ALONG_LINE') return 'Type distance or percent like 25 or 50% from selected line';
     if (activeCommandKey === 'EXTEND_LINE') return 'Type extension distance from selected line end';
     if (activeCommandKey === 'OFFSET_POINT') return 'Type Loffset,along or Roffset,along from selected line';
+    if (activeCommandKey === 'ALIGNMENT_STATION_EQUATION') return 'Type backStation,aheadStation from selected alignment';
     if (activeCommandKey === 'ALIGNMENT_OFFSET_POINT') return 'Type station,offset or LABEL=station,offset from selected alignment';
     if (activeCommandKey === 'ALIGNMENT_INTERVAL_POINTS') return 'Type interval or start,end,interval from selected alignment';
     if (activeCommandKey === 'CURVE_SOLVER') return 'Type param1,param2,value1,value2 like radius,delta,200,60';
@@ -535,6 +538,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               canCreateIntersectionPoint={canCreateIntersectionPoint}
               canCreateAlignment={canCreateAlignment}
               canReportAlignmentStation={canReportAlignmentStation}
+              canCreateAlignmentStationEquation={canCreateAlignmentStationEquation}
               canCreateAlignmentOffsetPoint={canCreateAlignmentOffsetPoint}
               canCreateAlignmentIntervalPoints={canCreateAlignmentIntervalPoints}
               canCreateParcel={canCreateParcel}
@@ -566,6 +570,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               onStartPointAlongLine={startPointAlongLineCommand}
               onStartExtendLine={startExtendLineCommand}
               onStartOffsetPoint={startOffsetPointCommand}
+              onStartAlignmentStationEquation={startAlignmentStationEquationCommand}
               onStartAlignmentOffsetPoint={startAlignmentOffsetPointCommand}
               onStartAlignmentIntervalPoints={startAlignmentIntervalPointsCommand}
               onStartCurveSolver={startCurveSolverCommand}

@@ -26,6 +26,7 @@ Current implemented spike slice:
 - first traverse-entry command: `TRAVERSE`
 - first alignment-promotion command: `ALIGNMENT_CREATE` from a selected native line/arc chain
 - first alignment station-report command: `ALIGNMENT_STATION_REPORT` from a selected native alignment + point pair
+- first alignment station-equation command: `ALIGNMENT_STATION_EQUATION` from a selected native alignment plus typed `backStation,aheadStation`
 - first alignment station-offset point command: `ALIGNMENT_OFFSET_POINT` from a selected native alignment plus typed `station,offset`
 - first alignment station-interval point command: `ALIGNMENT_INTERVAL_POINTS` from a selected native alignment plus typed `interval` or `start,end,interval`
 - first parcel-promotion command: `PARCEL_CREATE` from a selected native polyline/traverse seam
@@ -36,6 +37,7 @@ Current implemented spike slice:
 - deed-entry toolbar flow now adds `DEED` / `BATCH_COGO`, which opens a native batch panel for pasted `START`, bearing-distance, and tangent-curve rows, previews parsed rows plus generated point/line/arc geometry before commit, and persists the committed batch as one shared COGO computation
 - selection-driven toolbar flow now also adds `ALIGN`, which validates a selected open line/arc chain, snapshots it into a native alignment entity, and persists a shared COGO report/provenance record for later stationing work
 - selection-driven toolbar flow now also adds `STA`, which projects a selected survey point onto a selected native alignment, reports station/offset plus projected coordinates, and persists that stationing result through the shared COGO history seam
+- selection-driven toolbar flow now also adds `STA EQ`, which starts a typed station-equation command from a selected native alignment, persists the resolved raw-station break plus displayed back/ahead station values onto the alignment, and feeds those equations back into later station-report, station-point, and station-interval commands
 - selection-driven toolbar flow now also adds `STA PT`, which starts a typed station-offset point command from a selected native alignment, previews the resolved point, and persists the created point plus report rows through the shared history seam
 - selection-driven toolbar flow now also adds `STA INT`, which starts a typed station-interval point command from a selected native alignment, previews the generated point set, and persists the created points plus summary rows through the shared history seam
 - undo/redo replay over snapshot-backed transaction entries
