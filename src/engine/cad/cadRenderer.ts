@@ -1,6 +1,8 @@
 import type {
   CadDisplayPrimitive,
   CadDisplayScene,
+  CadAlignmentEntity,
+  CadAlignmentElement,
   CadEntity,
   CadPolylineEntity,
   CadProject,
@@ -13,6 +15,13 @@ import {
   formatCadSweepDms,
 } from './cadCogo';
 import { cadSignedSweepDeg } from './cadGeometry';
+import {
+  cadAlignmentEndStation,
+  cadAlignmentLength,
+  cadAlignmentRawStationToDisplayStation,
+  formatCadStation,
+  cadPointAtAlignmentStationOffset,
+} from './cadAlignment';
 
 const layerColor = (project: CadProject, layerId: string): string =>
   project.layers.find((layer) => layer.id === layerId)?.color ?? '#94a3b8';
@@ -212,6 +221,86 @@ const buildArcLabelPrimitive = (
   }];
 };
 
+const buildAlignmentLabelPrimitive = (
+  project: CadProject,
+  entity: CadAlignmentEntity,
+): CadDisplayPrimitive[] => {
+  const totalLength = cadAlignmentLength(entity);
+  const endStation = cadAlignmentEndStation(entity);
+  if (entity.elements.length === 0 || totalLength <= 1e-9 || endStation == null) {
+    return [];
+  }
+
+  const midpointRawStation = entity.startStation + totalLength / 2;
+  const midpointDisplayStation = cadAlignmentRawStationToDisplayStation(entity, midpointRawStation);
+  if (midpointDisplayStation == null) return [];
+
+  const labelOffset = Math.max(Math.min(totalLength * 0.02, 8), 1.5);
+  const midpoint = cadPointAtAlignmentStationOffset(entity, midpointDisplayStation, labelOffset);
+  if (!midpoint) return [];
+  const rotationDeg = buildAlignmentLabelRotation(entity.elements[midpoint.elementIndex], midpoint.point);
+  if (rotationDeg == null) return [];
+
+  return [{
+    kind: 'text',
+    id: `primitive:${entity.id}:alignment-label`,
+    layerId: 'labels',
+    sourceEntityId: entity.id,
+    stroke: entityStyle(project, entity)?.color ?? layerColor(project, 'labels'),
+    point: midpoint.point,
+    text: `${entity.name}\nSTA ${formatCadStation(entity.startStation)} - ${formatCadStation(endStation)}`,
+    fontSize: textFontSize(project, entity, 11),
+    rotationDeg,
+    textAnchor: 'middle',
+  }];
+};
+
+const buildAlignmentLabelRotation = (
+  element: CadAlignmentElement | undefined,
+  point: { x: number; y: number },
+): number | null => {
+  if (!element) return null;
+  if (element.kind === 'line') {
+    return normalizeReadableLabelRotation(
+      -((Math.atan2(element.end.y - element.start.y, element.end.x - element.start.x) * 180) / Math.PI),
+    );
+  }
+  const radiusAngleDeg =
+    ((Math.atan2(point.y - element.center.y, point.x - element.center.x) * 180) / Math.PI);
+  const tangentAngleDeg =
+    radiusAngleDeg + (cadSignedSweepDeg(element.startAngleDeg, element.endAngleDeg) >= 0 ? 90 : -90);
+  return normalizeReadableLabelRotation(-tangentAngleDeg);
+};
+
+const buildAlignmentStationEquationLabelPrimitives = (
+  project: CadProject,
+  entity: CadAlignmentEntity,
+): CadDisplayPrimitive[] => {
+  if (!Array.isArray(entity.stationEquations) || entity.stationEquations.length === 0) {
+    return [];
+  }
+
+  return entity.stationEquations.flatMap((equation, index) => {
+    const labelOffset = 3 + index * 1.5;
+    const marker = cadPointAtAlignmentStationOffset(entity, equation.aheadStation, labelOffset);
+    if (!marker) return [];
+    const rotationDeg = buildAlignmentLabelRotation(entity.elements[marker.elementIndex], marker.point);
+    if (rotationDeg == null) return [];
+    return [{
+      kind: 'text' as const,
+      id: `primitive:${entity.id}:station-equation-label:${index + 1}`,
+      layerId: 'labels',
+      sourceEntityId: entity.id,
+      stroke: entityStyle(project, entity)?.color ?? layerColor(project, 'labels'),
+      point: marker.point,
+      text: `EQ ${formatCadStation(equation.backStation)} = ${formatCadStation(equation.aheadStation)}`,
+      fontSize: textFontSize(project, entity, 10),
+      rotationDeg,
+      textAnchor: 'middle' as const,
+    }];
+  });
+};
+
 const toPrimitives = (project: CadProject, entity: CadEntity): CadDisplayPrimitive[] => {
   const stroke = entityStyle(project, entity)?.color ?? layerColor(project, entity.layerId);
   switch (entity.type) {
@@ -271,33 +360,37 @@ const toPrimitives = (project: CadProject, entity: CadEntity): CadDisplayPrimiti
         ...buildArcLabelPrimitive(project, entity),
       ];
     case 'alignment':
-      return entity.elements.flatMap((element, index): CadDisplayPrimitive[] => {
-        if (element.kind === 'line') {
+      return [
+        ...entity.elements.flatMap((element, index): CadDisplayPrimitive[] => {
+          if (element.kind === 'line') {
+            return [{
+              kind: 'line',
+              id: `primitive:${entity.id}:${index + 1}`,
+              layerId: entity.layerId,
+              sourceEntityId: entity.id,
+              sourceSegmentId: `${entity.id}#${index}`,
+              stroke,
+              points: [element.start, element.end],
+              strokeWidth: strokeWidth(project, entity, 1.5),
+            }];
+          }
           return [{
-            kind: 'line',
+            kind: 'arc',
             id: `primitive:${entity.id}:${index + 1}`,
             layerId: entity.layerId,
             sourceEntityId: entity.id,
             sourceSegmentId: `${entity.id}#${index}`,
             stroke,
-            points: [element.start, element.end],
+            center: element.center,
+            radius: element.radius,
+            startAngleDeg: element.startAngleDeg,
+            endAngleDeg: element.endAngleDeg,
             strokeWidth: strokeWidth(project, entity, 1.5),
           }];
-        }
-        return [{
-          kind: 'arc',
-          id: `primitive:${entity.id}:${index + 1}`,
-          layerId: entity.layerId,
-          sourceEntityId: entity.id,
-          sourceSegmentId: `${entity.id}#${index}`,
-          stroke,
-          center: element.center,
-          radius: element.radius,
-          startAngleDeg: element.startAngleDeg,
-          endAngleDeg: element.endAngleDeg,
-          strokeWidth: strokeWidth(project, entity, 1.5),
-        }];
-      });
+        }),
+        ...buildAlignmentLabelPrimitive(project, entity),
+        ...buildAlignmentStationEquationLabelPrimitives(project, entity),
+      ];
     case 'text':
       return [{
         kind: 'text',

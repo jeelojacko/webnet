@@ -17,8 +17,13 @@ import {
   cadBuildAlignmentDraft,
   cadPointAtAlignmentStationOffset,
   cadProjectPointToAlignment,
+  formatCadStation,
 } from './cadAlignment';
 import { buildCadCogoComputation, buildCadCogoEntityMetadata } from './cadCogoTypes';
+import {
+  getCadEntityEditableName,
+  getCadEntityDisplayLabel,
+} from './cadEntityNames';
 import {
   cadAngleDegFromCenter,
   cadArcMidpoint,
@@ -27,6 +32,7 @@ import {
   cadClosestPointOnArc,
   cadClosestPointOnSegment,
   cadDistance,
+  cadInfiniteLineIntersection,
   cadIntersectArcArc,
   cadIntersectSegmentArc,
   cadNormalizeAngleDeg,
@@ -80,9 +86,11 @@ export type CadCommandKey =
   | 'PARCEL_CREATE'
   | 'MOVE'
   | 'COPY'
+  | 'FILLET'
   | 'PASTE'
   | 'TRIM'
   | 'INTERSECT_POINT'
+  | 'EDIT_ENTITY'
   | 'GRIP_EDIT';
 export type CadCommandPhase = 'idle' | 'committed';
 
@@ -230,6 +238,14 @@ export type CadCommand =
       deltaY: number;
     }
   | {
+      key: 'FILLET';
+      radius: number;
+      firstLineEntityId: CadEntityId;
+      firstPickPoint: { x: number; y: number };
+      secondLineEntityId: CadEntityId;
+      secondPickPoint: { x: number; y: number };
+    }
+  | {
       key: 'PASTE';
       deltaX: number;
       deltaY: number;
@@ -249,6 +265,17 @@ export type CadCommand =
       label?: string;
       firstLabel: string;
       secondLabel: string;
+    }
+  | {
+      key: 'EDIT_ENTITY';
+      entityId: CadEntityId;
+      edit:
+        | { kind: 'entity-name'; value: string }
+        | { kind: 'point-x'; value: number }
+        | { kind: 'point-y'; value: number }
+        | { kind: 'point-z'; value: number | null }
+        | { kind: 'line-end'; toX: number; toY: number }
+        | { kind: 'polyline-vertex'; vertexIndex: number; x: number; y: number };
     }
   | {
       key: 'GRIP_EDIT';
@@ -291,7 +318,7 @@ interface CadCommandDefinition<TCommand extends CadCommand> {
 const createIdleCommandState = (): CadCommandState => ({
   key: 'IDLE',
   phase: 'idle',
-  prompt: 'Ready. Use Select All, Clear Selection, ERASE, POINT, COGO PT, LINE, PLINE, TRAVERSE, DEED, ARC 3PT, TAN CURVE, ALIGN, ALIGN OFF, STA, STA EQ, STA PT, STA INT, PARCEL, MOVE, COPY, TRIM, INTX, or INVERSE to exercise command history.',
+  prompt: 'Ready. Use Select All, Clear Selection, ERASE, POINT, COGO PT, LINE, PLINE, TRAVERSE, DEED, ARC 3PT, TAN CURVE, ALIGN, ALIGN OFF, STA, STA EQ, STA PT, STA INT, PARCEL, MOVE, COPY, TRIM, FILLET, INTX, or INVERSE to exercise command history.',
 });
 
 const nextManualStationId = (project: CadProject): string => {
@@ -325,6 +352,788 @@ const nextAlignmentName = (project: CadProject): string => {
     maxSequence = Math.max(maxSequence, Number(match[1]));
   });
   return `ALIGN${maxSequence + 1}`;
+};
+
+const nextEntityName = (project: CadProject, prefix: string): string => {
+  const matcher = new RegExp(`^${prefix}(\\d+)$`, 'i');
+  let maxSequence = 0;
+  project.entities.forEach((entity) => {
+    const name = getCadEntityEditableName(entity);
+    const match = matcher.exec(name.trim());
+    if (!match) return;
+    maxSequence = Math.max(maxSequence, Number(match[1]));
+  });
+  return `${prefix}${maxSequence + 1}`;
+};
+
+const nextCurveSequence = (project: CadProject): number => {
+  const matcher = /^(?:CURVE|BC|MP|EC|R)(\d+)$/i;
+  let maxSequence = 0;
+  project.entities.forEach((entity) => {
+    const match = matcher.exec(getCadEntityEditableName(entity).trim());
+    if (!match) return;
+    maxSequence = Math.max(maxSequence, Number(match[1]));
+  });
+  return maxSequence + 1;
+};
+
+const buildCurveLabels = (sequence: number) => ({
+  curveName: `CURVE${sequence}`,
+  beginLabel: `BC${sequence}`,
+  midLabel: `MP${sequence}`,
+  endLabel: `EC${sequence}`,
+  radiusLabel: `R${sequence}`,
+});
+
+const cloneEntityMetadata = (entity: CadEntity): Record<string, unknown> =>
+  typeof entity.metadata === 'object' && entity.metadata != null ? { ...entity.metadata } : {};
+
+const withEntityMetadataName = <TEntity extends CadEntity>(
+  entity: TEntity,
+  name: string,
+): TEntity => ({
+  ...entity,
+  metadata: {
+    ...cloneEntityMetadata(entity),
+    entityName: name,
+  },
+});
+
+const renamePointReferences = (
+  entity: CadEntity,
+  pointEntityId: CadEntityId,
+  previousStationId: string,
+  nextStationId: string,
+): CadEntity => {
+  if (entity.type === 'survey-point' && entity.id === pointEntityId) {
+    return {
+      ...entity,
+      stationId: nextStationId,
+    };
+  }
+  if (entity.type === 'text') {
+    const metadata = cloneEntityMetadata(entity);
+    if (entity.anchorEntityId === pointEntityId) {
+      if (typeof metadata.stationId === 'string') {
+        metadata.stationId = nextStationId;
+      }
+      return {
+        ...entity,
+        text: entity.text === previousStationId ? nextStationId : entity.text,
+        metadata,
+      };
+    }
+    if (typeof metadata.stationId === 'string' && metadata.stationId === previousStationId) {
+      metadata.stationId = nextStationId;
+      return {
+        ...entity,
+        metadata,
+      };
+    }
+    return entity;
+  }
+  if (entity.type === 'line') {
+    return {
+      ...entity,
+      fromStationId: entity.fromStationId === previousStationId ? nextStationId : entity.fromStationId,
+      toStationId: entity.toStationId === previousStationId ? nextStationId : entity.toStationId,
+    };
+  }
+  if (entity.type === 'polyline' || entity.type === 'polygon' || entity.type === 'parcel') {
+    return {
+      ...entity,
+      vertexLabels: entity.vertexLabels.map((label) => (label === previousStationId ? nextStationId : label)),
+    };
+  }
+  if (entity.type === 'error-ellipse' && entity.stationId === previousStationId) {
+    return {
+      ...entity,
+      stationId: nextStationId,
+    };
+  }
+  return entity;
+};
+
+const movePointReferences = (
+  entity: CadEntity,
+  pointEntityId: CadEntityId,
+  stationId: string,
+  nextX: number,
+  nextY: number,
+  nextZ: number | undefined,
+): CadEntity => {
+  if (entity.type === 'survey-point' && entity.id === pointEntityId) {
+    return {
+      ...entity,
+      x: nextX,
+      y: nextY,
+      z: nextZ,
+    };
+  }
+  if (entity.type === 'text' && entity.anchorEntityId === pointEntityId) {
+    return {
+      ...entity,
+      x: nextX,
+      y: nextY,
+    };
+  }
+  if (entity.type === 'line') {
+    return {
+      ...entity,
+      fromX: entity.fromStationId === stationId ? nextX : entity.fromX,
+      fromY: entity.fromStationId === stationId ? nextY : entity.fromY,
+      toX: entity.toStationId === stationId ? nextX : entity.toX,
+      toY: entity.toStationId === stationId ? nextY : entity.toY,
+    };
+  }
+  if (entity.type === 'polyline' || entity.type === 'polygon' || entity.type === 'parcel') {
+    return {
+      ...entity,
+      vertices: entity.vertices.map((vertex, index) =>
+        entity.vertexLabels[index] === stationId ? { x: nextX, y: nextY } : vertex,
+      ),
+    };
+  }
+  if (entity.type === 'error-ellipse' && entity.stationId === stationId) {
+    return {
+      ...entity,
+      centerX: nextX,
+      centerY: nextY,
+    };
+  }
+  return entity;
+};
+
+const syncLinkedSurveyPointPosition = (
+  project: CadProject,
+  stationId: string | undefined,
+  previousPoint: { x: number; y: number },
+  nextPoint: { x: number; y: number },
+): CadProject => {
+  if (!stationId) return project;
+  if (
+    Math.abs(previousPoint.x - nextPoint.x) <= 1e-9 &&
+    Math.abs(previousPoint.y - nextPoint.y) <= 1e-9
+  ) {
+    return project;
+  }
+  const linkedPoint = project.entities.find(
+    (entity): entity is CadSurveyPointEntity =>
+      entity.type === 'survey-point' &&
+      entity.stationId === stationId &&
+      Math.abs(entity.x - previousPoint.x) <= 1e-9 &&
+      Math.abs(entity.y - previousPoint.y) <= 1e-9,
+  );
+  if (!linkedPoint) return project;
+  return replaceCadProjectEntities(
+    project,
+    project.entities.map((entity) =>
+      movePointReferences(
+        entity,
+        linkedPoint.id,
+        linkedPoint.stationId,
+        nextPoint.x,
+        nextPoint.y,
+        linkedPoint.z,
+      ),
+    ),
+  );
+};
+
+const resolveLinkedSurveyPoint = (
+  project: CadProject,
+  stationId: string | undefined,
+  expectedPoint?: { x: number; y: number },
+): CadSurveyPointEntity | null => {
+  if (!stationId) return null;
+  return (
+    project.entities.find(
+      (entity): entity is CadSurveyPointEntity =>
+        entity.type === 'survey-point' &&
+        entity.stationId === stationId &&
+        (expectedPoint == null ||
+          (Math.abs(entity.x - expectedPoint.x) <= 1e-9 &&
+            Math.abs(entity.y - expectedPoint.y) <= 1e-9)),
+    ) ?? null
+  );
+};
+
+const createArcSupportEntities = (
+  project: CadProject,
+  arcEntityId: CadEntityId,
+  sequence: number,
+  definition: {
+    center: { x: number; y: number };
+    radius: number;
+    startAngleDeg: number;
+    endAngleDeg: number;
+  },
+  createdBy: string,
+): Array<CadSurveyPointEntity | CadTextEntity> => {
+  const curveLabels = buildCurveLabels(sequence);
+  const supportPoints = [
+    {
+      label: curveLabels.beginLabel,
+      point: cadPointOnCircle(definition.center, definition.radius, definition.startAngleDeg),
+    },
+    {
+      label: curveLabels.midLabel,
+      point: cadArcMidpoint(
+        definition.center,
+        definition.radius,
+        definition.startAngleDeg,
+        definition.endAngleDeg,
+      ),
+    },
+    {
+      label: curveLabels.endLabel,
+      point: cadPointOnCircle(definition.center, definition.radius, definition.endAngleDeg),
+    },
+    {
+      label: curveLabels.radiusLabel,
+      point: definition.center,
+    },
+  ];
+  let workingProject = project;
+  const entities: Array<CadSurveyPointEntity | CadTextEntity> = [];
+  supportPoints.forEach((supportPoint) => {
+    const bundle = createManualPointEntities(
+      workingProject,
+      supportPoint.point.x,
+      supportPoint.point.y,
+      supportPoint.label,
+      { createdBy },
+    );
+    const pointEntity: CadSurveyPointEntity = {
+      ...bundle.point,
+      metadata: {
+        ...cloneEntityMetadata(bundle.point),
+        anchorCurveEntityId: arcEntityId,
+        curvePointRole:
+          supportPoint.label.startsWith('BC')
+            ? 'begin'
+            : supportPoint.label.startsWith('MP')
+              ? 'mid'
+              : supportPoint.label.startsWith('EC')
+                ? 'end'
+                : 'radius',
+      },
+    };
+    const labelEntity: CadTextEntity | null = bundle.label
+      ? {
+          ...bundle.label,
+          metadata: {
+            ...cloneEntityMetadata(bundle.label),
+            anchorCurveEntityId: arcEntityId,
+          },
+        }
+      : null;
+    workingProject = appendCadProjectEntities(workingProject, compactManualPointEntities([pointEntity, labelEntity]));
+    entities.push(pointEntity);
+    if (labelEntity) entities.push(labelEntity);
+  });
+  return entities;
+};
+
+const syncArcSupportEntities = (
+  project: CadProject,
+  arcEntity: Extract<CadEntity, { type: 'arc' }>,
+): CadProject => {
+  const supportTargets = new Map<
+    'begin' | 'mid' | 'end' | 'radius',
+    { x: number; y: number }
+  >([
+    [
+      'begin',
+      cadPointOnCircle(
+        { x: arcEntity.centerX, y: arcEntity.centerY },
+        arcEntity.radius,
+        arcEntity.startAngleDeg,
+      ),
+    ],
+    [
+      'mid',
+      cadArcMidpoint(
+        { x: arcEntity.centerX, y: arcEntity.centerY },
+        arcEntity.radius,
+        arcEntity.startAngleDeg,
+        arcEntity.endAngleDeg,
+      ),
+    ],
+    [
+      'end',
+      cadPointOnCircle(
+        { x: arcEntity.centerX, y: arcEntity.centerY },
+        arcEntity.radius,
+        arcEntity.endAngleDeg,
+      ),
+    ],
+    ['radius', { x: arcEntity.centerX, y: arcEntity.centerY }],
+  ]);
+  const anchoredSupportPoints = project.entities.filter(
+    (entity): entity is CadSurveyPointEntity =>
+      entity.type === 'survey-point' &&
+      entity.metadata != null &&
+      typeof entity.metadata === 'object' &&
+      entity.metadata.anchorCurveEntityId === arcEntity.id &&
+      (entity.metadata.curvePointRole === 'begin' ||
+        entity.metadata.curvePointRole === 'mid' ||
+        entity.metadata.curvePointRole === 'end' ||
+        entity.metadata.curvePointRole === 'radius'),
+  );
+  return anchoredSupportPoints.reduce((currentProject, pointEntity) => {
+    const role = pointEntity.metadata?.curvePointRole;
+    if (
+      role !== 'begin' &&
+      role !== 'mid' &&
+      role !== 'end' &&
+      role !== 'radius'
+    ) {
+      return currentProject;
+    }
+    const target = supportTargets.get(role);
+    if (!target) return currentProject;
+    return replaceCadProjectEntities(
+      currentProject,
+      currentProject.entities.map((entity) =>
+        movePointReferences(
+          entity,
+          pointEntity.id,
+          pointEntity.stationId,
+          target.x,
+          target.y,
+          pointEntity.z,
+        ),
+      ),
+    );
+  }, project);
+};
+
+const syncEditedEntityDependencies = (
+  project: CadProject,
+  previousEntity: CadEntity,
+  updatedEntity: CadEntity,
+  options?: { syncLinePoints?: boolean },
+): CadProject => {
+  if (
+    (options?.syncLinePoints ?? true) &&
+    previousEntity.type === 'line' &&
+    updatedEntity.type === 'line'
+  ) {
+    let nextProject = syncLinkedSurveyPointPosition(
+      project,
+      previousEntity.fromStationId,
+      { x: previousEntity.fromX, y: previousEntity.fromY },
+      { x: updatedEntity.fromX, y: updatedEntity.fromY },
+    );
+    nextProject = syncLinkedSurveyPointPosition(
+      nextProject,
+      previousEntity.toStationId,
+      { x: previousEntity.toX, y: previousEntity.toY },
+      { x: updatedEntity.toX, y: updatedEntity.toY },
+    );
+    return nextProject;
+  }
+  if (
+    (previousEntity.type === 'polyline' && updatedEntity.type === 'polyline') ||
+    (previousEntity.type === 'polygon' && updatedEntity.type === 'polygon') ||
+    (previousEntity.type === 'parcel' && updatedEntity.type === 'parcel')
+  ) {
+    return previousEntity.vertices.reduce((currentProject, previousVertex, index) => {
+      const nextVertex = updatedEntity.vertices[index];
+      if (!nextVertex) return currentProject;
+      return syncLinkedSurveyPointPosition(
+        currentProject,
+        previousEntity.vertexLabels[index],
+        previousVertex,
+        nextVertex,
+      );
+    }, project);
+  }
+  if (previousEntity.type === 'arc' && updatedEntity.type === 'arc') {
+    return syncArcSupportEntities(project, updatedEntity);
+  }
+  return project;
+};
+
+const buildCopiedDependentPointEntities = (
+  project: CadProject,
+  selectedEntities: readonly CadEntity[],
+  deltaX: number,
+  deltaY: number,
+): {
+  workingProject: CadProject;
+  copiedEntities: CadEntity[];
+  copiedPointByStationId: Map<string, { stationId: string; x: number; y: number }>;
+  copiedArcSupportBySourceId: Map<
+    CadEntityId,
+    { sequence: number; arcSupportEntities: Array<CadSurveyPointEntity | CadTextEntity> }
+  >;
+} => {
+  const copiedEntities: CadEntity[] = [];
+  const copiedPointByStationId = new Map<string, { stationId: string; x: number; y: number }>();
+  const copiedArcSupportBySourceId = new Map<
+    CadEntityId,
+    { sequence: number; arcSupportEntities: Array<CadSurveyPointEntity | CadTextEntity> }
+  >();
+  let workingProject = project;
+  const copiedSourcePointIds = new Set<CadEntityId>();
+
+  const copyPointEntity = (
+    sourcePoint: CadSurveyPointEntity,
+    requestedLabel?: string,
+  ): { point: CadSurveyPointEntity; label: CadTextEntity | null } => {
+    const pointBundle = createManualPointEntities(
+      workingProject,
+      sourcePoint.x + deltaX,
+      sourcePoint.y + deltaY,
+      requestedLabel,
+      {
+        includeTextLabel: sourcePoint.metadata?.hiddenLabel === true ? false : undefined,
+        createdBy: 'COPY',
+      },
+    );
+    const appendedEntities = compactManualPointEntities([pointBundle.point, pointBundle.label]);
+    workingProject = appendCadProjectEntities(workingProject, appendedEntities);
+    copiedEntities.push(...appendedEntities);
+    copiedPointByStationId.set(sourcePoint.stationId, {
+      stationId: pointBundle.point.stationId,
+      x: pointBundle.point.x,
+      y: pointBundle.point.y,
+    });
+    copiedSourcePointIds.add(sourcePoint.id);
+    return pointBundle;
+  };
+
+  selectedEntities.forEach((entity) => {
+    if (entity.type === 'survey-point') {
+      copyPointEntity(entity);
+      return;
+    }
+
+    if (
+      entity.type === 'polyline' ||
+      entity.type === 'polygon' ||
+      entity.type === 'parcel'
+    ) {
+      entity.vertexLabels.forEach((label, index) => {
+        if (!label || copiedPointByStationId.has(label)) return;
+        const linkedPoint = resolveLinkedSurveyPoint(project, label, entity.vertices[index]);
+        if (!linkedPoint || copiedSourcePointIds.has(linkedPoint.id)) return;
+        copyPointEntity(linkedPoint);
+      });
+      return;
+    }
+
+    if (entity.type !== 'arc') return;
+    const sequence = nextCurveSequence(workingProject);
+    const curveLabels = buildCurveLabels(sequence);
+    const supportPointByRole = new Map<'begin' | 'mid' | 'end' | 'radius', CadSurveyPointEntity>();
+    project.entities.forEach((candidate) => {
+      if (
+        candidate.type !== 'survey-point' ||
+        candidate.metadata == null ||
+        typeof candidate.metadata !== 'object' ||
+        candidate.metadata.anchorCurveEntityId !== entity.id ||
+        (candidate.metadata.curvePointRole !== 'begin' &&
+          candidate.metadata.curvePointRole !== 'mid' &&
+          candidate.metadata.curvePointRole !== 'end' &&
+          candidate.metadata.curvePointRole !== 'radius')
+      ) {
+        return;
+      }
+      supportPointByRole.set(candidate.metadata.curvePointRole, candidate);
+    });
+    const requestedLabels: Record<'begin' | 'mid' | 'end' | 'radius', string> = {
+      begin: curveLabels.beginLabel,
+      mid: curveLabels.midLabel,
+      end: curveLabels.endLabel,
+      radius: curveLabels.radiusLabel,
+    };
+    const arcSupportEntities: Array<CadSurveyPointEntity | CadTextEntity> = [];
+    (['begin', 'mid', 'end', 'radius'] as const).forEach((role) => {
+      const sourcePoint = supportPointByRole.get(role);
+      if (!sourcePoint || copiedSourcePointIds.has(sourcePoint.id)) return;
+      const pointBundle = copyPointEntity(sourcePoint, requestedLabels[role]);
+      const copiedPoint: CadSurveyPointEntity = {
+        ...pointBundle.point,
+        metadata: {
+          ...cloneEntityMetadata(pointBundle.point),
+          curvePointRole: role,
+        },
+      };
+      const copiedLabel: CadTextEntity | null = pointBundle.label
+        ? {
+            ...pointBundle.label,
+            metadata: cloneEntityMetadata(pointBundle.label),
+          }
+        : null;
+      workingProject = replaceCadProjectEntities(
+        workingProject,
+        workingProject.entities.map((candidate) => {
+          if (candidate.id === pointBundle.point.id) return copiedPoint;
+          if (copiedLabel && candidate.id === copiedLabel.id) return copiedLabel;
+          return candidate;
+        }),
+      );
+      arcSupportEntities.push(copiedPoint);
+      if (copiedLabel) arcSupportEntities.push(copiedLabel);
+    });
+    copiedArcSupportBySourceId.set(entity.id, { sequence, arcSupportEntities });
+  });
+
+  return {
+    workingProject,
+    copiedEntities,
+    copiedPointByStationId,
+    copiedArcSupportBySourceId,
+  };
+};
+
+const buildFilletRayDirection = (
+  line: CadLineEntity,
+  intersectionPoint: { x: number; y: number },
+  pickPoint: { x: number; y: number },
+): { directionX: number; directionY: number; trimStart: boolean } | null => {
+  const start = { x: line.fromX, y: line.fromY };
+  const end = { x: line.toX, y: line.toY };
+  const projectedPick = cadProjectPointOntoInfiniteLine(pickPoint, start, end).point;
+  const pickedStart = cadDistance(projectedPick, start) <= cadDistance(projectedPick, end);
+  const primaryPoint = pickedStart ? start : end;
+  const secondaryPoint = pickedStart ? end : start;
+  const primaryVector = {
+    x: primaryPoint.x - intersectionPoint.x,
+    y: primaryPoint.y - intersectionPoint.y,
+  };
+  const primaryLength = Math.hypot(primaryVector.x, primaryVector.y);
+  const projectedVector = {
+    x: projectedPick.x - intersectionPoint.x,
+    y: projectedPick.y - intersectionPoint.y,
+  };
+  const projectedLength = Math.hypot(projectedVector.x, projectedVector.y);
+  const fallbackVector =
+    projectedLength > 1e-9
+      ? projectedVector
+      : primaryLength > 1e-9
+        ? primaryVector
+        : {
+            x: secondaryPoint.x - intersectionPoint.x,
+            y: secondaryPoint.y - intersectionPoint.y,
+          };
+  const fallbackLength = Math.hypot(fallbackVector.x, fallbackVector.y);
+  if (fallbackLength <= 1e-9) return null;
+  return {
+    directionX: fallbackVector.x / fallbackLength,
+    directionY: fallbackVector.y / fallbackLength,
+    trimStart: pickedStart,
+  };
+};
+
+const buildFilletRayDirectionForEndpoint = (
+  line: CadLineEntity,
+  intersectionPoint: { x: number; y: number },
+  trimStart: boolean,
+): { directionX: number; directionY: number; trimStart: boolean } | null => {
+  const primaryPoint = trimStart
+    ? { x: line.fromX, y: line.fromY }
+    : { x: line.toX, y: line.toY };
+  const secondaryPoint = trimStart
+    ? { x: line.toX, y: line.toY }
+    : { x: line.fromX, y: line.fromY };
+  const primaryVector = {
+    x: primaryPoint.x - intersectionPoint.x,
+    y: primaryPoint.y - intersectionPoint.y,
+  };
+  const primaryLength = Math.hypot(primaryVector.x, primaryVector.y);
+  const fallbackVector =
+    primaryLength > 1e-9
+      ? primaryVector
+      : {
+          x: secondaryPoint.x - intersectionPoint.x,
+          y: secondaryPoint.y - intersectionPoint.y,
+        };
+  const fallbackLength = Math.hypot(fallbackVector.x, fallbackVector.y);
+  if (fallbackLength <= 1e-9) return null;
+  return {
+    directionX: fallbackVector.x / fallbackLength,
+    directionY: fallbackVector.y / fallbackLength,
+    trimStart,
+  };
+};
+
+const buildCadLineFilletCandidate = (
+  firstLine: CadLineEntity,
+  firstPickPoint: { x: number; y: number },
+  secondLine: CadLineEntity,
+  secondPickPoint: { x: number; y: number },
+  radius: number,
+  intersectionPoint: { x: number; y: number },
+  firstRay: { directionX: number; directionY: number; trimStart: boolean },
+  secondRay: { directionX: number; directionY: number; trimStart: boolean },
+): {
+  firstLine: CadLineEntity;
+  secondLine: CadLineEntity;
+  arcDefinition: {
+    center: { x: number; y: number };
+    radius: number;
+    startAngleDeg: number;
+    endAngleDeg: number;
+  };
+  score: number;
+} | null => {
+  const dotProduct = Math.max(
+    -1,
+    Math.min(1, firstRay.directionX * secondRay.directionX + firstRay.directionY * secondRay.directionY),
+  );
+  const angle = Math.acos(dotProduct);
+  if (!Number.isFinite(angle) || angle <= 1e-6 || Math.abs(Math.PI - angle) <= 1e-6) return null;
+
+  const tangentOffset = radius / Math.tan(angle / 2);
+  const centerOffset = radius / Math.sin(angle / 2);
+  if (!Number.isFinite(tangentOffset) || !Number.isFinite(centerOffset)) return null;
+
+  const firstTangentPoint = {
+    x: intersectionPoint.x + firstRay.directionX * tangentOffset,
+    y: intersectionPoint.y + firstRay.directionY * tangentOffset,
+  };
+  const secondTangentPoint = {
+    x: intersectionPoint.x + secondRay.directionX * tangentOffset,
+    y: intersectionPoint.y + secondRay.directionY * tangentOffset,
+  };
+  const bisectorVector = {
+    x: firstRay.directionX + secondRay.directionX,
+    y: firstRay.directionY + secondRay.directionY,
+  };
+  const bisectorLength = Math.hypot(bisectorVector.x, bisectorVector.y);
+  if (bisectorLength <= 1e-9) return null;
+  const centerPoint = {
+    x: intersectionPoint.x + (bisectorVector.x / bisectorLength) * centerOffset,
+    y: intersectionPoint.y + (bisectorVector.y / bisectorLength) * centerOffset,
+  };
+  const midVector = {
+    x: intersectionPoint.x - centerPoint.x,
+    y: intersectionPoint.y - centerPoint.y,
+  };
+  const midVectorLength = Math.hypot(midVector.x, midVector.y);
+  if (midVectorLength <= 1e-9) return null;
+  const throughPoint = {
+    x: centerPoint.x + (midVector.x / midVectorLength) * radius,
+    y: centerPoint.y + (midVector.y / midVectorLength) * radius,
+  };
+  const arc = cadBuildArcFromThreePoints(firstTangentPoint, throughPoint, secondTangentPoint);
+  if (!arc) return null;
+
+  const nextFirstLine: CadLineEntity = firstRay.trimStart
+    ? {
+        ...firstLine,
+        fromX: firstTangentPoint.x,
+        fromY: firstTangentPoint.y,
+      }
+    : {
+        ...firstLine,
+        toX: firstTangentPoint.x,
+        toY: firstTangentPoint.y,
+      };
+  const nextSecondLine: CadLineEntity = secondRay.trimStart
+    ? {
+        ...secondLine,
+        fromX: secondTangentPoint.x,
+        fromY: secondTangentPoint.y,
+      }
+    : {
+        ...secondLine,
+        toX: secondTangentPoint.x,
+        toY: secondTangentPoint.y,
+      };
+
+  return {
+    firstLine: nextFirstLine,
+    secondLine: nextSecondLine,
+    arcDefinition: {
+      center: { x: arc.center.x, y: arc.center.y },
+      radius: arc.radius,
+      startAngleDeg: arc.startAngleDeg,
+      endAngleDeg: arc.endAngleDeg,
+    },
+    score:
+      cadDistance(firstPickPoint, firstTangentPoint) +
+      cadDistance(secondPickPoint, secondTangentPoint),
+  };
+};
+
+const buildCadLineFillet = (
+  firstLine: CadLineEntity,
+  firstPickPoint: { x: number; y: number },
+  secondLine: CadLineEntity,
+  secondPickPoint: { x: number; y: number },
+  radius: number,
+): {
+  firstLine: CadLineEntity;
+  secondLine: CadLineEntity;
+  arcDefinition: {
+    center: { x: number; y: number };
+    radius: number;
+    startAngleDeg: number;
+    endAngleDeg: number;
+  };
+} | null => {
+  if (!Number.isFinite(radius) || radius <= 1e-9) return null;
+  const firstStart = { x: firstLine.fromX, y: firstLine.fromY };
+  const firstEnd = { x: firstLine.toX, y: firstLine.toY };
+  const secondStart = { x: secondLine.fromX, y: secondLine.fromY };
+  const secondEnd = { x: secondLine.toX, y: secondLine.toY };
+  const intersectionPoint = cadInfiniteLineIntersection(firstStart, firstEnd, secondStart, secondEnd);
+  if (!intersectionPoint) return null;
+
+  const preferredFirstRay = buildFilletRayDirection(firstLine, intersectionPoint, firstPickPoint);
+  const preferredSecondRay = buildFilletRayDirection(secondLine, intersectionPoint, secondPickPoint);
+  const firstRayCandidates = [true, false]
+    .map((trimStart) => buildFilletRayDirectionForEndpoint(firstLine, intersectionPoint, trimStart))
+    .filter((candidate): candidate is NonNullable<typeof candidate> => candidate != null)
+    .sort((left, right) => {
+      const leftPenalty =
+        preferredFirstRay == null || preferredFirstRay.trimStart === left.trimStart ? 0 : 1000;
+      const rightPenalty =
+        preferredFirstRay == null || preferredFirstRay.trimStart === right.trimStart ? 0 : 1000;
+      return leftPenalty - rightPenalty;
+    });
+  const secondRayCandidates = [true, false]
+    .map((trimStart) => buildFilletRayDirectionForEndpoint(secondLine, intersectionPoint, trimStart))
+    .filter((candidate): candidate is NonNullable<typeof candidate> => candidate != null)
+    .sort((left, right) => {
+      const leftPenalty =
+        preferredSecondRay == null || preferredSecondRay.trimStart === left.trimStart ? 0 : 1000;
+      const rightPenalty =
+        preferredSecondRay == null || preferredSecondRay.trimStart === right.trimStart ? 0 : 1000;
+      return leftPenalty - rightPenalty;
+    });
+  if (firstRayCandidates.length === 0 || secondRayCandidates.length === 0) return null;
+
+  const bestCandidate =
+    firstRayCandidates
+      .flatMap((firstRay) =>
+        secondRayCandidates.map((secondRay) =>
+          buildCadLineFilletCandidate(
+            firstLine,
+            firstPickPoint,
+            secondLine,
+            secondPickPoint,
+            radius,
+            intersectionPoint,
+            firstRay,
+            secondRay,
+          ),
+        ),
+      )
+      .filter((candidate): candidate is NonNullable<typeof candidate> => candidate != null)
+      .sort((left, right) => left.score - right.score)[0] ?? null;
+  if (!bestCandidate) return null;
+
+  return {
+    firstLine: bestCandidate.firstLine,
+    secondLine: bestCandidate.secondLine,
+    arcDefinition: bestCandidate.arcDefinition,
+  };
 };
 
 const stationIdExists = (project: CadProject, stationId: string): boolean =>
@@ -962,6 +1771,12 @@ export interface CadTrimPreview {
   previewEntities: CadEntity[];
 }
 
+export interface CadFilletPreview {
+  firstLineEntityId: CadEntityId;
+  secondLineEntityId: CadEntityId;
+  previewEntities: CadEntity[];
+}
+
 export const buildCadTrimPreview = (
   project: CadProject,
   cuttingEntityIds: readonly CadEntityId[],
@@ -992,6 +1807,64 @@ export const buildCadTrimPreview = (
   return {
     targetEntityId: targetEntity.id,
     previewEntities,
+  };
+};
+
+export const buildCadFilletPreview = (
+  project: CadProject,
+  radius: number,
+  firstLineEntityId: CadEntityId,
+  firstPickPoint: { x: number; y: number },
+  secondLineEntityId: CadEntityId,
+  secondPickPoint: { x: number; y: number },
+): CadFilletPreview | null => {
+  if (firstLineEntityId === secondLineEntityId) return null;
+  const firstLine = project.entities.find(
+    (entity): entity is CadLineEntity =>
+      entity.type === 'line' && entity.id === firstLineEntityId && !entity.locked,
+  );
+  const secondLine = project.entities.find(
+    (entity): entity is CadLineEntity =>
+      entity.type === 'line' && entity.id === secondLineEntityId && !entity.locked,
+  );
+  if (!firstLine || !secondLine) return null;
+  const fillet = buildCadLineFillet(
+    firstLine,
+    firstPickPoint,
+    secondLine,
+    secondPickPoint,
+    radius,
+  );
+  if (!fillet) return null;
+  return {
+    firstLineEntityId,
+    secondLineEntityId,
+    previewEntities: [
+      {
+        ...fillet.firstLine,
+        id: `${firstLineEntityId}:fillet-preview`,
+      },
+      {
+        ...fillet.secondLine,
+        id: `${secondLineEntityId}:fillet-preview`,
+      },
+      {
+        id: 'fillet-preview:arc',
+        type: 'arc',
+        layerId: 'preview',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        centerX: fillet.arcDefinition.center.x,
+        centerY: fillet.arcDefinition.center.y,
+        radius: fillet.arcDefinition.radius,
+        startAngleDeg: fillet.arcDefinition.startAngleDeg,
+        endAngleDeg: fillet.arcDefinition.endAngleDeg,
+        metadata: {
+          createdBy: 'FILLET_PREVIEW',
+        },
+      },
+    ],
   };
 };
 
@@ -1301,10 +2174,11 @@ export const applyCadGripEdit = (
     command.vertexIndex,
   );
   if (!updatedEntity) return null;
-  return replaceCadProjectEntities(
+  const nextProject = replaceCadProjectEntities(
     project,
     project.entities.map((candidate) => (candidate.id === entity.id ? updatedEntity : candidate)),
   );
+  return syncEditedEntityDependencies(nextProject, entity, updatedEntity);
 };
 
 const buildCopiedEntities = (
@@ -1318,32 +2192,12 @@ const buildCopiedEntities = (
       .filter((entity): entity is CadSurveyPointEntity => entity.type === 'survey-point')
       .map((entity) => entity.stationId),
   );
-  const copiedEntities: CadEntity[] = [];
-  const copiedPointByStationId = new Map<
-    string,
-    { stationId: string; x: number; y: number }
-  >();
-  let workingProject = project;
-
-  selectedEntities.forEach((entity) => {
-    if (entity.type !== 'survey-point') return;
-    const pointBundle = createManualPointEntities(
-      workingProject,
-      entity.x + deltaX,
-      entity.y + deltaY,
-    );
-    const appendedEntities = compactManualPointEntities([pointBundle.point, pointBundle.label]);
-    workingProject = appendCadProjectEntities(
-      workingProject,
-      appendedEntities,
-    );
-    copiedPointByStationId.set(entity.stationId, {
-      stationId: pointBundle.point.stationId,
-      x: pointBundle.point.x,
-      y: pointBundle.point.y,
-    });
-    copiedEntities.push(...appendedEntities);
-  });
+  const { copiedEntities, copiedPointByStationId, copiedArcSupportBySourceId } = buildCopiedDependentPointEntities(
+    project,
+    selectedEntities,
+    deltaX,
+    deltaY,
+  );
 
   selectedEntities.forEach((entity) => {
     if (entity.type === 'survey-point') return;
@@ -1403,17 +2257,51 @@ const buildCopiedEntities = (
         });
         break;
       case 'arc':
-        copiedEntities.push({
+        {
+          const copiedArcSupport = copiedArcSupportBySourceId.get(entity.id);
+          const copiedArc = {
           ...entity,
           id: createStableRuntimeId('cad-arc'),
           centerX: entity.centerX + deltaX,
           centerY: entity.centerY + deltaY,
           metadata: {
             ...entity.metadata,
+            entityName:
+              copiedArcSupport != null
+                ? buildCurveLabels(copiedArcSupport.sequence).curveName
+                : getCadEntityEditableName(entity),
             createdBy: 'COPY',
             manual: true,
           },
-        });
+          } satisfies CadArcEntity;
+          copiedEntities.push(copiedArc);
+          if (copiedArcSupport) {
+            copiedArcSupport.arcSupportEntities.forEach((supportEntity) => {
+              const replacement =
+                supportEntity.type === 'survey-point'
+                  ? {
+                      ...supportEntity,
+                      metadata: {
+                        ...cloneEntityMetadata(supportEntity),
+                        anchorCurveEntityId: copiedArc.id,
+                      },
+                    }
+                  : {
+                      ...supportEntity,
+                      anchorEntityId:
+                        supportEntity.anchorEntityId && supportEntity.anchorEntityId.startsWith('pt:')
+                          ? `pt:${supportEntity.text}`
+                          : supportEntity.anchorEntityId,
+                      metadata: {
+                        ...cloneEntityMetadata(supportEntity),
+                        anchorCurveEntityId: copiedArc.id,
+                      },
+                    };
+              const index = copiedEntities.findIndex((candidate) => candidate.id === supportEntity.id);
+              if (index >= 0) copiedEntities[index] = replacement;
+            });
+          }
+        }
         break;
       case 'alignment':
         copiedEntities.push({
@@ -1667,6 +2555,7 @@ const lineCommand: CadCommandDefinition<{
     ) {
       return null;
     }
+    const lineName = nextEntityName(snapshot.project, 'LINE');
     const lineEntity: CadEntity = {
       id: createStableRuntimeId('cad-line'),
       type: 'line',
@@ -1683,6 +2572,7 @@ const lineCommand: CadCommandDefinition<{
       sourceObservationIds: [],
       metadata: {
         createdBy: 'LINE',
+        entityName: lineName,
         manual: true,
       },
     };
@@ -1697,7 +2587,7 @@ const lineCommand: CadCommandDefinition<{
         phase: 'committed',
         prompt: `LINE committed from ${command.start.label} to ${command.end.label}.`,
       },
-      transactionLabel: `LINE (${command.start.label}-${command.end.label})`,
+      transactionLabel: `LINE (${lineName})`,
       addedEntityIds: [lineEntity.id],
       removedEntityIds: [],
     };
@@ -1761,6 +2651,7 @@ const polylineCommand: CadCommandDefinition<{
       return Math.abs(vertex.x - previous.x) > 1e-9 || Math.abs(vertex.y - previous.y) > 1e-9;
     });
     if (vertices.length < 2) return null;
+    const polylineName = nextEntityName(snapshot.project, 'PL');
     const polylineEntity: CadPolylineEntity = {
       id: createStableRuntimeId('cad-polyline'),
       type: 'polyline',
@@ -1773,6 +2664,7 @@ const polylineCommand: CadCommandDefinition<{
       closed: false,
       metadata: {
         createdBy: 'PLINE',
+        entityName: polylineName,
         manual: true,
       },
     };
@@ -1787,7 +2679,7 @@ const polylineCommand: CadCommandDefinition<{
         phase: 'committed',
         prompt: `PLINE committed with ${vertices.length} vertices.`,
       },
-      transactionLabel: `PLINE (${vertices.length})`,
+      transactionLabel: `PLINE (${polylineName})`,
       addedEntityIds: [polylineEntity.id],
       removedEntityIds: [],
     };
@@ -1939,6 +2831,7 @@ const traverseCommand: CadCommandDefinition<{
       createdEntities.push(lineEntity);
     });
 
+    const traverseName = nextEntityName(workingProject, 'TRAV');
     const polylineEntity: CadPolylineEntity = {
       id: createStableRuntimeId('cad-traverse'),
       type: 'polyline',
@@ -1951,6 +2844,7 @@ const traverseCommand: CadCommandDefinition<{
       closed: traverseMode === 'closed',
       metadata: buildCadCogoEntityMetadata({
         createdBy: 'TRAVERSE',
+        entityName: traverseName,
         manual: true,
         traverseMode,
         sideshotCount: command.sideshots?.length ?? 0,
@@ -2004,7 +2898,7 @@ const traverseCommand: CadCommandDefinition<{
         phase: 'committed',
         prompt: `TRAVERSE committed with ${vertices.length} stations. Closure ${closureDistance.toFixed(3)} m.`,
       },
-      transactionLabel: `TRAVERSE (${vertices.length})`,
+      transactionLabel: `TRAVERSE (${traverseName})`,
       addedEntityIds: [...createdEntities.map((entity) => entity.id), polylineEntity.id],
       removedEntityIds: [],
     };
@@ -2079,6 +2973,7 @@ const batchCogoCommand: CadCommandDefinition<{
       }
 
       if (operation.kind === 'line') {
+        const lineName = nextEntityName(workingProject, 'LINE');
         const lineEntity: CadLineEntity = {
           id: createStableRuntimeId('cad-batch-cogo-line'),
           type: 'line',
@@ -2096,6 +2991,7 @@ const batchCogoCommand: CadCommandDefinition<{
           metadata: buildCadCogoEntityMetadata(
             {
               createdBy: 'BATCH_COGO',
+              entityName: lineName,
               manual: true,
               batchRow: operation.lineNumber,
               batchKind: 'line',
@@ -2108,6 +3004,8 @@ const batchCogoCommand: CadCommandDefinition<{
         continue;
       }
 
+      const curveSequence = nextCurveSequence(workingProject);
+      const curveName = `CURVE${curveSequence}`;
       const arcEntity: CadArcEntity = {
         id: createStableRuntimeId('cad-batch-cogo-arc'),
         type: 'arc',
@@ -2123,6 +3021,7 @@ const batchCogoCommand: CadCommandDefinition<{
         metadata: buildCadCogoEntityMetadata(
           {
             createdBy: 'BATCH_COGO',
+            entityName: curveName,
             manual: true,
             batchRow: operation.lineNumber,
             batchKind: 'curve',
@@ -2134,8 +3033,20 @@ const batchCogoCommand: CadCommandDefinition<{
           provenance,
         ),
       };
-      workingProject = appendCadProjectEntities(workingProject, [arcEntity]);
-      createdEntities.push(arcEntity);
+      const arcSupportEntities = createArcSupportEntities(
+        workingProject,
+        arcEntity.id,
+        curveSequence,
+        {
+          center: { x: operation.definition.center.x, y: operation.definition.center.y },
+          radius: operation.definition.radius,
+          startAngleDeg: operation.definition.startAngleDeg,
+          endAngleDeg: operation.definition.endAngleDeg,
+        },
+        'BATCH_COGO',
+      );
+      workingProject = appendCadProjectEntities(workingProject, [arcEntity, ...arcSupportEntities]);
+      createdEntities.push(arcEntity, ...arcSupportEntities);
     }
 
     const nextProject = appendCadProjectCogoComputation(
@@ -2180,11 +3091,13 @@ const arc3ptCommand: CadCommandDefinition<{
   execute: (snapshot, command) => {
     const arcDefinition = cadBuildArcFromThreePoints(command.start, command.through, command.end);
     if (!arcDefinition) return null;
-    const summary = `Created arc through ${command.start.label}, ${command.through.label}, ${command.end.label}`;
+    const curveSequence = nextCurveSequence(snapshot.project);
+    const curveLabels = buildCurveLabels(curveSequence);
+    const summary = `Created ${curveLabels.curveName} with ${curveLabels.beginLabel}, ${curveLabels.midLabel}, ${curveLabels.endLabel}, ${curveLabels.radiusLabel}`;
     const provenance = createCogoProvenance({
       toolKey: 'ARC_CREATE',
       summary,
-      sourcePointIds: [command.start.label, command.through.label, command.end.label],
+      sourcePointIds: [curveLabels.beginLabel, curveLabels.midLabel, curveLabels.endLabel, curveLabels.radiusLabel],
       inputs: {
         start: command.start,
         through: command.through,
@@ -2208,13 +3121,26 @@ const arc3ptCommand: CadCommandDefinition<{
       endAngleDeg: arcDefinition.endAngleDeg,
       metadata: buildCadCogoEntityMetadata({
         createdBy: 'ARC_3PT',
+        entityName: curveLabels.curveName,
         manual: true,
         startLabel: command.start.label,
         throughLabel: command.through.label,
         endLabel: command.end.label,
       }, provenance),
     };
-    const nextProjectWithEntities = appendCadProjectEntities(snapshot.project, [arcEntity]);
+    const supportEntities = createArcSupportEntities(
+      snapshot.project,
+      arcEntity.id,
+      curveSequence,
+      {
+        center: { x: arcDefinition.center.x, y: arcDefinition.center.y },
+        radius: arcDefinition.radius,
+        startAngleDeg: arcDefinition.startAngleDeg,
+        endAngleDeg: arcDefinition.endAngleDeg,
+      },
+      'ARC_3PT',
+    );
+    const nextProjectWithEntities = appendCadProjectEntities(snapshot.project, [arcEntity, ...supportEntities]);
     const nextProject = appendCogoComputation({
       project: nextProjectWithEntities,
       provenance,
@@ -2224,7 +3150,7 @@ const arc3ptCommand: CadCommandDefinition<{
         { label: 'Radius', value: arcDefinition.radius.toFixed(3), unit: 'm' },
         { label: 'Delta', value: arcDefinition.deltaDeg.toFixed(6), unit: 'deg' },
       ],
-      createdEntities: [arcEntity],
+      createdEntities: [arcEntity, ...supportEntities],
     });
     return {
       nextSnapshot: {
@@ -2234,10 +3160,10 @@ const arc3ptCommand: CadCommandDefinition<{
       commandState: {
         key: 'ARC_3PT',
         phase: 'committed',
-      prompt: `ARC_3PT committed through ${command.start.label}, ${command.through.label}, ${command.end.label}.`,
+        prompt: `ARC_3PT committed as ${curveLabels.curveName}.`,
       },
-      transactionLabel: `ARC_3PT (${command.start.label}-${command.through.label}-${command.end.label})`,
-      addedEntityIds: [arcEntity.id],
+      transactionLabel: `ARC_3PT (${curveLabels.curveName})`,
+      addedEntityIds: [arcEntity.id, ...supportEntities.map((entity) => entity.id)],
       removedEntityIds: [],
     };
   },
@@ -2256,7 +3182,9 @@ const arcCreateCommand: CadCommandDefinition<{
 }> = {
   key: 'ARC_CREATE',
   execute: (snapshot, command) => {
-    const summary = `${command.modeLabel} created radius ${command.definition.radius.toFixed(3)} m`;
+    const curveSequence = nextCurveSequence(snapshot.project);
+    const curveLabels = buildCurveLabels(curveSequence);
+    const summary = `${command.modeLabel} created ${curveLabels.curveName} radius ${command.definition.radius.toFixed(3)} m`;
     const provenance = createCogoProvenance({
       toolKey: 'ARC_CREATE',
       summary,
@@ -2280,11 +3208,24 @@ const arcCreateCommand: CadCommandDefinition<{
       endAngleDeg: command.definition.endAngleDeg,
       metadata: buildCadCogoEntityMetadata({
         createdBy: command.modeLabel,
+        entityName: curveLabels.curveName,
         manual: true,
         ...(command.metadata ?? {}),
       }, provenance),
     };
-    const nextProjectWithEntities = appendCadProjectEntities(snapshot.project, [arcEntity]);
+    const supportEntities = createArcSupportEntities(
+      snapshot.project,
+      arcEntity.id,
+      curveSequence,
+      {
+        center: { x: command.definition.center.x, y: command.definition.center.y },
+        radius: command.definition.radius,
+        startAngleDeg: command.definition.startAngleDeg,
+        endAngleDeg: command.definition.endAngleDeg,
+      },
+      command.modeLabel,
+    );
+    const nextProjectWithEntities = appendCadProjectEntities(snapshot.project, [arcEntity, ...supportEntities]);
     const nextProject = appendCogoComputation({
       project: nextProjectWithEntities,
       provenance,
@@ -2295,7 +3236,7 @@ const arcCreateCommand: CadCommandDefinition<{
         { label: 'Start angle', value: command.definition.startAngleDeg.toFixed(6), unit: 'deg' },
         { label: 'End angle', value: command.definition.endAngleDeg.toFixed(6), unit: 'deg' },
       ],
-      createdEntities: [arcEntity],
+      createdEntities: [arcEntity, ...supportEntities],
     });
     return {
       nextSnapshot: {
@@ -2305,10 +3246,10 @@ const arcCreateCommand: CadCommandDefinition<{
       commandState: {
         key: 'ARC_CREATE',
         phase: 'committed',
-        prompt: `${command.modeLabel} committed.`,
+        prompt: `${command.modeLabel} committed as ${curveLabels.curveName}.`,
       },
-      transactionLabel: `${command.modeLabel}`,
-      addedEntityIds: [arcEntity.id],
+      transactionLabel: `${command.modeLabel} (${curveLabels.curveName})`,
+      addedEntityIds: [arcEntity.id, ...supportEntities.map((entity) => entity.id)],
       removedEntityIds: [],
     };
   },
@@ -2330,11 +3271,13 @@ const tangentCurveCommand: CadCommandDefinition<{
       command.radius,
     );
     if (!arcDefinition) return null;
-    const summary = `Created tangent curve at ${command.pi.label} with radius ${command.radius.toFixed(3)} m`;
+    const curveSequence = nextCurveSequence(snapshot.project);
+    const curveLabels = buildCurveLabels(curveSequence);
+    const summary = `Created ${curveLabels.curveName} tangent curve with ${curveLabels.beginLabel}, ${curveLabels.midLabel}, ${curveLabels.endLabel}, ${curveLabels.radiusLabel}`;
     const provenance = createCogoProvenance({
       toolKey: 'TANGENT_CURVE',
       summary,
-      sourcePointIds: [command.pi.label, command.backTangentPoint.label, command.aheadTangentPoint.label],
+      sourcePointIds: ['PI', 'Back tangent', 'Ahead tangent', curveLabels.radiusLabel],
       inputs: {
         pi: command.pi,
         backTangentPoint: command.backTangentPoint,
@@ -2358,13 +3301,26 @@ const tangentCurveCommand: CadCommandDefinition<{
       endAngleDeg: arcDefinition.endAngleDeg,
       metadata: buildCadCogoEntityMetadata({
         createdBy: 'TANGENT_CURVE',
+        entityName: curveLabels.curveName,
         manual: true,
         piLabel: command.pi.label,
         backLabel: command.backTangentPoint.label,
         aheadLabel: command.aheadTangentPoint.label,
       }, provenance),
     };
-    const nextProjectWithEntities = appendCadProjectEntities(snapshot.project, [arcEntity]);
+    const supportEntities = createArcSupportEntities(
+      snapshot.project,
+      arcEntity.id,
+      curveSequence,
+      {
+        center: { x: arcDefinition.center.x, y: arcDefinition.center.y },
+        radius: arcDefinition.radius,
+        startAngleDeg: arcDefinition.startAngleDeg,
+        endAngleDeg: arcDefinition.endAngleDeg,
+      },
+      'TANGENT_CURVE',
+    );
+    const nextProjectWithEntities = appendCadProjectEntities(snapshot.project, [arcEntity, ...supportEntities]);
     const nextProject = appendCogoComputation({
       project: nextProjectWithEntities,
       provenance,
@@ -2375,7 +3331,7 @@ const tangentCurveCommand: CadCommandDefinition<{
         { label: 'Radius', value: command.radius.toFixed(3), unit: 'm' },
         { label: 'Delta', value: arcDefinition.deltaDeg.toFixed(6), unit: 'deg' },
       ],
-      createdEntities: [arcEntity],
+      createdEntities: [arcEntity, ...supportEntities],
     });
     return {
       nextSnapshot: {
@@ -2385,10 +3341,10 @@ const tangentCurveCommand: CadCommandDefinition<{
       commandState: {
         key: 'TANGENT_CURVE',
         phase: 'committed',
-        prompt: `TANGENT_CURVE committed at ${command.pi.label} with radius ${command.radius.toFixed(3)}.`,
+        prompt: `TANGENT_CURVE committed as ${curveLabels.curveName} with radius ${command.radius.toFixed(3)}.`,
       },
-      transactionLabel: `TANGENT_CURVE (${command.pi.label})`,
-      addedEntityIds: [arcEntity.id],
+      transactionLabel: `TANGENT_CURVE (${curveLabels.curveName})`,
+      addedEntityIds: [arcEntity.id, ...supportEntities.map((entity) => entity.id)],
       removedEntityIds: [],
     };
   },
@@ -2449,8 +3405,8 @@ const alignmentCreateCommand: CadCommandDefinition<{
       rows: [
         { label: 'Alignment', value: alignmentName },
         { label: 'Elements', value: String(draft.elements.length) },
-        { label: 'Start station', value: startStation.toFixed(3), unit: 'm' },
-        { label: 'End station', value: (startStation + draft.totalLength).toFixed(3), unit: 'm' },
+        { label: 'Start station', value: formatCadStation(startStation), unit: 'm' },
+        { label: 'End station', value: formatCadStation(startStation + draft.totalLength), unit: 'm' },
         { label: 'Length', value: draft.totalLength.toFixed(3), unit: 'm' },
         { label: 'Start point', value: `${draft.startPoint.x.toFixed(3)}, ${draft.startPoint.y.toFixed(3)}` },
         { label: 'End point', value: `${draft.endPoint.x.toFixed(3)}, ${draft.endPoint.y.toFixed(3)}` },
@@ -2537,8 +3493,8 @@ const alignmentOffsetCreateCommand: CadCommandDefinition<{
         { label: 'Source alignment', value: sourceAlignment.name },
         { label: 'Offset alignment', value: alignmentName },
         { label: 'Offset', value: command.offset.toFixed(3), unit: 'm' },
-        { label: 'Start station', value: alignmentEntity.startStation.toFixed(3), unit: 'm' },
-        { label: 'End station', value: endStation.toFixed(3), unit: 'm' },
+        { label: 'Start station', value: formatCadStation(alignmentEntity.startStation), unit: 'm' },
+        { label: 'End station', value: formatCadStation(endStation), unit: 'm' },
         { label: 'Length', value: draft.totalLength.toFixed(3), unit: 'm' },
       ],
       createdEntities: [alignmentEntity],
@@ -2583,7 +3539,8 @@ const alignmentStationReportCommand: CadCommandDefinition<{
     });
     if (!projection) return null;
 
-    const summary = `Projected ${pointEntity.stationId} onto ${alignmentEntity.name} at station ${projection.station.toFixed(3)}`;
+    const formattedStation = formatCadStation(projection.station);
+    const summary = `Projected ${pointEntity.stationId} onto ${alignmentEntity.name} at station ${formattedStation}`;
     const provenance = createCogoProvenance({
       toolKey: 'ALIGNMENT_STATION',
       summary,
@@ -2606,7 +3563,7 @@ const alignmentStationReportCommand: CadCommandDefinition<{
       rows: [
         { label: 'Alignment', value: alignmentEntity.name },
         { label: 'Point', value: pointEntity.stationId },
-        { label: 'Station', value: projection.station.toFixed(3), unit: 'm' },
+        { label: 'Station', value: formattedStation, unit: 'm' },
         { label: 'Offset', value: projection.offset.toFixed(3), unit: 'm' },
         { label: 'Projected Northing', value: projection.point.y.toFixed(3), unit: 'm' },
         { label: 'Projected Easting', value: projection.point.x.toFixed(3), unit: 'm' },
@@ -2712,9 +3669,9 @@ const alignmentStationEquationCommand: CadCommandDefinition<{
           summary,
           rows: [
             { label: 'Alignment', value: alignmentEntity.name },
-            { label: 'Back station', value: command.backStation.toFixed(3) },
-            { label: 'Ahead station', value: command.aheadStation.toFixed(3) },
-            { label: 'Raw station', value: rawStation.toFixed(3) },
+            { label: 'Back station', value: formatCadStation(command.backStation) },
+            { label: 'Ahead station', value: formatCadStation(command.aheadStation) },
+            { label: 'Raw station', value: formatCadStation(rawStation) },
             { label: 'Equation count', value: String(updatedAlignment.stationEquations?.length ?? 0) },
           ],
         },
@@ -2757,7 +3714,8 @@ const alignmentOffsetPointCommand: CadCommandDefinition<{
     const stationPoint = cadPointAtAlignmentStationOffset(alignmentEntity, command.station, command.offset);
     if (!stationPoint) return null;
 
-    const summary = `Created station-offset point on ${alignmentEntity.name} at station ${command.station.toFixed(3)}`;
+    const formattedStation = formatCadStation(command.station);
+    const summary = `Created station-offset point on ${alignmentEntity.name} at station ${formattedStation}`;
     const provenance = createCogoProvenance({
       toolKey: 'ALIGNMENT_POINT',
       summary,
@@ -2800,7 +3758,7 @@ const alignmentOffsetPointCommand: CadCommandDefinition<{
       rows: [
         { label: 'Alignment', value: alignmentEntity.name },
         { label: 'Point', value: pointEntity.stationId },
-        { label: 'Station', value: command.station.toFixed(3), unit: 'm' },
+        { label: 'Station', value: formattedStation, unit: 'm' },
         { label: 'Offset', value: command.offset.toFixed(3), unit: 'm' },
         { label: 'Northing', value: stationPoint.point.y.toFixed(3), unit: 'm' },
         { label: 'Easting', value: stationPoint.point.x.toFixed(3), unit: 'm' },
@@ -2912,8 +3870,8 @@ const alignmentIntervalPointsCommand: CadCommandDefinition<{
       summary,
       rows: [
         { label: 'Alignment', value: alignmentEntity.name },
-        { label: 'Start station', value: startStation.toFixed(3), unit: 'm' },
-        { label: 'End station', value: endStation.toFixed(3), unit: 'm' },
+        { label: 'Start station', value: formatCadStation(startStation), unit: 'm' },
+        { label: 'End station', value: formatCadStation(endStation), unit: 'm' },
         { label: 'Interval', value: command.interval.toFixed(3), unit: 'm' },
         { label: 'Points', value: String(stationPoints.length) },
       ],
@@ -3028,6 +3986,174 @@ const parcelCreateCommand: CadCommandDefinition<{
   },
 };
 
+const replaceEntityInProject = (
+  project: CadProject,
+  entityId: CadEntityId,
+  updater: (_entity: CadEntity) => CadEntity,
+): CadProject =>
+  replaceCadProjectEntities(
+    project,
+    project.entities.map((entity) => (entity.id === entityId ? updater(entity) : entity)),
+  );
+
+const editEntityCommand: CadCommandDefinition<{
+  key: 'EDIT_ENTITY';
+  entityId: CadEntityId;
+  edit:
+    | { kind: 'entity-name'; value: string }
+    | { kind: 'point-x'; value: number }
+    | { kind: 'point-y'; value: number }
+    | { kind: 'point-z'; value: number | null }
+    | { kind: 'line-end'; toX: number; toY: number }
+    | { kind: 'polyline-vertex'; vertexIndex: number; x: number; y: number };
+}> = {
+  key: 'EDIT_ENTITY',
+  execute: (snapshot, command) => {
+    const targetEntity = snapshot.project.entities.find((entity) => entity.id === command.entityId);
+    if (!targetEntity) return null;
+
+    if (command.edit.kind === 'entity-name') {
+      const nextName = command.edit.value.trim();
+      if (!nextName) return null;
+      let nextProject: CadProject | null = null;
+      if (targetEntity.type === 'survey-point') {
+        if (
+          stationIdExists(snapshot.project, nextName) &&
+          nextName.toUpperCase() !== targetEntity.stationId.trim().toUpperCase()
+        ) {
+          return null;
+        }
+        nextProject = replaceCadProjectEntities(
+          snapshot.project,
+          snapshot.project.entities.map((entity) =>
+            renamePointReferences(entity, targetEntity.id, targetEntity.stationId, nextName),
+          ),
+        );
+      } else if (targetEntity.type === 'alignment') {
+        nextProject = replaceEntityInProject(snapshot.project, targetEntity.id, (entity) =>
+          entity.type === 'alignment' ? { ...entity, name: nextName } : entity,
+        );
+      } else if (targetEntity.type === 'parcel') {
+        nextProject = replaceEntityInProject(snapshot.project, targetEntity.id, (entity) =>
+          entity.type === 'parcel' ? { ...entity, parcelName: nextName } : entity,
+        );
+      } else {
+        nextProject = replaceEntityInProject(snapshot.project, targetEntity.id, (entity) =>
+          withEntityMetadataName(entity, nextName),
+        );
+      }
+      if (!nextProject) return null;
+      return {
+        nextSnapshot: {
+          project: nextProject,
+          selection: createCadSelectionState(nextProject, [targetEntity.id]),
+        },
+        commandState: {
+          key: 'EDIT_ENTITY',
+          phase: 'committed',
+          prompt: `EDIT_ENTITY committed for ${nextName}.`,
+        },
+        transactionLabel: `EDIT_ENTITY (${nextName})`,
+        addedEntityIds: [],
+        removedEntityIds: [],
+      };
+    }
+
+    if (targetEntity.type === 'survey-point') {
+      const nextX = command.edit.kind === 'point-x' ? command.edit.value : targetEntity.x;
+      const nextY = command.edit.kind === 'point-y' ? command.edit.value : targetEntity.y;
+      const nextZ =
+        command.edit.kind === 'point-z'
+          ? command.edit.value ?? undefined
+          : targetEntity.z;
+      if (
+        !Number.isFinite(nextX) ||
+        !Number.isFinite(nextY) ||
+        (nextZ != null && !Number.isFinite(nextZ))
+      ) {
+        return null;
+      }
+      const nextProject = replaceCadProjectEntities(
+        snapshot.project,
+        snapshot.project.entities.map((entity) =>
+          movePointReferences(entity, targetEntity.id, targetEntity.stationId, nextX, nextY, nextZ),
+        ),
+      );
+      return {
+        nextSnapshot: {
+          project: nextProject,
+          selection: createCadSelectionState(nextProject, [targetEntity.id]),
+        },
+        commandState: {
+          key: 'EDIT_ENTITY',
+          phase: 'committed',
+          prompt: `EDIT_ENTITY committed for ${targetEntity.stationId}.`,
+        },
+        transactionLabel: `EDIT_ENTITY (${targetEntity.stationId})`,
+        addedEntityIds: [],
+        removedEntityIds: [],
+      };
+    }
+
+    if (targetEntity.type === 'line' && command.edit.kind === 'line-end') {
+      const edit = command.edit;
+      const updatedEntity: CadEntity = {
+        ...targetEntity,
+        toX: edit.toX,
+        toY: edit.toY,
+      };
+      const nextProjectBase = replaceEntityInProject(snapshot.project, targetEntity.id, (_entity) =>
+        updatedEntity,
+      );
+      const nextProject = syncEditedEntityDependencies(nextProjectBase, targetEntity, updatedEntity);
+      return {
+        nextSnapshot: {
+          project: nextProject,
+          selection: createCadSelectionState(nextProject, [targetEntity.id]),
+        },
+        commandState: {
+          key: 'EDIT_ENTITY',
+          phase: 'committed',
+          prompt: `EDIT_ENTITY committed for ${getCadEntityDisplayLabel(targetEntity)}.`,
+        },
+        transactionLabel: `EDIT_ENTITY (${getCadEntityDisplayLabel(targetEntity)})`,
+        addedEntityIds: [],
+        removedEntityIds: [],
+      };
+    }
+
+    if (targetEntity.type === 'polyline' && command.edit.kind === 'polyline-vertex') {
+      const edit = command.edit;
+      const vertex = targetEntity.vertices[edit.vertexIndex];
+      if (!vertex) return null;
+      const updatedEntity: CadEntity = {
+        ...targetEntity,
+        vertices: targetEntity.vertices.map((entry, index) =>
+          index === edit.vertexIndex ? { x: edit.x, y: edit.y } : entry,
+        ),
+      };
+      const nextProjectBase = replaceEntityInProject(snapshot.project, targetEntity.id, (_entity) => updatedEntity);
+      const nextProject = syncEditedEntityDependencies(nextProjectBase, targetEntity, updatedEntity);
+      return {
+        nextSnapshot: {
+          project: nextProject,
+          selection: createCadSelectionState(nextProject, [targetEntity.id]),
+        },
+        commandState: {
+          key: 'EDIT_ENTITY',
+          phase: 'committed',
+          prompt: `EDIT_ENTITY committed for ${getCadEntityDisplayLabel(targetEntity)}.`,
+        },
+        transactionLabel: `EDIT_ENTITY (${getCadEntityDisplayLabel(targetEntity)})`,
+        addedEntityIds: [],
+        removedEntityIds: [],
+      };
+    }
+
+    return null;
+  },
+};
+
 const moveCommand: CadCommandDefinition<{
   key: 'MOVE';
   deltaX: number;
@@ -3039,12 +4165,22 @@ const moveCommand: CadCommandDefinition<{
     const selectedEntities = getExpandedSelectedEntities(snapshot);
     if (selectedEntities.length === 0) return null;
     const selectedIdSet = new Set(selectedEntities.map((entity) => entity.id));
-    const nextProject = replaceCadProjectEntities(
+    const nextProjectBase = replaceCadProjectEntities(
       snapshot.project,
       snapshot.project.entities.map((entity) =>
         selectedIdSet.has(entity.id) ? translateEntity(entity, command.deltaX, command.deltaY) : entity,
       ),
     );
+    const translatedEntityById = new Map(
+      nextProjectBase.entities.map((entity) => [entity.id, entity] as const),
+    );
+    const nextProject = selectedEntities.reduce((currentProject, previousEntity) => {
+      const updatedEntity = translatedEntityById.get(previousEntity.id);
+      if (!updatedEntity) return currentProject;
+      return syncEditedEntityDependencies(currentProject, previousEntity, updatedEntity, {
+        syncLinePoints: false,
+      });
+    }, nextProjectBase);
     return {
       nextSnapshot: {
         project: nextProject,
@@ -3090,6 +4226,91 @@ const copyCommand: CadCommandDefinition<{
       },
       transactionLabel: `COPY (${copiedEntities.length})`,
       addedEntityIds: copiedEntities.map((entity) => entity.id),
+      removedEntityIds: [],
+    };
+  },
+};
+
+const filletCommand: CadCommandDefinition<{
+  key: 'FILLET';
+  radius: number;
+  firstLineEntityId: CadEntityId;
+  firstPickPoint: { x: number; y: number };
+  secondLineEntityId: CadEntityId;
+  secondPickPoint: { x: number; y: number };
+}> = {
+  key: 'FILLET',
+  execute: (snapshot, command) => {
+    if (command.firstLineEntityId === command.secondLineEntityId) return null;
+    const firstLine = snapshot.project.entities.find(
+      (entity): entity is CadLineEntity =>
+        entity.type === 'line' && entity.id === command.firstLineEntityId && !entity.locked,
+    );
+    const secondLine = snapshot.project.entities.find(
+      (entity): entity is CadLineEntity =>
+        entity.type === 'line' && entity.id === command.secondLineEntityId && !entity.locked,
+    );
+    if (!firstLine || !secondLine) return null;
+
+    const fillet = buildCadLineFillet(
+      firstLine,
+      command.firstPickPoint,
+      secondLine,
+      command.secondPickPoint,
+      command.radius,
+    );
+    if (!fillet) return null;
+
+    const curveSequence = nextCurveSequence(snapshot.project);
+    const curveLabels = buildCurveLabels(curveSequence);
+    const arcEntity: CadArcEntity = {
+      id: createStableRuntimeId('cad-arc'),
+      type: 'arc',
+      layerId: 'observation-lines',
+      styleId: 'style-observation-line',
+      visible: true,
+      locked: false,
+      centerX: fillet.arcDefinition.center.x,
+      centerY: fillet.arcDefinition.center.y,
+      radius: fillet.arcDefinition.radius,
+      startAngleDeg: fillet.arcDefinition.startAngleDeg,
+      endAngleDeg: fillet.arcDefinition.endAngleDeg,
+      metadata: {
+        createdBy: 'FILLET',
+        entityName: curveLabels.curveName,
+        manual: true,
+        filletRadius: command.radius,
+        sourceLineIds: [firstLine.id, secondLine.id],
+      },
+    };
+    const updatedProject = replaceCadProjectEntities(
+      snapshot.project,
+      snapshot.project.entities.map((entity) => {
+        if (entity.id === firstLine.id) return fillet.firstLine;
+        if (entity.id === secondLine.id) return fillet.secondLine;
+        return entity;
+      }),
+    );
+    const supportEntities = createArcSupportEntities(
+      updatedProject,
+      arcEntity.id,
+      curveSequence,
+      fillet.arcDefinition,
+      'FILLET',
+    );
+    const nextProject = appendCadProjectEntities(updatedProject, [arcEntity, ...supportEntities]);
+    return {
+      nextSnapshot: {
+        project: nextProject,
+        selection: createCadSelectionState(nextProject, [arcEntity.id]),
+      },
+      commandState: {
+        key: 'FILLET',
+        phase: 'committed',
+        prompt: `FILLET committed as ${curveLabels.curveName} radius ${command.radius.toFixed(3)}.`,
+      },
+      transactionLabel: `FILLET (${curveLabels.curveName})`,
+      addedEntityIds: [arcEntity.id, ...supportEntities.map((entity) => entity.id)],
       removedEntityIds: [],
     };
   },
@@ -3305,8 +4526,10 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   ALIGNMENT_OFFSET_POINT: alignmentOffsetPointCommand as CadCommandDefinition<CadCommand>,
   ALIGNMENT_INTERVAL_POINTS: alignmentIntervalPointsCommand as CadCommandDefinition<CadCommand>,
   PARCEL_CREATE: parcelCreateCommand as CadCommandDefinition<CadCommand>,
+  EDIT_ENTITY: editEntityCommand as CadCommandDefinition<CadCommand>,
   MOVE: moveCommand as CadCommandDefinition<CadCommand>,
   COPY: copyCommand as CadCommandDefinition<CadCommand>,
+  FILLET: filletCommand as CadCommandDefinition<CadCommand>,
   PASTE: pasteCommand as CadCommandDefinition<CadCommand>,
   TRIM: trimCommand as CadCommandDefinition<CadCommand>,
   INTERSECT_POINT: intersectPointCommand as CadCommandDefinition<CadCommand>,

@@ -71,6 +71,7 @@ interface SurveyCadCommandLineProps {
   onStartMove: () => void;
   onStartCopy: () => void;
   onStartTrim: () => void;
+  onStartFillet: () => void;
   onCreateIntersectionPoint: () => void;
   onCreateAlignment: () => void;
   onReportAlignmentStation: () => void;
@@ -158,6 +159,7 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   onStartMove,
   onStartCopy,
   onStartTrim,
+  onStartFillet,
   onCreateIntersectionPoint,
   onCreateAlignment,
   onReportAlignmentStation,
@@ -433,6 +435,14 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
         title="Trim"
       >
         TRIM
+      </button>
+      <button
+        type="button"
+        className={commandButtonClassName}
+        onClick={() => runImmediate(onStartFillet)}
+        title="Fillet"
+      >
+        FILLET
       </button>
       <div className="relative flex items-stretch" data-survey-cad-intersection-tool>
         <button

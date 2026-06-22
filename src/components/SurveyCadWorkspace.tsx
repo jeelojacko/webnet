@@ -5,7 +5,7 @@ import type { CadBounds, SurveyCadPersistedState } from '../engine/cad/cadTypes'
 import { noteUiTabReady } from '../hooks/useUiPerfMonitor';
 import { useSurveyCadWorkspace } from '../hooks/surveyCad/useSurveyCadWorkspace';
 import SurveyCadCommandLine from './surveyCad/SurveyCadCommandLine';
-import SurveyCadCogoPanel from './surveyCad/SurveyCadCogoPanel';
+import SurveyCadPropertiesPanel from './surveyCad/SurveyCadPropertiesPanel';
 import SurveyCadPreview from './surveyCad/SurveyCadPreview';
 
 interface SurveyCadWorkspaceProps {
@@ -72,8 +72,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     selectedEntityIds,
     selectedEntities,
     selectedParcelReport,
-    activeCogoComputation,
-    activeCogoComputationSource,
+    propertiesPanelState,
     activeBatchCogoDraft,
     activeTraverseDraft,
     selectionCount,
@@ -159,6 +158,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     startMoveCommand,
     startCopyCommand,
     startTrimCommand,
+    startFilletCommand,
     createIntersectionPoint,
     createAlignmentFromSelection,
     reportAlignmentStationFromSelection,
@@ -185,6 +185,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     commitBatchCogoDraft,
     selectEntity,
     selectEntities,
+    editPropertiesField,
     startGripEdit,
     updateGripEdit,
     finishGripEdit,
@@ -356,7 +357,8 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     if (activeCommandKey === 'PERP_INTX') return 'Select a line, then pick the external point';
     if (activeCommandKey === 'OFFSET_INTX') return 'Select two lines, then type Loff1,Roff2';
     if (activeCommandKey === 'SKEW_INTX') return 'Select a line, pick a source point, then type Langle or Rangle';
-    if (activeCommandKey === 'TRIM') return 'Click side to trim. Enter or Esc ends trim';
+    if (activeCommandKey === 'TRIM') return 'Click cutting edge, then click side to trim. Enter/Esc ends trim';
+    if (activeCommandKey === 'FILLET') return 'Type radius, then click two lines near the corner. Enter/Esc ends fillet';
     if (activeCommandKey?.startsWith('ARC_') || activeCommandKey === 'CONTINUE_CURVE') {
       return 'Pick arc points, then enter the required value. Hold Ctrl to reverse direction';
     }
@@ -597,6 +599,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               onStartMove={startMoveCommand}
               onStartCopy={startCopyCommand}
               onStartTrim={startTrimCommand}
+              onStartFillet={startFilletCommand}
               onCreateIntersectionPoint={createIntersectionPoint}
               onCreateAlignment={createAlignmentFromSelection}
               onReportAlignmentStation={reportAlignmentStationFromSelection}
@@ -611,10 +614,11 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           </div>
         </div>
         <div className="h-full">
-          {activeCogoComputation && activeCogoComputationSource ? (
-            <SurveyCadCogoPanel
-              computation={activeCogoComputation}
-              sourceLabel={activeCogoComputationSource}
+          {propertiesPanelState ? (
+            <SurveyCadPropertiesPanel
+              panelState={propertiesPanelState}
+              onSelectEntity={(entityId) => selectEntity(entityId)}
+              onEditField={editPropertiesField}
             />
           ) : null}
           {activeBatchCogoDraft ? (
@@ -1201,7 +1205,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             selectedEntityIds={selectedEntityIds}
             selectedParcelReport={selectedParcelReport}
             hasTopRightOverlay={
-              activeCogoComputation != null || activeBatchCogoDraft != null || activeTraverseDraft != null
+              propertiesPanelState != null || activeBatchCogoDraft != null || activeTraverseDraft != null
             }
             activeSnap={activeSnap}
             commandPreviewPrimitives={commandPreviewPrimitives}
@@ -1240,6 +1244,11 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               }
               if (selectionCount > 0) {
                 clearSelection();
+              }
+            }}
+            onEmptyBackgroundDoubleClick={() => {
+              if (activeCommandKey) {
+                handleEscapeKey();
               }
             }}
             onZoomExtents={() => {

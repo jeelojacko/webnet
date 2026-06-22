@@ -146,6 +146,7 @@ describe('Survey CAD spatial index', () => {
     const midpoint = index.queryNearestSnap({ x: 10, y: 5 }, 2, ['midpoint']);
     expect(midpoint?.kind).toBe('midpoint');
     expect(midpoint?.sourceEntityId).toBe('pline:test');
+    expect(midpoint?.label).toBe('A-P1');
 
     const endpoint = index.queryNearestSnap({ x: 39.8, y: 0.2 }, 2, ['endpoint']);
     expect(endpoint?.kind).toBe('endpoint');
@@ -189,6 +190,9 @@ describe('Survey CAD spatial index', () => {
           radius: 10,
           startAngleDeg: 0,
           endAngleDeg: 180,
+          metadata: {
+            entityName: 'CURVE1',
+          },
         },
         {
           id: 'arc:right-upper',
@@ -202,6 +206,9 @@ describe('Survey CAD spatial index', () => {
           radius: 10,
           startAngleDeg: 90,
           endAngleDeg: 180,
+          metadata: {
+            entityName: 'CURVE2',
+          },
         },
       ],
     );
@@ -234,20 +241,21 @@ describe('Survey CAD spatial index', () => {
     const nearest = index.queryNearestSnap({ x: 7, y: 8.2 }, 2, ['nearest']);
     expect(nearest?.kind).toBe('nearest');
     expect(nearest?.sourceEntityId).toBe('arc:upper');
+    expect(nearest?.label).toBe('CURVE1');
     expect(nearest?.x).toBeCloseTo(6.4926, 3);
     expect(nearest?.y).toBeCloseTo(7.6056, 3);
 
     const lineArcIntersection = index.queryNearestSnap({ x: 0.1, y: 9.8 }, 1, ['intersection']);
     expect(lineArcIntersection?.kind).toBe('intersection');
     expect(lineArcIntersection?.label).toContain('L1-L2');
-    expect(lineArcIntersection?.label).toContain('arc:upper');
+    expect(lineArcIntersection?.label).toContain('CURVE1');
     expect(lineArcIntersection?.x).toBeCloseTo(0, 6);
     expect(lineArcIntersection?.y).toBeCloseTo(10, 6);
 
     const arcArcIntersection = index.queryNearestSnap({ x: 4, y: 9.1 }, 1, ['intersection']);
     expect(arcArcIntersection?.kind).toBe('intersection');
-    expect(arcArcIntersection?.label).toContain('arc:upper');
-    expect(arcArcIntersection?.label).toContain('arc:right-upper');
+    expect(arcArcIntersection?.label).toContain('CURVE1');
+    expect(arcArcIntersection?.label).toContain('CURVE2');
     expect(arcArcIntersection?.x).toBeCloseTo(4, 6);
     expect(arcArcIntersection?.y).toBeCloseTo(Math.sqrt(84), 6);
   });

@@ -5,6 +5,7 @@ import {
   isCadLineLikeEntity,
   type CadParcelReportSummary,
 } from '../../engine/cad/cadCogo';
+import { buildCadInverseSummary } from '../../engine/cad/cadCogo';
 import { cadBuildAlignmentDraft } from '../../engine/cad/cadAlignment';
 import {
   clearCadSelection,
@@ -17,6 +18,10 @@ import { buildCadBounds, buildCadProjectSignature } from '../../engine/cad/cadPr
 import { cloneSurveyCadPersistedState } from '../../engine/cad/cadPersistence';
 import { buildMlightcadSpikeScene } from '../../engine/cad/cadMlightcadAdapter';
 import { buildCadDisplayScene } from '../../engine/cad/cadRenderer';
+import {
+  buildCadPropertiesPanelState,
+  type CadPropertiesPanelState,
+} from '../../engine/cad/cadProperties';
 import type { CadCogoComputation } from '../../engine/cad/cadCogoTypes';
 import {
   createCadHistoryState,
@@ -27,9 +32,14 @@ import {
 } from '../../engine/cad/cadUndoRedo';
 import {
   applyCadGripEdit,
+  buildCadFilletPreview,
   buildCadGripHandles,
   buildCadTrimPreview,
 } from '../../engine/cad/cadTransactions';
+import {
+  cadParseBearingDegrees,
+  cadPointFromAzimuthDistance,
+} from '../../engine/cad/cadGeometry';
 import { useSurveyCadCommands, type CadCommandPreviewState } from './useSurveyCadCommands';
 import { useSurveyCadSnapping, type CadSnapPreferences } from './useSurveyCadSnapping';
 import type {
@@ -59,8 +69,7 @@ interface UseSurveyCadWorkspaceResult {
   selectedEntityIds: string[];
   selectedEntities: ReturnType<typeof getSelectedCadEntities>;
   selectedParcelReport: CadParcelReportSummary | null;
-  activeCogoComputation: CadCogoComputation | null;
-  activeCogoComputationSource: 'selected' | 'latest' | null;
+  propertiesPanelState: CadPropertiesPanelState | null;
   activeBatchCogoDraft: {
     inputValue: string;
     startPoint: { label: string; x: number; y: number } | null;
@@ -181,6 +190,7 @@ interface UseSurveyCadWorkspaceResult {
     | 'MOVE'
     | 'COPY'
     | 'TRIM'
+    | 'FILLET'
     | 'PASTE'
     | null;
   commandInputValue: string;
@@ -260,6 +270,7 @@ interface UseSurveyCadWorkspaceResult {
   startMoveCommand: () => void;
   startCopyCommand: () => void;
   startTrimCommand: () => void;
+  startFilletCommand: () => void;
   createIntersectionPoint: () => void;
   createAlignmentFromSelection: () => void;
   reportAlignmentStationFromSelection: () => void;
@@ -272,6 +283,11 @@ interface UseSurveyCadWorkspaceResult {
   submitCommandInput: () => void;
   useActiveSnap: () => void;
   editTraverseDraftLeg: (_legIndex: number) => void;
+  editPropertiesField: (
+    _entityId: CadEntityId,
+    _field: import('../../engine/cad/cadProperties').CadEntityPropertyEditField,
+    _value: string,
+  ) => boolean;
   replaceTraverseDraftLeg: (_legIndex: number, _inputValue: string) => boolean;
   appendTraverseDraftPoint: (_inputValue: string) => boolean;
   insertTraverseDraftLeg: (_legIndex: number, _inputValue: string) => boolean;
@@ -328,19 +344,6 @@ interface CommandHoverTarget {
   segmentId?: string;
   point: { x: number; y: number };
 }
-
-const cogoProvenanceIdFromEntity = (entity: ReturnType<typeof getSelectedCadEntities>[number]): string | null => {
-  const cogoMetadata = entity.metadata?.cogo;
-  if (
-    typeof cogoMetadata !== 'object' ||
-    cogoMetadata == null ||
-    !('provenanceId' in cogoMetadata) ||
-    typeof cogoMetadata.provenanceId !== 'string'
-  ) {
-    return null;
-  }
-  return cogoMetadata.provenanceId;
-};
 
 export const useSurveyCadWorkspace = (
   baseProject: CadProject,
@@ -467,14 +470,6 @@ export const useSurveyCadWorkspace = (
         : null,
     [selectedEntities],
   );
-  const selectedTrimEntities = useMemo(
-    () => selectedEntities.filter((entity) => entity.type === 'line' || entity.type === 'polyline' || entity.type === 'arc'),
-    [selectedEntities],
-  );
-  const trimCuttingEntityIds = useMemo(
-    () => selectedTrimEntities.map((entity) => entity.id),
-    [selectedTrimEntities],
-  );
   const selectedParcelReport = useMemo(() => {
     const selectedParcel = selectedEntities.find((entity) => entity.type === 'parcel');
     if (!selectedParcel || selectedParcel.type !== 'parcel') return null;
@@ -484,35 +479,137 @@ export const useSurveyCadWorkspace = (
       vertexLabels: selectedParcel.vertexLabels,
     });
   }, [selectedEntities]);
-  const [reportedComputation, setReportedComputation] = useState<CadCogoComputation | null>(null);
-  const latestPersistedCogoComputation = useMemo(
-    () => cadProject.cogoComputations[cadProject.cogoComputations.length - 1] ?? null,
-    [cadProject.cogoComputations],
+  const [, setReportedComputation] = useState<CadCogoComputation | null>(null);
+  const propertiesPanelState = useMemo(
+    () => buildCadPropertiesPanelState(cadProject, selectedEntities),
+    [cadProject, selectedEntities],
   );
-  const selectedCogoComputation = useMemo(() => {
-    const selectedProvenanceIds = new Set(
-      selectedEntities
-        .map((entity) => cogoProvenanceIdFromEntity(entity))
-        .filter((value): value is string => value != null),
-    );
-    if (selectedProvenanceIds.size === 0) return null;
-    for (let index = cadProject.cogoComputations.length - 1; index >= 0; index -= 1) {
-      const computation = cadProject.cogoComputations[index];
-      if (computation && selectedProvenanceIds.has(computation.id)) {
-        return computation;
-      }
+  const editPropertiesField = (
+    entityId: CadEntityId,
+    field: import('../../engine/cad/cadProperties').CadEntityPropertyEditField,
+    value: string,
+  ): boolean => {
+    const targetEntity = historyRef.current.present.project.entities.find((entity) => entity.id === entityId);
+    if (!targetEntity) return false;
+    const trimmedValue = value.trim();
+    if (field.kind === 'entity-name') {
+      if (trimmedValue.length === 0) return false;
+      applyHistoryUpdate((current) =>
+        runCadCommand(current, {
+          key: 'EDIT_ENTITY',
+          entityId,
+          edit: { kind: 'entity-name', value: trimmedValue },
+        }),
+      );
+      return true;
     }
-    return null;
-  }, [cadProject.cogoComputations, selectedEntities]);
-  const activeCogoComputation = reportedComputation ?? selectedCogoComputation ?? latestPersistedCogoComputation;
-  const activeCogoComputationSource: 'selected' | 'latest' | null =
-    reportedComputation != null
-      ? 'latest'
-      : selectedCogoComputation != null
-      ? 'selected'
-      : activeCogoComputation != null
-        ? 'latest'
-        : null;
+    if (field.kind === 'point-x' || field.kind === 'point-y' || field.kind === 'point-z') {
+      if (field.kind === 'point-z' && trimmedValue.length === 0) {
+        applyHistoryUpdate((current) =>
+          runCadCommand(current, {
+            key: 'EDIT_ENTITY',
+            entityId,
+            edit: { kind: 'point-z', value: null },
+          }),
+        );
+        return true;
+      }
+      const numericValue = Number.parseFloat(trimmedValue);
+      if (!Number.isFinite(numericValue)) return false;
+      applyHistoryUpdate((current) =>
+        runCadCommand(current, {
+          key: 'EDIT_ENTITY',
+          entityId,
+          edit:
+            field.kind === 'point-x'
+              ? { kind: 'point-x', value: numericValue }
+              : field.kind === 'point-y'
+                ? { kind: 'point-y', value: numericValue }
+                : { kind: 'point-z', value: numericValue },
+        }),
+      );
+      return true;
+    }
+    if (targetEntity.type === 'line' && (field.kind === 'line-length' || field.kind === 'line-azimuth')) {
+      const inverse = buildCadInverseSummary(
+        { x: targetEntity.fromX, y: targetEntity.fromY },
+        { x: targetEntity.toX, y: targetEntity.toY },
+      );
+      const nextLength =
+        field.kind === 'line-length' ? Number.parseFloat(trimmedValue) : inverse.distance;
+      const nextAzimuth =
+        field.kind === 'line-azimuth' ? cadParseBearingDegrees(trimmedValue) : inverse.azimuthDeg;
+      if (!Number.isFinite(nextLength) || nextLength <= 0 || nextAzimuth == null) return false;
+      const nextPoint = cadPointFromAzimuthDistance(
+        { x: targetEntity.fromX, y: targetEntity.fromY },
+        nextAzimuth,
+        nextLength,
+      );
+      applyHistoryUpdate((current) =>
+        runCadCommand(current, {
+          key: 'EDIT_ENTITY',
+          entityId,
+          edit: {
+            kind: 'line-end',
+            toX: nextPoint.x,
+            toY: nextPoint.y,
+          },
+        }),
+      );
+      return true;
+    }
+    if (
+      targetEntity.type === 'polyline' &&
+      (field.kind === 'polyline-vertex-x' ||
+        field.kind === 'polyline-vertex-y' ||
+        field.kind === 'polyline-segment-length' ||
+        field.kind === 'polyline-segment-azimuth')
+    ) {
+      if (field.kind === 'polyline-vertex-x' || field.kind === 'polyline-vertex-y') {
+        const vertex = targetEntity.vertices[field.vertexIndex];
+        if (!vertex) return false;
+        const numericValue = Number.parseFloat(trimmedValue);
+        if (!Number.isFinite(numericValue)) return false;
+        applyHistoryUpdate((current) =>
+          runCadCommand(current, {
+            key: 'EDIT_ENTITY',
+            entityId,
+            edit: {
+              kind: 'polyline-vertex',
+              vertexIndex: field.vertexIndex,
+              x: field.kind === 'polyline-vertex-x' ? numericValue : vertex.x,
+              y: field.kind === 'polyline-vertex-y' ? numericValue : vertex.y,
+            },
+          }),
+        );
+        return true;
+      }
+      const startVertex = targetEntity.vertices[field.segmentIndex];
+      const endVertex = targetEntity.vertices[field.segmentIndex + 1];
+      if (!startVertex || !endVertex) return false;
+      const inverse = buildCadInverseSummary(startVertex, endVertex);
+      const nextLength =
+        field.kind === 'polyline-segment-length' ? Number.parseFloat(trimmedValue) : inverse.distance;
+      const nextAzimuth =
+        field.kind === 'polyline-segment-azimuth' ? cadParseBearingDegrees(trimmedValue) : inverse.azimuthDeg;
+      if (!Number.isFinite(nextLength) || nextLength <= 0 || nextAzimuth == null) return false;
+      const nextVertex = cadPointFromAzimuthDistance(startVertex, nextAzimuth, nextLength);
+      applyHistoryUpdate((current) =>
+        runCadCommand(current, {
+          key: 'EDIT_ENTITY',
+          entityId,
+          edit: {
+            kind: 'polyline-vertex',
+            vertexIndex: field.segmentIndex + 1,
+            x: nextVertex.x,
+            y: nextVertex.y,
+          },
+        }),
+      );
+      return true;
+    }
+    return false;
+  };
   const [activeGripHandle, setActiveGripHandle] = useState<CadGripHandle | null>(null);
   useEffect(() => {
     activeGripHandleRef.current = activeGripHandle;
@@ -558,6 +655,8 @@ export const useSurveyCadWorkspace = (
     commandPrompt,
     commandHelpText,
     commandPreview,
+    activeTrimCuttingEntityIds,
+    activeFilletPreview,
     activeBatchCogoDraft,
     activeTraverseDraft,
     snapConstructionContext: nextSnapConstructionContext,
@@ -616,6 +715,7 @@ export const useSurveyCadWorkspace = (
     startMoveCommand,
     startCopyCommand,
     startTrimCommand,
+    startFilletCommand,
     startPasteCommand,
     cancelCommand,
     finishCommand,
@@ -647,7 +747,6 @@ export const useSurveyCadWorkspace = (
     previewPoint,
     history,
     selectionCount: selection.selectedEntityIds.length,
-    trimCuttingEntityIds,
     selectedArcForContinue,
     selectedArcForCurveCogo: selectedArcForContinue,
     selectedLineForCoreCogo,
@@ -665,10 +764,6 @@ export const useSurveyCadWorkspace = (
     onReportComputation: setReportedComputation,
   });
   useEffect(() => {
-    if (activeCommandKey == null || activeCommandKey === 'INVERSE') return;
-    setReportedComputation(null);
-  }, [activeCommandKey]);
-  useEffect(() => {
     setSnapConstructionContext((current) => {
       if (
         current.active === nextSnapConstructionContext.active &&
@@ -685,7 +780,7 @@ export const useSurveyCadWorkspace = (
     });
   }, [nextSnapConstructionContext]);
   useEffect(() => {
-    if (activeCommandKey === 'TRIM') return;
+    if (activeCommandKey === 'TRIM' || activeCommandKey === 'FILLET') return;
     setCommandHoverTargetState(null);
   }, [activeCommandKey]);
   const updatePointerWorldPoint = (
@@ -854,15 +949,15 @@ export const useSurveyCadWorkspace = (
       });
   }, [activeCommandKey, commandPreview, displayScene.primitives, selection.selectedEntityIds]);
   const trimPreview = useMemo(() => {
-    if (activeCommandKey !== 'TRIM' || !commandHoverTarget) return null;
+    if (activeCommandKey !== 'TRIM' || !commandHoverTarget || activeTrimCuttingEntityIds.length === 0) return null;
     return buildCadTrimPreview(
       cadProject,
-      trimCuttingEntityIds,
+      activeTrimCuttingEntityIds,
       commandHoverTarget.entityId,
       commandHoverTarget.point,
       commandHoverTarget.segmentId,
     );
-  }, [activeCommandKey, cadProject, commandHoverTarget, trimCuttingEntityIds]);
+  }, [activeCommandKey, activeTrimCuttingEntityIds, cadProject, commandHoverTarget]);
   const trimPreviewPrimitives = useMemo<CadDisplayPrimitive[]>(() => {
     if (!trimPreview) return [];
     return buildCadDisplayScene({
@@ -871,9 +966,36 @@ export const useSurveyCadWorkspace = (
       bounds: buildCadBounds(trimPreview.previewEntities),
     }).primitives;
   }, [cadProject, trimPreview]);
+  const filletPreview = useMemo(() => {
+    if (activeCommandKey !== 'FILLET' || !commandHoverTarget || !activeFilletPreview) return null;
+    return buildCadFilletPreview(
+      cadProject,
+      activeFilletPreview.radius,
+      activeFilletPreview.firstLineEntityId,
+      activeFilletPreview.firstPickPoint,
+      commandHoverTarget.entityId,
+      commandHoverTarget.point,
+    );
+  }, [activeCommandKey, activeFilletPreview, cadProject, commandHoverTarget]);
+  const filletPreviewPrimitives = useMemo<CadDisplayPrimitive[]>(() => {
+    if (!filletPreview) return [];
+    return buildCadDisplayScene({
+      ...cadProject,
+      entities: filletPreview.previewEntities,
+      bounds: buildCadBounds(filletPreview.previewEntities),
+    }).primitives;
+  }, [cadProject, filletPreview]);
   const commandEntityOpacityOverrides = useMemo<Record<string, number>>(
-    () => (trimPreview ? { [trimPreview.targetEntityId]: 0.22 } : {}),
-    [trimPreview],
+    () => ({
+      ...(trimPreview ? { [trimPreview.targetEntityId]: 0.22 } : {}),
+      ...(filletPreview
+        ? {
+            [filletPreview.firstLineEntityId]: 0.22,
+            [filletPreview.secondLineEntityId]: 0.22,
+          }
+        : {}),
+    }),
+    [filletPreview, trimPreview],
   );
   const gripHandles = useMemo(
     () =>
@@ -949,8 +1071,7 @@ export const useSurveyCadWorkspace = (
     selectedEntityIds: selection.selectedEntityIds,
     selectedEntities,
     selectedParcelReport,
-    activeCogoComputation,
-    activeCogoComputationSource,
+    propertiesPanelState,
     activeBatchCogoDraft,
     activeTraverseDraft,
     selectionCount: selection.selectedEntityIds.length,
@@ -963,7 +1084,11 @@ export const useSurveyCadWorkspace = (
     commandInputValue,
     statusText: commandPrompt,
     commandHelpText,
-    commandPreviewPrimitives: [...commandPreviewPrimitives, ...trimPreviewPrimitives],
+    commandPreviewPrimitives: [
+      ...commandPreviewPrimitives,
+      ...trimPreviewPrimitives,
+      ...filletPreviewPrimitives,
+    ],
     commandEntityOpacityOverrides,
     commandExpectsPointPick,
     canUseActiveSnap,
@@ -986,7 +1111,7 @@ export const useSurveyCadWorkspace = (
       selectedEntities.length === 1 && selectedAlignmentForStationing != null,
     canCreateParcel: selectedPolylineForParcel != null,
     canContinueCurve: selectedArcForContinue != null,
-    canTrimSelection: trimCuttingEntityIds.length > 0,
+    canTrimSelection: true,
     isGripEditing: activeGripHandle != null,
     activeSnap,
     nearbySnaps,
@@ -1044,6 +1169,7 @@ export const useSurveyCadWorkspace = (
     startMoveCommand,
     startCopyCommand,
     startTrimCommand,
+    startFilletCommand,
     createIntersectionPoint: () => {
       if (!selectedIntersection || selectedLineLikes.length !== 2) return;
       applyHistoryUpdate((current) =>
@@ -1098,6 +1224,7 @@ export const useSurveyCadWorkspace = (
     submitCommandInput,
     useActiveSnap,
     editTraverseDraftLeg,
+    editPropertiesField,
     replaceTraverseDraftLeg,
     appendTraverseDraftPoint,
     insertTraverseDraftLeg,

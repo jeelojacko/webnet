@@ -184,6 +184,120 @@ describe('CAD renderer labels', () => {
     expect(Math.abs(arcLabel.rotationDeg ?? 0)).toBeLessThanOrEqual(90);
   });
 
+  it('renders one upright alignment label with alignment name and displayed station range', () => {
+    const scene = buildCadDisplayScene({
+      ...createSnapshot().project,
+      entities: [
+        {
+          id: 'alignment:label-test',
+          type: 'alignment',
+          layerId: 'planning',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          name: 'ALIGN1',
+          startStation: 100,
+          elements: [
+            {
+              kind: 'line',
+              start: { x: 0, y: 0 },
+              end: { x: 100, y: 0 },
+            },
+          ],
+        },
+      ],
+    });
+
+    const labels = scene.primitives.filter(
+      (primitive) => primitive.kind === 'text' && primitive.sourceEntityId === 'alignment:label-test',
+    );
+
+    expect(labels).toHaveLength(1);
+    const label = labels[0];
+    if (label.kind !== 'text') throw new Error('Alignment label primitive missing');
+    expect(label.text).toBe('ALIGN1\nSTA 1+00.000 - 2+00.000');
+    expect(label.textAnchor).toBe('middle');
+    expect(Math.abs(label.rotationDeg ?? 0)).toBeLessThanOrEqual(90);
+  });
+
+  it('uses displayed station equations in alignment label range text', () => {
+    const scene = buildCadDisplayScene({
+      ...createSnapshot().project,
+      entities: [
+        {
+          id: 'alignment:eq-label-test',
+          type: 'alignment',
+          layerId: 'planning',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          name: 'ALIGN2',
+          startStation: 100,
+          stationEquations: [{ backStation: 110, aheadStation: 120, rawStation: 110 }],
+          elements: [
+            {
+              kind: 'line',
+              start: { x: 0, y: 0 },
+              end: { x: 100, y: 0 },
+            },
+          ],
+        },
+      ],
+    });
+
+    const labels = scene.primitives.filter(
+      (primitive) =>
+        primitive.kind === 'text' &&
+        primitive.sourceEntityId === 'alignment:eq-label-test' &&
+        primitive.id.includes('alignment-label'),
+    );
+
+    expect(labels).toHaveLength(1);
+    const label = labels[0];
+    if (label.kind !== 'text') throw new Error('Alignment label primitive missing');
+    expect(label.text).toBe('ALIGN2\nSTA 1+00.000 - 2+10.000');
+  });
+
+  it('renders station-equation marker labels at equation locations on alignments', () => {
+    const scene = buildCadDisplayScene({
+      ...createSnapshot().project,
+      entities: [
+        {
+          id: 'alignment:eq-marker-test',
+          type: 'alignment',
+          layerId: 'planning',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          name: 'ALIGN3',
+          startStation: 100,
+          stationEquations: [{ backStation: 110, aheadStation: 120, rawStation: 110 }],
+          elements: [
+            {
+              kind: 'line',
+              start: { x: 0, y: 0 },
+              end: { x: 100, y: 0 },
+            },
+          ],
+        },
+      ],
+    });
+
+    const equationLabels = scene.primitives.filter(
+      (primitive) =>
+        primitive.kind === 'text' &&
+        primitive.sourceEntityId === 'alignment:eq-marker-test' &&
+        primitive.id.includes('station-equation-label'),
+    );
+
+    expect(equationLabels).toHaveLength(1);
+    const label = equationLabels[0];
+    if (label.kind !== 'text') throw new Error('Alignment station-equation label primitive missing');
+    expect(label.text).toBe('EQ 1+10.000 = 1+20.000');
+    expect(label.textAnchor).toBe('middle');
+    expect(Math.abs(label.rotationDeg ?? 0)).toBeLessThanOrEqual(90);
+  });
+
   it('preserves full-circle sweep and label text for clockwise and counterclockwise arcs', () => {
     expect(cadSignedSweepDeg(180, -180)).toBe(-360);
 

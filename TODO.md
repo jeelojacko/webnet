@@ -2,7 +2,7 @@
 
 - [x] Survey CAD deed/batch COGO batch (June 2026): add a native `DEED` / `BATCH_COGO` panel with pasted `START`, bearing-distance, and tangent-curve row parsing, live preview rows/warnings plus generated point/line/arc preview geometry, and persisted computation history on the shared CAD command seam.
 
-- [ ] Survey CAD alignment/stationing batch (June 2026): current slice: create native `ALIGN` from selected line/arc chains, add selection-driven `STA` station/offset reporting for `alignment + point`, add typed `STA PT` station-offset point creation plus `STA INT` station-interval point creation from a selected alignment, add persisted `STA EQ` station-equation editing on native alignments, add typed `ALIGN OFF` offset-alignment creation from a selected native alignment, and keep shared alignment length/station/projection helpers ready for later labels/refinements.
+- [ ] Survey CAD alignment/stationing batch (June 2026): current slice: add alignment label refinements plus global CAD naming consistency on top of the new selection-driven CAD `Properties` panel, keep hover/snap badge labels on the same operator-facing naming contract as `Properties`, keep shared displayed-station formatting across labels/report rows, make move/copy keep arc/polyline/polygon/parcel/traverse-linked point geometry in sync without extending that auto-move to ordinary lines, extend the new repeatable Civil3D-style `FILLET` with logical-side live preview plus side-of-corner control from cursor position, make `TRIM` reuse a repeatable pair-based first-entity/second-entity loop like `FILLET`, and leave interval/stakeout annotation refinements for the next slice.
 
 - [x] Survey CAD traverse adjustment batch (June 2026): add draft-panel angular balance plus Bowditch/transit closure adjustment on top of the native traverse editor, persist adjustment provenance/report rows through command history, and leave optional Crandall balancing for a later high-end pass.
 
@@ -13,6 +13,8 @@
 - [x] Survey CAD core point-line batch (June 2026): add multi-point inverse, bearing-only and distance-only reports, turned/deflection point tools, point-along and offset-point calculators, extend-line helper flow, and the command UI/report coverage for them.
 
 - [x] Survey CAD COGO report panel batch (June 2026): add a selected/latest COGO result overlay in the native CAD workspace, bridge live `INVERSE` query output into the shared report model, and add exportable TXT/CSV/Markdown report previews for persisted computation history.
+
+- [x] Survey CAD properties panel batch (June 2026): replace the selected/latest COGO popup with a selection-driven `Properties` panel for points, lines, parcels, alignments, arcs, text, ellipses, and mixed multi-select dropdown collapse while leaving command status text plus persisted COGO history intact.
 
 - [x] Survey CAD COGO foundation batch (June 2026): add shared COGO result/report/provenance types, project-level persisted COGO computation history, versioned CAD project migration, native alignment entity foundation, and command-history integration for existing COGO-producing commands.
 

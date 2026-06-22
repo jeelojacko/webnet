@@ -16,6 +16,7 @@ import {
   cadIsAngleOnArcSweep,
   type CadWorldPoint,
 } from './cadGeometry';
+import { getCadEntityDisplayLabel, getCadEntitySubpartDisplayLabel } from './cadEntityNames';
 import type {
   CadArcEntity,
   CadBounds,
@@ -185,14 +186,14 @@ const vertexEntitySegments = (
     end: points[index + 1]!,
     startLabel: entity.vertexLabels[index] ?? `V${index + 1}`,
     endLabel: entity.vertexLabels[index + 1] ?? `V${index + 2}`,
-    label: entity.vertexLabels.join(' -> ') || entity.id,
+    label: `${entity.vertexLabels[index] ?? `V${index + 1}`}-${entity.vertexLabels[index + 1] ?? `V${index + 2}`}`,
   }));
 };
 
 const entitySegments = (entity: CadLineEntity | CadPolylineEntity | CadPolygonEntity | CadParcelEntity): CadSegmentRef[] =>
   entity.type === 'line' ? lineSegments(entity) : vertexEntitySegments(entity);
 
-const arcRefFromEntity = (entity: CadArcEntity): CadArcRef => ({
+const arcRefFromEntity = (project: CadProject, entity: CadArcEntity): CadArcRef => ({
   sourceEntityId: entity.id,
   center: { x: entity.centerX, y: entity.centerY },
   radius: entity.radius,
@@ -200,7 +201,7 @@ const arcRefFromEntity = (entity: CadArcEntity): CadArcRef => ({
   endAngleDeg: entity.endAngleDeg,
   startPoint: cadPointOnCircle({ x: entity.centerX, y: entity.centerY }, entity.radius, entity.startAngleDeg),
   endPoint: cadPointOnCircle({ x: entity.centerX, y: entity.centerY }, entity.radius, entity.endAngleDeg),
-  label: entity.id,
+  label: getCadEntityDisplayLabel(entity),
 });
 
 const dedupeCandidates = (candidates: CadSnapCandidate[]): CadSnapCandidate[] => {
@@ -620,6 +621,7 @@ const arcIntersectsBounds = (arc: CadArcRef, bounds: CadBounds): boolean => {
 };
 
 const entityIntersectsBounds = (
+  project: CadProject,
   entity: CadProject['entities'][number],
   bounds: CadBounds,
 ): boolean => {
@@ -646,7 +648,7 @@ const entityIntersectsBounds = (
       );
     }
     case 'arc':
-      return arcIntersectsBounds(arcRefFromEntity(entity), bounds);
+      return arcIntersectsBounds(arcRefFromEntity(project, entity), bounds);
     case 'text':
       return pointInsideBounds({ x: entity.x, y: entity.y }, bounds);
     case 'error-ellipse':
@@ -687,7 +689,9 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => {
     const candidates: CadSnapCandidate[] = [];
     const visibleQueryBounds = visibleBounds ? expandBounds(visibleBounds, toleranceWorld * 1.5) : null;
     const visibleEntities = visibleQueryBounds
-      ? project.entities.filter((entity) => entity.visible && entityIntersectsBounds(entity, visibleQueryBounds))
+      ? project.entities.filter(
+          (entity) => entity.visible && entityIntersectsBounds(project, entity, visibleQueryBounds),
+        )
       : project.entities.filter((entity) => entity.visible);
     const segments = visibleEntities
       .filter((entity): entity is CadLineEntity | CadPolylineEntity | CadPolygonEntity | CadParcelEntity =>
@@ -699,7 +703,7 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => {
       .flatMap((entity) => entitySegments(entity));
     const arcs = visibleEntities
       .filter((entity): entity is CadArcEntity => entity.type === 'arc')
-      .map((entity) => arcRefFromEntity(entity));
+      .map((entity) => arcRefFromEntity(project, entity));
     const basePoint = constructionContext.active ? constructionContext.basePoint : null;
     const scopeSeedSegmentId = constructionContext.scopeSeedSegmentId ?? null;
     const scopeSeedSegment = scopeSeedSegmentId
@@ -830,15 +834,35 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => {
           });
           break;
         case 'arc': {
-          const arc = arcRefFromEntity(entity);
+          const arc = arcRefFromEntity(project, entity);
           if (allowed.has('endpoint')) {
             candidates.push(
-              buildCandidate('endpoint', entity.id, arc.startPoint, worldPoint, `${arc.label} start`),
-              buildCandidate('endpoint', entity.id, arc.endPoint, worldPoint, `${arc.label} end`),
+              buildCandidate(
+                'endpoint',
+                entity.id,
+                arc.startPoint,
+                worldPoint,
+                getCadEntitySubpartDisplayLabel(project, entity.id, 'arc-start'),
+              ),
+              buildCandidate(
+                'endpoint',
+                entity.id,
+                arc.endPoint,
+                worldPoint,
+                getCadEntitySubpartDisplayLabel(project, entity.id, 'arc-end'),
+              ),
             );
           }
           if (allowed.has('center')) {
-            candidates.push(buildCandidate('center', entity.id, arc.center, worldPoint, `${arc.label} center`));
+            candidates.push(
+              buildCandidate(
+                'center',
+                entity.id,
+                arc.center,
+                worldPoint,
+                getCadEntitySubpartDisplayLabel(project, entity.id, 'center'),
+              ),
+            );
           }
           if (allowed.has('arc-midpoint')) {
             candidates.push(
@@ -847,7 +871,7 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => {
                 entity.id,
                 cadArcMidpoint(arc.center, arc.radius, arc.startAngleDeg, arc.endAngleDeg),
                 worldPoint,
-                `${arc.label} mid`,
+                getCadEntitySubpartDisplayLabel(project, entity.id, 'arc-midpoint'),
               ),
             );
           }
@@ -860,7 +884,7 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => {
                   entity.id,
                   cadPointOnCircle(arc.center, arc.radius, angleDeg),
                   worldPoint,
-                  `${arc.label} q${angleDeg}`,
+                  getCadEntitySubpartDisplayLabel(project, entity.id, 'quadrant', { quadrantAngleDeg: angleDeg }),
                 ),
               );
             });
@@ -1245,14 +1269,17 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => {
           constructionContext.lockedSnap.kind === 'tangent'
             ? lockedArc?.sourceEntityId ?? constructionContext.lockedSnap.sourceEntityId
             : lockedSegment?.sourceEntityId ?? constructionContext.lockedSnap.sourceEntityId;
+        const lockedSourceEntity =
+          project.entities.find((entity) => entity.id === lockedSourceEntityId) ?? null;
+        const lockedSourceLabel = lockedArc?.label ?? (lockedSourceEntity ? getCadEntityDisplayLabel(lockedSourceEntity) : lockedSourceEntityId);
         const explicitLockedConstructionCandidate = buildCandidate(
           constructionContext.lockedSnap.kind,
           lockedSourceEntityId,
           lockedPoint,
           worldPoint,
           constructionContext.lockedSnap.kind === 'tangent'
-            ? `${lockedSourceEntityId} tangent`
-            : `${lockedSegment?.label ?? lockedSourceEntityId} ${
+            ? `${lockedSourceLabel} tangent`
+            : `${lockedSegment?.label ?? lockedSourceLabel} ${
                 constructionContext.lockedSnap.kind === 'extension'
                   ? 'ext'
                   : constructionContext.lockedSnap.kind === 'parallel'

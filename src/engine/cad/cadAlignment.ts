@@ -219,6 +219,15 @@ export const cadAlignmentEndStation = (
   return startStation + totalLength + deltaAfter;
 };
 
+export const formatCadStation = (station: number): string => {
+  if (!Number.isFinite(station)) return 'NaN';
+  const sign = station < 0 ? '-' : '';
+  const absoluteStation = Math.abs(station);
+  const major = Math.floor(absoluteStation / 100);
+  const minor = absoluteStation - major * 100;
+  return `${sign}${major}+${minor.toFixed(3).padStart(6, '0')}`;
+};
+
 export const cadAlignmentRawStationToDisplayStation = (
   alignment:
     | Pick<CadAlignmentEntity, 'elements' | 'startStation' | 'stationEquations'>

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { buildCadSpatialIndex } from '../../engine/cad/cadSpatialIndex';
+import { getCadEntitySubpartDisplayLabel } from '../../engine/cad/cadEntityNames';
 import type {
   CadBounds,
   CadGripHandle,
@@ -139,11 +140,19 @@ export const useSurveyCadSnapping = (
         y: handle.y,
         distance: 0,
         label:
-          handle.kind === 'arc-radius'
-            ? `${handle.entityId} radius`
-            : handle.kind === 'vertex'
-              ? `${handle.entityId} v${(handle.vertexIndex ?? 0) + 1}`
-              : `${handle.entityId} ${handle.kind}`,
+          handle.kind === 'line-start'
+            ? getCadEntitySubpartDisplayLabel(project, handle.entityId, 'line-start')
+            : handle.kind === 'line-end'
+              ? getCadEntitySubpartDisplayLabel(project, handle.entityId, 'line-end')
+              : handle.kind === 'arc-start'
+                ? getCadEntitySubpartDisplayLabel(project, handle.entityId, 'arc-start')
+                : handle.kind === 'arc-end'
+                  ? getCadEntitySubpartDisplayLabel(project, handle.entityId, 'arc-end')
+                  : handle.kind === 'arc-radius'
+                    ? getCadEntitySubpartDisplayLabel(project, handle.entityId, 'arc-radius')
+                    : getCadEntitySubpartDisplayLabel(project, handle.entityId, 'vertex', {
+                        vertexIndex: handle.vertexIndex,
+                      }),
       }));
       if (restrictedGripCandidates.length > 0) {
         const gripTolerance = dynamicToleranceWorld ?? toleranceWorld;

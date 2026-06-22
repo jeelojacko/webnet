@@ -3471,7 +3471,7 @@ describe('SurveyCadWorkspace', () => {
       'ARC_SCE committed',
     );
     expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain(
-      '9 entities',
+      '17 entities',
     );
     expect(container.querySelectorAll('path.cursor-pointer').length).toBeGreaterThan(0);
 
@@ -3889,22 +3889,14 @@ describe('SurveyCadWorkspace', () => {
     expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
       'azimuth 90.0000',
     );
-    expect(container.querySelector('[data-survey-cad-cogo-panel]')).not.toBeNull();
-    expect(container.querySelector('[data-survey-cad-cogo-panel-title]')?.textContent).toContain(
-      'Inverse',
+    expect(container.querySelector('[data-survey-cad-properties-panel-title]')?.textContent).toContain(
+      'Properties',
     );
-    expect(container.querySelector('[data-survey-cad-cogo-panel-source]')?.textContent).toContain(
-      'Latest COGO Result',
+    expect(container.querySelector('[data-survey-cad-properties-entity-label]')?.textContent).toContain(
+      'CURVE2',
     );
-    expect(container.querySelector('[data-survey-cad-cogo-export-preview]')?.textContent).toContain(
-      'Distance: 100.000 m',
-    );
-
-    await act(async () => {
-      (container.querySelector('[data-survey-cad-cogo-format="csv"]') as HTMLButtonElement | null)?.click();
-    });
-    expect(container.querySelector('[data-survey-cad-cogo-export-preview]')?.textContent).toContain(
-      'section,label,value,unit',
+    expect(container.querySelector('[data-survey-cad-properties-panel-rows]')?.textContent).toContain(
+      'Arc length',
     );
 
     await act(async () => {
@@ -3948,12 +3940,11 @@ describe('SurveyCadWorkspace', () => {
     expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
       'MULTI_INVERSE reported 2 legs',
     );
-    expect(container.querySelector('[data-survey-cad-cogo-panel-title]')?.textContent).toContain(
-      'Multi-Point Inverse',
+    expect(container.querySelector('[data-survey-cad-properties-panel-title]')?.textContent).toContain(
+      'Properties',
     );
-    expect(container.querySelector('[data-survey-cad-cogo-export-preview]')?.textContent).toContain(
-      'Total distance: 20.000 m',
-    );
+    expect(container.querySelector('[data-survey-cad-properties-entity-label]')?.textContent).toContain('A');
+    expect(container.querySelector('[data-survey-cad-properties-panel-rows]')?.textContent).toContain('Easting');
 
     await act(async () => {
       root.unmount();
@@ -4001,12 +3992,297 @@ describe('SurveyCadWorkspace', () => {
     expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
       'POINT committed',
     );
-    expect(container.querySelector('[data-survey-cad-cogo-panel-title]')?.textContent).toContain(
-      'Point Along Line',
+    expect(container.querySelector('[data-survey-cad-properties-panel-title]')?.textContent).toContain(
+      'Properties',
     );
-    expect(container.querySelector('[data-survey-cad-cogo-export-preview]')?.textContent).toContain(
-      'Fraction: 50.000 %',
+    expect(container.querySelector('[data-survey-cad-properties-entity-label]')?.textContent).toContain(
+      'CAD1',
     );
+    expect(container.querySelector('[data-survey-cad-properties-panel-rows]')?.textContent).toContain(
+      'Point class',
+    );
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('auto-labels mouse-picked pline vertices with plain CAD names instead of raw coordinates', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+    const capture = createPersistedStateCapture();
+    const baseProject = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+          onPersistedStateChange={capture.onPersistedStateChange}
+        />,
+      );
+    });
+
+    const preview = container.querySelector('[data-survey-cad-preview]') as SVGElement | null;
+    const commandInput = container.querySelector('[data-survey-cad-command-input]') as HTMLInputElement | null;
+    if (!preview || !commandInput) throw new Error('Preview or command input not found');
+    mockElementRect(preview);
+    const firstPick = projectWorldToPreviewScreen(baseProject.bounds!, { x: 12, y: 28 });
+    const secondPick = projectWorldToPreviewScreen(baseProject.bounds!, { x: 28, y: 34 });
+
+    await act(async () => {
+      clickButton(container, 'PLINE');
+      preview.dispatchEvent(
+        new MouseEvent('mousedown', {
+          bubbles: true,
+          clientX: firstPick.clientX,
+          clientY: firstPick.clientY,
+          button: 0,
+        }),
+      );
+      preview.dispatchEvent(
+        new MouseEvent('click', {
+          bubbles: true,
+          clientX: firstPick.clientX,
+          clientY: firstPick.clientY,
+          button: 0,
+        }),
+      );
+      preview.dispatchEvent(
+        new MouseEvent('mousedown', {
+          bubbles: true,
+          clientX: secondPick.clientX,
+          clientY: secondPick.clientY,
+          button: 0,
+        }),
+      );
+      preview.dispatchEvent(
+        new MouseEvent('click', {
+          bubbles: true,
+          clientX: secondPick.clientX,
+          clientY: secondPick.clientY,
+          button: 0,
+        }),
+      );
+    });
+
+    await act(async () => {
+      setTextInputValue(commandInput, '');
+      pressKey(commandInput, 'Enter');
+    });
+
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain('PLINE committed');
+    const persistedProject = capture.read()?.project;
+    const polyline = persistedProject?.entities.filter((entity) => entity.type === 'polyline').at(-1);
+    expect(polyline?.type).toBe('polyline');
+    expect(polyline?.type === 'polyline' ? polyline.vertexLabels : null).toEqual(['CAD1', 'CAD2']);
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('closes the properties panel automatically when selection clears', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+        />,
+      );
+    });
+
+    const pointTarget = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="pt:A"]',
+    ) as SVGElement | null;
+    if (!pointTarget) throw new Error('Point target not found');
+
+    await act(async () => {
+      pointTarget.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 0, clientY: 0 }));
+    });
+
+    expect(container.querySelector('[data-survey-cad-properties-panel]')).not.toBeNull();
+
+    await act(async () => {
+      clickButton(container, 'CLEAR');
+    });
+
+    expect(container.querySelector('[data-survey-cad-properties-panel]')).toBeNull();
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('uses multi-select properties dropdowns to collapse selection to one entity', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+        />,
+      );
+    });
+
+    const lineTarget = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="line:A|C"]',
+    ) as SVGElement | null;
+    const pointTarget = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="pt:C"]',
+    ) as SVGElement | null;
+    if (!lineTarget || !pointTarget) throw new Error('Mixed selection targets not found');
+
+    await act(async () => {
+      lineTarget.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 0, clientY: 0 }));
+      pointTarget.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 0, clientY: 0, shiftKey: true }));
+    });
+
+    expect(container.querySelector('[data-survey-cad-selection-count]')?.textContent).toContain('2 selected');
+
+    const typeSelect = container.querySelector(
+      '[data-survey-cad-properties-type-select]',
+    ) as HTMLSelectElement | null;
+    const entitySelect = container.querySelector(
+      '[data-survey-cad-properties-entity-select]',
+    ) as HTMLSelectElement | null;
+    if (!typeSelect || !entitySelect) throw new Error('Properties dropdowns not found');
+
+    await act(async () => {
+      typeSelect.value = 'survey-point';
+      typeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+
+    await act(async () => {
+      entitySelect.value = 'pt:C';
+      entitySelect.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+
+    expect(container.querySelector('[data-survey-cad-selection-count]')?.textContent).toContain('1 selected');
+    expect(container.querySelector('[data-survey-cad-properties-entity-label]')?.textContent).toContain('C');
+    expect(container.querySelector('[data-survey-cad-properties-panel-rows]')?.textContent).toContain('Easting');
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('edits point properties from properties panel and applies on enter', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+        />,
+      );
+    });
+
+    const pointTarget = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="pt:A"]',
+    ) as SVGElement | null;
+    if (!pointTarget) throw new Error('Point target not found');
+
+    await act(async () => {
+      pointTarget.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 0, clientY: 0 }));
+    });
+
+    const nameInput = container.querySelector(
+      '[data-survey-cad-properties-input="name"]',
+    ) as HTMLInputElement | null;
+    if (!nameInput) throw new Error('Point name input not found');
+
+    await act(async () => {
+      setTextInputValue(nameInput, 'A_EDIT');
+      pressKey(nameInput, 'Enter');
+    });
+
+    const updatedNameInput = container.querySelector(
+      '[data-survey-cad-properties-input="name"]',
+    ) as HTMLInputElement | null;
+    expect(container.querySelector('[data-survey-cad-properties-entity-label]')?.textContent).toContain('A_EDIT');
+    expect(updatedNameInput?.value).toBe('A_EDIT');
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('edits line length from properties panel and applies on enter', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+        />,
+      );
+    });
+
+    const lineTarget = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="line:A|C"]',
+    ) as SVGElement | null;
+    if (!lineTarget) throw new Error('Line target not found');
+
+    await act(async () => {
+      lineTarget.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 0, clientY: 0 }));
+    });
+
+    const lengthInput = container.querySelector(
+      '[data-survey-cad-properties-input="length"]',
+    ) as HTMLInputElement | null;
+    if (!lengthInput) throw new Error('Line length input not found');
+
+    await act(async () => {
+      setTextInputValue(lengthInput, '100');
+      pressKey(lengthInput, 'Enter');
+    });
+
+    const updatedLengthInput = container.querySelector(
+      '[data-survey-cad-properties-input="length"]',
+    ) as HTMLInputElement | null;
+    expect(updatedLengthInput?.value).toBe('100.000');
+    expect(container.querySelector('[data-survey-cad-properties-panel-rows]')?.textContent).toContain('83.205');
 
     await act(async () => {
       root.unmount();
@@ -4111,11 +4387,11 @@ describe('SurveyCadWorkspace', () => {
       'POINT committed',
     );
     expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain('11 entities');
-    expect(container.querySelector('[data-survey-cad-cogo-panel-title]')?.textContent).toContain(
-      'Point On Curve',
+    expect(container.querySelector('[data-survey-cad-properties-panel-title]')?.textContent).toContain(
+      'Properties',
     );
-    expect(container.querySelector('[data-survey-cad-cogo-export-preview]')?.textContent).toContain(
-      'Distance: 6.000 m',
+    expect(container.querySelector('[data-survey-cad-properties-panel-rows]')?.textContent).toContain(
+      'Point class',
     );
 
     await act(async () => {
@@ -4157,14 +4433,14 @@ describe('SurveyCadWorkspace', () => {
       pressKey(commandInput, 'Enter');
     });
 
-    expect(container.querySelector('[data-survey-cad-cogo-panel-title]')?.textContent).toContain(
-      'Bearing-Distance Intersection',
+    expect(container.querySelector('[data-survey-cad-properties-panel-title]')?.textContent).toContain(
+      'Properties',
     );
-    expect(container.querySelector('[data-survey-cad-cogo-panel-summary]')?.textContent).toContain(
-      'bearing-distance intersection',
+    expect(container.querySelector('[data-survey-cad-properties-entity-label]')?.textContent).toContain(
+      'CAD1',
     );
-    expect(container.querySelector('[data-survey-cad-cogo-panel-alternatives]')?.textContent).toContain(
-      'Alternative',
+    expect(container.querySelector('[data-survey-cad-properties-panel-rows]')?.textContent).toContain(
+      'Point class',
     );
 
     await act(async () => {
@@ -4173,7 +4449,214 @@ describe('SurveyCadWorkspace', () => {
     container.remove();
   });
 
-  it('runs TRIM from the command surface by using selected cutting edges and clicking the portion to remove', async () => {
+  it('runs repeatable TRIM from the command surface by capturing a cutting edge first and then trimming targets one pair at a time', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+    const capture = createPersistedStateCapture();
+
+    const originalProject = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+    const baseProject = appendCadProjectEntities(
+      originalProject,
+      [
+        {
+          id: 'line:trim-cutter',
+          type: 'line',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          fromStationId: 'TC1',
+          toStationId: 'TC2',
+          fromX: 30,
+          fromY: 0,
+          toX: 30,
+          toY: 40,
+          sourceObservationIds: [],
+        },
+        {
+          id: 'line:trim-target-1',
+          type: 'line',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          fromStationId: 'TT1',
+          toStationId: 'TT2',
+          fromX: 10,
+          fromY: 20,
+          toX: 50,
+          toY: 20,
+          sourceObservationIds: [],
+        },
+        {
+          id: 'line:trim-target-2',
+          type: 'line',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          fromStationId: 'TT3',
+          toStationId: 'TT4',
+          fromX: 10,
+          fromY: 10,
+          toX: 50,
+          toY: 10,
+          sourceObservationIds: [],
+        },
+      ],
+    );
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+          persistedState={{
+            version: 1,
+            sourceSignature: buildCadProjectSignature(originalProject),
+            project: baseProject,
+          }}
+          onPersistedStateChange={capture.onPersistedStateChange}
+        />,
+      );
+    });
+
+    const preview = container.querySelector('[data-survey-cad-preview]') as SVGElement | null;
+    const cutter = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="line:trim-cutter"]',
+    ) as SVGLineElement | null;
+    const trimTarget1 = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="line:trim-target-1"]',
+    ) as SVGLineElement | null;
+    const trimTarget2 = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="line:trim-target-2"]',
+    ) as SVGLineElement | null;
+    if (!preview || !cutter || !trimTarget1 || !trimTarget2) throw new Error('Trim targets not found');
+    mockElementRect(preview);
+
+    const cutterPick = projectWorldToPreviewScreen(baseProject.bounds!, { x: 30, y: 30 });
+    const removeRightPick = projectWorldToPreviewScreen(baseProject.bounds!, { x: 40, y: 20 });
+    const removeLeftPick = projectWorldToPreviewScreen(baseProject.bounds!, { x: 20, y: 10 });
+
+    await act(async () => {
+      clickButton(container, 'TRIM');
+    });
+
+    await act(async () => {
+      cutter.dispatchEvent(
+        new MouseEvent('click', {
+          bubbles: true,
+          clientX: cutterPick.clientX,
+          clientY: cutterPick.clientY,
+          button: 0,
+        }),
+      );
+    });
+
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+      'cutting edge captured',
+    );
+
+    await act(async () => {
+      preview.dispatchEvent(
+        new MouseEvent('mousemove', {
+          bubbles: true,
+          clientX: removeRightPick.clientX,
+          clientY: removeRightPick.clientY,
+        }),
+      );
+      trimTarget1.dispatchEvent(
+        new MouseEvent('mousemove', {
+          bubbles: true,
+          clientX: removeRightPick.clientX,
+          clientY: removeRightPick.clientY,
+        }),
+      );
+    });
+
+    const dimmedTarget = container.querySelector(
+      '[data-survey-cad-render-entity-id="line:trim-target-1"]',
+    ) as SVGLineElement | null;
+    const trimPreviewLines = Array.from(
+      container.querySelectorAll('[data-survey-cad-command-preview-line]'),
+    ) as SVGLineElement[];
+
+    expect(dimmedTarget?.getAttribute('opacity')).toBe('0.22');
+    expect(trimPreviewLines).toHaveLength(1);
+
+    await act(async () => {
+      trimTarget1.dispatchEvent(
+        new MouseEvent('mousedown', {
+          bubbles: true,
+          clientX: removeRightPick.clientX,
+          clientY: removeRightPick.clientY,
+          button: 0,
+        }),
+      );
+      trimTarget1.dispatchEvent(
+        new MouseEvent('click', {
+          bubbles: true,
+          clientX: removeRightPick.clientX,
+          clientY: removeRightPick.clientY,
+          button: 0,
+        }),
+      );
+    });
+
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+      'Click the next cutting edge',
+    );
+
+    await act(async () => {
+      cutter.dispatchEvent(
+        new MouseEvent('click', {
+          bubbles: true,
+          clientX: cutterPick.clientX,
+          clientY: cutterPick.clientY,
+          button: 0,
+        }),
+      );
+      trimTarget2.dispatchEvent(
+        new MouseEvent('click', {
+          bubbles: true,
+          clientX: removeLeftPick.clientX,
+          clientY: removeLeftPick.clientY,
+          button: 0,
+        }),
+      );
+    });
+
+    const trimmedTargets = capture.read()?.project.entities.filter(
+      (entity) =>
+        entity.type === 'line' &&
+        entity.id !== 'line:trim-cutter' &&
+        ((entity.fromY === 20 && entity.toY === 20) || (entity.fromY === 10 && entity.toY === 10)),
+    );
+    expect(trimmedTargets).toHaveLength(2);
+    expect(
+      trimmedTargets?.some((entity) => entity.type === 'line' && entity.fromY === 20 && entity.fromX === 10 && entity.toX === 30),
+    ).toBe(true);
+    expect(
+      trimmedTargets?.some((entity) => entity.type === 'line' && entity.fromY === 10 && entity.fromX === 30 && entity.toX === 50),
+    ).toBe(true);
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('reuses one FILLET radius across multiple line corners and cancels on empty-space double click', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
     const root: Root = createRoot(container);
@@ -4186,20 +4669,65 @@ describe('SurveyCadWorkspace', () => {
       units: 'm',
       result: null,
     });
-    const trimProject = appendCadProjectEntities(baseProject, [
+    const filletProject = appendCadProjectEntities(baseProject, [
       {
-        id: 'line:trim-target',
+        id: 'line:fillet-a1',
         type: 'line',
         layerId: 'observation-lines',
         styleId: 'style-observation-line',
         visible: true,
         locked: false,
-        fromStationId: 'T1',
-        toStationId: 'T2',
-        fromX: 10,
-        fromY: 20,
-        toX: 90,
-        toY: 20,
+        fromStationId: 'FA1',
+        toStationId: 'FA2',
+        fromX: 0,
+        fromY: 0,
+        toX: 10,
+        toY: 0,
+        sourceObservationIds: [],
+      },
+      {
+        id: 'line:fillet-b1',
+        type: 'line',
+        layerId: 'observation-lines',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        fromStationId: 'FB1',
+        toStationId: 'FB2',
+        fromX: 0,
+        fromY: 0,
+        toX: 0,
+        toY: 10,
+        sourceObservationIds: [],
+      },
+      {
+        id: 'line:fillet-a2',
+        type: 'line',
+        layerId: 'observation-lines',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        fromStationId: 'FC1',
+        toStationId: 'FC2',
+        fromX: 20,
+        fromY: 0,
+        toX: 30,
+        toY: 0,
+        sourceObservationIds: [],
+      },
+      {
+        id: 'line:fillet-b2',
+        type: 'line',
+        layerId: 'observation-lines',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        fromStationId: 'FD1',
+        toStationId: 'FD2',
+        fromX: 20,
+        fromY: 0,
+        toX: 20,
+        toY: 10,
         sourceObservationIds: [],
       },
     ]);
@@ -4215,7 +4743,7 @@ describe('SurveyCadWorkspace', () => {
           persistedState={{
             version: 1,
             sourceSignature: buildCadProjectSignature(baseProject),
-            project: trimProject,
+            project: filletProject,
           }}
           onPersistedStateChange={capture.onPersistedStateChange}
         />,
@@ -4223,83 +4751,248 @@ describe('SurveyCadWorkspace', () => {
     });
 
     const preview = container.querySelector('[data-survey-cad-preview]') as SVGElement | null;
-    const cutA = container.querySelector(
-      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="line:A|C"]',
+    const commandInput = container.querySelector('[data-survey-cad-command-input]') as HTMLInputElement | null;
+    const background = container.querySelector('[data-survey-cad-background="true"]') as SVGRectElement | null;
+    const firstHorizontal = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="line:fillet-a1"]',
     ) as SVGLineElement | null;
-    const cutB = container.querySelector(
-      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="line:B|C"]',
+    const firstVertical = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="line:fillet-b1"]',
     ) as SVGLineElement | null;
-    const trimTarget = container.querySelector(
-      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="line:trim-target"]',
+    const secondHorizontal = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="line:fillet-a2"]',
     ) as SVGLineElement | null;
-    if (!preview || !cutA || !cutB || !trimTarget) throw new Error('Trim targets not found');
+    const secondVertical = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="line:fillet-b2"]',
+    ) as SVGLineElement | null;
+    if (!preview || !commandInput || !background || !firstHorizontal || !firstVertical || !secondHorizontal || !secondVertical) {
+      throw new Error('Fillet workspace controls not found');
+    }
     mockElementRect(preview);
 
-    const removePick = projectWorldToPreviewScreen(trimProject.bounds!, { x: 50, y: 20 });
+    const firstPickA = projectWorldToPreviewScreen(filletProject.bounds!, { x: 1, y: 0 });
+    const firstPickB = projectWorldToPreviewScreen(filletProject.bounds!, { x: 0, y: 1 });
+    const secondPickA = projectWorldToPreviewScreen(filletProject.bounds!, { x: 21, y: 0 });
+    const secondPickB = projectWorldToPreviewScreen(filletProject.bounds!, { x: 20, y: 1 });
 
     await act(async () => {
-      cutA.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 0, clientY: 0 }));
-      cutB.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 0, clientY: 0, shiftKey: true }));
-      clickButton(container, 'TRIM');
+      clickButton(container, 'FILLET');
+      setTextInputValue(commandInput, '2');
+      pressKey(commandInput, 'Enter');
     });
 
-    expect(container.querySelector('[data-survey-cad-selection-count]')?.textContent).toContain('2 selected');
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain('radius 2.000');
+
+    await act(async () => {
+      firstHorizontal.dispatchEvent(
+        new MouseEvent('click', {
+          bubbles: true,
+          clientX: firstPickA.clientX,
+          clientY: firstPickA.clientY,
+          button: 0,
+        }),
+      );
+      firstVertical.dispatchEvent(
+        new MouseEvent('click', {
+          bubbles: true,
+          clientX: firstPickB.clientX,
+          clientY: firstPickB.clientY,
+          button: 0,
+        }),
+      );
+    });
+
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain('still active');
+
+    await act(async () => {
+      secondHorizontal.dispatchEvent(
+        new MouseEvent('click', {
+          bubbles: true,
+          clientX: secondPickA.clientX,
+          clientY: secondPickA.clientY,
+          button: 0,
+        }),
+      );
+      secondVertical.dispatchEvent(
+        new MouseEvent('click', {
+          bubbles: true,
+          clientX: secondPickB.clientX,
+          clientY: secondPickB.clientY,
+          button: 0,
+        }),
+      );
+    });
+
+    expect(
+      capture.read()?.project.entities.filter(
+        (entity) => entity.type === 'arc' && entity.metadata?.createdBy === 'FILLET',
+      ),
+    ).toHaveLength(2);
+
+    await act(async () => {
+      background.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, button: 0 }));
+    });
+
+    expect(commandInput.disabled).toBe(true);
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('shows a live FILLET preview before commit and then creates the fillet arc from the same command flow', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+    const capture = createPersistedStateCapture();
+
+    const originalProject = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+    const baseProject = appendCadProjectEntities(
+      originalProject,
+      [
+        {
+          id: 'line:fillet-cross-a',
+          type: 'line',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          fromStationId: 'FX1',
+          toStationId: 'FX2',
+          fromX: -10,
+          fromY: 0,
+          toX: 10,
+          toY: 0,
+          sourceObservationIds: [],
+        },
+        {
+          id: 'line:fillet-cross-b',
+          type: 'line',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          fromStationId: 'FY1',
+          toStationId: 'FY2',
+          fromX: 0,
+          fromY: -10,
+          toX: 0,
+          toY: 10,
+          sourceObservationIds: [],
+        },
+      ],
+    );
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+          persistedState={{
+            version: 1,
+            sourceSignature: buildCadProjectSignature(originalProject),
+            project: baseProject,
+          }}
+          onPersistedStateChange={capture.onPersistedStateChange}
+        />,
+      );
+    });
+
+    const preview = container.querySelector('[data-survey-cad-preview]') as SVGElement | null;
+    const commandInput = container.querySelector('[data-survey-cad-command-input]') as HTMLInputElement | null;
+    const horizontal = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="line:fillet-cross-a"]',
+    ) as SVGLineElement | null;
+    const vertical = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="line:fillet-cross-b"]',
+    ) as SVGLineElement | null;
+    if (!preview || !commandInput || !horizontal || !vertical) throw new Error('Fillet side controls not found');
+    mockElementRect(preview);
+
+    const firstPick = projectWorldToPreviewScreen(baseProject.bounds!, { x: 1, y: 0 });
+    const upperPick = projectWorldToPreviewScreen(baseProject.bounds!, { x: 0, y: 1 });
+    const lowerPick = projectWorldToPreviewScreen(baseProject.bounds!, { x: 0, y: -1 });
+
+    await act(async () => {
+      clickButton(container, 'FILLET');
+      setTextInputValue(commandInput, '2');
+      pressKey(commandInput, 'Enter');
+      horizontal.dispatchEvent(
+        new MouseEvent('click', {
+          bubbles: true,
+          clientX: firstPick.clientX,
+          clientY: firstPick.clientY,
+          button: 0,
+        }),
+      );
+    });
 
     await act(async () => {
       preview.dispatchEvent(
         new MouseEvent('mousemove', {
           bubbles: true,
-          clientX: removePick.clientX,
-          clientY: removePick.clientY,
+          clientX: upperPick.clientX,
+          clientY: upperPick.clientY,
         }),
       );
-      trimTarget.dispatchEvent(
+      vertical.dispatchEvent(
         new MouseEvent('mousemove', {
           bubbles: true,
-          clientX: removePick.clientX,
-          clientY: removePick.clientY,
+          clientX: upperPick.clientX,
+          clientY: upperPick.clientY,
         }),
       );
     });
 
-    const dimmedTarget = container.querySelector(
-      '[data-survey-cad-render-entity-id="line:trim-target"]',
-    ) as SVGLineElement | null;
-    const trimPreviewLines = Array.from(
-      container.querySelectorAll('[data-survey-cad-command-preview-line]'),
-    ) as SVGLineElement[];
-
-    expect(dimmedTarget?.getAttribute('opacity')).toBe('0.22');
-    expect(trimPreviewLines).toHaveLength(2);
+    const upperPreviewPath =
+      (container.querySelector('[data-survey-cad-command-preview-arc]') as SVGPathElement | null)?.getAttribute('d') ??
+      '';
+    expect(upperPreviewPath).not.toBe('');
 
     await act(async () => {
-      trimTarget.dispatchEvent(
-        new MouseEvent('mousedown', {
+      preview.dispatchEvent(
+        new MouseEvent('mousemove', {
           bubbles: true,
-          clientX: removePick.clientX,
-          clientY: removePick.clientY,
-          button: 0,
+          clientX: lowerPick.clientX,
+          clientY: lowerPick.clientY,
         }),
       );
-      trimTarget.dispatchEvent(
+      vertical.dispatchEvent(
+        new MouseEvent('mousemove', {
+          bubbles: true,
+          clientX: lowerPick.clientX,
+          clientY: lowerPick.clientY,
+        }),
+      );
+    });
+
+    await act(async () => {
+      vertical.dispatchEvent(
         new MouseEvent('click', {
           bubbles: true,
-          clientX: removePick.clientX,
-          clientY: removePick.clientY,
+          clientX: lowerPick.clientX,
+          clientY: lowerPick.clientY,
           button: 0,
         }),
       );
     });
 
-    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain('TRIM committed');
-
-    const trimmedLines = capture.read()?.project.entities.filter(
-      (entity) => entity.type === 'line' && entity.fromY === 20 && entity.toY === 20,
+    const committedArc = capture.read()?.project.entities.find(
+      (entity) => entity.type === 'arc' && entity.metadata?.createdBy === 'FILLET',
     );
-    expect(trimmedLines).toHaveLength(2);
-    expect(trimmedLines?.some((entity) => entity.type === 'line' && entity.fromX === 10 && entity.toX === 30)).toBe(true);
-    expect(trimmedLines?.some((entity) => entity.type === 'line' && entity.fromX === 80 && entity.toX === 90)).toBe(true);
-    expect(capture.read()?.project.entities.some((entity) => entity.id === 'line:trim-target')).toBe(false);
+    expect(committedArc?.type).toBe('arc');
+    if (committedArc?.type !== 'arc') throw new Error('Committed fillet arc not found');
+    expect(committedArc.radius).toBeCloseTo(2, 6);
 
     await act(async () => {
       root.unmount();
@@ -4457,7 +5150,7 @@ describe('SurveyCadWorkspace', () => {
 
     expect(container.querySelector('[data-survey-cad-traverse-draft]')).not.toBeNull();
     expect(container.querySelectorAll('[data-survey-cad-traverse-leg]')).toHaveLength(2);
-    expect(container.querySelector('[data-survey-cad-traverse-draft]')?.textContent).toContain('A - tp1');
+    expect(container.querySelector('[data-survey-cad-traverse-draft]')?.textContent).toContain('A - CAD1');
     expect(container.querySelector('[data-survey-cad-traverse-closure]')?.textContent).toContain('29.155 m');
 
     await act(async () => {
@@ -4817,8 +5510,8 @@ describe('SurveyCadWorkspace', () => {
     });
 
     expect(container.querySelectorAll('[data-survey-cad-traverse-leg]')).toHaveLength(2);
-    expect(container.querySelector('[data-survey-cad-traverse-draft]')?.textContent).toContain('tp1');
-    expect(container.querySelector('[data-survey-cad-traverse-draft]')?.textContent).toContain('tp2');
+    expect(container.querySelector('[data-survey-cad-traverse-draft]')?.textContent).toContain('CAD1');
+    expect(container.querySelector('[data-survey-cad-traverse-draft]')?.textContent).toContain('CAD2');
 
     await act(async () => {
       (container.querySelector('[data-survey-cad-traverse-finish]') as HTMLButtonElement | null)?.click();
@@ -5047,14 +5740,17 @@ describe('SurveyCadWorkspace', () => {
     expect(container.querySelector('[data-survey-cad-parcel-report]')?.textContent).toContain(
       'Closure',
     );
-    expect(container.querySelector('[data-survey-cad-cogo-panel-title]')?.textContent).toContain(
-      'Parcel Create',
+    expect(container.querySelector('[data-survey-cad-properties-panel-title]')?.textContent).toContain(
+      'Properties',
     );
-    expect(container.querySelector('[data-survey-cad-cogo-panel-source]')?.textContent).toContain(
-      'Selected COGO Result',
+    expect(container.querySelector('[data-survey-cad-properties-entity-label]')?.textContent).toContain(
+      'Parcel 1',
+    );
+    expect(container.querySelector('[data-survey-cad-properties-panel-rows]')?.textContent).toContain(
+      'Area',
     );
     expect(container.querySelector('[data-survey-cad-parcel-report]')?.textContent).toContain(
-      'A-tp1',
+      'A-CAD1',
     );
     expect(container.querySelector('[data-survey-cad-parcel-report]')?.textContent).toContain(
       '90°00\'00"',
@@ -5137,10 +5833,15 @@ describe('SurveyCadWorkspace', () => {
       'ALIGNMENT_CREATE committed',
     );
     expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain('10 entities');
-    expect(container.querySelector('[data-survey-cad-cogo-panel-title]')?.textContent).toContain(
-      'Alignment Create',
+    expect(container.querySelector('[data-survey-cad-properties-panel-title]')?.textContent).toContain(
+      'Properties',
     );
-    expect(container.querySelector('[data-survey-cad-cogo-panel-summary]')?.textContent).toContain('Created alignment');
+    expect(container.querySelector('[data-survey-cad-properties-entity-label]')?.textContent).toContain(
+      'ALIGN1',
+    );
+    expect(container.querySelector('[data-survey-cad-properties-panel-rows]')?.textContent).toContain(
+      'Start station',
+    );
 
     const persisted = capture.read();
     expect(persisted?.project.entities.some((entity) => entity.type === 'alignment')).toBe(true);
@@ -5220,12 +5921,11 @@ describe('SurveyCadWorkspace', () => {
     expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
       'ALIGNMENT_STATION committed',
     );
-    expect(container.querySelector('[data-survey-cad-cogo-panel-title]')?.textContent).toContain(
-      'Alignment Station',
+    expect(container.querySelector('[data-survey-cad-properties-panel-title]')?.textContent).toContain(
+      'Properties',
     );
-    expect(container.querySelector('[data-survey-cad-cogo-panel-summary]')?.textContent).toContain(
-      'Projected C onto ALIGN1',
-    );
+    expect(container.querySelector('[data-survey-cad-properties-type-select]')).not.toBeNull();
+    expect(container.querySelector('[data-survey-cad-properties-entity-select]')).not.toBeNull();
 
     const persisted = capture.read();
     expect(persisted?.project.cogoComputations.at(-1)?.toolKey).toBe('ALIGNMENT_STATION');
@@ -5303,8 +6003,8 @@ describe('SurveyCadWorkspace', () => {
     expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
       'ALIGNMENT_OFFSET_POINT committed',
     );
-    expect(container.querySelector('[data-survey-cad-cogo-panel-title]')?.textContent).toContain(
-      'Alignment Station Offset Point',
+    expect(container.querySelector('[data-survey-cad-properties-entity-label]')?.textContent).toContain(
+      'SO1',
     );
 
     const persisted = capture.read();
@@ -5384,8 +6084,11 @@ describe('SurveyCadWorkspace', () => {
     expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
       'ALIGNMENT_STATION_EQUATION committed',
     );
-    expect(container.querySelector('[data-survey-cad-cogo-panel-title]')?.textContent).toContain(
-      'Alignment Station Equation',
+    expect(container.querySelector('[data-survey-cad-properties-entity-label]')?.textContent).toContain(
+      'ALIGN1',
+    );
+    expect(container.querySelector('[data-survey-cad-properties-panel-rows]')?.textContent).toContain(
+      'Station equations',
     );
 
     const persisted = capture.read();
@@ -5470,9 +6173,8 @@ describe('SurveyCadWorkspace', () => {
     expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
       'ALIGNMENT_INTERVAL_POINTS committed',
     );
-    expect(container.querySelector('[data-survey-cad-cogo-panel-title]')?.textContent).toContain(
-      'Alignment Interval Points',
-    );
+    expect(container.querySelector('[data-survey-cad-properties-type-select]')).not.toBeNull();
+    expect(container.querySelector('[data-survey-cad-properties-entity-select]')).not.toBeNull();
 
     const persisted = capture.read();
     expect(
@@ -5562,8 +6264,8 @@ describe('SurveyCadWorkspace', () => {
     expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
       'ALIGNMENT_OFFSET_CREATE committed',
     );
-    expect(container.querySelector('[data-survey-cad-cogo-panel-title]')?.textContent).toContain(
-      'Offset Alignment',
+    expect(container.querySelector('[data-survey-cad-properties-entity-label]')?.textContent).toContain(
+      'ALIGN2',
     );
 
     const persisted = capture.read();
@@ -6092,6 +6794,19 @@ describe('SurveyCadWorkspace', () => {
       entities: [
         ...baseProject.entities,
         {
+          id: 'pt:L1',
+          type: 'survey-point' as const,
+          layerId: 'points',
+          styleId: 'style-point',
+          visible: true,
+          locked: false,
+          stationId: 'L1',
+          x: 20,
+          y: 12,
+          pointClass: 'free' as const,
+          source: 'parsed-input' as const,
+        },
+        {
           id: 'line:grip-test',
           type: 'line' as const,
           layerId: 'observation-lines',
@@ -6176,6 +6891,13 @@ describe('SurveyCadWorkspace', () => {
     if (line?.type !== 'line') throw new Error('Dragged line not found');
     expect(line.fromX).toBeCloseTo(15, 6);
     expect(line.fromY).not.toBeCloseTo(12, 6);
+    const movedA = capture.read()?.project.entities.find(
+      (entity) => entity.type === 'survey-point' && entity.stationId === 'L1',
+    );
+    expect(movedA?.type).toBe('survey-point');
+    if (movedA?.type !== 'survey-point') throw new Error('Linked line point not found');
+    expect(movedA.x).toBeCloseTo(line.fromX, 6);
+    expect(movedA.y).toBeCloseTo(line.fromY, 6);
     expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain('GRIP_EDIT committed');
 
     await act(async () => {
@@ -7126,6 +7848,22 @@ describe('SurveyCadWorkspace', () => {
 
     expect(container.querySelectorAll('[data-survey-cad-grip-handle="vertex"]')).toHaveLength(4);
 
+    const hoverVertex = projectWorldToPreviewScreen(persistedProject.bounds!, { x: 28, y: 14 });
+    await act(async () => {
+      preview.dispatchEvent(
+        new MouseEvent('mousemove', {
+          bubbles: true,
+          clientX: hoverVertex.clientX,
+          clientY: hoverVertex.clientY,
+        }),
+      );
+    });
+
+    const vertexBadge = container.querySelector('[data-survey-cad-snap-badge]')?.textContent ?? '';
+    expect(vertexBadge).toContain('P2');
+    expect(vertexBadge).not.toContain('polyline:grip-test');
+    expect(vertexBadge).not.toContain(':vertex:');
+
     const vertexHandle = container.querySelector(
       '[data-survey-cad-grip-handle-id="polyline:grip-test:vertex:1"]',
     ) as SVGCircleElement | null;
@@ -7162,6 +7900,13 @@ describe('SurveyCadWorkspace', () => {
     if (polyline?.type !== 'polyline') throw new Error('Dragged polyline not found');
     expect(polyline.vertices[1]?.x).toBeCloseTo(30, 6);
     expect(polyline.vertices[1]?.y).toBeCloseTo(22, 6);
+    const movedP2 = capture.read()?.project.entities.find(
+      (entity) => entity.type === 'survey-point' && entity.stationId === 'P2',
+    );
+    if (movedP2?.type === 'survey-point') {
+      expect(movedP2.x).toBeCloseTo(30, 6);
+      expect(movedP2.y).toBeCloseTo(22, 6);
+    }
 
     await act(async () => {
       root.unmount();
@@ -7296,7 +8041,7 @@ describe('SurveyCadWorkspace', () => {
       entities: [
         ...baseProject.entities,
         {
-          id: 'arc:grip-test',
+          id: 'cad-arc-grip-test',
           type: 'arc' as const,
           layerId: 'observation-lines',
           styleId: 'style-observation-line',
@@ -7307,6 +8052,60 @@ describe('SurveyCadWorkspace', () => {
           radius: 12,
           startAngleDeg: 0,
           endAngleDeg: 180,
+          metadata: {
+            entityName: 'CURVE1',
+          },
+        },
+        {
+          id: 'pt:BC1',
+          type: 'survey-point' as const,
+          layerId: 'points',
+          styleId: 'style-point',
+          visible: true,
+          locked: false,
+          stationId: 'BC1',
+          x: 62,
+          y: 20,
+          pointClass: 'free' as const,
+          source: 'parsed-input' as const,
+          metadata: {
+            anchorCurveEntityId: 'cad-arc-grip-test',
+            curvePointRole: 'begin',
+          },
+        },
+        {
+          id: 'pt:R1',
+          type: 'survey-point' as const,
+          layerId: 'points',
+          styleId: 'style-point',
+          visible: true,
+          locked: false,
+          stationId: 'R1',
+          x: 50,
+          y: 20,
+          pointClass: 'free' as const,
+          source: 'parsed-input' as const,
+          metadata: {
+            anchorCurveEntityId: 'cad-arc-grip-test',
+            curvePointRole: 'radius',
+          },
+        },
+        {
+          id: 'pt:MP1',
+          type: 'survey-point' as const,
+          layerId: 'points',
+          styleId: 'style-point',
+          visible: true,
+          locked: false,
+          stationId: 'MP1',
+          x: 50,
+          y: 32,
+          pointClass: 'free' as const,
+          source: 'parsed-input' as const,
+          metadata: {
+            anchorCurveEntityId: 'cad-arc-grip-test',
+            curvePointRole: 'mid',
+          },
         },
       ],
     };
@@ -7331,7 +8130,7 @@ describe('SurveyCadWorkspace', () => {
 
     const preview = container.querySelector('[data-survey-cad-preview]') as SVGElement | null;
     const arcTarget = container.querySelector(
-      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="arc:grip-test"]',
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="cad-arc-grip-test"]',
     ) as SVGPathElement | null;
     if (!preview || !arcTarget) throw new Error('Preview or arc target not found');
     mockElementRect(preview);
@@ -7342,6 +8141,21 @@ describe('SurveyCadWorkspace', () => {
 
     expect(container.querySelectorAll('[data-survey-cad-grip-handle]')).toHaveLength(3);
     expect(container.querySelector('[data-survey-cad-grip-handle="arc-radius"]')).not.toBeNull();
+
+    const radiusHover = projectWorldToPreviewScreen(persistedProject.bounds!, { x: 50, y: 32 });
+    await act(async () => {
+      preview.dispatchEvent(
+        new MouseEvent('mousemove', {
+          bubbles: true,
+          clientX: radiusHover.clientX,
+          clientY: radiusHover.clientY,
+        }),
+      );
+    });
+
+    const radiusBadge = container.querySelector('[data-survey-cad-snap-badge]')?.textContent ?? '';
+    expect(radiusBadge).toContain('R1');
+    expect(radiusBadge).not.toContain('cad-arc-grip-test');
 
     const startHandle = container.querySelector(
       '[data-survey-cad-grip-handle="arc-start"]',
@@ -7374,7 +8188,7 @@ describe('SurveyCadWorkspace', () => {
       );
     });
 
-    let arc = capture.read()?.project.entities.find((entity) => entity.id === 'arc:grip-test');
+    let arc = capture.read()?.project.entities.find((entity) => entity.id === 'cad-arc-grip-test');
     expect(arc?.type).toBe('arc');
     if (arc?.type !== 'arc') throw new Error('Dragged arc not found');
     const movedStartX = arc.centerX + Math.cos((arc.startAngleDeg * Math.PI) / 180) * arc.radius;
@@ -7382,6 +8196,21 @@ describe('SurveyCadWorkspace', () => {
     expect(movedStartX).toBeCloseTo(56, 3);
     expect(movedStartY).toBeCloseTo(9.607695, 3);
     expect(arc.radius).toBeCloseTo(12, 6);
+    const movedBeginPoint = capture.read()?.project.entities.find(
+      (entity) => entity.type === 'survey-point' && entity.stationId === 'BC1',
+    );
+    const movedMidPoint = capture.read()?.project.entities.find(
+      (entity) => entity.type === 'survey-point' && entity.stationId === 'MP1',
+    );
+    expect(movedBeginPoint?.type).toBe('survey-point');
+    expect(movedMidPoint?.type).toBe('survey-point');
+    if (movedBeginPoint?.type !== 'survey-point' || movedMidPoint?.type !== 'survey-point') {
+      throw new Error('Moved support points not found');
+    }
+    expect(movedBeginPoint.x).toBeCloseTo(movedStartX, 3);
+    expect(movedBeginPoint.y).toBeCloseTo(movedStartY, 3);
+    expect(movedMidPoint.x).not.toBeCloseTo(50, 6);
+    expect(movedMidPoint.y).not.toBeCloseTo(32, 6);
 
     const radiusHandle = container.querySelector(
       '[data-survey-cad-grip-handle="arc-radius"]',
@@ -7414,10 +8243,27 @@ describe('SurveyCadWorkspace', () => {
       );
     });
 
-    arc = capture.read()?.project.entities.find((entity) => entity.id === 'arc:grip-test');
+    arc = capture.read()?.project.entities.find((entity) => entity.id === 'cad-arc-grip-test');
     expect(arc?.type).toBe('arc');
     if (arc?.type !== 'arc') throw new Error('Radius-edited arc not found');
     expect(arc.radius).toBeCloseTo(18, 3);
+    const radiusPoint = capture.read()?.project.entities.find(
+      (entity) => entity.type === 'survey-point' && entity.stationId === 'R1',
+    );
+    const resizedBeginPoint = capture.read()?.project.entities.find(
+      (entity) => entity.type === 'survey-point' && entity.stationId === 'BC1',
+    );
+    expect(radiusPoint?.type).toBe('survey-point');
+    expect(resizedBeginPoint?.type).toBe('survey-point');
+    if (radiusPoint?.type !== 'survey-point' || resizedBeginPoint?.type !== 'survey-point') {
+      throw new Error('Resized support points not found');
+    }
+    expect(radiusPoint.x).toBeCloseTo(50, 6);
+    expect(radiusPoint.y).toBeCloseTo(20, 6);
+    const resizedStartX = arc.centerX + Math.cos((arc.startAngleDeg * Math.PI) / 180) * arc.radius;
+    const resizedStartY = arc.centerY + Math.sin((arc.startAngleDeg * Math.PI) / 180) * arc.radius;
+    expect(resizedBeginPoint.x).toBeCloseTo(resizedStartX, 3);
+    expect(resizedBeginPoint.y).toBeCloseTo(resizedStartY, 3);
 
     await act(async () => {
       root.unmount();
@@ -7594,8 +8440,15 @@ describe('SurveyCadWorkspace', () => {
     const startHandle = container.querySelector(
       '[data-survey-cad-grip-handle="arc-start"]',
     ) as SVGCircleElement | null;
-    if (!startHandle) throw new Error('Arc start handle not found');
-    const nearEndPoint = projectWorldToPreviewScreen(persistedProject.bounds!, { x: 38.8, y: 20.6 });
+    const endHandle = container.querySelector(
+      '[data-survey-cad-grip-handle="arc-end"]',
+    ) as SVGCircleElement | null;
+    if (!startHandle || !endHandle) throw new Error('Arc grip handles not found');
+    const previewRect = preview.getBoundingClientRect();
+    const nearEndPoint = {
+      clientX: previewRect.left + Number(endHandle.getAttribute('cx') ?? '0'),
+      clientY: previewRect.top + Number(endHandle.getAttribute('cy') ?? '0'),
+    };
 
     await act(async () => {
       startHandle.dispatchEvent(
@@ -7728,10 +8581,6 @@ describe('SurveyCadWorkspace', () => {
         }),
       );
     });
-
-    expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent ?? '').toContain(
-      'arc:full-circle-window-test',
-    );
 
     await act(async () => {
       window.dispatchEvent(

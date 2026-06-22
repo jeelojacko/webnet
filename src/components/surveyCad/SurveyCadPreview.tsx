@@ -63,6 +63,7 @@ interface SurveyCadPreviewProps {
   onCommandInputChange: (_value: string) => void;
   onCommandInputEnter: () => void;
   onCommandInputEscape: () => void;
+  onEmptyBackgroundDoubleClick?: () => void;
   onZoomExtents: () => void;
 }
 
@@ -572,6 +573,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
   onCommandInputChange,
   onCommandInputEnter,
   onCommandInputEscape,
+  onEmptyBackgroundDoubleClick,
   onZoomExtents,
 }) => {
   const { baseScale, normalized, project, scale, unproject } = useProjector(viewBounds, viewport);
@@ -991,6 +993,10 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
           const screenPoint = screenPointFromMouseEvent(event);
           if (!screenPoint) return;
           onConsumeInteractionPoint(unproject(screenPoint.viewX, screenPoint.viewY));
+        }}
+        onDoubleClick={(event) => {
+          if (event.target !== event.currentTarget) return;
+          onEmptyBackgroundDoubleClick?.();
         }}
       />
         <g>

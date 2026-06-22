@@ -2,6 +2,10 @@
 
 - [x] Survey CAD COGO report panel batch (June 2026): add a selected/latest COGO result overlay in the native CAD workspace, bridge live `INVERSE` query output into the shared report model, and add exportable TXT/CSV/Markdown report previews for persisted computation history.
 
+- [x] Survey CAD properties panel batch (June 2026): replace the selected/latest COGO popup with a selection-driven `Properties` panel, make it auto-close on empty selection, cover all current CAD entity families, and collapse mixed multi-selects back through the native single-select path.
+
+- [x] Survey CAD properties editing + simple naming batch (June 2026): make logical `Properties` rows editable in place for entity names plus point/line/polyline geometry fields, add simple auto names like `PL#` / `TRAV#` / `CURVE#`, switch unnamed draft/traverse/polyline stations onto plain `CAD#` labels, and create labeled arc support points (`BC#`, `MP#`, `EC#`, `R#`) whenever native curve commands commit.
+
 - [x] Survey CAD COGO foundation batch (June 2026): add shared COGO result/report/provenance types, project-level persisted COGO computation history, versioned CAD project migration, native alignment entity foundation, and command-history integration for existing COGO-producing commands.
 
 ## COGO Expansion Checklist
@@ -14,7 +18,7 @@
 - [x] Traverse adjustment batch: add angular balance, compass/Bowditch, and transit rule as CAD-only draft-editor balancing tools with persisted adjustment reports, while leaving optional Crandall for a later pass.
 - [x] Deed/batch COGO batch: add parser for pasted `START`, bearing-distance, and tangent-curve calls, preview rows, warnings, generated points/lines/arcs, and reproducible computation history.
 - [ ] Alignment/stationing batch: add alignment entities from selected line/arc chains, station at point, station-offset point creation, point-to-station/offset projection, station equations, offset alignments, station interval points, and labels.
-  Current slice: create native `ALIGN` from selected line/arc chains, add typed `ALIGN OFF` offset-alignment creation from a selected native alignment, add selection-driven `STA` station/offset reporting for `alignment + point`, add typed `STA PT` station-offset point creation plus `STA INT` interval point creation from a selected alignment, add selection-driven `STA EQ` station-equation editing on native alignments, persist alignment/station provenance/report rows, and keep reusable alignment length/station/projection helpers ready for later labels/refinements.
+  Current slice: build alignment label refinements plus global CAD naming consistency on top of editable `Properties`, keep hover/snap labels on the same operator-facing naming contract as `Properties`, keep shared displayed-station formatting across labels/report rows, make `MOVE` / `COPY` carry arc/polyline/polygon/parcel/traverse-linked point sets with the parent geometry while leaving ordinary line moves as geometry-only, add a repeatable Civil3D-style `FILLET` command beside `TRIM` for line-line radius fillets that keeps one typed radius active across multiple corners plus live corner preview from the hovered second line, make `TRIM` reuse a repeatable first-entity/second-entity pair loop instead of exiting after one cut, and leave broader interval/stakeout annotation polish for the next slice.
 - [ ] Parcel tools batch: add area by picked point sequence, area unit conversion, create parcel from closed selected linework, split by line/bearing/area, hinged/sliding area, gap/overlap detection, and line/curve parcel tables.
 - [ ] Transform tools batch: add rotate, scale, mirror, two-point rotate+translate, 2D Helmert, affine transform, grid-ground scaling from origin, set/add/interpolate elevation.
 - [ ] Annotation/report batch: add bearing-distance labels, richer curve labels, line/curve tables, point reports, inverse reports, traverse reports, parcel reports, COGO history log, and export computation report.
@@ -181,7 +185,7 @@ Acceptance criteria:
 - closure, area, perimeter, bearings, and distances update with edits
 
 Current phase note:
-- the native CAD workspace now runs direct `TRAVERSE` command entry, can promote a selected traverse/polyline into a first `PARCEL` entity with area/perimeter/closure metrics plus centroid label text, shows a selected-parcel closure report overlay with area/perimeter/closure/course rows, now also shows a selected/latest COGO computation overlay with TXT/CSV/Markdown export preview for persisted command results plus live `INVERSE` queries, and now covers geometry-tied traverse/parcel/arc labeling for the current Phase 4 scope
+- the native CAD workspace now runs direct `TRAVERSE` command entry, can promote a selected traverse/polyline into a first `PARCEL` entity with area/perimeter/closure metrics plus centroid label text, shows a selected-parcel closure report overlay with area/perimeter/closure/course rows, now also shows an editable selection-driven `Properties` overlay for points/lines/parcels/arcs/alignments/text/ellipses while command status text and persisted `cogoComputations` keep the live/history COGO seam, and now covers geometry-tied traverse/parcel/arc labeling plus simple `PL#` / `TRAV#` / `CURVE#` naming with curve support points for the current Phase 4 scope
 
 ## Phase 5: Point import and field-to-finish
 - [ ] Define feature-code library format.
