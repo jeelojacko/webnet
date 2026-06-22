@@ -1209,7 +1209,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
       </g>
       </svg>
       <div
-        className="pointer-events-none absolute bottom-3 left-3 max-w-[32rem] text-[11px] leading-4 text-slate-300"
+        className="pointer-events-none absolute bottom-16 left-1/2 w-[min(44rem,calc(100%-12rem))] -translate-x-1/2 text-center text-[11px] leading-4 text-slate-300"
         data-survey-cad-command-help
       >
         {commandStatusText ? (

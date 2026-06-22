@@ -31,6 +31,7 @@ import {
   type CadHistoryState,
 } from '../../engine/cad/cadUndoRedo';
 import {
+  buildCadExtendPreview,
   applyCadGripEdit,
   buildCadFilletPreview,
   buildCadGripHandles,
@@ -189,6 +190,7 @@ interface UseSurveyCadWorkspaceResult {
     | 'SKEW_INTX'
     | 'MOVE'
     | 'COPY'
+    | 'EXTEND'
     | 'TRIM'
     | 'FILLET'
     | 'PASTE'
@@ -213,6 +215,7 @@ interface UseSurveyCadWorkspaceResult {
   canCreateParcel: boolean;
   canContinueCurve: boolean;
   canTrimSelection: boolean;
+  canExtendSelection: boolean;
   isGripEditing: boolean;
   activeSnap: CadSnapCandidate | null;
   nearbySnaps: readonly CadSnapCandidate[];
@@ -269,6 +272,7 @@ interface UseSurveyCadWorkspaceResult {
   startSkewIntersectionCommand: () => void;
   startMoveCommand: () => void;
   startCopyCommand: () => void;
+  startExtendCommand: () => void;
   startTrimCommand: () => void;
   startFilletCommand: () => void;
   createIntersectionPoint: () => void;
@@ -662,6 +666,7 @@ export const useSurveyCadWorkspace = (
     commandHelpText,
     commandPreview,
     activeTrimCuttingEntityIds,
+    activeExtendTarget,
     activeFilletPreview,
     activeBatchCogoDraft,
     activeTraverseDraft,
@@ -720,6 +725,7 @@ export const useSurveyCadWorkspace = (
     startSkewIntersectionCommand,
     startMoveCommand,
     startCopyCommand,
+    startExtendCommand,
     startTrimCommand,
     startFilletCommand,
     startPasteCommand,
@@ -786,7 +792,7 @@ export const useSurveyCadWorkspace = (
     });
   }, [nextSnapConstructionContext]);
   useEffect(() => {
-    if (activeCommandKey === 'TRIM' || activeCommandKey === 'FILLET') return;
+    if (activeCommandKey === 'TRIM' || activeCommandKey === 'EXTEND' || activeCommandKey === 'FILLET') return;
     setCommandHoverTargetState(null);
   }, [activeCommandKey]);
   const updatePointerWorldPoint = (
@@ -962,7 +968,6 @@ export const useSurveyCadWorkspace = (
       commandHoverTarget.entityId,
       commandHoverTarget.point,
       commandHoverTarget.segmentId,
-      commandHoverTarget.extendMode === true,
     );
   }, [activeCommandKey, activeTrimCuttingEntityIds, cadProject, commandHoverTarget]);
   const trimPreviewPrimitives = useMemo<CadDisplayPrimitive[]>(() => {
@@ -973,6 +978,24 @@ export const useSurveyCadWorkspace = (
       bounds: buildCadBounds(trimPreview.previewEntities),
     }).primitives;
   }, [cadProject, trimPreview]);
+  const extendPreview = useMemo(() => {
+    if (activeCommandKey !== 'EXTEND' || !commandHoverTarget || !activeExtendTarget) return null;
+    return buildCadExtendPreview(
+      cadProject,
+      commandHoverTarget.entityId,
+      activeExtendTarget.entityId,
+      activeExtendTarget.pickPoint,
+      activeExtendTarget.segmentId,
+    );
+  }, [activeCommandKey, activeExtendTarget, cadProject, commandHoverTarget]);
+  const extendPreviewPrimitives = useMemo<CadDisplayPrimitive[]>(() => {
+    if (!extendPreview) return [];
+    return buildCadDisplayScene({
+      ...cadProject,
+      entities: extendPreview.previewEntities,
+      bounds: buildCadBounds(extendPreview.previewEntities),
+    }).primitives;
+  }, [cadProject, extendPreview]);
   const filletPreview = useMemo(() => {
     if (activeCommandKey !== 'FILLET' || !commandHoverTarget || !activeFilletPreview) return null;
     return buildCadFilletPreview(
@@ -995,6 +1018,12 @@ export const useSurveyCadWorkspace = (
   const commandEntityOpacityOverrides = useMemo<Record<string, number>>(
     () => ({
       ...(trimPreview ? { [trimPreview.targetEntityId]: 0.22 } : {}),
+      ...(extendPreview
+        ? {
+            [extendPreview.targetEntityId]: 0.22,
+            [extendPreview.boundaryEntityId]: 0.22,
+          }
+        : {}),
       ...(filletPreview
         ? {
             [filletPreview.firstLineEntityId]: 0.22,
@@ -1002,7 +1031,7 @@ export const useSurveyCadWorkspace = (
           }
         : {}),
     }),
-    [filletPreview, trimPreview],
+    [extendPreview, filletPreview, trimPreview],
   );
   const gripHandles = useMemo(
     () =>
@@ -1094,6 +1123,7 @@ export const useSurveyCadWorkspace = (
     commandPreviewPrimitives: [
       ...commandPreviewPrimitives,
       ...trimPreviewPrimitives,
+      ...extendPreviewPrimitives,
       ...filletPreviewPrimitives,
     ],
     commandEntityOpacityOverrides,
@@ -1119,6 +1149,7 @@ export const useSurveyCadWorkspace = (
     canCreateParcel: selectedPolylineForParcel != null,
     canContinueCurve: selectedArcForContinue != null,
     canTrimSelection: true,
+    canExtendSelection: true,
     isGripEditing: activeGripHandle != null,
     activeSnap,
     nearbySnaps,
@@ -1175,6 +1206,7 @@ export const useSurveyCadWorkspace = (
     startSkewIntersectionCommand,
     startMoveCommand,
     startCopyCommand,
+    startExtendCommand,
     startTrimCommand,
     startFilletCommand,
     createIntersectionPoint: () => {

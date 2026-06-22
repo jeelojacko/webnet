@@ -21,6 +21,7 @@ interface SurveyCadCommandLineProps {
   canCreateParcel: boolean;
   canContinueCurve: boolean;
   canTrimSelection: boolean;
+  canExtendSelection: boolean;
   onStartPoint: () => void;
   onStartCogoPoint: () => void;
   onStartLine: () => void;
@@ -70,6 +71,7 @@ interface SurveyCadCommandLineProps {
   onStartSkewIntersection: () => void;
   onStartMove: () => void;
   onStartCopy: () => void;
+  onStartExtend: () => void;
   onStartTrim: () => void;
   onStartFillet: () => void;
   onCreateIntersectionPoint: () => void;
@@ -109,6 +111,7 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   canCreateParcel,
   canContinueCurve,
   canTrimSelection,
+  canExtendSelection,
   onStartPoint,
   onStartCogoPoint,
   onStartLine,
@@ -158,6 +161,7 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   onStartSkewIntersection,
   onStartMove,
   onStartCopy,
+  onStartExtend,
   onStartTrim,
   onStartFillet,
   onCreateIntersectionPoint,
@@ -426,6 +430,15 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
         title="Copy"
       >
         COPY
+      </button>
+      <button
+        type="button"
+        className={commandButtonClassName}
+        onClick={() => runImmediate(onStartExtend)}
+        disabled={!canExtendSelection}
+        title="Extend"
+      >
+        EXT
       </button>
       <button
         type="button"

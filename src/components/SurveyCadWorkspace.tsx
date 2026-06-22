@@ -100,6 +100,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     canCreateParcel,
     canContinueCurve,
     canTrimSelection,
+    canExtendSelection,
     isGripEditing,
     canCycleActiveSnap,
     activeSnap,
@@ -157,6 +158,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     startSkewIntersectionCommand,
     startMoveCommand,
     startCopyCommand,
+    startExtendCommand,
     startTrimCommand,
     startFilletCommand,
     createIntersectionPoint,
@@ -357,6 +359,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     if (activeCommandKey === 'PERP_INTX') return 'Select a line, then pick the external point';
     if (activeCommandKey === 'OFFSET_INTX') return 'Select two lines, then type Loff1,Roff2';
     if (activeCommandKey === 'SKEW_INTX') return 'Select a line, pick a source point, then type Langle or Rangle';
+    if (activeCommandKey === 'EXTEND') return 'Click entity to extend, then click boundary. Enter/Esc ends extend';
     if (activeCommandKey === 'TRIM') return 'Click cutting edge, then click side to trim. Enter/Esc ends trim';
     if (activeCommandKey === 'FILLET') return 'Type radius, then click two lines near the corner. Enter/Esc ends fillet';
     if (activeCommandKey?.startsWith('ARC_') || activeCommandKey === 'CONTINUE_CURVE') {
@@ -549,6 +552,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               canCreateAlignmentIntervalPoints={canCreateAlignmentIntervalPoints}
               canCreateParcel={canCreateParcel}
               canContinueCurve={canContinueCurve}
+              canExtendSelection={canExtendSelection}
               onStartPoint={startPointCommand}
               onStartCogoPoint={startCogoPointCommand}
               onStartLine={startLineCommand}
@@ -598,6 +602,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               onStartSkewIntersection={startSkewIntersectionCommand}
               onStartMove={startMoveCommand}
               onStartCopy={startCopyCommand}
+              onStartExtend={startExtendCommand}
               onStartTrim={startTrimCommand}
               onStartFillet={startFilletCommand}
               onCreateIntersectionPoint={createIntersectionPoint}
@@ -1219,7 +1224,12 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             snapPreferences={snapPreferences}
             commandInputValue={commandInputValue}
             commandInputPlaceholder={commandInputPlaceholder}
-            commandInputEnabled={activeCommandKey != null && activeCommandKey !== 'TRIM' && activeCommandKey !== 'BATCH_COGO'}
+            commandInputEnabled={
+              activeCommandKey != null &&
+              activeCommandKey !== 'TRIM' &&
+              activeCommandKey !== 'EXTEND' &&
+              activeCommandKey !== 'BATCH_COGO'
+            }
             commandEntityOpacityOverrides={commandEntityOpacityOverrides}
             viewport={viewport}
             commandActive={activeCommandKey != null}

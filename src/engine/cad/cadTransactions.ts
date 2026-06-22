@@ -88,6 +88,7 @@ export type CadCommandKey =
   | 'PARCEL_CREATE'
   | 'MOVE'
   | 'COPY'
+  | 'EXTEND'
   | 'FILLET'
   | 'PASTE'
   | 'TRIM'
@@ -240,6 +241,13 @@ export type CadCommand =
       deltaY: number;
     }
   | {
+      key: 'EXTEND';
+      boundaryEntityIds: CadEntityId[];
+      targetEntityId: CadEntityId;
+      targetPickPoint: { x: number; y: number };
+      targetSegmentId?: string;
+    }
+  | {
       key: 'FILLET';
       radius: number;
       firstLineEntityId: CadEntityId;
@@ -259,7 +267,6 @@ export type CadCommand =
       targetEntityId: CadEntityId;
       pickPoint: { x: number; y: number };
       targetSegmentId?: string;
-      extendMode?: boolean;
     }
   | {
       key: 'INTERSECT_POINT';
@@ -321,7 +328,7 @@ interface CadCommandDefinition<TCommand extends CadCommand> {
 const createIdleCommandState = (): CadCommandState => ({
   key: 'IDLE',
   phase: 'idle',
-  prompt: 'Ready. Use Select All, Clear Selection, ERASE, POINT, COGO PT, LINE, PLINE, TRAVERSE, DEED, ARC 3PT, TAN CURVE, ALIGN, ALIGN OFF, STA, STA EQ, STA PT, STA INT, PARCEL, MOVE, COPY, TRIM, FILLET, INTX, or INVERSE to exercise command history.',
+  prompt: 'Ready. Use Select All, Clear Selection, ERASE, POINT, COGO PT, LINE, PLINE, TRAVERSE, DEED, ARC 3PT, TAN CURVE, ALIGN, ALIGN OFF, STA, STA EQ, STA PT, STA INT, PARCEL, MOVE, COPY, TRIM, EXT, FILLET, INTX, or INVERSE to exercise command history.',
 });
 
 const nextManualStationId = (project: CadProject): string => {
@@ -2135,6 +2142,12 @@ export interface CadTrimPreview {
   previewEntities: CadEntity[];
 }
 
+export interface CadExtendPreview {
+  targetEntityId: CadEntityId;
+  boundaryEntityId: CadEntityId;
+  previewEntities: CadEntity[];
+}
+
 export interface CadFilletPreview {
   firstLineEntityId: CadEntityId;
   secondLineEntityId: CadEntityId;
@@ -2147,7 +2160,6 @@ export const buildCadTrimPreview = (
   targetEntityId: CadEntityId,
   pickPoint: { x: number; y: number },
   targetSegmentId?: string,
-  extendMode = false,
 ): CadTrimPreview | null => {
   const cuttingEntities = buildTrimBoundaryEntities(project, cuttingEntityIds);
   if (cuttingEntities.length === 0) return null;
@@ -2157,20 +2169,16 @@ export const buildCadTrimPreview = (
       entity.id === targetEntityId && isTrimmableEntity(entity) && !entity.locked,
   );
   if (!targetEntity) return null;
-  const previewEntities = (
-    extendMode
-      ? buildExtendedTrimEntity(targetEntity, cuttingEntities, pickPoint, targetSegmentId)
-      : buildTrimmedEntityPieces(
-          targetEntity,
-          cuttingEntities,
-          pickPoint,
-          targetSegmentId,
-          {
-            preserveOriginalIdWhenSingle: false,
-            idForPiece: (index) => `${targetEntity.id}:trim-preview:${index + 1}`,
-            includeTrimMetadata: false,
-          },
-        )
+  const previewEntities = buildTrimmedEntityPieces(
+    targetEntity,
+    cuttingEntities,
+    pickPoint,
+    targetSegmentId,
+    {
+      preserveOriginalIdWhenSingle: false,
+      idForPiece: (index) => `${targetEntity.id}:trim-preview:${index + 1}`,
+      includeTrimMetadata: false,
+    },
   ).map((entity, index) => ({
     ...entity,
     id: `${targetEntity.id}:trim-preview:${index + 1}`,
@@ -2179,6 +2187,39 @@ export const buildCadTrimPreview = (
   if (previewEntities.length === 0) return null;
   return {
     targetEntityId: targetEntity.id,
+    previewEntities,
+  };
+};
+
+export const buildCadExtendPreview = (
+  project: CadProject,
+  boundaryEntityId: CadEntityId,
+  targetEntityId: CadEntityId,
+  targetPickPoint: { x: number; y: number },
+  targetSegmentId?: string,
+): CadExtendPreview | null => {
+  const boundaryEntities = buildTrimBoundaryEntities(project, [boundaryEntityId]);
+  if (boundaryEntities.length === 0) return null;
+  if (boundaryEntities.some((entity) => entity.id === targetEntityId)) return null;
+  const targetEntity = project.entities.find(
+    (entity): entity is CadTrimEntity =>
+      entity.id === targetEntityId && isTrimmableEntity(entity) && !entity.locked,
+  );
+  if (!targetEntity) return null;
+  const previewEntities = buildExtendedTrimEntity(
+    targetEntity,
+    boundaryEntities,
+    targetPickPoint,
+    targetSegmentId,
+  ).map((entity, index) => ({
+    ...entity,
+    id: `${targetEntity.id}:extend-preview:${index + 1}`,
+    metadata: targetEntity.metadata,
+  }));
+  if (previewEntities.length === 0) return null;
+  return {
+    targetEntityId: targetEntity.id,
+    boundaryEntityId,
     previewEntities,
   };
 };
@@ -4606,6 +4647,57 @@ const copyCommand: CadCommandDefinition<{
   },
 };
 
+const extendCommand: CadCommandDefinition<{
+  key: 'EXTEND';
+  boundaryEntityIds: CadEntityId[];
+  targetEntityId: CadEntityId;
+  targetPickPoint: { x: number; y: number };
+  targetSegmentId?: string;
+}> = {
+  key: 'EXTEND',
+  execute: (snapshot, command) => {
+    const boundaryEntities = buildTrimBoundaryEntities(snapshot.project, command.boundaryEntityIds);
+    if (boundaryEntities.length === 0) return null;
+    if (boundaryEntities.some((entity) => entity.id === command.targetEntityId)) return null;
+    const targetEntity = snapshot.project.entities.find(
+      (entity): entity is CadTrimEntity =>
+        entity.id === command.targetEntityId && isTrimmableEntity(entity) && !entity.locked,
+    );
+    if (!targetEntity) return null;
+    const extendedPieces = buildExtendedTrimEntity(
+      targetEntity,
+      boundaryEntities,
+      command.targetPickPoint,
+      command.targetSegmentId,
+    );
+    if (extendedPieces.length === 0) return null;
+    const nextProject = replaceCadProjectEntities(
+      snapshot.project,
+      snapshot.project.entities.flatMap((entity) => {
+        if (entity.id !== targetEntity.id) return [entity];
+        return extendedPieces;
+      }),
+    );
+    const boundarySelectionIds = boundaryEntities
+      .filter((entity) => nextProject.entities.some((candidate) => candidate.id === entity.id))
+      .map((entity) => entity.id);
+    return {
+      nextSnapshot: {
+        project: nextProject,
+        selection: createCadSelectionState(nextProject, boundarySelectionIds),
+      },
+      commandState: {
+        key: 'EXTEND',
+        phase: 'committed',
+        prompt: `EXTEND committed on ${targetEntity.id}.`,
+      },
+      transactionLabel: `EXTEND (${targetEntity.id})`,
+      addedEntityIds: [],
+      removedEntityIds: [],
+    };
+  },
+};
+
 const filletCommand: CadCommandDefinition<{
   key: 'FILLET';
   radius: number;
@@ -4748,7 +4840,6 @@ const trimCommand: CadCommandDefinition<{
   targetEntityId: CadEntityId;
   pickPoint: { x: number; y: number };
   targetSegmentId?: string;
-  extendMode?: boolean;
 }> = {
   key: 'TRIM',
   execute: (snapshot, command) => {
@@ -4761,19 +4852,12 @@ const trimCommand: CadCommandDefinition<{
     );
     if (!targetEntity) return null;
 
-    const trimmedPieces = command.extendMode
-      ? buildExtendedTrimEntity(
-          targetEntity,
-          cuttingEntities,
-          command.pickPoint,
-          command.targetSegmentId,
-        )
-      : buildTrimmedEntityPieces(
-          targetEntity,
-          cuttingEntities,
-          command.pickPoint,
-          command.targetSegmentId,
-        );
+    const trimmedPieces = buildTrimmedEntityPieces(
+      targetEntity,
+      cuttingEntities,
+      command.pickPoint,
+      command.targetSegmentId,
+    );
     if (trimmedPieces.length === 0) return null;
 
     const nextProject = replaceCadProjectEntities(
@@ -4796,11 +4880,9 @@ const trimCommand: CadCommandDefinition<{
       commandState: {
         key: 'TRIM',
         phase: 'committed',
-        prompt: command.extendMode
-          ? `TRIM extend committed on ${targetEntity.id}.`
-          : `TRIM committed on ${targetEntity.id}. ${trimmedPieces.length} piece${trimmedPieces.length === 1 ? '' : 's'} remain.`,
+        prompt: `TRIM committed on ${targetEntity.id}. ${trimmedPieces.length} piece${trimmedPieces.length === 1 ? '' : 's'} remain.`,
       },
-      transactionLabel: command.extendMode ? `EXTEND (${targetEntity.id})` : `TRIM (${targetEntity.id})`,
+      transactionLabel: `TRIM (${targetEntity.id})`,
       addedEntityIds: trimmedPieces
         .map((entity) => entity.id)
         .filter((entityId) => entityId !== targetEntity.id),
@@ -4931,6 +5013,7 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   EDIT_ENTITY: editEntityCommand as CadCommandDefinition<CadCommand>,
   MOVE: moveCommand as CadCommandDefinition<CadCommand>,
   COPY: copyCommand as CadCommandDefinition<CadCommand>,
+  EXTEND: extendCommand as CadCommandDefinition<CadCommand>,
   FILLET: filletCommand as CadCommandDefinition<CadCommand>,
   PASTE: pasteCommand as CadCommandDefinition<CadCommand>,
   TRIM: trimCommand as CadCommandDefinition<CadCommand>,

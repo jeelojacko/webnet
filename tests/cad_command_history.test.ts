@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { cadDraftBatchCogo } from '../src/engine/cad/cadBatchCogo';
 import { buildSurveyCadSpikeProject } from '../src/engine/cad/cadModel';
 import { appendCadProjectEntities } from '../src/engine/cad/cadProjectState';
-import { buildCadTrimPreview } from '../src/engine/cad/cadTransactions';
+import { buildCadExtendPreview } from '../src/engine/cad/cadTransactions';
 import { createCadHistoryState, redoCadHistory, runCadCommand, undoCadHistory } from '../src/engine/cad/cadUndoRedo';
 import type { ParseOptions } from '../src/types';
 
@@ -1506,7 +1506,7 @@ describe('Survey CAD command history', () => {
     ).toHaveLength(2);
   });
 
-  it('extends linework to the cutting edge when TRIM runs in extend mode', () => {
+  it('extends linework to the picked boundary when EXTEND runs as its own command', () => {
     const baseProject = buildSurveyCadSpikeProject({
       input,
       instrumentLibrary: {},
@@ -1548,12 +1548,11 @@ describe('Survey CAD command history', () => {
     ]);
 
     const extendedState = runCadCommand(createCadHistoryState(project), {
-      key: 'TRIM',
-      cuttingEntityIds: ['line:extend-cutter'],
+      key: 'EXTEND',
+      boundaryEntityIds: ['line:extend-cutter'],
       targetEntityId: 'line:extend-target',
-      pickPoint: { x: 19, y: 0 },
+      targetPickPoint: { x: 19, y: 0 },
       targetSegmentId: 'line:extend-target#0',
-      extendMode: true,
     });
 
     const extendedLine = extendedState.present.project.entities.find(
@@ -1563,10 +1562,10 @@ describe('Survey CAD command history', () => {
     if (extendedLine?.type !== 'line') throw new Error('Extended line missing');
     expect(extendedLine.toX).toBeCloseTo(30, 6);
     expect(extendedLine.toY).toBeCloseTo(0, 6);
-    expect(extendedState.commandState.prompt).toContain('TRIM extend committed');
+    expect(extendedState.commandState.prompt).toContain('EXTEND committed');
   });
 
-  it('builds an extend preview for TRIM when the picked target can reach the cutting edge', () => {
+  it('builds an extend preview for EXTEND when the picked target can reach the boundary', () => {
     const baseProject = buildSurveyCadSpikeProject({
       input,
       instrumentLibrary: {},
@@ -1607,13 +1606,12 @@ describe('Survey CAD command history', () => {
       },
     ]);
 
-    const preview = buildCadTrimPreview(
+    const preview = buildCadExtendPreview(
       project,
-      ['line:extend-cutter'],
+      'line:extend-cutter',
       'line:extend-target',
       { x: 19, y: 0 },
       'line:extend-target#0',
-      true,
     );
     expect(preview?.previewEntities).toHaveLength(1);
     const previewLine = preview?.previewEntities[0];

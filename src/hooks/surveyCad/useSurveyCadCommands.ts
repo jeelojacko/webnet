@@ -149,6 +149,7 @@ type ActiveCommandKey =
   | 'BATCH_COGO'
   | 'MOVE'
   | 'COPY'
+  | 'EXTEND'
   | 'TRIM'
   | 'FILLET'
   | 'PASTE';
@@ -277,6 +278,14 @@ type CommandSession =
       resultText?: string;
     }
   | {
+      key: 'EXTEND';
+      inputValue: string;
+      firstTargetEntityId: string | null;
+      firstTargetPickPoint: CommandPoint | null;
+      firstTargetSegmentId?: string;
+      resultText?: string;
+    }
+  | {
       key: 'TRIM';
       inputValue: string;
       firstCuttingEntityId: string | null;
@@ -401,6 +410,13 @@ interface UseSurveyCadCommandsResult {
   commandHelpText: string;
   commandPreview: CadCommandPreviewState | null;
   activeTrimCuttingEntityIds: string[];
+  activeExtendTarget:
+    | {
+        entityId: string;
+        pickPoint: { x: number; y: number };
+        segmentId?: string;
+      }
+    | null;
   activeFilletPreview:
     | {
         radius: number;
@@ -514,6 +530,7 @@ interface UseSurveyCadCommandsResult {
   startSkewIntersectionCommand: () => void;
   startMoveCommand: () => void;
   startCopyCommand: () => void;
+  startExtendCommand: () => void;
   startTrimCommand: () => void;
   startFilletCommand: () => void;
   startPasteCommand: (_sourceEntityIds: string[], _basePoint: CommandPoint) => void;
@@ -625,6 +642,7 @@ const sessionExpectsPointPick = (session: CommandSession | null): boolean => {
     case 'DISTANCE_REPORT':
     case 'MOVE':
     case 'COPY':
+    case 'EXTEND':
     case 'TRIM':
     case 'FILLET':
     case 'PASTE':
@@ -1340,11 +1358,16 @@ const promptForSession = (session: CommandSession | null, fallbackStatus: string
         (session.startPoint
           ? `COPY active. Base point ${session.startPoint.label} captured. Click the target point or enter \`@azimuth,distance\` / bearing-distance, then press Enter.`
           : 'COPY active. Click or enter the base point for the current selection.');
+    case 'EXTEND':
+      return session.resultText ??
+        (session.firstTargetEntityId == null
+          ? 'EXT active. Click the first line, polyline, or arc to extend.'
+          : 'EXT active. Source entity captured. Click the boundary line, polyline, or arc to extend to. Enter or Esc ends the command.');
     case 'TRIM':
       return session.resultText ??
         (session.firstCuttingEntityId == null
           ? 'TRIM active. Click the first line, polyline, or arc to use as the cutting edge.'
-          : 'TRIM active. Cutting edge captured. Click target portion to trim, or hold Shift to extend target to the cutter. Enter or Esc ends the command.');
+          : 'TRIM active. Cutting edge captured. Click target portion to trim. Enter or Esc ends the command.');
     case 'FILLET':
       return session.resultText ??
         (session.radius == null
@@ -1523,10 +1546,14 @@ const helpTextForSession = (session: CommandSession | null): string => {
       return session.startPoint
         ? 'COPY target point: `x,y`, `LABEL=x,y`, `@azimuth,distance`, or bearing-distance from the base point.'
         : 'COPY base point: click in the model space or type `x,y` / `LABEL=x,y`.';
+    case 'EXTEND':
+      return session.firstTargetEntityId == null
+        ? 'EXT input: click the line, polyline, or arc you want to extend.'
+        : 'EXT boundary pick: click the line, polyline, or arc to extend to. After commit, EXT resets for the next source/boundary pair until Enter, Esc, or empty-space double-click ends it.';
     case 'TRIM':
       return session.firstCuttingEntityId == null
         ? 'TRIM input: click the first line, polyline, or arc as the cutting edge.'
-        : 'TRIM target pick: click target portion to remove, or hold Shift to extend that target to the cutting edge. After commit, TRIM resets for the next cutting-edge pair until Enter, Esc, or empty-space double-click ends it.';
+        : 'TRIM target pick: click target portion to remove. After commit, TRIM resets for the next cutting-edge pair until Enter, Esc, or empty-space double-click ends it.';
     case 'FILLET':
       return session.radius == null
         ? 'FILLET input: enter a zero-or-greater radius, then click the first and second lines near the corner. Radius 0 keeps a hard intersection corner. The same radius stays active until Enter, Esc, or empty-space double-click ends the tool.'
@@ -1800,6 +1827,7 @@ export const useSurveyCadCommands = ({
             };
       case 'MOVE':
       case 'COPY':
+      case 'EXTEND':
       case 'TRIM':
       case 'FILLET':
         return { active: false, basePoint: null };
@@ -2364,10 +2392,11 @@ export const useSurveyCadCommands = ({
         };
       case 'MOVE':
       case 'COPY':
+      case 'EXTEND':
       case 'TRIM':
       case 'FILLET':
         if (!previewPoint) return null;
-        if (session.key === 'TRIM' || session.key === 'FILLET') {
+        if (session.key === 'TRIM' || session.key === 'FILLET' || session.key === 'EXTEND') {
           return null;
         }
         if (!session.startPoint) {
@@ -2884,7 +2913,7 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
           firstCuttingEntityId: targetEntityId,
           cuttingEntityIds: [targetEntityId],
           inputValue: '',
-          resultText: 'TRIM cutting edge captured. Click target portion to trim, or hold Shift while clicking to extend.',
+          resultText: 'TRIM cutting edge captured. Click target portion to trim.',
         });
         return;
       }
@@ -2896,7 +2925,6 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
           targetEntityId,
           pickPoint: { x: point.x, y: point.y },
           targetSegmentId: point.snapSourceSegmentId,
-          extendMode: point.extendMode,
         });
         committed = next !== existing;
         return next;
@@ -2907,14 +2935,59 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
         cuttingEntityIds: [],
         inputValue: '',
         resultText: committed
-          ? point.extendMode
-            ? `TRIM extended ${targetEntityId}. Click the next cutting edge, or press Enter/Esc to finish.`
-            : `TRIM committed on ${targetEntityId}. Click the next cutting edge, or press Enter/Esc to finish.`
+          ? `TRIM committed on ${targetEntityId}. Click the next cutting edge, or press Enter/Esc to finish.`
           : current.cuttingEntityIds.includes(targetEntityId)
             ? 'TRIM ignored the same cutting edge. Click a different line, polyline, or arc to trim.'
-            : point.extendMode
-              ? `TRIM found no extend path on ${targetEntityId}. Check cutting-edge selection and click the end you want to extend.`
-              : `TRIM found no removable span on ${targetEntityId}. Check cutting-edge selection and click a different side.`,
+            : `TRIM found no removable span on ${targetEntityId}. Check cutting-edge selection and click a different side.`,
+      });
+      return;
+    }
+    if (current.key === 'EXTEND') {
+      const targetEntityId = point.snapSourceEntityId;
+      if (!targetEntityId) {
+        replaceSession({
+          ...current,
+          resultText: 'EXT needs a direct line, polyline, or arc body click. Background points do not extend.',
+        });
+        return;
+      }
+      if (current.firstTargetEntityId == null) {
+        replaceSession({
+          ...current,
+          firstTargetEntityId: targetEntityId,
+          firstTargetPickPoint: point,
+          firstTargetSegmentId: point.snapSourceSegmentId,
+          inputValue: '',
+          resultText: 'EXT source entity captured. Click the boundary to extend to.',
+        });
+        return;
+      }
+      let committed = false;
+      applyHistoryUpdate((existing) => {
+        const next = runCadCommand(existing, {
+          key: 'EXTEND',
+          boundaryEntityIds: [targetEntityId],
+          targetEntityId: current.firstTargetEntityId!,
+          targetPickPoint: {
+            x: current.firstTargetPickPoint!.x,
+            y: current.firstTargetPickPoint!.y,
+          },
+          targetSegmentId: current.firstTargetSegmentId,
+        });
+        committed = next !== existing;
+        return next;
+      });
+      replaceSession({
+        ...current,
+        firstTargetEntityId: null,
+        firstTargetPickPoint: null,
+        firstTargetSegmentId: undefined,
+        inputValue: '',
+        resultText: committed
+          ? `EXT committed on ${current.firstTargetEntityId ?? targetEntityId}. Click the next entity to extend, or press Enter/Esc to finish.`
+          : current.firstTargetEntityId === targetEntityId
+            ? 'EXT ignored the same entity twice. Click a different boundary entity.'
+            : `EXT found no extend path on ${current.firstTargetEntityId}. Check the picked end and boundary.`,
       });
       return;
     }
@@ -4364,7 +4437,7 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
 
   const handleEnterKey = () => {
     if (!session) return;
-    if (session.key === 'TRIM') {
+    if (session.key === 'TRIM' || session.key === 'EXTEND') {
       replaceSession(null);
       return;
     }
@@ -4857,6 +4930,19 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
     commandPreview,
     activeTrimCuttingEntityIds:
       session?.key === 'TRIM' ? session.cuttingEntityIds : [],
+    activeExtendTarget:
+      session?.key === 'EXTEND' &&
+      session.firstTargetEntityId != null &&
+      session.firstTargetPickPoint != null
+        ? {
+            entityId: session.firstTargetEntityId,
+            pickPoint: {
+              x: session.firstTargetPickPoint.x,
+              y: session.firstTargetPickPoint.y,
+            },
+            segmentId: session.firstTargetSegmentId,
+          }
+        : null,
     activeFilletPreview:
       session?.key === 'FILLET' &&
       session.radius != null &&
@@ -4878,10 +4964,12 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
     canUseActiveSnap:
       activeSnap != null &&
       commandExpectsPointPick &&
-      session?.key !== 'TRIM',
+      session?.key !== 'TRIM' &&
+      session?.key !== 'EXTEND',
     canCycleActiveSnap:
       commandExpectsPointPick &&
-      session?.key !== 'TRIM',
+      session?.key !== 'TRIM' &&
+      session?.key !== 'EXTEND',
     canFinishCommand:
       session?.key === 'PLINE'
         ? session.points.length >= 2
@@ -5252,6 +5340,15 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
         startPoint: null,
       });
     },
+    startExtendCommand: () => {
+      beginSession({
+        key: 'EXTEND',
+        inputValue: '',
+        firstTargetEntityId: null,
+        firstTargetPickPoint: null,
+        firstTargetSegmentId: undefined,
+      });
+    },
     startTrimCommand: () => {
       beginSession({
         key: 'TRIM',
@@ -5293,19 +5390,19 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
     },
     setCommandInputValue: (value) =>
       updateSession((current) =>
-        current && current.key !== 'TRIM'
+        current && current.key !== 'TRIM' && current.key !== 'EXTEND'
           ? { ...current, inputValue: value, resultText: undefined }
           : current,
       ),
     appendCommandInputValue: (value) =>
       updateSession((current) =>
-        current && current.key !== 'TRIM'
+        current && current.key !== 'TRIM' && current.key !== 'EXTEND'
           ? { ...current, inputValue: `${current.inputValue}${value}`, resultText: undefined }
           : current,
       ),
     backspaceCommandInputValue: () =>
       updateSession((current) =>
-        current && current.key !== 'TRIM'
+        current && current.key !== 'TRIM' && current.key !== 'EXTEND'
           ? { ...current, inputValue: current.inputValue.slice(0, -1), resultText: undefined }
           : current,
       ),
