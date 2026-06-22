@@ -1,3 +1,5 @@
+- [x] Survey CAD fillet-corner + trim-extend batch (June 2026): fix reverse-side partial-circle fillet previews/commits so cursor-side corner selection stays logical, allow `FILLET` radius `0` to resolve as a hard intersection corner, and add `Shift`-held `TRIM` extension mode with live preview that extends the clicked entity to the next valid cut in its forward path.
+
 - [x] Survey CAD traverse editor batch (June 2026): replace sequential `TRAVERSE` prompt with a live draft panel that now covers open/closed/point-to-point modes, selected-point close targets, append/edit/insert/reorder leg rows, sideshot rows, panel-native finish/cancel, and closure metrics on the current command/history seam, while leaving richer deed-style batch entry for the later deed/parser batch.
 
 - [x] Survey CAD deed/batch COGO batch (June 2026): add a native `DEED` / `BATCH_COGO` panel with pasted `START`, bearing-distance, and tangent-curve row parsing, live preview rows/warnings plus generated point/line/arc preview geometry, and persisted computation history on the shared CAD command seam.

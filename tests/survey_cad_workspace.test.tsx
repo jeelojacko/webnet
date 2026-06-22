@@ -2013,6 +2013,7 @@ describe('SurveyCadWorkspace', () => {
       { x: 5, y: 0 },
       'P1-P2',
       {
+        extendMode: false,
         snapSourceSegmentId: 'pline:chain#0',
         snapSourceEntityId: 'pline:chain',
         snapKind: 'midpoint',
@@ -2140,6 +2141,7 @@ describe('SurveyCadWorkspace', () => {
       { x: 5, y: 0 },
       'P1-P2',
       {
+        extendMode: false,
         snapSourceSegmentId: 'pline:chain#0',
         snapSourceEntityId: 'pline:chain',
         snapKind: 'midpoint',

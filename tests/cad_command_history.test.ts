@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { cadDraftBatchCogo } from '../src/engine/cad/cadBatchCogo';
 import { buildSurveyCadSpikeProject } from '../src/engine/cad/cadModel';
 import { appendCadProjectEntities } from '../src/engine/cad/cadProjectState';
+import { buildCadTrimPreview } from '../src/engine/cad/cadTransactions';
 import { createCadHistoryState, redoCadHistory, runCadCommand, undoCadHistory } from '../src/engine/cad/cadUndoRedo';
 import type { ParseOptions } from '../src/types';
 
@@ -1505,6 +1506,123 @@ describe('Survey CAD command history', () => {
     ).toHaveLength(2);
   });
 
+  it('extends linework to the cutting edge when TRIM runs in extend mode', () => {
+    const baseProject = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+    const project = appendCadProjectEntities(baseProject, [
+      {
+        id: 'line:extend-cutter',
+        type: 'line',
+        layerId: 'observation-lines',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        fromStationId: 'EC1',
+        toStationId: 'EC2',
+        fromX: 30,
+        fromY: -10,
+        toX: 30,
+        toY: 20,
+        sourceObservationIds: [],
+      },
+      {
+        id: 'line:extend-target',
+        type: 'line',
+        layerId: 'observation-lines',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        fromStationId: 'ET1',
+        toStationId: 'ET2',
+        fromX: 0,
+        fromY: 0,
+        toX: 20,
+        toY: 0,
+        sourceObservationIds: [],
+      },
+    ]);
+
+    const extendedState = runCadCommand(createCadHistoryState(project), {
+      key: 'TRIM',
+      cuttingEntityIds: ['line:extend-cutter'],
+      targetEntityId: 'line:extend-target',
+      pickPoint: { x: 19, y: 0 },
+      targetSegmentId: 'line:extend-target#0',
+      extendMode: true,
+    });
+
+    const extendedLine = extendedState.present.project.entities.find(
+      (entity) => entity.id === 'line:extend-target',
+    );
+    expect(extendedLine?.type).toBe('line');
+    if (extendedLine?.type !== 'line') throw new Error('Extended line missing');
+    expect(extendedLine.toX).toBeCloseTo(30, 6);
+    expect(extendedLine.toY).toBeCloseTo(0, 6);
+    expect(extendedState.commandState.prompt).toContain('TRIM extend committed');
+  });
+
+  it('builds an extend preview for TRIM when the picked target can reach the cutting edge', () => {
+    const baseProject = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+    const project = appendCadProjectEntities(baseProject, [
+      {
+        id: 'line:extend-cutter',
+        type: 'line',
+        layerId: 'observation-lines',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        fromStationId: 'EC1',
+        toStationId: 'EC2',
+        fromX: 30,
+        fromY: -10,
+        toX: 30,
+        toY: 20,
+        sourceObservationIds: [],
+      },
+      {
+        id: 'line:extend-target',
+        type: 'line',
+        layerId: 'observation-lines',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        fromStationId: 'ET1',
+        toStationId: 'ET2',
+        fromX: 0,
+        fromY: 0,
+        toX: 20,
+        toY: 0,
+        sourceObservationIds: [],
+      },
+    ]);
+
+    const preview = buildCadTrimPreview(
+      project,
+      ['line:extend-cutter'],
+      'line:extend-target',
+      { x: 19, y: 0 },
+      'line:extend-target#0',
+      true,
+    );
+    expect(preview?.previewEntities).toHaveLength(1);
+    const previewLine = preview?.previewEntities[0];
+    expect(previewLine?.type).toBe('line');
+    if (previewLine?.type !== 'line') throw new Error('Extend preview line missing');
+    expect(previewLine.toX).toBeCloseTo(30, 6);
+    expect(previewLine.toY).toBeCloseTo(0, 6);
+  });
+
   it('creates a radius fillet between two clicked lines and keeps arc support points with the new curve', () => {
     const baseProject = buildSurveyCadSpikeProject({
       input,
@@ -1593,6 +1711,72 @@ describe('Survey CAD command history', () => {
     expect(redoneState.present.project.entities.some((entity) => entity.id === filletArc.id)).toBe(true);
   });
 
+  it('allows FILLET radius 0 and resolves both lines to a hard intersection without creating an arc', () => {
+    const project = appendCadProjectEntities(
+      buildSurveyCadSpikeProject({
+        input,
+        instrumentLibrary: {},
+        parseOptions,
+        units: 'm',
+        result: null,
+      }),
+      [
+        {
+          id: 'line:corner-a',
+          type: 'line',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          fromStationId: 'CA1',
+          toStationId: 'CA2',
+          fromX: 0,
+          fromY: 0,
+          toX: 10,
+          toY: 0,
+          sourceObservationIds: [],
+        },
+        {
+          id: 'line:corner-b',
+          type: 'line',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          fromStationId: 'CB1',
+          toStationId: 'CB2',
+          fromX: 0,
+          fromY: 0,
+          toX: 0,
+          toY: 10,
+          sourceObservationIds: [],
+        },
+      ],
+    );
+
+    const cornerState = runCadCommand(createCadHistoryState(project), {
+      key: 'FILLET',
+      radius: 0,
+      firstLineEntityId: 'line:corner-a',
+      firstPickPoint: { x: 1, y: 0 },
+      secondLineEntityId: 'line:corner-b',
+      secondPickPoint: { x: 0, y: 1 },
+    });
+
+    expect(
+      cornerState.present.project.entities.some(
+        (entity) => entity.type === 'arc' && entity.metadata?.createdBy === 'FILLET',
+      ),
+    ).toBe(false);
+    expect(
+      cornerState.present.project.entities.find((entity) => entity.id === 'line:corner-a' && entity.type === 'line'),
+    ).toMatchObject({ fromX: 0, fromY: 0 });
+    expect(
+      cornerState.present.project.entities.find((entity) => entity.id === 'line:corner-b' && entity.type === 'line'),
+    ).toMatchObject({ fromX: 0, fromY: 0 });
+    expect(cornerState.commandState.prompt).toContain('hard corner');
+  });
+
   it('chooses the fillet side from the clicked line sides instead of forcing the opposite near-full-circle case', () => {
     const project = appendCadProjectEntities(
       buildSurveyCadSpikeProject({
@@ -1669,6 +1853,67 @@ describe('Survey CAD command history', () => {
     expect(upperArc.centerY).toBeCloseTo(2, 6);
     expect(lowerArc.centerX).toBeCloseTo(2, 6);
     expect(lowerArc.centerY).toBeCloseTo(-2, 6);
+  });
+
+  it('keeps acute-corner fillets on the clicked interior sweep instead of producing a near-full-circle arc', () => {
+    const project = appendCadProjectEntities(
+      buildSurveyCadSpikeProject({
+        input,
+        instrumentLibrary: {},
+        parseOptions,
+        units: 'm',
+        result: null,
+      }),
+      [
+        {
+          id: 'line:acute-a',
+          type: 'line',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          fromStationId: 'AA1',
+          toStationId: 'AA2',
+          fromX: 0,
+          fromY: 8,
+          toX: 10,
+          toY: 0,
+          sourceObservationIds: [],
+        },
+        {
+          id: 'line:acute-b',
+          type: 'line',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          fromStationId: 'AB1',
+          toStationId: 'AB2',
+          fromX: 0,
+          fromY: -8,
+          toX: 10,
+          toY: 0,
+          sourceObservationIds: [],
+        },
+      ],
+    );
+
+    const filletState = runCadCommand(createCadHistoryState(project), {
+      key: 'FILLET',
+      radius: 5,
+      firstLineEntityId: 'line:acute-a',
+      firstPickPoint: { x: 8.5, y: 1.2 },
+      secondLineEntityId: 'line:acute-b',
+      secondPickPoint: { x: 8.5, y: -1.2 },
+    });
+
+    const acuteArc = filletState.present.project.entities.find(
+      (entity) => entity.type === 'arc' && entity.metadata?.createdBy === 'FILLET',
+    );
+    expect(acuteArc?.type).toBe('arc');
+    if (acuteArc?.type !== 'arc') throw new Error('Acute fillet arc missing');
+    expect(Math.abs(acuteArc.endAngleDeg - acuteArc.startAngleDeg)).toBeLessThan(180);
+    expect(acuteArc.centerX).toBeLessThan(10);
   });
 
   it('keeps arc support points synced when arc grips edit the committed curve', () => {

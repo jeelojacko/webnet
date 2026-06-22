@@ -309,7 +309,12 @@ interface UseSurveyCadWorkspaceResult {
   consumeInteractionPoint: (
     _worldPoint: { x: number; y: number },
     _label?: string,
-    _options?: { snapSourceSegmentId?: string; snapSourceEntityId?: string; snapKind?: CadSnapKind },
+    _options?: {
+      snapSourceSegmentId?: string;
+      snapSourceEntityId?: string;
+      snapKind?: CadSnapKind;
+      extendMode?: boolean;
+    },
   ) => void;
   handleEnterKey: () => void;
   handleEscapeKey: () => void;
@@ -343,6 +348,7 @@ interface CommandHoverTarget {
   entityId: string;
   segmentId?: string;
   point: { x: number; y: number };
+  extendMode?: boolean;
 }
 
 export const useSurveyCadWorkspace = (
@@ -956,6 +962,7 @@ export const useSurveyCadWorkspace = (
       commandHoverTarget.entityId,
       commandHoverTarget.point,
       commandHoverTarget.segmentId,
+      commandHoverTarget.extendMode === true,
     );
   }, [activeCommandKey, activeTrimCuttingEntityIds, cadProject, commandHoverTarget]);
   const trimPreviewPrimitives = useMemo<CadDisplayPrimitive[]>(() => {
@@ -1249,6 +1256,7 @@ export const useSurveyCadWorkspace = (
             snapSourceSegmentId: activeSnap.sourceSegmentId,
             snapSourceEntityId: activeSnap.sourceEntityId,
             snapKind: activeSnap.kind,
+            extendMode: options?.extendMode,
           },
         );
         return;

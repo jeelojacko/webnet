@@ -75,6 +75,7 @@ type CommandPoint = CadNamedPoint & {
   snapSourceSegmentId?: string;
   snapSourceEntityId?: string;
   snapKind?: CadSnapKind;
+  extendMode?: boolean;
 };
 
 type TraverseDraftMode = 'open' | 'closed' | 'point-to-point';
@@ -541,7 +542,12 @@ interface UseSurveyCadCommandsResult {
   consumeInteractionPoint: (
     _point: { x: number; y: number },
     _label?: string,
-    _options?: { snapSourceSegmentId?: string; snapSourceEntityId?: string; snapKind?: CadSnapKind },
+    _options?: {
+      snapSourceSegmentId?: string;
+      snapSourceEntityId?: string;
+      snapKind?: CadSnapKind;
+      extendMode?: boolean;
+    },
   ) => void;
   handleEnterKey: () => void;
   handleEscapeKey: () => void;
@@ -1338,7 +1344,7 @@ const promptForSession = (session: CommandSession | null, fallbackStatus: string
       return session.resultText ??
         (session.firstCuttingEntityId == null
           ? 'TRIM active. Click the first line, polyline, or arc to use as the cutting edge.'
-          : 'TRIM active. Cutting edge captured. Click the portion of another line, polyline, or arc to remove. Enter or Esc ends the command.');
+          : 'TRIM active. Cutting edge captured. Click target portion to trim, or hold Shift to extend target to the cutter. Enter or Esc ends the command.');
     case 'FILLET':
       return session.resultText ??
         (session.radius == null
@@ -1520,10 +1526,10 @@ const helpTextForSession = (session: CommandSession | null): string => {
     case 'TRIM':
       return session.firstCuttingEntityId == null
         ? 'TRIM input: click the first line, polyline, or arc as the cutting edge.'
-        : 'TRIM target pick: click the portion of another line, polyline, or arc to remove. After commit, TRIM resets for the next cutting-edge pair until Enter, Esc, or empty-space double-click ends it.';
+        : 'TRIM target pick: click target portion to remove, or hold Shift to extend that target to the cutting edge. After commit, TRIM resets for the next cutting-edge pair until Enter, Esc, or empty-space double-click ends it.';
     case 'FILLET':
       return session.radius == null
-        ? 'FILLET input: enter a positive radius, then click the first and second lines near the corner to round. The same radius stays active until Enter, Esc, or empty-space double-click ends the tool.'
+        ? 'FILLET input: enter a zero-or-greater radius, then click the first and second lines near the corner. Radius 0 keeps a hard intersection corner. The same radius stays active until Enter, Esc, or empty-space double-click ends the tool.'
         : 'FILLET line picks: click two lines near the corner to round. The current radius stays active for repeated corners until Enter, Esc, or empty-space double-click ends the tool.';
     case 'PASTE':
       return 'PASTE insertion point: click in the model space or type `x,y`, `LABEL=x,y`, `@azimuth,distance`, or bearing-distance from the clipboard base point.';
@@ -2878,7 +2884,7 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
           firstCuttingEntityId: targetEntityId,
           cuttingEntityIds: [targetEntityId],
           inputValue: '',
-          resultText: 'TRIM cutting edge captured. Click the portion of another object to remove.',
+          resultText: 'TRIM cutting edge captured. Click target portion to trim, or hold Shift while clicking to extend.',
         });
         return;
       }
@@ -2890,6 +2896,7 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
           targetEntityId,
           pickPoint: { x: point.x, y: point.y },
           targetSegmentId: point.snapSourceSegmentId,
+          extendMode: point.extendMode,
         });
         committed = next !== existing;
         return next;
@@ -2900,10 +2907,14 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
         cuttingEntityIds: [],
         inputValue: '',
         resultText: committed
-          ? `TRIM committed on ${targetEntityId}. Click the next cutting edge, or press Enter/Esc to finish.`
+          ? point.extendMode
+            ? `TRIM extended ${targetEntityId}. Click the next cutting edge, or press Enter/Esc to finish.`
+            : `TRIM committed on ${targetEntityId}. Click the next cutting edge, or press Enter/Esc to finish.`
           : current.cuttingEntityIds.includes(targetEntityId)
             ? 'TRIM ignored the same cutting edge. Click a different line, polyline, or arc to trim.'
-            : `TRIM found no removable span on ${targetEntityId}. Check cutting-edge selection and click a different side.`,
+            : point.extendMode
+              ? `TRIM found no extend path on ${targetEntityId}. Check cutting-edge selection and click the end you want to extend.`
+              : `TRIM found no removable span on ${targetEntityId}. Check cutting-edge selection and click a different side.`,
       });
       return;
     }
@@ -2911,7 +2922,7 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
       if (current.radius == null) {
         replaceSession({
           ...current,
-          resultText: 'FILLET needs a radius first. Enter a positive radius, then press Enter.',
+          resultText: 'FILLET needs a radius first. Enter a zero-or-greater numeric radius, then press Enter.',
         });
         return;
       }
@@ -4165,10 +4176,10 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
     }
     if (session.key === 'FILLET') {
       const radius = Number(session.inputValue.trim());
-      if (!Number.isFinite(radius) || radius <= 0) {
+      if (!Number.isFinite(radius) || radius < 0) {
         replaceSession({
           ...session,
-          resultText: 'FILLET radius invalid. Enter a positive numeric radius, then press Enter.',
+          resultText: 'FILLET radius invalid. Enter a zero-or-greater numeric radius, then press Enter.',
         });
         return;
       }
@@ -5348,6 +5359,7 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
           snapSourceSegmentId: options?.snapSourceSegmentId,
           snapSourceEntityId: options?.snapSourceEntityId,
           snapKind: options?.snapKind,
+          extendMode: options?.extendMode,
         },
         { suppressPointLabel: true },
       );

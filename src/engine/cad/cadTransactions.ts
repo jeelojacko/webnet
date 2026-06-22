@@ -34,6 +34,8 @@ import {
   cadDistance,
   cadInfiniteLineIntersection,
   cadIntersectArcArc,
+  cadIntersectInfiniteLineArc,
+  cadIsAngleOnArcSweep,
   cadIntersectSegmentArc,
   cadNormalizeAngleDeg,
   cadPointOnCircle,
@@ -257,6 +259,7 @@ export type CadCommand =
       targetEntityId: CadEntityId;
       pickPoint: { x: number; y: number };
       targetSegmentId?: string;
+      extendMode?: boolean;
     }
   | {
       key: 'INTERSECT_POINT';
@@ -961,6 +964,26 @@ const buildFilletRayDirectionForEndpoint = (
   };
 };
 
+const lineSideValue = (
+  lineStart: { x: number; y: number },
+  lineEnd: { x: number; y: number },
+  point: { x: number; y: number },
+): number =>
+  (lineEnd.x - lineStart.x) * (point.y - lineStart.y) -
+  (lineEnd.y - lineStart.y) * (point.x - lineStart.x);
+
+const sideMismatchPenalty = (
+  lineStart: { x: number; y: number },
+  lineEnd: { x: number; y: number },
+  referencePoint: { x: number; y: number },
+  candidatePoint: { x: number; y: number },
+): number => {
+  const referenceSide = lineSideValue(lineStart, lineEnd, referencePoint);
+  const candidateSide = lineSideValue(lineStart, lineEnd, candidatePoint);
+  if (Math.abs(referenceSide) <= 1e-9 || Math.abs(candidateSide) <= 1e-9) return 0;
+  return Math.sign(referenceSide) === Math.sign(candidateSide) ? 0 : 1_000_000;
+};
+
 const buildCadLineFilletCandidate = (
   firstLine: CadLineEntity,
   firstPickPoint: { x: number; y: number },
@@ -1010,18 +1033,11 @@ const buildCadLineFilletCandidate = (
     x: intersectionPoint.x + (bisectorVector.x / bisectorLength) * centerOffset,
     y: intersectionPoint.y + (bisectorVector.y / bisectorLength) * centerOffset,
   };
-  const midVector = {
-    x: intersectionPoint.x - centerPoint.x,
-    y: intersectionPoint.y - centerPoint.y,
-  };
-  const midVectorLength = Math.hypot(midVector.x, midVector.y);
-  if (midVectorLength <= 1e-9) return null;
-  const throughPoint = {
-    x: centerPoint.x + (midVector.x / midVectorLength) * radius,
-    y: centerPoint.y + (midVector.y / midVectorLength) * radius,
-  };
-  const arc = cadBuildArcFromThreePoints(firstTangentPoint, throughPoint, secondTangentPoint);
-  if (!arc) return null;
+  const startAngleDeg = cadAngleDegFromCenter(centerPoint, firstTangentPoint);
+  const endAngleSeedDeg = cadAngleDegFromCenter(centerPoint, secondTangentPoint);
+  const ccwDeltaDeg = cadNormalizeAngleDeg(endAngleSeedDeg - startAngleDeg);
+  const signedSweepDeg = ccwDeltaDeg <= 180 ? ccwDeltaDeg : -(360 - ccwDeltaDeg);
+  if (Math.abs(signedSweepDeg) <= 1e-6 || Math.abs(signedSweepDeg) >= 180 - 1e-6) return null;
 
   const nextFirstLine: CadLineEntity = firstRay.trimStart
     ? {
@@ -1050,14 +1066,82 @@ const buildCadLineFilletCandidate = (
     firstLine: nextFirstLine,
     secondLine: nextSecondLine,
     arcDefinition: {
-      center: { x: arc.center.x, y: arc.center.y },
-      radius: arc.radius,
-      startAngleDeg: arc.startAngleDeg,
-      endAngleDeg: arc.endAngleDeg,
+      center: centerPoint,
+      radius,
+      startAngleDeg,
+      endAngleDeg: startAngleDeg + signedSweepDeg,
     },
     score:
+      sideMismatchPenalty(
+        { x: firstLine.fromX, y: firstLine.fromY },
+        { x: firstLine.toX, y: firstLine.toY },
+        secondPickPoint,
+        centerPoint,
+      ) +
+      sideMismatchPenalty(
+        { x: secondLine.fromX, y: secondLine.fromY },
+        { x: secondLine.toX, y: secondLine.toY },
+        firstPickPoint,
+        centerPoint,
+      ) +
       cadDistance(firstPickPoint, firstTangentPoint) +
       cadDistance(secondPickPoint, secondTangentPoint),
+  };
+};
+
+const buildCadLineCornerCandidate = (
+  firstLine: CadLineEntity,
+  firstPickPoint: { x: number; y: number },
+  secondLine: CadLineEntity,
+  secondPickPoint: { x: number; y: number },
+  intersectionPoint: { x: number; y: number },
+  firstRay: { directionX: number; directionY: number; trimStart: boolean },
+  secondRay: { directionX: number; directionY: number; trimStart: boolean },
+): {
+  firstLine: CadLineEntity;
+  secondLine: CadLineEntity;
+  score: number;
+} => {
+  const nextFirstLine: CadLineEntity = firstRay.trimStart
+    ? {
+        ...firstLine,
+        fromX: intersectionPoint.x,
+        fromY: intersectionPoint.y,
+      }
+    : {
+        ...firstLine,
+        toX: intersectionPoint.x,
+        toY: intersectionPoint.y,
+      };
+  const nextSecondLine: CadLineEntity = secondRay.trimStart
+    ? {
+        ...secondLine,
+        fromX: intersectionPoint.x,
+        fromY: intersectionPoint.y,
+      }
+    : {
+        ...secondLine,
+        toX: intersectionPoint.x,
+        toY: intersectionPoint.y,
+      };
+  return {
+    firstLine: nextFirstLine,
+    secondLine: nextSecondLine,
+    score:
+      sideMismatchPenalty(
+        { x: firstLine.fromX, y: firstLine.fromY },
+        { x: firstLine.toX, y: firstLine.toY },
+        secondPickPoint,
+        intersectionPoint,
+      ) +
+      sideMismatchPenalty(
+        { x: secondLine.fromX, y: secondLine.fromY },
+        { x: secondLine.toX, y: secondLine.toY },
+        firstPickPoint,
+        intersectionPoint,
+      ) +
+      cadDistance(firstPickPoint, intersectionPoint) +
+      cadDistance(secondPickPoint, intersectionPoint),
   };
 };
 
@@ -1075,9 +1159,9 @@ const buildCadLineFillet = (
     radius: number;
     startAngleDeg: number;
     endAngleDeg: number;
-  };
+  } | null;
 } | null => {
-  if (!Number.isFinite(radius) || radius <= 1e-9) return null;
+  if (!Number.isFinite(radius) || radius < -1e-9) return null;
   const firstStart = { x: firstLine.fromX, y: firstLine.fromY };
   const firstEnd = { x: firstLine.toX, y: firstLine.toY };
   const secondStart = { x: secondLine.fromX, y: secondLine.fromY };
@@ -1108,6 +1192,31 @@ const buildCadLineFillet = (
       return leftPenalty - rightPenalty;
     });
   if (firstRayCandidates.length === 0 || secondRayCandidates.length === 0) return null;
+
+  if (radius <= 1e-9) {
+    const bestCornerCandidate =
+      firstRayCandidates
+        .flatMap((firstRay) =>
+          secondRayCandidates.map((secondRay) =>
+            buildCadLineCornerCandidate(
+              firstLine,
+              firstPickPoint,
+              secondLine,
+              secondPickPoint,
+              intersectionPoint,
+              firstRay,
+              secondRay,
+            ),
+          ),
+        )
+        .sort((left, right) => left.score - right.score)[0] ?? null;
+    if (!bestCornerCandidate) return null;
+    return {
+      firstLine: bestCornerCandidate.firstLine,
+      secondLine: bestCornerCandidate.secondLine,
+      arcDefinition: null,
+    };
+  }
 
   const bestCandidate =
     firstRayCandidates
@@ -1766,6 +1875,261 @@ const buildTrimmedEntityPieces = (
   );
 };
 
+const pointOnSegmentInclusive = (
+  point: { x: number; y: number },
+  start: { x: number; y: number },
+  end: { x: number; y: number },
+): boolean => {
+  const projection = cadProjectPointOntoInfiniteLine(point, start, end);
+  if (projection.t < -TRIM_EPSILON || projection.t > 1 + TRIM_EPSILON) return false;
+  return cadDistance(point, projection.point) <= 1e-6;
+};
+
+const collectLineExtensionIntersections = (
+  lineStart: { x: number; y: number },
+  lineEnd: { x: number; y: number },
+  boundaries: readonly CadTrimEntity[],
+  excludeEntityId: CadEntityId,
+): Array<{ point: { x: number; y: number }; t: number }> => {
+  const intersections: Array<{ point: { x: number; y: number }; t: number }> = [];
+  boundaries.forEach((boundary) => {
+    if (boundary.id === excludeEntityId) return;
+    if (boundary.type === 'arc') {
+      cadIntersectInfiniteLineArc(
+        lineStart,
+        lineEnd,
+        { x: boundary.centerX, y: boundary.centerY },
+        boundary.radius,
+        boundary.startAngleDeg,
+        boundary.endAngleDeg,
+      ).forEach((point) => {
+        intersections.push({
+          point,
+          t: cadProjectPointOntoInfiniteLine(point, lineStart, lineEnd).t,
+        });
+      });
+      return;
+    }
+    buildTrimSegments(boundary).forEach((segment) => {
+      const point = cadInfiniteLineIntersection(lineStart, lineEnd, segment.start, segment.end);
+      if (!point || !pointOnSegmentInclusive(point, segment.start, segment.end)) return;
+      intersections.push({
+        point,
+        t: cadProjectPointOntoInfiniteLine(point, lineStart, lineEnd).t,
+      });
+    });
+  });
+  return intersections;
+};
+
+const buildExtendedLineEntity = (
+  entity: CadLineEntity,
+  boundaries: readonly CadTrimEntity[],
+  pickPoint: { x: number; y: number },
+): CadLineEntity | null => {
+  const start = { x: entity.fromX, y: entity.fromY };
+  const end = { x: entity.toX, y: entity.toY };
+  const projectedPick = cadProjectPointOntoInfiniteLine(pickPoint, start, end).point;
+  const extendStart = cadDistance(projectedPick, start) <= cadDistance(projectedPick, end);
+  const candidate = collectLineExtensionIntersections(start, end, boundaries, entity.id)
+    .filter(({ t }) => (extendStart ? t < -TRIM_EPSILON : t > 1 + TRIM_EPSILON))
+    .sort((left, right) => (extendStart ? right.t - left.t : left.t - right.t))[0];
+  if (!candidate) return null;
+  return extendStart
+    ? {
+        ...entity,
+        fromX: candidate.point.x,
+        fromY: candidate.point.y,
+        metadata: {
+          ...entity.metadata,
+          createdBy: 'TRIM',
+          manual: true,
+        },
+      }
+    : {
+        ...entity,
+        toX: candidate.point.x,
+        toY: candidate.point.y,
+        metadata: {
+          ...entity.metadata,
+          createdBy: 'TRIM',
+          manual: true,
+        },
+      };
+};
+
+const buildExtendedPolylineEntity = (
+  entity: CadPolylineEntity,
+  boundaries: readonly CadTrimEntity[],
+  pickPoint: { x: number; y: number },
+  targetSegmentId?: string,
+): CadPolylineEntity | null => {
+  if (entity.vertices.length < 2) return null;
+  const segments = buildTrimSegments(entity);
+  const totalLength = trimEntityTotalLength(entity);
+  const pickedSegment =
+    (targetSegmentId
+      ? segments.find((segment) => segment.segmentId === targetSegmentId)
+      : null) ??
+    segments
+      .map((segment) => ({
+        segment,
+        point: cadClosestPointOnSegment(pickPoint, segment.start, segment.end),
+      }))
+      .sort((left, right) => cadDistance(left.point, pickPoint) - cadDistance(right.point, pickPoint))[0]?.segment ??
+    null;
+  if (!pickedSegment) return null;
+  const projectedPoint = cadClosestPointOnSegment(pickPoint, pickedSegment.start, pickedSegment.end);
+  const pickPosition = pickedSegment.startDistance + cadDistance(pickedSegment.start, projectedPoint);
+  const extendStart = pickPosition <= totalLength / 2;
+  const lineStart = extendStart ? entity.vertices[1]! : entity.vertices[entity.vertices.length - 2]!;
+  const lineEnd = extendStart ? entity.vertices[0]! : entity.vertices[entity.vertices.length - 1]!;
+  const candidate = collectLineExtensionIntersections(lineStart, lineEnd, boundaries, entity.id)
+    .filter(({ t }) => t > 1 + TRIM_EPSILON)
+    .sort((left, right) => left.t - right.t)[0];
+  if (!candidate) return null;
+  return {
+    ...entity,
+    vertices: entity.vertices.map((vertex, index) =>
+      index === (extendStart ? 0 : entity.vertices.length - 1)
+        ? { x: candidate.point.x, y: candidate.point.y }
+        : vertex,
+    ),
+    metadata: {
+      ...entity.metadata,
+      createdBy: 'TRIM',
+      manual: true,
+    },
+  };
+};
+
+const collectArcExtensionIntersections = (
+  arc: CadArcEntity,
+  boundaries: readonly CadTrimEntity[],
+): number[] => {
+  const positions: number[] = [];
+  boundaries.forEach((boundary) => {
+    if (boundary.id === arc.id) return;
+    if (boundary.type === 'arc') {
+      cadIntersectArcArc(
+        { x: arc.centerX, y: arc.centerY },
+        arc.radius,
+        0,
+        360,
+        { x: boundary.centerX, y: boundary.centerY },
+        boundary.radius,
+        boundary.startAngleDeg,
+        boundary.endAngleDeg,
+      ).forEach((point) => {
+        addTrimPosition(
+          positions,
+          arcPositionAtAngle(arc, cadAngleDegFromCenter({ x: arc.centerX, y: arc.centerY }, point)),
+          360,
+        );
+      });
+      return;
+    }
+    buildTrimSegments(boundary).forEach((segment) => {
+      cadIntersectSegmentArc(
+        segment.start,
+        segment.end,
+        { x: arc.centerX, y: arc.centerY },
+        arc.radius,
+        0,
+        360,
+      ).forEach((point) => {
+        addTrimPosition(
+          positions,
+          arcPositionAtAngle(arc, cadAngleDegFromCenter({ x: arc.centerX, y: arc.centerY }, point)),
+          360,
+        );
+      });
+    });
+  });
+  return positions.sort((left, right) => left - right);
+};
+
+const buildExtendedArcEntity = (
+  entity: CadArcEntity,
+  boundaries: readonly CadTrimEntity[],
+  pickPoint: { x: number; y: number },
+): CadArcEntity | null => {
+  const totalSweep = Math.abs(cadSignedSweepDeg(entity.startAngleDeg, entity.endAngleDeg));
+  const closestPoint = cadClosestPointOnArc(
+    pickPoint,
+    { x: entity.centerX, y: entity.centerY },
+    entity.radius,
+    entity.startAngleDeg,
+    entity.endAngleDeg,
+  );
+  const pickPosition = arcPositionAtAngle(
+    entity,
+    cadAngleDegFromCenter({ x: entity.centerX, y: entity.centerY }, closestPoint),
+  );
+  const extendStart = pickPosition <= totalSweep / 2;
+  const sweepSign = cadSignedSweepDeg(entity.startAngleDeg, entity.endAngleDeg) >= 0 ? 1 : -1;
+  const currentStartNorm = cadNormalizeAngleDeg(entity.startAngleDeg);
+  const currentEndNorm = cadNormalizeAngleDeg(entity.endAngleDeg);
+  const candidate = collectArcExtensionIntersections(entity, boundaries)
+    .map((position) => {
+      const angleDeg = cadNormalizeAngleDeg(angleAtArcPosition(entity, position));
+      if (cadIsAngleOnArcSweep(angleDeg, entity.startAngleDeg, entity.endAngleDeg, 1e-6)) {
+        const atStart = cadNormalizeAngleDeg(angleDeg - currentStartNorm) <= 1e-6;
+        const atEnd = cadNormalizeAngleDeg(currentEndNorm - angleDeg) <= 1e-6;
+        if (!(atStart || atEnd)) return null;
+      }
+      const delta = extendStart
+        ? (sweepSign >= 0
+            ? cadNormalizeAngleDeg(currentStartNorm - angleDeg)
+            : cadNormalizeAngleDeg(angleDeg - currentStartNorm))
+        : (sweepSign >= 0
+            ? cadNormalizeAngleDeg(angleDeg - currentEndNorm)
+            : cadNormalizeAngleDeg(currentEndNorm - angleDeg));
+      if (delta <= TRIM_EPSILON) return null;
+      return { delta };
+    })
+    .filter((entry): entry is { delta: number } => entry != null)
+    .sort((left, right) => left.delta - right.delta)[0];
+  if (!candidate) return null;
+  return extendStart
+    ? {
+        ...entity,
+        startAngleDeg: sweepSign >= 0 ? entity.startAngleDeg - candidate.delta : entity.startAngleDeg + candidate.delta,
+        metadata: {
+          ...entity.metadata,
+          createdBy: 'TRIM',
+          manual: true,
+        },
+      }
+    : {
+        ...entity,
+        endAngleDeg: sweepSign >= 0 ? entity.endAngleDeg + candidate.delta : entity.endAngleDeg - candidate.delta,
+        metadata: {
+          ...entity.metadata,
+          createdBy: 'TRIM',
+          manual: true,
+        },
+      };
+};
+
+const buildExtendedTrimEntity = (
+  entity: CadTrimEntity,
+  boundaries: readonly CadTrimEntity[],
+  pickPoint: { x: number; y: number },
+  targetSegmentId?: string,
+): CadEntity[] => {
+  if (entity.type === 'line') {
+    const extended = buildExtendedLineEntity(entity, boundaries, pickPoint);
+    return extended ? [extended] : [];
+  }
+  if (entity.type === 'polyline') {
+    const extended = buildExtendedPolylineEntity(entity, boundaries, pickPoint, targetSegmentId);
+    return extended ? [extended] : [];
+  }
+  const extended = buildExtendedArcEntity(entity, boundaries, pickPoint);
+  return extended ? [extended] : [];
+};
+
 export interface CadTrimPreview {
   targetEntityId: CadEntityId;
   previewEntities: CadEntity[];
@@ -1783,6 +2147,7 @@ export const buildCadTrimPreview = (
   targetEntityId: CadEntityId,
   pickPoint: { x: number; y: number },
   targetSegmentId?: string,
+  extendMode = false,
 ): CadTrimPreview | null => {
   const cuttingEntities = buildTrimBoundaryEntities(project, cuttingEntityIds);
   if (cuttingEntities.length === 0) return null;
@@ -1792,17 +2157,25 @@ export const buildCadTrimPreview = (
       entity.id === targetEntityId && isTrimmableEntity(entity) && !entity.locked,
   );
   if (!targetEntity) return null;
-  const previewEntities = buildTrimmedEntityPieces(
-    targetEntity,
-    cuttingEntities,
-    pickPoint,
-    targetSegmentId,
-    {
-      preserveOriginalIdWhenSingle: false,
-      idForPiece: (index) => `${targetEntity.id}:trim-preview:${index + 1}`,
-      includeTrimMetadata: false,
-    },
-  );
+  const previewEntities = (
+    extendMode
+      ? buildExtendedTrimEntity(targetEntity, cuttingEntities, pickPoint, targetSegmentId)
+      : buildTrimmedEntityPieces(
+          targetEntity,
+          cuttingEntities,
+          pickPoint,
+          targetSegmentId,
+          {
+            preserveOriginalIdWhenSingle: false,
+            idForPiece: (index) => `${targetEntity.id}:trim-preview:${index + 1}`,
+            includeTrimMetadata: false,
+          },
+        )
+  ).map((entity, index) => ({
+    ...entity,
+    id: `${targetEntity.id}:trim-preview:${index + 1}`,
+    metadata: targetEntity.metadata,
+  }));
   if (previewEntities.length === 0) return null;
   return {
     targetEntityId: targetEntity.id,
@@ -1848,22 +2221,24 @@ export const buildCadFilletPreview = (
         ...fillet.secondLine,
         id: `${secondLineEntityId}:fillet-preview`,
       },
-      {
-        id: 'fillet-preview:arc',
-        type: 'arc',
-        layerId: 'preview',
-        styleId: 'style-observation-line',
-        visible: true,
-        locked: false,
-        centerX: fillet.arcDefinition.center.x,
-        centerY: fillet.arcDefinition.center.y,
-        radius: fillet.arcDefinition.radius,
-        startAngleDeg: fillet.arcDefinition.startAngleDeg,
-        endAngleDeg: fillet.arcDefinition.endAngleDeg,
-        metadata: {
-          createdBy: 'FILLET_PREVIEW',
-        },
-      },
+      ...(fillet.arcDefinition
+        ? [{
+            id: 'fillet-preview:arc',
+            type: 'arc' as const,
+            layerId: 'preview',
+            styleId: 'style-observation-line',
+            visible: true,
+            locked: false,
+            centerX: fillet.arcDefinition.center.x,
+            centerY: fillet.arcDefinition.center.y,
+            radius: fillet.arcDefinition.radius,
+            startAngleDeg: fillet.arcDefinition.startAngleDeg,
+            endAngleDeg: fillet.arcDefinition.endAngleDeg,
+            metadata: {
+              createdBy: 'FILLET_PREVIEW',
+            },
+          }]
+        : []),
     ],
   };
 };
@@ -4261,6 +4636,31 @@ const filletCommand: CadCommandDefinition<{
     );
     if (!fillet) return null;
 
+    const updatedProject = replaceCadProjectEntities(
+      snapshot.project,
+      snapshot.project.entities.map((entity) => {
+        if (entity.id === firstLine.id) return fillet.firstLine;
+        if (entity.id === secondLine.id) return fillet.secondLine;
+        return entity;
+      }),
+    );
+    if (!fillet.arcDefinition) {
+      return {
+        nextSnapshot: {
+          project: updatedProject,
+          selection: createCadSelectionState(updatedProject, [firstLine.id, secondLine.id]),
+        },
+        commandState: {
+          key: 'FILLET',
+          phase: 'committed',
+          prompt: `FILLET committed as hard corner radius ${command.radius.toFixed(3)}.`,
+        },
+        transactionLabel: 'FILLET (0)',
+        addedEntityIds: [],
+        removedEntityIds: [],
+      };
+    }
+
     const curveSequence = nextCurveSequence(snapshot.project);
     const curveLabels = buildCurveLabels(curveSequence);
     const arcEntity: CadArcEntity = {
@@ -4283,14 +4683,6 @@ const filletCommand: CadCommandDefinition<{
         sourceLineIds: [firstLine.id, secondLine.id],
       },
     };
-    const updatedProject = replaceCadProjectEntities(
-      snapshot.project,
-      snapshot.project.entities.map((entity) => {
-        if (entity.id === firstLine.id) return fillet.firstLine;
-        if (entity.id === secondLine.id) return fillet.secondLine;
-        return entity;
-      }),
-    );
     const supportEntities = createArcSupportEntities(
       updatedProject,
       arcEntity.id,
@@ -4356,6 +4748,7 @@ const trimCommand: CadCommandDefinition<{
   targetEntityId: CadEntityId;
   pickPoint: { x: number; y: number };
   targetSegmentId?: string;
+  extendMode?: boolean;
 }> = {
   key: 'TRIM',
   execute: (snapshot, command) => {
@@ -4368,12 +4761,19 @@ const trimCommand: CadCommandDefinition<{
     );
     if (!targetEntity) return null;
 
-    const trimmedPieces = buildTrimmedEntityPieces(
-      targetEntity,
-      cuttingEntities,
-      command.pickPoint,
-      command.targetSegmentId,
-    );
+    const trimmedPieces = command.extendMode
+      ? buildExtendedTrimEntity(
+          targetEntity,
+          cuttingEntities,
+          command.pickPoint,
+          command.targetSegmentId,
+        )
+      : buildTrimmedEntityPieces(
+          targetEntity,
+          cuttingEntities,
+          command.pickPoint,
+          command.targetSegmentId,
+        );
     if (trimmedPieces.length === 0) return null;
 
     const nextProject = replaceCadProjectEntities(
@@ -4396,9 +4796,11 @@ const trimCommand: CadCommandDefinition<{
       commandState: {
         key: 'TRIM',
         phase: 'committed',
-        prompt: `TRIM committed on ${targetEntity.id}. ${trimmedPieces.length} piece${trimmedPieces.length === 1 ? '' : 's'} remain.`,
+        prompt: command.extendMode
+          ? `TRIM extend committed on ${targetEntity.id}.`
+          : `TRIM committed on ${targetEntity.id}. ${trimmedPieces.length} piece${trimmedPieces.length === 1 ? '' : 's'} remain.`,
       },
-      transactionLabel: `TRIM (${targetEntity.id})`,
+      transactionLabel: command.extendMode ? `EXTEND (${targetEntity.id})` : `TRIM (${targetEntity.id})`,
       addedEntityIds: trimmedPieces
         .map((entity) => entity.id)
         .filter((entityId) => entityId !== targetEntity.id),

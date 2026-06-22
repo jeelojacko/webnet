@@ -45,7 +45,12 @@ interface SurveyCadPreviewProps {
   onConsumeInteractionPoint: (
     _worldPoint: { x: number; y: number },
     _label?: string,
-    _options?: { snapSourceSegmentId?: string; snapSourceEntityId?: string; snapKind?: CadSnapKind },
+    _options?: {
+      snapSourceSegmentId?: string;
+      snapSourceEntityId?: string;
+      snapKind?: CadSnapKind;
+      extendMode?: boolean;
+    },
   ) => void;
   onPointerWorldPointChange: (
     _worldPoint: { x: number; y: number } | null,
@@ -57,7 +62,12 @@ interface SurveyCadPreviewProps {
     },
   ) => void;
   onCommandHoverTargetChange?: (
-    _hoverTarget: { entityId: string; segmentId?: string; point: { x: number; y: number } } | null,
+    _hoverTarget: {
+      entityId: string;
+      segmentId?: string;
+      point: { x: number; y: number };
+      extendMode?: boolean;
+    } | null,
   ) => void;
   onSnapPreferenceChange: (_kind: CadSnapKind, _enabled: boolean) => void;
   onCommandInputChange: (_value: string) => void;
@@ -695,7 +705,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
     return screenPointFromClientPoint(svgElement.getBoundingClientRect(), event.clientX, event.clientY);
   };
 
-  const consumeSnapCandidate = (snapCandidate: CadSnapCandidate) => {
+  const consumeSnapCandidate = (snapCandidate: CadSnapCandidate, extendMode = false) => {
     onConsumeInteractionPoint(
       { x: snapCandidate.x, y: snapCandidate.y },
       snapCandidate.label,
@@ -703,15 +713,16 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
         snapSourceSegmentId: snapCandidate.sourceSegmentId,
         snapSourceEntityId: snapCandidate.sourceEntityId,
         snapKind: snapCandidate.kind,
+        extendMode,
       },
     );
   };
 
-  const consumeLatchedOrActiveSnap = (): boolean => {
+  const consumeLatchedOrActiveSnap = (extendMode = false): boolean => {
     const latchedSnap = armedSnap ?? activeSnap;
     setArmedSnap(null);
     if (!latchedSnap) return false;
-    consumeSnapCandidate(latchedSnap);
+    consumeSnapCandidate(latchedSnap, extendMode);
     return true;
   };
 
@@ -721,7 +732,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
     sourceSegmentId?: string,
   ) => {
     if (didDrag) return;
-    if (consumeLatchedOrActiveSnap()) {
+    if (consumeLatchedOrActiveSnap(event.shiftKey)) {
       return;
     }
     const svg = event.currentTarget.ownerSVGElement;
@@ -750,6 +761,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
           snapSourceSegmentId: sourceSegmentId,
           snapSourceEntityId: primitive.sourceEntityId,
           snapKind: 'nearest',
+          extendMode: event.shiftKey,
         },
       );
       return;
@@ -757,6 +769,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
     onConsumeInteractionPoint(rawWorldPoint, undefined, {
       snapSourceSegmentId: sourceSegmentId,
       snapSourceEntityId: primitive.sourceEntityId,
+      extendMode: event.shiftKey,
     });
   };
 
@@ -786,6 +799,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
       entityId: primitive.sourceEntityId,
       segmentId: sourceSegmentId,
       point,
+      extendMode: event.shiftKey,
     });
   };
 
@@ -797,12 +811,14 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
         data-survey-cad-preview
         onClick={(event) => {
           if (!commandPointInputActive || didDrag || event.target !== event.currentTarget) return;
-          if (consumeLatchedOrActiveSnap()) {
+          if (consumeLatchedOrActiveSnap(event.shiftKey)) {
             return;
           }
           const screenPoint = screenPointFromMouseEvent(event);
           if (!screenPoint) return;
-          onConsumeInteractionPoint(unproject(screenPoint.viewX, screenPoint.viewY));
+          onConsumeInteractionPoint(unproject(screenPoint.viewX, screenPoint.viewY), undefined, {
+            extendMode: event.shiftKey,
+          });
         }}
         onMouseLeave={() => {
           onCommandHoverTargetChange(null);
@@ -987,12 +1003,14 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
         data-survey-cad-background="true"
         onClick={(event) => {
           if (!commandPointInputActive || didDrag) return;
-          if (consumeLatchedOrActiveSnap()) {
+          if (consumeLatchedOrActiveSnap(event.shiftKey)) {
             return;
           }
           const screenPoint = screenPointFromMouseEvent(event);
           if (!screenPoint) return;
-          onConsumeInteractionPoint(unproject(screenPoint.viewX, screenPoint.viewY));
+          onConsumeInteractionPoint(unproject(screenPoint.viewX, screenPoint.viewY), undefined, {
+            extendMode: event.shiftKey,
+          });
         }}
         onDoubleClick={(event) => {
           if (event.target !== event.currentTarget) return;
