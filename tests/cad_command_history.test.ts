@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { cadDraftBatchCogo } from '../src/engine/cad/cadBatchCogo';
+import { cadSignedSweepDeg } from '../src/engine/cad/cadGeometry';
 import { buildSurveyCadSpikeProject } from '../src/engine/cad/cadModel';
 import { appendCadProjectEntities } from '../src/engine/cad/cadProjectState';
 import { buildCadExtendPreview } from '../src/engine/cad/cadTransactions';
@@ -35,6 +36,59 @@ const parseOptions: ParseOptions = {
   normalize: true,
   faceNormalizationMode: 'on',
   lonSign: 'west-negative',
+};
+
+type TestArcShape = {
+  centerX: number;
+  centerY: number;
+  radius: number;
+  startAngleDeg: number;
+  endAngleDeg: number;
+};
+
+const testPointAtArcAngle = (arc: TestArcShape, angleDeg: number) => {
+  const radians = (angleDeg * Math.PI) / 180;
+  return {
+    x: arc.centerX + arc.radius * Math.cos(radians),
+    y: arc.centerY + arc.radius * Math.sin(radians),
+  };
+};
+
+const testArcTangentDirection = (arc: TestArcShape, angleDeg: number) => {
+  const radians = (angleDeg * Math.PI) / 180;
+  return cadSignedSweepDeg(arc.startAngleDeg, arc.endAngleDeg) >= 0
+    ? { x: -Math.sin(radians), y: Math.cos(radians) }
+    : { x: Math.sin(radians), y: -Math.cos(radians) };
+};
+
+const sharedArcJoinTangentDot = (firstArc: TestArcShape, secondArc: TestArcShape): number => {
+  const firstEndpoints = [
+    { angleDeg: firstArc.startAngleDeg, point: testPointAtArcAngle(firstArc, firstArc.startAngleDeg) },
+    { angleDeg: firstArc.endAngleDeg, point: testPointAtArcAngle(firstArc, firstArc.endAngleDeg) },
+  ];
+  const secondEndpoints = [
+    { angleDeg: secondArc.startAngleDeg, point: testPointAtArcAngle(secondArc, secondArc.startAngleDeg) },
+    { angleDeg: secondArc.endAngleDeg, point: testPointAtArcAngle(secondArc, secondArc.endAngleDeg) },
+  ];
+  const closestPair =
+    firstEndpoints
+      .flatMap((firstEndpoint) =>
+        secondEndpoints.map((secondEndpoint) => ({
+          firstEndpoint,
+          secondEndpoint,
+          distance: Math.hypot(
+            firstEndpoint.point.x - secondEndpoint.point.x,
+            firstEndpoint.point.y - secondEndpoint.point.y,
+          ),
+        })),
+      )
+      .sort((left, right) => left.distance - right.distance)[0] ?? null;
+  if (!closestPair || closestPair.distance > 1e-3) {
+    throw new Error('Fillet arc does not share a join point with retained arc');
+  }
+  const firstTangent = testArcTangentDirection(firstArc, closestPair.firstEndpoint.angleDeg);
+  const secondTangent = testArcTangentDirection(secondArc, closestPair.secondEndpoint.angleDeg);
+  return Math.abs(firstTangent.x * secondTangent.x + firstTangent.y * secondTangent.y);
 };
 
 describe('Survey CAD command history', () => {
@@ -1850,6 +1904,7 @@ describe('Survey CAD command history', () => {
     expect(updatedLine.toX).toBeCloseTo(10, 6);
     expect(updatedArc.startAngleDeg).toBeGreaterThan(160);
     expect(updatedArc.startAngleDeg).toBeLessThan(180);
+    expect(sharedArcJoinTangentDot(updatedArc, filletArc)).toBeGreaterThan(0.98);
     expect(filletState.present.project.entities.filter(
       (entity) =>
         entity.type === 'survey-point' &&
@@ -2062,6 +2117,7 @@ describe('Survey CAD command history', () => {
     expect(updatedArc.endAngleDeg).toBeCloseTo(20, 6);
     expect(updatedArc.startAngleDeg).toBeGreaterThan(220);
     expect(updatedArc.startAngleDeg).toBeLessThan(360);
+    expect(sharedArcJoinTangentDot(updatedArc, filletArc)).toBeGreaterThan(0.98);
   });
 
   it('rejects alternate acute line-line branches and keeps the picked corner rays only', () => {

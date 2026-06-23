@@ -1030,6 +1030,8 @@ type CadFilletRef = CadFilletSegmentRef | CadFilletArcRef;
 interface CadFilletEntityChoice<TEntity extends CadFilletEntity> {
   entity: TEntity;
   score: number;
+  approachDirection: { x: number; y: number } | null;
+  departDirection: { x: number; y: number } | null;
 }
 
 interface CadFilletResult {
@@ -1048,6 +1050,41 @@ const pointAtArcAngle = (
   angleDeg: number,
 ): { x: number; y: number } =>
   cadPointOnCircle({ x: entity.centerX, y: entity.centerY }, entity.radius, angleDeg);
+
+const normalizeCadVector = (x: number, y: number): { x: number; y: number } | null => {
+  const length = Math.hypot(x, y);
+  if (length <= 1e-9) return null;
+  return { x: x / length, y: y / length };
+};
+
+const negateCadVector = (vector: { x: number; y: number } | null): { x: number; y: number } | null =>
+  vector ? { x: -vector.x, y: -vector.y } : null;
+
+const tangentDirectionAlongArcSweep = (
+  entity: Pick<CadArcEntity, 'startAngleDeg' | 'endAngleDeg'>,
+  angleDeg: number,
+): { x: number; y: number } | null => {
+  const radians = (angleDeg * Math.PI) / 180;
+  const signedSweep = cadSignedSweepDeg(entity.startAngleDeg, entity.endAngleDeg);
+  return signedSweep >= 0
+    ? normalizeCadVector(-Math.sin(radians), Math.cos(radians))
+    : normalizeCadVector(Math.sin(radians), -Math.cos(radians));
+};
+
+const filletJoinContinuityPenalty = (
+  incomingDirection: { x: number; y: number } | null,
+  outgoingDirection: { x: number; y: number } | null,
+): number => {
+  if (!incomingDirection || !outgoingDirection) return 1_000_000;
+  const dot = Math.abs(
+    incomingDirection.x * outgoingDirection.x + incomingDirection.y * outgoingDirection.y,
+  );
+  if (dot >= 0.9999) return 0;
+  if (dot >= 0.999) return 0.01;
+  if (dot >= 0.995) return 0.1;
+  if (dot >= 0.98) return 100;
+  return 1_000_000;
+};
 
 const normalizeArcStartToAngle = (entity: CadArcEntity, angleDeg: number): number => {
   const currentSweep = cadSignedSweepDeg(entity.startAngleDeg, entity.endAngleDeg);
@@ -1209,6 +1246,8 @@ const buildSegmentFilletChoices = (
       ? tangentT >= -TRIM_EPSILON
       : tangentT >= -TRIM_EPSILON && tangentT <= 1 + TRIM_EPSILON;
   const choices: Array<CadFilletEntityChoice<CadLineEntity | CadPolylineEntity>> = [];
+  const forwardDirection = normalizeCadVector(ref.end.x - ref.start.x, ref.end.y - ref.start.y);
+  const reverseDirection = negateCadVector(forwardDirection);
   if (allowTrimStart) {
     const segmentIndex = Number(ref.segmentId.split('#')[1]);
     const nextEntity =
@@ -1229,6 +1268,8 @@ const buildSegmentFilletChoices = (
           : pickDistanceToStart <= pickDistanceToEnd)
           ? 0
           : 1000),
+      approachDirection: reverseDirection,
+      departDirection: forwardDirection,
     });
   }
   if (allowTrimEnd) {
@@ -1251,6 +1292,8 @@ const buildSegmentFilletChoices = (
           : pickDistanceToEnd <= pickDistanceToStart)
           ? 0
           : 1000),
+      approachDirection: forwardDirection,
+      departDirection: reverseDirection,
     });
   }
   return choices;
@@ -1336,6 +1379,10 @@ const buildArcFilletChoices = (
         true,
         pickDistanceToStart <= pickDistanceToEnd,
       ),
+      approachDirection: negateCadVector(
+        tangentDirectionAlongArcSweep(trimStartEntity, tangentAngleDeg),
+      ),
+      departDirection: tangentDirectionAlongArcSweep(trimStartEntity, tangentAngleDeg),
     },
     {
       entity: trimEndEntity,
@@ -1343,6 +1390,10 @@ const buildArcFilletChoices = (
         trimEndEntity,
         false,
         pickDistanceToEnd <= pickDistanceToStart,
+      ),
+      approachDirection: tangentDirectionAlongArcSweep(trimEndEntity, tangentAngleDeg),
+      departDirection: negateCadVector(
+        tangentDirectionAlongArcSweep(trimEndEntity, tangentAngleDeg),
       ),
     },
   ];
@@ -1422,13 +1473,25 @@ const buildFilletResultFromCenter = (
 
   const bestPair =
     firstChoices
-      .flatMap((firstChoice) =>
-        secondChoices.map((secondChoice) => ({
+      .flatMap((firstChoice) => {
+        const filletStartDirection = tangentDirectionAlongArcSweep(
+          arcDefinition,
+          arcDefinition.startAngleDeg,
+        );
+        const filletEndDirection = tangentDirectionAlongArcSweep(
+          arcDefinition,
+          arcDefinition.endAngleDeg,
+        );
+        return secondChoices.map((secondChoice) => ({
           firstChoice,
           secondChoice,
-          score: firstChoice.score + secondChoice.score,
-        })),
-      )
+          score:
+            firstChoice.score +
+            secondChoice.score +
+            filletJoinContinuityPenalty(firstChoice.approachDirection, filletStartDirection) +
+            filletJoinContinuityPenalty(filletEndDirection, secondChoice.departDirection),
+        }));
+      })
       .sort((left, right) => left.score - right.score)[0] ?? null;
   if (!bestPair) return null;
   return {
