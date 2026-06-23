@@ -5243,6 +5243,137 @@ describe('SurveyCadWorkspace', () => {
     container.remove();
   });
 
+  it('keeps the hovered survivor rays for live FILLET on crossing interior line picks', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+    const capture = createPersistedStateCapture();
+
+    const originalProject = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+    const baseProject = appendCadProjectEntities(originalProject, [
+      {
+        id: 'line:live-crossing-diagonal',
+        type: 'line' as const,
+        layerId: 'observation-lines',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        fromStationId: 'XD1',
+        toStationId: 'XD2',
+        fromX: 0,
+        fromY: 0,
+        toX: 20,
+        toY: 20,
+        sourceObservationIds: [],
+      },
+      {
+        id: 'line:live-crossing-horizontal',
+        type: 'line' as const,
+        layerId: 'observation-lines',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        fromStationId: 'XH1',
+        toStationId: 'XH2',
+        fromX: -10,
+        fromY: 10,
+        toX: 30,
+        toY: 10,
+        sourceObservationIds: [],
+      },
+    ]);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+          persistedState={{
+            version: 1,
+            sourceSignature: buildCadProjectSignature(originalProject),
+            project: baseProject,
+          }}
+          onPersistedStateChange={capture.onPersistedStateChange}
+        />,
+      );
+    });
+
+    const preview = container.querySelector('[data-survey-cad-preview]') as SVGElement | null;
+    const commandInput = container.querySelector('[data-survey-cad-command-input]') as HTMLInputElement | null;
+    const diagonal = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="line:live-crossing-diagonal"]',
+    ) as SVGElement | null;
+    const horizontal = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="line:live-crossing-horizontal"]',
+    ) as SVGElement | null;
+    if (!preview || !commandInput || !diagonal || !horizontal) {
+      throw new Error('Live crossing FILLET controls not found');
+    }
+    mockElementRect(preview);
+
+    const diagonalPick = projectWorldToPreviewScreen(baseProject.bounds!, { x: 13, y: 13 });
+    const horizontalPick = projectWorldToPreviewScreen(baseProject.bounds!, { x: 15, y: 10 });
+
+    await act(async () => {
+      clickButton(container, 'FILLET');
+      setTextInputValue(commandInput, '2');
+      pressKey(commandInput, 'Enter');
+      diagonal.dispatchEvent(
+        new MouseEvent('click', {
+          bubbles: true,
+          clientX: diagonalPick.clientX,
+          clientY: diagonalPick.clientY,
+          button: 0,
+        }),
+      );
+      horizontal.dispatchEvent(
+        new MouseEvent('click', {
+          bubbles: true,
+          clientX: horizontalPick.clientX,
+          clientY: horizontalPick.clientY,
+          button: 0,
+        }),
+      );
+    });
+
+    const updatedDiagonal = capture.read()?.project.entities.find(
+      (entity) => entity.id === 'line:live-crossing-diagonal',
+    );
+    const updatedHorizontal = capture.read()?.project.entities.find(
+      (entity) => entity.id === 'line:live-crossing-horizontal',
+    );
+    const committedArc = capture.read()?.project.entities.find(
+      (entity) => entity.type === 'arc' && entity.metadata?.createdBy === 'FILLET',
+    );
+    expect(updatedDiagonal?.type).toBe('line');
+    expect(updatedHorizontal?.type).toBe('line');
+    expect(committedArc?.type).toBe('arc');
+    if (updatedDiagonal?.type !== 'line' || updatedHorizontal?.type !== 'line' || committedArc?.type !== 'arc') {
+      throw new Error('Live crossing FILLET entities missing');
+    }
+    expect(updatedDiagonal.toX).toBeCloseTo(20, 6);
+    expect(updatedDiagonal.toY).toBeCloseTo(20, 6);
+    expect(updatedDiagonal.fromX).toBeGreaterThan(10);
+    expect(updatedDiagonal.fromY).toBeGreaterThan(10);
+    expect(updatedHorizontal.toX).toBeCloseTo(30, 6);
+    expect(updatedHorizontal.fromX).toBeGreaterThan(10);
+    expect(committedArc.radius).toBeCloseTo(2, 6);
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
   it('creates a FILLET from a picked polyline segment and a line in the live workspace', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
@@ -5364,6 +5495,136 @@ describe('SurveyCadWorkspace', () => {
     expect(updatedPolyline.vertices[1]).toEqual({ x: 2, y: 0 });
     expect(updatedBoundary.fromX).toBeCloseTo(0, 6);
     expect(updatedBoundary.toY).toBeCloseTo(2, 6);
+    expect(committedArc.radius).toBeCloseTo(2, 6);
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('keeps the neighboring polyline segment fixed by inserting a tangent vertex during live FILLET', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+    const capture = createPersistedStateCapture();
+
+    const originalProject = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+    const baseProject = appendCadProjectEntities(originalProject, [
+      {
+        id: 'polyline:live-shared-corner',
+        type: 'polyline' as const,
+        layerId: 'observation-lines',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        vertices: [
+          { x: 0, y: -10 },
+          { x: 0, y: 0 },
+          { x: 10, y: 10 },
+        ],
+        vertexLabels: ['P1', 'P2', 'P3'],
+        closed: false,
+      },
+      {
+        id: 'line:live-shared-corner-target',
+        type: 'line' as const,
+        layerId: 'observation-lines',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        fromStationId: 'SC1',
+        toStationId: 'SC2',
+        fromX: 0,
+        fromY: 0,
+        toX: -10,
+        toY: 10,
+        sourceObservationIds: [],
+      },
+    ]);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+          persistedState={{
+            version: 1,
+            sourceSignature: buildCadProjectSignature(originalProject),
+            project: baseProject,
+          }}
+          onPersistedStateChange={capture.onPersistedStateChange}
+        />,
+      );
+    });
+
+    const preview = container.querySelector('[data-survey-cad-preview]') as SVGElement | null;
+    const commandInput = container.querySelector('[data-survey-cad-command-input]') as HTMLInputElement | null;
+    const polylineSegments = Array.from(
+      container.querySelectorAll(
+        '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="polyline:live-shared-corner"]',
+      ),
+    ) as SVGElement[];
+    const line = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="line:live-shared-corner-target"]',
+    ) as SVGElement | null;
+    const polyline = polylineSegments[1] ?? null;
+    if (!preview || !commandInput || !polyline || !line) {
+      throw new Error('Live shared-corner FILLET controls not found');
+    }
+    mockElementRect(preview);
+
+    const polylinePick = projectWorldToPreviewScreen(baseProject.bounds!, { x: 4, y: 4 });
+    const linePick = projectWorldToPreviewScreen(baseProject.bounds!, { x: -2, y: 2 });
+
+    await act(async () => {
+      clickButton(container, 'FILLET');
+      setTextInputValue(commandInput, '2');
+      pressKey(commandInput, 'Enter');
+      polyline.dispatchEvent(
+        new MouseEvent('click', {
+          bubbles: true,
+          clientX: polylinePick.clientX,
+          clientY: polylinePick.clientY,
+          button: 0,
+        }),
+      );
+      line.dispatchEvent(
+        new MouseEvent('click', {
+          bubbles: true,
+          clientX: linePick.clientX,
+          clientY: linePick.clientY,
+          button: 0,
+        }),
+      );
+    });
+
+    const updatedPolyline = capture.read()?.project.entities.find(
+      (entity) => entity.id === 'polyline:live-shared-corner',
+    );
+    const committedArc = capture.read()?.project.entities.find(
+      (entity) => entity.type === 'arc' && entity.metadata?.createdBy === 'FILLET',
+    );
+    expect(updatedPolyline?.type).toBe('polyline');
+    expect(committedArc?.type).toBe('arc');
+    if (updatedPolyline?.type !== 'polyline' || committedArc?.type !== 'arc') {
+      throw new Error('Live shared-corner FILLET entities missing');
+    }
+    expect(updatedPolyline.vertices).toHaveLength(4);
+    expect(updatedPolyline.vertices[0]).toEqual({ x: 0, y: -10 });
+    expect(updatedPolyline.vertices[1]).toEqual({ x: 0, y: 0 });
+    expect(updatedPolyline.vertices[2].x).toBeGreaterThan(0);
+    expect(updatedPolyline.vertices[2].y).toBeGreaterThan(0);
+    expect(updatedPolyline.vertices[3]).toEqual({ x: 10, y: 10 });
     expect(committedArc.radius).toBeCloseTo(2, 6);
 
     await act(async () => {
@@ -5632,6 +5893,123 @@ describe('SurveyCadWorkspace', () => {
     expect(updatedLine.fromX).toBeCloseTo(30, 6);
     expect(updatedLine.toX).toBeGreaterThan(10);
     expect(updatedLine.toX).toBeLessThan(30);
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('keeps the hovered interior arc branch during live line-arc FILLET on a larger arc', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+    const capture = createPersistedStateCapture();
+
+    const originalProject = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+    const baseProject = appendCadProjectEntities(originalProject, [
+      {
+        id: 'line:live-large-arc-line',
+        type: 'line' as const,
+        layerId: 'observation-lines',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        fromStationId: 'LAL1',
+        toStationId: 'LAL2',
+        fromX: -40,
+        fromY: 40,
+        toX: 60,
+        toY: -60,
+        sourceObservationIds: [],
+      },
+      {
+        id: 'arc:live-large-arc-target',
+        type: 'arc' as const,
+        layerId: 'observation-lines',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        centerX: 0,
+        centerY: 0,
+        radius: 35,
+        startAngleDeg: 220,
+        endAngleDeg: 20,
+      },
+    ]);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+          persistedState={{
+            version: 1,
+            sourceSignature: buildCadProjectSignature(originalProject),
+            project: baseProject,
+          }}
+          onPersistedStateChange={capture.onPersistedStateChange}
+        />,
+      );
+    });
+
+    const preview = container.querySelector('[data-survey-cad-preview]') as SVGElement | null;
+    const commandInput = container.querySelector('[data-survey-cad-command-input]') as HTMLInputElement | null;
+    const line = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="line:live-large-arc-line"]',
+    ) as SVGElement | null;
+    const arc = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="arc:live-large-arc-target"]',
+    ) as SVGElement | null;
+    if (!preview || !commandInput || !line || !arc) {
+      throw new Error('Live large-arc FILLET controls not found');
+    }
+    mockElementRect(preview);
+
+    const linePick = projectWorldToPreviewScreen(baseProject.bounds!, { x: -18, y: 18 });
+    const arcPick = projectWorldToPreviewScreen(baseProject.bounds!, { x: 0, y: 35 });
+
+    await act(async () => {
+      clickButton(container, 'FILLET');
+      setTextInputValue(commandInput, '5');
+      pressKey(commandInput, 'Enter');
+      line.dispatchEvent(
+        new MouseEvent('click', {
+          bubbles: true,
+          clientX: linePick.clientX,
+          clientY: linePick.clientY,
+          button: 0,
+        }),
+      );
+      arc.dispatchEvent(
+        new MouseEvent('click', {
+          bubbles: true,
+          clientX: arcPick.clientX,
+          clientY: arcPick.clientY,
+          button: 0,
+        }),
+      );
+    });
+
+    const updatedArc = capture.read()?.project.entities.find(
+      (entity) => entity.id === 'arc:live-large-arc-target',
+    );
+    expect(updatedArc?.type).toBe('arc');
+    if (updatedArc?.type !== 'arc') {
+      throw new Error('Live large-arc fillet missing');
+    }
+    expect(updatedArc.endAngleDeg).toBeCloseTo(20, 6);
+    expect(updatedArc.startAngleDeg).toBeGreaterThan(220);
+    expect(updatedArc.startAngleDeg).toBeLessThan(360);
 
     await act(async () => {
       root.unmount();

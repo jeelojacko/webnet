@@ -1295,7 +1295,11 @@ export const useSurveyCadWorkspace = (
         );
         return;
       }
-      consumeInteractionPoint(worldPoint, label, options);
+      consumeInteractionPoint(worldPoint, label, {
+        ...options,
+        snapSourceSegmentId: options?.snapSourceSegmentId ?? commandHoverTarget?.segmentId,
+        snapSourceEntityId: options?.snapSourceEntityId ?? commandHoverTarget?.entityId,
+      });
     },
     handleEnterKey,
     handleEscapeKey,

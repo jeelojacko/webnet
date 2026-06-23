@@ -909,10 +909,16 @@ const buildFilletRayDirection = (
 ): { directionX: number; directionY: number; trimStart: boolean } | null => {
   const start = { x: line.fromX, y: line.fromY };
   const end = { x: line.toX, y: line.toY };
-  const projectedPick = cadProjectPointOntoInfiniteLine(pickPoint, start, end).point;
-  const pickedStart = cadDistance(projectedPick, start) <= cadDistance(projectedPick, end);
-  const primaryPoint = pickedStart ? start : end;
-  const secondaryPoint = pickedStart ? end : start;
+  const pickProjection = cadProjectPointOntoInfiniteLine(pickPoint, start, end);
+  const intersectionProjection = cadProjectPointOntoInfiniteLine(intersectionPoint, start, end);
+  const projectedPick = pickProjection.point;
+  const keepStartSide =
+    Math.abs(pickProjection.t - intersectionProjection.t) <= 1e-9
+      ? cadDistance(projectedPick, start) <= cadDistance(projectedPick, end)
+      : pickProjection.t <= intersectionProjection.t;
+  const trimStart = !keepStartSide;
+  const primaryPoint = keepStartSide ? start : end;
+  const secondaryPoint = keepStartSide ? end : start;
   const primaryVector = {
     x: primaryPoint.x - intersectionPoint.x,
     y: primaryPoint.y - intersectionPoint.y,
@@ -937,7 +943,7 @@ const buildFilletRayDirection = (
   return {
     directionX: fallbackVector.x / fallbackLength,
     directionY: fallbackVector.y / fallbackLength,
-    trimStart: pickedStart,
+    trimStart,
   };
 };
 
@@ -947,11 +953,11 @@ const buildFilletRayDirectionForEndpoint = (
   trimStart: boolean,
 ): { directionX: number; directionY: number; trimStart: boolean } | null => {
   const primaryPoint = trimStart
-    ? { x: line.fromX, y: line.fromY }
-    : { x: line.toX, y: line.toY };
-  const secondaryPoint = trimStart
     ? { x: line.toX, y: line.toY }
     : { x: line.fromX, y: line.fromY };
+  const secondaryPoint = trimStart
+    ? { x: line.fromX, y: line.fromY }
+    : { x: line.toX, y: line.toY };
   const primaryVector = {
     x: primaryPoint.x - intersectionPoint.x,
     y: primaryPoint.y - intersectionPoint.y,
@@ -1123,6 +1129,60 @@ const offsetSegmentPoints = (
   ];
 };
 
+const buildTrimmedPolylineForFillet = (
+  entity: CadPolylineEntity,
+  segmentIndex: number,
+  tangentPoint: { x: number; y: number },
+  trimStart: boolean,
+): CadPolylineEntity => {
+  const lastSegmentIndex = entity.vertices.length - 2;
+  if (trimStart) {
+    if (segmentIndex <= 0) {
+      return {
+        ...entity,
+        vertices: entity.vertices.map((vertex, index) =>
+          index === 0 ? { x: tangentPoint.x, y: tangentPoint.y } : vertex,
+        ),
+      };
+    }
+    return {
+      ...entity,
+      vertices: [
+        ...entity.vertices.slice(0, segmentIndex + 1),
+        { x: tangentPoint.x, y: tangentPoint.y },
+        ...entity.vertices.slice(segmentIndex + 1),
+      ],
+      vertexLabels: [
+        ...entity.vertexLabels.slice(0, segmentIndex + 1),
+        '',
+        ...entity.vertexLabels.slice(segmentIndex + 1),
+      ],
+    };
+  }
+
+  if (segmentIndex >= lastSegmentIndex) {
+    return {
+      ...entity,
+      vertices: entity.vertices.map((vertex, index) =>
+        index === segmentIndex + 1 ? { x: tangentPoint.x, y: tangentPoint.y } : vertex,
+      ),
+    };
+  }
+  return {
+    ...entity,
+    vertices: [
+      ...entity.vertices.slice(0, segmentIndex + 1),
+      { x: tangentPoint.x, y: tangentPoint.y },
+      ...entity.vertices.slice(segmentIndex + 1),
+    ],
+    vertexLabels: [
+      ...entity.vertexLabels.slice(0, segmentIndex + 1),
+      '',
+      ...entity.vertexLabels.slice(segmentIndex + 1),
+    ],
+  };
+};
+
 const buildSegmentFilletChoices = (
   ref: CadFilletSegmentRef,
   pickPoint: { x: number; y: number },
@@ -1150,6 +1210,7 @@ const buildSegmentFilletChoices = (
       : tangentT >= -TRIM_EPSILON && tangentT <= 1 + TRIM_EPSILON;
   const choices: Array<CadFilletEntityChoice<CadLineEntity | CadPolylineEntity>> = [];
   if (allowTrimStart) {
+    const segmentIndex = Number(ref.segmentId.split('#')[1]);
     const nextEntity =
       ref.entity.type === 'line'
         ? {
@@ -1157,12 +1218,7 @@ const buildSegmentFilletChoices = (
             fromX: tangentOnSegment.x,
             fromY: tangentOnSegment.y,
           }
-        : {
-            ...ref.entity,
-            vertices: ref.entity.vertices.map((vertex, index) =>
-              index === Number(ref.segmentId.split('#')[1]) ? { x: tangentOnSegment.x, y: tangentOnSegment.y } : vertex,
-            ),
-          };
+        : buildTrimmedPolylineForFillet(ref.entity, segmentIndex, tangentOnSegment, true);
     choices.push({
       entity: nextEntity,
       score:
@@ -1184,12 +1240,7 @@ const buildSegmentFilletChoices = (
             toX: tangentOnSegment.x,
             toY: tangentOnSegment.y,
           }
-        : {
-            ...ref.entity,
-            vertices: ref.entity.vertices.map((vertex, index) =>
-              index === segmentIndex + 1 ? { x: tangentOnSegment.x, y: tangentOnSegment.y } : vertex,
-            ),
-          };
+        : buildTrimmedPolylineForFillet(ref.entity, segmentIndex, tangentOnSegment, false);
     choices.push({
       entity: nextEntity,
       score:
@@ -1214,24 +1265,85 @@ const buildArcFilletChoices = (
     { x: ref.entity.centerX, y: ref.entity.centerY },
     tangentPoint,
   );
+  const pickAngleDeg = cadAngleDegFromCenter(
+    { x: ref.entity.centerX, y: ref.entity.centerY },
+    pickPoint,
+  );
+  const totalSweep = Math.abs(cadSignedSweepDeg(ref.entity.startAngleDeg, ref.entity.endAngleDeg));
+  const tangentPosition = arcPositionAtAngle(ref.entity, tangentAngleDeg);
+  const pickPosition = arcPositionAtAngle(ref.entity, pickAngleDeg);
   const startPoint = pointAtArcAngle(ref.entity, ref.entity.startAngleDeg);
   const endPoint = pointAtArcAngle(ref.entity, ref.entity.endAngleDeg);
   const pickDistanceToStart = cadDistance(pickPoint, startPoint);
   const pickDistanceToEnd = cadDistance(pickPoint, endPoint);
+  const interiorPick = pickPosition > totalSweep * 0.2 && pickPosition < totalSweep * 0.8;
+  const preferDeepInteriorBranch = interiorPick && totalSweep > 120;
+  const trimStartEntity = {
+    ...ref.entity,
+    startAngleDeg: normalizeArcStartToAngle(ref.entity, tangentAngleDeg),
+  };
+  const trimEndEntity = {
+    ...ref.entity,
+    endAngleDeg: normalizeArcEndToAngle(ref.entity, tangentAngleDeg),
+  };
+  const buildArcChoiceScore = (
+    entity: CadArcEntity,
+    trimStart: boolean,
+    preferredByEndpoint: boolean,
+  ): number => {
+    const hoverDistance = cadDistance(
+      pickPoint,
+      cadClosestPointOnArc(
+        pickPoint,
+        { x: entity.centerX, y: entity.centerY },
+        entity.radius,
+        entity.startAngleDeg,
+        entity.endAngleDeg,
+      ),
+    );
+    const candidateSweep = Math.abs(cadSignedSweepDeg(entity.startAngleDeg, entity.endAngleDeg));
+    const candidatePickPosition = arcPositionAtAngle(entity, pickAngleDeg);
+    const keptGap = trimStart ? candidatePickPosition : candidateSweep - candidatePickPosition;
+    if (!preferDeepInteriorBranch) {
+      return (
+        hoverDistance +
+        cadDistance(pickPoint, tangentPoint) +
+        ((interiorPick
+          ? trimStart
+            ? pickPosition >= tangentPosition - 1e-6
+            : pickPosition <= tangentPosition + 1e-6
+          : preferredByEndpoint)
+          ? 0
+          : 1000)
+      );
+    }
+    return (
+      hoverDistance * 100 -
+      keptGap +
+      cadDistance(pickPoint, tangentPoint) +
+      ((interiorPick
+        ? hoverDistance <= 1e-6
+        : preferredByEndpoint)
+        ? 0
+        : 1000)
+    );
+  };
   return [
     {
-      entity: {
-        ...ref.entity,
-        startAngleDeg: normalizeArcStartToAngle(ref.entity, tangentAngleDeg),
-      },
-      score: cadDistance(pickPoint, tangentPoint) + (pickDistanceToStart <= pickDistanceToEnd ? 0 : 1000),
+      entity: trimStartEntity,
+      score: buildArcChoiceScore(
+        trimStartEntity,
+        true,
+        pickDistanceToStart <= pickDistanceToEnd,
+      ),
     },
     {
-      entity: {
-        ...ref.entity,
-        endAngleDeg: normalizeArcEndToAngle(ref.entity, tangentAngleDeg),
-      },
-      score: cadDistance(pickPoint, tangentPoint) + (pickDistanceToEnd <= pickDistanceToStart ? 0 : 1000),
+      entity: trimEndEntity,
+      score: buildArcChoiceScore(
+        trimEndEntity,
+        false,
+        pickDistanceToEnd <= pickDistanceToStart,
+      ),
     },
   ];
 };
@@ -1630,27 +1742,45 @@ const buildCadLineFillet = (
   const preferredSecondRay = buildFilletRayDirection(secondLine, intersectionPoint, secondPickPoint);
   const firstRayCandidates = [true, false]
     .map((trimStart) => buildFilletRayDirectionForEndpoint(firstLine, intersectionPoint, trimStart))
-    .filter((candidate): candidate is NonNullable<typeof candidate> => candidate != null)
+    .filter((candidate): candidate is NonNullable<typeof candidate> => candidate != null);
+  const secondRayCandidates = [true, false]
+    .map((trimStart) => buildFilletRayDirectionForEndpoint(secondLine, intersectionPoint, trimStart))
+    .filter((candidate): candidate is NonNullable<typeof candidate> => candidate != null);
+  if (firstRayCandidates.length === 0 || secondRayCandidates.length === 0) return null;
+
+  const firstPreferredCandidates = firstRayCandidates
+    .filter(
+      (candidate) =>
+        preferredFirstRay == null
+          ? true
+          : candidate.trimStart === preferredFirstRay.trimStart &&
+            filletRayPreferencePenalty(preferredFirstRay, candidate) === 0,
+    )
     .sort((left, right) => {
       const leftPenalty = filletRayPreferencePenalty(preferredFirstRay, left);
       const rightPenalty = filletRayPreferencePenalty(preferredFirstRay, right);
       return leftPenalty - rightPenalty;
     });
-  const secondRayCandidates = [true, false]
-    .map((trimStart) => buildFilletRayDirectionForEndpoint(secondLine, intersectionPoint, trimStart))
-    .filter((candidate): candidate is NonNullable<typeof candidate> => candidate != null)
+  const secondPreferredCandidates = secondRayCandidates
+    .filter(
+      (candidate) =>
+        preferredSecondRay == null
+          ? true
+          : candidate.trimStart === preferredSecondRay.trimStart &&
+            filletRayPreferencePenalty(preferredSecondRay, candidate) === 0,
+    )
     .sort((left, right) => {
       const leftPenalty = filletRayPreferencePenalty(preferredSecondRay, left);
       const rightPenalty = filletRayPreferencePenalty(preferredSecondRay, right);
       return leftPenalty - rightPenalty;
     });
-  if (firstRayCandidates.length === 0 || secondRayCandidates.length === 0) return null;
+  if (firstPreferredCandidates.length === 0 || secondPreferredCandidates.length === 0) return null;
 
   if (radius <= 1e-9) {
     const bestCornerCandidate =
-      firstRayCandidates
+      firstPreferredCandidates
         .flatMap((firstRay) =>
-          secondRayCandidates.map((secondRay) =>
+          secondPreferredCandidates.map((secondRay) =>
             buildCadLineCornerCandidate(
               firstLine,
               firstPickPoint,
@@ -1672,9 +1802,9 @@ const buildCadLineFillet = (
   }
 
   const bestCandidate =
-    firstRayCandidates
+    firstPreferredCandidates
       .flatMap((firstRay) =>
-        secondRayCandidates.map((secondRay) =>
+        secondPreferredCandidates.map((secondRay) =>
           buildCadLineFilletCandidate(
             firstLine,
             firstPickPoint,
