@@ -1001,10 +1001,12 @@ export const useSurveyCadWorkspace = (
     return buildCadFilletPreview(
       cadProject,
       activeFilletPreview.radius,
-      activeFilletPreview.firstLineEntityId,
+      activeFilletPreview.firstEntityId,
       activeFilletPreview.firstPickPoint,
+      activeFilletPreview.firstSegmentId,
       commandHoverTarget.entityId,
       commandHoverTarget.point,
+      commandHoverTarget.segmentId,
     );
   }, [activeCommandKey, activeFilletPreview, cadProject, commandHoverTarget]);
   const filletPreviewPrimitives = useMemo<CadDisplayPrimitive[]>(() => {
@@ -1026,8 +1028,8 @@ export const useSurveyCadWorkspace = (
         : {}),
       ...(filletPreview
         ? {
-            [filletPreview.firstLineEntityId]: 0.22,
-            [filletPreview.secondLineEntityId]: 0.22,
+            [filletPreview.firstEntityId]: 0.22,
+            [filletPreview.secondEntityId]: 0.22,
           }
         : {}),
     }),

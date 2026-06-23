@@ -361,7 +361,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     if (activeCommandKey === 'SKEW_INTX') return 'Select a line, pick a source point, then type Langle or Rangle';
     if (activeCommandKey === 'EXTEND') return 'Click entity to extend, then click boundary. Enter/Esc ends extend';
     if (activeCommandKey === 'TRIM') return 'Click cutting edge, then click side to trim. Enter/Esc ends trim';
-    if (activeCommandKey === 'FILLET') return 'Type radius, then click two lines near the corner. Enter/Esc ends fillet';
+    if (activeCommandKey === 'FILLET') return 'Type radius, then click two entities near the corner. Enter/Esc ends fillet';
     if (activeCommandKey?.startsWith('ARC_') || activeCommandKey === 'CONTINUE_CURVE') {
       return 'Pick arc points, then enter the required value. Hold Ctrl to reverse direction';
     }

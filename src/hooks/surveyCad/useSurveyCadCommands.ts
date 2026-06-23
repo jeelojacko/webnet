@@ -66,6 +66,7 @@ import type {
   CadArcEntity,
   CadDisplayPrimitive,
   CadLineEntity,
+  CadPolylineEntity,
   CadSnapCandidate,
   CadSnapConstructionContext,
   CadSnapKind,
@@ -296,8 +297,9 @@ type CommandSession =
       key: 'FILLET';
       inputValue: string;
       radius: number | null;
-      firstLineEntityId: string | null;
+      firstEntityId: string | null;
       firstPickPoint: CommandPoint | null;
+      firstSegmentId?: string;
       resultText?: string;
     }
   | {
@@ -420,8 +422,9 @@ interface UseSurveyCadCommandsResult {
   activeFilletPreview:
     | {
         radius: number;
-        firstLineEntityId: string;
+        firstEntityId: string;
         firstPickPoint: { x: number; y: number };
+        firstSegmentId?: string;
       }
     | null;
   activeBatchCogoDraft: {
@@ -1372,9 +1375,9 @@ const promptForSession = (session: CommandSession | null, fallbackStatus: string
       return session.resultText ??
         (session.radius == null
           ? 'FILLET active. Enter the fillet radius, then press Enter.'
-          : session.firstLineEntityId == null
-            ? `FILLET active. Radius ${session.radius.toFixed(3)} m set. Click the first line near the corner to round.`
-            : `FILLET active. Radius ${session.radius.toFixed(3)} m set. First line captured. Click the second line near the same corner, or press Enter/Esc to finish.`);
+          : session.firstEntityId == null
+            ? `FILLET active. Radius ${session.radius.toFixed(3)} m set. Click the first line, polyline, or arc near the corner to round.`
+            : `FILLET active. Radius ${session.radius.toFixed(3)} m set. First entity captured. Click the second line, polyline, or arc near the same corner, or press Enter/Esc to finish.`);
     case 'PASTE':
       return session.resultText ??
         `PASTE active. Clipboard base ${session.startPoint.label} captured. Click the insertion point or enter \`x,y\`, \`@azimuth,distance\`, or \`N45-00-00E,100\`, then press Enter.`;
@@ -1556,8 +1559,8 @@ const helpTextForSession = (session: CommandSession | null): string => {
         : 'TRIM target pick: click target portion to remove. After commit, TRIM resets for the next cutting-edge pair until Enter, Esc, or empty-space double-click ends it.';
     case 'FILLET':
       return session.radius == null
-        ? 'FILLET input: enter a zero-or-greater radius, then click the first and second lines near the corner. Radius 0 keeps a hard intersection corner. The same radius stays active until Enter, Esc, or empty-space double-click ends the tool.'
-        : 'FILLET line picks: click two lines near the corner to round. The current radius stays active for repeated corners until Enter, Esc, or empty-space double-click ends the tool.';
+        ? 'FILLET input: enter a zero-or-greater radius, then click the first and second line, polyline, or arc near the corner. Radius 0 keeps a hard intersection corner. The same radius stays active until Enter, Esc, or empty-space double-click ends the tool.'
+        : 'FILLET picks: click two lines, polylines, or arcs near the corner to round. The current radius stays active for repeated corners until Enter, Esc, or empty-space double-click ends the tool.';
     case 'PASTE':
       return 'PASTE insertion point: click in the model space or type `x,y`, `LABEL=x,y`, `@azimuth,distance`, or bearing-distance from the clipboard base point.';
   }
@@ -3003,27 +3006,30 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
       if (!targetEntityId) {
         replaceSession({
           ...current,
-          resultText: 'FILLET needs a direct line click. Background points do not define a fillet corner.',
+          resultText: 'FILLET needs a direct entity click. Background points do not define a fillet corner.',
         });
         return;
       }
-      const targetLine = history.present.project.entities.find(
-        (entity): entity is CadLineEntity => entity.type === 'line' && entity.id === targetEntityId,
+      const targetEntity = history.present.project.entities.find(
+        (entity): entity is CadLineEntity | CadPolylineEntity | CadArcEntity =>
+          (entity.type === 'line' || entity.type === 'polyline' || entity.type === 'arc') &&
+          entity.id === targetEntityId,
       );
-      if (!targetLine) {
+      if (!targetEntity) {
         replaceSession({
           ...current,
-          resultText: 'FILLET currently supports line-line corners only. Click a line near the desired corner.',
+          resultText: 'FILLET currently supports line, polyline, and arc corners only. Click a valid entity near the desired corner.',
         });
         return;
       }
-      if (current.firstLineEntityId == null || current.firstPickPoint == null) {
+      if (current.firstEntityId == null || current.firstPickPoint == null) {
         replaceSession({
           ...current,
-          firstLineEntityId: targetLine.id,
+          firstEntityId: targetEntity.id,
           firstPickPoint: point,
+          firstSegmentId: point.snapSourceSegmentId,
           inputValue: '',
-          resultText: `FILLET first line captured. Click the second line for radius ${current.radius.toFixed(3)} m.`,
+          resultText: `FILLET first entity captured. Click the second entity for radius ${current.radius.toFixed(3)} m.`,
         });
         return;
       }
@@ -3032,24 +3038,28 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
         const next = runCadCommand(existing, {
           key: 'FILLET',
           radius: current.radius!,
-          firstLineEntityId: current.firstLineEntityId!,
+          firstEntityId: current.firstEntityId!,
           firstPickPoint: { x: current.firstPickPoint!.x, y: current.firstPickPoint!.y },
-          secondLineEntityId: targetLine.id,
+          firstSegmentId: current.firstSegmentId,
+          secondEntityId: targetEntity.id,
           secondPickPoint: { x: point.x, y: point.y },
+          secondSegmentId: point.snapSourceSegmentId,
         });
         committed = next !== existing;
         return next;
       });
       replaceSession({
         ...current,
-        firstLineEntityId: null,
+        firstEntityId: null,
         firstPickPoint: null,
+        firstSegmentId: undefined,
         inputValue: '',
         resultText: committed
-          ? `FILLET committed. Radius ${current.radius.toFixed(3)} m still active. Click two more lines, or press Enter/Esc to finish.`
-          : current.firstLineEntityId === targetLine.id
-            ? 'FILLET ignored the same line twice. Click a different second line near the same corner.'
-            : `FILLET failed for ${current.radius.toFixed(3)} m. Check that the clicked lines can form that corner radius.`,
+          ? `FILLET committed. Radius ${current.radius.toFixed(3)} m still active. Click two more entities, or press Enter/Esc to finish.`
+          : current.firstEntityId === targetEntity.id &&
+              current.firstSegmentId === point.snapSourceSegmentId
+            ? 'FILLET ignored the same pick twice. Click a different second entity or segment near the same corner.'
+            : `FILLET failed for ${current.radius.toFixed(3)} m. Check that the clicked entities can form that corner radius.`,
       });
       return;
     }
@@ -4260,9 +4270,10 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
         ...session,
         radius,
         inputValue: '',
-        firstLineEntityId: null,
+        firstEntityId: null,
         firstPickPoint: null,
-        resultText: `FILLET radius ${radius.toFixed(3)} m set. Click the first line near the corner to round.`,
+        firstSegmentId: undefined,
+        resultText: `FILLET radius ${radius.toFixed(3)} m set. Click the first line, polyline, or arc near the corner to round.`,
       });
       return;
     }
@@ -4946,15 +4957,16 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
     activeFilletPreview:
       session?.key === 'FILLET' &&
       session.radius != null &&
-      session.firstLineEntityId != null &&
+      session.firstEntityId != null &&
       session.firstPickPoint != null
         ? {
             radius: session.radius,
-            firstLineEntityId: session.firstLineEntityId,
+            firstEntityId: session.firstEntityId,
             firstPickPoint: {
               x: session.firstPickPoint.x,
               y: session.firstPickPoint.y,
             },
+            firstSegmentId: session.firstSegmentId,
           }
         : null,
     activeBatchCogoDraft,
@@ -5362,8 +5374,9 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
         key: 'FILLET',
         inputValue: '',
         radius: null,
-        firstLineEntityId: null,
+        firstEntityId: null,
         firstPickPoint: null,
+        firstSegmentId: undefined,
       }),
     startPasteCommand: (sourceEntityIds, basePoint) => {
       if (sourceEntityIds.length === 0) return;

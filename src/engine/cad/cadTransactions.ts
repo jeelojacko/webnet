@@ -250,10 +250,12 @@ export type CadCommand =
   | {
       key: 'FILLET';
       radius: number;
-      firstLineEntityId: CadEntityId;
+      firstEntityId: CadEntityId;
       firstPickPoint: { x: number; y: number };
-      secondLineEntityId: CadEntityId;
+      firstSegmentId?: string;
+      secondEntityId: CadEntityId;
       secondPickPoint: { x: number; y: number };
+      secondSegmentId?: string;
     }
   | {
       key: 'PASTE';
@@ -971,6 +973,17 @@ const buildFilletRayDirectionForEndpoint = (
   };
 };
 
+const filletRayPreferencePenalty = (
+  preferredRay: { directionX: number; directionY: number } | null,
+  candidateRay: { directionX: number; directionY: number },
+): number => {
+  if (!preferredRay) return 0;
+  const dot =
+    preferredRay.directionX * candidateRay.directionX +
+    preferredRay.directionY * candidateRay.directionY;
+  return dot >= 0.999 ? 0 : dot >= 0 ? 1000 : 1_000_000;
+};
+
 const lineSideValue = (
   lineStart: { x: number; y: number },
   lineEnd: { x: number; y: number },
@@ -989,6 +1002,443 @@ const sideMismatchPenalty = (
   const candidateSide = lineSideValue(lineStart, lineEnd, candidatePoint);
   if (Math.abs(referenceSide) <= 1e-9 || Math.abs(candidateSide) <= 1e-9) return 0;
   return Math.sign(referenceSide) === Math.sign(candidateSide) ? 0 : 1_000_000;
+};
+
+type CadFilletEntity = CadLineEntity | CadPolylineEntity | CadArcEntity;
+
+interface CadFilletSegmentRef {
+  kind: 'segment';
+  entity: CadLineEntity | CadPolylineEntity;
+  segmentId: string;
+  start: { x: number; y: number };
+  end: { x: number; y: number };
+}
+
+interface CadFilletArcRef {
+  kind: 'arc';
+  entity: CadArcEntity;
+}
+
+type CadFilletRef = CadFilletSegmentRef | CadFilletArcRef;
+
+interface CadFilletEntityChoice<TEntity extends CadFilletEntity> {
+  entity: TEntity;
+  score: number;
+}
+
+interface CadFilletResult {
+  firstEntity: CadFilletEntity;
+  secondEntity: CadFilletEntity;
+  arcDefinition: {
+    center: { x: number; y: number };
+    radius: number;
+    startAngleDeg: number;
+    endAngleDeg: number;
+  } | null;
+}
+
+const pointAtArcAngle = (
+  entity: CadArcEntity,
+  angleDeg: number,
+): { x: number; y: number } =>
+  cadPointOnCircle({ x: entity.centerX, y: entity.centerY }, entity.radius, angleDeg);
+
+const normalizeArcStartToAngle = (entity: CadArcEntity, angleDeg: number): number => {
+  const currentSweep = cadSignedSweepDeg(entity.startAngleDeg, entity.endAngleDeg);
+  const currentEndNorm = cadNormalizeAngleDeg(entity.endAngleDeg);
+  const nextAngleNorm = cadNormalizeAngleDeg(angleDeg);
+  if (currentSweep >= 0) {
+    const magnitude = cadCounterClockwiseDeltaDeg(nextAngleNorm, currentEndNorm);
+    return entity.endAngleDeg - magnitude;
+  }
+  const magnitude = cadCounterClockwiseDeltaDeg(currentEndNorm, nextAngleNorm);
+  return entity.endAngleDeg + magnitude;
+};
+
+const normalizeArcEndToAngle = (entity: CadArcEntity, angleDeg: number): number => {
+  const currentSweep = cadSignedSweepDeg(entity.startAngleDeg, entity.endAngleDeg);
+  const currentStartNorm = cadNormalizeAngleDeg(entity.startAngleDeg);
+  const nextAngleNorm = cadNormalizeAngleDeg(angleDeg);
+  if (currentSweep >= 0) {
+    const magnitude = cadCounterClockwiseDeltaDeg(currentStartNorm, nextAngleNorm);
+    return entity.startAngleDeg + magnitude;
+  }
+  const magnitude = cadCounterClockwiseDeltaDeg(nextAngleNorm, currentStartNorm);
+  return entity.startAngleDeg - magnitude;
+};
+
+const buildCadFilletRef = (
+  entity: CadFilletEntity,
+  pickPoint: { x: number; y: number },
+  segmentId?: string,
+): CadFilletRef | null => {
+  if (entity.type === 'arc') {
+    return {
+      kind: 'arc',
+      entity,
+    };
+  }
+  if (entity.type === 'line') {
+    return {
+      kind: 'segment',
+      entity,
+      segmentId: `${entity.id}#0`,
+      start: { x: entity.fromX, y: entity.fromY },
+      end: { x: entity.toX, y: entity.toY },
+    };
+  }
+  const segments = buildTrimSegments(entity);
+  const resolvedSegment =
+    (segmentId ? segments.find((candidate) => candidate.segmentId === segmentId) : null) ??
+    segments
+      .map((candidate) => ({
+        segment: candidate,
+        point: cadClosestPointOnSegment(pickPoint, candidate.start, candidate.end),
+      }))
+      .sort((left, right) => cadDistance(left.point, pickPoint) - cadDistance(right.point, pickPoint))[0]?.segment ??
+    null;
+  if (!resolvedSegment) return null;
+  return {
+    kind: 'segment',
+    entity,
+    segmentId: resolvedSegment.segmentId,
+    start: resolvedSegment.start,
+    end: resolvedSegment.end,
+  };
+};
+
+const offsetSegmentPoints = (
+  segment: CadFilletSegmentRef,
+  offset: number,
+): [{ x: number; y: number }, { x: number; y: number }] | null => {
+  const dx = segment.end.x - segment.start.x;
+  const dy = segment.end.y - segment.start.y;
+  const length = Math.hypot(dx, dy);
+  if (length <= TRIM_EPSILON) return null;
+  const offsetX = (-dy / length) * offset;
+  const offsetY = (dx / length) * offset;
+  return [
+    { x: segment.start.x + offsetX, y: segment.start.y + offsetY },
+    { x: segment.end.x + offsetX, y: segment.end.y + offsetY },
+  ];
+};
+
+const buildSegmentFilletChoices = (
+  ref: CadFilletSegmentRef,
+  pickPoint: { x: number; y: number },
+  tangentPoint: { x: number; y: number },
+  centerPoint: { x: number; y: number },
+  oppositePickPoint: { x: number; y: number },
+  preferPickedSide: boolean,
+): Array<CadFilletEntityChoice<CadLineEntity | CadPolylineEntity>> => {
+  const tangentProjection = cadProjectPointOntoInfiniteLine(tangentPoint, ref.start, ref.end);
+  const tangentOnSegment = tangentProjection.point;
+  if (cadDistance(tangentPoint, tangentOnSegment) > 1e-4) return [];
+  const tangentT = tangentProjection.t;
+  const pickT = cadProjectPointOntoInfiniteLine(pickPoint, ref.start, ref.end).t;
+  const pickDistanceToStart = cadDistance(pickPoint, ref.start);
+  const pickDistanceToEnd = cadDistance(pickPoint, ref.end);
+  const interiorPick = pickT > 0.2 && pickT < 0.8;
+  const preferHoveredRay = preferPickedSide || interiorPick;
+  const allowTrimStart =
+    ref.entity.type === 'line'
+      ? tangentT <= 1 + TRIM_EPSILON
+      : tangentT >= -TRIM_EPSILON && tangentT <= 1 + TRIM_EPSILON;
+  const allowTrimEnd =
+    ref.entity.type === 'line'
+      ? tangentT >= -TRIM_EPSILON
+      : tangentT >= -TRIM_EPSILON && tangentT <= 1 + TRIM_EPSILON;
+  const choices: Array<CadFilletEntityChoice<CadLineEntity | CadPolylineEntity>> = [];
+  if (allowTrimStart) {
+    const nextEntity =
+      ref.entity.type === 'line'
+        ? {
+            ...ref.entity,
+            fromX: tangentOnSegment.x,
+            fromY: tangentOnSegment.y,
+          }
+        : {
+            ...ref.entity,
+            vertices: ref.entity.vertices.map((vertex, index) =>
+              index === Number(ref.segmentId.split('#')[1]) ? { x: tangentOnSegment.x, y: tangentOnSegment.y } : vertex,
+            ),
+          };
+    choices.push({
+      entity: nextEntity,
+      score:
+        sideMismatchPenalty(ref.start, ref.end, oppositePickPoint, centerPoint) +
+        cadDistance(pickPoint, tangentOnSegment) +
+        ((preferHoveredRay
+          ? pickT >= tangentT - 1e-9
+          : pickDistanceToStart <= pickDistanceToEnd)
+          ? 0
+          : 1000),
+    });
+  }
+  if (allowTrimEnd) {
+    const segmentIndex = Number(ref.segmentId.split('#')[1]);
+    const nextEntity =
+      ref.entity.type === 'line'
+        ? {
+            ...ref.entity,
+            toX: tangentOnSegment.x,
+            toY: tangentOnSegment.y,
+          }
+        : {
+            ...ref.entity,
+            vertices: ref.entity.vertices.map((vertex, index) =>
+              index === segmentIndex + 1 ? { x: tangentOnSegment.x, y: tangentOnSegment.y } : vertex,
+            ),
+          };
+    choices.push({
+      entity: nextEntity,
+      score:
+        sideMismatchPenalty(ref.start, ref.end, oppositePickPoint, centerPoint) +
+        cadDistance(pickPoint, tangentOnSegment) +
+        ((preferHoveredRay
+          ? pickT <= tangentT + 1e-9
+          : pickDistanceToEnd <= pickDistanceToStart)
+          ? 0
+          : 1000),
+    });
+  }
+  return choices;
+};
+
+const buildArcFilletChoices = (
+  ref: CadFilletArcRef,
+  pickPoint: { x: number; y: number },
+  tangentPoint: { x: number; y: number },
+): Array<CadFilletEntityChoice<CadArcEntity>> => {
+  const tangentAngleDeg = cadAngleDegFromCenter(
+    { x: ref.entity.centerX, y: ref.entity.centerY },
+    tangentPoint,
+  );
+  const startPoint = pointAtArcAngle(ref.entity, ref.entity.startAngleDeg);
+  const endPoint = pointAtArcAngle(ref.entity, ref.entity.endAngleDeg);
+  const pickDistanceToStart = cadDistance(pickPoint, startPoint);
+  const pickDistanceToEnd = cadDistance(pickPoint, endPoint);
+  return [
+    {
+      entity: {
+        ...ref.entity,
+        startAngleDeg: normalizeArcStartToAngle(ref.entity, tangentAngleDeg),
+      },
+      score: cadDistance(pickPoint, tangentPoint) + (pickDistanceToStart <= pickDistanceToEnd ? 0 : 1000),
+    },
+    {
+      entity: {
+        ...ref.entity,
+        endAngleDeg: normalizeArcEndToAngle(ref.entity, tangentAngleDeg),
+      },
+      score: cadDistance(pickPoint, tangentPoint) + (pickDistanceToEnd <= pickDistanceToStart ? 0 : 1000),
+    },
+  ];
+};
+
+const buildFilletArcDefinition = (
+  centerPoint: { x: number; y: number },
+  radius: number,
+  firstTangentPoint: { x: number; y: number },
+  secondTangentPoint: { x: number; y: number },
+): CadFilletResult['arcDefinition'] => {
+  const startAngleDeg = cadAngleDegFromCenter(centerPoint, firstTangentPoint);
+  const endAngleSeedDeg = cadAngleDegFromCenter(centerPoint, secondTangentPoint);
+  const ccwDeltaDeg = cadNormalizeAngleDeg(endAngleSeedDeg - startAngleDeg);
+  const signedSweepDeg = ccwDeltaDeg <= 180 ? ccwDeltaDeg : -(360 - ccwDeltaDeg);
+  if (Math.abs(signedSweepDeg) <= 1e-6 || Math.abs(signedSweepDeg) >= 180 - 1e-6) return null;
+  return {
+    center: centerPoint,
+    radius,
+    startAngleDeg,
+    endAngleDeg: startAngleDeg + signedSweepDeg,
+  };
+};
+
+const buildFilletResultFromCenter = (
+  firstRef: CadFilletRef,
+  firstPickPoint: { x: number; y: number },
+  secondRef: CadFilletRef,
+  secondPickPoint: { x: number; y: number },
+  centerPoint: { x: number; y: number },
+  radius: number,
+): (CadFilletResult & { score: number }) | null => {
+  const firstTangentPoint =
+    firstRef.kind === 'segment'
+      ? cadProjectPointOntoInfiniteLine(centerPoint, firstRef.start, firstRef.end).point
+      : cadPointOnCircle(
+          { x: firstRef.entity.centerX, y: firstRef.entity.centerY },
+          firstRef.entity.radius,
+          cadAngleDegFromCenter({ x: firstRef.entity.centerX, y: firstRef.entity.centerY }, centerPoint),
+        );
+  const secondTangentPoint =
+    secondRef.kind === 'segment'
+      ? cadProjectPointOntoInfiniteLine(centerPoint, secondRef.start, secondRef.end).point
+      : cadPointOnCircle(
+          { x: secondRef.entity.centerX, y: secondRef.entity.centerY },
+          secondRef.entity.radius,
+          cadAngleDegFromCenter({ x: secondRef.entity.centerX, y: secondRef.entity.centerY }, centerPoint),
+        );
+  if (Math.abs(cadDistance(centerPoint, firstTangentPoint) - radius) > 1e-4) return null;
+  if (Math.abs(cadDistance(centerPoint, secondTangentPoint) - radius) > 1e-4) return null;
+  const arcDefinition = buildFilletArcDefinition(centerPoint, radius, firstTangentPoint, secondTangentPoint);
+  if (!arcDefinition) return null;
+
+  const firstChoices =
+    firstRef.kind === 'segment'
+      ? buildSegmentFilletChoices(
+          firstRef,
+          firstPickPoint,
+          firstTangentPoint,
+          centerPoint,
+          secondPickPoint,
+          true,
+        )
+      : buildArcFilletChoices(firstRef, firstPickPoint, firstTangentPoint);
+  const secondChoices =
+    secondRef.kind === 'segment'
+      ? buildSegmentFilletChoices(
+          secondRef,
+          secondPickPoint,
+          secondTangentPoint,
+          centerPoint,
+          firstPickPoint,
+          true,
+        )
+      : buildArcFilletChoices(secondRef, secondPickPoint, secondTangentPoint);
+  if (firstChoices.length === 0 || secondChoices.length === 0) return null;
+
+  const bestPair =
+    firstChoices
+      .flatMap((firstChoice) =>
+        secondChoices.map((secondChoice) => ({
+          firstChoice,
+          secondChoice,
+          score: firstChoice.score + secondChoice.score,
+        })),
+      )
+      .sort((left, right) => left.score - right.score)[0] ?? null;
+  if (!bestPair) return null;
+  return {
+    firstEntity: bestPair.firstChoice.entity,
+    secondEntity: bestPair.secondChoice.entity,
+    arcDefinition,
+    score: bestPair.score,
+  };
+};
+
+const buildZeroRadiusFilletResult = (
+  firstRef: CadFilletRef,
+  firstPickPoint: { x: number; y: number },
+  secondRef: CadFilletRef,
+  secondPickPoint: { x: number; y: number },
+): (CadFilletResult & { score: number }) | null => {
+  let intersections: Array<{ x: number; y: number }> = [];
+  if (firstRef.kind === 'segment' && secondRef.kind === 'segment') {
+    const point =
+      firstRef.entity.type === 'line' && secondRef.entity.type === 'line'
+        ? cadInfiniteLineIntersection(firstRef.start, firstRef.end, secondRef.start, secondRef.end)
+        : cadSegmentIntersection(firstRef.start, firstRef.end, secondRef.start, secondRef.end);
+    intersections = point ? [point] : [];
+  } else if (firstRef.kind === 'segment' && secondRef.kind === 'arc') {
+    intersections =
+      firstRef.entity.type === 'line'
+        ? cadIntersectInfiniteLineArc(
+            firstRef.start,
+            firstRef.end,
+            { x: secondRef.entity.centerX, y: secondRef.entity.centerY },
+            secondRef.entity.radius,
+            secondRef.entity.startAngleDeg,
+            secondRef.entity.endAngleDeg,
+          )
+        : cadIntersectSegmentArc(
+            firstRef.start,
+            firstRef.end,
+            { x: secondRef.entity.centerX, y: secondRef.entity.centerY },
+            secondRef.entity.radius,
+            secondRef.entity.startAngleDeg,
+            secondRef.entity.endAngleDeg,
+          );
+  } else if (firstRef.kind === 'arc' && secondRef.kind === 'segment') {
+    intersections =
+      secondRef.entity.type === 'line'
+        ? cadIntersectInfiniteLineArc(
+            secondRef.start,
+            secondRef.end,
+            { x: firstRef.entity.centerX, y: firstRef.entity.centerY },
+            firstRef.entity.radius,
+            firstRef.entity.startAngleDeg,
+            firstRef.entity.endAngleDeg,
+          )
+        : cadIntersectSegmentArc(
+            secondRef.start,
+            secondRef.end,
+            { x: firstRef.entity.centerX, y: firstRef.entity.centerY },
+            firstRef.entity.radius,
+            firstRef.entity.startAngleDeg,
+            firstRef.entity.endAngleDeg,
+          );
+  } else {
+    const firstArc = firstRef.entity as CadArcEntity;
+    const secondArc = secondRef.entity as CadArcEntity;
+    intersections = cadIntersectArcArc(
+      { x: firstArc.centerX, y: firstArc.centerY },
+      firstArc.radius,
+      firstArc.startAngleDeg,
+      firstArc.endAngleDeg,
+      { x: secondArc.centerX, y: secondArc.centerY },
+      secondArc.radius,
+      secondArc.startAngleDeg,
+      secondArc.endAngleDeg,
+    );
+  }
+  const bestCandidate =
+    intersections
+      .map((intersectionPoint) => {
+        const firstChoices =
+          firstRef.kind === 'segment'
+            ? buildSegmentFilletChoices(
+                firstRef,
+                firstPickPoint,
+                intersectionPoint,
+                intersectionPoint,
+                secondPickPoint,
+                true,
+              )
+            : buildArcFilletChoices(firstRef, firstPickPoint, intersectionPoint);
+        const secondChoices =
+          secondRef.kind === 'segment'
+            ? buildSegmentFilletChoices(
+                secondRef,
+                secondPickPoint,
+                intersectionPoint,
+                intersectionPoint,
+                firstPickPoint,
+                true,
+              )
+            : buildArcFilletChoices(secondRef, secondPickPoint, intersectionPoint);
+        if (firstChoices.length === 0 || secondChoices.length === 0) return null;
+        const pair =
+          firstChoices
+            .flatMap((firstChoice) =>
+              secondChoices.map((secondChoice) => ({
+                firstChoice,
+                secondChoice,
+                score: firstChoice.score + secondChoice.score,
+              })),
+            )
+            .sort((left, right) => left.score - right.score)[0] ?? null;
+        if (!pair) return null;
+        return {
+          firstEntity: pair.firstChoice.entity,
+          secondEntity: pair.secondChoice.entity,
+          arcDefinition: null,
+          score: pair.score,
+        } as CadFilletResult & { score: number };
+      })
+      .filter((candidate): candidate is NonNullable<typeof candidate> => candidate != null)
+      .sort((left, right) => left.score - right.score)[0] ?? null;
+  return bestCandidate;
 };
 
 const buildCadLineFilletCandidate = (
@@ -1182,20 +1632,16 @@ const buildCadLineFillet = (
     .map((trimStart) => buildFilletRayDirectionForEndpoint(firstLine, intersectionPoint, trimStart))
     .filter((candidate): candidate is NonNullable<typeof candidate> => candidate != null)
     .sort((left, right) => {
-      const leftPenalty =
-        preferredFirstRay == null || preferredFirstRay.trimStart === left.trimStart ? 0 : 1000;
-      const rightPenalty =
-        preferredFirstRay == null || preferredFirstRay.trimStart === right.trimStart ? 0 : 1000;
+      const leftPenalty = filletRayPreferencePenalty(preferredFirstRay, left);
+      const rightPenalty = filletRayPreferencePenalty(preferredFirstRay, right);
       return leftPenalty - rightPenalty;
     });
   const secondRayCandidates = [true, false]
     .map((trimStart) => buildFilletRayDirectionForEndpoint(secondLine, intersectionPoint, trimStart))
     .filter((candidate): candidate is NonNullable<typeof candidate> => candidate != null)
     .sort((left, right) => {
-      const leftPenalty =
-        preferredSecondRay == null || preferredSecondRay.trimStart === left.trimStart ? 0 : 1000;
-      const rightPenalty =
-        preferredSecondRay == null || preferredSecondRay.trimStart === right.trimStart ? 0 : 1000;
+      const leftPenalty = filletRayPreferencePenalty(preferredSecondRay, left);
+      const rightPenalty = filletRayPreferencePenalty(preferredSecondRay, right);
       return leftPenalty - rightPenalty;
     });
   if (firstRayCandidates.length === 0 || secondRayCandidates.length === 0) return null;
@@ -1248,6 +1694,155 @@ const buildCadLineFillet = (
   return {
     firstLine: bestCandidate.firstLine,
     secondLine: bestCandidate.secondLine,
+    arcDefinition: bestCandidate.arcDefinition,
+  };
+};
+
+const buildCadGeneralFillet = (
+  firstEntity: CadFilletEntity,
+  firstPickPoint: { x: number; y: number },
+  secondEntity: CadFilletEntity,
+  secondPickPoint: { x: number; y: number },
+  radius: number,
+  firstSegmentId?: string,
+  secondSegmentId?: string,
+): CadFilletResult | null => {
+  if (!Number.isFinite(radius) || radius < -1e-9) return null;
+  const firstRef = buildCadFilletRef(firstEntity, firstPickPoint, firstSegmentId);
+  const secondRef = buildCadFilletRef(secondEntity, secondPickPoint, secondSegmentId);
+  if (!firstRef || !secondRef) return null;
+
+  if (
+    firstRef.kind === 'segment' &&
+    secondRef.kind === 'segment' &&
+    firstRef.entity.type === 'line' &&
+    secondRef.entity.type === 'line'
+  ) {
+    const fillet = buildCadLineFillet(
+      firstRef.entity,
+      firstPickPoint,
+      secondRef.entity,
+      secondPickPoint,
+      radius,
+    );
+    if (!fillet) return null;
+    return {
+      firstEntity: fillet.firstLine,
+      secondEntity: fillet.secondLine,
+      arcDefinition: fillet.arcDefinition,
+    };
+  }
+
+  if (radius <= 1e-9) {
+    const corner = buildZeroRadiusFilletResult(firstRef, firstPickPoint, secondRef, secondPickPoint);
+    return corner
+      ? {
+          firstEntity: corner.firstEntity,
+          secondEntity: corner.secondEntity,
+          arcDefinition: null,
+        }
+      : null;
+  }
+
+  let candidateCenters: Array<{ x: number; y: number }> = [];
+  if (firstRef.kind === 'segment' && secondRef.kind === 'segment') {
+    candidateCenters = [-1, 1].flatMap((firstSide) =>
+      [-1, 1].flatMap((secondSide) => {
+        const firstOffset = offsetSegmentPoints(firstRef, radius * firstSide);
+        const secondOffset = offsetSegmentPoints(secondRef, radius * secondSide);
+        if (!firstOffset || !secondOffset) return [];
+        const point = cadInfiniteLineIntersection(
+          firstOffset[0],
+          firstOffset[1],
+          secondOffset[0],
+          secondOffset[1],
+        );
+        return point ? [point] : [];
+      }),
+    );
+  } else if (firstRef.kind === 'segment' && secondRef.kind === 'arc') {
+    candidateCenters = [-1, 1].flatMap((lineSide) => {
+      const lineOffset = offsetSegmentPoints(firstRef, radius * lineSide);
+      if (!lineOffset) return [];
+      const arcRadii = [secondRef.entity.radius + radius];
+      if (secondRef.entity.radius - radius > TRIM_EPSILON) {
+        arcRadii.push(secondRef.entity.radius - radius);
+      }
+      return arcRadii.flatMap((offsetRadius) =>
+        cadIntersectInfiniteLineArc(
+          lineOffset[0],
+          lineOffset[1],
+          { x: secondRef.entity.centerX, y: secondRef.entity.centerY },
+          offsetRadius,
+          0,
+          360,
+        ),
+      );
+    });
+  } else if (firstRef.kind === 'arc' && secondRef.kind === 'segment') {
+    candidateCenters = [-1, 1].flatMap((lineSide) => {
+      const lineOffset = offsetSegmentPoints(secondRef, radius * lineSide);
+      if (!lineOffset) return [];
+      const arcRadii = [firstRef.entity.radius + radius];
+      if (firstRef.entity.radius - radius > TRIM_EPSILON) {
+        arcRadii.push(firstRef.entity.radius - radius);
+      }
+      return arcRadii.flatMap((offsetRadius) =>
+        cadIntersectInfiniteLineArc(
+          lineOffset[0],
+          lineOffset[1],
+          { x: firstRef.entity.centerX, y: firstRef.entity.centerY },
+          offsetRadius,
+          0,
+          360,
+        ),
+      );
+    });
+  } else {
+    const firstArc = firstRef.entity as CadArcEntity;
+    const secondArc = secondRef.entity as CadArcEntity;
+    const firstRadii = [firstArc.radius + radius];
+    if (firstArc.radius - radius > TRIM_EPSILON) {
+      firstRadii.push(firstArc.radius - radius);
+    }
+    const secondRadii = [secondArc.radius + radius];
+    if (secondArc.radius - radius > TRIM_EPSILON) {
+      secondRadii.push(secondArc.radius - radius);
+    }
+    candidateCenters = firstRadii.flatMap((firstOffsetRadius) =>
+      secondRadii.flatMap((secondOffsetRadius) =>
+        cadIntersectArcArc(
+          { x: firstArc.centerX, y: firstArc.centerY },
+          firstOffsetRadius,
+          0,
+          360,
+          { x: secondArc.centerX, y: secondArc.centerY },
+          secondOffsetRadius,
+          0,
+          360,
+        ),
+      ),
+    );
+  }
+
+  const bestCandidate =
+    candidateCenters
+      .map((centerPoint) =>
+        buildFilletResultFromCenter(
+          firstRef,
+          firstPickPoint,
+          secondRef,
+          secondPickPoint,
+          centerPoint,
+          radius,
+        ),
+      )
+      .filter((candidate): candidate is CadFilletResult & { score: number } => candidate != null)
+      .sort((left, right) => left.score - right.score)[0] ?? null;
+  if (!bestCandidate) return null;
+  return {
+    firstEntity: bestCandidate.firstEntity,
+    secondEntity: bestCandidate.secondEntity,
     arcDefinition: bestCandidate.arcDefinition,
   };
 };
@@ -2149,8 +2744,8 @@ export interface CadExtendPreview {
 }
 
 export interface CadFilletPreview {
-  firstLineEntityId: CadEntityId;
-  secondLineEntityId: CadEntityId;
+  firstEntityId: CadEntityId;
+  secondEntityId: CadEntityId;
   previewEntities: CadEntity[];
 }
 
@@ -2227,40 +2822,44 @@ export const buildCadExtendPreview = (
 export const buildCadFilletPreview = (
   project: CadProject,
   radius: number,
-  firstLineEntityId: CadEntityId,
+  firstEntityId: CadEntityId,
   firstPickPoint: { x: number; y: number },
-  secondLineEntityId: CadEntityId,
+  firstSegmentId: string | undefined,
+  secondEntityId: CadEntityId,
   secondPickPoint: { x: number; y: number },
+  secondSegmentId?: string,
 ): CadFilletPreview | null => {
-  if (firstLineEntityId === secondLineEntityId) return null;
-  const firstLine = project.entities.find(
-    (entity): entity is CadLineEntity =>
-      entity.type === 'line' && entity.id === firstLineEntityId && !entity.locked,
+  if (firstEntityId === secondEntityId && firstSegmentId === secondSegmentId) return null;
+  const firstEntity = project.entities.find(
+    (entity): entity is CadFilletEntity =>
+      entity.id === firstEntityId && isTrimmableEntity(entity) && !entity.locked,
   );
-  const secondLine = project.entities.find(
-    (entity): entity is CadLineEntity =>
-      entity.type === 'line' && entity.id === secondLineEntityId && !entity.locked,
+  const secondEntity = project.entities.find(
+    (entity): entity is CadFilletEntity =>
+      entity.id === secondEntityId && isTrimmableEntity(entity) && !entity.locked,
   );
-  if (!firstLine || !secondLine) return null;
-  const fillet = buildCadLineFillet(
-    firstLine,
+  if (!firstEntity || !secondEntity) return null;
+  const fillet = buildCadGeneralFillet(
+    firstEntity,
     firstPickPoint,
-    secondLine,
+    secondEntity,
     secondPickPoint,
     radius,
+    firstSegmentId,
+    secondSegmentId,
   );
   if (!fillet) return null;
   return {
-    firstLineEntityId,
-    secondLineEntityId,
+    firstEntityId,
+    secondEntityId,
     previewEntities: [
       {
-        ...fillet.firstLine,
-        id: `${firstLineEntityId}:fillet-preview`,
+        ...fillet.firstEntity,
+        id: `${firstEntityId}:fillet-preview`,
       },
       {
-        ...fillet.secondLine,
-        id: `${secondLineEntityId}:fillet-preview`,
+        ...fillet.secondEntity,
+        id: `${secondEntityId}:fillet-preview`,
       },
       ...(fillet.arcDefinition
         ? [{
@@ -4701,38 +5300,44 @@ const extendCommand: CadCommandDefinition<{
 const filletCommand: CadCommandDefinition<{
   key: 'FILLET';
   radius: number;
-  firstLineEntityId: CadEntityId;
+  firstEntityId: CadEntityId;
   firstPickPoint: { x: number; y: number };
-  secondLineEntityId: CadEntityId;
+  firstSegmentId?: string;
+  secondEntityId: CadEntityId;
   secondPickPoint: { x: number; y: number };
+  secondSegmentId?: string;
 }> = {
   key: 'FILLET',
   execute: (snapshot, command) => {
-    if (command.firstLineEntityId === command.secondLineEntityId) return null;
-    const firstLine = snapshot.project.entities.find(
-      (entity): entity is CadLineEntity =>
-        entity.type === 'line' && entity.id === command.firstLineEntityId && !entity.locked,
+    if (command.firstEntityId === command.secondEntityId && command.firstSegmentId === command.secondSegmentId) {
+      return null;
+    }
+    const firstEntity = snapshot.project.entities.find(
+      (entity): entity is CadFilletEntity =>
+        entity.id === command.firstEntityId && isTrimmableEntity(entity) && !entity.locked,
     );
-    const secondLine = snapshot.project.entities.find(
-      (entity): entity is CadLineEntity =>
-        entity.type === 'line' && entity.id === command.secondLineEntityId && !entity.locked,
+    const secondEntity = snapshot.project.entities.find(
+      (entity): entity is CadFilletEntity =>
+        entity.id === command.secondEntityId && isTrimmableEntity(entity) && !entity.locked,
     );
-    if (!firstLine || !secondLine) return null;
+    if (!firstEntity || !secondEntity) return null;
 
-    const fillet = buildCadLineFillet(
-      firstLine,
+    const fillet = buildCadGeneralFillet(
+      firstEntity,
       command.firstPickPoint,
-      secondLine,
+      secondEntity,
       command.secondPickPoint,
       command.radius,
+      command.firstSegmentId,
+      command.secondSegmentId,
     );
     if (!fillet) return null;
 
     const updatedProject = replaceCadProjectEntities(
       snapshot.project,
       snapshot.project.entities.map((entity) => {
-        if (entity.id === firstLine.id) return fillet.firstLine;
-        if (entity.id === secondLine.id) return fillet.secondLine;
+        if (entity.id === firstEntity.id) return fillet.firstEntity;
+        if (entity.id === secondEntity.id) return fillet.secondEntity;
         return entity;
       }),
     );
@@ -4740,7 +5345,7 @@ const filletCommand: CadCommandDefinition<{
       return {
         nextSnapshot: {
           project: updatedProject,
-          selection: createCadSelectionState(updatedProject, [firstLine.id, secondLine.id]),
+          selection: createCadSelectionState(updatedProject, [firstEntity.id, secondEntity.id]),
         },
         commandState: {
           key: 'FILLET',
@@ -4772,7 +5377,7 @@ const filletCommand: CadCommandDefinition<{
         entityName: curveLabels.curveName,
         manual: true,
         filletRadius: command.radius,
-        sourceLineIds: [firstLine.id, secondLine.id],
+        sourceLineIds: [firstEntity.id, secondEntity.id],
       },
     };
     const supportEntities = createArcSupportEntities(

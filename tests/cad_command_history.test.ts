@@ -1665,9 +1665,9 @@ describe('Survey CAD command history', () => {
     const filletState = runCadCommand(createCadHistoryState(project), {
       key: 'FILLET',
       radius: 2,
-      firstLineEntityId: 'line:fillet-a',
+      firstEntityId: 'line:fillet-a',
       firstPickPoint: { x: 1, y: 0 },
-      secondLineEntityId: 'line:fillet-b',
+      secondEntityId: 'line:fillet-b',
       secondPickPoint: { x: 0, y: 1 },
     });
 
@@ -1707,6 +1707,222 @@ describe('Survey CAD command history', () => {
 
     const redoneState = redoCadHistory(undoneState);
     expect(redoneState.present.project.entities.some((entity) => entity.id === filletArc.id)).toBe(true);
+  });
+
+  it('creates a fillet between a picked polyline segment and a line', () => {
+    const project = appendCadProjectEntities(
+      buildSurveyCadSpikeProject({
+        input,
+        instrumentLibrary: {},
+        parseOptions,
+        units: 'm',
+        result: null,
+      }),
+      [
+        {
+          id: 'polyline:fillet-source',
+          type: 'polyline',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          vertices: [
+            { x: 0, y: 0 },
+            { x: 10, y: 0 },
+            { x: 10, y: 10 },
+          ],
+          vertexLabels: ['P1', 'P2', 'P3'],
+          closed: false,
+        },
+        {
+          id: 'line:fillet-poly-boundary',
+          type: 'line',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          fromStationId: 'PLA',
+          toStationId: 'PLB',
+          fromX: 0,
+          fromY: 0,
+          toX: 0,
+          toY: 10,
+          sourceObservationIds: [],
+        },
+      ],
+    );
+
+    const filletState = runCadCommand(createCadHistoryState(project), {
+      key: 'FILLET',
+      radius: 2,
+      firstEntityId: 'polyline:fillet-source',
+      firstPickPoint: { x: 1, y: 0 },
+      firstSegmentId: 'polyline:fillet-source#0',
+      secondEntityId: 'line:fillet-poly-boundary',
+      secondPickPoint: { x: 0, y: 1 },
+    });
+
+    const updatedPolyline = filletState.present.project.entities.find(
+      (entity) => entity.id === 'polyline:fillet-source',
+    );
+    const boundaryLine = filletState.present.project.entities.find(
+      (entity) => entity.id === 'line:fillet-poly-boundary',
+    );
+    const filletArc = filletState.present.project.entities.find(
+      (entity) => entity.type === 'arc' && entity.metadata?.createdBy === 'FILLET',
+    );
+    expect(updatedPolyline?.type).toBe('polyline');
+    expect(boundaryLine?.type).toBe('line');
+    expect(filletArc?.type).toBe('arc');
+    if (updatedPolyline?.type !== 'polyline' || boundaryLine?.type !== 'line' || filletArc?.type !== 'arc') {
+      throw new Error('Polyline fillet entities missing');
+    }
+    expect(updatedPolyline.vertices[0]).toEqual({ x: 0, y: 0 });
+    expect(updatedPolyline.vertices[1]).toEqual({ x: 2, y: 0 });
+    expect(boundaryLine.fromX).toBeCloseTo(0, 6);
+    expect(boundaryLine.toY).toBeCloseTo(2, 6);
+    expect(filletArc.radius).toBeCloseTo(2, 6);
+  });
+
+  it('creates a fillet between a line and an arc while keeping the clicked line ray', () => {
+    const project = appendCadProjectEntities(
+      buildSurveyCadSpikeProject({
+        input,
+        instrumentLibrary: {},
+        parseOptions,
+        units: 'm',
+        result: null,
+      }),
+      [
+        {
+          id: 'line:fillet-line-arc',
+          type: 'line',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          fromStationId: 'LA1',
+          toStationId: 'LA2',
+          fromX: 0,
+          fromY: 0,
+          toX: 10,
+          toY: 0,
+          sourceObservationIds: [],
+        },
+        {
+          id: 'arc:fillet-target',
+          type: 'arc',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          centerX: 20,
+          centerY: 0,
+          radius: 10,
+          startAngleDeg: 180,
+          endAngleDeg: 90,
+        },
+      ],
+    );
+
+    const filletState = runCadCommand(createCadHistoryState(project), {
+      key: 'FILLET',
+      radius: 2,
+      firstEntityId: 'line:fillet-line-arc',
+      firstPickPoint: { x: 9, y: 0 },
+      secondEntityId: 'arc:fillet-target',
+      secondPickPoint: { x: 10.5, y: 1 },
+    });
+
+    const updatedLine = filletState.present.project.entities.find((entity) => entity.id === 'line:fillet-line-arc');
+    const updatedArc = filletState.present.project.entities.find((entity) => entity.id === 'arc:fillet-target');
+    const filletArc = filletState.present.project.entities.find(
+      (entity) => entity.type === 'arc' && entity.metadata?.createdBy === 'FILLET',
+    );
+    expect(updatedLine?.type).toBe('line');
+    expect(updatedArc?.type).toBe('arc');
+    expect(filletArc?.type).toBe('arc');
+    if (updatedLine?.type !== 'line' || updatedArc?.type !== 'arc' || filletArc?.type !== 'arc') {
+      throw new Error('Line-arc fillet entities missing');
+    }
+    expect(updatedLine.fromX).toBeGreaterThan(7);
+    expect(updatedLine.fromX).toBeLessThan(10);
+    expect(updatedLine.toX).toBeCloseTo(10, 6);
+    expect(updatedArc.startAngleDeg).toBeGreaterThan(160);
+    expect(updatedArc.startAngleDeg).toBeLessThan(180);
+    expect(filletState.present.project.entities.filter(
+      (entity) =>
+        entity.type === 'survey-point' &&
+        entity.metadata != null &&
+        typeof entity.metadata === 'object' &&
+        entity.metadata.anchorCurveEntityId === filletArc.id,
+    )).toHaveLength(4);
+  });
+
+  it('keeps the hovered side of a reversed line when filleting against an arc', () => {
+    const project = appendCadProjectEntities(
+      buildSurveyCadSpikeProject({
+        input,
+        instrumentLibrary: {},
+        parseOptions,
+        units: 'm',
+        result: null,
+      }),
+      [
+        {
+          id: 'line:fillet-reversed-line-arc',
+          type: 'line',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          fromStationId: 'RL2',
+          toStationId: 'RL1',
+          fromX: 30,
+          fromY: 0,
+          toX: -30,
+          toY: 0,
+          sourceObservationIds: [],
+        },
+        {
+          id: 'arc:fillet-reversed-target',
+          type: 'arc',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          centerX: 20,
+          centerY: 0,
+          radius: 10,
+          startAngleDeg: 180,
+          endAngleDeg: 90,
+        },
+      ],
+    );
+
+    const filletState = runCadCommand(createCadHistoryState(project), {
+      key: 'FILLET',
+      radius: 2,
+      firstEntityId: 'line:fillet-reversed-line-arc',
+      firstPickPoint: { x: 18, y: 0 },
+      secondEntityId: 'arc:fillet-reversed-target',
+      secondPickPoint: { x: 10.5, y: 1 },
+    });
+
+    const updatedLine = filletState.present.project.entities.find(
+      (entity) => entity.id === 'line:fillet-reversed-line-arc',
+    );
+    const filletArc = filletState.present.project.entities.find(
+      (entity) => entity.type === 'arc' && entity.metadata?.createdBy === 'FILLET',
+    );
+    expect(updatedLine?.type).toBe('line');
+    expect(filletArc?.type).toBe('arc');
+    if (updatedLine?.type !== 'line' || filletArc?.type !== 'arc') {
+      throw new Error('Reversed line-arc fillet entities missing');
+    }
+    expect(updatedLine.fromX).toBeCloseTo(30, 6);
+    expect(updatedLine.toX).toBeGreaterThan(10);
+    expect(updatedLine.toX).toBeLessThan(30);
   });
 
   it('allows FILLET radius 0 and resolves both lines to a hard intersection without creating an arc', () => {
@@ -1755,9 +1971,9 @@ describe('Survey CAD command history', () => {
     const cornerState = runCadCommand(createCadHistoryState(project), {
       key: 'FILLET',
       radius: 0,
-      firstLineEntityId: 'line:corner-a',
+      firstEntityId: 'line:corner-a',
       firstPickPoint: { x: 1, y: 0 },
-      secondLineEntityId: 'line:corner-b',
+      secondEntityId: 'line:corner-b',
       secondPickPoint: { x: 0, y: 1 },
     });
 
@@ -1821,17 +2037,17 @@ describe('Survey CAD command history', () => {
     const upperState = runCadCommand(createCadHistoryState(project), {
       key: 'FILLET',
       radius: 2,
-      firstLineEntityId: 'line:fillet-cross-a',
+      firstEntityId: 'line:fillet-cross-a',
       firstPickPoint: { x: 1, y: 0 },
-      secondLineEntityId: 'line:fillet-cross-b',
+      secondEntityId: 'line:fillet-cross-b',
       secondPickPoint: { x: 0, y: 1 },
     });
     const lowerState = runCadCommand(createCadHistoryState(project), {
       key: 'FILLET',
       radius: 2,
-      firstLineEntityId: 'line:fillet-cross-a',
+      firstEntityId: 'line:fillet-cross-a',
       firstPickPoint: { x: 1, y: 0 },
-      secondLineEntityId: 'line:fillet-cross-b',
+      secondEntityId: 'line:fillet-cross-b',
       secondPickPoint: { x: 0, y: -1 },
     });
 
@@ -1899,9 +2115,9 @@ describe('Survey CAD command history', () => {
     const filletState = runCadCommand(createCadHistoryState(project), {
       key: 'FILLET',
       radius: 5,
-      firstLineEntityId: 'line:acute-a',
+      firstEntityId: 'line:acute-a',
       firstPickPoint: { x: 8.5, y: 1.2 },
-      secondLineEntityId: 'line:acute-b',
+      secondEntityId: 'line:acute-b',
       secondPickPoint: { x: 8.5, y: -1.2 },
     });
 
