@@ -67,6 +67,46 @@ describe('Survey CAD entity naming helpers', () => {
     expect(getCadEntityDisplayLabel(arc)).toBe('Arc');
   });
 
+  it('treats prefixed implementation ids as opaque for unlabeled arc and polyline fallbacks', () => {
+    const project = appendCadProjectEntities(buildBaseProject(), [
+      {
+        id: 'arc:hover-test',
+        type: 'arc',
+        layerId: 'observation-lines',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        centerX: 10,
+        centerY: 10,
+        radius: 5,
+        startAngleDeg: 0,
+        endAngleDeg: 90,
+      },
+      {
+        id: 'polyline:hover-test',
+        type: 'polyline',
+        layerId: 'observation-lines',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 10, y: 0 },
+          { x: 10, y: 10 },
+        ],
+        vertexLabels: ['', '', ''],
+        closed: false,
+      },
+    ]);
+    const arc = project.entities.find((entity) => entity.id === 'arc:hover-test');
+    const polyline = project.entities.find((entity) => entity.id === 'polyline:hover-test');
+    if (!arc || arc.type !== 'arc') throw new Error('Prefixed arc not found');
+    if (!polyline || polyline.type !== 'polyline') throw new Error('Prefixed polyline not found');
+
+    expect(getCadEntityDisplayLabel(arc)).toBe('Arc');
+    expect(getCadEntityDisplayLabel(polyline)).toBe('Polyline');
+  });
+
   it('returns curve support-point labels for arc start/end/radius subparts when available', () => {
     const project = appendCadProjectEntities(buildBaseProject(), [
       {

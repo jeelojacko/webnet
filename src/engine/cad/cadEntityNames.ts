@@ -12,7 +12,7 @@ const readMetadataEntityName = (entity: CadEntity): string | null => {
 const readNonOpaqueEntityId = (entity: CadEntity): string | null => {
   const trimmed = entity.id.trim();
   if (trimmed.length === 0) return null;
-  return /^cad-[a-z]+/i.test(trimmed) ? null : trimmed;
+  return /^cad-[a-z]+/i.test(trimmed) || /^[a-z-]+:/i.test(trimmed) ? null : trimmed;
 };
 
 const findEntityById = (project: CadProject, entityId: CadEntityId): CadEntity | null =>

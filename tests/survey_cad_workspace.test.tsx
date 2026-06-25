@@ -618,7 +618,7 @@ describe('SurveyCadWorkspace', () => {
       );
     });
     expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent).toContain('Arc Mid');
-    expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent).toContain('arc:hover-test');
+    expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent).toContain('Arc');
 
     const nearestScreen = projectWorldToPreviewScreen(baseProject.bounds!, { x: 57.2, y: 29.6 });
     await act(async () => {
@@ -639,7 +639,7 @@ describe('SurveyCadWorkspace', () => {
       );
     });
     expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent).toContain('Nearest');
-    expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent).toContain('arc:hover-test');
+    expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent).toContain('Arc');
 
     await act(async () => {
       root.unmount();
@@ -713,7 +713,7 @@ describe('SurveyCadWorkspace', () => {
     });
 
     expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent).toContain('Nearest');
-    expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent).toContain('arc:small-hover-test');
+    expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent).toContain('Arc');
 
     await act(async () => {
       root.unmount();
@@ -1440,7 +1440,7 @@ describe('SurveyCadWorkspace', () => {
     });
 
     expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent).toContain('Perpendicular');
-    expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent).toContain('arc:perp-target');
+    expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent).toContain('Arc');
     const previewLine = container.querySelector('[data-survey-cad-command-preview-line]') as SVGLineElement | null;
     if (!previewLine) throw new Error('Preview line not found');
     const snappedIntersectionScreen = projectWorldToPreviewScreen(persistedProject.bounds!, { x: 8, y: 10 + Math.sqrt(21) });
@@ -2776,7 +2776,7 @@ describe('SurveyCadWorkspace', () => {
       );
     });
     expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent ?? '').toContain('Nearest');
-    expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent ?? '').toContain('arc:line-snap-test');
+    expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent ?? '').toContain('Arc');
 
     await act(async () => {
       arcHitTarget.dispatchEvent(
@@ -2880,7 +2880,7 @@ describe('SurveyCadWorkspace', () => {
         }),
       );
     });
-    expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent ?? '').toContain('arc:tangent-hold-test');
+    expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent ?? '').toContain('Arc');
 
     await act(async () => {
       arcHitTarget.dispatchEvent(
@@ -2902,7 +2902,7 @@ describe('SurveyCadWorkspace', () => {
     });
 
     expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent ?? '').toContain('Tangent');
-    expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent ?? '').toContain('arc:tangent-hold-test');
+    expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent ?? '').toContain('Arc');
     expect(container.querySelectorAll('[data-survey-cad-snap-guide]')).toHaveLength(2);
 
     await act(async () => {
@@ -2992,7 +2992,7 @@ describe('SurveyCadWorkspace', () => {
     });
 
     expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent ?? '').toContain('Tangent');
-    expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent ?? '').toContain('arc:tangent-attach-test');
+    expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent ?? '').toContain('Arc');
 
     await act(async () => {
       root.unmount();
@@ -9783,9 +9783,7 @@ describe('SurveyCadWorkspace', () => {
       );
     });
 
-    expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent ?? '').toContain(
-      'arc:full-circle-snap-test',
-    );
+    expect(container.querySelector('[data-survey-cad-snap-badge]')?.textContent ?? '').toContain('Arc');
 
     await act(async () => {
       preview.dispatchEvent(

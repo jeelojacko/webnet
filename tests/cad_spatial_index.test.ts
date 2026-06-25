@@ -1159,7 +1159,7 @@ describe('Survey CAD spatial index', () => {
     );
     expect(apparentLineArc?.kind).toBe('apparent-intersection');
     expect(apparentLineArc?.label).toContain('L1-L2');
-    expect(apparentLineArc?.label).toContain('arc:right');
+    expect(apparentLineArc?.label).toContain('Arc');
     expect(apparentLineArc?.x).toBeCloseTo(Math.sqrt(19), 6);
     expect(apparentLineArc?.y).toBeCloseTo(9, 6);
     expect(apparentLineArc?.guideSegments).toHaveLength(2);
@@ -1521,8 +1521,7 @@ describe('Survey CAD spatial index', () => {
       { active: true, basePoint: { x: 0, y: 0 } },
     );
     expect(apparentArcArc?.kind).toBe('apparent-intersection');
-    expect(apparentArcArc?.label).toContain('arc:left-upper');
-    expect(apparentArcArc?.label).toContain('arc:right-upper');
+    expect(apparentArcArc?.label).toBe('Arc x Arc apparent');
     expect(apparentArcArc?.x).toBeCloseTo(3, 6);
     expect(apparentArcArc?.y).toBeCloseTo(4, 6);
   });

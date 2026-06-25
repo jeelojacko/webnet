@@ -1,5 +1,7 @@
 # WebNet Survey CAD TODO
 
+- [x] Survey CAD naming fallback batch (June 2026): stop unlabeled arc/polyline/polygon hover and snap surfaces from leaking raw prefixed entity ids like `arc:*` or `polyline:*`, and keep the shared naming helper on readable type fallbacks instead.
+
 - [x] Survey CAD COGO report panel batch (June 2026): add a selected/latest COGO result overlay in the native CAD workspace, bridge live `INVERSE` query output into the shared report model, and add exportable TXT/CSV/Markdown report previews for persisted computation history.
 
 - [x] Survey CAD properties panel batch (June 2026): replace the selected/latest COGO popup with a selection-driven `Properties` panel, make it auto-close on empty selection, cover all current CAD entity families, and collapse mixed multi-selects back through the native single-select path.
