@@ -1277,16 +1277,16 @@ const promptForSession = (session: CommandSession | null, fallbackStatus: string
         `OFFSET_POINT active. Selected line ${session.lineStart.label}-${session.lineEnd.label}. Enter \`Loffset,along\` or \`Roffset,along\`, with along as distance or percent.`;
     case 'ALIGNMENT_OFFSET_CREATE':
       return session.resultText ??
-        `ALIGNMENT_OFFSET_CREATE active. Selected alignment ${session.alignment.name}. Enter \`offset\` or \`NAME=offset\`.`;
+        `ALIGN OFF active. Selected alignment ${session.alignment.name}. Enter \`offset\` or \`NAME=offset\`.`;
     case 'ALIGNMENT_STATION_EQUATION':
       return session.resultText ??
-        `ALIGNMENT_STATION_EQUATION active. Selected alignment ${session.alignment.name}. Enter \`backStation,aheadStation\`.`;
+        `STA EQ active. Selected alignment ${session.alignment.name}. Enter \`backStation,aheadStation\`.`;
     case 'ALIGNMENT_OFFSET_POINT':
       return session.resultText ??
-        `ALIGNMENT_OFFSET_POINT active. Selected alignment ${session.alignment.name}. Enter \`station,offset\` or \`LABEL=station,offset\`.`;
+        `STA PT active. Selected alignment ${session.alignment.name}. Enter \`station,offset\` or \`LABEL=station,offset\`.`;
     case 'ALIGNMENT_INTERVAL_POINTS':
       return session.resultText ??
-        `ALIGNMENT_INTERVAL_POINTS active. Selected alignment ${session.alignment.name}. Enter \`interval\` or \`start,end,interval\`, with optional \`LABEL=\` prefix.`;
+        `STA INT active. Selected alignment ${session.alignment.name}. Enter \`interval\` or \`start,end,interval\`, with optional \`LABEL=\` prefix.`;
     case 'CURVE_SOLVER':
       return session.resultText ?? 'CURVE_SOLVER active. Enter `param1,param2,value1,value2` such as `radius,delta,200,60`.';
     case 'RADIAL_BEARING':
@@ -1487,13 +1487,13 @@ const helpTextForSession = (session: CommandSession | null): string => {
     case 'OFFSET_POINT':
       return 'OFFSET_POINT input: enter `Loffset,along` or `Roffset,along`; along may be distance or percent like `50%`.';
     case 'ALIGNMENT_OFFSET_CREATE':
-      return 'ALIGNMENT_OFFSET_CREATE input: enter `offset` or `NAME=offset`. Positive offset follows the current station report sign.';
+      return 'ALIGN OFF input: enter `offset` or `NAME=offset`. Positive offset follows the current station report sign.';
     case 'ALIGNMENT_STATION_EQUATION':
-      return 'ALIGNMENT_STATION_EQUATION input: enter `backStation,aheadStation`; ahead must stay at or above back.';
+      return 'STA EQ input: enter `backStation,aheadStation`; ahead must stay at or above back.';
     case 'ALIGNMENT_OFFSET_POINT':
-      return 'ALIGNMENT_OFFSET_POINT input: enter `station,offset` or `LABEL=station,offset`. Positive offset follows the current station report sign.';
+      return 'STA PT input: enter `station,offset` or `LABEL=station,offset`. Positive offset follows the current station report sign.';
     case 'ALIGNMENT_INTERVAL_POINTS':
-      return 'ALIGNMENT_INTERVAL_POINTS input: enter `interval` for full alignment coverage or `start,end,interval`; optional `LABEL=` sets a point-label prefix.';
+      return 'STA INT input: enter `interval` for full alignment coverage or `start,end,interval`; optional `LABEL=` sets a point-label prefix.';
     case 'CURVE_SOLVER':
       return 'CURVE_SOLVER input: enter `param1,param2,value1,value2`, for example `radius,delta,200,60` or `arc,chord,125,120`.';
     case 'RADIAL_BEARING':
@@ -3338,7 +3338,7 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
         if (!parsed || !point) {
           replaceSession({
             ...session,
-            resultText: 'ALIGNMENT_OFFSET_POINT input invalid. Use `station,offset` or `LABEL=station,offset` within the selected alignment range.',
+            resultText: 'STA PT input invalid. Use `station,offset` or `LABEL=station,offset` within the selected alignment range.',
           });
           return;
         }
@@ -3518,7 +3518,7 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
       if (!parsed || !draft) {
         replaceSession({
           ...session,
-          resultText: 'ALIGNMENT_OFFSET_CREATE input invalid. Use `offset` or `NAME=offset` for a buildable selected alignment.',
+          resultText: 'ALIGN OFF input invalid. Use `offset` or `NAME=offset` for a buildable selected alignment.',
         });
         return;
       }
@@ -3538,7 +3538,7 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
       if (!parsed) {
         replaceSession({
           ...session,
-          resultText: 'ALIGNMENT_STATION_EQUATION input invalid. Use `backStation,aheadStation`, with ahead at or above back.',
+          resultText: 'STA EQ input invalid. Use `backStation,aheadStation`, with ahead at or above back.',
         });
         return;
       }
@@ -3567,7 +3567,7 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
       if (!parsed || points.length === 0) {
         replaceSession({
           ...session,
-          resultText: 'ALIGNMENT_INTERVAL_POINTS input invalid. Use `interval` or `start,end,interval` within the selected alignment range.',
+          resultText: 'STA INT input invalid. Use `interval` or `start,end,interval` within the selected alignment range.',
         });
         return;
       }

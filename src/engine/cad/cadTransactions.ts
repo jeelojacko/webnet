@@ -4657,7 +4657,7 @@ const alignmentCreateCommand: CadCommandDefinition<{
       commandState: {
         key: 'ALIGNMENT_CREATE',
         phase: 'committed',
-        prompt: `ALIGNMENT_CREATE committed for ${alignmentName}. Length ${draft.totalLength.toFixed(3)} m.`,
+        prompt: `ALIGN committed for ${alignmentName}. Length ${draft.totalLength.toFixed(3)} m.`,
       },
       transactionLabel: `ALIGNMENT_CREATE (${alignmentName})`,
       addedEntityIds: [alignmentEntity.id],
@@ -4743,7 +4743,7 @@ const alignmentOffsetCreateCommand: CadCommandDefinition<{
       commandState: {
         key: 'ALIGNMENT_OFFSET_CREATE',
         phase: 'committed',
-        prompt: `ALIGNMENT_OFFSET_CREATE committed for ${alignmentName}.`,
+        prompt: `ALIGN OFF committed for ${alignmentName}.`,
       },
       transactionLabel: `ALIGNMENT_OFFSET_CREATE (${alignmentName})`,
       addedEntityIds: [alignmentEntity.id],
@@ -4814,7 +4814,7 @@ const alignmentStationReportCommand: CadCommandDefinition<{
       commandState: {
         key: 'ALIGNMENT_STATION_REPORT',
         phase: 'committed',
-        prompt: `ALIGNMENT_STATION committed for ${pointEntity.stationId} on ${alignmentEntity.name}.`,
+        prompt: `STA committed for ${pointEntity.stationId} on ${alignmentEntity.name}.`,
       },
       transactionLabel: `ALIGNMENT_STATION (${pointEntity.stationId})`,
       addedEntityIds: [],
@@ -4923,7 +4923,7 @@ const alignmentStationEquationCommand: CadCommandDefinition<{
       commandState: {
         key: 'ALIGNMENT_STATION_EQUATION',
         phase: 'committed',
-        prompt: `ALIGNMENT_STATION_EQUATION committed for ${alignmentEntity.name}.`,
+        prompt: `STA EQ committed for ${alignmentEntity.name}.`,
       },
       transactionLabel: `ALIGNMENT_STATION_EQUATION (${alignmentEntity.name})`,
       addedEntityIds: [],
@@ -5024,7 +5024,7 @@ const alignmentOffsetPointCommand: CadCommandDefinition<{
       commandState: {
         key: 'ALIGNMENT_OFFSET_POINT',
         phase: 'committed',
-        prompt: `ALIGNMENT_OFFSET_POINT committed for ${pointEntity.stationId} on ${alignmentEntity.name}.`,
+        prompt: `STA PT committed for ${pointEntity.stationId} on ${alignmentEntity.name}.`,
       },
       transactionLabel: `ALIGNMENT_OFFSET_POINT (${pointEntity.stationId})`,
       addedEntityIds: createdEntities.map((entity) => entity.id),
@@ -5151,7 +5151,7 @@ const alignmentIntervalPointsCommand: CadCommandDefinition<{
       commandState: {
         key: 'ALIGNMENT_INTERVAL_POINTS',
         phase: 'committed',
-        prompt: `ALIGNMENT_INTERVAL_POINTS committed with ${stationPoints.length} point${stationPoints.length === 1 ? '' : 's'} on ${alignmentEntity.name}.`,
+        prompt: `STA INT committed with ${stationPoints.length} point${stationPoints.length === 1 ? '' : 's'} on ${alignmentEntity.name}.`,
       },
       transactionLabel: `ALIGNMENT_INTERVAL_POINTS (${stationPoints.length})`,
       addedEntityIds: createdEntities.map((entity) => entity.id),

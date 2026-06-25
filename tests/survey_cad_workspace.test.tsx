@@ -6975,7 +6975,7 @@ describe('SurveyCadWorkspace', () => {
     });
 
     expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
-      'ALIGNMENT_CREATE committed',
+      'ALIGN committed',
     );
     expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain('10 entities');
     expect(container.querySelector('[data-survey-cad-properties-panel-title]')?.textContent).toContain(
@@ -7064,7 +7064,7 @@ describe('SurveyCadWorkspace', () => {
     });
 
     expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
-      'ALIGNMENT_STATION committed',
+      'STA committed',
     );
     expect(container.querySelector('[data-survey-cad-properties-panel-title]')?.textContent).toContain(
       'Properties',
@@ -7146,7 +7146,7 @@ describe('SurveyCadWorkspace', () => {
     });
 
     expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
-      'ALIGNMENT_OFFSET_POINT committed',
+      'STA PT committed',
     );
     expect(container.querySelector('[data-survey-cad-properties-entity-label]')?.textContent).toContain(
       'SO1',
@@ -7372,7 +7372,7 @@ describe('SurveyCadWorkspace', () => {
     });
 
     expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
-      'ALIGNMENT_STATION_EQUATION committed',
+      'STA EQ committed',
     );
     expect(container.querySelector('[data-survey-cad-properties-entity-label]')?.textContent).toContain(
       'ALIGN1',
@@ -7461,7 +7461,7 @@ describe('SurveyCadWorkspace', () => {
     });
 
     expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
-      'ALIGNMENT_INTERVAL_POINTS committed',
+      'STA INT committed',
     );
     expect(container.querySelector('[data-survey-cad-properties-type-select]')).not.toBeNull();
     expect(container.querySelector('[data-survey-cad-properties-entity-select]')).not.toBeNull();
@@ -7577,7 +7577,7 @@ describe('SurveyCadWorkspace', () => {
     });
 
     expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
-      'ALIGNMENT_OFFSET_CREATE committed',
+      'ALIGN OFF committed',
     );
     expect(container.querySelector('[data-survey-cad-properties-entity-label]')?.textContent).toContain(
       'ALIGN2',

@@ -732,7 +732,7 @@ describe('Survey CAD command history', () => {
     );
     const alignment = alignmentState.present.project.entities.find((entity) => entity.type === 'alignment');
     expect(alignment?.type).toBe('alignment');
-    expect(alignmentState.commandState.prompt).toContain('ALIGNMENT_CREATE committed');
+    expect(alignmentState.commandState.prompt).toContain('ALIGN committed');
     expect(alignmentState.present.project.cogoComputations.at(-1)?.toolKey).toBe('ALIGNMENT');
     expect(alignment?.metadata?.cogo).toMatchObject({
       toolKey: 'ALIGNMENT',
