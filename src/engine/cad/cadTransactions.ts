@@ -1347,8 +1347,11 @@ const buildArcFilletChoices = (
     const candidateSweep = Math.abs(cadSignedSweepDeg(entity.startAngleDeg, entity.endAngleDeg));
     const candidatePickPosition = arcPositionAtAngle(entity, pickAngleDeg);
     const keptGap = trimStart ? candidatePickPosition : candidateSweep - candidatePickPosition;
+    const retainsHoveredArcPoint = hoverDistance <= 1e-6;
+    const interiorRetentionPenalty = interiorPick && !retainsHoveredArcPoint ? 1_000_000 : 0;
     if (!preferDeepInteriorBranch) {
       return (
+        interiorRetentionPenalty +
         hoverDistance +
         cadDistance(pickPoint, tangentPoint) +
         ((interiorPick
@@ -1361,6 +1364,7 @@ const buildArcFilletChoices = (
       );
     }
     return (
+      interiorRetentionPenalty +
       hoverDistance * 100 -
       keptGap +
       cadDistance(pickPoint, tangentPoint) +
@@ -2104,6 +2108,18 @@ const createManualPointEntities = (
       },
     },
   };
+};
+
+const buildAlignmentStakeoutLabelText = (
+  stationId: string,
+  formattedStation: string,
+  offset?: number | null,
+): string => {
+  const lines = [stationId, `STA ${formattedStation}`];
+  if (offset != null && Math.abs(offset) > 1e-9) {
+    lines.push(`OFF ${offset.toFixed(3)} m`);
+  }
+  return lines.join('\n');
 };
 
 const compactManualPointEntities = (
@@ -4948,12 +4964,27 @@ const alignmentOffsetPointCommand: CadCommandDefinition<{
     );
     const pointEntity: CadSurveyPointEntity = {
       ...entities.point,
-      metadata: buildCadCogoEntityMetadata(entities.point.metadata, provenance),
+      metadata: {
+        ...buildCadCogoEntityMetadata(entities.point.metadata, provenance),
+        alignmentEntityId: alignmentEntity.id,
+        alignmentName: alignmentEntity.name,
+        alignmentStation: formattedStation,
+        alignmentOffset: command.offset,
+        alignmentPointKind: 'station-offset',
+      },
     };
     const labelEntity = entities.label
       ? {
           ...entities.label,
-          metadata: buildCadCogoEntityMetadata(entities.label.metadata, provenance),
+          text: buildAlignmentStakeoutLabelText(pointEntity.stationId, formattedStation, command.offset),
+          metadata: {
+            ...buildCadCogoEntityMetadata(entities.label.metadata, provenance),
+            alignmentEntityId: alignmentEntity.id,
+            alignmentName: alignmentEntity.name,
+            alignmentStation: formattedStation,
+            alignmentOffset: command.offset,
+            alignmentPointKind: 'station-offset',
+          },
         }
       : null;
     const createdEntities = compactManualPointEntities([pointEntity, labelEntity]);
@@ -5037,6 +5068,7 @@ const alignmentIntervalPointsCommand: CadCommandDefinition<{
     const selectedPointIds: CadEntityId[] = [];
     stationPoints.forEach((stationPoint, index) => {
       const label = prefix ? `${prefix}${index + 1}` : undefined;
+      const formattedStation = formatCadStation(stationPoint.station);
       const pointBundle = createManualPointEntities(
         workingProject,
         stationPoint.point.x,
@@ -5048,12 +5080,27 @@ const alignmentIntervalPointsCommand: CadCommandDefinition<{
       );
       const pointEntity: CadSurveyPointEntity = {
         ...pointBundle.point,
-        metadata: buildCadCogoEntityMetadata(pointBundle.point.metadata, provenance),
+        metadata: {
+          ...buildCadCogoEntityMetadata(pointBundle.point.metadata, provenance),
+          alignmentEntityId: alignmentEntity.id,
+          alignmentName: alignmentEntity.name,
+          alignmentStation: formattedStation,
+          alignmentOffset: 0,
+          alignmentPointKind: 'interval',
+        },
       };
       const labelEntity = pointBundle.label
         ? {
             ...pointBundle.label,
-            metadata: buildCadCogoEntityMetadata(pointBundle.label.metadata, provenance),
+            text: buildAlignmentStakeoutLabelText(pointEntity.stationId, formattedStation),
+            metadata: {
+              ...buildCadCogoEntityMetadata(pointBundle.label.metadata, provenance),
+              alignmentEntityId: alignmentEntity.id,
+              alignmentName: alignmentEntity.name,
+              alignmentStation: formattedStation,
+              alignmentOffset: 0,
+              alignmentPointKind: 'interval',
+            },
           }
         : null;
       const entities = compactManualPointEntities([pointEntity, labelEntity]);

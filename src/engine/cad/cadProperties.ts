@@ -218,6 +218,24 @@ const vertexRows = (entity: Extract<CadEntity, { type: 'polyline' | 'polygon' | 
     ];
   });
 
+const appendAlignmentStakeoutRows = (
+  rows: CadEntityPropertyRow[],
+  metadata: CadEntity['metadata'] | undefined,
+): void => {
+  if (typeof metadata?.alignmentName === 'string') {
+    rows.push(row('alignment-name', 'Alignment', metadata.alignmentName));
+  }
+  if (typeof metadata?.alignmentStation === 'string') {
+    rows.push(row('alignment-station', 'Station', metadata.alignmentStation));
+  }
+  if (typeof metadata?.alignmentOffset === 'number' && Number.isFinite(metadata.alignmentOffset)) {
+    rows.push(row('alignment-offset', 'Offset', numeric(metadata.alignmentOffset)));
+  }
+  if (typeof metadata?.alignmentPointKind === 'string') {
+    rows.push(row('alignment-point-kind', 'Stakeout kind', metadata.alignmentPointKind));
+  }
+};
+
 const buildEntityProperties = (project: CadProject, entity: CadEntity): CadEntityPropertyRow[] => {
   const rows = appendCommonRows(project, entity);
   switch (entity.type) {
@@ -230,6 +248,7 @@ const buildEntityProperties = (project: CadProject, entity: CadEntity): CadEntit
         row('point-y', 'Northing', numeric(entity.y), { kind: 'point-y' }),
         row('point-z', 'Elevation', entity.z == null ? '--' : numeric(entity.z), { kind: 'point-z' }),
       );
+      appendAlignmentStakeoutRows(rows, entity.metadata);
       if (entity.description) rows.push(row('description', 'Description', entity.description));
       if (entity.featureCode) rows.push(row('feature-code', 'Feature code', entity.featureCode));
       return rows;
@@ -344,6 +363,7 @@ const buildEntityProperties = (project: CadProject, entity: CadEntity): CadEntit
         row('insertion-e', 'Insertion E', numeric(entity.x)),
         row('insertion-n', 'Insertion N', numeric(entity.y)),
       );
+      appendAlignmentStakeoutRows(rows, entity.metadata);
       if (entity.anchorEntityId) rows.push(row('anchor-entity', 'Anchor entity', entity.anchorEntityId));
       return rows;
     case 'error-ellipse':

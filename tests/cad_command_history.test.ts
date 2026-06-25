@@ -835,9 +835,18 @@ describe('Survey CAD command history', () => {
       (entity): entity is Extract<(typeof pointState.present.project.entities)[number], { type: 'survey-point' }> =>
         entity.type === 'survey-point' && entity.stationId === 'SO1',
     );
+    const labelEntity = pointState.present.project.entities.find(
+      (entity): entity is Extract<(typeof pointState.present.project.entities)[number], { type: 'text' }> =>
+        entity.type === 'text' && entity.id === 'label:SO1',
+    );
     expect(pointEntity?.type).toBe('survey-point');
+    expect(labelEntity?.type).toBe('text');
     expect(pointEntity?.x ?? Number.NaN).toBeCloseTo(5.54700196, 6);
     expect(pointEntity?.y ?? Number.NaN).toBeCloseTo(9.70725343, 6);
+    expect(labelEntity?.text).toBe('SO1\nSTA 1+10.000\nOFF 5.000 m');
+    expect(pointEntity?.metadata?.alignmentName).toBe('ALIGN1');
+    expect(pointEntity?.metadata?.alignmentStation).toBe('1+10.000');
+    expect(pointEntity?.metadata?.alignmentOffset).toBe(5);
     expect(pointState.present.project.cogoComputations.at(-1)?.toolKey).toBe('ALIGNMENT_POINT');
     expect(pointState.present.project.cogoComputations.at(-1)?.report.title).toBe(
       'Alignment Station Offset Point',
@@ -1061,6 +1070,19 @@ describe('Survey CAD command history', () => {
         (entity) => entity.type === 'survey-point' && /^INT\d+$/.test(entity.stationId),
       ),
     ).toHaveLength(4);
+    expect(
+      pointState.present.project.entities
+        .filter(
+          (entity): entity is Extract<(typeof pointState.present.project.entities)[number], { type: 'text' }> =>
+            entity.type === 'text' && /^label:INT\d+$/.test(entity.id),
+        )
+        .map((entity) => entity.text),
+    ).toEqual([
+      'INT1\nSTA 1+00.000',
+      'INT2\nSTA 1+10.000',
+      'INT3\nSTA 1+20.000',
+      'INT4\nSTA 1+30.000',
+    ]);
     expect(pointState.present.project.cogoComputations.at(-1)?.toolKey).toBe('ALIGNMENT_INTERVALS');
     expect(pointState.present.project.cogoComputations.at(-1)?.report.title).toBe('Alignment Interval Points');
     expect(
@@ -2114,6 +2136,154 @@ describe('Survey CAD command history', () => {
     if (updatedArc?.type !== 'arc' || filletArc?.type !== 'arc') {
       throw new Error('Large arc fillet entities missing');
     }
+    expect(updatedArc.endAngleDeg).toBeCloseTo(20, 6);
+    expect(updatedArc.startAngleDeg).toBeGreaterThan(220);
+    expect(updatedArc.startAngleDeg).toBeLessThan(360);
+    expect(sharedArcJoinTangentDot(updatedArc, filletArc)).toBeGreaterThan(0.98);
+  });
+
+  it('supports picking the arc first when filleting against a polyline segment', () => {
+    const project = appendCadProjectEntities(
+      buildSurveyCadSpikeProject({
+        input,
+        instrumentLibrary: {},
+        parseOptions,
+        units: 'm',
+        result: null,
+      }),
+      [
+        {
+          id: 'arc:fillet-first-arc',
+          type: 'arc',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          centerX: 20,
+          centerY: 0,
+          radius: 10,
+          startAngleDeg: 180,
+          endAngleDeg: 90,
+        },
+        {
+          id: 'polyline:fillet-arc-polyline',
+          type: 'polyline',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          vertices: [
+            { x: 0, y: 0 },
+            { x: 10, y: 0 },
+            { x: 10, y: -10 },
+          ],
+          vertexLabels: ['AP1', 'AP2', 'AP3'],
+          closed: false,
+        },
+      ],
+    );
+
+    const filletState = runCadCommand(createCadHistoryState(project), {
+      key: 'FILLET',
+      radius: 2,
+      firstEntityId: 'arc:fillet-first-arc',
+      firstPickPoint: { x: 10.5, y: 1 },
+      secondEntityId: 'polyline:fillet-arc-polyline',
+      secondSegmentId: 'polyline:fillet-arc-polyline#0',
+      secondPickPoint: { x: 9, y: 0 },
+    });
+
+    const updatedArc = filletState.present.project.entities.find(
+      (entity) => entity.id === 'arc:fillet-first-arc',
+    );
+    const updatedPolyline = filletState.present.project.entities.find(
+      (entity) => entity.id === 'polyline:fillet-arc-polyline',
+    );
+    const filletArc = filletState.present.project.entities.find(
+      (entity) => entity.type === 'arc' && entity.metadata?.createdBy === 'FILLET',
+    );
+    expect(updatedArc?.type).toBe('arc');
+    expect(updatedPolyline?.type).toBe('polyline');
+    expect(filletArc?.type).toBe('arc');
+    if (updatedArc?.type !== 'arc' || updatedPolyline?.type !== 'polyline' || filletArc?.type !== 'arc') {
+      throw new Error('Arc-first polyline fillet entities missing');
+    }
+    expect(updatedArc.startAngleDeg).toBeGreaterThan(160);
+    expect(updatedArc.startAngleDeg).toBeLessThan(180);
+    expect(updatedPolyline.vertices[0].x).toBeGreaterThan(7);
+    expect(updatedPolyline.vertices[0].x).toBeLessThan(10);
+    expect(updatedPolyline.vertices[1]).toEqual({ x: 10, y: 0 });
+    expect(sharedArcJoinTangentDot(updatedArc, filletArc)).toBeGreaterThan(0.98);
+  });
+
+  it('keeps the hovered interior arc branch when filleting a picked polyline segment against a larger arc', () => {
+    const project = appendCadProjectEntities(
+      buildSurveyCadSpikeProject({
+        input,
+        instrumentLibrary: {},
+        parseOptions,
+        units: 'm',
+        result: null,
+      }),
+      [
+        {
+          id: 'polyline:fillet-large-arc-polyline',
+          type: 'polyline',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          vertices: [
+            { x: -40, y: 40 },
+            { x: 60, y: -60 },
+          ],
+          vertexLabels: ['LAP1', 'LAP2'],
+          closed: false,
+        },
+        {
+          id: 'arc:fillet-large-arc-polyline-target',
+          type: 'arc',
+          layerId: 'observation-lines',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          centerX: 0,
+          centerY: 0,
+          radius: 35,
+          startAngleDeg: 220,
+          endAngleDeg: 20,
+        },
+      ],
+    );
+
+    const filletState = runCadCommand(createCadHistoryState(project), {
+      key: 'FILLET',
+      radius: 5,
+      firstEntityId: 'polyline:fillet-large-arc-polyline',
+      firstSegmentId: 'polyline:fillet-large-arc-polyline#0',
+      firstPickPoint: { x: -18, y: 18 },
+      secondEntityId: 'arc:fillet-large-arc-polyline-target',
+      secondPickPoint: { x: 0, y: 35 },
+    });
+
+    const updatedPolyline = filletState.present.project.entities.find(
+      (entity) => entity.id === 'polyline:fillet-large-arc-polyline',
+    );
+    const updatedArc = filletState.present.project.entities.find(
+      (entity) => entity.id === 'arc:fillet-large-arc-polyline-target',
+    );
+    const filletArc = filletState.present.project.entities.find(
+      (entity) => entity.type === 'arc' && entity.metadata?.createdBy === 'FILLET',
+    );
+    expect(updatedPolyline?.type).toBe('polyline');
+    expect(updatedArc?.type).toBe('arc');
+    expect(filletArc?.type).toBe('arc');
+    if (updatedPolyline?.type !== 'polyline' || updatedArc?.type !== 'arc' || filletArc?.type !== 'arc') {
+      throw new Error('Large arc polyline fillet entities missing');
+    }
+    expect(updatedPolyline.vertices[0]).toEqual({ x: -40, y: 40 });
+    expect(updatedPolyline.vertices[1].x).toBeGreaterThan(-40);
+    expect(updatedPolyline.vertices[1].x).toBeLessThan(60);
     expect(updatedArc.endAngleDeg).toBeCloseTo(20, 6);
     expect(updatedArc.startAngleDeg).toBeGreaterThan(220);
     expect(updatedArc.startAngleDeg).toBeLessThan(360);

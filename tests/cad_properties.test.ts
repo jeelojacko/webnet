@@ -225,6 +225,76 @@ describe('Survey CAD properties builder', () => {
     expect(state.entity.properties.find((row) => row.label === 'Station equations')?.value).toBe('1');
   });
 
+  it('builds stakeout point properties with alignment metadata', () => {
+    const project = appendCadProjectEntities(buildBaseProject(), [
+      {
+        id: 'point:stakeout',
+        type: 'survey-point',
+        layerId: 'points',
+        styleId: 'style-point',
+        visible: true,
+        locked: false,
+        stationId: 'SO1',
+        x: 66,
+        y: 44,
+        pointClass: 'free',
+        source: 'parsed-input',
+        metadata: {
+          alignmentName: 'ALIGN1',
+          alignmentStation: '1+10.000',
+          alignmentOffset: 5,
+          alignmentPointKind: 'station-offset',
+        },
+      },
+    ]);
+    const point = project.entities.find((entity) => entity.id === 'point:stakeout');
+    if (!point || point.type !== 'survey-point') throw new Error('Stakeout point not found');
+
+    const state = buildCadPropertiesPanelState(project, [point]);
+    expect(state?.mode).toBe('single');
+    if (!state || state.mode !== 'single') throw new Error('Stakeout point properties missing');
+
+    expect(state.entity.properties.find((row) => row.label === 'Alignment')?.value).toBe('ALIGN1');
+    expect(state.entity.properties.find((row) => row.label === 'Station')?.value).toBe('1+10.000');
+    expect(state.entity.properties.find((row) => row.label === 'Offset')?.value).toBe('5.000');
+    expect(state.entity.properties.find((row) => row.label === 'Stakeout kind')?.value).toBe('station-offset');
+  });
+
+  it('builds stakeout text properties with alignment metadata', () => {
+    const project = appendCadProjectEntities(buildBaseProject(), [
+      {
+        id: 'text:stakeout',
+        type: 'text',
+        layerId: 'labels',
+        styleId: 'style-text',
+        visible: true,
+        locked: false,
+        x: 66,
+        y: 44,
+        text: 'SO1\nSTA 1+10.000\nOFF 5.000 m',
+        metadata: {
+          entityName: 'SO1',
+          alignmentName: 'ALIGN1',
+          alignmentStation: '1+10.000',
+          alignmentOffset: 5,
+          alignmentPointKind: 'station-offset',
+        },
+      },
+    ]);
+    const text = project.entities.find((entity) => entity.id === 'text:stakeout');
+    if (!text || text.type !== 'text') throw new Error('Stakeout text not found');
+
+    const state = buildCadPropertiesPanelState(project, [text]);
+    expect(state?.mode).toBe('single');
+    if (!state || state.mode !== 'single') throw new Error('Stakeout text properties missing');
+
+    expect(state.entity.properties.find((row) => row.label === 'Text')?.value).toBe('SO1\nSTA 1+10.000\nOFF 5.000 m');
+    expect(state.entity.properties.find((row) => row.label === 'Alignment')?.value).toBe('ALIGN1');
+    expect(state.entity.properties.find((row) => row.label === 'Station')?.value).toBe('1+10.000');
+    expect(state.entity.properties.find((row) => row.label === 'Offset')?.value).toBe('5.000');
+    expect(state.entity.properties.find((row) => row.label === 'Stakeout kind')?.value).toBe('station-offset');
+  });
+
   it('builds deterministic mixed-type multi-selection groups in selection order', () => {
     const project = appendCadProjectEntities(buildBaseProject(), [
       {

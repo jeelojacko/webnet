@@ -202,6 +202,41 @@ const visibleWorldBoundsFromViewport = (
   };
 };
 
+const textPrimitiveScreenBox = (
+  primitive: Extract<CadDisplayPrimitive, { kind: 'text' }>,
+  project: (_x: number, _y: number) => { x: number; y: number },
+): {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  displayX: number;
+  displayY: number;
+} => {
+  const point = project(primitive.point.x, primitive.point.y);
+  const lines = primitive.text.split('\n');
+  const longestLine = lines.reduce(
+    (current, line) => Math.max(current, line.length),
+    0,
+  );
+  const width = Math.max(24, longestLine * primitive.fontSize * 0.55);
+  const height = Math.max(primitive.fontSize, lines.length * primitive.fontSize * 1.2);
+  const anchorOffset =
+    primitive.textAnchor === 'middle' ? width / 2 : primitive.textAnchor === 'end' ? width : 0;
+  const displayX =
+    primitive.textAnchor === 'start' || primitive.textAnchor == null ? point.x + 6 : point.x;
+  const displayY =
+    primitive.textAnchor === 'start' || primitive.textAnchor == null ? point.y - 6 : point.y;
+  return {
+    x: displayX - anchorOffset,
+    y: displayY - primitive.fontSize,
+    width,
+    height,
+    displayX,
+    displayY,
+  };
+};
+
 const primitiveBounds = (
   primitive: CadDisplayPrimitive,
   project: (_x: number, _y: number) => { x: number; y: number },
@@ -238,21 +273,12 @@ const primitiveBounds = (
       };
     }
     case 'text': {
-      const point = project(primitive.point.x, primitive.point.y);
-      const lines = primitive.text.split('\n');
-      const longestLine = lines.reduce(
-        (current, line) => Math.max(current, line.length),
-        0,
-      );
-      const width = Math.max(24, longestLine * primitive.fontSize * 0.55);
-      const height = Math.max(primitive.fontSize, lines.length * primitive.fontSize * 1.2);
-      const anchorOffset =
-        primitive.textAnchor === 'middle' ? width / 2 : primitive.textAnchor === 'end' ? width : 0;
+      const textBox = textPrimitiveScreenBox(primitive, project);
       return {
-        minX: point.x - anchorOffset,
-        minY: point.y - primitive.fontSize,
-        maxX: point.x - anchorOffset + width,
-        maxY: point.y - primitive.fontSize + height,
+        minX: textBox.x,
+        minY: textBox.y,
+        maxX: textBox.x + textBox.width,
+        maxY: textBox.y + textBox.height,
       };
     }
     case 'ellipse': {
@@ -477,36 +503,50 @@ const renderPrimitive = (
       );
     }
     case 'text': {
-      const point = project(primitive.point.x, primitive.point.y);
-      const displayX = primitive.textAnchor === 'start' || primitive.textAnchor == null ? point.x + 6 : point.x;
-      const displayY = primitive.textAnchor === 'start' || primitive.textAnchor == null ? point.y - 6 : point.y;
+      const textBox = textPrimitiveScreenBox(primitive, project);
+      const displayX = textBox.displayX;
+      const displayY = textBox.displayY;
+      const textTransform =
+        primitive.rotationDeg != null
+          ? `rotate(${primitive.rotationDeg} ${displayX} ${displayY})`
+          : undefined;
       return (
-        <text
-          key={primitive.id}
-          {...commonProps}
-          data-survey-cad-render-entity-id={primitive.sourceEntityId}
-          x={displayX}
-          y={displayY}
-          fill={isSelected ? '#fbbf24' : primitive.stroke}
-          fontSize={primitive.fontSize}
-          opacity={entityOpacityOverrides[primitive.sourceEntityId] ?? primitive.opacity ?? 1}
-          textAnchor={primitive.textAnchor ?? 'start'}
-          transform={
-            primitive.rotationDeg != null
-              ? `rotate(${primitive.rotationDeg} ${displayX} ${displayY})`
-              : undefined
-          }
-        >
-          {primitive.text.split('\n').map((line, index) => (
-            <tspan
-              key={`${primitive.id}:${index + 1}`}
-              x={displayX}
-              dy={index === 0 ? 0 : primitive.fontSize * 1.15}
-            >
-              {line}
-            </tspan>
-          ))}
-        </text>
+        <g key={primitive.id}>
+          <rect
+            {...commonProps}
+            data-survey-cad-hit-target="true"
+            data-survey-cad-entity-id={primitive.sourceEntityId}
+            x={textBox.x - 4}
+            y={textBox.y - 3}
+            width={textBox.width + 8}
+            height={textBox.height + 6}
+            fill="transparent"
+            fillOpacity={0.001}
+            transform={textTransform}
+            pointerEvents="fill"
+          />
+          <text
+            {...commonProps}
+            data-survey-cad-render-entity-id={primitive.sourceEntityId}
+            x={displayX}
+            y={displayY}
+            fill={isSelected ? '#fbbf24' : primitive.stroke}
+            fontSize={primitive.fontSize}
+            opacity={entityOpacityOverrides[primitive.sourceEntityId] ?? primitive.opacity ?? 1}
+            textAnchor={primitive.textAnchor ?? 'start'}
+            transform={textTransform}
+          >
+            {primitive.text.split('\n').map((line, index) => (
+              <tspan
+                key={`${primitive.id}:${index + 1}`}
+                x={displayX}
+                dy={index === 0 ? 0 : primitive.fontSize * 1.15}
+              >
+                {line}
+              </tspan>
+            ))}
+          </text>
+        </g>
       );
     }
     case 'ellipse': {

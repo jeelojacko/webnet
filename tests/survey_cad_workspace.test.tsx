@@ -5783,6 +5783,134 @@ describe('SurveyCadWorkspace', () => {
     container.remove();
   });
 
+  it('supports arc-first FILLET picks against a polyline segment in the live workspace', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+    const capture = createPersistedStateCapture();
+
+    const originalProject = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+    const baseProject = appendCadProjectEntities(originalProject, [
+      {
+        id: 'arc:live-first-arc',
+        type: 'arc' as const,
+        layerId: 'observation-lines',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        centerX: 20,
+        centerY: 0,
+        radius: 10,
+        startAngleDeg: 180,
+        endAngleDeg: 90,
+      },
+      {
+        id: 'polyline:live-arc-polyline',
+        type: 'polyline' as const,
+        layerId: 'observation-lines',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 10, y: 0 },
+          { x: 10, y: -10 },
+        ],
+        vertexLabels: ['AP1', 'AP2', 'AP3'],
+        closed: false,
+      },
+    ]);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+          persistedState={{
+            version: 1,
+            sourceSignature: buildCadProjectSignature(originalProject),
+            project: baseProject,
+          }}
+          onPersistedStateChange={capture.onPersistedStateChange}
+        />,
+      );
+    });
+
+    const preview = container.querySelector('[data-survey-cad-preview]') as SVGElement | null;
+    const commandInput = container.querySelector('[data-survey-cad-command-input]') as HTMLInputElement | null;
+    const arc = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="arc:live-first-arc"]',
+    ) as SVGElement | null;
+    const polyline = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="polyline:live-arc-polyline"]',
+    ) as SVGElement | null;
+    if (!preview || !commandInput || !arc || !polyline) {
+      throw new Error('Live arc-first polyline FILLET controls not found');
+    }
+    mockElementRect(preview);
+
+    const arcPick = projectWorldToPreviewScreen(baseProject.bounds!, { x: 10.5, y: 1 });
+    const polylinePick = projectWorldToPreviewScreen(baseProject.bounds!, { x: 9, y: 0 });
+
+    await act(async () => {
+      clickButton(container, 'FILLET');
+      setTextInputValue(commandInput, '2');
+      pressKey(commandInput, 'Enter');
+      arc.dispatchEvent(
+        new MouseEvent('click', {
+          bubbles: true,
+          clientX: arcPick.clientX,
+          clientY: arcPick.clientY,
+          button: 0,
+        }),
+      );
+      polyline.dispatchEvent(
+        new MouseEvent('click', {
+          bubbles: true,
+          clientX: polylinePick.clientX,
+          clientY: polylinePick.clientY,
+          button: 0,
+        }),
+      );
+    });
+
+    const updatedArc = capture.read()?.project.entities.find(
+      (entity) => entity.id === 'arc:live-first-arc',
+    );
+    const updatedPolyline = capture.read()?.project.entities.find(
+      (entity) => entity.id === 'polyline:live-arc-polyline',
+    );
+    const committedArc = capture.read()?.project.entities.find(
+      (entity) => entity.type === 'arc' && entity.metadata?.createdBy === 'FILLET',
+    );
+    expect(updatedArc?.type).toBe('arc');
+    expect(updatedPolyline?.type).toBe('polyline');
+    expect(committedArc?.type).toBe('arc');
+    if (updatedArc?.type !== 'arc' || updatedPolyline?.type !== 'polyline' || committedArc?.type !== 'arc') {
+      throw new Error('Live arc-first polyline FILLET entities missing');
+    }
+    expect(updatedArc.startAngleDeg).toBeGreaterThan(160);
+    expect(updatedArc.startAngleDeg).toBeLessThan(180);
+    expect(updatedPolyline.vertices[0].x).toBeGreaterThan(7);
+    expect(updatedPolyline.vertices[0].x).toBeLessThan(10);
+    expect(updatedPolyline.vertices[1]).toEqual({ x: 10, y: 0 });
+    expect(committedArc.radius).toBeCloseTo(2, 6);
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
   it('keeps the hovered side of a reversed line during live line-arc FILLET', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
@@ -7024,6 +7152,31 @@ describe('SurveyCadWorkspace', () => {
       'SO1',
     );
 
+    const stationLabelTarget = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="label:SO1"]',
+    ) as SVGElement | null;
+    if (!stationLabelTarget) throw new Error('Station-offset label target not found');
+
+    await act(async () => {
+      stationLabelTarget.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 0, clientY: 0 }));
+    });
+
+    expect(container.querySelector('[data-survey-cad-properties-entity-label]')?.textContent).toContain(
+      'SO1',
+    );
+    expect(container.querySelector('[data-survey-cad-properties-panel-rows]')?.textContent).toContain(
+      'AlignmentALIGN1',
+    );
+    expect(container.querySelector('[data-survey-cad-properties-panel-rows]')?.textContent).toContain(
+      'Station1+10.000',
+    );
+    expect(container.querySelector('[data-survey-cad-properties-panel-rows]')?.textContent).toContain(
+      'Offset5.000',
+    );
+    expect(container.querySelector('[data-survey-cad-properties-panel-rows]')?.textContent).toContain(
+      'Stakeout kindstation-offset',
+    );
+
     const persisted = capture.read();
     expect(persisted?.project.entities.some((entity) => entity.type === 'survey-point' && entity.stationId === 'SO1')).toBe(true);
     expect(persisted?.project.cogoComputations.at(-1)?.toolKey).toBe('ALIGNMENT_POINT');
@@ -7192,6 +7345,31 @@ describe('SurveyCadWorkspace', () => {
     );
     expect(container.querySelector('[data-survey-cad-properties-type-select]')).not.toBeNull();
     expect(container.querySelector('[data-survey-cad-properties-entity-select]')).not.toBeNull();
+
+    const intervalLabelTarget = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="label:INT1"]',
+    ) as SVGElement | null;
+    if (!intervalLabelTarget) throw new Error('Interval label target not found');
+
+    await act(async () => {
+      intervalLabelTarget.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 0, clientY: 0 }));
+    });
+
+    expect(container.querySelector('[data-survey-cad-properties-entity-label]')?.textContent).toContain(
+      'INT1',
+    );
+    expect(container.querySelector('[data-survey-cad-properties-panel-rows]')?.textContent).toContain(
+      'AlignmentALIGN1',
+    );
+    expect(container.querySelector('[data-survey-cad-properties-panel-rows]')?.textContent).toContain(
+      'Station1+00.000',
+    );
+    expect(container.querySelector('[data-survey-cad-properties-panel-rows]')?.textContent).toContain(
+      'Offset0.000',
+    );
+    expect(container.querySelector('[data-survey-cad-properties-panel-rows]')?.textContent).toContain(
+      'Stakeout kindinterval',
+    );
 
     const persisted = capture.read();
     expect(
