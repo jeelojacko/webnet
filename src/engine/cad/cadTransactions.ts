@@ -429,9 +429,20 @@ const renamePointReferences = (
       if (typeof metadata.stationId === 'string') {
         metadata.stationId = nextStationId;
       }
+      const alignmentStation =
+        typeof metadata.alignmentStation === 'string' ? metadata.alignmentStation : null;
+      const alignmentOffset =
+        typeof metadata.alignmentOffset === 'number' && Number.isFinite(metadata.alignmentOffset)
+          ? metadata.alignmentOffset
+          : null;
       return {
         ...entity,
-        text: entity.text === previousStationId ? nextStationId : entity.text,
+        text:
+          alignmentStation != null
+            ? buildAlignmentStakeoutLabelText(nextStationId, alignmentStation, alignmentOffset)
+            : entity.text === previousStationId
+              ? nextStationId
+              : entity.text,
         metadata,
       };
     }

@@ -8,6 +8,8 @@
 
 - [x] Survey CAD COGO foundation batch (June 2026): add shared COGO result/report/provenance types, project-level persisted COGO computation history, versioned CAD project migration, native alignment entity foundation, and command-history integration for existing COGO-producing commands.
 
+- [x] Survey CAD stakeout rename-sync batch (June 2026): keep `STA PT` multiline stakeout labels synced when the created point is renamed from `Properties`, so the first-line station id updates without losing displayed station/offset text.
+
 - [x] Survey CAD stakeout label selection batch (June 2026): make text labels pickable through the same widened CAD hit-target path as other entity types, then lock live `STA PT` / `STA INT` stakeout-label `Properties` selection coverage before broader alignment annotation polish continues.
 
 - [x] Survey CAD stakeout label batch (June 2026): make `STA PT` / `STA INT` created point labels carry displayed-station text and make both the created points and picked stakeout labels surface shared alignment station/offset metadata in `Properties`, while leaving broader stakeout annotation polish for a later slice.

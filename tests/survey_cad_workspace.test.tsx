@@ -7187,6 +7187,126 @@ describe('SurveyCadWorkspace', () => {
     container.remove();
   });
 
+  it('renames a station-offset point through Properties and keeps the multiline stakeout label synced', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+    const capture = createPersistedStateCapture();
+
+    const baseProject = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+    const stationProject = appendCadProjectEntities(baseProject, [
+      {
+        id: 'alignment:station-ui-test',
+        type: 'alignment',
+        layerId: 'planning',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        name: 'ALIGN1',
+        startStation: 100,
+        elements: [
+          {
+            kind: 'line',
+            start: { x: 0, y: 0 },
+            end: { x: 60, y: 40 },
+          },
+        ],
+      },
+    ]);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+          persistedState={{
+            version: 1,
+            sourceSignature: buildCadProjectSignature(baseProject),
+            project: stationProject,
+          }}
+          onPersistedStateChange={capture.onPersistedStateChange}
+        />,
+      );
+    });
+
+    const alignmentTarget = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="alignment:station-ui-test"]',
+    ) as SVGElement | null;
+    const commandInput = container.querySelector('[data-survey-cad-command-input]') as HTMLInputElement | null;
+    if (!alignmentTarget || !commandInput) throw new Error('Alignment station rename controls not found');
+
+    await act(async () => {
+      alignmentTarget.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 0, clientY: 0 }));
+      clickButton(container, 'STA PT');
+      setTextInputValue(commandInput, 'SO1=110,5');
+      pressKey(commandInput, 'Enter');
+    });
+
+    const pointTarget = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="pt:SO1"]',
+    ) as SVGElement | null;
+    const nameInput = container.querySelector(
+      '[data-survey-cad-properties-input="name"]',
+    ) as HTMLInputElement | null;
+    if (!pointTarget || !nameInput) throw new Error('Stakeout rename controls not found');
+
+    await act(async () => {
+      pointTarget.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 0, clientY: 0 }));
+      setTextInputValue(nameInput, 'SO2');
+      pressKey(nameInput, 'Enter');
+    });
+
+    expect(container.querySelector('[data-survey-cad-properties-entity-label]')?.textContent).toContain(
+      'SO2',
+    );
+
+    const renamedLabelTarget = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="label:SO1"]',
+    ) as SVGElement | null;
+    if (!renamedLabelTarget) throw new Error('Renamed station-offset label target not found');
+
+    await act(async () => {
+      renamedLabelTarget.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 0, clientY: 0 }));
+    });
+
+    expect(container.querySelector('[data-survey-cad-properties-entity-label]')?.textContent).toContain(
+      'SO2',
+    );
+    expect(container.querySelector('[data-survey-cad-properties-panel-rows]')?.textContent).toContain(
+      'NameTextSO2',
+    );
+    expect(container.querySelector('[data-survey-cad-properties-panel-rows]')?.textContent).toContain(
+      'STA 1+10.000',
+    );
+    expect(container.querySelector('[data-survey-cad-properties-panel-rows]')?.textContent).toContain(
+      'OFF 5.000 m',
+    );
+
+    const persisted = capture.read();
+    const renamedPoint = persisted?.project.entities.find(
+      (entity) => entity.type === 'survey-point' && entity.id === 'pt:SO1',
+    );
+    const renamedLabel = persisted?.project.entities.find(
+      (entity) => entity.type === 'text' && entity.id === 'label:SO1',
+    );
+    expect(renamedPoint?.type === 'survey-point' ? renamedPoint.stationId : null).toBe('SO2');
+    expect(renamedLabel?.type === 'text' ? renamedLabel.text : null).toBe('SO2\nSTA 1+10.000\nOFF 5.000 m');
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
   it('adds a station equation to a selected alignment', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);

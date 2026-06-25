@@ -870,6 +870,65 @@ describe('Survey CAD command history', () => {
     ).toBe(true);
   });
 
+  it('renames stakeout point labels through history without losing multiline station text', () => {
+    const project = appendCadProjectEntities(
+      buildSurveyCadSpikeProject({
+        input,
+        instrumentLibrary: {},
+        parseOptions,
+        units: 'm',
+        result: null,
+      }),
+      [
+        {
+          id: 'alignment:test',
+          type: 'alignment',
+          layerId: 'planning',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          name: 'ALIGN1',
+          startStation: 100,
+          elements: [
+            {
+              kind: 'line',
+              start: { x: 0, y: 0 },
+              end: { x: 60, y: 40 },
+            },
+          ],
+        },
+      ],
+    );
+
+    const pointState = runCadCommand(createCadHistoryState(project), {
+      key: 'ALIGNMENT_OFFSET_POINT',
+      alignmentEntityId: 'alignment:test',
+      station: 110,
+      offset: 5,
+      label: 'SO1',
+    });
+    const renamedState = runCadCommand(pointState, {
+      key: 'EDIT_ENTITY',
+      entityId: 'pt:SO1',
+      edit: {
+        kind: 'entity-name',
+        value: 'SO2',
+      },
+    });
+
+    const renamedPoint = renamedState.present.project.entities.find(
+      (entity) => entity.type === 'survey-point' && entity.id === 'pt:SO1',
+    );
+    const renamedLabel = renamedState.present.project.entities.find(
+      (entity) => entity.type === 'text' && entity.id === 'label:SO1',
+    );
+    expect(renamedPoint?.type).toBe('survey-point');
+    expect(renamedPoint?.type === 'survey-point' ? renamedPoint.stationId : null).toBe('SO2');
+    expect(renamedLabel?.type).toBe('text');
+    expect(renamedLabel?.type === 'text' ? renamedLabel.text : null).toBe('SO2\nSTA 1+10.000\nOFF 5.000 m');
+    expect(renamedLabel?.type === 'text' ? renamedLabel.metadata?.stationId : null).toBe('SO2');
+  });
+
   it('adds alignment station equations through history and applies them to later station input', () => {
     const project = appendCadProjectEntities(
       buildSurveyCadSpikeProject({

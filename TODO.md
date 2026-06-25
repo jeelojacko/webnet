@@ -1,3 +1,5 @@
+- [x] Survey CAD stakeout rename-sync batch (June 2026): keep `STA PT` multiline stakeout labels synced when the created point is renamed from `Properties`, so the first-line station id updates without losing displayed station/offset text.
+
 - [x] Survey CAD stakeout label selection batch (June 2026): make text labels pickable through the same widened CAD hit-target path as other entity types, then lock live `STA PT` / `STA INT` stakeout-label `Properties` selection coverage before broader alignment annotation polish continues.
 
 - [x] Survey CAD extend-tool + centered helper batch (June 2026): move the viewport command helper/status copy into the centered lane above the command bar so long prompts stay readable, replace the unreliable `Shift`-held trim extension path with a dedicated repeatable `EXT` command that captures source then boundary picks, and keep focused CAD geometry/workspace coverage on the new extend flow.
