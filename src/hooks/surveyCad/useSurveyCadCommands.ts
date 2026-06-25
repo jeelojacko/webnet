@@ -289,8 +289,9 @@ type CommandSession =
   | {
       key: 'TRIM';
       inputValue: string;
-      firstCuttingEntityId: string | null;
-      cuttingEntityIds: string[];
+      firstEntityId: string | null;
+      firstPickPoint: CommandPoint | null;
+      firstSegmentId?: string;
       resultText?: string;
     }
   | {
@@ -1368,9 +1369,9 @@ const promptForSession = (session: CommandSession | null, fallbackStatus: string
           : 'EXT active. Source entity captured. Click the boundary line, polyline, or arc to extend to. Enter or Esc ends the command.');
     case 'TRIM':
       return session.resultText ??
-        (session.firstCuttingEntityId == null
+        (session.firstEntityId == null
           ? 'TRIM active. Click the first line, polyline, or arc to use as the cutting edge.'
-          : 'TRIM active. Cutting edge captured. Click target portion to trim. Enter or Esc ends the command.');
+          : 'TRIM active. First entity captured. Click the target portion to trim against it. Enter or Esc ends the command.');
     case 'FILLET':
       return session.resultText ??
         (session.radius == null
@@ -1554,9 +1555,9 @@ const helpTextForSession = (session: CommandSession | null): string => {
         ? 'EXT input: click the line, polyline, or arc you want to extend.'
         : 'EXT boundary pick: click the line, polyline, or arc to extend to. After commit, EXT resets for the next source/boundary pair until Enter, Esc, or empty-space double-click ends it.';
     case 'TRIM':
-      return session.firstCuttingEntityId == null
+      return session.firstEntityId == null
         ? 'TRIM input: click the first line, polyline, or arc as the cutting edge.'
-        : 'TRIM target pick: click target portion to remove. After commit, TRIM resets for the next cutting-edge pair until Enter, Esc, or empty-space double-click ends it.';
+        : 'TRIM target pick: click the target portion to remove against the captured cutting edge. After commit, TRIM resets for the next first-entity/second-entity pair until Enter, Esc, or empty-space double-click ends it.';
     case 'FILLET':
       return session.radius == null
         ? 'FILLET input: enter a zero-or-greater radius, then click the first and second line, polyline, or arc near the corner. Radius 0 keeps a hard intersection corner. The same radius stays active until Enter, Esc, or empty-space double-click ends the tool.'
@@ -2910,13 +2911,14 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
         });
         return;
       }
-      if (current.firstCuttingEntityId == null) {
+      if (current.firstEntityId == null || current.firstPickPoint == null) {
         replaceSession({
           ...current,
-          firstCuttingEntityId: targetEntityId,
-          cuttingEntityIds: [targetEntityId],
+          firstEntityId: targetEntityId,
+          firstPickPoint: point,
+          firstSegmentId: point.snapSourceSegmentId,
           inputValue: '',
-          resultText: 'TRIM cutting edge captured. Click target portion to trim.',
+          resultText: 'TRIM first entity captured. Click target portion to trim against it.',
         });
         return;
       }
@@ -2924,7 +2926,7 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
       applyHistoryUpdate((existing) => {
         const next = runCadCommand(existing, {
           key: 'TRIM',
-          cuttingEntityIds: current.cuttingEntityIds,
+          cuttingEntityIds: [current.firstEntityId!],
           targetEntityId,
           pickPoint: { x: point.x, y: point.y },
           targetSegmentId: point.snapSourceSegmentId,
@@ -2934,13 +2936,15 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
       });
       replaceSession({
         ...current,
-        firstCuttingEntityId: null,
-        cuttingEntityIds: [],
+        firstEntityId: null,
+        firstPickPoint: null,
+        firstSegmentId: undefined,
         inputValue: '',
         resultText: committed
-          ? `TRIM committed on ${targetEntityId}. Click the next cutting edge, or press Enter/Esc to finish.`
-          : current.cuttingEntityIds.includes(targetEntityId)
-            ? 'TRIM ignored the same cutting edge. Click a different line, polyline, or arc to trim.'
+          ? `TRIM committed on ${targetEntityId}. Click the next cutting edge, then the next target, or press Enter/Esc to finish.`
+          : current.firstEntityId === targetEntityId &&
+              current.firstSegmentId === point.snapSourceSegmentId
+            ? 'TRIM ignored the same pick twice. Click a different target entity or segment.'
             : `TRIM found no removable span on ${targetEntityId}. Check cutting-edge selection and click a different side.`,
       });
       return;
@@ -4940,7 +4944,7 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
     commandHelpText: helpText,
     commandPreview,
     activeTrimCuttingEntityIds:
-      session?.key === 'TRIM' ? session.cuttingEntityIds : [],
+      session?.key === 'TRIM' && session.firstEntityId != null ? [session.firstEntityId] : [],
     activeExtendTarget:
       session?.key === 'EXTEND' &&
       session.firstTargetEntityId != null &&
@@ -5365,8 +5369,9 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
       beginSession({
         key: 'TRIM',
         inputValue: '',
-        firstCuttingEntityId: null,
-        cuttingEntityIds: [],
+        firstEntityId: null,
+        firstPickPoint: null,
+        firstSegmentId: undefined,
       });
     },
     startFilletCommand: () =>

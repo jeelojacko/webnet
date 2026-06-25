@@ -4451,7 +4451,7 @@ describe('SurveyCadWorkspace', () => {
     container.remove();
   });
 
-  it('runs repeatable TRIM from the command surface by capturing a cutting edge first and then trimming targets one pair at a time', async () => {
+  it('runs repeatable TRIM from the command surface as a first-pick/second-pick loop one pair at a time', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
     const root: Root = createRoot(container);
@@ -4566,7 +4566,7 @@ describe('SurveyCadWorkspace', () => {
     });
 
     expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
-      'cutting edge captured',
+      'first entity captured',
     );
 
     await act(async () => {
@@ -4616,7 +4616,7 @@ describe('SurveyCadWorkspace', () => {
     });
 
     expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
-      'Click the next cutting edge',
+      'Click the next cutting edge, then the next target',
     );
 
     await act(async () => {
