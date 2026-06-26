@@ -7109,6 +7109,146 @@ describe('SurveyCadWorkspace', () => {
     container.remove();
   });
 
+  it('reports parcel linework diagnostics for selected open/overlapping lines', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    const originalProject = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+    const persistedProject = {
+      ...originalProject,
+      entities: [
+        {
+          id: 'line:A|B:1',
+          type: 'line' as const,
+          layerId: 'planning',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          fromStationId: 'A',
+          toStationId: 'B',
+          fromX: 0,
+          fromY: 0,
+          toX: 10,
+          toY: 0,
+          sourceObservationIds: [],
+        },
+        {
+          id: 'line:B|C',
+          type: 'line' as const,
+          layerId: 'planning',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          fromStationId: 'B',
+          toStationId: 'C',
+          fromX: 10,
+          fromY: 0,
+          toX: 20,
+          toY: 0,
+          sourceObservationIds: [],
+        },
+        {
+          id: 'line:A|B:2',
+          type: 'line' as const,
+          layerId: 'planning',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          fromStationId: 'A',
+          toStationId: 'B',
+          fromX: 0,
+          fromY: 0,
+          toX: 10,
+          toY: 0,
+          sourceObservationIds: [],
+        },
+      ],
+      bounds: { minX: 0, minY: 0, maxX: 20, maxY: 1 },
+    };
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+          persistedState={{
+            version: 1,
+            sourceSignature: buildCadProjectSignature(originalProject),
+            project: persistedProject,
+          }}
+        />,
+      );
+    });
+
+    const firstLine = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="line:A|B:1"]',
+    ) as SVGLineElement | null;
+    const secondLine = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="line:B|C"]',
+    ) as SVGLineElement | null;
+    const thirdLine = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="line:A|B:2"]',
+    ) as SVGLineElement | null;
+    const parcelMenuButton = container.querySelector(
+      '[data-survey-cad-parcel-menu-button]',
+    ) as HTMLButtonElement | null;
+    if (!firstLine || !secondLine || !thirdLine || !parcelMenuButton) {
+      throw new Error('Expected parcel diagnostic controls not found');
+    }
+
+    await act(async () => {
+      firstLine.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 0, clientY: 0 }));
+      secondLine.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 0, clientY: 0, shiftKey: true }));
+      thirdLine.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 0, clientY: 0, shiftKey: true }));
+    });
+    expect(container.querySelector('[data-survey-cad-selection-count]')?.textContent).toContain('3 selected');
+
+    await act(async () => {
+      parcelMenuButton.click();
+    });
+    await act(async () => {
+      clickButton(container, 'Parcel Check');
+    });
+
+    const cogoPanels = Array.from(container.querySelectorAll('[data-survey-cad-cogo-panel]'));
+    const parcelCheckPanel = cogoPanels.find((panel) =>
+      panel.querySelector('[data-survey-cad-cogo-panel-source]')?.textContent?.includes('Latest COGO Result'),
+    );
+    expect(parcelCheckPanel?.querySelector('[data-survey-cad-cogo-panel-title]')?.textContent).toContain(
+      'Parcel Linework Check',
+    );
+    expect(parcelCheckPanel?.querySelector('[data-survey-cad-cogo-panel-tool]')?.textContent).toContain(
+      'PARCEL_CHECK',
+    );
+    expect(parcelCheckPanel?.querySelector('[data-survey-cad-cogo-panel-summary]')?.textContent).toContain(
+      '1 open end',
+    );
+    expect(parcelCheckPanel?.querySelector('[data-survey-cad-cogo-panel-rows]')?.textContent).toContain(
+      'Needs cleanup',
+    );
+    expect(parcelCheckPanel?.querySelector('[data-survey-cad-cogo-panel-rows]')?.textContent).toContain(
+      'C',
+    );
+    expect(parcelCheckPanel?.querySelector('[data-survey-cad-cogo-panel-rows]')?.textContent).toContain(
+      'A-B x2',
+    );
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
   it('creates an alignment from a selected line-arc chain and reports it through the COGO panel', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);

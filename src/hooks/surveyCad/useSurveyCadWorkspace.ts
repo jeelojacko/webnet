@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import {
+  cadBuildParcelLineworkDiagnostics,
   cadBuildParcelSourceDraft,
   cadBuildParcelReportSummary,
   cadIntersectLineLikeEntities,
@@ -23,7 +24,7 @@ import {
   buildCadPropertiesPanelState,
   type CadPropertiesPanelState,
 } from '../../engine/cad/cadProperties';
-import type { CadCogoComputation } from '../../engine/cad/cadCogoTypes';
+import { buildCadCogoComputation, type CadCogoComputation } from '../../engine/cad/cadCogoTypes';
 import {
   createCadHistoryState,
   redoCadHistory,
@@ -216,6 +217,7 @@ interface UseSurveyCadWorkspaceResult {
   canCreateAlignmentOffsetPoint: boolean;
   canCreateAlignmentIntervalPoints: boolean;
   canCreateParcel: boolean;
+  canReportParcelDiagnostics: boolean;
   canContinueCurve: boolean;
   canTrimSelection: boolean;
   canExtendSelection: boolean;
@@ -283,6 +285,7 @@ interface UseSurveyCadWorkspaceResult {
   createAlignmentFromSelection: () => void;
   reportAlignmentStationFromSelection: () => void;
   createParcelFromSelection: () => void;
+  reportParcelDiagnosticsFromSelection: () => void;
   cancelActiveCommand: () => void;
   finishActiveCommand: () => void;
   setCommandInputValue: (_value: string) => void;
@@ -437,6 +440,13 @@ export const useSurveyCadWorkspace = (
             ),
           )
         : null,
+    [selectedEntities],
+  );
+  const selectedParcelDiagnosticLines = useMemo(
+    () =>
+      selectedEntities.every((entity) => entity.type === 'line')
+        ? selectedEntities.filter((entity): entity is CadLineEntity => entity.type === 'line')
+        : [],
     [selectedEntities],
   );
   const selectedLineLikes = useMemo(
@@ -1159,6 +1169,7 @@ export const useSurveyCadWorkspace = (
     canCreateAlignmentIntervalPoints:
       selectedEntities.length === 1 && selectedAlignmentForStationing != null,
     canCreateParcel: selectedParcelSource != null,
+    canReportParcelDiagnostics: selectedParcelDiagnosticLines.length > 0,
     canContinueCurve: selectedArcForContinue != null,
     canTrimSelection: true,
     canExtendSelection: true,
@@ -1265,6 +1276,49 @@ export const useSurveyCadWorkspace = (
         runCadCommand(current, {
           key: 'PARCEL_CREATE',
           sourceEntityIds: selectedParcelSource.sourceEntityIds,
+        }),
+      );
+    },
+    reportParcelDiagnosticsFromSelection: () => {
+      if (selectedParcelDiagnosticLines.length === 0) return;
+      const diagnostics = cadBuildParcelLineworkDiagnostics(selectedParcelDiagnosticLines);
+      const openEnds = diagnostics.danglingNodes.map((node) => node.label).join(', ');
+      const branchNodes = diagnostics.branchNodes.map((node) => node.label).join(', ');
+      const overlapSummary = diagnostics.overlapSegments
+        .map((segment) => `${segment.firstLabel}-${segment.secondLabel} x${segment.segmentCount}`)
+        .join(', ');
+      const summary = diagnostics.isClosedLoopCandidate
+        ? 'Selected linework forms one closed parcel loop.'
+        : `Selected linework has ${diagnostics.danglingNodes.length} open end${diagnostics.danglingNodes.length === 1 ? '' : 's'}, ${diagnostics.branchNodes.length} branch node${diagnostics.branchNodes.length === 1 ? '' : 's'}, and ${diagnostics.overlapSegments.length} overlap group${diagnostics.overlapSegments.length === 1 ? '' : 's'}.`;
+      setReportedComputation(
+        buildCadCogoComputation({
+          createdEntities: [],
+          report: {
+            title: 'Parcel Linework Check',
+            summary,
+            rows: [
+              {
+                label: 'Status',
+                value: diagnostics.isClosedLoopCandidate ? 'Closed loop ready for PARCEL' : 'Needs cleanup',
+              },
+              { label: 'Lines', value: diagnostics.lineCount.toFixed(0) },
+              { label: 'Nodes', value: diagnostics.nodeCount.toFixed(0) },
+              { label: 'Components', value: diagnostics.componentCount.toFixed(0) },
+              { label: 'Open ends', value: openEnds || 'None' },
+              { label: 'Branch nodes', value: branchNodes || 'None' },
+              { label: 'Overlaps', value: overlapSummary || 'None' },
+            ],
+          },
+          warnings: [],
+          provenance: {
+            id: `parcel-check:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`,
+            toolKey: 'PARCEL_CHECK',
+            inputs: {
+              sourceEntityIds: selectedParcelDiagnosticLines.map((entity) => entity.id),
+            },
+            resultSummary: summary,
+            createdAtIso: new Date().toISOString(),
+          },
         }),
       );
     },

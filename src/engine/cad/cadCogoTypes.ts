@@ -4,6 +4,7 @@ export type CadCogoToolKey =
   | 'INVERSE'
   | 'MULTI_INVERSE'
   | 'AREA'
+  | 'PARCEL_CHECK'
   | 'COGO_POINT'
   | 'INTERSECT_POINT'
   | 'CURVE_CALCULATOR'

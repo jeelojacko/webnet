@@ -19,6 +19,7 @@ interface SurveyCadCommandLineProps {
   canCreateAlignmentOffsetPoint: boolean;
   canCreateAlignmentIntervalPoints: boolean;
   canCreateParcel: boolean;
+  canReportParcelDiagnostics: boolean;
   canContinueCurve: boolean;
   canTrimSelection: boolean;
   canExtendSelection: boolean;
@@ -79,6 +80,7 @@ interface SurveyCadCommandLineProps {
   onCreateAlignment: () => void;
   onReportAlignmentStation: () => void;
   onCreateParcel: () => void;
+  onReportParcelDiagnostics: () => void;
   onSelectAll: () => void;
   onClearSelection: () => void;
   onErase: () => void;
@@ -110,6 +112,7 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   canCreateAlignmentOffsetPoint,
   canCreateAlignmentIntervalPoints,
   canCreateParcel,
+  canReportParcelDiagnostics,
   canContinueCurve,
   canTrimSelection,
   canExtendSelection,
@@ -170,6 +173,7 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   onCreateAlignment,
   onReportAlignmentStation,
   onCreateParcel,
+  onReportParcelDiagnostics,
   onSelectAll,
   onClearSelection,
   onErase,
@@ -180,6 +184,7 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   const [coreCogoMenuOpen, setCoreCogoMenuOpen] = React.useState(false);
   const [curveMenuOpen, setCurveMenuOpen] = React.useState(false);
   const [intersectionMenuOpen, setIntersectionMenuOpen] = React.useState(false);
+  const [parcelMenuOpen, setParcelMenuOpen] = React.useState(false);
   const runImmediate = (action: () => void) => {
     flushSync(() => {
       action();
@@ -584,15 +589,49 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
       >
         STA INT
       </button>
-      <button
-        type="button"
-        className={commandButtonClassName}
-        onClick={() => runImmediate(onCreateParcel)}
-        disabled={!canCreateParcel}
-        title="Create Parcel"
-      >
-        PARCEL
-      </button>
+      <div className="relative flex items-stretch" data-survey-cad-parcel-tool>
+        <button
+          type="button"
+          className={commandButtonClassName}
+          onClick={() => runImmediate(onCreateParcel)}
+          disabled={!canCreateParcel}
+          title="Create Parcel"
+        >
+          PARCEL
+        </button>
+        <button
+          type="button"
+          className={commandButtonClassName}
+          onClick={() => setParcelMenuOpen((current) => !current)}
+          title="Parcel Tools"
+          data-survey-cad-parcel-menu-button
+        >
+          ▾
+        </button>
+        {parcelMenuOpen ? (
+          <div
+            className="absolute left-0 top-full z-20 mt-1 grid min-w-56 gap-1 rounded border border-slate-700 bg-slate-950/95 p-2 shadow-xl"
+            data-survey-cad-parcel-menu
+          >
+            <button
+              type="button"
+              className={arcMenuButtonClassName}
+              onClick={() => { setParcelMenuOpen(false); runImmediate(onCreateParcel); }}
+              disabled={!canCreateParcel}
+            >
+              Create Parcel
+            </button>
+            <button
+              type="button"
+              className={arcMenuButtonClassName}
+              onClick={() => { setParcelMenuOpen(false); runImmediate(onReportParcelDiagnostics); }}
+              disabled={!canReportParcelDiagnostics}
+            >
+              Parcel Check
+            </button>
+          </div>
+        ) : null}
+      </div>
       <button type="button" className={commandButtonClassName} onClick={() => runImmediate(onSelectAll)} title="Select All">
         S-ALL
       </button>

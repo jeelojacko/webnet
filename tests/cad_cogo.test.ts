@@ -3,6 +3,7 @@ import {
   buildCadInverseSummary,
   buildCadDistanceSummary,
   buildCadMultiInverseSummary,
+  cadBuildParcelLineworkDiagnostics,
   cadConvertAreaSquareMeters,
   cadBuildArcFromThreePoints,
   cadBuildArcFromChordBearingRadius,
@@ -915,6 +916,71 @@ describe('Survey CAD COGO helpers', () => {
       'A-B',
       'B-C',
       'C-A',
+    ]);
+  });
+
+  it('diagnoses open ends and overlaps in parcel linework', () => {
+    const diagnostics = cadBuildParcelLineworkDiagnostics([
+      {
+        id: 'line:A|B:1',
+        type: 'line',
+        layerId: 'planning',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        fromStationId: 'A',
+        toStationId: 'B',
+        fromX: 0,
+        fromY: 0,
+        toX: 10,
+        toY: 0,
+        sourceObservationIds: [],
+      },
+      {
+        id: 'line:B|C',
+        type: 'line',
+        layerId: 'planning',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        fromStationId: 'B',
+        toStationId: 'C',
+        fromX: 10,
+        fromY: 0,
+        toX: 20,
+        toY: 0,
+        sourceObservationIds: [],
+      },
+      {
+        id: 'line:A|B:2',
+        type: 'line',
+        layerId: 'planning',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        fromStationId: 'A',
+        toStationId: 'B',
+        fromX: 0,
+        fromY: 0,
+        toX: 10,
+        toY: 0,
+        sourceObservationIds: [],
+      },
+    ]);
+
+    expect(diagnostics.lineCount).toBe(3);
+    expect(diagnostics.nodeCount).toBe(3);
+    expect(diagnostics.componentCount).toBe(1);
+    expect(diagnostics.isClosedLoopCandidate).toBe(false);
+    expect(diagnostics.danglingNodes.map((node) => node.label)).toEqual(['C']);
+    expect(diagnostics.branchNodes.map((node) => node.label)).toEqual(['B']);
+    expect(diagnostics.overlapSegments).toEqual([
+      {
+        firstLabel: 'A',
+        secondLabel: 'B',
+        segmentCount: 2,
+        lengthMeters: 10,
+      },
     ]);
   });
 
