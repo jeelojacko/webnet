@@ -5,6 +5,7 @@ import type { CadBounds, SurveyCadPersistedState } from '../engine/cad/cadTypes'
 import { noteUiTabReady } from '../hooks/useUiPerfMonitor';
 import { useSurveyCadWorkspace } from '../hooks/surveyCad/useSurveyCadWorkspace';
 import SurveyCadCommandLine from './surveyCad/SurveyCadCommandLine';
+import SurveyCadCogoPanel from './surveyCad/SurveyCadCogoPanel';
 import SurveyCadPropertiesPanel from './surveyCad/SurveyCadPropertiesPanel';
 import SurveyCadPreview from './surveyCad/SurveyCadPreview';
 
@@ -72,6 +73,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     selectedEntityIds,
     selectedEntities,
     selectedParcelReport,
+    reportedComputation,
     propertiesPanelState,
     activeBatchCogoDraft,
     activeTraverseDraft,
@@ -129,6 +131,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     startTangentCurveCommand,
     startInverseCommand,
     startMultiInverseCommand,
+    startAreaCommand,
     startBearingReportCommand,
     startDistanceReportCommand,
     startTurnedPointCommand,
@@ -334,6 +337,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     if (activeCommandKey === 'TRAVERSE') return 'Click start / next point or type bearing-distance';
     if (activeCommandKey === 'BATCH_COGO') return 'Use batch COGO panel for pasted deed rows';
     if (activeCommandKey === 'MULTI_INVERSE') return 'Click point sequence or type x,y / bearing-distance';
+    if (activeCommandKey === 'AREA') return 'Click point sequence or type x,y / bearing-distance, then Enter to close';
     if (activeCommandKey === 'TURNED_POINT') return 'Pick occupy/backsight, then type Langle,distance or Rangle,distance';
     if (activeCommandKey === 'DEFLECT_POINT') return 'Type Langle,distance or Rangle,distance from selected line';
     if (activeCommandKey === 'POINT_ALONG_LINE') return 'Type distance or percent like 25 or 50% from selected line';
@@ -573,6 +577,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               onStartTangentCurve={startTangentCurveCommand}
               onStartInverse={startInverseCommand}
               onStartMultiInverse={startMultiInverseCommand}
+              onStartArea={startAreaCommand}
               onStartBearingReport={startBearingReportCommand}
               onStartDistanceReport={startDistanceReportCommand}
               onStartTurnedPoint={startTurnedPointCommand}
@@ -625,6 +630,9 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               onSelectEntity={(entityId) => selectEntity(entityId)}
               onEditField={editPropertiesField}
             />
+          ) : null}
+          {reportedComputation ? (
+            <SurveyCadCogoPanel computation={reportedComputation} sourceLabel="latest" />
           ) : null}
           {activeBatchCogoDraft ? (
             <div
@@ -1210,7 +1218,10 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             selectedEntityIds={selectedEntityIds}
             selectedParcelReport={selectedParcelReport}
             hasTopRightOverlay={
-              propertiesPanelState != null || activeBatchCogoDraft != null || activeTraverseDraft != null
+              propertiesPanelState != null ||
+              reportedComputation != null ||
+              activeBatchCogoDraft != null ||
+              activeTraverseDraft != null
             }
             activeSnap={activeSnap}
             commandPreviewPrimitives={commandPreviewPrimitives}

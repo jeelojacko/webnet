@@ -71,6 +71,7 @@ interface UseSurveyCadWorkspaceResult {
   selectedEntityIds: string[];
   selectedEntities: ReturnType<typeof getSelectedCadEntities>;
   selectedParcelReport: CadParcelReportSummary | null;
+  reportedComputation: CadCogoComputation | null;
   propertiesPanelState: CadPropertiesPanelState | null;
   activeBatchCogoDraft: {
     inputValue: string;
@@ -162,6 +163,7 @@ interface UseSurveyCadWorkspaceResult {
     | 'TANGENT_CURVE'
     | 'INVERSE'
     | 'MULTI_INVERSE'
+    | 'AREA'
     | 'BEARING_REPORT'
     | 'DISTANCE_REPORT'
     | 'TURNED_POINT'
@@ -244,6 +246,7 @@ interface UseSurveyCadWorkspaceResult {
   startTangentCurveCommand: () => void;
   startInverseCommand: () => void;
   startMultiInverseCommand: () => void;
+  startAreaCommand: () => void;
   startBearingReportCommand: () => void;
   startDistanceReportCommand: () => void;
   startTurnedPointCommand: () => void;
@@ -494,7 +497,7 @@ export const useSurveyCadWorkspace = (
       vertexLabels: selectedParcel.vertexLabels,
     });
   }, [selectedEntities]);
-  const [, setReportedComputation] = useState<CadCogoComputation | null>(null);
+  const [reportedComputation, setReportedComputation] = useState<CadCogoComputation | null>(null);
   const propertiesPanelState = useMemo(
     () => buildCadPropertiesPanelState(cadProject, selectedEntities),
     [cadProject, selectedEntities],
@@ -701,6 +704,7 @@ export const useSurveyCadWorkspace = (
     startTangentCurveCommand,
     startInverseCommand,
     startMultiInverseCommand,
+    startAreaCommand,
     startBearingReportCommand,
     startDistanceReportCommand,
     startTurnedPointCommand,
@@ -1114,6 +1118,7 @@ export const useSurveyCadWorkspace = (
     selectedEntityIds: selection.selectedEntityIds,
     selectedEntities,
     selectedParcelReport,
+    reportedComputation,
     propertiesPanelState,
     activeBatchCogoDraft,
     activeTraverseDraft,
@@ -1184,6 +1189,7 @@ export const useSurveyCadWorkspace = (
     startTangentCurveCommand,
     startInverseCommand,
     startMultiInverseCommand,
+    startAreaCommand,
     startBearingReportCommand,
     startDistanceReportCommand,
     startTurnedPointCommand,

@@ -28,6 +28,8 @@
 
 - [x] Survey CAD parcel-area units batch (June 2026): add shared parcel area conversions and surface hectare/acre/square-foot readouts alongside the existing square-meter parcel metrics in the native parcel report/COGO workflow.
 
+- [x] Survey CAD area-sequence batch (June 2026): add a report-only `AREA` command that captures a picked/typed point sequence, auto-closes the loop for parcel-style math, and reports area/perimeter/closure plus converted area units without creating parcel entities.
+
 - [x] Survey CAD traverse adjustment batch (June 2026): add draft-panel angular balance plus Bowditch/transit closure adjustment on top of the native traverse editor, persist adjustment provenance/report rows through command history, and leave optional Crandall balancing for a later high-end pass.
 
 - [x] Survey CAD curve calculator batch (June 2026): add shared curve-solver/report math, selected-arc radial bearing and point-on-curve/subdivision/offset tools, typed PI-radius-delta and chord-bearing constructors, reverse/compound continuations, and focused CAD math/workspace coverage.

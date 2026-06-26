@@ -42,6 +42,7 @@ interface SurveyCadCommandLineProps {
   onStartTangentCurve: () => void;
   onStartInverse: () => void;
   onStartMultiInverse: () => void;
+  onStartArea: () => void;
   onStartBearingReport: () => void;
   onStartDistanceReport: () => void;
   onStartTurnedPoint: () => void;
@@ -132,6 +133,7 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   onStartTangentCurve,
   onStartInverse,
   onStartMultiInverse,
+  onStartArea,
   onStartBearingReport,
   onStartDistanceReport,
   onStartTurnedPoint,
@@ -290,6 +292,9 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
           >
             <button type="button" className={arcMenuButtonClassName} onClick={() => { setCoreCogoMenuOpen(false); runImmediate(onStartMultiInverse); }}>
               Multi Inverse
+            </button>
+            <button type="button" className={arcMenuButtonClassName} onClick={() => { setCoreCogoMenuOpen(false); runImmediate(onStartArea); }}>
+              Area Sequence
             </button>
             <button type="button" className={arcMenuButtonClassName} onClick={() => { setCoreCogoMenuOpen(false); runImmediate(onStartBearingReport); }}>
               Bearing Report

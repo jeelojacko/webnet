@@ -893,6 +893,31 @@ describe('Survey CAD COGO helpers', () => {
     expect(report?.closureDistanceMeters ?? Number.NaN).toBeCloseTo(0, 6);
   });
 
+  it('builds an implied-closure parcel report from an open point sequence', () => {
+    const report = cadBuildParcelReportSummary({
+      parcelName: 'Area Sequence',
+      vertices: [
+        { x: 0, y: 0 },
+        { x: 0, y: 10 },
+        { x: 10, y: 10 },
+      ],
+      vertexLabels: ['A', 'B', 'C'],
+    });
+
+    expect(report).not.toBeNull();
+    expect(report?.courseCount).toBe(3);
+    expect(report?.areaSquareMeters ?? Number.NaN).toBeCloseTo(50, 6);
+    expect(report?.perimeterMeters ?? Number.NaN).toBeCloseTo(34.142136, 6);
+    expect(report?.closureDeltaX ?? Number.NaN).toBeCloseTo(-10, 6);
+    expect(report?.closureDeltaY ?? Number.NaN).toBeCloseTo(-10, 6);
+    expect(report?.closureDistanceMeters ?? Number.NaN).toBeCloseTo(14.142136, 6);
+    expect(report?.courses.map((course) => `${course.fromLabel}-${course.toLabel}`)).toEqual([
+      'A-B',
+      'B-C',
+      'C-A',
+    ]);
+  });
+
   it('converts parcel area square meters into shared display units', () => {
     const converted = cadConvertAreaSquareMeters(187.5);
 

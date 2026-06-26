@@ -3954,6 +3954,71 @@ describe('SurveyCadWorkspace', () => {
     container.remove();
   });
 
+  it('reports area from a picked point sequence through the point-line COGO menu', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+        />,
+      );
+    });
+
+    const commandInput = container.querySelector('[data-survey-cad-command-input]') as HTMLInputElement | null;
+    if (!commandInput) throw new Error('Command input not found');
+
+    await act(async () => {
+      (container.querySelector('[data-survey-cad-core-cogo-menu-button]') as HTMLButtonElement | null)?.click();
+    });
+    await act(async () => {
+      clickButton(container, 'Area Sequence');
+      setTextInputValue(commandInput, 'A=0,0');
+      pressKey(commandInput, 'Enter');
+      setTextInputValue(commandInput, 'B=0,10');
+      pressKey(commandInput, 'Enter');
+      setTextInputValue(commandInput, 'C=10,10');
+      pressKey(commandInput, 'Enter');
+      setTextInputValue(commandInput, '');
+      pressKey(commandInput, 'Enter');
+    });
+
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+      'AREA reported 3 sides, 50.000 m².',
+    );
+    const cogoPanels = Array.from(container.querySelectorAll('[data-survey-cad-cogo-panel]'));
+    const areaPanel = cogoPanels.find((panel) =>
+      panel.querySelector('[data-survey-cad-cogo-panel-source]')?.textContent?.includes('Latest COGO Result'),
+    );
+    expect(areaPanel?.querySelector('[data-survey-cad-cogo-panel-title]')?.textContent).toContain(
+      'Area by Point Sequence',
+    );
+    expect(areaPanel?.querySelector('[data-survey-cad-cogo-panel-tool]')?.textContent).toContain('AREA');
+    expect(areaPanel?.querySelector('[data-survey-cad-cogo-panel-rows]')?.textContent).toContain(
+      '50.000 m2',
+    );
+    expect(areaPanel?.querySelector('[data-survey-cad-cogo-panel-rows]')?.textContent).toContain(
+      '0.0050 ha',
+    );
+    expect(areaPanel?.querySelector('[data-survey-cad-cogo-panel-rows]')?.textContent).toContain(
+      '538.196 ft2',
+    );
+    expect(areaPanel?.querySelector('[data-survey-cad-cogo-panel-rows]')?.textContent).toContain(
+      '14.142 m',
+    );
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
   it('creates a point along a selected line from the point-line COGO menu', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);

@@ -3,6 +3,7 @@ import type { CadDisplayPoint, CadEntity, CadEntityId } from './cadTypes';
 export type CadCogoToolKey =
   | 'INVERSE'
   | 'MULTI_INVERSE'
+  | 'AREA'
   | 'COGO_POINT'
   | 'INTERSECT_POINT'
   | 'CURVE_CALCULATOR'

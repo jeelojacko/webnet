@@ -9,12 +9,14 @@ import {
   cadArcPointByChordDistance,
   cadArcSubdivisionPoints,
   cadAdjustTraverse,
+  cadBuildParcelReportSummary,
   cadBuildArcFromChordBearingRadius,
   cadBuildArcFromPiRadiusDelta,
   cadBuildCompoundCurve,
   buildCadDistanceSummary,
   buildCadInverseSummary,
   buildCadMultiInverseSummary,
+  cadConvertAreaSquareMeters,
   cadBuildCurveMetricsSummaryFromRadiusDelta,
   cadComputeDeflectionAnglePoint,
   cadComputeTurnedAnglePoint,
@@ -120,6 +122,7 @@ type ActiveCommandKey =
   | 'TANGENT_CURVE'
   | 'INVERSE'
   | 'MULTI_INVERSE'
+  | 'AREA'
   | 'BEARING_REPORT'
   | 'DISTANCE_REPORT'
   | 'TURNED_POINT'
@@ -175,6 +178,12 @@ type CommandSession =
     }
   | {
       key: 'MULTI_INVERSE';
+      inputValue: string;
+      points: CommandPoint[];
+      resultText?: string;
+    }
+  | {
+      key: 'AREA';
       inputValue: string;
       points: CommandPoint[];
       resultText?: string;
@@ -505,6 +514,7 @@ interface UseSurveyCadCommandsResult {
   startTangentCurveCommand: () => void;
   startInverseCommand: () => void;
   startMultiInverseCommand: () => void;
+  startAreaCommand: () => void;
   startBearingReportCommand: () => void;
   startDistanceReportCommand: () => void;
   startTurnedPointCommand: () => void;
@@ -653,6 +663,7 @@ const sessionExpectsPointPick = (session: CommandSession | null): boolean => {
     case 'PLINE':
     case 'TRAVERSE':
     case 'MULTI_INVERSE':
+    case 'AREA':
     case 'BEARING_BEARING_INTX':
     case 'BEARING_DISTANCE_INTX':
     case 'DISTANCE_DISTANCE_INTX':
@@ -1246,6 +1257,11 @@ const promptForSession = (session: CommandSession | null, fallbackStatus: string
         (session.points.length > 0
           ? `MULTI_INVERSE active. ${session.points.length} point${session.points.length === 1 ? '' : 's'} captured. Click the next point or press Enter on an empty input to report the sequence.`
           : 'MULTI_INVERSE active. Click or enter the first point.');
+    case 'AREA':
+      return session.resultText ??
+        (session.points.length > 0
+          ? `AREA active. ${session.points.length} point${session.points.length === 1 ? '' : 's'} captured. Click the next point or press Enter on an empty input to report the loop.`
+          : 'AREA active. Click or enter the first point.');
     case 'BEARING_REPORT':
       return session.resultText ??
         (session.startPoint
@@ -1466,6 +1482,10 @@ const helpTextForSession = (session: CommandSession | null): string => {
       return session.points.length > 0
         ? 'MULTI_INVERSE next point: click in model space or type `x,y` / relative bearing-distance. Press Enter on an empty input to finish the report.'
         : 'MULTI_INVERSE first point: click in model space or type `x,y` / `LABEL=x,y`.';
+    case 'AREA':
+      return session.points.length > 0
+        ? 'AREA next point: click in model space or type `x,y` / relative bearing-distance. Press Enter on an empty input to close and report the loop after 3+ points.'
+        : 'AREA first point: click in model space or type `x,y` / `LABEL=x,y`.';
     case 'BEARING_REPORT':
       return session.startPoint
         ? 'BEARING report second point: `x,y`, `LABEL=x,y`, `@azimuth,distance`, or bearing-distance from the first point.'
@@ -1757,6 +1777,7 @@ export const useSurveyCadCommands = ({
             }
           : { active: false, basePoint: null };
       case 'MULTI_INVERSE':
+      case 'AREA':
         return session.points.length > 0
           ? {
               active: true,
@@ -1961,6 +1982,7 @@ export const useSurveyCadCommands = ({
           ],
         };
       case 'MULTI_INVERSE':
+      case 'AREA':
         if (!previewPoint) return null;
         if (session.points.length === 0) {
           return {
@@ -2500,6 +2522,15 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
       return;
     }
     if (current.key === 'MULTI_INVERSE') {
+      replaceSession({
+        ...current,
+        points: [...current.points, point],
+        inputValue: '',
+        resultText: undefined,
+      });
+      return;
+    }
+    if (current.key === 'AREA') {
       replaceSession({
         ...current,
         points: [...current.points, point],
@@ -3265,6 +3296,56 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
         replaceSession({
           ...session,
           resultText: 'MULTI_INVERSE point input invalid. Use `x,y`, `LABEL=x,y`, `@azimuth,distance`, or survey bearing-distance.',
+        });
+        return;
+      }
+      consumePoint(parsedPoint);
+      return;
+    }
+    if (session.key === 'AREA') {
+      if (session.inputValue.trim().length === 0) {
+        if (session.points.length < 3) return;
+        const report = cadBuildParcelReportSummary({
+          parcelName: 'Area Sequence',
+          vertices: session.points,
+          vertexLabels: session.points.map((point) => point.label),
+        });
+        if (!report) {
+          replaceSession({
+            ...session,
+            resultText: 'AREA could not build a valid loop from the captured point sequence.',
+          });
+          return;
+        }
+        const convertedArea = cadConvertAreaSquareMeters(report.areaSquareMeters);
+        publishReport(
+          'AREA',
+          'Area by Point Sequence',
+          `Computed area from ${report.courseCount} side${report.courseCount === 1 ? '' : 's'}.`,
+          [
+            { label: 'Points', value: session.points.map((point) => point.label).join(' -> ') },
+            { label: 'Area', value: report.areaSquareMeters.toFixed(3), unit: 'm2' },
+            { label: 'Area (ha)', value: convertedArea.hectares.toFixed(4), unit: 'ha' },
+            { label: 'Area (ac)', value: convertedArea.acres.toFixed(4), unit: 'ac' },
+            { label: 'Area (ft2)', value: convertedArea.squareFeet.toFixed(3), unit: 'ft2' },
+            { label: 'Perimeter', value: report.perimeterMeters.toFixed(3), unit: 'm' },
+            { label: 'Closure dN', value: report.closureDeltaY.toFixed(3), unit: 'm' },
+            { label: 'Closure dE', value: report.closureDeltaX.toFixed(3), unit: 'm' },
+            { label: 'Closure', value: report.closureDistanceMeters.toFixed(3), unit: 'm' },
+          ],
+        );
+        replaceSession({
+          ...session,
+          points: [],
+          resultText: `AREA reported ${report.courseCount} sides, ${report.areaSquareMeters.toFixed(3)} m².`,
+        });
+        return;
+      }
+      const parsedPoint = parseInputPoint(session.inputValue, session.points[session.points.length - 1] ?? null);
+      if (!parsedPoint) {
+        replaceSession({
+          ...session,
+          resultText: 'AREA point input invalid. Use `x,y`, `LABEL=x,y`, `@azimuth,distance`, or survey bearing-distance.',
         });
         return;
       }
@@ -4479,6 +4560,10 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
       submitSessionInput();
       return;
     }
+    if (session.key === 'AREA' && session.inputValue.trim().length === 0 && session.points.length >= 3) {
+      submitSessionInput();
+      return;
+    }
     if (session.inputValue.trim().length === 0) return;
     submitSessionInput();
   };
@@ -5122,6 +5207,12 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
     startMultiInverseCommand: () =>
       beginSession({
         key: 'MULTI_INVERSE',
+        inputValue: '',
+        points: [],
+      }),
+    startAreaCommand: () =>
+      beginSession({
+        key: 'AREA',
         inputValue: '',
         points: [],
       }),
