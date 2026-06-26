@@ -5,6 +5,7 @@ import {
 } from './cadSelection';
 import {
   cadBuildParcelClosureSummary,
+  cadBuildParcelReportSummary,
   cadBuildParcelSourceDraft,
   cadConvertAreaSquareMeters,
 } from './cadCogo';
@@ -5188,7 +5189,13 @@ const parcelCreateCommand: CadCommandDefinition<{
         : parcelSource.vertices;
     const metrics = cadBuildParcelClosureSummary(metricVertices);
     if (!metrics) return null;
-    const parcelName = nextParcelName(snapshot.project);
+    const parcelReport = cadBuildParcelReportSummary({
+      parcelName: nextParcelName(snapshot.project),
+      vertices: parcelSource.vertices,
+      vertexLabels: parcelSource.vertexLabels,
+    });
+    if (!parcelReport) return null;
+    const parcelName = parcelReport.parcelName;
     const summary = `Created ${parcelName} from ${parcelSource.sourceEntityIds.join(', ')}`;
     const provenance = createCogoProvenance({
       toolKey: 'PARCEL_CREATE',
@@ -5240,6 +5247,17 @@ const parcelCreateCommand: CadCommandDefinition<{
         { label: 'Area (ft2)', value: convertedArea.squareFeet.toFixed(3), unit: 'ft2' },
         { label: 'Perimeter', value: metrics.perimeterMeters.toFixed(3), unit: 'm' },
         { label: 'Closure', value: metrics.closureDistanceMeters.toFixed(3), unit: 'm' },
+        ...parcelReport.courses.flatMap((course, index) => [
+          {
+            label: `Course ${index + 1}`,
+            value: `${course.fromLabel}-${course.toLabel} ${course.bearing}`,
+          },
+          {
+            label: `Course ${index + 1} Distance`,
+            value: course.distanceMeters.toFixed(3),
+            unit: 'm',
+          },
+        ]),
       ],
       createdEntities: [parcelEntity],
     });

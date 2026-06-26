@@ -6975,6 +6975,9 @@ describe('SurveyCadWorkspace', () => {
       'A-CAD1',
     );
     expect(container.querySelector('[data-survey-cad-parcel-report]')?.textContent).toContain(
+      'N90-00-00.00E',
+    );
+    expect(container.querySelector('[data-survey-cad-parcel-report]')?.textContent).toContain(
       '90°00\'00"',
     );
     expect(container.querySelectorAll('[data-survey-cad-parcel-course]')).toHaveLength(3);

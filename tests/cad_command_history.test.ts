@@ -1315,6 +1315,15 @@ describe('Survey CAD command history', () => {
     expect(parcel.areaSquareMeters).toBeCloseTo(187.5, 6);
     expect(parcel.perimeterMeters).toBeCloseTo(69.154759, 6);
     expect(parcel.closureDistanceMeters).toBeCloseTo(0, 6);
+    const parcelReportRows = parcelState.present.project.cogoComputations.at(-1)?.report.rows ?? [];
+    expect(parcelReportRows).toEqual(
+      expect.arrayContaining([
+        { label: 'Course 1', value: 'A-P1 N90-00-00.00E' },
+        { label: 'Course 1 Distance', value: '25.000', unit: 'm' },
+        { label: 'Course 2', value: 'P1-P2 N00-00-00.00E' },
+        { label: 'Course 3', value: 'P2-A S59-02-10.48W' },
+      ]),
+    );
 
     const undoneParcelState = undoCadHistory(parcelState);
     expect(
@@ -1403,6 +1412,14 @@ describe('Survey CAD command history', () => {
     expect(parcel.areaSquareMeters).toBeCloseTo(187.5, 6);
     expect(parcel.perimeterMeters).toBeCloseTo(69.154759, 6);
     expect(parcel.closureDistanceMeters).toBeCloseTo(0, 6);
+    const parcelReportRows = parcelState.present.project.cogoComputations.at(-1)?.report.rows ?? [];
+    expect(parcelReportRows).toEqual(
+      expect.arrayContaining([
+        { label: 'Course 1', value: 'A-P1 N90-00-00.00E' },
+        { label: 'Course 2', value: 'P1-P2 N00-00-00.00E' },
+        { label: 'Course 3', value: 'P2-A S59-02-10.48W' },
+      ]),
+    );
   });
 
   it('commits point-to-point traverses with sideshots into geometry and persisted COGO history', () => {

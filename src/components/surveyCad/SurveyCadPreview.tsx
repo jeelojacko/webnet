@@ -1394,7 +1394,10 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
                 data-survey-cad-parcel-course
               >
                 <span className="text-slate-400">{course.fromLabel}-{course.toLabel}</span>
-                <span>{course.azimuthText}</span>
+                <span>
+                  {course.bearing}
+                  <span className="pl-2 text-[10px] text-slate-400">{course.azimuthText}</span>
+                </span>
                 <span>{course.distanceMeters.toFixed(3)} m</span>
               </div>
             ))}
