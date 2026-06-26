@@ -31,6 +31,7 @@
 - [x] Survey CAD trim pair-pick loop batch (June 2026): make repeatable native `TRIM` follow the same first-entity/second-entity loop as `FILLET`, keep the live survivor preview on the hovered second pick, and reset cleanly for the next trim pair after each commit or failed same-entity pick.
 
 - [x] Survey CAD alignment command-copy batch (June 2026): replace raw `ALIGNMENT_*` status, validation, and committed-history copy on the CAD command surface with operator-facing `ALIGN`, `ALIGN OFF`, `STA`, `STA EQ`, `STA PT`, and `STA INT` wording.
+- [x] Survey CAD stakeout-properties wording batch (June 2026): make `Properties` show readable stakeout-kind labels like `Station offset` and `Interval` instead of raw metadata slugs such as `station-offset`.
 - [ ] Parcel tools batch: add area by picked point sequence, area unit conversion, create parcel from closed selected linework, split by line/bearing/area, hinged/sliding area, gap/overlap detection, and line/curve parcel tables.
 - [ ] Transform tools batch: add rotate, scale, mirror, two-point rotate+translate, 2D Helmert, affine transform, grid-ground scaling from origin, set/add/interpolate elevation.
 - [ ] Annotation/report batch: add bearing-distance labels, richer curve labels, line/curve tables, point reports, inverse reports, traverse reports, parcel reports, COGO history log, and export computation report.

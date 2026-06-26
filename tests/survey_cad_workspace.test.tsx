@@ -7174,7 +7174,7 @@ describe('SurveyCadWorkspace', () => {
       'Offset5.000',
     );
     expect(container.querySelector('[data-survey-cad-properties-panel-rows]')?.textContent).toContain(
-      'Stakeout kindstation-offset',
+      'Stakeout kindStation offset',
     );
 
     const persisted = capture.read();
@@ -7488,7 +7488,7 @@ describe('SurveyCadWorkspace', () => {
       'Offset0.000',
     );
     expect(container.querySelector('[data-survey-cad-properties-panel-rows]')?.textContent).toContain(
-      'Stakeout kindinterval',
+      'Stakeout kindInterval',
     );
 
     const persisted = capture.read();

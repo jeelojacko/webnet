@@ -257,7 +257,7 @@ describe('Survey CAD properties builder', () => {
     expect(state.entity.properties.find((row) => row.label === 'Alignment')?.value).toBe('ALIGN1');
     expect(state.entity.properties.find((row) => row.label === 'Station')?.value).toBe('1+10.000');
     expect(state.entity.properties.find((row) => row.label === 'Offset')?.value).toBe('5.000');
-    expect(state.entity.properties.find((row) => row.label === 'Stakeout kind')?.value).toBe('station-offset');
+    expect(state.entity.properties.find((row) => row.label === 'Stakeout kind')?.value).toBe('Station offset');
   });
 
   it('builds stakeout text properties with alignment metadata', () => {
@@ -292,7 +292,7 @@ describe('Survey CAD properties builder', () => {
     expect(state.entity.properties.find((row) => row.label === 'Alignment')?.value).toBe('ALIGN1');
     expect(state.entity.properties.find((row) => row.label === 'Station')?.value).toBe('1+10.000');
     expect(state.entity.properties.find((row) => row.label === 'Offset')?.value).toBe('5.000');
-    expect(state.entity.properties.find((row) => row.label === 'Stakeout kind')?.value).toBe('station-offset');
+    expect(state.entity.properties.find((row) => row.label === 'Stakeout kind')?.value).toBe('Station offset');
   });
 
   it('builds deterministic mixed-type multi-selection groups in selection order', () => {

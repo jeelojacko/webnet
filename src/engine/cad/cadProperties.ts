@@ -222,6 +222,14 @@ const appendAlignmentStakeoutRows = (
   rows: CadEntityPropertyRow[],
   metadata: CadEntity['metadata'] | undefined,
 ): void => {
+  const stakeoutKindLabel =
+    typeof metadata?.alignmentPointKind === 'string'
+      ? metadata.alignmentPointKind === 'station-offset'
+        ? 'Station offset'
+        : metadata.alignmentPointKind === 'interval'
+          ? 'Interval'
+          : metadata.alignmentPointKind
+      : null;
   if (typeof metadata?.alignmentName === 'string') {
     rows.push(row('alignment-name', 'Alignment', metadata.alignmentName));
   }
@@ -231,8 +239,8 @@ const appendAlignmentStakeoutRows = (
   if (typeof metadata?.alignmentOffset === 'number' && Number.isFinite(metadata.alignmentOffset)) {
     rows.push(row('alignment-offset', 'Offset', numeric(metadata.alignmentOffset)));
   }
-  if (typeof metadata?.alignmentPointKind === 'string') {
-    rows.push(row('alignment-point-kind', 'Stakeout kind', metadata.alignmentPointKind));
+  if (stakeoutKindLabel != null) {
+    rows.push(row('alignment-point-kind', 'Stakeout kind', stakeoutKindLabel));
   }
 };
 
