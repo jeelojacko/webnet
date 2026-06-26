@@ -7162,8 +7162,11 @@ describe('SurveyCadWorkspace', () => {
     });
 
     expect(container.querySelector('[data-survey-cad-properties-entity-label]')?.textContent).toContain(
-      'SO1',
+      'SO1 label',
     );
+    expect(
+      (container.querySelector('[data-survey-cad-properties-input="name"]') as HTMLInputElement | null)?.value,
+    ).toBe('SO1 label');
     expect(container.querySelector('[data-survey-cad-properties-panel-rows]')?.textContent).toContain(
       'AlignmentALIGN1',
     );
@@ -7279,11 +7282,11 @@ describe('SurveyCadWorkspace', () => {
     });
 
     expect(container.querySelector('[data-survey-cad-properties-entity-label]')?.textContent).toContain(
-      'SO2',
+      'SO2 label',
     );
-    expect(container.querySelector('[data-survey-cad-properties-panel-rows]')?.textContent).toContain(
-      'NameTextSO2',
-    );
+    expect(
+      (container.querySelector('[data-survey-cad-properties-input="name"]') as HTMLInputElement | null)?.value,
+    ).toBe('SO2 label');
     expect(container.querySelector('[data-survey-cad-properties-panel-rows]')?.textContent).toContain(
       'STA 1+10.000',
     );

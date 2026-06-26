@@ -214,4 +214,32 @@ describe('Survey CAD entity naming helpers', () => {
     expect(getCadEntitySubpartDisplayLabel(project, 'line:A|C', 'line-start')).toBe('A');
     expect(getCadEntitySubpartDisplayLabel(project, 'line:A|C', 'line-end')).toBe('C');
   });
+
+  it('prefers stable metadata names over multiline text body for anchored text labels', () => {
+    const project = appendCadProjectEntities(buildBaseProject(), [
+      {
+        id: 'label:SO1',
+        type: 'text',
+        layerId: 'labels',
+        styleId: 'style-label',
+        visible: true,
+        locked: false,
+        x: 10,
+        y: 10,
+        text: 'SO1\nSTA 1+10.000\nOFF 5.000 m',
+        anchorEntityId: 'pt:SO1',
+        metadata: {
+          entityName: 'SO1 label',
+          stationId: 'SO1',
+          alignmentStation: '1+10.000',
+          alignmentOffset: 5,
+          alignmentPointKind: 'station-offset',
+        },
+      },
+    ]);
+    const label = project.entities.find((entity) => entity.id === 'label:SO1');
+    if (!label || label.type !== 'text') throw new Error('Anchored text label not found');
+
+    expect(getCadEntityDisplayLabel(label)).toBe('SO1 label');
+  });
 });

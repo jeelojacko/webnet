@@ -429,6 +429,9 @@ const renamePointReferences = (
       if (typeof metadata.stationId === 'string') {
         metadata.stationId = nextStationId;
       }
+      if (typeof metadata.entityName === 'string') {
+        metadata.entityName = buildAnchoredPointLabelEntityName(nextStationId);
+      }
       const alignmentStation =
         typeof metadata.alignmentStation === 'string' ? metadata.alignmentStation : null;
       const alignmentOffset =
@@ -2115,6 +2118,7 @@ const createManualPointEntities = (
       metadata: {
         createdBy,
         manual: true,
+        entityName: buildAnchoredPointLabelEntityName(stationId),
         stationId,
       },
     },
@@ -2132,6 +2136,8 @@ const buildAlignmentStakeoutLabelText = (
   }
   return lines.join('\n');
 };
+
+const buildAnchoredPointLabelEntityName = (stationId: string): string => `${stationId} label`;
 
 const compactManualPointEntities = (
   entities: Array<CadSurveyPointEntity | CadTextEntity | null>,

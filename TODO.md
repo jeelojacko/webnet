@@ -22,6 +22,8 @@
 
 - [x] Survey CAD stakeout-properties wording batch (June 2026): make `Properties` show readable stakeout-kind labels like `Station offset` and `Interval` instead of raw metadata slugs such as `station-offset`.
 
+- [x] Survey CAD anchored-label naming batch (June 2026): give anchored point and stakeout text labels stable operator-facing `... label` names inside `Properties`, and keep those names synced when the source point is renamed.
+
 - [x] Survey CAD traverse adjustment batch (June 2026): add draft-panel angular balance plus Bowditch/transit closure adjustment on top of the native traverse editor, persist adjustment provenance/report rows through command history, and leave optional Crandall balancing for a later high-end pass.
 
 - [x] Survey CAD curve calculator batch (June 2026): add shared curve-solver/report math, selected-arc radial bearing and point-on-curve/subdivision/offset tools, typed PI-radius-delta and chord-bearing constructors, reverse/compound continuations, and focused CAD math/workspace coverage.
