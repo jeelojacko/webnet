@@ -126,6 +126,12 @@ export interface CadParcelCourseSummary {
   distanceMeters: number;
 }
 
+export interface CadAreaUnitSummary {
+  hectares: number;
+  acres: number;
+  squareFeet: number;
+}
+
 export interface CadParcelReportSummary extends CadParcelClosureSummary {
   parcelName: string;
   courseCount: number;
@@ -177,6 +183,12 @@ interface CadParcelNode {
 }
 
 const padInteger = (value: number, width: number): string => value.toString().padStart(width, '0');
+
+export const cadConvertAreaSquareMeters = (areaSquareMeters: number): CadAreaUnitSummary => ({
+  hectares: areaSquareMeters / 10_000,
+  acres: areaSquareMeters / 4046.8564224,
+  squareFeet: areaSquareMeters * 10.7639104167097,
+});
 
 export const formatCadNorthAzimuthDms = (azimuthDeg: number): string => {
   const normalized = ((azimuthDeg % 360) + 360) % 360;

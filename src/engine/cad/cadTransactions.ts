@@ -3,7 +3,11 @@ import {
   createCadSelectionState,
   selectAllCadEntities,
 } from './cadSelection';
-import { cadBuildParcelClosureSummary, cadBuildParcelSourceDraft } from './cadCogo';
+import {
+  cadBuildParcelClosureSummary,
+  cadBuildParcelSourceDraft,
+  cadConvertAreaSquareMeters,
+} from './cadCogo';
 import {
   buildCadBatchCogoReportRows,
   buildCadBatchCogoSummary,
@@ -5222,6 +5226,7 @@ const parcelCreateCommand: CadCommandDefinition<{
       }, provenance),
     };
     const nextProjectWithEntities = appendCadProjectEntities(snapshot.project, [parcelEntity]);
+    const convertedArea = cadConvertAreaSquareMeters(metrics.areaSquareMeters);
     const nextProject = appendCogoComputation({
       project: nextProjectWithEntities,
       provenance,
@@ -5230,6 +5235,9 @@ const parcelCreateCommand: CadCommandDefinition<{
       rows: [
         { label: 'Parcel', value: parcelName },
         { label: 'Area', value: metrics.areaSquareMeters.toFixed(3), unit: 'm2' },
+        { label: 'Area (ha)', value: convertedArea.hectares.toFixed(4), unit: 'ha' },
+        { label: 'Area (ac)', value: convertedArea.acres.toFixed(4), unit: 'ac' },
+        { label: 'Area (ft2)', value: convertedArea.squareFeet.toFixed(3), unit: 'ft2' },
         { label: 'Perimeter', value: metrics.perimeterMeters.toFixed(3), unit: 'm' },
         { label: 'Closure', value: metrics.closureDistanceMeters.toFixed(3), unit: 'm' },
       ],

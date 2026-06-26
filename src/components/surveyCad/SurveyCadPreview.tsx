@@ -8,7 +8,10 @@ import type {
   CadSnapCandidate,
   CadSnapKind,
 } from '../../engine/cad/cadTypes';
-import type { CadParcelReportSummary } from '../../engine/cad/cadCogo';
+import {
+  cadConvertAreaSquareMeters,
+  type CadParcelReportSummary,
+} from '../../engine/cad/cadCogo';
 import { cadClosestPointOnArc, cadSignedSweepDeg } from '../../engine/cad/cadGeometry';
 import type { CadSnapPreferences } from '../../hooks/surveyCad/useSurveyCadSnapping';
 
@@ -628,6 +631,13 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
 }) => {
   const { baseScale, normalized, project, scale, unproject } = useProjector(viewBounds, viewport);
   const visibleWorldBounds = useMemo(() => visibleWorldBoundsFromViewport(unproject), [unproject]);
+  const selectedParcelAreaUnits = useMemo(
+    () =>
+      selectedParcelReport
+        ? cadConvertAreaSquareMeters(selectedParcelReport.areaSquareMeters)
+        : null,
+    [selectedParcelReport],
+  );
   const snapToleranceScreenUnits = useMemo(
     () =>
       Math.max(
@@ -1358,6 +1368,12 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
           <div className="grid grid-cols-[auto,1fr] gap-x-3 gap-y-1 text-[11px] leading-4">
             <span className="text-slate-400">Area</span>
             <span>{selectedParcelReport.areaSquareMeters.toFixed(3)} m²</span>
+            <span className="text-slate-400">Area (ha)</span>
+            <span>{selectedParcelAreaUnits?.hectares.toFixed(4)} ha</span>
+            <span className="text-slate-400">Area (ac)</span>
+            <span>{selectedParcelAreaUnits?.acres.toFixed(4)} ac</span>
+            <span className="text-slate-400">Area (ft²)</span>
+            <span>{selectedParcelAreaUnits?.squareFeet.toFixed(3)} ft²</span>
             <span className="text-slate-400">Perimeter</span>
             <span>{selectedParcelReport.perimeterMeters.toFixed(3)} m</span>
             <span className="text-slate-400">Closure dN</span>

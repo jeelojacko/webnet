@@ -6895,6 +6895,18 @@ describe('SurveyCadWorkspace', () => {
       'Area',
     );
     expect(container.querySelector('[data-survey-cad-parcel-report]')?.textContent).toContain(
+      'Area (ha)',
+    );
+    expect(container.querySelector('[data-survey-cad-parcel-report]')?.textContent).toContain(
+      '0.0187 ha',
+    );
+    expect(container.querySelector('[data-survey-cad-parcel-report]')?.textContent).toContain(
+      '0.0463 ac',
+    );
+    expect(container.querySelector('[data-survey-cad-parcel-report]')?.textContent).toContain(
+      '2018.233 ft²',
+    );
+    expect(container.querySelector('[data-survey-cad-parcel-report]')?.textContent).toContain(
       'A-CAD1',
     );
     expect(container.querySelector('[data-survey-cad-parcel-report]')?.textContent).toContain(

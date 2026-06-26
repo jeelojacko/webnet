@@ -3,6 +3,7 @@ import {
   buildCadInverseSummary,
   buildCadDistanceSummary,
   buildCadMultiInverseSummary,
+  cadConvertAreaSquareMeters,
   cadBuildArcFromThreePoints,
   cadBuildArcFromChordBearingRadius,
   cadBuildArcFromPiRadiusDelta,
@@ -890,5 +891,13 @@ describe('Survey CAD COGO helpers', () => {
     expect(report?.courses[1]?.azimuthText).toBe('0°00\'00"');
     expect(report?.courses[1]?.distanceMeters ?? Number.NaN).toBeCloseTo(15, 6);
     expect(report?.closureDistanceMeters ?? Number.NaN).toBeCloseTo(0, 6);
+  });
+
+  it('converts parcel area square meters into shared display units', () => {
+    const converted = cadConvertAreaSquareMeters(187.5);
+
+    expect(converted.hectares).toBeCloseTo(0.01875, 8);
+    expect(converted.acres).toBeCloseTo(0.046332259, 8);
+    expect(converted.squareFeet).toBeCloseTo(2018.2332031, 6);
   });
 });
