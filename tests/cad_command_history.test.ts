@@ -1298,7 +1298,7 @@ describe('Survey CAD command history', () => {
       },
       {
         key: 'PARCEL_CREATE',
-        sourceEntityId: traversePolyline.id,
+        sourceEntityIds: [traversePolyline.id],
       },
     );
     const parcel = parcelState.present.project.entities.find((entity) => entity.type === 'parcel');
@@ -1329,6 +1329,80 @@ describe('Survey CAD command history', () => {
         (entity) => entity.type === 'parcel' && entity.id === parcel.id,
       ),
     ).toBe(true);
+  });
+
+  it('creates parcel entities from a closed selection of line entities', () => {
+    const baseProject = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+    const project = appendCadProjectEntities(baseProject, [
+      {
+        id: 'line:A|P1',
+        type: 'line',
+        layerId: 'planning',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        fromStationId: 'A',
+        toStationId: 'P1',
+        fromX: 0,
+        fromY: 0,
+        toX: 25,
+        toY: 0,
+        sourceObservationIds: [],
+      },
+      {
+        id: 'line:P1|P2',
+        type: 'line',
+        layerId: 'planning',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        fromStationId: 'P1',
+        toStationId: 'P2',
+        fromX: 25,
+        fromY: 0,
+        toX: 25,
+        toY: 15,
+        sourceObservationIds: [],
+      },
+      {
+        id: 'line:P2|A',
+        type: 'line',
+        layerId: 'planning',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        fromStationId: 'P2',
+        toStationId: 'A',
+        fromX: 25,
+        fromY: 15,
+        toX: 0,
+        toY: 0,
+        sourceObservationIds: [],
+      },
+    ]);
+
+    const parcelState = runCadCommand(createCadHistoryState(project), {
+      key: 'PARCEL_CREATE',
+      sourceEntityIds: ['line:A|P1', 'line:P1|P2', 'line:P2|A'],
+    });
+    const parcel = parcelState.present.project.entities.find((entity) => entity.type === 'parcel');
+    expect(parcel?.type).toBe('parcel');
+    if (parcel?.type !== 'parcel') throw new Error('Parcel missing');
+
+    expect(parcel.vertexLabels).toEqual(['A', 'P1', 'P2']);
+    expect(parcel.metadata?.cogo).toMatchObject({
+      toolKey: 'PARCEL_CREATE',
+      sourceEntityIds: ['line:A|P1', 'line:P1|P2', 'line:P2|A'],
+    });
+    expect(parcel.areaSquareMeters).toBeCloseTo(187.5, 6);
+    expect(parcel.perimeterMeters).toBeCloseTo(69.154759, 6);
+    expect(parcel.closureDistanceMeters).toBeCloseTo(0, 6);
   });
 
   it('commits point-to-point traverses with sideshots into geometry and persisted COGO history', () => {

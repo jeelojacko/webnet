@@ -3,7 +3,7 @@ import {
   createCadSelectionState,
   selectAllCadEntities,
 } from './cadSelection';
-import { cadBuildParcelClosureSummary } from './cadCogo';
+import { cadBuildParcelClosureSummary, cadBuildParcelSourceDraft } from './cadCogo';
 import {
   buildCadBatchCogoReportRows,
   buildCadBatchCogoSummary,
@@ -228,7 +228,7 @@ export type CadCommand =
     }
   | {
       key: 'PARCEL_CREATE';
-      sourceEntityId: CadEntityId;
+      sourceEntityIds: CadEntityId[];
     }
   | {
       key: 'MOVE';
@@ -5168,37 +5168,31 @@ const alignmentIntervalPointsCommand: CadCommandDefinition<{
 
 const parcelCreateCommand: CadCommandDefinition<{
   key: 'PARCEL_CREATE';
-  sourceEntityId: CadEntityId;
+  sourceEntityIds: CadEntityId[];
 }> = {
   key: 'PARCEL_CREATE',
   execute: (snapshot, command) => {
-    const sourcePolyline = snapshot.project.entities.find(
-      (entity): entity is CadPolylineEntity =>
-        entity.type === 'polyline' && entity.id === command.sourceEntityId,
+    const sourceEntities = snapshot.project.entities.filter(
+      (entity): entity is CadLineEntity | CadPolylineEntity =>
+        command.sourceEntityIds.includes(entity.id) && (entity.type === 'line' || entity.type === 'polyline'),
     );
-    if (!sourcePolyline) return null;
-    const metrics = cadBuildParcelClosureSummary(sourcePolyline.vertices);
+    const parcelSource = cadBuildParcelSourceDraft(sourceEntities);
+    if (!parcelSource) return null;
+    const metricVertices =
+      parcelSource.vertices.length > 0
+        ? [...parcelSource.vertices, parcelSource.vertices[0]!]
+        : parcelSource.vertices;
+    const metrics = cadBuildParcelClosureSummary(metricVertices);
     if (!metrics) return null;
-    const ringVertices =
-      sourcePolyline.vertices.length > 1 &&
-      Math.abs(sourcePolyline.vertices[0]!.x - sourcePolyline.vertices[sourcePolyline.vertices.length - 1]!.x) <= 1e-9 &&
-      Math.abs(sourcePolyline.vertices[0]!.y - sourcePolyline.vertices[sourcePolyline.vertices.length - 1]!.y) <= 1e-9
-        ? sourcePolyline.vertices.slice(0, -1)
-        : sourcePolyline.vertices;
-    const ringLabels =
-      sourcePolyline.vertexLabels.length > 1 &&
-      sourcePolyline.vertexLabels[0] === sourcePolyline.vertexLabels[sourcePolyline.vertexLabels.length - 1]
-        ? sourcePolyline.vertexLabels.slice(0, -1)
-        : sourcePolyline.vertexLabels;
     const parcelName = nextParcelName(snapshot.project);
-    const summary = `Created ${parcelName} from ${sourcePolyline.id}`;
+    const summary = `Created ${parcelName} from ${parcelSource.sourceEntityIds.join(', ')}`;
     const provenance = createCogoProvenance({
       toolKey: 'PARCEL_CREATE',
       summary,
-      sourceEntityIds: [sourcePolyline.id],
-      sourcePointIds: ringLabels,
+      sourceEntityIds: parcelSource.sourceEntityIds,
+      sourcePointIds: parcelSource.vertexLabels,
       inputs: {
-        sourceEntityId: sourcePolyline.id,
+        sourceEntityIds: parcelSource.sourceEntityIds,
       },
       parameters: {
         areaSquareMeters: metrics.areaSquareMeters,
@@ -5213,8 +5207,8 @@ const parcelCreateCommand: CadCommandDefinition<{
       styleId: 'style-parcel',
       visible: true,
       locked: false,
-      vertices: ringVertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
-      vertexLabels: [...ringLabels],
+      vertices: parcelSource.vertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
+      vertexLabels: [...parcelSource.vertexLabels],
       parcelName,
       areaSquareMeters: metrics.areaSquareMeters,
       perimeterMeters: metrics.perimeterMeters,
@@ -5224,7 +5218,7 @@ const parcelCreateCommand: CadCommandDefinition<{
       metadata: buildCadCogoEntityMetadata({
         createdBy: 'PARCEL_CREATE',
         manual: true,
-        sourceEntityId: sourcePolyline.id,
+        sourceEntityIds: parcelSource.sourceEntityIds,
       }, provenance),
     };
     const nextProjectWithEntities = appendCadProjectEntities(snapshot.project, [parcelEntity]);

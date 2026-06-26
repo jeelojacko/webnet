@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import {
+  cadBuildParcelSourceDraft,
   cadBuildParcelReportSummary,
   cadIntersectLineLikeEntities,
   isCadLineLikeEntity,
@@ -423,12 +424,16 @@ export const useSurveyCadWorkspace = (
     () => selectedEntities.find((entity): entity is CadArcEntity => entity.type === 'arc') ?? null,
     [selectedEntities],
   );
-  const selectedPolylineForParcel = useMemo(
+  const selectedParcelSource = useMemo(
     () =>
-      selectedEntities.find(
-        (entity): entity is CadPolylineEntity =>
-          entity.type === 'polyline' && entity.vertices.length >= 3,
-      ) ?? null,
+      selectedEntities.every((entity) => entity.type === 'line' || entity.type === 'polyline')
+        ? cadBuildParcelSourceDraft(
+            selectedEntities.filter(
+              (entity): entity is CadLineEntity | CadPolylineEntity =>
+                entity.type === 'line' || entity.type === 'polyline',
+            ),
+          )
+        : null,
     [selectedEntities],
   );
   const selectedLineLikes = useMemo(
@@ -1148,7 +1153,7 @@ export const useSurveyCadWorkspace = (
       selectedEntities.length === 1 && selectedAlignmentForStationing != null,
     canCreateAlignmentIntervalPoints:
       selectedEntities.length === 1 && selectedAlignmentForStationing != null,
-    canCreateParcel: selectedPolylineForParcel != null,
+    canCreateParcel: selectedParcelSource != null,
     canContinueCurve: selectedArcForContinue != null,
     canTrimSelection: true,
     canExtendSelection: true,
@@ -1249,11 +1254,11 @@ export const useSurveyCadWorkspace = (
       );
     },
     createParcelFromSelection: () => {
-      if (!selectedPolylineForParcel) return;
+      if (!selectedParcelSource) return;
       applyHistoryUpdate((current) =>
         runCadCommand(current, {
           key: 'PARCEL_CREATE',
-          sourceEntityId: selectedPolylineForParcel.id,
+          sourceEntityIds: selectedParcelSource.sourceEntityIds,
         }),
       );
     },

@@ -141,7 +141,7 @@ describe('CAD renderer labels', () => {
 
     const parcelResult = executeCadCommand(traverseResult.nextSnapshot, {
       key: 'PARCEL_CREATE',
-      sourceEntityId: traverseResult.addedEntityIds[traverseResult.addedEntityIds.length - 1]!,
+      sourceEntityIds: [traverseResult.addedEntityIds[traverseResult.addedEntityIds.length - 1]!],
     });
     if (!parcelResult) throw new Error('Parcel result missing');
 

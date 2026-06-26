@@ -6908,6 +6908,127 @@ describe('SurveyCadWorkspace', () => {
     container.remove();
   });
 
+  it('creates a parcel from a closed selection of line entities in the CAD workspace', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+    const capture = createPersistedStateCapture();
+
+    const baseProject = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+    const lineProject = appendCadProjectEntities(baseProject, [
+      {
+        id: 'line:A|P1',
+        type: 'line',
+        layerId: 'planning',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        fromStationId: 'A',
+        toStationId: 'P1',
+        fromX: 0,
+        fromY: 0,
+        toX: 25,
+        toY: 0,
+        sourceObservationIds: [],
+      },
+      {
+        id: 'line:P1|P2',
+        type: 'line',
+        layerId: 'planning',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        fromStationId: 'P1',
+        toStationId: 'P2',
+        fromX: 25,
+        fromY: 0,
+        toX: 25,
+        toY: 15,
+        sourceObservationIds: [],
+      },
+      {
+        id: 'line:P2|A',
+        type: 'line',
+        layerId: 'planning',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        fromStationId: 'P2',
+        toStationId: 'A',
+        fromX: 25,
+        fromY: 15,
+        toX: 0,
+        toY: 0,
+        sourceObservationIds: [],
+      },
+    ]);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+          persistedState={{
+            version: 1,
+            sourceSignature: buildCadProjectSignature(baseProject),
+            project: lineProject,
+          }}
+          onPersistedStateChange={capture.onPersistedStateChange}
+        />,
+      );
+    });
+
+    const firstLine = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="line:A|P1"]',
+    ) as SVGElement | null;
+    const secondLine = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="line:P1|P2"]',
+    ) as SVGElement | null;
+    const thirdLine = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="line:P2|A"]',
+    ) as SVGElement | null;
+    if (!firstLine || !secondLine || !thirdLine) throw new Error('Parcel line targets not found');
+
+    await act(async () => {
+      firstLine.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 0, clientY: 0 }));
+      secondLine.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 0, clientY: 0, shiftKey: true }));
+      thirdLine.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 0, clientY: 0, shiftKey: true }));
+    });
+
+    expect(container.querySelector('[data-survey-cad-selection-count]')?.textContent).toContain('3 selected');
+
+    await act(async () => {
+      clickButton(container, 'PARCEL');
+    });
+
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+      'PARCEL_CREATE committed',
+    );
+    expect(container.querySelector('[data-survey-cad-parcel-report]')?.textContent).toContain('A-P1');
+    expect(container.querySelector('[data-survey-cad-parcel-report]')?.textContent).toContain('P1-P2');
+    expect(container.querySelector('[data-survey-cad-properties-entity-label]')?.textContent).toContain('Parcel 1');
+
+    const persisted = capture.read();
+    const parcel = persisted?.project.entities.find((entity) => entity.type === 'parcel');
+    expect(parcel?.type).toBe('parcel');
+    expect(parcel?.type === 'parcel' ? parcel.vertexLabels : null).toEqual(['A', 'P1', 'P2']);
+    expect(persisted?.project.cogoComputations.at(-1)?.toolKey).toBe('PARCEL_CREATE');
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
   it('creates an alignment from a selected line-arc chain and reports it through the COGO panel', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
