@@ -4,6 +4,7 @@ import {
   buildCadDistanceSummary,
   buildCadMultiInverseSummary,
   cadBuildParcelLineworkDiagnostics,
+  cadBuildParcelOverlapDiagnostics,
   cadBuildParcelSplitByLineDraft,
   cadConvertAreaSquareMeters,
   cadBuildArcFromThreePoints,
@@ -1029,6 +1030,51 @@ describe('Survey CAD COGO helpers', () => {
     expect(split?.splitEnd.y ?? Number.NaN).toBeCloseTo(12, 6);
     expect(childAreas[0]).toBeCloseTo(67.5, 6);
     expect(childAreas[1]).toBeCloseTo(120, 6);
+  });
+
+  it('diagnoses overlapping parcel pairs with shared area', () => {
+    const diagnostics = cadBuildParcelOverlapDiagnostics([
+      {
+        id: 'parcel:1',
+        type: 'parcel',
+        layerId: 'parcels',
+        styleId: 'style-parcel',
+        visible: true,
+        locked: false,
+        parcelName: 'Parcel 1',
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 10, y: 0 },
+          { x: 10, y: 10 },
+          { x: 0, y: 10 },
+        ],
+        vertexLabels: ['A', 'B', 'C', 'D'],
+      },
+      {
+        id: 'parcel:2',
+        type: 'parcel',
+        layerId: 'parcels',
+        styleId: 'style-parcel',
+        visible: true,
+        locked: false,
+        parcelName: 'Parcel 2',
+        vertices: [
+          { x: 5, y: 0 },
+          { x: 15, y: 0 },
+          { x: 15, y: 10 },
+          { x: 5, y: 10 },
+        ],
+        vertexLabels: ['E', 'F', 'G', 'H'],
+      },
+    ]);
+
+    expect(diagnostics.parcelCount).toBe(2);
+    expect(diagnostics.pairCount).toBe(1);
+    expect(diagnostics.overlapPairs).toHaveLength(1);
+    expect(diagnostics.overlapPairs[0]?.firstParcelName).toBe('Parcel 1');
+    expect(diagnostics.overlapPairs[0]?.secondParcelName).toBe('Parcel 2');
+    expect(diagnostics.overlapPairs[0]?.overlapAreaSquareMeters ?? Number.NaN).toBeCloseTo(50, 6);
+    expect(diagnostics.totalOverlapAreaSquareMeters).toBeCloseTo(50, 6);
   });
 
   it('converts parcel area square meters into shared display units', () => {

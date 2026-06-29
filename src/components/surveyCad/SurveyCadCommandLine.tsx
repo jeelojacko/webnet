@@ -20,6 +20,7 @@ interface SurveyCadCommandLineProps {
   canCreateAlignmentIntervalPoints: boolean;
   canCreateParcel: boolean;
   canReportParcelDiagnostics: boolean;
+  canReportParcelOverlap: boolean;
   canSplitParcelByLine: boolean;
   canContinueCurve: boolean;
   canTrimSelection: boolean;
@@ -82,6 +83,7 @@ interface SurveyCadCommandLineProps {
   onReportAlignmentStation: () => void;
   onCreateParcel: () => void;
   onReportParcelDiagnostics: () => void;
+  onReportParcelOverlap: () => void;
   onSplitParcelByLine: () => void;
   onSelectAll: () => void;
   onClearSelection: () => void;
@@ -115,6 +117,7 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   canCreateAlignmentIntervalPoints,
   canCreateParcel,
   canReportParcelDiagnostics,
+  canReportParcelOverlap,
   canSplitParcelByLine,
   canContinueCurve,
   canTrimSelection,
@@ -177,6 +180,7 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   onReportAlignmentStation,
   onCreateParcel,
   onReportParcelDiagnostics,
+  onReportParcelOverlap,
   onSplitParcelByLine,
   onSelectAll,
   onClearSelection,
@@ -632,6 +636,14 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
               disabled={!canReportParcelDiagnostics}
             >
               Parcel Check
+            </button>
+            <button
+              type="button"
+              className={arcMenuButtonClassName}
+              onClick={() => { setParcelMenuOpen(false); runImmediate(onReportParcelOverlap); }}
+              disabled={!canReportParcelOverlap}
+            >
+              Parcel Overlap
             </button>
             <button
               type="button"

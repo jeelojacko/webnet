@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import {
+  cadBuildParcelOverlapDiagnostics,
   cadBuildParcelLineworkDiagnostics,
   cadBuildParcelSourceDraft,
   cadBuildParcelReportSummary,
@@ -52,6 +53,7 @@ import type {
   CadDisplayPrimitive,
   CadGripHandle,
   CadLineEntity,
+  CadParcelEntity,
   CadPolylineEntity,
   CadProject,
   CadSurveyPointEntity,
@@ -218,6 +220,7 @@ interface UseSurveyCadWorkspaceResult {
   canCreateAlignmentIntervalPoints: boolean;
   canCreateParcel: boolean;
   canReportParcelDiagnostics: boolean;
+  canReportParcelOverlap: boolean;
   canSplitParcelByLine: boolean;
   canContinueCurve: boolean;
   canTrimSelection: boolean;
@@ -287,6 +290,7 @@ interface UseSurveyCadWorkspaceResult {
   reportAlignmentStationFromSelection: () => void;
   createParcelFromSelection: () => void;
   reportParcelDiagnosticsFromSelection: () => void;
+  reportParcelOverlapFromSelection: () => void;
   splitParcelBySelectedLine: () => void;
   cancelActiveCommand: () => void;
   finishActiveCommand: () => void;
@@ -451,10 +455,18 @@ export const useSurveyCadWorkspace = (
         : [],
     [selectedEntities],
   );
+  const selectedParcelsForOverlap = useMemo(
+    () =>
+      selectedEntities.length >= 2 &&
+      selectedEntities.every((entity): entity is CadParcelEntity => entity.type === 'parcel')
+        ? selectedEntities
+        : [],
+    [selectedEntities],
+  );
   const selectedParcelForSplit = useMemo(
     () =>
       selectedEntities.length === 2
-        ? selectedEntities.find((entity): entity is import('../../engine/cad/cadTypes').CadParcelEntity => entity.type === 'parcel') ?? null
+        ? selectedEntities.find((entity): entity is CadParcelEntity => entity.type === 'parcel') ?? null
         : null,
     [selectedEntities],
   );
@@ -1186,6 +1198,7 @@ export const useSurveyCadWorkspace = (
       selectedEntities.length === 1 && selectedAlignmentForStationing != null,
     canCreateParcel: selectedParcelSource != null,
     canReportParcelDiagnostics: selectedParcelDiagnosticLines.length > 0,
+    canReportParcelOverlap: selectedParcelsForOverlap.length >= 2,
     canSplitParcelByLine: selectedParcelForSplit != null && selectedSplitLineForParcel != null,
     canContinueCurve: selectedArcForContinue != null,
     canTrimSelection: true,
@@ -1332,6 +1345,56 @@ export const useSurveyCadWorkspace = (
             toolKey: 'PARCEL_CHECK',
             inputs: {
               sourceEntityIds: selectedParcelDiagnosticLines.map((entity) => entity.id),
+            },
+            resultSummary: summary,
+            createdAtIso: new Date().toISOString(),
+          },
+        }),
+      );
+    },
+    reportParcelOverlapFromSelection: () => {
+      if (selectedParcelsForOverlap.length < 2) return;
+      const diagnostics = cadBuildParcelOverlapDiagnostics(selectedParcelsForOverlap);
+      const summary =
+        diagnostics.overlapPairs.length === 0
+          ? `Checked ${diagnostics.pairCount} parcel pair${diagnostics.pairCount === 1 ? '' : 's'}. No overlaps found.`
+          : `Found ${diagnostics.overlapPairs.length} overlapping parcel pair${diagnostics.overlapPairs.length === 1 ? '' : 's'} across ${diagnostics.pairCount} checked pair${diagnostics.pairCount === 1 ? '' : 's'}.`;
+      setReportedComputation(
+        buildCadCogoComputation({
+          createdEntities: [],
+          report: {
+            title: 'Parcel Overlap Check',
+            summary,
+            rows: [
+              { label: 'Parcels', value: diagnostics.parcelCount.toFixed(0) },
+              { label: 'Pairs checked', value: diagnostics.pairCount.toFixed(0) },
+              { label: 'Overlap pairs', value: diagnostics.overlapPairs.length.toFixed(0) },
+              {
+                label: 'Total overlap',
+                value: diagnostics.totalOverlapAreaSquareMeters.toFixed(3),
+                unit: 'm2',
+              },
+              ...(
+                diagnostics.overlapPairs.length === 0
+                  ? [{ label: 'Pairs', value: 'None' }]
+                  : diagnostics.overlapPairs.map((pair, index) => ({
+                      label: `Pair ${index + 1}`,
+                      value: `${pair.firstParcelName} x ${pair.secondParcelName}`,
+                    }))
+              ),
+              ...diagnostics.overlapPairs.map((pair, index) => ({
+                label: `Pair ${index + 1} Area`,
+                value: pair.overlapAreaSquareMeters.toFixed(3),
+                unit: 'm2',
+              })),
+            ],
+          },
+          warnings: [],
+          provenance: {
+            id: `parcel-overlap:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`,
+            toolKey: 'PARCEL_OVERLAP',
+            inputs: {
+              parcelEntityIds: selectedParcelsForOverlap.map((entity) => entity.id),
             },
             resultSummary: summary,
             createdAtIso: new Date().toISOString(),
