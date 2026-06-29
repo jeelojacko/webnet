@@ -30,7 +30,14 @@ import {
   type CadCurveMetrics,
   type CadWorldPoint,
 } from './cadGeometry';
-import type { CadArcEntity, CadEntity, CadEntityId, CadLineEntity, CadPolylineEntity } from './cadTypes';
+import type {
+  CadArcEntity,
+  CadEntity,
+  CadEntityId,
+  CadLineEntity,
+  CadParcelEntity,
+  CadPolylineEntity,
+} from './cadTypes';
 
 export interface CadInverseSummary {
   distance: number;
@@ -138,6 +145,15 @@ export interface CadParcelReportSummary extends CadParcelClosureSummary {
   courses: CadParcelCourseSummary[];
 }
 
+export interface CadParcelSplitDraft {
+  firstVertices: CadWorldPoint[];
+  firstVertexLabels: string[];
+  secondVertices: CadWorldPoint[];
+  secondVertexLabels: string[];
+  splitStart: CadWorldPoint;
+  splitEnd: CadWorldPoint;
+}
+
 export interface CadParcelSourceDraft {
   vertices: CadWorldPoint[];
   vertexLabels: string[];
@@ -164,6 +180,18 @@ const parcelPointsMatch = (left: CadWorldPoint, right: CadWorldPoint): boolean =
 
 const compareParcelPoints = (left: CadWorldPoint, right: CadWorldPoint): number =>
   left.x === right.x ? left.y - right.y : left.x - right.x;
+
+const cadPointListsMatch = (
+  left: readonly CadWorldPoint[],
+  right: readonly CadWorldPoint[],
+  tolerance = 1e-9,
+): boolean =>
+  left.length === right.length &&
+  left.every(
+    (point, index) =>
+      Math.abs(point.x - (right[index]?.x ?? Number.NaN)) <= tolerance &&
+      Math.abs(point.y - (right[index]?.y ?? Number.NaN)) <= tolerance,
+  );
 
 interface CadParcelLineCandidate {
   entityId: CadEntityId;
@@ -1423,6 +1451,98 @@ export const cadBuildParcelLineworkDiagnostics = (
     branchNodes,
     overlapSegments,
     isClosedLoopCandidate,
+  };
+};
+
+export const cadBuildParcelSplitByLineDraft = (
+  parcel: CadParcelEntity,
+  splitLine: CadLineEntity,
+): CadParcelSplitDraft | null => {
+  const ring = parcel.vertices.map((vertex) => ({ x: vertex.x, y: vertex.y }));
+  const labels = [...parcel.vertexLabels];
+  if (ring.length < 3 || labels.length !== ring.length) return null;
+
+  const splitStart = { x: splitLine.fromX, y: splitLine.fromY };
+  const splitEnd = { x: splitLine.toX, y: splitLine.toY };
+
+  const intersections: Array<{
+    edgeIndex: number;
+    point: CadWorldPoint;
+    lineDistance: number;
+    edgeDistance: number;
+  }> = [];
+
+  for (let index = 0; index < ring.length; index += 1) {
+    const start = ring[index]!;
+    const end = ring[(index + 1) % ring.length]!;
+    const point = cadSegmentIntersection(splitStart, splitEnd, start, end);
+    if (!point) continue;
+    if (parcelPointsMatch(point, start) || parcelPointsMatch(point, end)) {
+      return null;
+    }
+    intersections.push({
+      edgeIndex: index,
+      point,
+      lineDistance: cadDistance(splitStart, point),
+      edgeDistance: cadDistance(start, point),
+    });
+  }
+
+  intersections.sort((left, right) => left.lineDistance - right.lineDistance);
+  if (intersections.length !== 2) return null;
+  if (intersections[0]!.edgeIndex === intersections[1]!.edgeIndex) return null;
+
+  const splitPointLabels = new Map<string, string>();
+  splitPointLabels.set(parcelPointKey(intersections[0]!.point), 'CUT1');
+  splitPointLabels.set(parcelPointKey(intersections[1]!.point), 'CUT2');
+
+  const augmentedVertices: CadWorldPoint[] = [];
+  const augmentedLabels: string[] = [];
+  for (let index = 0; index < ring.length; index += 1) {
+    augmentedVertices.push(ring[index]!);
+    augmentedLabels.push(labels[index] ?? `V${index + 1}`);
+    intersections
+      .filter((intersection) => intersection.edgeIndex === index)
+      .sort((left, right) => left.edgeDistance - right.edgeDistance)
+      .forEach((intersection) => {
+        augmentedVertices.push(intersection.point);
+        augmentedLabels.push(splitPointLabels.get(parcelPointKey(intersection.point)) ?? 'CUT');
+      });
+  }
+
+  const cut1Index = augmentedLabels.indexOf('CUT1');
+  const cut2Index = augmentedLabels.indexOf('CUT2');
+  if (cut1Index < 0 || cut2Index < 0 || cut1Index === cut2Index) return null;
+
+  const collectPath = (startIndex: number, endIndex: number) => {
+    const points: CadWorldPoint[] = [];
+    const pathLabels: string[] = [];
+    let index = startIndex;
+    while (true) {
+      points.push(augmentedVertices[index]!);
+      pathLabels.push(augmentedLabels[index]!);
+      if (index === endIndex) break;
+      index = (index + 1) % augmentedVertices.length;
+    }
+    return { points, pathLabels };
+  };
+
+  const firstPath = collectPath(cut1Index, cut2Index);
+  const secondPath = collectPath(cut2Index, cut1Index);
+
+  const firstSummary = cadBuildParcelClosureSummary(firstPath.points);
+  const secondSummary = cadBuildParcelClosureSummary(secondPath.points);
+  if (!firstSummary || !secondSummary) return null;
+  if (firstSummary.areaSquareMeters <= 1e-9 || secondSummary.areaSquareMeters <= 1e-9) return null;
+  if (cadPointListsMatch(firstPath.points, secondPath.points)) return null;
+
+  return {
+    firstVertices: firstPath.points,
+    firstVertexLabels: firstPath.pathLabels,
+    secondVertices: secondPath.points,
+    secondVertexLabels: secondPath.pathLabels,
+    splitStart: intersections[0]!.point,
+    splitEnd: intersections[1]!.point,
   };
 };
 

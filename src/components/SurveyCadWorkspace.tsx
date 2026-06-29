@@ -101,6 +101,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     canCreateAlignmentIntervalPoints,
     canCreateParcel,
     canReportParcelDiagnostics,
+    canSplitParcelByLine,
     canContinueCurve,
     canTrimSelection,
     canExtendSelection,
@@ -170,6 +171,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     reportAlignmentStationFromSelection,
     createParcelFromSelection,
     reportParcelDiagnosticsFromSelection,
+    splitParcelBySelectedLine,
     setCommandInputValue,
     appendCommandInputValue,
     backspaceCommandInputValue,
@@ -558,6 +560,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               canCreateAlignmentIntervalPoints={canCreateAlignmentIntervalPoints}
               canCreateParcel={canCreateParcel}
               canReportParcelDiagnostics={canReportParcelDiagnostics}
+              canSplitParcelByLine={canSplitParcelByLine}
               canContinueCurve={canContinueCurve}
               canExtendSelection={canExtendSelection}
               onStartPoint={startPointCommand}
@@ -618,6 +621,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               onReportAlignmentStation={reportAlignmentStationFromSelection}
               onCreateParcel={createParcelFromSelection}
               onReportParcelDiagnostics={reportParcelDiagnosticsFromSelection}
+              onSplitParcelByLine={splitParcelBySelectedLine}
               canTrimSelection={canTrimSelection}
               onSelectAll={selectAll}
               onClearSelection={clearSelection}

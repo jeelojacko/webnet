@@ -5,6 +5,7 @@ import {
 } from './cadSelection';
 import {
   cadBuildParcelClosureSummary,
+  cadBuildParcelSplitByLineDraft,
   cadBuildParcelReportSummary,
   cadBuildParcelSourceDraft,
   cadConvertAreaSquareMeters,
@@ -91,6 +92,7 @@ export type CadCommandKey =
   | 'ALIGNMENT_OFFSET_POINT'
   | 'ALIGNMENT_INTERVAL_POINTS'
   | 'PARCEL_CREATE'
+  | 'PARCEL_SPLIT'
   | 'MOVE'
   | 'COPY'
   | 'EXTEND'
@@ -234,6 +236,11 @@ export type CadCommand =
   | {
       key: 'PARCEL_CREATE';
       sourceEntityIds: CadEntityId[];
+    }
+  | {
+      key: 'PARCEL_SPLIT';
+      parcelEntityId: CadEntityId;
+      splitLineEntityId: CadEntityId;
     }
   | {
       key: 'MOVE';
@@ -5278,6 +5285,161 @@ const parcelCreateCommand: CadCommandDefinition<{
   },
 };
 
+const parcelSplitCommand: CadCommandDefinition<{
+  key: 'PARCEL_SPLIT';
+  parcelEntityId: CadEntityId;
+  splitLineEntityId: CadEntityId;
+}> = {
+  key: 'PARCEL_SPLIT',
+  execute: (snapshot, command) => {
+    const parcelEntity = snapshot.project.entities.find(
+      (entity): entity is CadParcelEntity => entity.id === command.parcelEntityId && entity.type === 'parcel',
+    );
+    const splitLineEntity = snapshot.project.entities.find(
+      (entity): entity is CadLineEntity => entity.id === command.splitLineEntityId && entity.type === 'line',
+    );
+    if (!parcelEntity || !splitLineEntity) return null;
+
+    const splitDraft = cadBuildParcelSplitByLineDraft(parcelEntity, splitLineEntity);
+    if (!splitDraft) return null;
+
+    const firstParcelName = nextParcelName(snapshot.project);
+    const parcelSequenceProject = appendCadProjectEntities(snapshot.project, [
+      {
+        id: createStableRuntimeId('cad-parcel-sequence'),
+        type: 'parcel',
+        layerId: parcelEntity.layerId,
+        styleId: parcelEntity.styleId,
+        visible: parcelEntity.visible,
+        locked: parcelEntity.locked,
+        vertices: splitDraft.firstVertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
+        vertexLabels: [...splitDraft.firstVertexLabels],
+        parcelName: firstParcelName,
+        areaSquareMeters: 0,
+        perimeterMeters: 0,
+        closureDeltaX: 0,
+        closureDeltaY: 0,
+        closureDistanceMeters: 0,
+      },
+    ]);
+    const secondParcelName = nextParcelName(parcelSequenceProject);
+
+    const firstReport = cadBuildParcelReportSummary({
+      parcelName: firstParcelName,
+      vertices: splitDraft.firstVertices,
+      vertexLabels: splitDraft.firstVertexLabels,
+    });
+    const secondReport = cadBuildParcelReportSummary({
+      parcelName: secondParcelName,
+      vertices: splitDraft.secondVertices,
+      vertexLabels: splitDraft.secondVertexLabels,
+    });
+    if (!firstReport || !secondReport) return null;
+
+    const summary = `Split ${parcelEntity.parcelName} with ${splitLineEntity.fromStationId}-${splitLineEntity.toStationId}`;
+    const provenance = createCogoProvenance({
+      toolKey: 'PARCEL_SPLIT',
+      summary,
+      sourceEntityIds: [parcelEntity.id, splitLineEntity.id],
+      sourcePointIds: [
+        ...parcelEntity.vertexLabels,
+        splitLineEntity.fromStationId,
+        splitLineEntity.toStationId,
+      ],
+      inputs: {
+        parcelEntityId: parcelEntity.id,
+        splitLineEntityId: splitLineEntity.id,
+      },
+      parameters: {
+        splitStart: splitDraft.splitStart,
+        splitEnd: splitDraft.splitEnd,
+      },
+    });
+
+    const createdParcels: CadParcelEntity[] = [
+      {
+        id: createStableRuntimeId('cad-parcel'),
+        type: 'parcel',
+        layerId: parcelEntity.layerId,
+        styleId: parcelEntity.styleId,
+        visible: parcelEntity.visible,
+        locked: parcelEntity.locked,
+        vertices: splitDraft.firstVertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
+        vertexLabels: [...splitDraft.firstVertexLabels],
+        parcelName: firstParcelName,
+        areaSquareMeters: firstReport.areaSquareMeters,
+        perimeterMeters: firstReport.perimeterMeters,
+        closureDeltaX: firstReport.closureDeltaX,
+        closureDeltaY: firstReport.closureDeltaY,
+        closureDistanceMeters: firstReport.closureDistanceMeters,
+        metadata: buildCadCogoEntityMetadata({
+          createdBy: 'PARCEL_SPLIT',
+          parentParcelId: parcelEntity.id,
+          splitLineEntityId: splitLineEntity.id,
+        }, provenance),
+      },
+      {
+        id: createStableRuntimeId('cad-parcel'),
+        type: 'parcel',
+        layerId: parcelEntity.layerId,
+        styleId: parcelEntity.styleId,
+        visible: parcelEntity.visible,
+        locked: parcelEntity.locked,
+        vertices: splitDraft.secondVertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
+        vertexLabels: [...splitDraft.secondVertexLabels],
+        parcelName: secondParcelName,
+        areaSquareMeters: secondReport.areaSquareMeters,
+        perimeterMeters: secondReport.perimeterMeters,
+        closureDeltaX: secondReport.closureDeltaX,
+        closureDeltaY: secondReport.closureDeltaY,
+        closureDistanceMeters: secondReport.closureDistanceMeters,
+        metadata: buildCadCogoEntityMetadata({
+          createdBy: 'PARCEL_SPLIT',
+          parentParcelId: parcelEntity.id,
+          splitLineEntityId: splitLineEntity.id,
+        }, provenance),
+      },
+    ];
+
+    const nextProjectBase = replaceCadProjectEntities(
+      snapshot.project,
+      snapshot.project.entities
+        .filter((entity) => entity.id !== parcelEntity.id)
+        .concat(createdParcels),
+    );
+    const nextProject = appendCogoComputation({
+      project: nextProjectBase,
+      provenance,
+      title: 'Parcel Split',
+      summary,
+      rows: [
+        { label: 'Parent parcel', value: parcelEntity.parcelName },
+        { label: 'Split line', value: `${splitLineEntity.fromStationId}-${splitLineEntity.toStationId}` },
+        { label: firstParcelName, value: firstReport.areaSquareMeters.toFixed(3), unit: 'm2' },
+        { label: `${firstParcelName} Perimeter`, value: firstReport.perimeterMeters.toFixed(3), unit: 'm' },
+        { label: secondParcelName, value: secondReport.areaSquareMeters.toFixed(3), unit: 'm2' },
+        { label: `${secondParcelName} Perimeter`, value: secondReport.perimeterMeters.toFixed(3), unit: 'm' },
+      ],
+      createdEntities: createdParcels,
+    });
+
+    return {
+      nextSnapshot: {
+        project: nextProject,
+        selection: createCadSelectionState(nextProject, createdParcels.map((entity) => entity.id)),
+      },
+      commandState: {
+        key: 'PARCEL_SPLIT',
+        phase: 'committed',
+        prompt: `PARCEL SPLIT committed on ${parcelEntity.parcelName}. Created ${firstParcelName} and ${secondParcelName}.`,
+      },
+      transactionLabel: `PARCEL SPLIT (${parcelEntity.parcelName})`,
+      addedEntityIds: createdParcels.map((entity) => entity.id),
+      removedEntityIds: [parcelEntity.id],
+    };
+  },
+};
+
 const replaceEntityInProject = (
   project: CadProject,
   entityId: CadEntityId,
@@ -5892,6 +6054,7 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   ALIGNMENT_OFFSET_POINT: alignmentOffsetPointCommand as CadCommandDefinition<CadCommand>,
   ALIGNMENT_INTERVAL_POINTS: alignmentIntervalPointsCommand as CadCommandDefinition<CadCommand>,
   PARCEL_CREATE: parcelCreateCommand as CadCommandDefinition<CadCommand>,
+  PARCEL_SPLIT: parcelSplitCommand as CadCommandDefinition<CadCommand>,
   EDIT_ENTITY: editEntityCommand as CadCommandDefinition<CadCommand>,
   MOVE: moveCommand as CadCommandDefinition<CadCommand>,
   COPY: copyCommand as CadCommandDefinition<CadCommand>,

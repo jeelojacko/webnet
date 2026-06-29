@@ -1422,6 +1422,78 @@ describe('Survey CAD command history', () => {
     );
   });
 
+  it('splits a parcel entity by a selected line into two child parcels', () => {
+    const baseProject = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+    const project = appendCadProjectEntities(baseProject, [
+      {
+        id: 'parcel:source',
+        type: 'parcel',
+        layerId: 'parcels',
+        styleId: 'style-parcel',
+        visible: true,
+        locked: false,
+        parcelName: 'Parcel 1',
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 25, y: 0 },
+          { x: 25, y: 15 },
+        ],
+        vertexLabels: ['A', 'P1', 'P2'],
+        areaSquareMeters: 187.5,
+        perimeterMeters: 69.154759,
+        closureDeltaX: 0,
+        closureDeltaY: 0,
+        closureDistanceMeters: 0,
+      },
+      {
+        id: 'line:split',
+        type: 'line',
+        layerId: 'planning',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        fromStationId: 'S1',
+        toStationId: 'S2',
+        fromX: 20,
+        fromY: -5,
+        toX: 20,
+        toY: 20,
+        sourceObservationIds: [],
+      },
+    ]);
+
+    const splitState = runCadCommand(createCadHistoryState(project), {
+      key: 'PARCEL_SPLIT',
+      parcelEntityId: 'parcel:source',
+      splitLineEntityId: 'line:split',
+    });
+
+    const parcels = splitState.present.project.entities.filter((entity) => entity.type === 'parcel');
+    expect(parcels).toHaveLength(2);
+    expect(parcels.map((entity) => entity.parcelName)).toEqual(['Parcel 2', 'Parcel 3']);
+    expect(parcels.map((entity) => entity.areaSquareMeters ?? Number.NaN).sort((a, b) => a - b)).toEqual([
+      67.5,
+      120,
+    ]);
+    expect(splitState.present.project.cogoComputations.at(-1)?.toolKey).toBe('PARCEL_SPLIT');
+
+    const undoneSplitState = undoCadHistory(splitState);
+    expect(
+      undoneSplitState.present.project.entities.some(
+        (entity) => entity.type === 'parcel' && entity.id === 'parcel:source',
+      ),
+    ).toBe(true);
+
+    const redoneSplitState = redoCadHistory(undoneSplitState);
+    expect(redoneSplitState.present.project.entities.filter((entity) => entity.type === 'parcel')).toHaveLength(2);
+  });
+
   it('commits point-to-point traverses with sideshots into geometry and persisted COGO history', () => {
     const project = buildSurveyCadSpikeProject({
       input,

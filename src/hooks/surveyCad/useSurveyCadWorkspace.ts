@@ -218,6 +218,7 @@ interface UseSurveyCadWorkspaceResult {
   canCreateAlignmentIntervalPoints: boolean;
   canCreateParcel: boolean;
   canReportParcelDiagnostics: boolean;
+  canSplitParcelByLine: boolean;
   canContinueCurve: boolean;
   canTrimSelection: boolean;
   canExtendSelection: boolean;
@@ -286,6 +287,7 @@ interface UseSurveyCadWorkspaceResult {
   reportAlignmentStationFromSelection: () => void;
   createParcelFromSelection: () => void;
   reportParcelDiagnosticsFromSelection: () => void;
+  splitParcelBySelectedLine: () => void;
   cancelActiveCommand: () => void;
   finishActiveCommand: () => void;
   setCommandInputValue: (_value: string) => void;
@@ -447,6 +449,20 @@ export const useSurveyCadWorkspace = (
       selectedEntities.every((entity) => entity.type === 'line')
         ? selectedEntities.filter((entity): entity is CadLineEntity => entity.type === 'line')
         : [],
+    [selectedEntities],
+  );
+  const selectedParcelForSplit = useMemo(
+    () =>
+      selectedEntities.length === 2
+        ? selectedEntities.find((entity): entity is import('../../engine/cad/cadTypes').CadParcelEntity => entity.type === 'parcel') ?? null
+        : null,
+    [selectedEntities],
+  );
+  const selectedSplitLineForParcel = useMemo(
+    () =>
+      selectedEntities.length === 2
+        ? selectedEntities.find((entity): entity is CadLineEntity => entity.type === 'line') ?? null
+        : null,
     [selectedEntities],
   );
   const selectedLineLikes = useMemo(
@@ -1170,6 +1186,7 @@ export const useSurveyCadWorkspace = (
       selectedEntities.length === 1 && selectedAlignmentForStationing != null,
     canCreateParcel: selectedParcelSource != null,
     canReportParcelDiagnostics: selectedParcelDiagnosticLines.length > 0,
+    canSplitParcelByLine: selectedParcelForSplit != null && selectedSplitLineForParcel != null,
     canContinueCurve: selectedArcForContinue != null,
     canTrimSelection: true,
     canExtendSelection: true,
@@ -1319,6 +1336,16 @@ export const useSurveyCadWorkspace = (
             resultSummary: summary,
             createdAtIso: new Date().toISOString(),
           },
+        }),
+      );
+    },
+    splitParcelBySelectedLine: () => {
+      if (!selectedParcelForSplit || !selectedSplitLineForParcel) return;
+      applyHistoryUpdate((current) =>
+        runCadCommand(current, {
+          key: 'PARCEL_SPLIT',
+          parcelEntityId: selectedParcelForSplit.id,
+          splitLineEntityId: selectedSplitLineForParcel.id,
         }),
       );
     },

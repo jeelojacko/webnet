@@ -20,6 +20,7 @@ interface SurveyCadCommandLineProps {
   canCreateAlignmentIntervalPoints: boolean;
   canCreateParcel: boolean;
   canReportParcelDiagnostics: boolean;
+  canSplitParcelByLine: boolean;
   canContinueCurve: boolean;
   canTrimSelection: boolean;
   canExtendSelection: boolean;
@@ -81,6 +82,7 @@ interface SurveyCadCommandLineProps {
   onReportAlignmentStation: () => void;
   onCreateParcel: () => void;
   onReportParcelDiagnostics: () => void;
+  onSplitParcelByLine: () => void;
   onSelectAll: () => void;
   onClearSelection: () => void;
   onErase: () => void;
@@ -113,6 +115,7 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   canCreateAlignmentIntervalPoints,
   canCreateParcel,
   canReportParcelDiagnostics,
+  canSplitParcelByLine,
   canContinueCurve,
   canTrimSelection,
   canExtendSelection,
@@ -174,6 +177,7 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   onReportAlignmentStation,
   onCreateParcel,
   onReportParcelDiagnostics,
+  onSplitParcelByLine,
   onSelectAll,
   onClearSelection,
   onErase,
@@ -628,6 +632,14 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
               disabled={!canReportParcelDiagnostics}
             >
               Parcel Check
+            </button>
+            <button
+              type="button"
+              className={arcMenuButtonClassName}
+              onClick={() => { setParcelMenuOpen(false); runImmediate(onSplitParcelByLine); }}
+              disabled={!canSplitParcelByLine}
+            >
+              Split by Line
             </button>
           </div>
         ) : null}
