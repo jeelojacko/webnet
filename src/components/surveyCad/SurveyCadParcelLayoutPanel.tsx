@@ -12,7 +12,9 @@ interface SurveyCadParcelLayoutPanelProps {
   parentParcelName: string | null;
   frontageLabel: string | null;
   previewStatus: string;
+  previewDetails: string[];
   hasPreview: boolean;
+  canAcceptPreview: boolean;
   canPreviewLayout: boolean;
   canUseCurrentSelectionAsParent: boolean;
   canUseCurrentSelectionAsFrontage: boolean;
@@ -95,7 +97,9 @@ const SurveyCadParcelLayoutPanel: React.FC<SurveyCadParcelLayoutPanelProps> = ({
   parentParcelName,
   frontageLabel,
   previewStatus,
+  previewDetails,
   hasPreview,
+  canAcceptPreview,
   canPreviewLayout,
   canUseCurrentSelectionAsParent,
   canUseCurrentSelectionAsFrontage,
@@ -339,9 +343,16 @@ const SurveyCadParcelLayoutPanel: React.FC<SurveyCadParcelLayoutPanelProps> = ({
             <div className="text-[10px] text-slate-400" data-survey-cad-parcel-layout-preview-status>
               {previewStatus}
             </div>
+            {previewDetails.length > 0 ? (
+              <div className="grid gap-1 text-[10px] text-slate-500">
+                {previewDetails.map((detail) => (
+                  <div key={detail}>{detail}</div>
+                ))}
+              </div>
+            ) : null}
             <div className="flex flex-wrap gap-2">
               <button type="button" className={buttonClassName} onClick={onCyclePreviewAlternative} disabled={!hasPreview}>Alt</button>
-              <button type="button" className={buttonClassName} onClick={onAcceptPreview} disabled={!hasPreview}>Accept</button>
+              <button type="button" className={buttonClassName} onClick={onAcceptPreview} disabled={!canAcceptPreview}>Accept</button>
               <button type="button" className={buttonClassName} onClick={onRejectPreview} disabled={!hasPreview}>Reject</button>
               <button type="button" className={buttonClassName} disabled>Create All</button>
               <button type="button" className={buttonClassName} onClick={onResetSettings}>Reset</button>

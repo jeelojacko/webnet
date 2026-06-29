@@ -11,6 +11,8 @@ import {
   cadBuildParcelSplitByLineDraft,
   cadBuildParcelSplitBySlideDraft,
   cadBuildParcelSplitBySwingDraft,
+  cadBuildParcelLayoutPreviewCandidate,
+  cadEvaluateParcelLayoutConstraints,
   cadConvertAreaSquareMeters,
   cadBuildArcFromThreePoints,
   cadBuildArcFromChordBearingRadius,
@@ -54,6 +56,7 @@ import {
   cadSolveCurveMetrics,
   formatCadBearing,
 } from '../src/engine/cad/cadCogo';
+import type { CadParcelLayoutSettings, CadParcelEntity, CadLineEntity } from '../src/engine/cad/cadTypes';
 import {
   cadArcEndPoint,
   cadBuildArcFromStartCenterAngle,
@@ -82,6 +85,101 @@ import {
 } from '../src/engine/cad/cadAlignment';
 
 describe('Survey CAD COGO helpers', () => {
+  const parcelLayoutTestParcel: CadParcelEntity = {
+    id: 'parcel:layout',
+    type: 'parcel',
+    layerId: 'parcels',
+    styleId: 'style-parcel',
+    visible: true,
+    locked: false,
+    parcelName: 'Layout Parcel',
+    vertices: [
+      { x: 0, y: 0 },
+      { x: 80, y: 0 },
+      { x: 80, y: 60 },
+      { x: 0, y: 60 },
+    ],
+    vertexLabels: ['A', 'B', 'C', 'D'],
+  };
+
+  const parcelLayoutFrontage: CadLineEntity = {
+    id: 'line:A|B',
+    type: 'line',
+    layerId: 'planning',
+    styleId: 'style-observation-line',
+    visible: true,
+    locked: false,
+    fromStationId: 'A',
+    toStationId: 'B',
+    fromX: 0,
+    fromY: 0,
+    toX: 80,
+    toY: 0,
+    sourceObservationIds: [],
+  };
+
+  const parcelLayoutSettings = (
+    overrides: Partial<CadParcelLayoutSettings> = {},
+  ): CadParcelLayoutSettings => ({
+    minAreaSquareMeters: 1200,
+    minFrontageMeters: 20,
+    useFrontageAtOffset: false,
+    frontageOffsetMeters: 10,
+    minWidthMeters: 10,
+    minDepthMeters: 20,
+    useMaxDepth: false,
+    maxDepthMeters: 150,
+    solutionPreference: 'shortest_frontage',
+    automaticMode: 'off',
+    remainderDistribution: 'place_remainder_in_last_parcel',
+    ...overrides,
+  });
+
+  const parcelLayoutOffsetTestParcel: CadParcelEntity = {
+    id: 'parcel:offset',
+    type: 'parcel',
+    layerId: 'parcels',
+    styleId: 'style-parcel',
+    visible: true,
+    locked: false,
+    parcelName: 'Offset Parcel',
+    vertices: [
+      { x: 0, y: 0 },
+      { x: 40, y: 0 },
+      { x: 30, y: 30 },
+      { x: 10, y: 30 },
+    ],
+    vertexLabels: ['A', 'B', 'C', 'D'],
+  };
+
+  const parcelLayoutScoreTestParcel: CadParcelEntity = {
+    id: 'parcel:score',
+    type: 'parcel',
+    layerId: 'parcels',
+    styleId: 'style-parcel',
+    visible: true,
+    locked: false,
+    parcelName: 'Score Parcel',
+    vertices: [
+      { x: 0, y: 0 },
+      { x: 50, y: 0 },
+      { x: 40, y: 30 },
+      { x: 0, y: 30 },
+    ],
+    vertexLabels: ['A', 'B', 'C', 'D'],
+  };
+
+  const parcelLayoutScoreFrontage: CadLineEntity = {
+    ...parcelLayoutFrontage,
+    toStationId: 'B2',
+    toX: 50,
+  };
+
+  const parcelLayoutOffsetFrontage: CadLineEntity = {
+    ...parcelLayoutFrontage,
+    toX: 40,
+  };
+
   it('builds inverse summaries with azimuth and survey bearing formatting', () => {
     const inverse = buildCadInverseSummary({ x: 0, y: 0 }, { x: 100, y: 100 });
 
@@ -1183,6 +1281,95 @@ describe('Survey CAD COGO helpers', () => {
     expect(layoutDraft?.alternative).toBe('start');
     expect(layoutDraft?.frontageLengthMeters ?? Number.NaN).toBeCloseTo(25, 6);
     expect(layoutDraft?.childAreaSquareMeters ?? Number.NaN).toBeCloseTo(67.5, 2);
+  });
+
+  it('evaluates a valid slide preview candidate with width and depth metrics', () => {
+    const candidate = cadBuildParcelLayoutPreviewCandidate(
+      parcelLayoutTestParcel,
+      parcelLayoutFrontage,
+      parcelLayoutSettings(),
+      'slide',
+      'start',
+    );
+
+    expect(candidate.draft).not.toBeNull();
+    expect(candidate.evaluation).not.toBeNull();
+    expect(candidate.isValid).toBe(true);
+    expect(candidate.evaluation?.minimumSampledWidthMeters ?? Number.NaN).toBeCloseTo(
+      candidate.draft?.frontageLengthMeters ?? Number.NaN,
+      6,
+    );
+    expect(candidate.evaluation?.depthMeters ?? Number.NaN).toBeCloseTo(60, 6);
+  });
+
+  it('rejects a slide preview when frontage-at-offset width fails', () => {
+    const candidate = cadBuildParcelLayoutPreviewCandidate(
+      parcelLayoutOffsetTestParcel,
+      parcelLayoutOffsetFrontage,
+      parcelLayoutSettings({
+        useFrontageAtOffset: true,
+        frontageOffsetMeters: 10,
+        minAreaSquareMeters: 600,
+        minFrontageMeters: 24,
+      }),
+      'slide',
+      'start',
+    );
+
+    expect(candidate.isValid).toBe(false);
+    expect(candidate.evaluation?.failedRuleCodes).toContain('frontage_at_offset');
+  });
+
+  it('rejects a swing preview when minimum depth fails', () => {
+    const draft = cadBuildParcelSplitBySwingDraft(
+      parcelLayoutTestParcel,
+      parcelLayoutFrontage,
+      1200,
+      20,
+      'start',
+    );
+    expect(draft).not.toBeNull();
+    if (!draft) throw new Error('Expected swing draft');
+
+    const evaluation = cadEvaluateParcelLayoutConstraints(
+      draft,
+      parcelLayoutFrontage,
+      parcelLayoutSettings({ minDepthMeters: 70 }),
+    );
+
+    expect(evaluation.failedRuleCodes).toContain('min_depth');
+  });
+
+  it('scores start and end slide alternatives by solution preference', () => {
+    const startCandidate = cadBuildParcelLayoutPreviewCandidate(
+      parcelLayoutScoreTestParcel,
+      parcelLayoutScoreFrontage,
+      parcelLayoutSettings({
+        minAreaSquareMeters: 600,
+        solutionPreference: 'shortest_frontage',
+      }),
+      'slide',
+      'start',
+    );
+    const endCandidate = cadBuildParcelLayoutPreviewCandidate(
+      parcelLayoutScoreTestParcel,
+      parcelLayoutScoreFrontage,
+      parcelLayoutSettings({
+        minAreaSquareMeters: 600,
+        solutionPreference: 'shortest_frontage',
+      }),
+      'slide',
+      'end',
+    );
+
+    expect(startCandidate.isValid).toBe(true);
+    expect(endCandidate.isValid).toBe(true);
+    expect(startCandidate.draft?.frontageLengthMeters ?? Number.NaN).toBeLessThan(
+      endCandidate.draft?.frontageLengthMeters ?? Number.NaN,
+    );
+    expect(startCandidate.evaluation?.score ?? Number.NaN).toBeLessThan(
+      endCandidate.evaluation?.score ?? Number.NaN,
+    );
   });
 
   it('diagnoses overlapping parcel pairs with shared area', () => {

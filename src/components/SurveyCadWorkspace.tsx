@@ -2,9 +2,8 @@ import React, { useEffect, useMemo, useRef, useState, type Dispatch, type SetSta
 import type { AdjustmentResult, InstrumentLibrary, ParseOptions, UnitsMode } from '../types';
 import { buildSurveyCadSpikeProject } from '../engine/cad/cadModel';
 import {
-  cadBuildParcelSplitBySlideDraft,
-  cadBuildParcelSplitBySwingDraft,
-  type CadParcelLayoutSplitDraft,
+  cadBuildParcelLayoutPreviewCandidate,
+  type CadParcelLayoutPreviewCandidate,
 } from '../engine/cad/cadCogo';
 import type {
   CadBounds,
@@ -85,9 +84,7 @@ const cloneParcelLayoutUiState = (
 });
 
 interface ParcelLayoutPreviewState {
-  tool: 'slide' | 'swing';
-  alternative: 'start' | 'end';
-  draft: CadParcelLayoutSplitDraft;
+  candidate: CadParcelLayoutPreviewCandidate;
 }
 
 const buildParcelLayoutPreviewPrimitives = (
@@ -95,10 +92,12 @@ const buildParcelLayoutPreviewPrimitives = (
   parcelEntityId: CadEntityId | null,
 ): CadDisplayPrimitive[] => {
   if (!preview || !parcelEntityId) return [];
-  const { split } = preview.draft;
-  const vertices = split.firstVertices.concat(split.firstVertices[0] ?? []);
+  const { draft } = preview.candidate;
+  if (!draft) return [];
+  const { split } = draft;
+  const vertices = draft.childVertices.concat(draft.childVertices[0] ?? []);
   const childOutlinePrimitives: CadDisplayPrimitive[] = [];
-  for (let index = 0; index < split.firstVertices.length; index += 1) {
+  for (let index = 0; index < draft.childVertices.length; index += 1) {
     const start = vertices[index];
     const end = vertices[index + 1];
     if (!start || !end) continue;
@@ -109,9 +108,9 @@ const buildParcelLayoutPreviewPrimitives = (
       sourceEntityId: parcelEntityId,
       points: [start, end],
       stroke: '#22d3ee',
-      strokeWidth: index === split.firstVertices.length - 1 ? 2.4 : 1.8,
+      strokeWidth: index === draft.childVertices.length - 1 ? 2.4 : 1.8,
       opacity: 0.95,
-      strokeDasharray: index === split.firstVertices.length - 1 ? '4 3' : '7 5',
+      strokeDasharray: index === draft.childVertices.length - 1 ? '4 3' : '7 5',
     });
   }
   childOutlinePrimitives.push({
@@ -120,7 +119,7 @@ const buildParcelLayoutPreviewPrimitives = (
     layerId: 'parcels',
     sourceEntityId: parcelEntityId,
     points: [split.splitStart, split.splitEnd],
-    stroke: preview.tool === 'slide' ? '#f59e0b' : '#34d399',
+    stroke: preview.candidate.tool === 'slide' ? '#f59e0b' : '#34d399',
     strokeWidth: 2.6,
     opacity: 0.95,
     strokeDasharray: '10 5',
@@ -134,7 +133,7 @@ const buildParcelLayoutPreviewPrimitives = (
       x: (split.splitStart.x + split.splitEnd.x) / 2,
       y: (split.splitStart.y + split.splitEnd.y) / 2,
     },
-    text: `${preview.tool === 'slide' ? 'Slide' : 'Swing'} ${preview.alternative} | ${preview.draft.childAreaSquareMeters.toFixed(1)} m2 | ${preview.draft.frontageLengthMeters.toFixed(1)} m`,
+    text: `${preview.candidate.tool === 'slide' ? 'Slide' : 'Swing'} ${preview.candidate.alternative} | ${draft.childAreaSquareMeters.toFixed(1)} m2 | ${draft.frontageLengthMeters.toFixed(1)} m`,
     stroke: '#e2e8f0',
     fontSize: 11,
     opacity: 0.95,
@@ -633,64 +632,75 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     if (!parcelLayoutPreviewState) {
       return 'Use Slide or Swing to preview one child lot from the active parent/frontage setup.';
     }
-    return `${parcelLayoutPreviewState.tool === 'slide' ? 'Slide' : 'Swing'} ${parcelLayoutPreviewState.alternative} preview: ${parcelLayoutPreviewState.draft.childAreaSquareMeters.toFixed(3)} m2 child area and ${parcelLayoutPreviewState.draft.frontageLengthMeters.toFixed(3)} m frontage.`;
+    return parcelLayoutPreviewState.candidate.statusMessage;
   }, [parcelLayoutFrontageEntity, parcelLayoutParentEntity, parcelLayoutPreviewState]);
+
+  const parcelLayoutPreviewDetails = useMemo(
+    () => parcelLayoutPreviewState?.candidate.evaluation?.messages ?? [],
+    [parcelLayoutPreviewState],
+  );
 
   const previewParcelLayoutSplit = (
     tool: 'slide' | 'swing',
-    alternative = parcelLayoutPreviewState?.tool === tool ? parcelLayoutPreviewState.alternative : 'start',
+    alternative = parcelLayoutPreviewState?.candidate.tool === tool
+      ? parcelLayoutPreviewState.candidate.alternative
+      : null,
   ) => {
     if (!parcelLayoutParentEntity || parcelLayoutFrontageEntity?.type !== 'line') return;
-    const nextDraft =
-      tool === 'slide'
-        ? cadBuildParcelSplitBySlideDraft(
-            parcelLayoutParentEntity,
-            parcelLayoutFrontageEntity,
-            parcelLayoutState.settings.minAreaSquareMeters,
-            parcelLayoutState.settings.minFrontageMeters,
-            alternative,
-          )
-        : cadBuildParcelSplitBySwingDraft(
-            parcelLayoutParentEntity,
-            parcelLayoutFrontageEntity,
-            parcelLayoutState.settings.minAreaSquareMeters,
-            parcelLayoutState.settings.minFrontageMeters,
-            alternative,
-          );
-    setParcelLayoutPreviewState(
-      nextDraft
-        ? {
-            tool,
-            alternative,
-            draft: nextDraft,
-          }
-        : null,
+    const startCandidate = cadBuildParcelLayoutPreviewCandidate(
+      parcelLayoutParentEntity,
+      parcelLayoutFrontageEntity,
+      parcelLayoutState.settings,
+      tool,
+      'start',
     );
+    const endCandidate = cadBuildParcelLayoutPreviewCandidate(
+      parcelLayoutParentEntity,
+      parcelLayoutFrontageEntity,
+      parcelLayoutState.settings,
+      tool,
+      'end',
+    );
+    const preferredCandidate =
+      alternative === 'start'
+        ? startCandidate
+        : alternative === 'end'
+          ? endCandidate
+          : [startCandidate, endCandidate]
+              .sort((left, right) => {
+                if (left.isValid !== right.isValid) return left.isValid ? -1 : 1;
+                const leftScore = left.evaluation?.score ?? Number.POSITIVE_INFINITY;
+                const rightScore = right.evaluation?.score ?? Number.POSITIVE_INFINITY;
+                return leftScore - rightScore;
+              })[0] ?? startCandidate;
+    setParcelLayoutPreviewState({ candidate: preferredCandidate });
   };
 
   const cycleParcelLayoutPreviewAlternative = () => {
     if (!parcelLayoutPreviewState) return;
     previewParcelLayoutSplit(
-      parcelLayoutPreviewState.tool,
-      parcelLayoutPreviewState.alternative === 'start' ? 'end' : 'start',
+      parcelLayoutPreviewState.candidate.tool,
+      parcelLayoutPreviewState.candidate.alternative === 'start' ? 'end' : 'start',
     );
   };
 
   const acceptParcelLayoutPreview = () => {
     if (
       !parcelLayoutPreviewState ||
+      !parcelLayoutPreviewState.candidate.isValid ||
+      !parcelLayoutPreviewState.candidate.draft ||
       !parcelLayoutParentEntity ||
       parcelLayoutFrontageEntity?.type !== 'line'
     ) {
       return;
     }
-    if (parcelLayoutPreviewState.tool === 'slide') {
+    if (parcelLayoutPreviewState.candidate.tool === 'slide') {
       commitParcelSlideLayout({
         parcelEntityId: parcelLayoutParentEntity.id,
         frontageEntityId: parcelLayoutFrontageEntity.id,
         targetAreaSquareMeters: parcelLayoutState.settings.minAreaSquareMeters,
         minFrontageMeters: parcelLayoutState.settings.minFrontageMeters,
-        alternative: parcelLayoutPreviewState.alternative,
+        alternative: parcelLayoutPreviewState.candidate.alternative,
       });
     } else {
       commitParcelSwingLayout({
@@ -698,7 +708,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         frontageEntityId: parcelLayoutFrontageEntity.id,
         targetAreaSquareMeters: parcelLayoutState.settings.minAreaSquareMeters,
         minFrontageMeters: parcelLayoutState.settings.minFrontageMeters,
-        alternative: parcelLayoutPreviewState.alternative,
+        alternative: parcelLayoutPreviewState.candidate.alternative,
       });
     }
     setParcelLayoutPreviewState(null);
@@ -743,6 +753,13 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     parcelLayoutFrontageEntity?.id,
     parcelLayoutState.settings.minAreaSquareMeters,
     parcelLayoutState.settings.minFrontageMeters,
+    parcelLayoutState.settings.useFrontageAtOffset,
+    parcelLayoutState.settings.frontageOffsetMeters,
+    parcelLayoutState.settings.minWidthMeters,
+    parcelLayoutState.settings.minDepthMeters,
+    parcelLayoutState.settings.useMaxDepth,
+    parcelLayoutState.settings.maxDepthMeters,
+    parcelLayoutState.settings.solutionPreference,
     activeProject.entities.length,
   ]);
 
@@ -989,7 +1006,9 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               parentParcelName={parcelLayoutParentEntity?.parcelName ?? null}
               frontageLabel={parcelLayoutFrontageLabel}
               previewStatus={parcelLayoutPreviewStatus}
+              previewDetails={parcelLayoutPreviewDetails}
               hasPreview={parcelLayoutPreviewState != null}
+              canAcceptPreview={parcelLayoutPreviewState?.candidate.isValid ?? false}
               canPreviewLayout={canPreviewParcelSlideOrSwing}
               canUseCurrentSelectionAsParent={selectedParcelForLayout != null}
               canUseCurrentSelectionAsFrontage={selectedFrontageForLayout != null}

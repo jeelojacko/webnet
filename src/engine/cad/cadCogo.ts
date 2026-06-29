@@ -35,6 +35,7 @@ import type {
   CadEntity,
   CadEntityId,
   CadLineEntity,
+  CadParcelLayoutSettings,
   CadParcelEntity,
   CadPolylineEntity,
 } from './cadTypes';
@@ -161,7 +162,39 @@ export interface CadParcelLayoutSplitDraft {
   alternative: CadParcelLayoutSplitAlternative;
   frontageLengthMeters: number;
   childAreaSquareMeters: number;
+  childVertices: CadWorldPoint[];
+  childVertexLabels: string[];
+  remainderVertices: CadWorldPoint[];
+  remainderVertexLabels: string[];
 }
+
+export interface CadParcelLayoutConstraintEvaluation {
+  frontageLengthMeters: number;
+  frontageAtOffsetWidthMeters: number | null;
+  minimumSampledWidthMeters: number | null;
+  depthMeters: number | null;
+  score: number;
+  failedRuleCodes: Array<
+    | 'min_area'
+    | 'min_frontage'
+    | 'frontage_at_offset'
+    | 'min_width'
+    | 'min_depth'
+    | 'max_depth'
+  >;
+  messages: string[];
+}
+
+export interface CadParcelLayoutPreviewCandidate {
+  tool: 'slide' | 'swing';
+  alternative: CadParcelLayoutSplitAlternative;
+  draft: CadParcelLayoutSplitDraft | null;
+  evaluation: CadParcelLayoutConstraintEvaluation | null;
+  isValid: boolean;
+  statusMessage: string;
+}
+
+const PARCEL_LAYOUT_EVALUATION_SAMPLE_COUNT = 7;
 
 export interface CadParcelSourceDraft {
   vertices: CadWorldPoint[];
@@ -1853,6 +1886,11 @@ interface CadParcelSelectedSplitSide {
   areaSquareMeters: number;
 }
 
+interface CadParcelLayoutLocalPoint {
+  x: number;
+  y: number;
+}
+
 const cadMatchFrontageLineToParcelEdge = (
   parcel: CadParcelEntity,
   frontageLine: CadLineEntity,
@@ -1934,6 +1972,28 @@ const cadSelectParcelSplitSide = (
     ) ?? null
   );
 };
+
+const cadBuildParcelLayoutDraft = (
+  split: CadParcelSplitDraft,
+  alternative: CadParcelLayoutSplitAlternative,
+  frontageLengthMeters: number,
+  childSide: CadParcelSelectedSplitSide,
+): CadParcelLayoutSplitDraft => ({
+  split,
+  alternative,
+  frontageLengthMeters,
+  childAreaSquareMeters: childSide.areaSquareMeters,
+  childVertices: childSide.vertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
+  childVertexLabels: [...childSide.labels],
+  remainderVertices:
+    childSide.vertices === split.firstVertices
+      ? split.secondVertices.map((vertex) => ({ x: vertex.x, y: vertex.y }))
+      : split.firstVertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
+  remainderVertexLabels:
+    childSide.vertices === split.firstVertices
+      ? [...split.secondVertexLabels]
+      : [...split.firstVertexLabels],
+});
 
 const cadBuildParcelSwingSplitDraft = (
   parcel: CadParcelEntity,
@@ -2041,13 +2101,12 @@ const evaluateParcelSlideAtFrontageDistance = (
   if (!selectedSide) return null;
 
   return {
-    draft: {
-      split: splitDraft,
+    draft: cadBuildParcelLayoutDraft(
+      splitDraft,
       alternative,
-      frontageLengthMeters:
-        alternative === 'start' ? distanceFromStartMeters : frontageLength - distanceFromStartMeters,
-      childAreaSquareMeters: selectedSide.areaSquareMeters,
-    },
+      alternative === 'start' ? distanceFromStartMeters : frontageLength - distanceFromStartMeters,
+      selectedSide,
+    ),
     differenceSquareMeters: selectedSide.areaSquareMeters - targetAreaSquareMeters,
     positionMeters: distanceFromStartMeters,
   };
@@ -2256,6 +2315,10 @@ const cadEvaluateParcelSwingAtBoundaryDistance = (
       alternative,
       frontageLengthMeters: frontageEdge.lengthMeters,
       childAreaSquareMeters: childSummary.areaSquareMeters,
+      childVertices: splitDraft.firstVertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
+      childVertexLabels: [...splitDraft.firstVertexLabels],
+      remainderVertices: splitDraft.secondVertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
+      remainderVertexLabels: [...splitDraft.secondVertexLabels],
     },
     differenceSquareMeters: childSummary.areaSquareMeters - targetAreaSquareMeters,
     positionMeters: distanceAlongPathMeters,
@@ -2359,6 +2422,261 @@ export const cadBuildParcelSplitBySwingDraft = (
   const frontageEdge = cadMatchFrontageLineToParcelEdge(parcel, frontageLine);
   if (!frontageEdge || frontageEdge.lengthMeters + 1e-9 < minFrontageMeters) return null;
   return solveParcelSwingDraft(parcel, frontageEdge, targetAreaSquareMeters, alternative);
+};
+
+const cadBuildParcelLayoutLocalPoints = (
+  frontageStart: CadWorldPoint,
+  frontageEnd: CadWorldPoint,
+  vertices: readonly CadWorldPoint[],
+): CadParcelLayoutLocalPoint[] | null => {
+  const frontageLength = cadDistance(frontageStart, frontageEnd);
+  if (frontageLength <= 1e-9 || vertices.length < 3) return null;
+  const unitX = (frontageEnd.x - frontageStart.x) / frontageLength;
+  const unitY = (frontageEnd.y - frontageStart.y) / frontageLength;
+  const raw = vertices.map((vertex) => {
+    const dx = vertex.x - frontageStart.x;
+    const dy = vertex.y - frontageStart.y;
+    return {
+      x: dx * unitX + dy * unitY,
+      y: dx * -unitY + dy * unitX,
+    };
+  });
+  const maxY = raw.reduce((maximum, point) => Math.max(maximum, point.y), Number.NEGATIVE_INFINITY);
+  const minY = raw.reduce((minimum, point) => Math.min(minimum, point.y), Number.POSITIVE_INFINITY);
+  const flip = Math.abs(minY) > Math.abs(maxY);
+  return flip ? raw.map((point) => ({ x: point.x, y: -point.y })) : raw;
+};
+
+const cadWidthAtParcelLayoutOffset = (
+  localVertices: readonly CadParcelLayoutLocalPoint[],
+  offsetMeters: number,
+  frontageLengthMeters: number,
+): number | null => {
+  if (localVertices.length < 3) return null;
+  if (offsetMeters <= 1e-9) return frontageLengthMeters;
+  const xIntersections: number[] = [];
+  for (let index = 0; index < localVertices.length; index += 1) {
+    const start = localVertices[index]!;
+    const end = localVertices[(index + 1) % localVertices.length]!;
+    if (Math.abs(start.y - end.y) <= 1e-9) continue;
+    const crosses =
+      (start.y <= offsetMeters && offsetMeters < end.y) ||
+      (end.y <= offsetMeters && offsetMeters < start.y);
+    if (!crosses) continue;
+    const ratio = (offsetMeters - start.y) / (end.y - start.y);
+    xIntersections.push(start.x + (end.x - start.x) * ratio);
+  }
+  if (xIntersections.length < 2) return null;
+  xIntersections.sort((left, right) => left - right);
+  return xIntersections[xIntersections.length - 1]! - xIntersections[0]!;
+};
+
+const cadBuildParcelLayoutConstraintMessages = (
+  settings: CadParcelLayoutSettings,
+  draft: CadParcelLayoutSplitDraft,
+  evaluation: Omit<CadParcelLayoutConstraintEvaluation, 'messages'>,
+): string[] => {
+  const messages: string[] = [];
+  const areaPass = draft.childAreaSquareMeters + 1e-9 >= settings.minAreaSquareMeters;
+  messages.push(
+    `Area ${areaPass ? 'pass' : 'fail'}: ${draft.childAreaSquareMeters.toFixed(3)} m2 vs ${settings.minAreaSquareMeters.toFixed(3)} m2 min.`,
+  );
+  const frontagePass = draft.frontageLengthMeters + 1e-9 >= settings.minFrontageMeters;
+  messages.push(
+    `Frontage ${frontagePass ? 'pass' : 'fail'}: ${draft.frontageLengthMeters.toFixed(3)} m vs ${settings.minFrontageMeters.toFixed(3)} m min.`,
+  );
+  if (settings.useFrontageAtOffset) {
+    const widthAtOffset = evaluation.frontageAtOffsetWidthMeters;
+    const offsetPass = widthAtOffset != null && widthAtOffset + 1e-9 >= settings.minFrontageMeters;
+    messages.push(
+      `Offset width ${offsetPass ? 'pass' : 'fail'}: ${widthAtOffset == null ? 'n/a' : `${widthAtOffset.toFixed(3)} m`} at ${settings.frontageOffsetMeters.toFixed(3)} m offset.`,
+    );
+  }
+  const widthPass =
+    evaluation.minimumSampledWidthMeters != null &&
+    evaluation.minimumSampledWidthMeters + 1e-9 >= settings.minWidthMeters;
+  messages.push(
+    `Width ${widthPass ? 'pass' : 'fail'}: ${evaluation.minimumSampledWidthMeters == null ? 'n/a' : `${evaluation.minimumSampledWidthMeters.toFixed(3)} m`} vs ${settings.minWidthMeters.toFixed(3)} m min.`,
+  );
+  const depthPass =
+    evaluation.depthMeters != null && evaluation.depthMeters + 1e-9 >= settings.minDepthMeters;
+  messages.push(
+    `Depth ${depthPass ? 'pass' : 'fail'}: ${evaluation.depthMeters == null ? 'n/a' : `${evaluation.depthMeters.toFixed(3)} m`} vs ${settings.minDepthMeters.toFixed(3)} m min.`,
+  );
+  if (settings.useMaxDepth) {
+    const maxDepthPass =
+      evaluation.depthMeters != null && evaluation.depthMeters <= settings.maxDepthMeters + 1e-9;
+    messages.push(
+      `Max depth ${maxDepthPass ? 'pass' : 'fail'}: ${evaluation.depthMeters == null ? 'n/a' : `${evaluation.depthMeters.toFixed(3)} m`} vs ${settings.maxDepthMeters.toFixed(3)} m max.`,
+    );
+  }
+  return messages;
+};
+
+export const cadEvaluateParcelLayoutConstraints = (
+  draft: CadParcelLayoutSplitDraft,
+  frontageLine: CadLineEntity,
+  settings: CadParcelLayoutSettings,
+): CadParcelLayoutConstraintEvaluation => {
+  const localVertices = cadBuildParcelLayoutLocalPoints(
+    { x: frontageLine.fromX, y: frontageLine.fromY },
+    { x: frontageLine.toX, y: frontageLine.toY },
+    draft.childVertices,
+  );
+  const depthMeters =
+    localVertices == null
+      ? null
+      : Math.max(
+          0,
+          ...localVertices.map((point) => point.y).filter((value) => Number.isFinite(value)),
+        );
+  const frontageAtOffsetWidthMeters =
+    settings.useFrontageAtOffset && localVertices
+      ? cadWidthAtParcelLayoutOffset(localVertices, settings.frontageOffsetMeters, draft.frontageLengthMeters)
+      : null;
+
+  const sampledOffsets: number[] = [];
+  if (localVertices && depthMeters != null && depthMeters > 1e-6) {
+    const epsilon = Math.max(depthMeters * 1e-3, 1e-4);
+    for (let index = 1; index <= PARCEL_LAYOUT_EVALUATION_SAMPLE_COUNT; index += 1) {
+      const ratio = index / (PARCEL_LAYOUT_EVALUATION_SAMPLE_COUNT + 1);
+      sampledOffsets.push(epsilon + (depthMeters - 2 * epsilon) * ratio);
+    }
+  }
+  const sampledWidths = sampledOffsets
+    .map((offsetMeters) =>
+      localVertices
+        ? cadWidthAtParcelLayoutOffset(localVertices, offsetMeters, draft.frontageLengthMeters)
+        : null,
+    )
+    .filter((value): value is number => value != null && Number.isFinite(value) && value > 1e-9);
+  const minimumSampledWidthMeters =
+    sampledWidths.length > 0 ? Math.min(...sampledWidths) : null;
+
+  const failedRuleCodes: CadParcelLayoutConstraintEvaluation['failedRuleCodes'] = [];
+  if (draft.childAreaSquareMeters + 1e-9 < settings.minAreaSquareMeters) {
+    failedRuleCodes.push('min_area');
+  }
+  if (draft.frontageLengthMeters + 1e-9 < settings.minFrontageMeters) {
+    failedRuleCodes.push('min_frontage');
+  }
+  if (
+    settings.useFrontageAtOffset &&
+    (frontageAtOffsetWidthMeters == null ||
+      frontageAtOffsetWidthMeters + 1e-9 < settings.minFrontageMeters)
+  ) {
+    failedRuleCodes.push('frontage_at_offset');
+  }
+  if (
+    minimumSampledWidthMeters == null ||
+    minimumSampledWidthMeters + 1e-9 < settings.minWidthMeters
+  ) {
+    failedRuleCodes.push('min_width');
+  }
+  if (depthMeters == null || depthMeters + 1e-9 < settings.minDepthMeters) {
+    failedRuleCodes.push('min_depth');
+  }
+  if (settings.useMaxDepth && (depthMeters == null || depthMeters > settings.maxDepthMeters + 1e-9)) {
+    failedRuleCodes.push('max_depth');
+  }
+
+  const areaDelta = Math.abs(draft.childAreaSquareMeters - settings.minAreaSquareMeters);
+  const frontageDelta = Math.abs(draft.frontageLengthMeters - settings.minFrontageMeters);
+  const widthDelta =
+    minimumSampledWidthMeters == null
+      ? Number.POSITIVE_INFINITY
+      : Math.abs(minimumSampledWidthMeters - settings.minWidthMeters);
+  const depthDelta =
+    depthMeters == null ? Number.POSITIVE_INFINITY : Math.abs(depthMeters - settings.minDepthMeters);
+  let score = failedRuleCodes.length * 1_000_000;
+  switch (settings.solutionPreference) {
+    case 'smallest_area':
+      score += draft.childAreaSquareMeters;
+      break;
+    case 'largest_area':
+      score -= draft.childAreaSquareMeters;
+      break;
+    case 'most_rectangular': {
+      const ratio =
+        minimumSampledWidthMeters != null &&
+        depthMeters != null &&
+        minimumSampledWidthMeters > 1e-9 &&
+        depthMeters > 1e-9
+          ? Math.max(minimumSampledWidthMeters, depthMeters) /
+            Math.min(minimumSampledWidthMeters, depthMeters)
+          : Number.POSITIVE_INFINITY;
+      score += ratio;
+      break;
+    }
+    case 'closest_to_target_area':
+      score += areaDelta;
+      break;
+    case 'shortest_frontage':
+    default:
+      score += draft.frontageLengthMeters;
+      break;
+  }
+  score += areaDelta * 1e-3 + frontageDelta * 1e-2 + widthDelta * 1e-2 + depthDelta * 1e-2;
+
+  const evaluationWithoutMessages = {
+    frontageLengthMeters: draft.frontageLengthMeters,
+    frontageAtOffsetWidthMeters,
+    minimumSampledWidthMeters,
+    depthMeters,
+    score,
+    failedRuleCodes,
+  };
+  return {
+    ...evaluationWithoutMessages,
+    messages: cadBuildParcelLayoutConstraintMessages(settings, draft, evaluationWithoutMessages),
+  };
+};
+
+export const cadBuildParcelLayoutPreviewCandidate = (
+  parcel: CadParcelEntity,
+  frontageLine: CadLineEntity,
+  settings: CadParcelLayoutSettings,
+  tool: 'slide' | 'swing',
+  alternative: CadParcelLayoutSplitAlternative,
+): CadParcelLayoutPreviewCandidate => {
+  const draft =
+    tool === 'slide'
+      ? cadBuildParcelSplitBySlideDraft(
+          parcel,
+          frontageLine,
+          settings.minAreaSquareMeters,
+          settings.minFrontageMeters,
+          alternative,
+        )
+      : cadBuildParcelSplitBySwingDraft(
+          parcel,
+          frontageLine,
+          settings.minAreaSquareMeters,
+          settings.minFrontageMeters,
+          alternative,
+        );
+  if (!draft) {
+    return {
+      tool,
+      alternative,
+      draft: null,
+      evaluation: null,
+      isValid: false,
+      statusMessage: `${tool === 'slide' ? 'Slide' : 'Swing'} ${alternative} preview could not be solved for the current parent, frontage, and target area.`,
+    };
+  }
+  const evaluation = cadEvaluateParcelLayoutConstraints(draft, frontageLine, settings);
+  const isValid = evaluation.failedRuleCodes.length === 0;
+  return {
+    tool,
+    alternative,
+    draft,
+    evaluation,
+    isValid,
+    statusMessage: isValid
+      ? `${tool === 'slide' ? 'Slide' : 'Swing'} ${alternative} preview valid: ${draft.childAreaSquareMeters.toFixed(3)} m2 area and ${draft.frontageLengthMeters.toFixed(3)} m frontage.`
+      : `${tool === 'slide' ? 'Slide' : 'Swing'} ${alternative} preview invalid: ${evaluation.failedRuleCodes.join(', ')}.`,
+  };
 };
 
 export const cadBuildParcelSplitByBearingDraft = (
