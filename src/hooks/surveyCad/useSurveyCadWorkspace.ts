@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import {
+  cadBuildParcelGapDiagnostics,
   cadBuildParcelOverlapDiagnostics,
   cadBuildParcelLineworkDiagnostics,
   cadBuildParcelSourceDraft,
@@ -219,6 +220,7 @@ interface UseSurveyCadWorkspaceResult {
   canCreateAlignmentOffsetPoint: boolean;
   canCreateAlignmentIntervalPoints: boolean;
   canCreateParcel: boolean;
+  canReportParcelGap: boolean;
   canReportParcelDiagnostics: boolean;
   canReportParcelOverlap: boolean;
   canSplitParcelByLine: boolean;
@@ -289,6 +291,7 @@ interface UseSurveyCadWorkspaceResult {
   createAlignmentFromSelection: () => void;
   reportAlignmentStationFromSelection: () => void;
   createParcelFromSelection: () => void;
+  reportParcelGapFromSelection: () => void;
   reportParcelDiagnosticsFromSelection: () => void;
   reportParcelOverlapFromSelection: () => void;
   splitParcelBySelectedLine: () => void;
@@ -1197,6 +1200,7 @@ export const useSurveyCadWorkspace = (
     canCreateAlignmentIntervalPoints:
       selectedEntities.length === 1 && selectedAlignmentForStationing != null,
     canCreateParcel: selectedParcelSource != null,
+    canReportParcelGap: selectedParcelsForOverlap.length >= 2,
     canReportParcelDiagnostics: selectedParcelDiagnosticLines.length > 0,
     canReportParcelOverlap: selectedParcelsForOverlap.length >= 2,
     canSplitParcelByLine: selectedParcelForSplit != null && selectedSplitLineForParcel != null,
@@ -1306,6 +1310,61 @@ export const useSurveyCadWorkspace = (
         runCadCommand(current, {
           key: 'PARCEL_CREATE',
           sourceEntityIds: selectedParcelSource.sourceEntityIds,
+        }),
+      );
+    },
+    reportParcelGapFromSelection: () => {
+      if (selectedParcelsForOverlap.length < 2) return;
+      const diagnostics = cadBuildParcelGapDiagnostics(selectedParcelsForOverlap);
+      const summary = !diagnostics.isSupported
+        ? 'Selected parcels do not form one simple connected coverage for gap detection.'
+        : diagnostics.gapLoops.length === 0
+          ? `Checked ${diagnostics.exposedLoopCount} exposed loop${diagnostics.exposedLoopCount === 1 ? '' : 's'}. No enclosed gaps found.`
+          : `Found ${diagnostics.gapLoops.length} enclosed gap loop${diagnostics.gapLoops.length === 1 ? '' : 's'} inside the selected parcel coverage.`;
+      setReportedComputation(
+        buildCadCogoComputation({
+          createdEntities: [],
+          report: {
+            title: 'Parcel Gap Check',
+            summary,
+            rows: [
+              { label: 'Parcels', value: diagnostics.parcelCount.toFixed(0) },
+              { label: 'Components', value: diagnostics.componentCount.toFixed(0) },
+              { label: 'Supported', value: diagnostics.isSupported ? 'Yes' : 'No' },
+              { label: 'Exposed loops', value: diagnostics.exposedLoopCount.toFixed(0) },
+              { label: 'Gap loops', value: diagnostics.gapLoops.length.toFixed(0) },
+              {
+                label: 'Total gap area',
+                value: diagnostics.totalGapAreaSquareMeters.toFixed(3),
+                unit: 'm2',
+              },
+              ...(
+                diagnostics.gapLoops.length === 0
+                  ? [{ label: 'Gaps', value: diagnostics.isSupported ? 'None' : 'Unsupported selection' }]
+                  : diagnostics.gapLoops.flatMap((gap, index) => [
+                      {
+                        label: `Gap ${index + 1} Area`,
+                        value: gap.areaSquareMeters.toFixed(3),
+                        unit: 'm2',
+                      },
+                      {
+                        label: `Gap ${index + 1} Center`,
+                        value: `${gap.centroid.x.toFixed(3)}, ${gap.centroid.y.toFixed(3)}`,
+                      },
+                    ])
+              ),
+            ],
+          },
+          warnings: [],
+          provenance: {
+            id: `parcel-gap:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`,
+            toolKey: 'PARCEL_GAP',
+            inputs: {
+              parcelEntityIds: selectedParcelsForOverlap.map((entity) => entity.id),
+            },
+            resultSummary: summary,
+            createdAtIso: new Date().toISOString(),
+          },
         }),
       );
     },

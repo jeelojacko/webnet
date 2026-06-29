@@ -3,6 +3,7 @@ import {
   buildCadInverseSummary,
   buildCadDistanceSummary,
   buildCadMultiInverseSummary,
+  cadBuildParcelGapDiagnostics,
   cadBuildParcelLineworkDiagnostics,
   cadBuildParcelOverlapDiagnostics,
   cadBuildParcelSplitByLineDraft,
@@ -1075,6 +1076,108 @@ describe('Survey CAD COGO helpers', () => {
     expect(diagnostics.overlapPairs[0]?.secondParcelName).toBe('Parcel 2');
     expect(diagnostics.overlapPairs[0]?.overlapAreaSquareMeters ?? Number.NaN).toBeCloseTo(50, 6);
     expect(diagnostics.totalOverlapAreaSquareMeters).toBeCloseTo(50, 6);
+  });
+
+  it('diagnoses enclosed parcel gaps from one connected parcel coverage', () => {
+    const diagnostics = cadBuildParcelGapDiagnostics([
+      {
+        id: 'parcel:bl',
+        type: 'parcel',
+        layerId: 'parcels',
+        styleId: 'style-parcel',
+        visible: true,
+        locked: false,
+        parcelName: 'Parcel BL',
+        vertices: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 0, y: 10 }],
+        vertexLabels: ['A', 'B', 'C', 'D'],
+      },
+      {
+        id: 'parcel:bm',
+        type: 'parcel',
+        layerId: 'parcels',
+        styleId: 'style-parcel',
+        visible: true,
+        locked: false,
+        parcelName: 'Parcel BM',
+        vertices: [{ x: 10, y: 0 }, { x: 20, y: 0 }, { x: 20, y: 10 }, { x: 10, y: 10 }],
+        vertexLabels: ['E', 'F', 'G', 'H'],
+      },
+      {
+        id: 'parcel:br',
+        type: 'parcel',
+        layerId: 'parcels',
+        styleId: 'style-parcel',
+        visible: true,
+        locked: false,
+        parcelName: 'Parcel BR',
+        vertices: [{ x: 20, y: 0 }, { x: 30, y: 0 }, { x: 30, y: 10 }, { x: 20, y: 10 }],
+        vertexLabels: ['I', 'J', 'K', 'L'],
+      },
+      {
+        id: 'parcel:lm',
+        type: 'parcel',
+        layerId: 'parcels',
+        styleId: 'style-parcel',
+        visible: true,
+        locked: false,
+        parcelName: 'Parcel LM',
+        vertices: [{ x: 0, y: 10 }, { x: 10, y: 10 }, { x: 10, y: 20 }, { x: 0, y: 20 }],
+        vertexLabels: ['M', 'N', 'O', 'P'],
+      },
+      {
+        id: 'parcel:rm',
+        type: 'parcel',
+        layerId: 'parcels',
+        styleId: 'style-parcel',
+        visible: true,
+        locked: false,
+        parcelName: 'Parcel RM',
+        vertices: [{ x: 20, y: 10 }, { x: 30, y: 10 }, { x: 30, y: 20 }, { x: 20, y: 20 }],
+        vertexLabels: ['Q', 'R', 'S', 'T'],
+      },
+      {
+        id: 'parcel:tl',
+        type: 'parcel',
+        layerId: 'parcels',
+        styleId: 'style-parcel',
+        visible: true,
+        locked: false,
+        parcelName: 'Parcel TL',
+        vertices: [{ x: 0, y: 20 }, { x: 10, y: 20 }, { x: 10, y: 30 }, { x: 0, y: 30 }],
+        vertexLabels: ['U', 'V', 'W', 'X'],
+      },
+      {
+        id: 'parcel:tm',
+        type: 'parcel',
+        layerId: 'parcels',
+        styleId: 'style-parcel',
+        visible: true,
+        locked: false,
+        parcelName: 'Parcel TM',
+        vertices: [{ x: 10, y: 20 }, { x: 20, y: 20 }, { x: 20, y: 30 }, { x: 10, y: 30 }],
+        vertexLabels: ['Y', 'Z', 'AA', 'AB'],
+      },
+      {
+        id: 'parcel:tr',
+        type: 'parcel',
+        layerId: 'parcels',
+        styleId: 'style-parcel',
+        visible: true,
+        locked: false,
+        parcelName: 'Parcel TR',
+        vertices: [{ x: 20, y: 20 }, { x: 30, y: 20 }, { x: 30, y: 30 }, { x: 20, y: 30 }],
+        vertexLabels: ['AC', 'AD', 'AE', 'AF'],
+      },
+    ]);
+
+    expect(diagnostics.isSupported).toBe(true);
+    expect(diagnostics.componentCount).toBe(2);
+    expect(diagnostics.exposedLoopCount).toBe(2);
+    expect(diagnostics.gapLoops).toHaveLength(1);
+    expect(diagnostics.gapLoops[0]?.areaSquareMeters ?? Number.NaN).toBeCloseTo(100, 6);
+    expect(diagnostics.gapLoops[0]?.centroid.x ?? Number.NaN).toBeCloseTo(15, 6);
+    expect(diagnostics.gapLoops[0]?.centroid.y ?? Number.NaN).toBeCloseTo(15, 6);
+    expect(diagnostics.totalGapAreaSquareMeters).toBeCloseTo(100, 6);
   });
 
   it('converts parcel area square meters into shared display units', () => {

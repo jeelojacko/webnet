@@ -100,6 +100,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     canCreateAlignmentOffsetPoint,
     canCreateAlignmentIntervalPoints,
     canCreateParcel,
+    canReportParcelGap,
     canReportParcelDiagnostics,
     canReportParcelOverlap,
     canSplitParcelByLine,
@@ -171,6 +172,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     createAlignmentFromSelection,
     reportAlignmentStationFromSelection,
     createParcelFromSelection,
+    reportParcelGapFromSelection,
     reportParcelDiagnosticsFromSelection,
     reportParcelOverlapFromSelection,
     splitParcelBySelectedLine,
@@ -561,6 +563,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               canCreateAlignmentOffsetPoint={canCreateAlignmentOffsetPoint}
               canCreateAlignmentIntervalPoints={canCreateAlignmentIntervalPoints}
               canCreateParcel={canCreateParcel}
+              canReportParcelGap={canReportParcelGap}
               canReportParcelDiagnostics={canReportParcelDiagnostics}
               canReportParcelOverlap={canReportParcelOverlap}
               canSplitParcelByLine={canSplitParcelByLine}
@@ -623,6 +626,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               onCreateAlignment={createAlignmentFromSelection}
               onReportAlignmentStation={reportAlignmentStationFromSelection}
               onCreateParcel={createParcelFromSelection}
+              onReportParcelGap={reportParcelGapFromSelection}
               onReportParcelDiagnostics={reportParcelDiagnosticsFromSelection}
               onReportParcelOverlap={reportParcelOverlapFromSelection}
               onSplitParcelByLine={splitParcelBySelectedLine}

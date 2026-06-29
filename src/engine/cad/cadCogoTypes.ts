@@ -5,6 +5,7 @@ export type CadCogoToolKey =
   | 'MULTI_INVERSE'
   | 'AREA'
   | 'PARCEL_CHECK'
+  | 'PARCEL_GAP'
   | 'PARCEL_OVERLAP'
   | 'PARCEL_SPLIT'
   | 'COGO_POINT'

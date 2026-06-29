@@ -19,6 +19,7 @@ interface SurveyCadCommandLineProps {
   canCreateAlignmentOffsetPoint: boolean;
   canCreateAlignmentIntervalPoints: boolean;
   canCreateParcel: boolean;
+  canReportParcelGap: boolean;
   canReportParcelDiagnostics: boolean;
   canReportParcelOverlap: boolean;
   canSplitParcelByLine: boolean;
@@ -82,6 +83,7 @@ interface SurveyCadCommandLineProps {
   onCreateAlignment: () => void;
   onReportAlignmentStation: () => void;
   onCreateParcel: () => void;
+  onReportParcelGap: () => void;
   onReportParcelDiagnostics: () => void;
   onReportParcelOverlap: () => void;
   onSplitParcelByLine: () => void;
@@ -116,6 +118,7 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   canCreateAlignmentOffsetPoint,
   canCreateAlignmentIntervalPoints,
   canCreateParcel,
+  canReportParcelGap,
   canReportParcelDiagnostics,
   canReportParcelOverlap,
   canSplitParcelByLine,
@@ -179,6 +182,7 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   onCreateAlignment,
   onReportAlignmentStation,
   onCreateParcel,
+  onReportParcelGap,
   onReportParcelDiagnostics,
   onReportParcelOverlap,
   onSplitParcelByLine,
@@ -628,6 +632,14 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
               disabled={!canCreateParcel}
             >
               Create Parcel
+            </button>
+            <button
+              type="button"
+              className={arcMenuButtonClassName}
+              onClick={() => { setParcelMenuOpen(false); runImmediate(onReportParcelGap); }}
+              disabled={!canReportParcelGap}
+            >
+              Parcel Gap
             </button>
             <button
               type="button"

@@ -40,6 +40,7 @@
 - [x] Survey CAD parcel-check batch (June 2026): add a report-only `PARCEL CHECK` action for selected linework that reports open ends, branches, overlaps, and closed-loop readiness before parcel creation.
 - [x] Survey CAD parcel-split-line batch (June 2026): add a first `PARCEL SPLIT` workflow that uses one selected parcel plus one selected line segment to replace the parent parcel with two child parcels when the line crosses the boundary exactly twice.
 - [x] Survey CAD parcel-overlap-report batch (June 2026): add a report-only parcel overlap action for multi-selected parcels that lists overlapping parcel pairs and their computed shared area before broader parcel gap/area-split tools.
+- [x] Survey CAD parcel-gap-report batch (June 2026): add a report-only parcel gap action for multi-selected parcels that detects enclosed gaps between parcel loops and reports their computed area before broader bearing/area split tools.
 - [ ] Parcel tools batch: add area by picked point sequence, area unit conversion, create parcel from closed selected linework, split by line/bearing/area, hinged/sliding area, gap/overlap detection, and line/curve parcel tables.
 - [ ] Transform tools batch: add rotate, scale, mirror, two-point rotate+translate, 2D Helmert, affine transform, grid-ground scaling from origin, set/add/interpolate elevation.
 - [ ] Annotation/report batch: add bearing-distance labels, richer curve labels, line/curve tables, point reports, inverse reports, traverse reports, parcel reports, COGO history log, and export computation report.
