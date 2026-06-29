@@ -9,6 +9,8 @@ import {
   cadBuildParcelSplitByAreaDraft,
   cadBuildParcelSplitByBearingDraft,
   cadBuildParcelSplitByLineDraft,
+  cadBuildParcelSplitBySlideDraft,
+  cadBuildParcelSplitBySwingDraft,
   cadConvertAreaSquareMeters,
   cadBuildArcFromThreePoints,
   cadBuildArcFromChordBearingRadius,
@@ -1095,6 +1097,92 @@ describe('Survey CAD COGO helpers', () => {
       .sort((left, right) => left - right);
     expect(childAreas[0]).toBeCloseTo(67.5, 2);
     expect(childAreas[1]).toBeCloseTo(120, 2);
+  });
+
+  it('builds a parcel slide draft from a matched frontage edge', () => {
+    const layoutDraft = cadBuildParcelSplitBySlideDraft(
+      {
+        id: 'parcel:1',
+        type: 'parcel',
+        layerId: 'parcels',
+        styleId: 'style-parcel',
+        visible: true,
+        locked: false,
+        parcelName: 'Parcel 1',
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 25, y: 0 },
+          { x: 25, y: 15 },
+        ],
+        vertexLabels: ['A', 'P1', 'P2'],
+      },
+      {
+        id: 'line:A|P1',
+        type: 'line',
+        layerId: 'planning',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        fromStationId: 'A',
+        toStationId: 'P1',
+        fromX: 0,
+        fromY: 0,
+        toX: 25,
+        toY: 0,
+        sourceObservationIds: [],
+      },
+      67.5,
+      10,
+      'start',
+    );
+
+    expect(layoutDraft).not.toBeNull();
+    expect(layoutDraft?.alternative).toBe('start');
+    expect(layoutDraft?.frontageLengthMeters ?? Number.NaN).toBeCloseTo(15, 2);
+    expect(layoutDraft?.childAreaSquareMeters ?? Number.NaN).toBeCloseTo(67.5, 2);
+  });
+
+  it('builds a parcel swing draft from a matched frontage edge', () => {
+    const layoutDraft = cadBuildParcelSplitBySwingDraft(
+      {
+        id: 'parcel:1',
+        type: 'parcel',
+        layerId: 'parcels',
+        styleId: 'style-parcel',
+        visible: true,
+        locked: false,
+        parcelName: 'Parcel 1',
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 25, y: 0 },
+          { x: 25, y: 15 },
+        ],
+        vertexLabels: ['A', 'P1', 'P2'],
+      },
+      {
+        id: 'line:A|P1',
+        type: 'line',
+        layerId: 'planning',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        fromStationId: 'A',
+        toStationId: 'P1',
+        fromX: 0,
+        fromY: 0,
+        toX: 25,
+        toY: 0,
+        sourceObservationIds: [],
+      },
+      67.5,
+      10,
+      'start',
+    );
+
+    expect(layoutDraft).not.toBeNull();
+    expect(layoutDraft?.alternative).toBe('start');
+    expect(layoutDraft?.frontageLengthMeters ?? Number.NaN).toBeCloseTo(25, 6);
+    expect(layoutDraft?.childAreaSquareMeters ?? Number.NaN).toBeCloseTo(67.5, 2);
   });
 
   it('diagnoses overlapping parcel pairs with shared area', () => {

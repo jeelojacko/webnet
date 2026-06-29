@@ -11,6 +11,9 @@ interface SurveyCadParcelLayoutPanelProps {
   state: CadParcelLayoutUiState;
   parentParcelName: string | null;
   frontageLabel: string | null;
+  previewStatus: string;
+  hasPreview: boolean;
+  canPreviewLayout: boolean;
   canUseCurrentSelectionAsParent: boolean;
   canUseCurrentSelectionAsFrontage: boolean;
   onClose: () => void;
@@ -27,6 +30,11 @@ interface SurveyCadParcelLayoutPanelProps {
   onSplitByLine: () => void;
   onSplitByBearing: () => void;
   onSplitByArea: () => void;
+  onPreviewSlide: () => void;
+  onPreviewSwing: () => void;
+  onCyclePreviewAlternative: () => void;
+  onAcceptPreview: () => void;
+  onRejectPreview: () => void;
   onReportGap: () => void;
   onReportCheck: () => void;
   onReportOverlap: () => void;
@@ -86,6 +94,9 @@ const SurveyCadParcelLayoutPanel: React.FC<SurveyCadParcelLayoutPanelProps> = ({
   state,
   parentParcelName,
   frontageLabel,
+  previewStatus,
+  hasPreview,
+  canPreviewLayout,
   canUseCurrentSelectionAsParent,
   canUseCurrentSelectionAsFrontage,
   onClose,
@@ -102,6 +113,11 @@ const SurveyCadParcelLayoutPanel: React.FC<SurveyCadParcelLayoutPanelProps> = ({
   onSplitByLine,
   onSplitByBearing,
   onSplitByArea,
+  onPreviewSlide,
+  onPreviewSwing,
+  onCyclePreviewAlternative,
+  onAcceptPreview,
+  onRejectPreview,
   onReportGap,
   onReportCheck,
   onReportOverlap,
@@ -176,8 +192,8 @@ const SurveyCadParcelLayoutPanel: React.FC<SurveyCadParcelLayoutPanelProps> = ({
               <button type="button" className={buttonClassName} onClick={onSplitByLine} disabled={!canSplitByLine}>Line</button>
               <button type="button" className={buttonClassName} onClick={onSplitByBearing} disabled={!canSplitByBearing}>Bearing</button>
               <button type="button" className={buttonClassName} onClick={onSplitByArea} disabled={!canSplitByArea}>Area</button>
-              <button type="button" className={buttonClassName} disabled>Slide</button>
-              <button type="button" className={buttonClassName} disabled>Swing</button>
+              <button type="button" className={buttonClassName} onClick={onPreviewSlide} disabled={!canPreviewLayout}>Slide</button>
+              <button type="button" className={buttonClassName} onClick={onPreviewSwing} disabled={!canPreviewLayout}>Swing</button>
               <button type="button" className={buttonClassName} disabled>Auto</button>
               <button type="button" className={buttonClassName} onClick={onReportGap} disabled={!canReportGap}>Gap</button>
               <button type="button" className={buttonClassName} onClick={onReportCheck} disabled={!canReportCheck}>Check</button>
@@ -321,12 +337,12 @@ const SurveyCadParcelLayoutPanel: React.FC<SurveyCadParcelLayoutPanelProps> = ({
           <div className="grid gap-2 rounded border border-slate-800 bg-slate-900/50 p-2">
             <div className={sectionLabelClassName}>Preview</div>
             <div className="text-[10px] text-slate-400" data-survey-cad-parcel-layout-preview-status>
-              Solver preview comes in the next parcel-layout batches. This panel now persists parent/frontage state and sizing rules.
+              {previewStatus}
             </div>
             <div className="flex flex-wrap gap-2">
-              <button type="button" className={buttonClassName} disabled>Preview</button>
-              <button type="button" className={buttonClassName} disabled>Accept</button>
-              <button type="button" className={buttonClassName} disabled>Reject</button>
+              <button type="button" className={buttonClassName} onClick={onCyclePreviewAlternative} disabled={!hasPreview}>Alt</button>
+              <button type="button" className={buttonClassName} onClick={onAcceptPreview} disabled={!hasPreview}>Accept</button>
+              <button type="button" className={buttonClassName} onClick={onRejectPreview} disabled={!hasPreview}>Reject</button>
               <button type="button" className={buttonClassName} disabled>Create All</button>
               <button type="button" className={buttonClassName} onClick={onResetSettings}>Reset</button>
             </div>

@@ -302,6 +302,20 @@ interface UseSurveyCadWorkspaceResult {
   reportParcelDiagnosticsFromSelection: () => void;
   reportParcelOverlapFromSelection: () => void;
   splitParcelBySelectedLine: () => void;
+  commitParcelSlideLayout: (_options: {
+    parcelEntityId: CadEntityId;
+    frontageEntityId: CadEntityId;
+    targetAreaSquareMeters: number;
+    minFrontageMeters: number;
+    alternative: 'start' | 'end';
+  }) => void;
+  commitParcelSwingLayout: (_options: {
+    parcelEntityId: CadEntityId;
+    frontageEntityId: CadEntityId;
+    targetAreaSquareMeters: number;
+    minFrontageMeters: number;
+    alternative: 'start' | 'end';
+  }) => void;
   cancelActiveCommand: () => void;
   finishActiveCommand: () => void;
   setCommandInputValue: (_value: string) => void;
@@ -1492,6 +1506,42 @@ export const useSurveyCadWorkspace = (
           key: 'PARCEL_SPLIT',
           parcelEntityId: selectedParcelForSplit.id,
           splitLineEntityId: selectedSplitLineForParcel.id,
+        }),
+      );
+    },
+    commitParcelSlideLayout: ({
+      parcelEntityId,
+      frontageEntityId,
+      targetAreaSquareMeters,
+      minFrontageMeters,
+      alternative,
+    }) => {
+      applyHistoryUpdate((current) =>
+        runCadCommand(current, {
+          key: 'PARCEL_SPLIT_SLIDE',
+          parcelEntityId,
+          frontageEntityId,
+          targetAreaSquareMeters,
+          minFrontageMeters,
+          alternative,
+        }),
+      );
+    },
+    commitParcelSwingLayout: ({
+      parcelEntityId,
+      frontageEntityId,
+      targetAreaSquareMeters,
+      minFrontageMeters,
+      alternative,
+    }) => {
+      applyHistoryUpdate((current) =>
+        runCadCommand(current, {
+          key: 'PARCEL_SPLIT_SWING',
+          parcelEntityId,
+          frontageEntityId,
+          targetAreaSquareMeters,
+          minFrontageMeters,
+          alternative,
         }),
       );
     },
