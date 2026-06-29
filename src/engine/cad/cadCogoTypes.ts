@@ -8,6 +8,7 @@ export type CadCogoToolKey =
   | 'PARCEL_GAP'
   | 'PARCEL_OVERLAP'
   | 'PARCEL_SPLIT'
+  | 'PARCEL_SPLIT_BEARING'
   | 'COGO_POINT'
   | 'INTERSECT_POINT'
   | 'CURVE_CALCULATOR'

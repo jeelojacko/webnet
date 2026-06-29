@@ -1827,6 +1827,37 @@ export const cadBuildParcelSplitByLineDraft = (
   };
 };
 
+export const cadBuildParcelSplitByBearingDraft = (
+  parcel: CadParcelEntity,
+  throughPoint: CadWorldPoint,
+  bearing: string,
+): CadParcelSplitDraft | null => {
+  const azimuthDeg = cadParseBearingDegrees(bearing);
+  if (azimuthDeg == null) return null;
+  const parcelVertices = normalizeParcelPolygonVertices(parcel.vertices);
+  if (parcelVertices.length < 3) return null;
+  const maxVertexDistance = parcelVertices.reduce(
+    (maximum, vertex) => Math.max(maximum, cadDistance(throughPoint, vertex)),
+    0,
+  );
+  const extensionDistance = Math.max(maxVertexDistance * 4, 1000);
+  return cadBuildParcelSplitByLineDraft(parcel, {
+    id: 'parcel-split-bearing:draft',
+    type: 'line',
+    layerId: parcel.layerId,
+    styleId: parcel.styleId,
+    visible: true,
+    locked: false,
+    fromStationId: 'BRG1',
+    toStationId: 'BRG2',
+    fromX: cadPointFromAzimuthDistance(throughPoint, azimuthDeg + 180, extensionDistance).x,
+    fromY: cadPointFromAzimuthDistance(throughPoint, azimuthDeg + 180, extensionDistance).y,
+    toX: cadPointFromAzimuthDistance(throughPoint, azimuthDeg, extensionDistance).x,
+    toY: cadPointFromAzimuthDistance(throughPoint, azimuthDeg, extensionDistance).y,
+    sourceObservationIds: [],
+  });
+};
+
 export const cadBuildParcelOverlapDiagnostics = (
   parcels: readonly CadParcelEntity[],
 ): CadParcelOverlapDiagnostics => {

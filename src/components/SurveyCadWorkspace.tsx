@@ -100,6 +100,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     canCreateAlignmentOffsetPoint,
     canCreateAlignmentIntervalPoints,
     canCreateParcel,
+    canSplitParcelByBearing,
     canReportParcelGap,
     canReportParcelDiagnostics,
     canReportParcelOverlap,
@@ -121,6 +122,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     startPolylineCommand,
     startTraverseCommand,
     startBatchCogoCommand,
+    startParcelSplitBearingCommand,
     startArc3PointCommand,
     startArcStartCenterEndCommand,
     startArcCenterStartEndCommand,
@@ -563,6 +565,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               canCreateAlignmentOffsetPoint={canCreateAlignmentOffsetPoint}
               canCreateAlignmentIntervalPoints={canCreateAlignmentIntervalPoints}
               canCreateParcel={canCreateParcel}
+              canSplitParcelByBearing={canSplitParcelByBearing}
               canReportParcelGap={canReportParcelGap}
               canReportParcelDiagnostics={canReportParcelDiagnostics}
               canReportParcelOverlap={canReportParcelOverlap}
@@ -575,6 +578,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               onStartPolyline={startPolylineCommand}
               onStartTraverse={startTraverseCommand}
               onStartBatchCogo={startBatchCogoCommand}
+              onStartParcelSplitBearing={startParcelSplitBearingCommand}
               onStartArc3Point={startArc3PointCommand}
               onStartArcStartCenterEnd={startArcStartCenterEndCommand}
               onStartArcCenterStartEnd={startArcCenterStartEndCommand}

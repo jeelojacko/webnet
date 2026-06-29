@@ -6,6 +6,7 @@ import {
   cadBuildParcelGapDiagnostics,
   cadBuildParcelLineworkDiagnostics,
   cadBuildParcelOverlapDiagnostics,
+  cadBuildParcelSplitByBearingDraft,
   cadBuildParcelSplitByLineDraft,
   cadConvertAreaSquareMeters,
   cadBuildArcFromThreePoints,
@@ -1019,6 +1020,39 @@ describe('Survey CAD COGO helpers', () => {
         toY: 20,
         sourceObservationIds: [],
       },
+    );
+
+    expect(split).not.toBeNull();
+    const childAreas = [split?.firstVertices ?? [], split?.secondVertices ?? []]
+      .map((vertices) => cadBuildParcelClosureSummary(vertices)?.areaSquareMeters ?? Number.NaN)
+      .sort((left, right) => left - right);
+    expect(split?.splitStart.x ?? Number.NaN).toBeCloseTo(20, 6);
+    expect(split?.splitStart.y ?? Number.NaN).toBeCloseTo(0, 6);
+    expect(split?.splitEnd.x ?? Number.NaN).toBeCloseTo(20, 6);
+    expect(split?.splitEnd.y ?? Number.NaN).toBeCloseTo(12, 6);
+    expect(childAreas[0]).toBeCloseTo(67.5, 6);
+    expect(childAreas[1]).toBeCloseTo(120, 6);
+  });
+
+  it('splits a parcel by a through-point bearing into two child loops', () => {
+    const split = cadBuildParcelSplitByBearingDraft(
+      {
+        id: 'parcel:1',
+        type: 'parcel',
+        layerId: 'parcels',
+        styleId: 'style-parcel',
+        visible: true,
+        locked: false,
+        parcelName: 'Parcel 1',
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 25, y: 0 },
+          { x: 25, y: 15 },
+        ],
+        vertexLabels: ['A', 'P1', 'P2'],
+      },
+      { x: 20, y: 6 },
+      'N00-00-00E',
     );
 
     expect(split).not.toBeNull();

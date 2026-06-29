@@ -19,6 +19,7 @@ interface SurveyCadCommandLineProps {
   canCreateAlignmentOffsetPoint: boolean;
   canCreateAlignmentIntervalPoints: boolean;
   canCreateParcel: boolean;
+  canSplitParcelByBearing: boolean;
   canReportParcelGap: boolean;
   canReportParcelDiagnostics: boolean;
   canReportParcelOverlap: boolean;
@@ -32,6 +33,7 @@ interface SurveyCadCommandLineProps {
   onStartPolyline: () => void;
   onStartTraverse: () => void;
   onStartBatchCogo: () => void;
+  onStartParcelSplitBearing: () => void;
   onStartArc3Point: () => void;
   onStartArcStartCenterEnd: () => void;
   onStartArcCenterStartEnd: () => void;
@@ -118,6 +120,7 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   canCreateAlignmentOffsetPoint,
   canCreateAlignmentIntervalPoints,
   canCreateParcel,
+  canSplitParcelByBearing,
   canReportParcelGap,
   canReportParcelDiagnostics,
   canReportParcelOverlap,
@@ -131,6 +134,7 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   onStartPolyline,
   onStartTraverse,
   onStartBatchCogo,
+  onStartParcelSplitBearing,
   onStartArc3Point,
   onStartArcStartCenterEnd,
   onStartArcCenterStartEnd,
@@ -632,6 +636,14 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
               disabled={!canCreateParcel}
             >
               Create Parcel
+            </button>
+            <button
+              type="button"
+              className={arcMenuButtonClassName}
+              onClick={() => { setParcelMenuOpen(false); runImmediate(onStartParcelSplitBearing); }}
+              disabled={!canSplitParcelByBearing}
+            >
+              Split by Bearing
             </button>
             <button
               type="button"
