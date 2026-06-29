@@ -196,6 +196,7 @@ interface UseSurveyCadWorkspaceResult {
     | 'OFFSET_INTX'
     | 'SKEW_INTX'
     | 'PARCEL_SPLIT_BEARING'
+    | 'PARCEL_SPLIT_AREA'
     | 'MOVE'
     | 'COPY'
     | 'EXTEND'
@@ -222,6 +223,7 @@ interface UseSurveyCadWorkspaceResult {
   canCreateAlignmentIntervalPoints: boolean;
   canCreateParcel: boolean;
   canSplitParcelByBearing: boolean;
+  canSplitParcelByArea: boolean;
   canReportParcelGap: boolean;
   canReportParcelDiagnostics: boolean;
   canReportParcelOverlap: boolean;
@@ -243,6 +245,7 @@ interface UseSurveyCadWorkspaceResult {
   startTraverseCommand: () => void;
   startBatchCogoCommand: () => void;
   startParcelSplitBearingCommand: () => void;
+  startParcelSplitAreaCommand: () => void;
   startArc3PointCommand: () => void;
   startArcStartCenterEndCommand: () => void;
   startArcCenterStartEndCommand: () => void;
@@ -735,6 +738,7 @@ export const useSurveyCadWorkspace = (
     startTraverseCommand,
     startBatchCogoCommand,
     startParcelSplitBearingCommand,
+    startParcelSplitAreaCommand,
     startArc3PointCommand,
     startArcStartCenterEndCommand,
     startArcCenterStartEndCommand,
@@ -819,6 +823,9 @@ export const useSurveyCadWorkspace = (
     selectedLinePairForIntersection,
     selectedAlignmentForStationing,
     selectedParcelForBearingSplit: selectedEntities.length === 1 && selectedEntities[0]?.type === 'parcel'
+      ? selectedEntities[0]
+      : null,
+    selectedParcelForAreaSplit: selectedEntities.length === 1 && selectedEntities[0]?.type === 'parcel'
       ? selectedEntities[0]
       : null,
     selectedStartPointForBatchCogo: selectedSurveyPointForBatchCogo
@@ -1209,6 +1216,8 @@ export const useSurveyCadWorkspace = (
     canCreateParcel: selectedParcelSource != null,
     canSplitParcelByBearing:
       selectedEntities.length === 1 && selectedEntities[0]?.type === 'parcel',
+    canSplitParcelByArea:
+      selectedEntities.length === 1 && selectedEntities[0]?.type === 'parcel',
     canReportParcelGap: selectedParcelsForOverlap.length >= 2,
     canReportParcelDiagnostics: selectedParcelDiagnosticLines.length > 0,
     canReportParcelOverlap: selectedParcelsForOverlap.length >= 2,
@@ -1230,6 +1239,7 @@ export const useSurveyCadWorkspace = (
     startTraverseCommand,
     startBatchCogoCommand,
     startParcelSplitBearingCommand,
+    startParcelSplitAreaCommand,
     startArc3PointCommand,
     startArcStartCenterEndCommand,
     startArcCenterStartEndCommand,

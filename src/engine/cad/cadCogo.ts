@@ -1834,6 +1834,14 @@ export const cadBuildParcelSplitByBearingDraft = (
 ): CadParcelSplitDraft | null => {
   const azimuthDeg = cadParseBearingDegrees(bearing);
   if (azimuthDeg == null) return null;
+  return cadBuildParcelSplitLineDraftFromAzimuth(parcel, throughPoint, azimuthDeg);
+};
+
+const cadBuildParcelSplitLineDraftFromAzimuth = (
+  parcel: CadParcelEntity,
+  throughPoint: CadWorldPoint,
+  azimuthDeg: number,
+): CadParcelSplitDraft | null => {
   const parcelVertices = normalizeParcelPolygonVertices(parcel.vertices);
   if (parcelVertices.length < 3) return null;
   const maxVertexDistance = parcelVertices.reduce(
@@ -1856,6 +1864,149 @@ export const cadBuildParcelSplitByBearingDraft = (
     toY: cadPointFromAzimuthDistance(throughPoint, azimuthDeg, extensionDistance).y,
     sourceObservationIds: [],
   });
+};
+
+interface CadParcelSplitAreaEvaluation {
+  angleDeg: number;
+  draft: CadParcelSplitDraft;
+  differenceSquareMeters: number;
+}
+
+const evaluateParcelSplitAreaAtAngle = (
+  parcel: CadParcelEntity,
+  throughPoint: CadWorldPoint,
+  targetAreaSquareMeters: number,
+  angleDeg: number,
+): CadParcelSplitAreaEvaluation | null => {
+  const draft = cadBuildParcelSplitLineDraftFromAzimuth(parcel, throughPoint, angleDeg);
+  if (!draft) return null;
+  const firstSummary = cadBuildParcelClosureSummary(draft.firstVertices);
+  const secondSummary = cadBuildParcelClosureSummary(draft.secondVertices);
+  if (!firstSummary || !secondSummary) return null;
+
+  const firstCross = cadCross(draft.splitStart, draft.splitEnd, firstSummary.centroid);
+  const secondCross = cadCross(draft.splitStart, draft.splitEnd, secondSummary.centroid);
+  const leftSummary =
+    firstCross > PARCEL_POINT_TOLERANCE
+      ? firstSummary
+      : secondCross > PARCEL_POINT_TOLERANCE
+        ? secondSummary
+        : null;
+  const rightSummary =
+    firstCross < -PARCEL_POINT_TOLERANCE
+      ? firstSummary
+      : secondCross < -PARCEL_POINT_TOLERANCE
+        ? secondSummary
+        : null;
+  if (!leftSummary || !rightSummary) return null;
+
+  return {
+    angleDeg,
+    draft,
+    differenceSquareMeters: leftSummary.areaSquareMeters - targetAreaSquareMeters,
+  };
+};
+
+const refineParcelSplitAreaEvaluation = (
+  parcel: CadParcelEntity,
+  throughPoint: CadWorldPoint,
+  targetAreaSquareMeters: number,
+  seed: CadParcelSplitAreaEvaluation,
+  windowDeg: number,
+  stepDeg: number,
+): CadParcelSplitAreaEvaluation => {
+  let best = seed;
+  for (
+    let angleDeg = seed.angleDeg - windowDeg;
+    angleDeg <= seed.angleDeg + windowDeg + 1e-9;
+    angleDeg += stepDeg
+  ) {
+    const evaluation = evaluateParcelSplitAreaAtAngle(
+      parcel,
+      throughPoint,
+      targetAreaSquareMeters,
+      cadNormalizeAngleDeg(angleDeg),
+    );
+    if (
+      evaluation &&
+      Math.abs(evaluation.differenceSquareMeters) < Math.abs(best.differenceSquareMeters)
+    ) {
+      best = evaluation;
+    }
+  }
+  return best;
+};
+
+export const cadBuildParcelSplitByAreaDraft = (
+  parcel: CadParcelEntity,
+  throughPoint: CadWorldPoint,
+  targetAreaSquareMeters: number,
+): CadParcelSplitDraft | null => {
+  if (!Number.isFinite(targetAreaSquareMeters) || targetAreaSquareMeters <= 0) return null;
+  const parcelVertices = normalizeParcelPolygonVertices(parcel.vertices);
+  if (parcelVertices.length < 3) return null;
+  if (
+    parcelVertices.some((start, index) =>
+      cadPointOnSegment(throughPoint, start, parcelVertices[(index + 1) % parcelVertices.length]!),
+    )
+  ) {
+    return null;
+  }
+  if (!cadPointInPolygon(throughPoint, parcelVertices)) return null;
+
+  const parcelSummary = cadBuildParcelClosureSummary(parcelVertices);
+  if (!parcelSummary) return null;
+  if (targetAreaSquareMeters >= parcelSummary.areaSquareMeters - 1e-6) return null;
+  const areaToleranceSquareMeters = Math.max(parcelSummary.areaSquareMeters * 1e-6, 1e-3);
+
+  let bestEvaluation: CadParcelSplitAreaEvaluation | null = null;
+  for (let angleDeg = 0; angleDeg < 360; angleDeg += 1) {
+    const evaluation = evaluateParcelSplitAreaAtAngle(
+      parcel,
+      throughPoint,
+      targetAreaSquareMeters,
+      angleDeg,
+    );
+    if (
+      evaluation &&
+      (
+        bestEvaluation == null ||
+        Math.abs(evaluation.differenceSquareMeters) < Math.abs(bestEvaluation.differenceSquareMeters)
+      )
+    ) {
+      bestEvaluation = evaluation;
+    }
+  }
+  if (!bestEvaluation) return null;
+
+  bestEvaluation = refineParcelSplitAreaEvaluation(
+    parcel,
+    throughPoint,
+    targetAreaSquareMeters,
+    bestEvaluation,
+    1,
+    0.1,
+  );
+  bestEvaluation = refineParcelSplitAreaEvaluation(
+    parcel,
+    throughPoint,
+    targetAreaSquareMeters,
+    bestEvaluation,
+    0.1,
+    0.01,
+  );
+  bestEvaluation = refineParcelSplitAreaEvaluation(
+    parcel,
+    throughPoint,
+    targetAreaSquareMeters,
+    bestEvaluation,
+    0.01,
+    0.001,
+  );
+
+  return Math.abs(bestEvaluation.differenceSquareMeters) <= areaToleranceSquareMeters
+    ? bestEvaluation.draft
+    : null;
 };
 
 export const cadBuildParcelOverlapDiagnostics = (

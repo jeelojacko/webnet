@@ -153,6 +153,7 @@ type ActiveCommandKey =
   | 'SKEW_INTX'
   | 'BATCH_COGO'
   | 'PARCEL_SPLIT_BEARING'
+  | 'PARCEL_SPLIT_AREA'
   | 'MOVE'
   | 'COPY'
   | 'EXTEND'
@@ -192,6 +193,13 @@ type CommandSession =
     }
   | {
       key: 'PARCEL_SPLIT_BEARING';
+      inputValue: string;
+      parcel: CadParcelEntity;
+      splitPoint: CommandPoint | null;
+      resultText?: string;
+    }
+  | {
+      key: 'PARCEL_SPLIT_AREA';
       inputValue: string;
       parcel: CadParcelEntity;
       splitPoint: CommandPoint | null;
@@ -386,6 +394,7 @@ interface UseSurveyCadCommandsArgs {
   selectedLinePairForIntersection: [CadLineEntity, CadLineEntity] | null;
   selectedAlignmentForStationing: CadAlignmentEntity | null;
   selectedParcelForBearingSplit: CadParcelEntity | null;
+  selectedParcelForAreaSplit: CadParcelEntity | null;
   selectedStartPointForBatchCogo: CommandPoint | null;
   reverseDirectionModifier: boolean;
   applyHistoryUpdate: (_updater: (_history: CadHistoryState) => CadHistoryState) => void;
@@ -511,6 +520,7 @@ interface UseSurveyCadCommandsResult {
   startTraverseCommand: () => void;
   startBatchCogoCommand: () => void;
   startParcelSplitBearingCommand: () => void;
+  startParcelSplitAreaCommand: () => void;
   startArc3PointCommand: () => void;
   startArcStartCenterEndCommand: () => void;
   startArcCenterStartEndCommand: () => void;
@@ -676,6 +686,7 @@ const sessionExpectsPointPick = (session: CommandSession | null): boolean => {
     case 'MULTI_INVERSE':
     case 'AREA':
     case 'PARCEL_SPLIT_BEARING':
+    case 'PARCEL_SPLIT_AREA':
     case 'BEARING_BEARING_INTX':
     case 'BEARING_DISTANCE_INTX':
     case 'DISTANCE_DISTANCE_INTX':
@@ -1279,6 +1290,11 @@ const promptForSession = (session: CommandSession | null, fallbackStatus: string
         (session.splitPoint == null
           ? `PARCEL SPLIT bearing active on ${session.parcel.parcelName}. Click or enter the through point.`
           : `PARCEL SPLIT bearing active on ${session.parcel.parcelName}. Through point ${session.splitPoint.label} captured. Enter the bearing, then press Enter.`);
+    case 'PARCEL_SPLIT_AREA':
+      return session.resultText ??
+        (session.splitPoint == null
+          ? `PARCEL SPLIT area active on ${session.parcel.parcelName}. Click or enter the through point.`
+          : `PARCEL SPLIT area active on ${session.parcel.parcelName}. Through point ${session.splitPoint.label} captured. Enter the target area in square meters, then press Enter.`);
     case 'BEARING_REPORT':
       return session.resultText ??
         (session.startPoint
@@ -1507,6 +1523,10 @@ const helpTextForSession = (session: CommandSession | null): string => {
       return session.splitPoint == null
         ? 'PARCEL SPLIT bearing through point: click in the model space or type `x,y` / `LABEL=x,y`.'
         : 'PARCEL SPLIT bearing input: enter an azimuth or survey bearing like `N45-00-00E`.';
+    case 'PARCEL_SPLIT_AREA':
+      return session.splitPoint == null
+        ? 'PARCEL SPLIT area through point: click in the model space or type `x,y` / `LABEL=x,y`.'
+        : 'PARCEL SPLIT area input: enter the target child area in square meters.';
     case 'BEARING_REPORT':
       return session.startPoint
         ? 'BEARING report second point: `x,y`, `LABEL=x,y`, `@azimuth,distance`, or bearing-distance from the first point.'
@@ -1644,6 +1664,7 @@ export const useSurveyCadCommands = ({
   selectedLinePairForIntersection,
   selectedAlignmentForStationing,
   selectedParcelForBearingSplit,
+  selectedParcelForAreaSplit,
   selectedStartPointForBatchCogo,
   reverseDirectionModifier,
   applyHistoryUpdate,
@@ -1810,6 +1831,7 @@ export const useSurveyCadCommands = ({
             }
           : { active: false, basePoint: null };
       case 'PARCEL_SPLIT_BEARING':
+      case 'PARCEL_SPLIT_AREA':
         return { active: false, basePoint: null };
       case 'BEARING_BEARING_INTX':
       case 'BEARING_DISTANCE_INTX':
@@ -2056,6 +2078,18 @@ export const useSurveyCadCommands = ({
           ],
         };
       }
+      case 'PARCEL_SPLIT_AREA':
+        return session.splitPoint == null
+          ? previewPoint
+            ? {
+                kind: 'point',
+                point: { x: previewPoint.x, y: previewPoint.y },
+              }
+            : null
+          : {
+              kind: 'point',
+              point: { x: session.splitPoint.x, y: session.splitPoint.y },
+            };
       case 'TURNED_POINT':
         if (!previewPoint) return null;
         if (session.occupyPoint == null) {
@@ -3181,6 +3215,17 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
       }
       return;
     }
+    if (current.key === 'PARCEL_SPLIT_AREA') {
+      if (current.splitPoint == null) {
+        replaceSession({
+          ...current,
+          splitPoint: point,
+          inputValue: '',
+          resultText: `PARCEL SPLIT area through point ${point.label} captured. Enter the target area in square meters, then press Enter.`,
+        });
+      }
+      return;
+    }
     if (!('startPoint' in current)) return;
     if (!current.startPoint) {
       replaceSession({
@@ -3462,6 +3507,50 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
           : {
               ...session,
               resultText: `PARCEL SPLIT bearing failed on ${session.parcel.parcelName}. Check that the through point and bearing cross the parcel boundary exactly twice.`,
+            },
+      );
+      return;
+    }
+    if (session.key === 'PARCEL_SPLIT_AREA') {
+      if (session.splitPoint == null) {
+        const parsedPoint = parseInputPoint(session.inputValue, null);
+        if (!parsedPoint) {
+          replaceSession({
+            ...session,
+            resultText: 'PARCEL SPLIT area through point invalid. Use `x,y` or `LABEL=x,y`.',
+          });
+          return;
+        }
+        consumePoint(parsedPoint);
+        return;
+      }
+      const targetAreaSquareMeters = Number(session.inputValue.trim());
+      if (!Number.isFinite(targetAreaSquareMeters) || targetAreaSquareMeters <= 0) {
+        replaceSession({
+          ...session,
+          resultText: 'PARCEL SPLIT area invalid. Enter a positive target area in square meters.',
+        });
+        return;
+      }
+      let committed = false;
+      applyHistoryUpdate((existing) => {
+        const next = runCadCommand(existing, {
+          key: 'PARCEL_SPLIT_AREA',
+          parcelEntityId: session.parcel.id,
+          throughPointX: session.splitPoint!.x,
+          throughPointY: session.splitPoint!.y,
+          throughPointLabel: session.splitPoint!.label,
+          targetAreaSquareMeters,
+        });
+        committed = next !== existing;
+        return next;
+      });
+      replaceSession(
+        committed
+          ? null
+          : {
+              ...session,
+              resultText: `PARCEL SPLIT area failed on ${session.parcel.parcelName}. Check that the through point is inside the parcel and the target area is achievable from that point.`,
             },
       );
       return;
@@ -4681,6 +4770,9 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
     if (session.key === 'PARCEL_SPLIT_BEARING' && session.inputValue.trim().length === 0) {
       return;
     }
+    if (session.key === 'PARCEL_SPLIT_AREA' && session.inputValue.trim().length === 0) {
+      return;
+    }
     if (session.inputValue.trim().length === 0) return;
     submitSessionInput();
   };
@@ -5194,7 +5286,7 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
         : session?.key === 'TRAVERSE'
           ? session.points.length >= 2 &&
             (session.mode !== 'point-to-point' || session.closePoint != null)
-          : session?.key === 'PARCEL_SPLIT_BEARING'
+          : session?.key === 'PARCEL_SPLIT_BEARING' || session?.key === 'PARCEL_SPLIT_AREA'
             ? session.splitPoint != null && session.inputValue.trim().length > 0
           : session?.key === 'BATCH_COGO'
             ? session.draft.canCommit
@@ -5247,6 +5339,15 @@ const parseInputPoint = (inputValue: string, basePoint: CommandPoint | null): Co
         key: 'PARCEL_SPLIT_BEARING',
         inputValue: '',
         parcel: selectedParcelForBearingSplit,
+        splitPoint: null,
+      });
+    },
+    startParcelSplitAreaCommand: () => {
+      if (!selectedParcelForAreaSplit) return;
+      beginSession({
+        key: 'PARCEL_SPLIT_AREA',
+        inputValue: '',
+        parcel: selectedParcelForAreaSplit,
         splitPoint: null,
       });
     },

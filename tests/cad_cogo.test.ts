@@ -6,6 +6,7 @@ import {
   cadBuildParcelGapDiagnostics,
   cadBuildParcelLineworkDiagnostics,
   cadBuildParcelOverlapDiagnostics,
+  cadBuildParcelSplitByAreaDraft,
   cadBuildParcelSplitByBearingDraft,
   cadBuildParcelSplitByLineDraft,
   cadConvertAreaSquareMeters,
@@ -1065,6 +1066,35 @@ describe('Survey CAD COGO helpers', () => {
     expect(split?.splitEnd.y ?? Number.NaN).toBeCloseTo(12, 6);
     expect(childAreas[0]).toBeCloseTo(67.5, 6);
     expect(childAreas[1]).toBeCloseTo(120, 6);
+  });
+
+  it('splits a parcel by a through-point target area into two child loops', () => {
+    const split = cadBuildParcelSplitByAreaDraft(
+      {
+        id: 'parcel:1',
+        type: 'parcel',
+        layerId: 'parcels',
+        styleId: 'style-parcel',
+        visible: true,
+        locked: false,
+        parcelName: 'Parcel 1',
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 25, y: 0 },
+          { x: 25, y: 15 },
+        ],
+        vertexLabels: ['A', 'P1', 'P2'],
+      },
+      { x: 20, y: 6 },
+      67.5,
+    );
+
+    expect(split).not.toBeNull();
+    const childAreas = [split?.firstVertices ?? [], split?.secondVertices ?? []]
+      .map((vertices) => cadBuildParcelClosureSummary(vertices)?.areaSquareMeters ?? Number.NaN)
+      .sort((left, right) => left - right);
+    expect(childAreas[0]).toBeCloseTo(67.5, 2);
+    expect(childAreas[1]).toBeCloseTo(120, 2);
   });
 
   it('diagnoses overlapping parcel pairs with shared area', () => {

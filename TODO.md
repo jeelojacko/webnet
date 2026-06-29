@@ -41,6 +41,7 @@
 - [x] Survey CAD parcel-gap-report batch (June 2026): add a report-only parcel gap action for multi-selected parcels that detects enclosed gaps between parcel loops and reports their computed area before broader bearing/area split tools.
 
 - [x] Survey CAD parcel-split-bearing batch (June 2026): add a first `PARCEL SPLIT` bearing workflow for one selected parcel that captures a through point plus typed bearing and replaces the parent parcel when that bearing line crosses the boundary exactly twice.
+- [x] Survey CAD parcel-split-area batch (June 2026): add a first `PARCEL SPLIT` area workflow for one selected parcel that captures a through point plus target area in square meters and replaces the parent parcel when a solved split line through that point can hit the requested child area.
 
 - [x] Survey CAD traverse adjustment batch (June 2026): add draft-panel angular balance plus Bowditch/transit closure adjustment on top of the native traverse editor, persist adjustment provenance/report rows through command history, and leave optional Crandall balancing for a later high-end pass.
 

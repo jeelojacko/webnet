@@ -1549,6 +1549,55 @@ describe('Survey CAD command history', () => {
     ).toBe(true);
   });
 
+  it('splits a parcel entity by a through-point target area into two child parcels', () => {
+    const baseProject = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+    const project = appendCadProjectEntities(baseProject, [
+      {
+        id: 'parcel:source',
+        type: 'parcel',
+        layerId: 'parcels',
+        styleId: 'style-parcel',
+        visible: true,
+        locked: false,
+        parcelName: 'Parcel 1',
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 25, y: 0 },
+          { x: 25, y: 15 },
+        ],
+        vertexLabels: ['A', 'P1', 'P2'],
+        areaSquareMeters: 187.5,
+        perimeterMeters: 69.154759,
+        closureDeltaX: 0,
+        closureDeltaY: 0,
+        closureDistanceMeters: 0,
+      },
+    ]);
+
+    const splitState = runCadCommand(createCadHistoryState(project), {
+      key: 'PARCEL_SPLIT_AREA',
+      parcelEntityId: 'parcel:source',
+      throughPointX: 20,
+      throughPointY: 6,
+      throughPointLabel: 'SP1',
+      targetAreaSquareMeters: 67.5,
+    });
+
+    const parcels = splitState.present.project.entities.filter((entity) => entity.type === 'parcel');
+    expect(parcels).toHaveLength(2);
+    expect(parcels.map((entity) => entity.parcelName)).toEqual(['Parcel 2', 'Parcel 3']);
+    const parcelAreas = parcels.map((entity) => entity.areaSquareMeters ?? Number.NaN).sort((a, b) => a - b);
+    expect(parcelAreas[0]).toBeCloseTo(67.5, 2);
+    expect(parcelAreas[1]).toBeCloseTo(120, 2);
+    expect(splitState.present.project.cogoComputations.at(-1)?.toolKey).toBe('PARCEL_SPLIT_AREA');
+  });
+
   it('commits point-to-point traverses with sideshots into geometry and persisted COGO history', () => {
     const project = buildSurveyCadSpikeProject({
       input,
