@@ -55,6 +55,7 @@ import type {
   CadGripHandle,
   CadLineEntity,
   CadParcelEntity,
+  CadParcelLayoutUiState,
   CadPolylineEntity,
   CadProject,
   CadSurveyPointEntity,
@@ -381,6 +382,7 @@ export const useSurveyCadWorkspace = (
   baseProject: CadProject,
   persistedState: SurveyCadPersistedState | null,
   onPersistedStateChange: Dispatch<SetStateAction<SurveyCadPersistedState | null>>,
+  parcelLayoutState: CadParcelLayoutUiState | undefined,
   reverseDirectionModifier = false,
 ): UseSurveyCadWorkspaceResult => {
   const projectSignature = useMemo(() => buildCadProjectSignature(baseProject), [baseProject]);
@@ -1152,16 +1154,18 @@ export const useSurveyCadWorkspace = (
         version: 1,
         sourceSignature: projectSignature,
         project: cadProject,
+        parcelLayout: parcelLayoutState,
       });
       if (
         current?.sourceSignature === nextState.sourceSignature &&
-        buildCadProjectSignature(current.project) === buildCadProjectSignature(nextState.project)
+        buildCadProjectSignature(current.project) === buildCadProjectSignature(nextState.project) &&
+        JSON.stringify(current.parcelLayout ?? null) === JSON.stringify(nextState.parcelLayout ?? null)
       ) {
         return current;
       }
       return nextState;
     });
-  }, [cadProject, onPersistedStateChange, projectSignature]);
+  }, [cadProject, onPersistedStateChange, parcelLayoutState, projectSignature]);
 
   return {
     cadProject,

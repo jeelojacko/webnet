@@ -1,11 +1,18 @@
 import React, { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import type { AdjustmentResult, InstrumentLibrary, ParseOptions, UnitsMode } from '../types';
 import { buildSurveyCadSpikeProject } from '../engine/cad/cadModel';
-import type { CadBounds, SurveyCadPersistedState } from '../engine/cad/cadTypes';
+import type {
+  CadBounds,
+  CadEntityId,
+  CadParcelLayoutSettings,
+  CadParcelLayoutUiState,
+  SurveyCadPersistedState,
+} from '../engine/cad/cadTypes';
 import { noteUiTabReady } from '../hooks/useUiPerfMonitor';
 import { useSurveyCadWorkspace } from '../hooks/surveyCad/useSurveyCadWorkspace';
 import SurveyCadCommandLine from './surveyCad/SurveyCadCommandLine';
 import SurveyCadCogoPanel from './surveyCad/SurveyCadCogoPanel';
+import SurveyCadParcelLayoutPanel from './surveyCad/SurveyCadParcelLayoutPanel';
 import SurveyCadPropertiesPanel from './surveyCad/SurveyCadPropertiesPanel';
 import SurveyCadPreview from './surveyCad/SurveyCadPreview';
 
@@ -18,6 +25,58 @@ interface SurveyCadWorkspaceProps {
   persistedState?: SurveyCadPersistedState | null;
   onPersistedStateChange?: Dispatch<SetStateAction<SurveyCadPersistedState | null>>;
 }
+
+const DEFAULT_PARCEL_LAYOUT_SETTINGS: CadParcelLayoutSettings = {
+  minAreaSquareMeters: 1000,
+  minFrontageMeters: 30,
+  useFrontageAtOffset: false,
+  frontageOffsetMeters: 10,
+  minWidthMeters: 20,
+  minDepthMeters: 20,
+  useMaxDepth: false,
+  maxDepthMeters: 150,
+  solutionPreference: 'shortest_frontage',
+  automaticMode: 'off',
+  remainderDistribution: 'place_remainder_in_last_parcel',
+};
+
+const DEFAULT_PARCEL_LAYOUT_UI_STATE: CadParcelLayoutUiState = {
+  open: false,
+  collapsed: false,
+  dock: 'right',
+  floatingLeftPx: 24,
+  floatingTopPx: 96,
+  activeParentParcelId: null,
+  activeFrontageEntityId: null,
+  settings: DEFAULT_PARCEL_LAYOUT_SETTINGS,
+};
+
+const cloneParcelLayoutSettings = (settings: CadParcelLayoutSettings): CadParcelLayoutSettings => ({
+  minAreaSquareMeters: settings.minAreaSquareMeters,
+  minFrontageMeters: settings.minFrontageMeters,
+  useFrontageAtOffset: settings.useFrontageAtOffset,
+  frontageOffsetMeters: settings.frontageOffsetMeters,
+  minWidthMeters: settings.minWidthMeters,
+  minDepthMeters: settings.minDepthMeters,
+  useMaxDepth: settings.useMaxDepth,
+  maxDepthMeters: settings.maxDepthMeters,
+  solutionPreference: settings.solutionPreference,
+  automaticMode: settings.automaticMode,
+  remainderDistribution: settings.remainderDistribution,
+});
+
+const cloneParcelLayoutUiState = (
+  state: CadParcelLayoutUiState | undefined | null,
+): CadParcelLayoutUiState => ({
+  open: state?.open ?? DEFAULT_PARCEL_LAYOUT_UI_STATE.open,
+  collapsed: state?.collapsed ?? DEFAULT_PARCEL_LAYOUT_UI_STATE.collapsed,
+  dock: state?.dock ?? DEFAULT_PARCEL_LAYOUT_UI_STATE.dock,
+  floatingLeftPx: state?.floatingLeftPx ?? DEFAULT_PARCEL_LAYOUT_UI_STATE.floatingLeftPx,
+  floatingTopPx: state?.floatingTopPx ?? DEFAULT_PARCEL_LAYOUT_UI_STATE.floatingTopPx,
+  activeParentParcelId: state?.activeParentParcelId ?? DEFAULT_PARCEL_LAYOUT_UI_STATE.activeParentParcelId,
+  activeFrontageEntityId: state?.activeFrontageEntityId ?? DEFAULT_PARCEL_LAYOUT_UI_STATE.activeFrontageEntityId,
+  settings: cloneParcelLayoutSettings(state?.settings ?? DEFAULT_PARCEL_LAYOUT_SETTINGS),
+});
 
 const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   input,
@@ -55,6 +114,9 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   );
   const [viewport, setViewport] = useState({ zoom: 1, panX: 0, panY: 0 });
   const [viewBounds, setViewBounds] = useState<CadBounds | null>(() => cloneBounds(cadProject.bounds));
+  const [parcelLayoutState, setParcelLayoutState] = useState<CadParcelLayoutUiState>(() =>
+    cloneParcelLayoutUiState(persistedState?.parcelLayout),
+  );
   const [copiedEntityIds, setCopiedEntityIds] = useState<string[]>([]);
   const [reverseDirectionModifier, setReverseDirectionModifier] = useState(false);
   const [editingTraverseLegIndex, setEditingTraverseLegIndex] = useState<number | null>(null);
@@ -217,7 +279,13 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     startPasteFromClipboard,
     undo,
     redo,
-  } = useSurveyCadWorkspace(cadProject, persistedState, onPersistedStateChange, reverseDirectionModifier);
+  } = useSurveyCadWorkspace(
+    cadProject,
+    persistedState,
+    onPersistedStateChange,
+    parcelLayoutState,
+    reverseDirectionModifier,
+  );
   const copiedEntityIdsRef = useRef<string[]>([]);
   const selectedTraverseClosePoint =
     selectedEntities.length === 1 && selectedEntities[0]?.type === 'survey-point'
@@ -227,6 +295,13 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   useEffect(() => {
     copiedEntityIdsRef.current = copiedEntityIds;
   }, [copiedEntityIds]);
+
+  useEffect(() => {
+    setParcelLayoutState((current) => {
+      const next = cloneParcelLayoutUiState(persistedState?.parcelLayout);
+      return JSON.stringify(current) === JSON.stringify(next) ? current : next;
+    });
+  }, [persistedState]);
 
   useEffect(() => {
     if (!activeTraverseDraft || editingTraverseLegIndex == null) {
@@ -421,6 +496,83 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     if (enabledConstructionKinds.length === 0) return '';
     return `Base ${snapConstructionContext.basePoint.x.toFixed(3)},${snapConstructionContext.basePoint.y.toFixed(3)}: Construction snaps live (${enabledConstructionKinds.join('/')})`;
   }, [snapConstructionContext, snapPreferences]);
+
+  const parcelLayoutDragRef = useRef<{
+    pointerId: number;
+    offsetX: number;
+    offsetY: number;
+  } | null>(null);
+  const parcelLayoutParentEntity = useMemo(
+    () =>
+      parcelLayoutState.activeParentParcelId == null
+        ? null
+        : activeProject.entities.find(
+            (entity): entity is Extract<(typeof activeProject.entities)[number], { type: 'parcel' }> =>
+              entity.id === parcelLayoutState.activeParentParcelId && entity.type === 'parcel',
+          ) ?? null,
+    [activeProject, parcelLayoutState.activeParentParcelId],
+  );
+  const parcelLayoutFrontageEntity = useMemo(
+    () =>
+      parcelLayoutState.activeFrontageEntityId == null
+        ? null
+        : activeProject.entities.find(
+            (entity): entity is Extract<(typeof activeProject.entities)[number], { type: 'line' | 'polyline' }> =>
+              entity.id === parcelLayoutState.activeFrontageEntityId &&
+              (entity.type === 'line' || entity.type === 'polyline'),
+          ) ?? null,
+    [activeProject, parcelLayoutState.activeFrontageEntityId],
+  );
+  const selectedParcelForLayout =
+    selectedEntities.length === 1 && selectedEntities[0]?.type === 'parcel'
+      ? selectedEntities[0]
+      : selectedEntities.find((entity) => entity.type === 'parcel') ?? null;
+  const selectedFrontageForLayout =
+    selectedEntities.find(
+      (entity): entity is Extract<(typeof selectedEntities)[number], { type: 'line' | 'polyline' }> =>
+        entity.type === 'line' || entity.type === 'polyline',
+    ) ?? null;
+  const parcelLayoutFrontageLabel = useMemo(() => {
+    if (!parcelLayoutFrontageEntity) return null;
+    if (parcelLayoutFrontageEntity.type === 'line') {
+      return `${parcelLayoutFrontageEntity.fromStationId}-${parcelLayoutFrontageEntity.toStationId}`;
+    }
+    return parcelLayoutFrontageEntity.vertexLabels.length > 0
+      ? `${parcelLayoutFrontageEntity.vertexLabels[0]}...`
+      : 'Polyline frontage';
+  }, [parcelLayoutFrontageEntity]);
+
+  useEffect(() => {
+    if (parcelLayoutState.dock !== 'floating') return;
+    const handlePointerMove = (event: PointerEvent) => {
+      const drag = parcelLayoutDragRef.current;
+      if (!drag || drag.pointerId !== event.pointerId) return;
+      setParcelLayoutState((current) => ({
+        ...current,
+        floatingLeftPx: Math.max(8, event.clientX - drag.offsetX),
+        floatingTopPx: Math.max(72, event.clientY - drag.offsetY),
+      }));
+    };
+    const handlePointerUp = (event: PointerEvent) => {
+      if (parcelLayoutDragRef.current?.pointerId === event.pointerId) {
+        parcelLayoutDragRef.current = null;
+      }
+    };
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+    };
+  }, [parcelLayoutState.dock]);
+
+  const toggleParcelLayoutPanel = () => {
+    setParcelLayoutState((current) => ({ ...current, open: !current.open }));
+  };
+
+  const updateParcelLayoutState = (updater: (_current: CadParcelLayoutUiState) => CadParcelLayoutUiState) => {
+    setParcelLayoutState((current) => updater(current));
+  };
 
   useEffect(() => {
     setViewport({ zoom: 1, panX: 0, panY: 0 });
@@ -638,6 +790,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               onReportParcelDiagnostics={reportParcelDiagnosticsFromSelection}
               onReportParcelOverlap={reportParcelOverlapFromSelection}
               onSplitParcelByLine={splitParcelBySelectedLine}
+              onToggleParcelLayoutPanel={toggleParcelLayoutPanel}
               canTrimSelection={canTrimSelection}
               onSelectAll={selectAll}
               onClearSelection={clearSelection}
@@ -657,6 +810,62 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           ) : null}
           {reportedComputation ? (
             <SurveyCadCogoPanel computation={reportedComputation} sourceLabel="latest" />
+          ) : null}
+          {parcelLayoutState.open ? (
+            <SurveyCadParcelLayoutPanel
+              state={parcelLayoutState}
+              parentParcelName={parcelLayoutParentEntity?.parcelName ?? null}
+              frontageLabel={parcelLayoutFrontageLabel}
+              canUseCurrentSelectionAsParent={selectedParcelForLayout != null}
+              canUseCurrentSelectionAsFrontage={selectedFrontageForLayout != null}
+              onClose={() => updateParcelLayoutState((current) => ({ ...current, open: false }))}
+              onToggleCollapsed={() => updateParcelLayoutState((current) => ({ ...current, collapsed: !current.collapsed }))}
+              onSetDock={(dock) => updateParcelLayoutState((current) => ({ ...current, dock }))}
+              onStartDrag={(event) => {
+                if (parcelLayoutState.dock !== 'floating') return;
+                const rect = (event.currentTarget.parentElement as HTMLDivElement | null)?.getBoundingClientRect();
+                parcelLayoutDragRef.current = {
+                  pointerId: event.pointerId,
+                  offsetX: rect ? event.clientX - rect.left : 0,
+                  offsetY: rect ? event.clientY - rect.top : 0,
+                };
+              }}
+              onUseSelectedParent={() => {
+                if (!selectedParcelForLayout || selectedParcelForLayout.type !== 'parcel') return;
+                updateParcelLayoutState((current) => ({
+                  ...current,
+                  activeParentParcelId: selectedParcelForLayout.id,
+                }));
+              }}
+              onUseSelectedFrontage={() => {
+                if (!selectedFrontageForLayout) return;
+                updateParcelLayoutState((current) => ({
+                  ...current,
+                  activeFrontageEntityId: selectedFrontageForLayout.id,
+                }));
+              }}
+              onClearParent={() => updateParcelLayoutState((current) => ({ ...current, activeParentParcelId: null }))}
+              onClearFrontage={() => updateParcelLayoutState((current) => ({ ...current, activeFrontageEntityId: null }))}
+              onUpdateSettings={(settings) => updateParcelLayoutState((current) => ({ ...current, settings }))}
+              onResetSettings={() => updateParcelLayoutState((current) => ({
+                ...current,
+                settings: cloneParcelLayoutSettings(DEFAULT_PARCEL_LAYOUT_SETTINGS),
+              }))}
+              onCreateParcel={createParcelFromSelection}
+              onSplitByLine={splitParcelBySelectedLine}
+              onSplitByBearing={startParcelSplitBearingCommand}
+              onSplitByArea={startParcelSplitAreaCommand}
+              onReportGap={reportParcelGapFromSelection}
+              onReportCheck={reportParcelDiagnosticsFromSelection}
+              onReportOverlap={reportParcelOverlapFromSelection}
+              canCreateParcel={canCreateParcel}
+              canSplitByLine={canSplitParcelByLine}
+              canSplitByBearing={canSplitParcelByBearing}
+              canSplitByArea={canSplitParcelByArea}
+              canReportGap={canReportParcelGap}
+              canReportCheck={canReportParcelDiagnostics}
+              canReportOverlap={canReportParcelOverlap}
+            />
           ) : null}
           {activeBatchCogoDraft ? (
             <div

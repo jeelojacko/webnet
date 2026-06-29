@@ -91,6 +91,7 @@ interface SurveyCadCommandLineProps {
   onReportParcelDiagnostics: () => void;
   onReportParcelOverlap: () => void;
   onSplitParcelByLine: () => void;
+  onToggleParcelLayoutPanel: () => void;
   onSelectAll: () => void;
   onClearSelection: () => void;
   onErase: () => void;
@@ -194,6 +195,7 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   onReportParcelDiagnostics,
   onReportParcelOverlap,
   onSplitParcelByLine,
+  onToggleParcelLayoutPanel,
   onSelectAll,
   onClearSelection,
   onErase,
@@ -656,6 +658,13 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
               disabled={!canSplitParcelByArea}
             >
               Split by Area
+            </button>
+            <button
+              type="button"
+              className={arcMenuButtonClassName}
+              onClick={() => { setParcelMenuOpen(false); runImmediate(onToggleParcelLayoutPanel); }}
+            >
+              Layout Tools
             </button>
             <button
               type="button"

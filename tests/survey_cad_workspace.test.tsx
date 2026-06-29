@@ -8,6 +8,7 @@ import SurveyCadWorkspace from '../src/components/SurveyCadWorkspace';
 import SurveyCadPreview from '../src/components/surveyCad/SurveyCadPreview';
 import { buildSurveyCadSpikeProject } from '../src/engine/cad/cadModel';
 import { appendCadProjectEntities, buildCadProjectSignature } from '../src/engine/cad/cadProjectState';
+import type { SurveyCadPersistedState } from '../src/engine/cad/cadTypes';
 import type { ParseOptions } from '../src/types';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -122,11 +123,7 @@ const clickButton = (container: HTMLElement, label: string): HTMLButtonElement =
 };
 
 const ParentBackedWorkspace: React.FC = () => {
-  const [persistedState, setPersistedState] = React.useState<null | {
-    version: 1;
-    sourceSignature: string;
-    project: ReturnType<typeof buildSurveyCadSpikeProject>;
-  }>(null);
+  const [persistedState, setPersistedState] = React.useState<SurveyCadPersistedState | null>(null);
 
   return (
     <SurveyCadWorkspace
@@ -153,11 +150,7 @@ const ParentBackedCampWorkspace: React.FC = () => {
       }),
     [],
   );
-  const [persistedState, setPersistedState] = React.useState<null | {
-    version: 1;
-    sourceSignature: string;
-    project: ReturnType<typeof buildSurveyCadSpikeProject>;
-  }>({
+  const [persistedState, setPersistedState] = React.useState<SurveyCadPersistedState | null>({
     version: 1,
     sourceSignature: buildCadProjectSignature(baseProject),
     project: baseProject,
@@ -177,34 +170,12 @@ const ParentBackedCampWorkspace: React.FC = () => {
 };
 
 const createPersistedStateCapture = () => {
-  let captured: null | {
-    version: 1;
-    sourceSignature: string;
-    project: ReturnType<typeof buildSurveyCadSpikeProject>;
-  } = null;
+  let captured: SurveyCadPersistedState | null = null;
   const onPersistedStateChange = (
     update:
-      | ((
-          _previous:
-            | null
-            | {
-                version: 1;
-                sourceSignature: string;
-                project: ReturnType<typeof buildSurveyCadSpikeProject>;
-              },
-        ) =>
-          | null
-          | {
-              version: 1;
-              sourceSignature: string;
-              project: ReturnType<typeof buildSurveyCadSpikeProject>;
-            })
-      | null
-      | {
-          version: 1;
-          sourceSignature: string;
-          project: ReturnType<typeof buildSurveyCadSpikeProject>;
-        },
+      | ((_previous: SurveyCadPersistedState | null) => SurveyCadPersistedState | null)
+      | SurveyCadPersistedState
+      | null,
   ) => {
     captured =
       typeof update === 'function'
@@ -7914,6 +7885,214 @@ describe('SurveyCadWorkspace', () => {
     const parcels = persisted?.project.entities.filter((entity) => entity.type === 'parcel') ?? [];
     expect(parcels).toHaveLength(2);
     expect(persisted?.project.cogoComputations.at(-1)?.toolKey).toBe('PARCEL_SPLIT_AREA');
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('opens the parcel layout panel and lets the user bind selected parent and frontage geometry', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    const originalProject = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+    const persistedProject = {
+      ...originalProject,
+      entities: [
+        ...originalProject.entities,
+        {
+          id: 'parcel:source',
+          type: 'parcel' as const,
+          layerId: 'parcels',
+          styleId: 'style-parcel',
+          visible: true,
+          locked: false,
+          parcelName: 'Parcel 1',
+          vertices: [
+            { x: 0, y: 0 },
+            { x: 25, y: 0 },
+            { x: 25, y: 15 },
+          ],
+          vertexLabels: ['A', 'P1', 'P2'],
+          areaSquareMeters: 187.5,
+          perimeterMeters: 69.154759,
+          closureDeltaX: 0,
+          closureDeltaY: 0,
+          closureDistanceMeters: 0,
+        },
+      ],
+      bounds: { minX: 0, minY: 0, maxX: 100, maxY: 40 },
+    };
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+          persistedState={{
+            version: 1,
+            sourceSignature: buildCadProjectSignature(originalProject),
+            project: persistedProject,
+          }}
+        />,
+      );
+    });
+
+    const parcelTarget = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="parcel:source"]',
+    ) as SVGElement | null;
+    const lineTarget = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="line:A|C"]',
+    ) as SVGElement | null;
+    const parcelMenuButton = container.querySelector(
+      '[data-survey-cad-parcel-menu-button]',
+    ) as HTMLButtonElement | null;
+    if (!parcelTarget || !lineTarget || !parcelMenuButton) {
+      throw new Error('Parcel layout controls not found');
+    }
+
+    await act(async () => {
+      parcelTarget.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 0, clientY: 0 }));
+      lineTarget.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 0, clientY: 0, shiftKey: true }));
+    });
+    await act(async () => {
+      parcelMenuButton.click();
+    });
+    await act(async () => {
+      clickButton(container, 'Layout Tools');
+    });
+
+    expect(container.querySelector('[data-survey-cad-parcel-layout-panel]')).not.toBeNull();
+    expect(container.querySelector('[data-survey-cad-parcel-layout-parent]')?.textContent).toContain('None');
+
+    const useParentButton = container.querySelector(
+      '[data-survey-cad-parcel-layout-use-parent]',
+    ) as HTMLButtonElement | null;
+    const useFrontageButton = container.querySelector(
+      '[data-survey-cad-parcel-layout-use-frontage]',
+    ) as HTMLButtonElement | null;
+    if (!useParentButton || !useFrontageButton) {
+      throw new Error('Parcel layout state buttons not found');
+    }
+
+    await act(async () => {
+      useParentButton.click();
+      useFrontageButton.click();
+    });
+
+    expect(container.querySelector('[data-survey-cad-parcel-layout-parent]')?.textContent).toContain('Parcel 1');
+    expect(container.querySelector('[data-survey-cad-parcel-layout-frontage]')?.textContent).toContain('A-C');
+    expect(
+      (container.querySelector('[data-survey-cad-parcel-layout-min-area]') as HTMLInputElement | null)?.value ?? '',
+    ).toContain('1000');
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('persists parcel layout panel settings through workspace state', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+    const capture = createPersistedStateCapture();
+
+    const originalProject = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+    const persistedProject = {
+      ...originalProject,
+      entities: [
+        {
+          id: 'parcel:source',
+          type: 'parcel' as const,
+          layerId: 'parcels',
+          styleId: 'style-parcel',
+          visible: true,
+          locked: false,
+          parcelName: 'Parcel 1',
+          vertices: [
+            { x: 0, y: 0 },
+            { x: 25, y: 0 },
+            { x: 25, y: 15 },
+          ],
+          vertexLabels: ['A', 'P1', 'P2'],
+          areaSquareMeters: 187.5,
+          perimeterMeters: 69.154759,
+          closureDeltaX: 0,
+          closureDeltaY: 0,
+          closureDistanceMeters: 0,
+        },
+      ],
+      bounds: { minX: 0, minY: 0, maxX: 25, maxY: 15 },
+    };
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+          persistedState={{
+            version: 1,
+            sourceSignature: buildCadProjectSignature(originalProject),
+            project: persistedProject,
+          }}
+          onPersistedStateChange={capture.onPersistedStateChange}
+        />,
+      );
+    });
+
+    const parcelTarget = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="parcel:source"]',
+    ) as SVGElement | null;
+    const parcelMenuButton = container.querySelector(
+      '[data-survey-cad-parcel-menu-button]',
+    ) as HTMLButtonElement | null;
+    if (!parcelTarget || !parcelMenuButton) throw new Error('Parcel layout persistence controls not found');
+
+    await act(async () => {
+      parcelTarget.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 0, clientY: 0 }));
+      parcelMenuButton.click();
+    });
+    await act(async () => {
+      clickButton(container, 'Layout Tools');
+    });
+
+    const useParentButton = container.querySelector(
+      '[data-survey-cad-parcel-layout-use-parent]',
+    ) as HTMLButtonElement | null;
+    const minAreaInput = container.querySelector(
+      '[data-survey-cad-parcel-layout-min-area]',
+    ) as HTMLInputElement | null;
+    if (!useParentButton || !minAreaInput) throw new Error('Parcel layout persistence fields not found');
+
+    await act(async () => {
+      useParentButton.click();
+      setTextInputValue(minAreaInput, '2500');
+    });
+
+    expect(capture.read()?.parcelLayout?.open).toBe(true);
+    expect(capture.read()?.parcelLayout?.activeParentParcelId).toBe('parcel:source');
+    expect(capture.read()?.parcelLayout?.settings.minAreaSquareMeters).toBe(2500);
 
     await act(async () => {
       root.unmount();

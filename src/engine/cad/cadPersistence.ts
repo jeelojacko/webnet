@@ -3,6 +3,8 @@ import type {
   CadDisplayPoint,
   CadEntity,
   CadLayer,
+  CadParcelLayoutSettings,
+  CadParcelLayoutUiState,
   CadProject,
   CadStyleLibrary,
   SurveyCadPersistedState,
@@ -106,12 +108,45 @@ export const cloneCadProject = (project: CadProject): CadProject => ({
   bounds: cloneBounds(project.bounds),
 });
 
+const cloneParcelLayoutSettings = (
+  settings: CadParcelLayoutSettings,
+): CadParcelLayoutSettings => ({
+  minAreaSquareMeters: settings.minAreaSquareMeters,
+  minFrontageMeters: settings.minFrontageMeters,
+  useFrontageAtOffset: settings.useFrontageAtOffset,
+  frontageOffsetMeters: settings.frontageOffsetMeters,
+  minWidthMeters: settings.minWidthMeters,
+  minDepthMeters: settings.minDepthMeters,
+  useMaxDepth: settings.useMaxDepth,
+  maxDepthMeters: settings.maxDepthMeters,
+  solutionPreference: settings.solutionPreference,
+  automaticMode: settings.automaticMode,
+  remainderDistribution: settings.remainderDistribution,
+});
+
+const cloneParcelLayoutUiState = (
+  state: CadParcelLayoutUiState | undefined,
+): CadParcelLayoutUiState | undefined =>
+  state
+    ? {
+        open: state.open,
+        collapsed: state.collapsed,
+        dock: state.dock,
+        floatingLeftPx: state.floatingLeftPx,
+        floatingTopPx: state.floatingTopPx,
+        activeParentParcelId: state.activeParentParcelId,
+        activeFrontageEntityId: state.activeFrontageEntityId,
+        settings: cloneParcelLayoutSettings(state.settings),
+      }
+    : undefined;
+
 export const cloneSurveyCadPersistedState = (
   state: SurveyCadPersistedState,
 ): SurveyCadPersistedState => ({
   version: 1,
   sourceSignature: state.sourceSignature,
   project: cloneCadProject(state.project),
+  parcelLayout: cloneParcelLayoutUiState(state.parcelLayout),
 });
 
 export const sanitizeSurveyCadPersistedState = (

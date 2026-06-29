@@ -221,6 +221,46 @@ export interface SurveyCadPersistedState {
   version: 1;
   sourceSignature: string;
   project: CadProject;
+  parcelLayout?: CadParcelLayoutUiState;
+}
+
+export type CadParcelLayoutSolutionPreference =
+  | 'shortest_frontage'
+  | 'smallest_area'
+  | 'largest_area'
+  | 'most_rectangular'
+  | 'closest_to_target_area';
+
+export type CadParcelLayoutAutomaticMode = 'off' | 'single_preview' | 'fill_parent';
+
+export type CadParcelLayoutRemainderDistribution =
+  | 'place_remainder_in_last_parcel'
+  | 'create_parcel_from_remainder'
+  | 'redistribute_remainder';
+
+export interface CadParcelLayoutSettings {
+  minAreaSquareMeters: number;
+  minFrontageMeters: number;
+  useFrontageAtOffset: boolean;
+  frontageOffsetMeters: number;
+  minWidthMeters: number;
+  minDepthMeters: number;
+  useMaxDepth: boolean;
+  maxDepthMeters: number;
+  solutionPreference: CadParcelLayoutSolutionPreference;
+  automaticMode: CadParcelLayoutAutomaticMode;
+  remainderDistribution: CadParcelLayoutRemainderDistribution;
+}
+
+export interface CadParcelLayoutUiState {
+  open: boolean;
+  collapsed: boolean;
+  dock: 'floating' | 'left' | 'right';
+  floatingLeftPx: number;
+  floatingTopPx: number;
+  activeParentParcelId: CadEntityId | null;
+  activeFrontageEntityId: CadEntityId | null;
+  settings: CadParcelLayoutSettings;
 }
 
 export interface CadDisplayPoint {
