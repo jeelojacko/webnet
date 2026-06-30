@@ -1443,6 +1443,36 @@ describe('Survey CAD COGO helpers', () => {
     ).toBeCloseTo(600, 3);
   });
 
+  it('redistributes auto layout remainder across same lot count', () => {
+    const autoLayout = cadBuildParcelAutoLayoutDraft(
+      parcelLayoutAutoTestParcel,
+      parcelLayoutAutoFrontage,
+      parcelLayoutSettings({
+        minAreaSquareMeters: 1200,
+        minFrontageMeters: 20,
+        remainderDistribution: 'redistribute_remainder',
+      }),
+      'slide',
+    );
+
+    expect(autoLayout.isValid).toBe(true);
+    expect(autoLayout.acceptedCandidates).toHaveLength(3);
+    expect(autoLayout.generatedParcels).toHaveLength(4);
+    expect(autoLayout.generatedParcels.every((generatedParcel) => generatedParcel.role === 'lot')).toBe(true);
+    expect(autoLayout.statusMessage).toContain('redistributed remainder across 4 lots');
+    expect(
+      autoLayout.generatedParcels.map(
+        (generatedParcel) =>
+          cadBuildParcelClosureSummary(generatedParcel.vertices)?.areaSquareMeters ?? Number.NaN,
+      ),
+    ).toEqual([
+      expect.closeTo(1350, 3),
+      expect.closeTo(1350, 3),
+      expect.closeTo(1350, 3),
+      expect.closeTo(1350, 3),
+    ]);
+  });
+
   it('builds a swing auto layout draft from the selected frontage', () => {
     const autoLayout = cadBuildParcelAutoLayoutDraft(
       parcelLayoutAutoTestParcel,
