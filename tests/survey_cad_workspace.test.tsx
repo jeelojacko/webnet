@@ -8599,8 +8599,28 @@ describe('SurveyCadWorkspace', () => {
     await act(async () => {
       clickButton(container, 'Layout Tools');
     });
+    const floatButton = Array.from(container.querySelectorAll('button')).find(
+      (entry) => entry.textContent?.trim() === 'Float',
+    ) as HTMLButtonElement | undefined;
+    if (!floatButton) throw new Error('Float button not found');
     await act(async () => {
-      clickButton(container, 'Float');
+      dispatchSyntheticPointerEvent(floatButton, 'pointerdown', {
+        pointerId: 7,
+        button: 0,
+        clientX: 40,
+        clientY: 120,
+      });
+      floatButton.click();
+      dispatchSyntheticPointerEvent(window, 'pointermove', {
+        pointerId: 7,
+        clientX: 260,
+        clientY: 280,
+      });
+      dispatchSyntheticPointerEvent(window, 'pointerup', {
+        pointerId: 7,
+        clientX: 260,
+        clientY: 280,
+      });
     });
 
     const panel = container.querySelector('[data-survey-cad-parcel-layout-panel]') as HTMLDivElement | null;
@@ -8613,6 +8633,8 @@ describe('SurveyCadWorkspace', () => {
     expect(panel.className).toContain('w-[19rem]');
     expect(panel.style.left).toBe('24px');
     expect(panel.style.top).toBe('96px');
+    expect(capture.read()?.parcelLayout?.floatingLeftPx).toBe(24);
+    expect(capture.read()?.parcelLayout?.floatingTopPx).toBe(96);
 
     await act(async () => {
       dispatchSyntheticPointerEvent(header, 'pointerdown', {

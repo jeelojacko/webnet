@@ -1275,8 +1275,14 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               onStartDrag={(event) => {
                 if (parcelLayoutState.dock !== 'floating') return;
                 if (event.button !== 0) return;
+                const target = event.target;
+                if (
+                  target instanceof HTMLElement &&
+                  target.closest('button, input, select, textarea, label, a')
+                ) {
+                  return;
+                }
                 event.preventDefault();
-                event.currentTarget.setPointerCapture?.(event.pointerId);
                 const rect = (event.currentTarget.parentElement as HTMLDivElement | null)?.getBoundingClientRect();
                 parcelLayoutDragRef.current = {
                   pointerId: event.pointerId,
