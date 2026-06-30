@@ -21,6 +21,8 @@ interface SurveyCadCommandLineProps {
   canCreateParcel: boolean;
   canSplitParcelByBearing: boolean;
   canSplitParcelByArea: boolean;
+  canSplitParcelBySlide: boolean;
+  canSplitParcelBySwing: boolean;
   canReportParcelGap: boolean;
   canReportParcelDiagnostics: boolean;
   canReportParcelOverlap: boolean;
@@ -36,6 +38,8 @@ interface SurveyCadCommandLineProps {
   onStartBatchCogo: () => void;
   onStartParcelSplitBearing: () => void;
   onStartParcelSplitArea: () => void;
+  onSplitParcelBySlide: () => void;
+  onSplitParcelBySwing: () => void;
   onStartArc3Point: () => void;
   onStartArcStartCenterEnd: () => void;
   onStartArcCenterStartEnd: () => void;
@@ -125,6 +129,8 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   canCreateParcel,
   canSplitParcelByBearing,
   canSplitParcelByArea,
+  canSplitParcelBySlide,
+  canSplitParcelBySwing,
   canReportParcelGap,
   canReportParcelDiagnostics,
   canReportParcelOverlap,
@@ -140,6 +146,8 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
   onStartBatchCogo,
   onStartParcelSplitBearing,
   onStartParcelSplitArea,
+  onSplitParcelBySlide,
+  onSplitParcelBySwing,
   onStartArc3Point,
   onStartArcStartCenterEnd,
   onStartArcCenterStartEnd,
@@ -658,6 +666,22 @@ const SurveyCadCommandLine: React.FC<SurveyCadCommandLineProps> = ({
               disabled={!canSplitParcelByArea}
             >
               Split by Area
+            </button>
+            <button
+              type="button"
+              className={arcMenuButtonClassName}
+              onClick={() => { setParcelMenuOpen(false); runImmediate(onSplitParcelBySlide); }}
+              disabled={!canSplitParcelBySlide}
+            >
+              Sliding Area Split
+            </button>
+            <button
+              type="button"
+              className={arcMenuButtonClassName}
+              onClick={() => { setParcelMenuOpen(false); runImmediate(onSplitParcelBySwing); }}
+              disabled={!canSplitParcelBySwing}
+            >
+              Hinged Area Split
             </button>
             <button
               type="button"

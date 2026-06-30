@@ -668,6 +668,20 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       (entity): entity is Extract<(typeof selectedEntities)[number], { type: 'line' | 'polyline' }> =>
         entity.type === 'line' || entity.type === 'polyline',
     ) ?? null;
+  const directParcelSplitTarget = useMemo(() => {
+    const parcel = parcelLayoutParentEntity ?? selectedParcelForLayout;
+    const frontage = parcelLayoutFrontageEntity?.type === 'line'
+      ? parcelLayoutFrontageEntity
+      : selectedFrontageForLayout?.type === 'line'
+        ? selectedFrontageForLayout
+        : null;
+    return parcel && frontage ? { parcel, frontage } : null;
+  }, [
+    parcelLayoutFrontageEntity,
+    parcelLayoutParentEntity,
+    selectedFrontageForLayout,
+    selectedParcelForLayout,
+  ]);
   const parcelLayoutFrontageLabel = useMemo(() => {
     if (!parcelLayoutFrontageEntity) return null;
     if (parcelLayoutFrontageEntity.type === 'line') {
@@ -679,6 +693,30 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   }, [parcelLayoutFrontageEntity]);
   const canPreviewParcelSlideOrSwing =
     parcelLayoutParentEntity != null && parcelLayoutFrontageEntity?.type === 'line';
+  const directParcelSlideCandidate = useMemo(
+    () =>
+      directParcelSplitTarget
+        ? cadSelectPreferredParcelLayoutPreviewCandidate(
+            directParcelSplitTarget.parcel,
+            directParcelSplitTarget.frontage,
+            parcelLayoutState.settings,
+            'slide',
+          )
+        : null,
+    [directParcelSplitTarget, parcelLayoutState.settings],
+  );
+  const directParcelSwingCandidate = useMemo(
+    () =>
+      directParcelSplitTarget
+        ? cadSelectPreferredParcelLayoutPreviewCandidate(
+            directParcelSplitTarget.parcel,
+            directParcelSplitTarget.frontage,
+            parcelLayoutState.settings,
+            'swing',
+          )
+        : null,
+    [directParcelSplitTarget, parcelLayoutState.settings],
+  );
   const parcelLayoutPreviewPrimitives = useMemo(
     () =>
       buildParcelLayoutPreviewPrimitives(
@@ -863,6 +901,32 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       frontageEntityId: parcelLayoutFrontageEntity.id,
       tool: parcelLayoutAutoTool,
       settings: cloneParcelLayoutSettings(parcelLayoutState.settings),
+    });
+    setParcelLayoutAutoPreviewState(null);
+    setParcelLayoutPreviewState(null);
+  };
+
+  const splitParcelBySlide = () => {
+    if (!directParcelSplitTarget) return;
+    commitParcelSlideLayout({
+      parcelEntityId: directParcelSplitTarget.parcel.id,
+      frontageEntityId: directParcelSplitTarget.frontage.id,
+      targetAreaSquareMeters: parcelLayoutState.settings.minAreaSquareMeters,
+      minFrontageMeters: parcelLayoutState.settings.minFrontageMeters,
+      alternative: directParcelSlideCandidate?.alternative ?? 'start',
+    });
+    setParcelLayoutAutoPreviewState(null);
+    setParcelLayoutPreviewState(null);
+  };
+
+  const splitParcelBySwing = () => {
+    if (!directParcelSplitTarget) return;
+    commitParcelSwingLayout({
+      parcelEntityId: directParcelSplitTarget.parcel.id,
+      frontageEntityId: directParcelSplitTarget.frontage.id,
+      targetAreaSquareMeters: parcelLayoutState.settings.minAreaSquareMeters,
+      minFrontageMeters: parcelLayoutState.settings.minFrontageMeters,
+      alternative: directParcelSwingCandidate?.alternative ?? 'start',
     });
     setParcelLayoutAutoPreviewState(null);
     setParcelLayoutPreviewState(null);
@@ -1150,6 +1214,10 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               onReportParcelGap={reportParcelGapFromSelection}
               onReportParcelDiagnostics={reportParcelDiagnosticsFromSelection}
               onReportParcelOverlap={reportParcelOverlapFromSelection}
+              canSplitParcelBySlide={directParcelSplitTarget != null}
+              canSplitParcelBySwing={directParcelSplitTarget != null}
+              onSplitParcelBySlide={splitParcelBySlide}
+              onSplitParcelBySwing={splitParcelBySwing}
               onSplitParcelByLine={splitParcelBySelectedLine}
               onToggleParcelLayoutPanel={toggleParcelLayoutPanel}
               canTrimSelection={canTrimSelection}
