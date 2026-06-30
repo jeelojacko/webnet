@@ -1681,6 +1681,16 @@ describe('Survey CAD command history', () => {
         (row) => row.label === 'Solution preference' && row.value === 'Most rectangular',
       ),
     ).toBe(true);
+    expect(
+      splitState.present.project.cogoComputations.at(-1)?.report.rows.some(
+        (row) => row.label === 'Sampled minimum width',
+      ),
+    ).toBe(true);
+    expect(
+      splitState.present.project.cogoComputations.at(-1)?.report.rows.some(
+        (row) => row.label === 'Child depth',
+      ),
+    ).toBe(true);
   });
 
   it('splits a parcel entity by swing frontage layout into two child parcels', () => {
@@ -1767,6 +1777,16 @@ describe('Survey CAD command history', () => {
     expect(
       splitState.present.project.cogoComputations.at(-1)?.report.rows.some(
         (row) => row.label === 'Minimum width' && row.value === '7.000 m',
+      ),
+    ).toBe(true);
+    expect(
+      splitState.present.project.cogoComputations.at(-1)?.report.rows.some(
+        (row) => row.label === 'Sampled minimum width',
+      ),
+    ).toBe(true);
+    expect(
+      splitState.present.project.cogoComputations.at(-1)?.report.rows.some(
+        (row) => row.label === 'Child depth',
       ),
     ).toBe(true);
   });

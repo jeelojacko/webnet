@@ -9115,6 +9115,26 @@ describe('SurveyCadWorkspace', () => {
         (row) => row.label === 'Solution preference' && row.value === 'Shortest frontage',
       ),
     ).toBe(true);
+    expect(
+      persisted?.project.cogoComputations.at(-1)?.report.rows.some(
+        (row) => row.label === 'Alternative mix',
+      ),
+    ).toBe(true);
+    expect(
+      persisted?.project.cogoComputations.at(-1)?.report.rows.some(
+        (row) => row.label === 'Lot frontage range',
+      ),
+    ).toBe(true);
+    expect(
+      persisted?.project.cogoComputations.at(-1)?.report.rows.some(
+        (row) => row.label === 'Lot width range',
+      ),
+    ).toBe(true);
+    expect(
+      persisted?.project.cogoComputations.at(-1)?.report.rows.some(
+        (row) => row.label === 'Lot depth range',
+      ),
+    ).toBe(true);
 
     await act(async () => {
       root.unmount();

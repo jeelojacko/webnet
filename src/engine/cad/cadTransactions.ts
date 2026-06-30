@@ -7,6 +7,7 @@ import {
   cadBuildParcelAutoLayoutDraft,
   cadBuildParcelClosureSummary,
   cadBuildParcelLayoutFrontageReference,
+  cadEvaluateParcelLayoutConstraints,
   cadBuildParcelSplitByAreaDraft,
   cadBuildParcelSplitByBearingDraft,
   cadBuildParcelSplitByLineDraft,
@@ -492,6 +493,39 @@ const buildParcelLayoutConstraintReportRows = (
     value: formatParcelLayoutSolutionPreference(settings.solutionPreference),
   },
 ];
+
+const buildParcelLayoutEvaluationReportRows = (
+  evaluation: import('./cadCogo').CadParcelLayoutConstraintEvaluation,
+): CadCogoReportRow[] => {
+  const rows: CadCogoReportRow[] = [];
+  if (evaluation.frontageAtOffsetWidthMeters != null) {
+    rows.push({
+      label: 'Offset width achieved',
+      value: formatParcelLayoutMeters(evaluation.frontageAtOffsetWidthMeters),
+    });
+  }
+  if (evaluation.minimumSampledWidthMeters != null) {
+    rows.push({
+      label: 'Sampled minimum width',
+      value: formatParcelLayoutMeters(evaluation.minimumSampledWidthMeters),
+    });
+  }
+  if (evaluation.depthMeters != null) {
+    rows.push({
+      label: 'Child depth',
+      value: formatParcelLayoutMeters(evaluation.depthMeters),
+    });
+  }
+  return rows;
+};
+
+const formatParcelLayoutRange = (values: number[]): string => {
+  if (values.length === 0) return 'n/a';
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  if (Math.abs(min - max) <= 1e-9) return formatParcelLayoutMeters(min);
+  return `${min.toFixed(3)}-${max.toFixed(3)} m`;
+};
 
 const nextAlignmentName = (project: CadProject): string => {
   let maxSequence = 0;
@@ -6141,6 +6175,11 @@ const parcelSplitSlideCommand: CadCommandDefinition<{
       command.alternative,
     );
     if (!layoutDraft) return null;
+    const evaluation = cadEvaluateParcelLayoutConstraints(
+      layoutDraft,
+      frontageReference.frontageLine,
+      command.settings,
+    );
 
     const summary = `Split ${parcelEntity.parcelName} by slide from ${frontageReference.displayLabel} (${command.alternative})`;
     const result = buildParcelSplitCommitResult({
@@ -6173,6 +6212,7 @@ const parcelSplitSlideCommand: CadCommandDefinition<{
         { label: 'Target area', value: command.targetAreaSquareMeters.toFixed(3), unit: 'm2' },
         { label: 'Child frontage', value: layoutDraft.frontageLengthMeters.toFixed(3), unit: 'm' },
         { label: 'Child area', value: layoutDraft.childAreaSquareMeters.toFixed(3), unit: 'm2' },
+        ...buildParcelLayoutEvaluationReportRows(evaluation),
         ...buildParcelLayoutConstraintReportRows(command.settings),
       ],
       firstParcelMetadata: {
@@ -6224,6 +6264,11 @@ const parcelSplitSwingCommand: CadCommandDefinition<{
       command.alternative,
     );
     if (!layoutDraft) return null;
+    const evaluation = cadEvaluateParcelLayoutConstraints(
+      layoutDraft,
+      frontageReference.frontageLine,
+      command.settings,
+    );
 
     const summary = `Split ${parcelEntity.parcelName} by swing from ${frontageReference.displayLabel} (${command.alternative})`;
     const result = buildParcelSplitCommitResult({
@@ -6256,6 +6301,7 @@ const parcelSplitSwingCommand: CadCommandDefinition<{
         { label: 'Target area', value: command.targetAreaSquareMeters.toFixed(3), unit: 'm2' },
         { label: 'Child frontage', value: layoutDraft.frontageLengthMeters.toFixed(3), unit: 'm' },
         { label: 'Child area', value: layoutDraft.childAreaSquareMeters.toFixed(3), unit: 'm2' },
+        ...buildParcelLayoutEvaluationReportRows(evaluation),
         ...buildParcelLayoutConstraintReportRows(command.settings),
       ],
       firstParcelMetadata: {
@@ -6390,6 +6436,25 @@ const parcelLayoutAutoCommand: CadCommandDefinition<{
         provenance,
       ),
     }));
+    const lotCandidates = autoLayoutDraft.acceptedCandidates.filter((candidate) => candidate.evaluation != null);
+    const frontageValues = lotCandidates
+      .map((candidate) => candidate.evaluation?.frontageLengthMeters)
+      .filter((value): value is number => value != null && Number.isFinite(value));
+    const widthValues = lotCandidates
+      .map((candidate) => candidate.evaluation?.minimumSampledWidthMeters)
+      .filter((value): value is number => value != null && Number.isFinite(value));
+    const depthValues = lotCandidates
+      .map((candidate) => candidate.evaluation?.depthMeters)
+      .filter((value): value is number => value != null && Number.isFinite(value));
+    const startCount = autoLayoutDraft.acceptedCandidates.filter((candidate) => candidate.alternative === 'start').length;
+    const endCount = autoLayoutDraft.acceptedCandidates.filter((candidate) => candidate.alternative === 'end').length;
+    const lotAreaValues = finalizedCreatedParcels
+      .filter((parcel) => parcel.metadata?.role !== 'remainder')
+      .map((parcel) => parcel.areaSquareMeters ?? 0);
+    const averageLotArea =
+      lotAreaValues.length > 0
+        ? lotAreaValues.reduce((sum, value) => sum + value, 0) / lotAreaValues.length
+        : null;
 
     const nextProjectBase = replaceCadProjectEntities(
       snapshot.project,
@@ -6419,6 +6484,25 @@ const parcelLayoutAutoCommand: CadCommandDefinition<{
               ? 'Yes'
               : 'No',
         },
+        {
+          label: 'Alternative mix',
+          value: `Start ${startCount} / End ${endCount}`,
+        },
+        {
+          label: 'Lot frontage range',
+          value: formatParcelLayoutRange(frontageValues),
+        },
+        {
+          label: 'Lot width range',
+          value: formatParcelLayoutRange(widthValues),
+        },
+        {
+          label: 'Lot depth range',
+          value: formatParcelLayoutRange(depthValues),
+        },
+        ...(averageLotArea == null
+          ? []
+          : [{ label: 'Average lot area', value: averageLotArea.toFixed(3), unit: 'm2' as const }]),
         ...buildParcelLayoutConstraintReportRows(command.settings),
         { label: 'Created parcels', value: String(finalizedCreatedParcels.length) },
         ...finalizedCreatedParcels.flatMap((createdParcel) => [
