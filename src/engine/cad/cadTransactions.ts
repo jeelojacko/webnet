@@ -277,6 +277,7 @@ export type CadCommand =
       targetAreaSquareMeters: number;
       minFrontageMeters: number;
       alternative: 'start' | 'end';
+      settings: CadParcelLayoutSettings;
     }
   | {
       key: 'PARCEL_SPLIT_SWING';
@@ -285,6 +286,7 @@ export type CadCommand =
       targetAreaSquareMeters: number;
       minFrontageMeters: number;
       alternative: 'start' | 'end';
+      settings: CadParcelLayoutSettings;
     }
   | {
       key: 'PARCEL_LAYOUT_AUTO';
@@ -446,6 +448,50 @@ const formatParcelLayoutRemainderDistribution = (
       return remainderDistribution;
   }
 };
+
+const formatParcelLayoutSolutionPreference = (
+  preference: CadParcelLayoutSettings['solutionPreference'],
+): string => {
+  switch (preference) {
+    case 'closest_to_target_area':
+      return 'Closest to target area';
+    case 'smallest_area':
+      return 'Smallest area';
+    case 'largest_area':
+      return 'Largest area';
+    case 'most_rectangular':
+      return 'Most rectangular';
+    case 'shortest_frontage':
+    default:
+      return 'Shortest frontage';
+  }
+};
+
+const formatParcelLayoutMeters = (value: number): string => `${value.toFixed(3)} m`;
+
+const buildParcelLayoutConstraintReportRows = (
+  settings: CadParcelLayoutSettings,
+): CadCogoReportRow[] => [
+  { label: 'Minimum frontage', value: formatParcelLayoutMeters(settings.minFrontageMeters) },
+  {
+    label: 'Frontage at offset',
+    value: settings.useFrontageAtOffset
+      ? formatParcelLayoutMeters(settings.frontageOffsetMeters)
+      : 'Off',
+  },
+  { label: 'Minimum width', value: formatParcelLayoutMeters(settings.minWidthMeters) },
+  { label: 'Minimum depth', value: formatParcelLayoutMeters(settings.minDepthMeters) },
+  {
+    label: 'Maximum depth',
+    value: settings.useMaxDepth
+      ? formatParcelLayoutMeters(settings.maxDepthMeters)
+      : 'Off',
+  },
+  {
+    label: 'Solution preference',
+    value: formatParcelLayoutSolutionPreference(settings.solutionPreference),
+  },
+];
 
 const nextAlignmentName = (project: CadProject): string => {
   let maxSequence = 0;
@@ -6070,6 +6116,7 @@ const parcelSplitSlideCommand: CadCommandDefinition<{
   targetAreaSquareMeters: number;
   minFrontageMeters: number;
   alternative: 'start' | 'end';
+  settings: CadParcelLayoutSettings;
 }> = {
   key: 'PARCEL_SPLIT_SLIDE',
   execute: (snapshot, command) => {
@@ -6126,6 +6173,7 @@ const parcelSplitSlideCommand: CadCommandDefinition<{
         { label: 'Target area', value: command.targetAreaSquareMeters.toFixed(3), unit: 'm2' },
         { label: 'Child frontage', value: layoutDraft.frontageLengthMeters.toFixed(3), unit: 'm' },
         { label: 'Child area', value: layoutDraft.childAreaSquareMeters.toFixed(3), unit: 'm2' },
+        ...buildParcelLayoutConstraintReportRows(command.settings),
       ],
       firstParcelMetadata: {
         createdBy: 'PARCEL_SPLIT_SLIDE',
@@ -6151,6 +6199,7 @@ const parcelSplitSwingCommand: CadCommandDefinition<{
   targetAreaSquareMeters: number;
   minFrontageMeters: number;
   alternative: 'start' | 'end';
+  settings: CadParcelLayoutSettings;
 }> = {
   key: 'PARCEL_SPLIT_SWING',
   execute: (snapshot, command) => {
@@ -6207,6 +6256,7 @@ const parcelSplitSwingCommand: CadCommandDefinition<{
         { label: 'Target area', value: command.targetAreaSquareMeters.toFixed(3), unit: 'm2' },
         { label: 'Child frontage', value: layoutDraft.frontageLengthMeters.toFixed(3), unit: 'm' },
         { label: 'Child area', value: layoutDraft.childAreaSquareMeters.toFixed(3), unit: 'm2' },
+        ...buildParcelLayoutConstraintReportRows(command.settings),
       ],
       firstParcelMetadata: {
         createdBy: 'PARCEL_SPLIT_SWING',
@@ -6369,6 +6419,7 @@ const parcelLayoutAutoCommand: CadCommandDefinition<{
               ? 'Yes'
               : 'No',
         },
+        ...buildParcelLayoutConstraintReportRows(command.settings),
         { label: 'Created parcels', value: String(finalizedCreatedParcels.length) },
         ...finalizedCreatedParcels.flatMap((createdParcel) => [
           { label: createdParcel.parcelName, value: createdParcel.areaSquareMeters?.toFixed(3) ?? '0.000', unit: 'm2' },

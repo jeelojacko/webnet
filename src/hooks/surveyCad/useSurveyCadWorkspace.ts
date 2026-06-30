@@ -309,6 +309,7 @@ interface UseSurveyCadWorkspaceResult {
     targetAreaSquareMeters: number;
     minFrontageMeters: number;
     alternative: 'start' | 'end';
+    settings: CadParcelLayoutSettings;
   }) => void;
   commitParcelSwingLayout: (_options: {
     parcelEntityId: CadEntityId;
@@ -316,6 +317,7 @@ interface UseSurveyCadWorkspaceResult {
     targetAreaSquareMeters: number;
     minFrontageMeters: number;
     alternative: 'start' | 'end';
+    settings: CadParcelLayoutSettings;
   }) => void;
   commitParcelAutoLayout: (_options: {
     parcelEntityId: CadEntityId;
@@ -1525,6 +1527,7 @@ export const useSurveyCadWorkspace = (
       targetAreaSquareMeters,
       minFrontageMeters,
       alternative,
+      settings,
     }) => {
       applyHistoryUpdate((current) =>
         runCadCommand(current, {
@@ -1534,6 +1537,7 @@ export const useSurveyCadWorkspace = (
           targetAreaSquareMeters,
           minFrontageMeters,
           alternative,
+          settings,
         }),
       );
     },
@@ -1543,6 +1547,7 @@ export const useSurveyCadWorkspace = (
       targetAreaSquareMeters,
       minFrontageMeters,
       alternative,
+      settings,
     }) => {
       applyHistoryUpdate((current) =>
         runCadCommand(current, {
@@ -1552,6 +1557,7 @@ export const useSurveyCadWorkspace = (
           targetAreaSquareMeters,
           minFrontageMeters,
           alternative,
+          settings,
         }),
       );
     },

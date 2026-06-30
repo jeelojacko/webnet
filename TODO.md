@@ -47,7 +47,7 @@
 - [x] Survey CAD parcel-constraint solver batch (June 2026): extend parcel-layout solving with frontage-at-offset, minimum width, minimum depth, optional maximum depth, solution-preference scoring, and failed-rule highlighting/warnings while keeping all measurements normalized to internal metric units.
 - [x] Survey CAD parcel-auto-layout batch (June 2026): add repeated frontage-aware parcel generation for one selected parent parcel, including preview-all vs step-through creation, automatic fill mode, deterministic parcel naming, and remainder handling options that can place leftover area in the last parcel, create a remainder parcel, or redistribute it.
 - [ ] Survey CAD parcel-advanced split/report batch (June 2026): add dedicated sliding-area and hinged-area split tools plus curved-frontage support, parcel-layout history/report rows, parcel label toggles, and richer parcel table/report surfacing for generated lot sets.
-  Current slice: expand parcel-layout history/report rows now that generated parcel tables are persisted through the shared COGO report/export path.
+  Current slice: expand parcel-layout history/report row summaries beyond the newly persisted parcel-set tables and saved constraint settings.
 
 - [x] Survey CAD traverse adjustment batch (June 2026): add draft-panel angular balance plus Bowditch/transit closure adjustment on top of the native traverse editor, persist adjustment provenance/report rows through command history, and leave optional Crandall balancing for a later high-end pass.
 

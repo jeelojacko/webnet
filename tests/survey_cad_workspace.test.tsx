@@ -9105,6 +9105,16 @@ describe('SurveyCadWorkspace', () => {
     const parcels = persisted?.project.entities.filter((entity) => entity.type === 'parcel') ?? [];
     expect(parcels).toHaveLength(5);
     expect(persisted?.project.cogoComputations.at(-1)?.toolKey).toBe('PARCEL_LAYOUT_AUTO');
+    expect(
+      persisted?.project.cogoComputations.at(-1)?.report.rows.some(
+        (row) => row.label === 'Minimum width' && row.value === '10.000 m',
+      ),
+    ).toBe(true);
+    expect(
+      persisted?.project.cogoComputations.at(-1)?.report.rows.some(
+        (row) => row.label === 'Solution preference' && row.value === 'Shortest frontage',
+      ),
+    ).toBe(true);
 
     await act(async () => {
       root.unmount();

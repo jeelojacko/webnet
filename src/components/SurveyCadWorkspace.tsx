@@ -837,6 +837,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           targetAreaSquareMeters: parcelLayoutState.settings.minAreaSquareMeters,
           minFrontageMeters: parcelLayoutState.settings.minFrontageMeters,
           alternative: activeCandidate.alternative,
+          settings: cloneParcelLayoutSettings(parcelLayoutState.settings),
         });
       } else {
         commitParcelSwingLayout({
@@ -845,6 +846,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           targetAreaSquareMeters: parcelLayoutState.settings.minAreaSquareMeters,
           minFrontageMeters: parcelLayoutState.settings.minFrontageMeters,
           alternative: activeCandidate.alternative,
+          settings: cloneParcelLayoutSettings(parcelLayoutState.settings),
         });
       }
       setParcelLayoutAutoPreviewState(null);
@@ -867,6 +869,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         targetAreaSquareMeters: parcelLayoutState.settings.minAreaSquareMeters,
         minFrontageMeters: parcelLayoutState.settings.minFrontageMeters,
         alternative: parcelLayoutPreviewState.candidate.alternative,
+        settings: cloneParcelLayoutSettings(parcelLayoutState.settings),
       });
     } else {
       commitParcelSwingLayout({
@@ -875,6 +878,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         targetAreaSquareMeters: parcelLayoutState.settings.minAreaSquareMeters,
         minFrontageMeters: parcelLayoutState.settings.minFrontageMeters,
         alternative: parcelLayoutPreviewState.candidate.alternative,
+        settings: cloneParcelLayoutSettings(parcelLayoutState.settings),
       });
     }
     setParcelLayoutPreviewState(null);
@@ -915,6 +919,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       targetAreaSquareMeters: parcelLayoutState.settings.minAreaSquareMeters,
       minFrontageMeters: parcelLayoutState.settings.minFrontageMeters,
       alternative: directParcelSlideCandidate?.alternative ?? 'start',
+      settings: cloneParcelLayoutSettings(parcelLayoutState.settings),
     });
     setParcelLayoutAutoPreviewState(null);
     setParcelLayoutPreviewState(null);
@@ -928,6 +933,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       targetAreaSquareMeters: parcelLayoutState.settings.minAreaSquareMeters,
       minFrontageMeters: parcelLayoutState.settings.minFrontageMeters,
       alternative: directParcelSwingCandidate?.alternative ?? 'start',
+      settings: cloneParcelLayoutSettings(parcelLayoutState.settings),
     });
     setParcelLayoutAutoPreviewState(null);
     setParcelLayoutPreviewState(null);

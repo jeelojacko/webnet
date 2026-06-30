@@ -1651,6 +1651,19 @@ describe('Survey CAD command history', () => {
       targetAreaSquareMeters: 67.5,
       minFrontageMeters: 10,
       alternative: 'start',
+      settings: {
+        minAreaSquareMeters: 67.5,
+        minFrontageMeters: 10,
+        useFrontageAtOffset: true,
+        frontageOffsetMeters: 12,
+        minWidthMeters: 5,
+        minDepthMeters: 6,
+        useMaxDepth: true,
+        maxDepthMeters: 40,
+        solutionPreference: 'most_rectangular',
+        automaticMode: 'off',
+        remainderDistribution: 'place_remainder_in_last_parcel',
+      },
     });
 
     const parcels = splitState.present.project.entities.filter((entity) => entity.type === 'parcel');
@@ -1658,6 +1671,16 @@ describe('Survey CAD command history', () => {
     expect(splitState.present.project.cogoComputations.at(-1)?.toolKey).toBe('PARCEL_SPLIT_SLIDE');
     expect(splitState.present.project.cogoComputations.at(-1)?.report.tables?.[0]?.title).toBe('Created Parcels');
     expect(splitState.present.project.cogoComputations.at(-1)?.report.tables?.[0]?.rows).toHaveLength(2);
+    expect(
+      splitState.present.project.cogoComputations.at(-1)?.report.rows.some(
+        (row) => row.label === 'Frontage at offset' && row.value === '12.000 m',
+      ),
+    ).toBe(true);
+    expect(
+      splitState.present.project.cogoComputations.at(-1)?.report.rows.some(
+        (row) => row.label === 'Solution preference' && row.value === 'Most rectangular',
+      ),
+    ).toBe(true);
   });
 
   it('splits a parcel entity by swing frontage layout into two child parcels', () => {
@@ -1713,11 +1736,39 @@ describe('Survey CAD command history', () => {
       targetAreaSquareMeters: 67.5,
       minFrontageMeters: 10,
       alternative: 'start',
+      settings: {
+        minAreaSquareMeters: 67.5,
+        minFrontageMeters: 10,
+        useFrontageAtOffset: false,
+        frontageOffsetMeters: 10,
+        minWidthMeters: 7,
+        minDepthMeters: 8,
+        useMaxDepth: false,
+        maxDepthMeters: 150,
+        solutionPreference: 'smallest_area',
+        automaticMode: 'off',
+        remainderDistribution: 'place_remainder_in_last_parcel',
+      },
     });
 
     const parcels = splitState.present.project.entities.filter((entity) => entity.type === 'parcel');
     expect(parcels).toHaveLength(2);
     expect(splitState.present.project.cogoComputations.at(-1)?.toolKey).toBe('PARCEL_SPLIT_SWING');
+    expect(
+      splitState.present.project.cogoComputations.at(-1)?.report.rows.some(
+        (row) => row.label === 'Maximum depth' && row.value === 'Off',
+      ),
+    ).toBe(true);
+    expect(
+      splitState.present.project.cogoComputations.at(-1)?.report.rows.some(
+        (row) => row.label === 'Solution preference' && row.value === 'Smallest area',
+      ),
+    ).toBe(true);
+    expect(
+      splitState.present.project.cogoComputations.at(-1)?.report.rows.some(
+        (row) => row.label === 'Minimum width' && row.value === '7.000 m',
+      ),
+    ).toBe(true);
   });
 
   it('splits a parcel entity by slide frontage layout using a polyline frontage reference', () => {
@@ -1773,6 +1824,19 @@ describe('Survey CAD command history', () => {
       targetAreaSquareMeters: 67.5,
       minFrontageMeters: 10,
       alternative: 'start',
+      settings: {
+        minAreaSquareMeters: 67.5,
+        minFrontageMeters: 10,
+        useFrontageAtOffset: false,
+        frontageOffsetMeters: 10,
+        minWidthMeters: 5,
+        minDepthMeters: 5,
+        useMaxDepth: false,
+        maxDepthMeters: 150,
+        solutionPreference: 'shortest_frontage',
+        automaticMode: 'off',
+        remainderDistribution: 'place_remainder_in_last_parcel',
+      },
     });
 
     const parcels = splitState.present.project.entities.filter((entity) => entity.type === 'parcel');
