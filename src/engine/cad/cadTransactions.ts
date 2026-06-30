@@ -417,6 +417,35 @@ const nextParcelName = (project: CadProject): string => {
   return `Parcel ${maxSequence + 1}`;
 };
 
+const formatParcelLayoutAutomaticMode = (
+  automaticMode: CadParcelLayoutSettings['automaticMode'],
+): string => {
+  switch (automaticMode) {
+    case 'single_preview':
+      return 'Single preview';
+    case 'fill_parent':
+      return 'Fill parent';
+    case 'off':
+    default:
+      return 'Off';
+  }
+};
+
+const formatParcelLayoutRemainderDistribution = (
+  remainderDistribution: CadParcelLayoutSettings['remainderDistribution'],
+): string => {
+  switch (remainderDistribution) {
+    case 'place_remainder_in_last_parcel':
+      return 'Place remainder in last parcel';
+    case 'create_parcel_from_remainder':
+      return 'Create parcel from remainder';
+    case 'redistribute_remainder':
+      return 'Redistribute remainder';
+    default:
+      return remainderDistribution;
+  }
+};
+
 const nextAlignmentName = (project: CadProject): string => {
   let maxSequence = 0;
   project.entities.forEach((entity) => {
@@ -6242,8 +6271,19 @@ const parcelLayoutAutoCommand: CadCommandDefinition<{
         { label: 'Parent parcel', value: parcelEntity.parcelName },
         { label: 'Frontage', value: `${frontageEntity.fromStationId}-${frontageEntity.toStationId}` },
         { label: 'Tool', value: command.tool === 'slide' ? 'Slide' : 'Swing' },
-        { label: 'Mode', value: command.settings.automaticMode },
-        { label: 'Remainder', value: command.settings.remainderDistribution },
+        { label: 'Mode', value: formatParcelLayoutAutomaticMode(command.settings.automaticMode) },
+        {
+          label: 'Remainder',
+          value: formatParcelLayoutRemainderDistribution(command.settings.remainderDistribution),
+        },
+        { label: 'Generated lots', value: String(autoLayoutDraft.acceptedCandidates.length) },
+        {
+          label: 'Remainder parcel',
+          value:
+            autoLayoutDraft.generatedParcels.some((generatedParcel) => generatedParcel.role === 'remainder')
+              ? 'Yes'
+              : 'No',
+        },
         { label: 'Created parcels', value: String(finalizedCreatedParcels.length) },
         ...finalizedCreatedParcels.flatMap((createdParcel) => [
           { label: createdParcel.parcelName, value: createdParcel.areaSquareMeters?.toFixed(3) ?? '0.000', unit: 'm2' },

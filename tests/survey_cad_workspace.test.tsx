@@ -8636,11 +8636,11 @@ describe('SurveyCadWorkspace', () => {
     const persisted = capture.read();
     const parcels = persisted?.project.entities.filter((entity) => entity.type === 'parcel') ?? [];
     expect(parcels).toHaveLength(4);
-    expect(
-      persisted?.project.cogoComputations.at(-1)?.report.rows.some(
-        (row) => row.label === 'Remainder' && row.value === 'redistribute_remainder',
-      ),
-    ).toBe(true);
+    const reportRows = persisted?.project.cogoComputations.at(-1)?.report.rows ?? [];
+    expect(reportRows.some((row) => row.label === 'Remainder' && row.value === 'Redistribute remainder')).toBe(true);
+    expect(reportRows.some((row) => row.label === 'Mode' && row.value === 'Fill parent')).toBe(true);
+    expect(reportRows.some((row) => row.label === 'Generated lots' && row.value === '3')).toBe(true);
+    expect(reportRows.some((row) => row.label === 'Remainder parcel' && row.value === 'No')).toBe(true);
 
     await act(async () => {
       root.unmount();
