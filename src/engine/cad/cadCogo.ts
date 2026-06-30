@@ -2903,15 +2903,6 @@ export const cadBuildParcelAutoLayoutDraft = (
   settings: CadParcelLayoutSettings,
   tool: 'slide' | 'swing',
 ): CadParcelAutoLayoutDraft => {
-  if (tool !== 'slide') {
-    return {
-      tool,
-      generatedParcels: [],
-      acceptedCandidates: [],
-      isValid: false,
-      statusMessage: 'Automatic fill currently supports slide layout only.',
-    };
-  }
   if (!isParcelAutoRemainderDistributionSupported(settings.remainderDistribution)) {
     return {
       tool,
@@ -2970,7 +2961,10 @@ export const cadBuildParcelAutoLayoutDraft = (
       candidate.draft.remainderVertexLabels,
       'remainder',
     );
-    const rawRemainderFrontage = cadBuildAutoLayoutRemainderFrontageLine(currentFrontage, candidate);
+    const rawRemainderFrontage =
+      tool === 'slide'
+        ? cadBuildAutoLayoutRemainderFrontageLine(currentFrontage, candidate)
+        : { ...currentFrontage, id: `${currentFrontage.id}:auto-remainder` };
     const remainderFrontage = rawRemainderFrontage
       ? cadStabilizeFrontageLine(rawRemainderFrontage)
       : null;

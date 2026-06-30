@@ -1443,6 +1443,28 @@ describe('Survey CAD COGO helpers', () => {
     ).toBeCloseTo(600, 3);
   });
 
+  it('builds a swing auto layout draft from the selected frontage', () => {
+    const autoLayout = cadBuildParcelAutoLayoutDraft(
+      parcelLayoutAutoTestParcel,
+      parcelLayoutAutoFrontage,
+      parcelLayoutSettings({
+        minAreaSquareMeters: 300,
+        minFrontageMeters: 20,
+        minWidthMeters: 5,
+        minDepthMeters: 5,
+        remainderDistribution: 'create_parcel_from_remainder',
+      }),
+      'swing',
+    );
+
+    expect(autoLayout.isValid).toBe(true);
+    expect(autoLayout.acceptedCandidates).toHaveLength(1);
+    expect(autoLayout.acceptedCandidates[0]?.tool).toBe('swing');
+    expect(autoLayout.generatedParcels).toHaveLength(2);
+    expect(autoLayout.generatedParcels[0]?.role).toBe('lot');
+    expect(autoLayout.generatedParcels[1]?.role).toBe('remainder');
+  });
+
   it('diagnoses overlapping parcel pairs with shared area', () => {
     const diagnostics = cadBuildParcelOverlapDiagnostics([
       {

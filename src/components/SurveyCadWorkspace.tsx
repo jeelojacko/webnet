@@ -218,6 +218,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   const [parcelLayoutPreviewState, setParcelLayoutPreviewState] = useState<ParcelLayoutPreviewState | null>(null);
   const [parcelLayoutAutoPreviewState, setParcelLayoutAutoPreviewState] =
     useState<ParcelLayoutAutoPreviewState | null>(null);
+  const [parcelLayoutAutoTool, setParcelLayoutAutoTool] = useState<'slide' | 'swing'>('slide');
   const [copiedEntityIds, setCopiedEntityIds] = useState<string[]>([]);
   const [reverseDirectionModifier, setReverseDirectionModifier] = useState(false);
   const [editingTraverseLegIndex, setEditingTraverseLegIndex] = useState<number | null>(null);
@@ -697,9 +698,9 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       parcelLayoutParentEntity,
       parcelLayoutFrontageEntity,
       parcelLayoutState.settings,
-      'slide',
+      parcelLayoutAutoTool,
     );
-  }, [parcelLayoutFrontageEntity, parcelLayoutParentEntity, parcelLayoutState.settings]);
+  }, [parcelLayoutAutoTool, parcelLayoutFrontageEntity, parcelLayoutParentEntity, parcelLayoutState.settings]);
 
   const canCreateAllParcelLayout =
     parcelLayoutParentEntity != null &&
@@ -719,6 +720,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       : null,
     ) => {
     if (!parcelLayoutParentEntity || parcelLayoutFrontageEntity?.type !== 'line') return;
+    setParcelLayoutAutoTool(tool);
     setParcelLayoutAutoPreviewState(null);
     const preferredCandidate = cadSelectPreferredParcelLayoutPreviewCandidate(
       parcelLayoutParentEntity,
@@ -758,13 +760,23 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       const activeCandidate =
         parcelLayoutAutoPreviewState.draft.acceptedCandidates[parcelLayoutAutoPreviewState.activeIndex] ?? null;
       if (!activeCandidate?.isValid || !activeCandidate.draft) return;
-      commitParcelSlideLayout({
-        parcelEntityId: parcelLayoutParentEntity.id,
-        frontageEntityId: parcelLayoutFrontageEntity.id,
-        targetAreaSquareMeters: parcelLayoutState.settings.minAreaSquareMeters,
-        minFrontageMeters: parcelLayoutState.settings.minFrontageMeters,
-        alternative: activeCandidate.alternative,
-      });
+      if (activeCandidate.tool === 'slide') {
+        commitParcelSlideLayout({
+          parcelEntityId: parcelLayoutParentEntity.id,
+          frontageEntityId: parcelLayoutFrontageEntity.id,
+          targetAreaSquareMeters: parcelLayoutState.settings.minAreaSquareMeters,
+          minFrontageMeters: parcelLayoutState.settings.minFrontageMeters,
+          alternative: activeCandidate.alternative,
+        });
+      } else {
+        commitParcelSwingLayout({
+          parcelEntityId: parcelLayoutParentEntity.id,
+          frontageEntityId: parcelLayoutFrontageEntity.id,
+          targetAreaSquareMeters: parcelLayoutState.settings.minAreaSquareMeters,
+          minFrontageMeters: parcelLayoutState.settings.minFrontageMeters,
+          alternative: activeCandidate.alternative,
+        });
+      }
       setParcelLayoutAutoPreviewState(null);
       setParcelLayoutPreviewState(null);
       return;
@@ -818,7 +830,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     commitParcelAutoLayout({
       parcelEntityId: parcelLayoutParentEntity.id,
       frontageEntityId: parcelLayoutFrontageEntity.id,
-      tool: 'slide',
+      tool: parcelLayoutAutoTool,
       settings: cloneParcelLayoutSettings(parcelLayoutState.settings),
     });
     setParcelLayoutAutoPreviewState(null);
