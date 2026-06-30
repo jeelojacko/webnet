@@ -231,7 +231,7 @@ const ParentBackedParcelLayoutWorkspace: React.FC = () => {
       floatingLeftPx: 24,
       floatingTopPx: 112,
       floatingWidthPx: 304,
-      floatingHeightPx: 560,
+      floatingHeightPx: 600,
       activeParentParcelId: null,
       activeFrontageEntityId: null,
       settings: {
@@ -8726,11 +8726,11 @@ describe('SurveyCadWorkspace', () => {
     expect(panel.style.left).toBe('24px');
     expect(panel.style.top).toBe('112px');
     expect(panel.style.width).toBe('304px');
-    expect(panel.style.height).toBe('560px');
+    expect(panel.style.height).toBe('600px');
     expect(capture.read()?.parcelLayout?.floatingLeftPx).toBe(24);
     expect(capture.read()?.parcelLayout?.floatingTopPx).toBe(112);
     expect(capture.read()?.parcelLayout?.floatingWidthPx).toBe(304);
-    expect(capture.read()?.parcelLayout?.floatingHeightPx).toBe(560);
+    expect(capture.read()?.parcelLayout?.floatingHeightPx).toBe(600);
 
     const cornerResizeHandle = container.querySelector(
       '[data-survey-cad-floating-panel-resize-corner]',
@@ -8752,20 +8752,20 @@ describe('SurveyCadWorkspace', () => {
       dispatchSyntheticPointerEvent(window, 'pointermove', {
         pointerId: 2,
         clientX: 390,
-        clientY: 700,
+        clientY: 620,
       });
       dispatchSyntheticPointerEvent(window, 'pointerup', {
         pointerId: 2,
         clientX: 390,
-        clientY: 700,
+        clientY: 620,
       });
     });
 
     expect(container.querySelector('[data-survey-cad-parcel-layout-drag-shield]')).toBeNull();
     expect(Number.parseFloat(panel.style.width)).toBeGreaterThan(304);
-    expect(Number.parseFloat(panel.style.height)).toBeGreaterThan(560);
+    expect(Number.parseFloat(panel.style.height)).toBeLessThan(600);
     expect((capture.read()?.parcelLayout?.floatingWidthPx ?? 0) > 304).toBe(true);
-    expect((capture.read()?.parcelLayout?.floatingHeightPx ?? 0) > 560).toBe(true);
+    expect((capture.read()?.parcelLayout?.floatingHeightPx ?? 0) < 600).toBe(true);
 
     await act(async () => {
       dispatchSyntheticPointerEvent(header, 'pointerdown', {
@@ -8842,7 +8842,7 @@ describe('SurveyCadWorkspace', () => {
     expect(panel.style.left).toBe('24px');
     expect(panel.style.top).toBe('112px');
     expect(panel.style.width).toBe('304px');
-    expect(panel.style.height).toBe('560px');
+    expect(panel.style.height).toBe('600px');
 
     const cornerResizeHandle = container.querySelector(
       '[data-survey-cad-floating-panel-resize-corner]',
@@ -8859,19 +8859,19 @@ describe('SurveyCadWorkspace', () => {
       dispatchSyntheticPointerEvent(window, 'pointermove', {
         pointerId: 4,
         clientX: 390,
-        clientY: 700,
+        clientY: 620,
       });
       dispatchSyntheticPointerEvent(window, 'pointerup', {
         pointerId: 4,
         clientX: 390,
-        clientY: 700,
+        clientY: 620,
       });
     });
 
     const resizedWidth = Number.parseFloat(panel.style.width);
     const resizedHeight = Number.parseFloat(panel.style.height);
     expect(resizedWidth).toBeGreaterThan(304);
-    expect(resizedHeight).toBeGreaterThan(560);
+    expect(resizedHeight).toBeLessThan(600);
 
     await act(async () => {
       dispatchSyntheticPointerEvent(header, 'pointerdown', {

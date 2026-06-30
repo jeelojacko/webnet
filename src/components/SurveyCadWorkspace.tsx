@@ -51,7 +51,7 @@ const DEFAULT_PARCEL_LAYOUT_SETTINGS: CadParcelLayoutSettings = {
 };
 
 const DEFAULT_PARCEL_LAYOUT_FLOATING_WIDTH_PX = 304;
-const DEFAULT_PARCEL_LAYOUT_FLOATING_HEIGHT_PX = 560;
+const DEFAULT_PARCEL_LAYOUT_FLOATING_HEIGHT_PX = 600;
 const MIN_PARCEL_LAYOUT_FLOATING_WIDTH_PX = 304;
 const MIN_PARCEL_LAYOUT_FLOATING_HEIGHT_PX = 220;
 const PARCEL_LAYOUT_FLOATING_VIEWPORT_GUTTER_PX = 8;
@@ -86,18 +86,26 @@ const cloneParcelLayoutSettings = (settings: CadParcelLayoutSettings): CadParcel
 
 const cloneParcelLayoutUiState = (
   state: CadParcelLayoutUiState | undefined | null,
-): CadParcelLayoutUiState => ({
-  open: state?.open ?? DEFAULT_PARCEL_LAYOUT_UI_STATE.open,
-  collapsed: state?.collapsed ?? DEFAULT_PARCEL_LAYOUT_UI_STATE.collapsed,
-  dock: state?.dock ?? DEFAULT_PARCEL_LAYOUT_UI_STATE.dock,
-  floatingLeftPx: state?.floatingLeftPx ?? DEFAULT_PARCEL_LAYOUT_UI_STATE.floatingLeftPx,
-  floatingTopPx: state?.floatingTopPx ?? DEFAULT_PARCEL_LAYOUT_UI_STATE.floatingTopPx,
-  floatingWidthPx: state?.floatingWidthPx ?? DEFAULT_PARCEL_LAYOUT_UI_STATE.floatingWidthPx,
-  floatingHeightPx: state?.floatingHeightPx ?? DEFAULT_PARCEL_LAYOUT_UI_STATE.floatingHeightPx,
-  activeParentParcelId: state?.activeParentParcelId ?? DEFAULT_PARCEL_LAYOUT_UI_STATE.activeParentParcelId,
-  activeFrontageEntityId: state?.activeFrontageEntityId ?? DEFAULT_PARCEL_LAYOUT_UI_STATE.activeFrontageEntityId,
-  settings: cloneParcelLayoutSettings(state?.settings ?? DEFAULT_PARCEL_LAYOUT_SETTINGS),
-});
+): CadParcelLayoutUiState => {
+  const floatingWidthPx = state?.floatingWidthPx ?? DEFAULT_PARCEL_LAYOUT_UI_STATE.floatingWidthPx;
+  const floatingHeightPx =
+    state?.floatingWidthPx === DEFAULT_PARCEL_LAYOUT_FLOATING_WIDTH_PX &&
+    state?.floatingHeightPx === 560
+      ? DEFAULT_PARCEL_LAYOUT_FLOATING_HEIGHT_PX
+      : (state?.floatingHeightPx ?? DEFAULT_PARCEL_LAYOUT_UI_STATE.floatingHeightPx);
+  return {
+    open: state?.open ?? DEFAULT_PARCEL_LAYOUT_UI_STATE.open,
+    collapsed: state?.collapsed ?? DEFAULT_PARCEL_LAYOUT_UI_STATE.collapsed,
+    dock: state?.dock ?? DEFAULT_PARCEL_LAYOUT_UI_STATE.dock,
+    floatingLeftPx: state?.floatingLeftPx ?? DEFAULT_PARCEL_LAYOUT_UI_STATE.floatingLeftPx,
+    floatingTopPx: state?.floatingTopPx ?? DEFAULT_PARCEL_LAYOUT_UI_STATE.floatingTopPx,
+    floatingWidthPx,
+    floatingHeightPx,
+    activeParentParcelId: state?.activeParentParcelId ?? DEFAULT_PARCEL_LAYOUT_UI_STATE.activeParentParcelId,
+    activeFrontageEntityId: state?.activeFrontageEntityId ?? DEFAULT_PARCEL_LAYOUT_UI_STATE.activeFrontageEntityId,
+    settings: cloneParcelLayoutSettings(state?.settings ?? DEFAULT_PARCEL_LAYOUT_SETTINGS),
+  };
+};
 
 interface ParcelLayoutPreviewState {
   candidate: CadParcelLayoutPreviewCandidate;
@@ -1003,9 +1011,16 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           MIN_PARCEL_LAYOUT_FLOATING_WIDTH_PX,
           window.innerWidth - current.floatingLeftPx - PARCEL_LAYOUT_FLOATING_VIEWPORT_GUTTER_PX,
         );
-        const maxHeight = Math.max(
+        const maxHeight = Math.min(
+          DEFAULT_PARCEL_LAYOUT_FLOATING_HEIGHT_PX,
+          Math.max(
+            MIN_PARCEL_LAYOUT_FLOATING_HEIGHT_PX,
+            window.innerHeight - current.floatingTopPx - PARCEL_LAYOUT_FLOATING_VIEWPORT_GUTTER_PX,
+          ),
+        );
+        const minHeight = Math.min(
           MIN_PARCEL_LAYOUT_FLOATING_HEIGHT_PX,
-          window.innerHeight - current.floatingTopPx - PARCEL_LAYOUT_FLOATING_VIEWPORT_GUTTER_PX,
+          DEFAULT_PARCEL_LAYOUT_FLOATING_HEIGHT_PX,
         );
         const deltaX = event.clientX - resize.startClientX;
         const deltaY = event.clientY - resize.startClientY;
@@ -1021,7 +1036,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           ),
           floatingHeightPx: Math.min(
             maxHeight,
-            Math.max(MIN_PARCEL_LAYOUT_FLOATING_HEIGHT_PX, resize.startHeightPx + heightDelta),
+            Math.max(minHeight, resize.startHeightPx + heightDelta),
           ),
         };
       });
