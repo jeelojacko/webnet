@@ -54,16 +54,16 @@ interface SurveyCadParcelLayoutPanelProps {
 }
 
 const shellClassName =
-  'pointer-events-auto w-[22rem] rounded border border-slate-700 bg-slate-950/95 shadow-2xl backdrop-blur';
+  'pointer-events-auto absolute z-20 w-[19rem] max-w-[calc(100vw-1rem)] overflow-hidden rounded border border-slate-700 bg-slate-950/95 shadow-2xl backdrop-blur';
 const sectionLabelClassName =
-  'text-[10px] font-semibold uppercase tracking-[0.12em] text-cyan-200';
-const rowClassName = 'grid grid-cols-[1fr_auto] items-center gap-3';
+  'text-[9px] font-semibold uppercase tracking-[0.12em] text-cyan-200';
+const rowClassName = 'grid grid-cols-[minmax(0,1fr),auto] items-start gap-2';
 const inputClassName =
-  'w-28 rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-100 outline-none focus:border-cyan-500';
+  'w-24 rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[10px] leading-4 text-slate-100 outline-none focus:border-cyan-500';
 const selectClassName =
-  'w-44 rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-100 outline-none focus:border-cyan-500';
+  'w-36 rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[10px] leading-4 text-slate-100 outline-none focus:border-cyan-500';
 const buttonClassName =
-  'rounded border border-slate-700 bg-slate-950/85 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-100 transition-colors hover:border-cyan-500/70 hover:bg-slate-900 disabled:cursor-not-allowed disabled:border-slate-800 disabled:text-slate-500';
+  'rounded border border-slate-700 bg-slate-950/85 px-1.5 py-1 text-[9px] font-semibold uppercase tracking-[0.06em] leading-4 text-slate-100 transition-colors hover:border-cyan-500/70 hover:bg-slate-900 disabled:cursor-not-allowed disabled:border-slate-800 disabled:text-slate-500';
 
 const solutionPreferenceOptions: Array<{
   value: CadParcelLayoutSolutionPreference;
@@ -165,19 +165,19 @@ const SurveyCadParcelLayoutPanel: React.FC<SurveyCadParcelLayoutPanelProps> = ({
       data-survey-cad-parcel-layout-panel
     >
       <div
-        className="flex cursor-move items-center justify-between border-b border-slate-800 px-3 py-2"
+        className="flex cursor-move items-start justify-between gap-2 border-b border-slate-800 px-2 py-1.5"
         onPointerDown={onStartDrag}
         data-survey-cad-parcel-layout-panel-header
       >
         <div>
-          <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-100">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-100">
             Parcel Layout Tools
           </div>
-          <div className="text-[10px] text-slate-400">
-            Parcel layout settings and preview shell
+          <div className="text-[9px] leading-4 text-slate-400">
+            Compact parcel layout controls
           </div>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center justify-end gap-1">
           <button type="button" className={buttonClassName} onClick={() => onSetDock('left')}>
             Left
           </button>
@@ -196,10 +196,10 @@ const SurveyCadParcelLayoutPanel: React.FC<SurveyCadParcelLayoutPanelProps> = ({
         </div>
       </div>
       {state.collapsed ? null : (
-        <div className="grid gap-3 p-3 text-[11px] text-slate-200">
-          <div className="grid gap-2">
+        <div className="grid max-h-[calc(100vh-8rem)] gap-2 overflow-y-auto p-2 text-[10px] leading-4 text-slate-200">
+          <div className="grid gap-1.5">
             <div className={sectionLabelClassName}>Tools</div>
-            <div className="grid grid-cols-3 gap-2" data-survey-cad-parcel-layout-tool-grid>
+            <div className="grid grid-cols-4 gap-1.5" data-survey-cad-parcel-layout-tool-grid>
               <button type="button" className={buttonClassName} onClick={onCreateParcel} disabled={!canCreateParcel}>Create</button>
               <button type="button" className={buttonClassName} onClick={onSplitByLine} disabled={!canSplitByLine}>Line</button>
               <button type="button" className={buttonClassName} onClick={onSplitByBearing} disabled={!canSplitByBearing}>Bearing</button>
@@ -213,21 +213,21 @@ const SurveyCadParcelLayoutPanel: React.FC<SurveyCadParcelLayoutPanelProps> = ({
             </div>
           </div>
 
-          <div className="grid gap-2 rounded border border-slate-800 bg-slate-900/50 p-2">
+          <div className="grid gap-1.5 rounded border border-slate-800 bg-slate-900/50 p-2">
             <div className={sectionLabelClassName}>Active Geometry</div>
-            <div className="grid gap-2">
+            <div className="grid gap-1.5">
               <div className={rowClassName}>
                 <span>Parent parcel</span>
-                <div className="flex items-center gap-2">
-                  <span data-survey-cad-parcel-layout-parent>{parentParcelName ?? 'None'}</span>
+                <div className="flex flex-wrap items-center justify-end gap-1.5 text-right">
+                  <span className="max-w-24 truncate" data-survey-cad-parcel-layout-parent>{parentParcelName ?? 'None'}</span>
                   <button type="button" className={buttonClassName} onClick={onUseSelectedParent} disabled={!canUseCurrentSelectionAsParent} data-survey-cad-parcel-layout-use-parent>Use selection</button>
                   <button type="button" className={buttonClassName} onClick={onClearParent} disabled={parentParcelName == null}>Clear</button>
                 </div>
               </div>
               <div className={rowClassName}>
                 <span>Frontage</span>
-                <div className="flex items-center gap-2">
-                  <span data-survey-cad-parcel-layout-frontage>{frontageLabel ?? 'None'}</span>
+                <div className="flex flex-wrap items-center justify-end gap-1.5 text-right">
+                  <span className="max-w-24 truncate" data-survey-cad-parcel-layout-frontage>{frontageLabel ?? 'None'}</span>
                   <button type="button" className={buttonClassName} onClick={onUseSelectedFrontage} disabled={!canUseCurrentSelectionAsFrontage} data-survey-cad-parcel-layout-use-frontage>Use selection</button>
                   <button type="button" className={buttonClassName} onClick={onClearFrontage} disabled={frontageLabel == null}>Clear</button>
                 </div>
@@ -235,7 +235,7 @@ const SurveyCadParcelLayoutPanel: React.FC<SurveyCadParcelLayoutPanelProps> = ({
             </div>
           </div>
 
-          <div className="grid gap-2 rounded border border-slate-800 bg-slate-900/50 p-2">
+          <div className="grid gap-1.5 rounded border border-slate-800 bg-slate-900/50 p-2">
             <div className={sectionLabelClassName}>Parcel Sizing</div>
             <label className={rowClassName}>
               <span>Minimum area</span>
@@ -318,7 +318,7 @@ const SurveyCadParcelLayoutPanel: React.FC<SurveyCadParcelLayoutPanelProps> = ({
             </label>
           </div>
 
-          <div className="grid gap-2 rounded border border-slate-800 bg-slate-900/50 p-2">
+          <div className="grid gap-1.5 rounded border border-slate-800 bg-slate-900/50 p-2">
             <div className={sectionLabelClassName}>Automatic Layout</div>
             <label className={rowClassName}>
               <span>Automatic mode</span>
@@ -346,19 +346,19 @@ const SurveyCadParcelLayoutPanel: React.FC<SurveyCadParcelLayoutPanelProps> = ({
             </label>
           </div>
 
-          <div className="grid gap-2 rounded border border-slate-800 bg-slate-900/50 p-2">
+          <div className="grid gap-1.5 rounded border border-slate-800 bg-slate-900/50 p-2">
             <div className={sectionLabelClassName}>Preview</div>
-            <div className="text-[10px] text-slate-400" data-survey-cad-parcel-layout-preview-status>
+            <div className="text-[9px] leading-4 text-slate-400" data-survey-cad-parcel-layout-preview-status>
               {previewStatus}
             </div>
             {previewDetails.length > 0 ? (
-              <div className="grid gap-1 text-[10px] text-slate-500">
+              <div className="grid gap-0.5 text-[9px] leading-4 text-slate-500">
                 {previewDetails.map((detail) => (
                   <div key={detail}>{detail}</div>
                 ))}
               </div>
             ) : null}
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5">
               <button type="button" className={buttonClassName} onClick={onCyclePreviewAlternative} disabled={!hasPreview}>Alt</button>
               <button type="button" className={buttonClassName} onClick={onAcceptPreview} disabled={!canAcceptPreview}>Accept</button>
               <button type="button" className={buttonClassName} onClick={onRejectPreview} disabled={!hasPreview}>Reject</button>

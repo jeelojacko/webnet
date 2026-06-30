@@ -944,10 +944,12 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     const handlePointerMove = (event: PointerEvent) => {
       const drag = parcelLayoutDragRef.current;
       if (!drag || drag.pointerId !== event.pointerId) return;
+      const maxLeft = Math.max(8, window.innerWidth - 320);
+      const maxTop = Math.max(72, window.innerHeight - 220);
       setParcelLayoutState((current) => ({
         ...current,
-        floatingLeftPx: Math.max(8, event.clientX - drag.offsetX),
-        floatingTopPx: Math.max(72, event.clientY - drag.offsetY),
+        floatingLeftPx: Math.min(maxLeft, Math.max(8, event.clientX - drag.offsetX)),
+        floatingTopPx: Math.min(maxTop, Math.max(72, event.clientY - drag.offsetY)),
       }));
     };
     const handlePointerUp = (event: PointerEvent) => {
@@ -1272,6 +1274,9 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               onSetDock={(dock) => updateParcelLayoutState((current) => ({ ...current, dock }))}
               onStartDrag={(event) => {
                 if (parcelLayoutState.dock !== 'floating') return;
+                if (event.button !== 0) return;
+                event.preventDefault();
+                event.currentTarget.setPointerCapture?.(event.pointerId);
                 const rect = (event.currentTarget.parentElement as HTMLDivElement | null)?.getBoundingClientRect();
                 parcelLayoutDragRef.current = {
                   pointerId: event.pointerId,

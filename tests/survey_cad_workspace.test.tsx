@@ -113,6 +113,16 @@ const pressKey = (
   target.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key, ...options }));
 };
 
+const dispatchSyntheticPointerEvent = (
+  target: EventTarget,
+  type: string,
+  init: { pointerId?: number; button?: number; clientX?: number; clientY?: number },
+): void => {
+  const event = new Event(type, { bubbles: true, cancelable: true });
+  Object.assign(event, init);
+  target.dispatchEvent(event);
+};
+
 const clickButton = (container: HTMLElement, label: string): HTMLButtonElement => {
   const button = Array.from(container.querySelectorAll('button')).find(
     (entry) => entry.textContent?.trim() === label,
@@ -8497,6 +8507,144 @@ describe('SurveyCadWorkspace', () => {
     expect(capture.read()?.parcelLayout?.open).toBe(true);
     expect(capture.read()?.parcelLayout?.activeParentParcelId).toBe('parcel:source');
     expect(capture.read()?.parcelLayout?.settings.minAreaSquareMeters).toBe(2500);
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('supports floating parcel layout drag and keeps a compact shell', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+    const capture = createPersistedStateCapture();
+
+    const previousInnerWidth = window.innerWidth;
+    const previousInnerHeight = window.innerHeight;
+
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      value: 1280,
+    });
+    Object.defineProperty(window, 'innerHeight', {
+      configurable: true,
+      value: 720,
+    });
+
+    const originalProject = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+    const persistedProject = {
+      ...originalProject,
+      entities: [
+        {
+          id: 'parcel:source',
+          type: 'parcel' as const,
+          layerId: 'parcels',
+          styleId: 'style-parcel',
+          visible: true,
+          locked: false,
+          parcelName: 'Parcel 1',
+          vertices: [
+            { x: 0, y: 0 },
+            { x: 25, y: 0 },
+            { x: 25, y: 15 },
+          ],
+          vertexLabels: ['A', 'P1', 'P2'],
+          areaSquareMeters: 187.5,
+          perimeterMeters: 69.154759,
+          closureDeltaX: 0,
+          closureDeltaY: 0,
+          closureDistanceMeters: 0,
+        },
+      ],
+      bounds: { minX: 0, minY: 0, maxX: 25, maxY: 15 },
+    };
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+          persistedState={{
+            version: 1,
+            sourceSignature: buildCadProjectSignature(originalProject),
+            project: persistedProject,
+          }}
+          onPersistedStateChange={capture.onPersistedStateChange}
+        />,
+      );
+    });
+
+    const parcelTarget = container.querySelector(
+      '[data-survey-cad-hit-target="true"][data-survey-cad-entity-id="parcel:source"]',
+    ) as SVGElement | null;
+    const parcelMenuButton = container.querySelector(
+      '[data-survey-cad-parcel-menu-button]',
+    ) as HTMLButtonElement | null;
+    if (!parcelTarget || !parcelMenuButton) throw new Error('Parcel layout floating controls not found');
+
+    await act(async () => {
+      parcelTarget.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 0, clientY: 0 }));
+      parcelMenuButton.click();
+    });
+    await act(async () => {
+      clickButton(container, 'Layout Tools');
+    });
+    await act(async () => {
+      clickButton(container, 'Float');
+    });
+
+    const panel = container.querySelector('[data-survey-cad-parcel-layout-panel]') as HTMLDivElement | null;
+    const header = container.querySelector(
+      '[data-survey-cad-parcel-layout-panel-header]',
+    ) as HTMLDivElement | null;
+    if (!panel || !header) throw new Error('Parcel layout floating panel not found');
+
+    expect(panel.className).toContain('absolute');
+    expect(panel.className).toContain('w-[19rem]');
+    expect(panel.style.left).toBe('24px');
+    expect(panel.style.top).toBe('96px');
+
+    await act(async () => {
+      dispatchSyntheticPointerEvent(header, 'pointerdown', {
+        pointerId: 1,
+        button: 0,
+        clientX: 40,
+        clientY: 120,
+      });
+      dispatchSyntheticPointerEvent(window, 'pointermove', {
+        pointerId: 1,
+        clientX: 240,
+        clientY: 260,
+      });
+      dispatchSyntheticPointerEvent(window, 'pointerup', {
+        pointerId: 1,
+        clientX: 240,
+        clientY: 260,
+      });
+    });
+
+    expect(capture.read()?.parcelLayout?.dock).toBe('floating');
+    expect((capture.read()?.parcelLayout?.floatingLeftPx ?? 0) > 24).toBe(true);
+    expect((capture.read()?.parcelLayout?.floatingTopPx ?? 0) > 96).toBe(true);
+
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      value: previousInnerWidth,
+    });
+    Object.defineProperty(window, 'innerHeight', {
+      configurable: true,
+      value: previousInnerHeight,
+    });
 
     await act(async () => {
       root.unmount();
