@@ -6,6 +6,9 @@ import type {
   CadParcelLayoutSolutionPreference,
   CadParcelLayoutUiState,
 } from '../../engine/cad/cadTypes';
+import SurveyCadFloatingPanelShell, {
+  type FloatingPanelResizeDirection,
+} from './SurveyCadFloatingPanelShell';
 
 interface SurveyCadParcelLayoutPanelProps {
   state: CadParcelLayoutUiState;
@@ -22,6 +25,10 @@ interface SurveyCadParcelLayoutPanelProps {
   onToggleCollapsed: () => void;
   onSetDock: (_dock: CadParcelLayoutUiState['dock']) => void;
   onStartDrag: (_event: React.PointerEvent<HTMLDivElement>) => void;
+  onStartResize: (
+    _direction: FloatingPanelResizeDirection,
+    _event: React.PointerEvent<HTMLDivElement>,
+  ) => void;
   onUseSelectedParent: () => void;
   onUseSelectedFrontage: () => void;
   onClearParent: () => void;
@@ -53,8 +60,6 @@ interface SurveyCadParcelLayoutPanelProps {
   canReportOverlap: boolean;
 }
 
-const shellClassName =
-  'pointer-events-auto fixed z-40 w-[19rem] max-w-[calc(100vw-1rem)] overflow-hidden rounded border border-slate-700 bg-slate-950/95 shadow-2xl backdrop-blur';
 const sectionLabelClassName =
   'text-[9px] font-semibold uppercase tracking-[0.12em] text-cyan-200';
 const rowClassName = 'grid grid-cols-[minmax(0,1fr),auto] items-start gap-2';
@@ -111,6 +116,7 @@ const SurveyCadParcelLayoutPanel: React.FC<SurveyCadParcelLayoutPanelProps> = ({
   onToggleCollapsed,
   onSetDock,
   onStartDrag,
+  onStartResize,
   onUseSelectedParent,
   onUseSelectedFrontage,
   onClearParent,
@@ -153,50 +159,52 @@ const SurveyCadParcelLayoutPanel: React.FC<SurveyCadParcelLayoutPanelProps> = ({
 
   const positionStyle =
     state.dock === 'floating'
-      ? { left: `${state.floatingLeftPx}px`, top: `${state.floatingTopPx}px` }
+      ? {
+          left: `${state.floatingLeftPx}px`,
+          top: `${state.floatingTopPx}px`,
+          width: `${state.floatingWidthPx}px`,
+          height: state.collapsed ? undefined : `${state.floatingHeightPx}px`,
+          maxWidth: 'calc(100vw - 1rem)',
+        }
       : state.dock === 'left'
-        ? { left: '12px', top: '104px' }
-        : { right: '12px', top: '104px' };
+        ? { left: '12px', top: '104px', width: '19rem' }
+        : { right: '12px', top: '104px', width: '19rem' };
+
+  const headerActions = (
+    <>
+      <button type="button" className={buttonClassName} onClick={() => onSetDock('left')}>
+        Left
+      </button>
+      <button type="button" className={buttonClassName} onClick={() => onSetDock('right')}>
+        Right
+      </button>
+      <button type="button" className={buttonClassName} onClick={() => onSetDock('floating')}>
+        Float
+      </button>
+      <button type="button" className={buttonClassName} onClick={onToggleCollapsed}>
+        {state.collapsed ? 'Expand' : 'Collapse'}
+      </button>
+      <button type="button" className={buttonClassName} onClick={onClose}>
+        Close
+      </button>
+    </>
+  );
 
   return (
-    <div
-      className={shellClassName}
-      style={positionStyle}
-      data-survey-cad-parcel-layout-panel
+    <SurveyCadFloatingPanelShell
+      title="Parcel Layout Tools"
+      subtitle="Compact parcel layout controls"
+      dock={state.dock}
+      collapsed={state.collapsed}
+      positionStyle={positionStyle}
+      shellDataAttribute="data-survey-cad-parcel-layout-panel"
+      headerDataAttribute="data-survey-cad-parcel-layout-panel-header"
+      headerActions={headerActions}
+      onStartDrag={onStartDrag}
+      onStartResize={onStartResize}
     >
-      <div
-        className="flex cursor-move items-start justify-between gap-2 border-b border-slate-800 px-2 py-1.5"
-        onPointerDown={onStartDrag}
-        data-survey-cad-parcel-layout-panel-header
-      >
-        <div>
-          <div className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-100">
-            Parcel Layout Tools
-          </div>
-          <div className="text-[9px] leading-4 text-slate-400">
-            Compact parcel layout controls
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center justify-end gap-1">
-          <button type="button" className={buttonClassName} onClick={() => onSetDock('left')}>
-            Left
-          </button>
-          <button type="button" className={buttonClassName} onClick={() => onSetDock('right')}>
-            Right
-          </button>
-          <button type="button" className={buttonClassName} onClick={() => onSetDock('floating')}>
-            Float
-          </button>
-          <button type="button" className={buttonClassName} onClick={onToggleCollapsed}>
-            {state.collapsed ? 'Expand' : 'Collapse'}
-          </button>
-          <button type="button" className={buttonClassName} onClick={onClose}>
-            Close
-          </button>
-        </div>
-      </div>
       {state.collapsed ? null : (
-        <div className="grid max-h-[calc(100vh-8rem)] gap-2 overflow-y-auto p-2 text-[10px] leading-4 text-slate-200">
+        <div className="grid h-full max-h-[calc(100vh-8rem)] gap-2 overflow-y-auto p-2 pr-3 text-[10px] leading-4 text-slate-200">
           <div className="grid gap-1.5">
             <div className={sectionLabelClassName}>Tools</div>
             <div className="grid grid-cols-4 gap-1.5" data-survey-cad-parcel-layout-tool-grid>
@@ -369,7 +377,7 @@ const SurveyCadParcelLayoutPanel: React.FC<SurveyCadParcelLayoutPanelProps> = ({
           </div>
         </div>
       )}
-    </div>
+    </SurveyCadFloatingPanelShell>
   );
 };
 

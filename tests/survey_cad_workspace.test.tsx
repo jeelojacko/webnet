@@ -230,6 +230,8 @@ const ParentBackedParcelLayoutWorkspace: React.FC = () => {
       dock: 'floating',
       floatingLeftPx: 24,
       floatingTopPx: 112,
+      floatingWidthPx: 304,
+      floatingHeightPx: 560,
       activeParentParcelId: null,
       activeFrontageEntityId: null,
       settings: {
@@ -7465,6 +7467,8 @@ describe('SurveyCadWorkspace', () => {
               dock: 'right',
               floatingLeftPx: 24,
               floatingTopPx: 96,
+              floatingWidthPx: 304,
+              floatingHeightPx: 560,
               activeParentParcelId: 'parcel:source',
               activeFrontageEntityId: 'line:A|P1',
               settings: {
@@ -7936,6 +7940,8 @@ describe('SurveyCadWorkspace', () => {
               dock: 'right',
               floatingLeftPx: 24,
               floatingTopPx: 96,
+              floatingWidthPx: 304,
+              floatingHeightPx: 560,
               activeParentParcelId: 'parcel:source',
               activeFrontageEntityId: 'line:A|P1',
               settings: {
@@ -8181,6 +8187,8 @@ describe('SurveyCadWorkspace', () => {
               dock: 'right',
               floatingLeftPx: 24,
               floatingTopPx: 96,
+              floatingWidthPx: 304,
+              floatingHeightPx: 560,
               activeParentParcelId: null,
               activeFrontageEntityId: null,
               settings: {
@@ -8314,6 +8322,8 @@ describe('SurveyCadWorkspace', () => {
               dock: 'right',
               floatingLeftPx: 24,
               floatingTopPx: 96,
+              floatingWidthPx: 304,
+              floatingHeightPx: 560,
               activeParentParcelId: null,
               activeFrontageEntityId: null,
               settings: {
@@ -8597,7 +8607,7 @@ describe('SurveyCadWorkspace', () => {
     container.remove();
   });
 
-  it('supports floating parcel layout drag and keeps a compact shell', async () => {
+  it('supports floating parcel layout drag and resize while keeping a compact shell', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
     const root: Root = createRoot(container);
@@ -8713,11 +8723,49 @@ describe('SurveyCadWorkspace', () => {
     if (!panel || !header) throw new Error('Parcel layout floating panel not found');
 
     expect(panel.className).toContain('fixed');
-    expect(panel.className).toContain('w-[19rem]');
     expect(panel.style.left).toBe('24px');
     expect(panel.style.top).toBe('112px');
+    expect(panel.style.width).toBe('304px');
+    expect(panel.style.height).toBe('560px');
     expect(capture.read()?.parcelLayout?.floatingLeftPx).toBe(24);
     expect(capture.read()?.parcelLayout?.floatingTopPx).toBe(112);
+    expect(capture.read()?.parcelLayout?.floatingWidthPx).toBe(304);
+    expect(capture.read()?.parcelLayout?.floatingHeightPx).toBe(560);
+
+    const cornerResizeHandle = container.querySelector(
+      '[data-survey-cad-floating-panel-resize-corner]',
+    ) as HTMLDivElement | null;
+    if (!cornerResizeHandle) throw new Error('Corner resize handle not found');
+
+    await act(async () => {
+      dispatchSyntheticPointerEvent(cornerResizeHandle, 'pointerdown', {
+        pointerId: 2,
+        button: 0,
+        clientX: 330,
+        clientY: 660,
+      });
+    });
+
+    expect(container.querySelector('[data-survey-cad-parcel-layout-drag-shield]')).not.toBeNull();
+
+    await act(async () => {
+      dispatchSyntheticPointerEvent(window, 'pointermove', {
+        pointerId: 2,
+        clientX: 390,
+        clientY: 700,
+      });
+      dispatchSyntheticPointerEvent(window, 'pointerup', {
+        pointerId: 2,
+        clientX: 390,
+        clientY: 700,
+      });
+    });
+
+    expect(container.querySelector('[data-survey-cad-parcel-layout-drag-shield]')).toBeNull();
+    expect(Number.parseFloat(panel.style.width)).toBeGreaterThan(304);
+    expect(Number.parseFloat(panel.style.height)).toBeGreaterThan(560);
+    expect((capture.read()?.parcelLayout?.floatingWidthPx ?? 0) > 304).toBe(true);
+    expect((capture.read()?.parcelLayout?.floatingHeightPx ?? 0) > 560).toBe(true);
 
     await act(async () => {
       dispatchSyntheticPointerEvent(header, 'pointerdown', {
@@ -8747,7 +8795,7 @@ describe('SurveyCadWorkspace', () => {
 
     expect(capture.read()?.parcelLayout?.dock).toBe('floating');
     expect((capture.read()?.parcelLayout?.floatingLeftPx ?? 0) > 24).toBe(true);
-    expect((capture.read()?.parcelLayout?.floatingTopPx ?? 0) > 112).toBe(true);
+    expect((capture.read()?.parcelLayout?.floatingTopPx ?? 0) >= 112).toBe(true);
 
     Object.defineProperty(window, 'innerWidth', {
       configurable: true,
@@ -8793,6 +8841,37 @@ describe('SurveyCadWorkspace', () => {
 
     expect(panel.style.left).toBe('24px');
     expect(panel.style.top).toBe('112px');
+    expect(panel.style.width).toBe('304px');
+    expect(panel.style.height).toBe('560px');
+
+    const cornerResizeHandle = container.querySelector(
+      '[data-survey-cad-floating-panel-resize-corner]',
+    ) as HTMLDivElement | null;
+    if (!cornerResizeHandle) throw new Error('Parent-backed corner resize handle not found');
+
+    await act(async () => {
+      dispatchSyntheticPointerEvent(cornerResizeHandle, 'pointerdown', {
+        pointerId: 4,
+        button: 0,
+        clientX: 330,
+        clientY: 660,
+      });
+      dispatchSyntheticPointerEvent(window, 'pointermove', {
+        pointerId: 4,
+        clientX: 390,
+        clientY: 700,
+      });
+      dispatchSyntheticPointerEvent(window, 'pointerup', {
+        pointerId: 4,
+        clientX: 390,
+        clientY: 700,
+      });
+    });
+
+    const resizedWidth = Number.parseFloat(panel.style.width);
+    const resizedHeight = Number.parseFloat(panel.style.height);
+    expect(resizedWidth).toBeGreaterThan(304);
+    expect(resizedHeight).toBeGreaterThan(560);
 
     await act(async () => {
       dispatchSyntheticPointerEvent(header, 'pointerdown', {
@@ -8821,7 +8900,7 @@ describe('SurveyCadWorkspace', () => {
     const movedLeft = Number.parseFloat(panel.style.left);
     const movedTop = Number.parseFloat(panel.style.top);
     expect(movedLeft).toBeGreaterThan(24);
-    expect(movedTop).toBeGreaterThan(112);
+    expect(movedTop).toBeGreaterThanOrEqual(112);
 
     await act(async () => {
       await Promise.resolve();
@@ -8829,6 +8908,8 @@ describe('SurveyCadWorkspace', () => {
 
     expect(Number.parseFloat(panel.style.left)).toBe(movedLeft);
     expect(Number.parseFloat(panel.style.top)).toBe(movedTop);
+    expect(Number.parseFloat(panel.style.width)).toBe(resizedWidth);
+    expect(Number.parseFloat(panel.style.height)).toBe(resizedHeight);
     expect(container.querySelector('[data-survey-cad-parcel-layout-drag-shield]')).toBeNull();
 
     Object.defineProperty(window, 'innerWidth', {
@@ -8921,6 +9002,8 @@ describe('SurveyCadWorkspace', () => {
               dock: 'right',
               floatingLeftPx: 24,
               floatingTopPx: 96,
+              floatingWidthPx: 304,
+              floatingHeightPx: 560,
               activeParentParcelId: 'parcel:auto',
               activeFrontageEntityId: 'line:A|B3',
               settings: {
@@ -9040,6 +9123,8 @@ describe('SurveyCadWorkspace', () => {
               dock: 'right',
               floatingLeftPx: 24,
               floatingTopPx: 96,
+              floatingWidthPx: 304,
+              floatingHeightPx: 560,
               activeParentParcelId: 'parcel:auto',
               activeFrontageEntityId: 'line:A|B3',
               settings: {
@@ -9172,6 +9257,8 @@ describe('SurveyCadWorkspace', () => {
               dock: 'right',
               floatingLeftPx: 24,
               floatingTopPx: 96,
+              floatingWidthPx: 304,
+              floatingHeightPx: 560,
               activeParentParcelId: 'parcel:auto',
               activeFrontageEntityId: 'line:A|B3',
               settings: {
@@ -9292,6 +9379,8 @@ describe('SurveyCadWorkspace', () => {
               dock: 'right',
               floatingLeftPx: 24,
               floatingTopPx: 96,
+              floatingWidthPx: 304,
+              floatingHeightPx: 560,
               activeParentParcelId: 'parcel:auto',
               activeFrontageEntityId: 'line:A|B3',
               settings: {
@@ -9409,6 +9498,8 @@ describe('SurveyCadWorkspace', () => {
               dock: 'right',
               floatingLeftPx: 24,
               floatingTopPx: 96,
+              floatingWidthPx: 304,
+              floatingHeightPx: 560,
               activeParentParcelId: 'parcel:auto',
               activeFrontageEntityId: 'arc:frontage',
               settings: {

@@ -22,6 +22,7 @@ import { useSurveyCadWorkspace } from '../hooks/surveyCad/useSurveyCadWorkspace'
 import SurveyCadCommandLine from './surveyCad/SurveyCadCommandLine';
 import SurveyCadCogoPanel from './surveyCad/SurveyCadCogoPanel';
 import SurveyCadParcelLayoutPanel from './surveyCad/SurveyCadParcelLayoutPanel';
+import type { FloatingPanelResizeDirection } from './surveyCad/SurveyCadFloatingPanelShell';
 import SurveyCadPropertiesPanel from './surveyCad/SurveyCadPropertiesPanel';
 import SurveyCadPreview from './surveyCad/SurveyCadPreview';
 
@@ -49,12 +50,21 @@ const DEFAULT_PARCEL_LAYOUT_SETTINGS: CadParcelLayoutSettings = {
   remainderDistribution: 'place_remainder_in_last_parcel',
 };
 
+const DEFAULT_PARCEL_LAYOUT_FLOATING_WIDTH_PX = 304;
+const DEFAULT_PARCEL_LAYOUT_FLOATING_HEIGHT_PX = 560;
+const MIN_PARCEL_LAYOUT_FLOATING_WIDTH_PX = 304;
+const MIN_PARCEL_LAYOUT_FLOATING_HEIGHT_PX = 220;
+const PARCEL_LAYOUT_FLOATING_VIEWPORT_GUTTER_PX = 8;
+const PARCEL_LAYOUT_FLOATING_MIN_TOP_PX = 72;
+
 const DEFAULT_PARCEL_LAYOUT_UI_STATE: CadParcelLayoutUiState = {
   open: false,
   collapsed: false,
   dock: 'right',
   floatingLeftPx: 24,
   floatingTopPx: 112,
+  floatingWidthPx: DEFAULT_PARCEL_LAYOUT_FLOATING_WIDTH_PX,
+  floatingHeightPx: DEFAULT_PARCEL_LAYOUT_FLOATING_HEIGHT_PX,
   activeParentParcelId: null,
   activeFrontageEntityId: null,
   settings: DEFAULT_PARCEL_LAYOUT_SETTINGS,
@@ -82,6 +92,8 @@ const cloneParcelLayoutUiState = (
   dock: state?.dock ?? DEFAULT_PARCEL_LAYOUT_UI_STATE.dock,
   floatingLeftPx: state?.floatingLeftPx ?? DEFAULT_PARCEL_LAYOUT_UI_STATE.floatingLeftPx,
   floatingTopPx: state?.floatingTopPx ?? DEFAULT_PARCEL_LAYOUT_UI_STATE.floatingTopPx,
+  floatingWidthPx: state?.floatingWidthPx ?? DEFAULT_PARCEL_LAYOUT_UI_STATE.floatingWidthPx,
+  floatingHeightPx: state?.floatingHeightPx ?? DEFAULT_PARCEL_LAYOUT_UI_STATE.floatingHeightPx,
   activeParentParcelId: state?.activeParentParcelId ?? DEFAULT_PARCEL_LAYOUT_UI_STATE.activeParentParcelId,
   activeFrontageEntityId: state?.activeFrontageEntityId ?? DEFAULT_PARCEL_LAYOUT_UI_STATE.activeFrontageEntityId,
   settings: cloneParcelLayoutSettings(state?.settings ?? DEFAULT_PARCEL_LAYOUT_SETTINGS),
@@ -641,7 +653,19 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     startLeftPx: number;
     startTopPx: number;
   } | null>(null);
+  const parcelLayoutResizeRef = useRef<{
+    pointerId: number;
+    direction: FloatingPanelResizeDirection;
+    startClientX: number;
+    startClientY: number;
+    startWidthPx: number;
+    startHeightPx: number;
+    startLeftPx: number;
+    startTopPx: number;
+  } | null>(null);
   const [isParcelLayoutDragging, setIsParcelLayoutDragging] = useState(false);
+  const [parcelLayoutResizeDirection, setParcelLayoutResizeDirection] =
+    useState<FloatingPanelResizeDirection | null>(null);
   const parcelLayoutParentEntity = useMemo(
     () =>
       parcelLayoutState.activeParentParcelId == null
@@ -946,22 +970,70 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     if (parcelLayoutState.dock !== 'floating') return;
     const handlePointerMove = (event: PointerEvent) => {
       const drag = parcelLayoutDragRef.current;
-      if (!drag || drag.pointerId !== event.pointerId) return;
+      if (drag && drag.pointerId === event.pointerId) {
+        event.preventDefault();
+        const maxLeft = Math.max(
+          PARCEL_LAYOUT_FLOATING_VIEWPORT_GUTTER_PX,
+          window.innerWidth - parcelLayoutState.floatingWidthPx - PARCEL_LAYOUT_FLOATING_VIEWPORT_GUTTER_PX,
+        );
+        const maxTop = Math.max(
+          PARCEL_LAYOUT_FLOATING_MIN_TOP_PX,
+          window.innerHeight - parcelLayoutState.floatingHeightPx - PARCEL_LAYOUT_FLOATING_VIEWPORT_GUTTER_PX,
+        );
+        const nextLeft = drag.startLeftPx + (event.clientX - drag.startClientX);
+        const nextTop = drag.startTopPx + (event.clientY - drag.startClientY);
+        setParcelLayoutState((current) => ({
+          ...current,
+          floatingLeftPx: Math.min(
+            maxLeft,
+            Math.max(PARCEL_LAYOUT_FLOATING_VIEWPORT_GUTTER_PX, nextLeft),
+          ),
+          floatingTopPx: Math.min(
+            maxTop,
+            Math.max(PARCEL_LAYOUT_FLOATING_MIN_TOP_PX, nextTop),
+          ),
+        }));
+        return;
+      }
+      const resize = parcelLayoutResizeRef.current;
+      if (!resize || resize.pointerId !== event.pointerId) return;
       event.preventDefault();
-      const maxLeft = Math.max(8, window.innerWidth - 320);
-      const maxTop = Math.max(72, window.innerHeight - 220);
-      const nextLeft = drag.startLeftPx + (event.clientX - drag.startClientX);
-      const nextTop = drag.startTopPx + (event.clientY - drag.startClientY);
-      setParcelLayoutState((current) => ({
-        ...current,
-        floatingLeftPx: Math.min(maxLeft, Math.max(8, nextLeft)),
-        floatingTopPx: Math.min(maxTop, Math.max(72, nextTop)),
-      }));
+      setParcelLayoutState((current) => {
+        const maxWidth = Math.max(
+          MIN_PARCEL_LAYOUT_FLOATING_WIDTH_PX,
+          window.innerWidth - current.floatingLeftPx - PARCEL_LAYOUT_FLOATING_VIEWPORT_GUTTER_PX,
+        );
+        const maxHeight = Math.max(
+          MIN_PARCEL_LAYOUT_FLOATING_HEIGHT_PX,
+          window.innerHeight - current.floatingTopPx - PARCEL_LAYOUT_FLOATING_VIEWPORT_GUTTER_PX,
+        );
+        const deltaX = event.clientX - resize.startClientX;
+        const deltaY = event.clientY - resize.startClientY;
+        const widthDelta =
+          resize.direction === 'right' || resize.direction === 'corner' ? deltaX : 0;
+        const heightDelta =
+          resize.direction === 'bottom' || resize.direction === 'corner' ? deltaY : 0;
+        return {
+          ...current,
+          floatingWidthPx: Math.min(
+            maxWidth,
+            Math.max(MIN_PARCEL_LAYOUT_FLOATING_WIDTH_PX, resize.startWidthPx + widthDelta),
+          ),
+          floatingHeightPx: Math.min(
+            maxHeight,
+            Math.max(MIN_PARCEL_LAYOUT_FLOATING_HEIGHT_PX, resize.startHeightPx + heightDelta),
+          ),
+        };
+      });
     };
     const clearDrag = (pointerId: number) => {
       if (parcelLayoutDragRef.current?.pointerId === pointerId) {
         parcelLayoutDragRef.current = null;
         setIsParcelLayoutDragging(false);
+      }
+      if (parcelLayoutResizeRef.current?.pointerId === pointerId) {
+        parcelLayoutResizeRef.current = null;
+        setParcelLayoutResizeDirection(null);
       }
     };
     const handlePointerUp = (event: PointerEvent) => {
@@ -978,12 +1050,18 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       window.removeEventListener('pointerup', handlePointerUp);
       window.removeEventListener('pointercancel', handlePointerCancel);
     };
-  }, [parcelLayoutState.dock]);
+  }, [
+    parcelLayoutState.dock,
+    parcelLayoutState.floatingHeightPx,
+    parcelLayoutState.floatingWidthPx,
+  ]);
 
   useEffect(() => {
     if (parcelLayoutState.open && parcelLayoutState.dock === 'floating') return;
     parcelLayoutDragRef.current = null;
+    parcelLayoutResizeRef.current = null;
     setIsParcelLayoutDragging(false);
+    setParcelLayoutResizeDirection(null);
   }, [parcelLayoutState.dock, parcelLayoutState.open]);
 
   const toggleParcelLayoutPanel = () => {
@@ -1260,9 +1338,17 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           </div>
         </div>
         <div className="h-full">
-          {isParcelLayoutDragging ? (
+          {isParcelLayoutDragging || parcelLayoutResizeDirection ? (
             <div
-              className="fixed inset-0 z-[19] cursor-move"
+              className={`fixed inset-0 z-[39] ${
+                parcelLayoutResizeDirection === 'right'
+                  ? 'cursor-ew-resize'
+                  : parcelLayoutResizeDirection === 'bottom'
+                    ? 'cursor-ns-resize'
+                    : parcelLayoutResizeDirection === 'corner'
+                      ? 'cursor-nwse-resize'
+                      : 'cursor-move'
+              }`}
               data-survey-cad-parcel-layout-drag-shield
             />
           ) : null}
@@ -1311,6 +1397,8 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
                 }
                 event.preventDefault();
                 event.stopPropagation();
+                parcelLayoutResizeRef.current = null;
+                setParcelLayoutResizeDirection(null);
                 parcelLayoutDragRef.current = {
                   pointerId: event.pointerId,
                   startClientX: event.clientX,
@@ -1319,6 +1407,25 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
                   startTopPx: parcelLayoutState.floatingTopPx,
                 };
                 setIsParcelLayoutDragging(true);
+              }}
+              onStartResize={(direction, event) => {
+                if (parcelLayoutState.dock !== 'floating') return;
+                if (event.button !== 0) return;
+                event.preventDefault();
+                event.stopPropagation();
+                parcelLayoutDragRef.current = null;
+                setIsParcelLayoutDragging(false);
+                parcelLayoutResizeRef.current = {
+                  pointerId: event.pointerId,
+                  direction,
+                  startClientX: event.clientX,
+                  startClientY: event.clientY,
+                  startWidthPx: parcelLayoutState.floatingWidthPx,
+                  startHeightPx: parcelLayoutState.floatingHeightPx,
+                  startLeftPx: parcelLayoutState.floatingLeftPx,
+                  startTopPx: parcelLayoutState.floatingTopPx,
+                };
+                setParcelLayoutResizeDirection(direction);
               }}
               onUseSelectedParent={() => {
                 if (!selectedParcelForLayout || selectedParcelForLayout.type !== 'parcel') return;

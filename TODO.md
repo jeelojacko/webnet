@@ -1,3 +1,5 @@
+- [x] Survey CAD floating panel shell batch (June 2026): make the parcel-layout floating popup resizable in both axes with persisted size, then extract that compact drag/resize shell into a shared Survey CAD popup pattern so future floating CAD panels reuse the same behavior instead of ad hoc panel chrome.
+
 - [x] Survey CAD naming fallback batch (June 2026): stop unlabeled arc/polyline/polygon hover and snap surfaces from leaking raw prefixed entity ids like `arc:*` or `polyline:*`, and keep the shared naming helper on readable type fallbacks instead.
 
 - [x] Survey CAD stakeout rename-sync batch (June 2026): keep `STA PT` multiline stakeout labels synced when the created point is renamed from `Properties`, so the first-line station id updates without losing displayed station/offset text.

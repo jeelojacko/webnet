@@ -259,6 +259,8 @@ export interface CadParcelLayoutUiState {
   dock: 'floating' | 'left' | 'right';
   floatingLeftPx: number;
   floatingTopPx: number;
+  floatingWidthPx: number;
+  floatingHeightPx: number;
   activeParentParcelId: CadEntityId | null;
   activeFrontageEntityId: CadEntityId | null;
   settings: CadParcelLayoutSettings;

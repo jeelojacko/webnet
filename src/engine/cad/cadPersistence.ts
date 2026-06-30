@@ -134,6 +134,8 @@ const cloneParcelLayoutUiState = (
         dock: state.dock,
         floatingLeftPx: state.floatingLeftPx,
         floatingTopPx: state.floatingTopPx,
+        floatingWidthPx: state.floatingWidthPx,
+        floatingHeightPx: state.floatingHeightPx,
         activeParentParcelId: state.activeParentParcelId,
         activeFrontageEntityId: state.activeFrontageEntityId,
         settings: cloneParcelLayoutSettings(state.settings),
