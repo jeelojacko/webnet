@@ -9,6 +9,7 @@ import {
   cadBuildCurveMetricsFromRadiusDelta as buildCurveMetricsFromRadiusDeltaGeometry,
   cadBuildCurveMetricsFromTangentLength as buildCurveMetricsFromTangentLengthGeometry,
   cadBuildTangentCurve as buildTangentCurveGeometry,
+  cadArcStartPoint,
   cadArcEndPoint,
   cadArcEndTangentAzimuthDeg,
   cadAzimuthDeg,
@@ -209,6 +210,13 @@ export interface CadParcelAutoLayoutDraft {
   statusMessage: string;
 }
 
+export interface CadParcelLayoutFrontageReference {
+  sourceEntityId: CadEntityId;
+  displayLabel: string;
+  sourcePointIds: string[];
+  frontageLine: CadLineEntity;
+}
+
 const PARCEL_LAYOUT_EVALUATION_SAMPLE_COUNT = 7;
 
 export interface CadParcelSourceDraft {
@@ -216,6 +224,58 @@ export interface CadParcelSourceDraft {
   vertexLabels: string[];
   sourceEntityIds: CadEntityId[];
 }
+
+const createFrontageReferenceLine = (
+  sourceEntity: CadLineEntity | CadPolylineEntity | CadArcEntity,
+  fromPoint: CadWorldPoint,
+  toPoint: CadWorldPoint,
+  fromLabel: string,
+  toLabel: string,
+): CadParcelLayoutFrontageReference => ({
+  sourceEntityId: sourceEntity.id,
+  displayLabel: `${fromLabel}-${toLabel}`,
+  sourcePointIds: [fromLabel, toLabel],
+  frontageLine: {
+    id: `${sourceEntity.id}:frontage-chord`,
+    type: 'line',
+    layerId: sourceEntity.layerId,
+    styleId: sourceEntity.styleId,
+    visible: sourceEntity.visible,
+    locked: sourceEntity.locked,
+    fromStationId: fromLabel,
+    toStationId: toLabel,
+    fromX: fromPoint.x,
+    fromY: fromPoint.y,
+    toX: toPoint.x,
+    toY: toPoint.y,
+    sourceObservationIds: [],
+  },
+});
+
+export const cadBuildParcelLayoutFrontageReference = (
+  frontageEntity: CadLineEntity | CadPolylineEntity | CadArcEntity,
+): CadParcelLayoutFrontageReference | null => {
+  if (frontageEntity.type === 'line') {
+    return {
+      sourceEntityId: frontageEntity.id,
+      displayLabel: `${frontageEntity.fromStationId}-${frontageEntity.toStationId}`,
+      sourcePointIds: [frontageEntity.fromStationId, frontageEntity.toStationId],
+      frontageLine: frontageEntity,
+    };
+  }
+  if (frontageEntity.type === 'polyline') {
+    if (frontageEntity.vertices.length < 2) return null;
+    const firstVertex = frontageEntity.vertices[0]!;
+    const lastVertex = frontageEntity.vertices[frontageEntity.vertices.length - 1]!;
+    const firstLabel = frontageEntity.vertexLabels[0]?.trim() || 'FRONT1';
+    const lastLabel =
+      frontageEntity.vertexLabels[frontageEntity.vertexLabels.length - 1]?.trim() || 'FRONT2';
+    return createFrontageReferenceLine(frontageEntity, firstVertex, lastVertex, firstLabel, lastLabel);
+  }
+  const startPoint = cadArcStartPoint(frontageEntity);
+  const endPoint = cadArcEndPoint(frontageEntity);
+  return createFrontageReferenceLine(frontageEntity, startPoint, endPoint, 'ARC START', 'ARC END');
+};
 
 const normalizeParcelVertexLabel = (label: string | undefined, index: number): string => {
   if (!label) return `V${index + 1}`;

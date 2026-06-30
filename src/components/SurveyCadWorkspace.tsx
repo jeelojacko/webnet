@@ -3,6 +3,7 @@ import type { AdjustmentResult, InstrumentLibrary, ParseOptions, UnitsMode } fro
 import { buildSurveyCadSpikeProject } from '../engine/cad/cadModel';
 import {
   cadBuildParcelAutoLayoutDraft,
+  cadBuildParcelLayoutFrontageReference,
   type CadParcelAutoLayoutDraft,
   type CadParcelLayoutPreviewCandidate,
   cadSelectPreferredParcelLayoutPreviewCandidate,
@@ -653,9 +654,9 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       parcelLayoutState.activeFrontageEntityId == null
         ? null
         : activeProject.entities.find(
-            (entity): entity is Extract<(typeof activeProject.entities)[number], { type: 'line' | 'polyline' }> =>
+            (entity): entity is Extract<(typeof activeProject.entities)[number], { type: 'line' | 'polyline' | 'arc' }> =>
               entity.id === parcelLayoutState.activeFrontageEntityId &&
-              (entity.type === 'line' || entity.type === 'polyline'),
+              (entity.type === 'line' || entity.type === 'polyline' || entity.type === 'arc'),
           ) ?? null,
     [activeProject, parcelLayoutState.activeFrontageEntityId],
   );
@@ -665,17 +666,23 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       : selectedEntities.find((entity) => entity.type === 'parcel') ?? null;
   const selectedFrontageForLayout =
     selectedEntities.find(
-      (entity): entity is Extract<(typeof selectedEntities)[number], { type: 'line' | 'polyline' }> =>
-        entity.type === 'line' || entity.type === 'polyline',
+      (entity): entity is Extract<(typeof selectedEntities)[number], { type: 'line' | 'polyline' | 'arc' }> =>
+        entity.type === 'line' || entity.type === 'polyline' || entity.type === 'arc',
     ) ?? null;
+  const parcelLayoutFrontageReference = useMemo(
+    () =>
+      parcelLayoutFrontageEntity
+        ? cadBuildParcelLayoutFrontageReference(parcelLayoutFrontageEntity)
+        : null,
+    [parcelLayoutFrontageEntity],
+  );
   const directParcelSplitTarget = useMemo(() => {
     const parcel = parcelLayoutParentEntity ?? selectedParcelForLayout;
-    const frontage = parcelLayoutFrontageEntity?.type === 'line'
-      ? parcelLayoutFrontageEntity
-      : selectedFrontageForLayout?.type === 'line'
-        ? selectedFrontageForLayout
-        : null;
-    return parcel && frontage ? { parcel, frontage } : null;
+    const frontage = parcelLayoutFrontageEntity ?? selectedFrontageForLayout;
+    const frontageReference = frontage
+      ? cadBuildParcelLayoutFrontageReference(frontage)
+      : null;
+    return parcel && frontage && frontageReference ? { parcel, frontage, frontageReference } : null;
   }, [
     parcelLayoutFrontageEntity,
     parcelLayoutParentEntity,
@@ -683,22 +690,16 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     selectedParcelForLayout,
   ]);
   const parcelLayoutFrontageLabel = useMemo(() => {
-    if (!parcelLayoutFrontageEntity) return null;
-    if (parcelLayoutFrontageEntity.type === 'line') {
-      return `${parcelLayoutFrontageEntity.fromStationId}-${parcelLayoutFrontageEntity.toStationId}`;
-    }
-    return parcelLayoutFrontageEntity.vertexLabels.length > 0
-      ? `${parcelLayoutFrontageEntity.vertexLabels[0]}...`
-      : 'Polyline frontage';
-  }, [parcelLayoutFrontageEntity]);
+    return parcelLayoutFrontageReference?.displayLabel ?? null;
+  }, [parcelLayoutFrontageReference]);
   const canPreviewParcelSlideOrSwing =
-    parcelLayoutParentEntity != null && parcelLayoutFrontageEntity?.type === 'line';
+    parcelLayoutParentEntity != null && parcelLayoutFrontageReference != null;
   const directParcelSlideCandidate = useMemo(
     () =>
       directParcelSplitTarget
         ? cadSelectPreferredParcelLayoutPreviewCandidate(
             directParcelSplitTarget.parcel,
-            directParcelSplitTarget.frontage,
+            directParcelSplitTarget.frontageReference.frontageLine,
             parcelLayoutState.settings,
             'slide',
           )
@@ -710,7 +711,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       directParcelSplitTarget
         ? cadSelectPreferredParcelLayoutPreviewCandidate(
             directParcelSplitTarget.parcel,
-            directParcelSplitTarget.frontage,
+            directParcelSplitTarget.frontageReference.frontageLine,
             parcelLayoutState.settings,
             'swing',
           )
@@ -734,8 +735,8 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     if (!parcelLayoutParentEntity) {
       return 'Choose one parent parcel for parcel-layout preview.';
     }
-    if (parcelLayoutFrontageEntity?.type !== 'line') {
-      return 'Choose one straight frontage line that matches a parent parcel edge.';
+    if (!parcelLayoutFrontageReference) {
+      return 'Choose one frontage entity that matches a parent parcel edge.';
     }
     if (parcelLayoutAutoPreviewState) {
       const lotCount = parcelLayoutAutoPreviewState.draft.acceptedCandidates.length;
@@ -746,7 +747,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       return 'Use Slide or Swing to preview one child lot from the active parent/frontage setup.';
     }
     return parcelLayoutPreviewState.candidate.statusMessage;
-  }, [parcelLayoutAutoPreviewState, parcelLayoutFrontageEntity, parcelLayoutParentEntity, parcelLayoutPreviewState]);
+  }, [parcelLayoutAutoPreviewState, parcelLayoutFrontageReference, parcelLayoutParentEntity, parcelLayoutPreviewState]);
 
   const parcelLayoutPreviewDetails = useMemo(() => {
     if (parcelLayoutAutoPreviewState) {
@@ -762,23 +763,23 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   }, [parcelLayoutAutoPreviewState, parcelLayoutPreviewState]);
 
   const parcelAutoLayoutDraft = useMemo(() => {
-    if (!parcelLayoutParentEntity || parcelLayoutFrontageEntity?.type !== 'line') return null;
+    if (!parcelLayoutParentEntity || !parcelLayoutFrontageReference) return null;
     return cadBuildParcelAutoLayoutDraft(
       parcelLayoutParentEntity,
-      parcelLayoutFrontageEntity,
+      parcelLayoutFrontageReference.frontageLine,
       parcelLayoutState.settings,
       parcelLayoutAutoTool,
     );
-  }, [parcelLayoutAutoTool, parcelLayoutFrontageEntity, parcelLayoutParentEntity, parcelLayoutState.settings]);
+  }, [parcelLayoutAutoTool, parcelLayoutFrontageReference, parcelLayoutParentEntity, parcelLayoutState.settings]);
 
   const canCreateAllParcelLayout =
     parcelLayoutParentEntity != null &&
-    parcelLayoutFrontageEntity?.type === 'line' &&
+    parcelLayoutFrontageReference != null &&
     parcelLayoutState.settings.automaticMode === 'fill_parent' &&
     (parcelAutoLayoutDraft?.isValid ?? false);
   const canPreviewAllParcelLayout =
     parcelLayoutParentEntity != null &&
-    parcelLayoutFrontageEntity?.type === 'line' &&
+    parcelLayoutFrontageReference != null &&
     parcelLayoutState.settings.automaticMode !== 'off' &&
     (parcelAutoLayoutDraft?.isValid ?? false);
 
@@ -788,12 +789,12 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       ? parcelLayoutPreviewState.candidate.alternative
       : null,
     ) => {
-    if (!parcelLayoutParentEntity || parcelLayoutFrontageEntity?.type !== 'line') return;
+    if (!parcelLayoutParentEntity || !parcelLayoutFrontageReference) return;
     setParcelLayoutAutoTool(tool);
     setParcelLayoutAutoPreviewState(null);
     const preferredCandidate = cadSelectPreferredParcelLayoutPreviewCandidate(
       parcelLayoutParentEntity,
-      parcelLayoutFrontageEntity,
+      parcelLayoutFrontageReference.frontageLine,
       parcelLayoutState.settings,
       tool,
       alternative,
@@ -824,7 +825,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     if (
       parcelLayoutAutoPreviewState &&
       parcelLayoutParentEntity &&
-      parcelLayoutFrontageEntity?.type === 'line'
+      parcelLayoutFrontageEntity
     ) {
       const activeCandidate =
         parcelLayoutAutoPreviewState.draft.acceptedCandidates[parcelLayoutAutoPreviewState.activeIndex] ?? null;
@@ -855,7 +856,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       !parcelLayoutPreviewState.candidate.isValid ||
       !parcelLayoutPreviewState.candidate.draft ||
       !parcelLayoutParentEntity ||
-      parcelLayoutFrontageEntity?.type !== 'line'
+      !parcelLayoutFrontageEntity
     ) {
       return;
     }
@@ -892,7 +893,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     if (
       !canCreateAllParcelLayout ||
       !parcelLayoutParentEntity ||
-      parcelLayoutFrontageEntity?.type !== 'line'
+      !parcelLayoutFrontageEntity
     ) {
       return;
     }

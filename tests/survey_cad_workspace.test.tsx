@@ -8993,6 +8993,123 @@ describe('SurveyCadWorkspace', () => {
     container.remove();
   });
 
+  it('creates auto-layout parcels from an arc frontage reference', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+    const capture = createPersistedStateCapture();
+
+    const originalProject = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+    const persistedProject = {
+      ...originalProject,
+      entities: [
+        {
+          id: 'arc:frontage',
+          type: 'arc' as const,
+          layerId: 'planning',
+          styleId: 'style-observation-line',
+          visible: true,
+          locked: false,
+          centerX: 45,
+          centerY: 0,
+          radius: 45,
+          startAngleDeg: 180,
+          endAngleDeg: 0,
+        },
+        {
+          id: 'parcel:auto',
+          type: 'parcel' as const,
+          layerId: 'parcels',
+          styleId: 'style-parcel',
+          visible: true,
+          locked: false,
+          parcelName: 'Parcel 1',
+          vertices: [
+            { x: 0, y: 0 },
+            { x: 90, y: 0 },
+            { x: 90, y: 60 },
+            { x: 0, y: 60 },
+          ],
+          vertexLabels: ['A', 'B3', 'C3', 'D3'],
+          areaSquareMeters: 5400,
+          perimeterMeters: 300,
+          closureDeltaX: 0,
+          closureDeltaY: 0,
+          closureDistanceMeters: 0,
+        },
+      ],
+      bounds: { minX: 0, minY: 0, maxX: 90, maxY: 60 },
+    };
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+          persistedState={{
+            version: 1,
+            sourceSignature: buildCadProjectSignature(originalProject),
+            project: persistedProject,
+            parcelLayout: {
+              open: true,
+              collapsed: false,
+              dock: 'right',
+              floatingLeftPx: 24,
+              floatingTopPx: 96,
+              activeParentParcelId: 'parcel:auto',
+              activeFrontageEntityId: 'arc:frontage',
+              settings: {
+                minAreaSquareMeters: 1200,
+                minFrontageMeters: 20,
+                useFrontageAtOffset: false,
+                frontageOffsetMeters: 10,
+                minWidthMeters: 10,
+                minDepthMeters: 20,
+                useMaxDepth: false,
+                maxDepthMeters: 150,
+                solutionPreference: 'shortest_frontage',
+                automaticMode: 'fill_parent',
+                remainderDistribution: 'create_parcel_from_remainder',
+              },
+            },
+          }}
+          onPersistedStateChange={capture.onPersistedStateChange}
+        />,
+      );
+    });
+
+    expect(container.querySelector('[data-survey-cad-parcel-layout-frontage]')?.textContent).toContain(
+      'ARC START-ARC END',
+    );
+
+    await act(async () => {
+      clickButton(container, 'Create All');
+    });
+
+    expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
+      'PARCEL layout auto committed',
+    );
+
+    const persisted = capture.read();
+    const parcels = persisted?.project.entities.filter((entity) => entity.type === 'parcel') ?? [];
+    expect(parcels).toHaveLength(5);
+    expect(persisted?.project.cogoComputations.at(-1)?.toolKey).toBe('PARCEL_LAYOUT_AUTO');
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
   it.skip('previews and accepts a parcel slide layout split from the parcel layout panel', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);

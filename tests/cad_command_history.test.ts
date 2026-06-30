@@ -1718,6 +1718,71 @@ describe('Survey CAD command history', () => {
     expect(splitState.present.project.cogoComputations.at(-1)?.toolKey).toBe('PARCEL_SPLIT_SWING');
   });
 
+  it('splits a parcel entity by slide frontage layout using a polyline frontage reference', () => {
+    const baseProject = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+    const project = appendCadProjectEntities(baseProject, [
+      {
+        id: 'parcel:source',
+        type: 'parcel',
+        layerId: 'parcels',
+        styleId: 'style-parcel',
+        visible: true,
+        locked: false,
+        parcelName: 'Parcel 1',
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 25, y: 0 },
+          { x: 25, y: 15 },
+        ],
+        vertexLabels: ['A', 'P1', 'P2'],
+        areaSquareMeters: 187.5,
+        perimeterMeters: 69.154759,
+        closureDeltaX: 0,
+        closureDeltaY: 0,
+        closureDistanceMeters: 0,
+      },
+      {
+        id: 'pline:frontage',
+        type: 'polyline',
+        layerId: 'planning',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        closed: false,
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 12.5, y: -2 },
+          { x: 25, y: 0 },
+        ],
+        vertexLabels: ['A', 'MID', 'P1'],
+      },
+    ]);
+
+    const splitState = runCadCommand(createCadHistoryState(project), {
+      key: 'PARCEL_SPLIT_SLIDE',
+      parcelEntityId: 'parcel:source',
+      frontageEntityId: 'pline:frontage',
+      targetAreaSquareMeters: 67.5,
+      minFrontageMeters: 10,
+      alternative: 'start',
+    });
+
+    const parcels = splitState.present.project.entities.filter((entity) => entity.type === 'parcel');
+    expect(parcels).toHaveLength(2);
+    expect(splitState.present.project.cogoComputations.at(-1)?.toolKey).toBe('PARCEL_SPLIT_SLIDE');
+    expect(
+      splitState.present.project.cogoComputations.at(-1)?.report.rows.some(
+        (row) => row.label === 'Frontage' && row.value === 'A-P1',
+      ),
+    ).toBe(true);
+  });
+
   it('commits point-to-point traverses with sideshots into geometry and persisted COGO history', () => {
     const project = buildSurveyCadSpikeProject({
       input,
