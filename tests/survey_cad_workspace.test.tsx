@@ -7080,6 +7080,85 @@ describe('SurveyCadWorkspace', () => {
     container.remove();
   });
 
+  it('toggles parcel center labels in the CAD preview', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+    const capture = createPersistedStateCapture();
+
+    const baseProject = buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    });
+    const parcelProject = appendCadProjectEntities(baseProject, [
+      {
+        id: 'parcel:toggle',
+        type: 'parcel',
+        layerId: 'parcels',
+        styleId: 'style-parcel',
+        visible: true,
+        locked: false,
+        parcelName: 'Parcel 1',
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 25, y: 0 },
+          { x: 25, y: 15 },
+        ],
+        vertexLabels: ['A', 'P1', 'P2'],
+        areaSquareMeters: 187.5,
+        perimeterMeters: 69.1547594742265,
+        closureDeltaX: 0,
+        closureDeltaY: 0,
+        closureDistanceMeters: 0,
+      },
+    ]);
+
+    await act(async () => {
+      root.render(
+        <SurveyCadWorkspace
+          input={input}
+          instrumentLibrary={{}}
+          parseOptions={parseOptions}
+          units="m"
+          result={null}
+          persistedState={{
+            version: 1,
+            sourceSignature: buildCadProjectSignature(baseProject),
+            project: parcelProject,
+            showParcelLabels: true,
+          }}
+          onPersistedStateChange={capture.onPersistedStateChange}
+        />,
+      );
+    });
+
+    const parcelLabelText = '187.500';
+    expect(
+      Array.from(container.querySelectorAll('svg text')).some((node) =>
+        (node.textContent ?? '').replace(/\s+/g, '').includes(parcelLabelText),
+      ),
+    ).toBe(true);
+
+    await act(async () => {
+      clickButton(container, 'Parcel Labels');
+    });
+
+    expect(
+      Array.from(container.querySelectorAll('svg text')).some((node) =>
+        (node.textContent ?? '').replace(/\s+/g, '').includes(parcelLabelText),
+      ),
+    ).toBe(false);
+    expect(capture.read()?.showParcelLabels).toBe(false);
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
   it('reports parcel linework diagnostics for selected open/overlapping lines', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);

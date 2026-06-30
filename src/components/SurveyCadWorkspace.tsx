@@ -219,6 +219,9 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   const [parcelLayoutAutoPreviewState, setParcelLayoutAutoPreviewState] =
     useState<ParcelLayoutAutoPreviewState | null>(null);
   const [parcelLayoutAutoTool, setParcelLayoutAutoTool] = useState<'slide' | 'swing'>('slide');
+  const [showParcelLabels, setShowParcelLabels] = useState<boolean>(
+    () => persistedState?.showParcelLabels ?? true,
+  );
   const [copiedEntityIds, setCopiedEntityIds] = useState<string[]>([]);
   const [reverseDirectionModifier, setReverseDirectionModifier] = useState(false);
   const [editingTraverseLegIndex, setEditingTraverseLegIndex] = useState<number | null>(null);
@@ -389,6 +392,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     persistedState,
     onPersistedStateChange,
     parcelLayoutState,
+    showParcelLabels,
     reverseDirectionModifier,
   );
   const copiedEntityIdsRef = useRef<string[]>([]);
@@ -407,6 +411,33 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       return JSON.stringify(current) === JSON.stringify(next) ? current : next;
     });
   }, [persistedState]);
+
+  useEffect(() => {
+    setShowParcelLabels((current) =>
+      current === (persistedState?.showParcelLabels ?? true) ? current : (persistedState?.showParcelLabels ?? true),
+    );
+  }, [persistedState]);
+
+  const displaySceneWithParcelLabelToggle = useMemo(
+    () =>
+      showParcelLabels
+        ? displayScene
+        : {
+            ...displayScene,
+            primitives: displayScene.primitives.filter(
+              (primitive) => primitive.kind !== 'text' || !primitive.id.endsWith(':parcel-label'),
+            ),
+          },
+    [displayScene, showParcelLabels],
+  );
+
+  const reportedComputationEntities = useMemo(
+    () =>
+      reportedComputation
+        ? activeProject.entities.filter((entity) => reportedComputation.createdEntityIds.includes(entity.id))
+        : [],
+    [activeProject.entities, reportedComputation],
+  );
 
   useEffect(() => {
     if (!activeTraverseDraft || editingTraverseLegIndex == null) {
@@ -1139,7 +1170,11 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             />
           ) : null}
           {reportedComputation ? (
-            <SurveyCadCogoPanel computation={reportedComputation} sourceLabel="latest" />
+            <SurveyCadCogoPanel
+              computation={reportedComputation}
+              createdEntities={reportedComputationEntities}
+              sourceLabel="latest"
+            />
           ) : null}
           {parcelLayoutState.open ? (
             <SurveyCadParcelLayoutPanel
@@ -1797,10 +1832,11 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             </div>
           ) : null}
           <SurveyCadPreview
-            scene={displayScene}
+            scene={displaySceneWithParcelLabelToggle}
             viewBounds={viewBounds}
             selectedEntityIds={selectedEntityIds}
             selectedParcelReport={selectedParcelReport}
+            showParcelLabels={showParcelLabels}
             hasTopRightOverlay={
               propertiesPanelState != null ||
               reportedComputation != null ||
@@ -1838,6 +1874,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             onCancelGripEdit={cancelGripEdit}
             onConsumeInteractionPoint={consumeInteractionPoint}
             onPointerWorldPointChange={updatePointerWorldPoint}
+            onToggleParcelLabels={() => setShowParcelLabels((current) => !current)}
             onCommandHoverTargetChange={setCommandHoverTarget}
             onSnapPreferenceChange={setSnapPreference}
             onCommandInputChange={setCommandInputValue}

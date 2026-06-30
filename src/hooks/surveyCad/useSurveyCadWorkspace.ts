@@ -404,6 +404,7 @@ export const useSurveyCadWorkspace = (
   persistedState: SurveyCadPersistedState | null,
   onPersistedStateChange: Dispatch<SetStateAction<SurveyCadPersistedState | null>>,
   parcelLayoutState: CadParcelLayoutUiState | undefined,
+  showParcelLabels: boolean,
   reverseDirectionModifier = false,
 ): UseSurveyCadWorkspaceResult => {
   const projectSignature = useMemo(() => buildCadProjectSignature(baseProject), [baseProject]);
@@ -1176,17 +1177,19 @@ export const useSurveyCadWorkspace = (
         sourceSignature: projectSignature,
         project: cadProject,
         parcelLayout: parcelLayoutState,
+        showParcelLabels,
       });
       if (
         current?.sourceSignature === nextState.sourceSignature &&
         buildCadProjectSignature(current.project) === buildCadProjectSignature(nextState.project) &&
-        JSON.stringify(current.parcelLayout ?? null) === JSON.stringify(nextState.parcelLayout ?? null)
+        JSON.stringify(current.parcelLayout ?? null) === JSON.stringify(nextState.parcelLayout ?? null) &&
+        (current?.showParcelLabels ?? true) === nextState.showParcelLabels
       ) {
         return current;
       }
       return nextState;
     });
-  }, [cadProject, onPersistedStateChange, parcelLayoutState, projectSignature]);
+  }, [cadProject, onPersistedStateChange, parcelLayoutState, projectSignature, showParcelLabels]);
 
   return {
     cadProject,

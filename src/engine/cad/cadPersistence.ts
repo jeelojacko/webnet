@@ -147,6 +147,7 @@ export const cloneSurveyCadPersistedState = (
   sourceSignature: state.sourceSignature,
   project: cloneCadProject(state.project),
   parcelLayout: cloneParcelLayoutUiState(state.parcelLayout),
+  showParcelLabels: state.showParcelLabels ?? true,
 });
 
 export const sanitizeSurveyCadPersistedState = (

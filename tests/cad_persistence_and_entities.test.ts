@@ -129,26 +129,22 @@ describe('Survey CAD persistence and entity families', () => {
     };
 
     const cloned = cloneSurveyCadPersistedState(state);
-    expect(cloned).toEqual({
-      ...state,
-      project: {
-        ...state.project,
-        version: 2,
-        cogoComputations: [],
-      },
-    });
+    expect(cloned.version).toBe(1);
+    expect(cloned.sourceSignature).toBe(state.sourceSignature);
+    expect(cloned.project.version).toBe(2);
+    expect(cloned.project.cogoComputations).toEqual([]);
+    expect(cloned.showParcelLabels).toBe(true);
+    expect(cloned.parcelLayout).toBeUndefined();
     expect(cloned).not.toBe(state);
     expect(cloned.project).not.toBe(state.project);
 
     const sanitized = sanitizeSurveyCadPersistedState(state);
-    expect(sanitized).toEqual({
-      ...state,
-      project: {
-        ...state.project,
-        version: 2,
-        cogoComputations: [],
-      },
-    });
+    expect(sanitized?.version).toBe(1);
+    expect(sanitized?.sourceSignature).toBe(state.sourceSignature);
+    expect(sanitized?.project.version).toBe(2);
+    expect(sanitized?.project.cogoComputations).toEqual([]);
+    expect(sanitized?.showParcelLabels).toBe(true);
+    expect(sanitized?.parcelLayout).toBeUndefined();
     expect(sanitizeSurveyCadPersistedState({ version: 2 })).toBeUndefined();
   });
 

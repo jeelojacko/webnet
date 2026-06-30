@@ -5,9 +5,11 @@ import {
   type CadCogoExportFormat,
 } from '../../engine/cad/cadCogoReports';
 import type { CadCogoComputation } from '../../engine/cad/cadCogoTypes';
+import type { CadEntity } from '../../engine/cad/cadTypes';
 
 interface SurveyCadCogoPanelProps {
   computation: CadCogoComputation;
+  createdEntities?: readonly CadEntity[];
   sourceLabel: 'selected' | 'latest';
 }
 
@@ -17,14 +19,48 @@ const DOWNLOAD_MIME_BY_FORMAT: Record<CadCogoExportFormat, string> = {
   md: 'text/markdown;charset=utf-8',
 };
 
+interface ParcelLayoutCreatedParcelRow {
+  id: string;
+  name: string;
+  role: string;
+  areaSquareMeters: number;
+  perimeterMeters: number;
+}
+
 const SurveyCadCogoPanel: React.FC<SurveyCadCogoPanelProps> = ({
   computation,
+  createdEntities = [],
   sourceLabel,
 }) => {
   const [format, setFormat] = useState<CadCogoExportFormat>('txt');
   const exportText = useMemo(
     () => formatCadCogoComputation(computation, format),
     [computation, format],
+  );
+  const parcelLayoutCreatedParcels = useMemo<ParcelLayoutCreatedParcelRow[]>(
+    () =>
+      computation.toolKey === 'PARCEL_LAYOUT_AUTO'
+        ? createdEntities.flatMap((entity) =>
+            entity.type === 'parcel'
+              ? [
+                  {
+                    id: entity.id,
+                    name: entity.parcelName,
+                    role:
+                      entity.metadata?.createdBy === 'PARCEL_LAYOUT_AUTO' &&
+                      typeof entity.metadata.role === 'string'
+                        ? entity.metadata.role === 'remainder'
+                          ? 'Remainder'
+                          : 'Lot'
+                        : 'Lot',
+                    areaSquareMeters: entity.areaSquareMeters ?? 0,
+                    perimeterMeters: entity.perimeterMeters ?? 0,
+                  },
+                ]
+              : [],
+          )
+        : [],
+    [computation.toolKey, createdEntities],
   );
 
   const handleDownload = () => {
@@ -101,6 +137,27 @@ const SurveyCadCogoPanel: React.FC<SurveyCadCogoPanelProps> = ({
               {alternative.label}
             </div>
           ))}
+        </div>
+      ) : null}
+      {parcelLayoutCreatedParcels.length > 0 ? (
+        <div className="border-t border-slate-800/80 px-3 py-2" data-survey-cad-cogo-panel-created-parcels>
+          <div className="pb-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+            Generated Parcels
+          </div>
+          <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-2 gap-y-1 text-[10px] text-slate-400">
+            <span>Name</span>
+            <span>Role</span>
+            <span>Area</span>
+            <span>Perim</span>
+            {parcelLayoutCreatedParcels.map((parcel) => (
+              <React.Fragment key={parcel.id}>
+                <span className="text-slate-200">{parcel.name}</span>
+                <span className="text-slate-300">{parcel.role}</span>
+                <span className="text-slate-200">{parcel.areaSquareMeters.toFixed(3)}</span>
+                <span className="text-slate-200">{parcel.perimeterMeters.toFixed(3)}</span>
+              </React.Fragment>
+            ))}
+          </div>
         </div>
       ) : null}
       <div className="border-t border-slate-800/80 px-3 py-2">

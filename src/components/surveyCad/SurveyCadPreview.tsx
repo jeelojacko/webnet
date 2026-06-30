@@ -2,9 +2,9 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom';
 import type {
   CadBounds,
-  CadGripHandle,
   CadDisplayPrimitive,
   CadDisplayScene,
+  CadGripHandle,
   CadSnapCandidate,
   CadSnapKind,
 } from '../../engine/cad/cadTypes';
@@ -20,6 +20,7 @@ interface SurveyCadPreviewProps {
   viewBounds: CadBounds | null;
   selectedEntityIds: readonly string[];
   selectedParcelReport: CadParcelReportSummary | null;
+  showParcelLabels?: boolean;
   hasTopRightOverlay?: boolean;
   activeSnap: CadSnapCandidate | null;
   commandPreviewPrimitives: readonly CadDisplayPrimitive[];
@@ -64,6 +65,7 @@ interface SurveyCadPreviewProps {
       restrictedGripHandles?: readonly CadGripHandle[];
     },
   ) => void;
+  onToggleParcelLabels?: () => void;
   onCommandHoverTargetChange?: (
     _hoverTarget: {
       entityId: string;
@@ -594,6 +596,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
   viewBounds,
   selectedEntityIds,
   selectedParcelReport,
+  showParcelLabels = true,
   hasTopRightOverlay = false,
   activeSnap,
   commandPreviewPrimitives,
@@ -621,6 +624,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
   onCancelGripEdit = () => undefined,
   onConsumeInteractionPoint,
   onPointerWorldPointChange,
+  onToggleParcelLabels = () => undefined,
   onCommandHoverTargetChange = () => undefined,
   onSnapPreferenceChange,
   onCommandInputChange,
@@ -1300,7 +1304,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
           {SNAP_BADGE_LABELS[activeSnap.kind]}: {activeSnap.label}
         </div>
       ) : null}
-      <div className="absolute bottom-3 right-3" data-survey-cad-snap-menu>
+      <div className="absolute bottom-3 right-3 flex items-center gap-2" data-survey-cad-snap-menu>
         {snapMenuOpen ? (
           <div className="absolute bottom-9 right-0 mb-1 w-44 rounded border border-slate-700 bg-slate-950/95 p-2 shadow-xl">
             <div className="pb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
@@ -1325,6 +1329,18 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
             })}
           </div>
         ) : null}
+        <button
+          type="button"
+          className={`rounded border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] transition-colors ${
+            showParcelLabels
+              ? 'border-cyan-500/80 bg-cyan-500/10 text-cyan-100'
+              : 'border-slate-700/90 bg-slate-950/90 text-slate-300 hover:border-cyan-500/80'
+          }`}
+          onClick={onToggleParcelLabels}
+          data-survey-cad-parcel-label-toggle
+        >
+          Parcel Labels
+        </button>
         <button
           type="button"
           className="rounded border border-slate-700/90 bg-slate-950/90 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-200 transition-colors hover:border-cyan-500/80"

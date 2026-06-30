@@ -222,6 +222,7 @@ export interface SurveyCadPersistedState {
   sourceSignature: string;
   project: CadProject;
   parcelLayout?: CadParcelLayoutUiState;
+  showParcelLabels?: boolean;
 }
 
 export type CadParcelLayoutSolutionPreference =
