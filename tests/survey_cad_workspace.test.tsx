@@ -179,6 +179,89 @@ const ParentBackedCampWorkspace: React.FC = () => {
   );
 };
 
+const ParentBackedParcelLayoutWorkspace: React.FC = () => {
+  const baseProject = React.useMemo(
+    () =>
+      buildSurveyCadSpikeProject({
+        input,
+        instrumentLibrary: {},
+        parseOptions,
+        units: 'm',
+        result: null,
+      }),
+    [],
+  );
+  const persistedProject = React.useMemo(
+    () => ({
+      ...baseProject,
+      entities: [
+        {
+          id: 'parcel:source',
+          type: 'parcel' as const,
+          layerId: 'parcels',
+          styleId: 'style-parcel',
+          visible: true,
+          locked: false,
+          parcelName: 'Parcel 1',
+          vertices: [
+            { x: 0, y: 0 },
+            { x: 25, y: 0 },
+            { x: 25, y: 15 },
+          ],
+          vertexLabels: ['A', 'P1', 'P2'],
+          areaSquareMeters: 187.5,
+          perimeterMeters: 69.154759,
+          closureDeltaX: 0,
+          closureDeltaY: 0,
+          closureDistanceMeters: 0,
+        },
+      ],
+      bounds: { minX: 0, minY: 0, maxX: 25, maxY: 15 },
+    }),
+    [baseProject],
+  );
+  const [persistedState, setPersistedState] = React.useState<SurveyCadPersistedState | null>({
+    version: 1,
+    sourceSignature: buildCadProjectSignature(baseProject),
+    project: persistedProject,
+    parcelLayout: {
+      open: true,
+      collapsed: false,
+      dock: 'floating',
+      floatingLeftPx: 24,
+      floatingTopPx: 112,
+      activeParentParcelId: null,
+      activeFrontageEntityId: null,
+      settings: {
+        minAreaSquareMeters: 1000,
+        minFrontageMeters: 30,
+        useFrontageAtOffset: false,
+        frontageOffsetMeters: 10,
+        minWidthMeters: 20,
+        minDepthMeters: 20,
+        useMaxDepth: false,
+        maxDepthMeters: 150,
+        solutionPreference: 'shortest_frontage',
+        automaticMode: 'off',
+        remainderDistribution: 'place_remainder_in_last_parcel',
+      },
+    },
+    showParcelLabels: true,
+  });
+
+  return (
+    <SurveyCadWorkspace
+      input={input}
+      instrumentLibrary={{}}
+      parseOptions={{ ...parseOptions }}
+      units="m"
+      result={null}
+      persistedState={persistedState}
+      onPersistedStateChange={setPersistedState}
+    />
+  );
+};
+
 const createPersistedStateCapture = () => {
   let captured: SurveyCadPersistedState | null = null;
   const onPersistedStateChange = (
@@ -8629,12 +8712,12 @@ describe('SurveyCadWorkspace', () => {
     ) as HTMLDivElement | null;
     if (!panel || !header) throw new Error('Parcel layout floating panel not found');
 
-    expect(panel.className).toContain('absolute');
+    expect(panel.className).toContain('fixed');
     expect(panel.className).toContain('w-[19rem]');
     expect(panel.style.left).toBe('24px');
-    expect(panel.style.top).toBe('96px');
+    expect(panel.style.top).toBe('112px');
     expect(capture.read()?.parcelLayout?.floatingLeftPx).toBe(24);
-    expect(capture.read()?.parcelLayout?.floatingTopPx).toBe(96);
+    expect(capture.read()?.parcelLayout?.floatingTopPx).toBe(112);
 
     await act(async () => {
       dispatchSyntheticPointerEvent(header, 'pointerdown', {
@@ -8643,6 +8726,11 @@ describe('SurveyCadWorkspace', () => {
         clientX: 40,
         clientY: 120,
       });
+    });
+
+    expect(container.querySelector('[data-survey-cad-parcel-layout-drag-shield]')).not.toBeNull();
+
+    await act(async () => {
       dispatchSyntheticPointerEvent(window, 'pointermove', {
         pointerId: 1,
         clientX: 240,
@@ -8655,9 +8743,93 @@ describe('SurveyCadWorkspace', () => {
       });
     });
 
+    expect(container.querySelector('[data-survey-cad-parcel-layout-drag-shield]')).toBeNull();
+
     expect(capture.read()?.parcelLayout?.dock).toBe('floating');
     expect((capture.read()?.parcelLayout?.floatingLeftPx ?? 0) > 24).toBe(true);
-    expect((capture.read()?.parcelLayout?.floatingTopPx ?? 0) > 96).toBe(true);
+    expect((capture.read()?.parcelLayout?.floatingTopPx ?? 0) > 112).toBe(true);
+
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      value: previousInnerWidth,
+    });
+    Object.defineProperty(window, 'innerHeight', {
+      configurable: true,
+      value: previousInnerHeight,
+    });
+
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it('keeps floating parcel layout position stable through parent-backed persisted-state rerenders', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+
+    const previousInnerWidth = window.innerWidth;
+    const previousInnerHeight = window.innerHeight;
+
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      value: 1280,
+    });
+    Object.defineProperty(window, 'innerHeight', {
+      configurable: true,
+      value: 720,
+    });
+
+    await act(async () => {
+      root.render(<ParentBackedParcelLayoutWorkspace />);
+    });
+
+    const panel = container.querySelector('[data-survey-cad-parcel-layout-panel]') as HTMLDivElement | null;
+    const header = container.querySelector(
+      '[data-survey-cad-parcel-layout-panel-header]',
+    ) as HTMLDivElement | null;
+    if (!panel || !header) throw new Error('Parent-backed parcel layout panel not found');
+
+    expect(panel.style.left).toBe('24px');
+    expect(panel.style.top).toBe('112px');
+
+    await act(async () => {
+      dispatchSyntheticPointerEvent(header, 'pointerdown', {
+        pointerId: 3,
+        button: 0,
+        clientX: 60,
+        clientY: 120,
+      });
+      dispatchSyntheticPointerEvent(window, 'pointermove', {
+        pointerId: 3,
+        clientX: 160,
+        clientY: 200,
+      });
+      dispatchSyntheticPointerEvent(window, 'pointermove', {
+        pointerId: 3,
+        clientX: 240,
+        clientY: 280,
+      });
+      dispatchSyntheticPointerEvent(window, 'pointerup', {
+        pointerId: 3,
+        clientX: 240,
+        clientY: 280,
+      });
+    });
+
+    const movedLeft = Number.parseFloat(panel.style.left);
+    const movedTop = Number.parseFloat(panel.style.top);
+    expect(movedLeft).toBeGreaterThan(24);
+    expect(movedTop).toBeGreaterThan(112);
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(Number.parseFloat(panel.style.left)).toBe(movedLeft);
+    expect(Number.parseFloat(panel.style.top)).toBe(movedTop);
+    expect(container.querySelector('[data-survey-cad-parcel-layout-drag-shield]')).toBeNull();
 
     Object.defineProperty(window, 'innerWidth', {
       configurable: true,

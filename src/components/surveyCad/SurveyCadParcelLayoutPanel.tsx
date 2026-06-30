@@ -54,7 +54,7 @@ interface SurveyCadParcelLayoutPanelProps {
 }
 
 const shellClassName =
-  'pointer-events-auto absolute z-20 w-[19rem] max-w-[calc(100vw-1rem)] overflow-hidden rounded border border-slate-700 bg-slate-950/95 shadow-2xl backdrop-blur';
+  'pointer-events-auto fixed z-40 w-[19rem] max-w-[calc(100vw-1rem)] overflow-hidden rounded border border-slate-700 bg-slate-950/95 shadow-2xl backdrop-blur';
 const sectionLabelClassName =
   'text-[9px] font-semibold uppercase tracking-[0.12em] text-cyan-200';
 const rowClassName = 'grid grid-cols-[minmax(0,1fr),auto] items-start gap-2';
@@ -155,8 +155,8 @@ const SurveyCadParcelLayoutPanel: React.FC<SurveyCadParcelLayoutPanelProps> = ({
     state.dock === 'floating'
       ? { left: `${state.floatingLeftPx}px`, top: `${state.floatingTopPx}px` }
       : state.dock === 'left'
-        ? { left: '12px', top: '88px' }
-        : { right: '12px', top: '88px' };
+        ? { left: '12px', top: '104px' }
+        : { right: '12px', top: '104px' };
 
   return (
     <div

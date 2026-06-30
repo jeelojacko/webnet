@@ -8,6 +8,7 @@ import {
   type CadParcelLayoutPreviewCandidate,
   cadSelectPreferredParcelLayoutPreviewCandidate,
 } from '../engine/cad/cadCogo';
+import { buildCadProjectSignature } from '../engine/cad/cadProjectState';
 import type {
   CadBounds,
   CadDisplayPrimitive,
@@ -53,7 +54,7 @@ const DEFAULT_PARCEL_LAYOUT_UI_STATE: CadParcelLayoutUiState = {
   collapsed: false,
   dock: 'right',
   floatingLeftPx: 24,
-  floatingTopPx: 96,
+  floatingTopPx: 112,
   activeParentParcelId: null,
   activeFrontageEntityId: null,
   settings: DEFAULT_PARCEL_LAYOUT_SETTINGS,
@@ -397,6 +398,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     reverseDirectionModifier,
   );
   const copiedEntityIdsRef = useRef<string[]>([]);
+  const parcelLayoutHydrationKeyRef = useRef<string | null>(null);
   const selectedTraverseClosePoint =
     selectedEntities.length === 1 && selectedEntities[0]?.type === 'survey-point'
       ? selectedEntities[0]
@@ -407,16 +409,14 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   }, [copiedEntityIds]);
 
   useEffect(() => {
-    setParcelLayoutState((current) => {
-      const next = cloneParcelLayoutUiState(persistedState?.parcelLayout);
-      return JSON.stringify(current) === JSON.stringify(next) ? current : next;
-    });
-  }, [persistedState]);
-
-  useEffect(() => {
-    setShowParcelLabels((current) =>
-      current === (persistedState?.showParcelLabels ?? true) ? current : (persistedState?.showParcelLabels ?? true),
-    );
+    const hydrationKey =
+      persistedState == null
+        ? 'null'
+        : `${persistedState.sourceSignature}:${buildCadProjectSignature(persistedState.project)}`;
+    if (parcelLayoutHydrationKeyRef.current === hydrationKey) return;
+    parcelLayoutHydrationKeyRef.current = hydrationKey;
+    setParcelLayoutState(cloneParcelLayoutUiState(persistedState?.parcelLayout));
+    setShowParcelLabels(persistedState?.showParcelLabels ?? true);
   }, [persistedState]);
 
   const displaySceneWithParcelLabelToggle = useMemo(
@@ -636,9 +636,12 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
 
   const parcelLayoutDragRef = useRef<{
     pointerId: number;
-    offsetX: number;
-    offsetY: number;
+    startClientX: number;
+    startClientY: number;
+    startLeftPx: number;
+    startTopPx: number;
   } | null>(null);
+  const [isParcelLayoutDragging, setIsParcelLayoutDragging] = useState(false);
   const parcelLayoutParentEntity = useMemo(
     () =>
       parcelLayoutState.activeParentParcelId == null
@@ -944,26 +947,44 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     const handlePointerMove = (event: PointerEvent) => {
       const drag = parcelLayoutDragRef.current;
       if (!drag || drag.pointerId !== event.pointerId) return;
+      event.preventDefault();
       const maxLeft = Math.max(8, window.innerWidth - 320);
       const maxTop = Math.max(72, window.innerHeight - 220);
+      const nextLeft = drag.startLeftPx + (event.clientX - drag.startClientX);
+      const nextTop = drag.startTopPx + (event.clientY - drag.startClientY);
       setParcelLayoutState((current) => ({
         ...current,
-        floatingLeftPx: Math.min(maxLeft, Math.max(8, event.clientX - drag.offsetX)),
-        floatingTopPx: Math.min(maxTop, Math.max(72, event.clientY - drag.offsetY)),
+        floatingLeftPx: Math.min(maxLeft, Math.max(8, nextLeft)),
+        floatingTopPx: Math.min(maxTop, Math.max(72, nextTop)),
       }));
     };
-    const handlePointerUp = (event: PointerEvent) => {
-      if (parcelLayoutDragRef.current?.pointerId === event.pointerId) {
+    const clearDrag = (pointerId: number) => {
+      if (parcelLayoutDragRef.current?.pointerId === pointerId) {
         parcelLayoutDragRef.current = null;
+        setIsParcelLayoutDragging(false);
       }
+    };
+    const handlePointerUp = (event: PointerEvent) => {
+      clearDrag(event.pointerId);
+    };
+    const handlePointerCancel = (event: PointerEvent) => {
+      clearDrag(event.pointerId);
     };
     window.addEventListener('pointermove', handlePointerMove);
     window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerCancel);
     return () => {
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerCancel);
     };
   }, [parcelLayoutState.dock]);
+
+  useEffect(() => {
+    if (parcelLayoutState.open && parcelLayoutState.dock === 'floating') return;
+    parcelLayoutDragRef.current = null;
+    setIsParcelLayoutDragging(false);
+  }, [parcelLayoutState.dock, parcelLayoutState.open]);
 
   const toggleParcelLayoutPanel = () => {
     setParcelLayoutState((current) => ({ ...current, open: !current.open }));
@@ -1239,6 +1260,12 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           </div>
         </div>
         <div className="h-full">
+          {isParcelLayoutDragging ? (
+            <div
+              className="fixed inset-0 z-[19] cursor-move"
+              data-survey-cad-parcel-layout-drag-shield
+            />
+          ) : null}
           {propertiesPanelState ? (
             <SurveyCadPropertiesPanel
               panelState={propertiesPanelState}
@@ -1283,12 +1310,15 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
                   return;
                 }
                 event.preventDefault();
-                const rect = (event.currentTarget.parentElement as HTMLDivElement | null)?.getBoundingClientRect();
+                event.stopPropagation();
                 parcelLayoutDragRef.current = {
                   pointerId: event.pointerId,
-                  offsetX: rect ? event.clientX - rect.left : 0,
-                  offsetY: rect ? event.clientY - rect.top : 0,
+                  startClientX: event.clientX,
+                  startClientY: event.clientY,
+                  startLeftPx: parcelLayoutState.floatingLeftPx,
+                  startTopPx: parcelLayoutState.floatingTopPx,
                 };
+                setIsParcelLayoutDragging(true);
               }}
               onUseSelectedParent={() => {
                 if (!selectedParcelForLayout || selectedParcelForLayout.type !== 'parcel') return;
