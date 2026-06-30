@@ -33,6 +33,16 @@ describe('SurveyCadCogoPanel', () => {
           { label: 'Generated lots', value: '3' },
           { label: 'Remainder parcel', value: 'No' },
         ],
+        tables: [
+          {
+            title: 'Generated Parcels',
+            columns: ['Name', 'Role', 'Area (m2)', 'Perimeter (m)', 'Closure (m)'],
+            rows: [
+              ['Parcel 2', 'Lot', '1350.000', '106.000', '0.000000'],
+              ['Parcel 3', 'Lot', '1350.000', '106.000', '0.000000'],
+            ],
+          },
+        ],
       },
       warnings: [],
       alternatives: [],
@@ -41,42 +51,7 @@ describe('SurveyCadCogoPanel', () => {
       removedEntityIds: ['parcel:1'],
     };
 
-    const createdEntities: CadEntity[] = [
-      {
-        id: 'parcel:2',
-        type: 'parcel',
-        layerId: 'parcels',
-        styleId: 'style-parcel',
-        visible: true,
-        locked: false,
-        parcelName: 'Parcel 2',
-        vertices: [],
-        vertexLabels: [],
-        areaSquareMeters: 1350,
-        perimeterMeters: 106,
-        closureDeltaX: 0,
-        closureDeltaY: 0,
-        closureDistanceMeters: 0,
-        metadata: { createdBy: 'PARCEL_LAYOUT_AUTO', role: 'lot' },
-      },
-      {
-        id: 'parcel:3',
-        type: 'parcel',
-        layerId: 'parcels',
-        styleId: 'style-parcel',
-        visible: true,
-        locked: false,
-        parcelName: 'Parcel 3',
-        vertices: [],
-        vertexLabels: [],
-        areaSquareMeters: 1350,
-        perimeterMeters: 106,
-        closureDeltaX: 0,
-        closureDeltaY: 0,
-        closureDistanceMeters: 0,
-        metadata: { createdBy: 'PARCEL_LAYOUT_AUTO', role: 'lot' },
-      },
-    ];
+    const createdEntities: CadEntity[] = [];
 
     await act(async () => {
       root.render(
@@ -96,6 +71,9 @@ describe('SurveyCadCogoPanel', () => {
     );
     expect(container.querySelector('[data-survey-cad-cogo-panel-created-parcels]')?.textContent).toContain(
       'Lot',
+    );
+    expect(container.querySelector('[data-survey-cad-cogo-panel-created-parcels]')?.textContent).toContain(
+      '0.000000',
     );
 
     await act(async () => {

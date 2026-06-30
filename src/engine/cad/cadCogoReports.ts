@@ -39,6 +39,18 @@ export const formatCadCogoComputation = (
         ['row', row.label, row.value, row.unit ?? ''].map(escapeCadCogoCsv).join(','),
       );
     });
+    (report.tables ?? []).forEach((table) => {
+      lines.push(['table', `${table.title}::columns`, table.columns.join(' | '), ''].map(escapeCadCogoCsv).join(','));
+      table.rows.forEach((row, rowIndex) => {
+        row.forEach((cell, columnIndex) => {
+          lines.push(
+            ['table', `${table.title}::r${rowIndex + 1}:${table.columns[columnIndex] ?? `c${columnIndex + 1}`}`, cell, '']
+              .map(escapeCadCogoCsv)
+              .join(','),
+          );
+        });
+      });
+    });
     computation.warnings.forEach((warning) => {
       lines.push(
         ['warning', `${warning.severity}:${warning.code}`, warning.message, '']
@@ -71,6 +83,15 @@ export const formatCadCogoComputation = (
     report.rows.forEach((row) => {
       lines.push(`${bullet}${row.label}: ${row.value}${row.unit ? ` ${row.unit}` : ''}`);
     });
+    (report.tables ?? []).forEach((table) => {
+      lines.push('');
+      lines.push(`## ${table.title}`);
+      lines.push(`| ${table.columns.join(' | ')} |`);
+      lines.push(`| ${table.columns.map(() => '---').join(' | ')} |`);
+      table.rows.forEach((row) => {
+        lines.push(`| ${row.join(' | ')} |`);
+      });
+    });
     if (computation.warnings.length > 0) {
       lines.push('');
       lines.push('## Warnings');
@@ -95,6 +116,14 @@ export const formatCadCogoComputation = (
   lines.push('');
   report.rows.forEach((row) => {
     lines.push(`${row.label}: ${row.value}${row.unit ? ` ${row.unit}` : ''}`);
+  });
+  (report.tables ?? []).forEach((table) => {
+    lines.push('');
+    lines.push(`${table.title}:`);
+    lines.push(table.columns.join('\t'));
+    table.rows.forEach((row) => {
+      lines.push(row.join('\t'));
+    });
   });
   if (computation.warnings.length > 0) {
     lines.push('');

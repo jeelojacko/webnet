@@ -62,7 +62,7 @@ import {
   replaceCadProjectEntities,
 } from './cadProjectState';
 import type { CadSelectionState } from './cadSelection';
-import type { CadCogoReportRow, CadCogoToolKey } from './cadCogoTypes';
+import type { CadCogoReportRow, CadCogoReportTable, CadCogoToolKey } from './cadCogoTypes';
 import type {
   CadEntity,
   CadArcEntity,
@@ -2266,6 +2266,7 @@ const appendCogoComputation = ({
   title,
   summary,
   rows,
+  tables = [],
   createdEntities,
 }: {
   project: CadProject;
@@ -2273,6 +2274,7 @@ const appendCogoComputation = ({
   title: string;
   summary: string;
   rows: Array<{ label: string; value: string; unit?: string }>;
+  tables?: CadCogoReportTable[];
   createdEntities: CadEntity[];
 }): CadProject => {
   return appendCadProjectCogoComputation(
@@ -2283,12 +2285,37 @@ const appendCogoComputation = ({
         title,
         summary,
         rows,
+        tables,
       },
       warnings: [],
       provenance,
     }),
   );
 };
+
+const buildParcelSetReportTable = ({
+  title,
+  parcels,
+}: {
+  title: string;
+  parcels: Array<{
+    name: string;
+    role: string;
+    areaSquareMeters: number;
+    perimeterMeters: number;
+    closureDistanceMeters: number;
+  }>;
+}): CadCogoReportTable => ({
+  title,
+  columns: ['Name', 'Role', 'Area (m2)', 'Perimeter (m)', 'Closure (m)'],
+  rows: parcels.map((parcel) => [
+    parcel.name,
+    parcel.role,
+    parcel.areaSquareMeters.toFixed(3),
+    parcel.perimeterMeters.toFixed(3),
+    parcel.closureDistanceMeters.toFixed(6),
+  ]),
+});
 
 const expandSelectedEntityIds = (
   project: CadProject,
@@ -5500,6 +5527,27 @@ const parcelSplitCommand: CadCommandDefinition<{
         { label: secondParcelName, value: secondReport.areaSquareMeters.toFixed(3), unit: 'm2' },
         { label: `${secondParcelName} Perimeter`, value: secondReport.perimeterMeters.toFixed(3), unit: 'm' },
       ],
+      tables: [
+        buildParcelSetReportTable({
+          title: 'Created Parcels',
+          parcels: [
+            {
+              name: firstParcelName,
+              role: 'Child',
+              areaSquareMeters: firstReport.areaSquareMeters,
+              perimeterMeters: firstReport.perimeterMeters,
+              closureDistanceMeters: firstReport.closureDistanceMeters,
+            },
+            {
+              name: secondParcelName,
+              role: 'Child',
+              areaSquareMeters: secondReport.areaSquareMeters,
+              perimeterMeters: secondReport.perimeterMeters,
+              closureDistanceMeters: secondReport.closureDistanceMeters,
+            },
+          ],
+        }),
+      ],
       createdEntities: createdParcels,
     });
 
@@ -5650,6 +5698,27 @@ const buildParcelSplitCommitResult = ({
       { label: `${firstParcelName} Perimeter`, value: firstReport.perimeterMeters.toFixed(3), unit: 'm' },
       { label: secondParcelName, value: secondReport.areaSquareMeters.toFixed(3), unit: 'm2' },
       { label: `${secondParcelName} Perimeter`, value: secondReport.perimeterMeters.toFixed(3), unit: 'm' },
+    ],
+    tables: [
+      buildParcelSetReportTable({
+        title: 'Created Parcels',
+        parcels: [
+          {
+            name: firstParcelName,
+            role: 'Child',
+            areaSquareMeters: firstReport.areaSquareMeters,
+            perimeterMeters: firstReport.perimeterMeters,
+            closureDistanceMeters: firstReport.closureDistanceMeters,
+          },
+          {
+            name: secondParcelName,
+            role: 'Child',
+            areaSquareMeters: secondReport.areaSquareMeters,
+            perimeterMeters: secondReport.perimeterMeters,
+            closureDistanceMeters: secondReport.closureDistanceMeters,
+          },
+        ],
+      }),
     ],
     createdEntities: createdParcels,
   });
@@ -6305,6 +6374,21 @@ const parcelLayoutAutoCommand: CadCommandDefinition<{
           { label: createdParcel.parcelName, value: createdParcel.areaSquareMeters?.toFixed(3) ?? '0.000', unit: 'm2' },
           { label: `${createdParcel.parcelName} Perimeter`, value: createdParcel.perimeterMeters?.toFixed(3) ?? '0.000', unit: 'm' },
         ]),
+      ],
+      tables: [
+        buildParcelSetReportTable({
+          title: 'Generated Parcels',
+          parcels: finalizedCreatedParcels.map((createdParcel, index) => ({
+            name: createdParcel.parcelName,
+            role:
+              autoLayoutDraft.generatedParcels[index]?.role === 'remainder'
+                ? 'Remainder'
+                : 'Lot',
+            areaSquareMeters: createdParcel.areaSquareMeters ?? 0,
+            perimeterMeters: createdParcel.perimeterMeters ?? 0,
+            closureDistanceMeters: createdParcel.closureDistanceMeters ?? 0,
+          })),
+        }),
       ],
       createdEntities: finalizedCreatedParcels,
     });

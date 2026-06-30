@@ -19,12 +19,10 @@ const DOWNLOAD_MIME_BY_FORMAT: Record<CadCogoExportFormat, string> = {
   md: 'text/markdown;charset=utf-8',
 };
 
-interface ParcelLayoutCreatedParcelRow {
-  id: string;
-  name: string;
-  role: string;
-  areaSquareMeters: number;
-  perimeterMeters: number;
+interface PanelReportTable {
+  title: string;
+  columns: string[];
+  rows: string[][];
 }
 
 const SurveyCadCogoPanel: React.FC<SurveyCadCogoPanelProps> = ({
@@ -37,31 +35,38 @@ const SurveyCadCogoPanel: React.FC<SurveyCadCogoPanelProps> = ({
     () => formatCadCogoComputation(computation, format),
     [computation, format],
   );
-  const parcelLayoutCreatedParcels = useMemo<ParcelLayoutCreatedParcelRow[]>(
+  const fallbackParcelLayoutTable = useMemo<PanelReportTable | null>(
     () =>
       computation.toolKey === 'PARCEL_LAYOUT_AUTO'
-        ? createdEntities.flatMap((entity) =>
-            entity.type === 'parcel'
-              ? [
-                  {
-                    id: entity.id,
-                    name: entity.parcelName,
-                    role:
+        ? {
+            title: 'Generated Parcels',
+            columns: ['Name', 'Role', 'Area (m2)', 'Perimeter (m)', 'Closure (m)'],
+            rows: createdEntities.flatMap((entity) =>
+              entity.type === 'parcel'
+                ? [
+                    [
+                      entity.parcelName,
                       entity.metadata?.createdBy === 'PARCEL_LAYOUT_AUTO' &&
-                      typeof entity.metadata.role === 'string'
-                        ? entity.metadata.role === 'remainder'
-                          ? 'Remainder'
-                          : 'Lot'
+                      typeof entity.metadata.role === 'string' &&
+                      entity.metadata.role === 'remainder'
+                        ? 'Remainder'
                         : 'Lot',
-                    areaSquareMeters: entity.areaSquareMeters ?? 0,
-                    perimeterMeters: entity.perimeterMeters ?? 0,
-                  },
-                ]
-              : [],
-          )
-        : [],
+                      (entity.areaSquareMeters ?? 0).toFixed(3),
+                      (entity.perimeterMeters ?? 0).toFixed(3),
+                      (entity.closureDistanceMeters ?? 0).toFixed(6),
+                    ],
+                  ]
+                : [],
+            ),
+          }
+        : null,
     [computation.toolKey, createdEntities],
   );
+  const reportTables = computation.report.tables?.length
+    ? computation.report.tables
+    : fallbackParcelLayoutTable?.rows.length
+      ? [fallbackParcelLayoutTable]
+      : [];
 
   const handleDownload = () => {
     const blob = new Blob([exportText], {
@@ -139,27 +144,48 @@ const SurveyCadCogoPanel: React.FC<SurveyCadCogoPanelProps> = ({
           ))}
         </div>
       ) : null}
-      {parcelLayoutCreatedParcels.length > 0 ? (
-        <div className="border-t border-slate-800/80 px-3 py-2" data-survey-cad-cogo-panel-created-parcels>
+      {reportTables.map((table) => (
+        <div
+          key={`${table.title}:${table.columns.join('|')}`}
+          className="border-t border-slate-800/80 px-3 py-2"
+          data-survey-cad-cogo-panel-created-parcels={table.title === 'Generated Parcels' ? 'true' : undefined}
+          data-survey-cad-cogo-panel-table={table.title}
+        >
           <div className="pb-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-            Generated Parcels
+            {table.title}
           </div>
-          <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-2 gap-y-1 text-[10px] text-slate-400">
-            <span>Name</span>
-            <span>Role</span>
-            <span>Area</span>
-            <span>Perim</span>
-            {parcelLayoutCreatedParcels.map((parcel) => (
-              <React.Fragment key={parcel.id}>
-                <span className="text-slate-200">{parcel.name}</span>
-                <span className="text-slate-300">{parcel.role}</span>
-                <span className="text-slate-200">{parcel.areaSquareMeters.toFixed(3)}</span>
-                <span className="text-slate-200">{parcel.perimeterMeters.toFixed(3)}</span>
-              </React.Fragment>
-            ))}
+          <div
+            className="overflow-x-auto rounded border border-slate-800/80 bg-slate-950/40"
+            data-survey-cad-cogo-panel-table-wrap={table.title}
+          >
+            <table className="min-w-full border-collapse text-[10px]">
+              <thead>
+                <tr className="text-slate-400">
+                  {table.columns.map((column) => (
+                    <th key={`${table.title}:${column}`} className="border-b border-slate-800/80 px-2 py-1 text-left font-semibold">
+                      {column}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {table.rows.map((row, rowIndex) => (
+                  <tr key={`${table.title}:row:${rowIndex}`} className="text-slate-200">
+                    {table.columns.map((column, columnIndex) => (
+                      <td
+                        key={`${table.title}:${rowIndex}:${column}`}
+                        className="border-t border-slate-900/80 px-2 py-1 whitespace-nowrap"
+                      >
+                        {row[columnIndex] ?? ''}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
-      ) : null}
+      ))}
       <div className="border-t border-slate-800/80 px-3 py-2">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1">

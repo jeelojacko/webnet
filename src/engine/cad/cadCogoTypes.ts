@@ -30,10 +30,17 @@ export interface CadCogoReportRow {
   unit?: string;
 }
 
+export interface CadCogoReportTable {
+  title: string;
+  columns: string[];
+  rows: string[][];
+}
+
 export interface CadCogoReport {
   title: string;
   summary: string;
   rows: CadCogoReportRow[];
+  tables?: CadCogoReportTable[];
 }
 
 export interface CadCogoWarning {

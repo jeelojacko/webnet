@@ -1656,6 +1656,8 @@ describe('Survey CAD command history', () => {
     const parcels = splitState.present.project.entities.filter((entity) => entity.type === 'parcel');
     expect(parcels).toHaveLength(2);
     expect(splitState.present.project.cogoComputations.at(-1)?.toolKey).toBe('PARCEL_SPLIT_SLIDE');
+    expect(splitState.present.project.cogoComputations.at(-1)?.report.tables?.[0]?.title).toBe('Created Parcels');
+    expect(splitState.present.project.cogoComputations.at(-1)?.report.tables?.[0]?.rows).toHaveLength(2);
   });
 
   it('splits a parcel entity by swing frontage layout into two child parcels', () => {
@@ -1781,6 +1783,7 @@ describe('Survey CAD command history', () => {
         (row) => row.label === 'Frontage' && row.value === 'A-P1',
       ),
     ).toBe(true);
+    expect(splitState.present.project.cogoComputations.at(-1)?.report.tables?.[0]?.title).toBe('Created Parcels');
   });
 
   it('commits point-to-point traverses with sideshots into geometry and persisted COGO history', () => {

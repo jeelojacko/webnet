@@ -8614,6 +8614,8 @@ describe('SurveyCadWorkspace', () => {
     const parcels = persisted?.project.entities.filter((entity) => entity.type === 'parcel') ?? [];
     expect(parcels).toHaveLength(5);
     expect(persisted?.project.cogoComputations.at(-1)?.toolKey).toBe('PARCEL_LAYOUT_AUTO');
+    expect(persisted?.project.cogoComputations.at(-1)?.report.tables?.[0]?.title).toBe('Generated Parcels');
+    expect(persisted?.project.cogoComputations.at(-1)?.report.tables?.[0]?.rows).toHaveLength(5);
 
     await act(async () => {
       root.unmount();

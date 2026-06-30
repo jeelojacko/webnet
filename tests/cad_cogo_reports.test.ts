@@ -26,6 +26,13 @@ const sampleComputation: CadCogoComputation = {
       { label: 'Point', value: 'IP1' },
       { label: 'Northing', value: '10.500', unit: 'm' },
     ],
+    tables: [
+      {
+        title: 'Created Parcels',
+        columns: ['Name', 'Role'],
+        rows: [['Parcel 2', 'Lot']],
+      },
+    ],
   },
   warnings: [{ code: 'ALT', message: 'Alternate solution available', severity: 'warning' }],
   alternatives: [{ id: 'alt-1', label: 'Other branch' }],
@@ -42,12 +49,20 @@ describe('cadCogoReports', () => {
     const csv = formatCadCogoComputation(sampleComputation, 'csv');
     expect(csv).toContain('section,label,value,unit');
     expect(csv).toContain('row,Northing,10.500,m');
+    expect(csv).toContain('table,Created Parcels::columns,Name | Role,');
+    expect(csv).toContain('table,Created Parcels::r1:Name,Parcel 2,');
     expect(csv).toContain('warning,warning:ALT,Alternate solution available,');
 
     const markdown = formatCadCogoComputation(sampleComputation, 'md');
     expect(markdown).toContain('# Intersection');
     expect(markdown).toContain('- Point: IP1');
+    expect(markdown).toContain('## Created Parcels');
+    expect(markdown).toContain('| Name | Role |');
     expect(markdown).toContain('## Warnings');
+
+    const txt = formatCadCogoComputation(sampleComputation, 'txt');
+    expect(txt).toContain('Created Parcels:');
+    expect(txt).toContain('Parcel 2\tLot');
   });
 
   it('builds deterministic export filenames from tool and timestamp', () => {
