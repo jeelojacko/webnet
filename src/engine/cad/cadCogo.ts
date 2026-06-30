@@ -35,6 +35,7 @@ import type {
   CadEntity,
   CadEntityId,
   CadLineEntity,
+  CadParcelLayoutRemainderDistribution,
   CadParcelLayoutSettings,
   CadParcelEntity,
   CadPolylineEntity,
@@ -190,6 +191,20 @@ export interface CadParcelLayoutPreviewCandidate {
   alternative: CadParcelLayoutSplitAlternative;
   draft: CadParcelLayoutSplitDraft | null;
   evaluation: CadParcelLayoutConstraintEvaluation | null;
+  isValid: boolean;
+  statusMessage: string;
+}
+
+export interface CadParcelLayoutGeneratedParcelDraft {
+  vertices: CadWorldPoint[];
+  vertexLabels: string[];
+  role: 'lot' | 'remainder';
+}
+
+export interface CadParcelAutoLayoutDraft {
+  tool: 'slide' | 'swing';
+  generatedParcels: CadParcelLayoutGeneratedParcelDraft[];
+  acceptedCandidates: CadParcelLayoutPreviewCandidate[];
   isValid: boolean;
   statusMessage: string;
 }
@@ -2676,6 +2691,363 @@ export const cadBuildParcelLayoutPreviewCandidate = (
     statusMessage: isValid
       ? `${tool === 'slide' ? 'Slide' : 'Swing'} ${alternative} preview valid: ${draft.childAreaSquareMeters.toFixed(3)} m2 area and ${draft.frontageLengthMeters.toFixed(3)} m frontage.`
       : `${tool === 'slide' ? 'Slide' : 'Swing'} ${alternative} preview invalid: ${evaluation.failedRuleCodes.join(', ')}.`,
+  };
+};
+
+export const cadSelectPreferredParcelLayoutPreviewCandidate = (
+  parcel: CadParcelEntity,
+  frontageLine: CadLineEntity,
+  settings: CadParcelLayoutSettings,
+  tool: 'slide' | 'swing',
+  forcedAlternative: CadParcelLayoutSplitAlternative | null = null,
+): CadParcelLayoutPreviewCandidate => {
+  const startCandidate = cadBuildParcelLayoutPreviewCandidate(
+    parcel,
+    frontageLine,
+    settings,
+    tool,
+    'start',
+  );
+  const endCandidate = cadBuildParcelLayoutPreviewCandidate(
+    parcel,
+    frontageLine,
+    settings,
+    tool,
+    'end',
+  );
+  if (forcedAlternative === 'start') return startCandidate;
+  if (forcedAlternative === 'end') return endCandidate;
+  return (
+    [startCandidate, endCandidate].sort((left, right) => {
+      if (left.isValid !== right.isValid) return left.isValid ? -1 : 1;
+      const leftScore = left.evaluation?.score ?? Number.POSITIVE_INFINITY;
+      const rightScore = right.evaluation?.score ?? Number.POSITIVE_INFINITY;
+      return leftScore - rightScore;
+    })[0] ?? startCandidate
+  );
+};
+
+const cadCloneParcelLayoutGeneratedDraft = (
+  vertices: readonly CadWorldPoint[],
+  vertexLabels: readonly string[],
+  role: CadParcelLayoutGeneratedParcelDraft['role'],
+): CadParcelLayoutGeneratedParcelDraft => ({
+  vertices: vertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
+  vertexLabels: [...vertexLabels],
+  role,
+});
+
+const cadBuildParcelEntityFromGeneratedDraft = (
+  sourceParcel: CadParcelEntity,
+  generatedDraft: CadParcelLayoutGeneratedParcelDraft,
+): CadParcelEntity => ({
+  id: `${sourceParcel.id}:auto-draft`,
+  type: 'parcel',
+  layerId: sourceParcel.layerId,
+  styleId: sourceParcel.styleId,
+  visible: sourceParcel.visible,
+  locked: sourceParcel.locked,
+  parcelName: sourceParcel.parcelName,
+  vertices: generatedDraft.vertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
+  vertexLabels: generatedDraft.vertices.map((_, index) => `AUTO${index + 1}`),
+});
+
+const cadCanonicalizeParcelAgainstFrontage = (
+  parcel: CadParcelEntity,
+  frontageLine: CadLineEntity,
+): CadParcelEntity => {
+  const vertices = normalizeParcelPolygonVertices(parcel.vertices);
+  const labels =
+    parcel.vertexLabels.length === vertices.length
+      ? [...parcel.vertexLabels]
+      : vertices.map((_, index) => normalizeParcelVertexLabel(parcel.vertexLabels[index], index));
+  const vertexCount = vertices.length;
+  if (vertexCount < 3) return parcel;
+
+  const buildRotatedParcel = (
+    sourceVertices: readonly CadWorldPoint[],
+    sourceLabels: readonly string[],
+    startIndex: number,
+  ): CadParcelEntity => ({
+    ...parcel,
+    vertices: Array.from({ length: vertexCount }, (_, index) => ({
+      x: sourceVertices[(startIndex + index) % vertexCount]!.x,
+      y: sourceVertices[(startIndex + index) % vertexCount]!.y,
+    })),
+    vertexLabels: Array.from({ length: vertexCount }, (_, index) => sourceLabels[(startIndex + index) % vertexCount]!),
+  });
+
+  for (let index = 0; index < vertexCount; index += 1) {
+    const current = vertices[index]!;
+    const next = vertices[(index + 1) % vertexCount]!;
+    if (
+      parcelPointsMatch(current, { x: frontageLine.fromX, y: frontageLine.fromY }) &&
+      parcelPointsMatch(next, { x: frontageLine.toX, y: frontageLine.toY })
+    ) {
+      return buildRotatedParcel(vertices, labels, index);
+    }
+  }
+
+  const reversedVertices = [...vertices].reverse();
+  const reversedLabels = [...labels].reverse();
+  for (let index = 0; index < vertexCount; index += 1) {
+    const current = reversedVertices[index]!;
+    const next = reversedVertices[(index + 1) % vertexCount]!;
+    if (
+      parcelPointsMatch(current, { x: frontageLine.fromX, y: frontageLine.fromY }) &&
+      parcelPointsMatch(next, { x: frontageLine.toX, y: frontageLine.toY })
+    ) {
+      return buildRotatedParcel(reversedVertices, reversedLabels, index);
+    }
+  }
+
+  return parcel;
+};
+
+const cadStabilizeParcelVertexCoordinates = (
+  parcel: CadParcelEntity,
+  tolerance = 1e-9,
+): CadParcelEntity => {
+  const stabilizeCoordinate = (value: number): number => Math.round(value / tolerance) * tolerance;
+  const stabilizedVertices = parcel.vertices.map((vertex) => ({
+    x: stabilizeCoordinate(vertex.x),
+    y: stabilizeCoordinate(vertex.y),
+  }));
+  for (let index = 0; index < stabilizedVertices.length; index += 1) {
+    for (let compareIndex = 0; compareIndex < index; compareIndex += 1) {
+      if (
+        Math.abs(stabilizedVertices[index]!.x - stabilizedVertices[compareIndex]!.x) <= tolerance
+      ) {
+        stabilizedVertices[index]!.x = stabilizedVertices[compareIndex]!.x;
+      }
+      if (
+        Math.abs(stabilizedVertices[index]!.y - stabilizedVertices[compareIndex]!.y) <= tolerance
+      ) {
+        stabilizedVertices[index]!.y = stabilizedVertices[compareIndex]!.y;
+      }
+    }
+  }
+  return {
+    ...parcel,
+    vertices: stabilizedVertices,
+  };
+};
+
+const cadStabilizeFrontageLine = (
+  frontageLine: CadLineEntity,
+  tolerance = 1e-9,
+): CadLineEntity => {
+  const stabilizeCoordinate = (value: number): number => Math.round(value / tolerance) * tolerance;
+  return {
+    ...frontageLine,
+    fromX: stabilizeCoordinate(frontageLine.fromX),
+    fromY: stabilizeCoordinate(frontageLine.fromY),
+    toX: stabilizeCoordinate(frontageLine.toX),
+    toY: stabilizeCoordinate(frontageLine.toY),
+  };
+};
+
+const cadBuildAutoLayoutRemainderFrontageLine = (
+  frontageLine: CadLineEntity,
+  candidate: CadParcelLayoutPreviewCandidate,
+): CadLineEntity | null => {
+  const frontageLength = cadDistance(
+    { x: frontageLine.fromX, y: frontageLine.fromY },
+    { x: frontageLine.toX, y: frontageLine.toY },
+  );
+  const childFrontage = candidate.draft?.frontageLengthMeters ?? 0;
+  const remainderFrontage = frontageLength - childFrontage;
+  if (!candidate.draft || remainderFrontage <= 1e-9) return null;
+  const ratio =
+    candidate.alternative === 'start' ? childFrontage / frontageLength : remainderFrontage / frontageLength;
+  const cutPoint = {
+    x: frontageLine.fromX + (frontageLine.toX - frontageLine.fromX) * ratio,
+    y: frontageLine.fromY + (frontageLine.toY - frontageLine.fromY) * ratio,
+  };
+  return candidate.alternative === 'start'
+    ? {
+        ...frontageLine,
+        id: `${frontageLine.id}:auto-remainder`,
+        fromStationId: 'CUT',
+        fromX: cutPoint.x,
+        fromY: cutPoint.y,
+      }
+    : {
+        ...frontageLine,
+        id: `${frontageLine.id}:auto-remainder`,
+        toStationId: 'CUT',
+        toX: cutPoint.x,
+        toY: cutPoint.y,
+      };
+};
+
+const cadCanCreateAnotherAutoLayoutLot = (
+  parcel: CadParcelEntity,
+  frontageLine: CadLineEntity | null,
+  settings: CadParcelLayoutSettings,
+  tool: 'slide' | 'swing',
+): boolean => {
+  if (!frontageLine) return false;
+  return cadSelectPreferredParcelLayoutPreviewCandidate(parcel, frontageLine, settings, tool).isValid;
+};
+
+const isParcelAutoRemainderDistributionSupported = (
+  remainderDistribution: CadParcelLayoutRemainderDistribution,
+): boolean =>
+  remainderDistribution === 'place_remainder_in_last_parcel' ||
+  remainderDistribution === 'create_parcel_from_remainder';
+
+export const cadBuildParcelAutoLayoutDraft = (
+  parcel: CadParcelEntity,
+  frontageLine: CadLineEntity,
+  settings: CadParcelLayoutSettings,
+  tool: 'slide' | 'swing',
+): CadParcelAutoLayoutDraft => {
+  if (tool !== 'slide') {
+    return {
+      tool,
+      generatedParcels: [],
+      acceptedCandidates: [],
+      isValid: false,
+      statusMessage: 'Automatic fill currently supports slide layout only.',
+    };
+  }
+  if (!isParcelAutoRemainderDistributionSupported(settings.remainderDistribution)) {
+    return {
+      tool,
+      generatedParcels: [],
+      acceptedCandidates: [],
+      isValid: false,
+      statusMessage: 'Selected remainder mode is staged for a later automatic layout slice.',
+    };
+  }
+
+  let currentParcel = cadStabilizeParcelVertexCoordinates(
+    cadCanonicalizeParcelAgainstFrontage(
+      {
+        ...parcel,
+        vertices: parcel.vertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
+        vertexLabels: [...parcel.vertexLabels],
+      },
+      frontageLine,
+    ),
+  );
+  let currentFrontage = cadStabilizeFrontageLine({ ...frontageLine });
+  const generatedParcels: CadParcelLayoutGeneratedParcelDraft[] = [];
+  const acceptedCandidates: CadParcelLayoutPreviewCandidate[] = [];
+
+  for (let iteration = 0; iteration < 64; iteration += 1) {
+    const candidate = cadSelectPreferredParcelLayoutPreviewCandidate(
+      currentParcel,
+      currentFrontage,
+      settings,
+      tool,
+    );
+    if (!candidate.isValid || !candidate.draft) {
+      if (generatedParcels.length === 0) {
+        return {
+          tool,
+          generatedParcels: [],
+          acceptedCandidates: [],
+          isValid: false,
+          statusMessage: 'Automatic fill could not create a valid first lot from the active parent and frontage.',
+        };
+      }
+      generatedParcels.push(
+        cadCloneParcelLayoutGeneratedDraft(currentParcel.vertices, currentParcel.vertexLabels, 'remainder'),
+      );
+      return {
+        tool,
+        generatedParcels,
+        acceptedCandidates,
+        isValid: true,
+        statusMessage: `Automatic fill prepared ${generatedParcels.length} parcels from the active parent/frontage setup.`,
+      };
+    }
+
+    const remainderDraft = cadCloneParcelLayoutGeneratedDraft(
+      candidate.draft.remainderVertices,
+      candidate.draft.remainderVertexLabels,
+      'remainder',
+    );
+    const rawRemainderFrontage = cadBuildAutoLayoutRemainderFrontageLine(currentFrontage, candidate);
+    const remainderFrontage = rawRemainderFrontage
+      ? cadStabilizeFrontageLine(rawRemainderFrontage)
+      : null;
+    const remainderParcel = cadStabilizeParcelVertexCoordinates(
+      cadCanonicalizeParcelAgainstFrontage(
+        cadBuildParcelEntityFromGeneratedDraft(parcel, remainderDraft),
+        remainderFrontage ?? currentFrontage,
+      ),
+    );
+    const canCreateAnotherLot = cadCanCreateAnotherAutoLayoutLot(
+      remainderParcel,
+      remainderFrontage,
+      settings,
+      tool,
+    );
+
+    if (
+      !canCreateAnotherLot &&
+      settings.remainderDistribution === 'place_remainder_in_last_parcel'
+    ) {
+      if (generatedParcels.length === 0) {
+        return {
+          tool,
+          generatedParcels: [],
+          acceptedCandidates: [],
+          isValid: false,
+          statusMessage: 'Automatic fill needs room for at least two valid lots when remainder stays in the last parcel.',
+        };
+      }
+      generatedParcels.push(
+        cadCloneParcelLayoutGeneratedDraft(currentParcel.vertices, currentParcel.vertexLabels, 'remainder'),
+      );
+      return {
+        tool,
+        generatedParcels,
+        acceptedCandidates,
+        isValid: true,
+        statusMessage: `Automatic fill prepared ${generatedParcels.length} parcels with remainder kept in the last parcel.`,
+      };
+    }
+
+    generatedParcels.push(
+      cadCloneParcelLayoutGeneratedDraft(candidate.draft.childVertices, candidate.draft.childVertexLabels, 'lot'),
+    );
+    acceptedCandidates.push(candidate);
+
+    if (!canCreateAnotherLot) {
+      generatedParcels.push(remainderDraft);
+      return {
+        tool,
+        generatedParcels,
+        acceptedCandidates,
+        isValid: true,
+        statusMessage: `Automatic fill prepared ${generatedParcels.length} parcels from the active parent/frontage setup.`,
+      };
+    }
+
+    currentParcel = remainderParcel;
+    if (!remainderFrontage) {
+      generatedParcels.push(remainderDraft);
+      return {
+        tool,
+        generatedParcels,
+        acceptedCandidates,
+        isValid: true,
+        statusMessage: `Automatic fill prepared ${generatedParcels.length} parcels from the active parent/frontage setup.`,
+      };
+    }
+    currentFrontage = remainderFrontage;
+  }
+
+  return {
+    tool,
+    generatedParcels: [],
+    acceptedCandidates: [],
+    isValid: false,
+    statusMessage: 'Automatic fill reached its safety limit before completing the lot sequence.',
   };
 };
 

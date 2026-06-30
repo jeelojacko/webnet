@@ -2,8 +2,9 @@ import React, { useEffect, useMemo, useRef, useState, type Dispatch, type SetSta
 import type { AdjustmentResult, InstrumentLibrary, ParseOptions, UnitsMode } from '../types';
 import { buildSurveyCadSpikeProject } from '../engine/cad/cadModel';
 import {
-  cadBuildParcelLayoutPreviewCandidate,
+  cadBuildParcelAutoLayoutDraft,
   type CadParcelLayoutPreviewCandidate,
+  cadSelectPreferredParcelLayoutPreviewCandidate,
 } from '../engine/cad/cadCogo';
 import type {
   CadBounds,
@@ -309,6 +310,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     splitParcelBySelectedLine,
     commitParcelSlideLayout,
     commitParcelSwingLayout,
+    commitParcelAutoLayout,
     setCommandInputValue,
     appendCommandInputValue,
     backspaceCommandInputValue,
@@ -640,39 +642,36 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     [parcelLayoutPreviewState],
   );
 
+  const parcelAutoLayoutDraft = useMemo(() => {
+    if (!parcelLayoutParentEntity || parcelLayoutFrontageEntity?.type !== 'line') return null;
+    return cadBuildParcelAutoLayoutDraft(
+      parcelLayoutParentEntity,
+      parcelLayoutFrontageEntity,
+      parcelLayoutState.settings,
+      'slide',
+    );
+  }, [parcelLayoutFrontageEntity, parcelLayoutParentEntity, parcelLayoutState.settings]);
+
+  const canCreateAllParcelLayout =
+    parcelLayoutParentEntity != null &&
+    parcelLayoutFrontageEntity?.type === 'line' &&
+    parcelLayoutState.settings.automaticMode === 'fill_parent' &&
+    (parcelAutoLayoutDraft?.isValid ?? false);
+
   const previewParcelLayoutSplit = (
     tool: 'slide' | 'swing',
     alternative = parcelLayoutPreviewState?.candidate.tool === tool
       ? parcelLayoutPreviewState.candidate.alternative
       : null,
-  ) => {
+    ) => {
     if (!parcelLayoutParentEntity || parcelLayoutFrontageEntity?.type !== 'line') return;
-    const startCandidate = cadBuildParcelLayoutPreviewCandidate(
+    const preferredCandidate = cadSelectPreferredParcelLayoutPreviewCandidate(
       parcelLayoutParentEntity,
       parcelLayoutFrontageEntity,
       parcelLayoutState.settings,
       tool,
-      'start',
+      alternative,
     );
-    const endCandidate = cadBuildParcelLayoutPreviewCandidate(
-      parcelLayoutParentEntity,
-      parcelLayoutFrontageEntity,
-      parcelLayoutState.settings,
-      tool,
-      'end',
-    );
-    const preferredCandidate =
-      alternative === 'start'
-        ? startCandidate
-        : alternative === 'end'
-          ? endCandidate
-          : [startCandidate, endCandidate]
-              .sort((left, right) => {
-                if (left.isValid !== right.isValid) return left.isValid ? -1 : 1;
-                const leftScore = left.evaluation?.score ?? Number.POSITIVE_INFINITY;
-                const rightScore = right.evaluation?.score ?? Number.POSITIVE_INFINITY;
-                return leftScore - rightScore;
-              })[0] ?? startCandidate;
     setParcelLayoutPreviewState({ candidate: preferredCandidate });
   };
 
@@ -711,6 +710,23 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         alternative: parcelLayoutPreviewState.candidate.alternative,
       });
     }
+    setParcelLayoutPreviewState(null);
+  };
+
+  const createAllParcelLayout = () => {
+    if (
+      !canCreateAllParcelLayout ||
+      !parcelLayoutParentEntity ||
+      parcelLayoutFrontageEntity?.type !== 'line'
+    ) {
+      return;
+    }
+    commitParcelAutoLayout({
+      parcelEntityId: parcelLayoutParentEntity.id,
+      frontageEntityId: parcelLayoutFrontageEntity.id,
+      tool: 'slide',
+      settings: cloneParcelLayoutSettings(parcelLayoutState.settings),
+    });
     setParcelLayoutPreviewState(null);
   };
 
@@ -1054,9 +1070,11 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               onCyclePreviewAlternative={cycleParcelLayoutPreviewAlternative}
               onAcceptPreview={acceptParcelLayoutPreview}
               onRejectPreview={() => setParcelLayoutPreviewState(null)}
+              onCreateAll={createAllParcelLayout}
               onReportGap={reportParcelGapFromSelection}
               onReportCheck={reportParcelDiagnosticsFromSelection}
               onReportOverlap={reportParcelOverlapFromSelection}
+              canCreateAll={canCreateAllParcelLayout}
               canCreateParcel={canCreateParcel}
               canSplitByLine={canSplitParcelByLine}
               canSplitByBearing={canSplitParcelByBearing}

@@ -55,6 +55,7 @@ import type {
   CadGripHandle,
   CadLineEntity,
   CadParcelEntity,
+  CadParcelLayoutSettings,
   CadParcelLayoutUiState,
   CadPolylineEntity,
   CadProject,
@@ -315,6 +316,12 @@ interface UseSurveyCadWorkspaceResult {
     targetAreaSquareMeters: number;
     minFrontageMeters: number;
     alternative: 'start' | 'end';
+  }) => void;
+  commitParcelAutoLayout: (_options: {
+    parcelEntityId: CadEntityId;
+    frontageEntityId: CadEntityId;
+    tool: 'slide' | 'swing';
+    settings: CadParcelLayoutSettings;
   }) => void;
   cancelActiveCommand: () => void;
   finishActiveCommand: () => void;
@@ -1542,6 +1549,22 @@ export const useSurveyCadWorkspace = (
           targetAreaSquareMeters,
           minFrontageMeters,
           alternative,
+        }),
+      );
+    },
+    commitParcelAutoLayout: ({
+      parcelEntityId,
+      frontageEntityId,
+      tool,
+      settings,
+    }) => {
+      applyHistoryUpdate((current) =>
+        runCadCommand(current, {
+          key: 'PARCEL_LAYOUT_AUTO',
+          parcelEntityId,
+          frontageEntityId,
+          tool,
+          settings,
         }),
       );
     },

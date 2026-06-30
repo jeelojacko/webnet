@@ -4,6 +4,7 @@ import {
   selectAllCadEntities,
 } from './cadSelection';
 import {
+  cadBuildParcelAutoLayoutDraft,
   cadBuildParcelClosureSummary,
   cadBuildParcelSplitByAreaDraft,
   cadBuildParcelSplitByBearingDraft,
@@ -68,6 +69,7 @@ import type {
   CadGripHandle,
   CadGripHandleKind,
   CadLineEntity,
+  CadParcelLayoutSettings,
   CadParcelEntity,
   CadPolylineEntity,
   CadProject,
@@ -101,6 +103,7 @@ export type CadCommandKey =
   | 'PARCEL_SPLIT_AREA'
   | 'PARCEL_SPLIT_SLIDE'
   | 'PARCEL_SPLIT_SWING'
+  | 'PARCEL_LAYOUT_AUTO'
   | 'MOVE'
   | 'COPY'
   | 'EXTEND'
@@ -281,6 +284,13 @@ export type CadCommand =
       targetAreaSquareMeters: number;
       minFrontageMeters: number;
       alternative: 'start' | 'end';
+    }
+  | {
+      key: 'PARCEL_LAYOUT_AUTO';
+      parcelEntityId: CadEntityId;
+      frontageEntityId: CadEntityId;
+      tool: 'slide' | 'swing';
+      settings: CadParcelLayoutSettings;
     }
   | {
       key: 'MOVE';
@@ -6106,6 +6116,160 @@ const parcelSplitSwingCommand: CadCommandDefinition<{
   },
 };
 
+const parcelLayoutAutoCommand: CadCommandDefinition<{
+  key: 'PARCEL_LAYOUT_AUTO';
+  parcelEntityId: CadEntityId;
+  frontageEntityId: CadEntityId;
+  tool: 'slide' | 'swing';
+  settings: CadParcelLayoutSettings;
+}> = {
+  key: 'PARCEL_LAYOUT_AUTO',
+  execute: (snapshot, command) => {
+    const parcelEntity = snapshot.project.entities.find(
+      (entity): entity is CadParcelEntity => entity.id === command.parcelEntityId && entity.type === 'parcel',
+    );
+    const frontageEntity = snapshot.project.entities.find(
+      (entity): entity is CadLineEntity => entity.id === command.frontageEntityId && entity.type === 'line',
+    );
+    if (!parcelEntity || !frontageEntity) return null;
+
+    const autoLayoutDraft = cadBuildParcelAutoLayoutDraft(
+      parcelEntity,
+      frontageEntity,
+      command.settings,
+      command.tool,
+    );
+    if (!autoLayoutDraft.isValid || autoLayoutDraft.generatedParcels.length < 2) return null;
+
+    let parcelSequenceProject = snapshot.project;
+    const parcelNames: string[] = [];
+    autoLayoutDraft.generatedParcels.forEach(() => {
+      const parcelName = nextParcelName(parcelSequenceProject);
+      parcelNames.push(parcelName);
+      parcelSequenceProject = appendCadProjectEntities(parcelSequenceProject, [
+        {
+          id: createStableRuntimeId('cad-parcel-sequence'),
+          type: 'parcel',
+          layerId: parcelEntity.layerId,
+          styleId: parcelEntity.styleId,
+          visible: parcelEntity.visible,
+          locked: parcelEntity.locked,
+          vertices: [],
+          vertexLabels: [],
+          parcelName,
+          areaSquareMeters: 0,
+          perimeterMeters: 0,
+          closureDeltaX: 0,
+          closureDeltaY: 0,
+          closureDistanceMeters: 0,
+        },
+      ]);
+    });
+
+    const createdParcels = autoLayoutDraft.generatedParcels.map((generatedParcel, index) => {
+      const parcelName = parcelNames[index]!;
+      const report = cadBuildParcelReportSummary({
+        parcelName,
+        vertices: generatedParcel.vertices,
+        vertexLabels: generatedParcel.vertexLabels,
+      });
+      if (!report) return null;
+      return {
+        id: createStableRuntimeId('cad-parcel'),
+        type: 'parcel' as const,
+        layerId: parcelEntity.layerId,
+        styleId: parcelEntity.styleId,
+        visible: parcelEntity.visible,
+        locked: parcelEntity.locked,
+        vertices: generatedParcel.vertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
+        vertexLabels: [...generatedParcel.vertexLabels],
+        parcelName,
+        areaSquareMeters: report.areaSquareMeters,
+        perimeterMeters: report.perimeterMeters,
+        closureDeltaX: report.closureDeltaX,
+        closureDeltaY: report.closureDeltaY,
+        closureDistanceMeters: report.closureDistanceMeters,
+        metadata: undefined as unknown,
+      };
+    });
+    if (createdParcels.some((parcel) => parcel == null)) return null;
+
+    const provenance = createCogoProvenance({
+      toolKey: 'PARCEL_LAYOUT_AUTO',
+      summary: `Automatic parcel layout created ${createdParcels.length} parcels from ${parcelEntity.parcelName}.`,
+      sourceEntityIds: [parcelEntity.id, frontageEntity.id],
+      sourcePointIds: [...parcelEntity.vertexLabels, frontageEntity.fromStationId, frontageEntity.toStationId],
+      inputs: {
+        parcelEntityId: parcelEntity.id,
+        frontageEntityId: frontageEntity.id,
+        tool: command.tool,
+        settings: command.settings,
+      },
+      parameters: {
+        createdParcelCount: createdParcels.length,
+        acceptedCandidateCount: autoLayoutDraft.acceptedCandidates.length,
+      },
+    });
+
+    const finalizedCreatedParcels = createdParcels.map((parcel, index) => ({
+      ...parcel!,
+      metadata: buildCadCogoEntityMetadata(
+        {
+          createdBy: 'PARCEL_LAYOUT_AUTO',
+          parentParcelId: parcelEntity.id,
+          frontageEntityId: frontageEntity.id,
+          tool: command.tool,
+          lotIndex: index + 1,
+          role: autoLayoutDraft.generatedParcels[index]!.role,
+          remainderDistribution: command.settings.remainderDistribution,
+        },
+        provenance,
+      ),
+    }));
+
+    const nextProjectBase = replaceCadProjectEntities(
+      snapshot.project,
+      snapshot.project.entities
+        .filter((entity) => entity.id !== parcelEntity.id)
+        .concat(finalizedCreatedParcels),
+    );
+    const nextProject = appendCogoComputation({
+      project: nextProjectBase,
+      provenance,
+      title: 'Automatic Parcel Layout',
+      summary: provenance.resultSummary,
+      rows: [
+        { label: 'Parent parcel', value: parcelEntity.parcelName },
+        { label: 'Frontage', value: `${frontageEntity.fromStationId}-${frontageEntity.toStationId}` },
+        { label: 'Tool', value: command.tool === 'slide' ? 'Slide' : 'Swing' },
+        { label: 'Mode', value: command.settings.automaticMode },
+        { label: 'Remainder', value: command.settings.remainderDistribution },
+        { label: 'Created parcels', value: String(finalizedCreatedParcels.length) },
+        ...finalizedCreatedParcels.flatMap((createdParcel) => [
+          { label: createdParcel.parcelName, value: createdParcel.areaSquareMeters?.toFixed(3) ?? '0.000', unit: 'm2' },
+          { label: `${createdParcel.parcelName} Perimeter`, value: createdParcel.perimeterMeters?.toFixed(3) ?? '0.000', unit: 'm' },
+        ]),
+      ],
+      createdEntities: finalizedCreatedParcels,
+    });
+
+    return {
+      nextSnapshot: {
+        project: nextProject,
+        selection: createCadSelectionState(nextProject, finalizedCreatedParcels.map((entity) => entity.id)),
+      },
+      commandState: {
+        key: 'PARCEL_LAYOUT_AUTO',
+        phase: 'committed',
+        prompt: `PARCEL layout auto committed on ${parcelEntity.parcelName}. Created ${finalizedCreatedParcels.length} parcels.`,
+      },
+      transactionLabel: `PARCEL layout auto (${parcelEntity.parcelName})`,
+      addedEntityIds: finalizedCreatedParcels.map((entity) => entity.id),
+      removedEntityIds: [parcelEntity.id],
+    };
+  },
+};
+
 const replaceEntityInProject = (
   project: CadProject,
   entityId: CadEntityId,
@@ -6725,6 +6889,7 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   PARCEL_SPLIT_AREA: parcelSplitAreaCommand as CadCommandDefinition<CadCommand>,
   PARCEL_SPLIT_SLIDE: parcelSplitSlideCommand as CadCommandDefinition<CadCommand>,
   PARCEL_SPLIT_SWING: parcelSplitSwingCommand as CadCommandDefinition<CadCommand>,
+  PARCEL_LAYOUT_AUTO: parcelLayoutAutoCommand as CadCommandDefinition<CadCommand>,
   EDIT_ENTITY: editEntityCommand as CadCommandDefinition<CadCommand>,
   MOVE: moveCommand as CadCommandDefinition<CadCommand>,
   COPY: copyCommand as CadCommandDefinition<CadCommand>,

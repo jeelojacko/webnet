@@ -12,6 +12,7 @@ import {
   cadBuildParcelSplitBySlideDraft,
   cadBuildParcelSplitBySwingDraft,
   cadBuildParcelLayoutPreviewCandidate,
+  cadBuildParcelAutoLayoutDraft,
   cadEvaluateParcelLayoutConstraints,
   cadConvertAreaSquareMeters,
   cadBuildArcFromThreePoints,
@@ -173,6 +174,29 @@ describe('Survey CAD COGO helpers', () => {
     ...parcelLayoutFrontage,
     toStationId: 'B2',
     toX: 50,
+  };
+
+  const parcelLayoutAutoTestParcel: CadParcelEntity = {
+    id: 'parcel:auto',
+    type: 'parcel',
+    layerId: 'parcels',
+    styleId: 'style-parcel',
+    visible: true,
+    locked: false,
+    parcelName: 'Auto Parcel',
+    vertices: [
+      { x: 0, y: 0 },
+      { x: 90, y: 0 },
+      { x: 90, y: 60 },
+      { x: 0, y: 60 },
+    ],
+    vertexLabels: ['A', 'B', 'C', 'D'],
+  };
+
+  const parcelLayoutAutoFrontage: CadLineEntity = {
+    ...parcelLayoutFrontage,
+    toStationId: 'B3',
+    toX: 90,
   };
 
   const parcelLayoutOffsetFrontage: CadLineEntity = {
@@ -1370,6 +1394,53 @@ describe('Survey CAD COGO helpers', () => {
     expect(startCandidate.evaluation?.score ?? Number.NaN).toBeLessThan(
       endCandidate.evaluation?.score ?? Number.NaN,
     );
+  });
+
+  it('builds auto layout lots and keeps remainder in the last parcel', () => {
+    const autoLayout = cadBuildParcelAutoLayoutDraft(
+      parcelLayoutAutoTestParcel,
+      parcelLayoutAutoFrontage,
+      parcelLayoutSettings({
+        minAreaSquareMeters: 1200,
+        minFrontageMeters: 20,
+        remainderDistribution: 'place_remainder_in_last_parcel',
+      }),
+      'slide',
+    );
+
+    expect(autoLayout.isValid).toBe(true);
+    expect(autoLayout.generatedParcels).toHaveLength(4);
+    expect(
+      autoLayout.generatedParcels.map(
+        (generatedParcel) =>
+          cadBuildParcelClosureSummary(generatedParcel.vertices)?.areaSquareMeters ?? Number.NaN,
+      ),
+    ).toEqual([
+      expect.closeTo(1200, 3),
+      expect.closeTo(1200, 3),
+      expect.closeTo(1200, 3),
+      expect.closeTo(1800, 3),
+    ]);
+  });
+
+  it('builds auto layout lots and creates a separate remainder parcel', () => {
+    const autoLayout = cadBuildParcelAutoLayoutDraft(
+      parcelLayoutAutoTestParcel,
+      parcelLayoutAutoFrontage,
+      parcelLayoutSettings({
+        minAreaSquareMeters: 1200,
+        minFrontageMeters: 20,
+        remainderDistribution: 'create_parcel_from_remainder',
+      }),
+      'slide',
+    );
+
+    expect(autoLayout.isValid).toBe(true);
+    expect(autoLayout.generatedParcels).toHaveLength(5);
+    expect(autoLayout.generatedParcels.at(-1)?.role).toBe('remainder');
+    expect(
+      cadBuildParcelClosureSummary(autoLayout.generatedParcels.at(-1)?.vertices ?? [])?.areaSquareMeters ?? Number.NaN,
+    ).toBeCloseTo(600, 3);
   });
 
   it('diagnoses overlapping parcel pairs with shared area', () => {

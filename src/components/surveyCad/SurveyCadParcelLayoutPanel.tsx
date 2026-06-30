@@ -37,9 +37,11 @@ interface SurveyCadParcelLayoutPanelProps {
   onCyclePreviewAlternative: () => void;
   onAcceptPreview: () => void;
   onRejectPreview: () => void;
+  onCreateAll: () => void;
   onReportGap: () => void;
   onReportCheck: () => void;
   onReportOverlap: () => void;
+  canCreateAll: boolean;
   canCreateParcel: boolean;
   canSplitByLine: boolean;
   canSplitByBearing: boolean;
@@ -122,9 +124,11 @@ const SurveyCadParcelLayoutPanel: React.FC<SurveyCadParcelLayoutPanelProps> = ({
   onCyclePreviewAlternative,
   onAcceptPreview,
   onRejectPreview,
+  onCreateAll,
   onReportGap,
   onReportCheck,
   onReportOverlap,
+  canCreateAll,
   canCreateParcel,
   canSplitByLine,
   canSplitByBearing,
@@ -354,7 +358,7 @@ const SurveyCadParcelLayoutPanel: React.FC<SurveyCadParcelLayoutPanelProps> = ({
               <button type="button" className={buttonClassName} onClick={onCyclePreviewAlternative} disabled={!hasPreview}>Alt</button>
               <button type="button" className={buttonClassName} onClick={onAcceptPreview} disabled={!canAcceptPreview}>Accept</button>
               <button type="button" className={buttonClassName} onClick={onRejectPreview} disabled={!hasPreview}>Reject</button>
-              <button type="button" className={buttonClassName} disabled>Create All</button>
+              <button type="button" className={buttonClassName} onClick={onCreateAll} disabled={!canCreateAll}>Create All</button>
               <button type="button" className={buttonClassName} onClick={onResetSettings}>Reset</button>
             </div>
           </div>
