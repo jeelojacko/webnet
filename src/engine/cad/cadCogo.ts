@@ -216,6 +216,7 @@ export interface CadParcelLayoutFrontageReference {
   sourcePointIds: string[];
   frontageLine: CadLineEntity;
   parcelSegmentIds?: string[] | null;
+  parcelSegmentLabelPairs?: Array<readonly [string, string]> | null;
 }
 
 const PARCEL_LAYOUT_EVALUATION_SAMPLE_COUNT = 7;
@@ -336,6 +337,9 @@ export const cadBuildParcelLayoutFrontageReferenceFromParcelSegments = (
       toY: firstSegment.end.y,
       sourceObservationIds: [],
     },
+    parcelSegmentLabelPairs: matchedSegments.map(
+      (segment) => [segment.startLabel, segment.endLabel] as const,
+    ),
     parcelSegmentIds: matchedSegments.map((segment) => segment.segmentId),
   };
 };
@@ -2927,6 +2931,43 @@ const cadCanonicalizeParcelAgainstFrontage = (
   return parcel;
 };
 
+const cadBuildFrontageLineFromParcelLabelPair = (
+  parcel: CadParcelEntity,
+  startLabel: string,
+  endLabel: string,
+): CadLineEntity | null => {
+  const vertices = normalizeParcelPolygonVertices(parcel.vertices);
+  if (vertices.length < 2 || parcel.vertexLabels.length !== vertices.length) return null;
+  for (let index = 0; index < vertices.length; index += 1) {
+    const nextIndex = (index + 1) % vertices.length;
+    const currentLabel = parcel.vertexLabels[index];
+    const nextLabel = parcel.vertexLabels[nextIndex];
+    if (
+      (currentLabel === startLabel && nextLabel === endLabel) ||
+      (currentLabel === endLabel && nextLabel === startLabel)
+    ) {
+      const start = vertices[index]!;
+      const end = vertices[nextIndex]!;
+      return {
+        id: `${parcel.id}:frontage-${index}`,
+        type: 'line',
+        layerId: parcel.layerId,
+        styleId: parcel.styleId,
+        visible: parcel.visible,
+        locked: parcel.locked,
+        fromStationId: currentLabel ?? startLabel,
+        toStationId: nextLabel ?? endLabel,
+        fromX: start.x,
+        fromY: start.y,
+        toX: end.x,
+        toY: end.y,
+        sourceObservationIds: [],
+      };
+    }
+  }
+  return null;
+};
+
 const cadStabilizeParcelVertexCoordinates = (
   parcel: CadParcelEntity,
   tolerance = 1e-9,
@@ -3270,6 +3311,80 @@ export const cadBuildParcelAutoLayoutDraft = (
       role: 'lot',
     })),
     statusMessage: `Automatic fill redistributed remainder across ${lotCount} lots.`,
+  };
+};
+
+export const cadBuildParcelAutoLayoutDraftFromFrontageReference = (
+  parcel: CadParcelEntity,
+  frontageReference: CadParcelLayoutFrontageReference,
+  settings: CadParcelLayoutSettings,
+  tool: 'slide' | 'swing',
+): CadParcelAutoLayoutDraft => {
+  const segmentPairs = frontageReference.parcelSegmentLabelPairs ?? [];
+  if (segmentPairs.length <= 1) {
+    return cadBuildParcelAutoLayoutDraft(parcel, frontageReference.frontageLine, settings, tool);
+  }
+
+  let currentParcel: CadParcelEntity = {
+    ...parcel,
+    vertices: parcel.vertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
+    vertexLabels: [...parcel.vertexLabels],
+  };
+  const generatedParcels: CadParcelLayoutGeneratedParcelDraft[] = [];
+  const acceptedCandidates: CadParcelLayoutPreviewCandidate[] = [];
+
+  for (let index = 0; index < segmentPairs.length; index += 1) {
+    const pair = segmentPairs[index]!;
+    const currentFrontage = cadBuildFrontageLineFromParcelLabelPair(currentParcel, pair[0], pair[1]);
+    if (!currentFrontage) continue;
+
+    const isLastSegment = index === segmentPairs.length - 1;
+    const segmentSettings = isLastSegment
+      ? settings
+      : {
+          ...settings,
+          remainderDistribution: 'create_parcel_from_remainder' as const,
+        };
+    const segmentDraft = cadBuildParcelAutoLayoutDraft(
+      currentParcel,
+      currentFrontage,
+      segmentSettings,
+      tool,
+    );
+    if (!segmentDraft.isValid) {
+      continue;
+    }
+
+    const segmentGeneratedParcels = [...segmentDraft.generatedParcels];
+    const trailingRemainder =
+      !isLastSegment && segmentGeneratedParcels.at(-1)?.role === 'remainder'
+        ? segmentGeneratedParcels.pop() ?? null
+        : null;
+
+    generatedParcels.push(...segmentGeneratedParcels);
+    acceptedCandidates.push(...segmentDraft.acceptedCandidates);
+
+    if (!isLastSegment && trailingRemainder) {
+      currentParcel = cadBuildParcelEntityFromGeneratedDraft(parcel, trailingRemainder);
+    }
+  }
+
+  if (generatedParcels.length < 2) {
+    return {
+      tool,
+      generatedParcels: [],
+      acceptedCandidates: [],
+      isValid: false,
+      statusMessage: 'Automatic fill could not create valid lots from the selected frontage edges.',
+    };
+  }
+
+  return {
+    tool,
+    generatedParcels,
+    acceptedCandidates,
+    isValid: true,
+    statusMessage: `Automatic fill prepared ${generatedParcels.length} parcels from the selected frontage edges.`,
   };
 };
 

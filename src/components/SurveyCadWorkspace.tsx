@@ -1009,10 +1009,20 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     effectiveParcelLayoutFrontageReference != null &&
     parcelLayoutState.settings.automaticMode === 'fill_parent' &&
     (parcelAutoLayoutDraft?.isValid ?? false);
+  const canCreateSingleAutomaticParcel =
+    parcelLayoutState.settings.automaticMode === 'single_preview' &&
+    effectiveParcelLayoutParentEntity != null &&
+    effectiveParcelLayoutFrontageReference != null &&
+    (
+      (parcelLayoutAutoPreviewState?.draft.acceptedCandidates[parcelLayoutAutoPreviewState.activeIndex]?.isValid ?? false) ||
+      (parcelAutoLayoutDraft?.acceptedCandidates[0]?.isValid ?? false)
+    );
   const canRunPrimaryParcelLayoutCreate =
     parcelLayoutState.settings.automaticMode === 'fill_parent'
       ? canCreateAllParcelLayout
-      : canCreateParcel;
+      : parcelLayoutState.settings.automaticMode === 'single_preview'
+        ? canCreateSingleAutomaticParcel
+        : canCreateParcel;
   const canPreviewAllParcelLayout =
     effectiveParcelLayoutParentEntity != null &&
     effectiveParcelLayoutFrontageReference != null &&
@@ -1131,6 +1141,42 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         settings: cloneParcelLayoutSettings(parcelLayoutState.settings),
       });
     }
+    setParcelLayoutPreviewState(null);
+  };
+
+  const commitAutomaticSinglePreviewCandidate = () => {
+    const activeCandidate = parcelLayoutAutoPreviewState?.draft.acceptedCandidates[parcelLayoutAutoPreviewState.activeIndex]
+      ?? parcelAutoLayoutDraft?.acceptedCandidates[0]
+      ?? null;
+    if (
+      !activeCandidate?.isValid ||
+      !effectiveParcelLayoutParentEntity ||
+      !effectiveParcelLayoutFrontageReference
+    ) {
+      return;
+    }
+    if (activeCandidate.tool === 'slide') {
+      commitParcelSlideLayout({
+        parcelEntityId: effectiveParcelLayoutParentEntity.id,
+        frontageEntityId: effectiveParcelLayoutFrontageEntityId,
+        frontageParcelSegmentIds: effectiveParcelLayoutFrontageParcelSegmentIds,
+        targetAreaSquareMeters: parcelLayoutState.settings.minAreaSquareMeters,
+        minFrontageMeters: parcelLayoutState.settings.minFrontageMeters,
+        alternative: activeCandidate.alternative,
+        settings: cloneParcelLayoutSettings(parcelLayoutState.settings),
+      });
+    } else {
+      commitParcelSwingLayout({
+        parcelEntityId: effectiveParcelLayoutParentEntity.id,
+        frontageEntityId: effectiveParcelLayoutFrontageEntityId,
+        frontageParcelSegmentIds: effectiveParcelLayoutFrontageParcelSegmentIds,
+        targetAreaSquareMeters: parcelLayoutState.settings.minAreaSquareMeters,
+        minFrontageMeters: parcelLayoutState.settings.minFrontageMeters,
+        alternative: activeCandidate.alternative,
+        settings: cloneParcelLayoutSettings(parcelLayoutState.settings),
+      });
+    }
+    setParcelLayoutAutoPreviewState(null);
     setParcelLayoutPreviewState(null);
   };
 
@@ -1290,6 +1336,10 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   const createPrimaryParcelLayout = () => {
     if (parcelLayoutState.settings.automaticMode === 'fill_parent') {
       createAllParcelLayout();
+      return;
+    }
+    if (parcelLayoutState.settings.automaticMode === 'single_preview') {
+      commitAutomaticSinglePreviewCandidate();
       return;
     }
     createParcelFromSelection();
