@@ -7,6 +7,7 @@ import {
   cadBuildParcelAutoLayoutDraft,
   cadBuildParcelClosureSummary,
   cadBuildParcelLayoutFrontageReference,
+  cadBuildParcelLayoutFrontageReferenceFromParcelSegments,
   cadEvaluateParcelLayoutConstraints,
   cadBuildParcelSplitByAreaDraft,
   cadBuildParcelSplitByBearingDraft,
@@ -274,7 +275,8 @@ export type CadCommand =
   | {
       key: 'PARCEL_SPLIT_SLIDE';
       parcelEntityId: CadEntityId;
-      frontageEntityId: CadEntityId;
+      frontageEntityId?: CadEntityId | null;
+      frontageParcelSegmentIds?: string[] | null;
       targetAreaSquareMeters: number;
       minFrontageMeters: number;
       alternative: 'start' | 'end';
@@ -283,7 +285,8 @@ export type CadCommand =
   | {
       key: 'PARCEL_SPLIT_SWING';
       parcelEntityId: CadEntityId;
-      frontageEntityId: CadEntityId;
+      frontageEntityId?: CadEntityId | null;
+      frontageParcelSegmentIds?: string[] | null;
       targetAreaSquareMeters: number;
       minFrontageMeters: number;
       alternative: 'start' | 'end';
@@ -292,7 +295,8 @@ export type CadCommand =
   | {
       key: 'PARCEL_LAYOUT_AUTO';
       parcelEntityId: CadEntityId;
-      frontageEntityId: CadEntityId;
+      frontageEntityId?: CadEntityId | null;
+      frontageParcelSegmentIds?: string[] | null;
       tool: 'slide' | 'swing';
       settings: CadParcelLayoutSettings;
     }
@@ -6143,10 +6147,51 @@ const parcelSplitAreaCommand: CadCommandDefinition<{
   },
 };
 
+const resolveParcelLayoutFrontageSource = (
+  snapshot: CadWorkspaceSnapshot,
+  parcelEntity: CadParcelEntity,
+  frontageEntityId?: CadEntityId | null,
+  frontageParcelSegmentIds?: readonly string[] | null,
+) => {
+  const frontageEntity =
+    frontageEntityId == null
+      ? null
+      : snapshot.project.entities.find(
+          (entity): entity is CadLineEntity | CadPolylineEntity | CadArcEntity =>
+            entity.id === frontageEntityId &&
+            (entity.type === 'line' || entity.type === 'polyline' || entity.type === 'arc'),
+        ) ?? null;
+  if (frontageEntity) {
+    const frontageReference = cadBuildParcelLayoutFrontageReference(frontageEntity);
+    return frontageReference
+      ? {
+          frontageEntity,
+          frontageReference,
+          sourceEntityIds: [parcelEntity.id, frontageEntity.id],
+        }
+      : null;
+  }
+  if (frontageParcelSegmentIds?.length) {
+    const frontageReference = cadBuildParcelLayoutFrontageReferenceFromParcelSegments(
+      parcelEntity,
+      frontageParcelSegmentIds,
+    );
+    return frontageReference
+      ? {
+          frontageEntity: null,
+          frontageReference,
+          sourceEntityIds: [parcelEntity.id],
+        }
+      : null;
+  }
+  return null;
+};
+
 const parcelSplitSlideCommand: CadCommandDefinition<{
   key: 'PARCEL_SPLIT_SLIDE';
   parcelEntityId: CadEntityId;
-  frontageEntityId: CadEntityId;
+  frontageEntityId?: CadEntityId | null;
+  frontageParcelSegmentIds?: string[] | null;
   targetAreaSquareMeters: number;
   minFrontageMeters: number;
   alternative: 'start' | 'end';
@@ -6157,15 +6202,15 @@ const parcelSplitSlideCommand: CadCommandDefinition<{
     const parcelEntity = snapshot.project.entities.find(
       (entity): entity is CadParcelEntity => entity.id === command.parcelEntityId && entity.type === 'parcel',
     );
-    const frontageEntity = snapshot.project.entities.find(
-      (entity): entity is CadLineEntity | CadPolylineEntity | CadArcEntity =>
-        entity.id === command.frontageEntityId &&
-        (entity.type === 'line' || entity.type === 'polyline' || entity.type === 'arc'),
+    if (!parcelEntity) return null;
+    const resolvedFrontage = resolveParcelLayoutFrontageSource(
+      snapshot,
+      parcelEntity,
+      command.frontageEntityId,
+      command.frontageParcelSegmentIds,
     );
-    const frontageReference = frontageEntity
-      ? cadBuildParcelLayoutFrontageReference(frontageEntity)
-      : null;
-    if (!parcelEntity || !frontageEntity || !frontageReference) return null;
+    if (!resolvedFrontage) return null;
+    const { frontageEntity, frontageReference, sourceEntityIds } = resolvedFrontage;
 
     const layoutDraft = cadBuildParcelSplitBySlideDraft(
       parcelEntity,
@@ -6191,11 +6236,12 @@ const parcelSplitSlideCommand: CadCommandDefinition<{
       summary,
       transactionLabel: `PARCEL SPLIT slide (${parcelEntity.parcelName})`,
       prompt: `PARCEL SPLIT slide committed on ${parcelEntity.parcelName}.`,
-      sourceEntityIds: [parcelEntity.id, frontageEntity.id],
+      sourceEntityIds,
       sourcePointIds: [...parcelEntity.vertexLabels, ...frontageReference.sourcePointIds],
       inputs: {
         parcelEntityId: parcelEntity.id,
-        frontageEntityId: frontageEntity.id,
+        frontageEntityId: frontageEntity?.id ?? null,
+        frontageParcelSegmentIds: frontageReference.parcelSegmentIds ?? null,
         targetAreaSquareMeters: command.targetAreaSquareMeters,
         minFrontageMeters: command.minFrontageMeters,
         alternative: command.alternative,
@@ -6218,13 +6264,15 @@ const parcelSplitSlideCommand: CadCommandDefinition<{
       firstParcelMetadata: {
         createdBy: 'PARCEL_SPLIT_SLIDE',
         parentParcelId: parcelEntity.id,
-        frontageEntityId: frontageEntity.id,
+        frontageEntityId: frontageEntity?.id ?? null,
+        frontageParcelSegmentIds: frontageReference.parcelSegmentIds ?? null,
         alternative: command.alternative,
       },
       secondParcelMetadata: {
         createdBy: 'PARCEL_SPLIT_SLIDE',
         parentParcelId: parcelEntity.id,
-        frontageEntityId: frontageEntity.id,
+        frontageEntityId: frontageEntity?.id ?? null,
+        frontageParcelSegmentIds: frontageReference.parcelSegmentIds ?? null,
         alternative: command.alternative,
       },
     });
@@ -6235,7 +6283,8 @@ const parcelSplitSlideCommand: CadCommandDefinition<{
 const parcelSplitSwingCommand: CadCommandDefinition<{
   key: 'PARCEL_SPLIT_SWING';
   parcelEntityId: CadEntityId;
-  frontageEntityId: CadEntityId;
+  frontageEntityId?: CadEntityId | null;
+  frontageParcelSegmentIds?: string[] | null;
   targetAreaSquareMeters: number;
   minFrontageMeters: number;
   alternative: 'start' | 'end';
@@ -6246,15 +6295,15 @@ const parcelSplitSwingCommand: CadCommandDefinition<{
     const parcelEntity = snapshot.project.entities.find(
       (entity): entity is CadParcelEntity => entity.id === command.parcelEntityId && entity.type === 'parcel',
     );
-    const frontageEntity = snapshot.project.entities.find(
-      (entity): entity is CadLineEntity | CadPolylineEntity | CadArcEntity =>
-        entity.id === command.frontageEntityId &&
-        (entity.type === 'line' || entity.type === 'polyline' || entity.type === 'arc'),
+    if (!parcelEntity) return null;
+    const resolvedFrontage = resolveParcelLayoutFrontageSource(
+      snapshot,
+      parcelEntity,
+      command.frontageEntityId,
+      command.frontageParcelSegmentIds,
     );
-    const frontageReference = frontageEntity
-      ? cadBuildParcelLayoutFrontageReference(frontageEntity)
-      : null;
-    if (!parcelEntity || !frontageEntity || !frontageReference) return null;
+    if (!resolvedFrontage) return null;
+    const { frontageEntity, frontageReference, sourceEntityIds } = resolvedFrontage;
 
     const layoutDraft = cadBuildParcelSplitBySwingDraft(
       parcelEntity,
@@ -6280,11 +6329,12 @@ const parcelSplitSwingCommand: CadCommandDefinition<{
       summary,
       transactionLabel: `PARCEL SPLIT swing (${parcelEntity.parcelName})`,
       prompt: `PARCEL SPLIT swing committed on ${parcelEntity.parcelName}.`,
-      sourceEntityIds: [parcelEntity.id, frontageEntity.id],
+      sourceEntityIds,
       sourcePointIds: [...parcelEntity.vertexLabels, ...frontageReference.sourcePointIds],
       inputs: {
         parcelEntityId: parcelEntity.id,
-        frontageEntityId: frontageEntity.id,
+        frontageEntityId: frontageEntity?.id ?? null,
+        frontageParcelSegmentIds: frontageReference.parcelSegmentIds ?? null,
         targetAreaSquareMeters: command.targetAreaSquareMeters,
         minFrontageMeters: command.minFrontageMeters,
         alternative: command.alternative,
@@ -6307,13 +6357,15 @@ const parcelSplitSwingCommand: CadCommandDefinition<{
       firstParcelMetadata: {
         createdBy: 'PARCEL_SPLIT_SWING',
         parentParcelId: parcelEntity.id,
-        frontageEntityId: frontageEntity.id,
+        frontageEntityId: frontageEntity?.id ?? null,
+        frontageParcelSegmentIds: frontageReference.parcelSegmentIds ?? null,
         alternative: command.alternative,
       },
       secondParcelMetadata: {
         createdBy: 'PARCEL_SPLIT_SWING',
         parentParcelId: parcelEntity.id,
-        frontageEntityId: frontageEntity.id,
+        frontageEntityId: frontageEntity?.id ?? null,
+        frontageParcelSegmentIds: frontageReference.parcelSegmentIds ?? null,
         alternative: command.alternative,
       },
     });
@@ -6324,7 +6376,8 @@ const parcelSplitSwingCommand: CadCommandDefinition<{
 const parcelLayoutAutoCommand: CadCommandDefinition<{
   key: 'PARCEL_LAYOUT_AUTO';
   parcelEntityId: CadEntityId;
-  frontageEntityId: CadEntityId;
+  frontageEntityId?: CadEntityId | null;
+  frontageParcelSegmentIds?: string[] | null;
   tool: 'slide' | 'swing';
   settings: CadParcelLayoutSettings;
 }> = {
@@ -6333,15 +6386,15 @@ const parcelLayoutAutoCommand: CadCommandDefinition<{
     const parcelEntity = snapshot.project.entities.find(
       (entity): entity is CadParcelEntity => entity.id === command.parcelEntityId && entity.type === 'parcel',
     );
-    const frontageEntity = snapshot.project.entities.find(
-      (entity): entity is CadLineEntity | CadPolylineEntity | CadArcEntity =>
-        entity.id === command.frontageEntityId &&
-        (entity.type === 'line' || entity.type === 'polyline' || entity.type === 'arc'),
+    if (!parcelEntity) return null;
+    const resolvedFrontage = resolveParcelLayoutFrontageSource(
+      snapshot,
+      parcelEntity,
+      command.frontageEntityId,
+      command.frontageParcelSegmentIds,
     );
-    const frontageReference = frontageEntity
-      ? cadBuildParcelLayoutFrontageReference(frontageEntity)
-      : null;
-    if (!parcelEntity || !frontageEntity || !frontageReference) return null;
+    if (!resolvedFrontage) return null;
+    const { frontageEntity, frontageReference, sourceEntityIds } = resolvedFrontage;
 
     const autoLayoutDraft = cadBuildParcelAutoLayoutDraft(
       parcelEntity,
@@ -6407,11 +6460,12 @@ const parcelLayoutAutoCommand: CadCommandDefinition<{
     const provenance = createCogoProvenance({
       toolKey: 'PARCEL_LAYOUT_AUTO',
       summary: `Automatic parcel layout created ${createdParcels.length} parcels from ${parcelEntity.parcelName}.`,
-      sourceEntityIds: [parcelEntity.id, frontageEntity.id],
+      sourceEntityIds,
       sourcePointIds: [...parcelEntity.vertexLabels, ...frontageReference.sourcePointIds],
       inputs: {
         parcelEntityId: parcelEntity.id,
-        frontageEntityId: frontageEntity.id,
+        frontageEntityId: frontageEntity?.id ?? null,
+        frontageParcelSegmentIds: frontageReference.parcelSegmentIds ?? null,
         tool: command.tool,
         settings: command.settings,
       },
@@ -6427,7 +6481,8 @@ const parcelLayoutAutoCommand: CadCommandDefinition<{
         {
           createdBy: 'PARCEL_LAYOUT_AUTO',
           parentParcelId: parcelEntity.id,
-          frontageEntityId: frontageEntity.id,
+          frontageEntityId: frontageEntity?.id ?? null,
+          frontageParcelSegmentIds: frontageReference.parcelSegmentIds ?? null,
           tool: command.tool,
           lotIndex: index + 1,
           role: autoLayoutDraft.generatedParcels[index]!.role,

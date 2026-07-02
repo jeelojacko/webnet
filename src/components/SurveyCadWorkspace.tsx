@@ -4,6 +4,7 @@ import { buildSurveyCadSpikeProject } from '../engine/cad/cadModel';
 import {
   cadBuildParcelAutoLayoutDraft,
   cadBuildParcelLayoutFrontageReference,
+  cadBuildParcelLayoutFrontageReferenceFromParcelSegments,
   type CadParcelAutoLayoutDraft,
   type CadParcelLayoutPreviewCandidate,
   cadSelectPreferredParcelLayoutPreviewCandidate,
@@ -76,6 +77,7 @@ const DEFAULT_PARCEL_LAYOUT_UI_STATE: CadParcelLayoutUiState = {
   floatingHeightPx: DEFAULT_PARCEL_LAYOUT_FLOATING_HEIGHT_PX,
   activeParentParcelId: null,
   activeFrontageEntityId: null,
+  activeFrontageParcelSegmentIds: null,
   settings: DEFAULT_PARCEL_LAYOUT_SETTINGS,
 };
 
@@ -112,6 +114,10 @@ const cloneParcelLayoutUiState = (
     floatingHeightPx,
     activeParentParcelId: state?.activeParentParcelId ?? DEFAULT_PARCEL_LAYOUT_UI_STATE.activeParentParcelId,
     activeFrontageEntityId: state?.activeFrontageEntityId ?? DEFAULT_PARCEL_LAYOUT_UI_STATE.activeFrontageEntityId,
+    activeFrontageParcelSegmentIds:
+      state?.activeFrontageParcelSegmentIds != null
+        ? [...state.activeFrontageParcelSegmentIds]
+        : DEFAULT_PARCEL_LAYOUT_UI_STATE.activeFrontageParcelSegmentIds,
     settings: cloneParcelLayoutSettings(state?.settings ?? DEFAULT_PARCEL_LAYOUT_SETTINGS),
   };
 };
@@ -250,6 +256,9 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   const [parcelLayoutAutoPreviewState, setParcelLayoutAutoPreviewState] =
     useState<ParcelLayoutAutoPreviewState | null>(null);
   const [parcelLayoutAutoTool, setParcelLayoutAutoTool] = useState<'slide' | 'swing'>('slide');
+  const [parcelLayoutFrontageSegmentSelectionActive, setParcelLayoutFrontageSegmentSelectionActive] =
+    useState(false);
+  const [parcelLayoutFrontageSegmentSelectionIds, setParcelLayoutFrontageSegmentSelectionIds] = useState<string[]>([]);
   const [showParcelLabels, setShowParcelLabels] = useState<boolean>(
     () => persistedState?.showParcelLabels ?? true,
   );
@@ -796,6 +805,16 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       (entity): entity is Extract<(typeof selectedEntities)[number], { type: 'line' | 'polyline' | 'arc' }> =>
         entity.type === 'line' || entity.type === 'polyline' || entity.type === 'arc',
     ) ?? null;
+  const activeParcelSegmentFrontageReference = useMemo(
+    () =>
+      (parcelLayoutParentEntity ?? selectedParcelForLayout) && parcelLayoutState.activeFrontageParcelSegmentIds?.length
+        ? cadBuildParcelLayoutFrontageReferenceFromParcelSegments(
+            (parcelLayoutParentEntity ?? selectedParcelForLayout)!,
+            parcelLayoutState.activeFrontageParcelSegmentIds,
+          )
+        : null,
+    [parcelLayoutParentEntity, parcelLayoutState.activeFrontageParcelSegmentIds, selectedParcelForLayout],
+  );
   const parcelLayoutFrontageReference = useMemo(
     () =>
       parcelLayoutFrontageEntity
@@ -818,15 +837,49 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   ]);
   const effectiveParcelLayoutParentEntity =
     directParcelSplitTarget?.parcel ?? parcelLayoutParentEntity ?? selectedParcelForLayout ?? null;
+  const draftParcelSegmentFrontageReference = useMemo(
+    () =>
+      parcelLayoutFrontageSegmentSelectionActive &&
+      effectiveParcelLayoutParentEntity &&
+      parcelLayoutFrontageSegmentSelectionIds.length > 0
+        ? cadBuildParcelLayoutFrontageReferenceFromParcelSegments(
+            effectiveParcelLayoutParentEntity,
+            parcelLayoutFrontageSegmentSelectionIds,
+          )
+        : null,
+    [
+      effectiveParcelLayoutParentEntity,
+      parcelLayoutFrontageSegmentSelectionActive,
+      parcelLayoutFrontageSegmentSelectionIds,
+    ],
+  );
   const effectiveParcelLayoutFrontageEntity =
-    directParcelSplitTarget?.frontage ?? parcelLayoutFrontageEntity ?? selectedFrontageForLayout ?? null;
+    activeParcelSegmentFrontageReference == null && draftParcelSegmentFrontageReference == null
+      ? directParcelSplitTarget?.frontage ?? parcelLayoutFrontageEntity ?? selectedFrontageForLayout ?? null
+      : null;
   const effectiveParcelLayoutFrontageReference =
-    directParcelSplitTarget?.frontageReference ?? parcelLayoutFrontageReference;
+    draftParcelSegmentFrontageReference ??
+    activeParcelSegmentFrontageReference ??
+    directParcelSplitTarget?.frontageReference ??
+    parcelLayoutFrontageReference;
+  const effectiveParcelLayoutFrontageEntityId = effectiveParcelLayoutFrontageEntity?.id ?? null;
+  const effectiveParcelLayoutFrontageParcelSegmentIds =
+    effectiveParcelLayoutFrontageReference?.parcelSegmentIds ?? null;
   const parcelLayoutFrontageLabel = useMemo(() => {
     return effectiveParcelLayoutFrontageReference?.displayLabel ?? null;
   }, [effectiveParcelLayoutFrontageReference]);
   const parcelLayoutAutoFrontageUnsupportedMessage = useMemo(() => {
-    if (parcelLayoutState.settings.automaticMode === 'off' || !effectiveParcelLayoutFrontageEntity) {
+    if (parcelLayoutState.settings.automaticMode === 'off') {
+      return null;
+    }
+    const activeFrontageSegmentCount =
+      draftParcelSegmentFrontageReference?.parcelSegmentIds?.length ??
+      activeParcelSegmentFrontageReference?.parcelSegmentIds?.length ??
+      0;
+    if (activeFrontageSegmentCount > 1) {
+      return 'Automatic fill from multiple selected parcel edges is staged next. Keep one segment selected for now.';
+    }
+    if (!effectiveParcelLayoutFrontageEntity) {
       return null;
     }
     if (
@@ -836,7 +889,12 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       return 'Automatic fill currently needs one frontage edge. Multi-segment frontage polylines are not supported yet.';
     }
     return null;
-  }, [effectiveParcelLayoutFrontageEntity, parcelLayoutState.settings.automaticMode]);
+  }, [
+    activeParcelSegmentFrontageReference?.parcelSegmentIds,
+    draftParcelSegmentFrontageReference?.parcelSegmentIds,
+    effectiveParcelLayoutFrontageEntity,
+    parcelLayoutState.settings.automaticMode,
+  ]);
   const canPreviewParcelSlideOrSwing =
     effectiveParcelLayoutParentEntity != null && effectiveParcelLayoutFrontageReference != null;
   const directParcelSlideCandidate = useMemo(
@@ -895,6 +953,11 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       return 'Choose one parent parcel for parcel-layout preview.';
     }
     if (!effectiveParcelLayoutFrontageReference) {
+      if (parcelLayoutFrontageSegmentSelectionActive) {
+        return parcelLayoutFrontageSegmentSelectionIds.length === 0
+          ? 'Click parcel edges to build frontage, then accept with ✓.'
+          : `Selected ${parcelLayoutFrontageSegmentSelectionIds.length} frontage segment${parcelLayoutFrontageSegmentSelectionIds.length === 1 ? '' : 's'}. Accept with ✓ or cancel with X.`;
+      }
       return 'Choose one frontage entity that matches a parent parcel edge.';
     }
     if (parcelLayoutAutoFrontageUnsupportedMessage) {
@@ -920,6 +983,8 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     parcelAutoLayoutDraft,
     parcelLayoutAutoFrontageUnsupportedMessage,
     parcelLayoutAutoPreviewState,
+    parcelLayoutFrontageSegmentSelectionActive,
+    parcelLayoutFrontageSegmentSelectionIds.length,
     effectiveParcelLayoutFrontageReference,
     effectiveParcelLayoutParentEntity,
     parcelLayoutPreviewState,
@@ -1006,7 +1071,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     if (
       parcelLayoutAutoPreviewState &&
       effectiveParcelLayoutParentEntity &&
-      effectiveParcelLayoutFrontageEntity
+      effectiveParcelLayoutFrontageReference
     ) {
       const activeCandidate =
         parcelLayoutAutoPreviewState.draft.acceptedCandidates[parcelLayoutAutoPreviewState.activeIndex] ?? null;
@@ -1014,7 +1079,8 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       if (activeCandidate.tool === 'slide') {
         commitParcelSlideLayout({
           parcelEntityId: effectiveParcelLayoutParentEntity.id,
-          frontageEntityId: effectiveParcelLayoutFrontageEntity.id,
+          frontageEntityId: effectiveParcelLayoutFrontageEntityId,
+          frontageParcelSegmentIds: effectiveParcelLayoutFrontageParcelSegmentIds,
           targetAreaSquareMeters: parcelLayoutState.settings.minAreaSquareMeters,
           minFrontageMeters: parcelLayoutState.settings.minFrontageMeters,
           alternative: activeCandidate.alternative,
@@ -1023,7 +1089,8 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       } else {
         commitParcelSwingLayout({
           parcelEntityId: effectiveParcelLayoutParentEntity.id,
-          frontageEntityId: effectiveParcelLayoutFrontageEntity.id,
+          frontageEntityId: effectiveParcelLayoutFrontageEntityId,
+          frontageParcelSegmentIds: effectiveParcelLayoutFrontageParcelSegmentIds,
           targetAreaSquareMeters: parcelLayoutState.settings.minAreaSquareMeters,
           minFrontageMeters: parcelLayoutState.settings.minFrontageMeters,
           alternative: activeCandidate.alternative,
@@ -1039,14 +1106,15 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       !parcelLayoutPreviewState.candidate.isValid ||
       !parcelLayoutPreviewState.candidate.draft ||
       !effectiveParcelLayoutParentEntity ||
-      !effectiveParcelLayoutFrontageEntity
+      !effectiveParcelLayoutFrontageReference
     ) {
       return;
     }
     if (parcelLayoutPreviewState.candidate.tool === 'slide') {
       commitParcelSlideLayout({
         parcelEntityId: effectiveParcelLayoutParentEntity.id,
-        frontageEntityId: effectiveParcelLayoutFrontageEntity.id,
+        frontageEntityId: effectiveParcelLayoutFrontageEntityId,
+        frontageParcelSegmentIds: effectiveParcelLayoutFrontageParcelSegmentIds,
         targetAreaSquareMeters: parcelLayoutState.settings.minAreaSquareMeters,
         minFrontageMeters: parcelLayoutState.settings.minFrontageMeters,
         alternative: parcelLayoutPreviewState.candidate.alternative,
@@ -1055,7 +1123,8 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     } else {
       commitParcelSwingLayout({
         parcelEntityId: effectiveParcelLayoutParentEntity.id,
-        frontageEntityId: effectiveParcelLayoutFrontageEntity.id,
+        frontageEntityId: effectiveParcelLayoutFrontageEntityId,
+        frontageParcelSegmentIds: effectiveParcelLayoutFrontageParcelSegmentIds,
         targetAreaSquareMeters: parcelLayoutState.settings.minAreaSquareMeters,
         minFrontageMeters: parcelLayoutState.settings.minFrontageMeters,
         alternative: parcelLayoutPreviewState.candidate.alternative,
@@ -1078,13 +1147,14 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     if (
       !canCreateAllParcelLayout ||
       !effectiveParcelLayoutParentEntity ||
-      !effectiveParcelLayoutFrontageEntity
+      !effectiveParcelLayoutFrontageReference
     ) {
       return;
     }
     commitParcelAutoLayout({
       parcelEntityId: effectiveParcelLayoutParentEntity.id,
-      frontageEntityId: effectiveParcelLayoutFrontageEntity.id,
+      frontageEntityId: effectiveParcelLayoutFrontageEntityId,
+      frontageParcelSegmentIds: effectiveParcelLayoutFrontageParcelSegmentIds,
       tool: parcelLayoutAutoTool,
       settings: cloneParcelLayoutSettings(parcelLayoutState.settings),
     });
@@ -1223,6 +1293,52 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       return;
     }
     createParcelFromSelection();
+  };
+
+  const startFrontageSegmentSelection = () => {
+    if (!effectiveParcelLayoutParentEntity) return;
+    setParcelLayoutFrontageSegmentSelectionIds([
+      ...(parcelLayoutState.activeFrontageParcelSegmentIds ?? []),
+    ]);
+    setParcelLayoutFrontageSegmentSelectionActive(true);
+  };
+
+  const acceptFrontageSegmentSelection = () => {
+    if (!effectiveParcelLayoutParentEntity || parcelLayoutFrontageSegmentSelectionIds.length === 0) {
+      setParcelLayoutFrontageSegmentSelectionActive(false);
+      setParcelLayoutFrontageSegmentSelectionIds([]);
+      return;
+    }
+    const nextSegmentIds = [...new Set(parcelLayoutFrontageSegmentSelectionIds)];
+    updateParcelLayoutState((current) => ({
+      ...current,
+      activeFrontageEntityId: null,
+      activeFrontageParcelSegmentIds: nextSegmentIds,
+    }));
+    setParcelLayoutFrontageSegmentSelectionActive(false);
+    setParcelLayoutFrontageSegmentSelectionIds([]);
+  };
+
+  const cancelFrontageSegmentSelection = () => {
+    setParcelLayoutFrontageSegmentSelectionActive(false);
+    setParcelLayoutFrontageSegmentSelectionIds([]);
+  };
+
+  const toggleFrontageSegmentSelection = (entityId: CadEntityId, segmentId?: string) => {
+    if (
+      !parcelLayoutFrontageSegmentSelectionActive ||
+      !effectiveParcelLayoutParentEntity ||
+      entityId !== effectiveParcelLayoutParentEntity.id ||
+      segmentId == null
+    ) {
+      return false;
+    }
+    setParcelLayoutFrontageSegmentSelectionIds((current) =>
+      current.includes(segmentId)
+        ? current.filter((entry) => entry !== segmentId)
+        : [...current, segmentId],
+    );
+    return true;
   };
 
   const runAutoLayoutTool = () => {
@@ -1657,6 +1773,8 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               canPreviewLayout={canPreviewParcelSlideOrSwing}
               canUseCurrentSelectionAsParent={selectedParcelForLayout != null}
               canUseCurrentSelectionAsFrontage={selectedFrontageForLayout != null}
+              canUseParcelFrontageSegments={effectiveParcelLayoutParentEntity != null}
+              isSelectingFrontageSegments={parcelLayoutFrontageSegmentSelectionActive}
               onClose={() => updateParcelLayoutState((current) => ({ ...current, open: false }))}
               onToggleCollapsed={() => updateParcelLayoutState((current) => ({ ...current, collapsed: !current.collapsed }))}
               onSetDock={(dock) => {
@@ -1711,6 +1829,10 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
                 updateParcelLayoutState((current) => ({
                   ...current,
                   activeParentParcelId: selectedParcelForLayout.id,
+                  activeFrontageParcelSegmentIds:
+                    current.activeParentParcelId === selectedParcelForLayout.id
+                      ? current.activeFrontageParcelSegmentIds
+                      : null,
                 }));
               }}
               onUseSelectedFrontage={() => {
@@ -1718,10 +1840,22 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
                 updateParcelLayoutState((current) => ({
                   ...current,
                   activeFrontageEntityId: selectedFrontageForLayout.id,
+                  activeFrontageParcelSegmentIds: null,
                 }));
               }}
-              onClearParent={() => updateParcelLayoutState((current) => ({ ...current, activeParentParcelId: null }))}
-              onClearFrontage={() => updateParcelLayoutState((current) => ({ ...current, activeFrontageEntityId: null }))}
+              onStartFrontageSegmentSelection={startFrontageSegmentSelection}
+              onAcceptFrontageSegmentSelection={acceptFrontageSegmentSelection}
+              onCancelFrontageSegmentSelection={cancelFrontageSegmentSelection}
+              onClearParent={() => updateParcelLayoutState((current) => ({
+                ...current,
+                activeParentParcelId: null,
+                activeFrontageParcelSegmentIds: null,
+              }))}
+              onClearFrontage={() => updateParcelLayoutState((current) => ({
+                ...current,
+                activeFrontageEntityId: null,
+                activeFrontageParcelSegmentIds: null,
+              }))}
               onUpdateSettings={(settings) => updateParcelLayoutState((current) => ({ ...current, settings }))}
               onResetSettings={() => updateParcelLayoutState((current) => ({
                 ...current,
@@ -1756,6 +1890,11 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               canReportCheck={canReportParcelDiagnostics}
               canReportOverlap={canReportParcelOverlap}
               autoToolTitle={autoLayoutToolTitle}
+              frontageSegmentActionTitle={
+                effectiveParcelLayoutParentEntity
+                  ? 'Pick frontage segments from active parent parcel'
+                  : 'Choose one parent parcel before selecting frontage segments'
+              }
             />
           ) : null}
           {activeBatchCogoDraft ? (
@@ -2371,6 +2510,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             commandActive={activeCommandKey != null}
             commandPointInputActive={commandExpectsPointPick}
             onViewportChange={setViewport}
+            onPrimitiveClickIntercept={toggleFrontageSegmentSelection}
             onSelectEntity={selectEntity}
             onSelectEntities={selectEntities}
             onStartGripEdit={startGripEdit}

@@ -263,6 +263,7 @@ export interface CadParcelLayoutUiState {
   floatingHeightPx: number;
   activeParentParcelId: CadEntityId | null;
   activeFrontageEntityId: CadEntityId | null;
+  activeFrontageParcelSegmentIds?: string[] | null;
   settings: CadParcelLayoutSettings;
 }
 

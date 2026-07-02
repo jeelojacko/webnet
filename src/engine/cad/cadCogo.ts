@@ -215,6 +215,7 @@ export interface CadParcelLayoutFrontageReference {
   displayLabel: string;
   sourcePointIds: string[];
   frontageLine: CadLineEntity;
+  parcelSegmentIds?: string[] | null;
 }
 
 const PARCEL_LAYOUT_EVALUATION_SAMPLE_COUNT = 7;
@@ -275,6 +276,68 @@ export const cadBuildParcelLayoutFrontageReference = (
   const startPoint = cadArcStartPoint(frontageEntity);
   const endPoint = cadArcEndPoint(frontageEntity);
   return createFrontageReferenceLine(frontageEntity, startPoint, endPoint, 'ARC START', 'ARC END');
+};
+
+export const cadBuildParcelLayoutFrontageReferenceFromParcelSegments = (
+  parcel: CadParcelEntity,
+  segmentIds: readonly string[],
+): CadParcelLayoutFrontageReference | null => {
+  if (segmentIds.length === 0 || parcel.vertices.length < 2) return null;
+  const vertices = normalizeParcelPolygonVertices(parcel.vertices);
+  if (vertices.length < 2) return null;
+  const labels =
+    parcel.vertexLabels.length === vertices.length
+      ? parcel.vertexLabels
+      : vertices.map((_, index) => normalizeParcelVertexLabel(parcel.vertexLabels[index], index));
+
+  const uniqueSegmentIds = [...new Set(segmentIds)];
+  const matchedSegments = uniqueSegmentIds
+    .map((segmentId) => {
+      const expectedPrefix = `${parcel.id}#`;
+      if (!segmentId.startsWith(expectedPrefix)) return null;
+      const rawIndex = Number(segmentId.slice(expectedPrefix.length));
+      if (!Number.isInteger(rawIndex) || rawIndex < 0 || rawIndex >= vertices.length) return null;
+      const start = vertices[rawIndex]!;
+      const end = vertices[(rawIndex + 1) % vertices.length]!;
+      return {
+        segmentId,
+        index: rawIndex,
+        start,
+        end,
+        startLabel: labels[rawIndex] ?? `V${rawIndex + 1}`,
+        endLabel: labels[(rawIndex + 1) % vertices.length] ?? `V${((rawIndex + 1) % vertices.length) + 1}`,
+      };
+    })
+    .filter((segment): segment is NonNullable<typeof segment> => segment != null)
+    .sort((left, right) => left.index - right.index);
+  if (matchedSegments.length === 0) return null;
+
+  const firstSegment = matchedSegments[0]!;
+  const displayLabel = matchedSegments
+    .map((segment) => `${segment.startLabel}-${segment.endLabel}`)
+    .join(', ');
+
+  return {
+    sourceEntityId: parcel.id,
+    displayLabel,
+    sourcePointIds: matchedSegments.flatMap((segment) => [segment.startLabel, segment.endLabel]),
+    frontageLine: {
+      id: `${parcel.id}:frontage-segment:${firstSegment.index}`,
+      type: 'line',
+      layerId: parcel.layerId,
+      styleId: parcel.styleId,
+      visible: parcel.visible,
+      locked: parcel.locked,
+      fromStationId: firstSegment.startLabel,
+      toStationId: firstSegment.endLabel,
+      fromX: firstSegment.start.x,
+      fromY: firstSegment.start.y,
+      toX: firstSegment.end.x,
+      toY: firstSegment.end.y,
+      sourceObservationIds: [],
+    },
+    parcelSegmentIds: matchedSegments.map((segment) => segment.segmentId),
+  };
 };
 
 const normalizeParcelVertexLabel = (label: string | undefined, index: number): string => {

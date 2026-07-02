@@ -22,6 +22,8 @@ interface SurveyCadParcelLayoutPanelProps {
   canPreviewLayout: boolean;
   canUseCurrentSelectionAsParent: boolean;
   canUseCurrentSelectionAsFrontage: boolean;
+  canUseParcelFrontageSegments: boolean;
+  isSelectingFrontageSegments: boolean;
   onClose: () => void;
   onToggleCollapsed: () => void;
   onSetDock: (_dock: CadParcelLayoutUiState['dock']) => void;
@@ -32,6 +34,9 @@ interface SurveyCadParcelLayoutPanelProps {
   ) => void;
   onUseSelectedParent: () => void;
   onUseSelectedFrontage: () => void;
+  onStartFrontageSegmentSelection: () => void;
+  onAcceptFrontageSegmentSelection: () => void;
+  onCancelFrontageSegmentSelection: () => void;
   onClearParent: () => void;
   onClearFrontage: () => void;
   onUpdateSettings: (_settings: CadParcelLayoutSettings) => void;
@@ -62,6 +67,7 @@ interface SurveyCadParcelLayoutPanelProps {
   canReportCheck: boolean;
   canReportOverlap: boolean;
   autoToolTitle: string;
+  frontageSegmentActionTitle: string;
 }
 
 const sectionLabelClassName =
@@ -117,6 +123,8 @@ const SurveyCadParcelLayoutPanel: React.FC<SurveyCadParcelLayoutPanelProps> = ({
   canPreviewLayout,
   canUseCurrentSelectionAsParent,
   canUseCurrentSelectionAsFrontage,
+  canUseParcelFrontageSegments,
+  isSelectingFrontageSegments,
   onClose,
   onToggleCollapsed,
   onSetDock,
@@ -124,6 +132,9 @@ const SurveyCadParcelLayoutPanel: React.FC<SurveyCadParcelLayoutPanelProps> = ({
   onStartResize,
   onUseSelectedParent,
   onUseSelectedFrontage,
+  onStartFrontageSegmentSelection,
+  onAcceptFrontageSegmentSelection,
+  onCancelFrontageSegmentSelection,
   onClearParent,
   onClearFrontage,
   onUpdateSettings,
@@ -154,6 +165,7 @@ const SurveyCadParcelLayoutPanel: React.FC<SurveyCadParcelLayoutPanelProps> = ({
   canReportCheck,
   canReportOverlap,
   autoToolTitle,
+  frontageSegmentActionTitle,
 }) => {
   const updateSetting = <TKey extends keyof CadParcelLayoutSettings>(
     key: TKey,
@@ -244,6 +256,22 @@ const SurveyCadParcelLayoutPanel: React.FC<SurveyCadParcelLayoutPanelProps> = ({
                 <div className="flex flex-wrap items-center justify-end gap-1 text-right">
                   <span className="max-w-24 truncate" data-survey-cad-parcel-layout-frontage title={frontageLabel ?? 'No active frontage reference'}>{frontageLabel ?? 'None'}</span>
                   <button type="button" className={buttonClassName} onClick={onUseSelectedFrontage} disabled={!canUseCurrentSelectionAsFrontage} data-survey-cad-parcel-layout-use-frontage title="Use the current selection as the active frontage reference">Use selection</button>
+                  {isSelectingFrontageSegments ? (
+                    <>
+                      <button type="button" className={buttonClassName} onClick={onAcceptFrontageSegmentSelection} title="Accept the current frontage-segment selection">✓</button>
+                      <button type="button" className={buttonClassName} onClick={onCancelFrontageSegmentSelection} title="Cancel frontage-segment selection">X</button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      className={buttonClassName}
+                      onClick={onStartFrontageSegmentSelection}
+                      disabled={!canUseParcelFrontageSegments}
+                      title={frontageSegmentActionTitle}
+                    >
+                      Segments
+                    </button>
+                  )}
                   <button type="button" className={buttonClassName} onClick={onClearFrontage} disabled={frontageLabel == null} title="Clear the active frontage reference">Clear</button>
                 </div>
               </div>

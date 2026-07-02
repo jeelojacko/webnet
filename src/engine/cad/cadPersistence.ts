@@ -128,7 +128,7 @@ const cloneParcelLayoutUiState = (
   state: CadParcelLayoutUiState | undefined,
 ): CadParcelLayoutUiState | undefined =>
   state
-    ? {
+      ? {
         open: state.open,
         collapsed: state.collapsed,
         dock: state.dock,
@@ -138,6 +138,9 @@ const cloneParcelLayoutUiState = (
         floatingHeightPx: state.floatingHeightPx,
         activeParentParcelId: state.activeParentParcelId,
         activeFrontageEntityId: state.activeFrontageEntityId,
+        activeFrontageParcelSegmentIds: state.activeFrontageParcelSegmentIds
+          ? [...state.activeFrontageParcelSegmentIds]
+          : null,
         settings: cloneParcelLayoutSettings(state.settings),
       }
     : undefined;

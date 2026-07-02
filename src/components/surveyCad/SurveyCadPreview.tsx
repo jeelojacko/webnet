@@ -40,6 +40,10 @@ interface SurveyCadPreviewProps {
   commandActive: boolean;
   commandPointInputActive: boolean;
   onViewportChange: (_viewport: { zoom: number; panX: number; panY: number }) => void;
+  onPrimitiveClickIntercept?: (
+    _entityId: string,
+    _sourceSegmentId?: string,
+  ) => boolean;
   onSelectEntity: (_entityId: string, _appendToSelection?: boolean) => void;
   onSelectEntities: (_entityIds: string[], _appendToSelection?: boolean) => void;
   onStartGripEdit?: (_handleId: string) => void;
@@ -402,11 +406,21 @@ const renderPrimitive = (
     _sourceSegmentId?: string,
   ) => void,
   onEntityLeave?: () => void,
+  onPrimitiveClickIntercept?: (
+    _entityId: string,
+    _sourceSegmentId?: string,
+  ) => boolean,
 ) => {
   const isSelected = selectedEntityIds.includes(primitive.sourceEntityId);
   const commonProps = {
-    onClick: (event: React.MouseEvent<SVGElement>) =>
-      onEntityClick(event, primitive.sourceEntityId, primitive.sourceSegmentId, event.shiftKey),
+    onClick: (event: React.MouseEvent<SVGElement>) => {
+      if (onPrimitiveClickIntercept?.(primitive.sourceEntityId, primitive.sourceSegmentId)) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+      onEntityClick(event, primitive.sourceEntityId, primitive.sourceSegmentId, event.shiftKey);
+    },
     onMouseMove: (event: React.MouseEvent<SVGElement>) =>
       onEntityHover?.(event, primitive, primitive.sourceSegmentId),
     onMouseLeave: () => onEntityLeave?.(),
@@ -423,6 +437,7 @@ const renderPrimitive = (
             {...commonProps}
             data-survey-cad-hit-target="true"
             data-survey-cad-entity-id={primitive.sourceEntityId}
+            data-survey-cad-segment-id={primitive.sourceSegmentId}
             x1={start.x}
             y1={start.y}
             x2={end.x}
@@ -456,6 +471,7 @@ const renderPrimitive = (
             {...commonProps}
             data-survey-cad-hit-target="true"
             data-survey-cad-entity-id={primitive.sourceEntityId}
+            data-survey-cad-segment-id={primitive.sourceSegmentId}
             d={path}
             fill="none"
             stroke="transparent"
@@ -616,6 +632,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
   commandActive,
   commandPointInputActive,
   onViewportChange,
+  onPrimitiveClickIntercept,
   onSelectEntity,
   onSelectEntities,
   onStartGripEdit = () => undefined,
@@ -1090,6 +1107,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
               },
               handlePrimitiveCommandHover,
               () => onCommandHoverTargetChange(null),
+              onPrimitiveClickIntercept,
             ),
         )}
         {transientPreviewPrimitives.length > 0 ? (

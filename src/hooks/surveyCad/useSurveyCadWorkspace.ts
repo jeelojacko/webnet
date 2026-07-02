@@ -305,7 +305,8 @@ interface UseSurveyCadWorkspaceResult {
   splitParcelBySelectedLine: () => void;
   commitParcelSlideLayout: (_options: {
     parcelEntityId: CadEntityId;
-    frontageEntityId: CadEntityId;
+    frontageEntityId?: CadEntityId | null;
+    frontageParcelSegmentIds?: string[] | null;
     targetAreaSquareMeters: number;
     minFrontageMeters: number;
     alternative: 'start' | 'end';
@@ -313,7 +314,8 @@ interface UseSurveyCadWorkspaceResult {
   }) => void;
   commitParcelSwingLayout: (_options: {
     parcelEntityId: CadEntityId;
-    frontageEntityId: CadEntityId;
+    frontageEntityId?: CadEntityId | null;
+    frontageParcelSegmentIds?: string[] | null;
     targetAreaSquareMeters: number;
     minFrontageMeters: number;
     alternative: 'start' | 'end';
@@ -321,7 +323,8 @@ interface UseSurveyCadWorkspaceResult {
   }) => void;
   commitParcelAutoLayout: (_options: {
     parcelEntityId: CadEntityId;
-    frontageEntityId: CadEntityId;
+    frontageEntityId?: CadEntityId | null;
+    frontageParcelSegmentIds?: string[] | null;
     tool: 'slide' | 'swing';
     settings: CadParcelLayoutSettings;
   }) => void;
@@ -1524,6 +1527,7 @@ export const useSurveyCadWorkspace = (
     commitParcelSlideLayout: ({
       parcelEntityId,
       frontageEntityId,
+      frontageParcelSegmentIds,
       targetAreaSquareMeters,
       minFrontageMeters,
       alternative,
@@ -1534,6 +1538,7 @@ export const useSurveyCadWorkspace = (
           key: 'PARCEL_SPLIT_SLIDE',
           parcelEntityId,
           frontageEntityId,
+          frontageParcelSegmentIds,
           targetAreaSquareMeters,
           minFrontageMeters,
           alternative,
@@ -1544,6 +1549,7 @@ export const useSurveyCadWorkspace = (
     commitParcelSwingLayout: ({
       parcelEntityId,
       frontageEntityId,
+      frontageParcelSegmentIds,
       targetAreaSquareMeters,
       minFrontageMeters,
       alternative,
@@ -1554,6 +1560,7 @@ export const useSurveyCadWorkspace = (
           key: 'PARCEL_SPLIT_SWING',
           parcelEntityId,
           frontageEntityId,
+          frontageParcelSegmentIds,
           targetAreaSquareMeters,
           minFrontageMeters,
           alternative,
@@ -1564,6 +1571,7 @@ export const useSurveyCadWorkspace = (
     commitParcelAutoLayout: ({
       parcelEntityId,
       frontageEntityId,
+      frontageParcelSegmentIds,
       tool,
       settings,
     }) => {
@@ -1572,6 +1580,7 @@ export const useSurveyCadWorkspace = (
           key: 'PARCEL_LAYOUT_AUTO',
           parcelEntityId,
           frontageEntityId,
+          frontageParcelSegmentIds,
           tool,
           settings,
         }),
