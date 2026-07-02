@@ -4,7 +4,7 @@ import {
   selectAllCadEntities,
 } from './cadSelection';
 import {
-  cadBuildParcelFrontageStripAutoLayoutDraft,
+  cadBuildParcelFrontagePathAutoLayoutDraft,
   cadBuildPreferredParcelAutoLayoutDraftFromFrontageReference,
   cadBuildParcelClosureSummary,
   cadBuildParcelLayoutFrontageReference,
@@ -6411,9 +6411,9 @@ const parcelLayoutAutoCommand: CadCommandDefinition<{
     const autoLayoutDraft = preferredAutoLayoutDraft.isValid
       ? preferredAutoLayoutDraft
       : (
-          cadBuildParcelFrontageStripAutoLayoutDraft(
+          cadBuildParcelFrontagePathAutoLayoutDraft(
             parcelEntity,
-            frontageReference.frontageLine,
+            frontageReference,
             command.settings,
             command.tool,
           ) ?? preferredAutoLayoutDraft

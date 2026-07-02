@@ -1628,7 +1628,13 @@ describe('Survey CAD COGO helpers', () => {
     expect(autoLayout).not.toBeNull();
     expect(autoLayout?.isValid).toBe(true);
     expect(autoLayout?.generatedParcels).toHaveLength(40);
-    expect(autoLayout?.acceptedCandidates).toHaveLength(40);
+    expect(autoLayout?.acceptedCandidates).toHaveLength(39);
+    expect(autoLayout?.generatedParcels.at(-1)?.role).toBe('remainder');
+    expect(
+      autoLayout?.acceptedCandidates.every(
+        (candidate) => (candidate.evaluation?.depthMeters ?? Number.POSITIVE_INFINITY) <= 150.000001,
+      ),
+    ).toBe(true);
   });
 
   it('diagnoses overlapping parcel pairs with shared area', () => {

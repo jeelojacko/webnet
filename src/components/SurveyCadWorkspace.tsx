@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState, type Dispatch, type SetSta
 import type { AdjustmentResult, InstrumentLibrary, ParseOptions, UnitsMode } from '../types';
 import { buildSurveyCadSpikeProject } from '../engine/cad/cadModel';
 import {
-  cadBuildParcelFrontageStripAutoLayoutDraft,
+  cadBuildParcelFrontagePathAutoLayoutDraft,
   cadBuildPreferredParcelAutoLayoutDraftFromFrontageReference,
   cadBuildParcelLayoutFrontageReference,
   cadBuildParcelLayoutFrontageReferenceFromParcelSegments,
@@ -920,9 +920,9 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       return preferredDraft;
     }
     return (
-      cadBuildParcelFrontageStripAutoLayoutDraft(
+      cadBuildParcelFrontagePathAutoLayoutDraft(
         effectiveParcelLayoutParentEntity,
-        effectiveParcelLayoutFrontageReference.frontageLine,
+        effectiveParcelLayoutFrontageReference,
         parcelLayoutState.settings,
         parcelLayoutAutoTool,
       ) ?? preferredDraft
