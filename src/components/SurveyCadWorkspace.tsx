@@ -904,6 +904,10 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     parcelLayoutFrontageReference != null &&
     parcelLayoutState.settings.automaticMode === 'fill_parent' &&
     (parcelAutoLayoutDraft?.isValid ?? false);
+  const canRunPrimaryParcelLayoutCreate =
+    parcelLayoutState.settings.automaticMode === 'fill_parent'
+      ? canCreateAllParcelLayout
+      : canCreateParcel;
   const canPreviewAllParcelLayout =
     parcelLayoutParentEntity != null &&
     parcelLayoutFrontageReference != null &&
@@ -1162,6 +1166,14 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     parcelLayoutState.floatingHeightPx,
     parcelLayoutState.floatingWidthPx,
   ]);
+
+  const createPrimaryParcelLayout = () => {
+    if (parcelLayoutState.settings.automaticMode === 'fill_parent') {
+      createAllParcelLayout();
+      return;
+    }
+    createParcelFromSelection();
+  };
 
   useEffect(() => {
     if (propertiesPanelUiState.dock !== 'floating' || propertiesPanelState == null) return;
@@ -1481,7 +1493,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               onCreateIntersectionPoint={createIntersectionPoint}
               onCreateAlignment={createAlignmentFromSelection}
               onReportAlignmentStation={reportAlignmentStationFromSelection}
-              onCreateParcel={createParcelFromSelection}
+              onCreateParcel={createPrimaryParcelLayout}
               onReportParcelGap={reportParcelGapFromSelection}
               onReportParcelDiagnostics={reportParcelDiagnosticsFromSelection}
               onReportParcelOverlap={reportParcelOverlapFromSelection}
@@ -1655,7 +1667,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
                 ...current,
                 settings: cloneParcelLayoutSettings(DEFAULT_PARCEL_LAYOUT_SETTINGS),
               }))}
-              onCreateParcel={createParcelFromSelection}
+              onCreateParcel={createPrimaryParcelLayout}
               onSplitByLine={splitParcelBySelectedLine}
               onSplitByBearing={startParcelSplitBearingCommand}
               onSplitByArea={startParcelSplitAreaCommand}
@@ -1674,7 +1686,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               onReportOverlap={reportParcelOverlapFromSelection}
               canPreviewAll={canPreviewAllParcelLayout}
               canCreateAll={canCreateAllParcelLayout}
-              canCreateParcel={canCreateParcel}
+              canCreateParcel={canRunPrimaryParcelLayoutCreate}
               canSplitByLine={canSplitParcelByLine}
               canSplitByBearing={canSplitParcelByBearing}
               canSplitByArea={canSplitParcelByArea}
