@@ -1370,6 +1370,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           {propertiesPanelState ? (
             <SurveyCadPropertiesPanel
               panelState={propertiesPanelState}
+              selectedParcelReport={selectedParcelReport}
               onSelectEntity={(entityId) => selectEntity(entityId)}
               onEditField={editPropertiesField}
             />
@@ -2070,11 +2071,11 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             </div>
           ) : null}
           <SurveyCadPreview
-            scene={displaySceneWithParcelLabelToggle}
-            viewBounds={viewBounds}
-            selectedEntityIds={selectedEntityIds}
-            selectedParcelReport={selectedParcelReport}
-            showParcelLabels={showParcelLabels}
+              scene={displaySceneWithParcelLabelToggle}
+              viewBounds={viewBounds}
+              selectedEntityIds={selectedEntityIds}
+              selectedParcelReport={propertiesPanelState ? null : selectedParcelReport}
+              showParcelLabels={showParcelLabels}
             hasTopRightOverlay={
               propertiesPanelState != null ||
               reportedComputation != null ||

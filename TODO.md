@@ -1,5 +1,6 @@
 - [x] Survey CAD floating panel shell batch (June 2026): make the parcel-layout floating popup resizable in both axes with persisted size, then extract that compact drag/resize shell into a shared Survey CAD popup pattern so future floating CAD panels reuse the same behavior instead of ad hoc panel chrome.
 - [x] Survey CAD parcel layout shell polish batch (June 2026): fix floating panel body scrolling so the preview section stays reachable at standard size, match floating default size to the docked shell, restrict resize to wider-or-standard and shorter-or-standard directions, compact the parcel controls further, and add hover tooltips across the panel surface.
+- [x] Survey CAD parcel properties merge batch (July 2026): restyle the Properties popup onto the shared CAD floating-panel chrome, merge the selected parcel report summary/table into that popup for parcel selections, and suppress the duplicate standalone parcel report card behind it.
 
 - [x] Survey CAD naming fallback batch (June 2026): stop unlabeled arc/polyline/polygon hover and snap surfaces from leaking raw prefixed entity ids like `arc:*` or `polyline:*`, and keep the shared naming helper on readable type fallbacks instead.
 

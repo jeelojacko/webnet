@@ -7013,9 +7013,7 @@ describe('SurveyCadWorkspace', () => {
     );
     expect(container.textContent).toContain('187.500 m²');
     expect(container.textContent).toContain('69.155 m');
-    expect(container.querySelector('[data-survey-cad-parcel-report]')?.textContent).toContain(
-      'Closure',
-    );
+    expect(container.querySelector('[data-survey-cad-parcel-report]')).toBeNull();
     expect(container.querySelector('[data-survey-cad-properties-panel-title]')?.textContent).toContain(
       'Properties',
     );
@@ -7025,25 +7023,25 @@ describe('SurveyCadWorkspace', () => {
     expect(container.querySelector('[data-survey-cad-properties-panel-rows]')?.textContent).toContain(
       'Area',
     );
-    expect(container.querySelector('[data-survey-cad-parcel-report]')?.textContent).toContain(
+    expect(container.querySelector('[data-survey-cad-properties-panel]')?.textContent).toContain(
       'Area (ha)',
     );
-    expect(container.querySelector('[data-survey-cad-parcel-report]')?.textContent).toContain(
+    expect(container.querySelector('[data-survey-cad-properties-panel]')?.textContent).toContain(
       '0.0187 ha',
     );
-    expect(container.querySelector('[data-survey-cad-parcel-report]')?.textContent).toContain(
+    expect(container.querySelector('[data-survey-cad-properties-panel]')?.textContent).toContain(
       '0.0463 ac',
     );
-    expect(container.querySelector('[data-survey-cad-parcel-report]')?.textContent).toContain(
+    expect(container.querySelector('[data-survey-cad-properties-panel]')?.textContent).toContain(
       '2018.233 ft²',
     );
-    expect(container.querySelector('[data-survey-cad-parcel-report]')?.textContent).toContain(
+    expect(container.querySelector('[data-survey-cad-properties-panel]')?.textContent).toContain(
       'A-CAD1',
     );
-    expect(container.querySelector('[data-survey-cad-parcel-report]')?.textContent).toContain(
+    expect(container.querySelector('[data-survey-cad-properties-panel]')?.textContent).toContain(
       'N90-00-00.00E',
     );
-    expect(container.querySelector('[data-survey-cad-parcel-report]')?.textContent).toContain(
+    expect(container.querySelector('[data-survey-cad-properties-panel]')?.textContent).toContain(
       '90°00\'00"',
     );
     expect(container.querySelectorAll('[data-survey-cad-parcel-course]')).toHaveLength(3);
@@ -7159,8 +7157,9 @@ describe('SurveyCadWorkspace', () => {
     expect(container.querySelector('[data-survey-cad-command-status]')?.textContent).toContain(
       'PARCEL_CREATE committed',
     );
-    expect(container.querySelector('[data-survey-cad-parcel-report]')?.textContent).toContain('A-P1');
-    expect(container.querySelector('[data-survey-cad-parcel-report]')?.textContent).toContain('P1-P2');
+    expect(container.querySelector('[data-survey-cad-parcel-report]')).toBeNull();
+    expect(container.querySelector('[data-survey-cad-properties-panel]')?.textContent).toContain('A-P1');
+    expect(container.querySelector('[data-survey-cad-properties-panel]')?.textContent).toContain('P1-P2');
     expect(container.querySelector('[data-survey-cad-properties-entity-label]')?.textContent).toContain('Parcel 1');
 
     const persisted = capture.read();

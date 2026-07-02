@@ -11,7 +11,7 @@ interface SurveyCadFloatingPanelShellProps {
   shellDataAttribute: string;
   headerDataAttribute: string;
   headerActions: React.ReactNode;
-  onStartDrag: (_event: React.PointerEvent<HTMLDivElement>) => void;
+  onStartDrag?: (_event: React.PointerEvent<HTMLDivElement>) => void;
   onStartResize?: (
     _direction: FloatingPanelResizeDirection,
     _event: React.PointerEvent<HTMLDivElement>,
@@ -41,11 +41,14 @@ const SurveyCadFloatingPanelShell: React.FC<SurveyCadFloatingPanelShellProps> = 
   const headerProps: Record<string, string> = {
     [headerDataAttribute]: 'true',
   };
+  const headerClassName = `flex items-start justify-between gap-1 border-b border-slate-800 px-1.5 py-1 ${
+    onStartDrag ? 'cursor-move' : 'cursor-default'
+  }`;
 
   return (
     <div className={shellClassName} style={positionStyle} {...shellProps}>
       <div
-        className="flex cursor-move items-start justify-between gap-1 border-b border-slate-800 px-1.5 py-1"
+        className={headerClassName}
         onPointerDown={onStartDrag}
         {...headerProps}
       >
