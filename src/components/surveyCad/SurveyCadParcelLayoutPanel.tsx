@@ -42,6 +42,7 @@ interface SurveyCadParcelLayoutPanelProps {
   onSplitByArea: () => void;
   onPreviewSlide: () => void;
   onPreviewSwing: () => void;
+  onAutoLayout: () => void;
   onCyclePreviewAlternative: () => void;
   onAcceptPreview: () => void;
   onRejectPreview: () => void;
@@ -56,9 +57,11 @@ interface SurveyCadParcelLayoutPanelProps {
   canSplitByLine: boolean;
   canSplitByBearing: boolean;
   canSplitByArea: boolean;
+  canAutoLayout: boolean;
   canReportGap: boolean;
   canReportCheck: boolean;
   canReportOverlap: boolean;
+  autoToolTitle: string;
 }
 
 const sectionLabelClassName =
@@ -131,6 +134,7 @@ const SurveyCadParcelLayoutPanel: React.FC<SurveyCadParcelLayoutPanelProps> = ({
   onSplitByArea,
   onPreviewSlide,
   onPreviewSwing,
+  onAutoLayout,
   onCyclePreviewAlternative,
   onAcceptPreview,
   onRejectPreview,
@@ -145,9 +149,11 @@ const SurveyCadParcelLayoutPanel: React.FC<SurveyCadParcelLayoutPanelProps> = ({
   canSplitByLine,
   canSplitByBearing,
   canSplitByArea,
+  canAutoLayout,
   canReportGap,
   canReportCheck,
   canReportOverlap,
+  autoToolTitle,
 }) => {
   const updateSetting = <TKey extends keyof CadParcelLayoutSettings>(
     key: TKey,
@@ -215,7 +221,7 @@ const SurveyCadParcelLayoutPanel: React.FC<SurveyCadParcelLayoutPanelProps> = ({
               <button type="button" className={buttonClassName} onClick={onSplitByArea} disabled={!canSplitByArea} title="Split the active parcel by target area">Area</button>
               <button type="button" className={buttonClassName} onClick={onPreviewSlide} disabled={!canPreviewLayout} title="Preview a slide split from the current parent and frontage">Slide</button>
               <button type="button" className={buttonClassName} onClick={onPreviewSwing} disabled={!canPreviewLayout} title="Preview a swing split from the current parent and frontage">Swing</button>
-              <button type="button" className={buttonClassName} disabled title="Automatic layout controls are configured below">Auto</button>
+              <button type="button" className={buttonClassName} onClick={onAutoLayout} disabled={!canAutoLayout} title={autoToolTitle}>Auto</button>
               <button type="button" className={buttonClassName} onClick={onReportGap} disabled={!canReportGap} title="Report enclosed gaps between selected parcels">Gap</button>
               <button type="button" className={buttonClassName} onClick={onReportCheck} disabled={!canReportCheck} title="Check selected linework for parcel readiness">Check</button>
               <button type="button" className={buttonClassName} onClick={onReportOverlap} disabled={!canReportOverlap} title="Report overlap between selected parcels">Overlap</button>
