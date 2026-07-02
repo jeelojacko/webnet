@@ -4,7 +4,8 @@ import {
   selectAllCadEntities,
 } from './cadSelection';
 import {
-  cadBuildParcelAutoLayoutDraft,
+  cadBuildParcelFrontageStripAutoLayoutDraft,
+  cadBuildPreferredParcelAutoLayoutDraftFromFrontageReference,
   cadBuildParcelClosureSummary,
   cadBuildParcelLayoutFrontageReference,
   cadBuildParcelLayoutFrontageReferenceFromParcelSegments,
@@ -2242,6 +2243,8 @@ const stationIdExists = (project: CadProject, stationId: string): boolean =>
       entity.id === `label:${stationId}`,
   );
 
+const isUserFacingStationId = (stationId: string): boolean => /^[A-Za-z][A-Za-z0-9_-]*$/.test(stationId);
+
 const createManualPointEntities = (
   project: CadProject,
   x: number,
@@ -2251,7 +2254,9 @@ const createManualPointEntities = (
 ): { point: CadSurveyPointEntity; label: CadTextEntity | null } => {
   const requestedStationId = requestedLabel?.trim();
   const stationId =
-    requestedStationId && !stationIdExists(project, requestedStationId)
+    requestedStationId &&
+    isUserFacingStationId(requestedStationId) &&
+    !stationIdExists(project, requestedStationId)
       ? requestedStationId
       : nextManualStationId(project);
   const createdBy = options?.createdBy ?? 'POINT';
@@ -5394,7 +5399,8 @@ const parcelCreateCommand: CadCommandDefinition<{
     });
     if (!parcelReport) return null;
     const parcelName = parcelReport.parcelName;
-    const summary = `Created ${parcelName} from ${parcelSource.sourceEntityIds.join(', ')}`;
+    const sourceEntityLabels = sourceEntities.map((entity) => getCadEntityDisplayLabel(entity));
+    const summary = `Created ${parcelName} from ${sourceEntityLabels.join(', ')}`;
     const provenance = createCogoProvenance({
       toolKey: 'PARCEL_CREATE',
       summary,
@@ -6396,12 +6402,22 @@ const parcelLayoutAutoCommand: CadCommandDefinition<{
     if (!resolvedFrontage) return null;
     const { frontageEntity, frontageReference, sourceEntityIds } = resolvedFrontage;
 
-    const autoLayoutDraft = cadBuildParcelAutoLayoutDraft(
+    const preferredAutoLayoutDraft = cadBuildPreferredParcelAutoLayoutDraftFromFrontageReference(
       parcelEntity,
-      frontageReference.frontageLine,
+      frontageReference,
       command.settings,
       command.tool,
     );
+    const autoLayoutDraft = preferredAutoLayoutDraft.isValid
+      ? preferredAutoLayoutDraft
+      : (
+          cadBuildParcelFrontageStripAutoLayoutDraft(
+            parcelEntity,
+            frontageReference.frontageLine,
+            command.settings,
+            command.tool,
+          ) ?? preferredAutoLayoutDraft
+        );
     if (!autoLayoutDraft.isValid || autoLayoutDraft.generatedParcels.length < 2) return null;
 
     let parcelSequenceProject = snapshot.project;

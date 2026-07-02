@@ -272,7 +272,17 @@ export const cadBuildParcelLayoutFrontageReference = (
     const firstLabel = frontageEntity.vertexLabels[0]?.trim() || 'FRONT1';
     const lastLabel =
       frontageEntity.vertexLabels[frontageEntity.vertexLabels.length - 1]?.trim() || 'FRONT2';
-    return createFrontageReferenceLine(frontageEntity, firstVertex, lastVertex, firstLabel, lastLabel);
+    const segmentLabelPairs = frontageEntity.vertices.slice(0, -1).map((_, index) => {
+      const startLabel = frontageEntity.vertexLabels[index]?.trim() || `FRONT${index + 1}`;
+      const endLabel = frontageEntity.vertexLabels[index + 1]?.trim() || `FRONT${index + 2}`;
+      return [startLabel, endLabel] as const;
+    });
+    return {
+      ...createFrontageReferenceLine(frontageEntity, firstVertex, lastVertex, firstLabel, lastLabel),
+      displayLabel: segmentLabelPairs.map(([startLabel, endLabel]) => `${startLabel}-${endLabel}`).join(', '),
+      sourcePointIds: segmentLabelPairs.flatMap(([startLabel, endLabel]) => [startLabel, endLabel]),
+      parcelSegmentLabelPairs: segmentLabelPairs,
+    };
   }
   const startPoint = cadArcStartPoint(frontageEntity);
   const endPoint = cadArcEndPoint(frontageEntity);
@@ -348,6 +358,27 @@ const normalizeParcelVertexLabel = (label: string | undefined, index: number): s
   if (!label) return `V${index + 1}`;
   const trimmed = label.trim();
   return /^[A-Za-z0-9_-]+$/.test(trimmed) ? trimmed : `V${index + 1}`;
+};
+
+const isGenericParcelVertexLabel = (label: string): boolean =>
+  /^V\d+$/i.test(label) ||
+  /^FRONT\d+$/i.test(label) ||
+  /^AUTO\d+$/i.test(label);
+
+const normalizeParcelSourceVertexLabels = (vertexLabels: readonly string[]): string[] => {
+  const normalized = vertexLabels.map((label, index) => normalizeParcelVertexLabel(label, index));
+  const usedLabels = new Set<string>();
+  return normalized.map((label, index) => {
+    let nextLabel = label;
+    if (isGenericParcelVertexLabel(nextLabel) || usedLabels.has(nextLabel)) {
+      nextLabel = `CAD${index + 1}`;
+      while (usedLabels.has(nextLabel)) {
+        nextLabel = `CAD${usedLabels.size + 1}`;
+      }
+    }
+    usedLabels.add(nextLabel);
+    return nextLabel;
+  });
 };
 
 const PARCEL_POINT_TOLERANCE = 1e-6;
@@ -2589,6 +2620,275 @@ const cadBuildParcelLayoutLocalPoints = (
   return flip ? raw.map((point) => ({ x: point.x, y: -point.y })) : raw;
 };
 
+const cadBuildParcelLayoutLocalToWorldPoint = (
+  frontageStart: CadWorldPoint,
+  frontageEnd: CadWorldPoint,
+  localPoint: CadParcelLayoutLocalPoint,
+  flipY: boolean,
+): CadWorldPoint => {
+  const frontageLength = cadDistance(frontageStart, frontageEnd);
+  const unitX = (frontageEnd.x - frontageStart.x) / frontageLength;
+  const unitY = (frontageEnd.y - frontageStart.y) / frontageLength;
+  const localY = flipY ? -localPoint.y : localPoint.y;
+  return {
+    x: frontageStart.x + localPoint.x * unitX + localY * -unitY,
+    y: frontageStart.y + localPoint.x * unitY + localY * unitX,
+  };
+};
+
+const cadDeduplicateLocalPolygonVertices = (
+  vertices: readonly CadParcelLayoutLocalPoint[],
+  tolerance = 1e-9,
+): CadParcelLayoutLocalPoint[] => {
+  const deduplicated: CadParcelLayoutLocalPoint[] = [];
+  vertices.forEach((vertex) => {
+    const previous = deduplicated[deduplicated.length - 1];
+    if (
+      previous &&
+      Math.abs(previous.x - vertex.x) <= tolerance &&
+      Math.abs(previous.y - vertex.y) <= tolerance
+    ) {
+      return;
+    }
+    deduplicated.push({ x: vertex.x, y: vertex.y });
+  });
+  if (deduplicated.length > 1) {
+    const first = deduplicated[0]!;
+    const last = deduplicated[deduplicated.length - 1]!;
+    if (Math.abs(first.x - last.x) <= tolerance && Math.abs(first.y - last.y) <= tolerance) {
+      deduplicated.pop();
+    }
+  }
+  return deduplicated;
+};
+
+const cadClipLocalPolygonAgainstVerticalBoundary = (
+  vertices: readonly CadParcelLayoutLocalPoint[],
+  boundaryX: number,
+  keepGreaterThanOrEqual: boolean,
+): CadParcelLayoutLocalPoint[] => {
+  if (vertices.length < 3) return [];
+  const clipped: CadParcelLayoutLocalPoint[] = [];
+  const isInside = (point: CadParcelLayoutLocalPoint) =>
+    keepGreaterThanOrEqual ? point.x >= boundaryX - 1e-9 : point.x <= boundaryX + 1e-9;
+  for (let index = 0; index < vertices.length; index += 1) {
+    const current = vertices[index]!;
+    const previous = vertices[(index + vertices.length - 1) % vertices.length]!;
+    const currentInside = isInside(current);
+    const previousInside = isInside(previous);
+    if (currentInside !== previousInside) {
+      const deltaX = current.x - previous.x;
+      if (Math.abs(deltaX) > 1e-12) {
+        const ratio = (boundaryX - previous.x) / deltaX;
+        clipped.push({
+          x: boundaryX,
+          y: previous.y + (current.y - previous.y) * ratio,
+        });
+      }
+    }
+    if (currentInside) {
+      clipped.push({ x: current.x, y: current.y });
+    }
+  }
+  return cadDeduplicateLocalPolygonVertices(clipped);
+};
+
+const cadClipLocalPolygonToVerticalStrip = (
+  vertices: readonly CadParcelLayoutLocalPoint[],
+  startX: number,
+  endX: number,
+): CadParcelLayoutLocalPoint[] => {
+  const leftClipped = cadClipLocalPolygonAgainstVerticalBoundary(vertices, startX, true);
+  if (leftClipped.length < 3) return [];
+  return cadClipLocalPolygonAgainstVerticalBoundary(leftClipped, endX, false);
+};
+
+const cadBuildAutoParcelVertexLabels = (
+  sourceParcel: CadParcelEntity,
+  vertices: readonly CadWorldPoint[],
+  lotIndex: number,
+): string[] => {
+  let generatedIndex = 1;
+  return vertices.map((vertex) => {
+    const matchedIndex = sourceParcel.vertices.findIndex((candidate) => parcelPointsMatch(candidate, vertex));
+    if (matchedIndex >= 0) {
+      return sourceParcel.vertexLabels[matchedIndex] ?? `CAD${matchedIndex + 1}`;
+    }
+    const label = `LOT${lotIndex + 1}P${generatedIndex}`;
+    generatedIndex += 1;
+    return label;
+  });
+};
+
+const cadBuildAutoLayoutPreviewCandidateFromGeneratedParcel = (
+  parcel: CadParcelEntity,
+  frontageLine: CadLineEntity,
+  settings: CadParcelLayoutSettings,
+  generatedParcel: CadParcelLayoutGeneratedParcelDraft,
+): CadParcelLayoutPreviewCandidate => {
+  const splitStart = generatedParcel.vertices[0] ?? { x: frontageLine.fromX, y: frontageLine.fromY };
+  const splitEnd = generatedParcel.vertices[1] ?? { x: frontageLine.toX, y: frontageLine.toY };
+  const draft: CadParcelLayoutSplitDraft = {
+    split: {
+      firstVertices: generatedParcel.vertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
+      firstVertexLabels: [...generatedParcel.vertexLabels],
+      secondVertices: parcel.vertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
+      secondVertexLabels: [...parcel.vertexLabels],
+      splitStart,
+      splitEnd,
+    },
+    alternative: 'start',
+    frontageLengthMeters: cadDistance(generatedParcel.vertices[0]!, generatedParcel.vertices[1]!),
+    childAreaSquareMeters: cadBuildParcelClosureSummary(generatedParcel.vertices)?.areaSquareMeters ?? 0,
+    childVertices: generatedParcel.vertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
+    childVertexLabels: [...generatedParcel.vertexLabels],
+    remainderVertices: [],
+    remainderVertexLabels: [],
+  };
+  const evaluation = cadEvaluateParcelLayoutConstraints(draft, frontageLine, {
+    ...settings,
+    minWidthMeters: 0,
+    useMaxDepth: false,
+  });
+  const isValid = evaluation.failedRuleCodes.length === 0;
+  return {
+    tool: 'slide',
+    alternative: 'start',
+    draft,
+    evaluation,
+    isValid,
+    statusMessage: isValid
+      ? `Automatic strip valid: ${draft.childAreaSquareMeters.toFixed(3)} m2 area and ${draft.frontageLengthMeters.toFixed(3)} m frontage.`
+      : `Automatic strip invalid: ${evaluation.failedRuleCodes.join(', ')}.`,
+  };
+};
+
+export const cadBuildParcelFrontageStripAutoLayoutDraft = (
+  parcel: CadParcelEntity,
+  frontageLine: CadLineEntity,
+  settings: CadParcelLayoutSettings,
+  preferredTool: 'slide' | 'swing',
+): CadParcelAutoLayoutDraft | null => {
+  const frontageEdge = cadMatchFrontageLineToParcelEdge(parcel, frontageLine);
+  if (!frontageEdge || frontageEdge.lengthMeters + 1e-9 < settings.minFrontageMeters) {
+    return null;
+  }
+  const frontageStart = { x: frontageLine.fromX, y: frontageLine.fromY };
+  const frontageEnd = { x: frontageLine.toX, y: frontageLine.toY };
+  const frontageLength = cadDistance(frontageStart, frontageEnd);
+  const rawLocalVertices = parcel.vertices.map((vertex) => {
+    const dx = vertex.x - frontageStart.x;
+    const dy = vertex.y - frontageStart.y;
+    const unitX = (frontageEnd.x - frontageStart.x) / frontageLength;
+    const unitY = (frontageEnd.y - frontageStart.y) / frontageLength;
+    return {
+      x: dx * unitX + dy * unitY,
+      y: dx * -unitY + dy * unitX,
+    };
+  });
+  const maxY = rawLocalVertices.reduce((maximum, point) => Math.max(maximum, point.y), Number.NEGATIVE_INFINITY);
+  const minY = rawLocalVertices.reduce((minimum, point) => Math.min(minimum, point.y), Number.POSITIVE_INFINITY);
+  const flipY = Math.abs(minY) > Math.abs(maxY);
+  const localVertices = rawLocalVertices.map((point) => ({ x: point.x, y: flipY ? -point.y : point.y }));
+
+  const fullLotCount = Math.floor((frontageLength + 1e-9) / settings.minFrontageMeters);
+  if (fullLotCount < 1) {
+    return null;
+  }
+  const remainderFrontage = Math.max(0, frontageLength - fullLotCount * settings.minFrontageMeters);
+  const intervals: Array<{ startX: number; endX: number; role: 'lot' | 'remainder' }> = [];
+  if (settings.remainderDistribution === 'redistribute_remainder') {
+    const redistributedFrontage = frontageLength / fullLotCount;
+    for (let index = 0; index < fullLotCount; index += 1) {
+      intervals.push({
+        startX: index * redistributedFrontage,
+        endX: (index + 1) * redistributedFrontage,
+        role: 'lot',
+      });
+    }
+  } else if (settings.remainderDistribution === 'create_parcel_from_remainder') {
+    for (let index = 0; index < fullLotCount; index += 1) {
+      intervals.push({
+        startX: index * settings.minFrontageMeters,
+        endX: (index + 1) * settings.minFrontageMeters,
+        role: 'lot',
+      });
+    }
+    if (remainderFrontage > 1e-6) {
+      intervals.push({
+        startX: fullLotCount * settings.minFrontageMeters,
+        endX: frontageLength,
+        role: 'remainder',
+      });
+    }
+  } else {
+    for (let index = 0; index < fullLotCount; index += 1) {
+      intervals.push({
+        startX: index * settings.minFrontageMeters,
+        endX: index === fullLotCount - 1 ? frontageLength : (index + 1) * settings.minFrontageMeters,
+        role: 'lot',
+      });
+    }
+  }
+
+  const generatedParcels: CadParcelLayoutGeneratedParcelDraft[] = [];
+  const acceptedCandidates: CadParcelLayoutPreviewCandidate[] = [];
+  for (let index = 0; index < intervals.length; index += 1) {
+    const interval = intervals[index]!;
+    const clippedLocalVertices = cadClipLocalPolygonToVerticalStrip(localVertices, interval.startX, interval.endX);
+    if (clippedLocalVertices.length < 3) {
+      return null;
+    }
+    const worldVertices = clippedLocalVertices.map((point) =>
+      cadBuildParcelLayoutLocalToWorldPoint(frontageStart, frontageEnd, point, flipY),
+    );
+    const vertexLabels = cadBuildAutoParcelVertexLabels(parcel, worldVertices, index);
+    const generatedParcel: CadParcelLayoutGeneratedParcelDraft = {
+      vertices: worldVertices,
+      vertexLabels,
+      role: interval.role,
+    };
+    if (interval.role === 'lot') {
+      const frontageChildLine: CadLineEntity = {
+        ...frontageLine,
+        id: `${frontageLine.id}:strip:${index + 1}`,
+        fromX: cadBuildParcelLayoutLocalToWorldPoint(frontageStart, frontageEnd, { x: interval.startX, y: 0 }, flipY).x,
+        fromY: cadBuildParcelLayoutLocalToWorldPoint(frontageStart, frontageEnd, { x: interval.startX, y: 0 }, flipY).y,
+        toX: cadBuildParcelLayoutLocalToWorldPoint(frontageStart, frontageEnd, { x: interval.endX, y: 0 }, flipY).x,
+        toY: cadBuildParcelLayoutLocalToWorldPoint(frontageStart, frontageEnd, { x: interval.endX, y: 0 }, flipY).y,
+      };
+      const candidate = cadBuildAutoLayoutPreviewCandidateFromGeneratedParcel(
+        parcel,
+        frontageChildLine,
+        settings,
+        generatedParcel,
+      );
+      if (!candidate.isValid) {
+        return {
+          tool: preferredTool,
+          generatedParcels: [],
+          acceptedCandidates: [candidate],
+          isValid: false,
+          statusMessage: candidate.statusMessage,
+        };
+      }
+      acceptedCandidates.push({
+        ...candidate,
+        tool: preferredTool,
+      });
+    }
+    generatedParcels.push(generatedParcel);
+  }
+
+  return {
+    tool: preferredTool,
+    generatedParcels,
+    acceptedCandidates,
+    isValid: acceptedCandidates.length > 0,
+    statusMessage: `Automatic fill prepared ${generatedParcels.length} frontage-strip parcels from the active parent/frontage setup.`,
+  };
+};
+
 const cadWidthAtParcelLayoutOffset = (
   localVertices: readonly CadParcelLayoutLocalPoint[],
   offsetMeters: number,
@@ -2781,19 +3081,38 @@ export const cadBuildParcelLayoutPreviewCandidate = (
   tool: 'slide' | 'swing',
   alternative: CadParcelLayoutSplitAlternative,
 ): CadParcelLayoutPreviewCandidate => {
+  const targetAreaSquareMeters = settings.minAreaSquareMeters;
+  return cadBuildParcelLayoutPreviewCandidateForTargetArea(
+    parcel,
+    frontageLine,
+    settings,
+    tool,
+    alternative,
+    targetAreaSquareMeters,
+  );
+};
+
+const cadBuildParcelLayoutPreviewCandidateForTargetArea = (
+  parcel: CadParcelEntity,
+  frontageLine: CadLineEntity,
+  settings: CadParcelLayoutSettings,
+  tool: 'slide' | 'swing',
+  alternative: CadParcelLayoutSplitAlternative,
+  targetAreaSquareMeters: number,
+): CadParcelLayoutPreviewCandidate => {
   const draft =
     tool === 'slide'
       ? cadBuildParcelSplitBySlideDraft(
           parcel,
           frontageLine,
-          settings.minAreaSquareMeters,
+          targetAreaSquareMeters,
           settings.minFrontageMeters,
           alternative,
         )
       : cadBuildParcelSplitBySwingDraft(
           parcel,
           frontageLine,
-          settings.minAreaSquareMeters,
+          targetAreaSquareMeters,
           settings.minFrontageMeters,
           alternative,
         );
@@ -2819,6 +3138,32 @@ export const cadBuildParcelLayoutPreviewCandidate = (
       ? `${tool === 'slide' ? 'Slide' : 'Swing'} ${alternative} preview valid: ${draft.childAreaSquareMeters.toFixed(3)} m2 area and ${draft.frontageLengthMeters.toFixed(3)} m frontage.`
       : `${tool === 'slide' ? 'Slide' : 'Swing'} ${alternative} preview invalid: ${evaluation.failedRuleCodes.join(', ')}.`,
   };
+};
+
+const cadBuildAutomaticTargetAreaSquareMeters = (
+  parcel: CadParcelEntity,
+  frontageLine: CadLineEntity,
+  settings: CadParcelLayoutSettings,
+): number => {
+  const parcelAreaSquareMeters = cadBuildParcelClosureSummary(parcel.vertices)?.areaSquareMeters ?? 0;
+  const frontageLengthMeters = cadDistance(
+    { x: frontageLine.fromX, y: frontageLine.fromY },
+    { x: frontageLine.toX, y: frontageLine.toY },
+  );
+  const averageDepthMeters =
+    frontageLengthMeters > 1e-9 && parcelAreaSquareMeters > 1e-9
+      ? parcelAreaSquareMeters / frontageLengthMeters
+      : settings.minDepthMeters;
+  const targetDepthMeters = settings.useMaxDepth
+    ? Math.max(settings.minDepthMeters, Math.min(settings.maxDepthMeters, averageDepthMeters))
+    : Math.max(settings.minDepthMeters, averageDepthMeters);
+  return Math.max(
+    settings.minAreaSquareMeters,
+    settings.minFrontageMeters * targetDepthMeters,
+    settings.minWidthMeters * targetDepthMeters,
+    settings.minFrontageMeters * settings.minDepthMeters,
+    settings.minWidthMeters * settings.minDepthMeters,
+  );
 };
 
 export const cadSelectPreferredParcelLayoutPreviewCandidate = (
@@ -3052,7 +3397,28 @@ const cadCanCreateAnotherAutoLayoutLot = (
   tool: 'slide' | 'swing',
 ): boolean => {
   if (!frontageLine) return false;
-  return cadSelectPreferredParcelLayoutPreviewCandidate(parcel, frontageLine, settings, tool).isValid;
+  const automaticTargetAreaSquareMeters = cadBuildAutomaticTargetAreaSquareMeters(
+    parcel,
+    frontageLine,
+    settings,
+  );
+  const startCandidate = cadBuildParcelLayoutPreviewCandidateForTargetArea(
+    parcel,
+    frontageLine,
+    settings,
+    tool,
+    'start',
+    automaticTargetAreaSquareMeters,
+  );
+  const endCandidate = cadBuildParcelLayoutPreviewCandidateForTargetArea(
+    parcel,
+    frontageLine,
+    settings,
+    tool,
+    'end',
+    automaticTargetAreaSquareMeters,
+  );
+  return startCandidate.isValid || endCandidate.isValid;
 };
 
 const cadBuildParcelAutoLayoutDraftForSupportedRemainderMode = (
@@ -3086,12 +3452,34 @@ const cadBuildParcelAutoLayoutDraftForSupportedRemainderMode = (
   const acceptedCandidates: CadParcelLayoutPreviewCandidate[] = [];
 
   for (let iteration = 0; iteration < 64; iteration += 1) {
-    const candidate = cadSelectPreferredParcelLayoutPreviewCandidate(
+    const automaticTargetAreaSquareMeters = cadBuildAutomaticTargetAreaSquareMeters(
+      currentParcel,
+      currentFrontage,
+      settings,
+    );
+    const startCandidate = cadBuildParcelLayoutPreviewCandidateForTargetArea(
       currentParcel,
       currentFrontage,
       settings,
       tool,
+      'start',
+      automaticTargetAreaSquareMeters,
     );
+    const endCandidate = cadBuildParcelLayoutPreviewCandidateForTargetArea(
+      currentParcel,
+      currentFrontage,
+      settings,
+      tool,
+      'end',
+      automaticTargetAreaSquareMeters,
+    );
+    const candidate =
+      [startCandidate, endCandidate].sort((left, right) => {
+        if (left.isValid !== right.isValid) return left.isValid ? -1 : 1;
+        const leftScore = left.evaluation?.score ?? Number.POSITIVE_INFINITY;
+        const rightScore = right.evaluation?.score ?? Number.POSITIVE_INFINITY;
+        return leftScore - rightScore;
+      })[0] ?? startCandidate;
     if (!candidate.isValid || !candidate.draft) {
       if (generatedParcels.length === 0) {
         return {
@@ -3386,6 +3774,32 @@ export const cadBuildParcelAutoLayoutDraftFromFrontageReference = (
     isValid: true,
     statusMessage: `Automatic fill prepared ${generatedParcels.length} parcels from the selected frontage edges.`,
   };
+};
+
+export const cadBuildPreferredParcelAutoLayoutDraftFromFrontageReference = (
+  parcel: CadParcelEntity,
+  frontageReference: CadParcelLayoutFrontageReference,
+  settings: CadParcelLayoutSettings,
+  preferredTool: 'slide' | 'swing',
+): CadParcelAutoLayoutDraft => {
+  const preferredDraft = cadBuildParcelAutoLayoutDraftFromFrontageReference(
+    parcel,
+    frontageReference,
+    settings,
+    preferredTool,
+  );
+  const alternateTool = preferredTool === 'slide' ? 'swing' : 'slide';
+  if (preferredDraft.isValid) {
+    return preferredDraft;
+  }
+
+  const alternateDraft = cadBuildParcelAutoLayoutDraftFromFrontageReference(
+    parcel,
+    frontageReference,
+    settings,
+    alternateTool,
+  );
+  return alternateDraft.isValid ? alternateDraft : preferredDraft;
 };
 
 export const cadBuildParcelSplitByBearingDraft = (
@@ -3785,10 +4199,11 @@ const normalizePolylineParcelSource = (entity: CadPolylineEntity): CadParcelSour
     entity.vertexLabels.length > 1 && entity.vertexLabels[0] === entity.vertexLabels[entity.vertexLabels.length - 1]
       ? entity.vertexLabels.slice(0, -1)
       : entity.vertexLabels;
+  const normalizedLabels = normalizeParcelSourceVertexLabels(ringLabels);
   return ringVertices.length >= 3
     ? {
         vertices: ringVertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
-        vertexLabels: [...ringLabels],
+        vertexLabels: normalizedLabels,
         sourceEntityIds: [entity.id],
       }
     : null;

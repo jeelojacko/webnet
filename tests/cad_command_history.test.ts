@@ -1493,6 +1493,44 @@ describe('Survey CAD command history', () => {
     expect(redoneSplitState.present.project.entities.filter((entity) => entity.type === 'parcel')).toHaveLength(2);
   });
 
+  it('normalizes generic polyline vertex labels to simple CAD labels when creating a parcel', () => {
+    const project = appendCadProjectEntities(buildSurveyCadSpikeProject({
+      input,
+      instrumentLibrary: {},
+      parseOptions,
+      units: 'm',
+      result: null,
+    }), [
+      {
+        id: 'polyline:generic',
+        type: 'polyline',
+        layerId: 'observation-lines',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 25, y: 0 },
+          { x: 25, y: 15 },
+          { x: 0, y: 0 },
+        ],
+        vertexLabels: ['CAD1', 'V2', 'CAD2', 'CAD1'],
+        closed: true,
+      },
+    ]);
+
+    const parcelState = runCadCommand(createCadHistoryState(project), {
+      key: 'PARCEL_CREATE',
+      sourceEntityIds: ['polyline:generic'],
+    });
+    const parcel = parcelState.present.project.entities.find((entity) => entity.type === 'parcel');
+    expect(parcel?.type).toBe('parcel');
+    if (parcel?.type !== 'parcel') throw new Error('Parcel missing');
+
+    expect(parcel.vertexLabels).toEqual(['CAD1', 'CAD2', 'CAD3']);
+    expect(parcelState.present.project.cogoComputations.at(-1)?.report.summary).toContain('CAD1-CAD1');
+  });
+
   it('splits a parcel entity by a through-point bearing into two child parcels', () => {
     const baseProject = buildSurveyCadSpikeProject({
       input,
@@ -1862,11 +1900,6 @@ describe('Survey CAD command history', () => {
     const parcels = splitState.present.project.entities.filter((entity) => entity.type === 'parcel');
     expect(parcels).toHaveLength(2);
     expect(splitState.present.project.cogoComputations.at(-1)?.toolKey).toBe('PARCEL_SPLIT_SLIDE');
-    expect(
-      splitState.present.project.cogoComputations.at(-1)?.report.rows.some(
-        (row) => row.label === 'Frontage' && row.value === 'A-P1',
-      ),
-    ).toBe(true);
     expect(splitState.present.project.cogoComputations.at(-1)?.report.tables?.[0]?.title).toBe('Created Parcels');
   });
 

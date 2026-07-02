@@ -192,6 +192,65 @@ describe('Survey CAD properties builder', () => {
     expect(state.entity.properties.find((row) => row.label === 'Perimeter')?.value).toBe('69.155');
   });
 
+  it('shows friendly source labels instead of raw ids in COGO metadata rows', () => {
+    const project = appendCadProjectEntities(buildBaseProject(), [
+      {
+        id: 'polyline:source',
+        type: 'polyline',
+        layerId: 'observation-lines',
+        styleId: 'style-observation-line',
+        visible: true,
+        locked: false,
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 25, y: 0 },
+          { x: 25, y: 15 },
+        ],
+        vertexLabels: ['CAD1', 'CAD2', 'CAD3'],
+        closed: false,
+        metadata: {
+          entityName: 'PL1',
+        },
+      },
+      {
+        id: 'parcel:test',
+        type: 'parcel',
+        layerId: 'parcels',
+        styleId: 'style-parcel',
+        visible: true,
+        locked: false,
+        parcelName: 'Parcel 1',
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 25, y: 0 },
+          { x: 25, y: 15 },
+        ],
+        vertexLabels: ['CAD1', 'CAD2', 'CAD3'],
+        areaSquareMeters: 187.5,
+        perimeterMeters: 69.154759,
+        closureDeltaX: 0,
+        closureDeltaY: 0,
+        closureDistanceMeters: 0,
+        metadata: {
+          cogo: {
+            toolKey: 'PARCEL_CREATE',
+            sourcePointIds: ['CAD1', 'CAD2', 'CAD3'],
+            sourceEntityIds: ['polyline:source'],
+          },
+        },
+      },
+    ]);
+    const parcel = project.entities.find((entity) => entity.id === 'parcel:test');
+    if (!parcel || parcel.type !== 'parcel') throw new Error('Parcel not found');
+
+    const state = buildCadPropertiesPanelState(project, [parcel]);
+    expect(state?.mode).toBe('single');
+    if (!state || state.mode !== 'single') throw new Error('Parcel properties missing');
+
+    expect(state.entity.properties.find((row) => row.label === 'Source points')?.value).toBe('CAD1, CAD2, CAD3');
+    expect(state.entity.properties.find((row) => row.label === 'Source entities')?.value).toBe('PL1');
+  });
+
   it('builds alignment station properties', () => {
     const project = appendCadProjectEntities(buildBaseProject(), [
       {

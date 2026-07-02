@@ -13,6 +13,9 @@ import {
   cadBuildParcelSplitBySwingDraft,
   cadBuildParcelLayoutPreviewCandidate,
   cadBuildParcelAutoLayoutDraft,
+  cadBuildParcelAutoLayoutDraftFromFrontageReference,
+  cadBuildParcelFrontageStripAutoLayoutDraft,
+  cadBuildParcelLayoutFrontageReference,
   cadEvaluateParcelLayoutConstraints,
   cadConvertAreaSquareMeters,
   cadBuildArcFromThreePoints,
@@ -1423,6 +1426,41 @@ describe('Survey CAD COGO helpers', () => {
     ]);
   });
 
+  it('uses frontage and depth constraints to size first automatic lot when minimum area is smaller', () => {
+    const autoLayout = cadBuildParcelAutoLayoutDraft(
+      {
+        ...parcelLayoutAutoTestParcel,
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 1200, y: 0 },
+          { x: 1200, y: 500 },
+          { x: 0, y: 500 },
+        ],
+        vertexLabels: ['CAD1', 'CAD2', 'CAD3', 'CAD4'],
+      },
+      {
+        ...parcelLayoutAutoFrontage,
+        fromStationId: 'CAD1',
+        toStationId: 'CAD2',
+        toX: 1200,
+      },
+      parcelLayoutSettings({
+        minAreaSquareMeters: 100,
+        minFrontageMeters: 30,
+        minWidthMeters: 20,
+        minDepthMeters: 20,
+        remainderDistribution: 'create_parcel_from_remainder',
+      }),
+      'slide',
+    );
+
+    expect(autoLayout.isValid).toBe(true);
+    expect(autoLayout.acceptedCandidates.length).toBeGreaterThan(30);
+    expect(autoLayout.acceptedCandidates[0]?.evaluation?.failedRuleCodes).toEqual([]);
+    expect(autoLayout.acceptedCandidates[0]?.draft?.frontageLengthMeters ?? Number.NaN).toBeCloseTo(30, 3);
+    expect(autoLayout.acceptedCandidates[0]?.draft?.childAreaSquareMeters ?? Number.NaN).toBeCloseTo(15000, 3);
+  });
+
   it('builds auto layout lots and creates a separate remainder parcel', () => {
     const autoLayout = cadBuildParcelAutoLayoutDraft(
       parcelLayoutAutoTestParcel,
@@ -1493,6 +1531,104 @@ describe('Survey CAD COGO helpers', () => {
     expect(autoLayout.generatedParcels).toHaveLength(2);
     expect(autoLayout.generatedParcels[0]?.role).toBe('lot');
     expect(autoLayout.generatedParcels[1]?.role).toBe('remainder');
+  });
+
+  it('builds auto layout across multiple frontage segments from one frontage polyline', () => {
+    const frontageReference = cadBuildParcelLayoutFrontageReference({
+      id: 'frontage:multi',
+      type: 'polyline',
+      layerId: 'planning',
+      styleId: 'style-observation-line',
+      visible: true,
+      locked: false,
+      vertices: [
+        { x: 0, y: 0 },
+        { x: 90, y: 0 },
+        { x: 90, y: 60 },
+      ],
+      vertexLabels: ['A', 'B', 'C'],
+      closed: false,
+    });
+    expect(frontageReference).not.toBeNull();
+
+    const autoLayout = cadBuildParcelAutoLayoutDraftFromFrontageReference(
+      parcelLayoutAutoTestParcel,
+      frontageReference!,
+      parcelLayoutSettings({
+        minAreaSquareMeters: 600,
+        minFrontageMeters: 20,
+        minWidthMeters: 10,
+        minDepthMeters: 20,
+        remainderDistribution: 'create_parcel_from_remainder',
+      }),
+      'slide',
+    );
+
+    expect(autoLayout.isValid).toBe(true);
+    expect(autoLayout.acceptedCandidates.length).toBeGreaterThan(2);
+    expect(autoLayout.generatedParcels.length).toBeGreaterThan(3);
+    expect(autoLayout.statusMessage).toContain('selected frontage edges');
+  });
+
+  it('builds frontage-strip auto lots for the screenshot parcel fixture', () => {
+    const parcel = {
+      id: 'parcel:fixture',
+      type: 'parcel' as const,
+      layerId: 'parcels',
+      styleId: 'style-parcel',
+      visible: true,
+      locked: false,
+      parcelName: 'Parcel 1',
+      vertices: [
+        { x: 685672.814, y: 5091312.877 },
+        { x: 686879.074, y: 5091312.877 },
+        { x: 686694.912, y: 5090134.241 },
+        { x: 685522.415, y: 5090336.819 },
+      ],
+      vertexLabels: ['CAD1', 'CAD2', 'CAD3', 'CAD4'],
+    };
+    const frontageReference = {
+      sourceEntityId: parcel.id,
+      displayLabel: 'CAD1-CAD2',
+      sourcePointIds: ['CAD1', 'CAD2'],
+      frontageLine: {
+        id: `${parcel.id}:frontage-segment:0`,
+        type: 'line' as const,
+        layerId: 'parcels',
+        styleId: 'style-parcel',
+        visible: true,
+        locked: false,
+        fromStationId: 'CAD1',
+        toStationId: 'CAD2',
+        fromX: 685672.814,
+        fromY: 5091312.877,
+        toX: 686879.074,
+        toY: 5091312.877,
+        sourceObservationIds: [],
+      },
+      parcelSegmentIds: ['parcel:fixture#0'],
+      parcelSegmentLabelPairs: [['CAD1', 'CAD2']] as Array<readonly [string, string]>,
+    };
+
+    const autoLayout = cadBuildParcelFrontageStripAutoLayoutDraft(
+      parcel,
+      frontageReference.frontageLine,
+      parcelLayoutSettings({
+        minAreaSquareMeters: 100,
+        minFrontageMeters: 30,
+        minWidthMeters: 20,
+        minDepthMeters: 20,
+        useMaxDepth: true,
+        maxDepthMeters: 150,
+        remainderDistribution: 'place_remainder_in_last_parcel',
+      }),
+      'slide',
+    );
+
+    expect(autoLayout).not.toBeNull();
+    expect(autoLayout?.isValid).toBe(true);
+    expect(autoLayout?.generatedParcels).toHaveLength(40);
+    expect(autoLayout?.acceptedCandidates).toHaveLength(40);
   });
 
   it('diagnoses overlapping parcel pairs with shared area', () => {

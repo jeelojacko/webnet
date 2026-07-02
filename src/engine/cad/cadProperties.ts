@@ -115,6 +115,18 @@ const row = (
   editableField,
 });
 
+const resolveSourcePointLabel = (project: CadProject, sourcePointId: string): string => {
+  const point = project.entities.find(
+    (entity) => entity.type === 'survey-point' && entity.stationId === sourcePointId,
+  );
+  return point?.type === 'survey-point' ? point.stationId : sourcePointId;
+};
+
+const resolveSourceEntityLabel = (project: CadProject, sourceEntityId: CadEntityId): string => {
+  const entity = project.entities.find((candidate) => candidate.id === sourceEntityId);
+  return entity ? getCadEntityDisplayLabel(entity) : sourceEntityId;
+};
+
 const appendCommonRows = (project: CadProject, entity: CadEntity): CadEntityPropertyRow[] => {
   const rows: CadEntityPropertyRow[] = [
     row('type', 'Type', CAD_ENTITY_TYPE_SINGULAR_LABELS[entity.type]),
@@ -148,8 +160,24 @@ const appendCommonRows = (project: CadProject, entity: CadEntity): CadEntityProp
     if (toolKey) rows.push(row('cogo-tool', 'COGO tool', toolKey));
     if (provenanceId) rows.push(row('cogo-provenance', 'Provenance', provenanceId));
     if (resultSummary) rows.push(row('cogo-summary', 'COGO summary', resultSummary));
-    if (sourcePointIds.length > 0) rows.push(row('cogo-source-points', 'Source points', sourcePointIds.join(', ')));
-    if (sourceEntityIds.length > 0) rows.push(row('cogo-source-entities', 'Source entities', sourceEntityIds.join(', ')));
+    if (sourcePointIds.length > 0) {
+      rows.push(
+        row(
+          'cogo-source-points',
+          'Source points',
+          sourcePointIds.map((value) => resolveSourcePointLabel(project, value)).join(', '),
+        ),
+      );
+    }
+    if (sourceEntityIds.length > 0) {
+      rows.push(
+        row(
+          'cogo-source-entities',
+          'Source entities',
+          sourceEntityIds.map((value) => resolveSourceEntityLabel(project, value)).join(', '),
+        ),
+      );
+    }
   }
   return rows;
 };

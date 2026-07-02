@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useRef, useState, type Dispatch, type SetSta
 import type { AdjustmentResult, InstrumentLibrary, ParseOptions, UnitsMode } from '../types';
 import { buildSurveyCadSpikeProject } from '../engine/cad/cadModel';
 import {
-  cadBuildParcelAutoLayoutDraft,
+  cadBuildParcelFrontageStripAutoLayoutDraft,
+  cadBuildPreferredParcelAutoLayoutDraftFromFrontageReference,
   cadBuildParcelLayoutFrontageReference,
   cadBuildParcelLayoutFrontageReferenceFromParcelSegments,
   type CadParcelAutoLayoutDraft,
@@ -868,33 +869,6 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   const parcelLayoutFrontageLabel = useMemo(() => {
     return effectiveParcelLayoutFrontageReference?.displayLabel ?? null;
   }, [effectiveParcelLayoutFrontageReference]);
-  const parcelLayoutAutoFrontageUnsupportedMessage = useMemo(() => {
-    if (parcelLayoutState.settings.automaticMode === 'off') {
-      return null;
-    }
-    const activeFrontageSegmentCount =
-      draftParcelSegmentFrontageReference?.parcelSegmentIds?.length ??
-      activeParcelSegmentFrontageReference?.parcelSegmentIds?.length ??
-      0;
-    if (activeFrontageSegmentCount > 1) {
-      return 'Automatic fill from multiple selected parcel edges is staged next. Keep one segment selected for now.';
-    }
-    if (!effectiveParcelLayoutFrontageEntity) {
-      return null;
-    }
-    if (
-      effectiveParcelLayoutFrontageEntity.type === 'polyline' &&
-      effectiveParcelLayoutFrontageEntity.vertices.length > 2
-    ) {
-      return 'Automatic fill currently needs one frontage edge. Multi-segment frontage polylines are not supported yet.';
-    }
-    return null;
-  }, [
-    activeParcelSegmentFrontageReference?.parcelSegmentIds,
-    draftParcelSegmentFrontageReference?.parcelSegmentIds,
-    effectiveParcelLayoutFrontageEntity,
-    parcelLayoutState.settings.automaticMode,
-  ]);
   const canPreviewParcelSlideOrSwing =
     effectiveParcelLayoutParentEntity != null && effectiveParcelLayoutFrontageReference != null;
   const directParcelSlideCandidate = useMemo(
@@ -936,11 +910,22 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   );
   const parcelAutoLayoutDraft = useMemo(() => {
     if (!effectiveParcelLayoutParentEntity || !effectiveParcelLayoutFrontageReference) return null;
-    return cadBuildParcelAutoLayoutDraft(
+    const preferredDraft = cadBuildPreferredParcelAutoLayoutDraftFromFrontageReference(
       effectiveParcelLayoutParentEntity,
-      effectiveParcelLayoutFrontageReference.frontageLine,
+      effectiveParcelLayoutFrontageReference,
       parcelLayoutState.settings,
       parcelLayoutAutoTool,
+    );
+    if (preferredDraft.isValid || parcelLayoutState.settings.automaticMode !== 'fill_parent') {
+      return preferredDraft;
+    }
+    return (
+      cadBuildParcelFrontageStripAutoLayoutDraft(
+        effectiveParcelLayoutParentEntity,
+        effectiveParcelLayoutFrontageReference.frontageLine,
+        parcelLayoutState.settings,
+        parcelLayoutAutoTool,
+      ) ?? preferredDraft
     );
   }, [
     effectiveParcelLayoutFrontageReference,
@@ -960,9 +945,6 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       }
       return 'Choose one frontage entity that matches a parent parcel edge.';
     }
-    if (parcelLayoutAutoFrontageUnsupportedMessage) {
-      return parcelLayoutAutoFrontageUnsupportedMessage;
-    }
     if (parcelLayoutAutoPreviewState) {
       const lotCount = parcelLayoutAutoPreviewState.draft.acceptedCandidates.length;
       const previewIndex = Math.min(parcelLayoutAutoPreviewState.activeIndex + 1, lotCount);
@@ -981,7 +963,6 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     return parcelLayoutPreviewState.candidate.statusMessage;
   }, [
     parcelAutoLayoutDraft,
-    parcelLayoutAutoFrontageUnsupportedMessage,
     parcelLayoutAutoPreviewState,
     parcelLayoutFrontageSegmentSelectionActive,
     parcelLayoutFrontageSegmentSelectionIds.length,
