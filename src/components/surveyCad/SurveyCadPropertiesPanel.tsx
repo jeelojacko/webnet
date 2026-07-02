@@ -10,6 +10,15 @@ import SurveyCadFloatingPanelShell from './SurveyCadFloatingPanelShell';
 interface SurveyCadPropertiesPanelProps {
   panelState: CadPropertiesPanelState;
   selectedParcelReport?: CadParcelReportSummary | null;
+  dock: 'left' | 'right' | 'floating';
+  dockOffsetPx: number;
+  floatingLeftPx: number;
+  floatingTopPx: number;
+  collapsed: boolean;
+  onSetDock: (_dock: 'left' | 'right' | 'floating') => void;
+  onToggleCollapsed: () => void;
+  onClose: () => void;
+  onStartDrag?: (_event: React.PointerEvent<HTMLDivElement>) => void;
   onSelectEntity: (_entityId: CadEntityId) => void;
   onEditField: (
     _entityId: CadEntityId,
@@ -21,6 +30,15 @@ interface SurveyCadPropertiesPanelProps {
 const SurveyCadPropertiesPanel: React.FC<SurveyCadPropertiesPanelProps> = ({
   panelState,
   selectedParcelReport = null,
+  dock,
+  dockOffsetPx,
+  floatingLeftPx,
+  floatingTopPx,
+  collapsed,
+  onSetDock,
+  onToggleCollapsed,
+  onClose,
+  onStartDrag,
   onSelectEntity,
   onEditField,
 }) => {
@@ -72,6 +90,26 @@ const SurveyCadPropertiesPanel: React.FC<SurveyCadPropertiesPanelProps> = ({
 
   if (!activeEntity) return null;
 
+  const headerActions = (
+    <>
+      <button type="button" className="rounded border border-slate-700 bg-slate-950/85 px-1 py-0.5 text-[8px] font-semibold uppercase tracking-[0.04em] leading-3 text-slate-100 transition-colors hover:border-cyan-500/70 hover:bg-slate-900" onClick={() => onSetDock('left')} title="Dock panel to the left side">
+        Left
+      </button>
+      <button type="button" className="rounded border border-slate-700 bg-slate-950/85 px-1 py-0.5 text-[8px] font-semibold uppercase tracking-[0.04em] leading-3 text-slate-100 transition-colors hover:border-cyan-500/70 hover:bg-slate-900" onClick={() => onSetDock('right')} title="Dock panel to the right side">
+        Right
+      </button>
+      <button type="button" className="rounded border border-slate-700 bg-slate-950/85 px-1 py-0.5 text-[8px] font-semibold uppercase tracking-[0.04em] leading-3 text-slate-100 transition-colors hover:border-cyan-500/70 hover:bg-slate-900" onClick={() => onSetDock('floating')} title="Float panel as a movable popup">
+        Float
+      </button>
+      <button type="button" className="rounded border border-slate-700 bg-slate-950/85 px-1 py-0.5 text-[8px] font-semibold uppercase tracking-[0.04em] leading-3 text-slate-100 transition-colors hover:border-cyan-500/70 hover:bg-slate-900" onClick={onToggleCollapsed} title={collapsed ? 'Expand panel body' : 'Collapse panel body'}>
+        {collapsed ? '+' : '-'}
+      </button>
+      <button type="button" className="rounded border border-slate-700 bg-slate-950/85 px-1 py-0.5 text-[8px] font-semibold uppercase tracking-[0.04em] leading-3 text-slate-100 transition-colors hover:border-cyan-500/70 hover:bg-slate-900" onClick={onClose} title="Close properties">
+        X
+      </button>
+    </>
+  );
+
   const panelControls =
     panelState.mode === 'multi' ? (
       <div className="grid gap-1">
@@ -116,12 +154,19 @@ const SurveyCadPropertiesPanel: React.FC<SurveyCadPropertiesPanelProps> = ({
   return (
     <SurveyCadFloatingPanelShell
       title="Properties"
-      dock="right"
-      collapsed={false}
-      positionStyle={{ right: '12px', top: '104px', width: '19rem', height: '600px' }}
+      dock={dock}
+      collapsed={collapsed}
+      positionStyle={
+        dock === 'floating'
+          ? { left: `${floatingLeftPx}px`, top: `${floatingTopPx}px`, width: '19rem', height: collapsed ? undefined : '600px' }
+          : dock === 'left'
+            ? { left: `${dockOffsetPx}px`, top: '120px', width: '19rem', height: collapsed ? undefined : '600px' }
+            : { right: `${dockOffsetPx}px`, top: '120px', width: '19rem', height: collapsed ? undefined : '600px' }
+      }
       shellDataAttribute="data-survey-cad-properties-panel"
       headerDataAttribute="data-survey-cad-properties-panel-header"
-      headerActions={<></>}
+      headerActions={headerActions}
+      onStartDrag={onStartDrag}
     >
       <div className="grid min-h-0 flex-1 gap-1 overflow-y-auto p-1.5 pr-2 text-[9px] leading-3 text-slate-200">
         <div className="sr-only" data-survey-cad-properties-panel-title>

@@ -12,6 +12,7 @@ import SurveyCadFloatingPanelShell, {
 
 interface SurveyCadParcelLayoutPanelProps {
   state: CadParcelLayoutUiState;
+  dockOffsetPx: number;
   parentParcelName: string | null;
   frontageLabel: string | null;
   previewStatus: string;
@@ -103,6 +104,7 @@ const parseNumericInput = (value: string, fallback: number): number => {
 
 const SurveyCadParcelLayoutPanel: React.FC<SurveyCadParcelLayoutPanelProps> = ({
   state,
+  dockOffsetPx,
   parentParcelName,
   frontageLabel,
   previewStatus,
@@ -167,8 +169,8 @@ const SurveyCadParcelLayoutPanel: React.FC<SurveyCadParcelLayoutPanelProps> = ({
           maxWidth: 'calc(100vw - 1rem)',
         }
       : state.dock === 'left'
-        ? { left: '12px', top: '104px', width: '19rem', height: state.collapsed ? undefined : '600px' }
-        : { right: '12px', top: '104px', width: '19rem', height: state.collapsed ? undefined : '600px' };
+        ? { left: `${dockOffsetPx}px`, top: '120px', width: '19rem', height: state.collapsed ? undefined : '600px' }
+        : { right: `${dockOffsetPx}px`, top: '120px', width: '19rem', height: state.collapsed ? undefined : '600px' };
 
   const headerActions = (
     <>
@@ -182,10 +184,10 @@ const SurveyCadParcelLayoutPanel: React.FC<SurveyCadParcelLayoutPanelProps> = ({
         Float
       </button>
       <button type="button" className={buttonClassName} onClick={onToggleCollapsed} title={state.collapsed ? 'Expand panel body' : 'Collapse panel body'}>
-        {state.collapsed ? 'Expand' : 'Collapse'}
+        {state.collapsed ? '+' : '-'}
       </button>
       <button type="button" className={buttonClassName} onClick={onClose} title="Close parcel layout tools">
-        Close
+        X
       </button>
     </>
   );

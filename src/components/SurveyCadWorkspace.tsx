@@ -56,6 +56,15 @@ const MIN_PARCEL_LAYOUT_FLOATING_WIDTH_PX = 304;
 const MIN_PARCEL_LAYOUT_FLOATING_HEIGHT_PX = 220;
 const PARCEL_LAYOUT_FLOATING_VIEWPORT_GUTTER_PX = 8;
 const PARCEL_LAYOUT_FLOATING_MIN_TOP_PX = 72;
+const CAD_SIDE_PANEL_WIDTH_PX = 304;
+const CAD_SIDE_PANEL_GAP_PX = 12;
+const CAD_SIDE_PANEL_TOP_PX = 120;
+const PROPERTIES_PANEL_FLOATING_LEFT_PX = 24;
+const PROPERTIES_PANEL_FLOATING_TOP_PX = 120;
+const PROPERTIES_PANEL_HEIGHT_PX = 600;
+
+type CadSidePanelDock = 'left' | 'right' | 'floating';
+type CadSidePanelId = 'parcel-layout' | 'properties';
 
 const DEFAULT_PARCEL_LAYOUT_UI_STATE: CadParcelLayoutUiState = {
   open: false,
@@ -253,6 +262,30 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   const [newTraverseLegInput, setNewTraverseLegInput] = useState('');
   const [newTraverseSideshotOccupyIndex, setNewTraverseSideshotOccupyIndex] = useState(1);
   const [newTraverseSideshotInput, setNewTraverseSideshotInput] = useState('');
+  const [propertiesPanelUiState, setPropertiesPanelUiState] = useState<{
+    dock: CadSidePanelDock;
+    collapsed: boolean;
+    floatingLeftPx: number;
+    floatingTopPx: number;
+  }>({
+    dock: 'right',
+    collapsed: false,
+    floatingLeftPx: PROPERTIES_PANEL_FLOATING_LEFT_PX,
+    floatingTopPx: PROPERTIES_PANEL_FLOATING_TOP_PX,
+  });
+  const [panelDockOrders, setPanelDockOrders] = useState<Record<CadSidePanelId, number>>({
+    'parcel-layout': 0,
+    properties: 0,
+  });
+  const panelDockOrderCounterRef = useRef(0);
+  const touchPanelDockOrder = (panelId: CadSidePanelId) => {
+    panelDockOrderCounterRef.current += 1;
+    const nextOrder = panelDockOrderCounterRef.current;
+    setPanelDockOrders((current) => ({
+      ...current,
+      [panelId]: nextOrder,
+    }));
+  };
   const {
     cadProject: activeProject,
     displayScene,
@@ -439,6 +472,21 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     setShowParcelLabels(persistedState?.showParcelLabels ?? true);
   }, [persistedState]);
 
+  useEffect(() => {
+    const isVisible = propertiesPanelState != null;
+    if (isVisible && !previousPropertiesPanelVisibleRef.current) {
+      touchPanelDockOrder('properties');
+    }
+    previousPropertiesPanelVisibleRef.current = isVisible;
+  }, [propertiesPanelState]);
+
+  useEffect(() => {
+    if (parcelLayoutState.open && !previousParcelLayoutOpenRef.current) {
+      touchPanelDockOrder('parcel-layout');
+    }
+    previousParcelLayoutOpenRef.current = parcelLayoutState.open;
+  }, [parcelLayoutState.open]);
+
   const displaySceneWithParcelLabelToggle = useMemo(
     () =>
       showParcelLabels
@@ -448,9 +496,43 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             primitives: displayScene.primitives.filter(
               (primitive) => primitive.kind !== 'text' || !primitive.id.endsWith(':parcel-label'),
             ),
-          },
+        },
     [displayScene, showParcelLabels],
   );
+  const dockedPanelOffsets = useMemo(() => {
+    const visiblePanels: Array<{
+      id: CadSidePanelId;
+      dock: CadSidePanelDock;
+      order: number;
+    }> = [];
+    if (propertiesPanelState) {
+      visiblePanels.push({
+        id: 'properties',
+        dock: propertiesPanelUiState.dock,
+        order: panelDockOrders.properties,
+      });
+    }
+    if (parcelLayoutState.open && parcelLayoutState.dock !== 'floating') {
+      visiblePanels.push({
+        id: 'parcel-layout',
+        dock: parcelLayoutState.dock,
+        order: panelDockOrders['parcel-layout'],
+      });
+    }
+    const offsets: Record<CadSidePanelId, number> = {
+      'parcel-layout': CAD_SIDE_PANEL_GAP_PX,
+      properties: CAD_SIDE_PANEL_GAP_PX,
+    };
+    (['left', 'right'] as const).forEach((dock) => {
+      visiblePanels
+        .filter((panel) => panel.dock === dock)
+        .sort((left, right) => left.order - right.order)
+        .forEach((panel, index) => {
+          offsets[panel.id] = CAD_SIDE_PANEL_GAP_PX + index * (CAD_SIDE_PANEL_WIDTH_PX + CAD_SIDE_PANEL_GAP_PX);
+        });
+    });
+    return offsets;
+  }, [panelDockOrders, parcelLayoutState.dock, parcelLayoutState.open, propertiesPanelState, propertiesPanelUiState.dock]);
 
   const reportedComputationEntities = useMemo(
     () =>
@@ -661,6 +743,13 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     startLeftPx: number;
     startTopPx: number;
   } | null>(null);
+  const propertiesPanelDragRef = useRef<{
+    pointerId: number;
+    startClientX: number;
+    startClientY: number;
+    startLeftPx: number;
+    startTopPx: number;
+  } | null>(null);
   const parcelLayoutResizeRef = useRef<{
     pointerId: number;
     direction: FloatingPanelResizeDirection;
@@ -672,8 +761,11 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     startTopPx: number;
   } | null>(null);
   const [isParcelLayoutDragging, setIsParcelLayoutDragging] = useState(false);
+  const [isPropertiesPanelDragging, setIsPropertiesPanelDragging] = useState(false);
   const [parcelLayoutResizeDirection, setParcelLayoutResizeDirection] =
     useState<FloatingPanelResizeDirection | null>(null);
+  const previousPropertiesPanelVisibleRef = useRef(false);
+  const previousParcelLayoutOpenRef = useRef(false);
   const parcelLayoutParentEntity = useMemo(
     () =>
       parcelLayoutState.activeParentParcelId == null
@@ -1072,12 +1164,68 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   ]);
 
   useEffect(() => {
+    if (propertiesPanelUiState.dock !== 'floating' || propertiesPanelState == null) return;
+    const handlePointerMove = (event: PointerEvent) => {
+      const drag = propertiesPanelDragRef.current;
+      if (!drag || drag.pointerId !== event.pointerId) return;
+      event.preventDefault();
+      const maxLeft = Math.max(
+        PARCEL_LAYOUT_FLOATING_VIEWPORT_GUTTER_PX,
+        window.innerWidth - CAD_SIDE_PANEL_WIDTH_PX - PARCEL_LAYOUT_FLOATING_VIEWPORT_GUTTER_PX,
+      );
+      const maxTop = Math.max(
+        CAD_SIDE_PANEL_TOP_PX,
+        window.innerHeight - PROPERTIES_PANEL_HEIGHT_PX - PARCEL_LAYOUT_FLOATING_VIEWPORT_GUTTER_PX,
+      );
+      const nextLeft = drag.startLeftPx + (event.clientX - drag.startClientX);
+      const nextTop = drag.startTopPx + (event.clientY - drag.startClientY);
+      setPropertiesPanelUiState((current) => ({
+        ...current,
+        floatingLeftPx: Math.min(
+          maxLeft,
+          Math.max(PARCEL_LAYOUT_FLOATING_VIEWPORT_GUTTER_PX, nextLeft),
+        ),
+        floatingTopPx: Math.min(
+          maxTop,
+          Math.max(CAD_SIDE_PANEL_TOP_PX, nextTop),
+        ),
+      }));
+    };
+    const clearDrag = (pointerId: number) => {
+      if (propertiesPanelDragRef.current?.pointerId === pointerId) {
+        propertiesPanelDragRef.current = null;
+        setIsPropertiesPanelDragging(false);
+      }
+    };
+    const handlePointerUp = (event: PointerEvent) => {
+      clearDrag(event.pointerId);
+    };
+    const handlePointerCancel = (event: PointerEvent) => {
+      clearDrag(event.pointerId);
+    };
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerCancel);
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerCancel);
+    };
+  }, [propertiesPanelState, propertiesPanelUiState.dock]);
+
+  useEffect(() => {
     if (parcelLayoutState.open && parcelLayoutState.dock === 'floating') return;
     parcelLayoutDragRef.current = null;
     parcelLayoutResizeRef.current = null;
     setIsParcelLayoutDragging(false);
     setParcelLayoutResizeDirection(null);
   }, [parcelLayoutState.dock, parcelLayoutState.open]);
+
+  useEffect(() => {
+    if (propertiesPanelState && propertiesPanelUiState.dock === 'floating') return;
+    propertiesPanelDragRef.current = null;
+    setIsPropertiesPanelDragging(false);
+  }, [propertiesPanelState, propertiesPanelUiState.dock]);
 
   const toggleParcelLayoutPanel = () => {
     setParcelLayoutState((current) => ({ ...current, open: !current.open }));
@@ -1353,10 +1501,12 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           </div>
         </div>
         <div className="h-full">
-          {isParcelLayoutDragging || parcelLayoutResizeDirection ? (
+          {isParcelLayoutDragging || parcelLayoutResizeDirection || isPropertiesPanelDragging ? (
             <div
               className={`fixed inset-0 z-[39] ${
-                parcelLayoutResizeDirection === 'right'
+                isPropertiesPanelDragging || isParcelLayoutDragging
+                  ? 'cursor-move'
+                  : parcelLayoutResizeDirection === 'right'
                   ? 'cursor-ew-resize'
                   : parcelLayoutResizeDirection === 'bottom'
                     ? 'cursor-ns-resize'
@@ -1371,6 +1521,43 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             <SurveyCadPropertiesPanel
               panelState={propertiesPanelState}
               selectedParcelReport={selectedParcelReport}
+              dock={propertiesPanelUiState.dock}
+              dockOffsetPx={dockedPanelOffsets.properties}
+              floatingLeftPx={propertiesPanelUiState.floatingLeftPx}
+              floatingTopPx={propertiesPanelUiState.floatingTopPx}
+              collapsed={propertiesPanelUiState.collapsed}
+              onSetDock={(dock) => {
+                setPropertiesPanelUiState((current) => ({ ...current, dock }));
+                if (dock !== 'floating') touchPanelDockOrder('properties');
+              }}
+              onToggleCollapsed={() =>
+                setPropertiesPanelUiState((current) => ({
+                  ...current,
+                  collapsed: !current.collapsed,
+                }))
+              }
+              onClose={() => clearSelection()}
+              onStartDrag={(event) => {
+                if (propertiesPanelUiState.dock !== 'floating') return;
+                if (event.button !== 0) return;
+                const target = event.target;
+                if (
+                  target instanceof HTMLElement &&
+                  target.closest('button, input, select, textarea, label, a')
+                ) {
+                  return;
+                }
+                event.preventDefault();
+                event.stopPropagation();
+                propertiesPanelDragRef.current = {
+                  pointerId: event.pointerId,
+                  startClientX: event.clientX,
+                  startClientY: event.clientY,
+                  startLeftPx: propertiesPanelUiState.floatingLeftPx,
+                  startTopPx: propertiesPanelUiState.floatingTopPx,
+                };
+                setIsPropertiesPanelDragging(true);
+              }}
               onSelectEntity={(entityId) => selectEntity(entityId)}
               onEditField={editPropertiesField}
             />
@@ -1400,7 +1587,11 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               canUseCurrentSelectionAsFrontage={selectedFrontageForLayout != null}
               onClose={() => updateParcelLayoutState((current) => ({ ...current, open: false }))}
               onToggleCollapsed={() => updateParcelLayoutState((current) => ({ ...current, collapsed: !current.collapsed }))}
-              onSetDock={(dock) => updateParcelLayoutState((current) => ({ ...current, dock }))}
+              onSetDock={(dock) => {
+                updateParcelLayoutState((current) => ({ ...current, dock }));
+                touchPanelDockOrder('parcel-layout');
+              }}
+              dockOffsetPx={dockedPanelOffsets['parcel-layout']}
               onStartDrag={(event) => {
                 if (parcelLayoutState.dock !== 'floating') return;
                 if (event.button !== 0) return;
