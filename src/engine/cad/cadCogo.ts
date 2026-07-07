@@ -5149,6 +5149,55 @@ const cadBuildCornerFrontageTouchingLotCount = (
     ) != null,
   ).length;
 
+const cadGeneratedParcelTouchesFrontageLine = (
+  frontageLine: CadLineEntity,
+  generatedParcel: CadParcelLayoutGeneratedParcelDraft,
+): boolean =>
+  cadBuildFrontageLineFromCurrentParcelSegmentGeometry(
+    {
+      id: 'corner-frontage-touch-check',
+      type: 'parcel',
+      layerId: frontageLine.layerId,
+      styleId: frontageLine.styleId,
+      visible: frontageLine.visible,
+      locked: frontageLine.locked,
+      parcelName: 'Corner frontage touch check',
+      vertices: generatedParcel.vertices,
+      vertexLabels: generatedParcel.vertexLabels,
+    },
+    { x: frontageLine.fromX, y: frontageLine.fromY },
+    { x: frontageLine.toX, y: frontageLine.toY },
+  ) != null;
+
+const cadBuildSharedFrontagePoint = (
+  firstFrontageLine: CadLineEntity,
+  secondFrontageLine: CadLineEntity,
+): CadWorldPoint | null => {
+  const firstPoints = [
+    { x: firstFrontageLine.fromX, y: firstFrontageLine.fromY },
+    { x: firstFrontageLine.toX, y: firstFrontageLine.toY },
+  ];
+  const secondPoints = [
+    { x: secondFrontageLine.fromX, y: secondFrontageLine.fromY },
+    { x: secondFrontageLine.toX, y: secondFrontageLine.toY },
+  ];
+  return (
+    firstPoints.find((firstPoint) =>
+      secondPoints.some((secondPoint) => parcelPointsMatch(firstPoint, secondPoint)),
+    ) ?? null
+  );
+};
+
+const cadGeneratedParcelTouchesPoint = (
+  generatedParcel: CadParcelLayoutGeneratedParcelDraft,
+  point: CadWorldPoint,
+): boolean => {
+  const vertices = normalizeParcelPolygonVertices(generatedParcel.vertices);
+  return vertices.some((start, index) =>
+    cadPointOnSegment(point, start, vertices[(index + 1) % vertices.length]!),
+  );
+};
+
 const cadBuildTaggedGeneratedLotDraft = ({
   draft,
   sourceKind,
@@ -5631,17 +5680,40 @@ const cadBuildCornerInfillDraft = (
   const cornerRemainderDraft =
     resolvedCornerDraft.generatedParcels.find((generatedParcel) => generatedParcel.role === 'remainder') ??
     null;
-  const cornerLots = resolvedCornerDraft.generatedParcels.filter(
+  const allCornerLots = resolvedCornerDraft.generatedParcels.filter(
     (generatedParcel) => generatedParcel.role === 'lot',
   );
+  const sharedFrontagePoint = cadBuildSharedFrontagePoint(firstFrontageLine, secondFrontageLine);
+  const trueSharedCornerLotIndexes = allCornerLots
+    .map((generatedParcel, index) => ({
+      generatedParcel,
+      index,
+      touchesFirst: cadGeneratedParcelTouchesFrontageLine(firstFrontageLine, generatedParcel),
+      touchesSecond: cadGeneratedParcelTouchesFrontageLine(secondFrontageLine, generatedParcel),
+      touchesSharedPoint:
+        sharedFrontagePoint != null && cadGeneratedParcelTouchesPoint(generatedParcel, sharedFrontagePoint),
+    }))
+    .filter((entry) => entry.touchesFirst && entry.touchesSecond && entry.touchesSharedPoint)
+    .map((entry) => entry.index);
+  const selectedCornerLotIndexes =
+    mode === 'prepass'
+      ? trueSharedCornerLotIndexes.slice(0, 2)
+      : allCornerLots.map((_generatedParcel, index) => index);
+  const cornerLots = allCornerLots.filter((_generatedParcel, index) =>
+    selectedCornerLotIndexes.includes(index),
+  );
+  const cornerAcceptedCandidates = resolvedCornerDraft.acceptedCandidates
+    .filter((_candidate, index) => selectedCornerLotIndexes.includes(index))
+    .map((candidate) => ({
+      ...candidate,
+      tool: resolvedCornerDraft.tool,
+    }));
+  if (cornerLots.length === 0 || cornerAcceptedCandidates.length === 0) return null;
   return {
     draft: {
       ...resolvedCornerDraft,
       tool: resolvedCornerDraft.tool,
-      acceptedCandidates: resolvedCornerDraft.acceptedCandidates.map((candidate) => ({
-        ...candidate,
-        tool: resolvedCornerDraft.tool,
-        })),
+      acceptedCandidates: cornerAcceptedCandidates,
       generatedParcels: cornerLots,
     },
     remainderDraft: cornerRemainderDraft,
@@ -6312,7 +6384,9 @@ export const cadBuildParcelAutoLayoutDraftFromFrontageReference = (
       currentFrontage;
 
     const isLastSegment = index === segmentPairs.length - 1;
-    const segmentSettings = isLastSegment
+    const forceRemainderParcel =
+      settings.useMaxDepth && segmentPairs.length > 1 && settings.remainderDistribution === 'place_remainder_in_last_parcel';
+    const segmentSettings = isLastSegment && !forceRemainderParcel
       ? settings
       : {
           ...settings,

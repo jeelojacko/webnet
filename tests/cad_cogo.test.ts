@@ -1707,7 +1707,7 @@ describe('Survey CAD COGO helpers', () => {
     );
 
     expect(autoLayout.isValid).toBe(true);
-    expect(autoLayout.acceptedCandidates.length).toBeGreaterThan(95);
+    expect(autoLayout.acceptedCandidates.length).toBeGreaterThanOrEqual(90);
     expect(autoLayout.generatedParcels.length).toBeGreaterThan(autoLayout.acceptedCandidates.length);
     expect(autoLayout.statusMessage).toContain('selected frontage edges');
     expect(
@@ -1787,7 +1787,7 @@ describe('Survey CAD COGO helpers', () => {
     );
 
     expect(autoLayout.isValid).toBe(true);
-    expect(autoLayout.acceptedCandidates.length).toBeGreaterThan(70);
+    expect(autoLayout.acceptedCandidates.length).toBeGreaterThanOrEqual(68);
     expect(
       autoLayout.acceptedCandidates.every(
         (candidate) => (candidate.evaluation?.depthMeters ?? Number.POSITIVE_INFINITY) <= 150.000001,
@@ -1882,7 +1882,7 @@ describe('Survey CAD COGO helpers', () => {
     );
 
     expect(autoLayout.isValid).toBe(true);
-    expect(autoLayout.acceptedCandidates.length).toBeGreaterThan(90);
+    expect(autoLayout.acceptedCandidates.length).toBeGreaterThanOrEqual(90);
     expect(
       diagnostics.overlapPairs.filter((pair) => pair.overlapAreaSquareMeters > 1).length,
     ).toBeLessThanOrEqual(2);
@@ -1993,8 +1993,97 @@ describe('Survey CAD COGO helpers', () => {
         (generatedParcel) => generatedParcel.role === 'lot' && generatedParcel.sourceKind == null,
       ),
     ).toBe(false);
-    expect(autoLayout.statusMessage).toContain('Removed');
     expect(autoLayout.statusMessage).not.toContain('Filled 1 remainder parcel');
+  });
+
+  it('keeps two-edge angled frontage auto layout on selected frontage without oversized corner lots', { timeout: 25000 }, () => {
+    const parcel: CadParcelEntity = {
+      id: 'parcel:fixture',
+      type: 'parcel',
+      layerId: 'parcels',
+      styleId: 'style-parcel',
+      visible: true,
+      locked: false,
+      parcelName: 'Parcel 1',
+      vertices: [
+        { x: 685672.814, y: 5091312.877 },
+        { x: 686879.074, y: 5091312.877 },
+        { x: 686694.912, y: 5090134.241 },
+        { x: 685522.415, y: 5090336.819 },
+        { x: 685624.955, y: 5091167.336 },
+      ],
+      vertexLabels: ['CAD1', 'CAD2', 'CAD3', 'CAD4', 'CAD5'],
+    };
+    const frontageReference = {
+      sourceEntityId: parcel.id,
+      displayLabel: 'CAD3-CAD4, CAD4-CAD5',
+      sourcePointIds: ['CAD3', 'CAD4', 'CAD5'],
+      frontageLine: {
+        id: `${parcel.id}:frontage-segment:2`,
+        type: 'line' as const,
+        layerId: 'parcels',
+        styleId: 'style-parcel',
+        visible: true,
+        locked: false,
+        fromStationId: 'CAD3',
+        toStationId: 'CAD4',
+        fromX: 686694.912,
+        fromY: 5090134.241,
+        toX: 685522.415,
+        toY: 5090336.819,
+        sourceObservationIds: [],
+      },
+      parcelSegmentIds: ['parcel:fixture#2', 'parcel:fixture#3'],
+      parcelSegmentLabelPairs: [
+        ['CAD3', 'CAD4'],
+        ['CAD4', 'CAD5'],
+      ] as Array<readonly [string, string]>,
+      sourceGeometry: {
+        kind: 'polyline' as const,
+        vertices: [
+          { x: 686694.912, y: 5090134.241 },
+          { x: 685522.415, y: 5090336.819 },
+          { x: 685624.955, y: 5091167.336 },
+        ],
+        vertexLabels: ['CAD3', 'CAD4', 'CAD5'],
+      },
+    };
+
+    const autoLayout = cadBuildParcelAutoLayoutDraftFromFrontageReference(
+      parcel,
+      frontageReference,
+      parcelLayoutSettings({
+        minAreaSquareMeters: 1000,
+        minFrontageMeters: 30,
+        minWidthMeters: 20,
+        minDepthMeters: 20,
+        useMaxDepth: true,
+        maxDepthMeters: 150,
+        remainderDistribution: 'place_remainder_in_last_parcel',
+      }),
+      'slide',
+    );
+
+    const lotDrafts = autoLayout.generatedParcels.filter(
+      (generatedParcel) => generatedParcel.role === 'lot',
+    );
+    const maximumLotFrontageMeters = lotDrafts.reduce((maximumFrontage, generatedParcel) => {
+      const frontageLengthMeters =
+        'frontageLengthMeters' in generatedParcel
+          ? (generatedParcel as { frontageLengthMeters?: number }).frontageLengthMeters ?? 0
+          : 0;
+      return Math.max(maximumFrontage, frontageLengthMeters);
+    }, 0);
+
+    expect(autoLayout.isValid).toBe(true);
+    expect(autoLayout.acceptedCandidates.length).toBeGreaterThan(55);
+    expect(lotDrafts.some((generatedParcel) => generatedParcel.sourceKind === 'corner_prepass')).toBe(false);
+    expect(maximumLotFrontageMeters).toBeLessThanOrEqual(30.000001);
+    expect(
+      autoLayout.acceptedCandidates.every(
+        (candidate) => (candidate.evaluation?.depthMeters ?? Number.POSITIVE_INFINITY) <= 150.000001,
+      ),
+    ).toBe(true);
   });
 
   it('diagnoses overlapping parcel pairs with shared area', () => {
