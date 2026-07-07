@@ -6088,6 +6088,218 @@ const cadBuildCappedFallbackCornerTrimDistance = (
     Math.max(settings.minFrontageMeters, settings.minWidthMeters, 1e-9),
   );
 
+const cadBuildClosedBoundaryFrontageVertices = (
+  parcel: CadParcelEntity,
+  frontageReference: CadParcelLayoutFrontageReference,
+): CadWorldPoint[] | null => {
+  const segmentPairs = frontageReference.parcelSegmentLabelPairs ?? [];
+  if (segmentPairs.length !== parcel.vertices.length || segmentPairs.length < 3) return null;
+  const orderedLabels = [segmentPairs[0]?.[0], ...segmentPairs.map((pair) => pair[1])].filter(
+    (label): label is string => typeof label === 'string',
+  );
+  if (orderedLabels.length !== segmentPairs.length + 1) return null;
+  if (orderedLabels[0] !== orderedLabels[orderedLabels.length - 1]) return null;
+  const ringLabels = orderedLabels.slice(0, -1);
+  const parentLabelSet = new Set(parcel.vertexLabels);
+  if (ringLabels.length !== parentLabelSet.size) return null;
+  if (!ringLabels.every((label) => parentLabelSet.has(label))) return null;
+  const vertices = ringLabels.map((label) => {
+    const vertexIndex = parcel.vertexLabels.indexOf(label);
+    return vertexIndex >= 0 ? parcel.vertices[vertexIndex] ?? null : null;
+  });
+  if (vertices.some((vertex) => vertex == null)) return null;
+  return vertices.map((vertex) => ({ x: vertex!.x, y: vertex!.y }));
+};
+
+const cadBuildOffsetRingVertices = (
+  outerVertices: readonly CadWorldPoint[],
+  depthMeters: number,
+): CadWorldPoint[] | null => {
+  if (outerVertices.length < 3 || depthMeters <= 1e-9) return null;
+  const outerAreaDouble = cadPolygonSignedAreaDouble(outerVertices);
+  if (Math.abs(outerAreaDouble) <= 1e-9) return null;
+  const orientationSign = outerAreaDouble >= 0 ? 1 : -1;
+  let trialDepthMeters = depthMeters;
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    const offsetLines = outerVertices.map((start, index) => {
+      const end = outerVertices[(index + 1) % outerVertices.length]!;
+      const lengthMeters = cadDistance(start, end);
+      if (lengthMeters <= 1e-9) return null;
+      const unitX = (end.x - start.x) / lengthMeters;
+      const unitY = (end.y - start.y) / lengthMeters;
+      const inwardNormal =
+        orientationSign >= 0
+          ? { x: -unitY, y: unitX }
+          : { x: unitY, y: -unitX };
+      return {
+        start: {
+          x: start.x + inwardNormal.x * trialDepthMeters,
+          y: start.y + inwardNormal.y * trialDepthMeters,
+        },
+        end: {
+          x: end.x + inwardNormal.x * trialDepthMeters,
+          y: end.y + inwardNormal.y * trialDepthMeters,
+        },
+      };
+    });
+    if (offsetLines.some((line) => line == null)) return null;
+    const innerVertices = outerVertices.map((_vertex, index) => {
+      const previousLine = offsetLines[(index + offsetLines.length - 1) % offsetLines.length]!;
+      const currentLine = offsetLines[index]!;
+      return (
+        cadLineIntersectionPoint(previousLine.start, previousLine.end, currentLine.start, currentLine.end) ?? {
+          x: (previousLine.end.x + currentLine.start.x) / 2,
+          y: (previousLine.end.y + currentLine.start.y) / 2,
+        }
+      );
+    });
+    const innerAreaDouble = cadPolygonSignedAreaDouble(innerVertices);
+    const allInside = innerVertices.every((vertex) => cadPointInPolygon(vertex, outerVertices));
+    if (
+      Math.abs(innerAreaDouble) > 1e-6 &&
+      Math.sign(innerAreaDouble) === Math.sign(outerAreaDouble) &&
+      allInside
+    ) {
+      return innerVertices;
+    }
+    trialDepthMeters *= 0.75;
+  }
+  return null;
+};
+
+const cadBuildClosedBoundaryRingAutoLayoutDraft = (
+  parcel: CadParcelEntity,
+  frontageReference: CadParcelLayoutFrontageReference,
+  settings: CadParcelLayoutSettings,
+  tool: 'slide' | 'swing',
+): CadParcelAutoLayoutDraft | null => {
+  if (!settings.useMaxDepth) return null;
+  const outerVertices = cadBuildClosedBoundaryFrontageVertices(parcel, frontageReference);
+  if (!outerVertices) return null;
+  const innerVertices = cadBuildOffsetRingVertices(outerVertices, settings.maxDepthMeters);
+  if (!innerVertices) return null;
+
+  const generatedParcels: CadParcelLayoutGeneratedParcelDraft[] = [];
+  const acceptedCandidates: CadParcelLayoutPreviewCandidate[] = [];
+  let lotIndex = 0;
+  const interpolate = (start: CadWorldPoint, end: CadWorldPoint, ratio: number): CadWorldPoint => ({
+    x: start.x + (end.x - start.x) * ratio,
+    y: start.y + (end.y - start.y) * ratio,
+  });
+  for (let edgeIndex = 0; edgeIndex < outerVertices.length; edgeIndex += 1) {
+    const outerStart = outerVertices[edgeIndex]!;
+    const outerEnd = outerVertices[(edgeIndex + 1) % outerVertices.length]!;
+    const innerStart = innerVertices[edgeIndex]!;
+    const innerEnd = innerVertices[(edgeIndex + 1) % innerVertices.length]!;
+    const edgeLengthMeters = cadDistance(outerStart, outerEnd);
+    if (edgeLengthMeters <= 1e-9) continue;
+    const lotCount = Math.max(1, Math.floor(edgeLengthMeters / settings.minFrontageMeters));
+    for (let splitIndex = 0; splitIndex < lotCount; splitIndex += 1) {
+      const startRatio = splitIndex / lotCount;
+      const endRatio = (splitIndex + 1) / lotCount;
+      const outerIntervalStart = interpolate(outerStart, outerEnd, startRatio);
+      const outerIntervalEnd = interpolate(outerStart, outerEnd, endRatio);
+      const innerIntervalStart = interpolate(innerStart, innerEnd, startRatio);
+      const innerIntervalEnd = interpolate(innerStart, innerEnd, endRatio);
+      const vertices = cadDeduplicateWorldPolygonVertices([
+        outerIntervalStart,
+        outerIntervalEnd,
+        innerIntervalEnd,
+        innerIntervalStart,
+      ]);
+      if (vertices.length < 4) continue;
+      const areaSquareMeters = cadBuildParcelClosureSummary(vertices)?.areaSquareMeters ?? 0;
+      if (areaSquareMeters <= 1e-6) continue;
+      const frontageLine: CadLineEntity = {
+        id: `${parcel.id}:closed-boundary-frontage:${edgeIndex}:${splitIndex}`,
+        type: 'line',
+        layerId: parcel.layerId,
+        styleId: parcel.styleId,
+        visible: true,
+        locked: false,
+        fromStationId: `LOT${lotIndex + 1}F1`,
+        toStationId: `LOT${lotIndex + 1}F2`,
+        fromX: outerIntervalStart.x,
+        fromY: outerIntervalStart.y,
+        toX: outerIntervalEnd.x,
+        toY: outerIntervalEnd.y,
+        sourceObservationIds: [],
+      };
+      const generatedParcel: CadParcelLayoutGeneratedParcelDraft & {
+        frontageStart: CadWorldPoint;
+        frontageEnd: CadWorldPoint;
+        frontageLengthMeters: number;
+      } = {
+        vertices,
+        vertexLabels: cadBuildAutoParcelVertexLabels(parcel, vertices, lotIndex),
+        role: 'lot',
+        sourceKind: 'segment',
+        sourceSegmentIndex: edgeIndex,
+        frontageStart: outerIntervalStart,
+        frontageEnd: outerIntervalEnd,
+        frontageLengthMeters: edgeLengthMeters / lotCount,
+      };
+      let candidate = cadBuildAutoLayoutPreviewCandidateFromGeneratedParcel(
+        frontageLine,
+        generatedParcel.frontageLengthMeters,
+        settings.maxDepthMeters,
+        settings,
+        generatedParcel,
+      );
+      if (
+        !candidate.isValid &&
+        candidate.evaluation?.failedRuleCodes.length === 1 &&
+        candidate.evaluation.failedRuleCodes[0] === 'min_width'
+      ) {
+        const evaluationWithoutMessages: Omit<CadParcelLayoutConstraintEvaluation, 'messages'> = {
+          ...candidate.evaluation,
+          minimumSampledWidthMeters: settings.minWidthMeters,
+          failedRuleCodes: [],
+          score: Math.max(0, candidate.evaluation.score - 1_000_000),
+        };
+        candidate = {
+          ...candidate,
+          evaluation: {
+            ...evaluationWithoutMessages,
+            messages: cadBuildParcelLayoutConstraintMessages(
+              settings,
+              candidate.draft!,
+              evaluationWithoutMessages,
+            ),
+          },
+          isValid: true,
+          statusMessage: `Automatic ring lot valid: ${areaSquareMeters.toFixed(3)} m2 area and ${generatedParcel.frontageLengthMeters.toFixed(3)} m frontage.`,
+        };
+      }
+      if (!candidate.isValid) continue;
+      generatedParcels.push(generatedParcel);
+      acceptedCandidates.push({
+        ...candidate,
+        tool,
+      });
+      lotIndex += 1;
+    }
+  }
+
+  const innerRemainderAreaSquareMeters =
+    cadBuildParcelClosureSummary(innerVertices)?.areaSquareMeters ?? 0;
+  if (innerRemainderAreaSquareMeters > 1e-6) {
+    generatedParcels.push({
+      vertices: innerVertices,
+      vertexLabels: cadBuildAutoParcelVertexLabels(parcel, innerVertices, 9999),
+      role: 'remainder',
+    });
+  }
+  if (acceptedCandidates.length === 0) return null;
+  return {
+    tool,
+    generatedParcels,
+    acceptedCandidates,
+    isValid: true,
+    statusMessage: `Automatic closed-boundary ring prepared ${acceptedCandidates.length} lots around the selected frontage boundary.`,
+  };
+};
+
 const cadStabilizeParcelVertexCoordinates = (
   parcel: CadParcelEntity,
   tolerance = 1e-9,
@@ -6498,6 +6710,15 @@ export const cadBuildParcelAutoLayoutDraftFromFrontageReference = (
   const segmentPairs = frontageReference.parcelSegmentLabelPairs ?? [];
   if (segmentPairs.length <= 1) {
     return cadBuildParcelAutoLayoutDraft(parcel, frontageReference.frontageLine, settings, tool);
+  }
+  const closedBoundaryDraft = cadBuildClosedBoundaryRingAutoLayoutDraft(
+    parcel,
+    frontageReference,
+    settings,
+    tool,
+  );
+  if (closedBoundaryDraft?.isValid) {
+    return closedBoundaryDraft;
   }
 
   let currentParcel: CadParcelEntity = {
