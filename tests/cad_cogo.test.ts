@@ -2088,7 +2088,6 @@ describe('Survey CAD COGO helpers', () => {
         vertexLabels: generatedParcel.vertexLabels,
       })),
     );
-
     expect(autoLayout.isValid).toBe(true);
     expect(middleAngledLotCount).toBeGreaterThan(20);
     expect(bottomFrontageLotCount).toBeGreaterThan(25);
@@ -2224,6 +2223,11 @@ describe('Survey CAD COGO helpers', () => {
         vertexLabels: generatedParcel.vertexLabels,
       })),
     );
+    const maximumSolvedDepthMeters = autoLayout.acceptedCandidates.reduce(
+      (maximumDepthMeters, candidate) =>
+        Math.max(maximumDepthMeters, candidate.evaluation?.depthMeters ?? 0),
+      0,
+    );
 
     expect(autoLayout.isValid).toBe(true);
     expect(autoLayout.statusMessage).toContain('closed-boundary ring');
@@ -2236,6 +2240,7 @@ describe('Survey CAD COGO helpers', () => {
         (candidate) => (candidate.evaluation?.depthMeters ?? Number.POSITIVE_INFINITY) < 40,
       ),
     ).toBe(true);
+    expect(maximumSolvedDepthMeters).toBeLessThan(33.2);
     expect(
       diagnostics.overlapPairs.filter((pair) => pair.overlapAreaSquareMeters > 1).length,
     ).toBe(0);

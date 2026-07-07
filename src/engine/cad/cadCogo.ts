@@ -6146,6 +6146,17 @@ const cadBuildClosedBoundaryRingAutoLayoutDraft = (
       settings.minFrontageMeters * 2,
       lengthMeters * 0.25,
     );
+    const usableStartMeters = cornerTransitionMeters;
+    const usableEndMeters = lengthMeters - cornerTransitionMeters;
+    const usableLengthMeters = Math.max(0, usableEndMeters - usableStartMeters);
+    const straightRunLotCount =
+      usableLengthMeters >= settings.minFrontageMeters - 1e-9
+        ? Math.max(1, Math.floor(usableLengthMeters / settings.minFrontageMeters))
+        : 0;
+    const straightRunFrontageMeters =
+      straightRunLotCount > 0
+        ? usableLengthMeters / straightRunLotCount
+        : settings.minFrontageMeters;
     return {
       start,
       end,
@@ -6154,7 +6165,12 @@ const cadBuildClosedBoundaryRingAutoLayoutDraft = (
       unitY,
       inwardNormal,
       cornerTransitionMeters,
-      depthMeters: solveDepthMeters(settings.minFrontageMeters),
+      usableStartMeters,
+      usableEndMeters,
+      usableLengthMeters,
+      straightRunLotCount,
+      straightRunFrontageMeters,
+      depthMeters: solveDepthMeters(straightRunFrontageMeters),
     };
   });
   if (edgeMetrics.some((edge) => edge.lengthMeters <= 1e-9)) return null;
@@ -6282,18 +6298,15 @@ const cadBuildClosedBoundaryRingAutoLayoutDraft = (
 
   for (let edgeIndex = 0; edgeIndex < edgeMetrics.length; edgeIndex += 1) {
     const edge = edgeMetrics[edgeIndex]!;
-    const usableStartMeters = edge.cornerTransitionMeters;
-    const usableEndMeters = edge.lengthMeters - edge.cornerTransitionMeters;
-    const usableLengthMeters = usableEndMeters - usableStartMeters;
-    if (usableLengthMeters < settings.minFrontageMeters - 1e-9) continue;
-    const lotCount = Math.max(1, Math.floor(usableLengthMeters / settings.minFrontageMeters));
-    for (let splitIndex = 0; splitIndex < lotCount; splitIndex += 1) {
+    if (edge.straightRunLotCount === 0) continue;
+    for (let splitIndex = 0; splitIndex < edge.straightRunLotCount; splitIndex += 1) {
       const startDistanceMeters =
-        usableStartMeters + (usableLengthMeters * splitIndex) / lotCount;
+        edge.usableStartMeters + (edge.usableLengthMeters * splitIndex) / edge.straightRunLotCount;
       const endDistanceMeters =
-        usableStartMeters + (usableLengthMeters * (splitIndex + 1)) / lotCount;
+        edge.usableStartMeters +
+        (edge.usableLengthMeters * (splitIndex + 1)) / edge.straightRunLotCount;
       const frontageLengthMeters = endDistanceMeters - startDistanceMeters;
-      const depthMeters = solveDepthMeters(frontageLengthMeters);
+      const depthMeters = edge.depthMeters;
       addRingLot({
         vertices: [
           pointAlongEdge(edge, startDistanceMeters),
