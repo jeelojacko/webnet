@@ -6212,11 +6212,11 @@ const cadBuildClosedBoundaryRingAutoLayoutDraft = (
     frontageLengthMeters: number;
     pathDepthMeters: number;
     cornerLot?: boolean;
-  }) => {
+  }): boolean => {
     const normalizedVertices = cadDeduplicateWorldPolygonVertices(vertices);
-    if (normalizedVertices.length < 4) return;
+    if (normalizedVertices.length < 4) return false;
     const areaSquareMeters = cadBuildParcelClosureSummary(normalizedVertices)?.areaSquareMeters ?? 0;
-    if (areaSquareMeters <= 1e-6) return;
+    if (areaSquareMeters <= 1e-6) return false;
     const frontageLine: CadLineEntity = {
       id: `${parcel.id}:closed-boundary-frontage:${edgeIndex}:${lotIndex}`,
       type: 'line',
@@ -6287,13 +6287,14 @@ const cadBuildClosedBoundaryRingAutoLayoutDraft = (
         statusMessage: `Automatic ring lot valid: ${areaSquareMeters.toFixed(3)} m2 area and ${frontageLengthMeters.toFixed(3)} m frontage.`,
       };
     }
-    if (!candidate.isValid) return;
+    if (!candidate.isValid) return false;
     generatedParcels.push(generatedParcel);
     acceptedCandidates.push({
       ...candidate,
       tool,
     });
     lotIndex += 1;
+    return true;
   };
 
   for (let edgeIndex = 0; edgeIndex < edgeMetrics.length; edgeIndex += 1) {
@@ -6343,22 +6344,64 @@ const cadBuildClosedBoundaryRingAutoLayoutDraft = (
       currentEdge.cornerTransitionMeters,
       currentEdge.depthMeters,
     );
-    addRingLot({
+    const rearMidpoint = {
+      x: (innerBeforeCorner.x + innerAfterCorner.x) / 2,
+      y: (innerBeforeCorner.y + innerAfterCorner.y) / 2,
+    };
+    const splitCornerLotIndexes = {
+      generatedStart: generatedParcels.length,
+      candidateStart: acceptedCandidates.length,
+      lotIndexStart: lotIndex,
+    };
+    const splitFirstAccepted = addRingLot({
       vertices: [
         outerBeforeCorner,
         outerCorner,
-        outerAfterCorner,
-        innerAfterCorner,
+        rearMidpoint,
         innerBeforeCorner,
       ],
       edgeIndex: previousEdgeIndex,
       frontageStart: outerBeforeCorner,
-      frontageEnd: outerAfterCorner,
-      frontageLengthMeters:
-        previousEdge.cornerTransitionMeters + currentEdge.cornerTransitionMeters,
-      pathDepthMeters: Math.max(previousEdge.depthMeters, currentEdge.depthMeters),
+      frontageEnd: outerCorner,
+      frontageLengthMeters: previousEdge.cornerTransitionMeters,
+      pathDepthMeters: previousEdge.depthMeters,
       cornerLot: true,
     });
+    const splitSecondAccepted = addRingLot({
+      vertices: [
+        outerCorner,
+        outerAfterCorner,
+        innerAfterCorner,
+        rearMidpoint,
+      ],
+      edgeIndex: vertexIndex,
+      frontageStart: outerCorner,
+      frontageEnd: outerAfterCorner,
+      frontageLengthMeters: currentEdge.cornerTransitionMeters,
+      pathDepthMeters: currentEdge.depthMeters,
+      cornerLot: true,
+    });
+    if (!splitFirstAccepted || !splitSecondAccepted) {
+      generatedParcels.splice(splitCornerLotIndexes.generatedStart);
+      acceptedCandidates.splice(splitCornerLotIndexes.candidateStart);
+      lotIndex = splitCornerLotIndexes.lotIndexStart;
+      addRingLot({
+        vertices: [
+          outerBeforeCorner,
+          outerCorner,
+          outerAfterCorner,
+          innerAfterCorner,
+          innerBeforeCorner,
+        ],
+        edgeIndex: previousEdgeIndex,
+        frontageStart: outerBeforeCorner,
+        frontageEnd: outerAfterCorner,
+        frontageLengthMeters:
+          previousEdge.cornerTransitionMeters + currentEdge.cornerTransitionMeters,
+        pathDepthMeters: Math.max(previousEdge.depthMeters, currentEdge.depthMeters),
+        cornerLot: true,
+      });
+    }
   }
 
   const centerRemainderVertices = cadDeduplicateWorldPolygonVertices(

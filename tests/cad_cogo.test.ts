@@ -2191,6 +2191,9 @@ describe('Survey CAD COGO helpers', () => {
     const straightRunLots = lotDrafts.filter(
       (generatedParcel) => generatedParcel.sourceKind === 'segment',
     );
+    const cornerLots = lotDrafts.filter(
+      (generatedParcel) => generatedParcel.sourceKind === 'corner_remainder',
+    );
     const isPerpendicularStraightRunLot = (generatedParcel: (typeof straightRunLots)[number]): boolean => {
       const vertices = generatedParcel.vertices;
       if (vertices.length !== 4) return false;
@@ -2231,10 +2234,17 @@ describe('Survey CAD COGO helpers', () => {
 
     expect(autoLayout.isValid).toBe(true);
     expect(autoLayout.statusMessage).toContain('closed-boundary ring');
-    expect(lotDrafts.length).toBeGreaterThan(130);
+    expect(lotDrafts.length).toBeGreaterThan(140);
     expect(lotCountsBySegment.every((count) => count > 0)).toBe(true);
     expect(lotDrafts.every((generatedParcel) => generatedParcel.vertices.length >= 4)).toBe(true);
     expect(straightRunLots.every(isPerpendicularStraightRunLot)).toBe(true);
+    expect(cornerLots).toHaveLength(10);
+    expect(
+      cornerLots.every(
+        (generatedParcel) =>
+          (cadBuildParcelClosureSummary(generatedParcel.vertices)?.areaSquareMeters ?? 0) >= 1000,
+      ),
+    ).toBe(true);
     expect(
       autoLayout.acceptedCandidates.every(
         (candidate) => (candidate.evaluation?.depthMeters ?? Number.POSITIVE_INFINITY) < 40,

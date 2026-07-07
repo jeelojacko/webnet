@@ -1640,3 +1640,4 @@
 - [x] Survey CAD parcel auto ring-depth batch (July 2026): make full-boundary auto-layout ring lots perpendicular to frontage through straight runs, reserve only 1-2 frontage widths for corner transition lots, and solve lot depth from minimum area instead of always using maximum depth.
 - [x] Survey CAD parcel auto ring continuity batch (July 2026): stop closed-boundary ring generation from dropping straight-run lots and make corner-lot rear lines connect cleanly to adjacent straight-run rear lot lines.
 - [x] Survey CAD parcel auto corner-depth batch (July 2026): align closed-boundary corner lot rear endpoints to the adjacent straight-run solved depth instead of using deeper minimum-frontage depth.
+- [x] Survey CAD parcel auto corner-split batch (July 2026): split closed-boundary corner transition lots from parent corner to rear-line midpoint when both resulting lots pass layout minimums.
