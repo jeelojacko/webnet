@@ -6111,64 +6111,6 @@ const cadBuildClosedBoundaryFrontageVertices = (
   return vertices.map((vertex) => ({ x: vertex!.x, y: vertex!.y }));
 };
 
-const cadBuildOffsetRingVertices = (
-  outerVertices: readonly CadWorldPoint[],
-  depthMetersByEdge: readonly number[],
-): CadWorldPoint[] | null => {
-  if (
-    outerVertices.length < 3 ||
-    depthMetersByEdge.length !== outerVertices.length ||
-    depthMetersByEdge.some((depthMeters) => depthMeters <= 1e-9)
-  ) {
-    return null;
-  }
-  const outerAreaDouble = cadPolygonSignedAreaDouble(outerVertices);
-  if (Math.abs(outerAreaDouble) <= 1e-9) return null;
-  const orientationSign = outerAreaDouble >= 0 ? 1 : -1;
-  const offsetLines = outerVertices.map((start, index) => {
-    const end = outerVertices[(index + 1) % outerVertices.length]!;
-    const lengthMeters = cadDistance(start, end);
-    if (lengthMeters <= 1e-9) return null;
-    const unitX = (end.x - start.x) / lengthMeters;
-    const unitY = (end.y - start.y) / lengthMeters;
-    const inwardNormal =
-      orientationSign >= 0
-        ? { x: -unitY, y: unitX }
-        : { x: unitY, y: -unitX };
-    const depthMeters = depthMetersByEdge[index]!;
-    return {
-      start: {
-        x: start.x + inwardNormal.x * depthMeters,
-        y: start.y + inwardNormal.y * depthMeters,
-      },
-      end: {
-        x: end.x + inwardNormal.x * depthMeters,
-        y: end.y + inwardNormal.y * depthMeters,
-      },
-    };
-  });
-  if (offsetLines.some((line) => line == null)) return null;
-  const innerVertices = outerVertices.map((_vertex, index) => {
-    const previousLine = offsetLines[(index + offsetLines.length - 1) % offsetLines.length]!;
-    const currentLine = offsetLines[index]!;
-    return (
-      cadLineIntersectionPoint(previousLine.start, previousLine.end, currentLine.start, currentLine.end) ?? {
-        x: (previousLine.end.x + currentLine.start.x) / 2,
-        y: (previousLine.end.y + currentLine.start.y) / 2,
-      }
-    );
-  });
-  const innerAreaDouble = cadPolygonSignedAreaDouble(innerVertices);
-  if (
-    Math.abs(innerAreaDouble) <= 1e-6 ||
-    Math.sign(innerAreaDouble) !== Math.sign(outerAreaDouble) ||
-    !innerVertices.every((vertex) => cadPointInPolygon(vertex, outerVertices))
-  ) {
-    return null;
-  }
-  return innerVertices;
-};
-
 const cadBuildClosedBoundaryRingAutoLayoutDraft = (
   parcel: CadParcelEntity,
   frontageReference: CadParcelLayoutFrontageReference,
@@ -6216,11 +6158,6 @@ const cadBuildClosedBoundaryRingAutoLayoutDraft = (
     };
   });
   if (edgeMetrics.some((edge) => edge.lengthMeters <= 1e-9)) return null;
-  const innerVertices = cadBuildOffsetRingVertices(
-    outerVertices,
-    edgeMetrics.map((edge) => edge.depthMeters),
-  );
-  if (!innerVertices) return null;
 
   const generatedParcels: CadParcelLayoutGeneratedParcelDraft[] = [];
   const acceptedCandidates: CadParcelLayoutPreviewCandidate[] = [];
@@ -6300,9 +6237,18 @@ const cadBuildClosedBoundaryRingAutoLayoutDraft = (
       settings,
       generatedParcel,
     );
+    const areaToleranceSquareMeters = Math.max(settings.minAreaSquareMeters * 1e-6, 1e-3);
+    const tolerableFailedRuleCodes = candidate.evaluation?.failedRuleCodes.filter(
+      (ruleCode) =>
+        !(
+          ruleCode === 'min_width' ||
+          (ruleCode === 'min_area' && areaSquareMeters + areaToleranceSquareMeters >= settings.minAreaSquareMeters)
+        ),
+    ) ?? [];
     if (
       !candidate.isValid &&
-      candidate.evaluation?.failedRuleCodes.every((code) => code === 'min_width') &&
+      candidate.evaluation &&
+      tolerableFailedRuleCodes.length === 0 &&
       candidate.evaluation.failedRuleCodes.length > 0
     ) {
       const evaluationWithoutMessages: Omit<CadParcelLayoutConstraintEvaluation, 'messages'> = {
@@ -6379,7 +6325,6 @@ const cadBuildClosedBoundaryRingAutoLayoutDraft = (
       previousEdge.lengthMeters - previousEdge.cornerTransitionMeters,
       previousEdge.depthMeters,
     );
-    const innerCorner = innerVertices[vertexIndex]!;
     const innerAfterCorner = pointInsideEdge(
       currentEdge,
       currentEdge.cornerTransitionMeters,
@@ -6391,7 +6336,6 @@ const cadBuildClosedBoundaryRingAutoLayoutDraft = (
         outerCorner,
         outerAfterCorner,
         innerAfterCorner,
-        innerCorner,
         innerBeforeCorner,
       ],
       edgeIndex: previousEdgeIndex,
@@ -6404,12 +6348,22 @@ const cadBuildClosedBoundaryRingAutoLayoutDraft = (
     });
   }
 
+  const centerRemainderVertices = cadDeduplicateWorldPolygonVertices(
+    edgeMetrics.flatMap((edge) => [
+      pointInsideEdge(edge, edge.cornerTransitionMeters, edge.depthMeters),
+      pointInsideEdge(
+        edge,
+        edge.lengthMeters - edge.cornerTransitionMeters,
+        edge.depthMeters,
+      ),
+    ]),
+  );
   const innerRemainderAreaSquareMeters =
-    cadBuildParcelClosureSummary(innerVertices)?.areaSquareMeters ?? 0;
+    cadBuildParcelClosureSummary(centerRemainderVertices)?.areaSquareMeters ?? 0;
   if (innerRemainderAreaSquareMeters > 1e-6) {
     generatedParcels.push({
-      vertices: innerVertices,
-      vertexLabels: cadBuildAutoParcelVertexLabels(parcel, innerVertices, 9999),
+      vertices: centerRemainderVertices,
+      vertexLabels: cadBuildAutoParcelVertexLabels(parcel, centerRemainderVertices, 9999),
       role: 'remainder',
     });
   }

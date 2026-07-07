@@ -2211,10 +2211,23 @@ describe('Survey CAD COGO helpers', () => {
       const dotSecond = Math.abs(frontageVector.x * secondSideVector.x + frontageVector.y * secondSideVector.y);
       return dotFirst <= 1e-6 && dotSecond <= 1e-6;
     };
+    const diagnostics = cadBuildParcelOverlapDiagnostics(
+      lotDrafts.map((generatedParcel, index) => ({
+        id: `${parcel.id}:generated:${index + 1}`,
+        type: 'parcel' as const,
+        layerId: parcel.layerId,
+        styleId: parcel.styleId,
+        visible: true,
+        locked: false,
+        parcelName: `Generated lot ${index + 1}`,
+        vertices: generatedParcel.vertices,
+        vertexLabels: generatedParcel.vertexLabels,
+      })),
+    );
 
     expect(autoLayout.isValid).toBe(true);
     expect(autoLayout.statusMessage).toContain('closed-boundary ring');
-    expect(lotDrafts.length).toBeGreaterThan(100);
+    expect(lotDrafts.length).toBeGreaterThan(130);
     expect(lotCountsBySegment.every((count) => count > 0)).toBe(true);
     expect(lotDrafts.every((generatedParcel) => generatedParcel.vertices.length >= 4)).toBe(true);
     expect(straightRunLots.every(isPerpendicularStraightRunLot)).toBe(true);
@@ -2223,7 +2236,11 @@ describe('Survey CAD COGO helpers', () => {
         (candidate) => (candidate.evaluation?.depthMeters ?? Number.POSITIVE_INFINITY) < 40,
       ),
     ).toBe(true);
+    expect(
+      diagnostics.overlapPairs.filter((pair) => pair.overlapAreaSquareMeters > 1).length,
+    ).toBe(0);
     expect(centerRemainders).toHaveLength(1);
+    expect(centerRemainders[0]!.vertices.length).toBe(10);
     expect(cadBuildParcelClosureSummary(centerRemainders[0]!.vertices)?.areaSquareMeters).toBeGreaterThan(1000);
   });
 
