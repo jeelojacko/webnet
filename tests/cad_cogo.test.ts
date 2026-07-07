@@ -2189,12 +2189,40 @@ describe('Survey CAD COGO helpers', () => {
     const centerRemainders = autoLayout.generatedParcels.filter(
       (generatedParcel) => generatedParcel.role === 'remainder',
     );
+    const straightRunLots = lotDrafts.filter(
+      (generatedParcel) => generatedParcel.sourceKind === 'segment',
+    );
+    const isPerpendicularStraightRunLot = (generatedParcel: (typeof straightRunLots)[number]): boolean => {
+      const vertices = generatedParcel.vertices;
+      if (vertices.length !== 4) return false;
+      const frontageVector = {
+        x: vertices[1]!.x - vertices[0]!.x,
+        y: vertices[1]!.y - vertices[0]!.y,
+      };
+      const firstSideVector = {
+        x: vertices[3]!.x - vertices[0]!.x,
+        y: vertices[3]!.y - vertices[0]!.y,
+      };
+      const secondSideVector = {
+        x: vertices[2]!.x - vertices[1]!.x,
+        y: vertices[2]!.y - vertices[1]!.y,
+      };
+      const dotFirst = Math.abs(frontageVector.x * firstSideVector.x + frontageVector.y * firstSideVector.y);
+      const dotSecond = Math.abs(frontageVector.x * secondSideVector.x + frontageVector.y * secondSideVector.y);
+      return dotFirst <= 1e-6 && dotSecond <= 1e-6;
+    };
 
     expect(autoLayout.isValid).toBe(true);
     expect(autoLayout.statusMessage).toContain('closed-boundary ring');
-    expect(lotDrafts.length).toBeGreaterThan(140);
+    expect(lotDrafts.length).toBeGreaterThan(100);
     expect(lotCountsBySegment.every((count) => count > 0)).toBe(true);
     expect(lotDrafts.every((generatedParcel) => generatedParcel.vertices.length >= 4)).toBe(true);
+    expect(straightRunLots.every(isPerpendicularStraightRunLot)).toBe(true);
+    expect(
+      autoLayout.acceptedCandidates.every(
+        (candidate) => (candidate.evaluation?.depthMeters ?? Number.POSITIVE_INFINITY) < 40,
+      ),
+    ).toBe(true);
     expect(centerRemainders).toHaveLength(1);
     expect(cadBuildParcelClosureSummary(centerRemainders[0]!.vertices)?.areaSquareMeters).toBeGreaterThan(1000);
   });
