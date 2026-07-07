@@ -1996,7 +1996,7 @@ describe('Survey CAD COGO helpers', () => {
     expect(autoLayout.statusMessage).not.toContain('Filled 1 remainder parcel');
   });
 
-  it('keeps two-edge angled frontage auto layout on selected frontage without oversized corner lots', { timeout: 25000 }, () => {
+  it('fills two-edge angled frontage junctions without oversized corner lots', { timeout: 25000 }, () => {
     const parcel: CadParcelEntity = {
       id: 'parcel:fixture',
       type: 'parcel',
@@ -2010,14 +2010,13 @@ describe('Survey CAD COGO helpers', () => {
         { x: 686879.074, y: 5091312.877 },
         { x: 686694.912, y: 5090134.241 },
         { x: 685522.415, y: 5090336.819 },
-        { x: 685624.955, y: 5091167.336 },
       ],
-      vertexLabels: ['CAD1', 'CAD2', 'CAD3', 'CAD4', 'CAD5'],
+      vertexLabels: ['CAD1', 'CAD2', 'CAD3', 'CAD4'],
     };
     const frontageReference = {
       sourceEntityId: parcel.id,
-      displayLabel: 'CAD3-CAD4, CAD4-CAD5',
-      sourcePointIds: ['CAD3', 'CAD4', 'CAD5'],
+      displayLabel: 'CAD3-CAD4, CAD4-CAD1',
+      sourcePointIds: ['CAD3', 'CAD4', 'CAD1'],
       frontageLine: {
         id: `${parcel.id}:frontage-segment:2`,
         type: 'line' as const,
@@ -2036,16 +2035,16 @@ describe('Survey CAD COGO helpers', () => {
       parcelSegmentIds: ['parcel:fixture#2', 'parcel:fixture#3'],
       parcelSegmentLabelPairs: [
         ['CAD3', 'CAD4'],
-        ['CAD4', 'CAD5'],
+        ['CAD4', 'CAD1'],
       ] as Array<readonly [string, string]>,
       sourceGeometry: {
         kind: 'polyline' as const,
         vertices: [
           { x: 686694.912, y: 5090134.241 },
           { x: 685522.415, y: 5090336.819 },
-          { x: 685624.955, y: 5091167.336 },
+          { x: 685672.814, y: 5091312.877 },
         ],
-        vertexLabels: ['CAD3', 'CAD4', 'CAD5'],
+        vertexLabels: ['CAD3', 'CAD4', 'CAD1'],
       },
     };
 
@@ -2078,6 +2077,23 @@ describe('Survey CAD COGO helpers', () => {
     expect(autoLayout.isValid).toBe(true);
     expect(autoLayout.acceptedCandidates.length).toBeGreaterThan(55);
     expect(lotDrafts.some((generatedParcel) => generatedParcel.sourceKind === 'corner_prepass')).toBe(false);
+    expect(lotDrafts.some((generatedParcel) => generatedParcel.sourceKind === 'corner_remainder')).toBe(true);
+    expect(
+      lotDrafts.some(
+        (generatedParcel) =>
+          generatedParcel.sourceKind === 'corner_remainder' &&
+          generatedParcel.sourceSegmentIndex === 0 &&
+          (cadBuildParcelClosureSummary(generatedParcel.vertices)?.areaSquareMeters ?? 0) > 1000,
+      ),
+    ).toBe(true);
+    expect(
+      autoLayout.generatedParcels.some(
+        (generatedParcel) =>
+          generatedParcel.role === 'remainder' &&
+          generatedParcel.sourceSegmentIndex === 0 &&
+          ((generatedParcel as { frontageLengthMeters?: number }).frontageLengthMeters ?? Number.POSITIVE_INFINITY) < 30,
+      ),
+    ).toBe(false);
     expect(maximumLotFrontageMeters).toBeLessThanOrEqual(30.000001);
     expect(
       autoLayout.acceptedCandidates.every(

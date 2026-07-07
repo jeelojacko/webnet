@@ -3405,6 +3405,67 @@ const cadBuildAutoLayoutPreviewCandidateFromGeneratedParcel = (
   };
 };
 
+const cadBuildCornerRemainderPreviewCandidate = (
+  frontageLine: CadLineEntity,
+  settings: CadParcelLayoutSettings,
+  generatedParcel: CadParcelLayoutGeneratedParcelDraft,
+  combinedFrontageMeters: number,
+  tool: 'slide' | 'swing',
+): CadParcelLayoutPreviewCandidate | null => {
+  const childAreaSquareMeters =
+    cadBuildParcelClosureSummary(generatedParcel.vertices)?.areaSquareMeters ?? 0;
+  if (childAreaSquareMeters <= 1e-9) return null;
+  const depthMeters = settings.useMaxDepth ? settings.maxDepthMeters : settings.minDepthMeters;
+  const draft: CadParcelLayoutSplitDraft = {
+    split: {
+      firstVertices: generatedParcel.vertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
+      firstVertexLabels: [...generatedParcel.vertexLabels],
+      secondVertices: [],
+      secondVertexLabels: [],
+      splitStart: generatedParcel.vertices[0] ?? { x: frontageLine.fromX, y: frontageLine.fromY },
+      splitEnd: generatedParcel.vertices[1] ?? { x: frontageLine.toX, y: frontageLine.toY },
+    },
+    alternative: 'start',
+    frontageLengthMeters: combinedFrontageMeters,
+    childAreaSquareMeters,
+    childVertices: generatedParcel.vertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
+    childVertexLabels: [...generatedParcel.vertexLabels],
+    remainderVertices: [],
+    remainderVertexLabels: [],
+  };
+  const failedRuleCodes: CadParcelLayoutConstraintEvaluation['failedRuleCodes'] = [];
+  if (childAreaSquareMeters + 1e-9 < settings.minAreaSquareMeters) failedRuleCodes.push('min_area');
+  if (combinedFrontageMeters + 1e-9 < settings.minFrontageMeters) failedRuleCodes.push('min_frontage');
+  if (depthMeters + 1e-9 < settings.minDepthMeters) failedRuleCodes.push('min_depth');
+  if (settings.useMaxDepth && depthMeters > settings.maxDepthMeters + 1e-9) failedRuleCodes.push('max_depth');
+  const evaluationWithoutMessages: Omit<CadParcelLayoutConstraintEvaluation, 'messages'> = {
+    frontageLengthMeters: combinedFrontageMeters,
+    frontageAtOffsetWidthMeters: null,
+    minimumSampledWidthMeters: settings.minWidthMeters,
+    depthMeters,
+    score:
+      failedRuleCodes.length * 1_000_000 +
+      Math.abs(childAreaSquareMeters - settings.minAreaSquareMeters) +
+      Math.abs(combinedFrontageMeters - settings.minFrontageMeters),
+    failedRuleCodes,
+  };
+  const evaluation: CadParcelLayoutConstraintEvaluation = {
+    ...evaluationWithoutMessages,
+    messages: cadBuildParcelLayoutConstraintMessages(settings, draft, evaluationWithoutMessages),
+  };
+  return {
+    tool,
+    alternative: 'start',
+    draft,
+    evaluation,
+    isValid: failedRuleCodes.length === 0,
+    statusMessage:
+      failedRuleCodes.length === 0
+        ? `Automatic corner lot valid: ${childAreaSquareMeters.toFixed(3)} m2 area and ${combinedFrontageMeters.toFixed(3)} m combined frontage.`
+        : `Automatic corner lot invalid: ${failedRuleCodes.join(', ')}.`,
+  };
+};
+
 export const cadBuildParcelFrontagePathAutoLayoutDraft = (
   parcel: CadParcelEntity,
   frontageReference: CadParcelLayoutFrontageReference,
@@ -5369,6 +5430,201 @@ const cadBuildSequentialCornerStripDraft = ({
   return mergedDraft.acceptedCandidates.length > 0 ? mergedDraft : null;
 };
 
+const cadBuildLimitedCornerPathDraft = (
+  cornerParcel: CadParcelEntity,
+  firstFrontageLine: CadLineEntity,
+  secondFrontageLine: CadLineEntity,
+  settings: CadParcelLayoutSettings,
+  tool: 'slide' | 'swing',
+): CadParcelAutoLayoutDraft | null => {
+  const sharedPoint = cadBuildSharedFrontagePoint(firstFrontageLine, secondFrontageLine);
+  if (!sharedPoint) return null;
+  const pointAwayFromShared = (
+    frontageLine: CadLineEntity,
+    maxDistanceMeters: number,
+  ): CadWorldPoint | null => {
+    const start = { x: frontageLine.fromX, y: frontageLine.fromY };
+    const end = { x: frontageLine.toX, y: frontageLine.toY };
+    const other = parcelPointsMatch(sharedPoint, start)
+      ? end
+      : parcelPointsMatch(sharedPoint, end)
+        ? start
+        : null;
+    if (!other) return null;
+    const lengthMeters = cadDistance(sharedPoint, other);
+    if (lengthMeters <= 1e-9) return null;
+    const distanceMeters = Math.min(lengthMeters, maxDistanceMeters);
+    return {
+      x: sharedPoint.x + ((other.x - sharedPoint.x) / lengthMeters) * distanceMeters,
+      y: sharedPoint.y + ((other.y - sharedPoint.y) / lengthMeters) * distanceMeters,
+    };
+  };
+  const cornerFrontageMeters = Math.max(
+    settings.minFrontageMeters * 2,
+    settings.minWidthMeters * 2,
+    Math.sqrt(settings.minAreaSquareMeters) * 1.5,
+  );
+  const firstOuterPoint = pointAwayFromShared(firstFrontageLine, cornerFrontageMeters);
+  const secondOuterPoint = pointAwayFromShared(secondFrontageLine, cornerFrontageMeters);
+  if (!firstOuterPoint || !secondOuterPoint) return null;
+
+  const cornerReference: CadParcelLayoutFrontageReference = {
+    sourceEntityId: cornerParcel.id,
+    displayLabel: `${firstFrontageLine.fromStationId}-${firstFrontageLine.toStationId}, ${secondFrontageLine.fromStationId}-${secondFrontageLine.toStationId}`,
+    sourcePointIds: ['CORNER1', 'CORNER', 'CORNER2'],
+    frontageLine: {
+      ...firstFrontageLine,
+      id: `${cornerParcel.id}:limited-corner-frontage`,
+      fromStationId: 'CORNER1',
+      fromX: firstOuterPoint.x,
+      fromY: firstOuterPoint.y,
+      toStationId: 'CORNER',
+      toX: sharedPoint.x,
+      toY: sharedPoint.y,
+    },
+    sourceGeometry: {
+      kind: 'polyline',
+      vertices: [
+        { x: firstOuterPoint.x, y: firstOuterPoint.y },
+        { x: sharedPoint.x, y: sharedPoint.y },
+        { x: secondOuterPoint.x, y: secondOuterPoint.y },
+      ],
+      vertexLabels: ['CORNER1', 'CORNER', 'CORNER2'],
+    },
+  };
+  const draft = cadBuildParcelFrontagePathAutoLayoutDraft(
+    cornerParcel,
+    cornerReference,
+    {
+      ...settings,
+      remainderDistribution: 'create_parcel_from_remainder',
+    },
+    tool,
+  );
+  if (!draft?.isValid || draft.acceptedCandidates.length === 0) return null;
+  return {
+    ...draft,
+    generatedParcels: draft.generatedParcels.filter((generatedParcel) => generatedParcel.role === 'lot'),
+  };
+};
+
+const cadBuildFrontageBridgeDraft = (
+  parcel: CadParcelEntity,
+  firstFrontageLine: CadLineEntity,
+  secondFrontageLine: CadLineEntity,
+  settings: CadParcelLayoutSettings,
+  tool: 'slide' | 'swing',
+): CadCornerInfillDraft | null => {
+  const sharedPoint = cadBuildSharedFrontagePoint(firstFrontageLine, secondFrontageLine);
+  if (!sharedPoint) return null;
+  const firstStart = { x: firstFrontageLine.fromX, y: firstFrontageLine.fromY };
+  const firstEnd = { x: firstFrontageLine.toX, y: firstFrontageLine.toY };
+  const secondStart = { x: secondFrontageLine.fromX, y: secondFrontageLine.fromY };
+  const secondEnd = { x: secondFrontageLine.toX, y: secondFrontageLine.toY };
+  const firstOuterPoint = parcelPointsMatch(sharedPoint, firstStart)
+    ? firstEnd
+    : parcelPointsMatch(sharedPoint, firstEnd)
+      ? firstStart
+      : null;
+  const secondOuterPoint = parcelPointsMatch(sharedPoint, secondStart)
+    ? secondEnd
+    : parcelPointsMatch(sharedPoint, secondEnd)
+      ? secondStart
+      : null;
+  if (!firstOuterPoint || !secondOuterPoint) return null;
+  const firstRemainderFrontageMeters = cadDistance(firstOuterPoint, sharedPoint);
+  const secondAvailableFrontageMeters = cadDistance(sharedPoint, secondOuterPoint);
+  if (
+    firstRemainderFrontageMeters <= 1e-9 ||
+    secondAvailableFrontageMeters <= 1e-9 ||
+    firstRemainderFrontageMeters >= settings.minFrontageMeters - 1e-9
+  ) {
+    return null;
+  }
+  const minimumSecondFrontageMeters = Math.max(
+    settings.minFrontageMeters - firstRemainderFrontageMeters,
+    1,
+  );
+  const maximumSecondFrontageMeters = Math.min(
+    secondAvailableFrontageMeters,
+    Math.max(settings.minFrontageMeters * 2, settings.minWidthMeters * 2, minimumSecondFrontageMeters),
+  );
+  if (maximumSecondFrontageMeters + 1e-9 < minimumSecondFrontageMeters) return null;
+  const secondLengthMeters = cadDistance(sharedPoint, secondOuterPoint);
+  const buildSecondPoint = (distanceMeters: number): CadWorldPoint => ({
+    x: sharedPoint.x + ((secondOuterPoint.x - sharedPoint.x) / secondLengthMeters) * distanceMeters,
+    y: sharedPoint.y + ((secondOuterPoint.y - sharedPoint.y) / secondLengthMeters) * distanceMeters,
+  });
+  const candidateDrafts: CadCornerInfillDraft[] = [];
+  const steps = 16;
+  for (let index = 0; index <= steps; index += 1) {
+    const ratio = index / steps;
+    const secondFrontageMeters =
+      minimumSecondFrontageMeters +
+      (maximumSecondFrontageMeters - minimumSecondFrontageMeters) * ratio;
+    const secondPoint = buildSecondPoint(secondFrontageMeters);
+    const bridgeReference: CadParcelLayoutFrontageReference = {
+      sourceEntityId: parcel.id,
+      displayLabel: `${firstFrontageLine.fromStationId}-${firstFrontageLine.toStationId}, ${secondFrontageLine.fromStationId}-${secondFrontageLine.toStationId}`,
+      sourcePointIds: ['BRIDGE1', 'BRIDGE', 'BRIDGE2'],
+      frontageLine: {
+        ...firstFrontageLine,
+        id: `${parcel.id}:frontage-bridge`,
+        fromStationId: 'BRIDGE1',
+        fromX: firstOuterPoint.x,
+        fromY: firstOuterPoint.y,
+        toStationId: 'BRIDGE',
+        toX: sharedPoint.x,
+        toY: sharedPoint.y,
+      },
+      sourceGeometry: {
+        kind: 'polyline',
+        vertices: [
+          { x: firstOuterPoint.x, y: firstOuterPoint.y },
+          { x: sharedPoint.x, y: sharedPoint.y },
+          secondPoint,
+        ],
+        vertexLabels: ['BRIDGE1', 'BRIDGE', 'BRIDGE2'],
+      },
+    };
+    const bridgeDraft = cadBuildParcelFrontagePathAutoLayoutDraft(
+      parcel,
+      bridgeReference,
+      {
+        ...settings,
+        remainderDistribution: 'create_parcel_from_remainder',
+      },
+      tool,
+    );
+    if (!bridgeDraft?.isValid || bridgeDraft.acceptedCandidates.length === 0) continue;
+    const bridgeLots = bridgeDraft.generatedParcels.filter(
+      (generatedParcel) => generatedParcel.role === 'lot',
+    );
+    if (bridgeLots.length === 0) continue;
+    candidateDrafts.push({
+      draft: {
+        ...bridgeDraft,
+        generatedParcels: bridgeLots,
+      },
+      remainderDraft:
+        bridgeDraft.generatedParcels.find((generatedParcel) => generatedParcel.role === 'remainder') ?? null,
+      firstSegmentTrimMeters: firstRemainderFrontageMeters,
+      secondSegmentTrimMeters: secondFrontageMeters,
+    });
+  }
+  return (
+    candidateDrafts
+      .sort((left, right) => {
+        if (left.draft.acceptedCandidates.length !== right.draft.acceptedCandidates.length) {
+          return right.draft.acceptedCandidates.length - left.draft.acceptedCandidates.length;
+        }
+        const leftArea = left.draft.acceptedCandidates[0]?.draft?.childAreaSquareMeters ?? Number.POSITIVE_INFINITY;
+        const rightArea = right.draft.acceptedCandidates[0]?.draft?.childAreaSquareMeters ?? Number.POSITIVE_INFINITY;
+        return leftArea - rightArea;
+      })[0] ?? null
+  );
+};
+
 const cadBuildCornerInfillDraft = (
   parcel: CadParcelEntity,
   firstFrontageLine: CadLineEntity,
@@ -5453,6 +5709,16 @@ const cadBuildCornerInfillDraft = (
           ...cornerSettings,
           solutionPreference,
         };
+        const limitedCornerDraft = cadBuildLimitedCornerPathDraft(
+          cornerParcel,
+          firstFrontageLine,
+          secondFrontageLine,
+          variantSettings,
+          cornerTool,
+        );
+        if (limitedCornerDraft?.isValid && limitedCornerDraft.acceptedCandidates.length > 0) {
+          candidateDrafts.push(limitedCornerDraft);
+        }
         const cornerDraft = cadBuildParcelFrontagePathAutoLayoutDraft(
           cornerParcel,
           cornerFrontageReference,
@@ -6416,6 +6682,10 @@ export const cadBuildParcelAutoLayoutDraftFromFrontageReference = (
       !isLastSegment && segmentGeneratedParcels.at(-1)?.role === 'remainder'
         ? segmentGeneratedParcels.pop() ?? null
         : null;
+    const frontageRemainder =
+      !isLastSegment && segmentGeneratedParcels.at(-1)?.role === 'remainder'
+        ? segmentGeneratedParcels.pop() ?? null
+        : null;
 
     generatedParcels.push(
       ...segmentGeneratedParcels.map((generatedParcel) => ({
@@ -6425,6 +6695,38 @@ export const cadBuildParcelAutoLayoutDraftFromFrontageReference = (
       })),
     );
     acceptedCandidates.push(...segmentDraft.acceptedCandidates);
+    if (frontageRemainder) {
+      const frontageRemainderMeters =
+        (frontageRemainder as CadParcelLayoutGeneratedParcelDraft & {
+          frontageLengthMeters?: number;
+        }).frontageLengthMeters ?? 0;
+      const combinedFrontageMeters = Math.max(
+        settings.minFrontageMeters,
+        frontageRemainderMeters + settings.minFrontageMeters,
+      );
+      const cornerCandidate = cadBuildCornerRemainderPreviewCandidate(
+        currentFrontage,
+        settings,
+        frontageRemainder,
+        combinedFrontageMeters,
+        tool,
+      );
+      if (cornerCandidate?.isValid) {
+        generatedParcels.push({
+          ...frontageRemainder,
+          role: 'lot',
+          sourceKind: 'corner_remainder',
+          sourceSegmentIndex: index,
+        });
+        acceptedCandidates.push(cornerCandidate);
+      } else {
+        generatedParcels.push({
+          ...frontageRemainder,
+          sourceKind: 'segment',
+          sourceSegmentIndex: index,
+        });
+      }
+    }
 
     if (!isLastSegment && trailingRemainder) {
       let nextParcel = cadBuildParcelEntityFromGeneratedDraft(parcel, trailingRemainder, true);
@@ -6440,13 +6742,39 @@ export const cadBuildParcelAutoLayoutDraftFromFrontageReference = (
           index + 1,
         );
         if (currentResidualFrontage && nextResidualFrontage) {
-          const remainderCornerDraft = cadBuildRemainderJunctionInfillDraft(
+          const bridgeDraft = cadBuildFrontageBridgeDraft(
             nextParcel,
             currentResidualFrontage,
             nextResidualFrontage,
             settings,
             tool,
           );
+          if (bridgeDraft?.draft.generatedParcels.length) {
+            generatedParcels.push(
+              ...bridgeDraft.draft.generatedParcels.map((generatedParcel) => ({
+                ...generatedParcel,
+                sourceKind: 'corner_remainder' as const,
+                sourceSegmentIndex: index,
+              })),
+            );
+            acceptedCandidates.push(...bridgeDraft.draft.acceptedCandidates);
+            if (bridgeDraft.remainderDraft) {
+              nextParcel = cadBuildParcelEntityFromGeneratedDraft(
+                parcel,
+                bridgeDraft.remainderDraft,
+                true,
+              );
+            }
+          }
+          const remainderCornerDraft = bridgeDraft
+            ? null
+            : cadBuildRemainderJunctionInfillDraft(
+                nextParcel,
+                currentResidualFrontage,
+                nextResidualFrontage,
+                settings,
+                tool,
+              );
           if (remainderCornerDraft?.draft.generatedParcels.length) {
             generatedParcels.push(
               ...remainderCornerDraft.draft.generatedParcels.map((generatedParcel) => ({
