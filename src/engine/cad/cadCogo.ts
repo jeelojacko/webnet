@@ -6510,6 +6510,7 @@ export const cadBuildParcelAutoLayoutDraftFromFrontageReference = (
   const cornerTrimFromStartMetersBySegment = new Map<number, number>();
   const cornerTrimFromEndMetersBySegment = new Map<number, number>();
   const cornerDraftJunctionIndexes = new Set<number>();
+  let usedFullParentSegmentRecovery = false;
   if (settings.useMaxDepth) {
     for (let index = 0; index < segmentPairs.length - 1; index += 1) {
       const firstFrontage = cadBuildFrontageLineForCurrentParcelSegment(parcel, frontageReference, index);
@@ -6550,8 +6551,53 @@ export const cadBuildParcelAutoLayoutDraftFromFrontageReference = (
   }
 
   for (let index = 0; index < segmentPairs.length; index += 1) {
-    const rawCurrentFrontage = cadBuildFrontageLineForCurrentParcelSegment(
+    const carriedFrontage = cadBuildFrontageLineForCurrentParcelSegment(
       currentParcel,
+      frontageReference,
+      index,
+    );
+    const originalFrontage = cadBuildFrontageLineForCurrentParcelSegment(
+      parcel,
+      frontageReference,
+      index,
+    );
+    const carriedFrontageLengthMeters = carriedFrontage
+      ? cadDistance(
+          { x: carriedFrontage.fromX, y: carriedFrontage.fromY },
+          { x: carriedFrontage.toX, y: carriedFrontage.toY },
+        )
+      : 0;
+    const originalFrontageLengthMeters = originalFrontage
+      ? cadDistance(
+          { x: originalFrontage.fromX, y: originalFrontage.fromY },
+          { x: originalFrontage.toX, y: originalFrontage.toY },
+        )
+      : 0;
+    const carriedFrontageStartShiftMeters =
+      carriedFrontage && originalFrontage
+        ? Math.min(
+            cadDistance(
+              { x: carriedFrontage.fromX, y: carriedFrontage.fromY },
+              { x: originalFrontage.fromX, y: originalFrontage.fromY },
+            ),
+            cadDistance(
+              { x: carriedFrontage.toX, y: carriedFrontage.toY },
+              { x: originalFrontage.fromX, y: originalFrontage.fromY },
+            ),
+          )
+        : 0;
+    const shouldRecoverFullParentSegment =
+      settings.useMaxDepth &&
+      index > 0 &&
+      originalFrontageLengthMeters > settings.minFrontageMeters * 2 &&
+      (carriedFrontageLengthMeters + settings.minFrontageMeters < originalFrontageLengthMeters * 0.5 ||
+        (index > 1 && carriedFrontageStartShiftMeters > settings.minFrontageMeters * 2));
+    const segmentSourceParcel = shouldRecoverFullParentSegment ? parcel : currentParcel;
+    if (shouldRecoverFullParentSegment) {
+      usedFullParentSegmentRecovery = true;
+    }
+    const rawCurrentFrontage = cadBuildFrontageLineForCurrentParcelSegment(
+      segmentSourceParcel,
       frontageReference,
       index,
     );
@@ -6661,14 +6707,14 @@ export const cadBuildParcelAutoLayoutDraftFromFrontageReference = (
     const segmentDraft =
       (settings.useMaxDepth
         ? cadBuildParcelFrontageStripAutoLayoutDraft(
-            currentParcel,
+            segmentSourceParcel,
             currentFrontage,
             segmentSettings,
             tool,
           )
         : null) ??
       cadBuildParcelAutoLayoutDraft(
-        currentParcel,
+        segmentSourceParcel,
         currentFrontage,
         segmentSettings,
         tool,
@@ -6815,6 +6861,9 @@ export const cadBuildParcelAutoLayoutDraftFromFrontageReference = (
     isValid: true,
     statusMessage: `Automatic fill prepared ${generatedParcels.length} parcels from the selected frontage edges.`,
   });
+  if (usedFullParentSegmentRecovery) {
+    return resolvedDraft;
+  }
   return cadTryFillGeneratedRemaindersFromFrontageReference(
     parcel,
     frontageReference,
