@@ -1641,3 +1641,4 @@
 - [x] Survey CAD parcel auto ring continuity batch (July 2026): stop closed-boundary ring generation from dropping straight-run lots and make corner-lot rear lines connect cleanly to adjacent straight-run rear lot lines.
 - [x] Survey CAD parcel auto corner-depth batch (July 2026): align closed-boundary corner lot rear endpoints to the adjacent straight-run solved depth instead of using deeper minimum-frontage depth.
 - [x] Survey CAD parcel auto corner-split batch (July 2026): split closed-boundary corner transition lots from parent corner to rear-line midpoint when both resulting lots pass layout minimums.
+- [x] Survey CAD parcel auto corner-absorb batch (July 2026): when a closed-boundary corner transition lot cannot satisfy large layout minimums, absorb its wedge into the two adjacent straight-run lots instead of leaving a failed corner parcel.
