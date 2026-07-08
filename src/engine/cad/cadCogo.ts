@@ -2383,6 +2383,45 @@ const cadDeduplicateWorldPolygonVertices = (
   return deduplicated;
 };
 
+const cadSimplifyCollinearWorldPolygonVertices = (
+  vertices: readonly CadWorldPoint[],
+  tolerance = 1e-7,
+): CadWorldPoint[] => {
+  let simplified = cadDeduplicateWorldPolygonVertices(vertices, tolerance);
+  let changed = true;
+  while (changed && simplified.length > 3) {
+    changed = false;
+    const nextSimplified: CadWorldPoint[] = [];
+    for (let index = 0; index < simplified.length; index += 1) {
+      const previous = simplified[(index + simplified.length - 1) % simplified.length]!;
+      const current = simplified[index]!;
+      const next = simplified[(index + 1) % simplified.length]!;
+      const previousVector = {
+        x: current.x - previous.x,
+        y: current.y - previous.y,
+      };
+      const nextVector = {
+        x: next.x - current.x,
+        y: next.y - current.y,
+      };
+      const cross = Math.abs(previousVector.x * nextVector.y - previousVector.y * nextVector.x);
+      const lengthProduct = Math.max(
+        1,
+        Math.hypot(previousVector.x, previousVector.y) *
+          Math.hypot(nextVector.x, nextVector.y),
+      );
+      const dot = previousVector.x * nextVector.x + previousVector.y * nextVector.y;
+      if (cross <= tolerance * lengthProduct && dot >= -tolerance) {
+        changed = true;
+        continue;
+      }
+      nextSimplified.push(current);
+    }
+    simplified = nextSimplified;
+  }
+  return simplified;
+};
+
 const cadClipPolygonAgainstLineHalfPlane = (
   vertices: readonly CadWorldPoint[],
   linePoint: CadWorldPoint,
@@ -6175,7 +6214,15 @@ const cadBuildClosedBoundaryRingAutoLayoutDraft = (
   });
   if (edgeMetrics.some((edge) => edge.lengthMeters <= 1e-9)) return null;
 
-  const generatedParcels: CadParcelLayoutGeneratedParcelDraft[] = [];
+  type RingGeneratedParcelDraft = CadParcelLayoutGeneratedParcelDraft & {
+    frontageStart?: CadWorldPoint;
+    frontageEnd?: CadWorldPoint;
+    frontageLengthMeters?: number;
+    rearBoundaryPoints?: CadWorldPoint[];
+    rearSortEdgeIndex?: number;
+    rearSortDistanceMeters?: number;
+  };
+  const generatedParcels: RingGeneratedParcelDraft[] = [];
   const acceptedCandidates: CadParcelLayoutPreviewCandidate[] = [];
   const firstStraightLotByEdgeIndex = new Map<
     number,
@@ -6211,6 +6258,9 @@ const cadBuildClosedBoundaryRingAutoLayoutDraft = (
     frontageEnd,
     frontageLengthMeters,
     pathDepthMeters,
+    rearBoundaryPoints,
+    rearSortEdgeIndex,
+    rearSortDistanceMeters,
     cornerLot = false,
   }: {
     vertices: CadWorldPoint[];
@@ -6219,13 +6269,12 @@ const cadBuildClosedBoundaryRingAutoLayoutDraft = (
     frontageEnd: CadWorldPoint;
     frontageLengthMeters: number;
     pathDepthMeters: number;
+    rearBoundaryPoints: CadWorldPoint[];
+    rearSortEdgeIndex: number;
+    rearSortDistanceMeters: number;
     cornerLot?: boolean;
   }): {
-    generatedParcel: CadParcelLayoutGeneratedParcelDraft & {
-      frontageStart: CadWorldPoint;
-      frontageEnd: CadWorldPoint;
-      frontageLengthMeters: number;
-    };
+    generatedParcel: RingGeneratedParcelDraft;
     candidate: CadParcelLayoutPreviewCandidate;
   } | null => {
     const normalizedVertices = cadDeduplicateWorldPolygonVertices(vertices);
@@ -6247,11 +6296,7 @@ const cadBuildClosedBoundaryRingAutoLayoutDraft = (
       toY: frontageEnd.y,
       sourceObservationIds: [],
     };
-    const generatedParcel: CadParcelLayoutGeneratedParcelDraft & {
-      frontageStart: CadWorldPoint;
-      frontageEnd: CadWorldPoint;
-      frontageLengthMeters: number;
-    } = {
+    const generatedParcel: RingGeneratedParcelDraft = {
       vertices: normalizedVertices,
       vertexLabels: cadBuildAutoParcelVertexLabels(parcel, normalizedVertices, lotIndex),
       role: 'lot',
@@ -6260,6 +6305,9 @@ const cadBuildClosedBoundaryRingAutoLayoutDraft = (
       frontageStart,
       frontageEnd,
       frontageLengthMeters,
+      rearBoundaryPoints: cadDeduplicateWorldPolygonVertices(rearBoundaryPoints),
+      rearSortEdgeIndex,
+      rearSortDistanceMeters,
     };
     let candidate = cadBuildAutoLayoutPreviewCandidateFromGeneratedParcel(
       frontageLine,
@@ -6355,6 +6403,12 @@ const cadBuildClosedBoundaryRingAutoLayoutDraft = (
         frontageEnd: pointAlongEdge(edge, endDistanceMeters),
         frontageLengthMeters,
         pathDepthMeters: depthMeters,
+        rearBoundaryPoints: [
+          pointInsideEdge(edge, startDistanceMeters, depthMeters),
+          pointInsideEdge(edge, endDistanceMeters, depthMeters),
+        ],
+        rearSortEdgeIndex: edgeIndex,
+        rearSortDistanceMeters: startDistanceMeters,
       });
       if (addedLot) {
         if (!firstStraightLotByEdgeIndex.has(edgeIndex)) {
@@ -6406,6 +6460,12 @@ const cadBuildClosedBoundaryRingAutoLayoutDraft = (
       frontageEnd: outerCorner,
       frontageLengthMeters: previousEdge.cornerTransitionMeters,
       pathDepthMeters: previousEdge.depthMeters,
+      rearBoundaryPoints: [
+        innerBeforeCorner,
+        rearMidpoint,
+      ],
+      rearSortEdgeIndex: previousEdgeIndex,
+      rearSortDistanceMeters: previousEdge.lengthMeters - previousEdge.cornerTransitionMeters,
       cornerLot: true,
     });
     const splitSecondAccepted = addRingLot({
@@ -6420,6 +6480,12 @@ const cadBuildClosedBoundaryRingAutoLayoutDraft = (
       frontageEnd: outerAfterCorner,
       frontageLengthMeters: currentEdge.cornerTransitionMeters,
       pathDepthMeters: currentEdge.depthMeters,
+      rearBoundaryPoints: [
+        rearMidpoint,
+        innerAfterCorner,
+      ],
+      rearSortEdgeIndex: vertexIndex,
+      rearSortDistanceMeters: 0,
       cornerLot: true,
     });
     if (!splitFirstAccepted || !splitSecondAccepted) {
@@ -6459,10 +6525,15 @@ const cadBuildClosedBoundaryRingAutoLayoutDraft = (
           frontageEnd: outerCorner,
           frontageLengthMeters:
             previousEdge.cornerTransitionMeters +
-            ((generatedParcels[previousStraightLot.generatedIndex] as CadParcelLayoutGeneratedParcelDraft & {
-              frontageLengthMeters?: number;
-            }).frontageLengthMeters ?? 0),
+            (generatedParcels[previousStraightLot.generatedIndex]!.frontageLengthMeters ?? 0),
           pathDepthMeters: previousEdge.depthMeters,
+          rearBoundaryPoints: [
+            generatedParcels[previousStraightLot.generatedIndex]!.rearBoundaryPoints![0]!,
+            rearMidpoint,
+          ],
+          rearSortEdgeIndex: previousEdgeIndex,
+          rearSortDistanceMeters:
+            generatedParcels[previousStraightLot.generatedIndex]!.rearSortDistanceMeters ?? 0,
         });
       const absorbedIntoCurrent =
         currentStraightLot &&
@@ -6483,10 +6554,14 @@ const cadBuildClosedBoundaryRingAutoLayoutDraft = (
             ).frontageEnd ?? outerAfterCorner,
           frontageLengthMeters:
             currentEdge.cornerTransitionMeters +
-            ((generatedParcels[currentStraightLot.generatedIndex] as CadParcelLayoutGeneratedParcelDraft & {
-              frontageLengthMeters?: number;
-            }).frontageLengthMeters ?? 0),
+            (generatedParcels[currentStraightLot.generatedIndex]!.frontageLengthMeters ?? 0),
           pathDepthMeters: currentEdge.depthMeters,
+          rearBoundaryPoints: [
+            rearMidpoint,
+            generatedParcels[currentStraightLot.generatedIndex]!.rearBoundaryPoints!.at(-1)!,
+          ],
+          rearSortEdgeIndex: vertexIndex,
+          rearSortDistanceMeters: 0,
         });
       const absorbedIntoBoth = Boolean(absorbedIntoPrevious && absorbedIntoCurrent);
       if (
@@ -6529,10 +6604,14 @@ const cadBuildClosedBoundaryRingAutoLayoutDraft = (
           frontageLengthMeters:
             previousEdge.cornerTransitionMeters +
             currentEdge.cornerTransitionMeters +
-            ((generatedParcels[currentStraightLot.generatedIndex] as CadParcelLayoutGeneratedParcelDraft & {
-              frontageLengthMeters?: number;
-            }).frontageLengthMeters ?? 0),
+            (generatedParcels[currentStraightLot.generatedIndex]!.frontageLengthMeters ?? 0),
           pathDepthMeters: Math.max(previousEdge.depthMeters, currentEdge.depthMeters),
+          rearBoundaryPoints: [
+            innerBeforeCorner,
+            generatedParcels[currentStraightLot.generatedIndex]!.rearBoundaryPoints!.at(-1)!,
+          ],
+          rearSortEdgeIndex: previousEdgeIndex,
+          rearSortDistanceMeters: previousEdge.lengthMeters - previousEdge.cornerTransitionMeters,
         });
       const absorbedIntoPreviousOnly =
         !absorbedIntoBoth &&
@@ -6557,10 +6636,15 @@ const cadBuildClosedBoundaryRingAutoLayoutDraft = (
           frontageLengthMeters:
             previousEdge.cornerTransitionMeters +
             currentEdge.cornerTransitionMeters +
-            ((generatedParcels[previousStraightLot.generatedIndex] as CadParcelLayoutGeneratedParcelDraft & {
-              frontageLengthMeters?: number;
-            }).frontageLengthMeters ?? 0),
+            (generatedParcels[previousStraightLot.generatedIndex]!.frontageLengthMeters ?? 0),
           pathDepthMeters: Math.max(previousEdge.depthMeters, currentEdge.depthMeters),
+          rearBoundaryPoints: [
+            generatedParcels[previousStraightLot.generatedIndex]!.rearBoundaryPoints![0]!,
+            innerAfterCorner,
+          ],
+          rearSortEdgeIndex: previousEdgeIndex,
+          rearSortDistanceMeters:
+            generatedParcels[previousStraightLot.generatedIndex]!.rearSortDistanceMeters ?? 0,
         });
       if (!absorbedIntoBoth && !absorbedIntoCurrentOnly && !absorbedIntoPreviousOnly) {
         addRingLot({
@@ -6577,21 +6661,28 @@ const cadBuildClosedBoundaryRingAutoLayoutDraft = (
           frontageLengthMeters:
             previousEdge.cornerTransitionMeters + currentEdge.cornerTransitionMeters,
           pathDepthMeters: Math.max(previousEdge.depthMeters, currentEdge.depthMeters),
+          rearBoundaryPoints: [
+            innerBeforeCorner,
+            innerAfterCorner,
+          ],
+          rearSortEdgeIndex: previousEdgeIndex,
+          rearSortDistanceMeters: previousEdge.lengthMeters - previousEdge.cornerTransitionMeters,
           cornerLot: true,
         });
       }
     }
   }
 
-  const centerRemainderVertices = cadDeduplicateWorldPolygonVertices(
-    edgeMetrics.flatMap((edge) => [
-      pointInsideEdge(edge, edge.cornerTransitionMeters, edge.depthMeters),
-      pointInsideEdge(
-        edge,
-        edge.lengthMeters - edge.cornerTransitionMeters,
-        edge.depthMeters,
-      ),
-    ]),
+  const centerRemainderVertices = cadSimplifyCollinearWorldPolygonVertices(
+    [...generatedParcels]
+      .filter((generatedParcel) => generatedParcel.role === 'lot')
+      .sort((firstParcel, secondParcel) => {
+        if (firstParcel.rearSortEdgeIndex !== secondParcel.rearSortEdgeIndex) {
+          return (firstParcel.rearSortEdgeIndex ?? 0) - (secondParcel.rearSortEdgeIndex ?? 0);
+        }
+        return (firstParcel.rearSortDistanceMeters ?? 0) - (secondParcel.rearSortDistanceMeters ?? 0);
+      })
+      .flatMap((generatedParcel) => generatedParcel.rearBoundaryPoints ?? []),
   );
   const innerRemainderAreaSquareMeters =
     cadBuildParcelClosureSummary(centerRemainderVertices)?.areaSquareMeters ?? 0;

@@ -2372,6 +2372,46 @@ describe('Survey CAD COGO helpers', () => {
     expect(materialOverlaps).toHaveLength(0);
   });
 
+  it('aligns closed-boundary remainders to final generated lot backs', { timeout: 25000 }, () => {
+    const autoLayout = cadBuildParcelAutoLayoutDraftFromFrontageReference(
+      closedBoundaryRingTestParcel,
+      closedBoundaryRingFrontageReference,
+      parcelLayoutSettings({
+        minAreaSquareMeters: 5000,
+        minFrontageMeters: 100,
+        minWidthMeters: 20,
+        minDepthMeters: 20,
+        useMaxDepth: true,
+        maxDepthMeters: 150,
+        remainderDistribution: 'place_remainder_in_last_parcel',
+      }),
+      'slide',
+    );
+
+    const lotDrafts = autoLayout.generatedParcels.filter(
+      (generatedParcel) => generatedParcel.role === 'lot',
+    );
+    const centerRemainders = autoLayout.generatedParcels.filter(
+      (generatedParcel) => generatedParcel.role === 'remainder',
+    );
+    const lotBackPointKeys = new Set(
+      lotDrafts.flatMap((generatedParcel) =>
+        generatedParcel.vertices
+          .slice(2)
+          .map((vertex) => `${vertex.x.toFixed(6)},${vertex.y.toFixed(6)}`),
+      ),
+    );
+
+    expect(autoLayout.isValid).toBe(true);
+    expect(centerRemainders).toHaveLength(1);
+    expect(centerRemainders[0]!.vertices.length).toBe(10);
+    expect(
+      centerRemainders[0]!.vertices.every((vertex) =>
+        lotBackPointKeys.has(`${vertex.x.toFixed(6)},${vertex.y.toFixed(6)}`),
+      ),
+    ).toBe(true);
+  });
+
   it('fills two-edge angled frontage junctions without oversized corner lots', { timeout: 25000 }, () => {
     const parcel: CadParcelEntity = {
       id: 'parcel:fixture',
