@@ -19,6 +19,61 @@ WebNet is a browser-based least-squares adjustment application for mixed survey 
 - Preserve deterministic ordering in reports, listings, exports, diagnostics, and fixture-backed outputs.
 - Avoid changing output wording, row inclusion, ordering, or rounding unless the task requires it and regression coverage is updated.
 
+## TypeScript file structure rules
+- Keep files small and focused:
+  - Target 150-400 lines per normal `.ts` or `.tsx` file.
+  - Treat 600 lines as a warning.
+  - Do not allow regular source files over 900 lines unless there is a clear reason.
+  - Files over 1,200 lines must be split before adding more functionality.
+  - Generated files, vendor files, migrations, and large test fixtures are exempt, but they must be clearly marked.
+- Keep functions small:
+  - Target 10-40 lines per function.
+  - Treat 75 lines as a warning.
+  - Do not allow a function over 120 lines unless it is simple, linear, and hard to split cleanly.
+  - If a function has multiple phases, extract named helper functions.
+  - If a function has deep branching, extract each branch into a named function.
+- Create a new file when:
+  - A file contains more than one major responsibility.
+  - A component has large helper functions, hooks, types, constants, or data transforms mixed into it.
+  - A utility section is used by more than one file.
+  - Types/interfaces take up a significant section and are reused elsewhere.
+  - A file is approaching 600 lines and new functionality is being added.
+  - A function or component needs several private helpers.
+  - The file is becoming hard to scan from top to bottom.
+- Prefer this structure:
+  - `ComponentName.tsx` for the main component.
+  - `ComponentName.types.ts` for exported types.
+  - `ComponentName.utils.ts` for pure helper functions.
+  - `ComponentName.hooks.ts` for custom hooks.
+  - `ComponentName.constants.ts` for constants/config.
+  - `ComponentName.test.ts` or `.tsx` for tests.
+  - `index.ts` only for exports, not implementation.
+- React component rules:
+  - Keep the main component mostly focused on rendering and wiring.
+  - Move complex state logic into custom hooks.
+  - Move data formatting/mapping into utility functions.
+  - Move large child UI sections into child components.
+  - Do not keep several large components in one file.
+- Refactoring rule:
+  - Before adding new code to a file over 600 lines, first look for a clean split.
+  - Before adding new code to a function over 75 lines, first extract helper functions.
+  - Never solve a feature by appending hundreds of lines to an already-large file unless explicitly instructed.
+- Complexity rules:
+  - Avoid more than 3 levels of nesting.
+  - Avoid long `if/else if/else` chains; prefer maps, strategy objects, or extracted functions when appropriate.
+  - Avoid functions with more than 5 parameters; use a typed options object instead.
+  - Name extracted functions clearly so the parent function reads like a high-level workflow.
+- Do not split files just for the sake of splitting:
+  - A new file should have a clear responsibility.
+  - Avoid creating tiny one-function files unless the function is reused or conceptually important.
+  - Prefer cohesive modules over excessive fragmentation.
+- When modifying existing code:
+  - Preserve public APIs unless asked to change them.
+  - Split large files gradually and safely.
+  - Keep related tests updated.
+  - Do not introduce circular imports.
+  - Do not create vague files like `helpers.ts`, `misc.ts`, or `utils2.ts`; use specific names.
+
 ## Architecture routing
 - Parser and solver core behavior lives under `src/engine/`.
 - UI shell, report, map, modal, and operator workflows live under `src/components/` and `src/hooks/`.
