@@ -1,3 +1,4 @@
+- [x] Survey CAD parcel COGO split batch 11 (July 2026): extract supported-remainder automatic parcel fill loop from `cadCogoParcel.ts`, keep compatibility exports stable, and validate focused CAD behavior plus full checks.
 - [x] Survey CAD parcel COGO split batch 10 (July 2026): extract parcel auto-layout stabilization/remainder helpers from `cadCogoParcel.ts`, keep compatibility exports stable, and validate focused CAD behavior plus full checks.
 - [x] Survey CAD parcel COGO split batch 9 (July 2026): extract closed-boundary parcel ring auto-layout from `cadCogoParcel.ts`, keep compatibility exports stable, and validate focused CAD behavior plus full checks.
 - [x] Survey CAD parcel COGO split batch 8 (July 2026): extract corner-frontage geometry helpers from `cadCogoParcel.ts`, keep compatibility exports stable, and validate focused CAD behavior plus full checks.
