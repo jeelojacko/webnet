@@ -40,6 +40,18 @@ import {
   getCadEntityDisplayLabel,
 } from './cadEntityNames';
 import {
+  buildAlignmentStakeoutLabelText,
+  buildAnchoredPointLabelEntityName,
+  buildCurveLabels,
+  compactManualPointEntities,
+  createManualPointEntities,
+  nextAlignmentName,
+  nextCurveSequence,
+  nextEntityName,
+  nextParcelName,
+  stationIdExists,
+} from './cadTransactionsEntityFactories';
+import {
   cadAngleDegFromCenter,
   cadArcMidpoint,
   cadBuildArcFromThreePoints,
@@ -104,28 +116,6 @@ const createIdleCommandState = (): CadCommandState => ({
   phase: 'idle',
   prompt: 'Ready. Use Select All, Clear Selection, ERASE, POINT, COGO PT, LINE, PLINE, TRAVERSE, DEED, ARC 3PT, TAN CURVE, ALIGN, ALIGN OFF, STA, STA EQ, STA PT, STA INT, PARCEL, MOVE, COPY, TRIM, EXT, FILLET, INTX, or INVERSE to exercise command history.',
 });
-
-const nextManualStationId = (project: CadProject): string => {
-  let maxSequence = 0;
-  project.entities.forEach((entity) => {
-    if (entity.type !== 'survey-point') return;
-    const match = /^CAD(\d+)$/i.exec(entity.stationId);
-    if (!match) return;
-    maxSequence = Math.max(maxSequence, Number(match[1]));
-  });
-  return `CAD${maxSequence + 1}`;
-};
-
-const nextParcelName = (project: CadProject): string => {
-  let maxSequence = 0;
-  project.entities.forEach((entity) => {
-    if (entity.type !== 'parcel') return;
-    const match = /^Parcel\s+(\d+)$/i.exec(entity.parcelName.trim());
-    if (!match) return;
-    maxSequence = Math.max(maxSequence, Number(match[1]));
-  });
-  return `Parcel ${maxSequence + 1}`;
-};
 
 const formatParcelLayoutAutomaticMode = (
   automaticMode: CadParcelLayoutSettings['automaticMode'],
@@ -232,48 +222,6 @@ const formatParcelLayoutRange = (values: number[]): string => {
   if (Math.abs(min - max) <= 1e-9) return formatParcelLayoutMeters(min);
   return `${min.toFixed(3)}-${max.toFixed(3)} m`;
 };
-
-const nextAlignmentName = (project: CadProject): string => {
-  let maxSequence = 0;
-  project.entities.forEach((entity) => {
-    if (entity.type !== 'alignment') return;
-    const match = /^ALIGN(\d+)$/i.exec(entity.name.trim());
-    if (!match) return;
-    maxSequence = Math.max(maxSequence, Number(match[1]));
-  });
-  return `ALIGN${maxSequence + 1}`;
-};
-
-const nextEntityName = (project: CadProject, prefix: string): string => {
-  const matcher = new RegExp(`^${prefix}(\\d+)$`, 'i');
-  let maxSequence = 0;
-  project.entities.forEach((entity) => {
-    const name = getCadEntityEditableName(entity);
-    const match = matcher.exec(name.trim());
-    if (!match) return;
-    maxSequence = Math.max(maxSequence, Number(match[1]));
-  });
-  return `${prefix}${maxSequence + 1}`;
-};
-
-const nextCurveSequence = (project: CadProject): number => {
-  const matcher = /^(?:CURVE|BC|MP|EC|R)(\d+)$/i;
-  let maxSequence = 0;
-  project.entities.forEach((entity) => {
-    const match = matcher.exec(getCadEntityEditableName(entity).trim());
-    if (!match) return;
-    maxSequence = Math.max(maxSequence, Number(match[1]));
-  });
-  return maxSequence + 1;
-};
-
-const buildCurveLabels = (sequence: number) => ({
-  curveName: `CURVE${sequence}`,
-  beginLabel: `BC${sequence}`,
-  midLabel: `MP${sequence}`,
-  endLabel: `EC${sequence}`,
-  radiusLabel: `R${sequence}`,
-});
 
 const cloneEntityMetadata = (entity: CadEntity): Record<string, unknown> =>
   typeof entity.metadata === 'object' && entity.metadata != null ? { ...entity.metadata } : {};
@@ -1935,96 +1883,6 @@ const buildCadGeneralFillet = (
     arcDefinition: bestCandidate.arcDefinition,
   };
 };
-
-const stationIdExists = (project: CadProject, stationId: string): boolean =>
-  project.entities.some(
-    (entity) =>
-      (entity.type === 'survey-point' && entity.stationId === stationId) ||
-      entity.id === `pt:${stationId}` ||
-      entity.id === `label:${stationId}`,
-  );
-
-const isUserFacingStationId = (stationId: string): boolean => /^[A-Za-z][A-Za-z0-9_-]*$/.test(stationId);
-
-const createManualPointEntities = (
-  project: CadProject,
-  x: number,
-  y: number,
-  requestedLabel?: string,
-  options?: { includeTextLabel?: boolean; createdBy?: string },
-): { point: CadSurveyPointEntity; label: CadTextEntity | null } => {
-  const requestedStationId = requestedLabel?.trim();
-  const stationId =
-    requestedStationId &&
-    isUserFacingStationId(requestedStationId) &&
-    !stationIdExists(project, requestedStationId)
-      ? requestedStationId
-      : nextManualStationId(project);
-  const createdBy = options?.createdBy ?? 'POINT';
-  const point: CadSurveyPointEntity = {
-    id: `pt:${stationId}`,
-    type: 'survey-point',
-    layerId: 'points',
-    styleId: 'style-point',
-    visible: true,
-    locked: false,
-    stationId,
-    x,
-    y,
-    pointClass: 'free',
-    source: project.metadata.source,
-    metadata: {
-      createdBy,
-      manual: true,
-    },
-  };
-  if (options?.includeTextLabel === false) {
-    return {
-      point,
-      label: null,
-    };
-  }
-  return {
-    point,
-    label: {
-      id: `label:${stationId}`,
-      type: 'text',
-      layerId: 'labels',
-      styleId: 'style-label',
-      visible: true,
-      locked: false,
-      x,
-      y,
-      text: stationId,
-      anchorEntityId: `pt:${stationId}`,
-      metadata: {
-        createdBy,
-        manual: true,
-        entityName: buildAnchoredPointLabelEntityName(stationId),
-        stationId,
-      },
-    },
-  };
-};
-
-const buildAlignmentStakeoutLabelText = (
-  stationId: string,
-  formattedStation: string,
-  offset?: number | null,
-): string => {
-  const lines = [stationId, `STA ${formattedStation}`];
-  if (offset != null && Math.abs(offset) > 1e-9) {
-    lines.push(`OFF ${offset.toFixed(3)} m`);
-  }
-  return lines.join('\n');
-};
-
-const buildAnchoredPointLabelEntityName = (stationId: string): string => `${stationId} label`;
-
-const compactManualPointEntities = (
-  entities: Array<CadSurveyPointEntity | CadTextEntity | null>,
-): Array<CadSurveyPointEntity | CadTextEntity> =>
-  entities.filter((entity): entity is CadSurveyPointEntity | CadTextEntity => entity != null);
 
 const createCogoProvenance = ({
   toolKey,
