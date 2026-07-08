@@ -1,3 +1,4 @@
+- [x] Survey CAD parcel COGO split batch 5 (July 2026): extract parcel layout preview/evaluation helpers from `cadCogoParcel.ts`, preserve compatibility exports, and validate focused CAD behavior plus full checks.
 - [x] Survey CAD parcel COGO split batch 4 (July 2026): extract parcel layout types plus frontage-path/slide/swing layout primitives from `cadCogoParcel.ts`, preserve compatibility exports, and validate focused CAD behavior plus full checks.
 - [x] Survey CAD parcel COGO split batch 3 (July 2026): extract parcel frontage-reference and local-coordinate polygon helpers from `cadCogoParcel.ts`, keep compatibility exports stable, and validate focused CAD behavior plus full checks.
 - [x] Survey CAD parcel COGO split batch 2 (July 2026): continue breaking `cadCogoParcel.ts` into focused parcel modules, keep `cadCogo.ts`/`cadCogoParcel.ts` compatibility exports stable, and prove no behavior loss with CAD COGO tests plus full validation.
