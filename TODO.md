@@ -1,3 +1,4 @@
+- [x] Survey CAD TypeScript structure enforcement batch 3 (July 2026): split CAD transaction metadata, linked-point/dependency helpers, and transaction report helpers out of oversized `cadTransactions.ts`, preserve behavior, and validate focused CAD behavior plus full checks.
 - [x] Survey CAD TypeScript structure enforcement batch 2 (July 2026): split CAD transaction naming and manual point factory helpers out of oversized `cadTransactions.ts`, preserve behavior, and validate focused CAD behavior plus full checks.
 - [x] Survey CAD TypeScript structure enforcement batch 1 (July 2026): split CAD transaction command/types surface out of oversized `cadTransactions.ts`, preserve public exports, and validate focused CAD behavior plus full checks.
 - [x] Survey CAD parcel COGO split batch 13 (July 2026): extract single-frontage automatic parcel layout wrapper from `cadCogoParcel.ts`, keep compatibility exports stable, and validate focused CAD behavior plus full checks.
