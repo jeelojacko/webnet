@@ -1,3 +1,4 @@
+- [x] Survey CAD TypeScript structure enforcement batch 1 (July 2026): split CAD transaction command/types surface out of oversized `cadTransactions.ts`, preserve public exports, and validate focused CAD behavior plus full checks.
 - [x] Survey CAD parcel COGO split batch 13 (July 2026): extract single-frontage automatic parcel layout wrapper from `cadCogoParcel.ts`, keep compatibility exports stable, and validate focused CAD behavior plus full checks.
 - [x] Survey CAD parcel COGO split batch 12 (July 2026): extract frontage-path parcel auto-layout drafting from `cadCogoParcel.ts`, keep compatibility exports stable, and validate focused CAD behavior plus full checks.
 - [x] Survey CAD parcel COGO split batch 11 (July 2026): extract supported-remainder automatic parcel fill loop from `cadCogoParcel.ts`, keep compatibility exports stable, and validate focused CAD behavior plus full checks.
