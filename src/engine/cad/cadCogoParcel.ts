@@ -1,6 +1,4 @@
 import {
-  cadArcStartPoint,
-  cadArcEndPoint,
   cadAzimuthDeg,
   cadDistance,
   cadNormalizeAngleDeg,
@@ -45,6 +43,16 @@ import {
   type CadParcelSplitDraft,
 } from './cadCogoParcelSplit';
 export * from './cadCogoParcelSplit';
+import { type CadParcelLayoutFrontageReference } from './cadCogoParcelFrontage';
+export * from './cadCogoParcelFrontage';
+import {
+  cadBuildParcelLayoutLocalPoints,
+  cadBuildParcelLayoutLocalToWorldPoint,
+  cadClipLocalPolygonAgainstHorizontalBoundary,
+  cadClipLocalPolygonToVerticalStrip,
+  type CadParcelLayoutLocalPoint,
+} from './cadCogoParcelLocalGeometry';
+export * from './cadCogoParcelLocalGeometry';
 
 
 export type CadParcelLayoutSplitAlternative = 'start' | 'end';
@@ -102,188 +110,7 @@ export interface CadParcelAutoLayoutDraft {
   statusMessage: string;
 }
 
-export interface CadParcelLayoutFrontageReference {
-  sourceEntityId: CadEntityId;
-  displayLabel: string;
-  sourcePointIds: string[];
-  frontageLine: CadLineEntity;
-  parcelSegmentIds?: string[] | null;
-  parcelSegmentLabelPairs?: Array<readonly [string, string]> | null;
-  sourceGeometry?:
-    | {
-        kind: 'line';
-      }
-    | {
-        kind: 'polyline';
-        vertices: CadWorldPoint[];
-        vertexLabels: string[];
-      }
-    | {
-        kind: 'arc';
-        center: CadWorldPoint;
-        radius: number;
-        startAngleDeg: number;
-        endAngleDeg: number;
-      }
-    | null;
-}
-
 const PARCEL_LAYOUT_EVALUATION_SAMPLE_COUNT = 7;
-const createFrontageReferenceLine = (
-  sourceEntity: CadLineEntity | CadPolylineEntity | CadArcEntity,
-  fromPoint: CadWorldPoint,
-  toPoint: CadWorldPoint,
-  fromLabel: string,
-  toLabel: string,
-): CadParcelLayoutFrontageReference => ({
-  sourceEntityId: sourceEntity.id,
-  displayLabel: `${fromLabel}-${toLabel}`,
-  sourcePointIds: [fromLabel, toLabel],
-  frontageLine: {
-    id: `${sourceEntity.id}:frontage-chord`,
-    type: 'line',
-    layerId: sourceEntity.layerId,
-    styleId: sourceEntity.styleId,
-    visible: sourceEntity.visible,
-    locked: sourceEntity.locked,
-    fromStationId: fromLabel,
-    toStationId: toLabel,
-    fromX: fromPoint.x,
-    fromY: fromPoint.y,
-    toX: toPoint.x,
-    toY: toPoint.y,
-    sourceObservationIds: [],
-  },
-  sourceGeometry:
-    sourceEntity.type === 'line'
-      ? { kind: 'line' }
-      : sourceEntity.type === 'polyline'
-        ? {
-            kind: 'polyline',
-            vertices: sourceEntity.vertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
-            vertexLabels: [...sourceEntity.vertexLabels],
-          }
-        : {
-            kind: 'arc',
-            center: { x: sourceEntity.centerX, y: sourceEntity.centerY },
-            radius: sourceEntity.radius,
-            startAngleDeg: sourceEntity.startAngleDeg,
-            endAngleDeg: sourceEntity.endAngleDeg,
-          },
-});
-
-export const cadBuildParcelLayoutFrontageReference = (
-  frontageEntity: CadLineEntity | CadPolylineEntity | CadArcEntity,
-): CadParcelLayoutFrontageReference | null => {
-  if (frontageEntity.type === 'line') {
-    return {
-      sourceEntityId: frontageEntity.id,
-      displayLabel: `${frontageEntity.fromStationId}-${frontageEntity.toStationId}`,
-      sourcePointIds: [frontageEntity.fromStationId, frontageEntity.toStationId],
-      frontageLine: frontageEntity,
-      sourceGeometry: { kind: 'line' },
-    };
-  }
-  if (frontageEntity.type === 'polyline') {
-    if (frontageEntity.vertices.length < 2) return null;
-    const firstVertex = frontageEntity.vertices[0]!;
-    const lastVertex = frontageEntity.vertices[frontageEntity.vertices.length - 1]!;
-    const firstLabel = frontageEntity.vertexLabels[0]?.trim() || 'FRONT1';
-    const lastLabel =
-      frontageEntity.vertexLabels[frontageEntity.vertexLabels.length - 1]?.trim() || 'FRONT2';
-    const segmentLabelPairs = frontageEntity.vertices.slice(0, -1).map((_, index) => {
-      const startLabel = frontageEntity.vertexLabels[index]?.trim() || `FRONT${index + 1}`;
-      const endLabel = frontageEntity.vertexLabels[index + 1]?.trim() || `FRONT${index + 2}`;
-      return [startLabel, endLabel] as const;
-    });
-    return {
-      ...createFrontageReferenceLine(frontageEntity, firstVertex, lastVertex, firstLabel, lastLabel),
-      displayLabel: segmentLabelPairs.map(([startLabel, endLabel]) => `${startLabel}-${endLabel}`).join(', '),
-      sourcePointIds: segmentLabelPairs.flatMap(([startLabel, endLabel]) => [startLabel, endLabel]),
-      parcelSegmentLabelPairs: segmentLabelPairs,
-    };
-  }
-  const startPoint = cadArcStartPoint(frontageEntity);
-  const endPoint = cadArcEndPoint(frontageEntity);
-  return createFrontageReferenceLine(frontageEntity, startPoint, endPoint, 'ARC START', 'ARC END');
-};
-
-export const cadBuildParcelLayoutFrontageReferenceFromParcelSegments = (
-  parcel: CadParcelEntity,
-  segmentIds: readonly string[],
-): CadParcelLayoutFrontageReference | null => {
-  if (segmentIds.length === 0 || parcel.vertices.length < 2) return null;
-  const vertices = normalizeParcelPolygonVertices(parcel.vertices);
-  if (vertices.length < 2) return null;
-  const labels =
-    parcel.vertexLabels.length === vertices.length
-      ? parcel.vertexLabels
-      : vertices.map((_, index) => normalizeParcelVertexLabel(parcel.vertexLabels[index], index));
-
-  const uniqueSegmentIds = [...new Set(segmentIds)];
-  const matchedSegments = uniqueSegmentIds
-    .map((segmentId) => {
-      const expectedPrefix = `${parcel.id}#`;
-      if (!segmentId.startsWith(expectedPrefix)) return null;
-      const rawIndex = Number(segmentId.slice(expectedPrefix.length));
-      if (!Number.isInteger(rawIndex) || rawIndex < 0 || rawIndex >= vertices.length) return null;
-      const start = vertices[rawIndex]!;
-      const end = vertices[(rawIndex + 1) % vertices.length]!;
-      return {
-        segmentId,
-        index: rawIndex,
-        start,
-        end,
-        startLabel: labels[rawIndex] ?? `V${rawIndex + 1}`,
-        endLabel: labels[(rawIndex + 1) % vertices.length] ?? `V${((rawIndex + 1) % vertices.length) + 1}`,
-      };
-    })
-    .filter((segment): segment is NonNullable<typeof segment> => segment != null)
-    .sort((left, right) => left.index - right.index);
-  if (matchedSegments.length === 0) return null;
-
-  const firstSegment = matchedSegments[0]!;
-  const displayLabel = matchedSegments
-    .map((segment) => `${segment.startLabel}-${segment.endLabel}`)
-    .join(', ');
-
-  return {
-    sourceEntityId: parcel.id,
-    displayLabel,
-    sourcePointIds: matchedSegments.flatMap((segment) => [segment.startLabel, segment.endLabel]),
-    frontageLine: {
-      id: `${parcel.id}:frontage-segment:${firstSegment.index}`,
-      type: 'line',
-      layerId: parcel.layerId,
-      styleId: parcel.styleId,
-      visible: parcel.visible,
-      locked: parcel.locked,
-      fromStationId: firstSegment.startLabel,
-      toStationId: firstSegment.endLabel,
-      fromX: firstSegment.start.x,
-      fromY: firstSegment.start.y,
-      toX: firstSegment.end.x,
-      toY: firstSegment.end.y,
-      sourceObservationIds: [],
-    },
-    parcelSegmentLabelPairs: matchedSegments.map(
-      (segment) => [segment.startLabel, segment.endLabel] as const,
-    ),
-    parcelSegmentIds: matchedSegments.map((segment) => segment.segmentId),
-    sourceGeometry: {
-      kind: 'polyline',
-      vertices: matchedSegments.flatMap((segment, index) =>
-        index === 0
-          ? [{ x: segment.start.x, y: segment.start.y }, { x: segment.end.x, y: segment.end.y }]
-          : [{ x: segment.end.x, y: segment.end.y }],
-      ),
-      vertexLabels: matchedSegments.flatMap((segment, index) =>
-        index === 0 ? [segment.startLabel, segment.endLabel] : [segment.endLabel],
-      ),
-    },
-  };
-};
-
 
 interface CadMatchedParcelFrontageEdge {
   edgeIndex: number;
@@ -302,10 +129,6 @@ interface CadParcelSelectedSplitSide {
   areaSquareMeters: number;
 }
 
-interface CadParcelLayoutLocalPoint {
-  x: number;
-  y: number;
-}
 
 interface CadParcelLayoutFrontagePathLineSegment {
   kind: 'line';
@@ -1435,142 +1258,6 @@ export const cadBuildParcelSplitBySwingDraft = (
   return solveParcelSwingDraft(parcel, frontageEdge, targetAreaSquareMeters, alternative);
 };
 
-const cadBuildParcelLayoutLocalPoints = (
-  frontageStart: CadWorldPoint,
-  frontageEnd: CadWorldPoint,
-  vertices: readonly CadWorldPoint[],
-): CadParcelLayoutLocalPoint[] | null => {
-  const frontageLength = cadDistance(frontageStart, frontageEnd);
-  if (frontageLength <= 1e-9 || vertices.length < 3) return null;
-  const unitX = (frontageEnd.x - frontageStart.x) / frontageLength;
-  const unitY = (frontageEnd.y - frontageStart.y) / frontageLength;
-  const raw = vertices.map((vertex) => {
-    const dx = vertex.x - frontageStart.x;
-    const dy = vertex.y - frontageStart.y;
-    return {
-      x: dx * unitX + dy * unitY,
-      y: dx * -unitY + dy * unitX,
-    };
-  });
-  const maxY = raw.reduce((maximum, point) => Math.max(maximum, point.y), Number.NEGATIVE_INFINITY);
-  const minY = raw.reduce((minimum, point) => Math.min(minimum, point.y), Number.POSITIVE_INFINITY);
-  const flip = Math.abs(minY) > Math.abs(maxY);
-  return flip ? raw.map((point) => ({ x: point.x, y: -point.y })) : raw;
-};
-
-const cadBuildParcelLayoutLocalToWorldPoint = (
-  frontageStart: CadWorldPoint,
-  frontageEnd: CadWorldPoint,
-  localPoint: CadParcelLayoutLocalPoint,
-  flipY: boolean,
-): CadWorldPoint => {
-  const frontageLength = cadDistance(frontageStart, frontageEnd);
-  const unitX = (frontageEnd.x - frontageStart.x) / frontageLength;
-  const unitY = (frontageEnd.y - frontageStart.y) / frontageLength;
-  const localY = flipY ? -localPoint.y : localPoint.y;
-  return {
-    x: frontageStart.x + localPoint.x * unitX + localY * -unitY,
-    y: frontageStart.y + localPoint.x * unitY + localY * unitX,
-  };
-};
-
-const cadDeduplicateLocalPolygonVertices = (
-  vertices: readonly CadParcelLayoutLocalPoint[],
-  tolerance = 1e-9,
-): CadParcelLayoutLocalPoint[] => {
-  const deduplicated: CadParcelLayoutLocalPoint[] = [];
-  vertices.forEach((vertex) => {
-    const previous = deduplicated[deduplicated.length - 1];
-    if (
-      previous &&
-      Math.abs(previous.x - vertex.x) <= tolerance &&
-      Math.abs(previous.y - vertex.y) <= tolerance
-    ) {
-      return;
-    }
-    deduplicated.push({ x: vertex.x, y: vertex.y });
-  });
-  if (deduplicated.length > 1) {
-    const first = deduplicated[0]!;
-    const last = deduplicated[deduplicated.length - 1]!;
-    if (Math.abs(first.x - last.x) <= tolerance && Math.abs(first.y - last.y) <= tolerance) {
-      deduplicated.pop();
-    }
-  }
-  return deduplicated;
-};
-
-const cadClipLocalPolygonAgainstVerticalBoundary = (
-  vertices: readonly CadParcelLayoutLocalPoint[],
-  boundaryX: number,
-  keepGreaterThanOrEqual: boolean,
-): CadParcelLayoutLocalPoint[] => {
-  if (vertices.length < 3) return [];
-  const clipped: CadParcelLayoutLocalPoint[] = [];
-  const isInside = (point: CadParcelLayoutLocalPoint) =>
-    keepGreaterThanOrEqual ? point.x >= boundaryX - 1e-9 : point.x <= boundaryX + 1e-9;
-  for (let index = 0; index < vertices.length; index += 1) {
-    const current = vertices[index]!;
-    const previous = vertices[(index + vertices.length - 1) % vertices.length]!;
-    const currentInside = isInside(current);
-    const previousInside = isInside(previous);
-    if (currentInside !== previousInside) {
-      const deltaX = current.x - previous.x;
-      if (Math.abs(deltaX) > 1e-12) {
-        const ratio = (boundaryX - previous.x) / deltaX;
-        clipped.push({
-          x: boundaryX,
-          y: previous.y + (current.y - previous.y) * ratio,
-        });
-      }
-    }
-    if (currentInside) {
-      clipped.push({ x: current.x, y: current.y });
-    }
-  }
-  return cadDeduplicateLocalPolygonVertices(clipped);
-};
-
-const cadClipLocalPolygonToVerticalStrip = (
-  vertices: readonly CadParcelLayoutLocalPoint[],
-  startX: number,
-  endX: number,
-): CadParcelLayoutLocalPoint[] => {
-  const leftClipped = cadClipLocalPolygonAgainstVerticalBoundary(vertices, startX, true);
-  if (leftClipped.length < 3) return [];
-  return cadClipLocalPolygonAgainstVerticalBoundary(leftClipped, endX, false);
-};
-
-const cadClipLocalPolygonAgainstHorizontalBoundary = (
-  vertices: readonly CadParcelLayoutLocalPoint[],
-  boundaryY: number,
-  keepLessThanOrEqual: boolean,
-): CadParcelLayoutLocalPoint[] => {
-  if (vertices.length < 3) return [];
-  const clipped: CadParcelLayoutLocalPoint[] = [];
-  const isInside = (point: CadParcelLayoutLocalPoint) =>
-    keepLessThanOrEqual ? point.y <= boundaryY + 1e-9 : point.y >= boundaryY - 1e-9;
-  for (let index = 0; index < vertices.length; index += 1) {
-    const current = vertices[index]!;
-    const previous = vertices[(index + vertices.length - 1) % vertices.length]!;
-    const currentInside = isInside(current);
-    const previousInside = isInside(previous);
-    if (currentInside !== previousInside) {
-      const deltaY = current.y - previous.y;
-      if (Math.abs(deltaY) > 1e-12) {
-        const ratio = (boundaryY - previous.y) / deltaY;
-        clipped.push({
-          x: previous.x + (current.x - previous.x) * ratio,
-          y: boundaryY,
-        });
-      }
-    }
-    if (currentInside) {
-      clipped.push({ x: current.x, y: current.y });
-    }
-  }
-  return cadDeduplicateLocalPolygonVertices(clipped);
-};
 
 const cadBuildAutoParcelVertexLabels = (
   sourceParcel: CadParcelEntity,
