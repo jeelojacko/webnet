@@ -28,6 +28,8 @@
 
 - [x] Survey CAD parcel COGO split batch 14 (July 2026): split frontage-reference automatic parcel layout orchestration into `cadCogoParcelFrontageReferenceAutoLayout.ts`, corner infill into `cadCogoParcelFrontageReferenceCornerInfill.ts`, corner helper drafting into `cadCogoParcelFrontageReferenceCornerHelpers.ts`, and shared frontage-reference auto-layout types into `cadCogoParcelFrontageReferenceAutoLayoutTypes.ts`, while keeping compatibility exports stable.
 
+- [x] Survey CAD spatial index split batch 1 (July 2026): split spatial index types, snap constants, candidate building/ranking, entity reference extraction, construction snap helpers, and viewport bounds filtering into focused `cadSpatial*` modules while keeping `buildCadSpatialIndex` behavior and import path stable.
+
 - [x] Survey CAD TypeScript structure enforcement batch 1 (July 2026): split the CAD command/transaction type surface into `cadTransactions.types.ts`, while keeping `cadTransactions.ts` public type exports stable.
 
 - [x] Survey CAD TypeScript structure enforcement batch 2 (July 2026): split CAD transaction naming and manual point factory helpers into `cadTransactionsEntityFactories.ts`, while preserving command behavior.
