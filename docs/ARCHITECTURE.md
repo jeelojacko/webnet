@@ -146,7 +146,7 @@ Current Survey CAD spike seams:
 - `src/engine/cad/cadProperties.ts` builds deterministic selection-driven `Properties` panel view models for every current CAD entity family, including mixed-type grouping in project selection order plus per-entity formatted/editable property rows
 - `src/engine/cad/cadEntityNames.ts` centralizes operator-facing CAD naming for entity labels plus grip/snap subpart labels so `Properties`, passive hover, selected grip hover, and snap badges stay on one naming contract
 - `src/engine/cad/cadBatchCogo.ts` owns the pasted deed/batch parser for `START`, bearing-distance, and tangent-curve rows plus preview-row, warning, and preview-geometry assembly before the command layer commits anything
-- `src/engine/cad/cadAlignment.ts` owns selected line/arc chain ordering plus reusable alignment length, displayed-station formatting, offset-alignment draft, station, point-at-station, and point-to-alignment projection helpers for the native alignment/stationing workflows
+- `src/engine/cad/cadAlignment.ts` owns selected line/arc chain ordering plus station, point-at-station, and point-to-alignment projection helpers for the native alignment/stationing workflows; offset-alignment construction lives in `src/engine/cad/cadAlignmentOffset.ts`, and station-equation/display-station conversion helpers live in `src/engine/cad/cadAlignmentStationing.ts`
 - `src/engine/cad/cadModel.ts` builds a native CAD project from current WebNet input or solved results
 - `src/engine/cad/cadProjectState.ts` owns CAD project bounds/signature helpers used by renderer and history layers
 - `src/engine/cad/cadPersistence.ts` owns deterministic clone/sanitize helpers for Survey CAD state persisted through WebNet project files, bundles, and recovery state

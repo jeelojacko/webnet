@@ -1,3 +1,4 @@
+- [x] Survey CAD alignment split batch 19 (July 2026): split offset-alignment construction and station-equation helpers out of oversized `cadAlignment.ts`, keep alignment exports stable, and validate focused CAD alignment behavior plus full checks.
 - [x] Survey CAD geometry split batch 18 (July 2026): split arc/curve geometry helpers out of oversized `cadGeometry.ts`, keep existing geometry exports stable, and validate focused CAD COGO/spatial behavior plus full checks.
 - [x] Survey CAD parcel geometry split batch 17 (July 2026): split linework, overlap, and gap diagnostics out of oversized `cadCogoParcelGeometry.ts`, keep existing parcel geometry exports stable, and validate focused CAD COGO behavior plus full checks.
 - [x] Survey CAD COGO math split batch 16 (July 2026): split curve metric and arc construction helpers out of oversized `cadCogoMath.ts`, keep existing exports stable, and validate focused CAD COGO behavior plus full checks.
