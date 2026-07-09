@@ -2,6 +2,8 @@
 
 - [x] Survey CAD COGO module split batch (July 2026): refactor massive `cadCogo.ts` into a compatibility barrel plus `cadCogoMath.ts` for primitive COGO math/format/intersection/curve helpers and `cadCogoParcel.ts` for parcel/report/layout helpers, with behavior-preserving exports.
 
+- [x] Survey CAD COGO math split batch 16 (July 2026): split curve metric solving, arc subdivision/offset, PI/chord/reverse/compound curve construction, and curve geometry wrappers into `cadCogoCurveMath.ts`, while keeping `cadCogoMath.ts` exports stable.
+
 - [x] Survey CAD parcel COGO split batch 2 (July 2026): split shared parcel geometry/report/diagnostic helpers into `cadCogoParcelGeometry.ts` and line/bearing/area split solvers into `cadCogoParcelSplit.ts`, while keeping `cadCogo.ts` and `cadCogoParcel.ts` compatibility exports stable.
 
 - [x] Survey CAD parcel COGO split batch 3 (July 2026): split parcel frontage-reference helpers into `cadCogoParcelFrontage.ts` and layout-local polygon clipping helpers into `cadCogoParcelLocalGeometry.ts`, while keeping compatibility exports stable.
