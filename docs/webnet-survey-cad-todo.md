@@ -34,6 +34,8 @@
 
 - [x] Survey CAD TypeScript structure enforcement batch 4 (July 2026): split CAD transaction selection expansion and entity transform/grip-edit helpers into focused transaction helper modules while preserving command behavior.
 
+- [x] Survey CAD TypeScript structure enforcement batch 5 (July 2026): split CAD transaction TRIM/EXT common geometry plus trim/extend piece and preview helpers into focused modules, while preserving command behavior and public preview exports.
+
 - [x] Survey CAD naming fallback batch (June 2026): stop unlabeled arc/polyline/polygon hover and snap surfaces from leaking raw prefixed entity ids like `arc:*` or `polyline:*`, and keep the shared naming helper on readable type fallbacks instead.
 
 - [x] Survey CAD COGO report panel batch (June 2026): add a selected/latest COGO result overlay in the native CAD workspace, bridge live `INVERSE` query output into the shared report model, and add exportable TXT/CSV/Markdown report previews for persisted computation history.
