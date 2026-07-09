@@ -6,6 +6,8 @@
 
 - [x] Survey CAD parcel COGO split batch 2 (July 2026): split shared parcel geometry/report/diagnostic helpers into `cadCogoParcelGeometry.ts` and line/bearing/area split solvers into `cadCogoParcelSplit.ts`, while keeping `cadCogo.ts` and `cadCogoParcel.ts` compatibility exports stable.
 
+- [x] Survey CAD parcel geometry split batch 17 (July 2026): split linework, overlap, and gap diagnostics into `cadCogoParcelDiagnostics.ts`, while keeping `cadCogoParcelGeometry.ts` exports stable.
+
 - [x] Survey CAD parcel COGO split batch 3 (July 2026): split parcel frontage-reference helpers into `cadCogoParcelFrontage.ts` and layout-local polygon clipping helpers into `cadCogoParcelLocalGeometry.ts`, while keeping compatibility exports stable.
 
 - [x] Survey CAD parcel COGO split batch 4 (July 2026): split shared parcel layout types into `cadCogoParcelLayoutTypes.ts` and frontage-path/slide/swing layout primitives into `cadCogoParcelLayoutPrimitives.ts`, while keeping compatibility exports stable.
