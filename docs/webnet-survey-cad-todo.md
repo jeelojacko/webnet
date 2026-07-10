@@ -46,6 +46,8 @@
 
 - [x] Survey CAD spatial index split batch 1 (July 2026): split spatial index types, snap constants, candidate building/ranking, entity reference extraction, construction snap helpers, and viewport bounds filtering into focused `cadSpatial*` modules while keeping `buildCadSpatialIndex` behavior and import path stable.
 
+- [x] Survey CAD spatial index split batch 24 (July 2026): split entity-level point/segment/arc snap candidate collection into `cadSpatialEntityCandidates.ts`, while keeping `buildCadSpatialIndex` behavior and import path stable.
+
 - [x] Survey CAD TypeScript structure enforcement batch 1 (July 2026): split the CAD command/transaction type surface into `cadTransactions.types.ts`, while keeping `cadTransactions.ts` public type exports stable.
 
 - [x] Survey CAD TypeScript structure enforcement batch 2 (July 2026): split CAD transaction naming and manual point factory helpers into `cadTransactionsEntityFactories.ts`, while preserving command behavior.

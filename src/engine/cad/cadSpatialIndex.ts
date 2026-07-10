@@ -1,22 +1,14 @@
 import {
-  cadArcMidpoint,
-  cadClosestPointOnSegment,
-  cadClosestPointOnArc,
-  cadDistance,
   cadInfiniteLineIntersection,
   cadIntersectArcArc,
   cadIntersectCircleCircle,
   cadIntersectInfiniteLineArc,
   cadIntersectSegmentArc,
-  cadMidpoint,
-  cadPointOnCircle,
   cadProjectPointOntoInfiniteLine,
   cadSegmentIntersection,
-  cadTangentPointsFromExternalPointToArc,
-  cadIsAngleOnArcSweep,
   type CadWorldPoint,
 } from './cadGeometry';
-import { getCadEntityDisplayLabel, getCadEntitySubpartDisplayLabel } from './cadEntityNames';
+import { getCadEntityDisplayLabel } from './cadEntityNames';
 import type {
   CadArcEntity,
   CadBounds,
@@ -30,6 +22,7 @@ import type {
   CadSnapKind,
 } from './cadTypes';
 import { entityIntersectsBounds, expandBounds } from './cadSpatialBounds';
+import { buildCadSpatialEntitySnapCandidates } from './cadSpatialEntityCandidates';
 import { arcRefFromEntity, entitySegments } from './cadSpatialEntityRefs';
 import type { CadArcRef, CadSegmentRef, CadSpatialIndex } from './cadSpatialIndexTypes';
 import {
@@ -48,10 +41,8 @@ import {
 
 import {
   buildDirectionCandidate,
-  buildExtensionCandidate,
   buildLockedConstructionPoint,
   buildLockedLineIntersectionCandidates,
-  buildParallelCandidate,
   buildPerpendicularThroughBaseCandidate,
   buildPerpendicularThroughTangentSeedCandidate,
   buildScopedSegmentIds,
@@ -119,242 +110,21 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => {
     const apparentScope = constructionContext.active ? buildScopedSegmentIds(segments, basePoint, scopeSeedSegmentId, 2) : null;
     const requireExplicitScope = constructionContext.active && scopeSeedSegmentId != null;
 
-    visibleEntities.forEach((entity) => {
-      switch (entity.type) {
-        case 'survey-point':
-          if (allowed.has('point-node')) {
-            candidates.push(
-              buildCandidate('point-node', entity.id, { x: entity.x, y: entity.y }, worldPoint, entity.stationId),
-            );
-          }
-          break;
-        case 'line':
-        case 'polyline':
-        case 'polygon':
-        case 'parcel':
-          entitySegments(entity).forEach((segment) => {
-            if (allowed.has('endpoint')) {
-              candidates.push(
-                buildCandidate('endpoint', entity.id, segment.start, worldPoint, segment.startLabel, undefined, segment.segmentId),
-                buildCandidate('endpoint', entity.id, segment.end, worldPoint, segment.endLabel, undefined, segment.segmentId),
-              );
-            }
-            if (allowed.has('midpoint')) {
-              candidates.push(
-                buildCandidate('midpoint', entity.id, cadMidpoint(segment.start, segment.end), worldPoint, segment.label, undefined, segment.segmentId),
-              );
-            }
-            if (allowed.has('nearest')) {
-              candidates.push(
-                buildCandidate(
-                  'nearest',
-                  entity.id,
-                  cadClosestPointOnSegment(worldPoint, segment.start, segment.end),
-                  worldPoint,
-                  segment.label,
-                  undefined,
-                  segment.segmentId,
-                ),
-              );
-            }
-            if (constructionContext.active && allowed.has('extension')) {
-              if (!scopeAllowsSegment(extensionScope, segment.segmentId, requireExplicitScope)) {
-                return;
-              }
-              const extensionPoint = buildExtensionCandidate(segment, worldPoint);
-              if (extensionPoint) {
-                const extensionAnchor = nearestSegmentEndpointToPoint(segment, extensionPoint);
-                if (
-                  segmentPathObstructed(
-                    extensionAnchor,
-                    extensionPoint,
-                    segments,
-                    new Set([segment.segmentId]),
-                  )
-                ) {
-                  return;
-                }
-                candidates.push(
-                  buildCandidate(
-                    'extension',
-                    entity.id,
-                    extensionPoint,
-                    worldPoint,
-                    `${segment.label} ext`,
-                    [[extensionAnchor, extensionPoint]],
-                    segment.segmentId,
-                  ),
-                );
-              }
-            }
-            if (
-              constructionContext.active &&
-              basePoint &&
-              allowed.has('perpendicular') &&
-              !hasPerpendicularStartSeed
-            ) {
-              const perpendicularPoint = cadProjectPointOntoInfiniteLine(basePoint, segment.start, segment.end).point;
-              candidates.push(
-                buildCandidate(
-                  'perpendicular',
-                  entity.id,
-                  perpendicularPoint,
-                  worldPoint,
-                  `${segment.label} perp`,
-                  [[basePoint, perpendicularPoint]],
-                  segment.segmentId,
-                  undefined,
-                  perpendicularPoint,
-                ),
-              );
-            }
-            if (constructionContext.active && basePoint && allowed.has('parallel')) {
-              if (!scopeAllowsSegment(parallelScope, segment.segmentId, true)) {
-                return;
-              }
-              const parallelPoint = buildParallelCandidate(segment, basePoint, worldPoint);
-              if (parallelPoint) {
-                candidates.push(
-                  buildCandidate(
-                    'parallel',
-                    entity.id,
-                    parallelPoint,
-                    worldPoint,
-                    `${segment.label} parallel`,
-                    [
-                      [basePoint, parallelPoint],
-                      [segment.start, segment.end],
-                    ],
-                    segment.segmentId,
-                  ),
-                );
-              }
-            }
-          });
-          break;
-        case 'arc': {
-          const arc = arcRefFromEntity(project, entity);
-          if (allowed.has('endpoint')) {
-            candidates.push(
-              buildCandidate(
-                'endpoint',
-                entity.id,
-                arc.startPoint,
-                worldPoint,
-                getCadEntitySubpartDisplayLabel(project, entity.id, 'arc-start'),
-              ),
-              buildCandidate(
-                'endpoint',
-                entity.id,
-                arc.endPoint,
-                worldPoint,
-                getCadEntitySubpartDisplayLabel(project, entity.id, 'arc-end'),
-              ),
-            );
-          }
-          if (allowed.has('center')) {
-            candidates.push(
-              buildCandidate(
-                'center',
-                entity.id,
-                arc.center,
-                worldPoint,
-                getCadEntitySubpartDisplayLabel(project, entity.id, 'center'),
-              ),
-            );
-          }
-          if (allowed.has('arc-midpoint')) {
-            candidates.push(
-              buildCandidate(
-                'arc-midpoint',
-                entity.id,
-                cadArcMidpoint(arc.center, arc.radius, arc.startAngleDeg, arc.endAngleDeg),
-                worldPoint,
-                getCadEntitySubpartDisplayLabel(project, entity.id, 'arc-midpoint'),
-              ),
-            );
-          }
-          if (allowed.has('quadrant')) {
-            [0, 90, 180, 270].forEach((angleDeg) => {
-              if (!cadIsAngleOnArcSweep(angleDeg, arc.startAngleDeg, arc.endAngleDeg)) return;
-              candidates.push(
-                buildCandidate(
-                  'quadrant',
-                  entity.id,
-                  cadPointOnCircle(arc.center, arc.radius, angleDeg),
-                  worldPoint,
-                  getCadEntitySubpartDisplayLabel(project, entity.id, 'quadrant', { quadrantAngleDeg: angleDeg }),
-                ),
-              );
-            });
-          }
-          if (allowed.has('nearest')) {
-            candidates.push(
-              buildCandidate(
-                'nearest',
-                entity.id,
-                cadClosestPointOnArc(worldPoint, arc.center, arc.radius, arc.startAngleDeg, arc.endAngleDeg),
-                worldPoint,
-                arc.label,
-              ),
-            );
-          }
-          if (
-            constructionContext.active &&
-            basePoint &&
-            allowed.has('perpendicular') &&
-            !hasPerpendicularStartSeed
-          ) {
-            candidates.push(
-                buildCandidate(
-                  'perpendicular',
-                  entity.id,
-                  cadClosestPointOnArc(basePoint, arc.center, arc.radius, arc.startAngleDeg, arc.endAngleDeg),
-                  worldPoint,
-                  `${arc.label} perp`,
-                  [
-                    [basePoint, cadClosestPointOnArc(basePoint, arc.center, arc.radius, arc.startAngleDeg, arc.endAngleDeg)],
-                    [arc.center, cadClosestPointOnArc(basePoint, arc.center, arc.radius, arc.startAngleDeg, arc.endAngleDeg)],
-                  ],
-                ),
-              );
-            }
-          if (constructionContext.active && basePoint && allowed.has('tangent')) {
-            cadTangentPointsFromExternalPointToArc(
-              basePoint,
-              arc.center,
-              arc.radius,
-              arc.startAngleDeg,
-              arc.endAngleDeg,
-            ).forEach((tangentPoint) => {
-              const tangentLineDistance = cadDistance(
-                worldPoint,
-                cadProjectPointOntoInfiniteLine(worldPoint, basePoint, tangentPoint).point,
-              );
-              candidates.push(
-                buildCandidate(
-                  'tangent',
-                  entity.id,
-                  tangentPoint,
-                  worldPoint,
-                  `${arc.label} tangent`,
-                  [
-                    [basePoint, tangentPoint],
-                    [arc.center, tangentPoint],
-                  ],
-                  undefined,
-                  tangentLineDistance,
-                  tangentPoint,
-                ),
-              );
-            });
-          }
-          break;
-        }
-        default:
-          break;
-      }
-    });
+    candidates.push(
+      ...buildCadSpatialEntitySnapCandidates({
+        project,
+        visibleEntities,
+        segments,
+        worldPoint,
+        allowed,
+        constructionContext,
+        basePoint,
+        hasPerpendicularStartSeed,
+        parallelScope,
+        extensionScope,
+        requireExplicitScope,
+      }),
+    );
 
     if (constructionContext.active && basePoint && scopeSeedSegment && allowed.has('perpendicular')) {
       const startPerpendicularPoint = buildPerpendicularThroughBaseCandidate(scopeSeedSegment, basePoint, worldPoint);
