@@ -1,6 +1,7 @@
 import type { CadArcEntity } from './cadTypes';
 
 export * from './cadGeometryCurves';
+export * from './cadGeometryCurveIntersections';
 
 export interface CadWorldPoint {
   x: number;

@@ -8,6 +8,8 @@
 
 - [x] Survey CAD geometry split batch 18 (July 2026): split arc/curve geometry, circle/arc intersections, tangent helpers, and offset/parallel/perpendicular line geometry into `cadGeometryCurves.ts`, while keeping `cadGeometry.ts` exports stable.
 
+- [x] Survey CAD geometry curve split batch 23 (July 2026): split circle/arc intersection, tangent-point, and offset/parallel/perpendicular helpers into `cadGeometryCurveIntersections.ts`, while keeping `cadGeometry.ts` exports stable.
+
 - [x] Survey CAD alignment split batch 19 (July 2026): split offset-alignment construction into `cadAlignmentOffset.ts` and station-equation/display-station conversion into `cadAlignmentStationing.ts`, while keeping `cadAlignment.ts` exports stable.
 
 - [x] Survey CAD parcel COGO split batch 2 (July 2026): split shared parcel geometry/report/diagnostic helpers into `cadCogoParcelGeometry.ts` and line/bearing/area split solvers into `cadCogoParcelSplit.ts`, while keeping `cadCogo.ts` and `cadCogoParcel.ts` compatibility exports stable.
