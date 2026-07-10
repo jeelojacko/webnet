@@ -4,6 +4,8 @@
 
 - [x] Survey CAD COGO math split batch 16 (July 2026): split curve metric solving, arc subdivision/offset, PI/chord/reverse/compound curve construction, and curve geometry wrappers into `cadCogoCurveMath.ts`, while keeping `cadCogoMath.ts` exports stable.
 
+- [x] Survey CAD COGO summary split batch 20 (July 2026): split bearing/azimuth formatting, inverse/distance summaries, traverse adjustment, and named-point helpers into `cadCogoSummaries.ts`, while keeping `cadCogoMath.ts` exports stable.
+
 - [x] Survey CAD geometry split batch 18 (July 2026): split arc/curve geometry, circle/arc intersections, tangent helpers, and offset/parallel/perpendicular line geometry into `cadGeometryCurves.ts`, while keeping `cadGeometry.ts` exports stable.
 
 - [x] Survey CAD alignment split batch 19 (July 2026): split offset-alignment construction into `cadAlignmentOffset.ts` and station-equation/display-station conversion into `cadAlignmentStationing.ts`, while keeping `cadAlignment.ts` exports stable.
