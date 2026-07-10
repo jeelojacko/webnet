@@ -61,7 +61,7 @@ Important seams include:
 Representative modules include:
 
 - `parse.ts`
-- `adjust.ts`
+- `adjust.ts`, with top-level solver constants and internal engine/GPS/bootstrap types split into `adjustConstants.ts` and `adjustTypes.ts`
 - `runSession.ts`
 - `solveEngine.ts`
 - `directRunPipeline.ts`

@@ -1,4 +1,27 @@
 import { RAD_TO_DEG, DEG_TO_RAD } from './angles';
+import {
+  ARCSEC_TO_RAD,
+  DATA_CHECK_PROVISIONAL_DIRECTION_TRUST_MAX_RAD,
+  EARTH_RADIUS_M,
+  EPS,
+  FLOAT_ZENITH_COVARIANCE_SIGMA_SEC,
+  GPS_ADDHIHT_SCALE_TOL,
+  GPS_LOOP_BASE_TOLERANCE_M,
+  GPS_LOOP_TOLERANCE_PPM,
+  INDUSTRY_PARITY_ANGULAR_SIGMA_SCALE,
+  LEVEL_LOOP_DEFAULT_BASE_MM,
+  LEVEL_LOOP_DEFAULT_PER_SQRT_KM_MM,
+} from './adjustConstants';
+import {
+  cloneParsedResultValue,
+  type BootstrapDirectionSet,
+  type BootstrapPairMetrics,
+  type EngineOptions,
+  type GpsCovariance,
+  type GpsSolveVector,
+  type GpsVectorComponents,
+  type GpsVectorDerivatives,
+} from './adjustTypes';
 import { geoidGridMetadataSummary, interpolateGeoidUndulation, loadGeoidGridModel } from './geoid';
 import {
   computeElevationFactor,
@@ -129,89 +152,6 @@ import type {
   SigmaSource,
 } from '../types';
 
-const EPS = 1e-10;
-const EARTH_RADIUS_M = 6378137;
-const GPS_ADDHIHT_SCALE_TOL = 1e-9;
-const GPS_LOOP_BASE_TOLERANCE_M = 0.02;
-const GPS_LOOP_TOLERANCE_PPM = 50;
-const LEVEL_LOOP_DEFAULT_BASE_MM = 0;
-const LEVEL_LOOP_DEFAULT_PER_SQRT_KM_MM = 4;
-const INDUSTRY_PARITY_ANGULAR_SIGMA_SCALE = 1.0001;
-const FLOAT_ZENITH_COVARIANCE_SIGMA_SEC = 1e8;
-const ARCSEC_TO_RAD = DEG_TO_RAD / 3600;
-const DATA_CHECK_PROVISIONAL_DIRECTION_TRUST_MAX_RAD = (5 / 60) * DEG_TO_RAD;
-
-type GpsSolveVector = {
-  dE: number;
-  dN: number;
-  dU?: number;
-  scale: number;
-};
-
-type GpsCovariance = {
-  cEE: number;
-  cNN: number;
-  cEN: number;
-  cUU?: number;
-  cEU?: number;
-  cNU?: number;
-};
-
-type GpsVectorComponents = {
-  dE: number;
-  dN: number;
-  dU?: number;
-};
-
-type GpsVectorDerivatives = {
-  from: { x?: GpsVectorComponents; y?: GpsVectorComponents; h?: GpsVectorComponents };
-  to: { x?: GpsVectorComponents; y?: GpsVectorComponents; h?: GpsVectorComponents };
-};
-
-type BootstrapDirectionSet = {
-  setId: string;
-  occupy: StationId;
-  directions: { to: StationId; obs: number }[];
-};
-
-type BootstrapPairMetrics = {
-  slopeDistance: number;
-  horizDistance: number;
-  zenith?: number;
-  hi?: number;
-  ht?: number;
-};
-
-const cloneParsedResultValue = <T>(value: T): T => {
-  if (value == null || typeof value !== 'object') return value;
-  if (Array.isArray(value)) {
-    return value.map((entry) => cloneParsedResultValue(entry)) as T;
-  }
-  if (value instanceof Uint8Array) {
-    return new Uint8Array(value) as T;
-  }
-  return Object.fromEntries(
-    Object.entries(value as Record<string, unknown>).map(([key, entryValue]) => [
-      key,
-      cloneParsedResultValue(entryValue),
-    ]),
-  ) as T;
-};
-
-interface EngineOptions {
-  input: string;
-  maxIterations?: number;
-  instrumentLibrary?: InstrumentLibrary;
-  convergenceThreshold?: number;
-  excludeIds?: Set<number>;
-  overrides?: Record<number, ObservationOverride>;
-  options?: Partial<ParseOptions>;
-  parseOptions?: Partial<ParseOptions>;
-  geoidSourceData?: ArrayBuffer | Uint8Array;
-  parsedResult?: ParseResult;
-  solvePreparation?: SolvePreparationResult;
-  progressCallback?: (_event: SolveProgressEvent) => void;
-}
 export class LSAEngine {
   input: string;
   stations: StationMap = {};
