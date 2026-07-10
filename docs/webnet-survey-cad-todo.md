@@ -44,6 +44,8 @@
 
 - [x] Survey CAD parcel layout primitive split batch 15 (July 2026): split frontage path primitives into `cadCogoParcelLayoutPath.ts` and generated parcel/depth strip primitives into `cadCogoParcelLayoutGeneratedPrimitives.ts`, while keeping `cadCogoParcelLayoutPrimitives.ts` exports stable.
 
+- [x] Survey CAD parcel layout primitive split batch 25 (July 2026): split shared frontage/edge helpers into `cadCogoParcelLayoutSharedPrimitives.ts`, slide solving into `cadCogoParcelLayoutSlide.ts`, and swing solving into `cadCogoParcelLayoutSwing.ts`, while keeping `cadCogoParcelLayoutPrimitives.ts` compatibility exports stable.
+
 - [x] Survey CAD spatial index split batch 1 (July 2026): split spatial index types, snap constants, candidate building/ranking, entity reference extraction, construction snap helpers, and viewport bounds filtering into focused `cadSpatial*` modules while keeping `buildCadSpatialIndex` behavior and import path stable.
 
 - [x] Survey CAD spatial index split batch 24 (July 2026): split entity-level point/segment/arc snap candidate collection into `cadSpatialEntityCandidates.ts`, while keeping `buildCadSpatialIndex` behavior and import path stable.
