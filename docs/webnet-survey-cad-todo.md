@@ -56,6 +56,8 @@
 
 - [x] Survey CAD TypeScript structure enforcement batch 6 (July 2026): split native FILLET transaction geometry, line-specific solving, and preview helpers into focused modules while preserving command behavior and public preview exports.
 
+- [x] Survey CAD FILLET split batch 22 (July 2026): split general FILLET refs, trim-choice helpers, radius candidate result scoring, and zero-radius hard-corner solving into focused helper modules while keeping `buildCadGeneralFillet` exports stable.
+
 - [x] Survey CAD TypeScript structure enforcement batch 7 (July 2026): split alignment creation/offset commands and station/report/point commands into focused transaction command modules while preserving registry behavior.
 
 - [x] Survey CAD TypeScript structure enforcement batch 8 (July 2026): split parcel layout transaction commands and the shared parcel split commit helper into focused modules while preserving registry behavior.
