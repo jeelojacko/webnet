@@ -61,7 +61,7 @@ Important seams include:
 Representative modules include:
 
 - `parse.ts`
-- `adjust.ts`, with top-level solver constants and internal engine/GPS/bootstrap types split into `adjustConstants.ts` and `adjustTypes.ts`
+- `adjust.ts`, with top-level solver constants and internal engine/GPS/bootstrap types split into `adjustConstants.ts` and `adjustTypes.ts`, and direction diagnostic assembly split into `adjustmentDirectionDiagnostics.ts`
 - `crsCatalog.ts`, with shared CRS catalog types/helpers in `crsCatalogCore.ts`, Canada CRS data split through `crsCatalogCanada*.ts`, and US SPCS data split through `crsCatalogUsSpcs*.ts`
 - `runSession.ts`
 - `solveEngine.ts`
