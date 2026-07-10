@@ -99,6 +99,10 @@ import {
   buildDirectionDiagnostics,
   type DirectionSetStat,
 } from './adjustmentDirectionDiagnostics';
+import {
+  resolveRunModeCompatibilityOptions,
+  runModeCompatibilityDiagnosticLines,
+} from './adjustmentRunModeCompatibility';
 import { buildGpsLoopDiagnostics, buildLevelingLoopDiagnostics } from './adjustmentLoopDiagnostics';
 import {
   buildAutoSideshotDiagnostics,
@@ -2100,200 +2104,8 @@ export class LSAEngine {
     }).solve();
   }
 
-  private resolveRunModeCompatibilityOptions(
-    requestedRunMode: RunMode,
-    options: Partial<ParseOptions>,
-  ): { effectiveOptions: Partial<ParseOptions>; diagnostics: RunModeCompatibilityDiagnostic[] } {
-    const effectiveOptions: Partial<ParseOptions> = { ...(options ?? {}) };
-    const diagnostics: RunModeCompatibilityDiagnostic[] = [];
-    const warn = (code: string, message: string, action?: string): void => {
-      diagnostics.push({ code, severity: 'warning', message, action });
-    };
-
-    const hasClusterMerges = (effectiveOptions.clusterApprovedMerges?.length ?? 0) > 0;
-    const robustRequested = (effectiveOptions.robustMode ?? 'none') !== 'none';
-    const autoAdjustRequested = effectiveOptions.autoAdjustEnabled === true;
-    const autoSideshotRequested = effectiveOptions.autoSideshotEnabled !== false;
-    const clusterRequested = effectiveOptions.clusterDetectionEnabled !== false;
-
-    if (requestedRunMode === 'adjustment') {
-      if (effectiveOptions.preanalysisMode === true) {
-        warn(
-          'ADJUSTMENT_IGNORES_PREANALYSIS_FLAG',
-          'preanalysisMode=true is ignored when runMode=adjustment.',
-          'Using preanalysisMode=false for this run.',
-        );
-      }
-      effectiveOptions.preanalysisMode = false;
-    }
-
-    if (requestedRunMode === 'preanalysis') {
-      effectiveOptions.preanalysisMode = true;
-      if (autoAdjustRequested) {
-        warn(
-          'PREANALYSIS_DISALLOWS_AUTOADJUST',
-          'Auto-adjust is not available in preanalysis mode.',
-          'Disabling auto-adjust for this run.',
-        );
-        effectiveOptions.autoAdjustEnabled = false;
-      }
-      if (robustRequested) {
-        warn(
-          'PREANALYSIS_DISALLOWS_ROBUST',
-          'Robust reweighting is not available in preanalysis mode.',
-          'Using robustMode=none for this run.',
-        );
-        effectiveOptions.robustMode = 'none';
-      }
-      if (autoSideshotRequested) {
-        warn(
-          'PREANALYSIS_SKIPS_AUTOSIDESHOT',
-          'Auto-sideshot detection is skipped in preanalysis mode.',
-          'Disabling auto-sideshot diagnostics for this run.',
-        );
-        effectiveOptions.autoSideshotEnabled = false;
-      }
-      if (clusterRequested) {
-        warn(
-          'PREANALYSIS_SKIPS_CLUSTER',
-          'Cluster detection is skipped in preanalysis mode.',
-          'Disabling cluster detection for this run.',
-        );
-        effectiveOptions.clusterDetectionEnabled = false;
-      }
-      if (hasClusterMerges) {
-        warn(
-          'PREANALYSIS_DISALLOWS_CLUSTER_MERGES',
-          'Approved cluster merges are not applied in preanalysis mode.',
-          'Ignoring approved cluster merges for this run.',
-        );
-        effectiveOptions.clusterApprovedMerges = [];
-        effectiveOptions.clusterApprovedMergeCount = 0;
-        effectiveOptions.clusterDualPassRan = false;
-      }
-    }
-
-    if (requestedRunMode === 'data-check') {
-      effectiveOptions.preanalysisMode = false;
-      if (autoAdjustRequested) {
-        warn(
-          'DATACHECK_DISALLOWS_AUTOADJUST',
-          'Auto-adjust is not available in Data Check Only mode.',
-          'Disabling auto-adjust for this run.',
-        );
-        effectiveOptions.autoAdjustEnabled = false;
-      }
-      if (robustRequested) {
-        warn(
-          'DATACHECK_DISALLOWS_ROBUST',
-          'Robust reweighting is not available in Data Check Only mode.',
-          'Using robustMode=none for this run.',
-        );
-        effectiveOptions.robustMode = 'none';
-      }
-      if (autoSideshotRequested) {
-        warn(
-          'DATACHECK_SKIPS_AUTOSIDESHOT',
-          'Auto-sideshot detection is skipped in Data Check Only mode.',
-          'Disabling auto-sideshot diagnostics for this run.',
-        );
-        effectiveOptions.autoSideshotEnabled = false;
-      }
-      if (clusterRequested) {
-        warn(
-          'DATACHECK_SKIPS_CLUSTER',
-          'Cluster detection is skipped in Data Check Only mode.',
-          'Disabling cluster detection for this run.',
-        );
-        effectiveOptions.clusterDetectionEnabled = false;
-      }
-      if (hasClusterMerges) {
-        warn(
-          'DATACHECK_DISALLOWS_CLUSTER_MERGES',
-          'Approved cluster merges are not applied in Data Check Only mode.',
-          'Ignoring approved cluster merges for this run.',
-        );
-        effectiveOptions.clusterApprovedMerges = [];
-        effectiveOptions.clusterApprovedMergeCount = 0;
-        effectiveOptions.clusterDualPassRan = false;
-      }
-    }
-
-    if (requestedRunMode === 'blunder-detect') {
-      effectiveOptions.preanalysisMode = false;
-      if (autoAdjustRequested) {
-        warn(
-          'BLUNDER_DISALLOWS_AUTOADJUST',
-          'Auto-adjust is not available in Blunder Detect mode.',
-          'Disabling auto-adjust for this run.',
-        );
-        effectiveOptions.autoAdjustEnabled = false;
-      }
-      if (robustRequested) {
-        warn(
-          'BLUNDER_DISALLOWS_ROBUST',
-          'Robust reweighting is not available in Blunder Detect mode.',
-          'Using robustMode=none for this run.',
-        );
-        effectiveOptions.robustMode = 'none';
-      }
-      if (autoSideshotRequested) {
-        warn(
-          'BLUNDER_SKIPS_AUTOSIDESHOT',
-          'Auto-sideshot detection is skipped in Blunder Detect mode.',
-          'Disabling auto-sideshot diagnostics for this run.',
-        );
-        effectiveOptions.autoSideshotEnabled = false;
-      }
-      if (clusterRequested) {
-        warn(
-          'BLUNDER_SKIPS_CLUSTER',
-          'Cluster detection is skipped in Blunder Detect mode.',
-          'Disabling cluster detection for this run.',
-        );
-        effectiveOptions.clusterDetectionEnabled = false;
-      }
-      if (hasClusterMerges) {
-        warn(
-          'BLUNDER_DISALLOWS_CLUSTER_MERGES',
-          'Approved cluster merges are not applied in Blunder Detect mode.',
-          'Ignoring approved cluster merges for this run.',
-        );
-        effectiveOptions.clusterApprovedMerges = [];
-        effectiveOptions.clusterApprovedMergeCount = 0;
-        effectiveOptions.clusterDualPassRan = false;
-      }
-      if (effectiveOptions.clusterPassLabel && effectiveOptions.clusterPassLabel !== 'single') {
-        warn(
-          'BLUNDER_RESETS_CLUSTER_PASS_LABEL',
-          `Cluster pass label ${effectiveOptions.clusterPassLabel} is not used in Blunder Detect mode.`,
-          'Using clusterPassLabel=single for this run.',
-        );
-      }
-      effectiveOptions.clusterPassLabel = 'single';
-    }
-
-    effectiveOptions.runMode = requestedRunMode;
-    if (requestedRunMode !== 'preanalysis') {
-      effectiveOptions.preanalysisMode = false;
-    }
-    return { effectiveOptions, diagnostics };
-  }
-
-  private runModeCompatibilityDiagnosticLines(
-    diagnostics: RunModeCompatibilityDiagnostic[],
-  ): string[] {
-    return diagnostics.map((diag) => {
-      const head =
-        diag.severity === 'error'
-          ? `Error: Run-mode compatibility [${diag.code}] ${diag.message}`
-          : `Warning: Run-mode compatibility [${diag.code}] ${diag.message}`;
-      return diag.action ? `${head} Action: ${diag.action}` : head;
-    });
-  }
-
   private emitRunModeCompatibilityDiagnostics(diagnostics: RunModeCompatibilityDiagnostic[]): void {
-    this.runModeCompatibilityDiagnosticLines(diagnostics).forEach((line) => this.log(line));
+    runModeCompatibilityDiagnosticLines(diagnostics).forEach((line) => this.log(line));
   }
 
   private addCoordSystemDiagnostic(code: CoordSystemDiagnosticCode, warning?: string): void {
@@ -4490,7 +4302,7 @@ export class LSAEngine {
           runModeCompatibilityDiagnostics: [...runModeDiagnostics],
         } as ParseOptions)
       : undefined;
-    const runModeCompatibilityLines = this.runModeCompatibilityDiagnosticLines(runModeDiagnostics);
+    const runModeCompatibilityLines = runModeCompatibilityDiagnosticLines(runModeDiagnostics);
     return {
       ...finalResult,
       parseState: mergedParseState,
@@ -4563,7 +4375,7 @@ export class LSAEngine {
     const requestedRunMode: RunMode =
       this.parseOptions?.runMode ??
       (this.parseOptions?.preanalysisMode ? 'preanalysis' : 'adjustment');
-    const runModeCompatibility = this.resolveRunModeCompatibilityOptions(
+    const runModeCompatibility = resolveRunModeCompatibilityOptions(
       requestedRunMode,
       this.parseOptions ?? {},
     );
