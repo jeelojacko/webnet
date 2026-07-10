@@ -22,6 +22,8 @@
 
 - [x] Survey CAD parcel COGO split batch 5 (July 2026): split parcel layout preview/evaluation helpers into `cadCogoParcelLayoutEvaluation.ts`, while keeping compatibility exports stable.
 
+- [x] Survey CAD parcel layout evaluation split batch 26 (July 2026): split parcel layout constraint messages and generated/manual constraint evaluation into `cadCogoParcelLayoutConstraints.ts`, while keeping `cadCogoParcelLayoutEvaluation.ts` exports stable.
+
 - [x] Survey CAD parcel COGO split batch 6 (July 2026): split generated-draft/frontage-line auto-layout utilities into `cadCogoParcelLayoutDrafts.ts`, while keeping compatibility exports stable.
 
 - [x] Survey CAD parcel COGO split batch 7 (July 2026): split generated-lot conflict detection and conflict-resolution helpers into `cadCogoParcelLayoutConflicts.ts`, while keeping compatibility exports stable.
