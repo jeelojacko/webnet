@@ -100,6 +100,10 @@ import {
   type DirectionSetStat,
 } from './adjustmentDirectionDiagnostics';
 import {
+  buildTsCorrelationDiagnostics,
+  type TsCorrelationResidualGroups,
+} from './adjustmentTsCorrelationDiagnostics';
+import {
   resolveRunModeCompatibilityOptions,
   runModeCompatibilityDiagnosticLines,
 } from './adjustmentRunModeCompatibility';
@@ -4929,14 +4933,7 @@ export class LSAEngine {
     const directionStats = new Map<string, DirectionSetStat>();
     const activeObservations = activeObservationsInput ?? this.collectActiveObservations();
     const constraints = buildCoordinateConstraints(this.stations, paramIndex, this.is2D);
-    const tsCorrelationRows = new Map<
-      string,
-      {
-        station: StationId;
-        setId?: string;
-        rows: Array<{ v: number; sigma: number; groupLabel: string }>;
-      }
-    >();
+    const tsCorrelationRows: TsCorrelationResidualGroups = new Map();
     const groupOrder = ['Angles', 'Directions', 'Distances', 'Az/Bearings', 'GPS', 'Level Data', 'Zenith'];
     const summarizeGroup = (obs: Observation): string => {
       if (obs.type === 'angle') return 'Angles';
@@ -5257,101 +5254,20 @@ export class LSAEngine {
 
     vtpv += coordinateConstraintWeightedSum(this.stations, constraints);
 
-    if (this.tsCorrelationEnabled && this.tsCorrelationRho > 0) {
-      const rho = Math.min(0.95, Math.max(0, this.tsCorrelationRho));
-      let equationCount = 0;
-      let pairCountTotal = 0;
-      let maxGroupSize = 0;
-      let offDiagAbsSumTotal = 0;
-      const groups: NonNullable<AdjustmentResult['tsCorrelationDiagnostics']>['groups'] = [];
-      tsCorrelationRows.forEach((entry, key) => {
-        const n = entry.rows.length;
-        equationCount += n;
-        maxGroupSize = Math.max(maxGroupSize, n);
-        if (n < 2) {
-          groups.push({
-            key,
-            station: entry.station,
-            setId: entry.setId,
-            rows: n,
-            pairCount: 0,
-          });
-          return;
-        }
-        const denom = (1 - rho) * (1 - rho + n * rho);
-        if (!Number.isFinite(denom) || denom <= 1e-24) return;
-        const a = 1 / (1 - rho);
-        const b = rho / denom;
-        let pairCount = 0;
-        let offDiagAbsSum = 0;
-
-        entry.rows.forEach((row) => {
-          const baseDiag = 1 / (row.sigma * row.sigma);
-          const corrDiag = (a - b) / (row.sigma * row.sigma);
-          const delta = (corrDiag - baseDiag) * row.v * row.v;
-          vtpv += delta;
-          addGroupContribution(row.groupLabel, delta);
-        });
-        for (let i = 0; i < n; i += 1) {
-          const ri = entry.rows[i];
-          for (let j = i + 1; j < n; j += 1) {
-            const rj = entry.rows[j];
-            const w = -b / (ri.sigma * rj.sigma);
-            const contribution = 2 * w * ri.v * rj.v;
-            vtpv += contribution;
-            if (ri.groupLabel === rj.groupLabel) {
-              addGroupContribution(ri.groupLabel, contribution);
-            } else {
-              addGroupContribution(ri.groupLabel, contribution * 0.5);
-              addGroupContribution(rj.groupLabel, contribution * 0.5);
-            }
-            pairCount += 1;
-            offDiagAbsSum += Math.abs(w);
-          }
-        }
-
-        pairCountTotal += pairCount;
-        offDiagAbsSumTotal += offDiagAbsSum;
-        groups.push({
-          key,
-          station: entry.station,
-          setId: entry.setId,
-          rows: n,
-          pairCount,
-          meanAbsOffDiagWeight: pairCount > 0 ? offDiagAbsSum / pairCount : undefined,
-        });
-      });
-      this.tsCorrelationDiagnostics = {
-        enabled: true,
-        rho,
-        scope: this.tsCorrelationScope ?? 'set',
-        groupCount: tsCorrelationRows.size,
-        equationCount,
-        pairCount: pairCountTotal,
-        maxGroupSize,
-        meanAbsOffDiagWeight: pairCountTotal > 0 ? offDiagAbsSumTotal / pairCountTotal : undefined,
-        groups: groups.sort((a, b) => {
-          if (b.rows !== a.rows) return b.rows - a.rows;
-          if (b.pairCount !== a.pairCount) return b.pairCount - a.pairCount;
-          return a.key.localeCompare(b.key);
-        }),
-      };
-      this.log(
-        `TS correlation diagnostics: groups=${this.tsCorrelationDiagnostics.groupCount}, eq=${this.tsCorrelationDiagnostics.equationCount}, pairs=${this.tsCorrelationDiagnostics.pairCount}, maxGroup=${this.tsCorrelationDiagnostics.maxGroupSize}, mean|offdiagW|=${this.tsCorrelationDiagnostics.meanAbsOffDiagWeight != null ? this.tsCorrelationDiagnostics.meanAbsOffDiagWeight.toExponential(3) : '-'}`,
-      );
-    } else {
-      this.tsCorrelationDiagnostics = {
-        enabled: false,
-        rho: 0,
-        scope: this.tsCorrelationScope ?? 'set',
-        groupCount: 0,
-        equationCount: 0,
-        pairCount: 0,
-        maxGroupSize: 0,
-        groups: [],
-      };
+    const tsCorrelationDiagnostics = buildTsCorrelationDiagnostics({
+      enabled: this.tsCorrelationEnabled && this.tsCorrelationRho > 0,
+      rho: this.tsCorrelationRho,
+      scope: this.tsCorrelationScope ?? 'set',
+      rows: tsCorrelationRows,
+    });
+    vtpv += tsCorrelationDiagnostics.vtpvDelta;
+    tsCorrelationDiagnostics.groupContributions.forEach(({ label, contribution }) => {
+      addGroupContribution(label, contribution);
+    });
+    this.tsCorrelationDiagnostics = tsCorrelationDiagnostics.diagnostics;
+    if (tsCorrelationDiagnostics.logLine) {
+      this.log(tsCorrelationDiagnostics.logLine);
     }
-
     this.seuw = this.preanalysisMode ? 1 : this.dof > 0 ? Math.sqrt(vtpv / this.dof) : 0;
 
     this.chiSquare = undefined;
