@@ -1,7 +1,7 @@
 import { parseProj4Parameters, USA_DATUM_OPS, type CrsDefinition } from './crsCatalogCore';
 
 export const USA_SPCS_CATALOG_PART_1: CrsDefinition[] = [
-  {
+{
     id: 'US_NAD83_2011_SPCS_NY_EAST',
     label: 'NAD83(2011) / New York East',
     catalogGroup: 'us-spcs',
@@ -29,7 +29,7 @@ export const USA_SPCS_CATALOG_PART_1: CrsDefinition[] = [
     },
     supportedDatumOps: USA_DATUM_OPS,
   },
-  {
+{
     id: 'US_NAD83_2011_SPCS_NY_EAST_FTUS',
     label: 'NAD83(2011) / New York East (ftUS)',
     catalogGroup: 'us-spcs',
@@ -57,7 +57,7 @@ export const USA_SPCS_CATALOG_PART_1: CrsDefinition[] = [
     },
     supportedDatumOps: USA_DATUM_OPS,
   },
-  {
+{
     id: 'US_NAD83_2011_SPCS_NY_CENTRAL',
     label: 'NAD83(2011) / New York Central',
     catalogGroup: 'us-spcs',
@@ -85,7 +85,7 @@ export const USA_SPCS_CATALOG_PART_1: CrsDefinition[] = [
     },
     supportedDatumOps: USA_DATUM_OPS,
   },
-  {
+{
     id: 'US_NAD83_2011_SPCS_NY_CENTRAL_FTUS',
     label: 'NAD83(2011) / New York Central (ftUS)',
     catalogGroup: 'us-spcs',
@@ -113,7 +113,7 @@ export const USA_SPCS_CATALOG_PART_1: CrsDefinition[] = [
     },
     supportedDatumOps: USA_DATUM_OPS,
   },
-  {
+{
     id: 'US_NAD83_2011_SPCS_NY_WEST',
     label: 'NAD83(2011) / New York West',
     catalogGroup: 'us-spcs',
@@ -141,7 +141,7 @@ export const USA_SPCS_CATALOG_PART_1: CrsDefinition[] = [
     },
     supportedDatumOps: USA_DATUM_OPS,
   },
-  {
+{
     id: 'US_NAD83_2011_SPCS_NY_WEST_FTUS',
     label: 'NAD83(2011) / New York West (ftUS)',
     catalogGroup: 'us-spcs',
@@ -169,7 +169,7 @@ export const USA_SPCS_CATALOG_PART_1: CrsDefinition[] = [
     },
     supportedDatumOps: USA_DATUM_OPS,
   },
-  {
+{
     id: 'US_NAD83_2011_SPCS_CA_ZONE_1',
     label: 'NAD83(2011) / California zone 1',
     catalogGroup: 'us-spcs',
@@ -198,7 +198,7 @@ export const USA_SPCS_CATALOG_PART_1: CrsDefinition[] = [
     },
     supportedDatumOps: USA_DATUM_OPS,
   },
-  {
+{
     id: 'US_NAD83_2011_SPCS_CA_ZONE_1_FTUS',
     label: 'NAD83(2011) / California zone 1 (ftUS)',
     catalogGroup: 'us-spcs',
@@ -227,7 +227,7 @@ export const USA_SPCS_CATALOG_PART_1: CrsDefinition[] = [
     },
     supportedDatumOps: USA_DATUM_OPS,
   },
-  {
+{
     id: 'US_NAD83_2011_SPCS_CA_ZONE_2',
     label: 'NAD83(2011) / California zone 2',
     catalogGroup: 'us-spcs',
@@ -256,7 +256,7 @@ export const USA_SPCS_CATALOG_PART_1: CrsDefinition[] = [
     },
     supportedDatumOps: USA_DATUM_OPS,
   },
-  {
+{
     id: 'US_NAD83_2011_SPCS_CA_ZONE_2_FTUS',
     label: 'NAD83(2011) / California zone 2 (ftUS)',
     catalogGroup: 'us-spcs',
@@ -285,7 +285,7 @@ export const USA_SPCS_CATALOG_PART_1: CrsDefinition[] = [
     },
     supportedDatumOps: USA_DATUM_OPS,
   },
-  {
+{
     id: 'US_NAD83_2011_SPCS_CA_ZONE_3',
     label: 'NAD83(2011) / California zone 3',
     catalogGroup: 'us-spcs',
@@ -314,7 +314,7 @@ export const USA_SPCS_CATALOG_PART_1: CrsDefinition[] = [
     },
     supportedDatumOps: USA_DATUM_OPS,
   },
-  {
+{
     id: 'US_NAD83_2011_SPCS_CA_ZONE_3_FTUS',
     label: 'NAD83(2011) / California zone 3 (ftUS)',
     catalogGroup: 'us-spcs',
@@ -343,7 +343,7 @@ export const USA_SPCS_CATALOG_PART_1: CrsDefinition[] = [
     },
     supportedDatumOps: USA_DATUM_OPS,
   },
-  {
+{
     id: 'US_NAD83_2011_SPCS_CA_ZONE_4',
     label: 'NAD83(2011) / California zone 4',
     catalogGroup: 'us-spcs',
@@ -372,7 +372,7 @@ export const USA_SPCS_CATALOG_PART_1: CrsDefinition[] = [
     },
     supportedDatumOps: USA_DATUM_OPS,
   },
-  {
+{
     id: 'US_NAD83_2011_SPCS_CA_ZONE_4_FTUS',
     label: 'NAD83(2011) / California zone 4 (ftUS)',
     catalogGroup: 'us-spcs',
@@ -401,7 +401,7 @@ export const USA_SPCS_CATALOG_PART_1: CrsDefinition[] = [
     },
     supportedDatumOps: USA_DATUM_OPS,
   },
-  {
+{
     id: 'US_NAD83_2011_SPCS_CA_ZONE_5',
     label: 'NAD83(2011) / California zone 5',
     catalogGroup: 'us-spcs',
@@ -427,267 +427,6 @@ export const USA_SPCS_CATALOG_PART_1: CrsDefinition[] = [
       lat2Deg: 34.0333333333333,
       falseEastingM: 2000000,
       falseNorthingM: 500000,
-    },
-    supportedDatumOps: USA_DATUM_OPS,
-  },
-  {
-    id: 'US_NAD83_2011_SPCS_CA_ZONE_5_FTUS',
-    label: 'NAD83(2011) / California zone 5 (ftUS)',
-    catalogGroup: 'us-spcs',
-    region: 'usa',
-    datum: 'NAD83',
-    datumRealization: 'NAD83(2011)',
-    projectionFamily: 'lambert-conformal-conic',
-    linearUnit: 'us-ft',
-    axisOrder: 'E,N',
-    areaOfUse: 'United States (California zone 5)',
-    areaOfUseBounds: { minLatDeg: 32.76, maxLatDeg: 35.81, minLonDeg: -121.42, maxLonDeg: -114.12 },
-    epsgCode: '6424',
-    validityStatus: 'current',
-    proj4:
-      '+proj=lcc +lat_0=33.5 +lon_0=-118 +lat_1=35.4666666666667 +lat_2=34.0333333333333 +x_0=2000000.0001016 +y_0=500000.0001016 +ellps=GRS80 +units=us-ft +no_defs +type=crs',
-    projParams: parseProj4Parameters(
-      '+proj=lcc +lat_0=33.5 +lon_0=-118 +lat_1=35.4666666666667 +lat_2=34.0333333333333 +x_0=2000000.0001016 +y_0=500000.0001016 +ellps=GRS80 +units=us-ft +no_defs +type=crs',
-    ),
-    projectionParams: {
-      lat0Deg: 33.5,
-      lon0Deg: -118,
-      lat1Deg: 35.4666666666667,
-      lat2Deg: 34.0333333333333,
-      falseEastingM: 2000000.0001016,
-      falseNorthingM: 500000.0001016,
-    },
-    supportedDatumOps: USA_DATUM_OPS,
-  },
-  {
-    id: 'US_NAD83_2011_SPCS_CA_ZONE_6',
-    label: 'NAD83(2011) / California zone 6',
-    catalogGroup: 'us-spcs',
-    region: 'usa',
-    datum: 'NAD83',
-    datumRealization: 'NAD83(2011)',
-    projectionFamily: 'lambert-conformal-conic',
-    linearUnit: 'm',
-    axisOrder: 'E,N',
-    areaOfUse: 'United States (California zone 6)',
-    areaOfUseBounds: { minLatDeg: 32.53, maxLatDeg: 34.08, minLonDeg: -118.15, maxLonDeg: -114.42 },
-    epsgCode: '6425',
-    validityStatus: 'current',
-    proj4:
-      '+proj=lcc +lat_0=32.1666666666667 +lon_0=-116.25 +lat_1=33.8833333333333 +lat_2=32.7833333333333 +x_0=2000000 +y_0=500000 +ellps=GRS80 +units=m +no_defs +type=crs',
-    projParams: parseProj4Parameters(
-      '+proj=lcc +lat_0=32.1666666666667 +lon_0=-116.25 +lat_1=33.8833333333333 +lat_2=32.7833333333333 +x_0=2000000 +y_0=500000 +ellps=GRS80 +units=m +no_defs +type=crs',
-    ),
-    projectionParams: {
-      lat0Deg: 32.1666666666667,
-      lon0Deg: -116.25,
-      lat1Deg: 33.8833333333333,
-      lat2Deg: 32.7833333333333,
-      falseEastingM: 2000000,
-      falseNorthingM: 500000,
-    },
-    supportedDatumOps: USA_DATUM_OPS,
-  },
-  {
-    id: 'US_NAD83_2011_SPCS_CA_ZONE_6_FTUS',
-    label: 'NAD83(2011) / California zone 6 (ftUS)',
-    catalogGroup: 'us-spcs',
-    region: 'usa',
-    datum: 'NAD83',
-    datumRealization: 'NAD83(2011)',
-    projectionFamily: 'lambert-conformal-conic',
-    linearUnit: 'us-ft',
-    axisOrder: 'E,N',
-    areaOfUse: 'United States (California zone 6)',
-    areaOfUseBounds: { minLatDeg: 32.53, maxLatDeg: 34.08, minLonDeg: -118.15, maxLonDeg: -114.42 },
-    epsgCode: '6426',
-    validityStatus: 'current',
-    proj4:
-      '+proj=lcc +lat_0=32.1666666666667 +lon_0=-116.25 +lat_1=33.8833333333333 +lat_2=32.7833333333333 +x_0=2000000.0001016 +y_0=500000.0001016 +ellps=GRS80 +units=us-ft +no_defs +type=crs',
-    projParams: parseProj4Parameters(
-      '+proj=lcc +lat_0=32.1666666666667 +lon_0=-116.25 +lat_1=33.8833333333333 +lat_2=32.7833333333333 +x_0=2000000.0001016 +y_0=500000.0001016 +ellps=GRS80 +units=us-ft +no_defs +type=crs',
-    ),
-    projectionParams: {
-      lat0Deg: 32.1666666666667,
-      lon0Deg: -116.25,
-      lat1Deg: 33.8833333333333,
-      lat2Deg: 32.7833333333333,
-      falseEastingM: 2000000.0001016,
-      falseNorthingM: 500000.0001016,
-    },
-    supportedDatumOps: USA_DATUM_OPS,
-  },
-  {
-    id: 'US_NAD83_2011_SPCS_PA_NORTH',
-    label: 'NAD83(2011) / Pennsylvania North',
-    catalogGroup: 'us-spcs',
-    region: 'usa',
-    datum: 'NAD83',
-    datumRealization: 'NAD83(2011)',
-    projectionFamily: 'lambert-conformal-conic',
-    linearUnit: 'm',
-    axisOrder: 'E,N',
-    areaOfUse: 'United States (Pennsylvania north zone)',
-    areaOfUseBounds: { minLatDeg: 40.6, maxLatDeg: 42.53, minLonDeg: -80.53, maxLonDeg: -74.7 },
-    epsgCode: '6562',
-    validityStatus: 'current',
-    proj4:
-      '+proj=lcc +lat_0=40.1666666666667 +lon_0=-77.75 +lat_1=41.95 +lat_2=40.8833333333333 +x_0=600000 +y_0=0 +ellps=GRS80 +units=m +no_defs +type=crs',
-    projParams: parseProj4Parameters(
-      '+proj=lcc +lat_0=40.1666666666667 +lon_0=-77.75 +lat_1=41.95 +lat_2=40.8833333333333 +x_0=600000 +y_0=0 +ellps=GRS80 +units=m +no_defs +type=crs',
-    ),
-    projectionParams: {
-      lat0Deg: 40.1666666666667,
-      lon0Deg: -77.75,
-      lat1Deg: 41.95,
-      lat2Deg: 40.8833333333333,
-      falseEastingM: 600000,
-      falseNorthingM: 0,
-    },
-    supportedDatumOps: USA_DATUM_OPS,
-  },
-  {
-    id: 'US_NAD83_2011_SPCS_PA_NORTH_FTUS',
-    label: 'NAD83(2011) / Pennsylvania North (ftUS)',
-    catalogGroup: 'us-spcs',
-    region: 'usa',
-    datum: 'NAD83',
-    datumRealization: 'NAD83(2011)',
-    projectionFamily: 'lambert-conformal-conic',
-    linearUnit: 'us-ft',
-    axisOrder: 'E,N',
-    areaOfUse: 'United States (Pennsylvania north zone)',
-    areaOfUseBounds: { minLatDeg: 40.6, maxLatDeg: 42.53, minLonDeg: -80.53, maxLonDeg: -74.7 },
-    epsgCode: '6563',
-    validityStatus: 'current',
-    proj4:
-      '+proj=lcc +lat_0=40.1666666666667 +lon_0=-77.75 +lat_1=41.95 +lat_2=40.8833333333333 +x_0=600000 +y_0=0 +ellps=GRS80 +units=us-ft +no_defs +type=crs',
-    projParams: parseProj4Parameters(
-      '+proj=lcc +lat_0=40.1666666666667 +lon_0=-77.75 +lat_1=41.95 +lat_2=40.8833333333333 +x_0=600000 +y_0=0 +ellps=GRS80 +units=us-ft +no_defs +type=crs',
-    ),
-    projectionParams: {
-      lat0Deg: 40.1666666666667,
-      lon0Deg: -77.75,
-      lat1Deg: 41.95,
-      lat2Deg: 40.8833333333333,
-      falseEastingM: 600000,
-      falseNorthingM: 0,
-    },
-    supportedDatumOps: USA_DATUM_OPS,
-  },
-  {
-    id: 'US_NAD83_2011_SPCS_PA_SOUTH',
-    label: 'NAD83(2011) / Pennsylvania South',
-    catalogGroup: 'us-spcs',
-    region: 'usa',
-    datum: 'NAD83',
-    datumRealization: 'NAD83(2011)',
-    projectionFamily: 'lambert-conformal-conic',
-    linearUnit: 'm',
-    axisOrder: 'E,N',
-    areaOfUse: 'United States (Pennsylvania south zone)',
-    areaOfUseBounds: { minLatDeg: 39.71, maxLatDeg: 41.18, minLonDeg: -80.53, maxLonDeg: -74.72 },
-    epsgCode: '6564',
-    validityStatus: 'current',
-    proj4:
-      '+proj=lcc +lat_0=39.3333333333333 +lon_0=-77.75 +lat_1=40.9666666666667 +lat_2=39.9333333333333 +x_0=600000 +y_0=0 +ellps=GRS80 +units=m +no_defs +type=crs',
-    projParams: parseProj4Parameters(
-      '+proj=lcc +lat_0=39.3333333333333 +lon_0=-77.75 +lat_1=40.9666666666667 +lat_2=39.9333333333333 +x_0=600000 +y_0=0 +ellps=GRS80 +units=m +no_defs +type=crs',
-    ),
-    projectionParams: {
-      lat0Deg: 39.3333333333333,
-      lon0Deg: -77.75,
-      lat1Deg: 40.9666666666667,
-      lat2Deg: 39.9333333333333,
-      falseEastingM: 600000,
-      falseNorthingM: 0,
-    },
-    supportedDatumOps: USA_DATUM_OPS,
-  },
-  {
-    id: 'US_NAD83_2011_SPCS_PA_SOUTH_FTUS',
-    label: 'NAD83(2011) / Pennsylvania South (ftUS)',
-    catalogGroup: 'us-spcs',
-    region: 'usa',
-    datum: 'NAD83',
-    datumRealization: 'NAD83(2011)',
-    projectionFamily: 'lambert-conformal-conic',
-    linearUnit: 'us-ft',
-    axisOrder: 'E,N',
-    areaOfUse: 'United States (Pennsylvania south zone)',
-    areaOfUseBounds: { minLatDeg: 39.71, maxLatDeg: 41.18, minLonDeg: -80.53, maxLonDeg: -74.72 },
-    epsgCode: '6565',
-    validityStatus: 'current',
-    proj4:
-      '+proj=lcc +lat_0=39.3333333333333 +lon_0=-77.75 +lat_1=40.9666666666667 +lat_2=39.9333333333333 +x_0=600000 +y_0=0 +ellps=GRS80 +units=us-ft +no_defs +type=crs',
-    projParams: parseProj4Parameters(
-      '+proj=lcc +lat_0=39.3333333333333 +lon_0=-77.75 +lat_1=40.9666666666667 +lat_2=39.9333333333333 +x_0=600000 +y_0=0 +ellps=GRS80 +units=us-ft +no_defs +type=crs',
-    ),
-    projectionParams: {
-      lat0Deg: 39.3333333333333,
-      lon0Deg: -77.75,
-      lat1Deg: 40.9666666666667,
-      lat2Deg: 39.9333333333333,
-      falseEastingM: 600000,
-      falseNorthingM: 0,
-    },
-    supportedDatumOps: USA_DATUM_OPS,
-  },
-  {
-    id: 'US_NAD83_2011_SPCS_TX_NORTH',
-    label: 'NAD83(2011) / Texas north',
-    catalogGroup: 'us-spcs',
-    region: 'usa',
-    datum: 'NAD83',
-    datumRealization: 'NAD83(2011)',
-    projectionFamily: 'lambert-conformal-conic',
-    linearUnit: 'm',
-    axisOrder: 'E,N',
-    areaOfUse: 'United States (Texas north zone)',
-    areaOfUseBounds: { minLatDeg: 34.3, maxLatDeg: 36.5, minLonDeg: -103.03, maxLonDeg: -99.99 },
-    epsgCode: '6581',
-    validityStatus: 'current',
-    proj4:
-      '+proj=lcc +lat_0=34 +lon_0=-101.5 +lat_1=36.1833333333333 +lat_2=34.65 +x_0=200000 +y_0=1000000 +ellps=GRS80 +units=m +no_defs +type=crs',
-    projParams: parseProj4Parameters(
-      '+proj=lcc +lat_0=34 +lon_0=-101.5 +lat_1=36.1833333333333 +lat_2=34.65 +x_0=200000 +y_0=1000000 +ellps=GRS80 +units=m +no_defs +type=crs',
-    ),
-    projectionParams: {
-      lat0Deg: 34,
-      lon0Deg: -101.5,
-      lat1Deg: 36.1833333333333,
-      lat2Deg: 34.65,
-      falseEastingM: 200000,
-      falseNorthingM: 1000000,
-    },
-    supportedDatumOps: USA_DATUM_OPS,
-  },
-  {
-    id: 'US_NAD83_2011_SPCS_TX_NORTH_FTUS',
-    label: 'NAD83(2011) / Texas north (ftUS)',
-    catalogGroup: 'us-spcs',
-    region: 'usa',
-    datum: 'NAD83',
-    datumRealization: 'NAD83(2011)',
-    projectionFamily: 'lambert-conformal-conic',
-    linearUnit: 'us-ft',
-    axisOrder: 'E,N',
-    areaOfUse: 'United States (Texas north zone)',
-    areaOfUseBounds: { minLatDeg: 34.3, maxLatDeg: 36.5, minLonDeg: -103.03, maxLonDeg: -99.99 },
-    epsgCode: '6582',
-    validityStatus: 'current',
-    proj4:
-      '+proj=lcc +lat_0=34 +lon_0=-101.5 +lat_1=36.1833333333333 +lat_2=34.65 +x_0=200000.0001016 +y_0=999999.9998984 +ellps=GRS80 +units=us-ft +no_defs +type=crs',
-    projParams: parseProj4Parameters(
-      '+proj=lcc +lat_0=34 +lon_0=-101.5 +lat_1=36.1833333333333 +lat_2=34.65 +x_0=200000.0001016 +y_0=999999.9998984 +ellps=GRS80 +units=us-ft +no_defs +type=crs',
-    ),
-    projectionParams: {
-      lat0Deg: 34,
-      lon0Deg: -101.5,
-      lat1Deg: 36.1833333333333,
-      lat2Deg: 34.65,
-      falseEastingM: 200000.0001016,
-      falseNorthingM: 999999.9998984,
     },
     supportedDatumOps: USA_DATUM_OPS,
   },
