@@ -112,6 +112,12 @@ import {
   helpTextForSession,
   promptForSession,
 } from './useSurveyCadCommandText';
+import {
+  buildActiveBatchCogoDraftView,
+  buildActiveTraverseDraftView,
+  type ActiveBatchCogoDraftView,
+  type ActiveTraverseDraftView,
+} from './useSurveyCadCommandDrafts';
 
 interface UseSurveyCadCommandsArgs {
   activeSnap: CadSnapCandidate | null;
@@ -186,57 +192,8 @@ interface UseSurveyCadCommandsResult {
         firstSegmentId?: string;
       }
     | null;
-  activeBatchCogoDraft: {
-    inputValue: string;
-    startPoint: { label: string; x: number; y: number } | null;
-    startPointSource: 'selected' | 'input' | null;
-    endPoint: { label: string; x: number; y: number } | null;
-    previewRows: Array<{
-      lineNumber: number;
-      input: string;
-      kind: 'start' | 'line' | 'curve';
-      status: 'ok' | 'warning' | 'error';
-      summary: string;
-    }>;
-    warnings: Array<{
-      code: string;
-      message: string;
-      severity: 'info' | 'warning' | 'error';
-    }>;
-    generatedPointCount: number;
-    generatedLineCount: number;
-    generatedArcCount: number;
-    canCommit: boolean;
-  } | null;
-  activeTraverseDraft: {
-    points: Array<{ label: string; x: number; y: number }>;
-    mode: TraverseDraftMode;
-    closePoint: { label: string; x: number; y: number } | null;
-    legs: Array<{
-      fromLabel: string;
-      toLabel: string;
-      bearing: string;
-      distance: number;
-      inputValue: string;
-    }>;
-    sideshots: TraverseSideshotDraft[];
-    totalLength: number;
-    closureTargetLabel: string | null;
-    closureDeltaX: number | null;
-    closureDeltaY: number | null;
-    closureDistance: number | null;
-    closureBearing: string | null;
-    closureRatio: number | null;
-    adjustment: {
-      method: CadTraverseAdjustmentMethod;
-      targetLabel: string;
-      rawClosureDistance: number;
-      adjustedClosureDistance: number;
-      rawClosureBearing: string | null;
-      adjustedClosureBearing: string | null;
-      angularCorrectionPerLegSec: number | null;
-    } | null;
-  } | null;
+  activeBatchCogoDraft: ActiveBatchCogoDraftView | null;
+  activeTraverseDraft: ActiveTraverseDraftView | null;
   snapConstructionContext: CadSnapConstructionContext;
   commandExpectsPointPick: boolean;
   canUseActiveSnap: boolean;
@@ -3822,117 +3779,9 @@ export const useSurveyCadCommands = ({
     });
   };
 
-  const activeTraverseDraft = useMemo(() => {
-    if (session?.key !== 'TRAVERSE') return null;
-    const points = session.points.map((point) => ({
-      label: point.label,
-      x: point.x,
-      y: point.y,
-    }));
-    const legs = session.points.slice(1).map((point, index) => {
-      const fromPoint = session.points[index]!;
-      const inverse = buildCadInverseSummary(fromPoint, point);
-      return {
-        fromLabel: fromPoint.label,
-        toLabel: point.label,
-        bearing: inverse.bearing,
-        distance: inverse.distance,
-        inputValue: session.legInputs[index] ?? `${inverse.bearing},${inverse.distance.toFixed(3)}`,
-      };
-    });
-    const totalLength = legs.reduce((sum, leg) => sum + leg.distance, 0);
-    const closureTarget = buildTraverseClosureTarget(session.mode, session.inputPoints, session.closePoint);
-    if (session.points.length < 2) {
-      return {
-        points,
-        mode: session.mode,
-        closePoint: session.closePoint
-          ? { label: session.closePoint.label, x: session.closePoint.x, y: session.closePoint.y }
-          : null,
-        legs,
-        sideshots: session.sideshots.map((sideshot) => recalculateTraverseSideshotPoint(session.points, sideshot)),
-        totalLength,
-        closureTargetLabel: closureTarget?.label ?? null,
-        closureDeltaX: null,
-        closureDeltaY: null,
-        closureDistance: null,
-        closureBearing: null,
-        closureRatio: null,
-        adjustment:
-          session.adjustment == null
-            ? null
-            : {
-                method: session.adjustment.method,
-                targetLabel: session.adjustment.summary.targetLabel,
-                rawClosureDistance: session.adjustment.summary.rawClosureDistanceMeters,
-                adjustedClosureDistance: session.adjustment.summary.adjustedClosureDistanceMeters,
-                rawClosureBearing: session.adjustment.summary.rawClosureBearing,
-                adjustedClosureBearing: session.adjustment.summary.adjustedClosureBearing,
-                angularCorrectionPerLegSec: session.adjustment.summary.angularCorrectionPerLegSec,
-              },
-      };
-    }
-    const closureTargetPoint = closureTarget;
-    const lastPoint = session.points[session.points.length - 1]!;
-    const closureDistance =
-      closureTargetPoint == null ? null : buildCadDistanceSummary(lastPoint, closureTargetPoint).distance2d;
-    const closureDelta =
-      closureTargetPoint == null ? null : buildCadDistanceSummary(lastPoint, closureTargetPoint);
-    const closureBearing =
-      closureTargetPoint && closureDistance != null && closureDistance > 1e-9
-        ? buildCadInverseSummary(
-            lastPoint,
-            closureTargetPoint,
-          ).bearing
-        : null;
-    return {
-      points,
-      mode: session.mode,
-      closePoint: session.closePoint
-        ? { label: session.closePoint.label, x: session.closePoint.x, y: session.closePoint.y }
-        : null,
-      legs,
-      sideshots: session.sideshots.map((sideshot) => recalculateTraverseSideshotPoint(session.points, sideshot)),
-      totalLength,
-      closureTargetLabel: closureTargetPoint?.label ?? null,
-      closureDeltaX: closureDelta?.deltaX ?? null,
-      closureDeltaY: closureDelta?.deltaY ?? null,
-      closureDistance,
-      closureBearing,
-      closureRatio:
-        closureDistance != null && closureDistance > 1e-9 && totalLength > 0
-          ? totalLength / closureDistance
-          : null,
-      adjustment:
-        session.adjustment == null
-          ? null
-          : {
-              method: session.adjustment.method,
-              targetLabel: session.adjustment.summary.targetLabel,
-              rawClosureDistance: session.adjustment.summary.rawClosureDistanceMeters,
-              adjustedClosureDistance: session.adjustment.summary.adjustedClosureDistanceMeters,
-              rawClosureBearing: session.adjustment.summary.rawClosureBearing,
-              adjustedClosureBearing: session.adjustment.summary.adjustedClosureBearing,
-              angularCorrectionPerLegSec: session.adjustment.summary.angularCorrectionPerLegSec,
-            },
-    };
-  }, [session]);
+  const activeTraverseDraft = useMemo(() => buildActiveTraverseDraftView(session), [session]);
 
-  const activeBatchCogoDraft = useMemo(() => {
-    if (!session || session.key !== 'BATCH_COGO') return null;
-    return {
-      inputValue: session.inputValue,
-      startPoint: session.draft.startPoint,
-      startPointSource: session.draft.startPointSource,
-      endPoint: session.draft.endPoint,
-      previewRows: session.draft.previewRows,
-      warnings: session.draft.warnings,
-      generatedPointCount: session.draft.generatedPointCount,
-      generatedLineCount: session.draft.generatedLineCount,
-      generatedArcCount: session.draft.generatedArcCount,
-      canCommit: session.draft.canCommit,
-    };
-  }, [session]);
+  const activeBatchCogoDraft = useMemo(() => buildActiveBatchCogoDraftView(session), [session]);
 
   return {
     activeCommandKey: session?.key ?? null,
