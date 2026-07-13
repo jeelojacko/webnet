@@ -117,6 +117,11 @@ import {
   buildCommandPreview,
   type CadCommandPreviewState,
 } from './useSurveyCadCommandPreview';
+import {
+  buildActiveEditCommandTargets,
+  buildSelectedLineCommandPoints,
+  buildSelectedLinePairCommandPoints,
+} from './useSurveyCadCommandSelection';
 
 export type { CadCommandPreviewState } from './useSurveyCadCommandPreview';
 
@@ -312,53 +317,11 @@ export const useSurveyCadCommands = ({
   const [session, setSession] = useState<CommandSession | null>(null);
   const sessionRef = useRef<CommandSession | null>(session);
   const selectedLineCommandPoints = useMemo(
-    () =>
-      selectedLineForCoreCogo
-        ? {
-            start: {
-              x: selectedLineForCoreCogo.fromX,
-              y: selectedLineForCoreCogo.fromY,
-              label: selectedLineForCoreCogo.fromStationId,
-            } as CommandPoint,
-            end: {
-              x: selectedLineForCoreCogo.toX,
-              y: selectedLineForCoreCogo.toY,
-              label: selectedLineForCoreCogo.toStationId,
-            } as CommandPoint,
-          }
-        : null,
+    () => buildSelectedLineCommandPoints(selectedLineForCoreCogo),
     [selectedLineForCoreCogo],
   );
   const selectedLinePairCommandPoints = useMemo(
-    () =>
-      selectedLinePairForIntersection
-        ? {
-            first: {
-              start: {
-                x: selectedLinePairForIntersection[0].fromX,
-                y: selectedLinePairForIntersection[0].fromY,
-                label: selectedLinePairForIntersection[0].fromStationId,
-              } as CommandPoint,
-              end: {
-                x: selectedLinePairForIntersection[0].toX,
-                y: selectedLinePairForIntersection[0].toY,
-                label: selectedLinePairForIntersection[0].toStationId,
-              } as CommandPoint,
-            },
-            second: {
-              start: {
-                x: selectedLinePairForIntersection[1].fromX,
-                y: selectedLinePairForIntersection[1].fromY,
-                label: selectedLinePairForIntersection[1].fromStationId,
-              } as CommandPoint,
-              end: {
-                x: selectedLinePairForIntersection[1].toX,
-                y: selectedLinePairForIntersection[1].toY,
-                label: selectedLinePairForIntersection[1].toStationId,
-              } as CommandPoint,
-            },
-          }
-        : null,
+    () => buildSelectedLinePairCommandPoints(selectedLinePairForIntersection),
     [selectedLinePairForIntersection],
   );
 
@@ -3008,6 +2971,7 @@ export const useSurveyCadCommands = ({
   const activeTraverseDraft = useMemo(() => buildActiveTraverseDraftView(session), [session]);
 
   const activeBatchCogoDraft = useMemo(() => buildActiveBatchCogoDraftView(session), [session]);
+  const activeEditCommandTargets = useMemo(() => buildActiveEditCommandTargets(session), [session]);
 
   return {
     activeCommandKey: session?.key ?? null,
@@ -3015,36 +2979,9 @@ export const useSurveyCadCommands = ({
     commandPrompt: statusPrompt,
     commandHelpText: helpText,
     commandPreview,
-    activeTrimCuttingEntityIds:
-      session?.key === 'TRIM' && session.firstEntityId != null ? [session.firstEntityId] : [],
-    activeExtendTarget:
-      session?.key === 'EXTEND' &&
-      session.firstTargetEntityId != null &&
-      session.firstTargetPickPoint != null
-        ? {
-            entityId: session.firstTargetEntityId,
-            pickPoint: {
-              x: session.firstTargetPickPoint.x,
-              y: session.firstTargetPickPoint.y,
-            },
-            segmentId: session.firstTargetSegmentId,
-          }
-        : null,
-    activeFilletPreview:
-      session?.key === 'FILLET' &&
-      session.radius != null &&
-      session.firstEntityId != null &&
-      session.firstPickPoint != null
-        ? {
-            radius: session.radius,
-            firstEntityId: session.firstEntityId,
-            firstPickPoint: {
-              x: session.firstPickPoint.x,
-              y: session.firstPickPoint.y,
-            },
-            firstSegmentId: session.firstSegmentId,
-          }
-        : null,
+    activeTrimCuttingEntityIds: activeEditCommandTargets.activeTrimCuttingEntityIds,
+    activeExtendTarget: activeEditCommandTargets.activeExtendTarget,
+    activeFilletPreview: activeEditCommandTargets.activeFilletPreview,
     activeBatchCogoDraft,
     activeTraverseDraft,
     snapConstructionContext,
