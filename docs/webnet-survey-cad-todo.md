@@ -88,6 +88,8 @@
 
 - [x] Survey CAD command-hook split batch 5 (July 2026): split snap construction-context building into `useSurveyCadCommandConstruction.ts`, while preserving command snapping context behavior.
 
+- [x] Survey CAD command-hook split batch 6 (July 2026): split command preview-state building into `useSurveyCadCommandPreview.ts` and arc/curve preview helpers into `useSurveyCadCommandArcPreview.ts`, while preserving live preview behavior.
+
 - [x] Survey CAD naming fallback batch (June 2026): stop unlabeled arc/polyline/polygon hover and snap surfaces from leaking raw prefixed entity ids like `arc:*` or `polyline:*`, and keep the shared naming helper on readable type fallbacks instead.
 
 - [x] Survey CAD COGO report panel batch (June 2026): add a selected/latest COGO result overlay in the native CAD workspace, bridge live `INVERSE` query output into the shared report model, and add exportable TXT/CSV/Markdown report previews for persisted computation history.
