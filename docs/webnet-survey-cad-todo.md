@@ -78,6 +78,10 @@
 
 - [x] Survey CAD TypeScript structure enforcement batch 12 (July 2026): split move/copy/paste clipboard commands and trim/extend/fillet/grip modify commands into focused modules while preserving registry behavior.
 
+- [x] Survey CAD command-hook split batch 1 (July 2026): split command session types and shared point-pick / tangent-seed / traverse session helpers out of oversized `useSurveyCadCommands.ts`, while preserving hook behavior.
+
+- [x] Survey CAD command-hook split batch 2 (July 2026): split pure command input parsing helpers into `useSurveyCadCommandParsing.ts`, while preserving typed command behavior.
+
 - [x] Survey CAD naming fallback batch (June 2026): stop unlabeled arc/polyline/polygon hover and snap surfaces from leaking raw prefixed entity ids like `arc:*` or `polyline:*`, and keep the shared naming helper on readable type fallbacks instead.
 
 - [x] Survey CAD COGO report panel batch (June 2026): add a selected/latest COGO result overlay in the native CAD workspace, bridge live `INVERSE` query output into the shared report model, and add exportable TXT/CSV/Markdown report previews for persisted computation history.
