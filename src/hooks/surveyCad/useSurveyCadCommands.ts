@@ -82,8 +82,6 @@ import {
   buildTraverseLegInputFromPoints,
   recalculateTraverseSideshotPoint,
   sessionExpectsPointPick,
-  tangentSeedArcEntityIdFromPoint,
-  tangentSeedPointFromPoint,
 } from './useSurveyCadCommandSession';
 import {
   normalizeDraftPoint,
@@ -118,6 +116,7 @@ import {
   type ActiveBatchCogoDraftView,
   type ActiveTraverseDraftView,
 } from './useSurveyCadCommandDrafts';
+import { buildSnapConstructionContext } from './useSurveyCadCommandConstruction';
 
 interface UseSurveyCadCommandsArgs {
   activeSnap: CadSnapCandidate | null;
@@ -462,188 +461,7 @@ export const useSurveyCadCommands = ({
   );
   const helpText = useMemo(() => helpTextForSession(session), [session]);
   const commandExpectsPointPick = useMemo(() => sessionExpectsPointPick(session), [session]);
-  const snapConstructionContext = useMemo<CadSnapConstructionContext>(() => {
-    if (!session) {
-      return { active: false, basePoint: null };
-    }
-    switch (session.key) {
-      case 'POINT':
-        return { active: false, basePoint: null };
-      case 'COGO_POINT':
-      case 'LINE':
-      case 'INVERSE':
-      case 'BEARING_REPORT':
-      case 'DISTANCE_REPORT':
-        return session.startPoint
-          ? {
-              active: true,
-              basePoint: { x: session.startPoint.x, y: session.startPoint.y },
-              scopeSeedSegmentId: session.startPoint.snapSourceSegmentId ?? null,
-              tangentSeedArcEntityId: tangentSeedArcEntityIdFromPoint(session.startPoint),
-              tangentSeedPoint: tangentSeedPointFromPoint(session.startPoint),
-            }
-          : { active: false, basePoint: null };
-      case 'MULTI_INVERSE':
-      case 'AREA':
-        return session.points.length > 0
-          ? {
-              active: true,
-              basePoint: {
-                x: session.points[session.points.length - 1]!.x,
-                y: session.points[session.points.length - 1]!.y,
-              },
-            }
-          : { active: false, basePoint: null };
-      case 'PARCEL_SPLIT_BEARING':
-      case 'PARCEL_SPLIT_AREA':
-        return { active: false, basePoint: null };
-      case 'BEARING_BEARING_INTX':
-      case 'BEARING_DISTANCE_INTX':
-      case 'DISTANCE_DISTANCE_INTX':
-        return session.secondPoint
-          ? { active: false, basePoint: null }
-          : session.firstPoint
-            ? {
-                active: true,
-                basePoint: { x: session.firstPoint.x, y: session.firstPoint.y },
-              }
-            : { active: false, basePoint: null };
-      case 'CHORD_BEARING_CURVE':
-        return session.startPoint
-          ? {
-              active: true,
-              basePoint: { x: session.startPoint.x, y: session.startPoint.y },
-            }
-          : { active: false, basePoint: null };
-      case 'TURNED_POINT':
-        return session.backsightPoint
-          ? { active: false, basePoint: null }
-          : session.occupyPoint
-            ? {
-                active: true,
-                basePoint: { x: session.occupyPoint.x, y: session.occupyPoint.y },
-              }
-            : { active: false, basePoint: null };
-      case 'DEFLECT_POINT':
-      case 'POINT_ALONG_LINE':
-      case 'EXTEND_LINE':
-      case 'OFFSET_POINT':
-      case 'ALIGNMENT_OFFSET_CREATE':
-      case 'ALIGNMENT_STATION_EQUATION':
-      case 'ALIGNMENT_OFFSET_POINT':
-      case 'ALIGNMENT_INTERVAL_POINTS':
-      case 'BATCH_COGO':
-      case 'CURVE_SOLVER':
-      case 'RADIAL_BEARING':
-      case 'POINT_ON_CURVE':
-      case 'SUBDIVIDE_CURVE':
-      case 'OFFSET_CURVE':
-      case 'REVERSE_CURVE':
-      case 'COMPOUND_CURVE':
-      case 'OFFSET_INTX':
-        return { active: false, basePoint: null };
-      case 'PI_CURVE':
-        return session.backTangentPoint
-          ? { active: false, basePoint: null }
-          : session.piPoint
-            ? {
-                active: true,
-                basePoint: { x: session.piPoint.x, y: session.piPoint.y },
-              }
-            : { active: false, basePoint: null };
-      case 'LINE_CIRCLE_INTX':
-      case 'PERP_INTX':
-      case 'SKEW_INTX':
-        return session.targetPoint
-          ? { active: false, basePoint: null }
-          : {
-              active: true,
-              basePoint: { x: session.lineEnd.x, y: session.lineEnd.y },
-            };
-      case 'MOVE':
-      case 'COPY':
-      case 'EXTEND':
-      case 'TRIM':
-      case 'FILLET':
-        return { active: false, basePoint: null };
-      case 'PASTE':
-        return {
-          active: true,
-          basePoint: { x: session.startPoint.x, y: session.startPoint.y },
-          scopeSeedSegmentId: session.startPoint.snapSourceSegmentId ?? null,
-          tangentSeedArcEntityId: tangentSeedArcEntityIdFromPoint(session.startPoint),
-          tangentSeedPoint: tangentSeedPointFromPoint(session.startPoint),
-        };
-      case 'PLINE':
-      case 'TRAVERSE':
-      case 'ARC_3PT':
-        return session.points.length > 0
-          ? {
-              active: true,
-              basePoint: {
-                x: session.points[session.points.length - 1]!.x,
-                y: session.points[session.points.length - 1]!.y,
-              },
-              tangentSeedArcEntityId: tangentSeedArcEntityIdFromPoint(
-                session.points[session.points.length - 1]!,
-              ),
-              tangentSeedPoint: tangentSeedPointFromPoint(
-                session.points[session.points.length - 1]!,
-              ),
-            }
-          : { active: false, basePoint: null };
-      case 'ARC_SCE':
-      case 'ARC_CSE':
-        return session.points.length < 3 && session.points.length > 0
-          ? {
-              active: true,
-              basePoint: {
-                x: session.points[session.points.length - 1]!.x,
-                y: session.points[session.points.length - 1]!.y,
-              },
-              tangentSeedArcEntityId: tangentSeedArcEntityIdFromPoint(
-                session.points[session.points.length - 1]!,
-              ),
-              tangentSeedPoint: tangentSeedPointFromPoint(
-                session.points[session.points.length - 1]!,
-              ),
-            }
-          : { active: false, basePoint: null };
-      case 'ARC_SCA':
-      case 'ARC_CSA':
-      case 'ARC_SCL':
-      case 'ARC_CSL':
-      case 'ARC_SEA':
-      case 'ARC_SED':
-      case 'ARC_SER':
-        return session.points.length < 2 && session.points.length > 0
-          ? {
-              active: true,
-              basePoint: {
-                x: session.points[session.points.length - 1]!.x,
-                y: session.points[session.points.length - 1]!.y,
-              },
-            }
-          : { active: false, basePoint: null };
-      case 'CONTINUE_CURVE': {
-        const endPoint = cadArcEndPoint(session.sourceArc);
-        return {
-          active: true,
-          basePoint: endPoint,
-          tangentSeedArcEntityId: session.sourceArc.id,
-          tangentSeedPoint: endPoint,
-        };
-      }
-      case 'TANGENT_CURVE':
-        return session.aheadTangentPoint == null
-          ? session.backTangentPoint
-            ? { active: true, basePoint: { x: session.backTangentPoint.x, y: session.backTangentPoint.y } }
-            : session.piPoint
-              ? { active: true, basePoint: { x: session.piPoint.x, y: session.piPoint.y } }
-              : { active: false, basePoint: null }
-          : { active: false, basePoint: null };
-    }
-  }, [session]);
+  const snapConstructionContext = useMemo(() => buildSnapConstructionContext(session), [session]);
   const commandPreview = useMemo<CadCommandPreviewState | null>(() => {
     if (!session) return null;
     switch (session.key) {
