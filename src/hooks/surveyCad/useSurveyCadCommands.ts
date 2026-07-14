@@ -122,6 +122,7 @@ import {
   buildSelectedLineCommandPoints,
   buildSelectedLinePairCommandPoints,
 } from './useSurveyCadCommandSelection';
+import { useSurveyCadCommandStarters } from './useSurveyCadCommandStarters';
 
 export type { CadCommandPreviewState } from './useSurveyCadCommandPreview';
 
@@ -292,6 +293,14 @@ const buildCenterFirstArcDefinition = (
 const commandPointsMatch = (first: CadNamedPoint, second: CadNamedPoint): boolean =>
   Math.abs(first.x - second.x) <= 1e-9 && Math.abs(first.y - second.y) <= 1e-9;
 
+const buildReportProvenance = (toolKey: string, summary: string) => ({
+  id: `${toolKey}:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`,
+  toolKey,
+  inputs: {},
+  resultSummary: summary,
+  createdAtIso: new Date().toISOString(),
+});
+
 export const useSurveyCadCommands = ({
   activeSnap,
   previewPoint,
@@ -363,13 +372,7 @@ export const useSurveyCadCommands = ({
         },
         warnings: [],
         alternatives,
-        provenance: {
-          id: `${toolKey}:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`,
-          toolKey,
-          inputs: {},
-          resultSummary: summary,
-          createdAtIso: new Date().toISOString(),
-        },
+        provenance: buildReportProvenance(toolKey, summary),
       }),
     );
   };
@@ -2972,6 +2975,18 @@ export const useSurveyCadCommands = ({
 
   const activeBatchCogoDraft = useMemo(() => buildActiveBatchCogoDraftView(session), [session]);
   const activeEditCommandTargets = useMemo(() => buildActiveEditCommandTargets(session), [session]);
+  const commandStarters = useSurveyCadCommandStarters({
+    beginSession,
+    buildBatchCogoDraftForInput,
+    selectedArcForContinue,
+    selectedArcForCurveCogo,
+    selectedLineCommandPoints,
+    selectedLinePairCommandPoints,
+    selectedAlignmentForStationing,
+    selectedParcelForBearingSplit,
+    selectedParcelForAreaSplit,
+    selectionCount,
+  });
 
   return {
     activeCommandKey: session?.key ?? null,
@@ -3011,422 +3026,7 @@ export const useSurveyCadCommands = ({
       session.points.length >= 3 &&
       (Math.abs(session.points[0]!.x - session.points[session.points.length - 1]!.x) > 1e-9 ||
         Math.abs(session.points[0]!.y - session.points[session.points.length - 1]!.y) > 1e-9),
-    startPointCommand: () => beginSession({ key: 'POINT', inputValue: '' }),
-    startCogoPointCommand: () =>
-      beginSession({
-        key: 'COGO_POINT',
-        inputValue: '',
-        startPoint: null,
-      }),
-    startLineCommand: () =>
-      beginSession({
-        key: 'LINE',
-        inputValue: '',
-        startPoint: null,
-      }),
-    startPolylineCommand: () =>
-      beginSession({
-        key: 'PLINE',
-        inputValue: '',
-        points: [],
-      }),
-    startTraverseCommand: () =>
-      beginSession({
-        key: 'TRAVERSE',
-        inputValue: '',
-        points: [],
-        inputPoints: [],
-        legInputs: [],
-        mode: 'open',
-        closePoint: null,
-        sideshots: [],
-        adjustment: null,
-      }),
-    startBatchCogoCommand: () =>
-      beginSession({
-        key: 'BATCH_COGO',
-        inputValue: '',
-        draft: buildBatchCogoDraftForInput(''),
-      }),
-    startParcelSplitBearingCommand: () => {
-      if (!selectedParcelForBearingSplit) return;
-      beginSession({
-        key: 'PARCEL_SPLIT_BEARING',
-        inputValue: '',
-        parcel: selectedParcelForBearingSplit,
-        splitPoint: null,
-      });
-    },
-    startParcelSplitAreaCommand: () => {
-      if (!selectedParcelForAreaSplit) return;
-      beginSession({
-        key: 'PARCEL_SPLIT_AREA',
-        inputValue: '',
-        parcel: selectedParcelForAreaSplit,
-        splitPoint: null,
-      });
-    },
-    startArc3PointCommand: () =>
-      beginSession({
-        key: 'ARC_3PT',
-        inputValue: '',
-        points: [],
-      }),
-    startArcStartCenterEndCommand: () =>
-      beginSession({
-        key: 'ARC_SCE',
-        inputValue: '',
-        points: [],
-      }),
-    startArcCenterStartEndCommand: () =>
-      beginSession({
-        key: 'ARC_CSE',
-        inputValue: '',
-        points: [],
-      }),
-    startArcStartCenterAngleCommand: () =>
-      beginSession({
-        key: 'ARC_SCA',
-        inputValue: '',
-        points: [],
-      }),
-    startArcCenterStartAngleCommand: () =>
-      beginSession({
-        key: 'ARC_CSA',
-        inputValue: '',
-        points: [],
-      }),
-    startArcStartCenterChordCommand: () =>
-      beginSession({
-        key: 'ARC_SCL',
-        inputValue: '',
-        points: [],
-      }),
-    startArcCenterStartChordCommand: () =>
-      beginSession({
-        key: 'ARC_CSL',
-        inputValue: '',
-        points: [],
-      }),
-    startArcStartEndAngleCommand: () =>
-      beginSession({
-        key: 'ARC_SEA',
-        inputValue: '',
-        points: [],
-      }),
-    startArcStartEndDirectionCommand: () =>
-      beginSession({
-        key: 'ARC_SED',
-        inputValue: '',
-        points: [],
-      }),
-    startArcStartEndRadiusCommand: () =>
-      beginSession({
-        key: 'ARC_SER',
-        inputValue: '',
-        points: [],
-      }),
-    startContinueCurveCommand: () => {
-      if (!selectedArcForContinue) return;
-      beginSession({
-        key: 'CONTINUE_CURVE',
-        inputValue: '',
-        sourceArc: selectedArcForContinue,
-      });
-    },
-    startTangentCurveCommand: () =>
-      beginSession({
-        key: 'TANGENT_CURVE',
-        inputValue: '',
-        piPoint: null,
-        backTangentPoint: null,
-        aheadTangentPoint: null,
-      }),
-    startInverseCommand: () =>
-      beginSession({
-        key: 'INVERSE',
-        inputValue: '',
-        startPoint: null,
-      }),
-    startMultiInverseCommand: () =>
-      beginSession({
-        key: 'MULTI_INVERSE',
-        inputValue: '',
-        points: [],
-      }),
-    startAreaCommand: () =>
-      beginSession({
-        key: 'AREA',
-        inputValue: '',
-        points: [],
-      }),
-    startBearingReportCommand: () =>
-      beginSession({
-        key: 'BEARING_REPORT',
-        inputValue: '',
-        startPoint: null,
-      }),
-    startDistanceReportCommand: () =>
-      beginSession({
-        key: 'DISTANCE_REPORT',
-        inputValue: '',
-        startPoint: null,
-      }),
-    startTurnedPointCommand: () =>
-      beginSession({
-        key: 'TURNED_POINT',
-        inputValue: '',
-        occupyPoint: null,
-        backsightPoint: null,
-      }),
-    startDeflectionPointCommand: () => {
-      if (!selectedLineCommandPoints) return;
-      beginSession({
-        key: 'DEFLECT_POINT',
-        inputValue: '',
-        lineStart: selectedLineCommandPoints.start,
-        lineEnd: selectedLineCommandPoints.end,
-      });
-    },
-    startPointAlongLineCommand: () => {
-      if (!selectedLineCommandPoints) return;
-      beginSession({
-        key: 'POINT_ALONG_LINE',
-        inputValue: '',
-        lineStart: selectedLineCommandPoints.start,
-        lineEnd: selectedLineCommandPoints.end,
-      });
-    },
-    startExtendLineCommand: () => {
-      if (!selectedLineCommandPoints) return;
-      beginSession({
-        key: 'EXTEND_LINE',
-        inputValue: '',
-        lineStart: selectedLineCommandPoints.start,
-        lineEnd: selectedLineCommandPoints.end,
-      });
-    },
-    startOffsetPointCommand: () => {
-      if (!selectedLineCommandPoints) return;
-      beginSession({
-        key: 'OFFSET_POINT',
-        inputValue: '',
-        lineStart: selectedLineCommandPoints.start,
-        lineEnd: selectedLineCommandPoints.end,
-      });
-    },
-    startAlignmentOffsetCreateCommand: () => {
-      if (!selectedAlignmentForStationing) return;
-      beginSession({
-        key: 'ALIGNMENT_OFFSET_CREATE',
-        inputValue: '',
-        alignment: selectedAlignmentForStationing,
-      });
-    },
-    startAlignmentStationEquationCommand: () => {
-      if (!selectedAlignmentForStationing) return;
-      beginSession({
-        key: 'ALIGNMENT_STATION_EQUATION',
-        inputValue: '',
-        alignment: selectedAlignmentForStationing,
-      });
-    },
-    startAlignmentOffsetPointCommand: () => {
-      if (!selectedAlignmentForStationing) return;
-      beginSession({
-        key: 'ALIGNMENT_OFFSET_POINT',
-        inputValue: '',
-        alignment: selectedAlignmentForStationing,
-      });
-    },
-    startAlignmentIntervalPointsCommand: () => {
-      if (!selectedAlignmentForStationing) return;
-      beginSession({
-        key: 'ALIGNMENT_INTERVAL_POINTS',
-        inputValue: '',
-        alignment: selectedAlignmentForStationing,
-      });
-    },
-    startCurveSolverCommand: () =>
-      beginSession({
-        key: 'CURVE_SOLVER',
-        inputValue: '',
-      }),
-    startRadialBearingCommand: () => {
-      if (!selectedArcForCurveCogo) return;
-      beginSession({
-        key: 'RADIAL_BEARING',
-        inputValue: '',
-        arc: selectedArcForCurveCogo,
-      });
-    },
-    startPointOnCurveCommand: () => {
-      if (!selectedArcForCurveCogo) return;
-      beginSession({
-        key: 'POINT_ON_CURVE',
-        inputValue: '',
-        arc: selectedArcForCurveCogo,
-      });
-    },
-    startSubdivideCurveCommand: () => {
-      if (!selectedArcForCurveCogo) return;
-      beginSession({
-        key: 'SUBDIVIDE_CURVE',
-        inputValue: '',
-        arc: selectedArcForCurveCogo,
-      });
-    },
-    startOffsetCurveCommand: () => {
-      if (!selectedArcForCurveCogo) return;
-      beginSession({
-        key: 'OFFSET_CURVE',
-        inputValue: '',
-        arc: selectedArcForCurveCogo,
-      });
-    },
-    startPiCurveCommand: () =>
-      beginSession({
-        key: 'PI_CURVE',
-        inputValue: '',
-        piPoint: null,
-        backTangentPoint: null,
-      }),
-    startChordBearingCurveCommand: () =>
-      beginSession({
-        key: 'CHORD_BEARING_CURVE',
-        inputValue: '',
-        startPoint: null,
-      }),
-    startReverseCurveCommand: () => {
-      if (!selectedArcForCurveCogo) return;
-      beginSession({
-        key: 'REVERSE_CURVE',
-        inputValue: '',
-        arc: selectedArcForCurveCogo,
-      });
-    },
-    startCompoundCurveCommand: () => {
-      if (!selectedArcForCurveCogo) return;
-      beginSession({
-        key: 'COMPOUND_CURVE',
-        inputValue: '',
-        arc: selectedArcForCurveCogo,
-      });
-    },
-    startBearingBearingIntersectionCommand: () =>
-      beginSession({
-        key: 'BEARING_BEARING_INTX',
-        inputValue: '',
-        firstPoint: null,
-        secondPoint: null,
-      }),
-    startBearingDistanceIntersectionCommand: () =>
-      beginSession({
-        key: 'BEARING_DISTANCE_INTX',
-        inputValue: '',
-        firstPoint: null,
-        secondPoint: null,
-      }),
-    startDistanceDistanceIntersectionCommand: () =>
-      beginSession({
-        key: 'DISTANCE_DISTANCE_INTX',
-        inputValue: '',
-        firstPoint: null,
-        secondPoint: null,
-      }),
-    startLineCircleIntersectionCommand: () => {
-      if (!selectedLineCommandPoints) return;
-      beginSession({
-        key: 'LINE_CIRCLE_INTX',
-        inputValue: '',
-        lineStart: selectedLineCommandPoints.start,
-        lineEnd: selectedLineCommandPoints.end,
-        targetPoint: null,
-      });
-    },
-    startPerpendicularIntersectionCommand: () => {
-      if (!selectedLineCommandPoints) return;
-      beginSession({
-        key: 'PERP_INTX',
-        inputValue: '',
-        lineStart: selectedLineCommandPoints.start,
-        lineEnd: selectedLineCommandPoints.end,
-        targetPoint: null,
-      });
-    },
-    startOffsetIntersectionCommand: () => {
-      if (!selectedLinePairCommandPoints) return;
-      beginSession({
-        key: 'OFFSET_INTX',
-        inputValue: '',
-        firstLineStart: selectedLinePairCommandPoints.first.start,
-        firstLineEnd: selectedLinePairCommandPoints.first.end,
-        secondLineStart: selectedLinePairCommandPoints.second.start,
-        secondLineEnd: selectedLinePairCommandPoints.second.end,
-      });
-    },
-    startSkewIntersectionCommand: () => {
-      if (!selectedLineCommandPoints) return;
-      beginSession({
-        key: 'SKEW_INTX',
-        inputValue: '',
-        lineStart: selectedLineCommandPoints.start,
-        lineEnd: selectedLineCommandPoints.end,
-        targetPoint: null,
-      });
-    },
-    startMoveCommand: () => {
-      if (selectionCount === 0) return;
-      beginSession({
-        key: 'MOVE',
-        inputValue: '',
-        startPoint: null,
-      });
-    },
-    startCopyCommand: () => {
-      if (selectionCount === 0) return;
-      beginSession({
-        key: 'COPY',
-        inputValue: '',
-        startPoint: null,
-      });
-    },
-    startExtendCommand: () => {
-      beginSession({
-        key: 'EXTEND',
-        inputValue: '',
-        firstTargetEntityId: null,
-        firstTargetPickPoint: null,
-        firstTargetSegmentId: undefined,
-      });
-    },
-    startTrimCommand: () => {
-      beginSession({
-        key: 'TRIM',
-        inputValue: '',
-        firstEntityId: null,
-        firstPickPoint: null,
-        firstSegmentId: undefined,
-      });
-    },
-    startFilletCommand: () =>
-      beginSession({
-        key: 'FILLET',
-        inputValue: '',
-        radius: null,
-        firstEntityId: null,
-        firstPickPoint: null,
-        firstSegmentId: undefined,
-      }),
-    startPasteCommand: (sourceEntityIds, basePoint) => {
-      if (sourceEntityIds.length === 0) return;
-      beginSession({
-        key: 'PASTE',
-        inputValue: '',
-        startPoint: basePoint,
-        sourceEntityIds,
-      });
-    },
+    ...commandStarters,
     cancelCommand: () => replaceSession(null),
     finishCommand: () => {
       if (session?.key === 'PLINE') {
