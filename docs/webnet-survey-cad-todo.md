@@ -102,6 +102,8 @@
 
 - [x] Survey CAD command-hook split batch 12 (July 2026): split report publishing, batch COGO draft construction, and command availability flag builders into focused command helper modules, while preserving command report, draft, and result flag behavior.
 
+- [x] Survey CAD command-hook split batch 13 (July 2026): split arc, edit/modify, and parcel-split point-pick consumers into focused command helper modules, while preserving point-pick command behavior.
+
 - [x] Survey CAD naming fallback batch (June 2026): stop unlabeled arc/polyline/polygon hover and snap surfaces from leaking raw prefixed entity ids like `arc:*` or `polyline:*`, and keep the shared naming helper on readable type fallbacks instead.
 
 - [x] Survey CAD COGO report panel batch (June 2026): add a selected/latest COGO result overlay in the native CAD workspace, bridge live `INVERSE` query output into the shared report model, and add exportable TXT/CSV/Markdown report previews for persisted computation history.
