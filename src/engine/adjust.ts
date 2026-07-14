@@ -89,6 +89,15 @@ import {
   logNetworkDiagnostics as logNetworkDiagnosticsHelper,
 } from './adjustNetworkDiagnostics';
 import {
+  applyAverageGeoidHeightConversions as applyAverageGeoidHeightConversionsHelper,
+  applyGeoidHeightConversions as applyGeoidHeightConversionsHelper,
+  resolveStationEllipsoidHeight as resolveStationEllipsoidHeightHelper,
+} from './adjustGeoidHeightHelpers';
+import {
+  evaluateDatumSufficiency as evaluateDatumSufficiencyHelper,
+  evaluateGridInputGate as evaluateGridInputGateHelper,
+} from './adjustDatumChecks';
+import {
   applyAutoDroppedHeightHolds,
   buildSolvePreparation,
   cloneSolvePreparationResult,
@@ -2065,146 +2074,21 @@ export class LSAEngine {
     if (this.coordSystemMode !== 'grid') {
       return { blocked: false, reasons: [], suggestions: [] };
     }
-    const classes = new Set<CoordInputClass>();
-    Object.values(this.stations).forEach((station) => {
-      const hasControlLikeInput =
-        (station.fixedX ?? false) ||
-        (station.fixedY ?? false) ||
-        Number.isFinite(station.sx ?? Number.NaN) ||
-        Number.isFinite(station.sy ?? Number.NaN) ||
-        station.coordInputClass === 'geodetic' ||
-        (station.coordInputClass != null && station.coordInputClass !== 'unknown');
-      if (!hasControlLikeInput) return;
-      classes.add(station.coordInputClass ?? 'unknown');
+    return evaluateGridInputGateHelper({
+      activeObservations,
+      crsId: this.crsId,
+      gnssFrameConfirmed: this.gnssFrameConfirmed,
+      parseState: this.parseState,
+      stations: this.stations,
     });
-    const hasGrid = classes.has('grid');
-    const hasGeodetic = classes.has('geodetic');
-    const hasLocal = classes.has('local');
-    const hasUnknown = classes.has('unknown');
-    const reasons: string[] = [];
-    const suggestions: string[] = [];
-
-    if (hasUnknown) {
-      reasons.push(
-        'Grid mode input class check failed: one or more stations are UNKNOWN class (including geodetic records missing CRS/datum tagging).',
-      );
-      suggestions.push(
-        'Tag geodetic records with explicit CRS/datum or re-enter as grid/projected coordinates.',
-      );
-    }
-    if (hasLocal && (hasGrid || hasGeodetic)) {
-      reasons.push(
-        'Grid mode input class check failed: LOCAL coordinates mixed with GRID/GEODETIC coordinates without localization transform.',
-      );
-      suggestions.push(
-        'Remove local records or define a localization workflow before mixing systems.',
-      );
-    }
-    if (hasGeodetic && (!this.crsId || !this.crsId.trim())) {
-      reasons.push(
-        'Grid mode input class check failed: GEODETIC coordinates provided but CRS id is missing.',
-      );
-      suggestions.push('Set project CRS id before running a grid solve.');
-    }
-
-    const unknownGnssRows = activeObservations.filter(
-      (obs) =>
-        obs.type === 'gps' &&
-        (obs.gnssVectorFrame ?? this.parseState?.gnssVectorFrameDefault ?? 'gridNEU') ===
-          'unknown' &&
-        !((obs.gnssFrameConfirmed ?? false) || this.gnssFrameConfirmed),
-    );
-    if (unknownGnssRows.length > 0) {
-      reasons.push(
-        `Grid mode GNSS frame check failed: ${unknownGnssRows.length} vector(s) are UNKNOWN frame and not confirmed.`,
-      );
-      suggestions.push(
-        'Set .GPS FRAME to a known frame (GRIDNEU/ENULOCAL/ECEFDELTA/LLHBASELINE) or confirm unknown frame usage.',
-      );
-    }
-
-    return {
-      blocked: reasons.length > 0,
-      reasons,
-      suggestions,
-    };
   }
 
   private evaluateDatumSufficiency(activeObservations: Observation[]): DatumSufficiencyReport {
-    const reasons: string[] = [];
-    const suggestions: string[] = [];
-    let status: DatumSufficiencyReport['status'] = 'ok';
-
-    const hasDistanceLike = activeObservations.some(
-      (obs) => obs.type === 'dist' || obs.type === 'gps',
-    );
-    const hasAngularFamilies = activeObservations.some(
-      (obs) =>
-        obs.type === 'angle' ||
-        obs.type === 'bearing' ||
-        obs.type === 'dir' ||
-        obs.type === 'direction',
-    );
-    const weightedOrFixedXYCount = Object.values(this.stations).filter((station) => {
-      const fixedXY = (station.fixedX ?? false) && (station.fixedY ?? false);
-      const weightedXY =
-        Number.isFinite(station.sx ?? Number.NaN) && Number.isFinite(station.sy ?? Number.NaN);
-      return fixedXY || weightedXY;
-    }).length;
-    const weightedOrFixedHCount = Object.values(this.stations).filter((station) => {
-      const fixedH = station.fixedH ?? false;
-      const weightedH = Number.isFinite(station.sh ?? Number.NaN);
-      return fixedH || weightedH;
-    }).length;
-
-    if (this.is2D) {
-      const scaleDefined =
-        hasDistanceLike ||
-        weightedOrFixedXYCount >= 2 ||
-        (weightedOrFixedXYCount >= 1 && !hasAngularFamilies);
-      if (!scaleDefined) {
-        status = 'hard-fail';
-        reasons.push(
-          '2D datum sufficiency failed: scale is undefined (no distance-like constraints and control does not constrain scale).',
-        );
-        suggestions.push(
-          'Add at least one distance-like constraint (distance/GNSS) or add fixed/weighted coordinate control that constrains scale.',
-        );
-      } else if (weightedOrFixedXYCount < 2) {
-        status = 'soft-warn';
-        reasons.push(
-          '2D datum sufficiency warning: weak horizontal datum control (few fixed/weighted coordinate constraints).',
-        );
-        suggestions.push(
-          'Add a second fixed/weighted control point or a fixed azimuth/bearing constraint to strengthen orientation.',
-        );
-      }
-    } else {
-      if (weightedOrFixedXYCount === 0) {
-        status = 'hard-fail';
-        reasons.push(
-          '3D datum sufficiency failed: horizontal datum is undefined (no fixed/weighted XY control).',
-        );
-        suggestions.push('Add fixed or weighted XY control points.');
-      } else if (weightedOrFixedXYCount < 2) {
-        status = 'soft-warn';
-        reasons.push(
-          '3D datum sufficiency warning: weak horizontal control (single fixed/weighted XY constraint).',
-        );
-        suggestions.push(
-          'Add another fixed/weighted control point to stabilize orientation/scale.',
-        );
-      }
-      if (weightedOrFixedHCount === 0) {
-        status = 'hard-fail';
-        reasons.push(
-          '3D datum sufficiency failed: vertical datum is undefined (no fixed/weighted height control).',
-        );
-        suggestions.push('Add fixed/weighted height control or leveling/GNSS height constraints.');
-      }
-    }
-
-    return { status, reasons, suggestions };
+    return evaluateDatumSufficiencyHelper({
+      activeObservations,
+      is2D: this.is2D,
+      stations: this.stations,
+    });
   }
 
   private getAzimuth(fromID: StationId, toID: StationId): { az: number; dist: number } {
@@ -2224,155 +2108,38 @@ export class LSAEngine {
   }
 
   private applyGeoidHeightConversions(model: GeoidGridModel): void {
-    const interpolation = this.geoidInterpolation ?? 'bilinear';
-    const targetDatum = this.geoidOutputHeightDatum === 'ellipsoid' ? 'ellipsoid' : 'orthometric';
-    let convertedCount = 0;
-    let skippedCount = 0;
-    let alreadyTargetCount = 0;
-    let missingGeodeticCount = 0;
-    let outsideCoverageCount = 0;
-
-    Object.values(this.stations).forEach((station) => {
-      if (!Number.isFinite(station.h)) return;
-      const sourceDatum = station.heightType ?? 'orthometric';
-      if (sourceDatum === targetDatum) {
-        alreadyTargetCount += 1;
-        return;
-      }
-      if (
-        !Number.isFinite(station.latDeg ?? Number.NaN) ||
-        !Number.isFinite(station.lonDeg ?? Number.NaN)
-      ) {
-        skippedCount += 1;
-        missingGeodeticCount += 1;
-        return;
-      }
-
-      const undulation = interpolateGeoidUndulation(
-        model,
-        station.latDeg as number,
-        station.lonDeg as number,
-        interpolation,
-      );
-      if (undulation == null || !Number.isFinite(undulation)) {
-        skippedCount += 1;
-        outsideCoverageCount += 1;
-        return;
-      }
-
-      const delta = targetDatum === 'orthometric' ? -undulation : undulation;
-      station.h += delta;
-      if (Number.isFinite(station.constraintH ?? Number.NaN)) {
-        station.constraintH = (station.constraintH ?? 0) + delta;
-      }
-      station.heightType = targetDatum;
-      convertedCount += 1;
+    applyGeoidHeightConversionsHelper({
+      geoidInterpolation: this.geoidInterpolation,
+      geoidOutputHeightDatum: this.geoidOutputHeightDatum,
+      log: this.log.bind(this),
+      model,
+      parseState: this.parseState,
+      stations: this.stations,
     });
-
-    if (this.parseState) {
-      this.parseState.geoidHeightConversionEnabled = true;
-      this.parseState.geoidOutputHeightDatum = targetDatum;
-      this.parseState.geoidConvertedStationCount = convertedCount;
-      this.parseState.geoidSkippedStationCount = skippedCount;
-    }
-    this.log(
-      `Geoid height conversion: ON (target=${targetDatum.toUpperCase()}, converted=${convertedCount}, skipped=${skippedCount}, already=${alreadyTargetCount})`,
-    );
-    if (missingGeodeticCount > 0) {
-      this.log(
-        `Geoid height conversion skipped ${missingGeodeticCount} station(s): missing geodetic lat/lon.`,
-      );
-    }
-    if (outsideCoverageCount > 0) {
-      this.log(
-        `Geoid height conversion skipped ${outsideCoverageCount} station(s): outside geoid/grid coverage.`,
-      );
-    }
   }
 
   private applyAverageGeoidHeightConversions(): void {
-    const undulation = this.averageGeoidHeight;
-    if (!Number.isFinite(undulation) || Math.abs(undulation) <= 0) {
-      this.log(
-        'Warning: geoid height conversion requested but fallback average geoid height is zero/invalid; conversion skipped.',
-      );
-      return;
-    }
-    this.addCoordSystemDiagnostic(
-      'GEOID_FALLBACK',
-      `Geoid model unavailable; fallback average geoid height used (${undulation.toFixed(4)}m).`,
-    );
-    const targetDatum = this.geoidOutputHeightDatum === 'ellipsoid' ? 'ellipsoid' : 'orthometric';
-    let convertedCount = 0;
-    Object.values(this.stations).forEach((station) => {
-      const currentType = station.heightType === 'ellipsoid' ? 'ellipsoid' : 'orthometric';
-      if (currentType === targetDatum) return;
-      const delta = targetDatum === 'orthometric' ? -undulation : undulation;
-      station.h += delta;
-      if (Number.isFinite(station.constraintH ?? Number.NaN)) {
-        station.constraintH = (station.constraintH ?? 0) + delta;
-      }
-      station.heightType = targetDatum;
-      convertedCount += 1;
+    applyAverageGeoidHeightConversionsHelper({
+      addCoordSystemDiagnostic: this.addCoordSystemDiagnostic.bind(this),
+      averageGeoidHeight: this.averageGeoidHeight,
+      geoidOutputHeightDatum: this.geoidOutputHeightDatum,
+      log: this.log.bind(this),
+      parseState: this.parseState,
+      stations: this.stations,
     });
-    if (this.parseState) {
-      this.parseState.geoidHeightConversionEnabled = true;
-      this.parseState.geoidOutputHeightDatum = targetDatum;
-      this.parseState.geoidConvertedStationCount = convertedCount;
-      this.parseState.geoidSkippedStationCount = 0;
-    }
-    this.log(
-      `Geoid height conversion fallback: ON (target=${targetDatum.toUpperCase()}, avgN=${undulation.toFixed(4)}m, converted=${convertedCount})`,
-    );
   }
 
   private resolveStationEllipsoidHeight(station: Station): {
     ellipsoidHeightUsed: number;
     source: 'perStationGeoid+H' | 'avgGeoid+H' | 'providedEllipsoid' | 'assumed0';
   } {
-    if (station.heightType === 'ellipsoid') {
-      station.ellipsoidHeightUsed = station.h;
-      station.ellipsoidHeightSource = 'providedEllipsoid';
-      return { ellipsoidHeightUsed: station.h, source: 'providedEllipsoid' };
-    }
-
-    if (
-      this.activeGeoidModel &&
-      Number.isFinite(station.latDeg ?? Number.NaN) &&
-      Number.isFinite(station.lonDeg ?? Number.NaN)
-    ) {
-      const undulation = interpolateGeoidUndulation(
-        this.activeGeoidModel,
-        station.latDeg as number,
-        station.lonDeg as number,
-        this.geoidInterpolation ?? 'bilinear',
-      );
-      if (Number.isFinite(undulation ?? Number.NaN)) {
-        const ellipsoidHeightUsed = station.h + (undulation as number);
-        station.ellipsoidHeightUsed = ellipsoidHeightUsed;
-        station.ellipsoidHeightSource = 'perStationGeoid+H';
-        return { ellipsoidHeightUsed, source: 'perStationGeoid+H' };
-      }
-    }
-
-    if (Number.isFinite(this.averageGeoidHeight) && Math.abs(this.averageGeoidHeight) > 0) {
-      const ellipsoidHeightUsed = station.h + this.averageGeoidHeight;
-      station.ellipsoidHeightUsed = ellipsoidHeightUsed;
-      station.ellipsoidHeightSource = 'avgGeoid+H';
-      this.addCoordSystemDiagnostic(
-        'GEOID_FALLBACK',
-        `Station geoid fallback to average N (${this.averageGeoidHeight.toFixed(4)}m) applied while resolving ellipsoid heights.`,
-      );
-      return { ellipsoidHeightUsed, source: 'avgGeoid+H' };
-    }
-
-    station.ellipsoidHeightUsed = station.h;
-    station.ellipsoidHeightSource = 'assumed0';
-    this.addCoordSystemDiagnostic(
-      'GEOID_FALLBACK',
-      'Average geoid height fallback is zero/invalid while ellipsoid height is required; orthometric heights used as-is.',
-    );
-    return { ellipsoidHeightUsed: station.h, source: 'assumed0' };
+    return resolveStationEllipsoidHeightHelper({
+      activeGeoidModel: this.activeGeoidModel,
+      addCoordSystemDiagnostic: this.addCoordSystemDiagnostic.bind(this),
+      averageGeoidHeight: this.averageGeoidHeight,
+      geoidInterpolation: this.geoidInterpolation,
+      station,
+    });
   }
 
   private stationEllipsoidHeight(station: Station): number {
