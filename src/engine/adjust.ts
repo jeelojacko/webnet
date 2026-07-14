@@ -24,7 +24,6 @@ import {
   computeElevationFactor,
   computeGridFactors,
   inverseENToGeodetic,
-  projectGeodeticToEN,
 } from './geodesy';
 import { getCrsDefinition, isGeodeticInsideAreaOfUse } from './crsCatalog';
 import { runClusterDualPassWorkflow } from './adjustmentClusterWorkflow';
@@ -45,17 +44,9 @@ import { buildCoordinateConstraints, coordinateConstraintWeightedSum } from './a
 import { assembleAdjustmentEquations } from './adjustmentEquationAssembly';
 import { applyAdjustmentCorrections, solveAdjustmentIteration } from './adjustmentIteration';
 import {
-  azimuthFromCoords,
-  circularMean,
-  intersectDistanceCircles,
-  makeDirectedPairKey,
   makePairKey,
-  wrapTo2Pi,
-  wrapToPi,
 } from './adjustMath';
 import {
-  ecefDeltaToLocalEnu,
-  geodeticToEcef,
   transformSymmetricCovariance3,
 } from './adjustGpsMath';
 import {
@@ -67,7 +58,10 @@ import {
   transformGpsCovarianceToSolveFrame as transformGpsCovarianceToSolveFrameHelper,
 } from './adjustGpsVectorHelpers';
 import {
+  captureInitialSigmaGeometrySnapshot as captureInitialSigmaGeometrySnapshotHelper,
   effectiveStdDev as effectiveStdDevHelper,
+  getSigmaGeometryAzimuth as getSigmaGeometryAzimuthHelper,
+  getSigmaGeometryZenith as getSigmaGeometryZenithHelper,
   shouldApplyIndustryParityAngularSigmaCalibration as shouldApplyIndustryParityAngularSigmaCalibrationHelper,
 } from './adjustObservationWeighting';
 import {
@@ -80,6 +74,7 @@ import {
   captureRobustWeightBase as captureRobustWeightBaseHelper,
   computeRobustWeightSummary as computeRobustWeightSummaryHelper,
   maxRobustWeightDelta as maxRobustWeightDeltaHelper,
+  recordRobustDiagnostics as recordRobustDiagnosticsHelper,
   observationStations as observationStationsHelper,
   robustCorrelationRowGroups as robustCorrelationRowGroupsHelper,
   weightedQuadratic as weightedQuadraticHelper,
@@ -98,6 +93,41 @@ import {
   evaluateGridInputGate as evaluateGridInputGateHelper,
 } from './adjustDatumChecks';
 import {
+  applyBootstrapApproxStation as applyBootstrapApproxStationHelper,
+  bootstrapApproximateTraverseCoords as bootstrapApproximateTraverseCoordsHelper,
+  buildBootstrapPairMetrics as buildBootstrapPairMetricsHelper,
+  estimateBootstrapSetOrientation as estimateBootstrapSetOrientationHelper,
+  stationHasBootstrapableApprox as stationHasBootstrapableApproxHelper,
+  tryBootstrapDirectionSetOccupy as tryBootstrapDirectionSetOccupyHelper,
+} from './adjustBootstrapHelpers';
+import {
+  captureObservationWeightingStdDevs as captureObservationWeightingStdDevsHelper,
+  gpsCovariance as gpsCovarianceHelper,
+  gpsModeledVector as gpsModeledVectorHelper,
+  gpsModeledVectorDerivatives as gpsModeledVectorDerivativesHelper,
+  gpsModeledVectorFromStationValues as gpsModeledVectorFromStationValuesHelper,
+  gpsObservedVector as gpsObservedVectorHelper,
+  gpsWeight as gpsWeightHelper,
+  updateGpsAddHiHtDiagnostics as updateGpsAddHiHtDiagnosticsHelper,
+} from './adjustGpsObservationModel';
+import {
+  captureRawTraverseDirectionCorrections as captureRawTraverseDirectionCorrectionsHelper,
+  captureRawTraverseDistanceFactorSnapshots as captureRawTraverseDistanceFactorSnapshotsHelper,
+  correctedDistanceModel as correctedDistanceModelHelper,
+  crsDistanceScaleForObservation as crsDistanceScaleForObservationHelper,
+  curvatureRefractionAngle as curvatureRefractionAngleHelper,
+  effectiveDistanceForAngularObservation as effectiveDistanceForAngularObservationHelper,
+  getModeledZenith as getModeledZenithHelper,
+  getZenith as getZenithHelper,
+  mapDistanceScaleForObservation as mapDistanceScaleForObservationHelper,
+  measuredAngleCorrection as measuredAngleCorrectionHelper,
+  modeledAzimuth as modeledAzimuthHelper,
+  prismCorrectionForObservation as prismCorrectionForObservationHelper,
+  rawDirectionSetCorrection as rawDirectionSetCorrectionHelper,
+  rawDistanceCombinedFactor as rawDistanceCombinedFactorHelper,
+  zenithScaleForObservation as zenithScaleForObservationHelper,
+} from './adjustReductionHelpers';
+import {
   applyAutoDroppedHeightHolds,
   buildSolvePreparation,
   cloneSolvePreparationResult,
@@ -109,6 +139,17 @@ import {
   getObservationSetId,
   getObservationSideshotCalcMeta,
 } from './observationMetadata';
+import {
+  applyTsCorrelationToWeightMatrix as applyTsCorrelationToWeightMatrixHelper,
+  tsCorrelationGroup as tsCorrelationGroupHelper,
+} from './adjustTsCorrelationWeights';
+import {
+  buildSolveProgressEvent,
+  buildSolveTimingProfile as buildSolveTimingProfileHelper,
+  createEmptySolveTiming,
+  formatSolveTimingLogLine,
+} from './adjustSolveTiming';
+import { addUniqueCoordSystemWarning } from './adjustCoordSystemDiagnostics';
 import { buildAdjustmentResultPayload, finalizeResultParseState } from './adjustmentResultBuilder';
 import {
   buildObservationTypeSummary,
@@ -339,14 +380,7 @@ export class LSAEngine {
   >();
   private progressCallback?: (_event: SolveProgressEvent) => void;
   private solveStartedAt = 0;
-  private solveTiming = {
-    parseAndSetupMs: 0,
-    equationAssemblyMs: 0,
-    matrixFactorizationMs: 0,
-    precisionAndDiagnosticsMs: 0,
-    precisionPropagationMs: 0,
-    resultPackagingMs: 0,
-  };
+  private solveTiming = createEmptySolveTiming();
   private solveTimingLogged = false;
 
   private solveNormalEquations(
@@ -592,47 +626,26 @@ export class LSAEngine {
   }
 
   private captureInitialSigmaGeometrySnapshot(): void {
-    if (this.geometryDependentSigmaReference !== 'initial') {
-      this.initialSigmaGeometryStations = {};
-      this.initialSigmaAzimuthCache.clear();
-      this.initialSigmaZenithCache.clear();
-      return;
-    }
-    this.initialSigmaGeometryStations = Object.fromEntries(
-      Object.entries(this.stations).map(([id, station]) => [
-        id,
-        {
-          ...station,
-          x: station.x,
-          y: station.y,
-          h: station.h,
-        },
-      ]),
-    );
-    this.initialSigmaAzimuthCache.clear();
-    this.initialSigmaZenithCache.clear();
+    this.initialSigmaGeometryStations = captureInitialSigmaGeometrySnapshotHelper({
+      azimuthCache: this.initialSigmaAzimuthCache,
+      geometryDependentSigmaReference: this.geometryDependentSigmaReference,
+      stations: this.stations,
+      zenithCache: this.initialSigmaZenithCache,
+    });
   }
 
   private getSigmaGeometryAzimuth(
     fromID: StationId,
     toID: StationId,
   ): { az: number; dist: number } {
-    if (this.geometryDependentSigmaReference !== 'initial') {
-      return this.getAzimuth(fromID, toID);
-    }
-    const cacheKey = `${fromID}|${toID}`;
-    const cached = this.initialSigmaAzimuthCache.get(cacheKey);
-    if (cached) return cached;
-    const s1 = this.initialSigmaGeometryStations[fromID];
-    const s2 = this.initialSigmaGeometryStations[toID];
-    if (!s1 || !s2) return { az: 0, dist: 0 };
-    const dx = s2.x - s1.x;
-    const dy = s2.y - s1.y;
-    let az = Math.atan2(dx, dy);
-    if (az < 0) az += 2 * Math.PI;
-    const result = { az, dist: Math.sqrt(dx * dx + dy * dy) };
-    this.initialSigmaAzimuthCache.set(cacheKey, result);
-    return result;
+    return getSigmaGeometryAzimuthHelper({
+      cache: this.initialSigmaAzimuthCache,
+      currentGeometryAzimuth: (fromId, toId) => this.getAzimuth(fromId, toId),
+      fromID,
+      geometryDependentSigmaReference: this.geometryDependentSigmaReference,
+      initialSigmaGeometryStations: this.initialSigmaGeometryStations,
+      toID,
+    });
   }
 
   private getSigmaGeometryZenith(
@@ -641,26 +654,18 @@ export class LSAEngine {
     hi = 0,
     ht = 0,
   ): { z: number; dist: number; horiz: number; dh: number; crCorr: number } {
-    if (this.geometryDependentSigmaReference !== 'initial') {
-      return this.getZenith(fromID, toID, hi, ht);
-    }
-    const cacheKey = `${fromID}|${toID}|${hi}|${ht}`;
-    const cached = this.initialSigmaZenithCache.get(cacheKey);
-    if (cached) return cached;
-    const s1 = this.initialSigmaGeometryStations[fromID];
-    const s2 = this.initialSigmaGeometryStations[toID];
-    if (!s1 || !s2) return { z: 0, dist: 0, horiz: 0, dh: 0, crCorr: 0 };
-    const dx = s2.x - s1.x;
-    const dy = s2.y - s1.y;
-    const dh = s2.h + ht - (s1.h + hi);
-    const horiz = Math.sqrt(dx * dx + dy * dy);
-    const dist = Math.sqrt(horiz * horiz + dh * dh);
-    const zGeom = dist === 0 ? 0 : Math.acos(dh / dist);
-    const crCorr = this.curvatureRefractionAngle(horiz);
-    const z = Math.min(Math.PI, Math.max(0, zGeom + crCorr));
-    const result = { z, dist, horiz, dh, crCorr };
-    this.initialSigmaZenithCache.set(cacheKey, result);
-    return result;
+    return getSigmaGeometryZenithHelper({
+      cache: this.initialSigmaZenithCache,
+      currentGeometryZenith: (fromId, toId, fromHi, toHt) =>
+        this.getZenith(fromId, toId, fromHi, toHt),
+      curvatureRefractionAngle: (horiz) => this.curvatureRefractionAngle(horiz),
+      fromID,
+      geometryDependentSigmaReference: this.geometryDependentSigmaReference,
+      hi,
+      ht,
+      initialSigmaGeometryStations: this.initialSigmaGeometryStations,
+      toID,
+    });
   }
 
   private shouldApplyIndustryParityAngularSigmaCalibration(
@@ -802,50 +807,18 @@ export class LSAEngine {
   }
 
   private captureObservationWeightingStdDevs(observations: Observation[]): void {
-    observations.forEach((obs) => {
-      if (obs.type === 'gps') {
-        const cov = this.gpsCovariance(obs);
-        obs.weightingStdDev = undefined;
-        obs.weightingStdDevE = Math.sqrt(Math.max(cov.cEE, 0));
-        obs.weightingStdDevN = Math.sqrt(Math.max(cov.cNN, 0));
-        return;
-      }
-      if (obs.type === 'dist') {
-        obs.weightingStdDev = this.getObservedHorizontalDistanceIn2D(obs).sigmaDistance;
-        obs.weightingStdDevE = undefined;
-        obs.weightingStdDevN = undefined;
-        return;
-      }
-      obs.weightingStdDev = this.effectiveStdDev(obs);
-      obs.weightingStdDevE = undefined;
-      obs.weightingStdDevN = undefined;
+    captureObservationWeightingStdDevsHelper(observations, {
+      effectiveStdDev: (obs) => this.effectiveStdDev(obs),
+      getObservedHorizontalDistanceIn2D: (obs) => this.getObservedHorizontalDistanceIn2D(obs),
+      gpsCovariance: (obs) => this.gpsCovariance(obs),
     });
   }
 
   private gpsCovariance(obs: Observation): GpsCovariance {
-    if (obs.type !== 'gps') {
-      const s = Math.max(obs.stdDev || 0, 1e-12);
-      return { cEE: s * s, cNN: s * s, cEN: 0, cUU: s * s, cEU: 0, cNU: 0 };
-    }
-    const gps = obs;
-    const transformed = this.transformGpsCovarianceToSolveFrame(gps);
-    if (transformed) return transformed;
-    const vector = this.gpsObservedVector(gps);
-    const varianceScale = Math.max(vector.scale * vector.scale, 1e-12);
-    const sE = Math.max(gps.stdDevE ?? gps.stdDev ?? 0, 1e-12);
-    const sN = Math.max(gps.stdDevN ?? gps.stdDev ?? 0, 1e-12);
-    const sU = Math.max(gps.stdDevU ?? gps.stdDev ?? 0, 1e-12);
-    const corrEN = Math.max(-0.999, Math.min(0.999, gps.corrEN ?? 0));
-    const corrEU = Math.max(-0.999, Math.min(0.999, gps.corrEU ?? 0));
-    const corrNU = Math.max(-0.999, Math.min(0.999, gps.corrNU ?? 0));
-    return {
-      cEE: sE * sE * varianceScale,
-      cNN: sN * sN * varianceScale,
-      cEN: corrEN * sE * sN * varianceScale,
-      cUU: sU * sU * varianceScale,
-      cEU: corrEU * sE * sU * varianceScale,
-      cNU: corrNU * sN * sU * varianceScale,
-    };
+    return gpsCovarianceHelper(obs, {
+      gpsObservedVector: (gps) => this.gpsObservedVector(gps),
+      transformGpsCovarianceToSolveFrame: (gps) => this.transformGpsCovarianceToSolveFrame(gps),
+    });
   }
 
   private gpsWeight(obs: Observation): {
@@ -856,184 +829,23 @@ export class LSAEngine {
     wEU?: number;
     wNU?: number;
   } {
-    const cov = this.gpsCovariance(obs);
-    const hasVertical =
-      !this.is2D &&
-      Number.isFinite(cov.cUU ?? Number.NaN) &&
-      Number.isFinite(cov.cEU ?? Number.NaN) &&
-      Number.isFinite(cov.cNU ?? Number.NaN);
-    if (hasVertical) {
-      const matrix = [
-        [cov.cEE, cov.cEN, cov.cEU ?? 0],
-        [cov.cEN, cov.cNN, cov.cNU ?? 0],
-        [cov.cEU ?? 0, cov.cNU ?? 0, cov.cUU ?? 0],
-      ];
-      const det =
-        matrix[0][0] * (matrix[1][1] * matrix[2][2] - matrix[1][2] * matrix[2][1]) -
-        matrix[0][1] * (matrix[1][0] * matrix[2][2] - matrix[1][2] * matrix[2][0]) +
-        matrix[0][2] * (matrix[1][0] * matrix[2][1] - matrix[1][1] * matrix[2][0]);
-      if (Number.isFinite(det) && Math.abs(det) > 1e-24) {
-        const inv = [
-          [
-            (matrix[1][1] * matrix[2][2] - matrix[1][2] * matrix[2][1]) / det,
-            (matrix[0][2] * matrix[2][1] - matrix[0][1] * matrix[2][2]) / det,
-            (matrix[0][1] * matrix[1][2] - matrix[0][2] * matrix[1][1]) / det,
-          ],
-          [
-            (matrix[1][2] * matrix[2][0] - matrix[1][0] * matrix[2][2]) / det,
-            (matrix[0][0] * matrix[2][2] - matrix[0][2] * matrix[2][0]) / det,
-            (matrix[0][2] * matrix[1][0] - matrix[0][0] * matrix[1][2]) / det,
-          ],
-          [
-            (matrix[1][0] * matrix[2][1] - matrix[1][1] * matrix[2][0]) / det,
-            (matrix[0][1] * matrix[2][0] - matrix[0][0] * matrix[2][1]) / det,
-            (matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0]) / det,
-          ],
-        ];
-        return {
-          wEE: inv[0][0],
-          wNN: inv[1][1],
-          wEN: inv[0][1],
-          wUU: inv[2][2],
-          wEU: inv[0][2],
-          wNU: inv[1][2],
-        };
-      }
-    }
-    const det = cov.cEE * cov.cNN - cov.cEN * cov.cEN;
-    if (!Number.isFinite(det) || det <= 1e-24) {
-      return {
-        wEE: 1 / Math.max(cov.cEE, 1e-24),
-        wNN: 1 / Math.max(cov.cNN, 1e-24),
-        wEN: 0,
-      };
-    }
-    return {
-      wEE: cov.cNN / det,
-      wNN: cov.cEE / det,
-      wEN: -cov.cEN / det,
-    };
+    return gpsWeightHelper(obs, {
+      gpsCovariance: (observation) => this.gpsCovariance(observation),
+      is2D: this.is2D,
+    });
   }
 
   private gpsObservedVector(obs: GpsObservation): GpsSolveVector {
-    const includeVertical = !this.is2D && Number.isFinite(obs.obs.dU ?? Number.NaN);
-    const rawE = Number.isFinite(obs.obs.dE) ? obs.obs.dE : 0;
-    const rawN = Number.isFinite(obs.obs.dN) ? obs.obs.dN : 0;
-    const rawU = includeVertical ? (obs.obs.dU as number) : 0;
-    const frame: GnssVectorFrame =
-      obs.gnssVectorFrame ?? this.parseState?.gnssVectorFrameDefault ?? 'gridNEU';
-    let frameE = rawE;
-    let frameN = rawN;
-    let frameU = rawU;
-    const frameDistance = Math.hypot(rawE, rawN);
-
-    if (frame === 'enuLocal' || frame === 'llhBaseline') {
-      const deflected = this.applyGpsVerticalDeflection({ dE: rawE, dN: rawN, dU: rawU });
-      frameE = deflected.dE;
-      frameN = deflected.dN;
-      frameU = deflected.dU;
-      if (frameDistance > 200000) {
-        this.addCoordSystemWarning(
-          `GNSS frame sanity check: ${obs.from}-${obs.to} declared ${frame} with unusually long horizontal span ${frameDistance.toFixed(3)}m.`,
-        );
-      }
-    } else if (frame === 'ecefDelta') {
-      const geo = this.stationGeodetic(obs.from) ?? this.stationGeodetic(obs.to);
-      if (geo) {
-        const { dE: enuE, dN: enuN, dU: enuU } = ecefDeltaToLocalEnu(
-          rawE,
-          rawN,
-          rawU,
-          geo.latDeg,
-          geo.lonDeg,
-        );
-        const deflected = this.applyGpsVerticalDeflection({ dE: enuE, dN: enuN, dU: enuU });
-        frameE = deflected.dE;
-        frameN = deflected.dN;
-        frameU = deflected.dU;
-      } else {
-        this.addCoordSystemWarning(
-          `GNSS frame ${frame} could not resolve geodetic orientation for ${obs.from}-${obs.to}; using raw component proxy.`,
-        );
-      }
-      if (frameDistance < 0.001 || frameDistance > 1_000_000) {
-        this.addCoordSystemWarning(
-          `GNSS frame sanity check: ${obs.from}-${obs.to} ${frame} vector magnitude ${frameDistance.toFixed(6)}m looks inconsistent.`,
-        );
-      }
-    } else if (frame === 'unknown') {
-      this.addCoordSystemDiagnostic(
-        'GNSS_FRAME_UNCONFIRMED',
-        `GNSS frame UNKNOWN for ${obs.from}-${obs.to}; solve requires explicit frame confirmation.`,
-      );
-    }
-
-    const offset = this.gpsRoverOffsetVector(obs);
-    const horizRaw = Math.hypot(frameE, frameN);
-    if (horizRaw <= 1e-12) {
-      return {
-        dE: offset.dE,
-        dN: offset.dN,
-        dU: includeVertical ? frameU + offset.dH : undefined,
-        scale: 1,
-      };
-    }
-
-    const hasAntennaMeta = obs.gpsAntennaHiM != null || obs.gpsAntennaHtM != null;
-    if (!hasAntennaMeta) {
-      return {
-        dE: frameE + offset.dE,
-        dN: frameN + offset.dN,
-        dU: includeVertical ? frameU + offset.dH : undefined,
-        scale: 1,
-      };
-    }
-
-    const hi = Number.isFinite(obs.gpsAntennaHiM ?? Number.NaN) ? (obs.gpsAntennaHiM as number) : 0;
-    const ht = Number.isFinite(obs.gpsAntennaHtM ?? Number.NaN) ? (obs.gpsAntennaHtM as number) : 0;
-    const fromH = Number.isFinite(this.stations[obs.from]?.h ?? Number.NaN)
-      ? (this.stations[obs.from]?.h as number)
-      : 0;
-    const toH = Number.isFinite(this.stations[obs.to]?.h ?? Number.NaN)
-      ? (this.stations[obs.to]?.h as number)
-      : 0;
-
-    const deltaGround = toH - offset.dH - fromH;
-    const deltaAntenna = deltaGround + (ht - hi);
-    const slope = Math.hypot(horizRaw, deltaAntenna);
-    const horizCorrectedSq = slope * slope - deltaGround * deltaGround;
-    if (!Number.isFinite(horizCorrectedSq) || horizCorrectedSq <= 0) {
-      return {
-        dE: frameE + offset.dE,
-        dN: frameN + offset.dN,
-        dU: includeVertical ? frameU + offset.dH : undefined,
-        scale: 1,
-      };
-    }
-    const horizCorrected = Math.sqrt(horizCorrectedSq);
-    if (!Number.isFinite(horizCorrected) || horizCorrected <= 1e-12) {
-      return {
-        dE: frameE + offset.dE,
-        dN: frameN + offset.dN,
-        dU: includeVertical ? frameU + offset.dH : undefined,
-        scale: 1,
-      };
-    }
-    const scale = horizCorrected / horizRaw;
-    if (!Number.isFinite(scale) || scale <= 0) {
-      return {
-        dE: frameE + offset.dE,
-        dN: frameN + offset.dN,
-        dU: includeVertical ? frameU + offset.dH : undefined,
-        scale: 1,
-      };
-    }
-    return {
-      dE: frameE * scale + offset.dE,
-      dN: frameN * scale + offset.dN,
-      dU: includeVertical ? frameU + offset.dH : undefined,
-      scale,
-    };
+    return gpsObservedVectorHelper(obs, {
+      addCoordSystemDiagnostic: this.addCoordSystemDiagnostic.bind(this),
+      addCoordSystemWarning: this.addCoordSystemWarning.bind(this),
+      applyGpsVerticalDeflection: (vector) => this.applyGpsVerticalDeflection(vector),
+      gpsRoverOffsetVector: (gps) => this.gpsRoverOffsetVector(gps),
+      is2D: this.is2D,
+      parseState: this.parseState,
+      stationGeodetic: (stationId) => this.stationGeodetic(stationId),
+      stations: this.stations,
+    });
   }
 
   private gpsModeledVectorFromStationValues(
@@ -1041,214 +853,52 @@ export class LSAEngine {
     fromValues: { x: number; y: number; h: number },
     toValues: { x: number; y: number; h: number },
   ): GpsVectorComponents {
-    const includeVertical = !this.is2D && Number.isFinite(obs.obs.dU ?? Number.NaN);
-    const frame: GnssVectorFrame =
-      obs.gnssVectorFrame ?? this.parseState?.gnssVectorFrameDefault ?? 'gridNEU';
-
-    if (!this.gpsUsesLocalSolveFrame(frame)) {
-      return {
-        dE: toValues.x - fromValues.x,
-        dN: toValues.y - fromValues.y,
-        dU: includeVertical ? toValues.h - fromValues.h : undefined,
-      };
-    }
-
-    if (this.coordSystemMode !== 'grid') {
-      return {
-        dE: toValues.x - fromValues.x,
-        dN: toValues.y - fromValues.y,
-        dU: includeVertical ? toValues.h - fromValues.h : undefined,
-      };
-    }
-
-    const fromGeo = this.stationGeodeticFromCoordinates(obs.from, fromValues.x, fromValues.y);
-    const toGeo = this.stationGeodeticFromCoordinates(obs.to, toValues.x, toValues.y);
-    if (!fromGeo || !toGeo) {
-      return {
-        dE: toValues.x - fromValues.x,
-        dN: toValues.y - fromValues.y,
-        dU: includeVertical ? toValues.h - fromValues.h : undefined,
-      };
-    }
-
-    const fromStation = this.stations[obs.from];
-    const toStation = this.stations[obs.to];
-    if (!fromStation || !toStation) {
-      return {
-        dE: toValues.x - fromValues.x,
-        dN: toValues.y - fromValues.y,
-        dU: includeVertical ? toValues.h - fromValues.h : undefined,
-      };
-    }
-
-    const fromEllipsoidHeight = this.stationEllipsoidHeightFromValues(
-      fromStation,
-      fromValues.h,
-      fromGeo.latDeg,
-      fromGeo.lonDeg,
-    );
-    const toEllipsoidHeight = this.stationEllipsoidHeightFromValues(
-      toStation,
-      toValues.h,
-      toGeo.latDeg,
-      toGeo.lonDeg,
-    );
-    const fromEcef = geodeticToEcef(fromGeo.latDeg, fromGeo.lonDeg, fromEllipsoidHeight);
-    const toEcef = geodeticToEcef(toGeo.latDeg, toGeo.lonDeg, toEllipsoidHeight);
-    const local = ecefDeltaToLocalEnu(
-      toEcef.x - fromEcef.x,
-      toEcef.y - fromEcef.y,
-      toEcef.z - fromEcef.z,
-      fromGeo.latDeg,
-      fromGeo.lonDeg,
-    );
-    const deflected = this.applyGpsVerticalDeflection(local);
-    return {
-      dE: deflected.dE,
-      dN: deflected.dN,
-      dU: includeVertical ? deflected.dU : undefined,
-    };
+    return gpsModeledVectorFromStationValuesHelper(obs, fromValues, toValues, {
+      applyGpsVerticalDeflection: (vector) => this.applyGpsVerticalDeflection(vector),
+      coordSystemMode: this.coordSystemMode,
+      gpsUsesLocalSolveFrame: (frame) => this.gpsUsesLocalSolveFrame(frame),
+      is2D: this.is2D,
+      parseState: this.parseState,
+      stationEllipsoidHeightFromValues: (station, h, latDeg, lonDeg) =>
+        this.stationEllipsoidHeightFromValues(station, h, latDeg, lonDeg),
+      stationGeodeticFromCoordinates: (stationId, x, y) =>
+        this.stationGeodeticFromCoordinates(stationId, x, y),
+      stations: this.stations,
+    });
   }
 
   private gpsModeledVector(obs: GpsObservation): GpsSolveVector {
-    const fromStation = this.stations[obs.from];
-    const toStation = this.stations[obs.to];
-    if (!fromStation || !toStation) return { dE: 0, dN: 0, dU: 0, scale: 1 };
-    const modeled = this.gpsModeledVectorFromStationValues(
-      obs,
-      { x: fromStation.x, y: fromStation.y, h: fromStation.h },
-      { x: toStation.x, y: toStation.y, h: toStation.h },
-    );
-    return { ...modeled, scale: 1 };
+    return gpsModeledVectorHelper(obs, {
+      gpsModeledVectorFromStationValues: (gps, fromValues, toValues) =>
+        this.gpsModeledVectorFromStationValues(gps, fromValues, toValues),
+      stations: this.stations,
+    });
   }
 
   private gpsModeledVectorDerivatives(obs: GpsObservation): GpsVectorDerivatives {
-    const fromStation = this.stations[obs.from];
-    const toStation = this.stations[obs.to];
-    const empty: GpsVectorDerivatives = { from: {}, to: {} };
-    if (!fromStation || !toStation) return empty;
-
-    const delta = 1e-4;
-    const differentiate = (
-      endpoint: 'from' | 'to',
-      component: 'x' | 'y' | 'h',
-    ): GpsVectorComponents | undefined => {
-      if (component === 'h' && this.is2D) return undefined;
-      const fromBase = { x: fromStation.x, y: fromStation.y, h: fromStation.h };
-      const toBase = { x: toStation.x, y: toStation.y, h: toStation.h };
-      const fromPlus = { ...fromBase };
-      const fromMinus = { ...fromBase };
-      const toPlus = { ...toBase };
-      const toMinus = { ...toBase };
-      if (endpoint === 'from') {
-        fromPlus[component] += delta;
-        fromMinus[component] -= delta;
-      } else {
-        toPlus[component] += delta;
-        toMinus[component] -= delta;
-      }
-      const plus = this.gpsModeledVectorFromStationValues(obs, fromPlus, toPlus);
-      const minus = this.gpsModeledVectorFromStationValues(obs, fromMinus, toMinus);
-      return {
-        dE: (plus.dE - minus.dE) / (2 * delta),
-        dN: (plus.dN - minus.dN) / (2 * delta),
-        dU:
-          !this.is2D &&
-          Number.isFinite(plus.dU ?? Number.NaN) &&
-          Number.isFinite(minus.dU ?? Number.NaN)
-            ? ((plus.dU as number) - (minus.dU as number)) / (2 * delta)
-            : undefined,
-      };
-    };
-
-    empty.from.x = differentiate('from', 'x');
-    empty.from.y = differentiate('from', 'y');
-    empty.to.x = differentiate('to', 'x');
-    empty.to.y = differentiate('to', 'y');
-    if (!this.is2D) {
-      empty.from.h = differentiate('from', 'h');
-      empty.to.h = differentiate('to', 'h');
-    }
-    return empty;
+    return gpsModeledVectorDerivativesHelper(obs, {
+      gpsModeledVectorFromStationValues: (gps, fromValues, toValues) =>
+        this.gpsModeledVectorFromStationValues(gps, fromValues, toValues),
+      is2D: this.is2D,
+      stations: this.stations,
+    });
   }
 
   private updateGpsAddHiHtDiagnostics(): void {
-    if (!this.parseState) return;
-
-    const enabled = this.parseState.gpsAddHiHtEnabled ?? false;
-    let vectorCount = 0;
-    let appliedCount = 0;
-    let positiveCount = 0;
-    let negativeCount = 0;
-    let neutralCount = 0;
-    let defaultZeroCount = 0;
-    let missingHeightCount = 0;
-    let scaleMin = Number.POSITIVE_INFINITY;
-    let scaleMax = 0;
-
-    this.observations.forEach((obs) => {
-      if (obs.type !== 'gps') return;
-      vectorCount += 1;
-      const hasHi = Number.isFinite(obs.gpsAntennaHiM ?? Number.NaN);
-      const hasHt = Number.isFinite(obs.gpsAntennaHtM ?? Number.NaN);
-      if (!hasHi || !hasHt) {
-        missingHeightCount += 1;
-      }
-      const hi = hasHi ? (obs.gpsAntennaHiM as number) : 0;
-      const ht = hasHt ? (obs.gpsAntennaHtM as number) : 0;
-      if (Math.abs(hi) <= 1e-12 && Math.abs(ht) <= 1e-12) {
-        defaultZeroCount += 1;
-      }
-      const scale = this.gpsObservedVector(obs).scale;
-      scaleMin = Math.min(scaleMin, scale);
-      scaleMax = Math.max(scaleMax, scale);
-      const delta = scale - 1;
-      if (Math.abs(delta) <= GPS_ADDHIHT_SCALE_TOL) {
-        neutralCount += 1;
-      } else {
-        appliedCount += 1;
-        if (delta > 0) {
-          positiveCount += 1;
-        } else {
-          negativeCount += 1;
-        }
-      }
+    updateGpsAddHiHtDiagnosticsHelper({
+      gpsObservedVector: (gps) => this.gpsObservedVector(gps),
+      log: this.log.bind(this),
+      observations: this.observations,
+      parseState: this.parseState,
     });
-
-    this.parseState.gpsAddHiHtVectorCount = vectorCount;
-    this.parseState.gpsAddHiHtAppliedCount = appliedCount;
-    this.parseState.gpsAddHiHtPositiveCount = positiveCount;
-    this.parseState.gpsAddHiHtNegativeCount = negativeCount;
-    this.parseState.gpsAddHiHtNeutralCount = neutralCount;
-    this.parseState.gpsAddHiHtDefaultZeroCount = defaultZeroCount;
-    this.parseState.gpsAddHiHtMissingHeightCount = missingHeightCount;
-    this.parseState.gpsAddHiHtScaleMin = vectorCount > 0 ? scaleMin : 1;
-    this.parseState.gpsAddHiHtScaleMax = vectorCount > 0 ? scaleMax : 1;
-
-    if (enabled) {
-      this.log(
-        `GPS AddHiHt preprocessing: vectors=${vectorCount}, adjusted=${appliedCount} (+${positiveCount}/-${negativeCount}/neutral=${neutralCount}), defaultZero=${defaultZeroCount}, missingHeight=${missingHeightCount}, scale[min=${(this.parseState.gpsAddHiHtScaleMin ?? 1).toFixed(8)}, max=${(this.parseState.gpsAddHiHtScaleMax ?? 1).toFixed(8)}]`,
-      );
-    }
   }
 
-  private isTsCorrelationObservation(obs: Observation): boolean {
-    return (
-      obs.type === 'angle' ||
-      obs.type === 'direction' ||
-      obs.type === 'bearing' ||
-      obs.type === 'dir'
-    );
-  }
-
-  private tsCorrelationGroup(
-    obs: Observation,
-  ): { key: string; station: StationId; setId?: string } | null {
-    if (!this.tsCorrelationEnabled || !this.isTsCorrelationObservation(obs)) return null;
-    const station = obs.type === 'angle' || obs.type === 'direction' ? obs.at : obs.from;
-    const setId = getObservationSetId(obs);
-    const key = this.tsCorrelationScope === 'setup' ? station : `${station}|${setId ?? obs.type}`;
-    return { key, station, setId };
+  private tsCorrelationGroup(obs: Observation): { key: string; station: StationId; setId?: string } | null {
+    return tsCorrelationGroupHelper({
+      enabled: this.tsCorrelationEnabled,
+      obs,
+      scope: this.tsCorrelationScope,
+    });
   }
 
   private applyTsCorrelationToWeightMatrix(
@@ -1256,144 +906,22 @@ export class LSAEngine {
     rowInfo: EquationRowInfo[],
     captureDiagnostics = false,
   ): void {
-    if (!this.tsCorrelationEnabled) {
-      if (captureDiagnostics) {
-        this.tsCorrelationDiagnostics = {
-          enabled: false,
-          rho: 0,
-          scope: this.tsCorrelationScope ?? 'set',
-          groupCount: 0,
-          equationCount: 0,
-          pairCount: 0,
-          maxGroupSize: 0,
-          groups: [],
-        };
-      }
-      return;
-    }
-
-    const rhoBase = Math.min(0.95, Math.max(0, this.tsCorrelationRho || 0));
-    if (rhoBase <= 0) {
-      if (captureDiagnostics) {
-        this.tsCorrelationDiagnostics = {
-          enabled: true,
-          rho: rhoBase,
-          scope: this.tsCorrelationScope ?? 'set',
-          groupCount: 0,
-          equationCount: 0,
-          pairCount: 0,
-          maxGroupSize: 0,
-          groups: [],
-        };
-      }
-      return;
-    }
-
-    const groups = new Map<
-      string,
-      { station: StationId; setId?: string; rows: Array<{ index: number; sigma: number }> }
-    >();
-    rowInfo.forEach((info, index) => {
-      if (!info || info.component) return;
-      const group = this.tsCorrelationGroup(info.obs);
-      if (!group) return;
-      const sigma = this.effectiveStdDev(info.obs);
-      if (!Number.isFinite(sigma) || sigma <= 0) return;
-      const entry = groups.get(group.key) ?? {
-        station: group.station,
-        setId: group.setId,
-        rows: [],
-      };
-      entry.rows.push({ index, sigma });
-      groups.set(group.key, entry);
+    const diagnostics = applyTsCorrelationToWeightMatrixHelper({
+      captureDiagnostics,
+      effectiveStdDev: (obs) => this.effectiveStdDev(obs),
+      enabled: this.tsCorrelationEnabled,
+      matrix: P,
+      rho: this.tsCorrelationRho,
+      rowInfo,
+      scope: this.tsCorrelationScope,
+      tsCorrelationGroup: (obs) => this.tsCorrelationGroup(obs),
     });
-
-    let equationCount = 0;
-    let pairCountTotal = 0;
-    let maxGroupSize = 0;
-    let offDiagAbsSumTotal = 0;
-    const diagRows: NonNullable<AdjustmentResult['tsCorrelationDiagnostics']>['groups'] = [];
-
-    groups.forEach((entry, key) => {
-      const n = entry.rows.length;
-      equationCount += n;
-      maxGroupSize = Math.max(maxGroupSize, n);
-      if (n < 2) {
-        if (captureDiagnostics) {
-          diagRows.push({
-            key,
-            station: entry.station,
-            setId: entry.setId,
-            rows: n,
-            pairCount: 0,
-          });
-        }
-        return;
-      }
-
-      const rho = Math.min(0.999999, Math.max(0, rhoBase));
-      const denom = (1 - rho) * (1 - rho + n * rho);
-      if (!Number.isFinite(denom) || denom <= 1e-24) return;
-      const a = 1 / (1 - rho);
-      const b = rho / denom;
-      let pairCount = 0;
-      let offDiagAbsSum = 0;
-
-      entry.rows.forEach((row) => {
-        P[row.index][row.index] = (a - b) / (row.sigma * row.sigma);
-      });
-      for (let i = 0; i < n; i += 1) {
-        const ri = entry.rows[i];
-        for (let j = i + 1; j < n; j += 1) {
-          const rj = entry.rows[j];
-          const w = -b / (ri.sigma * rj.sigma);
-          P[ri.index][rj.index] = w;
-          P[rj.index][ri.index] = w;
-          pairCount += 1;
-          offDiagAbsSum += Math.abs(w);
-        }
-      }
-
-      pairCountTotal += pairCount;
-      offDiagAbsSumTotal += offDiagAbsSum;
-      if (captureDiagnostics) {
-        diagRows.push({
-          key,
-          station: entry.station,
-          setId: entry.setId,
-          rows: n,
-          pairCount,
-          meanAbsOffDiagWeight: pairCount > 0 ? offDiagAbsSum / pairCount : undefined,
-        });
-      }
-    });
-
-    if (captureDiagnostics) {
-      this.tsCorrelationDiagnostics = {
-        enabled: true,
-        rho: rhoBase,
-        scope: this.tsCorrelationScope ?? 'set',
-        groupCount: groups.size,
-        equationCount,
-        pairCount: pairCountTotal,
-        maxGroupSize,
-        meanAbsOffDiagWeight: pairCountTotal > 0 ? offDiagAbsSumTotal / pairCountTotal : undefined,
-        groups: diagRows.sort((a, b) => {
-          if (b.rows !== a.rows) return b.rows - a.rows;
-          if (b.pairCount !== a.pairCount) return b.pairCount - a.pairCount;
-          return a.key.localeCompare(b.key);
-        }),
-      };
-    }
+    if (captureDiagnostics) this.tsCorrelationDiagnostics = diagnostics;
   }
 
-  private weightedQuadratic(P: number[][], v: number[][]): number {
-    return weightedQuadraticHelper(P, v);
-  }
+  private weightedQuadratic(P: number[][], v: number[][]): number { return weightedQuadraticHelper(P, v); }
 
-  private observationStations(obs: Observation): string {
-    return observationStationsHelper(obs);
-  }
+  private observationStations(obs: Observation): string { return observationStationsHelper(obs); }
 
   private rowSigma(info: NonNullable<EquationRowInfo>): number {
     if (info.obs.type === 'gps') {
@@ -1417,10 +945,7 @@ export class LSAEngine {
     });
   }
 
-  private captureRobustWeightBase(
-    P: number[][],
-    rowInfo: EquationRowInfo[],
-  ): RobustWeightMatrixBase {
+  private captureRobustWeightBase(P: number[][], rowInfo: EquationRowInfo[]): RobustWeightMatrixBase {
     return captureRobustWeightBaseHelper(P, rowInfo, {
       robustCorrelationRowGroups: (info) => this.robustCorrelationRowGroups(info),
     });
@@ -1449,19 +974,14 @@ export class LSAEngine {
     summary: RobustWeightSummary,
     maxWeightDelta: number,
   ): void {
-    if (!this.robustDiagnostics) return;
-    this.robustDiagnostics.iterations.push({
+    recordRobustDiagnosticsHelper({
       iteration,
-      downweightedRows: summary.downweightedRows,
-      meanWeight: summary.meanWeight,
-      minWeight: summary.minWeight,
-      maxNorm: summary.maxNorm,
+      log: (message) => this.log(message),
       maxWeightDelta,
+      robustDiagnostics: this.robustDiagnostics,
+      robustMode: this.robustMode,
+      summary,
     });
-    this.robustDiagnostics.topDownweightedRows = summary.topRows;
-    this.log(
-      `Iter ${iteration} robust(${this.robustMode}): downweighted=${summary.downweightedRows}, minW=${summary.minWeight.toFixed(3)}, meanW=${summary.meanWeight.toFixed(3)}, max|v/sigma|=${summary.maxNorm.toFixed(2)}, maxDeltaW=${maxWeightDelta.toFixed(4)}`,
-    );
   }
 
   private maxRobustWeightDelta(a: number[], b: number[]): number {
@@ -1533,50 +1053,27 @@ export class LSAEngine {
 
   private emitSolveProgress(phase: SolveProgressEvent['phase']): void {
     if (!this.progressCallback) return;
-    this.progressCallback({
-      phase,
-      iteration: this.iterations,
-      maxIterations: this.maxIterations,
-      elapsedMs: Math.max(0, Date.now() - this.solveStartedAt),
-      converged: this.converged,
-    });
+    this.progressCallback(
+      buildSolveProgressEvent({
+        converged: this.converged,
+        iterations: this.iterations,
+        maxIterations: this.maxIterations,
+        phase,
+        solveStartedAt: this.solveStartedAt,
+      }),
+    );
   }
 
   private resetSolveTiming(): void {
-    this.solveTiming = {
-      parseAndSetupMs: 0,
-      equationAssemblyMs: 0,
-      matrixFactorizationMs: 0,
-      precisionAndDiagnosticsMs: 0,
-      precisionPropagationMs: 0,
-      resultPackagingMs: 0,
-    };
+    this.solveTiming = createEmptySolveTiming();
     this.solveTimingLogged = false;
   }
 
   private buildSolveTimingProfile(): NonNullable<AdjustmentResult['solveTimingProfile']> {
-    const totalMs = Math.max(0, Date.now() - this.solveStartedAt);
-    const reportDiagnosticsMs = Math.max(
-      0,
-      this.solveTiming.precisionAndDiagnosticsMs - this.solveTiming.precisionPropagationMs,
-    );
-    const classifiedMs =
-      this.solveTiming.parseAndSetupMs +
-      this.solveTiming.equationAssemblyMs +
-      this.solveTiming.matrixFactorizationMs +
-      this.solveTiming.precisionAndDiagnosticsMs +
-      this.solveTiming.resultPackagingMs;
-    return {
-      totalMs,
-      parseAndSetupMs: this.solveTiming.parseAndSetupMs,
-      equationAssemblyMs: this.solveTiming.equationAssemblyMs,
-      matrixFactorizationMs: this.solveTiming.matrixFactorizationMs,
-      precisionAndDiagnosticsMs: this.solveTiming.precisionAndDiagnosticsMs,
-      precisionPropagationMs: this.solveTiming.precisionPropagationMs,
-      reportDiagnosticsMs,
-      resultPackagingMs: this.solveTiming.resultPackagingMs,
-      otherMs: Math.max(0, totalMs - classifiedMs),
-    };
+    return buildSolveTimingProfileHelper({
+      solveStartedAt: this.solveStartedAt,
+      solveTiming: this.solveTiming,
+    });
   }
 
   private logSolveTimingProfile(
@@ -1584,9 +1081,7 @@ export class LSAEngine {
   ): void {
     if (this.solveTimingLogged) return;
     this.solveTimingLogged = true;
-    this.logs.push(
-      `Solve timing (ms): total=${profile.totalMs.toFixed(1)}, setup=${profile.parseAndSetupMs.toFixed(1)}, assembly=${profile.equationAssemblyMs.toFixed(1)}, factor=${profile.matrixFactorizationMs.toFixed(1)}, precision+diag=${profile.precisionAndDiagnosticsMs.toFixed(1)}, precision=${profile.precisionPropagationMs.toFixed(1)}, report=${profile.reportDiagnosticsMs.toFixed(1)}, packaging=${profile.resultPackagingMs.toFixed(1)}, other=${profile.otherMs.toFixed(1)}`,
-    );
+    this.logs.push(formatSolveTimingLogLine(profile));
   }
 
   private finishSolve(result: AdjustmentResult): AdjustmentResult {
@@ -1633,21 +1128,16 @@ export class LSAEngine {
   private addCoordSystemDiagnostic(code: CoordSystemDiagnosticCode, warning?: string): void {
     this.coordSystemDiagnostics.add(code);
     if (!warning) return;
-    const normalized = warning.trim();
-    if (!normalized) return;
-    if (this.coordWarningSeen.has(normalized)) return;
-    this.coordWarningSeen.add(normalized);
-    this.coordSystemWarningMessages.push(normalized);
-    this.log(`Warning: ${normalized}`);
+    this.addCoordSystemWarning(warning);
   }
 
   private addCoordSystemWarning(warning: string): void {
-    const normalized = warning.trim();
-    if (!normalized) return;
-    if (this.coordWarningSeen.has(normalized)) return;
-    this.coordWarningSeen.add(normalized);
-    this.coordSystemWarningMessages.push(normalized);
-    this.log(`Warning: ${normalized}`);
+    addUniqueCoordSystemWarning({
+      coordSystemWarningMessages: this.coordSystemWarningMessages,
+      coordWarningSeen: this.coordWarningSeen,
+      log: (message) => this.log(message),
+      warning,
+    });
   }
 
   private setCrsOff(reason: CrsOffReason, warning?: string): void {
@@ -1684,366 +1174,51 @@ export class LSAEngine {
   }
 
   private stationHasBootstrapableApprox(stationId: StationId): boolean {
-    const station = this.stations[stationId];
-    if (!station) return false;
-    if (!Number.isFinite(station.x) || !Number.isFinite(station.y)) return false;
-    if (station.coordInputClass && station.coordInputClass !== 'unknown') return true;
-    return station.bootstrapApprox === true;
+    return stationHasBootstrapableApproxHelper(this.stations, stationId);
   }
 
   private buildBootstrapPairMetrics(
     activeObservations: Observation[],
   ): Map<string, BootstrapPairMetrics> {
-    const zenithStats = new Map<string, { sum: number; count: number }>();
-    activeObservations.forEach((observation) => {
-      if (observation.type !== 'zenith') return;
-      const key = makeDirectedPairKey(observation.from, observation.to);
-      const entry = zenithStats.get(key) ?? { sum: 0, count: 0 };
-      entry.sum += observation.obs;
-      entry.count += 1;
-      zenithStats.set(key, entry);
-    });
-
-    const metrics = new Map<
-      string,
-      {
-        slopeSum: number;
-        horizSum: number;
-        bootstrapZenithSum: number;
-        bootstrapZenithCount: number;
-        hiSum: number;
-        hiCount: number;
-        htSum: number;
-        htCount: number;
-        count: number;
-      }
-    >();
-    activeObservations.forEach((observation) => {
-      if (observation.type !== 'dist') return;
-      const key = makeDirectedPairKey(observation.from, observation.to);
-      const zenithEntry = zenithStats.get(key);
-      const zenith =
-        zenithEntry && zenithEntry.count > 0
-          ? zenithEntry.sum / zenithEntry.count
-          : observation.type === 'dist' &&
-              Number.isFinite(observation.bootstrapZenithObs ?? Number.NaN)
-            ? observation.bootstrapZenithObs
-            : undefined;
-      const slopeDistance = observation.obs;
-      const horizDistance =
-        observation.mode === 'slope' && Number.isFinite(zenith ?? Number.NaN)
-          ? Math.abs(slopeDistance * Math.sin(zenith as number))
-          : Math.abs(slopeDistance);
-      const entry = metrics.get(key) ?? {
-        slopeSum: 0,
-        horizSum: 0,
-        bootstrapZenithSum: 0,
-        bootstrapZenithCount: 0,
-        hiSum: 0,
-        hiCount: 0,
-        htSum: 0,
-        htCount: 0,
-        count: 0,
-      };
-      entry.slopeSum += slopeDistance;
-      entry.horizSum += horizDistance;
-      if (!(zenithEntry && zenithEntry.count > 0) && Number.isFinite(zenith ?? Number.NaN)) {
-        entry.bootstrapZenithSum += zenith as number;
-        entry.bootstrapZenithCount += 1;
-      }
-      if (Number.isFinite(observation.hi ?? Number.NaN)) {
-        entry.hiSum += observation.hi as number;
-        entry.hiCount += 1;
-      }
-      if (Number.isFinite(observation.ht ?? Number.NaN)) {
-        entry.htSum += observation.ht as number;
-        entry.htCount += 1;
-      }
-      entry.count += 1;
-      metrics.set(key, entry);
-    });
-
-    return new Map(
-      [...metrics.entries()].map(([key, entry]) => {
-        const zenithEntry = zenithStats.get(key);
-        return [
-          key,
-          {
-            slopeDistance: entry.slopeSum / entry.count,
-            horizDistance: entry.horizSum / entry.count,
-            zenith:
-              zenithEntry && zenithEntry.count > 0
-                ? zenithEntry.sum / zenithEntry.count
-                : entry.bootstrapZenithCount > 0
-                  ? entry.bootstrapZenithSum / entry.bootstrapZenithCount
-                  : undefined,
-            hi: entry.hiCount > 0 ? entry.hiSum / entry.hiCount : undefined,
-            ht: entry.htCount > 0 ? entry.htSum / entry.htCount : undefined,
-          } satisfies BootstrapPairMetrics,
-        ];
-      }),
-    );
+    return buildBootstrapPairMetricsHelper(activeObservations);
   }
 
   private applyBootstrapApproxStation(
     stationId: StationId,
     seed: { x: number; y: number; h?: number },
   ): boolean {
-    const station = this.stations[stationId];
-    if (!station) return false;
-    const isInputControl = !!station.coordInputClass && station.coordInputClass !== 'unknown';
-    if (isInputControl) return false;
-    const preserveX =
-      (station.fixedX ?? false) ||
-      Number.isFinite(station.constraintX ?? Number.NaN) ||
-      station.constraintModeX === 'fixed' ||
-      station.constraintModeX === 'weighted';
-    const preserveY =
-      (station.fixedY ?? false) ||
-      Number.isFinite(station.constraintY ?? Number.NaN) ||
-      station.constraintModeY === 'fixed' ||
-      station.constraintModeY === 'weighted';
-    const preserveH =
-      (station.fixedH ?? false) ||
-      Number.isFinite(station.constraintH ?? Number.NaN) ||
-      station.constraintModeH === 'fixed' ||
-      station.constraintModeH === 'weighted';
-    const nextX = preserveX ? station.x : Number.isFinite(seed.x) ? seed.x : station.x;
-    const nextY = preserveY ? station.y : Number.isFinite(seed.y) ? seed.y : station.y;
-    const nextH = preserveH
-      ? station.h
-      : Number.isFinite(seed.h ?? Number.NaN)
-        ? (seed.h as number)
-        : station.h;
-    const changed =
-      !station.bootstrapApprox ||
-      Math.hypot((station.x ?? 0) - nextX, (station.y ?? 0) - nextY) > 1e-6 ||
-      Math.abs((station.h ?? 0) - nextH) > 1e-6;
-    if (!changed) return false;
-    station.x = nextX;
-    station.y = nextY;
-    station.h = nextH;
-    station.bootstrapApprox = true;
-    if (this.coordSystemMode === 'grid') {
-      this.stationGeodetic(stationId);
-      this.stationFactorSnapshot(stationId);
-    }
-    return true;
+    return applyBootstrapApproxStationHelper({
+      coordSystemMode: this.coordSystemMode,
+      seed,
+      stationFactorSnapshot: (id) => this.stationFactorSnapshot(id),
+      stationGeodetic: (id) => this.stationGeodetic(id),
+      stationId,
+      stations: this.stations,
+    });
   }
 
   private estimateBootstrapSetOrientation(
     set: BootstrapDirectionSet,
     pairMetrics: Map<string, BootstrapPairMetrics>,
   ): number | null {
-    const occupy = this.stations[set.occupy];
-    if (!occupy || !this.stationHasBootstrapableApprox(set.occupy)) return null;
-    const orientations = set.directions
-      .filter((direction) => {
-        const target = this.stations[direction.to];
-        const pair = pairMetrics.get(makeDirectedPairKey(set.occupy, direction.to));
-        return (
-          target &&
-          this.stationHasBootstrapableApprox(direction.to) &&
-          Number.isFinite(pair?.horizDistance ?? Number.NaN) &&
-          (pair?.horizDistance ?? 0) > 1e-6
-        );
-      })
-      .map((direction) => {
-        const target = this.stations[direction.to] as Station;
-        const azimuth = azimuthFromCoords(occupy.x, occupy.y, target.x, target.y);
-        return wrapTo2Pi(azimuth - direction.obs);
-      });
-    return circularMean(orientations);
+    return estimateBootstrapSetOrientationHelper({ pairMetrics, set, stations: this.stations });
   }
 
   private tryBootstrapDirectionSetOccupy(
     set: BootstrapDirectionSet,
     pairMetrics: Map<string, BootstrapPairMetrics>,
   ): { x: number; y: number; h?: number; orientation: number } | null {
-    const knownTargets = set.directions
-      .map((direction) => {
-        const target = this.stations[direction.to];
-        const metrics = pairMetrics.get(makeDirectedPairKey(set.occupy, direction.to));
-        if (!target || !metrics || !this.stationHasBootstrapableApprox(direction.to)) return null;
-        if (!Number.isFinite(metrics.horizDistance) || metrics.horizDistance <= 1e-6) return null;
-        return { direction, target, metrics };
-      })
-      .filter((entry): entry is NonNullable<typeof entry> => entry != null);
-    if (knownTargets.length < 2) return null;
-
-    let best:
-      | { x: number; y: number; h?: number; orientation: number; mismatch: number }
-      | undefined;
-
-    for (let i = 0; i < knownTargets.length - 1; i += 1) {
-      for (let j = i + 1; j < knownTargets.length; j += 1) {
-        const first = knownTargets[i];
-        const second = knownTargets[j];
-        const intersections = intersectDistanceCircles(
-          first.target.x,
-          first.target.y,
-          first.metrics.horizDistance,
-          second.target.x,
-          second.target.y,
-          second.metrics.horizDistance,
-        );
-        intersections.forEach((candidate) => {
-          const orientationValues = knownTargets.map((entry) => {
-            const azimuth = azimuthFromCoords(candidate.x, candidate.y, entry.target.x, entry.target.y);
-            return wrapTo2Pi(azimuth - entry.direction.obs);
-          });
-          const orientation = circularMean(orientationValues);
-          if (orientation == null) return;
-          const mismatch = knownTargets.reduce((total, entry) => {
-            const azimuth = azimuthFromCoords(candidate.x, candidate.y, entry.target.x, entry.target.y);
-            const predicted = wrapTo2Pi(orientation + entry.direction.obs);
-            return total + Math.abs(wrapToPi(azimuth - predicted));
-          }, 0);
-          const heightCandidates = knownTargets
-            .map((entry) =>
-              Number.isFinite(entry.metrics.zenith ?? Number.NaN)
-                ? entry.target.h -
-                  ((entry.metrics.hi ?? 0) -
-                    (entry.metrics.ht ?? 0) +
-                    entry.metrics.slopeDistance * Math.cos(entry.metrics.zenith as number))
-                : undefined,
-            )
-            .filter((value): value is number => Number.isFinite(value));
-          const height =
-            heightCandidates.length > 0
-              ? heightCandidates.reduce((sum, value) => sum + value, 0) / heightCandidates.length
-              : undefined;
-          if (!best || mismatch < best.mismatch) {
-            best = { x: candidate.x, y: candidate.y, h: height, orientation, mismatch };
-          }
-        });
-      }
-    }
-
-    if (!best) return null;
-    return { x: best.x, y: best.y, h: best.h, orientation: best.orientation };
+    return tryBootstrapDirectionSetOccupyHelper({ pairMetrics, set, stations: this.stations });
   }
 
   private bootstrapApproximateTraverseCoords(activeObservations: Observation[]): void {
-    const directionSets = new Map<string, BootstrapDirectionSet>();
-    activeObservations.forEach((observation) => {
-      if (observation.type !== 'direction' || !observation.setId) return;
-      const entry = directionSets.get(observation.setId) ?? {
-        setId: observation.setId,
-        occupy: observation.at,
-        directions: [],
-      };
-      entry.directions.push({ to: observation.to, obs: observation.obs });
-      directionSets.set(observation.setId, entry);
+    bootstrapApproximateTraverseCoordsHelper({
+      activeObservations,
+      applyBootstrapApproxStationFn: (stationId, seed) =>
+        this.applyBootstrapApproxStation(stationId, seed),
+      log: this.log.bind(this),
+      stations: this.stations,
     });
-    if (directionSets.size === 0) return;
-
-    const pairMetrics = this.buildBootstrapPairMetrics(activeObservations);
-    if (pairMetrics.size === 0) return;
-    const bearings = activeObservations.filter(
-      (observation): observation is Observation & { type: 'bearing' } => observation.type === 'bearing',
-    );
-
-    let seededCount = 0;
-    let passCount = 0;
-    for (let pass = 0; pass < 8; pass += 1) {
-      let progress = false;
-      passCount = pass + 1;
-
-      bearings.forEach((bearing) => {
-        const metrics = pairMetrics.get(makeDirectedPairKey(bearing.from, bearing.to));
-        if (!metrics || !Number.isFinite(metrics.horizDistance) || metrics.horizDistance <= 1e-6) {
-          return;
-        }
-        const fromKnown = this.stationHasBootstrapableApprox(bearing.from);
-        const toKnown = this.stationHasBootstrapableApprox(bearing.to);
-        if (fromKnown === toKnown) return;
-
-        if (!fromKnown) {
-          const target = this.stations[bearing.to];
-          if (!target) return;
-          const seedX = target.x - metrics.horizDistance * Math.sin(bearing.obs);
-          const seedY = target.y - metrics.horizDistance * Math.cos(bearing.obs);
-          const deltaH =
-            Number.isFinite(metrics.zenith ?? Number.NaN)
-              ? (metrics.hi ?? 0) + metrics.slopeDistance * Math.cos(metrics.zenith as number) - (metrics.ht ?? 0)
-              : undefined;
-          const seedH =
-            Number.isFinite(deltaH ?? Number.NaN) && Number.isFinite(target.h ?? Number.NaN)
-              ? target.h - (deltaH as number)
-              : target.h;
-          if (this.applyBootstrapApproxStation(bearing.from, { x: seedX, y: seedY, h: seedH })) {
-            seededCount += 1;
-            progress = true;
-          }
-          return;
-        }
-
-        const fromStation = this.stations[bearing.from];
-        if (!fromStation) return;
-        const seedX = fromStation.x + metrics.horizDistance * Math.sin(bearing.obs);
-        const seedY = fromStation.y + metrics.horizDistance * Math.cos(bearing.obs);
-        const deltaH =
-          Number.isFinite(metrics.zenith ?? Number.NaN)
-            ? (metrics.hi ?? 0) + metrics.slopeDistance * Math.cos(metrics.zenith as number) - (metrics.ht ?? 0)
-            : undefined;
-        const seedH =
-          Number.isFinite(deltaH ?? Number.NaN) && Number.isFinite(fromStation.h ?? Number.NaN)
-            ? fromStation.h + (deltaH as number)
-            : fromStation.h;
-        if (this.applyBootstrapApproxStation(bearing.to, { x: seedX, y: seedY, h: seedH })) {
-          seededCount += 1;
-          progress = true;
-        }
-      });
-
-      directionSets.forEach((set) => {
-        if (this.stationHasBootstrapableApprox(set.occupy)) return;
-        const occupySeed = this.tryBootstrapDirectionSetOccupy(set, pairMetrics);
-        if (!occupySeed) return;
-        if (this.applyBootstrapApproxStation(set.occupy, occupySeed)) {
-          seededCount += 1;
-          progress = true;
-        }
-      });
-
-      directionSets.forEach((set) => {
-        if (!this.stationHasBootstrapableApprox(set.occupy)) return;
-        const occupy = this.stations[set.occupy];
-        if (!occupy) return;
-        const orientation = this.estimateBootstrapSetOrientation(set, pairMetrics);
-        if (orientation == null) return;
-        set.directions.forEach((direction) => {
-          if (this.stationHasBootstrapableApprox(direction.to)) return;
-          const metrics = pairMetrics.get(makeDirectedPairKey(set.occupy, direction.to));
-          if (!metrics || !Number.isFinite(metrics.horizDistance) || metrics.horizDistance <= 1e-6) {
-            return;
-          }
-          const azimuth = wrapTo2Pi(orientation + direction.obs);
-          const seedX = occupy.x + metrics.horizDistance * Math.sin(azimuth);
-          const seedY = occupy.y + metrics.horizDistance * Math.cos(azimuth);
-          const seedH =
-            Number.isFinite(metrics.zenith ?? Number.NaN)
-              ? occupy.h +
-                (metrics.hi ?? 0) -
-                (metrics.ht ?? 0) +
-                metrics.slopeDistance * Math.cos(metrics.zenith as number)
-              : occupy.h;
-          if (this.applyBootstrapApproxStation(direction.to, { x: seedX, y: seedY, h: seedH })) {
-            seededCount += 1;
-            progress = true;
-          }
-        });
-      });
-
-      if (!progress) break;
-    }
-
-    if (seededCount > 0) {
-      this.log(
-        `Approximate traverse bootstrap: seeded ${seededCount} station(s) over ${passCount} pass(es).`,
-      );
-    }
   }
 
   private projectWeakFloatZenithLeafStationsForDisplay(options?: { log?: boolean }): void {
@@ -2365,141 +1540,64 @@ export class LSAEngine {
   }
 
   private measuredAngleCorrection(at: StationId, from: StationId, to: StationId): number {
-    if (this.coordSystemMode !== 'grid') return 0;
-    const mode = this.stations[at];
-    if (!mode) return 0;
-    const convFrom = this.stationFactorSnapshot(from).convergenceAngleRad;
-    const convTo = this.stationFactorSnapshot(to).convergenceAngleRad;
-    return convTo - convFrom;
+    if (!this.stations[at]) return 0;
+    return measuredAngleCorrectionHelper({
+      coordSystemMode: this.coordSystemMode,
+      from,
+      stationFactorSnapshot: (stationId) => this.stationFactorSnapshot(stationId),
+      to,
+    });
   }
 
   private rawDistanceCombinedFactor(obs: Observation & { type: 'dist' }): number {
-    const fromF = this.stationFactorSnapshot(obs.from);
-    const toF = this.stationFactorSnapshot(obs.to);
-    const averageCombined = (fromF.combinedFactor + toF.combinedFactor) / 2;
-    if (this.coordSystemMode !== 'grid') return averageCombined;
-
-    const fromGeo = this.stationGeodetic(obs.from);
-    const toGeo = this.stationGeodetic(obs.to);
-    const fromStation = this.stations[obs.from];
-    const toStation = this.stations[obs.to];
-    if (!fromGeo || !toGeo || !fromStation || !toStation) return averageCombined;
-
-    const midpointFactors = computeGridFactors(
-      (fromGeo.latDeg + toGeo.latDeg) / 2,
-      (fromGeo.lonDeg + toGeo.lonDeg) / 2,
-      this.crsId,
-    );
-    if (!midpointFactors) return averageCombined;
-
-    const meanEllipsoidHeight =
-      (this.stationEllipsoidHeight(fromStation) + this.stationEllipsoidHeight(toStation)) / 2;
-    return midpointFactors.gridScaleFactor * computeElevationFactor(meanEllipsoidHeight);
+    return rawDistanceCombinedFactorHelper({
+      coordSystemMode: this.coordSystemMode,
+      crsId: this.crsId,
+      obs,
+      stationEllipsoidHeight: (station) => this.stationEllipsoidHeight(station),
+      stationFactorSnapshot: (stationId) => this.stationFactorSnapshot(stationId),
+      stationGeodetic: (stationId) => this.stationGeodetic(stationId),
+      stations: this.stations,
+    });
   }
 
   private rawDirectionSetCorrection(obs: Observation & { type: 'direction' }): number {
-    if (this.coordSystemMode !== 'grid') return 0;
-    const fromStation = this.stations[obs.at];
-    const toStation = this.stations[obs.to];
-    const fromGeo = this.stationGeodetic(obs.at);
-    const toGeo = this.stationGeodetic(obs.to);
-    if (!fromStation || !toStation || !fromGeo || !toGeo) return 0;
-    const lat1 = fromGeo.latDeg * DEG_TO_RAD;
-    const lon1 = fromGeo.lonDeg * DEG_TO_RAD;
-    const lat2 = toGeo.latDeg * DEG_TO_RAD;
-    const lon2 = toGeo.lonDeg * DEG_TO_RAD;
-    const dLon = lon2 - lon1;
-    const y = Math.sin(dLon) * Math.cos(lat2);
-    const x =
-      Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
-    const bearing = Math.atan2(y, x);
-    const hav =
-      Math.sin((lat2 - lat1) / 2) ** 2 +
-      Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
-    const centralAngle = 2 * Math.asin(Math.min(1, Math.sqrt(Math.max(hav, 0))));
-    if (!Number.isFinite(centralAngle) || centralAngle <= 0) return 0;
-    const step = Math.min(centralAngle * 1e-2, 1e-6);
-    if (!Number.isFinite(step) || step <= 0) return 0;
-    const nearLat = Math.asin(
-      Math.sin(lat1) * Math.cos(step) + Math.cos(lat1) * Math.sin(step) * Math.cos(bearing),
-    );
-    const nearLon =
-      lon1 +
-      Math.atan2(
-        Math.sin(bearing) * Math.sin(step) * Math.cos(lat1),
-        Math.cos(step) - Math.sin(lat1) * Math.sin(nearLat),
-      );
-    const nearProjected = projectGeodeticToEN({
-      latDeg: nearLat * RAD_TO_DEG,
-      lonDeg: nearLon * RAD_TO_DEG,
-      originLatDeg: this.parseState?.originLatDeg ?? fromGeo.latDeg,
-      originLonDeg: this.parseState?.originLonDeg ?? fromGeo.lonDeg,
-      model: this.parseState?.crsProjectionModel ?? 'legacy-equirectangular',
+    return rawDirectionSetCorrectionHelper({
       coordSystemMode: this.coordSystemMode,
       crsId: this.crsId,
+      obs,
+      parseState: this.parseState,
+      stationGeodetic: (stationId) => this.stationGeodetic(stationId),
+      stations: this.stations,
+      wrapToPi: (value) => this.wrapToPi(value),
     });
-    const tangentAz = Math.atan2(
-      nearProjected.east - fromStation.x,
-      nearProjected.north - fromStation.y,
-    );
-    const chordAz = Math.atan2(toStation.x - fromStation.x, toStation.y - fromStation.y);
-    return this.wrapToPi(chordAz - tangentAz);
   }
 
   private captureRawTraverseDistanceFactorSnapshots(activeObservations: Observation[]): void {
-    if (!this.parseState) return;
-
-    const rawDistanceCombinedFactorByObsId: Record<number, number> = {};
-    activeObservations.forEach((obs) => {
-      if (obs.type !== 'dist') return;
-      rawDistanceCombinedFactorByObsId[obs.id] = this.rawDistanceCombinedFactor(obs);
-    });
-    this.parseState.rawDistanceCombinedFactorByObsId = rawDistanceCombinedFactorByObsId;
+    captureRawTraverseDistanceFactorSnapshotsHelper(
+      activeObservations,
+      this.parseState,
+      (obs) => this.rawDistanceCombinedFactor(obs),
+    );
   }
 
   private captureRawTraverseDirectionCorrections(activeObservations: Observation[]): void {
-    if (!this.parseState) return;
-    const directionGroups = new Map<string, Observation[]>();
-    activeObservations
-      .filter((obs): obs is Observation & { type: 'direction' } => obs.type === 'direction')
-      .sort((a, b) => {
-        const aLine = a.sourceLine ?? Number.MAX_SAFE_INTEGER;
-        const bLine = b.sourceLine ?? Number.MAX_SAFE_INTEGER;
-        if (aLine !== bLine) return aLine - bLine;
-        return a.id - b.id;
-      })
-      .forEach((obs) => {
-        const group = directionGroups.get(obs.setId) ?? [];
-        group.push(obs);
-        directionGroups.set(obs.setId, group);
-      });
-
-    const rawDirectionSetCorrectionByObsId: Record<number, number> = {};
-    directionGroups.forEach((group) => {
-      group.forEach((obs) => {
-        rawDirectionSetCorrectionByObsId[obs.id] = this.rawDirectionSetCorrection(
-          obs as Observation & { type: 'direction' },
-        );
-      });
-    });
-    this.parseState.rawDirectionSetCorrectionByObsId = rawDirectionSetCorrectionByObsId;
+    captureRawTraverseDirectionCorrectionsHelper(
+      activeObservations,
+      this.parseState,
+      (obs) => this.rawDirectionSetCorrection(obs),
+    );
   }
 
   private modeledAzimuth(rawAz: number, atStationId?: StationId, applyConvergence = true): number {
-    let az = rawAz;
-    if (applyConvergence && atStationId) {
-      az += this.stationFactorSnapshot(atStationId).convergenceAngleRad;
-    } else if (
-      applyConvergence &&
-      this.crsConvergenceEnabled &&
-      Number.isFinite(this.crsConvergenceAngleRad) &&
-      Math.abs(this.crsConvergenceAngleRad) > 0
-    ) {
-      az += this.crsConvergenceAngleRad;
-    }
-    az %= 2 * Math.PI;
-    if (az < 0) az += 2 * Math.PI;
-    return az;
+    return modeledAzimuthHelper({
+      applyConvergence,
+      atStationId,
+      crsConvergenceAngleRad: this.crsConvergenceAngleRad,
+      crsConvergenceEnabled: this.crsConvergenceEnabled,
+      rawAz,
+      stationFactorSnapshot: (stationId) => this.stationFactorSnapshot(stationId),
+    });
   }
 
   private wrapToPi(val: number): number {
@@ -2515,52 +1613,29 @@ export class LSAEngine {
   }
 
   private mapDistanceScaleForObservation(obs: Observation): number {
-    if (obs.type !== 'dist') return 1;
-    if (this.mapMode === 'off') return 1;
-    if (this.is2D) return this.mapScaleFactor;
-    return obs.mode === 'horiz' ? this.mapScaleFactor : 1;
+    return mapDistanceScaleForObservationHelper({
+      is2D: this.is2D,
+      mapMode: this.mapMode,
+      mapScaleFactor: this.mapScaleFactor,
+      obs,
+    });
   }
 
   private crsDistanceScaleForObservation(obs: Observation): number {
-    if (obs.type !== 'dist') return 1;
-    if (this.coordSystemMode === 'local') {
-      const legacyGridScale =
-        this.crsGridScaleEnabled &&
-        Number.isFinite(this.crsGridScaleFactor) &&
-        this.crsGridScaleFactor > 0
-          ? this.crsGridScaleFactor
-          : 1;
-      if (this.localDatumScheme === 'common-elevation') {
-        const from = this.stations[obs.from];
-        const to = this.stations[obs.to];
-        if (!from || !to) return 1;
-        const meanElevation =
-          (this.stationEllipsoidHeight(from) + this.stationEllipsoidHeight(to)) / 2;
-        const factor = (EARTH_RADIUS_M + this.commonElevation) / (EARTH_RADIUS_M + meanElevation);
-        const localFactor = Number.isFinite(factor) && factor > 0 ? factor : 1;
-        return localFactor * legacyGridScale;
-      }
-      return this.averageScaleFactor * legacyGridScale;
-    }
-
-    const fromF = this.stationFactorSnapshot(obs.from);
-    const toF = this.stationFactorSnapshot(obs.to);
-    const avgGridScale = (fromF.gridScaleFactor + toF.gridScaleFactor) / 2;
-    const avgCombined = (fromF.combinedFactor + toF.combinedFactor) / 2;
-    const distMode = obs.gridDistanceMode ?? 'measured';
-    const distanceKind =
-      obs.distanceKind ??
-      (distMode === 'ellipsoidal' ? 'ellipsoidal' : distMode === 'grid' ? 'grid' : 'ground');
-    if (distanceKind === 'grid') return 1;
-    if (distanceKind === 'ellipsoidal') return avgGridScale;
-    if (this.scaleOverrideActive) {
-      this.addCoordSystemDiagnostic(
-        'SCALE_OVERRIDE_USED',
-        `.SCALE override active in GRID mode: measured distances use k=${this.averageScaleFactor.toFixed(8)} (combined factor replaced).`,
-      );
-      return this.averageScaleFactor;
-    }
-    return avgCombined;
+    return crsDistanceScaleForObservationHelper({
+      addCoordSystemDiagnostic: this.addCoordSystemDiagnostic.bind(this),
+      averageScaleFactor: this.averageScaleFactor,
+      commonElevation: this.commonElevation,
+      coordSystemMode: this.coordSystemMode,
+      crsGridScaleEnabled: this.crsGridScaleEnabled,
+      crsGridScaleFactor: this.crsGridScaleFactor,
+      localDatumScheme: this.localDatumScheme,
+      obs,
+      scaleOverrideActive: this.scaleOverrideActive,
+      stationEllipsoidHeight: (station) => this.stationEllipsoidHeight(station),
+      stationFactorSnapshot: (stationId) => this.stationFactorSnapshot(stationId),
+      stations: this.stations,
+    });
   }
 
   private distanceScaleForObservation(obs: Observation): number {
@@ -2568,31 +1643,12 @@ export class LSAEngine {
   }
 
   private prismCorrectionForObservation(obs: Observation): number {
-    if (obs.type !== 'dist' && obs.type !== 'zenith') return 0;
-
-    const obsOffset = Number.isFinite(obs.prismCorrectionM ?? NaN)
-      ? (obs.prismCorrectionM ?? 0)
-      : undefined;
-    if (obsOffset != null) {
-      if (obs.prismScope === 'set') {
-        const setId = typeof obs.setId === 'string' ? obs.setId.trim() : '';
-        if (!setId) return 0;
-      }
-      return obsOffset;
-    }
-
-    if (
-      !this.prismEnabled ||
-      !Number.isFinite(this.prismOffset) ||
-      Math.abs(this.prismOffset) <= 0
-    ) {
-      return 0;
-    }
-    if ((this.prismScope ?? 'global') === 'set') {
-      const setId = typeof obs.setId === 'string' ? obs.setId.trim() : '';
-      if (!setId) return 0;
-    }
-    return this.prismOffset;
+    return prismCorrectionForObservationHelper({
+      obs,
+      prismEnabled: this.prismEnabled,
+      prismOffset: this.prismOffset,
+      prismScope: this.prismScope,
+    });
   }
 
   private correctedDistanceModel(
@@ -2606,68 +1662,41 @@ export class LSAEngine {
     verticalDerivativeFactor?: number;
     useReducedSlopeDerivatives?: boolean;
   } {
-    const mapScale = this.distanceScaleForObservation(obs);
-    const prismCorrection = this.prismCorrectionForObservation(obs);
-    if (
-      this.coordSystemMode === 'grid' &&
-      !this.is2D &&
-      obs.mode === 'slope' &&
-      Number.isFinite(mapScale) &&
-      mapScale > 0
-    ) {
-      const geom = this.centeringLineGeometry(obs.from, obs.to, obs.hi ?? 0, obs.ht ?? 0);
-      const groundHoriz = geom.horiz / mapScale;
-      const calcDistance = Math.sqrt(groundHoriz * groundHoriz + geom.elev * geom.elev) + prismCorrection;
-      const denom = Math.max(calcDistance - prismCorrection, 1e-12);
-      return {
-        calcDistance,
-        mapScale,
-        prismCorrection,
-        horizontalDerivativeFactor: 1 / (mapScale * mapScale * denom),
-        verticalDerivativeFactor: 1 / denom,
-        useReducedSlopeDerivatives: true,
-      };
-    }
-    return {
-      calcDistance: (calcDistRaw + prismCorrection) * mapScale,
-      mapScale,
-      prismCorrection,
-    };
+    return correctedDistanceModelHelper({
+      calcDistRaw,
+      centeringLineGeometry: (fromId, toId, hi, ht) =>
+        this.centeringLineGeometry(fromId, toId, hi, ht),
+      coordSystemMode: this.coordSystemMode,
+      distanceScaleForObservation: (distanceObs) => this.distanceScaleForObservation(distanceObs),
+      is2D: this.is2D,
+      obs,
+      prismCorrectionForObservation: (prismObs) => this.prismCorrectionForObservation(prismObs),
+    });
   }
 
   private curvatureRefractionAngle(horiz: number): number {
-    if (!this.applyCurvatureRefraction) return 0;
-    if (this.verticalReduction !== 'curvref') return 0;
-    if (!Number.isFinite(horiz) || horiz <= 0) return 0;
-    return ((1 - 2 * this.refractionCoefficient) * horiz) / (2 * EARTH_RADIUS_M);
+    return curvatureRefractionAngleHelper({
+      applyCurvatureRefraction: this.applyCurvatureRefraction,
+      horiz,
+      refractionCoefficient: this.refractionCoefficient,
+      verticalReduction: this.verticalReduction,
+    });
   }
 
   private zenithScaleForObservation(obs: Observation & { type: 'zenith' }): number {
-    if (this.coordSystemMode === 'local') {
-      const legacyGridScale =
-        this.crsGridScaleEnabled &&
-        Number.isFinite(this.crsGridScaleFactor) &&
-        this.crsGridScaleFactor > 0
-          ? this.crsGridScaleFactor
-          : 1;
-      if (this.localDatumScheme === 'common-elevation') {
-        const from = this.stations[obs.from];
-        const to = this.stations[obs.to];
-        if (!from || !to) return 1;
-        const meanElevation =
-          (this.stationEllipsoidHeight(from) + this.stationEllipsoidHeight(to)) / 2;
-        const factor = (EARTH_RADIUS_M + this.commonElevation) / (EARTH_RADIUS_M + meanElevation);
-        const localFactor = Number.isFinite(factor) && factor > 0 ? factor : 1;
-        return localFactor * legacyGridScale;
-      }
-      return this.averageScaleFactor * legacyGridScale;
-    }
-    const fromF = this.stationFactorSnapshot(obs.from);
-    const toF = this.stationFactorSnapshot(obs.to);
-    if (this.scaleOverrideActive) {
-      return this.averageScaleFactor;
-    }
-    return (fromF.combinedFactor + toF.combinedFactor) / 2;
+    return zenithScaleForObservationHelper({
+      averageScaleFactor: this.averageScaleFactor,
+      commonElevation: this.commonElevation,
+      coordSystemMode: this.coordSystemMode,
+      crsGridScaleEnabled: this.crsGridScaleEnabled,
+      crsGridScaleFactor: this.crsGridScaleFactor,
+      localDatumScheme: this.localDatumScheme,
+      obs,
+      scaleOverrideActive: this.scaleOverrideActive,
+      stationEllipsoidHeight: (station) => this.stationEllipsoidHeight(station),
+      stationFactorSnapshot: (stationId) => this.stationFactorSnapshot(stationId),
+      stations: this.stations,
+    });
   }
 
   private getZenith(
@@ -2676,66 +1705,36 @@ export class LSAEngine {
     hi = 0,
     ht = 0,
   ): { z: number; dist: number; horiz: number; dh: number; crCorr: number } {
-    const cacheKey = `${fromID}|${toID}|${hi}|${ht}`;
-    const cached = this.zenithCache.get(cacheKey);
-    if (cached) return cached;
-    const s1 = this.stations[fromID];
-    const s2 = this.stations[toID];
-    if (!s1 || !s2) return { z: 0, dist: 0, horiz: 0, dh: 0, crCorr: 0 };
-    const dx = s2.x - s1.x;
-    const dy = s2.y - s1.y;
-    const dh = s2.h + ht - (s1.h + hi);
-    const horiz = Math.sqrt(dx * dx + dy * dy);
-    const dist = Math.sqrt(horiz * horiz + dh * dh);
-    const zGeom = dist === 0 ? 0 : Math.acos(dh / dist);
-    const crCorr = this.curvatureRefractionAngle(horiz);
-    const z = Math.min(Math.PI, Math.max(0, zGeom + crCorr));
-    const result = { z, dist, horiz, dh, crCorr };
-    this.zenithCache.set(cacheKey, result);
-    return result;
+    return getZenithHelper({
+      curvatureRefractionAngle: (horiz) => this.curvatureRefractionAngle(horiz),
+      fromID,
+      hi,
+      ht,
+      stations: this.stations,
+      toID,
+      zenithCache: this.zenithCache,
+    });
   }
 
   private getModeledZenith(
     obs: Observation & { type: 'zenith' },
   ): { z: number; dist: number; horiz: number; dh: number; crCorr: number; horizontalScale: number } {
-    const raw = this.getZenith(obs.from, obs.to, obs.hi ?? 0, obs.ht ?? 0);
-    const horizontalScale =
-      this.coordSystemMode === 'grid' && !this.is2D ? this.zenithScaleForObservation(obs) : 1;
-    if (!Number.isFinite(horizontalScale) || horizontalScale <= 0 || Math.abs(horizontalScale - 1) <= 1e-12) {
-      return { ...raw, horizontalScale: 1 };
-    }
-    const horiz = raw.horiz / horizontalScale;
-    const dist = Math.sqrt(horiz * horiz + raw.dh * raw.dh);
-    const zGeom = dist === 0 ? 0 : Math.acos(raw.dh / dist);
-    const crCorr = this.curvatureRefractionAngle(horiz);
-    const z = Math.min(Math.PI, Math.max(0, zGeom + crCorr));
-    return { z, dist, horiz, dh: raw.dh, crCorr, horizontalScale };
+    return getModeledZenithHelper({
+      coordSystemMode: this.coordSystemMode,
+      curvatureRefractionAngle: (horiz) => this.curvatureRefractionAngle(horiz),
+      getZenith: (fromId, toId, hi, ht) => this.getZenith(fromId, toId, hi, ht),
+      is2D: this.is2D,
+      obs,
+      zenithScaleForObservation: (zenithObs) => this.zenithScaleForObservation(zenithObs),
+    });
   }
 
   private effectiveDistanceForAngularObservation(obs: Observation): number | undefined {
-    if (obs.type === 'angle') {
-      const rayFrom = this.getAzimuth(obs.at, obs.from).dist;
-      const rayTo = this.getAzimuth(obs.at, obs.to).dist;
-      if (!Number.isFinite(rayFrom) || !Number.isFinite(rayTo) || rayFrom <= 0 || rayTo <= 0) {
-        return undefined;
-      }
-      // Harmonic-mean baseline gives a stable single-length proxy for turned-angle sensitivity.
-      const denom = 1 / rayFrom + 1 / rayTo;
-      return denom > 0 ? 2 / denom : undefined;
-    }
-    if (obs.type === 'direction') {
-      const dist = this.getAzimuth(obs.at, obs.to).dist;
-      return Number.isFinite(dist) && dist > 0 ? dist : undefined;
-    }
-    if (obs.type === 'bearing' || obs.type === 'dir') {
-      const dist = this.getAzimuth(obs.from, obs.to).dist;
-      return Number.isFinite(dist) && dist > 0 ? dist : undefined;
-    }
-    if (obs.type === 'zenith') {
-      const geom = this.getModeledZenith(obs).dist;
-      return Number.isFinite(geom) && geom > 0 ? geom : undefined;
-    }
-    return undefined;
+    return effectiveDistanceForAngularObservationHelper({
+      getAzimuth: (fromId, toId) => this.getAzimuth(fromId, toId),
+      getModeledZenith: (zenithObs) => this.getModeledZenith(zenithObs),
+      obs,
+    });
   }
 
   private isObservationActive(obs: Observation): boolean {

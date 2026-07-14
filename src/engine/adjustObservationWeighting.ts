@@ -3,10 +3,125 @@ import type {
   Instrument,
   Observation,
   SigmaSource,
+  StationId,
+  StationMap,
 } from '../types';
 
 type LineGeometry = { horiz: number; slope: number; elev: number };
 type SigmaAzimuth = { az: number; dist: number };
+type SigmaZenith = { z: number; dist: number; horiz: number; dh: number; crCorr: number };
+
+export const captureInitialSigmaGeometrySnapshot = ({
+  azimuthCache,
+  geometryDependentSigmaReference,
+  stations,
+  zenithCache,
+}: {
+  azimuthCache: Map<string, SigmaAzimuth>;
+  geometryDependentSigmaReference: 'current' | 'initial';
+  stations: StationMap;
+  zenithCache: Map<string, SigmaZenith>;
+}): StationMap => {
+  if (geometryDependentSigmaReference !== 'initial') {
+    azimuthCache.clear();
+    zenithCache.clear();
+    return {};
+  }
+  azimuthCache.clear();
+  zenithCache.clear();
+  return Object.fromEntries(
+    Object.entries(stations).map(([id, station]) => [
+      id,
+      {
+        ...station,
+        x: station.x,
+        y: station.y,
+        h: station.h,
+      },
+    ]),
+  );
+};
+
+export const getSigmaGeometryAzimuth = ({
+  cache,
+  currentGeometryAzimuth,
+  fromID,
+  geometryDependentSigmaReference,
+  initialSigmaGeometryStations,
+  toID,
+}: {
+  cache: Map<string, SigmaAzimuth>;
+  currentGeometryAzimuth: (_fromId: StationId, _toId: StationId) => SigmaAzimuth;
+  fromID: StationId;
+  geometryDependentSigmaReference: 'current' | 'initial';
+  initialSigmaGeometryStations: StationMap;
+  toID: StationId;
+}): SigmaAzimuth => {
+  if (geometryDependentSigmaReference !== 'initial') {
+    return currentGeometryAzimuth(fromID, toID);
+  }
+  const cacheKey = `${fromID}|${toID}`;
+  const cached = cache.get(cacheKey);
+  if (cached) return cached;
+  const s1 = initialSigmaGeometryStations[fromID];
+  const s2 = initialSigmaGeometryStations[toID];
+  if (!s1 || !s2) return { az: 0, dist: 0 };
+  const dx = s2.x - s1.x;
+  const dy = s2.y - s1.y;
+  let az = Math.atan2(dx, dy);
+  if (az < 0) az += 2 * Math.PI;
+  const result = { az, dist: Math.sqrt(dx * dx + dy * dy) };
+  cache.set(cacheKey, result);
+  return result;
+};
+
+export const getSigmaGeometryZenith = ({
+  cache,
+  currentGeometryZenith,
+  curvatureRefractionAngle,
+  fromID,
+  geometryDependentSigmaReference,
+  hi = 0,
+  ht = 0,
+  initialSigmaGeometryStations,
+  toID,
+}: {
+  cache: Map<string, SigmaZenith>;
+  currentGeometryZenith: (
+    _fromId: StationId,
+    _toId: StationId,
+    _hi?: number,
+    _ht?: number,
+  ) => SigmaZenith;
+  curvatureRefractionAngle: (_horiz: number) => number;
+  fromID: StationId;
+  geometryDependentSigmaReference: 'current' | 'initial';
+  hi?: number;
+  ht?: number;
+  initialSigmaGeometryStations: StationMap;
+  toID: StationId;
+}): SigmaZenith => {
+  if (geometryDependentSigmaReference !== 'initial') {
+    return currentGeometryZenith(fromID, toID, hi, ht);
+  }
+  const cacheKey = `${fromID}|${toID}|${hi}|${ht}`;
+  const cached = cache.get(cacheKey);
+  if (cached) return cached;
+  const s1 = initialSigmaGeometryStations[fromID];
+  const s2 = initialSigmaGeometryStations[toID];
+  if (!s1 || !s2) return { z: 0, dist: 0, horiz: 0, dh: 0, crCorr: 0 };
+  const dx = s2.x - s1.x;
+  const dy = s2.y - s1.y;
+  const dh = s2.h + ht - (s1.h + hi);
+  const horiz = Math.sqrt(dx * dx + dy * dy);
+  const dist = Math.sqrt(horiz * horiz + dh * dh);
+  const zGeom = dist === 0 ? 0 : Math.acos(dh / dist);
+  const crCorr = curvatureRefractionAngle(horiz);
+  const z = Math.min(Math.PI, Math.max(0, zGeom + crCorr));
+  const result = { z, dist, horiz, dh, crCorr };
+  cache.set(cacheKey, result);
+  return result;
+};
 
 export const shouldApplyIndustryParityAngularSigmaCalibration = (
   obs: Observation,

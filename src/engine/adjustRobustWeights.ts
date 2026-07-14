@@ -160,3 +160,33 @@ export const maxRobustWeightDelta = (a: number[], b: number[]): number => {
   }
   return maxDelta;
 };
+
+export const recordRobustDiagnostics = ({
+  iteration,
+  log,
+  maxWeightDelta,
+  robustDiagnostics,
+  robustMode,
+  summary,
+}: {
+  iteration: number;
+  log: (_message: string) => void;
+  maxWeightDelta: number;
+  robustDiagnostics: AdjustmentResult['robustDiagnostics'];
+  robustMode: string | undefined;
+  summary: RobustWeightSummary;
+}): void => {
+  if (!robustDiagnostics) return;
+  robustDiagnostics.iterations.push({
+    iteration,
+    downweightedRows: summary.downweightedRows,
+    meanWeight: summary.meanWeight,
+    minWeight: summary.minWeight,
+    maxNorm: summary.maxNorm,
+    maxWeightDelta,
+  });
+  robustDiagnostics.topDownweightedRows = summary.topRows;
+  log(
+    `Iter ${iteration} robust(${robustMode}): downweighted=${summary.downweightedRows}, minW=${summary.minWeight.toFixed(3)}, meanW=${summary.meanWeight.toFixed(3)}, max|v/sigma|=${summary.maxNorm.toFixed(2)}, maxDeltaW=${maxWeightDelta.toFixed(4)}`,
+  );
+};
