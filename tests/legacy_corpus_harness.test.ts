@@ -17,11 +17,13 @@ import type { ParseCompatibilityDiagnostic } from '../src/types';
 const ROOT = process.cwd();
 const TSX_CLI = path.resolve(ROOT, 'node_modules', 'tsx', 'dist', 'cli.mjs');
 const HARNESS_CLI = path.resolve(ROOT, 'src', 'legacyCorpusHarness.ts');
+const HARNESS_TEST_TIMEOUT_MS = 20000;
 
-const runHarness = (args: string[] = []) =>
+const runHarness = (args: string[] = [], timeout = HARNESS_TEST_TIMEOUT_MS) =>
   spawnSync(process.execPath, [TSX_CLI, HARNESS_CLI, ...args], {
     cwd: ROOT,
     encoding: 'utf-8',
+    timeout,
   });
 
 describe('legacy corpus harness', () => {

@@ -119,6 +119,7 @@ import {
   buildSelectedLinePairCommandPoints,
 } from './useSurveyCadCommandSelection';
 import { useSurveyCadCommandStarters } from './useSurveyCadCommandStarters';
+import { useSurveyCadCommandInputActions } from './useSurveyCadCommandInputActions';
 import { useSurveyCadCommandLifecycle } from './useSurveyCadCommandLifecycle';
 import { useSurveyCadTraverseDraftActions } from './useSurveyCadTraverseDraftActions';
 
@@ -2489,6 +2490,13 @@ export const useSurveyCadCommands = ({
     sessionRef,
     submitSessionInput,
   });
+  const commandInputActions = useSurveyCadCommandInputActions({
+    activeSnap,
+    buildBatchCogoDraftForInput,
+    consumePoint,
+    session,
+    updateSession,
+  });
   const commandStarters = useSurveyCadCommandStarters({
     beginSession,
     buildBatchCogoDraftForInput,
@@ -2543,39 +2551,11 @@ export const useSurveyCadCommands = ({
     ...commandStarters,
     cancelCommand: commandLifecycle.cancelCommand,
     finishCommand: commandLifecycle.finishCommand,
-    setCommandInputValue: (value) =>
-      updateSession((current) =>
-        current && current.key !== 'TRIM' && current.key !== 'EXTEND'
-          ? { ...current, inputValue: value, resultText: undefined }
-          : current,
-      ),
-    appendCommandInputValue: (value) =>
-      updateSession((current) =>
-        current && current.key !== 'TRIM' && current.key !== 'EXTEND'
-          ? { ...current, inputValue: `${current.inputValue}${value}`, resultText: undefined }
-          : current,
-      ),
-    backspaceCommandInputValue: () =>
-      updateSession((current) =>
-        current && current.key !== 'TRIM' && current.key !== 'EXTEND'
-          ? { ...current, inputValue: current.inputValue.slice(0, -1), resultText: undefined }
-          : current,
-      ),
+    setCommandInputValue: commandInputActions.setCommandInputValue,
+    appendCommandInputValue: commandInputActions.appendCommandInputValue,
+    backspaceCommandInputValue: commandInputActions.backspaceCommandInputValue,
     submitCommandInput: submitSessionInput,
-    useActiveSnap: () => {
-      if (!activeSnap) return;
-      consumePoint(
-        {
-          x: activeSnap.x,
-          y: activeSnap.y,
-          label: activeSnap.label,
-          snapSourceSegmentId: activeSnap.sourceSegmentId,
-          snapSourceEntityId: activeSnap.sourceEntityId,
-          snapKind: activeSnap.kind,
-        },
-        { suppressPointLabel: true },
-      );
-    },
+    useActiveSnap: commandInputActions.useActiveSnap,
     editTraverseDraftLeg: traverseDraftActions.editTraverseDraftLeg,
     replaceTraverseDraftLeg: traverseDraftActions.replaceTraverseDraftLeg,
     appendTraverseDraftPoint: traverseDraftActions.appendTraverseDraftPoint,
@@ -2589,33 +2569,9 @@ export const useSurveyCadCommands = ({
     removeTraverseDraftSideshot: traverseDraftActions.removeTraverseDraftSideshot,
     rewindTraverseDraftToPointCount: traverseDraftActions.rewindTraverseDraftToPointCount,
     closeTraverseDraftLoop: traverseDraftActions.closeTraverseDraftLoop,
-    setBatchCogoInputValue: (value) =>
-      updateSession((current) =>
-        current && current.key === 'BATCH_COGO'
-          ? {
-              ...current,
-              inputValue: value,
-              draft: buildBatchCogoDraftForInput(value),
-              resultText: undefined,
-            }
-          : current,
-      ),
+    setBatchCogoInputValue: commandInputActions.setBatchCogoInputValue,
     commitBatchCogoDraft: commandLifecycle.commitBatchCogoDraft,
-    consumeInteractionPoint: (point, label, options) => {
-      if (!session) return;
-      consumePoint(
-        {
-          x: point.x,
-          y: point.y,
-          label: label ?? `${point.x.toFixed(3)},${point.y.toFixed(3)}`,
-          snapSourceSegmentId: options?.snapSourceSegmentId,
-          snapSourceEntityId: options?.snapSourceEntityId,
-          snapKind: options?.snapKind,
-          extendMode: options?.extendMode,
-        },
-        { suppressPointLabel: true },
-      );
-    },
+    consumeInteractionPoint: commandInputActions.consumeInteractionPoint,
     handleEnterKey: commandLifecycle.handleEnterKey,
     handleEscapeKey: commandLifecycle.handleEscapeKey,
   };

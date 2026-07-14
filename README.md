@@ -53,6 +53,8 @@ npm run test
 npm run build
 ```
 
+The Git pre-commit hook runs `npm run lint` and `npm run typecheck` by default. Set `WEBNET_PRECOMMIT_FULL=1` when you want the hook to also run `npm run test:run`; completed batches should still run the full validation list above before commit.
+
 Parity-sensitive work also requires:
 
 ```bash

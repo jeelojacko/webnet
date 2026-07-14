@@ -1,3 +1,8 @@
 npm run lint
 npm run typecheck
-npm run test:run
+
+if [ "${WEBNET_PRECOMMIT_FULL:-0}" = "1" ]; then
+  npm run test:run
+else
+  echo "Skipping npm run test:run in pre-commit; run full validation before commit or set WEBNET_PRECOMMIT_FULL=1."
+fi

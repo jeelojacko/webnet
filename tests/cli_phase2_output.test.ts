@@ -13,17 +13,18 @@ const PREANALYSIS_INPUT = path.resolve(ROOT, 'tests', 'fixtures', 'preanalysis_c
 const GEOID_GTX_INPUT = path.resolve(ROOT, 'tests', 'fixtures', 'mock_geoid.gtx');
 const CLI_TEST_TIMEOUT_MS = 15000;
 
-const runCli = (args: string[]) =>
+const runCli = (args: string[], timeout = CLI_TEST_TIMEOUT_MS) =>
   spawnSync(process.execPath, [TSX_CLI, WEBNET_CLI, ...args], {
     cwd: ROOT,
     encoding: 'utf-8',
+    timeout,
   });
 
 const normalizePath = (value: string): string => value.replace(/\\/g, '/');
 
 describe('CLI phase 2 output modes', () => {
   it('emits machine-readable JSON payloads', () => {
-    const res = runCli(['--input', STABLE_INPUT, '--output', 'json']);
+    const res = runCli(['--input', STABLE_INPUT, '--output', 'json'], 120000);
     expect(res.status).toBe(0);
     const payload = JSON.parse(res.stdout);
     expect(payload.success).toBe(true);
@@ -35,7 +36,7 @@ describe('CLI phase 2 output modes', () => {
   it('writes industry-style listing output to file', () => {
     const outDir = mkdtempSync(path.join(tmpdir(), 'webnet-cli-'));
     const outPath = path.join(outDir, 'listing.txt');
-    const res = runCli(['--input', STABLE_INPUT, '--output', 'listing', '--out', outPath]);
+    const res = runCli(['--input', STABLE_INPUT, '--output', 'listing', '--out', outPath], 60000);
     expect(res.status).toBe(0);
     const text = readFileSync(outPath, 'utf-8');
     expect(text).toContain('INDUSTRY-STANDARD-STYLE Listing');
@@ -408,7 +409,7 @@ describe('CLI phase 2 output modes', () => {
         args.push('--run-mode', runMode);
       }
       args.push('--crs-id', crsId);
-      const res = runCli(args);
+      const res = runCli(args, 120000);
       expect(res.status).toBe(0);
       const payload = JSON.parse(res.stdout);
       expect(payload.parseState?.coordSystemMode).toBe('grid');
