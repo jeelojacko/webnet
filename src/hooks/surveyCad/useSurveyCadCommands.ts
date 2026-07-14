@@ -1,8 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  cadDraftBatchCogo,
-} from '../../engine/cad/cadBatchCogo';
-import {
   cadArcPointByArcDistance,
   cadArcPointByChordDistance,
   cadArcSubdivisionPoints,
@@ -121,7 +118,10 @@ import {
 import { useSurveyCadCommandStarters } from './useSurveyCadCommandStarters';
 import { useSurveyCadCommandInputActions } from './useSurveyCadCommandInputActions';
 import { useSurveyCadCommandLifecycle } from './useSurveyCadCommandLifecycle';
+import { createSurveyCadReportPublisher } from './useSurveyCadCommandReports';
 import { useSurveyCadTraverseDraftActions } from './useSurveyCadTraverseDraftActions';
+import { createBatchCogoDraftBuilder } from './useSurveyCadBatchCogoDraft';
+import { buildSurveyCadCommandAvailability } from './useSurveyCadCommandAvailability';
 
 export type { CadCommandPreviewState } from './useSurveyCadCommandPreview';
 
@@ -289,14 +289,6 @@ const buildCenterFirstArcDefinition = (
     : cadBuildArcFromStartCenterChord(points[1]!, points[0]!, value, reverseDirectionModifier);
 };
 
-const buildReportProvenance = (toolKey: string, summary: string) => ({
-  id: `${toolKey}:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`,
-  toolKey,
-  inputs: {},
-  resultSummary: summary,
-  createdAtIso: new Date().toISOString(),
-});
-
 export const useSurveyCadCommands = ({
   activeSnap,
   previewPoint,
@@ -351,42 +343,14 @@ export const useSurveyCadCommands = ({
     replaceSession(nextSession);
   };
 
-  const publishReport = (
-    toolKey: string,
-    title: string,
-    summary: string,
-    rows: Array<{ label: string; value: string; unit?: string }>,
-    alternatives: Array<{ id: string; label: string; point?: { x: number; y: number } }> = [],
-  ) => {
-    onReportComputation?.(
-      buildCadCogoComputation({
-        createdEntities: [],
-        report: {
-          title,
-          summary,
-          rows,
-        },
-        warnings: [],
-        alternatives,
-        provenance: buildReportProvenance(toolKey, summary),
-      }),
-    );
-  };
-
-  const buildBatchCogoDraftForInput = (
-    inputValue: string,
-    startPoint: CommandPoint | null = selectedStartPointForBatchCogo,
-  ) =>
-    cadDraftBatchCogo({
-      sourceText: inputValue,
-      selectedStartPoint: startPoint
-        ? {
-            x: startPoint.x,
-            y: startPoint.y,
-            label: startPoint.label,
-          }
-        : null,
-    });
+  const publishReport = useMemo(
+    () => createSurveyCadReportPublisher(onReportComputation),
+    [onReportComputation],
+  );
+  const buildBatchCogoDraftForInput = useMemo(
+    () => createBatchCogoDraftBuilder(selectedStartPointForBatchCogo),
+    [selectedStartPointForBatchCogo],
+  );
 
   const statusPrompt = useMemo(
     () => promptForSession(session, history.commandState.prompt),
@@ -398,6 +362,15 @@ export const useSurveyCadCommands = ({
   const commandPreview = useMemo(
     () => buildCommandPreview({ session, previewPoint, reverseDirectionModifier }),
     [previewPoint, reverseDirectionModifier, session],
+  );
+  const commandAvailability = useMemo(
+    () =>
+      buildSurveyCadCommandAvailability({
+        activeSnap,
+        commandExpectsPointPick,
+        session,
+      }),
+    [activeSnap, commandExpectsPointPick, session],
   );
   const commitArcDefinition = (
     modeLabel: string,
@@ -2523,31 +2496,10 @@ export const useSurveyCadCommands = ({
     activeTraverseDraft,
     snapConstructionContext,
     commandExpectsPointPick,
-    canUseActiveSnap:
-      activeSnap != null &&
-      commandExpectsPointPick &&
-      session?.key !== 'TRIM' &&
-      session?.key !== 'EXTEND',
-    canCycleActiveSnap:
-      commandExpectsPointPick &&
-      session?.key !== 'TRIM' &&
-      session?.key !== 'EXTEND',
-    canFinishCommand:
-      session?.key === 'PLINE'
-        ? session.points.length >= 2
-        : session?.key === 'TRAVERSE'
-          ? session.points.length >= 2 &&
-            (session.mode !== 'point-to-point' || session.closePoint != null)
-          : session?.key === 'PARCEL_SPLIT_BEARING' || session?.key === 'PARCEL_SPLIT_AREA'
-            ? session.splitPoint != null && session.inputValue.trim().length > 0
-          : session?.key === 'BATCH_COGO'
-            ? session.draft.canCommit
-            : false,
-    canCloseTraverseDraft:
-      session?.key === 'TRAVERSE' &&
-      session.points.length >= 3 &&
-      (Math.abs(session.points[0]!.x - session.points[session.points.length - 1]!.x) > 1e-9 ||
-        Math.abs(session.points[0]!.y - session.points[session.points.length - 1]!.y) > 1e-9),
+    canUseActiveSnap: commandAvailability.canUseActiveSnap,
+    canCycleActiveSnap: commandAvailability.canCycleActiveSnap,
+    canFinishCommand: commandAvailability.canFinishCommand,
+    canCloseTraverseDraft: commandAvailability.canCloseTraverseDraft,
     ...commandStarters,
     cancelCommand: commandLifecycle.cancelCommand,
     finishCommand: commandLifecycle.finishCommand,
