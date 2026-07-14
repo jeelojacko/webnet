@@ -31,7 +31,6 @@ import { formatAutoAdjustLogLines, runAutoAdjustCycles, type AutoAdjustConfig } 
 import type { GeoidGridModel } from './geoid';
 import {
   accumulateNormalEquationsFromSparseRows,
-  multiplySparseRowsByDenseMatrix,
   zeros,
 } from './matrix';
 import { parseInput } from './parse';
@@ -40,15 +39,8 @@ import {
   getCachedSolvePreparation,
   recordScenarioSolve,
 } from './scenarioParsedModelCache';
-import { buildCoordinateConstraints, coordinateConstraintWeightedSum } from './adjustmentConstraints';
 import { assembleAdjustmentEquations } from './adjustmentEquationAssembly';
 import { applyAdjustmentCorrections, solveAdjustmentIteration } from './adjustmentIteration';
-import {
-  makePairKey,
-} from './adjustMath';
-import {
-  transformSymmetricCovariance3,
-} from './adjustGpsMath';
 import {
   applyGpsVerticalDeflection as applyGpsVerticalDeflectionHelper,
   buildGpsDisplayResidualTransform,
@@ -136,7 +128,6 @@ import {
 } from './adjustmentPreprocessing';
 import type { SolvePreparationResult } from './adjustmentPreprocessing';
 import {
-  getObservationSetId,
   getObservationSideshotCalcMeta,
 } from './observationMetadata';
 import {
@@ -150,25 +141,14 @@ import {
   formatSolveTimingLogLine,
 } from './adjustSolveTiming';
 import { addUniqueCoordSystemWarning } from './adjustCoordSystemDiagnostics';
-import { buildAdjustmentResultPayload, finalizeResultParseState } from './adjustmentResultBuilder';
 import {
-  buildObservationTypeSummary,
-  buildResidualDiagnostics,
-  buildStatisticalSummary,
-} from './adjustmentStatisticsBuilders';
-import { buildChiSquareSummary } from './adjustmentStatisticalMath';
-import { buildWeakGeometryDiagnostics } from './adjustmentWeakGeometry';
+  calculateAdjustmentStatistics,
+  type AdjustmentStatisticsContext,
+} from './adjustStatistics';
+import { buildAdjustmentResultPayload, finalizeResultParseState } from './adjustmentResultBuilder';
 import {
   projectWeakFloatZenithLeafStationsForDisplay as projectWeakFloatZenithLeafStations,
 } from './adjustmentWeakFloatZenithProjection';
-import {
-  buildDirectionDiagnostics,
-  type DirectionSetStat,
-} from './adjustmentDirectionDiagnostics';
-import {
-  buildTsCorrelationDiagnostics,
-  type TsCorrelationResidualGroups,
-} from './adjustmentTsCorrelationDiagnostics';
 import {
   resolveRunModeCompatibilityOptions,
   runModeCompatibilityDiagnosticLines,
@@ -179,21 +159,7 @@ import {
   buildAutoSideshotDiagnostics,
   buildClusterDiagnostics,
 } from './adjustmentReviewDiagnostics';
-import {
-  buildSetupDiagnostics,
-  buildTraverseDiagnostics,
-} from './adjustmentSetupTraverseDiagnostics';
 import type { CoordinateConstraintEquation } from './adjustmentSolveTypes';
-import {
-  buildDistanceAzimuthPrecision,
-  buildHorizontalErrorEllipse,
-  buildRelativeCovarianceFromEndpoints,
-  sqrtPrecisionComponent,
-} from './precisionPropagation';
-import {
-  scaleRelativeCovarianceRows,
-  scaleStationCovarianceRows,
-} from './resultPrecision';
 import { summarizeReductionUsage } from './reductionUsageSummary';
 import type {
   EquationRowInfo,
@@ -3066,1111 +3032,108 @@ export class LSAEngine {
     }
   }
 
+  private buildStatisticsContext(): AdjustmentStatisticsContext {
+    return {
+      observations: this.observations,
+      stations: this.stations,
+      unknowns: this.unknowns,
+      paramIndex: this.paramIndex,
+      Qxx: this.Qxx,
+      is2D: this.is2D,
+      directionOrientations: this.directionOrientations,
+      dof: this.dof,
+      seuw: this.seuw,
+      preanalysisMode: this.preanalysisMode,
+      robustMode: this.robustMode,
+      tsCorrelationEnabled: this.tsCorrelationEnabled,
+      tsCorrelationRho: this.tsCorrelationRho,
+      tsCorrelationScope: this.tsCorrelationScope,
+      localTestCritical: this.localTestCritical,
+      maxStdRes: this.maxStdRes,
+      traverseThresholds: { ...this.traverseThresholds },
+      parseState: this.parseState,
+      solveTiming: this.solveTiming,
+      logs: this.logs,
+      chiSquare: this.chiSquare,
+      statisticalSummary: this.statisticalSummary,
+      typeSummary: this.typeSummary,
+      directionSetDiagnostics: this.directionSetDiagnostics,
+      directionTargetDiagnostics: this.directionTargetDiagnostics,
+      directionRepeatabilityDiagnostics: this.directionRepeatabilityDiagnostics,
+      setupDiagnostics: this.setupDiagnostics,
+      residualDiagnostics: this.residualDiagnostics,
+      traverseDiagnostics: this.traverseDiagnostics,
+      autoSideshotDiagnostics: this.autoSideshotDiagnostics,
+      tsCorrelationDiagnostics: this.tsCorrelationDiagnostics,
+      precisionModels: this.precisionModels,
+      stationCovariances: this.stationCovariances,
+      relativePrecision: this.relativePrecision,
+      relativeCovariances: this.relativeCovariances,
+      weakGeometryDiagnostics: this.weakGeometryDiagnostics,
+      sideshots: this.sideshots,
+      clearGeometryCache: () => this.clearGeometryCache(),
+      collectActiveObservations: () => this.collectActiveObservations(),
+      correctedDistanceModel: (obs, calcDistRaw) => this.correctedDistanceModel(obs, calcDistRaw),
+      curvatureRefractionAngle: (horiz) => this.curvatureRefractionAngle(horiz),
+      effectiveDistanceForAngularObservation: (obs) =>
+        this.effectiveDistanceForAngularObservation(obs),
+      effectiveStdDev: (obs) => this.effectiveStdDev(obs),
+      getAzimuth: (fromId, toId) => this.getAzimuth(fromId, toId),
+      getModeledZenith: (obs) => this.getModeledZenith(obs),
+      getObservedHorizontalDistanceIn2D: (obs) => this.getObservedHorizontalDistanceIn2D(obs),
+      gpsComponentCount: (obs) => this.gpsComponentCount(obs),
+      gpsCovariance: (obs) => this.gpsCovariance(obs),
+      gpsDisplayResidualTransform: (obs) => this.gpsDisplayResidualTransform(obs),
+      gpsModeledVector: (obs) => this.gpsModeledVector(obs),
+      gpsModeledVectorDerivatives: (obs) => this.gpsModeledVectorDerivatives(obs),
+      gpsObservedVector: (obs) => this.gpsObservedVector(obs),
+      gpsWeight: (obs) => this.gpsWeight(obs),
+      invertNormalMatrixForStats: (normal) => this.invertNormalMatrixForStats(normal),
+      isObservationActive: (obs) => this.isObservationActive(obs),
+      measuredAngleCorrection: (at, from, to) => this.measuredAngleCorrection(at, from, to),
+      modeledAzimuth: (rawAz, atStationId, applyConvergence) =>
+        this.modeledAzimuth(rawAz, atStationId, applyConvergence),
+      wrapToPi: (value) => this.wrapToPi(value),
+      applyRobustWeightFactors: (matrix, base, factors) =>
+        this.applyRobustWeightFactors(matrix, base, factors),
+      applyTsCorrelationToWeightMatrix: (matrix, rowInfo) =>
+        this.applyTsCorrelationToWeightMatrix(matrix, rowInfo, true),
+      captureObservationWeightingStdDevs: (observations) =>
+        this.captureObservationWeightingStdDevs(observations),
+      captureRobustWeightBase: (matrix, rowInfo) => this.captureRobustWeightBase(matrix, rowInfo),
+      computeRobustWeightSummary: (residuals, rowInfo) =>
+        this.computeRobustWeightSummary(residuals, rowInfo),
+      computeSideshotResults: () => this.computeSideshotResults(),
+      log: (message) => this.log(message),
+      tsCorrelationGroup: (obs) => this.tsCorrelationGroup(obs),
+    };
+  }
+
   private calculateStatistics(
     paramIndex: Record<StationId, { x?: number; y?: number; h?: number }>,
     hasQxx: boolean,
     activeObservationsInput?: Observation[],
   ) {
-    this.clearGeometryCache();
-    let vtpv = 0;
-    const closureResiduals: string[] = [];
-    const closureVectors: { from: StationId; to: StationId; dE: number; dN: number }[] = [];
-    const loopVectors: Record<string, { dE: number; dN: number }> = {};
-    const loopAngleArcSec = new Map<string, number>();
-    const loopVerticalMisclosure = new Map<string, number>();
-    const hasClosureObs = this.observations.some(
-      (o) => String(getObservationSetId(o) ?? '').toUpperCase() === 'TE',
-    );
-    const coordClosureVectors: { from: StationId; to: StationId; dE: number; dN: number }[] = [];
-    let totalTraverseDistance = 0;
-    const directionStats = new Map<string, DirectionSetStat>();
-    const activeObservations = activeObservationsInput ?? this.collectActiveObservations();
-    const constraints = buildCoordinateConstraints(this.stations, paramIndex, this.is2D);
-    const tsCorrelationRows: TsCorrelationResidualGroups = new Map();
-    const groupOrder = ['Angles', 'Directions', 'Distances', 'Az/Bearings', 'GPS', 'Level Data', 'Zenith'];
-    const summarizeGroup = (obs: Observation): string => {
-      if (obs.type === 'angle') return 'Angles';
-      if (obs.type === 'direction' || obs.type === 'dir') return 'Directions';
-      if (obs.type === 'bearing') return 'Az/Bearings';
-      if (obs.type === 'dist') return 'Distances';
-      if (obs.type === 'gps') return 'GPS';
-      if (obs.type === 'lev') return 'Level Data';
-      if (obs.type === 'zenith') return 'Zenith';
-      return 'Other';
-    };
-    const weightedByGroup = new Map<string, { count: number; sumSquares: number }>();
-    const ensureGroup = (label: string): { count: number; sumSquares: number } => {
-      const existing = weightedByGroup.get(label);
-      if (existing) return existing;
-      const init = { count: 0, sumSquares: 0 };
-      weightedByGroup.set(label, init);
-      return init;
-    };
-    const observationEquationCount = (obs: Observation): number => {
-      if (obs.type !== 'gps') return 1;
-      return this.gpsComponentCount(obs);
-    };
-    const addObservationContribution = (obs: Observation, contribution: number) => {
-      const label = summarizeGroup(obs);
-      const row = ensureGroup(label);
-      row.count += observationEquationCount(obs);
-      row.sumSquares += contribution;
-    };
-    const addGroupContribution = (label: string, contribution: number) => {
-      const row = ensureGroup(label);
-      row.sumSquares += contribution;
-    };
-    const collectTsCorrelationRow = (obs: Observation, v: number, sigma: number) => {
-      const group = this.tsCorrelationGroup(obs);
-      if (!group) return;
-      if (!Number.isFinite(v) || !Number.isFinite(sigma) || sigma <= 0) return;
-      const entry = tsCorrelationRows.get(group.key) ?? {
-        station: group.station,
-        setId: group.setId,
-        rows: [],
-      };
-      entry.rows.push({ v, sigma, groupLabel: summarizeGroup(obs) });
-      tsCorrelationRows.set(group.key, entry);
-    };
-
-    activeObservations.forEach((obs) => {
-      obs.effectiveDistance = undefined;
-      if (obs.type === 'dist') {
-        const s1 = this.stations[obs.from];
-        const s2 = this.stations[obs.to];
-        if (!s1 || !s2) return;
-        const dx = s2.x - s1.x;
-        const dy = s2.y - s1.y;
-        const dz = s2.h + (obs.ht ?? 0) - (s1.h + (obs.hi ?? 0));
-        const horiz = Math.sqrt(dx * dx + dy * dy);
-        const calcRaw = this.is2D
-          ? horiz
-          : obs.mode === 'slope'
-            ? Math.sqrt(horiz * horiz + dz * dz)
-            : horiz;
-        const calc = this.correctedDistanceModel(obs, calcRaw).calcDistance;
-        const v = obs.obs - calc;
-        obs.calc = calc;
-        obs.residual = v;
-        const sigma = this.effectiveStdDev(obs);
-        obs.stdRes = Math.abs(v) / sigma;
-        const q = (v * v) / (sigma * sigma);
-        vtpv += q;
-        addObservationContribution(obs, q);
-        const setTag = String(getObservationSetId(obs) ?? '').toUpperCase();
-        if (setTag === 'T' || setTag === 'TE') {
-          totalTraverseDistance += Math.abs(obs.obs);
-        }
-      } else if (obs.type === 'angle') {
-        obs.effectiveDistance = this.effectiveDistanceForAngularObservation(obs);
-        const azTo = this.getAzimuth(obs.at, obs.to).az;
-        const azFrom = this.getAzimuth(obs.at, obs.from).az;
-        let calcAngle = azTo - azFrom;
-        if (obs.gridObsMode !== 'grid') {
-          calcAngle += this.measuredAngleCorrection(obs.at, obs.from, obs.to);
-        }
-        if (calcAngle < 0) calcAngle += 2 * Math.PI;
-        let v = obs.obs - calcAngle;
-        if (v > Math.PI) v -= 2 * Math.PI;
-        if (v < -Math.PI) v += 2 * Math.PI;
-        obs.calc = calcAngle;
-        obs.residual = v;
-        const sigma = this.effectiveStdDev(obs);
-        obs.stdRes = Math.abs(v) / sigma;
-        const q = (v * v) / (sigma * sigma);
-        vtpv += q;
-        addObservationContribution(obs, q);
-        collectTsCorrelationRow(obs, v, sigma);
-      } else if (obs.type === 'gps') {
-        const corrected = this.gpsObservedVector(obs);
-        const calc = this.gpsModeledVector(obs);
-        const vE = corrected.dE - calc.dE;
-        const vN = corrected.dN - calc.dN;
-        const vU =
-          !this.is2D &&
-          Number.isFinite(corrected.dU ?? Number.NaN) &&
-          Number.isFinite(calc.dU ?? Number.NaN)
-            ? (corrected.dU as number) - (calc.dU as number)
-            : undefined;
-        obs.calc = calc;
-        obs.residual = { vE, vN, vU };
-        const w = this.gpsWeight(obs);
-        const quad =
-          w.wEE * vE * vE +
-          2 * w.wEN * vE * vN +
-          w.wNN * vN * vN +
-          ((vU != null && w.wUU != null ? w.wUU * vU * vU : 0) +
-            (vU != null && w.wEU != null ? 2 * w.wEU * vE * vU : 0) +
-            (vU != null && w.wNU != null ? 2 * w.wNU * vN * vU : 0));
-        obs.stdRes = Math.sqrt(Math.max(quad, 0));
-        vtpv += quad;
-        addObservationContribution(obs, quad);
-      } else if (obs.type === 'lev') {
-        const s1 = this.stations[obs.from];
-        const s2 = this.stations[obs.to];
-        if (!s1 || !s2) return;
-        const calc_dH = s2.h - s1.h;
-        const v = obs.obs - calc_dH;
-        obs.calc = calc_dH;
-        obs.residual = v;
-        const sigma = this.effectiveStdDev(obs);
-        obs.stdRes = Math.abs(v) / sigma;
-        const q = (v * v) / (sigma * sigma);
-        vtpv += q;
-        addObservationContribution(obs, q);
-      } else if (obs.type === 'bearing') {
-        obs.effectiveDistance = this.effectiveDistanceForAngularObservation(obs);
-        const calcAz = this.modeledAzimuth(
-          this.getAzimuth(obs.from, obs.to).az,
-          obs.from,
-          obs.gridObsMode !== 'grid',
-        );
-        let v = obs.obs - calcAz;
-        if (v > Math.PI) v -= 2 * Math.PI;
-        if (v < -Math.PI) v += 2 * Math.PI;
-        obs.calc = calcAz;
-        obs.residual = v;
-        const sigma = this.effectiveStdDev(obs);
-        obs.stdRes = Math.abs(v) / sigma;
-        const q = (v * v) / (sigma * sigma);
-        vtpv += q;
-        addObservationContribution(obs, q);
-        collectTsCorrelationRow(obs, v, sigma);
-      } else if (obs.type === 'dir') {
-        obs.effectiveDistance = this.effectiveDistanceForAngularObservation(obs);
-        const calcAz = this.modeledAzimuth(
-          this.getAzimuth(obs.from, obs.to).az,
-          obs.from,
-          obs.gridObsMode !== 'grid',
-        );
-        let v0 = obs.obs - calcAz;
-        if (v0 > Math.PI) v0 -= 2 * Math.PI;
-        if (v0 < -Math.PI) v0 += 2 * Math.PI;
-        let v = v0;
-        if (obs.flip180) {
-          let v1 = obs.obs + Math.PI - calcAz;
-          if (v1 > Math.PI) v1 -= 2 * Math.PI;
-          if (v1 < -Math.PI) v1 += 2 * Math.PI;
-          if (Math.abs(v1) < Math.abs(v0)) v = v1;
-        }
-        obs.calc = calcAz;
-        obs.residual = v;
-        const sigma = this.effectiveStdDev(obs);
-        obs.stdRes = Math.abs(v) / sigma;
-        const q = (v * v) / (sigma * sigma);
-        vtpv += q;
-        addObservationContribution(obs, q);
-        collectTsCorrelationRow(obs, v, sigma);
-      } else if (obs.type === 'direction') {
-        obs.effectiveDistance = this.effectiveDistanceForAngularObservation(obs);
-        const az = this.modeledAzimuth(
-          this.getAzimuth(obs.at, obs.to).az,
-          obs.at,
-          obs.gridObsMode !== 'grid',
-        );
-        const setId = getObservationSetId(obs) ?? 'unknown';
-        const orientation = this.directionOrientations[setId] ?? 0;
-        let calc = orientation + az;
-        calc %= 2 * Math.PI;
-        if (calc < 0) calc += 2 * Math.PI;
-        let v = obs.obs - calc;
-        if (v > Math.PI) v -= 2 * Math.PI;
-        if (v < -Math.PI) v += 2 * Math.PI;
-        obs.calc = calc;
-        obs.residual = v;
-        const sigma = this.effectiveStdDev(obs);
-        obs.stdRes = Math.abs(v) / sigma;
-        const q = (v * v) / (sigma * sigma);
-        vtpv += q;
-        addObservationContribution(obs, q);
-        collectTsCorrelationRow(obs, v, sigma);
-
-        const stat = directionStats.get(setId) ?? {
-          count: 0,
-          rawCount: 0,
-          reducedCount: 0,
-          face1Count: 0,
-          face2Count: 0,
-          pairedTargets: 0,
-          sum: 0,
-          sumSq: 0,
-          maxAbs: 0,
-          pairDeltaCount: 0,
-          pairDeltaSum: 0,
-          pairDeltaMax: 0,
-          rawMaxResidualCount: 0,
-          rawMaxResidualSum: 0,
-          rawMaxResidualMax: 0,
-          targetIds: new Set<StationId>(),
-          occupy: obs.at,
-          orientation,
-        };
-        const arcsec = v * RAD_TO_DEG * 3600;
-        const rawCount = typeof obs.rawCount === 'number' && obs.rawCount > 0 ? obs.rawCount : 1;
-        const face1Count =
-          typeof obs.rawFace1Count === 'number'
-            ? obs.rawFace1Count
-            : obs.obs >= Math.PI
-              ? 0
-              : rawCount;
-        const face2Count =
-          typeof obs.rawFace2Count === 'number'
-            ? obs.rawFace2Count
-            : Math.max(0, rawCount - face1Count);
-        stat.count += 1;
-        stat.rawCount += rawCount;
-        stat.reducedCount += 1;
-        stat.face1Count += face1Count;
-        stat.face2Count += face2Count;
-        if (face1Count > 0 && face2Count > 0) stat.pairedTargets += 1;
-        stat.sum += arcsec;
-        stat.sumSq += arcsec * arcsec;
-        stat.maxAbs = Math.max(stat.maxAbs, Math.abs(arcsec));
-        const pairDeltaArcSec =
-          typeof obs.facePairDelta === 'number'
-            ? Math.abs(obs.facePairDelta) * RAD_TO_DEG * 3600
-            : undefined;
-        if (pairDeltaArcSec != null && Number.isFinite(pairDeltaArcSec)) {
-          stat.pairDeltaCount += 1;
-          stat.pairDeltaSum += pairDeltaArcSec;
-          stat.pairDeltaMax = Math.max(stat.pairDeltaMax, pairDeltaArcSec);
-        }
-        const rawMaxResidualArcSec =
-          typeof obs.rawMaxResidual === 'number'
-            ? Math.abs(obs.rawMaxResidual) * RAD_TO_DEG * 3600
-            : undefined;
-        if (rawMaxResidualArcSec != null && Number.isFinite(rawMaxResidualArcSec)) {
-          stat.rawMaxResidualCount += 1;
-          stat.rawMaxResidualSum += rawMaxResidualArcSec;
-          stat.rawMaxResidualMax = Math.max(stat.rawMaxResidualMax, rawMaxResidualArcSec);
-        }
-        if (typeof obs.to === 'string' && obs.to.trim().length > 0) {
-          stat.targetIds.add(obs.to);
-        }
-        stat.occupy = obs.at ?? stat.occupy;
-        stat.orientation = orientation;
-        directionStats.set(setId, stat);
-      } else if (obs.type === 'zenith') {
-        obs.effectiveDistance = this.effectiveDistanceForAngularObservation(obs);
-        const zv = this.getModeledZenith(obs).z;
-        let v = obs.obs - zv;
-        if (v > Math.PI) v -= 2 * Math.PI;
-        if (v < -Math.PI) v += 2 * Math.PI;
-        obs.calc = zv;
-        obs.residual = v;
-        const sigma = this.effectiveStdDev(obs);
-        obs.stdRes = Math.abs(v) / sigma;
-        const q = (v * v) / (sigma * sigma);
-        vtpv += q;
-        addObservationContribution(obs, q);
-      }
-
-      if (obs.setId === 'TE' && typeof obs.residual === 'number') {
-        if (obs.type === 'dist') {
-          const key = `${obs.from}->${obs.to}`;
-          const az = this.getAzimuth(obs.from, obs.to).az;
-          const dE = obs.residual * Math.sin(az);
-          const dN = obs.residual * Math.cos(az);
-          closureVectors.push({ from: obs.from, to: obs.to, dE, dN });
-          loopVectors[key] = loopVectors[key] || { dE: 0, dN: 0 };
-          loopVectors[key].dE += dE;
-          loopVectors[key].dN += dN;
-          closureResiduals.push(
-            `Traverse closure residual ${obs.from}-${obs.to}: ${obs.residual.toFixed(4)} m`,
-          );
-          const s1 = this.stations[obs.from];
-          const s2 = this.stations[obs.to];
-          if (s1 && s2) {
-            coordClosureVectors.push({
-              from: obs.from,
-              to: obs.to,
-              dE: s2.x - s1.x,
-              dN: s2.y - s1.y,
-            });
-          }
-        } else if (obs.type === 'angle') {
-          const key = `${obs.from}->${obs.to}`;
-          const angleArcSec = obs.residual * RAD_TO_DEG * 3600;
-          loopAngleArcSec.set(key, (loopAngleArcSec.get(key) ?? 0) + angleArcSec);
-          closureResiduals.push(
-            `Traverse closure residual (angle) ${obs.from}-${obs.to}: ${(obs.residual * RAD_TO_DEG * 3600).toFixed(2)}"`,
-          );
-        } else if (obs.type === 'lev') {
-          const key = `${obs.from}->${obs.to}`;
-          loopVerticalMisclosure.set(key, (loopVerticalMisclosure.get(key) ?? 0) + obs.residual);
-          closureResiduals.push(
-            `Traverse closure residual (dH) ${obs.from}-${obs.to}: ${obs.residual.toFixed(4)} m`,
-          );
-        }
-      }
-    });
-
-    vtpv += coordinateConstraintWeightedSum(this.stations, constraints);
-
-    const tsCorrelationDiagnostics = buildTsCorrelationDiagnostics({
-      enabled: this.tsCorrelationEnabled && this.tsCorrelationRho > 0,
-      rho: this.tsCorrelationRho,
-      scope: this.tsCorrelationScope ?? 'set',
-      rows: tsCorrelationRows,
-    });
-    vtpv += tsCorrelationDiagnostics.vtpvDelta;
-    tsCorrelationDiagnostics.groupContributions.forEach(({ label, contribution }) => {
-      addGroupContribution(label, contribution);
-    });
-    this.tsCorrelationDiagnostics = tsCorrelationDiagnostics.diagnostics;
-    if (tsCorrelationDiagnostics.logLine) {
-      this.log(tsCorrelationDiagnostics.logLine);
-    }
-    this.seuw = this.preanalysisMode ? 1 : this.dof > 0 ? Math.sqrt(vtpv / this.dof) : 0;
-
-    this.chiSquare = undefined;
-    this.statisticalSummary = undefined;
-    this.typeSummary = undefined;
-    this.directionSetDiagnostics = undefined;
-    this.directionTargetDiagnostics = undefined;
-    this.directionRepeatabilityDiagnostics = undefined;
-    this.setupDiagnostics = undefined;
-    this.residualDiagnostics = undefined;
-    this.traverseDiagnostics = undefined;
-    this.autoSideshotDiagnostics = undefined;
-
-    if (!this.preanalysisMode && this.dof > 0) {
-      this.chiSquare = buildChiSquareSummary(vtpv, this.dof, 0.05);
-    }
-
-    if (hasQxx) {
-      const stationParamCount =
-        Object.values(paramIndex).reduce((max, idx) => {
-          const vals = [idx.x ?? -1, idx.y ?? -1, idx.h ?? -1];
-          return Math.max(max, ...vals);
-        }, -1) + 1;
-      const directionSetIds = Array.from(
-        new Set(
-          activeObservations
-            .filter((o) => o.type === 'direction')
-            .map((o) => getObservationSetId(o))
-            .filter((setId): setId is string => typeof setId === 'string'),
-        ),
-      );
-      const dirParamMap: Record<string, number> = {};
-      directionSetIds.forEach((id, idx) => {
-        dirParamMap[id] = stationParamCount + idx;
-      });
-      const numParams = stationParamCount + directionSetIds.length;
-      const numObsEquations =
-        activeObservations.reduce(
-          (acc, o) =>
-            acc +
-            (o.type === 'gps' && !this.is2D && Number.isFinite(o.obs.dU ?? Number.NaN)
-              ? 3
-              : o.type === 'gps'
-                ? 2
-                : 1),
-          0,
-        ) +
-        constraints.length;
-
-      if (numParams > 0 && numObsEquations > 0) {
-        const { L, P, rowInfo, sparseRows } = assembleAdjustmentEquations(
-          {
-            stations: this.stations,
-            paramIndex: this.paramIndex,
-            is2D: this.is2D,
-            debug: false,
-            directionOrientations: this.directionOrientations,
-            dirParamMap,
-            effectiveStdDev: this.effectiveStdDev.bind(this),
-            correctedDistanceModel: this.correctedDistanceModel.bind(this),
-            getObservedHorizontalDistanceIn2D: this.getObservedHorizontalDistanceIn2D.bind(this),
-            getAzimuth: this.getAzimuth.bind(this),
-            measuredAngleCorrection: this.measuredAngleCorrection.bind(this),
-            modeledAzimuth: this.modeledAzimuth.bind(this),
-            wrapToPi: this.wrapToPi.bind(this),
-            gpsObservedVector: this.gpsObservedVector.bind(this),
-            gpsModeledVector: this.gpsModeledVector.bind(this),
-            gpsModeledVectorDerivatives: this.gpsModeledVectorDerivatives.bind(this),
-            gpsWeight: this.gpsWeight.bind(this),
-            getModeledZenith: this.getModeledZenith.bind(this),
-            curvatureRefractionAngle: this.curvatureRefractionAngle.bind(this),
-            applyTsCorrelationToWeightMatrix: (weightMatrix, weightRowInfo) =>
-              this.applyTsCorrelationToWeightMatrix(weightMatrix, weightRowInfo, true),
-          },
-          activeObservations,
-          constraints,
-          numObsEquations,
-          numParams,
-          undefined,
-          { includeDenseA: false },
-        );
-
-        if (!this.preanalysisMode && this.robustMode === 'huber') {
-          const baseWeights = this.captureRobustWeightBase(P, rowInfo);
-          const residuals = L.map((row) => -row[0]);
-          const summary = this.computeRobustWeightSummary(residuals, rowInfo);
-          this.applyRobustWeightFactors(P, baseWeights, summary.factors);
-        }
-
-        if (!this.preanalysisMode) {
-          try {
-            const { normal: N } = accumulateNormalEquationsFromSparseRows(
-              sparseRows,
-              zeros(numObsEquations, 1),
-              P,
-              numParams,
-            );
-            const QxxStats = this.invertNormalMatrixForStats(N);
-            const B = multiplySparseRowsByDenseMatrix(sparseRows, QxxStats);
-            const rowStats = new Map<
-              number,
-              {
-                t: number[];
-                r: number[];
-                mdb: number[];
-                pass: boolean[];
-                comps: ('E' | 'N' | 'U' | undefined)[];
-                rows: number[];
-              }
-            >();
-            const s0 = this.seuw || 1;
-            for (let i = 0; i < numObsEquations; i += 1) {
-              const info = rowInfo[i];
-              if (!info) continue;
-              const sigma = this.effectiveStdDev(info.obs);
-              let qll = sigma > 0 ? sigma * sigma : 0;
-              if (info.obs.type === 'gps') {
-                const cov = this.gpsCovariance(info.obs);
-                qll =
-                  info.component === 'N'
-                    ? cov.cNN
-                    : info.component === 'U'
-                      ? (cov.cUU ?? cov.cNN)
-                      : cov.cEE;
-              }
-              let diag = 0;
-              const sparseRow = sparseRows[i] ?? [];
-              for (let j = 0; j < sparseRow.length; j += 1) {
-                const entry = sparseRow[j];
-                diag += B[i][entry.index] * entry.value;
-              }
-              const qvv = Math.max(qll - diag, 1e-20);
-              const t = L[i][0] / (s0 * Math.sqrt(qvv));
-              const r = qll > 0 ? qvv / qll : 0;
-              const pass = Math.abs(t) <= this.localTestCritical;
-              const sigmaQll = Math.sqrt(Math.max(qll, 0));
-              const mdb =
-                r > 1e-12
-                  ? (this.localTestCritical * s0 * sigmaQll) / Math.sqrt(r)
-                  : Number.POSITIVE_INFINITY;
-              const entry = rowStats.get(info.obs.id) ?? {
-                t: [],
-                r: [],
-                mdb: [],
-                pass: [],
-                comps: [],
-                rows: [],
-              };
-              entry.t.push(t);
-              entry.r.push(r);
-              entry.mdb.push(mdb);
-              entry.pass.push(pass);
-              entry.comps.push(info.component);
-              entry.rows.push(i);
-              rowStats.set(info.obs.id, entry);
-            }
-
-            activeObservations.forEach((obs) => {
-              const entry = rowStats.get(obs.id);
-              if (!entry) return;
-              if (obs.type === 'gps') {
-                const gpsObs = obs as GpsObservation;
-                const componentOrder = entry.comps.filter(
-                  (component): component is 'E' | 'N' | 'U' => component != null,
-                );
-                const componentIndex = new Map(componentOrder.map((component, index) => [component, index]));
-                const cov = this.gpsCovariance(gpsObs);
-                const solveQll = componentOrder.map((rowComponent) =>
-                  componentOrder.map((colComponent) => {
-                    if (rowComponent === 'E' && colComponent === 'E') return cov.cEE;
-                    if (rowComponent === 'N' && colComponent === 'N') return cov.cNN;
-                    if (rowComponent === 'U' && colComponent === 'U') return cov.cUU ?? cov.cNN;
-                    if (
-                      (rowComponent === 'E' && colComponent === 'N') ||
-                      (rowComponent === 'N' && colComponent === 'E')
-                    ) {
-                      return cov.cEN;
-                    }
-                    if (
-                      (rowComponent === 'E' && colComponent === 'U') ||
-                      (rowComponent === 'U' && colComponent === 'E')
-                    ) {
-                      return cov.cEU ?? 0;
-                    }
-                    return cov.cNU ?? 0;
-                  }),
-                );
-                const solveQvv = solveQll.map((solveRow, rowIndex) =>
-                  solveRow.map((qllValue, colIndex) => {
-                    let aqxxat = 0;
-                    const sparseColRow = sparseRows[entry.rows[colIndex]] ?? [];
-                    for (let paramEntryIndex = 0; paramEntryIndex < sparseColRow.length; paramEntryIndex += 1) {
-                      const paramEntry = sparseColRow[paramEntryIndex];
-                      aqxxat +=
-                        B[entry.rows[rowIndex]][paramEntry.index] * paramEntry.value;
-                    }
-                    return Math.max(qllValue - aqxxat, 0);
-                  }),
-                );
-                const solveResidualVector = componentOrder.map((component) =>
-                  component === 'N'
-                    ? (gpsObs.residual?.vN ?? 0)
-                    : component === 'U'
-                      ? (gpsObs.residual?.vU ?? 0)
-                      : (gpsObs.residual?.vE ?? 0),
-                );
-                const displayTransform = this.gpsDisplayResidualTransform(
-                  gpsObs,
-                  this.stations[gpsObs.from],
-                );
-                const toDisplayVector = (values: number[]) => {
-                  if (!displayTransform || values.length !== 3) return values;
-                  return displayTransform.map(
-                    (transformRow) =>
-                      transformRow[0] * values[0] + transformRow[1] * values[1] + transformRow[2] * values[2],
-                  );
-                };
-                const toDisplayCovariance = (covariance: number[][]) => {
-                  if (!displayTransform || covariance.length !== 3) return covariance;
-                  return transformSymmetricCovariance3(displayTransform, covariance);
-                };
-                const displayResidualVector = toDisplayVector(solveResidualVector);
-                const displayQvv = toDisplayCovariance(solveQvv);
-                const residualStdErr = (component: 'E' | 'N' | 'U'): number | undefined => {
-                  const index = componentIndex.get(component);
-                  if (index == null) return undefined;
-                  return this.seuw * Math.sqrt(Math.max(displayQvv[index]?.[index] ?? 0, 0));
-                };
-                const componentStdRes = (component: 'E' | 'N' | 'U'): number | undefined => {
-                  const index = componentIndex.get(component);
-                  if (index == null) return undefined;
-                  const sigma = residualStdErr(component);
-                  if (!Number.isFinite(sigma) || (sigma ?? 0) <= 0) return undefined;
-                  return Math.abs(displayResidualVector[index] ?? 0) / (sigma as number);
-                };
-                gpsObs.componentResidualStdErr = {
-                  sE: residualStdErr('E'),
-                  sN: residualStdErr('N'),
-                  sU: residualStdErr('U'),
-                };
-                gpsObs.componentStdRes = {
-                  tE: componentStdRes('E'),
-                  tN: componentStdRes('N'),
-                  tU: componentStdRes('U'),
-                };
-              }
-              if (entry.t.length === 2 && entry.comps.includes('E') && entry.comps.includes('N')) {
-                const idxE = entry.comps.indexOf('E');
-                const idxN = entry.comps.indexOf('N');
-                const tE = entry.t[idxE];
-                const tN = entry.t[idxN];
-                const rE = entry.r[idxE];
-                const rN = entry.r[idxN];
-                const mE = entry.mdb[idxE];
-                const mN = entry.mdb[idxN];
-                const passE = entry.pass[idxE];
-                const passN = entry.pass[idxN];
-                obs.stdResComponents = { tE, tN };
-                obs.stdRes = Math.max(Math.abs(tE), Math.abs(tN));
-                obs.redundancy = { rE, rN };
-                obs.localTest = { critical: this.localTestCritical, pass: passE && passN };
-                obs.localTestComponents = { passE, passN };
-                obs.mdbComponents = { mE, mN };
-              } else if (obs.type === 'gps' && entry.t.length > 2) {
-                obs.stdRes = Math.max(...entry.t.map((value) => Math.abs(value)));
-                obs.redundancy = Math.min(...entry.r);
-                obs.localTest = {
-                  critical: this.localTestCritical,
-                  pass: entry.pass.every(Boolean),
-                };
-                obs.mdb = Math.min(...entry.mdb.filter((value) => Number.isFinite(value)));
-              } else {
-                obs.stdRes = Math.abs(entry.t[0]);
-                obs.redundancy = entry.r[0];
-                obs.localTest = { critical: this.localTestCritical, pass: entry.pass[0] };
-                obs.mdb = entry.mdb[0];
-              }
-            });
-          } catch (error) {
-            const detail = error instanceof Error ? ` ${error.message}` : '';
-            this.log(
-              `Warning: standardized residuals not computed (normal matrix factorization failed).${detail}`,
-            );
-          }
-        }
-      }
-    }
-
-    if (!this.preanalysisMode) {
-      this.statisticalSummary = buildStatisticalSummary(weightedByGroup, groupOrder, this.dof);
-    }
-
-    if (!this.preanalysisMode) {
-      // Flag very large standardized residuals
-      const flagged = this.observations.filter((o) => Math.abs(o.stdRes || 0) > this.maxStdRes);
-      if (flagged.length) {
-        this.log(
-          `Warning: ${flagged.length} obs exceed ${this.maxStdRes} sigma (consider excluding/reweighting).`,
-        );
-      }
-      const localFailed = this.observations.filter(
-        (o) => this.isObservationActive(o) && o.localTest != null && !o.localTest.pass,
-      );
-      if (localFailed.length) {
-        this.log(
-          `Local test: ${localFailed.length} observation(s) exceed critical |t|>${this.localTestCritical.toFixed(
-            2,
-          )}.`,
-        );
-      }
-    }
-
-    if (!this.preanalysisMode) {
-      const residualDiagnostics = buildResidualDiagnostics(
-        activeObservations,
-        this.localTestCritical,
-      );
-      this.residualDiagnostics = residualDiagnostics;
-      this.log(
-        `Residual diagnostics: |t|>2=${residualDiagnostics.over2SigmaCount}, |t|>3=${residualDiagnostics.over3SigmaCount}, localFail=${residualDiagnostics.localFailCount}, lowRedund(<0.2)=${residualDiagnostics.lowRedundancyCount}.`,
-      );
-    }
-    if (this.preanalysisMode) {
-      this.log(
-        'Preanalysis statistics: using a-priori variance factor 1.0 and skipping residual-based diagnostics.',
-      );
-    }
-
-    this.typeSummary = buildObservationTypeSummary(activeObservations);
-    this.captureObservationWeightingStdDevs(activeObservations);
-
-    if (hasQxx && this.Qxx) {
-      const precisionPropagationStartedAt = Date.now();
-      const posteriorScaleSq =
-        this.dof > 0 && Number.isFinite(this.seuw) && this.seuw > 0 ? this.seuw * this.seuw : 1;
-      if (this.dof <= 0) {
-        this.log('DOF <= 0: using a-priori variance factor 1.0 for point precision scaling.');
-      }
-      const connectedPairTypes = new Map<string, Set<string>>();
-      const addConnectedPair = (a: StationId, b: StationId, label: string): void => {
-        if (!a || !b || a === b) return;
-        const key = makePairKey(a, b);
-        const types = connectedPairTypes.get(key) ?? new Set<string>();
-        types.add(label);
-        connectedPairTypes.set(key, types);
-      };
-      activeObservations.forEach((obs) => {
-        if (obs.type === 'angle') {
-          addConnectedPair(obs.at, obs.from, 'angle');
-          addConnectedPair(obs.at, obs.to, 'angle');
-          return;
-        }
-        if (obs.type === 'direction') {
-          addConnectedPair(obs.at, obs.to, 'direction');
-          return;
-        }
-        if ('from' in obs && 'to' in obs) {
-          addConnectedPair(obs.from, obs.to, obs.type);
-        }
-      });
-
-      const buildCovariance = (scaleSq: number) => (a?: number | null, b?: number | null): number => {
-        if (a == null || b == null) return 0;
-        if (!this.Qxx?.[a] || this.Qxx?.[a][b] == null) return 0;
-        return this.Qxx[a][b] * scaleSq;
-      };
-      const sortRelativeCovariances = (
-        rows: NonNullable<AdjustmentResult['relativeCovariances']>,
-      ) => {
-        rows.sort((a, b) => {
-          const cmpFrom = a.from.localeCompare(b.from, undefined, { numeric: true });
-          if (cmpFrom !== 0) return cmpFrom;
-          return a.to.localeCompare(b.to, undefined, { numeric: true });
-        });
-        return rows;
-      };
-      const requestedRelativePairs = new Map<
-        string,
-        {
-          from: StationId;
-          to: StationId;
-          rel: boolean;
-          ptol: boolean;
-        }
-      >();
-      const requestedPairKey = (from: StationId, to: StationId): string => {
-        const canonical = makePairKey(from, to);
-        const [first, second] = canonical.split('|') as [StationId, StationId];
-        return `${first}::${second}`;
-      };
-      const registerRequestedPairs = (
-        pairs: Array<{ from: StationId; to: StationId }> | undefined,
-        kind: 'rel' | 'ptol',
-      ) => {
-        pairs?.forEach((pair) => {
-          if (!pair?.from || !pair?.to || pair.from === pair.to) return;
-          const key = requestedPairKey(pair.from, pair.to);
-          const existing = requestedRelativePairs.get(key);
-          if (existing) {
-            existing.rel ||= kind === 'rel';
-            existing.ptol ||= kind === 'ptol';
-            return;
-          }
-          requestedRelativePairs.set(key, {
-            from: pair.from,
-            to: pair.to,
-            rel: kind === 'rel',
-            ptol: kind === 'ptol',
-          });
-        });
-      };
-      registerRequestedPairs(this.parseState?.relativeLinePairs, 'rel');
-      registerRequestedPairs(this.parseState?.positionalTolerancePairs, 'ptol');
-      const buildPrecisionModel = (scaleSq: number): NonNullable<AdjustmentResult['precisionModels']>[keyof NonNullable<AdjustmentResult['precisionModels']>] => {
-        const cov = buildCovariance(scaleSq);
-        const stationCovariances: NonNullable<AdjustmentResult['stationCovariances']> = [];
-        this.unknowns.forEach((id) => {
-          const idx = paramIndex[id];
-          if (!idx) return;
-          const hasHorizontal = idx.x != null && idx.y != null;
-          const varE = hasHorizontal ? cov(idx.x, idx.x) : 0;
-          const varN = hasHorizontal ? cov(idx.y, idx.y) : 0;
-          const covEN = hasHorizontal ? cov(idx.x, idx.y) : 0;
-          const ellipseSummary = hasHorizontal
-            ? buildHorizontalErrorEllipse(varE, varN, covEN)
-            : { ellipse: undefined };
-          const stationBlock: NonNullable<AdjustmentResult['stationCovariances']>[number] = {
-            stationId: id,
-            cEE: varE,
-            cEN: covEN,
-            cNN: varN,
-            sigmaE: sqrtPrecisionComponent(varE, Math.abs(varE)),
-            sigmaN: sqrtPrecisionComponent(varN, Math.abs(varN)),
-            ellipse: ellipseSummary.ellipse,
-          };
-          if (!this.is2D && idx.h != null) {
-            const varH = cov(idx.h, idx.h);
-            stationBlock.cEH = idx.x != null ? cov(idx.x, idx.h) : 0;
-            stationBlock.cNH = idx.y != null ? cov(idx.y, idx.h) : 0;
-            stationBlock.cHH = varH;
-            stationBlock.sigmaH = sqrtPrecisionComponent(varH, Math.abs(varH));
-          }
-          stationCovariances.push(stationBlock);
-        });
-
-        const buildRelativeCovarianceRow = (
-          from: StationId,
-          to: StationId,
-          relativeCovariance: ReturnType<typeof buildRelativeCovarianceFromEndpoints>,
-          connected: boolean,
-          connectionTypes: string[],
-          selectedByRelativeDirective: boolean,
-          selectedByPositionalToleranceDirective: boolean,
-        ): NonNullable<AdjustmentResult['relativeCovariances']>[number] => {
-          const fromStation = this.stations[from];
-          const toStation = this.stations[to];
-          const dE = (toStation?.x ?? 0) - (fromStation?.x ?? 0);
-          const dN = (toStation?.y ?? 0) - (fromStation?.y ?? 0);
-          const ellipseSummary = buildHorizontalErrorEllipse(
-            relativeCovariance.cEE,
-            relativeCovariance.cNN,
-            relativeCovariance.cEN,
-          );
-          const { sigmaDist, sigmaAz } = buildDistanceAzimuthPrecision(dE, dN, relativeCovariance);
-
-          const row: NonNullable<AdjustmentResult['relativeCovariances']>[number] = {
-            from,
-            to,
-            connected,
-            connectionTypes,
-            selectedByRelativeDirective,
-            selectedByPositionalToleranceDirective,
-            cEE: relativeCovariance.cEE,
-            cEN: relativeCovariance.cEN,
-            cNN: relativeCovariance.cNN,
-            sigmaE: sqrtPrecisionComponent(relativeCovariance.cEE, Math.abs(relativeCovariance.cEE)),
-            sigmaN: sqrtPrecisionComponent(relativeCovariance.cNN, Math.abs(relativeCovariance.cNN)),
-            sigmaDist,
-            sigmaAz,
-            ellipse: ellipseSummary.ellipse,
-          };
-
-          if (!this.is2D) {
-            row.cEH = relativeCovariance.cEH;
-            row.cNH = relativeCovariance.cNH;
-            row.cHH = relativeCovariance.cHH;
-            row.sigmaH = sqrtPrecisionComponent(
-              relativeCovariance.cHH ?? 0,
-              Math.abs(relativeCovariance.cHH ?? 0),
-            );
-          }
-
-          return row;
-        };
-
-        const relativePrecision: NonNullable<AdjustmentResult['relativePrecision']> = [];
-        for (let i = 0; i < this.unknowns.length; i += 1) {
-          for (let j = i + 1; j < this.unknowns.length; j += 1) {
-            const from = this.unknowns[i];
-            const to = this.unknowns[j];
-            const fromStation = this.stations[from];
-            const toStation = this.stations[to];
-            const idxFrom = paramIndex[from];
-            const idxTo = paramIndex[to];
-            if (!fromStation || !toStation || (!idxFrom && !idxTo)) continue;
-
-            const dE = toStation.x - fromStation.x;
-            const dN = toStation.y - fromStation.y;
-            const horizontalCovariance = buildRelativeCovarianceFromEndpoints(cov, idxFrom, idxTo);
-            const ellipseSummary = buildHorizontalErrorEllipse(
-              horizontalCovariance.cEE,
-              horizontalCovariance.cNN,
-              horizontalCovariance.cEN,
-            );
-            const { sigmaDist, sigmaAz } = buildDistanceAzimuthPrecision(dE, dN, horizontalCovariance);
-
-            relativePrecision.push({
-              from,
-              to,
-              sigmaN: sqrtPrecisionComponent(horizontalCovariance.cNN, Math.abs(horizontalCovariance.cNN)),
-              sigmaE: sqrtPrecisionComponent(horizontalCovariance.cEE, Math.abs(horizontalCovariance.cEE)),
-              sigmaDist,
-              sigmaAz,
-              ellipse: ellipseSummary.ellipse,
-            });
-          }
-        }
-
-        const relativeCovariances: NonNullable<AdjustmentResult['relativeCovariances']> = [];
-        connectedPairTypes.forEach((types, key) => {
-          const [from, to] = key.split('|') as [StationId, StationId];
-          const idxFrom = paramIndex[from];
-          const idxTo = paramIndex[to];
-          if ((!this.stations[from] || !this.stations[to]) || (!idxFrom && !idxTo)) return;
-
-          const requested = requestedRelativePairs.get(requestedPairKey(from, to));
-          const relativeCovariance = buildRelativeCovarianceFromEndpoints(cov, idxFrom, idxTo, !this.is2D);
-          relativeCovariances.push(
-            buildRelativeCovarianceRow(
-              from,
-              to,
-              relativeCovariance,
-              true,
-              Array.from(types).sort(),
-              requested?.rel ?? false,
-              requested?.ptol ?? false,
-            ),
-          );
-        });
-
-        requestedRelativePairs.forEach((requested, key) => {
-          if (connectedPairTypes.has(key.replace('::', '|'))) return;
-          const fromStation = this.stations[requested.from];
-          const toStation = this.stations[requested.to];
-          const idxFrom = paramIndex[requested.from];
-          const idxTo = paramIndex[requested.to];
-          if (!fromStation || !toStation || (!idxFrom && !idxTo)) return;
-          const relativeCovariance = buildRelativeCovarianceFromEndpoints(
-            cov,
-            idxFrom,
-            idxTo,
-            !this.is2D,
-          );
-          relativeCovariances.push(
-            buildRelativeCovarianceRow(
-              requested.from,
-              requested.to,
-              relativeCovariance,
-              false,
-              [],
-              requested.rel,
-              requested.ptol,
-            ),
-          );
-        });
-
-        return {
-          stationCovariances,
-          relativePrecision,
-          relativeCovariances: sortRelativeCovariances(relativeCovariances),
-        };
-      };
-
-      const industryStandardModel = buildPrecisionModel(1);
-      const posteriorScaledModel = {
-        stationCovariances: scaleStationCovarianceRows(
-          industryStandardModel.stationCovariances,
-          posteriorScaleSq,
-        ),
-        relativeCovariances: scaleRelativeCovarianceRows(
-          industryStandardModel.relativeCovariances,
-          posteriorScaleSq,
-        ),
-      };
-      this.precisionModels = {
-        'industry-standard': industryStandardModel,
-        'posterior-scaled': posteriorScaledModel,
-      };
-      this.stationCovariances = industryStandardModel.stationCovariances;
-      this.relativePrecision = industryStandardModel.relativePrecision;
-      this.relativeCovariances = industryStandardModel.relativeCovariances;
-      this.unknowns.forEach((id) => {
-        const station = this.stations[id];
-        if (!station) return;
-        station.errorEllipse = undefined;
-        station.sN = undefined;
-        station.sE = undefined;
-        station.sH = undefined;
-      });
-      industryStandardModel.stationCovariances?.forEach((row) => {
-        const station = this.stations[row.stationId];
-        if (!station) return;
-        station.errorEllipse = row.ellipse;
-        station.sE = row.sigmaE;
-        station.sN = row.sigmaN;
-        station.sH = row.sigmaH;
-      });
-
-      if (this.preanalysisMode) {
-        this.weakGeometryDiagnostics = buildWeakGeometryDiagnostics(
-          industryStandardModel.stationCovariances ?? [],
-          industryStandardModel.relativeCovariances ?? [],
-        );
-        const flaggedStations = this.weakGeometryDiagnostics.stationCues.filter(
-          (cue) => cue.severity !== 'ok',
-        );
-        const flaggedPairs = this.weakGeometryDiagnostics.relativeCues.filter(
-          (cue) => cue.severity !== 'ok',
-        );
-        this.log(
-          `Preanalysis covariance blocks: stations=${industryStandardModel.stationCovariances?.length ?? 0}, connectedPairs=${industryStandardModel.relativeCovariances?.length ?? 0}`,
-        );
-        this.log(
-          `Preanalysis weak geometry cues: stations=${flaggedStations.length}, connectedPairs=${flaggedPairs.length}`,
-        );
-        flaggedStations.slice(0, 5).forEach((cue) => {
-          this.log(`  station ${cue.stationId}: ${cue.severity.toUpperCase()} ${cue.note}`);
-        });
-        flaggedPairs.slice(0, 5).forEach((cue) => {
-          this.log(`  pair ${cue.from}-${cue.to}: ${cue.severity.toUpperCase()} ${cue.note}`);
-        });
-      }
-      this.solveTiming.precisionPropagationMs += Date.now() - precisionPropagationStartedAt;
-    }
-
-    const sideshots = this.computeSideshotResults();
-    this.sideshots = sideshots;
-    const sideshotCount = sideshots?.length ?? 0;
-    if (sideshotCount > 0) {
-      this.log(`Sideshots (post-adjust): ${sideshotCount}`);
-    }
-
-    const directionDiagnostics = buildDirectionDiagnostics(activeObservations, directionStats);
-    this.directionSetDiagnostics = directionDiagnostics.directionSetDiagnostics;
-    this.directionTargetDiagnostics = directionDiagnostics.directionTargetDiagnostics;
-    this.directionRepeatabilityDiagnostics = directionDiagnostics.directionRepeatabilityDiagnostics;
-    this.logs.push(...directionDiagnostics.logs);
-    this.setupDiagnostics = buildSetupDiagnostics({
-      activeObservations,
-      directionSetDiagnostics: this.directionSetDiagnostics,
-    });
-    if (this.setupDiagnostics) {
-      this.logs.push('Setup summary:');
-      this.setupDiagnostics.forEach((s) => {
-        this.logs.push(
-          `  ${s.station}: dirSets=${s.directionSetCount}, dirObs=${s.directionObsCount}, ang=${s.angleObsCount}, dist=${s.distanceObsCount}, zen=${s.zenithObsCount}, lev=${s.levelingObsCount}, gps=${s.gpsObsCount}, travDist=${s.traverseDistance.toFixed(3)}m, orientRMS=${s.orientationRmsArcSec != null ? `${s.orientationRmsArcSec.toFixed(2)}"` : '-'}, orientSE=${s.orientationSeArcSec != null ? `${s.orientationSeArcSec.toFixed(2)}"` : '-'}, rms|t|=${s.rmsStdRes != null ? s.rmsStdRes.toFixed(2) : '-'}, max|t|=${s.maxStdRes != null ? s.maxStdRes.toFixed(2) : '-'}, localFail=${s.localFailCount}`,
-        );
-      });
-    }
-
-    if (closureResiduals.length) {
-      this.logs.push(...closureResiduals);
-      this.traverseDiagnostics = buildTraverseDiagnostics({
-        closureVectors,
-        loopVectors,
-        loopAngleArcSec,
-        loopVerticalMisclosure,
-        totalTraverseDistance,
-        thresholds: { ...this.traverseThresholds },
-        setupDiagnostics: this.setupDiagnostics,
-        hasClosureObs,
-      });
-      if (this.traverseDiagnostics && this.traverseDiagnostics.closureCount > 0) {
-        const traverseDiagnostics = this.traverseDiagnostics;
-        this.logs.push(
-          `Traverse misclosure vector: dE=${traverseDiagnostics.misclosureE.toFixed(4)} m, dN=${traverseDiagnostics.misclosureN.toFixed(4)} m, Mag=${traverseDiagnostics.misclosureMag.toFixed(4)} m`,
-        );
-        if (totalTraverseDistance > 0) {
-          this.logs.push(`Traverse distance sum: ${totalTraverseDistance.toFixed(4)} m`);
-        }
-        if (traverseDiagnostics.closureRatio != null) {
-          this.logs.push(
-            `Traverse closure ratio: 1:${traverseDiagnostics.closureRatio.toFixed(0)}`,
-          );
-        }
-        if (traverseDiagnostics.linearPpm != null) {
-          this.logs.push(
-            `Traverse linear misclosure: ${traverseDiagnostics.linearPpm.toFixed(1)} ppm`,
-          );
-        }
-        if (traverseDiagnostics.angularMisclosureArcSec != null) {
-          this.logs.push(
-            `Traverse angular misclosure: ${traverseDiagnostics.angularMisclosureArcSec.toFixed(2)}"`,
-          );
-        }
-        if (traverseDiagnostics.verticalMisclosure != null) {
-          this.logs.push(
-            `Traverse vertical misclosure: ${traverseDiagnostics.verticalMisclosure.toFixed(4)} m`,
-          );
-        }
-        const traverseLoops = traverseDiagnostics.loops ?? [];
-        if (traverseLoops.length > 0) {
-          this.logs.push('Traverse closure loop ranking (worst first):');
-          traverseLoops.slice(0, 8).forEach((l) => {
-            this.logs.push(
-              `  ${l.key}: ratio=${l.closureRatio != null ? `1:${l.closureRatio.toFixed(0)}` : '-'}, ppm=${l.linearPpm != null ? l.linearPpm.toFixed(1) : '-'}, ang=${l.angularMisclosureArcSec != null ? `${l.angularMisclosureArcSec.toFixed(2)}"` : '-'}, dH=${l.verticalMisclosure != null ? `${l.verticalMisclosure.toFixed(4)}m` : '-'}, sev=${l.severity.toFixed(1)} ${l.pass ? 'PASS' : 'WARN'}`,
-            );
-          });
-        }
-      }
-      Object.entries(loopVectors).forEach(([k, v]) => {
-        const mag = Math.hypot(v.dE, v.dN);
-        this.logs.push(
-          `Closure loop ${k}: dE=${v.dE.toFixed(4)} m, dN=${v.dN.toFixed(4)} m, Mag=${mag.toFixed(4)} m`,
-        );
-      });
-      if (coordClosureVectors.length) {
-        coordClosureVectors.forEach((v) => {
-          const mag = Math.hypot(v.dE, v.dN);
-          this.logs.push(
-            `Closure geometry ${v.from}-${v.to}: dE=${v.dE.toFixed(4)} m, dN=${v.dN.toFixed(4)} m, Mag=${mag.toFixed(4)} m`,
-          );
-        });
-      }
-    } else if (hasClosureObs) {
-      this.traverseDiagnostics = buildTraverseDiagnostics({
-        closureVectors,
-        loopVectors,
-        loopAngleArcSec,
-        loopVerticalMisclosure,
-        totalTraverseDistance,
-        thresholds: { ...this.traverseThresholds },
-        setupDiagnostics: this.setupDiagnostics,
-        hasClosureObs,
-      });
-      this.logs.push('Traverse closure residual not computed (insufficient closure geometry).');
-      if (totalTraverseDistance > 0) {
-        this.logs.push(`Traverse distance sum: ${totalTraverseDistance.toFixed(4)} m`);
-      }
-    }
+    const statsContext = this.buildStatisticsContext();
+    calculateAdjustmentStatistics(statsContext, paramIndex, hasQxx, activeObservationsInput);
+    this.seuw = statsContext.seuw;
+    this.chiSquare = statsContext.chiSquare;
+    this.statisticalSummary = statsContext.statisticalSummary;
+    this.typeSummary = statsContext.typeSummary;
+    this.directionSetDiagnostics = statsContext.directionSetDiagnostics;
+    this.directionTargetDiagnostics = statsContext.directionTargetDiagnostics;
+    this.directionRepeatabilityDiagnostics = statsContext.directionRepeatabilityDiagnostics;
+    this.setupDiagnostics = statsContext.setupDiagnostics;
+    this.residualDiagnostics = statsContext.residualDiagnostics;
+    this.traverseDiagnostics = statsContext.traverseDiagnostics;
+    this.autoSideshotDiagnostics = statsContext.autoSideshotDiagnostics;
+    this.tsCorrelationDiagnostics = statsContext.tsCorrelationDiagnostics;
+    this.precisionModels = statsContext.precisionModels;
+    this.stationCovariances = statsContext.stationCovariances;
+    this.relativePrecision = statsContext.relativePrecision;
+    this.relativeCovariances = statsContext.relativeCovariances;
+    this.weakGeometryDiagnostics = statsContext.weakGeometryDiagnostics;
+    this.sideshots = statsContext.sideshots;
   }
 
   private buildResult(): AdjustmentResult {
