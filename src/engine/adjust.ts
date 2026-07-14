@@ -1,10 +1,8 @@
 import { RAD_TO_DEG, DEG_TO_RAD } from './angles';
 import {
-  ARCSEC_TO_RAD,
   DATA_CHECK_PROVISIONAL_DIRECTION_TRUST_MAX_RAD,
   EARTH_RADIUS_M,
   EPS,
-  FLOAT_ZENITH_COVARIANCE_SIGMA_SEC,
   GPS_ADDHIHT_SCALE_TOL,
   GPS_LOOP_BASE_TOLERANCE_M,
   GPS_LOOP_TOLERANCE_PPM,
@@ -34,11 +32,7 @@ import { formatAutoAdjustLogLines, runAutoAdjustCycles, type AutoAdjustConfig } 
 import type { GeoidGridModel } from './geoid';
 import {
   accumulateNormalEquationsFromSparseRows,
-  invertSPDFromCholesky,
-  choleskyDecomposeWithDamping,
   multiplySparseRowsByDenseMatrix,
-  solveSPDFromCholesky,
-  symmetricQuadraticForm,
   zeros,
 } from './matrix';
 import { parseInput } from './parse';
@@ -77,13 +71,23 @@ import {
   shouldApplyIndustryParityAngularSigmaCalibration as shouldApplyIndustryParityAngularSigmaCalibrationHelper,
 } from './adjustObservationWeighting';
 import {
-  matrixIsFinite,
-  recoverUndampedInverse,
-  scaleNormalMatrix,
-  scaleNormalRhs,
-  unscaleNormalInverse,
-  unscaleNormalSolution,
-} from './adjustNormalMatrixHelpers';
+  augmentCovarianceObservations as augmentCovarianceObservationsHelper,
+  invertNormalMatrixForStats as invertNormalMatrixForStatsHelper,
+  solveNormalEquations as solveNormalEquationsHelper,
+} from './adjustNormalEquationHelpers';
+import {
+  applyRobustWeightFactors as applyRobustWeightFactorsHelper,
+  captureRobustWeightBase as captureRobustWeightBaseHelper,
+  computeRobustWeightSummary as computeRobustWeightSummaryHelper,
+  maxRobustWeightDelta as maxRobustWeightDeltaHelper,
+  observationStations as observationStationsHelper,
+  robustCorrelationRowGroups as robustCorrelationRowGroupsHelper,
+  weightedQuadratic as weightedQuadraticHelper,
+} from './adjustRobustWeights';
+import {
+  computeDirectionSetPrefit as computeDirectionSetPrefitHelper,
+  logNetworkDiagnostics as logNetworkDiagnosticsHelper,
+} from './adjustNetworkDiagnostics';
 import {
   applyAutoDroppedHeightHolds,
   buildSolvePreparation,
@@ -341,56 +345,10 @@ export class LSAEngine {
     U: number[][],
     options?: { recoverCovariance?: boolean },
   ): { correction: number[][]; qxx?: number[][] } {
-    const scaled = scaleNormalMatrix(N);
-    const scaledU = scaleNormalRhs(U, scaled.scale);
-    const factorization = choleskyDecomposeWithDamping(scaled.scaled);
-    if (factorization.damping > 0) {
-      this.log(
-        `Warning: normal-equation factorization required diagonal damping (lambda=${factorization.damping.toExponential(
-          3,
-        )}, attempts=${factorization.attempts}).`,
-      );
-    }
-    const scaledCorrection = solveSPDFromCholesky(factorization.factor, scaledU);
-    if (!matrixIsFinite(scaledCorrection)) {
-      throw new Error(
-        'Normal matrix remained singular after diagonal damping; scaled correction contains non-finite values.',
-      );
-    }
-    const correction = unscaleNormalSolution(scaledCorrection, scaled.scale);
-    if (!matrixIsFinite(correction)) {
-      throw new Error(
-        'Normal matrix remained singular or numerically unstable after diagonal damping; correction contains non-finite values.',
-      );
-    }
-    if (!options?.recoverCovariance) {
-      return { correction };
-    }
-    const scaledQxx = invertSPDFromCholesky(factorization.factor);
-    if (!matrixIsFinite(scaledQxx)) {
-      throw new Error(
-        'Normal matrix remained singular after diagonal damping; damped covariance contains non-finite values.',
-      );
-    }
-    const qxx =
-      factorization.damping > 0
-        ? recoverUndampedInverse(
-            scaled.scaled,
-            scaled.scale,
-            scaledQxx,
-            'Normal-equation covariance recovery',
-            this.log.bind(this),
-          )
-        : unscaleNormalInverse(scaledQxx, scaled.scale);
-    if (!matrixIsFinite(qxx)) {
-      throw new Error(
-        'Normal matrix remained singular or numerically unstable after diagonal damping; covariance contains non-finite values.',
-      );
-    }
-    return {
-      correction,
-      qxx,
-    };
+    return solveNormalEquationsHelper(N, U, {
+      log: this.log.bind(this),
+      recoverCovariance: options?.recoverCovariance,
+    });
   }
 
   private recoverFinalNormalCovariance(
@@ -455,75 +413,14 @@ export class LSAEngine {
   }
 
   private augmentCovarianceObservations(activeObservations: Observation[]): Observation[] {
-    if (this.is2D) return activeObservations;
-    const existingZenithKeys = new Set(
-      activeObservations
-        .filter((observation): observation is ZenithObservation => observation.type === 'zenith')
-        .map(
-          (observation) =>
-            `${observation.from}|${observation.to}|${observation.sourceLine ?? -1}|${observation.setId ?? ''}`,
-        ),
-    );
-    const synthetic: ZenithObservation[] = [];
-    let syntheticId = -1;
-    activeObservations.forEach((observation) => {
-      if (
-        observation.type !== 'dist' ||
-        observation.mode !== 'slope' ||
-        !Number.isFinite(observation.bootstrapZenithObs ?? Number.NaN)
-      ) {
-        return;
-      }
-      const key = `${observation.from}|${observation.to}|${observation.sourceLine ?? -1}|${observation.setId ?? ''}`;
-      if (existingZenithKeys.has(key)) return;
-      synthetic.push({
-        id: syntheticId--,
-        type: 'zenith',
-        instCode: observation.instCode,
-        setId: observation.setId,
-        from: observation.from,
-        to: observation.to,
-        obs: observation.bootstrapZenithObs as number,
-        sourceLine: observation.sourceLine,
-        sourceFile: observation.sourceFile,
-        stdDev: FLOAT_ZENITH_COVARIANCE_SIGMA_SEC * ARCSEC_TO_RAD,
-        sigmaSource: 'float',
-        hi: observation.hi,
-        ht: observation.ht,
-      });
+    return augmentCovarianceObservationsHelper(activeObservations, {
+      is2D: this.is2D,
+      log: this.log.bind(this),
     });
-    if (!synthetic.length) return activeObservations;
-    this.log(
-      `Covariance-only float zenith augmentation: ${synthetic.length} synthetic row(s) added for weak vertical geometry.`,
-    );
-    return [...activeObservations, ...synthetic];
   }
 
   private invertNormalMatrixForStats(N: number[][]): number[][] {
-    const scaled = scaleNormalMatrix(N);
-    const factorization = choleskyDecomposeWithDamping(scaled.scaled);
-    if (factorization.damping > 0) {
-      this.log(
-        `Warning: covariance factorization required diagonal damping (lambda=${factorization.damping.toExponential(
-          3,
-        )}, attempts=${factorization.attempts}).`,
-      );
-    }
-    const scaledQxx = invertSPDFromCholesky(factorization.factor);
-    const qxx =
-      factorization.damping > 0
-        ? recoverUndampedInverse(
-            scaled.scaled,
-            scaled.scale,
-            scaledQxx,
-            'Standardized-residual covariance recovery',
-            this.log.bind(this),
-          )
-        : unscaleNormalInverse(scaledQxx, scaled.scale);
-    if (!matrixIsFinite(qxx)) {
-      throw new Error('Non-finite covariance values encountered after regularization.');
-    }
-    return qxx;
+    return invertNormalMatrixForStatsHelper(N, this.log.bind(this));
   }
 
   private getInstrument(obs: Observation): Instrument | undefined {
@@ -1482,23 +1379,11 @@ export class LSAEngine {
   }
 
   private weightedQuadratic(P: number[][], v: number[][]): number {
-    return symmetricQuadraticForm(P, v);
+    return weightedQuadraticHelper(P, v);
   }
 
   private observationStations(obs: Observation): string {
-    if (obs.type === 'angle') return `${obs.at}-${obs.from}-${obs.to}`;
-    if (obs.type === 'direction') return `${obs.at}-${obs.to}`;
-    if (
-      obs.type === 'dist' ||
-      obs.type === 'bearing' ||
-      obs.type === 'zenith' ||
-      obs.type === 'lev' ||
-      obs.type === 'gps' ||
-      obs.type === 'dir'
-    ) {
-      return `${obs.from}-${obs.to}`;
-    }
-    return '-';
+    return observationStationsHelper(obs);
   }
 
   private rowSigma(info: NonNullable<EquationRowInfo>): number {
@@ -1516,39 +1401,20 @@ export class LSAEngine {
   }
 
   private robustCorrelationRowGroups(rowInfo: EquationRowInfo[]): number[][] {
-    if (!this.tsCorrelationEnabled) return [];
-    const groups = new Map<string, number[]>();
-    rowInfo.forEach((info, index) => {
-      if (!info || info.component) return;
-      const group = this.tsCorrelationGroup(info.obs);
-      if (!group) return;
-      const sigma = this.rowSigma(info);
-      if (!Number.isFinite(sigma) || sigma <= 0) return;
-      const rows = groups.get(group.key) ?? [];
-      rows.push(index);
-      groups.set(group.key, rows);
+    return robustCorrelationRowGroupsHelper(rowInfo, {
+      rowSigma: (info) => this.rowSigma(info),
+      tsCorrelationEnabled: this.tsCorrelationEnabled,
+      tsCorrelationGroup: (obs) => this.tsCorrelationGroup(obs),
     });
-    return [...groups.values()].filter((rows) => rows.length > 1);
   }
 
   private captureRobustWeightBase(
     P: number[][],
     rowInfo: EquationRowInfo[],
   ): RobustWeightMatrixBase {
-    const diagonal = P.map((row, i) => row[i] ?? 0);
-    const correlatedPairs: RobustWeightMatrixBase['correlatedPairs'] = [];
-    this.robustCorrelationRowGroups(rowInfo).forEach((rows) => {
-      for (let a = 0; a < rows.length; a += 1) {
-        const i = rows[a];
-        for (let b = a + 1; b < rows.length; b += 1) {
-          const j = rows[b];
-          const base = P[i][j] ?? 0;
-          if (Math.abs(base) <= 0) continue;
-          correlatedPairs.push({ i, j, base });
-        }
-      }
+    return captureRobustWeightBaseHelper(P, rowInfo, {
+      robustCorrelationRowGroups: (info) => this.robustCorrelationRowGroups(info),
     });
-    return { diagonal, correlatedPairs };
   }
 
   private applyRobustWeightFactors(
@@ -1556,71 +1422,17 @@ export class LSAEngine {
     base: RobustWeightMatrixBase,
     factors: number[],
   ): void {
-    for (let i = 0; i < P.length; i += 1) {
-      P[i][i] = (base.diagonal[i] ?? 0) * (factors[i] ?? 1);
-    }
-    base.correlatedPairs.forEach(({ i, j, base: pairBase }) => {
-      const scale = Math.sqrt((factors[i] ?? 1) * (factors[j] ?? 1));
-      const scaled = pairBase * scale;
-      P[i][j] = scaled;
-      P[j][i] = scaled;
-    });
+    applyRobustWeightFactorsHelper(P, base, factors);
   }
 
   private computeRobustWeightSummary(
     residuals: number[],
     rowInfo: EquationRowInfo[],
   ): RobustWeightSummary {
-    const k = Math.max(0.5, Math.min(10, this.robustK || 1.5));
-    const factors = new Array(rowInfo.length).fill(1);
-
-    let downweightedRows = 0;
-    let minWeight = 1;
-    let maxNorm = 0;
-    let meanWeightSum = 0;
-    let meanWeightCount = 0;
-    const candidates: NonNullable<AdjustmentResult['robustDiagnostics']>['topDownweightedRows'] =
-      [];
-
-    for (let i = 0; i < rowInfo.length; i += 1) {
-      const info = rowInfo[i];
-      if (!info) continue;
-      const sigma = this.rowSigma(info);
-      const norm = Math.abs(residuals[i] ?? 0) / Math.max(sigma, 1e-24);
-      maxNorm = Math.max(maxNorm, norm);
-      let w = 1;
-      if (norm > k) w = k / norm;
-      w = Math.max(0.001, Math.min(1, w));
-      factors[i] = w;
-      meanWeightSum += w;
-      meanWeightCount += 1;
-      if (w < 0.999999) {
-        downweightedRows += 1;
-        minWeight = Math.min(minWeight, w);
-        candidates.push({
-          obsId: info.obs.id,
-          type: info.obs.type,
-          stations: this.observationStations(info.obs),
-          sourceLine: info.obs.sourceLine,
-          weight: w,
-          norm,
-        });
-      }
-    }
-
-    return {
-      factors,
-      downweightedRows,
-      minWeight: downweightedRows > 0 ? minWeight : 1,
-      maxNorm,
-      meanWeight: meanWeightCount > 0 ? meanWeightSum / meanWeightCount : 1,
-      topRows: candidates
-        .sort((a, b) => {
-          if (a.weight !== b.weight) return a.weight - b.weight;
-          return b.norm - a.norm;
-        })
-        .slice(0, 15),
-    };
+    return computeRobustWeightSummaryHelper(residuals, rowInfo, {
+      robustK: this.robustK,
+      rowSigma: (info) => this.rowSigma(info),
+    });
   }
 
   private recordRobustDiagnostics(
@@ -1644,173 +1456,30 @@ export class LSAEngine {
   }
 
   private maxRobustWeightDelta(a: number[], b: number[]): number {
-    const count = Math.max(a.length, b.length);
-    let maxDelta = 0;
-    for (let i = 0; i < count; i += 1) {
-      maxDelta = Math.max(maxDelta, Math.abs((a[i] ?? 1) - (b[i] ?? 1)));
-    }
-    return maxDelta;
+    return maxRobustWeightDeltaHelper(a, b);
   }
 
   private computeDirectionSetPrefit(
     activeObservations: Observation[],
     directionSetIds: string[],
   ): void {
-    const groups = new Map<
-      string,
-      { count: number; sumSin: number; sumCos: number; occupy: StationId }
-    >();
-    const diffsBySet = new Map<string, number[]>();
-
-    activeObservations.forEach((obs) => {
-      if (obs.type !== 'direction') return;
-      if (!this.stations[obs.at] || !this.stations[obs.to]) return;
-      const az = this.modeledAzimuth(
-        this.getAzimuth(obs.at, obs.to).az,
-        obs.at,
-        obs.gridObsMode !== 'grid',
-      );
-      const setId = getObservationSetId(obs) ?? 'unknown';
-      const diff = ((obs.obs - az + Math.PI) % (2 * Math.PI)) - Math.PI;
-      const entry = groups.get(setId) ?? {
-        count: 0,
-        sumSin: 0,
-        sumCos: 0,
-        occupy: obs.at,
-      };
-      entry.count += 1;
-      entry.sumSin += Math.sin(diff);
-      entry.sumCos += Math.cos(diff);
-      entry.occupy = obs.at ?? entry.occupy;
-      groups.set(setId, entry);
-      const arr = diffsBySet.get(setId) ?? [];
-      arr.push(diff);
-      diffsBySet.set(setId, arr);
-    });
-
-    if (!groups.size) return;
-
-    this.logs.push('Direction set prefit (initial coords, arcsec residuals):');
-    const sorted = [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0]));
-    sorted.forEach(([setId, entry]) => {
-      const orient = Math.atan2(entry.sumSin, entry.sumCos);
-      this.directionOrientations[setId] = orient;
-      const diffs = diffsBySet.get(setId) ?? [];
-      let sum = 0;
-      let sumSq = 0;
-      let maxAbs = 0;
-      diffs.forEach((d) => {
-        const v = ((d - orient + Math.PI) % (2 * Math.PI)) - Math.PI;
-        const arcsec = v * RAD_TO_DEG * 3600;
-        sum += arcsec;
-        sumSq += arcsec * arcsec;
-        maxAbs = Math.max(maxAbs, Math.abs(arcsec));
-      });
-      const mean = diffs.length ? sum / diffs.length : 0;
-      const rms = diffs.length ? Math.sqrt(sumSq / diffs.length) : 0;
-      const orientDeg = (orient * RAD_TO_DEG + 360) % 360;
-      this.logs.push(
-        `  ${setId} @ ${entry.occupy}: n=${diffs.length}, mean=${mean.toFixed(
-          2,
-        )}", rms=${rms.toFixed(2)}", max=${maxAbs.toFixed(2)}", orient=${orientDeg.toFixed(4)}°`,
-      );
-    });
-
-    // Ensure all direction sets have an initialization
-    directionSetIds.forEach((id) => {
-      if (this.directionOrientations[id] == null) this.directionOrientations[id] = 0;
+    computeDirectionSetPrefitHelper({
+      activeObservations,
+      directionOrientations: this.directionOrientations,
+      directionSetIds,
+      getAzimuth: (fromId, toId) => this.getAzimuth(fromId, toId),
+      logs: this.logs,
+      modeledAzimuth: (rawAz, atStationId, applyConvergence) =>
+        this.modeledAzimuth(rawAz, atStationId, applyConvergence),
+      stations: this.stations,
     });
   }
 
   private logNetworkDiagnostics(activeObservations: Observation[]) {
-    const stationObsCount = new Map<StationId, number>();
-    const otherObsCount = new Map<StationId, number>();
-    const directionAt = new Set<StationId>();
-    const directionTargets = new Map<StationId, Set<StationId>>();
-    const directionSetCounts = new Map<string, number>();
-
-    const mark = (id: StationId) => {
-      stationObsCount.set(id, (stationObsCount.get(id) ?? 0) + 1);
-    };
-    const markOther = (id: StationId) => {
-      otherObsCount.set(id, (otherObsCount.get(id) ?? 0) + 1);
-    };
-
-    activeObservations.forEach((obs) => {
-      if (obs.type === 'direction') {
-        const setId = getObservationSetId(obs) ?? 'unknown';
-        mark(obs.at);
-        mark(obs.to);
-        directionAt.add(obs.at);
-        const set = directionTargets.get(obs.to) ?? new Set<StationId>();
-        set.add(obs.at);
-        directionTargets.set(obs.to, set);
-        directionSetCounts.set(setId, (directionSetCounts.get(setId) ?? 0) + 1);
-        return;
-      }
-
-      if (obs.type === 'angle') {
-        mark(obs.at);
-        mark(obs.from);
-        mark(obs.to);
-        markOther(obs.at);
-        markOther(obs.from);
-        markOther(obs.to);
-        return;
-      }
-      if (
-        obs.type === 'dist' ||
-        obs.type === 'bearing' ||
-        obs.type === 'lev' ||
-        obs.type === 'zenith'
-      ) {
-        mark(obs.from);
-        mark(obs.to);
-        markOther(obs.from);
-        markOther(obs.to);
-        return;
-      }
-      if (obs.type === 'dir') {
-        mark(obs.from);
-        mark(obs.to);
-        markOther(obs.from);
-        markOther(obs.to);
-        return;
-      }
-      if (obs.type === 'gps') {
-        mark(obs.from);
-        mark(obs.to);
-        markOther(obs.from);
-        markOther(obs.to);
-      }
-    });
-
-    this.unknowns.forEach((id) => {
-      if (!stationObsCount.has(id)) {
-        this.log(
-          `Warning: unknown station ${id} has no observations and will cause a singular network.`,
-        );
-        return;
-      }
-
-      const hasOther = (otherObsCount.get(id) ?? 0) > 0;
-      if (!directionAt.has(id) && !hasOther) {
-        const atCount = directionTargets.get(id)?.size ?? 0;
-        if (atCount < 2) {
-          this.log(
-            `Warning: station ${id} is only targeted by directions from ${atCount} station(s). ` +
-              `At least two occupies or distance/GNSS observations are required to solve it.`,
-          );
-        }
-      }
-    });
-
-    directionSetCounts.forEach((count, setId) => {
-      if (count < 2) {
-        this.log(
-          `Warning: direction set ${setId} has only ${count} observation(s); orientation may be weak.`,
-        );
-      }
+    logNetworkDiagnosticsHelper({
+      activeObservations,
+      log: this.log.bind(this),
+      unknowns: this.unknowns,
     });
   }
 
