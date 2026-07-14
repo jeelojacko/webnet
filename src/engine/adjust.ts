@@ -8,7 +8,6 @@ import {
   GPS_ADDHIHT_SCALE_TOL,
   GPS_LOOP_BASE_TOLERANCE_M,
   GPS_LOOP_TOLERANCE_PPM,
-  INDUSTRY_PARITY_ANGULAR_SIGMA_SCALE,
   LEVEL_LOOP_DEFAULT_BASE_MM,
   LEVEL_LOOP_DEFAULT_PER_SQRT_KM_MM,
 } from './adjustConstants';
@@ -26,7 +25,6 @@ import { geoidGridMetadataSummary, interpolateGeoidUndulation, loadGeoidGridMode
 import {
   computeElevationFactor,
   computeGridFactors,
-  transformFactoredEcefDeltaCovarianceToLocalEnu,
   inverseENToGeodetic,
   projectGeodeticToEN,
 } from './geodesy';
@@ -64,9 +62,20 @@ import {
 import {
   ecefDeltaToLocalEnu,
   geodeticToEcef,
-  invertMatrix3,
   transformSymmetricCovariance3,
 } from './adjustGpsMath';
+import {
+  applyGpsVerticalDeflection as applyGpsVerticalDeflectionHelper,
+  buildGpsDisplayResidualTransform,
+  gpsRoverOffsetVector as gpsRoverOffsetVectorHelper,
+  gpsUsesLocalSolveFrame as gpsUsesLocalSolveFrameHelper,
+  plannedGpsRawVector as plannedGpsRawVectorHelper,
+  transformGpsCovarianceToSolveFrame as transformGpsCovarianceToSolveFrameHelper,
+} from './adjustGpsVectorHelpers';
+import {
+  effectiveStdDev as effectiveStdDevHelper,
+  shouldApplyIndustryParityAngularSigmaCalibration as shouldApplyIndustryParityAngularSigmaCalibrationHelper,
+} from './adjustObservationWeighting';
 import {
   matrixIsFinite,
   recoverUndampedInverse,
@@ -588,49 +597,15 @@ export class LSAEngine {
     horizDistance: number;
     applied: boolean;
   } {
-    const dE = Number.isFinite(obs.gpsOffsetDeltaE ?? Number.NaN)
-      ? (obs.gpsOffsetDeltaE as number)
-      : 0;
-    const dN = Number.isFinite(obs.gpsOffsetDeltaN ?? Number.NaN)
-      ? (obs.gpsOffsetDeltaN as number)
-      : 0;
-    const dH = Number.isFinite(obs.gpsOffsetDeltaH ?? Number.NaN)
-      ? (obs.gpsOffsetDeltaH as number)
-      : 0;
-    const horizDistance = Math.hypot(dE, dN);
-    return {
-      dE,
-      dN,
-      dH,
-      horizDistance,
-      applied: horizDistance > 1e-12 || Math.abs(dH) > 1e-12,
-    };
+    return gpsRoverOffsetVectorHelper(obs);
   }
 
   private plannedGpsRawVector(obs: GpsObservation): { dE: number; dN: number; dU?: number } {
-    const from = this.stations[obs.from];
-    const to = this.stations[obs.to];
-    if (!from || !to) return { dE: 0, dN: 0, dU: 0 };
-    const offset = this.gpsRoverOffsetVector(obs);
-    const dE = to.x - from.x - offset.dE;
-    const dN = to.y - from.y - offset.dN;
-    const dU = !this.is2D ? to.h - from.h - offset.dH : undefined;
-    const horizGround = Math.hypot(dE, dN);
-    if (horizGround <= 1e-12) return { dE, dN, dU };
-
-    const hi = Number.isFinite(obs.gpsAntennaHiM ?? Number.NaN) ? (obs.gpsAntennaHiM as number) : 0;
-    const ht = Number.isFinite(obs.gpsAntennaHtM ?? Number.NaN) ? (obs.gpsAntennaHtM as number) : 0;
-    const deltaGround = to.h - offset.dH - from.h;
-    const deltaAntenna = deltaGround + (ht - hi);
-    const rawHorizSq =
-      horizGround * horizGround + deltaGround * deltaGround - deltaAntenna * deltaAntenna;
-    if (!Number.isFinite(rawHorizSq) || rawHorizSq <= 1e-12) {
-      return { dE, dN, dU };
-    }
-    const rawHoriz = Math.sqrt(rawHorizSq);
-    const scale = rawHoriz / horizGround;
-    if (!Number.isFinite(scale) || scale <= 0) return { dE, dN, dU };
-    return { dE: dE * scale, dN: dN * scale, dU };
+    return plannedGpsRawVectorHelper({
+      is2D: this.is2D,
+      obs,
+      stations: this.stations,
+    });
   }
 
   private populatePreanalysisObservations(): void {
@@ -786,104 +761,26 @@ export class LSAEngine {
     obs: Observation,
     source: SigmaSource,
   ): boolean {
-    if (this.geometryDependentSigmaReference !== 'initial') return false;
-    if (source === 'explicit' || source === 'fixed' || source === 'float') return false;
-    return (
-      obs.type === 'angle' ||
-      obs.type === 'direction' ||
-      obs.type === 'bearing' ||
-      obs.type === 'dir'
+    return shouldApplyIndustryParityAngularSigmaCalibrationHelper(
+      obs,
+      source,
+      this.geometryDependentSigmaReference,
     );
   }
 
   private effectiveStdDev(obs: Observation): number {
-    const inst = this.getInstrument(obs);
-    let sigma = Number.isFinite(obs.stdDev) ? obs.stdDev : 0;
-    if (!inst) return Math.max(sigma, 1e-12);
-
-    const source = obs.sigmaSource ?? 'explicit';
-    if (this.shouldApplyIndustryParityAngularSigmaCalibration(obs, source)) {
-      sigma *= INDUSTRY_PARITY_ANGULAR_SIGMA_SCALE;
-    }
-    if (source === 'fixed' || source === 'float') return Math.max(sigma, 1e-12);
-    if (!this.applyCentering) return Math.max(sigma, 1e-12);
-    if (source === 'explicit' && !this.addCenteringToExplicit) return Math.max(sigma, 1e-12);
-
-    const instCenter = inst.instCentr_m || 0;
-    const tgtCenter = inst.tgtCentr_m || 0;
-    const centerHorizSq = instCenter * instCenter + tgtCenter * tgtCenter;
-    const centerHoriz = Math.sqrt(centerHorizSq);
-    const centerVert = Math.abs(inst.vertCentr_m || 0);
-    const centerVertSq = centerVert * centerVert;
-
-    if (obs.type === 'dist') {
-      if (this.is2D || obs.mode !== 'slope') {
-        if (centerHoriz <= 0) return Math.max(sigma, 1e-12);
-        return Math.max(Math.sqrt(sigma * sigma + centerHorizSq), 1e-12);
-      }
-      if (centerHorizSq <= 0 && centerVertSq <= 0) return Math.max(sigma, 1e-12);
-      const geom = this.centeringLineGeometry(obs.from, obs.to, obs.hi ?? 0, obs.ht ?? 0);
-      const slope = Math.max(geom.slope, 1e-12);
-      const horizRatioSq = (geom.horiz / slope) ** 2;
-      const elevRatioSq = (geom.elev / slope) ** 2;
-      const centeringVariance = horizRatioSq * centerHorizSq + 2 * elevRatioSq * centerVertSq;
-      return Math.max(Math.sqrt(sigma * sigma + centeringVariance), 1e-12);
-    }
-    if (obs.type === 'direction') {
-      if (centerHoriz <= 0) return Math.max(sigma, 1e-12);
-      const az = this.getSigmaGeometryAzimuth(obs.at, obs.to);
-      const term = az.dist > 0 ? centerHoriz / az.dist : 0;
-      return Math.max(Math.sqrt(sigma * sigma + term * term), 1e-12);
-    }
-    if (obs.type === 'bearing') {
-      if (centerHoriz <= 0) return Math.max(sigma, 1e-12);
-      const az = this.getSigmaGeometryAzimuth(obs.from, obs.to);
-      const term = az.dist > 0 ? centerHoriz / az.dist : 0;
-      return Math.max(Math.sqrt(sigma * sigma + term * term), 1e-12);
-    }
-    if (obs.type === 'dir') {
-      if (centerHoriz <= 0) return Math.max(sigma, 1e-12);
-      const az = this.getSigmaGeometryAzimuth(obs.from, obs.to);
-      const term = az.dist > 0 ? centerHoriz / az.dist : 0;
-      return Math.max(Math.sqrt(sigma * sigma + term * term), 1e-12);
-    }
-    if (obs.type === 'angle') {
-      if (centerHoriz <= 0) return Math.max(sigma, 1e-12);
-      const azTo = this.getSigmaGeometryAzimuth(obs.at, obs.to);
-      const azFrom = this.getSigmaGeometryAzimuth(obs.at, obs.from);
-      const dTo = Math.max(azTo.dist, 1e-12);
-      const dFrom = Math.max(azFrom.dist, 1e-12);
-      const geometryAngle = this.wrapToPi(azTo.az - azFrom.az);
-      const angle =
-        this.geometryDependentSigmaReference === 'initial'
-          ? geometryAngle
-          : Number.isFinite(obs.obs)
-            ? obs.obs
-            : geometryAngle;
-      const cross = Math.cos(angle);
-      const termSq =
-        (centerHoriz * centerHoriz) / (dTo * dTo) +
-        (centerHoriz * centerHoriz) / (dFrom * dFrom) -
-        (2 * centerHoriz * centerHoriz * cross) / (dTo * dFrom);
-      const term = Math.sqrt(Math.max(termSq, 0));
-      return Math.max(Math.sqrt(sigma * sigma + term * term), 1e-12);
-    }
-    if (obs.type === 'zenith') {
-      if (centerHorizSq <= 0 && centerVertSq <= 0) return Math.max(sigma, 1e-12);
-      const geom = this.centeringLineGeometry(obs.from, obs.to, obs.hi ?? 0, obs.ht ?? 0);
-      const slope = Math.max(geom.slope, 1e-12);
-      const horizRatioSq = (geom.horiz / slope) ** 2;
-      const elevRatioSq = (geom.elev / slope) ** 2;
-      // Convert the geometry-weighted linear centering projection into angular variance (radians^2).
-      const linearVariance = elevRatioSq * centerHorizSq + 2 * horizRatioSq * centerVertSq;
-      const term = Math.sqrt(Math.max(linearVariance, 0)) / slope;
-      return Math.max(Math.sqrt(sigma * sigma + term * term), 1e-12);
-    }
-    if (obs.type === 'lev') {
-      return Math.max(sigma, 1e-12);
-    }
-
-    return Math.max(sigma, 1e-12);
+    return effectiveStdDevHelper({
+      addCenteringToExplicit: this.addCenteringToExplicit,
+      applyCentering: this.applyCentering,
+      centeringLineGeometry: (fromId, toId, hi, ht) =>
+        this.centeringLineGeometry(fromId, toId, hi, ht),
+      geometryDependentSigmaReference: this.geometryDependentSigmaReference,
+      getSigmaGeometryAzimuth: (fromId, toId) => this.getSigmaGeometryAzimuth(fromId, toId),
+      instrument: this.getInstrument(obs),
+      is2D: this.is2D,
+      obs,
+      wrapToPi: (value) => this.wrapToPi(value),
+    });
   }
 
   private gpsComponentCount(obs: GpsObservation): number {
@@ -891,7 +788,7 @@ export class LSAEngine {
   }
 
   private gpsUsesLocalSolveFrame(frame: GnssVectorFrame): boolean {
-    return frame === 'enuLocal' || frame === 'llhBaseline' || frame === 'ecefDelta';
+    return gpsUsesLocalSolveFrameHelper(frame);
   }
 
   private stationGeodeticFromCoordinates(
@@ -949,18 +846,11 @@ export class LSAEngine {
   private applyGpsVerticalDeflection(
     vector: Required<Pick<GpsSolveVector, 'dE' | 'dN' | 'dU'>>,
   ): Required<Pick<GpsSolveVector, 'dE' | 'dN' | 'dU'>> {
-    const northSec = this.parseState?.verticalDeflectionNorthSec ?? 0;
-    const eastSec = this.parseState?.verticalDeflectionEastSec ?? 0;
-    const xi = (northSec / 3600) * DEG_TO_RAD;
-    const eta = (eastSec / 3600) * DEG_TO_RAD;
-    if ((!Number.isFinite(xi) || Math.abs(xi) <= 1e-16) && (!Number.isFinite(eta) || Math.abs(eta) <= 1e-16)) {
-      return vector;
-    }
-    return {
-      dE: vector.dE - eta * vector.dU,
-      dN: vector.dN - xi * vector.dU,
-      dU: vector.dU + eta * vector.dE + xi * vector.dN,
-    };
+    return applyGpsVerticalDeflectionHelper(
+      vector,
+      this.parseState?.verticalDeflectionNorthSec ?? 0,
+      this.parseState?.verticalDeflectionEastSec ?? 0,
+    );
   }
 
   private rotateGpsHorizontalToGrid(
@@ -985,77 +875,24 @@ export class LSAEngine {
   ): number[][] | null {
     const frame: GnssVectorFrame =
       obs.gnssVectorFrame ?? this.parseState?.gnssVectorFrameDefault ?? 'gridNEU';
-    const northSec = this.parseState?.verticalDeflectionNorthSec ?? 0;
-    const eastSec = this.parseState?.verticalDeflectionEastSec ?? 0;
-    const xi = (northSec / 3600) * DEG_TO_RAD;
-    const eta = (eastSec / 3600) * DEG_TO_RAD;
-    const needsDeflectionUndo = this.gpsUsesLocalSolveFrame(frame) && (Math.abs(xi) > 1e-16 || Math.abs(eta) > 1e-16);
-    const deflectionInverse = needsDeflectionUndo
-      ? invertMatrix3([
-          [1, 0, -eta],
-          [0, 1, -xi],
-          [eta, xi, 1],
-        ])
-      : null;
-    return this.gpsUsesLocalSolveFrame(frame) ? deflectionInverse : null;
+    return buildGpsDisplayResidualTransform({
+      frame,
+      northSec: this.parseState?.verticalDeflectionNorthSec ?? 0,
+      eastSec: this.parseState?.verticalDeflectionEastSec ?? 0,
+    });
   }
 
   private transformGpsCovarianceToSolveFrame(obs: GpsObservation): GpsCovariance | null {
     const frame: GnssVectorFrame =
       obs.gnssVectorFrame ?? this.parseState?.gnssVectorFrameDefault ?? 'gridNEU';
-    const componentCount = this.gpsComponentCount(obs);
-    if (componentCount < 3 || !obs.gpsCovariance3d) return null;
-    const { cXX, cYY, cZZ, cXY, cXZ, cYZ } = obs.gpsCovariance3d;
-    let cEE = cXX;
-    let cNN = cYY;
-    let cUU = cZZ;
-    let cEN = cXY;
-    let cEU = cXZ;
-    let cNU = cYZ;
-
-    if (frame === 'ecefDelta') {
-      const geo = this.stationGeodetic(obs.from) ?? this.stationGeodetic(obs.to);
-      if (!geo) return null;
-      const transformed = transformFactoredEcefDeltaCovarianceToLocalEnu(
-        obs.gpsCovariance3d,
-        geo.latDeg,
-        geo.lonDeg,
-        obs.gpsVectorHorizontalFactor,
-        obs.gpsVectorVerticalFactor,
-      );
-      cEE = transformed.cEE;
-      cEN = transformed.cEN;
-      cEU = transformed.cEU;
-      cNN = transformed.cNN;
-      cNU = transformed.cNU;
-      cUU = transformed.cUU;
-    }
-
-    const northSec = this.parseState?.verticalDeflectionNorthSec ?? 0;
-    const eastSec = this.parseState?.verticalDeflectionEastSec ?? 0;
-    const xi = (northSec / 3600) * DEG_TO_RAD;
-    const eta = (eastSec / 3600) * DEG_TO_RAD;
-    if (Math.abs(xi) > 1e-16 || Math.abs(eta) > 1e-16) {
-      const d = [
-        [1, 0, -eta],
-        [0, 1, -xi],
-        [eta, xi, 1],
-      ];
-      const q = [
-        [cEE, cEN, cEU],
-        [cEN, cNN, cNU],
-        [cEU, cNU, cUU],
-      ];
-      const transformed = transformSymmetricCovariance3(d, q);
-      cEE = transformed[0][0];
-      cEN = transformed[0][1];
-      cEU = transformed[0][2];
-      cNN = transformed[1][1];
-      cNU = transformed[1][2];
-      cUU = transformed[2][2];
-    }
-
-    return { cEE, cNN, cEN, cUU, cEU, cNU };
+    return transformGpsCovarianceToSolveFrameHelper({
+      componentCount: this.gpsComponentCount(obs),
+      frame,
+      obs,
+      stationGeodetic: (stationId) => this.stationGeodetic(stationId),
+      northSec: this.parseState?.verticalDeflectionNorthSec ?? 0,
+      eastSec: this.parseState?.verticalDeflectionEastSec ?? 0,
+    });
   }
 
   private captureObservationWeightingStdDevs(observations: Observation[]): void {
