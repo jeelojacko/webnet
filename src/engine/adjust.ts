@@ -25,7 +25,6 @@ import {
   inverseENToGeodetic,
 } from './geodesy';
 import { getCrsDefinition, isGeodeticInsideAreaOfUse } from './crsCatalog';
-import { formatAutoAdjustLogLines, runAutoAdjustCycles, type AutoAdjustConfig } from './autoAdjust';
 import type { GeoidGridModel } from './geoid';
 import {
   accumulateNormalEquationsFromSparseRows,
@@ -135,26 +134,33 @@ import {
   calculateAdjustmentStatistics,
   type AdjustmentStatisticsContext,
 } from './adjustStatistics';
+import { buildStatisticsContextForEngine } from './adjustStatisticsContext';
 import {
   applyDataCheckProvisionalApproximation as applyDataCheckProvisionalApproximationHelper,
   runDataCheckOnly as runDataCheckOnlyHelper,
 } from './adjustDataCheckWorkflow';
 import {
+  buildDataCheckContextForEngine,
+  syncDataCheckContextForEngine,
+} from './adjustDataCheckContext';
+import {
   runAdjustmentSolveWorkflow,
   type AdjustmentSolveWorkflowContext,
 } from './adjustSolveWorkflow';
-import { buildAdjustmentResultPayload, finalizeResultParseState } from './adjustmentResultBuilder';
+import {
+  buildAdjustmentResultFromContext,
+  type AdjustmentResultWorkflowContext,
+} from './adjustResultWorkflow';
+import {
+  runAutoAdjustWorkflow as runAutoAdjustWorkflowHelper,
+  runBlunderDetectWorkflow as runBlunderDetectWorkflowHelper,
+} from './adjustRunModeWorkflows';
 import {
   projectWeakFloatZenithLeafStationsForDisplay as projectWeakFloatZenithLeafStations,
 } from './adjustmentWeakFloatZenithProjection';
 import { runModeCompatibilityDiagnosticLines } from './adjustmentRunModeCompatibility';
 import { buildSideshotResults } from './adjustmentSideshots';
-import {
-  buildAutoSideshotDiagnostics,
-  buildClusterDiagnostics,
-} from './adjustmentReviewDiagnostics';
 import type { CoordinateConstraintEquation } from './adjustmentSolveTypes';
-import { summarizeReductionUsage } from './reductionUsageSummary';
 import type {
   EquationRowInfo,
   RobustWeightMatrixBase,
@@ -1743,63 +1749,11 @@ export class LSAEngine {
   }
 
   private buildDataCheckContext() {
-    return {
-      input: this.input,
-      stations: this.stations,
-      observations: this.observations,
-      unknowns: this.unknowns,
-      maxIterations: this.maxIterations,
-      convergenceThreshold: this.convergenceThreshold,
-      instrumentLibrary: this.instrumentLibrary,
-      excludeIds: this.excludeIds,
-      overrides: this.overrides,
-      parseOptions: this.parseOptions,
-      geoidSourceData: this.geoidSourceData,
-      is2D: this.is2D,
-      coordSystemMode: this.coordSystemMode,
-      runMode: this.runMode,
-      iterations: this.iterations,
-      dof: this.dof,
-      seuw: this.seuw,
-      converged: this.converged,
-      log: (message: string) => this.log(message),
-      buildResult: () => this.buildResult(),
-      centeringLineGeometry: (fromId: StationId, toId: StationId, hi?: number, ht?: number) =>
-        this.centeringLineGeometry(fromId, toId, hi, ht),
-      correctedDistanceModel: (obs: Observation & { type: 'dist' }, calcDistRaw: number) =>
-        this.correctedDistanceModel(obs, calcDistRaw),
-      getObservedHorizontalDistanceIn2D: (obs: DistanceObservation) =>
-        this.getObservedHorizontalDistanceIn2D(obs),
-      getAzimuth: (fromId: StationId, toId: StationId) => this.getAzimuth(fromId, toId),
-      getModeledZenith: (obs: Observation & { type: 'zenith' }) => this.getModeledZenith(obs),
-      gpsObservedVector: (obs: GpsObservation) => this.gpsObservedVector(obs),
-      gpsModeledVector: (obs: GpsObservation) => this.gpsModeledVector(obs),
-      gpsCovariance: (obs: Observation) => this.gpsCovariance(obs),
-      modeledAzimuth: (rawAz: number, atStationId?: StationId, applyConvergence?: boolean) =>
-        this.modeledAzimuth(rawAz, atStationId, applyConvergence),
-      stationGeodetic: (stationId: StationId) => this.stationGeodetic(stationId),
-      stationFactorSnapshot: (stationId: StationId) => this.stationFactorSnapshot(stationId),
-      wrapToPi: (value: number) => this.wrapToPi(value),
-      solveProvisional: (maxIterations: number, parseOptions: ParseOptions) =>
-        new LSAEngine({
-          input: this.input,
-          maxIterations,
-          convergenceThreshold: this.convergenceThreshold,
-          instrumentLibrary: this.instrumentLibrary,
-          excludeIds: this.excludeIds,
-          overrides: this.overrides,
-          parseOptions,
-          geoidSourceData: this.geoidSourceData,
-        }).solve(),
-    };
+    return buildDataCheckContextForEngine(this);
   }
 
   private syncDataCheckContext(ctx: ReturnType<LSAEngine['buildDataCheckContext']>): void {
-    this.runMode = ctx.runMode ?? this.runMode;
-    this.iterations = ctx.iterations;
-    this.dof = ctx.dof;
-    this.seuw = ctx.seuw;
-    this.converged = ctx.converged;
+    syncDataCheckContextForEngine(this, ctx);
   }
 
   private applyDataCheckProvisionalApproximation(): {
@@ -1825,125 +1779,11 @@ export class LSAEngine {
   private runBlunderDetectWorkflow(
     runModeDiagnostics: RunModeCompatibilityDiagnostic[],
   ): AdjustmentResult {
-    const baseOptions: Partial<ParseOptions> = {
-      ...(this.parseOptions ?? {}),
-      runMode: 'adjustment',
-      preanalysisMode: false,
-      robustMode: 'none',
-      autoAdjustEnabled: false,
-      clusterPassLabel: this.parseOptions?.clusterPassLabel ?? 'single',
-    };
-    let workingOverrides = { ...(this.overrides ?? {}) };
-    const cycleLogs: string[] = [];
-    const maxCycles = 3;
-    const threshold = 3;
-    let finalResult: AdjustmentResult | null = null;
-
-    for (let cycle = 1; cycle <= maxCycles; cycle += 1) {
-      const solved = this.solveNestedScenario(baseOptions, workingOverrides);
-      finalResult = solved;
-      const ranked = [...solved.observations]
-        .filter((obs) => Number.isFinite(obs.stdRes))
-        .sort((a, b) => Math.abs(b.stdRes ?? 0) - Math.abs(a.stdRes ?? 0));
-      const top = ranked[0];
-      if (!top || Math.abs(top.stdRes ?? 0) < threshold) {
-        cycleLogs.push(
-          `Blunder cycle ${cycle}: stop (max |t| ${Math.abs(top?.stdRes ?? 0).toFixed(3)} < ${threshold.toFixed(3)}).`,
-        );
-        break;
-      }
-      workingOverrides[top.id] = {
-        ...(workingOverrides[top.id] ?? {}),
-        stdDev: Math.max((top.stdDev ?? 1) * 4, 1e-9),
-      };
-      cycleLogs.push(
-        `Blunder cycle ${cycle}: deweight obs ${top.id} (${top.type}, line=${top.sourceLine ?? '-'}) |t|=${Math.abs(top.stdRes ?? 0).toFixed(3)} newSigma=${workingOverrides[top.id].stdDev?.toExponential(6)}.`,
-      );
-    }
-
-    if (!finalResult) {
-      this.converged = false;
-      this.runMode = 'blunder-detect';
-      this.runModeCompatibilityDiagnostics = [...runModeDiagnostics];
-      if (this.parseState) {
-        this.parseState.runMode = 'blunder-detect';
-        this.parseState.runModeCompatibilityDiagnostics = [...runModeDiagnostics];
-      }
-      this.emitRunModeCompatibilityDiagnostics(runModeDiagnostics);
-      this.log('Error: blunder-detect workflow could not produce a solve result.');
-      return this.buildResult();
-    }
-    const mergedParseState = finalResult.parseState
-      ? ({
-          ...finalResult.parseState,
-          runMode: 'blunder-detect' as const,
-          runModeCompatibilityDiagnostics: [...runModeDiagnostics],
-        } as ParseOptions)
-      : undefined;
-    const runModeCompatibilityLines = runModeCompatibilityDiagnosticLines(runModeDiagnostics);
-    return {
-      ...finalResult,
-      parseState: mergedParseState,
-      logs: [
-        ...runModeCompatibilityLines,
-        'Blunder Detect mode: iterative deweighting diagnostics (not a replacement for full adjustment QA).',
-        ...cycleLogs,
-        ...finalResult.logs,
-      ],
-    };
+    return runBlunderDetectWorkflowHelper(this as never, runModeDiagnostics);
   }
 
   private runAutoAdjustWorkflow(): AdjustmentResult {
-    const requestedConfig: AutoAdjustConfig = {
-      enabled: this.parseOptions?.autoAdjustEnabled === true,
-      maxCycles: this.parseOptions?.autoAdjustMaxCycles ?? 3,
-      maxRemovalsPerCycle: this.parseOptions?.autoAdjustMaxRemovalsPerCycle ?? 1,
-      stdResThreshold: this.parseOptions?.autoAdjustStdResThreshold ?? 4,
-      minRedundancy: 0.05,
-    };
-    const baseOptions: Partial<ParseOptions> = {
-      ...(this.parseOptions ?? {}),
-      autoAdjustEnabled: false,
-    };
-    const initialExcludedIds = new Set(this.excludeIds ?? []);
-    const summary = runAutoAdjustCycles(initialExcludedIds, requestedConfig, (trialExclusions) =>
-      this.solveNestedScenario(baseOptions, this.overrides, trialExclusions),
-    );
-    const finalResult = this.solveNestedScenario(
-      baseOptions,
-      this.overrides,
-      summary.finalExcludedIds,
-    );
-    const mergedParseState = finalResult.parseState
-      ? ({
-          ...finalResult.parseState,
-          autoAdjustEnabled: requestedConfig.enabled,
-          autoAdjustMaxCycles: summary.config.maxCycles,
-          autoAdjustMaxRemovalsPerCycle: summary.config.maxRemovalsPerCycle,
-          autoAdjustStdResThreshold: summary.config.stdResThreshold,
-        } as ParseOptions)
-      : undefined;
-    const autoAdjustDiagnostics = {
-      enabled: true,
-      threshold: summary.config.stdResThreshold,
-      maxCycles: summary.config.maxCycles,
-      maxRemovalsPerCycle: summary.config.maxRemovalsPerCycle,
-      minRedundancy: summary.config.minRedundancy ?? 0.05,
-      stopReason: summary.stopReason,
-      cycles: summary.cycles.map((cycle) => ({
-        cycle: cycle.cycle,
-        seuw: cycle.seuw,
-        maxAbsStdRes: cycle.maxAbsStdRes,
-        removals: [...cycle.removals],
-      })),
-      removed: summary.cycles.flatMap((cycle) => cycle.removals),
-    };
-    return {
-      ...finalResult,
-      parseState: mergedParseState,
-      autoAdjustDiagnostics,
-      logs: [...formatAutoAdjustLogLines(summary), ...finalResult.logs],
-    };
+    return runAutoAdjustWorkflowHelper(this as never);
   }
 
   solve(): AdjustmentResult {
@@ -1986,80 +1826,7 @@ export class LSAEngine {
   }
 
   private buildStatisticsContext(): AdjustmentStatisticsContext {
-    return {
-      observations: this.observations,
-      stations: this.stations,
-      unknowns: this.unknowns,
-      paramIndex: this.paramIndex,
-      Qxx: this.Qxx,
-      is2D: this.is2D,
-      directionOrientations: this.directionOrientations,
-      dof: this.dof,
-      seuw: this.seuw,
-      preanalysisMode: this.preanalysisMode,
-      robustMode: this.robustMode,
-      tsCorrelationEnabled: this.tsCorrelationEnabled,
-      tsCorrelationRho: this.tsCorrelationRho,
-      tsCorrelationScope: this.tsCorrelationScope,
-      localTestCritical: this.localTestCritical,
-      maxStdRes: this.maxStdRes,
-      traverseThresholds: { ...this.traverseThresholds },
-      parseState: this.parseState,
-      solveTiming: this.solveTiming,
-      logs: this.logs,
-      chiSquare: this.chiSquare,
-      statisticalSummary: this.statisticalSummary,
-      typeSummary: this.typeSummary,
-      directionSetDiagnostics: this.directionSetDiagnostics,
-      directionTargetDiagnostics: this.directionTargetDiagnostics,
-      directionRepeatabilityDiagnostics: this.directionRepeatabilityDiagnostics,
-      setupDiagnostics: this.setupDiagnostics,
-      residualDiagnostics: this.residualDiagnostics,
-      traverseDiagnostics: this.traverseDiagnostics,
-      autoSideshotDiagnostics: this.autoSideshotDiagnostics,
-      tsCorrelationDiagnostics: this.tsCorrelationDiagnostics,
-      precisionModels: this.precisionModels,
-      stationCovariances: this.stationCovariances,
-      relativePrecision: this.relativePrecision,
-      relativeCovariances: this.relativeCovariances,
-      weakGeometryDiagnostics: this.weakGeometryDiagnostics,
-      sideshots: this.sideshots,
-      clearGeometryCache: () => this.clearGeometryCache(),
-      collectActiveObservations: () => this.collectActiveObservations(),
-      correctedDistanceModel: (obs, calcDistRaw) => this.correctedDistanceModel(obs, calcDistRaw),
-      curvatureRefractionAngle: (horiz) => this.curvatureRefractionAngle(horiz),
-      effectiveDistanceForAngularObservation: (obs) =>
-        this.effectiveDistanceForAngularObservation(obs),
-      effectiveStdDev: (obs) => this.effectiveStdDev(obs),
-      getAzimuth: (fromId, toId) => this.getAzimuth(fromId, toId),
-      getModeledZenith: (obs) => this.getModeledZenith(obs),
-      getObservedHorizontalDistanceIn2D: (obs) => this.getObservedHorizontalDistanceIn2D(obs),
-      gpsComponentCount: (obs) => this.gpsComponentCount(obs),
-      gpsCovariance: (obs) => this.gpsCovariance(obs),
-      gpsDisplayResidualTransform: (obs) => this.gpsDisplayResidualTransform(obs),
-      gpsModeledVector: (obs) => this.gpsModeledVector(obs),
-      gpsModeledVectorDerivatives: (obs) => this.gpsModeledVectorDerivatives(obs),
-      gpsObservedVector: (obs) => this.gpsObservedVector(obs),
-      gpsWeight: (obs) => this.gpsWeight(obs),
-      invertNormalMatrixForStats: (normal) => this.invertNormalMatrixForStats(normal),
-      isObservationActive: (obs) => this.isObservationActive(obs),
-      measuredAngleCorrection: (at, from, to) => this.measuredAngleCorrection(at, from, to),
-      modeledAzimuth: (rawAz, atStationId, applyConvergence) =>
-        this.modeledAzimuth(rawAz, atStationId, applyConvergence),
-      wrapToPi: (value) => this.wrapToPi(value),
-      applyRobustWeightFactors: (matrix, base, factors) =>
-        this.applyRobustWeightFactors(matrix, base, factors),
-      applyTsCorrelationToWeightMatrix: (matrix, rowInfo) =>
-        this.applyTsCorrelationToWeightMatrix(matrix, rowInfo, true),
-      captureObservationWeightingStdDevs: (observations) =>
-        this.captureObservationWeightingStdDevs(observations),
-      captureRobustWeightBase: (matrix, rowInfo) => this.captureRobustWeightBase(matrix, rowInfo),
-      computeRobustWeightSummary: (residuals, rowInfo) =>
-        this.computeRobustWeightSummary(residuals, rowInfo),
-      computeSideshotResults: () => this.computeSideshotResults(),
-      log: (message) => this.log(message),
-      tsCorrelationGroup: (obs) => this.tsCorrelationGroup(obs),
-    };
+    return buildStatisticsContextForEngine(this);
   }
 
   private calculateStatistics(
@@ -2090,141 +1857,6 @@ export class LSAEngine {
   }
 
   private buildResult(): AdjustmentResult {
-    const resultPackagingStartedAt = Date.now();
-    this.projectWeakFloatZenithLeafStationsForDisplay();
-    if (!this.sideshots) {
-      this.sideshots = this.computeSideshotResults();
-    }
-    if (this.coordSystemMode === 'grid') {
-      Object.keys(this.stations).forEach((id) => {
-        this.stationFactorSnapshot(id);
-      });
-    }
-    this.captureRawTraverseDirectionCorrections(this.collectActiveObservations());
-    this.parseState = finalizeResultParseState({
-      parseState: this.parseState,
-      coordSystemMode: this.coordSystemMode,
-      coordSystemDiagnostics: this.coordSystemDiagnostics.values(),
-      coordSystemWarningMessages: this.coordSystemWarningMessages,
-      crsStatus: this.crsStatus,
-      crsOffReason: this.crsOffReason,
-      crsDatumOpId: this.crsDatumOpId,
-      crsDatumFallbackUsed: this.crsDatumFallbackUsed,
-      crsAreaOfUseStatus: this.crsAreaOfUseStatus,
-      crsOutOfAreaStationCount: this.crsOutOfAreaStationCount,
-      scaleOverrideActive: this.scaleOverrideActive,
-      gnssFrameConfirmed: this.gnssFrameConfirmed,
-      datumSufficiencyReport: this.datumSufficiencyReport,
-      parsedUsageSummary: summarizeReductionUsage(this.observations),
-      usedInSolveUsageSummary: summarizeReductionUsage(this.collectActiveObservations()),
-    });
-    const includeErrorCount = this.parseState?.includeErrors?.length ?? 0;
-    const runMode = this.runMode;
-    const autoSideshotEnabled =
-      this.parseState?.autoSideshotEnabled ?? this.parseOptions?.autoSideshotEnabled ?? true;
-    if (runMode === 'data-check') {
-      this.autoSideshotDiagnostics = undefined;
-      this.clusterDiagnostics = undefined;
-      this.logs.push('Data Check Only: auto-sideshot and cluster diagnostics are skipped.');
-    } else if (this.preanalysisMode) {
-      this.autoSideshotDiagnostics = undefined;
-      this.logs.push('Auto-sideshot detection (M-lines): disabled in preanalysis mode');
-    } else if (autoSideshotEnabled) {
-      if (!this.autoSideshotDiagnostics) {
-        this.autoSideshotDiagnostics = buildAutoSideshotDiagnostics({
-          observations: this.observations,
-          stations: this.stations,
-          redundancyScalar: (obs) => this.redundancyScalar(obs),
-          threshold: 0.1,
-        });
-        this.logs.push(
-          `Auto-sideshot detection (M-lines): evaluated=${this.autoSideshotDiagnostics.evaluatedCount}, candidates=${this.autoSideshotDiagnostics.candidateCount}, excluded-control=${this.autoSideshotDiagnostics.excludedControlCount}, threshold=${this.autoSideshotDiagnostics.threshold.toFixed(2)}`,
-        );
-        this.autoSideshotDiagnostics.candidates.slice(0, 10).forEach((c) => {
-          this.logs.push(
-            `  line ${c.sourceLine ?? '-'} ${c.occupy}->${c.target} (bs=${c.backsight}) minRed=${c.minRedundancy.toFixed(3)} max|t|=${c.maxAbsStdRes.toFixed(2)}`,
-          );
-        });
-      }
-    } else {
-      this.autoSideshotDiagnostics = undefined;
-      this.logs.push('Auto-sideshot detection (M-lines): disabled');
-    }
-    if (runMode !== 'data-check' && !this.clusterDiagnostics) {
-      const dimension: '2D' | '3D' = this.is2D ? '2D' : '3D';
-      this.clusterDiagnostics = buildClusterDiagnostics({
-        stations: this.stations,
-        unknowns: this.unknowns,
-        enabled: this.clusterDetectionEnabled,
-        linkageMode: this.clusterLinkageMode ?? 'single',
-        dimension,
-        tolerance: Math.max(
-          1e-9,
-          dimension === '2D' ? this.clusterTolerance2D : this.clusterTolerance3D,
-        ),
-        passMode:
-          (this.parseOptions?.clusterDualPassRan ?? false) ||
-          this.parseOptions?.clusterPassLabel === 'pass2'
-            ? 'dual-pass'
-            : 'single-pass',
-      });
-      if (this.clusterDiagnostics.enabled) {
-        this.logs.push(
-          `Cluster detection: pass=${this.clusterDiagnostics.passMode}, mode=${this.clusterDiagnostics.linkageMode}, dim=${this.clusterDiagnostics.dimension}, tol=${this.clusterDiagnostics.tolerance.toFixed(4)}m, pairHits=${this.clusterDiagnostics.pairCount}, candidates=${this.clusterDiagnostics.candidateCount}`,
-        );
-        if ((this.clusterDiagnostics.approvedMergeCount ?? 0) > 0) {
-          this.logs.push(
-            `  Approved merges applied: ${this.clusterDiagnostics.approvedMergeCount} (pass1 candidates=${this.clusterDiagnostics.pass1CandidateCount ?? 0})`,
-          );
-        }
-        this.clusterDiagnostics.candidates.slice(0, 10).forEach((c) => {
-          this.logs.push(
-            `  ${c.key}: rep=${c.representativeId}, members=${c.stationIds.join(',')}, maxSep=${c.maxSeparation.toFixed(4)}m, meanSep=${c.meanSeparation.toFixed(4)}m`,
-          );
-        });
-      }
-    }
-    const success = includeErrorCount === 0 && (runMode === 'data-check' ? true : this.converged);
-    const result = buildAdjustmentResultPayload({
-      success,
-      converged: this.converged,
-      iterations: this.iterations,
-      stations: this.stations,
-      observations: this.observations,
-      logs: this.logs,
-      seuw: this.seuw,
-      dof: this.dof,
-      preanalysisMode: this.preanalysisMode,
-      parseState: this.parseState,
-      condition: this.condition,
-      controlConstraints: this.controlConstraints,
-      stationCovariances: this.stationCovariances,
-      relativeCovariances: this.relativeCovariances,
-      precisionModels: this.precisionModels,
-      weakGeometryDiagnostics: this.weakGeometryDiagnostics,
-      chiSquare: this.chiSquare,
-      statisticalSummary: this.statisticalSummary,
-      typeSummary: this.typeSummary,
-      relativePrecision: this.relativePrecision,
-      directionSetDiagnostics: this.directionSetDiagnostics,
-      directionTargetDiagnostics: this.directionTargetDiagnostics,
-      directionRepeatabilityDiagnostics: this.directionRepeatabilityDiagnostics,
-      setupDiagnostics: this.setupDiagnostics,
-      tsCorrelationDiagnostics: this.tsCorrelationDiagnostics,
-      robustDiagnostics: this.robustDiagnostics,
-      residualDiagnostics: this.residualDiagnostics,
-      traverseDiagnostics: this.traverseDiagnostics,
-      sideshots: this.sideshots,
-      gpsLoopDiagnostics: this.gpsLoopDiagnostics,
-      levelingLoopDiagnostics: this.levelingLoopDiagnostics,
-      autoSideshotDiagnostics: this.autoSideshotDiagnostics,
-      clusterDiagnostics: this.clusterDiagnostics,
-      directionRejectDiagnostics: this.directionRejectDiagnostics,
-    });
-    this.solveTiming.resultPackagingMs += Date.now() - resultPackagingStartedAt;
-    const solveTimingProfile = this.buildSolveTimingProfile();
-    result.solveTimingProfile = solveTimingProfile;
-    this.logSolveTimingProfile(solveTimingProfile);
-    return result;
+    return buildAdjustmentResultFromContext(this as unknown as AdjustmentResultWorkflowContext);
   }
 }
