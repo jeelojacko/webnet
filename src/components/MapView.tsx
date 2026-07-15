@@ -32,35 +32,18 @@ import {
   resolveWeakStationSeverity,
   resolveSelectedObservationPairKey,
   resolveStationIdToken,
-  scoreMapStationPriority,
 } from '../engine/resultDerivedModels';
 import { noteUiPerfStage, noteUiTabReady } from '../hooks/useUiPerfMonitor';
 import {
-  buildBaseProjectedMapLines2d,
-  buildBaseProjectedPoints2d,
-  buildConnectedStationIds2d,
-  buildFilteredVisibleMapLines2d,
-  buildFilteredVisiblePoints2d,
-  buildMapDensitySummary,
-  buildProjectedViewportBounds,
-  buildProjectedMapLines2d,
-  buildProjectedPoints2d,
   buildProjection2d,
-  buildUnselectedCanvasLines2d,
-  buildVisiblePointLabels2d,
-  buildVisibleBaseProjectedMapLines2d,
-  buildVisibleBaseProjectedPoints2d,
-  buildViewportBounds,
   clamp,
   pointToSegmentDistancePx,
   projectPoint2d,
   type ProjectedMapLine2D,
   type ProjectedPoint2D,
-  type ViewportBounds,
   view2dEquals,
 } from './mapView/mapView2d';
 import { createStableRuntimeId } from '../engine/id';
-import { inverseENToGeodetic } from '../engine/geodesy';
 import { DEFAULT_PLANNING_MAP_STATE } from '../engine/planningMapState';
 import MapViewSvg2d from './mapView/MapViewSvg2d';
 import MapViewScene3d from './mapView/MapViewScene3d';
@@ -105,7 +88,6 @@ import {
   canRenderWebglLayers,
   DEFAULT_RENDER_SURFACE_LAYOUT,
   doesPolygonTouchRect,
-  isPointInsidePolygon,
   isPolygonInsideRect,
   OSM_FETCH_BUFFER_M,
   renderSurfaceLayoutEquals,
@@ -121,6 +103,8 @@ import {
   buildOverpassObstacleQuery,
   parseOverpassObstaclePolygons,
 } from './mapView/mapViewObstacles';
+import { useMapViewDerived2d } from './mapView/useMapViewDerived2d';
+import { useMapViewPlanning2d } from './mapView/useMapViewPlanning2d';
 
 const FT_PER_M = 3.280839895;
 const VIEW_W = 1000;
@@ -1400,179 +1384,24 @@ const MapView: React.FC<MapViewProps> = ({
     ],
   );
 
-  const bracePreviewPoints2d = useMemo(
-    () =>
-      (result.preanalysisImpactDiagnostics?.scenarioPreviewPoints ?? [])
-        .map((point) => {
-          const projected = project2d(point.x, point.y);
-          return {
-            stationId: point.stationId,
-            scenarioId: point.stationId,
-            templateLabel: point.stationId,
-            x: projected.x,
-            y: projected.y,
-            active: point.active,
-          };
-        })
-        .sort(
-          (left, right) =>
-            Number(right.active) - Number(left.active) ||
-            left.stationId.localeCompare(right.stationId, undefined, { numeric: true }),
-        ),
-    [project2d, result.preanalysisImpactDiagnostics?.scenarioPreviewPoints],
-  );
-
-  const scenarioPreviewSegments2d = useMemo(
-    () =>
-      (result.preanalysisImpactDiagnostics?.scenarioPreviewSegments ?? [])
-        .map((segment) => {
-          const fromStation = stations[segment.fromStationId];
-          const toStation =
-            stations[segment.toStationId] ??
-            result.preanalysisImpactDiagnostics?.scenarioPreviewPoints.find(
-              (point) => point.stationId === segment.toStationId,
-            );
-          if (!fromStation || !toStation) return null;
-          const fromProjected = project2d(fromStation.x, fromStation.y);
-          const toProjected = project2d(toStation.x, toStation.y);
-          return {
-            scenarioId: `${segment.fromStationId}-${segment.toStationId}`,
-            fromStationId: segment.fromStationId,
-            toStationId: segment.toStationId,
-            x1: fromProjected.x,
-            y1: fromProjected.y,
-            x2: toProjected.x,
-            y2: toProjected.y,
-            kind: segment.kind,
-            active: segment.active,
-          };
-        })
-        .filter((segment): segment is NonNullable<typeof segment> => segment != null),
-    [
-      project2d,
-      result.preanalysisImpactDiagnostics?.scenarioPreviewPoints,
-      result.preanalysisImpactDiagnostics?.scenarioPreviewSegments,
-      stations,
-    ],
-  );
-
-  const planningInputPoints2d = useMemo(
-    () =>
-      planningMap.showInputPoints
-        ? (result.parseState?.inputStationSnapshots ?? [])
-            .map((point) => {
-              const projected = project2d(point.x, point.y);
-              return { stationId: point.stationId, x: projected.x, y: projected.y };
-            })
-            .sort((left, right) =>
-              left.stationId.localeCompare(right.stationId, undefined, { numeric: true }),
-            )
-        : [],
-    [planningMap.showInputPoints, project2d, result.parseState?.inputStationSnapshots],
-  );
-
-  const observedStationIdsForPlanning = useMemo(() => {
-    const ids = new Set<string>();
-    observations.forEach((observation) => {
-      if ('from' in observation && typeof observation.from === 'string') {
-        ids.add(observation.from);
-      }
-      if ('to' in observation && typeof observation.to === 'string') {
-        ids.add(observation.to);
-      }
-      if ('at' in observation && typeof observation.at === 'string') {
-        ids.add(observation.at);
-      }
-    });
-    return ids;
-  }, [observations]);
-
-  const planningExtentPoints = useMemo(() => {
-    const snapshots = result.parseState?.inputStationSnapshots ?? [];
-    const filtered =
-      observedStationIdsForPlanning.size > 0
-        ? snapshots.filter((snapshot) => observedStationIdsForPlanning.has(snapshot.stationId))
-        : snapshots;
-    const source =
-      filtered.length > 0
-        ? filtered
-        : snapshots.length > 0
-          ? snapshots
-          : Object.entries(stations).map(([stationId, station]) => ({
-              stationId,
-              x: station.x,
-              y: station.y,
-              h: station.h,
-              coordInputClass: station.coordInputClass ?? 'unknown',
-              constraintModeX: station.constraintModeX,
-              constraintModeY: station.constraintModeY,
-              constraintModeH: station.constraintModeH,
-            }));
-    return source.filter(
-      (point) => Number.isFinite(point.x) && Number.isFinite(point.y),
-    );
-  }, [observedStationIdsForPlanning, result.parseState?.inputStationSnapshots, stations]);
-
-  const planningPolygons2d = useMemo(
-    () =>
-      [
-        ...(planningMap.showObstacleLayer ? planningMap.obstaclePolygons : []),
-        ...(planningMap.showBlockedAreas ? planningMap.blockedPolygons : []),
-        ...(draftBlockedPolygon.length >= 2
-          ? [
-              {
-                id: 'draft-blocked-polygon',
-                source: 'user' as const,
-                kind: 'blocked-area' as const,
-                label: 'Draft blocked area',
-                vertices: draftBlockedPolygon,
-              },
-            ]
-          : []),
-      ].map((polygon) => ({
-        id: polygon.id,
-        source: polygon.source,
-        kind: polygon.kind,
-        label: polygon.label,
-        vertices: polygon.vertices.map((vertex) => project2d(vertex.x, vertex.y)),
-        pointsAttr: polygon.vertices
-          .map((vertex) => {
-            const projected = project2d(vertex.x, vertex.y);
-            return `${projected.x},${projected.y}`;
-          })
-          .join(' '),
-      })),
-    [
-      planningMap.blockedPolygons,
-      draftBlockedPolygon,
-      planningMap.obstaclePolygons,
-      planningMap.showBlockedAreas,
-      planningMap.showObstacleLayer,
-      project2d,
-    ],
-  );
-
-  const findPlanningPolygonAtSvgPoint = useCallback(
-    (svgPoint: { x: number; y: number }) => {
-      const projectedPoint = {
-        x: (svgPoint.x - view2d.panX) / Math.max(view2d.zoom, 1e-9),
-        y: (svgPoint.y - view2d.panY) / Math.max(view2d.zoom, 1e-9),
-      };
-      for (let index = planningPolygons2d.length - 1; index >= 0; index -= 1) {
-        const polygon = planningPolygons2d[index]!;
-        if (polygon.id === 'draft-blocked-polygon' || polygon.vertices.length < 3) continue;
-        if (isPointInsidePolygon(projectedPoint, polygon.vertices)) {
-          return {
-            polygonId: polygon.id,
-            polygonSource: polygon.source,
-            polygonLabel: polygon.label || polygon.kind,
-          };
-        }
-      }
-      return null;
-    },
-    [planningPolygons2d, view2d.panX, view2d.panY, view2d.zoom],
-  );
+  const {
+    bracePreviewPoints2d,
+    findPlanningPolygonAtSvgPoint,
+    planningFetchExtent,
+    planningGeorefContext,
+    planningInputPoints2d,
+    planningPolygons2d,
+    scenarioPreviewSegments2d,
+  } = useMapViewPlanning2d({
+    bbox,
+    draftBlockedPolygon,
+    fetchBufferM: OSM_FETCH_BUFFER_M,
+    planningMap,
+    projectPoint: project2d,
+    result,
+    stations,
+    view2d,
+  });
 
   const selectionBoxRect = useMemo(() => {
     if (selectionBox == null) return null;
@@ -1584,32 +1413,6 @@ const MapView: React.FC<MapViewProps> = ({
       selectionBox.currentX >= selectionBox.anchorX ? 'window' : 'crossing';
     return { x, y, width, height, mode };
   }, [selectionBox]);
-
-  const planningGeorefContext = useMemo(() => {
-    const parseState = result.parseState;
-    if (!parseState) return null;
-    const fallbackPoint =
-      planningExtentPoints.length > 0
-        ? planningExtentPoints[Math.floor(planningExtentPoints.length / 2)]!
-        : { x: bbox.minX + bbox.width * 0.5, y: bbox.minY + bbox.height * 0.5 };
-    const inverse = inverseENToGeodetic({
-      east: fallbackPoint.x,
-      north: fallbackPoint.y,
-      originLatDeg: parseState.originLatDeg,
-      originLonDeg: parseState.originLonDeg,
-      model: parseState.crsProjectionModel ?? 'legacy-equirectangular',
-      coordSystemMode: parseState.coordSystemMode,
-      crsId: parseState.crsId,
-    });
-    if ('failureReason' in inverse) return null;
-    return {
-      originLatDeg: parseState.originLatDeg ?? inverse.latDeg,
-      originLonDeg: parseState.originLonDeg ?? inverse.lonDeg,
-      model: parseState.crsProjectionModel ?? 'legacy-equirectangular',
-      coordSystemMode: parseState.coordSystemMode,
-      crsId: parseState.crsId,
-    };
-  }, [bbox.height, bbox.minX, bbox.minY, bbox.width, planningExtentPoints, result.parseState]);
 
   const applySelectionBoxToPlanningPolygons = useCallback(
     (rect: { x: number; y: number; width: number; height: number; mode: SelectionBoxMode }) => {
@@ -1638,18 +1441,6 @@ const MapView: React.FC<MapViewProps> = ({
     },
     [onSelectObservation, onSelectStation, planningPolygons2d, view2d.panX, view2d.panY, view2d.zoom],
   );
-
-  const planningFetchExtent = useMemo(() => {
-    if (planningExtentPoints.length === 0) return null;
-    const xs = planningExtentPoints.map((point) => point.x);
-    const ys = planningExtentPoints.map((point) => point.y);
-    return {
-      minX: Math.min(...xs) - OSM_FETCH_BUFFER_M,
-      maxX: Math.max(...xs) + OSM_FETCH_BUFFER_M,
-      minY: Math.min(...ys) - OSM_FETCH_BUFFER_M,
-      maxY: Math.max(...ys) + OSM_FETCH_BUFFER_M,
-    };
-  }, [planningExtentPoints]);
 
   useEffect(() => {
     if (effectiveMode !== '2d' || planningMap.basemapMode !== 'osm') {
@@ -2030,241 +1821,41 @@ const MapView: React.FC<MapViewProps> = ({
     [derivedResult?.observationById, selectedObservationId],
   );
 
-  const viewportBounds2d = useMemo<ViewportBounds>(
-    () => buildViewportBounds(VIEW_W, VIEW_H, VIEWPORT_CLIP_MARGIN_PX),
-    [],
-  );
-
-  const baseProjectedMapLines2d = useMemo(
-    () =>
-      measureMapViewPerf('map:build-base-lines', () =>
-        buildBaseProjectedMapLines2d({
-          mapLinks,
-          stations,
-          showLostStations,
-          projectPoint: project2d,
-        }),
-      ),
-    [mapLinks, project2d, showLostStations, stations],
-  );
-
-  const baseProjectedPoints2d = useMemo(
-    () =>
-      measureMapViewPerf('map:build-base-points', () =>
-        buildBaseProjectedPoints2d({
-          points,
-          projectPoint: project2d,
-        }),
-      ),
-    [points, project2d],
-  );
-
-  const projectedViewportBounds2d = useMemo(
-    () => buildProjectedViewportBounds(viewportBounds2d, derivedView2d),
-    [derivedView2d, viewportBounds2d],
-  );
-
-  const visibleBaseProjectedMapLines2d = useMemo(
-    () =>
-      measureMapViewPerf('map:cull-base-lines', () =>
-        buildVisibleBaseProjectedMapLines2d({
-          baseProjectedMapLines2d,
-          selectedObservationId,
-          selectedObservationPairKey,
-          projectedViewportBounds: projectedViewportBounds2d,
-        }),
-      ),
-    [
-      baseProjectedMapLines2d,
-      projectedViewportBounds2d,
-      selectedObservationId,
-      selectedObservationPairKey,
-    ],
-  );
-
-  const visibleBaseProjectedPoints2d = useMemo(
-    () =>
-      measureMapViewPerf('map:cull-base-points', () =>
-        buildVisibleBaseProjectedPoints2d({
-          baseProjectedPoints2d,
-          selectedStationId,
-          projectedViewportBounds: projectedViewportBounds2d,
-          selectionMarginProjected: POINT_HIT_RADIUS_PX / Math.max(derivedView2d.zoom, 1e-9),
-        }),
-      ),
-    [baseProjectedPoints2d, derivedView2d.zoom, projectedViewportBounds2d, selectedStationId],
-  );
-
-  const filteredVisibleBaseProjectedMapLines2d = useMemo(
-    () =>
-      measureMapViewPerf('map:filter-base-lines', () =>
-        buildFilteredVisibleMapLines2d({
-          visibleMapLines2d: visibleBaseProjectedMapLines2d,
-          hideMinorGeometry,
-          focusSelection,
-          selectedObservationId,
-          selectedObservationPairKey,
-          selectedStationId,
-        }),
-      ),
-    [
-      focusSelection,
-      hideMinorGeometry,
-      selectedObservationId,
-      selectedObservationPairKey,
-      selectedStationId,
-      visibleBaseProjectedMapLines2d,
-    ],
-  );
-
-  const connectedStationIds2d = useMemo(
-    () =>
-      measureMapViewPerf('map:build-connected-stations', () =>
-        buildConnectedStationIds2d({
-          filteredVisibleMapLines2d: filteredVisibleBaseProjectedMapLines2d,
-          focusSelection,
-          selectedStationId,
-        }),
-      ),
-    [filteredVisibleBaseProjectedMapLines2d, focusSelection, selectedStationId],
-  );
-
-  const filteredVisibleBaseProjectedPoints2d = useMemo(
-    () =>
-      measureMapViewPerf('map:filter-base-points', () =>
-        buildFilteredVisiblePoints2d({
-          visiblePoints2d: visibleBaseProjectedPoints2d,
-          connectedStationIds: connectedStationIds2d,
-        }),
-      ),
-    [connectedStationIds2d, visibleBaseProjectedPoints2d],
-  );
-
-  const projectedMapLines2d = useMemo(
-    () =>
-      measureMapViewPerf('map:apply-view-lines', () =>
-        buildProjectedMapLines2d({
-          baseProjectedMapLines2d: filteredVisibleBaseProjectedMapLines2d,
-          view2d: derivedView2d,
-        }),
-      ),
-    [derivedView2d, filteredVisibleBaseProjectedMapLines2d],
-  );
-
-  const projectedPoints2d = useMemo(
-    () =>
-      measureMapViewPerf('map:apply-view-points', () =>
-        buildProjectedPoints2d({
-          baseProjectedPoints2d: filteredVisibleBaseProjectedPoints2d,
-          view2d: derivedView2d,
-        }),
-      ),
-    [derivedView2d, filteredVisibleBaseProjectedPoints2d],
-  );
-
-  const interactionDenseMode = useMemo(
-    () =>
-      measureMapViewPerf('map:derive-interaction-density', () =>
-        effectiveMode === '2d' &&
-        interactionPhase === 'interacting' &&
-        (projectedPoints2d.length > INTERACTION_DENSE_POINT_THRESHOLD ||
-          projectedMapLines2d.length > INTERACTION_DENSE_LINE_THRESHOLD),
-      ),
-    [effectiveMode, interactionPhase, projectedMapLines2d.length, projectedPoints2d.length],
-  );
-
-  const visiblePointLabels2d = useMemo(
-    () =>
-      measureMapViewPerf('map:build-visible-labels', () =>
-        buildVisiblePointLabels2d({
-          showLabels,
-          visiblePoints2d: projectedPoints2d,
-          visibleMapLines2dLength: projectedMapLines2d.length,
-          interactionDenseMode,
-          selectedStationId,
-          pointThreshold: DENSE_LABEL_POINT_THRESHOLD,
-          edgeThreshold: DENSE_LABEL_EDGE_THRESHOLD,
-          labelGridPx: LABEL_GRID_PX,
-          scorePriority: (point) =>
-            scoreMapStationPriority({
-              stationId: point.id,
-              selectedStationId,
-              severity: stationSeverity(point.id),
-              fixed: point.fixed,
-            }),
-        }),
-      ),
-    [
-      interactionDenseMode,
-      projectedMapLines2d.length,
-      projectedPoints2d,
-      selectedStationId,
-      showLabels,
-      stationSeverity,
-    ],
-  );
-
-  const unselectedCanvasLines2d = useMemo(
-    () =>
-      measureMapViewPerf('map:build-unselected-lines', () =>
-        buildUnselectedCanvasLines2d({
-          filteredVisibleMapLines2d: projectedMapLines2d,
-          interactionDenseMode,
-          selectedObservationId,
-          selectedObservationPairKey,
-          selectedStationId,
-        }),
-      ),
-    [
-      interactionDenseMode,
-      projectedMapLines2d,
-      selectedObservationId,
-      selectedObservationPairKey,
-      selectedStationId,
-    ],
-  );
-
-  const filteredVisibleMapLines2d = projectedMapLines2d;
-  const filteredVisiblePoints2d = projectedPoints2d;
-
-  const effectiveVisiblePointLabels2d = useMemo(() => {
-    if (
-      effectiveMode === '2d' &&
-      planningMap.basemapMode === 'osm' &&
-      showLabels &&
-      filteredVisiblePoints2d.length > 0 &&
-      filteredVisiblePoints2d.length <= OSM_FULL_LABEL_POINT_THRESHOLD
-    ) {
-      return new Set(filteredVisiblePoints2d.map((point) => point.id));
-    }
-    return visiblePointLabels2d;
-  }, [
-    effectiveMode,
+  const {
+    effectiveVisiblePointLabels2d,
+    filteredVisibleMapLines2d,
     filteredVisiblePoints2d,
-    planningMap.basemapMode,
+    interactionDenseMode,
+    mapDensitySummary,
+    unselectedCanvasLines2d,
+  } = useMapViewDerived2d({
+    denseLabelEdgeThreshold: DENSE_LABEL_EDGE_THRESHOLD,
+    denseLabelPointThreshold: DENSE_LABEL_POINT_THRESHOLD,
+    derivedView2d,
+    effectiveMode,
+    focusSelection,
+    hideMinorGeometry,
+    interactionDenseLineThreshold: INTERACTION_DENSE_LINE_THRESHOLD,
+    interactionDensePointThreshold: INTERACTION_DENSE_POINT_THRESHOLD,
+    interactionPhase,
+    labelGridPx: LABEL_GRID_PX,
+    mapLinks,
+    osmFullLabelPointThreshold: OSM_FULL_LABEL_POINT_THRESHOLD,
+    planningBasemapMode: planningMap.basemapMode,
+    pointHitRadiusPx: POINT_HIT_RADIUS_PX,
+    points,
+    projectPoint: project2d,
+    selectedObservationId,
+    selectedObservationPairKey,
+    selectedStationId,
     showLabels,
-    visiblePointLabels2d,
-  ]);
-
-  const mapDensitySummary = useMemo(
-    () =>
-      measureMapViewPerf('map:build-density-summary', () =>
-        buildMapDensitySummary({
-          filteredVisibleMapLines2dLength: projectedMapLines2d.length,
-          filteredVisiblePoints2dLength: projectedPoints2d.length,
-          totalProjectedMapLines2dLength: baseProjectedMapLines2d.length,
-          projectedMapLines2dLength: projectedMapLines2d.length,
-          visiblePointLabels2dSize: effectiveVisiblePointLabels2d.size,
-          denseLabelEdgeThreshold: DENSE_LABEL_EDGE_THRESHOLD,
-        }),
-      ),
-    [
-      baseProjectedMapLines2d.length,
-      projectedMapLines2d.length,
-      projectedPoints2d.length,
-      effectiveVisiblePointLabels2d.size,
-    ],
-  );
+    showLostStations,
+    stationSeverity,
+    stations,
+    viewportClipMarginPx: VIEWPORT_CLIP_MARGIN_PX,
+    viewHeight: VIEW_H,
+    viewWidth: VIEW_W,
+  });
 
   useEffect(() => {
     if (interactionPhase !== 'idle') return;
