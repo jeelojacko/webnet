@@ -1,3 +1,4 @@
+- [x] Map view split batch 6 (July 2026): split transformed overlay derivation and station display model helpers out of oversized `MapView.tsx`, keep map styling/tool behavior stable, and validate focused map coverage plus full checks.
 - [x] Map view split batch 5 (July 2026): split planning polygon action state and selection cleanup out of oversized `MapView.tsx`, keep station/observation/planning selection behavior stable, and validate focused map coverage plus full checks.
 - [x] Map view split batch 4 (July 2026): split 2D layer render scheduling, render-input refs, and OSM basemap tile lifecycle out of oversized `MapView.tsx`, keep canvas/WebGL map rendering stable, and validate focused map coverage plus full checks.
 - [x] Map view split batch 3 (July 2026): split tool panel state/metrics, frozen overlay state, and snapshot sync helpers out of oversized `MapView.tsx`, keep map interaction behavior stable, and validate focused map coverage plus full checks.

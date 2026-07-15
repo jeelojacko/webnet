@@ -17,18 +17,8 @@ import {
 import { RAD_TO_DEG } from '../engine/angles';
 import type { DerivedQaResult } from '../engine/qaWorkflow';
 import {
-  buildAdjustedPointsTransformPreview,
-  sanitizeAdjustedPointsExportSettings,
-} from '../engine/adjustedPointsExport';
-import {
   buildMapLinkByPairKey,
   buildObservationMapLinks,
-  buildVisibleStationRows,
-  buildVisibleStationIds,
-  buildWeakStationSeverityLookup,
-  resolveMapEllipseStrokeColor,
-  resolveMapStationFillColor,
-  resolveWeakStationSeverity,
   resolveSelectedObservationPairKey,
 } from '../engine/resultDerivedModels';
 import { noteUiPerfStage, noteUiTabReady } from '../hooks/useUiPerfMonitor';
@@ -59,7 +49,6 @@ import {
   buildMapScenePointBounds2d,
   buildMapViewStyle2d,
   buildProjectedMapState3d,
-  buildTransformedOverlayGeometry2d,
 } from './mapView/mapViewSelectors';
 import { projectPoint3d } from './mapView/mapView3d';
 import {
@@ -89,7 +78,9 @@ import { useFrozenMapViewOverlays } from './mapView/useFrozenMapViewOverlays';
 import { useMapViewPlanning2d } from './mapView/useMapViewPlanning2d';
 import { useMapViewPlanningActions } from './mapView/useMapViewPlanningActions';
 import { useMapViewSnapshotSync } from './mapView/useMapViewSnapshotSync';
+import { useMapViewStationDisplay } from './mapView/useMapViewStationDisplay';
 import { useMapViewToolState } from './mapView/useMapViewToolState';
+import { useMapViewTransformOverlay } from './mapView/useMapViewTransformOverlay';
 
 const FT_PER_M = 3.280839895;
 const VIEW_W = 1000;
@@ -275,78 +266,17 @@ const MapView: React.FC<MapViewProps> = ({
 
   const { points, bbox } = useMemo(() => buildMapScenePointBounds2d(scene3d), [scene3d]);
 
-  const cleanAdjustedPointsExportSettings = useMemo(
-    () =>
-      adjustedPointsExportSettings
-        ? sanitizeAdjustedPointsExportSettings(adjustedPointsExportSettings)
-        : null,
-    [adjustedPointsExportSettings],
-  );
-
-  const transformedOverlayConfig = useMemo(() => {
-    const emptyMap = new Map<string, { east: number; north: number }>();
-    if (!cleanAdjustedPointsExportSettings) {
-      return {
-        enabled: false,
-        available: false,
-        reason: '',
-        referenceStationId: '',
-        scope: 'all' as const,
-        transformedByStationId: emptyMap,
-        scaleEnabled: false,
-        scaleFactor: 1,
-        rotationEnabled: false,
-        rotationAngleDeg: 0,
-        translationEnabled: false,
-        translationMethod: 'direction-distance' as const,
-        translationAzimuthDeg: 0,
-        translationDistanceM: 0,
-      };
-    }
-    const preview = buildAdjustedPointsTransformPreview({
-      result,
-      settings: cleanAdjustedPointsExportSettings,
-      units,
-      includeLostStations: cleanAdjustedPointsExportSettings.includeLostStations,
-    });
-    return {
-      enabled: preview.enabled,
-      available: preview.available,
-      reason: preview.reason,
-      referenceStationId: preview.referenceStationId,
-      scope: preview.scope,
-      transformedByStationId: preview.transformedByStationId,
-      scaleEnabled: preview.scaleEnabled,
-      scaleFactor: preview.scaleFactor,
-      rotationEnabled: preview.rotationEnabled,
-      rotationAngleDeg: preview.rotationAngleDeg,
-      translationEnabled: preview.translationEnabled,
-      translationMethod: preview.translationMethod,
-      translationAzimuthDeg: preview.translationAzimuthDeg,
-      translationDistanceM: preview.translationDistanceM,
-    };
-  }, [cleanAdjustedPointsExportSettings, result, units]);
-
-  const visibleStationIds = useMemo(
-    () => buildVisibleStationIds(stations, showLostStations),
-    [showLostStations, stations],
-  );
-
-  const weakStationSeverity = useMemo(
-    () => buildWeakStationSeverityLookup(result.weakGeometryDiagnostics),
-    [result.weakGeometryDiagnostics],
-  );
-
-  const stationSeverity = useCallback(
-    (stationId: string): 'watch' | 'weak' | null =>
-      resolveWeakStationSeverity(weakStationSeverity, stationId),
-    [weakStationSeverity],
-  );
-
-  const visibleStationRows = useMemo(
-    () => buildVisibleStationRows(stations, showLostStations, weakStationSeverity),
-    [showLostStations, stations, weakStationSeverity],
-  );
+  const {
+    ellipseStroke,
+    stationFill,
+    stationSeverity,
+    visibleStationIds,
+    visibleStationRows,
+  } = useMapViewStationDisplay({
+    showLostStations,
+    stations,
+    weakGeometryDiagnostics: result.weakGeometryDiagnostics,
+  });
 
   const closeContextMenu = useCallback(() => {
     setContextMenu((prev) => ({ ...prev, open: false, planningPolygon: null }));
@@ -385,17 +315,6 @@ const MapView: React.FC<MapViewProps> = ({
     stations,
     visibleStationIds,
   });
-
-  const stationFill = useCallback(
-    (stationId: string, fixed: boolean): string =>
-      resolveMapStationFillColor({ fixed, severity: stationSeverity(stationId) }),
-    [stationSeverity],
-  );
-
-  const ellipseStroke = useCallback(
-    (stationId: string): string => resolveMapEllipseStrokeColor(stationSeverity(stationId)),
-    [stationSeverity],
-  );
 
   useEffect(() => {
     if (typeof window === 'undefined' || viewportWidthOverride != null) return;
@@ -467,9 +386,23 @@ const MapView: React.FC<MapViewProps> = ({
   }, [mode, scene3d.edges.length, scene3d.stations.length, effectiveViewportWidth]);
   const effectiveMode: '2d' | '3d' = mode === '3d' && !fallbackReason ? '3d' : '2d';
   const webglEligible = effectiveMode === '2d' && canRenderWebglLayers();
-  const showTransformToggle = transformedOverlayConfig.enabled;
-  const transformedOverlayActive =
-    showTransformedCoordinates && transformedOverlayConfig.available && effectiveMode === '2d';
+  const {
+    showTransformToggle,
+    transformedLines2d,
+    transformedOverlayActive,
+    transformedOverlayConfig,
+    transformedPoints2d,
+  } = useMapViewTransformOverlay({
+    adjustedPointsExportSettings,
+    effectiveMode,
+    observations,
+    points,
+    result,
+    showLostStations,
+    showTransformedCoordinates,
+    stations,
+    units,
+  });
 
   useLayoutEffect(() => {
     const webglRenderer = webglRendererRef.current;
@@ -1036,26 +969,6 @@ const MapView: React.FC<MapViewProps> = ({
   } = useMemo(
     () => buildMapViewStyle2d({ zoom: view2d.zoom }, transformedOverlayActive),
     [transformedOverlayActive, view2d.zoom],
-  );
-
-  const { transformedLines2d, transformedPoints2d } = useMemo(
-    () =>
-      buildTransformedOverlayGeometry2d({
-        transformedOverlayActive,
-        observations,
-        stations,
-        showLostStations,
-        transformedByStationId: transformedOverlayConfig.transformedByStationId,
-        points,
-      }),
-    [
-      observations,
-      points,
-      showLostStations,
-      stations,
-      transformedOverlayActive,
-      transformedOverlayConfig.transformedByStationId,
-    ],
   );
 
   const {
