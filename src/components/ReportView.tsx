@@ -1,10 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
-import type {
-  AdjustmentResult,
-  Observation,
-  RunMode,
-  Station,
-} from '../types';
+import type { AdjustmentResult, Observation, RunMode, Station } from '../types';
 import type { ReportViewProps } from './ReportView.types';
 import {
   getRelativeCovarianceRows,
@@ -22,29 +17,13 @@ import {
   PreanalysisPlanningSummarySection,
   PreanalysisRecommendationsSection,
 } from './report/ReportPreanalysisSections';
-import ReportProcessingLogSection from './report/ReportProcessingLogSection';
-import {
-  sortObservationsByStdRes,
-  type SortedObservation,
-} from '../engine/resultDerivedModels';
-import AdjustedCoordinatesSection from './report/AdjustedCoordinatesSection';
-import CollapsibleSectionHeader from './report/CollapsibleSectionHeader';
-import DirectionDiagnosticsSections, {
-  DirectionFaceTreatmentDiagnosticsSection,
-} from './report/DirectionDiagnosticsSections';
-import ObservationTableSection from './report/ObservationTableSection';
+import ReportClosingSections from './report/ReportClosingSections';
+import { sortObservationsByStdRes, type SortedObservation } from '../engine/resultDerivedModels';
+import DirectionDiagnosticsSections from './report/DirectionDiagnosticsSections';
 import PinnedSectionsPanel from './report/PinnedSectionsPanel';
-import ReportFilterPanel from './report/ReportFilterPanel';
 import LoopDiagnosticsSections from './report/LoopDiagnosticsSections';
-import { getReportHeaderTooltip } from './report/reportHeaderTooltips';
-import ReportLoadMoreFooter from './report/ReportLoadMoreFooter';
 import ReportDiagnosticsSections from './report/ReportDiagnosticsSections';
-import {
-  AutoAdjustDiagnosticsPanel,
-  AutoSideshotCandidatesPanel,
-  GpsRoverOffsetsPanel,
-  SetupDiagnosticsPanel,
-} from './report/ReportDiagnosticPanels';
+import { GpsRoverOffsetsPanel, SetupDiagnosticsPanel } from './report/ReportDiagnosticPanels';
 import {
   AdjustmentSummarySection,
   BlunderDetectSummarySection,
@@ -52,11 +31,7 @@ import {
   PendingRunSettingsDiffBanner,
 } from './report/ReportRunSummarySections';
 import { ReportSuspectImpactSection } from './report/ReportSuspectImpactSection';
-import { ReportClusterDetectionSection } from './report/ReportClusterDetectionSection';
-import {
-  AliasTraceabilitySection,
-  DescriptionReconciliationSection,
-} from './report/ReportTraceabilitySections';
+import ReportReviewWorkflowSections from './report/ReportReviewWorkflowSections';
 import {
   buildStationTypeBadge,
   formatEffectiveDistance as reportFormatEffectiveDistance,
@@ -71,13 +46,14 @@ import {
 } from './report/reportFormatters';
 import ReportToolbar from './report/ReportToolbar';
 import { REPORT_STATIC_TOOLTIPS } from './report/reportTooltips';
-import {
-  REPORT_DIAGNOSTIC_WINDOW_SIZE,
-  REPORT_TABLE_WINDOW_SIZE,
-  type CollapsibleDetailSectionId,
-} from './report/reportSectionRegistry';
-import SideshotSection from './report/SideshotSection';
+import { REPORT_DIAGNOSTIC_WINDOW_SIZE, type CollapsibleDetailSectionId } from './report/reportSectionRegistry';
 import SolveProfileDiagnosticsSection from './report/SolveProfileDiagnosticsSection';
+import {
+  ObservationTypeTables,
+  PostAdjustedSideshotSections,
+  ReportFilterAndCoordinatesSections,
+} from './report/ReportObservationWorkflowSections';
+import { useReportRenderHelpers } from './report/useReportRenderHelpers';
 import { buildReportObservationSelectorModel } from './report/reportObservationSelectors';
 import { buildReportPrecisionSelectorModel } from './report/reportPrecisionSelectors';
 import { buildReportReviewSelectorModel } from './report/reportReviewSelectors';
@@ -461,138 +437,27 @@ const ReportView: React.FC<ReportViewProps> = ({
     [unitScale, units],
   );
   const observationWeightLabel = getObservationWeightLabel;
-  const renderSideshotSection = (
-    title: string,
-    rows: NonNullable<AdjustmentResult['sideshots']>,
-    sectionId?: CollapsibleDetailSectionId,
-  ) => {
-    if (rows.length === 0) return null;
-    const collapsed = sectionId ? isSectionCollapsed(sectionId) : false;
-    return (
-      <SideshotSection
-        title={title}
-        rows={rows}
-        units={units}
-        unitScale={unitScale}
-        sectionId={sectionId}
-        collapsed={collapsed}
-        pinned={sectionId ? isDetailSectionPinned(sectionId) : false}
-        onToggleCollapse={toggleDetailSection}
-        onTogglePin={togglePinnedDetailSection}
-        onHeaderRef={(activeSectionId, node) => {
-          detailSectionHeaderRefs.current[activeSectionId] = node;
-        }}
-        renderSourceLineLink={renderSourceLineLink}
-      />
-    );
-  };
-
-  useEffect(() => {
-    const root = reportRootRef.current;
-    if (!root) return;
-    const headers = root.querySelectorAll('th');
-    headers.forEach((th) => {
-      const label = th.textContent ?? '';
-      const tip = getReportHeaderTooltip(label);
-      if (tip) th.setAttribute('title', tip);
-    });
+  const registerDetailSectionHeader = useCallback(
+    (id: CollapsibleDetailSectionId, node: HTMLDivElement | null) => {
+      detailSectionHeaderRefs.current[id] = node;
+    },
+    [],
+  );
+  const {
+    renderCollapsibleSectionHeader,
+    renderLoadMoreFooter,
+    renderSourceLineLink,
+  } = useReportRenderHelpers({
+    isDetailSectionPinned,
+    isSectionCollapsed,
+    onJumpToSourceLine,
+    registerDetailSectionHeader,
+    reportRootRef,
+    showAllRows,
+    showMoreRows,
+    toggleDetailSection,
+    togglePinnedDetailSection,
   });
-
-  const renderCollapsibleSectionHeader = (params: {
-    sectionId: CollapsibleDetailSectionId;
-    label: string;
-    className: string;
-    labelClassName: string;
-    title?: string;
-  }) => {
-    const { sectionId, label, className, labelClassName, title } = params;
-    return (
-      <CollapsibleSectionHeader
-        sectionId={sectionId}
-        label={label}
-        className={className}
-        labelClassName={labelClassName}
-        title={title}
-        collapsed={isSectionCollapsed(sectionId)}
-        pinned={isDetailSectionPinned(sectionId)}
-        onToggleCollapse={toggleDetailSection}
-        onTogglePin={togglePinnedDetailSection}
-        onHeaderRef={(id, node) => {
-          detailSectionHeaderRefs.current[id] = node;
-        }}
-      />
-    );
-  };
-
-  const renderLoadMoreFooter = (
-    key: string,
-    shownCount: number,
-    totalCount: number,
-    step = REPORT_TABLE_WINDOW_SIZE,
-  ) => {
-    return (
-      <ReportLoadMoreFooter
-        rowKey={key}
-        shownCount={shownCount}
-        totalCount={totalCount}
-        onShowMore={showMoreRows}
-        onShowAll={showAllRows}
-        step={step}
-      />
-    );
-  };
-
-  const renderSourceLineLink = (line: number | null | undefined) => {
-    if (line == null) return '-';
-    if (!onJumpToSourceLine) return line;
-    return (
-      <button
-        type="button"
-        onClick={() => onJumpToSourceLine(line)}
-        className="font-mono text-blue-300 underline decoration-dotted underline-offset-2 hover:text-blue-200"
-        title={`Jump to line ${line} in the input editor`}
-      >
-        {line}
-      </button>
-    );
-  };
-
-  const renderTable = (
-    obsList: Observation[],
-    title: string,
-    sectionId?: CollapsibleDetailSectionId,
-  ) => {
-    return (
-      <ObservationTableSection
-        obsList={obsList}
-        title={title}
-        sectionId={sectionId}
-        units={units}
-        unitScale={unitScale}
-        excludedIds={excludedIds}
-        autoSideshotObsIds={autoSideshotObsIds}
-        selectedObservationId={selectedObservationId}
-        onSelectObservation={onSelectObservation}
-        onToggleExclude={onToggleExclude}
-        rowSelectionClass={rowSelectionClass}
-        visibleRowsFor={visibleRowsFor}
-        showMoreRows={showMoreRows}
-        showAllRows={showAllRows}
-        renderSourceLineLink={renderSourceLineLink}
-        isSectionCollapsed={isSectionCollapsed}
-        isDetailSectionPinned={isDetailSectionPinned}
-        toggleDetailSection={toggleDetailSection}
-        togglePinnedDetailSection={togglePinnedDetailSection}
-        onHeaderRef={(id, node) => {
-          detailSectionHeaderRefs.current[id] = node;
-        }}
-        formatMdb={formatMdb}
-        formatEffectiveDistance={formatEffectiveDistance}
-        prismAnnotation={prismAnnotation}
-        observationWeightLabel={observationWeightLabel}
-      />
-    );
-  };
 
   const showClusterMergeRevert = true;
   const clusterRevertDisabledReason =
@@ -642,9 +507,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         isSectionCollapsed={isSectionCollapsed}
         isSpecialRunMode={isSpecialRunMode}
         onApplyImpactExclude={onApplyImpactExclude}
-        onHeaderRef={(id, node) => {
-          detailSectionHeaderRefs.current[id] = node;
-        }}
+        onHeaderRef={registerDetailSectionHeader}
         renderSourceLineLink={renderSourceLineLink}
         suspectImpactActionableCount={suspectImpactActionableCount}
         suspectImpactDiagnostics={suspectImpactDiagnostics}
@@ -695,9 +558,7 @@ const ReportView: React.FC<ReportViewProps> = ({
           pinned={isDetailSectionPinned('solve-profile-diagnostics')}
           onToggleCollapse={toggleDetailSection}
           onTogglePin={togglePinnedDetailSection}
-          onHeaderRef={(id, node) => {
-            detailSectionHeaderRefs.current[id] = node;
-          }}
+          onHeaderRef={registerDetailSectionHeader}
           formatReductionUsage={formatReductionUsage}
         />
       ) : null}
@@ -721,9 +582,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         lockedPreanalysisObservations={lockedPreanalysisObservations}
         observationStationsLabel={observationStationsLabel}
         observationValueLabel={observationValueLabel}
-        onHeaderRef={(id, node) => {
-          detailSectionHeaderRefs.current[id] = node;
-        }}
+        onHeaderRef={registerDetailSectionHeader}
         preanalysisLabelTooltip={preanalysisLabelTooltip}
         renderSourceLineLink={renderSourceLineLink}
         toggleDetailSection={toggleDetailSection}
@@ -737,9 +596,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         isSectionCollapsed={isSectionCollapsed}
         onApplyAllPreanalysisActions={onApplyAllPreanalysisActions}
         onApplyPreanalysisAction={onApplyPreanalysisAction}
-        onHeaderRef={(id, node) => {
-          detailSectionHeaderRefs.current[id] = node;
-        }}
+        onHeaderRef={registerDetailSectionHeader}
         preanalysisImpactDiagnostics={preanalysisImpactDiagnostics}
         preanalysisLabelTooltip={preanalysisLabelTooltip}
         renderSourceLineLink={renderSourceLineLink}
@@ -749,20 +606,24 @@ const ReportView: React.FC<ReportViewProps> = ({
         units={units}
       />
 
-      <AliasTraceabilitySection
-        aliasTrace={aliasTrace}
-        isDetailSectionPinned={isDetailSectionPinned}
-        isSectionCollapsed={isSectionCollapsed}
-        onHeaderRef={(id, node) => {
-          detailSectionHeaderRefs.current[id] = node;
+      <ReportReviewWorkflowSections
+        activeClusterProps={{
+          clusterAppliedMerges,
+          clusterCandidates,
+          clusterDiagnostics,
+          clusterMergeOutcomes,
+          clusterRejectedProposals,
+          clusterReviewDecisions,
+          clusterReviewStats,
+          onApplyClusterMerges,
+          onClearClusterMerges,
+          onClusterCanonicalSelection,
+          onClusterDecisionStatus,
+          onResetClusterReview,
         }}
-        parseState={result.parseState}
-        renderSourceLineLink={renderSourceLineLink}
-        toggleDetailSection={toggleDetailSection}
-        togglePinnedDetailSection={togglePinnedDetailSection}
-      />
-
-      <DescriptionReconciliationSection
+        aliasTrace={aliasTrace}
+        autoAdjustDiagnostics={autoAdjustDiagnostics}
+        autoSideshotDiagnostics={autoSideshotDiagnostics}
         descriptionAppendDelimiter={descriptionAppendDelimiter}
         descriptionConflicts={descriptionConflicts}
         descriptionReconcileMode={descriptionReconcileMode}
@@ -770,62 +631,15 @@ const ReportView: React.FC<ReportViewProps> = ({
         descriptionScanSummary={descriptionScanSummary}
         isDetailSectionPinned={isDetailSectionPinned}
         isSectionCollapsed={isSectionCollapsed}
-        onHeaderRef={(id, node) => {
-          detailSectionHeaderRefs.current[id] = node;
-        }}
-        parseState={result.parseState}
-        toggleDetailSection={toggleDetailSection}
-        togglePinnedDetailSection={togglePinnedDetailSection}
-      />
-
-      <ReportClusterDetectionSection
-        clusterAppliedMerges={clusterAppliedMerges}
-        clusterCandidates={clusterCandidates}
-        clusterDiagnostics={clusterDiagnostics}
-        clusterMergeOutcomes={clusterMergeOutcomes}
-        clusterRejectedProposals={clusterRejectedProposals}
-        clusterReviewDecisions={clusterReviewDecisions}
-        clusterReviewStats={clusterReviewStats}
-        isDetailSectionPinned={isDetailSectionPinned}
-        isSectionCollapsed={isSectionCollapsed}
-        onApplyClusterMerges={onApplyClusterMerges}
-        onClearClusterMerges={onClearClusterMerges}
-        onClusterCanonicalSelection={onClusterCanonicalSelection}
-        onClusterDecisionStatus={onClusterDecisionStatus}
-        onHeaderRef={(id, node) => {
-          detailSectionHeaderRefs.current[id] = node;
-        }}
-        onResetClusterReview={onResetClusterReview}
-        toggleDetailSection={toggleDetailSection}
-        togglePinnedDetailSection={togglePinnedDetailSection}
-        unitScale={unitScale}
-        units={units}
-      />
-
-      <AutoAdjustDiagnosticsPanel
-        autoAdjustDiagnostics={autoAdjustDiagnostics}
-        isDetailSectionPinned={isDetailSectionPinned}
-        isSectionCollapsed={isSectionCollapsed}
         isSpecialRunMode={isSpecialRunMode}
-        onHeaderRef={(id, node) => {
-          detailSectionHeaderRefs.current[id] = node;
-        }}
-        renderSourceLineLink={renderSourceLineLink}
-        toggleDetailSection={toggleDetailSection}
-        togglePinnedDetailSection={togglePinnedDetailSection}
-      />
-
-      <AutoSideshotCandidatesPanel
-        autoSideshotDiagnostics={autoSideshotDiagnostics}
-        isDetailSectionPinned={isDetailSectionPinned}
-        isSectionCollapsed={isSectionCollapsed}
-        onHeaderRef={(id, node) => {
-          detailSectionHeaderRefs.current[id] = node;
-        }}
+        onHeaderRef={registerDetailSectionHeader}
+        parseState={result.parseState}
         renderSourceLineLink={renderSourceLineLink}
         showAutoSideshotDiagnosticsSection={showAutoSideshotDiagnosticsSection}
         toggleDetailSection={toggleDetailSection}
         togglePinnedDetailSection={togglePinnedDetailSection}
+        unitScale={unitScale}
+        units={units}
       />
 
       <ReportDiagnosticsSections
@@ -884,9 +698,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         isDetailSectionPinned={isDetailSectionPinned}
         isPreanalysis={isPreanalysis}
         isSectionCollapsed={isSectionCollapsed}
-        onHeaderRef={(id, node) => {
-          detailSectionHeaderRefs.current[id] = node;
-        }}
+        onHeaderRef={registerDetailSectionHeader}
         setupDiagnostics={setupDiagnostics}
         setupLocalFailCount={setupLocalFailCount}
         setupObsCount={setupObsCount}
@@ -897,34 +709,28 @@ const ReportView: React.FC<ReportViewProps> = ({
         units={units}
       />
 
-      {!isDataCheck && (tsSideshots.length > 0 || gpsSideshots.length > 0) && (
-        <>
-          {renderSideshotSection(
-            'Post-Adjusted Sideshots (TS)',
-            tsSideshots,
-            'post-adjusted-sideshots-ts',
-          )}
-          {renderSideshotSection(
-            'Post-Adjusted GPS Sideshot Vectors',
-            gpsVectorSideshots,
-            'post-adjusted-gps-sideshot-vectors',
-          )}
-          {renderSideshotSection(
-            'Post-Adjusted GNSS Topo Coordinates (GS)',
-            gpsCoordinateSideshots,
-            'post-adjusted-gnss-topo-coordinates',
-          )}
-        </>
-      )}
+      <PostAdjustedSideshotSections
+        gpsCoordinateSideshots={gpsCoordinateSideshots}
+        gpsSideshots={gpsSideshots}
+        gpsVectorSideshots={gpsVectorSideshots}
+        isDataCheck={isDataCheck}
+        isDetailSectionPinned={isDetailSectionPinned}
+        isSectionCollapsed={isSectionCollapsed}
+        onHeaderRef={registerDetailSectionHeader}
+        renderSourceLineLink={renderSourceLineLink}
+        toggleDetailSection={toggleDetailSection}
+        togglePinnedDetailSection={togglePinnedDetailSection}
+        tsSideshots={tsSideshots}
+        unitScale={unitScale}
+        units={units}
+      />
 
       <GpsRoverOffsetsPanel
         gpsOffsetObservations={gpsOffsetObservations}
         isDataCheck={isDataCheck}
         isDetailSectionPinned={isDetailSectionPinned}
         isSectionCollapsed={isSectionCollapsed}
-        onHeaderRef={(id, node) => {
-          detailSectionHeaderRefs.current[id] = node;
-        }}
+        onHeaderRef={registerDetailSectionHeader}
         renderSourceLineLink={renderSourceLineLink}
         topGpsOffsetObservation={topGpsOffsetObservation}
         toggleDetailSection={toggleDetailSection}
@@ -933,50 +739,46 @@ const ReportView: React.FC<ReportViewProps> = ({
         units={units}
       />
 
-      {!isDataCheck && <ReportFilterPanel
-        isPreanalysis={isPreanalysis}
-        sectionId="report-filters"
-        collapsed={isSectionCollapsed('report-filters')}
-        onToggleCollapse={toggleDetailSection}
-        reportFilterQuery={reportFilterQuery}
-        onReportFilterQueryChange={setReportFilterQuery}
-        reportObservationTypeFilter={reportObservationTypeFilter}
-        onReportObservationTypeFilterChange={setReportObservationTypeFilter}
-        reportExclusionFilter={reportExclusionFilter}
-        onReportExclusionFilterChange={setReportExclusionFilter}
-        reviewConflictOnly={reviewConflictOnly}
-        onReviewConflictOnlyChange={setReviewConflictOnly}
-        reviewAdjustedOnly={reviewAdjustedOnly}
-        onReviewAdjustedOnlyChange={setReviewAdjustedOnly}
-        reviewImportedGroupFilter={reviewImportedGroupFilter}
-        onReviewImportedGroupFilterChange={setReviewImportedGroupFilter}
-        importedGroupOptions={importedGroupOptions}
-        onClearFilters={clearFilters}
-        filteredObservationCount={filteredSortedObs.length}
-        totalObservationCount={sortedObs.length}
+      <ReportFilterAndCoordinatesSections
+        clearFilters={clearFilters}
         deferredReportFilterQuery={deferredReportFilterQuery}
-        normalizedReportFilterQuery={normalizedReportFilterQuery}
-        focusRequestKey={focusFilterRequestKey}
-      />}
-
-      {!isDataCheck && <AdjustedCoordinatesSection
-        isPreanalysis={isPreanalysis}
-        units={units}
-        ellipseMode={ellipseMode}
-        onEllipseModeChange={setEllipseMode}
-        ellipseUnit={ellipseUnit}
         ellipseConfidenceScale={ellipseConfidenceScale}
+        ellipseMode={ellipseMode}
         ellipseScale={ellipseScale}
+        ellipseUnit={ellipseUnit}
+        filteredObservationCount={filteredSortedObs.length}
         filteredStationRows={filteredStationRows}
-        selectedStationId={selectedStationId}
+        focusFilterRequestKey={focusFilterRequestKey}
+        importedGroupOptions={importedGroupOptions}
+        isDataCheck={isDataCheck}
+        isPreanalysis={isPreanalysis}
+        isSectionCollapsed={isSectionCollapsed}
+        normalizedReportFilterQuery={normalizedReportFilterQuery}
+        onEllipseModeChange={setEllipseMode}
+        onReportExclusionFilterChange={setReportExclusionFilter}
+        onReportFilterQueryChange={setReportFilterQuery}
+        onReportObservationTypeFilterChange={setReportObservationTypeFilter}
+        onReviewAdjustedOnlyChange={setReviewAdjustedOnly}
+        onReviewConflictOnlyChange={setReviewConflictOnly}
+        onReviewImportedGroupFilterChange={setReviewImportedGroupFilter}
         onSelectStation={onSelectStation}
+        renderLoadMoreFooter={renderLoadMoreFooter}
+        reportExclusionFilter={reportExclusionFilter}
+        reportFilterQuery={reportFilterQuery}
+        reportObservationTypeFilter={reportObservationTypeFilter}
+        reviewAdjustedOnly={reviewAdjustedOnly}
+        reviewConflictOnly={reviewConflictOnly}
+        reviewImportedGroupFilter={reviewImportedGroupFilter}
+        rowSelectionClass={rowSelectionClass}
+        selectedStationId={selectedStationId}
+        sortedObservationCount={sortedObs.length}
         stationDescription={stationDescription}
         stationTypeBadge={stationTypeBadge}
-        rowSelectionClass={rowSelectionClass}
+        toggleDetailSection={toggleDetailSection}
         unitScale={unitScale}
+        units={units}
         visibleRowsFor={visibleRowsFor}
-        renderLoadMoreFooter={renderLoadMoreFooter}
-      />}
+      />
 
       <StationCovariancesSection
         covarianceScale={covarianceScale}
@@ -984,9 +786,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         isDetailSectionPinned={isDetailSectionPinned}
         isPreanalysis={isPreanalysis}
         isSectionCollapsed={isSectionCollapsed}
-        onHeaderRef={(id, node) => {
-          detailSectionHeaderRefs.current[id] = node;
-        }}
+        onHeaderRef={registerDetailSectionHeader}
         parseState={result.parseState}
         preanalysisLabelTooltip={preanalysisLabelTooltip}
         renderLoadMoreFooter={renderLoadMoreFooter}
@@ -1003,9 +803,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         isDetailSectionPinned={isDetailSectionPinned}
         isPreanalysis={isPreanalysis}
         isSectionCollapsed={isSectionCollapsed}
-        onHeaderRef={(id, node) => {
-          detailSectionHeaderRefs.current[id] = node;
-        }}
+        onHeaderRef={registerDetailSectionHeader}
         preanalysisLabelTooltip={preanalysisLabelTooltip}
         renderLoadMoreFooter={renderLoadMoreFooter}
         toggleDetailSection={toggleDetailSection}
@@ -1021,9 +819,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         isDetailSectionPinned={isDetailSectionPinned}
         isPreanalysis={isPreanalysis}
         isSectionCollapsed={isSectionCollapsed}
-        onHeaderRef={(id, node) => {
-          detailSectionHeaderRefs.current[id] = node;
-        }}
+        onHeaderRef={registerDetailSectionHeader}
         preanalysisLabelTooltip={preanalysisLabelTooltip}
         toggleDetailSection={toggleDetailSection}
         togglePinnedDetailSection={togglePinnedDetailSection}
@@ -1042,9 +838,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         isDetailSectionPinned={isDetailSectionPinned}
         isPreanalysis={isPreanalysis}
         isSectionCollapsed={isSectionCollapsed}
-        onHeaderRef={(id, node) => {
-          detailSectionHeaderRefs.current[id] = node;
-        }}
+        onHeaderRef={registerDetailSectionHeader}
         renderLoadMoreFooter={renderLoadMoreFooter}
         toggleDetailSection={toggleDetailSection}
         togglePinnedDetailSection={togglePinnedDetailSection}
@@ -1056,34 +850,43 @@ const ReportView: React.FC<ReportViewProps> = ({
         units={units}
         visibleRelativePrecision={visibleRelativePrecision}
       >
-        {renderTable(byType('angle'), 'Angles (TS)', 'angles-ts')}
-        {renderTable(byType('direction'), 'Directions (DB/DN)', 'directions-db-dn')}
-        {renderTable(byType('dist'), 'Distances (TS)', 'distances-ts')}
-        {renderTable(byType('bearing'), 'Bearings/Azimuths', 'bearings-azimuths')}
-        {renderTable(byType('dir'), 'Directions (Azimuth)', 'directions-azimuth')}
-        {renderTable(byType('zenith'), 'Zenith/Vertical Angles', 'zenith-vertical-angles')}
-        {renderTable(byType('gps'), 'GPS Vectors', 'gps-vectors')}
-        {renderTable(byType('lev'), 'Leveling dH', 'leveling-dh')}
-      </ObservationResidualsSummarySections>
-
-        {isRegularAdjustment && (
-          <DirectionFaceTreatmentDiagnosticsSection
-            directionTreatmentDiagnostics={directionTreatmentDiagnostics}
-            isPreanalysis={isPreanalysis}
-            isDataCheck={isDataCheck}
-            renderCollapsibleSectionHeader={renderCollapsibleSectionHeader}
-            isSectionCollapsed={isSectionCollapsed}
-            renderSourceLineLink={renderSourceLineLink}
-          />
-        )}
-
-        <ReportProcessingLogSection
+        <ObservationTypeTables
+          autoSideshotObsIds={autoSideshotObsIds}
+          byType={byType}
+          excludedIds={excludedIds}
+          formatEffectiveDistance={formatEffectiveDistance}
+          formatMdb={formatMdb}
           isDetailSectionPinned={isDetailSectionPinned}
           isSectionCollapsed={isSectionCollapsed}
+          observationWeightLabel={observationWeightLabel}
+          onHeaderRef={registerDetailSectionHeader}
+          onSelectObservation={onSelectObservation}
+          onToggleExclude={onToggleExclude}
+          prismAnnotation={prismAnnotation}
+          renderSourceLineLink={renderSourceLineLink}
+          rowSelectionClass={rowSelectionClass}
+          selectedObservationId={selectedObservationId}
+          showAllRows={showAllRows}
+          showMoreRows={showMoreRows}
+          toggleDetailSection={toggleDetailSection}
+          togglePinnedDetailSection={togglePinnedDetailSection}
+          unitScale={unitScale}
+          units={units}
+          visibleRowsFor={visibleRowsFor}
+        />
+      </ObservationResidualsSummarySections>
+
+        <ReportClosingSections
+          directionTreatmentDiagnostics={directionTreatmentDiagnostics}
+          isDataCheck={isDataCheck}
+          isDetailSectionPinned={isDetailSectionPinned}
+          isPreanalysis={isPreanalysis}
+          isRegularAdjustment={isRegularAdjustment}
+          isSectionCollapsed={isSectionCollapsed}
           logs={result.logs}
-          onHeaderRef={(id, node) => {
-            detailSectionHeaderRefs.current[id] = node;
-          }}
+          onHeaderRef={registerDetailSectionHeader}
+          renderCollapsibleSectionHeader={renderCollapsibleSectionHeader}
+          renderSourceLineLink={renderSourceLineLink}
           toggleDetailSection={toggleDetailSection}
           togglePinnedDetailSection={togglePinnedDetailSection}
         />
