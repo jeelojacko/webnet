@@ -47,23 +47,8 @@ import MapViewSvg2d from './mapView/MapViewSvg2d';
 import MapViewScene3d from './mapView/MapViewScene3d';
 import MapViewContextMenu, { type MapToolPanel } from './mapView/MapViewContextMenu';
 import MapViewToolOverlay, { type MapToolPickTarget } from './mapView/MapViewToolOverlay';
-import {
-  renderBasemapCanvas2d,
-  renderGeometryCanvas2d,
-  renderPlanningOverlayCanvas2d,
-} from './mapView/mapViewCanvas2d';
-import {
-  buildBasemapTiles2dForBuffer,
-  buildOsmDescriptorBucketForView,
-  buildRequestedBasemapTiles,
-  resolveInteractiveBasemapTiles,
-} from './mapView/mapViewBasemap';
 import { buildMapViewHitIndex } from './mapView/mapViewHitIndex';
-import {
-  MapViewTileStore,
-  type BasemapTileDescriptor2d,
-  type BasemapTileRenderSurface2d,
-} from './mapView/mapViewTileStore';
+import { MapViewTileStore } from './mapView/mapViewTileStore';
 import { MapViewWebgl2d } from './mapView/mapViewWebgl2d';
 import { buildMapViewWebglScene2d } from './mapView/mapViewWebglBuffers';
 import {
@@ -80,7 +65,6 @@ import {
 import { projectPoint3d } from './mapView/mapView3d';
 import {
   buildRenderSurfaceLayout,
-  canRenderCanvasLayers,
   canRenderWebglLayers,
   DEFAULT_RENDER_SURFACE_LAYOUT,
   doesPolygonTouchRect,
@@ -94,6 +78,8 @@ import {
   type ScreenSelectionBox,
   type SelectionBoxMode,
 } from './mapView/mapViewInteraction';
+import { useMapViewLayerRenderer } from './mapView/useMapViewLayerRenderer';
+import { useMapViewBasemapTiles2d } from './mapView/useMapViewBasemapTiles2d';
 import {
   buildObstacleFetchSignature,
   buildOverpassObstacleQuery,
@@ -202,8 +188,6 @@ const MapView: React.FC<MapViewProps> = ({
   const contextMenuRef = useRef<HTMLDivElement | null>(null);
   const tileStoreRef = useRef<MapViewTileStore>(new MapViewTileStore());
   const webglRendererRef = useRef<MapViewWebgl2d>(new MapViewWebgl2d());
-  const renderRequestFrameRef = useRef<number | null>(null);
-  const renderDirtyRef = useRef({ basemap: false, geometry: false, planning: false });
   const [renderSurfaceLayout, setRenderSurfaceLayout] = useState<RenderSurfaceLayout>(
     DEFAULT_RENDER_SURFACE_LAYOUT,
   );
@@ -211,71 +195,11 @@ const MapView: React.FC<MapViewProps> = ({
     canRenderWebglLayers() ? 'webgl' : 'canvas',
   );
   const interactionKindRef = useRef<MapInteractionKind>('none');
-  const stableBasemapTiles2dRef = useRef<BasemapTileDescriptor2d[]>([]);
-  const stableBasemapTileSignatureRef = useRef('');
-  const [stableBasemapTiles2dRender, setStableBasemapTiles2dRender] = useState<
-    BasemapTileDescriptor2d[]
-  >([]);
-  const [stableBasemapTileSignatureRender, setStableBasemapTileSignatureRender] = useState('');
-  const basemapDescriptorBucketRef = useRef('');
   const [basemapDescriptorView2d, setBasemapDescriptorView2d] = useState(
     () => snapshot?.view2d ?? { zoom: 1, panX: 0, panY: 0 },
   );
   const [idlePrefetchReady, setIdlePrefetchReady] = useState(false);
   const obstacleFetchSignatureRef = useRef<string>('');
-  const latestBasemapRenderInputRef = useRef<{
-    interactionPhase: MapInteractionPhase;
-    view2d: { zoom: number; panX: number; panY: number };
-    projectionScale: number;
-    tiles: BasemapTileRenderSurface2d[];
-  } | null>(null);
-  const latestGeometryRenderInputRef = useRef<{
-    interactionPhase: MapInteractionPhase;
-    view2d: { zoom: number; panX: number; panY: number };
-    originalGeometryOpacity: number;
-    lineWidth2d: number;
-    pointRadius2d: number;
-    ellipseStroke2d: number;
-    projectionScale: number;
-    units: 'm' | 'ft';
-    interactionDenseMode: boolean;
-    unselectedCanvasLines2d: ProjectedMapLine2D[];
-    filteredVisiblePoints2d: ProjectedPoint2D[];
-      ellipseStroke: (_stationId: string) => string;
-      stationFill: (_stationId: string, _fixed: boolean) => string;
-  } | null>(null);
-  const latestPlanningRenderInputRef = useRef<{
-    interactionPhase: MapInteractionPhase;
-    view2d: { zoom: number; panX: number; panY: number };
-    pointRadius2d: number;
-    planningInputPoints2d: Array<{ stationId: string; x: number; y: number }>;
-    planningPolygons2d: Array<{
-      id: string;
-      source: 'user' | 'osm';
-      kind: 'blocked-area' | 'building' | 'wooded';
-      label: string;
-      vertices: Array<{ x: number; y: number }>;
-    }>;
-    selectedPlanningPolygonIds: string[];
-  } | null>(null);
-  const latestWebglRenderInputRef = useRef<{
-    interactionPhase: MapInteractionPhase;
-    viewWidth: number;
-    viewHeight: number;
-    view2d: { zoom: number; panX: number; panY: number };
-    tiles: BasemapTileRenderSurface2d[];
-    surveyHaloLineWidth: number;
-    surveyLineWidth: number;
-    previewLineWidth: number;
-    ellipseLineWidth: number;
-    surveyHaloLines: ReturnType<typeof buildMapViewWebglScene2d>['surveyHaloLines'];
-    surveyLines: ReturnType<typeof buildMapViewWebglScene2d>['surveyLines'];
-    previewLines: ReturnType<typeof buildMapViewWebglScene2d>['previewLines'];
-    ellipseLines: ReturnType<typeof buildMapViewWebglScene2d>['ellipseLines'];
-    surveyHaloPoints: ReturnType<typeof buildMapViewWebglScene2d>['surveyHaloPoints'];
-    surveyPoints: ReturnType<typeof buildMapViewWebglScene2d>['surveyPoints'];
-    previewPoints: ReturnType<typeof buildMapViewWebglScene2d>['previewPoints'];
-  } | null>(null);
   const dragRef = useRef<{ active: boolean; mode: DragMode; lastX: number; lastY: number }>({
     active: false,
     mode: 'none',
@@ -570,93 +494,26 @@ const MapView: React.FC<MapViewProps> = ({
     setRenderer2d('canvas');
   }, []);
 
-  const renderLayersNow = useCallback(
-    (dirty: { basemap?: boolean; geometry?: boolean; planning?: boolean }) => {
-      if (effectiveMode !== '2d') return;
-      noteMapViewPerfCounter('map:render-layer-now-calls');
-      const shouldRenderPlanning = dirty.planning === true;
-      if (renderer2d === 'webgl') {
-        const webglInput = latestWebglRenderInputRef.current;
-        const webglRenderer = webglRendererRef.current;
-        if (!webglInput || !webglRenderer.isReady()) return;
-        noteMapViewPerfCounter('map:render-webgl-path');
-        webglRenderer.markDirty({ basemap: dirty.basemap, geometry: dirty.geometry });
-        const rendered = webglRenderer.render(webglInput);
-        if (!rendered) {
-          fallbackFromWebgl();
-          return;
-        }
-        webglInput.tiles.forEach((tile) => {
-          tileStoreRef.current.markUploaded(tile.key);
-        });
-      } else {
-        if (!canRenderCanvasLayers()) return;
-        noteMapViewPerfCounter('map:render-canvas-path');
-        if (dirty.basemap) {
-          const basemapInput = latestBasemapRenderInputRef.current;
-          const basemapCanvas = basemapCanvasRef.current;
-          if (basemapInput && basemapCanvas) {
-            renderBasemapCanvas2d({
-              canvas: basemapCanvas,
-              interactionPhase: basemapInput.interactionPhase,
-              viewWidth: VIEW_W,
-              viewHeight: VIEW_H,
-              view2d: basemapInput.view2d,
-              projectionScale: basemapInput.projectionScale,
-              units,
-              basemapTiles2d: basemapInput.tiles,
-            });
-          }
-        }
-        if (dirty.geometry) {
-          const geometryInput = latestGeometryRenderInputRef.current;
-          const geometryCanvas = geometryCanvasRef.current;
-          if (geometryInput && geometryCanvas) {
-            renderGeometryCanvas2d({
-              canvas: geometryCanvas,
-              interactionPhase: geometryInput.interactionPhase,
-              viewWidth: VIEW_W,
-              viewHeight: VIEW_H,
-              view2d: geometryInput.view2d,
-              originalGeometryOpacity: geometryInput.originalGeometryOpacity,
-              lineWidth2d: geometryInput.lineWidth2d,
-              pointRadius2d: geometryInput.pointRadius2d,
-              ellipseStroke2d: geometryInput.ellipseStroke2d,
-              projectionScale: geometryInput.projectionScale,
-              units: geometryInput.units,
-              interactionDenseMode: geometryInput.interactionDenseMode,
-              unselectedCanvasLines2d: geometryInput.unselectedCanvasLines2d,
-              filteredVisiblePoints2d: geometryInput.filteredVisiblePoints2d,
-              ellipseStroke: geometryInput.ellipseStroke,
-              stationFill: geometryInput.stationFill,
-            });
-          }
-        }
-      }
-      if (shouldRenderPlanning) {
-        if (renderer2d === 'canvas' && !canRenderCanvasLayers()) return;
-        noteMapViewPerfCounter('map:render-planning-overlay');
-        const planningInput = latestPlanningRenderInputRef.current;
-        const planningCanvas = planningCanvasRef.current;
-        if (planningInput && planningCanvas) {
-          renderPlanningOverlayCanvas2d({
-            canvas: planningCanvas,
-            interactionPhase: planningInput.interactionPhase,
-            viewWidth: VIEW_W,
-            viewHeight: VIEW_H,
-            view2d: planningInput.view2d,
-            projectionScale: 1,
-            units,
-            pointRadius2d: planningInput.pointRadius2d,
-            planningInputPoints2d: planningInput.planningInputPoints2d,
-            planningPolygons2d: planningInput.planningPolygons2d,
-            selectedPlanningPolygonIds: planningInput.selectedPlanningPolygonIds,
-          });
-        }
-      }
-    },
-    [effectiveMode, fallbackFromWebgl, renderer2d, units],
-  );
+  const {
+    latestBasemapRenderInputRef,
+    latestGeometryRenderInputRef,
+    latestPlanningRenderInputRef,
+    latestWebglRenderInputRef,
+    renderLayersNow,
+    scheduleLayerRender,
+  } = useMapViewLayerRenderer({
+    basemapCanvasRef,
+    effectiveMode,
+    geometryCanvasRef,
+    onWebglFallback: fallbackFromWebgl,
+    planningCanvasRef,
+    renderer2d,
+    tileStoreRef,
+    units,
+    viewHeight: VIEW_H,
+    viewWidth: VIEW_W,
+    webglRendererRef,
+  });
 
   const applyPanPreviewOffset = useCallback((offsetX: number, offsetY: number) => {
     const translate = offsetX === 0 && offsetY === 0 ? '' : `translate(${offsetX}px, ${offsetY}px)`;
@@ -673,25 +530,6 @@ const MapView: React.FC<MapViewProps> = ({
       container.dataset.mapPreviewPanY = offsetY.toFixed(6);
     }
   }, []);
-
-  const scheduleLayerRender = useCallback(
-    (dirty: { basemap?: boolean; geometry?: boolean; planning?: boolean }) => {
-      if (effectiveMode !== '2d') return;
-      if (renderer2d === 'canvas' && !canRenderCanvasLayers()) return;
-      noteMapViewPerfCounter('map:schedule-layer-render');
-      if (dirty.basemap) renderDirtyRef.current.basemap = true;
-      if (dirty.geometry) renderDirtyRef.current.geometry = true;
-      if (dirty.planning) renderDirtyRef.current.planning = true;
-      if (renderRequestFrameRef.current != null) return;
-      renderRequestFrameRef.current = requestAnimationFrame(() => {
-        renderRequestFrameRef.current = null;
-        const dirtyNow = renderDirtyRef.current;
-        renderDirtyRef.current = { basemap: false, geometry: false, planning: false };
-        renderLayersNow(dirtyNow);
-      });
-    },
-    [effectiveMode, renderLayersNow, renderer2d],
-  );
 
   const clearInteractionSettle = useCallback(() => {
     if (settleTimerRef.current != null) {
@@ -780,9 +618,6 @@ const MapView: React.FC<MapViewProps> = ({
       }
       if (dragMoveFrameRef.current != null) {
         cancelAnimationFrame(dragMoveFrameRef.current);
-      }
-      if (renderRequestFrameRef.current != null) {
-        cancelAnimationFrame(renderRequestFrameRef.current);
       }
       clearInteractionSettle();
     },
@@ -1327,325 +1162,32 @@ const MapView: React.FC<MapViewProps> = ({
     [onSelectObservation, onSelectStation, planningPolygons2d, view2d.panX, view2d.panY, view2d.zoom],
   );
 
-  useEffect(() => {
-    if (effectiveMode !== '2d' || planningMap.basemapMode !== 'osm') {
-      basemapDescriptorBucketRef.current = '';
-      if (!view2dEquals(basemapDescriptorView2d, view2d)) {
-        setBasemapDescriptorView2d(view2d);
-      }
-      return;
-    }
-    if (planningGeorefContext == null) return;
-    if (interactionPhase === 'idle' || interactionKindRef.current === 'none') {
-      basemapDescriptorBucketRef.current = '';
-      if (!view2dEquals(basemapDescriptorView2d, view2d)) {
-        setBasemapDescriptorView2d(view2d);
-      }
-      return;
-    }
-    if (interactionKindRef.current === 'pan') return;
-    const bucket = buildOsmDescriptorBucketForView({
-      bbox,
-      descriptorView: view2d,
-      interactionPhase,
-      planningGeorefContext,
-      projection: projection2d,
-      viewHeight: VIEW_H,
-      viewWidth: VIEW_W,
-    });
-    if (bucket == null) return;
-    if (bucket.signature === basemapDescriptorBucketRef.current) return;
-    basemapDescriptorBucketRef.current = bucket.signature;
-    noteMapViewPerfCounter('tiles:descriptor-rebuilds');
-    noteMapViewPerfMetadata('tiles:last-descriptor-bucket', bucket.signature);
-    setBasemapDescriptorView2d(view2d);
-  }, [
+  useMapViewBasemapTiles2d({
     basemapDescriptorView2d,
     bbox,
-    effectiveMode,
-    interactionPhase,
-    planningGeorefContext,
-    planningMap.basemapMode,
-    projection2d,
-    view2d,
-  ]);
-
-  const buildBasemapTiles2dForCurrentView = useCallback(
-    (tileBuffer: number): BasemapTileDescriptor2d[] =>
-      effectiveMode === '2d' &&
-      planningMap.basemapMode === 'osm' &&
-      planningGeorefContext != null
-        ? buildBasemapTiles2dForBuffer({
-            bbox,
-            descriptorView: basemapDescriptorView2d,
-            interactionPhase,
-            planningGeorefContext,
-            projectPoint: project2d,
-            projection: projection2d,
-            tileBuffer,
-            viewHeight: VIEW_H,
-            viewWidth: VIEW_W,
-          })
-        : [],
-    [
-      basemapDescriptorView2d,
-      bbox,
-      effectiveMode,
-      interactionPhase,
-      planningGeorefContext,
-      planningMap.basemapMode,
-      project2d,
-      projection2d,
-    ],
-  );
-
-  const basemapTiles2d = useMemo<BasemapTileDescriptor2d[]>(() => {
-    if (
-      effectiveMode !== '2d' ||
-      planningMap.basemapMode !== 'osm' ||
-      planningGeorefContext == null
-    ) {
-      return [];
-    }
-    const tileBuffer =
-      interactionPhase === 'interacting' ? OSM_INTERACTION_TILE_BUFFER : OSM_VISIBLE_TILE_BUFFER;
-    return buildBasemapTiles2dForCurrentView(tileBuffer);
-  }, [
-    buildBasemapTiles2dForCurrentView,
-    effectiveMode,
-    interactionPhase,
-    planningGeorefContext,
-    planningMap.basemapMode,
-  ]);
-
-  const prefetchedBasemapTiles2d = useMemo<BasemapTileDescriptor2d[]>(() => {
-    if (
-      effectiveMode !== '2d' ||
-      planningMap.basemapMode !== 'osm' ||
-      planningGeorefContext == null
-    ) {
-      return [];
-    }
-    if (interactionPhase !== 'idle') return basemapTiles2d;
-    if (!idlePrefetchReady) return basemapTiles2d;
-    if (basemapTiles2d.length >= OSM_IDLE_PREFETCH_TILE_COUNT_THRESHOLD) return basemapTiles2d;
-    return buildBasemapTiles2dForCurrentView(
-      Math.max(OSM_VISIBLE_TILE_BUFFER, OSM_IDLE_PREFETCH_TILE_BUFFER),
-    );
-  }, [
-    basemapTiles2d,
-    buildBasemapTiles2dForCurrentView,
+    dragRef,
     effectiveMode,
     idlePrefetchReady,
+    idlePrefetchTileBuffer: OSM_IDLE_PREFETCH_TILE_BUFFER,
+    idlePrefetchTileCountThreshold: OSM_IDLE_PREFETCH_TILE_COUNT_THRESHOLD,
     interactionPhase,
+    interactionTileBuffer: OSM_INTERACTION_TILE_BUFFER,
+    latestBasemapRenderInputRef,
+    latestWebglRenderInputRef,
+    planningBasemapMode: planningMap.basemapMode,
     planningGeorefContext,
-    planningMap.basemapMode,
-  ]);
-
-  const basemapTileSignature = useMemo(
-    () =>
-      basemapTiles2d
-        .map((tile) => `${tile.key}:${tile.meshColumns}:${tile.meshRows}:${tile.meshPoints.length}`)
-        .join('|'),
-    [basemapTiles2d],
-  );
-
-  useEffect(() => {
-    if (interactionPhase !== 'idle') return;
-    if (stableBasemapTileSignatureRef.current === basemapTileSignature) return;
-    stableBasemapTiles2dRef.current = basemapTiles2d;
-    stableBasemapTileSignatureRef.current = basemapTileSignature;
-    setStableBasemapTiles2dRender(basemapTiles2d);
-    setStableBasemapTileSignatureRender(basemapTileSignature);
-  }, [basemapTileSignature, basemapTiles2d, interactionPhase]);
-
-  const canReuseStableBasemapTilesDuringInteraction =
-    interactionPhase === 'interacting' &&
-    stableBasemapTiles2dRender.length > 0 &&
-    stableBasemapTileSignatureRender === basemapTileSignature;
-
-  const activeBasemapTiles2d = resolveInteractiveBasemapTiles(
-    basemapTiles2d,
-    stableBasemapTiles2dRender,
-    interactionPhase,
-    canReuseStableBasemapTilesDuringInteraction,
-  );
-
-  const usingStableInteractionTiles =
-    interactionPhase === 'interacting' &&
-    activeBasemapTiles2d === stableBasemapTiles2dRender &&
-    stableBasemapTiles2dRender.length > 0;
-
-  const requestedBasemapTiles2d = useMemo(
-    () =>
-      buildRequestedBasemapTiles(
-        activeBasemapTiles2d,
-        prefetchedBasemapTiles2d,
-        interactionPhase,
-      ),
-    [activeBasemapTiles2d, interactionPhase, prefetchedBasemapTiles2d],
-  );
-
-  const activeBasemapTileKeySet = useMemo(
-    () => new Set(activeBasemapTiles2d.map((tile) => tile.key)),
-    [activeBasemapTiles2d],
-  );
-
-  useLayoutEffect(() => {
-    const canReuseStableInteractionTiles =
-      effectiveMode === '2d' &&
-      usingStableInteractionTiles &&
-      (latestBasemapRenderInputRef.current?.tiles.length ?? 0) > 0;
-    if (canReuseStableInteractionTiles) {
-      const reusedTiles = latestBasemapRenderInputRef.current?.tiles ?? [];
-      noteMapViewPerfCounter('tiles:interaction-reuse-frames');
-      noteMapViewPerfMetadata('tiles:last-descriptor-mode', 'stable-reused');
-      latestBasemapRenderInputRef.current = {
-        interactionPhase,
-        view2d,
-        projectionScale: projection2d.scale,
-        tiles: reusedTiles,
-      };
-      latestWebglRenderInputRef.current = {
-        interactionPhase,
-        viewWidth: VIEW_W,
-        viewHeight: VIEW_H,
-        view2d,
-        tiles: reusedTiles,
-        surveyHaloLineWidth: latestWebglRenderInputRef.current?.surveyHaloLineWidth ?? 0,
-        surveyLineWidth: latestWebglRenderInputRef.current?.surveyLineWidth ?? 0,
-        previewLineWidth: latestWebglRenderInputRef.current?.previewLineWidth ?? 0,
-        ellipseLineWidth: latestWebglRenderInputRef.current?.ellipseLineWidth ?? 0,
-        surveyHaloLines: latestWebglRenderInputRef.current?.surveyHaloLines ?? [],
-        surveyLines: latestWebglRenderInputRef.current?.surveyLines ?? [],
-        previewLines: latestWebglRenderInputRef.current?.previewLines ?? [],
-        ellipseLines: latestWebglRenderInputRef.current?.ellipseLines ?? [],
-        surveyHaloPoints: latestWebglRenderInputRef.current?.surveyHaloPoints ?? [],
-        surveyPoints: latestWebglRenderInputRef.current?.surveyPoints ?? [],
-        previewPoints: latestWebglRenderInputRef.current?.previewPoints ?? [],
-      };
-      renderLayersNow({ basemap: true });
-      return;
-    }
-    const tileStore = tileStoreRef.current;
-    tileStore.markAllEvictable();
-    noteMapViewPerfCounter('tiles:mark-all-evictable');
-    if (effectiveMode !== '2d' || activeBasemapTiles2d.length === 0) {
-      latestBasemapRenderInputRef.current = {
-        interactionPhase,
-        view2d,
-        projectionScale: projection2d.scale,
-        tiles: [],
-      };
-      latestWebglRenderInputRef.current = {
-        interactionPhase,
-        viewWidth: VIEW_W,
-        viewHeight: VIEW_H,
-        view2d,
-        tiles: [],
-        surveyHaloLineWidth: latestWebglRenderInputRef.current?.surveyHaloLineWidth ?? 0,
-        surveyLineWidth: latestWebglRenderInputRef.current?.surveyLineWidth ?? 0,
-        previewLineWidth: latestWebglRenderInputRef.current?.previewLineWidth ?? 0,
-        ellipseLineWidth: latestWebglRenderInputRef.current?.ellipseLineWidth ?? 0,
-        surveyHaloLines: latestWebglRenderInputRef.current?.surveyHaloLines ?? [],
-        surveyLines: latestWebglRenderInputRef.current?.surveyLines ?? [],
-        previewLines: latestWebglRenderInputRef.current?.previewLines ?? [],
-        ellipseLines: latestWebglRenderInputRef.current?.ellipseLines ?? [],
-        surveyHaloPoints: latestWebglRenderInputRef.current?.surveyHaloPoints ?? [],
-        surveyPoints: latestWebglRenderInputRef.current?.surveyPoints ?? [],
-        previewPoints: latestWebglRenderInputRef.current?.previewPoints ?? [],
-      };
-      renderLayersNow({ basemap: true });
-      return;
-    }
-    const tileSnapshotBeforeRequest = tileStore.snapshotMetrics();
-    const canPrefetchIdleTiles =
-      interactionPhase === 'idle' &&
-      idlePrefetchReady &&
-      tileSnapshotBeforeRequest.requestedCount === 0;
-    const tileRequestDescriptors = canPrefetchIdleTiles
-      ? requestedBasemapTiles2d
-      : activeBasemapTiles2d;
-    tileStore.requestTiles(
-      tileRequestDescriptors,
-      (readyTileKey) => {
-        const activeDrag = dragRef.current;
-        const currentInteractionPhase =
-          latestBasemapRenderInputRef.current?.interactionPhase ?? interactionPhase;
-        if (!activeBasemapTileKeySet.has(readyTileKey)) {
-          noteMapViewPerfCounter('tiles:prefetch-ready-offscreen');
-          return;
-        }
-        const shouldDeferTileDrivenRender =
-          currentInteractionPhase === 'interacting' ||
-          (activeDrag.active && activeDrag.mode === 'pan2d');
-        if (shouldDeferTileDrivenRender) {
-          noteMapViewPerfMetadata('tiles:snapshot', tileStore.snapshotMetrics());
-          noteMapViewPerfCounter('tiles:deferred-renders-during-interaction');
-          return;
-        }
-        const latest = latestBasemapRenderInputRef.current;
-        if (!latest) return;
-        latest.tiles = tileStore.resolveRenderTiles(activeBasemapTiles2d);
-        noteMapViewPerfMetadata('tiles:snapshot', tileStore.snapshotMetrics());
-        noteMapViewPerfMetadata('tiles:last-resolved-count', latest.tiles.length);
-        noteMapViewPerfMetadata(
-          'tiles:last-descriptor-mode',
-          usingStableInteractionTiles ? 'stable-reused' : 'live',
-        );
-        if (latestWebglRenderInputRef.current) {
-          latestWebglRenderInputRef.current.tiles = latest.tiles;
-        }
-        scheduleLayerRender({ basemap: true });
-      },
-      renderer2d === 'webgl' ? { crossOrigin: 'anonymous' } : undefined,
-    );
-    const resolvedTiles = tileStore.resolveRenderTiles(activeBasemapTiles2d);
-    noteMapViewPerfMetadata('tiles:snapshot', tileStore.snapshotMetrics());
-    noteMapViewPerfMetadata('tiles:last-resolved-count', resolvedTiles.length);
-    noteMapViewPerfMetadata(
-      'tiles:last-descriptor-mode',
-      usingStableInteractionTiles ? 'stable-reused' : 'live',
-    );
-    latestBasemapRenderInputRef.current = {
-      interactionPhase,
-      view2d,
-      projectionScale: projection2d.scale,
-      tiles: resolvedTiles,
-    };
-    latestWebglRenderInputRef.current = {
-      interactionPhase,
-      viewWidth: VIEW_W,
-      viewHeight: VIEW_H,
-      view2d,
-      tiles: resolvedTiles,
-      surveyHaloLineWidth: latestWebglRenderInputRef.current?.surveyHaloLineWidth ?? 0,
-      surveyLineWidth: latestWebglRenderInputRef.current?.surveyLineWidth ?? 0,
-      previewLineWidth: latestWebglRenderInputRef.current?.previewLineWidth ?? 0,
-      ellipseLineWidth: latestWebglRenderInputRef.current?.ellipseLineWidth ?? 0,
-      surveyHaloLines: latestWebglRenderInputRef.current?.surveyHaloLines ?? [],
-      surveyLines: latestWebglRenderInputRef.current?.surveyLines ?? [],
-      previewLines: latestWebglRenderInputRef.current?.previewLines ?? [],
-      ellipseLines: latestWebglRenderInputRef.current?.ellipseLines ?? [],
-      surveyHaloPoints: latestWebglRenderInputRef.current?.surveyHaloPoints ?? [],
-      surveyPoints: latestWebglRenderInputRef.current?.surveyPoints ?? [],
-      previewPoints: latestWebglRenderInputRef.current?.previewPoints ?? [],
-    };
-    renderLayersNow({ basemap: true });
-  }, [
-    activeBasemapTiles2d,
-    effectiveMode,
-    interactionPhase,
-    requestedBasemapTiles2d,
-    projection2d.scale,
+    projectPoint: project2d,
+    projection2d,
     renderLayersNow,
     renderer2d,
     scheduleLayerRender,
-    activeBasemapTileKeySet,
-    idlePrefetchReady,
-    usingStableInteractionTiles,
+    setBasemapDescriptorView2d,
+    tileStoreRef,
     view2d,
-  ]);
+    viewHeight: VIEW_H,
+    viewWidth: VIEW_W,
+    visibleTileBuffer: OSM_VISIBLE_TILE_BUFFER,
+  });
 
   useEffect(() => {
     if (
@@ -1869,6 +1411,9 @@ const MapView: React.FC<MapViewProps> = ({
     filteredVisiblePoints2d,
     interactionDenseMode,
     interactionPhase,
+    latestBasemapRenderInputRef,
+    latestGeometryRenderInputRef,
+    latestWebglRenderInputRef,
     lineWidth2d,
     originalGeometryOpacity,
     pointRadius2d,
@@ -1901,6 +1446,7 @@ const MapView: React.FC<MapViewProps> = ({
   }, [
     effectiveMode,
     interactionPhase,
+    latestPlanningRenderInputRef,
     planningInputPoints2d,
     planningPolygons2d,
     pointRadius2d,
