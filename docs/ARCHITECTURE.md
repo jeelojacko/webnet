@@ -174,6 +174,9 @@ The UI should treat solve results as the source of truth and avoid duplicating e
 - `mapViewWebgl2d.ts` owns the preferred WebGL2 render controller for OSM tiles plus non-selected static geometry
 - `mapViewWebglBuffers.ts` builds GPU-ready line/point/ellipse/preview buffers from the same projected survey geometry used elsewhere, including the visibility-oriented halo passes and screen-readable point sizing used to keep map symbols legible over imagery
 - `mapViewTileStore.ts` owns imperative tile lifecycle, fallback coverage, and eviction state
+- `mapViewBasemap.ts` owns OSM descriptor buckets, tile mesh descriptors, interactive tile reuse, and idle prefetch merging for the 2D basemap path
+- `mapViewInteraction.ts` owns shared map interaction constants, render-surface layout helpers, tile math, and polygon/selection hit helpers used by the SVG and canvas layers
+- `mapViewObstacles.ts` owns OSM obstacle fetch signatures, Overpass query construction, and conversion of Overpass geometry into planning obstacle polygons
 - `mapView2d.ts` now stages 2D map derivation into base projected geometry, base-space viewport culling, base-space selection/minor-geometry filtering, and final screen-space view application so pan/zoom avoids reprojecting and retranslating the full network every frame
 - `mapViewCanvas2d.ts` now also owns a dedicated planning-overlay canvas pass for non-selected obstacle/blocked polygon bodies and raw input-point markers; that pass stays active even when the main 2D background renderer is WebGL
 - `MapView.tsx` now stacks the 2D layers as basemap -> non-selected planning polygons -> non-selected survey geometry -> SVG labels/selections/tools, and its hit path resolves point hits first, then line hits, then planning polygons so draw priority and click priority match

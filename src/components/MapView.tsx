@@ -60,7 +60,7 @@ import {
   view2dEquals,
 } from './mapView/mapView2d';
 import { createStableRuntimeId } from '../engine/id';
-import { inverseENToGeodetic, projectGeodeticToEN } from '../engine/geodesy';
+import { inverseENToGeodetic } from '../engine/geodesy';
 import { DEFAULT_PLANNING_MAP_STATE } from '../engine/planningMapState';
 import MapViewSvg2d from './mapView/MapViewSvg2d';
 import MapViewScene3d from './mapView/MapViewScene3d';
@@ -72,8 +72,9 @@ import {
   renderPlanningOverlayCanvas2d,
 } from './mapView/mapViewCanvas2d';
 import {
+  buildBasemapTiles2dForBuffer,
+  buildOsmDescriptorBucketForView,
   buildRequestedBasemapTiles,
-  chooseOsmTileMeshDivisions,
   resolveInteractiveBasemapTiles,
 } from './mapView/mapViewBasemap';
 import { buildMapViewHitIndex } from './mapView/mapViewHitIndex';
@@ -98,6 +99,28 @@ import {
   buildTransformedOverlayGeometry2d,
 } from './mapView/mapViewSelectors';
 import { projectPoint3d } from './mapView/mapView3d';
+import {
+  buildRenderSurfaceLayout,
+  canRenderCanvasLayers,
+  canRenderWebglLayers,
+  DEFAULT_RENDER_SURFACE_LAYOUT,
+  doesPolygonTouchRect,
+  isPointInsidePolygon,
+  isPolygonInsideRect,
+  OSM_FETCH_BUFFER_M,
+  renderSurfaceLayoutEquals,
+  type MapInteractionKind,
+  type MapInteractionPhase,
+  type PlanningPolygonTarget,
+  type RenderSurfaceLayout,
+  type ScreenSelectionBox,
+  type SelectionBoxMode,
+} from './mapView/mapViewInteraction';
+import {
+  buildObstacleFetchSignature,
+  buildOverpassObstacleQuery,
+  parseOverpassObstaclePolygons,
+} from './mapView/mapViewObstacles';
 
 const FT_PER_M = 3.280839895;
 const VIEW_W = 1000;
@@ -125,9 +148,6 @@ const OSM_INTERACTION_ZOOM_DELTA = 1;
 const OSM_VISIBLE_TILE_CAP = 72;
 const OSM_INTERACTION_TILE_CAP = 42;
 const EMPTY_MAP_LINKS: ReturnType<typeof buildObservationMapLinks> = [];
-
-type MapInteractionPhase = 'idle' | 'interacting' | 'settling';
-type MapInteractionKind = 'none' | 'pan' | 'wheel';
 
 export interface MapViewSnapshot {
   view2d: { zoom: number; panX: number; panY: number };
@@ -165,288 +185,6 @@ interface MapViewProps {
 }
 
 type DragMode = 'none' | 'pan2d' | 'orbit3d' | 'pan3d' | 'planning-vertex';
-
-type OverpassGeometryVertex = { lat: number; lon: number };
-type OverpassElement = {
-  id?: number | string;
-  geometry?: OverpassGeometryVertex[];
-  tags?: Record<string, string>;
-};
-type PlanningPolygonTarget = {
-  polygonId: string;
-  polygonSource: 'user' | 'osm';
-  polygonLabel: string;
-};
-type ScreenSelectionBox = {
-  anchorX: number;
-  anchorY: number;
-  currentX: number;
-  currentY: number;
-};
-
-type SelectionBoxMode = 'window' | 'crossing';
-type RenderSurfaceLayout = {
-  width: number;
-  height: number;
-  left: number;
-  top: number;
-};
-
-const OSM_TILE_SIZE_PX = 256;
-const OSM_MAX_ZOOM = 19;
-const OSM_MIN_ZOOM = 0;
-const OSM_FETCH_BUFFER_M = 100;
-const DEFAULT_RENDER_SURFACE_LAYOUT: RenderSurfaceLayout = {
-  width: VIEW_W,
-  height: VIEW_H,
-  left: 0,
-  top: 0,
-};
-
-const buildRenderSurfaceLayout = (
-  containerWidth: number,
-  containerHeight: number,
-): RenderSurfaceLayout => {
-  if (!(containerWidth > 0) || !(containerHeight > 0)) {
-    return DEFAULT_RENDER_SURFACE_LAYOUT;
-  }
-  const scale = Math.max(containerWidth / VIEW_W, containerHeight / VIEW_H);
-  const width = Math.max(1, VIEW_W * scale);
-  const height = Math.max(1, VIEW_H * scale);
-  return {
-    width,
-    height,
-    left: (containerWidth - width) * 0.5,
-    top: (containerHeight - height) * 0.5,
-  };
-};
-
-const renderSurfaceLayoutEquals = (
-  left: RenderSurfaceLayout,
-  right: RenderSurfaceLayout,
-): boolean =>
-  Math.abs(left.width - right.width) < 0.5 &&
-  Math.abs(left.height - right.height) < 0.5 &&
-  Math.abs(left.left - right.left) < 0.5 &&
-  Math.abs(left.top - right.top) < 0.5;
-const clampLatitudeForTiles = (latDeg: number): number =>
-  Math.min(85.05112878, Math.max(-85.05112878, latDeg));
-
-const longitudeToTileX = (lonDeg: number, zoom: number): number =>
-  ((lonDeg + 180) / 360) * 2 ** zoom;
-
-const latitudeToTileY = (latDeg: number, zoom: number): number => {
-  const latRad = (clampLatitudeForTiles(latDeg) * Math.PI) / 180;
-  return (
-    ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) *
-    2 ** zoom
-  );
-};
-
-const tileXToLongitude = (tileX: number, zoom: number): number => (tileX / 2 ** zoom) * 360 - 180;
-
-const tileYToLatitude = (tileY: number, zoom: number): number => {
-  const n = Math.PI - (2 * Math.PI * tileY) / 2 ** zoom;
-  return (180 / Math.PI) * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
-};
-
-const countOsmTileDescriptorsAtZoom = (
-  minLon: number,
-  maxLon: number,
-  minLat: number,
-  maxLat: number,
-  zoom: number,
-  tileBuffer: number,
-): number => {
-  const minTileX = Math.floor(longitudeToTileX(minLon, zoom)) - tileBuffer;
-  const maxTileX = Math.floor(longitudeToTileX(maxLon, zoom)) + tileBuffer;
-  const minTileY = Math.floor(latitudeToTileY(maxLat, zoom)) - tileBuffer;
-  const maxTileY = Math.floor(latitudeToTileY(minLat, zoom)) + tileBuffer;
-  return Math.max(0, maxTileX - minTileX + 1) * Math.max(0, maxTileY - minTileY + 1);
-};
-
-type OsmDescriptorBucket = {
-  descriptorZoom: number;
-  descriptorCount: number;
-  signature: string;
-};
-
-const buildOsmDescriptorBucket = ({
-  minLon,
-  maxLon,
-  minLat,
-  maxLat,
-  centerLat,
-  metersPerPixelX,
-  interactionPhase,
-}: {
-  minLon: number;
-  maxLon: number;
-  minLat: number;
-  maxLat: number;
-  centerLat: number;
-  metersPerPixelX: number;
-  interactionPhase: MapInteractionPhase;
-}): OsmDescriptorBucket => {
-  const tileBuffer =
-    interactionPhase === 'interacting' ? OSM_INTERACTION_TILE_BUFFER : OSM_VISIBLE_TILE_BUFFER;
-  const tileCap =
-    interactionPhase === 'interacting' ? OSM_INTERACTION_TILE_CAP : OSM_VISIBLE_TILE_CAP;
-  const tileMetersAtZoom0 =
-    156543.03392804097 * Math.cos((clampLatitudeForTiles(centerLat) * Math.PI) / 180);
-  let descriptorZoom = Math.round(
-    Math.log2(Math.max(1e-9, tileMetersAtZoom0) / Math.max(1e-9, metersPerPixelX)),
-  );
-  if (!Number.isFinite(descriptorZoom)) descriptorZoom = 18;
-  descriptorZoom = clamp(descriptorZoom, OSM_MIN_ZOOM, OSM_MAX_ZOOM);
-  if (interactionPhase === 'interacting') {
-    descriptorZoom = clamp(
-      descriptorZoom - OSM_INTERACTION_ZOOM_DELTA,
-      OSM_MIN_ZOOM,
-      OSM_MAX_ZOOM,
-    );
-  }
-  let descriptorCount = countOsmTileDescriptorsAtZoom(
-    minLon,
-    maxLon,
-    minLat,
-    maxLat,
-    descriptorZoom,
-    tileBuffer,
-  );
-  while (descriptorZoom > OSM_MIN_ZOOM && descriptorCount > tileCap) {
-    descriptorZoom -= 1;
-    descriptorCount = countOsmTileDescriptorsAtZoom(
-      minLon,
-      maxLon,
-      minLat,
-      maxLat,
-      descriptorZoom,
-      tileBuffer,
-    );
-  }
-  return {
-    descriptorZoom,
-    descriptorCount,
-    signature: `${descriptorZoom}:${descriptorCount}:${tileBuffer}:${tileCap}`,
-  };
-};
-
-const isPointInsideRect = (
-  point: { x: number; y: number },
-  rect: { left: number; right: number; top: number; bottom: number },
-): boolean =>
-  point.x >= rect.left && point.x <= rect.right && point.y >= rect.top && point.y <= rect.bottom;
-
-const segmentsIntersect = (
-  a1: { x: number; y: number },
-  a2: { x: number; y: number },
-  b1: { x: number; y: number },
-  b2: { x: number; y: number },
-): boolean => {
-  const cross = (
-    origin: { x: number; y: number },
-    p1: { x: number; y: number },
-    p2: { x: number; y: number },
-  ) => (p1.x - origin.x) * (p2.y - origin.y) - (p1.y - origin.y) * (p2.x - origin.x);
-  const onSegment = (
-    start: { x: number; y: number },
-    point: { x: number; y: number },
-    end: { x: number; y: number },
-  ) =>
-    point.x >= Math.min(start.x, end.x) &&
-    point.x <= Math.max(start.x, end.x) &&
-    point.y >= Math.min(start.y, end.y) &&
-    point.y <= Math.max(start.y, end.y);
-
-  const d1 = cross(a1, a2, b1);
-  const d2 = cross(a1, a2, b2);
-  const d3 = cross(b1, b2, a1);
-  const d4 = cross(b1, b2, a2);
-
-  if (((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0))) {
-    return true;
-  }
-  if (d1 === 0 && onSegment(a1, b1, a2)) return true;
-  if (d2 === 0 && onSegment(a1, b2, a2)) return true;
-  if (d3 === 0 && onSegment(b1, a1, b2)) return true;
-  if (d4 === 0 && onSegment(b1, a2, b2)) return true;
-  return false;
-};
-
-const isPointInsidePolygon = (
-  point: { x: number; y: number },
-  polygon: Array<{ x: number; y: number }>,
-): boolean => {
-  let inside = false;
-  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i, i += 1) {
-    const a = polygon[i]!;
-    const b = polygon[j]!;
-    const intersects =
-      a.y > point.y !== b.y > point.y &&
-      point.x < ((b.x - a.x) * (point.y - a.y)) / ((b.y - a.y) || Number.EPSILON) + a.x;
-    if (intersects) inside = !inside;
-  }
-  return inside;
-};
-
-const doesPolygonTouchRect = (
-  polygon: Array<{ x: number; y: number }>,
-  rect: { left: number; right: number; top: number; bottom: number },
-): boolean => {
-  if (polygon.some((vertex) => isPointInsideRect(vertex, rect))) return true;
-  const rectCorners = [
-    { x: rect.left, y: rect.top },
-    { x: rect.right, y: rect.top },
-    { x: rect.right, y: rect.bottom },
-    { x: rect.left, y: rect.bottom },
-  ];
-  if (rectCorners.some((corner) => isPointInsidePolygon(corner, polygon))) return true;
-  const rectEdges = [
-    [rectCorners[0]!, rectCorners[1]!],
-    [rectCorners[1]!, rectCorners[2]!],
-    [rectCorners[2]!, rectCorners[3]!],
-    [rectCorners[3]!, rectCorners[0]!],
-  ] as const;
-  for (let index = 0; index < polygon.length; index += 1) {
-    const start = polygon[index]!;
-    const end = polygon[(index + 1) % polygon.length]!;
-    if (rectEdges.some(([edgeStart, edgeEnd]) => segmentsIntersect(start, end, edgeStart, edgeEnd))) {
-      return true;
-    }
-  }
-  return false;
-};
-
-const isPolygonInsideRect = (
-  polygon: Array<{ x: number; y: number }>,
-  rect: { left: number; right: number; top: number; bottom: number },
-): boolean => polygon.every((vertex) => isPointInsideRect(vertex, rect));
-
-const canRenderCanvasLayers = (): boolean => {
-  const isJsdom =
-    typeof navigator !== 'undefined' && typeof navigator.userAgent === 'string'
-      ? /jsdom/i.test(navigator.userAgent)
-      : false;
-  const allowJsdomCanvas =
-    typeof globalThis !== 'undefined' &&
-    (globalThis as { __WEBNET_ENABLE_CANVAS_RENDER_TEST__?: boolean })
-      .__WEBNET_ENABLE_CANVAS_RENDER_TEST__ === true;
-  return !isJsdom || allowJsdomCanvas;
-};
-
-const canRenderWebglLayers = (): boolean => {
-  if (typeof document === 'undefined' || typeof HTMLCanvasElement === 'undefined') return false;
-  const isJsdom =
-    typeof navigator !== 'undefined' && typeof navigator.userAgent === 'string'
-      ? /jsdom/i.test(navigator.userAgent)
-      : false;
-  const allowJsdomWebgl =
-    typeof globalThis !== 'undefined' &&
-    (globalThis as { __WEBNET_ENABLE_WEBGL_RENDER_TEST__?: boolean })
-      .__WEBNET_ENABLE_WEBGL_RENDER_TEST__ === true;
-  return !isJsdom || allowJsdomWebgl;
-};
 
 const MapView: React.FC<MapViewProps> = ({
   result,
@@ -1247,8 +985,7 @@ const MapView: React.FC<MapViewProps> = ({
     reset2dView();
   }, [
     bbox.height,
-    bbox.minX,
-    bbox.minY,
+    bbox,
     bbox.width,
     clearInteractionSettle,
     effectiveMode,
@@ -1931,60 +1668,16 @@ const MapView: React.FC<MapViewProps> = ({
       return;
     }
     if (interactionKindRef.current === 'pan') return;
-    const svgToMapCoordsAtView = (
-      screenX: number,
-      screenY: number,
-      descriptorView: { zoom: number; panX: number; panY: number },
-    ): { x: number; y: number } => {
-      const projectedX = (screenX - descriptorView.panX) / Math.max(descriptorView.zoom, 1e-9);
-      const projectedY = (screenY - descriptorView.panY) / Math.max(descriptorView.zoom, 1e-9);
-      return {
-        x: bbox.minX + (projectedX - projection2d.offsetX) / Math.max(projection2d.scale, 1e-9),
-        y:
-          bbox.minY +
-          (VIEW_H - projectedY - projection2d.offsetY) / Math.max(projection2d.scale, 1e-9),
-      };
-    };
-    const descriptorViewportCorners = [
-      svgToMapCoordsAtView(0, 0, view2d),
-      svgToMapCoordsAtView(VIEW_W, 0, view2d),
-      svgToMapCoordsAtView(0, VIEW_H, view2d),
-      svgToMapCoordsAtView(VIEW_W, VIEW_H, view2d),
-    ];
-    const geodeticCorners = descriptorViewportCorners
-      .map((corner) =>
-        inverseENToGeodetic({
-          east: corner.x,
-          north: corner.y,
-          ...planningGeorefContext,
-        }),
-      )
-      .filter(
-        (corner): corner is { latDeg: number; lonDeg: number } => !('failureReason' in corner),
-      );
-    if (geodeticCorners.length !== 4) return;
-    const lats = geodeticCorners.map((corner) => corner.latDeg);
-    const lons = geodeticCorners.map((corner) => corner.lonDeg);
-    const minLat = Math.min(...lats);
-    const maxLat = Math.max(...lats);
-    const minLon = Math.min(...lons);
-    const maxLon = Math.max(...lons);
-    const centerLat = (minLat + maxLat) * 0.5;
-    const metersPerPixelX =
-      Math.abs(
-        svgToMapCoordsAtView(OSM_TILE_SIZE_PX, VIEW_H * 0.5, view2d).x -
-          svgToMapCoordsAtView(0, VIEW_H * 0.5, view2d).x,
-      ) / OSM_TILE_SIZE_PX;
-    if (!(metersPerPixelX > 0)) return;
-    const bucket = buildOsmDescriptorBucket({
-      minLon,
-      maxLon,
-      minLat,
-      maxLat,
-      centerLat,
-      metersPerPixelX,
+    const bucket = buildOsmDescriptorBucketForView({
+      bbox,
+      descriptorView: view2d,
       interactionPhase,
+      planningGeorefContext,
+      projection: projection2d,
+      viewHeight: VIEW_H,
+      viewWidth: VIEW_W,
     });
+    if (bucket == null) return;
     if (bucket.signature === basemapDescriptorBucketRef.current) return;
     basemapDescriptorBucketRef.current = bucket.signature;
     noteMapViewPerfCounter('tiles:descriptor-rebuilds');
@@ -1992,197 +1685,41 @@ const MapView: React.FC<MapViewProps> = ({
     setBasemapDescriptorView2d(view2d);
   }, [
     basemapDescriptorView2d,
-    bbox.minX,
-    bbox.minY,
+    bbox,
     effectiveMode,
     interactionPhase,
     planningGeorefContext,
     planningMap.basemapMode,
-    projection2d.offsetX,
-    projection2d.offsetY,
-    projection2d.scale,
+    projection2d,
     view2d,
   ]);
 
-  const buildBasemapTiles2dForBuffer = useCallback(
-    (tileBuffer: number): BasemapTileDescriptor2d[] => {
-      if (
-        effectiveMode !== '2d' ||
-        planningMap.basemapMode !== 'osm' ||
-        planningGeorefContext == null
-      ) {
-        return [];
-      }
-      const svgToMapCoordsAtView = (
-        screenX: number,
-        screenY: number,
-        descriptorView: { zoom: number; panX: number; panY: number },
-      ): { x: number; y: number } => {
-        const projectedX = (screenX - descriptorView.panX) / Math.max(descriptorView.zoom, 1e-9);
-        const projectedY = (screenY - descriptorView.panY) / Math.max(descriptorView.zoom, 1e-9);
-        return {
-          x: bbox.minX + (projectedX - projection2d.offsetX) / Math.max(projection2d.scale, 1e-9),
-          y:
-            bbox.minY +
-            (VIEW_H - projectedY - projection2d.offsetY) / Math.max(projection2d.scale, 1e-9),
-        };
-      };
-      const viewportCorners = [
-        svgToMapCoordsAtView(0, 0, basemapDescriptorView2d),
-        svgToMapCoordsAtView(VIEW_W, 0, basemapDescriptorView2d),
-        svgToMapCoordsAtView(0, VIEW_H, basemapDescriptorView2d),
-        svgToMapCoordsAtView(VIEW_W, VIEW_H, basemapDescriptorView2d),
-      ];
-      const geodeticCorners = viewportCorners
-        .map((corner) =>
-          inverseENToGeodetic({
-            east: corner.x,
-            north: corner.y,
-            ...planningGeorefContext,
-          }),
-        )
-        .filter(
-          (corner): corner is { latDeg: number; lonDeg: number } => !('failureReason' in corner),
-        );
-      if (geodeticCorners.length !== 4) return [];
-      const lats = geodeticCorners.map((corner) => corner.latDeg);
-      const lons = geodeticCorners.map((corner) => corner.lonDeg);
-      const minLat = Math.min(...lats);
-      const maxLat = Math.max(...lats);
-      const minLon = Math.min(...lons);
-      const maxLon = Math.max(...lons);
-      const centerLat = (minLat + maxLat) * 0.5;
-      const metersPerPixelX =
-        Math.abs(
-          svgToMapCoordsAtView(OSM_TILE_SIZE_PX, VIEW_H * 0.5, basemapDescriptorView2d).x -
-            svgToMapCoordsAtView(0, VIEW_H * 0.5, basemapDescriptorView2d).x,
-        ) / OSM_TILE_SIZE_PX;
-      if (!(metersPerPixelX > 0)) return [];
-      const descriptorBucket = buildOsmDescriptorBucket({
-        minLon,
-        maxLon,
-        minLat,
-        maxLat,
-        centerLat,
-        metersPerPixelX,
-        interactionPhase,
-      });
-      const zoom = descriptorBucket.descriptorZoom;
-      const tileCount = 2 ** zoom;
-      const minTileX = Math.floor(longitudeToTileX(minLon, zoom)) - tileBuffer;
-      const maxTileX = Math.floor(longitudeToTileX(maxLon, zoom)) + tileBuffer;
-      const minTileY = Math.floor(latitudeToTileY(maxLat, zoom)) - tileBuffer;
-      const maxTileY = Math.floor(latitudeToTileY(minLat, zoom)) + tileBuffer;
-      const centerTileX = (minTileX + maxTileX) * 0.5;
-      const centerTileY = (minTileY + maxTileY) * 0.5;
-      const tiles: BasemapTileDescriptor2d[] = [];
-      for (let tileX = minTileX; tileX <= maxTileX; tileX += 1) {
-        for (let tileY = minTileY; tileY <= maxTileY; tileY += 1) {
-          const wrappedTileX = ((tileX % tileCount) + tileCount) % tileCount;
-          if (tileY < 0 || tileY >= tileCount) continue;
-          const westLon = tileXToLongitude(tileX, zoom);
-          const eastLon = tileXToLongitude(tileX + 1, zoom);
-          const northLat = tileYToLatitude(tileY, zoom);
-          const southLat = tileYToLatitude(tileY + 1, zoom);
-          const northWest = projectGeodeticToEN({
-            latDeg: northLat,
-            lonDeg: westLon,
-            originLatDeg: planningGeorefContext.originLatDeg,
-            originLonDeg: planningGeorefContext.originLonDeg,
-            model: planningGeorefContext.model,
-            coordSystemMode: planningGeorefContext.coordSystemMode,
-            crsId: planningGeorefContext.crsId,
-          });
-          const southEast = projectGeodeticToEN({
-            latDeg: southLat,
-            lonDeg: eastLon,
-            originLatDeg: planningGeorefContext.originLatDeg,
-            originLonDeg: planningGeorefContext.originLonDeg,
-            model: planningGeorefContext.model,
-            coordSystemMode: planningGeorefContext.coordSystemMode,
-            crsId: planningGeorefContext.crsId,
-          });
-          const southEastScreen = project2d(southEast.east, southEast.north);
-          const northWestScreen = project2d(northWest.east, northWest.north);
-          if (
-            !Number.isFinite(northWestScreen.x) ||
-            !Number.isFinite(northWestScreen.y) ||
-            !Number.isFinite(southEastScreen.x) ||
-            !Number.isFinite(southEastScreen.y)
-          ) {
-            continue;
-          }
-          const tileWidthPx =
-            Math.abs(southEastScreen.x - northWestScreen.x) * basemapDescriptorView2d.zoom;
-          const tileHeightPx =
-            Math.abs(southEastScreen.y - northWestScreen.y) * basemapDescriptorView2d.zoom;
-          const meshColumns = chooseOsmTileMeshDivisions(
-            tileWidthPx,
-            tileHeightPx,
-            interactionPhase === 'interacting',
-          );
-          const meshRows = meshColumns;
-          const meshPoints: Array<{ x: number; y: number }> = [];
-          let meshValid = true;
-          for (let row = 0; row <= meshRows; row += 1) {
-            const tileSampleY = tileY + row / meshRows;
-            const sampleLat = tileYToLatitude(tileSampleY, zoom);
-            for (let column = 0; column <= meshColumns; column += 1) {
-              const tileSampleX = tileX + column / meshColumns;
-              const sampleLon = tileXToLongitude(tileSampleX, zoom);
-              const sampleProjected = projectGeodeticToEN({
-                latDeg: sampleLat,
-                lonDeg: sampleLon,
-                originLatDeg: planningGeorefContext.originLatDeg,
-                originLonDeg: planningGeorefContext.originLonDeg,
-                model: planningGeorefContext.model,
-                coordSystemMode: planningGeorefContext.coordSystemMode,
-                crsId: planningGeorefContext.crsId,
-              });
-              const sampleScreen = project2d(sampleProjected.east, sampleProjected.north);
-              if (!Number.isFinite(sampleScreen.x) || !Number.isFinite(sampleScreen.y)) {
-                meshValid = false;
-                break;
-              }
-              meshPoints.push({ x: sampleScreen.x, y: sampleScreen.y });
-            }
-            if (!meshValid) break;
-          }
-          if (!meshValid || meshPoints.length !== (meshColumns + 1) * (meshRows + 1)) continue;
-          tiles.push({
-            key: `${zoom}-${wrappedTileX}-${tileY}`,
-            href: `https://tile.openstreetmap.org/${zoom}/${wrappedTileX}/${tileY}.png`,
-            zoom,
-            tileX: wrappedTileX,
-            tileY,
-            meshColumns,
-            meshRows,
-            meshPoints,
-          });
-        }
-      }
-      return tiles.sort((left, right) => {
-        const [leftZoom, leftX, leftY] = left.key.split('-').map(Number);
-        const [rightZoom, rightX, rightY] = right.key.split('-').map(Number);
-        const zoomDelta = (rightZoom ?? zoom) - (leftZoom ?? zoom);
-        if (zoomDelta !== 0) return zoomDelta;
-        const leftDistance = Math.hypot((leftX ?? 0) - centerTileX, (leftY ?? 0) - centerTileY);
-        const rightDistance = Math.hypot((rightX ?? 0) - centerTileX, (rightY ?? 0) - centerTileY);
-        return leftDistance - rightDistance;
-      });
-    },
+  const buildBasemapTiles2dForCurrentView = useCallback(
+    (tileBuffer: number): BasemapTileDescriptor2d[] =>
+      effectiveMode === '2d' &&
+      planningMap.basemapMode === 'osm' &&
+      planningGeorefContext != null
+        ? buildBasemapTiles2dForBuffer({
+            bbox,
+            descriptorView: basemapDescriptorView2d,
+            interactionPhase,
+            planningGeorefContext,
+            projectPoint: project2d,
+            projection: projection2d,
+            tileBuffer,
+            viewHeight: VIEW_H,
+            viewWidth: VIEW_W,
+          })
+        : [],
     [
       basemapDescriptorView2d,
-      bbox.minX,
-      bbox.minY,
+      bbox,
       effectiveMode,
       interactionPhase,
       planningGeorefContext,
       planningMap.basemapMode,
       project2d,
-      projection2d.offsetX,
-      projection2d.offsetY,
-      projection2d.scale,
+      projection2d,
     ],
   );
 
@@ -2196,9 +1733,9 @@ const MapView: React.FC<MapViewProps> = ({
     }
     const tileBuffer =
       interactionPhase === 'interacting' ? OSM_INTERACTION_TILE_BUFFER : OSM_VISIBLE_TILE_BUFFER;
-    return buildBasemapTiles2dForBuffer(tileBuffer);
+    return buildBasemapTiles2dForCurrentView(tileBuffer);
   }, [
-    buildBasemapTiles2dForBuffer,
+    buildBasemapTiles2dForCurrentView,
     effectiveMode,
     interactionPhase,
     planningGeorefContext,
@@ -2216,12 +1753,12 @@ const MapView: React.FC<MapViewProps> = ({
     if (interactionPhase !== 'idle') return basemapTiles2d;
     if (!idlePrefetchReady) return basemapTiles2d;
     if (basemapTiles2d.length >= OSM_IDLE_PREFETCH_TILE_COUNT_THRESHOLD) return basemapTiles2d;
-    return buildBasemapTiles2dForBuffer(
+    return buildBasemapTiles2dForCurrentView(
       Math.max(OSM_VISIBLE_TILE_BUFFER, OSM_IDLE_PREFETCH_TILE_BUFFER),
     );
   }, [
     basemapTiles2d,
-    buildBasemapTiles2dForBuffer,
+    buildBasemapTiles2dForCurrentView,
     effectiveMode,
     idlePrefetchReady,
     interactionPhase,
@@ -2444,36 +1981,15 @@ const MapView: React.FC<MapViewProps> = ({
     ) {
       return;
     }
-    const fetchSignature = [
-      planningGeorefContext.originLatDeg.toFixed(8),
-      planningGeorefContext.originLonDeg.toFixed(8),
-      planningGeorefContext.coordSystemMode,
-      planningGeorefContext.crsId ?? '',
-      planningGeorefContext.model,
-      planningFetchExtent.minX.toFixed(3),
-      planningFetchExtent.maxX.toFixed(3),
-      planningFetchExtent.minY.toFixed(3),
-      planningFetchExtent.maxY.toFixed(3),
-    ].join('|');
+    const fetchSignature = buildObstacleFetchSignature(
+      planningGeorefContext,
+      planningFetchExtent,
+    );
     if (obstacleFetchSignatureRef.current === fetchSignature) return;
     obstacleFetchSignatureRef.current = fetchSignature;
-    const cornerA = inverseENToGeodetic({
-      east: planningFetchExtent.minX,
-      north: planningFetchExtent.minY,
-      ...planningGeorefContext,
-    });
-    const cornerB = inverseENToGeodetic({
-      east: planningFetchExtent.maxX,
-      north: planningFetchExtent.maxY,
-      ...planningGeorefContext,
-    });
-    if ('failureReason' in cornerA || 'failureReason' in cornerB) return;
-    const minLat = Math.min(cornerA.latDeg, cornerB.latDeg);
-    const maxLat = Math.max(cornerA.latDeg, cornerB.latDeg);
-    const minLon = Math.min(cornerA.lonDeg, cornerB.lonDeg);
-    const maxLon = Math.max(cornerA.lonDeg, cornerB.lonDeg);
+    const query = buildOverpassObstacleQuery(planningGeorefContext, planningFetchExtent);
+    if (query == null) return;
     const controller = new AbortController();
-    const query = `[out:json][timeout:20];(way["building"](${minLat},${minLon},${maxLat},${maxLon});way["landuse"="forest"](${minLat},${minLon},${maxLat},${maxLon});way["natural"="wood"](${minLat},${minLon},${maxLat},${maxLon});relation["building"](${minLat},${minLon},${maxLat},${maxLon}););out geom;`;
     void fetch('https://overpass-api.de/api/interpreter', {
       method: 'POST',
       body: query,
@@ -2482,45 +1998,7 @@ const MapView: React.FC<MapViewProps> = ({
       .then((response) => (response.ok ? response.json() : null))
       .then((json) => {
         if (!json || !Array.isArray(json.elements)) return;
-        const polygons = (json.elements as OverpassElement[])
-          .map((element) => {
-            const geometry = Array.isArray(element.geometry) ? element.geometry : [];
-            const vertices = geometry
-              .map((vertex) => {
-                if (
-                  typeof vertex?.lat !== 'number' ||
-                  !Number.isFinite(vertex.lat) ||
-                  typeof vertex?.lon !== 'number' ||
-                  !Number.isFinite(vertex.lon)
-                ) {
-                  return null;
-                }
-                const projected = projectGeodeticToEN({
-                  latDeg: vertex.lat,
-                  lonDeg: vertex.lon,
-                  originLatDeg: planningGeorefContext.originLatDeg,
-                  originLonDeg: planningGeorefContext.originLonDeg,
-                  model: planningGeorefContext.model,
-                  coordSystemMode: planningGeorefContext.coordSystemMode,
-                  crsId: planningGeorefContext.crsId,
-                });
-                return { x: projected.east, y: projected.north };
-              })
-              .filter((vertex: { x: number; y: number } | null): vertex is { x: number; y: number } => vertex != null);
-            if (vertices.length < 3) return null;
-            const isWooded =
-              element.tags?.landuse === 'forest' || element.tags?.natural === 'wood';
-            return {
-              id: `osm-${String(element.id ?? createStableRuntimeId('osm'))}`,
-              source: 'osm' as const,
-              kind: isWooded ? ('wooded' as const) : ('building' as const),
-              label: isWooded ? 'OSM wooded' : 'OSM building',
-              vertices,
-            };
-          })
-          .filter(
-            (polygon): polygon is NonNullable<typeof polygon> => polygon != null,
-          );
+        const polygons = parseOverpassObstaclePolygons(json.elements, planningGeorefContext);
         if (polygons.length === 0) return;
         onPlanningMapChange({
           ...planningMap,
