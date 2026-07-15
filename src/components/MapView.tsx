@@ -41,7 +41,6 @@ import {
   type ProjectedPoint2D,
   view2dEquals,
 } from './mapView/mapView2d';
-import { createStableRuntimeId } from '../engine/id';
 import { DEFAULT_PLANNING_MAP_STATE } from '../engine/planningMapState';
 import MapViewSvg2d from './mapView/MapViewSvg2d';
 import MapViewScene3d from './mapView/MapViewScene3d';
@@ -88,6 +87,7 @@ import {
 import { useMapViewDerived2d } from './mapView/useMapViewDerived2d';
 import { useFrozenMapViewOverlays } from './mapView/useFrozenMapViewOverlays';
 import { useMapViewPlanning2d } from './mapView/useMapViewPlanning2d';
+import { useMapViewPlanningActions } from './mapView/useMapViewPlanningActions';
 import { useMapViewSnapshotSync } from './mapView/useMapViewSnapshotSync';
 import { useMapViewToolState } from './mapView/useMapViewToolState';
 
@@ -243,21 +243,26 @@ const MapView: React.FC<MapViewProps> = ({
     () => snapshot?.hideMinorGeometry ?? false,
   );
   const [focusSelection, setFocusSelection] = useState(() => snapshot?.focusSelection ?? false);
-  const [draftBlockedPolygon, setDraftBlockedPolygon] = useState<Array<{ x: number; y: number }>>([]);
-  const [selectedPlanningPolygonIds, setSelectedPlanningPolygonIds] = useState<string[]>([]);
+  const {
+    clearDraftBlockedPolygon,
+    commitDraftBlockedPolygon,
+    draftBlockedPolygon,
+    planningVertexDragRef,
+    removePlanningPolygon,
+    removeSelectedPlanningPolygons,
+    selectedPlanningPolygonIds,
+    setDraftBlockedPolygon,
+    setSelectedPlanningPolygonIds,
+    updatePlanningPolygonVertices,
+  } = useMapViewPlanningActions({
+    onPlanningMapChange,
+    planningMap,
+  });
   const [selectionBox, setSelectionBox] = useState<ScreenSelectionBox | null>(null);
   const skipNextAutoResetRef = useRef(snapshot != null);
-  const planningVertexDragRef = useRef<{
-    polygonId: string;
-    polygonSource: 'user' | 'osm';
-    vertexIndex: number;
-  } | null>(null);
   const [viewportWidth, setViewportWidth] = useState<number>(
     typeof window !== 'undefined' ? window.innerWidth : 1280,
   );
-  const selectedPlanningPolygonId =
-    selectedPlanningPolygonIds.length === 1 ? selectedPlanningPolygonIds[0] ?? null : null;
-
   useEffect(() => {
     noteUiPerfStage('mapReady');
     noteUiTabReady('map');
@@ -730,7 +735,7 @@ const MapView: React.FC<MapViewProps> = ({
     setSelectedPlanningPolygonIds([]);
     setSelectionBox(null);
     planningVertexDragRef.current = null;
-  }, [onSelectObservation, onSelectStation]);
+  }, [onSelectObservation, onSelectStation, planningVertexDragRef, setSelectedPlanningPolygonIds]);
 
   const clearMapSelectionBox = useCallback(() => {
     setSelectionBox(null);
@@ -798,59 +803,7 @@ const MapView: React.FC<MapViewProps> = ({
     planningVertexDragRef.current = null;
     setIsDragging(false);
     noteMapViewPerfCounter('map:stop-drag');
-  }, [applyPanPreviewOffset]);
-
-  const updatePlanningPolygonVertices = useCallback(
-    (polygonId: string, polygonSource: 'user' | 'osm', vertices: Array<{ x: number; y: number }>) => {
-      if (!onPlanningMapChange) return;
-      const update = (polygons: PlanningMapState['blockedPolygons']) =>
-        polygons.map((polygon) =>
-          polygon.id === polygonId
-            ? { ...polygon, vertices: vertices.map((vertex) => ({ ...vertex })) }
-            : polygon,
-        );
-      onPlanningMapChange({
-        ...planningMap,
-        blockedPolygons:
-          polygonSource === 'user' ? update(planningMap.blockedPolygons) : planningMap.blockedPolygons,
-        obstaclePolygons:
-          polygonSource === 'osm' ? update(planningMap.obstaclePolygons) : planningMap.obstaclePolygons,
-      });
-    },
-    [onPlanningMapChange, planningMap],
-  );
-
-  const removePlanningPolygon = useCallback(
-    (polygonId: string, polygonSource: 'user' | 'osm') => {
-      if (!onPlanningMapChange) return;
-      onPlanningMapChange({
-        ...planningMap,
-        blockedPolygons:
-          polygonSource === 'user'
-            ? planningMap.blockedPolygons.filter((polygon) => polygon.id !== polygonId)
-            : planningMap.blockedPolygons,
-        obstaclePolygons:
-          polygonSource === 'osm'
-            ? planningMap.obstaclePolygons.filter((polygon) => polygon.id !== polygonId)
-            : planningMap.obstaclePolygons,
-      });
-      setSelectedPlanningPolygonIds((current) => current.filter((id) => id !== polygonId));
-      setContextMenu((current) => ({ ...current, open: false, planningPolygon: null }));
-    },
-    [onPlanningMapChange, planningMap],
-  );
-
-  const removeSelectedPlanningPolygons = useCallback(() => {
-    if (!onPlanningMapChange || selectedPlanningPolygonIds.length === 0) return;
-    const selectedIds = new Set(selectedPlanningPolygonIds);
-    onPlanningMapChange({
-      ...planningMap,
-      blockedPolygons: planningMap.blockedPolygons.filter((polygon) => !selectedIds.has(polygon.id)),
-      obstaclePolygons: planningMap.obstaclePolygons.filter((polygon) => !selectedIds.has(polygon.id)),
-    });
-    setSelectedPlanningPolygonIds([]);
-    setContextMenu((current) => ({ ...current, open: false, planningPolygon: null }));
-  }, [onPlanningMapChange, planningMap, selectedPlanningPolygonIds]);
+  }, [applyPanPreviewOffset, planningVertexDragRef]);
 
   const handleDragMoveClient = useCallback(
     (clientX: number, clientY: number) => {
@@ -929,6 +882,7 @@ const MapView: React.FC<MapViewProps> = ({
       markInteracting,
       planningMap.blockedPolygons,
       planningMap.obstaclePolygons,
+      planningVertexDragRef,
       updatePlanningPolygonVertices,
     ],
   );
@@ -1159,7 +1113,15 @@ const MapView: React.FC<MapViewProps> = ({
       onSelectObservation?.(null);
       setSelectionBox(null);
     },
-    [onSelectObservation, onSelectStation, planningPolygons2d, view2d.panX, view2d.panY, view2d.zoom],
+    [
+      onSelectObservation,
+      onSelectStation,
+      planningPolygons2d,
+      setSelectedPlanningPolygonIds,
+      view2d.panX,
+      view2d.panY,
+      view2d.zoom,
+    ],
   );
 
   useMapViewBasemapTiles2d({
@@ -1541,13 +1503,19 @@ const MapView: React.FC<MapViewProps> = ({
     if (!polygon) return;
     setSelectedPlanningPolygonIds([polygon.polygonId]);
     setContextMenu((current) => ({ ...current, open: false, planningPolygon: null }));
-  }, [contextMenu.planningPolygon]);
+  }, [contextMenu.planningPolygon, setSelectedPlanningPolygonIds]);
 
   const handleDeletePlanningPolygon = useCallback(() => {
     const polygon = contextMenu.planningPolygon;
     if (!polygon) return;
     removePlanningPolygon(polygon.polygonId, polygon.polygonSource);
-  }, [contextMenu.planningPolygon, removePlanningPolygon]);
+    closeContextMenu();
+  }, [closeContextMenu, contextMenu.planningPolygon, removePlanningPolygon]);
+
+  const handleRemoveSelectedPlanningPolygons = useCallback(() => {
+    removeSelectedPlanningPolygons();
+    closeContextMenu();
+  }, [closeContextMenu, removeSelectedPlanningPolygons]);
 
   const handlePlanningVertexMouseDown = useCallback(
     (polygonId: string, vertexIndex: number, event: React.MouseEvent<SVGCircleElement>) => {
@@ -1560,7 +1528,7 @@ const MapView: React.FC<MapViewProps> = ({
       event.preventDefault();
       event.stopPropagation();
     },
-    [beginDrag, planningMap.obstaclePolygons],
+    [beginDrag, planningMap.obstaclePolygons, planningVertexDragRef, setSelectedPlanningPolygonIds],
   );
 
   const handleSvgClick = (event: React.MouseEvent<SVGSVGElement>) => {
@@ -1661,49 +1629,6 @@ const MapView: React.FC<MapViewProps> = ({
       currentY: pointer.y,
     });
   };
-
-  const commitDraftBlockedPolygon = useCallback(() => {
-    if (!onPlanningMapChange || draftBlockedPolygon.length < 3) return;
-    onPlanningMapChange({
-      ...planningMap,
-      blockedPolygons: [
-        ...planningMap.blockedPolygons,
-        {
-          id: createStableRuntimeId('block'),
-          source: 'user',
-          kind: 'blocked-area',
-          label: `Blocked area ${planningMap.blockedPolygons.length + 1}`,
-          vertices: draftBlockedPolygon.map((vertex) => ({ ...vertex })),
-        },
-      ],
-      blockEditMode: false,
-    });
-    setDraftBlockedPolygon([]);
-  }, [draftBlockedPolygon, onPlanningMapChange, planningMap]);
-
-  const clearDraftBlockedPolygon = useCallback(() => {
-    setDraftBlockedPolygon([]);
-  }, []);
-
-  useEffect(() => {
-    if (selectedPlanningPolygonIds.length === 0) return;
-    const availableIds = new Set([
-      ...planningMap.blockedPolygons.map((polygon) => polygon.id),
-      ...planningMap.obstaclePolygons.map((polygon) => polygon.id),
-    ]);
-    setSelectedPlanningPolygonIds((current) => current.filter((id) => availableIds.has(id)));
-    if (
-      selectedPlanningPolygonId != null &&
-      !availableIds.has(selectedPlanningPolygonId)
-    ) {
-      planningVertexDragRef.current = null;
-    }
-  }, [
-    planningMap.blockedPolygons,
-    planningMap.obstaclePolygons,
-    selectedPlanningPolygonId,
-    selectedPlanningPolygonIds.length,
-  ]);
 
   return (
     <div className="h-full p-4 flex flex-col min-h-0">
@@ -2145,7 +2070,7 @@ const MapView: React.FC<MapViewProps> = ({
                 contextMenu.planningPolygon != null ? handleDeletePlanningPolygon : null
               }
               onDeleteSelectedPlanningPolygons={
-                selectedPlanningPolygonIds.length > 1 ? removeSelectedPlanningPolygons : null
+                selectedPlanningPolygonIds.length > 1 ? handleRemoveSelectedPlanningPolygons : null
               }
             />
           </div>
