@@ -140,6 +140,9 @@ Representative areas:
 - Project Options modal
 - workspace shell and toolbar components
 
+Current report seams:
+- `ReportView.tsx` owns report wiring, selector coordination, and section ordering, while `src/components/report/ReportRunSummarySections.tsx` renders the pending-run, adjustment-summary, data-check, and blunder-detect summary panels and `src/components/report/ReportSuspectImpactSection.tsx` renders the what-if exclusion table/action panel.
+
 Current Survey CAD spike seams:
 - `src/engine/cad/cadTypes.ts` defines native CAD entities, now including arc, polyline, polygon, parcel, and alignment families plus persisted Survey CAD project-state payloads with a versioned COGO computation log
 - `src/engine/cad/cadCogoTypes.ts` defines the shared COGO result/report/warning/provenance shape used by command-created computations and the persisted CAD project computation log
