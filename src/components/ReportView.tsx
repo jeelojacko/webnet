@@ -16,13 +16,17 @@ import type {
   Station,
   PrecisionReportingMode,
 } from '../types';
-import { RAD_TO_DEG } from '../engine/angles';
 import {
   getRelativeCovarianceRows,
   getRelativePrecisionRows,
   getStationCovarianceRows,
-  toSurveyEllipseAzimuthDeg,
 } from '../engine/resultPrecision';
+import {
+  RelativeCovariancesSection,
+  StationCovariancesSection,
+  WeakGeometryCuesSection,
+} from './report/ReportPrecisionSections';
+import { ObservationResidualsSummarySections } from './report/ReportResidualSummarySections';
 import {
   sortObservationsByStdRes,
   type SortedObservation,
@@ -1436,510 +1440,93 @@ const ReportView: React.FC<ReportViewProps> = ({
         renderLoadMoreFooter={renderLoadMoreFooter}
       />}
 
-      {isPreanalysis && filteredStationCovariances.length > 0 && (
-        <div className="mb-4 border border-slate-800 rounded">
-          {renderCollapsibleSectionHeader({
-            sectionId: 'station-covariances',
-            label: `Station Covariance Blocks (${units}^2)`,
-            className: 'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800',
-            labelClassName: 'text-slate-400',
-            title: preanalysisLabelTooltip('Station Covariance Blocks Section'),
-          })}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
-            <div>
-              <div className="text-slate-500">Stations</div>
-              <div>{filteredStationCovariances.length}</div>
-            </div>
-            <div>
-              <div className="text-slate-500">Top Station</div>
-              <div className="font-mono">{topStationCovarianceRow?.stationId ?? '-'}</div>
-            </div>
-            <div>
-              <div className="text-slate-500">Top CEE</div>
-              <div>
-                {topStationCovarianceRow != null
-                  ? (topStationCovarianceRow.cEE * covarianceScale).toExponential(4)
-                  : '-'}
-              </div>
-            </div>
-            <div>
-              <div className="text-slate-500">Top CHH</div>
-              <div>
-                {topStationCovarianceRow?.cHH != null
-                  ? (topStationCovarianceRow.cHH * covarianceScale).toExponential(4)
-                  : '-'}
-              </div>
-            </div>
-          </div>
-          {!isSectionCollapsed('station-covariances') && (
-            <div className="overflow-x-auto w-full">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="text-slate-200 border-b border-slate-700">
-                    <th className="py-2 px-3 font-semibold">Station</th>
-                    <th className="py-2 px-3 font-semibold text-right">CEE</th>
-                    <th className="py-2 px-3 font-semibold text-right">CEN</th>
-                    <th className="py-2 px-3 font-semibold text-right">CNN</th>
-                    {!result.parseState?.coordMode || result.parseState.coordMode === '3D' ? (
-                      <th className="py-2 px-3 font-semibold text-right">CHH</th>
-                    ) : null}
-                  </tr>
-                </thead>
-                <tbody className="text-slate-300">
-                  {visibleStationCovariances.map((block) => (
-                    <tr
-                      key={`station-cov-${block.stationId}`}
-                      className="border-b border-slate-800/50"
-                    >
-                      <td className="py-1 px-3">{block.stationId}</td>
-                      <td className="py-1 px-3 text-right">
-                        {(block.cEE * covarianceScale).toExponential(4)}
-                      </td>
-                      <td className="py-1 px-3 text-right">
-                        {(block.cEN * covarianceScale).toExponential(4)}
-                      </td>
-                      <td className="py-1 px-3 text-right">
-                        {(block.cNN * covarianceScale).toExponential(4)}
-                      </td>
-                      {!result.parseState?.coordMode || result.parseState.coordMode === '3D' ? (
-                        <td className="py-1 px-3 text-right">
-                          {block.cHH != null
-                            ? (block.cHH * covarianceScale).toExponential(4)
-                            : '-'}
-                        </td>
-                      ) : null}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {renderLoadMoreFooter(
-                'station-covariances',
-                visibleStationCovariances.length,
-                filteredStationCovariances.length,
-              )}
-            </div>
-          )}
-        </div>
-      )}
+      <StationCovariancesSection
+        covarianceScale={covarianceScale}
+        filteredStationCovariances={filteredStationCovariances}
+        isDetailSectionPinned={isDetailSectionPinned}
+        isPreanalysis={isPreanalysis}
+        isSectionCollapsed={isSectionCollapsed}
+        onHeaderRef={(id, node) => {
+          detailSectionHeaderRefs.current[id] = node;
+        }}
+        parseState={result.parseState}
+        preanalysisLabelTooltip={preanalysisLabelTooltip}
+        renderLoadMoreFooter={renderLoadMoreFooter}
+        toggleDetailSection={toggleDetailSection}
+        togglePinnedDetailSection={togglePinnedDetailSection}
+        topStationCovarianceRow={topStationCovarianceRow}
+        units={units}
+        visibleStationCovariances={visibleStationCovariances}
+      />
 
-      {isPreanalysis && filteredRelativeCovariances.length > 0 && (
-        <div className="mb-4 border border-slate-800 rounded">
-          {renderCollapsibleSectionHeader({
-            sectionId: 'relative-covariances',
-            label: 'Predicted Relative Precision (Connected Pairs)',
-            className: 'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800',
-            labelClassName: 'text-slate-400',
-            title: preanalysisLabelTooltip('Predicted Relative Precision (Connected Pairs)'),
-          })}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
-            <div>
-              <div className="text-slate-500">Pairs</div>
-              <div>{filteredRelativeCovariances.length}</div>
-            </div>
-            <div>
-              <div className="text-slate-500">Top Pair</div>
-              <div className="font-mono">
-                {topRelativeCovarianceRow
-                  ? `${topRelativeCovarianceRow.from}-${topRelativeCovarianceRow.to}`
-                  : '-'}
-              </div>
-            </div>
-            <div>
-              <div className="text-slate-500">Top σDist</div>
-              <div>
-                {topRelativeCovarianceRow?.sigmaDist != null
-                  ? (topRelativeCovarianceRow.sigmaDist * unitScale).toFixed(4)
-                  : '-'}
-              </div>
-            </div>
-            <div>
-              <div className="text-slate-500">Top CEE</div>
-              <div>
-                {topRelativeCovarianceRow != null
-                  ? (topRelativeCovarianceRow.cEE * covarianceScale).toExponential(4)
-                  : '-'}
-              </div>
-            </div>
-          </div>
-          {!isSectionCollapsed('relative-covariances') && (
-            <div className="overflow-x-auto w-full">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="text-slate-200 border-b border-slate-700">
-                    <th className="py-2 px-3 font-semibold">From</th>
-                    <th className="py-2 px-3 font-semibold">To</th>
-                    <th className="py-2 px-3 font-semibold">Types</th>
-                    <th className="py-2 px-3 font-semibold text-right">σN</th>
-                    <th className="py-2 px-3 font-semibold text-right">σE</th>
-                    <th className="py-2 px-3 font-semibold text-right">σDist</th>
-                    <th className="py-2 px-3 font-semibold text-right">σAz (")</th>
-                    <th className="py-2 px-3 font-semibold text-right">CEE</th>
-                    <th className="py-2 px-3 font-semibold text-right">CEN</th>
-                    <th className="py-2 px-3 font-semibold text-right">CNN</th>
-                  </tr>
-                </thead>
-                <tbody className="text-slate-300">
-                  {visibleRelativeCovariances.map(
-                    (rel, idx) => (
-                      <tr
-                        key={`preanalysis-rel-${rel.from}-${rel.to}-${idx}`}
-                        className="border-b border-slate-800/50"
-                      >
-                        <td className="py-1 px-3">{rel.from}</td>
-                        <td className="py-1 px-3">{rel.to}</td>
-                        <td className="py-1 px-3 text-slate-400">
-                          {rel.connectionTypes.join(', ')}
-                        </td>
-                        <td className="py-1 px-3 text-right">
-                          {(rel.sigmaN * unitScale).toFixed(4)}
-                        </td>
-                        <td className="py-1 px-3 text-right">
-                          {(rel.sigmaE * unitScale).toFixed(4)}
-                        </td>
-                        <td className="py-1 px-3 text-right">
-                          {rel.sigmaDist != null ? (rel.sigmaDist * unitScale).toFixed(4) : '-'}
-                        </td>
-                        <td className="py-1 px-3 text-right">
-                          {rel.sigmaAz != null
-                            ? (rel.sigmaAz * RAD_TO_DEG * 3600).toFixed(2)
-                            : '-'}
-                        </td>
-                        <td className="py-1 px-3 text-right">
-                          {(rel.cEE * covarianceScale).toExponential(4)}
-                        </td>
-                        <td className="py-1 px-3 text-right">
-                          {(rel.cEN * covarianceScale).toExponential(4)}
-                        </td>
-                        <td className="py-1 px-3 text-right">
-                          {(rel.cNN * covarianceScale).toExponential(4)}
-                        </td>
-                      </tr>
-                    ),
-                  )}
-                </tbody>
-              </table>
-              {renderLoadMoreFooter(
-                'relative-covariances',
-                visibleRelativeCovariances.length,
-                filteredRelativeCovariances.length,
-              )}
-            </div>
-          )}
-        </div>
-      )}
+      <RelativeCovariancesSection
+        covarianceScale={covarianceScale}
+        filteredRelativeCovariances={filteredRelativeCovariances}
+        isDetailSectionPinned={isDetailSectionPinned}
+        isPreanalysis={isPreanalysis}
+        isSectionCollapsed={isSectionCollapsed}
+        onHeaderRef={(id, node) => {
+          detailSectionHeaderRefs.current[id] = node;
+        }}
+        preanalysisLabelTooltip={preanalysisLabelTooltip}
+        renderLoadMoreFooter={renderLoadMoreFooter}
+        toggleDetailSection={toggleDetailSection}
+        togglePinnedDetailSection={togglePinnedDetailSection}
+        topRelativeCovarianceRow={topRelativeCovarianceRow}
+        unitScale={unitScale}
+        visibleRelativeCovariances={visibleRelativeCovariances}
+      />
 
-      {isPreanalysis && weakGeometryDiagnostics && (
-        <div className="mb-8 border border-amber-900/60 rounded overflow-hidden">
-          {renderCollapsibleSectionHeader({
-            sectionId: 'weak-geometry-cues',
-            label: 'Weak Geometry Cues',
-            className:
-              'px-3 py-2 text-xs uppercase tracking-wider border-b border-amber-900/40 bg-amber-950/30',
-            labelClassName: 'text-amber-200',
-            title: preanalysisLabelTooltip('Weak Geometry Cues'),
-          })}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300 border-b border-amber-900/30">
-            <div>
-              <div
-                className="text-slate-500"
-                title={preanalysisLabelTooltip('Median Station Major')}
-              >
-                Median Station Major
-              </div>
-              <div>
-                {(weakGeometryDiagnostics.stationMedianHorizontal * unitScale).toFixed(4)} {units}
-              </div>
-            </div>
-            <div>
-              <div
-                className="text-slate-500"
-                title={preanalysisLabelTooltip('Median Pair SigmaDist')}
-              >
-                Median Pair SigmaDist
-              </div>
-              <div>
-                {weakGeometryDiagnostics.relativeMedianDistance != null
-                  ? `${(weakGeometryDiagnostics.relativeMedianDistance * unitScale).toFixed(4)} ${units}`
-                  : '-'}
-              </div>
-            </div>
-            <div>
-              <div
-                className="text-slate-500"
-                title={preanalysisLabelTooltip('Station Flags')}
-              >
-                Station Flags
-              </div>
-              <div>{flaggedStationCues.length}</div>
-            </div>
-            <div>
-              <div className="text-slate-500" title={preanalysisLabelTooltip('Pair Flags')}>
-                Pair Flags
-              </div>
-              <div>{flaggedRelativeCues.length}</div>
-            </div>
-          </div>
-          {!isSectionCollapsed('weak-geometry-cues') && (
-            <>
-              <div className="overflow-x-auto w-full">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="text-slate-200 border-b border-slate-700">
-                      <th className="py-2 px-3 font-semibold">Scope</th>
-                      <th className="py-2 px-3 font-semibold">ID</th>
-                      <th className="py-2 px-3 font-semibold">Severity</th>
-                      <th className="py-2 px-3 font-semibold text-right">Metric</th>
-                      <th className="py-2 px-3 font-semibold text-right">Median Ratio</th>
-                      <th className="py-2 px-3 font-semibold text-right">Shape Ratio</th>
-                      <th className="py-2 px-3 font-semibold">Note</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-slate-300">
-                    {[...flaggedStationCues, ...flaggedRelativeCues].map((cue, idx) => {
-                      const isStationCue = 'stationId' in cue;
-                      const severityClass =
-                        cue.severity === 'weak'
-                          ? 'text-red-300'
-                          : cue.severity === 'watch'
-                            ? 'text-amber-300'
-                            : 'text-slate-300';
-                      const metric =
-                        'horizontalMetric' in cue ? cue.horizontalMetric : cue.distanceMetric;
-                      const id = isStationCue ? cue.stationId : `${cue.from}-${cue.to}`;
-                      return (
-                        <tr
-                          key={`weak-geometry-${id}-${idx}`}
-                          className="border-b border-slate-800/50"
-                        >
-                          <td className="py-1 px-3 uppercase text-slate-500">
-                            {isStationCue ? 'station' : 'pair'}
-                          </td>
-                          <td className="py-1 px-3">{id}</td>
-                          <td className={`py-1 px-3 uppercase font-semibold ${severityClass}`}>
-                            {cue.severity}
-                          </td>
-                          <td className="py-1 px-3 text-right">
-                            {metric != null ? `${(metric * unitScale).toFixed(4)} ${units}` : '-'}
-                          </td>
-                          <td className="py-1 px-3 text-right">
-                            {cue.relativeToMedian != null
-                              ? `${cue.relativeToMedian.toFixed(2)}x`
-                              : '-'}
-                          </td>
-                          <td className="py-1 px-3 text-right">
-                            {cue.ellipseRatio != null ? `${cue.ellipseRatio.toFixed(2)}x` : '-'}
-                          </td>
-                          <td className="py-1 px-3 text-slate-400">{cue.note}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
-        </div>
-      )}
+      <WeakGeometryCuesSection
+        flaggedRelativeCues={flaggedRelativeCues}
+        flaggedStationCues={flaggedStationCues}
+        isDetailSectionPinned={isDetailSectionPinned}
+        isPreanalysis={isPreanalysis}
+        isSectionCollapsed={isSectionCollapsed}
+        onHeaderRef={(id, node) => {
+          detailSectionHeaderRefs.current[id] = node;
+        }}
+        preanalysisLabelTooltip={preanalysisLabelTooltip}
+        toggleDetailSection={toggleDetailSection}
+        togglePinnedDetailSection={togglePinnedDetailSection}
+        unitScale={unitScale}
+        units={units}
+        weakGeometryDiagnostics={weakGeometryDiagnostics}
+      />
 
-      {!isPreanalysis && !isDataCheck && (
-        <div className="mb-8" style={{ order: -180 }}>
-          <h3 className="text-blue-400 font-bold mb-3 text-base uppercase tracking-wider">
-            Observations & Residuals
-          </h3>
-          <div className="bg-slate-800/50 rounded p-2 mb-2 text-xs text-slate-400 flex items-center justify-between">
-            <span>Sorted by |StdRes|</span>
-            <span>
-              MDB: arcsec (angular) / {units} (linear). Toggle rows to exclude and press Re-run
-            </span>
-          </div>
-          {allDetailSectionsCollapsed && (
-            <div className="mb-3 rounded border border-slate-800 bg-slate-900/40 px-3 py-2 text-xs text-slate-400">
-              Detail sections are collapsed. Click any section header to expand it, or use
-              “Expand detail sections”.
-            </div>
-          )}
-          {typeSummaryEntries.length > 0 && (
-            <div className="mb-4 border border-slate-800 rounded">
-              {renderCollapsibleSectionHeader({
-                sectionId: 'per-type-summary',
-                label: 'Per-Type Summary',
-                className: 'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-800/75',
-                labelClassName: 'text-slate-100',
-              })}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
-                <div>
-                  <div className="text-slate-500">Types</div>
-                  <div>{typeSummaryEntries.length}</div>
-                </div>
-                <div>
-                  <div className="text-slate-500">Obs Total</div>
-                  <div>{typeSummaryObsCount}</div>
-                </div>
-                <div>
-                  <div className="text-slate-500">Top Type</div>
-                  <div className="uppercase">{topTypeSummaryEntry?.[0] ?? '-'}</div>
-                </div>
-                <div>
-                  <div className="text-slate-500">Top Max |StdRes|</div>
-                  <div>
-                    {topTypeSummaryEntry ? topTypeSummaryEntry[1].maxStdRes.toFixed(3) : '-'}
-                  </div>
-                </div>
-              </div>
-              {!isSectionCollapsed('per-type-summary') && (
-                <div className="overflow-x-auto w-full">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="text-slate-200 border-b border-slate-700">
-                      <th className="py-2 px-3 font-semibold">Type</th>
-                      <th className="py-2 px-3 font-semibold text-right">Count</th>
-                      <th className="py-2 px-3 font-semibold text-right">RMS</th>
-                      <th className="py-2 px-3 font-semibold text-right">Max |Res|</th>
-                      <th className="py-2 px-3 font-semibold text-right">Max |StdRes|</th>
-                      <th className="py-2 px-3 font-semibold text-right">&gt;3σ</th>
-                      <th className="py-2 px-3 font-semibold text-right">&gt;4σ</th>
-                      <th className="py-2 px-3 font-semibold text-right">Unit</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-slate-300">
-                    {typeSummaryEntries.map(([type, summary]) => (
-                      <tr key={type} className="border-b border-slate-800/50">
-                        <td className="py-1 px-3 uppercase text-slate-400">{type}</td>
-                        <td className="py-1 px-3 text-right">{summary.count}</td>
-                        <td className="py-1 px-3 text-right">{summary.rms.toFixed(4)}</td>
-                        <td className="py-1 px-3 text-right">{summary.maxAbs.toFixed(4)}</td>
-                        <td className="py-1 px-3 text-right">{summary.maxStdRes.toFixed(3)}</td>
-                        <td className="py-1 px-3 text-right">{summary.over3}</td>
-                        <td className="py-1 px-3 text-right">{summary.over4}</td>
-                        <td className="py-1 px-3 text-right">{summary.unit}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                </div>
-              )}
-            </div>
-          )}
-          {filteredRelativePrecision.length > 0 && (
-            <div className="mb-4 border border-slate-800 rounded">
-              {renderCollapsibleSectionHeader({
-                sectionId: 'relative-precision-unknowns',
-                label: 'Relative Precision (Unknowns)',
-                className: 'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-800/75',
-                labelClassName: 'text-slate-100',
-              })}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
-                <div>
-                  <div className="text-slate-500">Pairs</div>
-                  <div>{filteredRelativePrecision.length}</div>
-                </div>
-                <div>
-                  <div className="text-slate-500">Top Pair</div>
-                  <div className="font-mono">
-                    {topRelativePrecisionRow
-                      ? `${topRelativePrecisionRow.from}-${topRelativePrecisionRow.to}`
-                      : '-'}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-slate-500">Top σDist</div>
-                  <div>
-                    {topRelativePrecisionRow?.sigmaDist != null
-                      ? (topRelativePrecisionRow.sigmaDist * unitScale).toFixed(4)
-                      : '-'}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-slate-500">Top Ellipse Az</div>
-                  <div>
-                    {topRelativePrecisionRow?.ellipse
-                      ? (toSurveyEllipseAzimuthDeg(topRelativePrecisionRow.ellipse.theta) ?? 0).toFixed(2)
-                      : '-'}
-                  </div>
-                </div>
-              </div>
-              {!isSectionCollapsed('relative-precision-unknowns') && (
-                <div className="overflow-x-auto w-full">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="text-slate-200 border-b border-slate-700">
-                      <th className="py-2 px-3 font-semibold">From</th>
-                      <th className="py-2 px-3 font-semibold">To</th>
-                      <th className="py-2 px-3 font-semibold text-right">σN</th>
-                      <th className="py-2 px-3 font-semibold text-right">σE</th>
-                      <th className="py-2 px-3 font-semibold text-right">σDist</th>
-                      <th className="py-2 px-3 font-semibold text-right">σAz (")</th>
-                      <th className="py-2 px-3 font-semibold text-right">
-                        Ellipse ({ellipseUnit})
-                      </th>
-                      <th className="py-2 px-3 font-semibold text-right">Az (deg)</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-slate-300">
-                    {visibleRelativePrecision.map(
-                      (rel, idx) => (
-                      <tr
-                        key={`${rel.from}-${rel.to}-${idx}`}
-                        className="border-b border-slate-800/50"
-                      >
-                        <td className="py-1 px-3">{rel.from}</td>
-                        <td className="py-1 px-3">{rel.to}</td>
-                        <td className="py-1 px-3 text-right">
-                          {(rel.sigmaN * unitScale).toFixed(4)}
-                        </td>
-                        <td className="py-1 px-3 text-right">
-                          {(rel.sigmaE * unitScale).toFixed(4)}
-                        </td>
-                        <td className="py-1 px-3 text-right">
-                          {rel.sigmaDist != null ? (rel.sigmaDist * unitScale).toFixed(4) : '-'}
-                        </td>
-                        <td className="py-1 px-3 text-right">
-                          {rel.sigmaAz != null ? (rel.sigmaAz * RAD_TO_DEG * 3600).toFixed(2) : '-'}
-                        </td>
-                        <td className="py-1 px-3 text-right">
-                          {rel.ellipse
-                            ? `${(
-                                rel.ellipse.semiMajor *
-                                ellipseConfidenceScale *
-                                ellipseScale *
-                                (units === 'ft' ? 0.0328084 : 1)
-                              ).toFixed(1)} / ${(
-                                rel.ellipse.semiMinor *
-                                ellipseConfidenceScale *
-                                ellipseScale *
-                                (units === 'ft' ? 0.0328084 : 1)
-                              ).toFixed(1)}`
-                            : '-'}
-                        </td>
-                        <td className="py-1 px-3 text-right">
-                          {rel.ellipse
-                            ? (toSurveyEllipseAzimuthDeg(rel.ellipse.theta) ?? 0).toFixed(2)
-                            : '-'}
-                        </td>
-                      </tr>
-                      ),
-                    )}
-                  </tbody>
-                </table>
-                {renderLoadMoreFooter(
-                  'relative-precision',
-                  visibleRelativePrecision.length,
-                  filteredRelativePrecision.length,
-                )}
-                </div>
-              )}
-            </div>
-          )}
-          {renderTable(byType('angle'), 'Angles (TS)', 'angles-ts')}
-          {renderTable(byType('direction'), 'Directions (DB/DN)', 'directions-db-dn')}
-          {renderTable(byType('dist'), 'Distances (TS)', 'distances-ts')}
-          {renderTable(byType('bearing'), 'Bearings/Azimuths', 'bearings-azimuths')}
-          {renderTable(byType('dir'), 'Directions (Azimuth)', 'directions-azimuth')}
-          {renderTable(byType('zenith'), 'Zenith/Vertical Angles', 'zenith-vertical-angles')}
-          {renderTable(byType('gps'), 'GPS Vectors', 'gps-vectors')}
-          {renderTable(byType('lev'), 'Leveling dH', 'leveling-dh')}
-        </div>
-      )}
+      <ObservationResidualsSummarySections
+        allDetailSectionsCollapsed={allDetailSectionsCollapsed}
+        ellipseConfidenceScale={ellipseConfidenceScale}
+        ellipseScale={ellipseScale}
+        ellipseUnit={ellipseUnit}
+        filteredRelativePrecision={filteredRelativePrecision}
+        isDataCheck={isDataCheck}
+        isDetailSectionPinned={isDetailSectionPinned}
+        isPreanalysis={isPreanalysis}
+        isSectionCollapsed={isSectionCollapsed}
+        onHeaderRef={(id, node) => {
+          detailSectionHeaderRefs.current[id] = node;
+        }}
+        renderLoadMoreFooter={renderLoadMoreFooter}
+        toggleDetailSection={toggleDetailSection}
+        togglePinnedDetailSection={togglePinnedDetailSection}
+        topRelativePrecisionRow={topRelativePrecisionRow}
+        topTypeSummaryEntry={topTypeSummaryEntry}
+        typeSummaryEntries={typeSummaryEntries}
+        typeSummaryObsCount={typeSummaryObsCount}
+        unitScale={unitScale}
+        units={units}
+        visibleRelativePrecision={visibleRelativePrecision}
+      >
+        {renderTable(byType('angle'), 'Angles (TS)', 'angles-ts')}
+        {renderTable(byType('direction'), 'Directions (DB/DN)', 'directions-db-dn')}
+        {renderTable(byType('dist'), 'Distances (TS)', 'distances-ts')}
+        {renderTable(byType('bearing'), 'Bearings/Azimuths', 'bearings-azimuths')}
+        {renderTable(byType('dir'), 'Directions (Azimuth)', 'directions-azimuth')}
+        {renderTable(byType('zenith'), 'Zenith/Vertical Angles', 'zenith-vertical-angles')}
+        {renderTable(byType('gps'), 'GPS Vectors', 'gps-vectors')}
+        {renderTable(byType('lev'), 'Leveling dH', 'leveling-dh')}
+      </ObservationResidualsSummarySections>
 
         {isRegularAdjustment && (
           <DirectionFaceTreatmentDiagnosticsSection
