@@ -1,21 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import type {
   AdjustmentResult,
-  ClusterApprovedMerge,
-  CoordSystemDiagnosticCode,
-  CrsOffReason,
-  CrsStatus,
-  DatumSufficiencyReport,
-  DirectiveNoEffectWarning,
-  DirectiveTransition,
-  GnssVectorFrame,
   Observation,
-  ReductionUsageSummary,
   RunMode,
-  SigmaSource,
   Station,
-  PrecisionReportingMode,
 } from '../types';
+import type { ReportViewProps } from './ReportView.types';
 import {
   getRelativeCovarianceRows,
   getRelativePrecisionRows,
@@ -27,6 +17,12 @@ import {
   WeakGeometryCuesSection,
 } from './report/ReportPrecisionSections';
 import { ObservationResidualsSummarySections } from './report/ReportResidualSummarySections';
+import {
+  LockedPlannedObservationsSection,
+  PreanalysisPlanningSummarySection,
+  PreanalysisRecommendationsSection,
+} from './report/ReportPreanalysisSections';
+import ReportProcessingLogSection from './report/ReportProcessingLogSection';
 import {
   sortObservationsByStdRes,
   type SortedObservation,
@@ -64,7 +60,6 @@ import {
 import {
   buildStationTypeBadge,
   formatEffectiveDistance as reportFormatEffectiveDistance,
-  formatFixedOrScientific,
   formatMdb as reportFormatMdb,
   formatPrismAnnotation,
   formatReductionUsage,
@@ -88,118 +83,13 @@ import { buildReportPrecisionSelectorModel } from './report/reportPrecisionSelec
 import { buildReportReviewSelectorModel } from './report/reportReviewSelectors';
 import { buildReportSummarySelectorModel } from './report/reportSummarySelectors';
 import { buildReportWindowedRowsModel } from './report/reportWindowedRows';
-import { useReportViewState, type ReportViewControls } from '../hooks/useReportViewState';
+import { useReportViewState } from '../hooks/useReportViewState';
 import { noteUiPerfStage, noteUiTabReady } from '../hooks/useUiPerfMonitor';
 
 const FT_PER_M = 3.280839895;
 const EMPTY_SUSPECT_IMPACT_DIAGNOSTICS: NonNullable<AdjustmentResult['suspectImpactDiagnostics']> =
   [];
 const EMPTY_SETUP_DIAGNOSTICS: NonNullable<AdjustmentResult['setupDiagnostics']> = [];
-
-interface ReportViewProps {
-  result: AdjustmentResult;
-  units: 'm' | 'ft';
-  precisionReportingMode?: PrecisionReportingMode;
-  viewState?: ReportViewControls;
-  runDiagnostics: {
-    solveProfile:
-      | 'webnet'
-      | 'industry-parity-current'
-      | 'industry-parity-legacy'
-      | 'legacy-compat'
-      | 'industry-parity';
-    runMode?: RunMode;
-    parity: boolean;
-    directionSetMode: 'reduced' | 'raw';
-    mapMode: 'off' | 'on' | 'anglecalc';
-    mapScaleFactor: number;
-    normalize: boolean;
-    faceNormalizationMode: 'on' | 'off' | 'auto';
-    angleMode: 'auto' | 'angle' | 'dir';
-    verticalReduction: 'none' | 'curvref';
-    applyCurvatureRefraction: boolean;
-    refractionCoefficient: number;
-    tsCorrelationEnabled: boolean;
-    tsCorrelationScope: 'setup' | 'set';
-    tsCorrelationRho: number;
-    robustMode: 'none' | 'huber';
-    robustK: number;
-    rotationAngleRad: number;
-    crsGridScaleEnabled: boolean;
-    crsGridScaleFactor: number;
-    crsConvergenceEnabled: boolean;
-    crsConvergenceAngleRad: number;
-    geoidModelEnabled: boolean;
-    geoidModelId: string;
-    geoidInterpolation: 'bilinear' | 'nearest';
-    geoidHeightConversionEnabled: boolean;
-    geoidOutputHeightDatum: 'orthometric' | 'ellipsoid';
-    geoidModelLoaded: boolean;
-    geoidModelMetadata: string;
-    geoidSampleUndulationM?: number;
-    geoidConvertedStationCount: number;
-    geoidSkippedStationCount: number;
-    qFixLinearSigmaM: number;
-    qFixAngularSigmaSec: number;
-    profileDefaultInstrumentFallback: boolean;
-    angleCenteringModel: 'geometry-aware-correlated-rays';
-    coordSystemMode?: 'local' | 'grid';
-    crsId?: string;
-    localDatumScheme?: 'average-scale' | 'common-elevation';
-    averageScaleFactor?: number;
-    scaleOverrideActive?: boolean;
-    commonElevation?: number;
-    averageGeoidHeight?: number;
-    gnssVectorFrameDefault?: GnssVectorFrame;
-    gnssFrameConfirmed?: boolean;
-    gridBearingMode?: 'measured' | 'grid';
-    gridDistanceMode?: 'measured' | 'grid' | 'ellipsoidal';
-    gridAngleMode?: 'measured' | 'grid';
-    gridDirectionMode?: 'measured' | 'grid';
-    parsedUsageSummary?: ReductionUsageSummary;
-    usedInSolveUsageSummary?: ReductionUsageSummary;
-    directiveTransitions?: DirectiveTransition[];
-    directiveNoEffectWarnings?: DirectiveNoEffectWarning[];
-    datumSufficiencyReport?: DatumSufficiencyReport;
-    coordSystemDiagnostics?: CoordSystemDiagnosticCode[];
-    coordSystemWarningMessages?: string[];
-    crsStatus?: CrsStatus;
-    crsOffReason?: CrsOffReason;
-    defaultSigmaCount: number;
-    defaultSigmaByType: string;
-    stochasticDefaultsSummary: string;
-  } | null;
-  excludedIds: Set<number>;
-  onToggleExclude: (_id: number) => void;
-  onApplyImpactExclude: (_id: number) => void;
-  onApplyPreanalysisAction: (_id: string) => void;
-  onApplyAllPreanalysisActions?: (_ids: string[]) => void;
-  onReRun: () => void;
-  onClearExclusions: () => void;
-  onJumpToSourceLine?: (_sourceLine: number) => void;
-  pendingRunSettingDiffs?: string[];
-  overrides: Record<number, { obs?: number | { dE: number; dN: number }; stdDev?: number }>;
-  onOverride: (
-    _id: number,
-    _payload: { obs?: number | { dE: number; dN: number }; stdDev?: number },
-  ) => void;
-  onResetOverrides: () => void;
-  clusterReviewDecisions: Record<
-    string,
-    { status: 'pending' | 'approve' | 'reject'; canonicalId: string }
-  >;
-  activeClusterApprovedMerges: ClusterApprovedMerge[];
-  onClusterDecisionStatus: (_clusterKey: string, _status: 'pending' | 'approve' | 'reject') => void;
-  onClusterCanonicalSelection: (_clusterKey: string, _canonicalId: string) => void;
-  onApplyClusterMerges: () => void;
-  onResetClusterReview: () => void;
-  onClearClusterMerges: () => void;
-  selectedStationId?: string | null;
-  selectedObservationId?: number | null;
-  onSelectStation?: (_stationId: string) => void;
-  onSelectObservation?: (_observationId: number) => void;
-  focusFilterRequestKey?: number;
-}
 
 const ReportView: React.FC<ReportViewProps> = ({
   result,
@@ -443,33 +333,6 @@ const ReportView: React.FC<ReportViewProps> = ({
   const activePreanalysisScenarioIds = useMemo(
     () => new Set(result.preanalysisSyntheticAdditionIds ?? []),
     [result.preanalysisSyntheticAdditionIds],
-  );
-  const formatPreanalysisLinearMetric = useCallback(
-    (valueMeters?: number) =>
-      valueMeters != null ? formatFixedOrScientific(valueMeters * unitScale, 4) : '-',
-    [unitScale],
-  );
-  const formatPreanalysisSetupLabel = useCallback(
-    (setupStationIds: string[]) => setupStationIds.join(', '),
-    [],
-  );
-  const formatPreanalysisSetLabel = useCallback((label: string): string => {
-    const separatorIndex = label.indexOf('->');
-    if (separatorIndex < 0) return label;
-    const trimmed = label.slice(separatorIndex + 2).trim();
-    return trimmed || label;
-  }, []);
-  const pendingPreanalysisScenarioIds = useMemo(
-    () =>
-      (preanalysisImpactDiagnostics?.rows ?? [])
-        .filter(
-          (row) =>
-            row.status === 'ok' &&
-            row.actionMode !== 'advisory' &&
-            !activePreanalysisScenarioIds.has(row.scenarioId),
-        )
-        .map((row) => row.scenarioId),
-    [activePreanalysisScenarioIds, preanalysisImpactDiagnostics?.rows],
   );
   const {
     filteredStationRows,
@@ -839,377 +702,52 @@ const ReportView: React.FC<ReportViewProps> = ({
         />
       ) : null}
 
-      {isPreanalysis && (
-        <div className="mb-6 border border-cyan-900/70 rounded overflow-hidden">
-          <div
-            className="px-3 py-2 text-xs text-cyan-200 uppercase tracking-wider border-b border-cyan-900/60 bg-cyan-950/30"
-            title={preanalysisLabelTooltip('Preanalysis Planning Summary')}
-          >
-            Preanalysis Planning Summary
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-3 p-3 text-xs text-slate-300 border-b border-cyan-900/30">
-            <div>
-              <div
-                className="text-slate-500"
-                title={preanalysisLabelTooltip('Planned Observations')}
-              >
-                Planned Observations
-              </div>
-              <div>{result.parseState?.plannedObservationCount ?? 0}</div>
-            </div>
-            <div>
-              <div
-                className="text-slate-500"
-                title={preanalysisLabelTooltip('Station Covariance Blocks')}
-              >
-                Station Covariance Blocks
-              </div>
-              <div>{stationCovariances.length}</div>
-            </div>
-            <div>
-              <div
-                className="text-slate-500"
-                title={preanalysisLabelTooltip('Connected Pair Blocks')}
-              >
-                Connected Pair Blocks
-              </div>
-              <div>{relativeCovariances.length}</div>
-            </div>
-            <div>
-              <div className="text-slate-500" title={preanalysisLabelTooltip('Weak Stations')}>
-                Weak Stations
-              </div>
-              <div>{flaggedStationCues.length}</div>
-            </div>
-            <div>
-              <div className="text-slate-500" title={preanalysisLabelTooltip('Weak Pairs')}>
-                Weak Pairs
-              </div>
-              <div>{flaggedRelativeCues.length}</div>
-            </div>
-            <div>
-              <div className="text-slate-500" title={preanalysisLabelTooltip('Locked Planned')}>
-                Locked Planned
-              </div>
-              <div>{lockedPreanalysisObservations.length}</div>
-            </div>
-          </div>
-          <div className="px-3 py-2 text-xs text-cyan-100/90 bg-cyan-950/20">
-            Predicted covariance uses sigma0^2 = 1.0. Residual-based QC, chi-square, suspect
-            ranking, and exclusion workflows are disabled in this mode.
-          </div>
-        </div>
-      )}
+      <PreanalysisPlanningSummarySection
+        flaggedRelativeCueCount={flaggedRelativeCues.length}
+        flaggedStationCueCount={flaggedStationCues.length}
+        isPreanalysis={isPreanalysis}
+        lockedPreanalysisObservationCount={lockedPreanalysisObservations.length}
+        parseState={result.parseState}
+        preanalysisLabelTooltip={preanalysisLabelTooltip}
+        relativeCovarianceCount={relativeCovariances.length}
+        stationCovarianceCount={stationCovariances.length}
+      />
 
-      {isPreanalysis && lockedPreanalysisObservations.length > 0 && (
-        <div className="mb-6 border border-slate-800 rounded overflow-hidden opacity-75">
-          {renderCollapsibleSectionHeader({
-            sectionId: 'locked-planned-observations',
-            label: 'Locked Planned Observations',
-            className:
-              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
-            labelClassName: 'text-slate-400',
-            title: preanalysisLabelTooltip('Locked Planned Observations'),
-          })}
-          {!isSectionCollapsed('locked-planned-observations') && (
-            <>
-              <div className="px-3 py-2 text-xs text-slate-500 bg-slate-950/30 border-b border-slate-800/60">
-                These planned rows use fixed sigma weighting, remain visible for context, and are
-                not removable from what-if actions.
-              </div>
-              <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="text-slate-200 border-b border-slate-700/80">
-                    <th className="py-2 px-3">#</th>
-                    <th className="py-2">Type</th>
-                    <th className="py-2">Stations</th>
-                    <th className="py-2 text-right">Line</th>
-                    <th className="py-2 text-right">Obs</th>
-                    <th className="py-2 text-right">Fixed Sigma</th>
-                    <th className="py-2 px-3">Note</th>
-                  </tr>
-                </thead>
-                <tbody className="text-slate-500">
-                  {lockedPreanalysisObservations.map((obs, idx) => (
-                    <tr
-                      key={`locked-preanalysis-${obs.id}-${idx}`}
-                      className="border-b border-slate-800/40 bg-slate-950/20"
-                    >
-                      <td className="py-1 px-3">{idx + 1}</td>
-                      <td className="py-1 uppercase">{obs.type}</td>
-                      <td className="py-1">{observationStationsLabel(obs)}</td>
-                      <td className="py-1 text-right font-mono">
-                        {renderSourceLineLink(obs.sourceLine)}
-                      </td>
-                      <td className="py-1 text-right font-mono">{observationValueLabel(obs)}</td>
-                      <td className="py-1 text-right font-mono">{fixedSigmaLabel(obs)}</td>
-                      <td className="py-1 px-3">
-                        Locked planned constraint; excluded from what-if actions.
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </>
-          )}
-        </div>
-      )}
+      <LockedPlannedObservationsSection
+        fixedSigmaLabel={fixedSigmaLabel}
+        isDetailSectionPinned={isDetailSectionPinned}
+        isPreanalysis={isPreanalysis}
+        isSectionCollapsed={isSectionCollapsed}
+        lockedPreanalysisObservations={lockedPreanalysisObservations}
+        observationStationsLabel={observationStationsLabel}
+        observationValueLabel={observationValueLabel}
+        onHeaderRef={(id, node) => {
+          detailSectionHeaderRefs.current[id] = node;
+        }}
+        preanalysisLabelTooltip={preanalysisLabelTooltip}
+        renderSourceLineLink={renderSourceLineLink}
+        toggleDetailSection={toggleDetailSection}
+        togglePinnedDetailSection={togglePinnedDetailSection}
+      />
 
-      {isPreanalysis &&
-        preanalysisImpactDiagnostics &&
-        preanalysisImpactDiagnostics.rows.length > 0 && (
-          <div className="mb-6 border border-slate-800 rounded overflow-hidden">
-            {renderCollapsibleSectionHeader({
-              sectionId: 'planned-observation-what-if-analysis',
-              label: 'Preanalysis Added-Set / Brace Recommendations',
-              className:
-                'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800 bg-slate-900/40',
-              labelClassName: 'text-slate-400',
-              title: preanalysisLabelTooltip('Preanalysis Added-Set Recommendations'),
-            })}
-            {!isSectionCollapsed('planned-observation-what-if-analysis') && (
-              <>
-                <div className="flex items-center justify-end gap-2 px-3 py-2 border-b border-slate-800/60 bg-slate-950/20">
-                  <button
-                    type="button"
-                    onClick={() => onApplyAllPreanalysisActions(pendingPreanalysisScenarioIds)}
-                    disabled={pendingPreanalysisScenarioIds.length === 0}
-                    className={`px-2.5 py-1 rounded border text-[10px] uppercase tracking-wide ${
-                      pendingPreanalysisScenarioIds.length === 0
-                        ? 'border-slate-700 text-slate-600 cursor-not-allowed'
-                        : 'border-cyan-700 text-cyan-200 hover:bg-cyan-950/30'
-                    }`}
-                  >
-                    Apply All Visible
-                  </button>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-8 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
-                  <div>
-                    <div className="text-slate-500" title={preanalysisLabelTooltip('Applied Added Scenarios')}>
-                      Applied Scenarios
-                    </div>
-                    <div>{preanalysisImpactDiagnostics.activeSyntheticAdditionCount}</div>
-                  </div>
-                  <div>
-                    <div className="text-slate-500" title={preanalysisLabelTooltip('Candidate Added Scenarios')}>
-                      Candidate Scenarios
-                    </div>
-                    <div>{preanalysisImpactDiagnostics.candidateTemplateCount}</div>
-                  </div>
-                  <div>
-                    <div
-                      className="text-slate-500"
-                      title={preanalysisLabelTooltip('Worst Station Major')}
-                    >
-                      Worst Station Major
-                    </div>
-                    <div>
-                      {preanalysisImpactDiagnostics.baseWorstStationMajor != null
-                        ? `${formatPreanalysisLinearMetric(preanalysisImpactDiagnostics.baseWorstStationMajor)} ${units}`
-                        : '-'}
-                    </div>
-                  </div>
-                  <div>
-                    <div
-                      className="text-slate-500"
-                      title={preanalysisLabelTooltip('Worst Pair SigmaDist')}
-                    >
-                      Worst Pair SigmaDist
-                    </div>
-                    <div>
-                      {preanalysisImpactDiagnostics.baseWorstPairSigmaDist != null
-                        ? `${formatPreanalysisLinearMetric(preanalysisImpactDiagnostics.baseWorstPairSigmaDist)} ${units}`
-                        : '-'}
-                    </div>
-                  </div>
-                  <div>
-                    <div
-                      className="text-slate-500"
-                      title={preanalysisLabelTooltip('Weak Stations')}
-                    >
-                      Weak Stations
-                    </div>
-                    <div>{preanalysisImpactDiagnostics.baseWeakStationCount}</div>
-                  </div>
-                  <div>
-                    <div className="text-slate-500" title={preanalysisLabelTooltip('Weak Pairs')}>
-                      Weak Pairs
-                    </div>
-                    <div>{preanalysisImpactDiagnostics.baseWeakPairCount}</div>
-                  </div>
-                  <div>
-                    <div
-                      className="text-slate-500"
-                      title={preanalysisLabelTooltip('Preanalysis Accuracy Threshold')}
-                    >
-                      Target Threshold
-                    </div>
-                    <div>
-                      {preanalysisImpactDiagnostics.targetThresholdMeters != null
-                        ? `${formatPreanalysisLinearMetric(preanalysisImpactDiagnostics.targetThresholdMeters)} ${units}`
-                        : '-'}
-                    </div>
-                  </div>
-                  <div>
-                    <div
-                      className="text-slate-500"
-                      title={preanalysisLabelTooltip('Threshold Plan Result')}
-                    >
-                      Threshold Plan
-                    </div>
-                    <div>
-                      {preanalysisImpactDiagnostics.thresholdPlan.thresholdReached
-                        ? `Reached in ${preanalysisImpactDiagnostics.thresholdPlan.appliedStepCount}`
-                        : preanalysisImpactDiagnostics.thresholdPlan.appliedStepCount > 0
-                          ? `Best ${preanalysisImpactDiagnostics.thresholdPlan.appliedStepCount}`
-                          : 'Not planned'}
-                    </div>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60 bg-slate-950/20">
-                  <div>
-                    <div className="text-slate-500">Plan Target</div>
-                    <div>
-                      {preanalysisImpactDiagnostics.thresholdPlan.targetThresholdMeters != null
-                        ? `${formatPreanalysisLinearMetric(preanalysisImpactDiagnostics.thresholdPlan.targetThresholdMeters)} ${units}`
-                        : '-'}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-slate-500">Plan Status</div>
-                    <div>
-                      {preanalysisImpactDiagnostics.thresholdPlan.thresholdReached
-                        ? 'Reached'
-                        : 'Not Reached'}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-slate-500">Sets Needed</div>
-                    <div>{preanalysisImpactDiagnostics.thresholdPlan.appliedStepCount}</div>
-                  </div>
-                  <div>
-                    <div className="text-slate-500">Projected Worst Major</div>
-                    <div>
-                      {preanalysisImpactDiagnostics.thresholdPlan.finalWorstStationMajor != null
-                        ? `${formatPreanalysisLinearMetric(preanalysisImpactDiagnostics.thresholdPlan.finalWorstStationMajor)} ${units}`
-                        : '-'}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-slate-500">Plan Note</div>
-                    <div>{preanalysisImpactDiagnostics.thresholdPlan.unmetReason ?? '-'}</div>
-                  </div>
-                </div>
-                <table className="w-full text-left text-xs">
-                  <thead>
-                    <tr className="text-slate-200 border-b border-slate-700/80">
-                      <th className="py-2 px-3">#</th>
-                      <th className="py-2">Setup</th>
-                      <th className="py-2">Set</th>
-                      <th className="py-2 text-right">Lines</th>
-                      <th className="py-2 text-right">Added Obs</th>
-                      <th className="py-2 text-right">dWorstMaj ({units})</th>
-                      <th className="py-2 text-right">dMedianMaj ({units})</th>
-                      <th className="py-2 text-right">dWorstPair ({units})</th>
-                      <th className="py-2 text-right">dPathWorst ({units})</th>
-                      <th className="py-2 text-right">dPathTotal ({units})</th>
-                      <th className="py-2 text-right">dWeakStn</th>
-                      <th className="py-2 text-right">dWeakPair</th>
-                      <th className="py-2">Path Reason</th>
-                      <th className="py-2 text-right">Score</th>
-                      <th className="py-2 text-right">Threshold</th>
-                      <th className="py-2 text-right px-3">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-slate-300">
-                    {preanalysisImpactDiagnostics.rows.map((row, idx) => {
-                      const alreadyApplied = activePreanalysisScenarioIds.has(row.scenarioId);
-                      return (
-                        <tr
-                          key={`preanalysis-impact-${row.scenarioId}-${idx}`}
-                          className="border-b border-slate-800/30"
-                        >
-                          <td className="py-1 px-3 text-slate-500">{idx + 1}</td>
-                          <td className="py-1 uppercase text-slate-400">
-                            {formatPreanalysisSetupLabel(row.setupStationIds)}
-                          </td>
-                          <td className="py-1">{formatPreanalysisSetLabel(row.templateLabel)}</td>
-                          <td className="py-1 text-right font-mono text-slate-500">
-                            {row.sourceLines.length > 0
-                              ? renderSourceLineLink(row.sourceLines[0])
-                              : '-'}
-                          </td>
-                          <td className="py-1 text-right font-mono">
-                            {row.addedObservationCount}
-                          </td>
-                          <td className="py-1 text-right font-mono">
-                            {formatPreanalysisLinearMetric(row.deltaWorstStationMajor)}
-                          </td>
-                          <td className="py-1 text-right font-mono">
-                            {formatPreanalysisLinearMetric(row.deltaMedianStationMajor)}
-                          </td>
-                          <td className="py-1 text-right font-mono">
-                            {formatPreanalysisLinearMetric(row.deltaWorstPairSigmaDist)}
-                          </td>
-                          <td className="py-1 text-right font-mono">
-                            {formatPreanalysisLinearMetric(row.deltaPathWorstEdge)}
-                          </td>
-                          <td className="py-1 text-right font-mono">
-                            {formatPreanalysisLinearMetric(row.deltaPathTotalMetric)}
-                          </td>
-                          <td className="py-1 text-right font-mono">
-                            {row.deltaWeakStationCount ?? '-'}
-                          </td>
-                          <td className="py-1 text-right font-mono">
-                            {row.deltaWeakPairCount ?? '-'}
-                          </td>
-                          <td className="py-1 text-[11px] text-slate-400">
-                            {row.primaryTargetStationId != null
-                              ? `${row.primaryTargetStationId}${
-                                  row.bottleneckPair != null
-                                    ? ` via ${row.bottleneckPair.from}-${row.bottleneckPair.to}`
-                                    : ''
-                                }${row.rationale ? `: ${row.rationale}` : ''}`
-                              : row.rationale ?? '-'}
-                          </td>
-                          <td className="py-1 text-right font-mono">
-                            {row.score != null ? row.score.toFixed(2) : '-'}
-                          </td>
-                          <td className="py-1 text-right font-mono">
-                            {row.thresholdReached ? 'YES' : 'NO'}
-                          </td>
-                          <td className="py-1 px-3 text-right">
-                            <button
-                              onClick={() => onApplyPreanalysisAction(row.scenarioId)}
-                              disabled={
-                                row.status !== 'ok' ||
-                                alreadyApplied ||
-                                row.actionMode === 'advisory'
-                              }
-                              className={`px-2 py-0.5 rounded border text-[10px] ${
-                                row.status !== 'ok' ||
-                                alreadyApplied ||
-                                row.actionMode === 'advisory'
-                                  ? 'border-slate-700 text-slate-600 cursor-not-allowed'
-                                  : 'border-cyan-700 text-cyan-200 hover:bg-cyan-950/30'
-                              }`}
-                            >
-                              {alreadyApplied
-                                ? 'Applied'
-                                : row.actionMode !== 'advisory'
-                                  ? 'Apply + Re-run'
-                                  : 'Manual Action'}
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </>
-            )}
-          </div>
-        )}
+      <PreanalysisRecommendationsSection
+        activePreanalysisScenarioIds={activePreanalysisScenarioIds}
+        isDetailSectionPinned={isDetailSectionPinned}
+        isPreanalysis={isPreanalysis}
+        isSectionCollapsed={isSectionCollapsed}
+        onApplyAllPreanalysisActions={onApplyAllPreanalysisActions}
+        onApplyPreanalysisAction={onApplyPreanalysisAction}
+        onHeaderRef={(id, node) => {
+          detailSectionHeaderRefs.current[id] = node;
+        }}
+        preanalysisImpactDiagnostics={preanalysisImpactDiagnostics}
+        preanalysisLabelTooltip={preanalysisLabelTooltip}
+        renderSourceLineLink={renderSourceLineLink}
+        toggleDetailSection={toggleDetailSection}
+        togglePinnedDetailSection={togglePinnedDetailSection}
+        unitScale={unitScale}
+        units={units}
+      />
 
       <AliasTraceabilitySection
         aliasTrace={aliasTrace}
@@ -1539,22 +1077,16 @@ const ReportView: React.FC<ReportViewProps> = ({
           />
         )}
 
-        <div className="mt-8 rounded border border-slate-800 overflow-hidden">
-        {renderCollapsibleSectionHeader({
-          sectionId: 'processing-log',
-          label: 'Processing Log',
-          className:
-            'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-900',
-          labelClassName: 'text-slate-300 font-bold',
-        })}
-        {!isSectionCollapsed('processing-log') && (
-          <div className="bg-slate-900 p-4 font-mono text-xs text-slate-400">
-            {result.logs.map((l, i) => (
-              <div key={i}>{l}</div>
-            ))}
-          </div>
-        )}
-      </div>
+        <ReportProcessingLogSection
+          isDetailSectionPinned={isDetailSectionPinned}
+          isSectionCollapsed={isSectionCollapsed}
+          logs={result.logs}
+          onHeaderRef={(id, node) => {
+            detailSectionHeaderRefs.current[id] = node;
+          }}
+          toggleDetailSection={toggleDetailSection}
+          togglePinnedDetailSection={togglePinnedDetailSection}
+        />
     </div>
   );
 };
