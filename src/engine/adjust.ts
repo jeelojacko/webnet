@@ -10,7 +10,6 @@ import {
   LEVEL_LOOP_DEFAULT_PER_SQRT_KM_MM,
 } from './adjustConstants';
 import {
-  cloneParsedResultValue,
   type BootstrapDirectionSet,
   type BootstrapPairMetrics,
   type EngineOptions,
@@ -19,28 +18,25 @@ import {
   type GpsVectorComponents,
   type GpsVectorDerivatives,
 } from './adjustTypes';
-import { geoidGridMetadataSummary, interpolateGeoidUndulation, loadGeoidGridModel } from './geoid';
+import { interpolateGeoidUndulation } from './geoid';
 import {
   computeElevationFactor,
   computeGridFactors,
   inverseENToGeodetic,
 } from './geodesy';
 import { getCrsDefinition, isGeodeticInsideAreaOfUse } from './crsCatalog';
-import { runClusterDualPassWorkflow } from './adjustmentClusterWorkflow';
 import { formatAutoAdjustLogLines, runAutoAdjustCycles, type AutoAdjustConfig } from './autoAdjust';
 import type { GeoidGridModel } from './geoid';
 import {
   accumulateNormalEquationsFromSparseRows,
   zeros,
 } from './matrix';
-import { parseInput } from './parse';
 import {
   getCachedParsedModel,
   getCachedSolvePreparation,
   recordScenarioSolve,
 } from './scenarioParsedModelCache';
 import { assembleAdjustmentEquations } from './adjustmentEquationAssembly';
-import { applyAdjustmentCorrections, solveAdjustmentIteration } from './adjustmentIteration';
 import {
   applyGpsVerticalDeflection as applyGpsVerticalDeflectionHelper,
   buildGpsDisplayResidualTransform,
@@ -120,16 +116,10 @@ import {
   zenithScaleForObservation as zenithScaleForObservationHelper,
 } from './adjustReductionHelpers';
 import {
-  applyAutoDroppedHeightHolds,
-  buildSolvePreparation,
-  cloneSolvePreparationResult,
   collectActiveObservationsForSolve,
   isObservationActiveForSolve,
 } from './adjustmentPreprocessing';
 import type { SolvePreparationResult } from './adjustmentPreprocessing';
-import {
-  getObservationSideshotCalcMeta,
-} from './observationMetadata';
 import {
   applyTsCorrelationToWeightMatrix as applyTsCorrelationToWeightMatrixHelper,
   tsCorrelationGroup as tsCorrelationGroupHelper,
@@ -145,16 +135,20 @@ import {
   calculateAdjustmentStatistics,
   type AdjustmentStatisticsContext,
 } from './adjustStatistics';
+import {
+  applyDataCheckProvisionalApproximation as applyDataCheckProvisionalApproximationHelper,
+  runDataCheckOnly as runDataCheckOnlyHelper,
+} from './adjustDataCheckWorkflow';
+import {
+  runAdjustmentSolveWorkflow,
+  type AdjustmentSolveWorkflowContext,
+} from './adjustSolveWorkflow';
 import { buildAdjustmentResultPayload, finalizeResultParseState } from './adjustmentResultBuilder';
 import {
   projectWeakFloatZenithLeafStationsForDisplay as projectWeakFloatZenithLeafStations,
 } from './adjustmentWeakFloatZenithProjection';
-import {
-  resolveRunModeCompatibilityOptions,
-  runModeCompatibilityDiagnosticLines,
-} from './adjustmentRunModeCompatibility';
+import { runModeCompatibilityDiagnosticLines } from './adjustmentRunModeCompatibility';
 import { buildSideshotResults } from './adjustmentSideshots';
-import { buildGpsLoopDiagnostics, buildLevelingLoopDiagnostics } from './adjustmentLoopDiagnostics';
 import {
   buildAutoSideshotDiagnostics,
   buildClusterDiagnostics,
@@ -1748,6 +1742,66 @@ export class LSAEngine {
     return undefined;
   }
 
+  private buildDataCheckContext() {
+    return {
+      input: this.input,
+      stations: this.stations,
+      observations: this.observations,
+      unknowns: this.unknowns,
+      maxIterations: this.maxIterations,
+      convergenceThreshold: this.convergenceThreshold,
+      instrumentLibrary: this.instrumentLibrary,
+      excludeIds: this.excludeIds,
+      overrides: this.overrides,
+      parseOptions: this.parseOptions,
+      geoidSourceData: this.geoidSourceData,
+      is2D: this.is2D,
+      coordSystemMode: this.coordSystemMode,
+      runMode: this.runMode,
+      iterations: this.iterations,
+      dof: this.dof,
+      seuw: this.seuw,
+      converged: this.converged,
+      log: (message: string) => this.log(message),
+      buildResult: () => this.buildResult(),
+      centeringLineGeometry: (fromId: StationId, toId: StationId, hi?: number, ht?: number) =>
+        this.centeringLineGeometry(fromId, toId, hi, ht),
+      correctedDistanceModel: (obs: Observation & { type: 'dist' }, calcDistRaw: number) =>
+        this.correctedDistanceModel(obs, calcDistRaw),
+      getObservedHorizontalDistanceIn2D: (obs: DistanceObservation) =>
+        this.getObservedHorizontalDistanceIn2D(obs),
+      getAzimuth: (fromId: StationId, toId: StationId) => this.getAzimuth(fromId, toId),
+      getModeledZenith: (obs: Observation & { type: 'zenith' }) => this.getModeledZenith(obs),
+      gpsObservedVector: (obs: GpsObservation) => this.gpsObservedVector(obs),
+      gpsModeledVector: (obs: GpsObservation) => this.gpsModeledVector(obs),
+      gpsCovariance: (obs: Observation) => this.gpsCovariance(obs),
+      modeledAzimuth: (rawAz: number, atStationId?: StationId, applyConvergence?: boolean) =>
+        this.modeledAzimuth(rawAz, atStationId, applyConvergence),
+      stationGeodetic: (stationId: StationId) => this.stationGeodetic(stationId),
+      stationFactorSnapshot: (stationId: StationId) => this.stationFactorSnapshot(stationId),
+      wrapToPi: (value: number) => this.wrapToPi(value),
+      solveProvisional: (maxIterations: number, parseOptions: ParseOptions) =>
+        new LSAEngine({
+          input: this.input,
+          maxIterations,
+          convergenceThreshold: this.convergenceThreshold,
+          instrumentLibrary: this.instrumentLibrary,
+          excludeIds: this.excludeIds,
+          overrides: this.overrides,
+          parseOptions,
+          geoidSourceData: this.geoidSourceData,
+        }).solve(),
+    };
+  }
+
+  private syncDataCheckContext(ctx: ReturnType<LSAEngine['buildDataCheckContext']>): void {
+    this.runMode = ctx.runMode ?? this.runMode;
+    this.iterations = ctx.iterations;
+    this.dof = ctx.dof;
+    this.seuw = ctx.seuw;
+    this.converged = ctx.converged;
+  }
+
   private applyDataCheckProvisionalApproximation(): {
     attempted: boolean;
     updatedStationCount: number;
@@ -1755,291 +1809,17 @@ export class LSAEngine {
     converged: boolean;
     directionCalcByObsId: Map<number, number>;
   } {
-    if (this.unknowns.length === 0) {
-      return {
-        attempted: false,
-        updatedStationCount: 0,
-        iterations: 0,
-        converged: false,
-        directionCalcByObsId: new Map<number, number>(),
-      };
-    }
-
-    const provisionalIterations = Math.max(2, Math.min(this.maxIterations, 4));
-    this.log(
-      `Data Check provisional approximation: running bounded coordinate fit (maxIterations=${provisionalIterations}) to refine approximate geometry before inverse comparisons.`,
-    );
-
-    const provisionalParseOptions = {
-      ...(this.parseOptions ?? {}),
-      runMode: 'adjustment',
-      preanalysisMode: false,
-      robustMode: 'none',
-      autoAdjustEnabled: false,
-      autoSideshotEnabled: false,
-      clusterDetectionEnabled: false,
-    } as ParseOptions;
-
-    const provisionalResult = new LSAEngine({
-      input: this.input,
-      maxIterations: provisionalIterations,
-      convergenceThreshold: this.convergenceThreshold,
-      instrumentLibrary: this.instrumentLibrary,
-      excludeIds: this.excludeIds,
-      overrides: this.overrides,
-      parseOptions: provisionalParseOptions,
-      geoidSourceData: this.geoidSourceData,
-    }).solve();
-    const directionCalcByObsId = new Map<number, number>();
-    provisionalResult.observations.forEach((obs) => {
-      if (
-        obs.type !== 'direction' ||
-        !Number.isFinite(obs.calc ?? Number.NaN) ||
-        !Number.isFinite(obs.residual ?? Number.NaN) ||
-        Math.abs(obs.residual ?? 0) > DATA_CHECK_PROVISIONAL_DIRECTION_TRUST_MAX_RAD
-      ) {
-        return;
-      }
-      directionCalcByObsId.set(obs.id, obs.calc as number);
-    });
-
-    let updatedStationCount = 0;
-    Object.entries(this.stations).forEach(([stationId, station]) => {
-      const provisionalStation = provisionalResult.stations[stationId];
-      if (!provisionalStation) return;
-      const nextX = provisionalStation.x;
-      const nextY = provisionalStation.y;
-      const nextH = provisionalStation.h;
-      if (
-        !Number.isFinite(nextX) ||
-        !Number.isFinite(nextY) ||
-        (!this.is2D && !Number.isFinite(nextH))
-      ) {
-        return;
-      }
-      const changed =
-        Math.abs(station.x - nextX) > 1e-9 ||
-        Math.abs(station.y - nextY) > 1e-9 ||
-        Math.abs((station.h ?? 0) - (nextH ?? 0)) > 1e-9 ||
-        station.bootstrapApprox === true;
-      if (!changed) return;
-      station.x = nextX;
-      station.y = nextY;
-      station.h = nextH;
-      station.bootstrapApprox = false;
-      if (this.coordSystemMode === 'grid') {
-        this.stationGeodetic(stationId as StationId);
-        this.stationFactorSnapshot(stationId as StationId);
-      }
-      updatedStationCount += 1;
-    });
-
-    this.log(
-      `Data Check provisional approximation: updated ${updatedStationCount} station(s); provisionalIterations=${provisionalResult.iterations}, converged=${provisionalResult.converged ? 'YES' : 'NO'}.`,
-    );
-
-    return {
-      attempted: true,
-      updatedStationCount,
-      iterations: provisionalResult.iterations,
-      converged: provisionalResult.converged,
-      directionCalcByObsId,
-    };
+    const ctx = this.buildDataCheckContext();
+    const result = applyDataCheckProvisionalApproximationHelper(ctx);
+    this.syncDataCheckContext(ctx);
+    return result;
   }
 
   private runDataCheckOnly(activeObservations: Observation[]): AdjustmentResult {
-    this.runMode = 'data-check';
-    this.iterations = 0;
-    this.dof = 0;
-    this.seuw = 0;
-    this.converged = true;
-    this.log(
-      'Data Check Only mode: reporting approximate-geometry differences from observations (no least-squares adjustment).',
-    );
-
-    const provisionalApproximation = this.applyDataCheckProvisionalApproximation();
-
-    const dataCheckDirectionOrientations = new Map<string, number>();
-    const directionOrientationSums = new Map<string, { sumSin: number; sumCos: number }>();
-    activeObservations.forEach((obs) => {
-      if (obs.type !== 'direction' || typeof obs.setId !== 'string' || obs.setId.trim() === '') return;
-      if (!this.stations[obs.at] || !this.stations[obs.to]) return;
-      const az = this.modeledAzimuth(
-        this.getAzimuth(obs.at, obs.to).az,
-        obs.at,
-        obs.gridObsMode !== 'grid',
-      );
-      const diff = this.wrapToPi(obs.obs - az);
-      const entry = directionOrientationSums.get(obs.setId) ?? { sumSin: 0, sumCos: 0 };
-      entry.sumSin += Math.sin(diff);
-      entry.sumCos += Math.cos(diff);
-      directionOrientationSums.set(obs.setId, entry);
-    });
-    directionOrientationSums.forEach((entry, setId) => {
-      dataCheckDirectionOrientations.set(setId, Math.atan2(entry.sumSin, entry.sumCos));
-    });
-
-    const ranked: Array<{ obsId: number; type: Observation['type']; diff: number }> = [];
-    activeObservations.forEach((obs) => {
-      if (obs.type === 'dist') {
-        const s1 = this.stations[obs.from];
-        const s2 = this.stations[obs.to];
-        if (!s1 || !s2) return;
-        const geom = this.centeringLineGeometry(obs.from, obs.to, obs.hi ?? 0, obs.ht ?? 0);
-        const rawCalc = this.is2D ? geom.horiz : obs.mode === 'slope' ? geom.slope : geom.horiz;
-        const corrected = this.correctedDistanceModel(obs, rawCalc);
-        const observed = this.getObservedHorizontalDistanceIn2D(obs);
-        const residual = observed.observedDistance - corrected.calcDistance;
-        obs.calc = corrected.calcDistance;
-        obs.residual = residual;
-        obs.stdRes = observed.sigmaDistance > 0 ? residual / observed.sigmaDistance : 0;
-        ranked.push({ obsId: obs.id, type: obs.type, diff: Math.abs(residual) });
-        return;
-      }
-      if (obs.type === 'angle') {
-        const azFrom = this.getAzimuth(obs.at, obs.from);
-        const azTo = this.getAzimuth(obs.at, obs.to);
-        let calc = azTo.az - azFrom.az;
-        if (calc < 0) calc += 2 * Math.PI;
-        const residual = ((obs.obs - calc + Math.PI) % (2 * Math.PI)) - Math.PI;
-        obs.calc = calc;
-        obs.residual = residual;
-        obs.stdRes = obs.stdDev > 0 ? residual / obs.stdDev : 0;
-        ranked.push({ obsId: obs.id, type: obs.type, diff: Math.abs(residual) });
-        return;
-      }
-      if (obs.type === 'bearing' || obs.type === 'dir') {
-        const from = obs.type === 'bearing' ? obs.from : obs.from;
-        const to = obs.type === 'bearing' ? obs.to : obs.to;
-        const calc = this.getAzimuth(from, to).az;
-        const residual = ((obs.obs - calc + Math.PI) % (2 * Math.PI)) - Math.PI;
-        obs.calc = calc;
-        obs.residual = residual;
-        obs.stdRes = obs.stdDev > 0 ? residual / obs.stdDev : 0;
-        ranked.push({ obsId: obs.id, type: obs.type, diff: Math.abs(residual) });
-        return;
-      }
-      if (obs.type === 'direction') {
-        const provisionalCalc = provisionalApproximation.directionCalcByObsId.get(obs.id);
-        if (Number.isFinite(provisionalCalc ?? Number.NaN)) {
-          const calc = provisionalCalc as number;
-          const residual = this.wrapToPi(obs.obs - calc);
-          obs.calc = calc;
-          obs.residual = residual;
-          obs.stdRes = obs.stdDev > 0 ? residual / obs.stdDev : 0;
-          ranked.push({ obsId: obs.id, type: obs.type, diff: Math.abs(residual) });
-          return;
-        }
-        const occupyStation = this.stations[obs.at];
-        const targetStation = this.stations[obs.to];
-        const weakApprox =
-          occupyStation?.bootstrapApprox === true || targetStation?.bootstrapApprox === true;
-        const internalResidualCandidates = [
-          obs.rawMaxResidual,
-          obs.rawSpread,
-          obs.facePairDelta,
-        ].filter((value): value is number => Number.isFinite(value));
-        if (
-          internalResidualCandidates.length > 0 &&
-          (weakApprox || provisionalApproximation.attempted)
-        ) {
-          const residual = internalResidualCandidates.reduce(
-            (max, value) => (Math.abs(value) > Math.abs(max) ? value : max),
-            0,
-          );
-          obs.calc = obs.obs;
-          obs.residual = residual;
-          obs.stdRes = undefined;
-          ranked.push({ obsId: obs.id, type: obs.type, diff: Math.abs(residual) });
-          return;
-        }
-        const az = this.modeledAzimuth(
-          this.getAzimuth(obs.at, obs.to).az,
-          obs.at,
-          obs.gridObsMode !== 'grid',
-        );
-        const orientation =
-          typeof obs.setId === 'string' && obs.setId.trim() !== ''
-            ? (dataCheckDirectionOrientations.get(obs.setId) ?? 0)
-            : 0;
-        let calc = az + orientation;
-        calc %= 2 * Math.PI;
-        if (calc < 0) calc += 2 * Math.PI;
-        const residual = this.wrapToPi(obs.obs - calc);
-        obs.calc = calc;
-        obs.residual = residual;
-        obs.stdRes = obs.stdDev > 0 ? residual / obs.stdDev : 0;
-        ranked.push({ obsId: obs.id, type: obs.type, diff: Math.abs(residual) });
-        return;
-      }
-      if (obs.type === 'lev') {
-        const s1 = this.stations[obs.from];
-        const s2 = this.stations[obs.to];
-        if (!s1 || !s2) return;
-        const calc = s2.h - s1.h;
-        const residual = obs.obs - calc;
-        obs.calc = calc;
-        obs.residual = residual;
-        obs.stdRes = obs.stdDev > 0 ? residual / obs.stdDev : 0;
-        ranked.push({ obsId: obs.id, type: obs.type, diff: Math.abs(residual) });
-        return;
-      }
-      if (obs.type === 'zenith') {
-        const geom = this.getModeledZenith(obs);
-        const calc = geom.z;
-        const residual = ((obs.obs - calc + Math.PI) % (2 * Math.PI)) - Math.PI;
-        obs.calc = calc;
-        obs.residual = residual;
-        obs.stdRes = obs.stdDev > 0 ? residual / obs.stdDev : 0;
-        ranked.push({ obsId: obs.id, type: obs.type, diff: Math.abs(residual) });
-        return;
-      }
-      if (obs.type === 'gps') {
-        const corrected = this.gpsObservedVector(obs);
-        const calc = this.gpsModeledVector(obs);
-        const residual = {
-          vE: corrected.dE - calc.dE,
-          vN: corrected.dN - calc.dN,
-          vU:
-            !this.is2D &&
-            Number.isFinite(corrected.dU ?? Number.NaN) &&
-            Number.isFinite(calc.dU ?? Number.NaN)
-              ? (corrected.dU as number) - (calc.dU as number)
-              : undefined,
-        };
-        obs.calc = calc;
-        obs.residual = residual;
-        const cov = this.gpsCovariance(obs);
-        const sigmaE = Math.sqrt(Math.max(cov.cEE, 1e-12));
-        const sigmaN = Math.sqrt(Math.max(cov.cNN, 1e-12));
-        const sigmaU = Math.sqrt(Math.max(cov.cUU ?? 1e-12, 1e-12));
-        obs.stdRes = Math.sqrt(
-          (residual.vE / sigmaE) ** 2 +
-            (residual.vN / sigmaN) ** 2 +
-            ((residual.vU ?? 0) / sigmaU) ** 2,
-        );
-        ranked.push({
-          obsId: obs.id,
-          type: obs.type,
-          diff: Math.sqrt(
-            residual.vE * residual.vE +
-              residual.vN * residual.vN +
-              (residual.vU ?? 0) * (residual.vU ?? 0),
-          ),
-        });
-      }
-    });
-
-    ranked
-      .sort((a, b) => b.diff - a.diff)
-      .slice(0, 25)
-      .forEach((row, idx) => {
-        this.log(
-          `  Difference #${idx + 1}: obs ${row.obsId} [${row.type}] |diff|=${row.diff.toExponential(6)}`,
-        );
-      });
-    this.log('Data Check Only complete.');
-    return this.buildResult();
+    const ctx = this.buildDataCheckContext();
+    const result = runDataCheckOnlyHelper(ctx, activeObservations);
+    this.syncDataCheckContext(ctx);
+    return result;
   }
 
   private runBlunderDetectWorkflow(
@@ -2167,834 +1947,7 @@ export class LSAEngine {
   }
 
   solve(): AdjustmentResult {
-    this.solveStartedAt = Date.now();
-    this.resetSolveTiming();
-    this.emitSolveProgress('start');
-    const requestedRunMode: RunMode =
-      this.parseOptions?.runMode ??
-      (this.parseOptions?.preanalysisMode ? 'preanalysis' : 'adjustment');
-    const runModeCompatibility = resolveRunModeCompatibilityOptions(
-      requestedRunMode,
-      this.parseOptions ?? {},
-    );
-    this.parseOptions = runModeCompatibility.effectiveOptions;
-    this.runModeCompatibilityDiagnostics = [...runModeCompatibility.diagnostics];
-    const clusterWorkflowResult = runClusterDualPassWorkflow({
-      requestedRunMode,
-      parseOptions: this.parseOptions,
-      solveScenario: (parseOptions, overrides) => this.solveNestedScenario(parseOptions, overrides),
-      overrides: this.overrides,
-    });
-    if (clusterWorkflowResult) {
-      return clusterWorkflowResult;
-    }
-
-    let parseAndSetupStartedAt = Date.now();
-    const finishParseAndSetupTiming = () => {
-      if (parseAndSetupStartedAt <= 0) return;
-      this.solveTiming.parseAndSetupMs += Date.now() - parseAndSetupStartedAt;
-      parseAndSetupStartedAt = 0;
-    };
-    const parsed = this.parsedResult
-      ? cloneParsedResultValue(this.parsedResult)
-      : parseInput(this.input, this.instrumentLibrary, this.parseOptions);
-    this.stations = parsed.stations;
-    this.observations = parsed.observations;
-    this.unknowns = parsed.unknowns;
-    this.instrumentLibrary = parsed.instrumentLibrary;
-    this.logs = [...parsed.logs];
-    this.directionRejectDiagnostics = parsed.directionRejectDiagnostics ?? [];
-    const parseRunMode =
-      parsed.parseState?.runMode ??
-      this.parseOptions?.runMode ??
-      (parsed.parseState?.preanalysisMode ? 'preanalysis' : 'adjustment');
-    this.runMode = parseRunMode;
-    const includeErrors = parsed.parseState?.includeErrors ?? [];
-    if (includeErrors.length > 0) {
-      this.converged = false;
-      this.iterations = 0;
-      this.dof = 0;
-      this.seuw = 0;
-      this.parseState = parsed.parseState;
-      if (this.parseState) {
-        this.parseState.runModeCompatibilityDiagnostics = [...this.runModeCompatibilityDiagnostics];
-      }
-      this.emitRunModeCompatibilityDiagnostics(this.runModeCompatibilityDiagnostics);
-      this.logs.push(
-        `Run failed: include preprocessing reported ${includeErrors.length} error(s).`,
-      );
-      includeErrors.forEach((error) => {
-        this.logs.push(
-          `  include-error ${error.code} at ${error.sourceFile}:${error.line}${error.includePath ? ` (${error.includePath})` : ''}: ${error.message}`,
-        );
-      });
-      finishParseAndSetupTiming();
-      return this.buildResult();
-    }
-    this.coordMode = parsed.parseState?.coordMode ?? this.parseOptions?.coordMode ?? '3D';
-    this.addCenteringToExplicit = parsed.parseState?.addCenteringToExplicit ?? false;
-    this.applyCentering = parsed.parseState?.applyCentering ?? true;
-    this.debug = parsed.parseState?.debug ?? false;
-    this.mapMode = parsed.parseState?.mapMode ?? this.parseOptions?.mapMode ?? 'off';
-    this.mapScaleFactor =
-      parsed.parseState?.mapScaleFactor ?? this.parseOptions?.mapScaleFactor ?? 1;
-    this.coordSystemMode =
-      parsed.parseState?.coordSystemMode ?? this.parseOptions?.coordSystemMode ?? 'local';
-    this.crsId = parsed.parseState?.crsId ?? this.parseOptions?.crsId ?? 'CA_NAD83_CSRS_UTM_20N';
-    this.localDatumScheme =
-      parsed.parseState?.localDatumScheme ?? this.parseOptions?.localDatumScheme ?? 'average-scale';
-    this.averageScaleFactor =
-      parsed.parseState?.averageScaleFactor ?? this.parseOptions?.averageScaleFactor ?? 1;
-    if (!Number.isFinite(this.averageScaleFactor) || this.averageScaleFactor <= 0) {
-      this.averageScaleFactor = 1;
-    }
-    this.scaleOverrideActive =
-      parsed.parseState?.scaleOverrideActive ?? this.parseOptions?.scaleOverrideActive ?? false;
-    this.commonElevation =
-      parsed.parseState?.commonElevation ?? this.parseOptions?.commonElevation ?? 0;
-    if (!Number.isFinite(this.commonElevation)) this.commonElevation = 0;
-    this.averageGeoidHeight =
-      parsed.parseState?.averageGeoidHeight ?? this.parseOptions?.averageGeoidHeight ?? 0;
-    if (!Number.isFinite(this.averageGeoidHeight)) this.averageGeoidHeight = 0;
-    this.crsGridScaleEnabled =
-      parsed.parseState?.crsGridScaleEnabled ?? this.parseOptions?.crsGridScaleEnabled ?? false;
-    this.crsGridScaleFactor =
-      parsed.parseState?.crsGridScaleFactor ?? this.parseOptions?.crsGridScaleFactor ?? 1;
-    if (!Number.isFinite(this.crsGridScaleFactor) || this.crsGridScaleFactor <= 0) {
-      this.crsGridScaleFactor = 1;
-    }
-    this.crsConvergenceEnabled =
-      parsed.parseState?.crsConvergenceEnabled ?? this.parseOptions?.crsConvergenceEnabled ?? false;
-    this.crsConvergenceAngleRad =
-      parsed.parseState?.crsConvergenceAngleRad ?? this.parseOptions?.crsConvergenceAngleRad ?? 0;
-    if (!Number.isFinite(this.crsConvergenceAngleRad)) {
-      this.crsConvergenceAngleRad = 0;
-    }
-    this.geoidModelEnabled =
-      parsed.parseState?.geoidModelEnabled ?? this.parseOptions?.geoidModelEnabled ?? false;
-    this.geoidModelId = (parsed.parseState?.geoidModelId ??
-      this.parseOptions?.geoidModelId ??
-      'NGS-DEMO') as string;
-    this.geoidSourceFormat =
-      parsed.parseState?.geoidSourceFormat ?? this.parseOptions?.geoidSourceFormat ?? 'builtin';
-    if (
-      this.geoidSourceFormat !== 'builtin' &&
-      this.geoidSourceFormat !== 'gtx' &&
-      this.geoidSourceFormat !== 'byn'
-    ) {
-      this.geoidSourceFormat = 'builtin';
-    }
-    this.geoidSourcePath = String(
-      parsed.parseState?.geoidSourcePath ?? this.parseOptions?.geoidSourcePath ?? '',
-    ).trim();
-    this.geoidInterpolation =
-      parsed.parseState?.geoidInterpolation ?? this.parseOptions?.geoidInterpolation ?? 'bilinear';
-    this.geoidHeightConversionEnabled =
-      parsed.parseState?.geoidHeightConversionEnabled ??
-      this.parseOptions?.geoidHeightConversionEnabled ??
-      false;
-    this.geoidOutputHeightDatum =
-      parsed.parseState?.geoidOutputHeightDatum ??
-      this.parseOptions?.geoidOutputHeightDatum ??
-      'orthometric';
-    if (this.geoidOutputHeightDatum !== 'ellipsoid') {
-      this.geoidOutputHeightDatum = 'orthometric';
-    }
-    this.applyCurvatureRefraction =
-      parsed.parseState?.applyCurvatureRefraction ??
-      this.parseOptions?.applyCurvatureRefraction ??
-      false;
-    this.refractionCoefficient =
-      parsed.parseState?.refractionCoefficient ?? this.parseOptions?.refractionCoefficient ?? 0.13;
-    this.verticalReduction =
-      parsed.parseState?.verticalReduction ?? this.parseOptions?.verticalReduction ?? 'none';
-    this.tsCorrelationEnabled =
-      parsed.parseState?.tsCorrelationEnabled ?? this.parseOptions?.tsCorrelationEnabled ?? false;
-    this.tsCorrelationRho =
-      parsed.parseState?.tsCorrelationRho ?? this.parseOptions?.tsCorrelationRho ?? 0.25;
-    this.tsCorrelationScope =
-      parsed.parseState?.tsCorrelationScope ?? this.parseOptions?.tsCorrelationScope ?? 'set';
-    const resolvedPreanalysisMode =
-      parsed.parseState?.preanalysisMode ?? this.parseOptions?.preanalysisMode ?? false;
-    this.preanalysisMode =
-      this.runMode === 'preanalysis'
-        ? true
-        : this.runMode === 'data-check' || this.runMode === 'blunder-detect'
-          ? false
-          : resolvedPreanalysisMode;
-    this.robustMode = parsed.parseState?.robustMode ?? this.parseOptions?.robustMode ?? 'none';
-    this.robustK = parsed.parseState?.robustK ?? this.parseOptions?.robustK ?? 1.5;
-    if (this.preanalysisMode || this.runMode === 'data-check') {
-      this.robustMode = 'none';
-    }
-    this.prismEnabled = parsed.parseState?.prismEnabled ?? this.parseOptions?.prismEnabled ?? false;
-    this.prismOffset = parsed.parseState?.prismOffset ?? this.parseOptions?.prismOffset ?? 0;
-    this.prismScope = parsed.parseState?.prismScope ?? this.parseOptions?.prismScope ?? 'global';
-    this.clusterDetectionEnabled =
-      parsed.parseState?.clusterDetectionEnabled ??
-      this.parseOptions?.clusterDetectionEnabled ??
-      true;
-    this.clusterLinkageMode =
-      parsed.parseState?.clusterLinkageMode ?? this.parseOptions?.clusterLinkageMode ?? 'single';
-    this.clusterTolerance2D =
-      parsed.parseState?.clusterTolerance2D ?? this.parseOptions?.clusterTolerance2D ?? 0.03;
-    this.clusterTolerance3D =
-      parsed.parseState?.clusterTolerance3D ?? this.parseOptions?.clusterTolerance3D ?? 0.05;
-    this.levelLoopToleranceBaseMm =
-      parsed.parseState?.levelLoopToleranceBaseMm ??
-      this.parseOptions?.levelLoopToleranceBaseMm ??
-      LEVEL_LOOP_DEFAULT_BASE_MM;
-    this.levelLoopTolerancePerSqrtKmMm =
-      parsed.parseState?.levelLoopTolerancePerSqrtKmMm ??
-      this.parseOptions?.levelLoopTolerancePerSqrtKmMm ??
-      LEVEL_LOOP_DEFAULT_PER_SQRT_KM_MM;
-    const gpsLoopCheckEnabled =
-      parsed.parseState?.gpsLoopCheckEnabled ?? this.parseOptions?.gpsLoopCheckEnabled ?? false;
-    this.gnssFrameConfirmed =
-      parsed.parseState?.gnssFrameConfirmed ?? this.parseOptions?.gnssFrameConfirmed ?? false;
-    this.geometryDependentSigmaReference =
-      parsed.parseState?.geometryDependentSigmaReference ??
-      this.parseOptions?.geometryDependentSigmaReference ??
-      'current';
-    this.parseState = parsed.parseState;
-    if (this.parseState) {
-      this.parseState.geometryDependentSigmaReference = this.geometryDependentSigmaReference;
-      this.parseState.runMode = this.runMode;
-      this.parseState.preanalysisMode = this.preanalysisMode;
-      this.parseState.runModeCompatibilityDiagnostics = [...this.runModeCompatibilityDiagnostics];
-      this.parseState.coordSystemMode = this.coordSystemMode;
-      this.parseState.crsId = this.crsId;
-      this.parseState.localDatumScheme = this.localDatumScheme;
-      this.parseState.averageScaleFactor = this.averageScaleFactor;
-      this.parseState.scaleOverrideActive = this.scaleOverrideActive;
-      this.parseState.commonElevation = this.commonElevation;
-      this.parseState.averageGeoidHeight = this.averageGeoidHeight;
-      this.parseState.geoidSourceFormat = this.geoidSourceFormat;
-      this.parseState.geoidSourcePath = this.geoidSourcePath;
-      this.parseState.geoidSourceResolvedFormat = this.geoidSourceFormat;
-      this.parseState.geoidSourceFallbackUsed = false;
-      this.parseState.reductionContext = this.parseState.reductionContext ?? {
-        inputSpaceDefault:
-          (this.parseState.gridDistanceMode ?? 'measured') === 'measured' ? 'measured' : 'grid',
-        distanceKind:
-          (this.parseState.gridDistanceMode ?? 'measured') === 'ellipsoidal'
-            ? 'ellipsoidal'
-            : (this.parseState.gridDistanceMode ?? 'measured') === 'grid'
-              ? 'grid'
-              : 'ground',
-        bearingKind: this.parseState.gridBearingMode ?? 'grid',
-        explicitOverrideActive: this.scaleOverrideActive,
-      };
-      this.parseState.observationMode = {
-        bearing: this.parseState.gridBearingMode ?? 'grid',
-        distance: this.parseState.gridDistanceMode ?? 'measured',
-        angle: this.parseState.gridAngleMode ?? 'measured',
-        direction: this.parseState.gridDirectionMode ?? 'measured',
-      };
-      this.parseState.gnssFrameConfirmed = this.gnssFrameConfirmed;
-      this.parseState.gnssVectorFrameDefault =
-        this.parseState.gnssVectorFrameDefault ??
-        this.parseOptions?.gnssVectorFrameDefault ??
-        'gridNEU';
-      this.parseState.gpsLoopCheckEnabled = gpsLoopCheckEnabled;
-      this.parseState.levelLoopToleranceBaseMm = this.levelLoopToleranceBaseMm;
-      this.parseState.levelLoopTolerancePerSqrtKmMm = this.levelLoopTolerancePerSqrtKmMm;
-      this.parseState.geoidHeightConversionEnabled = this.geoidHeightConversionEnabled;
-      this.parseState.geoidOutputHeightDatum = this.geoidOutputHeightDatum;
-      this.parseState.geoidModelLoaded = false;
-      this.parseState.geoidModelMetadata = '';
-      this.parseState.geoidSampleUndulationM = undefined;
-      this.parseState.geoidConvertedStationCount = 0;
-      this.parseState.geoidSkippedStationCount = 0;
-      this.parseState.coordSystemDiagnostics = [];
-      this.parseState.coordSystemWarningMessages = [];
-      this.parseState.crsStatus = this.coordSystemMode === 'grid' ? 'off' : undefined;
-      this.parseState.crsOffReason = this.coordSystemMode === 'grid' ? 'noCRSSelected' : undefined;
-      this.parseState.crsDatumOpId = '';
-      this.parseState.crsDatumFallbackUsed = false;
-      this.parseState.crsAreaOfUseStatus = 'unknown';
-      this.parseState.crsOutOfAreaStationCount = 0;
-      this.parseState.usedInSolveUsageSummary = undefined;
-    }
-    this.is2D = this.coordMode === '2D';
-    this.condition = undefined;
-    this.controlConstraints = undefined;
-    this.sideshots = undefined;
-    this.autoSideshotDiagnostics = undefined;
-    this.tsCorrelationDiagnostics = undefined;
-    this.robustDiagnostics = undefined;
-    this.residualDiagnostics = undefined;
-    this.clusterDiagnostics = undefined;
-    this.gpsLoopDiagnostics = undefined;
-    this.levelingLoopDiagnostics = undefined;
-    this.chiSquare = undefined;
-    this.statisticalSummary = undefined;
-    this.typeSummary = undefined;
-    this.relativePrecision = undefined;
-    this.stationCovariances = undefined;
-    this.relativeCovariances = undefined;
-    this.precisionModels = undefined;
-    this.weakGeometryDiagnostics = undefined;
-    this.conditionWarned = false;
-    this.initialSigmaGeometryStations = {};
-    this.initialSigmaAzimuthCache.clear();
-    this.initialSigmaZenithCache.clear();
-    this.clearCoordSystemDiagnostics();
-    this.clearGeometryCache();
-    if (this.coordSystemMode !== 'grid') {
-      this.setCrsOff('disabledByProfile');
-    } else if (!this.crsId || !this.crsId.trim()) {
-      this.setCrsOff('noCRSSelected', 'Grid coordinate mode is active but CRS id is missing.');
-    } else {
-      this.setCrsOff('noInverseAvailable');
-    }
-
-    if ((this.directionRejectDiagnostics?.length ?? 0) > 0) {
-      this.log(`Direction rejects captured: ${this.directionRejectDiagnostics?.length}`);
-    }
-
-    if (this.mapMode !== 'off') {
-      this.log(
-        `Map reduction active: mode=${this.mapMode}, scale=${this.mapScaleFactor.toFixed(8)}`,
-      );
-    }
-    this.log(
-      `Coordinate system mode: ${this.coordSystemMode.toUpperCase()}${this.coordSystemMode === 'grid' ? ` (CRS=${this.crsId})` : ` (datum=${this.localDatumScheme}, scale=${this.averageScaleFactor.toFixed(8)}, commonElev=${this.commonElevation.toFixed(4)}m)`}`,
-    );
-    if (this.crsGridScaleEnabled) {
-      this.log(`CRS grid-ground scale active: factor=${this.crsGridScaleFactor.toFixed(8)}`);
-    }
-    if (this.crsConvergenceEnabled) {
-      this.log(
-        `CRS convergence active: angle=${(this.crsConvergenceAngleRad * RAD_TO_DEG).toFixed(6)} deg`,
-      );
-    }
-    let geoidModel: GeoidGridModel | null = null;
-    this.activeGeoidModel = null;
-    if (this.geoidModelEnabled) {
-      const loaded = loadGeoidGridModel({
-        modelId: this.geoidModelId,
-        sourceFormat: this.geoidSourceFormat ?? 'builtin',
-        sourcePath: this.geoidSourcePath,
-        sourceData: this.geoidSourceData,
-      });
-      if (loaded.model) {
-        geoidModel = loaded.model;
-        this.activeGeoidModel = geoidModel;
-        const metadata = geoidGridMetadataSummary(loaded.model);
-        if (this.parseState) {
-          this.parseState.geoidModelLoaded = true;
-          this.parseState.geoidModelMetadata = metadata;
-          this.parseState.geoidModelId = loaded.model.id;
-          this.parseState.geoidInterpolation = this.geoidInterpolation ?? 'bilinear';
-          this.parseState.geoidSourceResolvedFormat = loaded.resolvedFormat;
-          this.parseState.geoidSourceFallbackUsed = loaded.fallbackUsed;
-        }
-        if (loaded.warning) this.log(`Warning: ${loaded.warning}`);
-        this.log(
-          `Geoid/grid model loaded: ${metadata} (interp=${(this.geoidInterpolation ?? 'bilinear').toUpperCase()}, format=${loaded.resolvedFormat.toUpperCase()}, fallback=${loaded.fallbackUsed ? 'YES' : 'NO'}, cache=${loaded.fromCache ? 'HIT' : 'MISS'})`,
-        );
-        const originLat = this.parseState?.originLatDeg;
-        const originLon = this.parseState?.originLonDeg;
-        if (originLat != null && originLon != null) {
-          const undulation = interpolateGeoidUndulation(
-            loaded.model,
-            originLat,
-            originLon,
-            this.geoidInterpolation ?? 'bilinear',
-          );
-          if (undulation != null && Number.isFinite(undulation)) {
-            if (this.parseState) this.parseState.geoidSampleUndulationM = undulation;
-            this.log(
-              `Geoid sample at geodetic origin: N=${undulation.toFixed(4)} m (lat=${originLat.toFixed(
-                6,
-              )}, lon=${originLon.toFixed(6)})`,
-            );
-          } else {
-            this.log(
-              `Geoid sample unavailable: origin (${originLat.toFixed(6)}, ${originLon.toFixed(
-                6,
-              )}) is outside model coverage.`,
-            );
-          }
-        }
-      } else {
-        this.activeGeoidModel = null;
-        if (this.parseState) {
-          this.parseState.geoidModelLoaded = false;
-          this.parseState.geoidModelMetadata = loaded.warning ?? '';
-          this.parseState.geoidSourceResolvedFormat = loaded.resolvedFormat;
-          this.parseState.geoidSourceFallbackUsed = loaded.fallbackUsed;
-        }
-        this.log(`Warning: ${loaded.warning ?? 'failed to load geoid/grid model.'}`);
-      }
-    }
-    if (this.geoidHeightConversionEnabled) {
-      if (!this.geoidModelEnabled) {
-        this.applyAverageGeoidHeightConversions();
-      } else if (!geoidModel) {
-        this.applyAverageGeoidHeightConversions();
-      } else {
-        this.applyGeoidHeightConversions(geoidModel);
-      }
-    }
-    if (this.coordSystemMode === 'grid') {
-      this.evaluateCrsAreaOfUseCoverage();
-      if (this.crsDatumOpId) {
-        this.log(`CRS datum operation: ${this.crsDatumOpId}`);
-      }
-      if (this.crsAreaOfUseStatus === 'inside') {
-        this.log('CRS area-of-use check: all evaluated stations are inside area bounds.');
-      } else if (this.crsAreaOfUseStatus === 'outside') {
-        this.log(
-          `CRS area-of-use check: ${this.crsOutOfAreaStationCount} station(s) outside configured area bounds (warning-only).`,
-        );
-      } else {
-        this.log(
-          'CRS area-of-use check: unavailable (no CRS bounds metadata or no geodetic stations).',
-        );
-      }
-    }
-    if (this.applyCurvatureRefraction && this.verticalReduction === 'curvref') {
-      this.log(
-        `Vertical reduction active: curvature/refraction (k=${this.refractionCoefficient.toFixed(
-          3,
-        )})`,
-      );
-    }
-    if (this.tsCorrelationEnabled && this.tsCorrelationRho > 0) {
-      this.log(
-        `TS angular correlation active: scope=${this.tsCorrelationScope}, rho=${this.tsCorrelationRho.toFixed(3)}`,
-      );
-    }
-    if (this.preanalysisMode) {
-      this.log(
-        'Preanalysis mode active: residual-based QC, chi-square, and robust reweighting are disabled.',
-      );
-    } else if (this.robustMode === 'huber') {
-      this.robustDiagnostics = {
-        enabled: true,
-        mode: 'huber',
-        k: Math.max(0.5, Math.min(10, this.robustK || 1.5)),
-        iterations: [],
-        topDownweightedRows: [],
-      };
-      this.log(
-        `Robust reweighting active: mode=${this.robustMode}, k=${this.robustDiagnostics.k.toFixed(2)}`,
-      );
-    }
-    let distCount = 0;
-    let zenithCount = 0;
-    this.observations.forEach((obs) => {
-      const correction = this.prismCorrectionForObservation(obs);
-      if (Math.abs(correction) <= 0) return;
-      if (obs.type === 'dist') distCount += 1;
-      if (obs.type === 'zenith') zenithCount += 1;
-    });
-    if (distCount > 0 || zenithCount > 0) {
-      this.log(
-        `Prism correction active: distRows=${distCount}, zenithRows=${zenithCount}, currentState=${this.prismEnabled ? `ON(${this.prismOffset.toFixed(4)}m,${this.prismScope})` : 'OFF'}`,
-      );
-    } else if (
-      this.prismEnabled &&
-      Number.isFinite(this.prismOffset) &&
-      Math.abs(this.prismOffset) > 0
-    ) {
-      this.log(
-        `Prism correction configured but no eligible rows: offset=${this.prismOffset.toFixed(4)}m, scope=${this.prismScope}`,
-      );
-    }
-
-    // Apply overrides before any unit normalization
-    if (this.overrides) {
-      this.observations.forEach((obs) => {
-        const over = this.overrides?.[obs.id];
-        if (!over) return;
-        if (over.stdDev != null) {
-          obs.stdDev = over.stdDev;
-          if (obs.type === 'gps') {
-            obs.stdDevE = over.stdDev;
-            obs.stdDevN = over.stdDev;
-            obs.corrEN = 0;
-          }
-        }
-        if (over.obs != null) {
-          if (
-            (obs.type === 'angle' ||
-              obs.type === 'direction' ||
-              obs.type === 'bearing' ||
-              obs.type === 'dir' ||
-              obs.type === 'zenith') &&
-            typeof over.obs === 'number'
-          ) {
-            obs.obs = (over.obs as number) * DEG_TO_RAD;
-          } else if ((obs.type === 'dist' || obs.type === 'lev') && typeof over.obs === 'number') {
-            obs.obs = over.obs as number;
-          } else if (obs.type === 'gps' && typeof over.obs === 'object') {
-            const val = over.obs as { dE: number; dN: number };
-            obs.obs = { dE: val.dE, dN: val.dN };
-          }
-        }
-      });
-    }
-
-    if (this.preanalysisMode) {
-      this.populatePreanalysisObservations();
-    }
-
-    this.updateGpsAddHiHtDiagnostics();
-    const activeObservations = this.collectActiveObservations();
-    this.bootstrapApproximateTraverseCoords(activeObservations);
-    this.captureRawTraverseDistanceFactorSnapshots(activeObservations);
-    if (this.parseState) {
-      this.parseState.usedInSolveUsageSummary = summarizeReductionUsage(activeObservations);
-      this.parseState.parsedUsageSummary =
-        this.parseState.parsedUsageSummary ?? summarizeReductionUsage(this.observations);
-    }
-    if (
-      this.runMode === 'blunder-detect' &&
-      activeObservations.length > 0 &&
-      activeObservations.every((obs) => obs.type === 'lev')
-    ) {
-      const levelingOnlyError: RunModeCompatibilityDiagnostic = {
-        code: 'BLUNDER_LEVELING_ONLY',
-        severity: 'error',
-        message: 'Blunder Detect mode is not supported for leveling-only datasets.',
-        action: 'Use adjustment or data-check mode for this dataset.',
-      };
-      this.runModeCompatibilityDiagnostics = [
-        ...this.runModeCompatibilityDiagnostics,
-        levelingOnlyError,
-      ];
-      if (this.parseState) {
-        this.parseState.runModeCompatibilityDiagnostics = [...this.runModeCompatibilityDiagnostics];
-      }
-      this.emitRunModeCompatibilityDiagnostics(this.runModeCompatibilityDiagnostics);
-      this.converged = false;
-      return this.finishSolve(this.buildResult());
-    }
-    if (this.runMode === 'blunder-detect') {
-      return this.finishSolve(this.runBlunderDetectWorkflow(this.runModeCompatibilityDiagnostics));
-    }
-
-    this.emitRunModeCompatibilityDiagnostics(this.runModeCompatibilityDiagnostics);
-    if (this.runMode === 'data-check') {
-      finishParseAndSetupTiming();
-      return this.finishSolve(this.runDataCheckOnly(activeObservations));
-    }
-    if (this.runMode === 'adjustment' && (this.parseOptions?.autoAdjustEnabled ?? false)) {
-      finishParseAndSetupTiming();
-      return this.finishSolve(this.runAutoAdjustWorkflow());
-    }
-    const gridInputGate = this.evaluateGridInputGate(activeObservations);
-    if (gridInputGate.blocked) {
-      this.addCoordSystemDiagnostic('CRS_INPUT_MIX_BLOCKED');
-      if (gridInputGate.reasons.some((reason) => reason.toUpperCase().includes('UNKNOWN FRAME'))) {
-        this.addCoordSystemDiagnostic('GNSS_FRAME_UNCONFIRMED');
-      }
-      gridInputGate.reasons.forEach((reason) => this.log(`Error: ${reason}`));
-      gridInputGate.suggestions.forEach((suggestion) => this.log(`Suggestion: ${suggestion}`));
-      this.datumSufficiencyReport = {
-        status: 'hard-fail',
-        reasons: [...gridInputGate.reasons],
-        suggestions: [...gridInputGate.suggestions],
-      };
-      if (this.parseState) {
-        this.parseState.datumSufficiencyReport = this.datumSufficiencyReport;
-      }
-      finishParseAndSetupTiming();
-      return this.finishSolve(this.buildResult());
-    }
-    this.datumSufficiencyReport = this.evaluateDatumSufficiency(activeObservations);
-    if (this.datumSufficiencyReport.status === 'hard-fail') {
-      this.addCoordSystemDiagnostic('DATUM_HARD_FAIL');
-      this.datumSufficiencyReport.reasons.forEach((reason) => this.log(`Error: ${reason}`));
-      this.datumSufficiencyReport.suggestions.forEach((suggestion) =>
-        this.log(`Suggestion: ${suggestion}`),
-      );
-      if (this.parseState) {
-        this.parseState.datumSufficiencyReport = this.datumSufficiencyReport;
-      }
-      finishParseAndSetupTiming();
-      return this.finishSolve(this.buildResult());
-    }
-    if (this.datumSufficiencyReport.status === 'soft-warn') {
-      this.addCoordSystemDiagnostic('DATUM_SOFT_WARN');
-      this.datumSufficiencyReport.reasons.forEach((reason) => this.log(`Warning: ${reason}`));
-      this.datumSufficiencyReport.suggestions.forEach((suggestion) =>
-        this.log(`Suggestion: ${suggestion}`),
-      );
-    }
-    if (this.parseState) {
-      this.parseState.datumSufficiencyReport = this.datumSufficiencyReport;
-    }
-    if (gpsLoopCheckEnabled) {
-      const gpsNetworkRows = activeObservations.filter(
-        (obs): obs is GpsObservation => obs.type === 'gps' && obs.gpsMode !== 'sideshot',
-      );
-      this.gpsLoopDiagnostics = buildGpsLoopDiagnostics({
-        gpsObservations: gpsNetworkRows,
-        observedVector: (obs) => this.gpsObservedVector(obs),
-        baseToleranceM: GPS_LOOP_BASE_TOLERANCE_M,
-        ppmTolerance: GPS_LOOP_TOLERANCE_PPM,
-        eps: EPS,
-      });
-      this.log(
-        `GPS loop check: vectors=${this.gpsLoopDiagnostics.vectorCount}, loops=${this.gpsLoopDiagnostics.loopCount}, pass=${this.gpsLoopDiagnostics.passCount}, warn=${this.gpsLoopDiagnostics.warnCount}, tolerance=${this.gpsLoopDiagnostics.thresholds.baseToleranceM.toFixed(3)}m+${this.gpsLoopDiagnostics.thresholds.ppmTolerance}ppm*dist`,
-      );
-      this.gpsLoopDiagnostics.loops.slice(0, 10).forEach((loop) => {
-        this.log(
-          `  #${loop.rank} ${loop.key}: path=${loop.stationPath.join('->')} closure(dE=${loop.closureE.toFixed(4)}m,dN=${loop.closureN.toFixed(4)}m,|d|=${loop.closureMag.toFixed(4)}m) tol=${loop.toleranceM.toFixed(4)}m ppm=${loop.linearPpm != null ? loop.linearPpm.toFixed(1) : '-'} sev=${loop.severity.toFixed(2)} status=${loop.pass ? 'PASS' : 'WARN'} lines=${loop.sourceLines.length > 0 ? loop.sourceLines.join(',') : '-'}`,
-        );
-      });
-    }
-    const levelingRows = activeObservations.filter(
-      (obs): obs is LevelObservation => obs.type === 'lev',
-    );
-    if (levelingRows.length > 0) {
-      this.levelingLoopDiagnostics = buildLevelingLoopDiagnostics({
-        levelingObservations: levelingRows,
-        baseMm: this.levelLoopToleranceBaseMm,
-        perSqrtKmMm: this.levelLoopTolerancePerSqrtKmMm,
-        eps: EPS,
-      });
-      this.log(
-        `Leveling loop check: observations=${this.levelingLoopDiagnostics.observationCount}, loops=${this.levelingLoopDiagnostics.loopCount}, totalLength=${this.levelingLoopDiagnostics.totalLengthKm.toFixed(3)}km, tolerance=${this.levelingLoopDiagnostics.thresholds.baseMm.toFixed(3)}mm+${this.levelingLoopDiagnostics.thresholds.perSqrtKmMm.toFixed(3)}mm*sqrt(km)`,
-      );
-      this.levelingLoopDiagnostics.loops.slice(0, 10).forEach((loop) => {
-        this.log(
-          `  #${loop.rank} ${loop.key}: path=${loop.stationPath.join('->')} closure=${loop.closure.toFixed(4)}m |closure|=${loop.absClosure.toFixed(4)}m len=${loop.loopLengthKm.toFixed(3)}km tol=${loop.toleranceMm.toFixed(2)}mm mm/sqrt(km)=${loop.closurePerSqrtKmMm.toFixed(2)} status=${loop.pass ? 'PASS' : 'WARN'} lines=${loop.sourceLines.length > 0 ? loop.sourceLines.join(',') : '-'}`,
-        );
-      });
-      this.levelingLoopDiagnostics.suspectSegments.slice(0, 5).forEach((segment) => {
-        this.log(
-          `  suspect #${segment.rank} ${segment.from}->${segment.to}: line=${segment.sourceLine ?? '-'} warnLoops=${segment.warnLoopCount} score=${segment.suspectScore.toFixed(2)} worst=${segment.worstLoopKey ?? '-'}`,
-        );
-      });
-    }
-
-    if (this.unknowns.length === 0) {
-      this.log('No unknown stations to solve.');
-      const sideshots = this.computeSideshotResults();
-      this.sideshots = sideshots;
-      const sideshotCount = sideshots?.length ?? 0;
-      if (sideshotCount > 0) {
-        this.log(`Sideshots (post-adjust): ${sideshotCount}`);
-      }
-      finishParseAndSetupTiming();
-      return this.finishSolve(this.buildResult());
-    }
-
-    const gpsSideshotCount = this.observations.filter(
-      (obs) => obs.type === 'gps' && obs.gpsMode === 'sideshot',
-    ).length;
-    if (gpsSideshotCount > 0) {
-      this.log(
-        `GPS sideshot vectors excluded from adjustment equations: ${gpsSideshotCount} (post-adjust output only).`,
-      );
-    }
-    if (this.is2D) {
-      const skippedVertical = this.observations.filter(
-        (o) => (o.type === 'lev' || o.type === 'zenith') && !getObservationSideshotCalcMeta(o),
-      ).length;
-      if (skippedVertical > 0) {
-        this.log(`2D mode: skipped ${skippedVertical} vertical observations (lev/zenith).`);
-      }
-    }
-    this.logNetworkDiagnostics(activeObservations);
-    const cachedSolvePreparation = this.solvePreparation;
-    const solvePreparation = cachedSolvePreparation
-      ? (() => {
-          applyAutoDroppedHeightHolds(this.stations, cachedSolvePreparation.autoDroppedHeights);
-          return cloneSolvePreparationResult(cachedSolvePreparation);
-        })()
-      : buildSolvePreparation(this.stations, this.unknowns, activeObservations, this.is2D);
-    if (solvePreparation.autoDroppedHeights.length > 0) {
-      this.log(
-        `Auto-drop H for stations with no vertical observations: ${solvePreparation.autoDroppedHeights.join(', ')}`,
-      );
-    }
-    const {
-      directionSetIds,
-      paramIndex,
-      constraints,
-      controlConstraints,
-      numParams,
-      numObsEquations,
-      dirParamMap,
-    } = solvePreparation;
-    this.directionOrientations = {};
-    this.computeDirectionSetPrefit(activeObservations, directionSetIds);
-    this.paramIndex = paramIndex;
-    this.controlConstraints = controlConstraints;
-    this.captureInitialSigmaGeometrySnapshot();
-    if (constraints.length) {
-      this.log(
-        `Weighted control constraints: ${constraints.length} (E=${this.controlConstraints.x}, N=${this.controlConstraints.y}, H=${this.controlConstraints.h}, corrXY=${this.controlConstraints.xyCorrelated ?? 0})`,
-      );
-    }
-    this.dof = numObsEquations - numParams;
-    if (this.dof < 0) {
-      this.log('Error: Redundancy < 0. Under-determined.');
-      finishParseAndSetupTiming();
-      return this.finishSolve(this.buildResult());
-    }
-    finishParseAndSetupTiming();
-    let prevObjectiveBefore: number | null = null;
-
-    for (let iter = 0; iter < this.maxIterations; iter++) {
-      this.iterations += 1;
-      this.clearGeometryCache();
-      const assemblyStartedAt = Date.now();
-      const { A, L, P, rowInfo, sparseRows } = assembleAdjustmentEquations(
-        {
-          stations: this.stations,
-          paramIndex: this.paramIndex,
-          is2D: this.is2D,
-          debug: this.debug,
-          directionOrientations: this.directionOrientations,
-          dirParamMap,
-          effectiveStdDev: this.effectiveStdDev.bind(this),
-          correctedDistanceModel: this.correctedDistanceModel.bind(this),
-          getObservedHorizontalDistanceIn2D: this.getObservedHorizontalDistanceIn2D.bind(this),
-          getAzimuth: this.getAzimuth.bind(this),
-          measuredAngleCorrection: this.measuredAngleCorrection.bind(this),
-          modeledAzimuth: this.modeledAzimuth.bind(this),
-          wrapToPi: this.wrapToPi.bind(this),
-          gpsObservedVector: this.gpsObservedVector.bind(this),
-          gpsModeledVector: this.gpsModeledVector.bind(this),
-          gpsModeledVectorDerivatives: this.gpsModeledVectorDerivatives.bind(this),
-          gpsWeight: this.gpsWeight.bind(this),
-          getModeledZenith: this.getModeledZenith.bind(this),
-          curvatureRefractionAngle: this.curvatureRefractionAngle.bind(this),
-          applyTsCorrelationToWeightMatrix: this.applyTsCorrelationToWeightMatrix.bind(this),
-          logObsDebug: this.logObsDebug.bind(this),
-        },
-        activeObservations,
-        constraints,
-        numObsEquations,
-        numParams,
-        iter + 1,
-        { includeDenseA: false },
-      );
-      this.solveTiming.equationAssemblyMs += Date.now() - assemblyStartedAt;
-
-      const factorizationStartedAt = Date.now();
-      try {
-        const iterationResult = solveAdjustmentIteration(
-          {
-            robustMode: this.robustMode,
-            solveNormalEquations: this.solveNormalEquations.bind(this),
-            estimateCondition: this.estimateCondition.bind(this),
-            recordConditionEstimate: this.recordConditionEstimate.bind(this),
-            captureRobustWeightBase: this.captureRobustWeightBase.bind(this),
-            applyRobustWeightFactors: this.applyRobustWeightFactors.bind(this),
-            computeRobustWeightSummary: this.computeRobustWeightSummary.bind(this),
-            maxRobustWeightDelta: this.maxRobustWeightDelta.bind(this),
-            recordRobustDiagnostics: this.recordRobustDiagnostics.bind(this),
-            weightedQuadratic: this.weightedQuadratic.bind(this),
-          },
-          A ?? [],
-          L,
-          P,
-          rowInfo,
-          iter + 1,
-          { sparseRows, numParams },
-        );
-        this.solveTiming.matrixFactorizationMs += Date.now() - factorizationStartedAt;
-        this.Qxx = iterationResult.qxx ?? null;
-        const { correction, sumBefore, sumAfter, maxBefore, maxAfter } = iterationResult;
-        const objectiveDeltaWithinIter = Math.abs(sumBefore - sumAfter);
-        const objectiveDeltaBetweenIterations =
-          prevObjectiveBefore == null
-            ? Number.POSITIVE_INFINITY
-            : Math.abs(sumBefore - prevObjectiveBefore);
-        const objectiveDeltaRelative =
-          prevObjectiveBefore == null
-            ? Number.POSITIVE_INFINITY
-            : objectiveDeltaBetweenIterations / Math.max(Math.abs(prevObjectiveBefore), 1);
-
-        if (this.debug) {
-          const ratio = sumBefore > 0 ? sumAfter / sumBefore : 0;
-          const msg =
-            `Iter ${iter + 1} step check: ` +
-            `weightedV0=${sumBefore.toExponential(3)} ` +
-            `weightedV1=${sumAfter.toExponential(3)} ` +
-            `ratio=${ratio.toFixed(3)} ` +
-            `max|w|=${maxBefore.toExponential(3)} ` +
-            `max|wnew|=${maxAfter.toExponential(3)}`;
-          this.logs.push(msg);
-          if (ratio > 1.05) {
-            this.logs.push(
-              `Warning: Iter ${iter + 1} predicted residuals increased. ` +
-                `Check sign convention and angle/zenith units (radians vs degrees).`,
-            );
-          }
-        }
-
-        if (this.preanalysisMode) {
-          this.converged = true;
-          this.log(`Iter ${iter + 1}: Max Corr = 0.0000`);
-          this.log(
-            `Iter ${iter + 1}: preanalysis geometry held at approximate coordinates; covariance assembled from the current planning geometry.`,
-          );
-          this.log(
-            'Converged: preanalysis uses the approximate-geometry covariance build without iterative coordinate updates.',
-          );
-          this.emitSolveProgress('iteration');
-          break;
-        }
-
-        const maxCorrection = applyAdjustmentCorrections(
-          this.stations,
-          this.paramIndex,
-          this.is2D,
-          this.directionOrientations,
-          dirParamMap,
-          correction,
-        );
-
-        this.log(`Iter ${iter + 1}: Max Corr = ${maxCorrection.toFixed(4)}`);
-        this.log(
-          `Iter ${iter + 1}: vTPv before=${sumBefore.toExponential(6)} after=${sumAfter.toExponential(
-            6,
-          )} delta(within)=${objectiveDeltaWithinIter.toExponential(6)} delta(iter)=${objectiveDeltaBetweenIterations.toExponential(6)} delta(rel)=${objectiveDeltaRelative.toExponential(6)}`,
-        );
-        if (prevObjectiveBefore != null && objectiveDeltaRelative < this.convergenceThreshold) {
-          this.log(
-            `Converged: relative iteration objective delta ${objectiveDeltaRelative.toExponential(6)} < limit ${this.convergenceThreshold.toExponential(6)}`,
-          );
-          this.converged = true;
-          this.emitSolveProgress('iteration');
-          break;
-        }
-        prevObjectiveBefore = sumBefore;
-        this.emitSolveProgress('iteration');
-      } catch (error) {
-        this.solveTiming.matrixFactorizationMs += Date.now() - factorizationStartedAt;
-        const detail = error instanceof Error ? ` ${error.message}` : '';
-        this.log(`Normal equation solve failed (singular or otherwise unstable).${detail}`);
-        const diagnosticsStartedAt = Date.now();
-        this.calculateStatistics(this.paramIndex, false, activeObservations);
-        this.solveTiming.precisionAndDiagnosticsMs += Date.now() - diagnosticsStartedAt;
-        return this.finishSolve(this.buildResult());
-      }
-    }
-
-    if (!this.converged) this.log('Warning: Max iterations reached.');
-    const covarianceStartedAt = Date.now();
-    this.Qxx = this.recoverFinalNormalCovariance(
-      activeObservations,
-      constraints,
-      numObsEquations,
-      numParams,
-      dirParamMap,
-    );
-    this.solveTiming.matrixFactorizationMs += Date.now() - covarianceStartedAt;
-    const diagnosticsStartedAt = Date.now();
-    this.calculateStatistics(this.paramIndex, !!this.Qxx, activeObservations);
-    this.solveTiming.precisionAndDiagnosticsMs += Date.now() - diagnosticsStartedAt;
-    return this.finishSolve(this.buildResult());
+    return runAdjustmentSolveWorkflow(this as unknown as AdjustmentSolveWorkflowContext);
   }
 
   private estimateCondition(N: number[][]): number {
