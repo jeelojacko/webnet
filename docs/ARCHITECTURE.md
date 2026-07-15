@@ -179,6 +179,7 @@ The UI should treat solve results as the source of truth and avoid duplicating e
 - `mapViewObstacles.ts` owns OSM obstacle fetch signatures, Overpass query construction, and conversion of Overpass geometry into planning obstacle polygons
 - `useMapViewDerived2d.ts` owns the memoized 2D projected-geometry, culling, filtering, label-density, and unselected-canvas derivation pipeline
 - `useMapViewPlanning2d.ts` owns projected planning overlays, preanalysis preview overlay geometry, planning georeference fallback, and OSM obstacle fetch extents
+- `useFrozenMapViewOverlays.ts`, `useMapViewToolState.ts`, and `useMapViewSnapshotSync.ts` own the interaction-time overlay freeze, tool-panel state/metrics, and stable map snapshot emission seams that used to sit inline in `MapView.tsx`
 - `mapView2d.ts` now stages 2D map derivation into base projected geometry, base-space viewport culling, base-space selection/minor-geometry filtering, and final screen-space view application so pan/zoom avoids reprojecting and retranslating the full network every frame
 - `mapViewCanvas2d.ts` now also owns a dedicated planning-overlay canvas pass for non-selected obstacle/blocked polygon bodies and raw input-point markers; that pass stays active even when the main 2D background renderer is WebGL
 - `MapView.tsx` now stacks the 2D layers as basemap -> non-selected planning polygons -> non-selected survey geometry -> SVG labels/selections/tools, and its hit path resolves point hits first, then line hits, then planning polygons so draw priority and click priority match

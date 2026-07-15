@@ -23,7 +23,6 @@ import {
 import {
   buildMapLinkByPairKey,
   buildObservationMapLinks,
-  buildStationIdLookup,
   buildVisibleStationRows,
   buildVisibleStationIds,
   buildWeakStationSeverityLookup,
@@ -31,7 +30,6 @@ import {
   resolveMapStationFillColor,
   resolveWeakStationSeverity,
   resolveSelectedObservationPairKey,
-  resolveStationIdToken,
 } from '../engine/resultDerivedModels';
 import { noteUiPerfStage, noteUiTabReady } from '../hooks/useUiPerfMonitor';
 import {
@@ -75,8 +73,6 @@ import {
 } from './mapView/mapViewPerf';
 import {
   buildMapScenePointBounds2d,
-  buildMapToolHighlights,
-  buildMapToolMetrics,
   buildMapViewStyle2d,
   buildProjectedMapState3d,
   buildTransformedOverlayGeometry2d,
@@ -104,7 +100,10 @@ import {
   parseOverpassObstaclePolygons,
 } from './mapView/mapViewObstacles';
 import { useMapViewDerived2d } from './mapView/useMapViewDerived2d';
+import { useFrozenMapViewOverlays } from './mapView/useFrozenMapViewOverlays';
 import { useMapViewPlanning2d } from './mapView/useMapViewPlanning2d';
+import { useMapViewSnapshotSync } from './mapView/useMapViewSnapshotSync';
+import { useMapViewToolState } from './mapView/useMapViewToolState';
 
 const FT_PER_M = 3.280839895;
 const VIEW_W = 1000;
@@ -223,73 +222,6 @@ const MapView: React.FC<MapViewProps> = ({
     () => snapshot?.view2d ?? { zoom: 1, panX: 0, panY: 0 },
   );
   const [idlePrefetchReady, setIdlePrefetchReady] = useState(false);
-  const frozenVisiblePointLabels2dRef = useRef<Set<string>>(new Set());
-  const [frozenVisiblePointLabels2d, setFrozenVisiblePointLabels2d] = useState<Set<string>>(
-    () => new Set(),
-  );
-  const frozenPlanningPolygons2dRef = useRef<
-    Array<{
-      id: string;
-      source: 'user' | 'osm';
-      kind: 'blocked-area' | 'building' | 'wooded';
-      label: string;
-      vertices: Array<{ x: number; y: number }>;
-      pointsAttr: string;
-    }>
-  >([]);
-  const [frozenPlanningPolygons2d, setFrozenPlanningPolygons2d] = useState<
-    Array<{
-      id: string;
-      source: 'user' | 'osm';
-      kind: 'blocked-area' | 'building' | 'wooded';
-      label: string;
-      vertices: Array<{ x: number; y: number }>;
-      pointsAttr: string;
-    }>
-  >([]);
-  const frozenPlanningInputPoints2dRef = useRef<Array<{ stationId: string; x: number; y: number }>>([]);
-  const [frozenPlanningInputPoints2d, setFrozenPlanningInputPoints2d] = useState<
-    Array<{ stationId: string; x: number; y: number }>
-  >([]);
-  const frozenBracePreviewPoints2dRef = useRef<
-    Array<{ scenarioId: string; stationId: string; templateLabel: string; x: number; y: number; active: boolean }>
-  >([]);
-  const [frozenBracePreviewPoints2d, setFrozenBracePreviewPoints2d] = useState<
-    Array<{
-      scenarioId: string;
-      stationId: string;
-      templateLabel: string;
-      x: number;
-      y: number;
-      active: boolean;
-    }>
-  >([]);
-  const frozenScenarioPreviewSegments2dRef = useRef<
-    Array<{
-      scenarioId: string;
-      fromStationId: string;
-      toStationId: string;
-      x1: number;
-      y1: number;
-      x2: number;
-      y2: number;
-      kind: 'sight-line' | 'cross-tie';
-      active: boolean;
-    }>
-  >([]);
-  const [frozenScenarioPreviewSegments2d, setFrozenScenarioPreviewSegments2d] = useState<
-    Array<{
-      scenarioId: string;
-      fromStationId: string;
-      toStationId: string;
-      x1: number;
-      y1: number;
-      x2: number;
-      y2: number;
-      kind: 'sight-line' | 'cross-tie';
-      active: boolean;
-    }>
-  >([]);
   const obstacleFetchSignatureRef = useRef<string>('');
   const latestBasemapRenderInputRef = useRef<{
     interactionPhase: MapInteractionPhase;
@@ -362,8 +294,6 @@ const MapView: React.FC<MapViewProps> = ({
   const pendingDragClientRef = useRef<{ x: number; y: number } | null>(null);
   const panPreviewOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const panPreviewCommitViewRef = useRef<{ zoom: number; panX: number; panY: number } | null>(null);
-  const stableSnapshotView2dRef = useRef(snapshot?.view2d ?? { zoom: 1, panX: 0, panY: 0 });
-  const lastEmittedSnapshotRef = useRef<MapViewSnapshot | null>(null);
   const settleTimerRef = useRef<ReturnType<typeof globalThis.setTimeout> | null>(null);
   const settleFrameRef = useRef<number | null>(null);
   const [interactionPhase, setInteractionPhase] = useState<MapInteractionPhase>('idle');
@@ -381,13 +311,6 @@ const MapView: React.FC<MapViewProps> = ({
     y: 0,
     planningPolygon: null,
   });
-  const [activeTool, setActiveTool] = useState<MapToolPanel>(() => snapshot?.activeTool ?? 'none');
-  const [toolPickTarget, setToolPickTarget] = useState<MapToolPickTarget | null>(null);
-  const [inverseFromInput, setInverseFromInput] = useState(() => snapshot?.inverseFromInput ?? '');
-  const [inverseToInput, setInverseToInput] = useState(() => snapshot?.inverseToInput ?? '');
-  const [anglePivotInput, setAnglePivotInput] = useState(() => snapshot?.anglePivotInput ?? '');
-  const [angleFromInput, setAngleFromInput] = useState(() => snapshot?.angleFromInput ?? '');
-  const [angleToInput, setAngleToInput] = useState(() => snapshot?.angleToInput ?? '');
   const [showTransformedCoordinates, setShowTransformedCoordinates] = useState(
     () => snapshot?.showTransformedCoordinates ?? false,
   );
@@ -496,6 +419,44 @@ const MapView: React.FC<MapViewProps> = ({
     [showLostStations, stations, weakStationSeverity],
   );
 
+  const closeContextMenu = useCallback(() => {
+    setContextMenu((prev) => ({ ...prev, open: false, planningPolygon: null }));
+  }, []);
+
+  const {
+    activeTool,
+    angleBetween,
+    angleFromId,
+    angleFromInput,
+    anglePivotId,
+    anglePivotInput,
+    angleToId,
+    angleToInput,
+    applyPickedToolStation,
+    clearToolPickTarget,
+    closeTool,
+    highlightedToolSegments,
+    highlightedToolStationIds,
+    inverse,
+    inverseFromId,
+    inverseFromInput,
+    inverseToId,
+    inverseToInput,
+    openTool,
+    setAngleFromInput,
+    setAnglePivotInput,
+    setAngleToInput,
+    setInverseFromInput,
+    setInverseToInput,
+    toggleToolPickTarget,
+    toolPickTarget,
+  } = useMapViewToolState({
+    onCloseContextMenu: closeContextMenu,
+    snapshot,
+    stations,
+    visibleStationIds,
+  });
+
   const stationFill = useCallback(
     (stationId: string, fixed: boolean): string =>
       resolveMapStationFillColor({ fixed, severity: stationSeverity(stationId) }),
@@ -505,13 +466,6 @@ const MapView: React.FC<MapViewProps> = ({
   const ellipseStroke = useCallback(
     (stationId: string): string => resolveMapEllipseStrokeColor(stationSeverity(stationId)),
     [stationSeverity],
-  );
-
-  const stationIdLookup = useMemo(() => buildStationIdLookup(visibleStationIds), [visibleStationIds]);
-
-  const resolveStationId = useCallback(
-    (value: string): string | null => resolveStationIdToken(stationIdLookup, value),
-    [stationIdLookup],
   );
 
   useEffect(() => {
@@ -547,32 +501,6 @@ const MapView: React.FC<MapViewProps> = ({
   }, []);
 
   useEffect(() => {
-    if (visibleStationIds.length === 0) {
-      setInverseFromInput('');
-      setInverseToInput('');
-      setAnglePivotInput('');
-      setAngleFromInput('');
-      setAngleToInput('');
-      return;
-    }
-    if (inverseFromInput.trim() === '') setInverseFromInput(visibleStationIds[0]);
-    if (inverseToInput.trim() === '')
-      setInverseToInput(visibleStationIds[Math.min(1, visibleStationIds.length - 1)]);
-    if (anglePivotInput.trim() === '') setAnglePivotInput(visibleStationIds[0]);
-    if (angleFromInput.trim() === '')
-      setAngleFromInput(visibleStationIds[Math.min(1, visibleStationIds.length - 1)]);
-    if (angleToInput.trim() === '')
-      setAngleToInput(visibleStationIds[Math.min(2, visibleStationIds.length - 1)]);
-  }, [
-    angleFromInput,
-    anglePivotInput,
-    angleToInput,
-    inverseFromInput,
-    inverseToInput,
-    visibleStationIds,
-  ]);
-
-  useEffect(() => {
     if (!contextMenu.open) return;
     const onMouseDown = (event: MouseEvent) => {
       const target = event.target as Node | null;
@@ -591,12 +519,6 @@ const MapView: React.FC<MapViewProps> = ({
       window.removeEventListener('keydown', onKeyDown);
     };
   }, [contextMenu.open]);
-
-  useEffect(() => {
-    if (activeTool === 'none' || visibleStationIds.length === 0) {
-      setToolPickTarget(null);
-    }
-  }, [activeTool, visibleStationIds.length]);
 
   const effectiveViewportWidth = viewportWidthOverride ?? viewportWidth;
   const derivedView2d = frozenDerivedView2d ?? deferredView2d;
@@ -851,11 +773,6 @@ const MapView: React.FC<MapViewProps> = ({
     return () => window.clearTimeout(timeout);
   }, [effectiveMode, interactionPhase, planningMap.basemapMode]);
 
-  useEffect(() => {
-    if (effectiveMode !== '2d' || interactionPhase !== 'idle') return;
-    stableSnapshotView2dRef.current = view2d;
-  }, [effectiveMode, interactionPhase, view2d]);
-
   useEffect(
     () => () => {
       if (view2dFrameRef.current != null) {
@@ -897,57 +814,24 @@ const MapView: React.FC<MapViewProps> = ({
     setCamera3d(createDefaultMap3DCamera(scene3d));
   }, [scene3d]);
 
-  useEffect(() => {
-    if (!onSnapshotChange) return;
-    const nextSnapshot: MapViewSnapshot = {
-      view2d: effectiveMode === '2d' ? stableSnapshotView2dRef.current : view2d,
-      camera3d,
-      activeTool,
-      inverseFromInput,
-      inverseToInput,
-      anglePivotInput,
-      angleFromInput,
-      angleToInput,
-      showTransformedCoordinates,
-      showLabels,
-      hideMinorGeometry,
-      focusSelection,
-    };
-    const previousSnapshot = lastEmittedSnapshotRef.current;
-    const snapshotUnchanged =
-      previousSnapshot != null &&
-      view2dEquals(previousSnapshot.view2d, nextSnapshot.view2d) &&
-      previousSnapshot.camera3d === nextSnapshot.camera3d &&
-      previousSnapshot.activeTool === nextSnapshot.activeTool &&
-      previousSnapshot.inverseFromInput === nextSnapshot.inverseFromInput &&
-      previousSnapshot.inverseToInput === nextSnapshot.inverseToInput &&
-      previousSnapshot.anglePivotInput === nextSnapshot.anglePivotInput &&
-      previousSnapshot.angleFromInput === nextSnapshot.angleFromInput &&
-      previousSnapshot.angleToInput === nextSnapshot.angleToInput &&
-      previousSnapshot.showTransformedCoordinates === nextSnapshot.showTransformedCoordinates &&
-      previousSnapshot.showLabels === nextSnapshot.showLabels &&
-      previousSnapshot.hideMinorGeometry === nextSnapshot.hideMinorGeometry &&
-      previousSnapshot.focusSelection === nextSnapshot.focusSelection;
-    if (snapshotUnchanged) return;
-    lastEmittedSnapshotRef.current = nextSnapshot;
-    onSnapshotChange(nextSnapshot);
-  }, [
+  useMapViewSnapshotSync({
     activeTool,
     angleFromInput,
     anglePivotInput,
     angleToInput,
     camera3d,
+    effectiveMode,
     focusSelection,
     hideMinorGeometry,
+    initialView2d: snapshot?.view2d ?? { zoom: 1, panX: 0, panY: 0 },
+    interactionPhase,
     inverseFromInput,
     inverseToInput,
-    interactionPhase,
     onSnapshotChange,
-    effectiveMode,
     showLabels,
     showTransformedCoordinates,
     view2d,
-  ]);
+  });
 
   useEffect(() => {
     if (effectiveMode === '3d') {
@@ -1022,7 +906,7 @@ const MapView: React.FC<MapViewProps> = ({
       if (event.key !== 'Escape') return;
       setContextMenu((prev) => ({ ...prev, open: false, planningPolygon: null }));
       if (toolPickTarget != null) {
-        setToolPickTarget(null);
+        clearToolPickTarget();
         return;
       }
       if (selectionBox != null) {
@@ -1042,6 +926,7 @@ const MapView: React.FC<MapViewProps> = ({
   }, [
     clearMapSelection,
     clearMapSelectionBox,
+    clearToolPickTarget,
     selectedObservationId,
     selectedPlanningPolygonIds.length,
     selectedStationId,
@@ -1857,43 +1742,21 @@ const MapView: React.FC<MapViewProps> = ({
     viewWidth: VIEW_W,
   });
 
-  useEffect(() => {
-    if (interactionPhase !== 'idle') return;
-    frozenVisiblePointLabels2dRef.current = effectiveVisiblePointLabels2d;
-    frozenPlanningPolygons2dRef.current = planningPolygons2d;
-    frozenPlanningInputPoints2dRef.current = planningInputPoints2d;
-    frozenBracePreviewPoints2dRef.current = bracePreviewPoints2d;
-    frozenScenarioPreviewSegments2dRef.current = scenarioPreviewSegments2d;
-    setFrozenVisiblePointLabels2d(effectiveVisiblePointLabels2d);
-    setFrozenPlanningPolygons2d(planningPolygons2d);
-    setFrozenPlanningInputPoints2d(planningInputPoints2d);
-    setFrozenBracePreviewPoints2d(bracePreviewPoints2d);
-    setFrozenScenarioPreviewSegments2d(scenarioPreviewSegments2d);
-  }, [
+  const {
+    svgBracePreviewPoints2d,
+    svgPlanningInputPoints2d,
+    svgPlanningPolygons2d,
+    svgScenarioPreviewSegments2d,
+    svgVisiblePointLabels2d,
+  } = useFrozenMapViewOverlays({
     bracePreviewPoints2d,
+    effectiveMode,
     interactionPhase,
     planningInputPoints2d,
     planningPolygons2d,
     scenarioPreviewSegments2d,
-    effectiveVisiblePointLabels2d,
-  ]);
-
-  const frozenOverlayInteraction = effectiveMode === '2d' && interactionPhase === 'interacting';
-  const svgVisiblePointLabels2d = frozenOverlayInteraction
-    ? frozenVisiblePointLabels2d
-    : effectiveVisiblePointLabels2d;
-  const svgPlanningPolygons2d = frozenOverlayInteraction
-    ? frozenPlanningPolygons2d
-    : planningPolygons2d;
-  const svgPlanningInputPoints2d = frozenOverlayInteraction
-    ? frozenPlanningInputPoints2d
-    : planningInputPoints2d;
-  const svgBracePreviewPoints2d = frozenOverlayInteraction
-    ? frozenBracePreviewPoints2d
-    : bracePreviewPoints2d;
-  const svgScenarioPreviewSegments2d = frozenOverlayInteraction
-    ? frozenScenarioPreviewSegments2d
-    : scenarioPreviewSegments2d;
+    visiblePointLabels2d: effectiveVisiblePointLabels2d,
+  });
 
   const webglScene2d = useMemo(
     () =>
@@ -2081,40 +1944,6 @@ const MapView: React.FC<MapViewProps> = ({
     });
   };
 
-  const inverseFromId = resolveStationId(inverseFromInput);
-  const inverseToId = resolveStationId(inverseToInput);
-  const anglePivotId = resolveStationId(anglePivotInput);
-  const angleFromId = resolveStationId(angleFromInput);
-  const angleToId = resolveStationId(angleToInput);
-
-  const { inverse, angleBetween } = useMemo(
-    () =>
-      buildMapToolMetrics({
-        stations,
-        inverseFromId,
-        inverseToId,
-        anglePivotId,
-        angleFromId,
-        angleToId,
-      }),
-    [angleFromId, anglePivotId, angleToId, inverseFromId, inverseToId, stations],
-  );
-  const {
-    highlightedStationIds: highlightedToolStationIds,
-    highlightedSegments: highlightedToolSegments,
-  } = useMemo(
-    () =>
-      buildMapToolHighlights({
-        activeTool,
-        inverseFromId,
-        inverseToId,
-        anglePivotId,
-        angleFromId,
-        angleToId,
-      }),
-    [activeTool, angleFromId, anglePivotId, angleToId, inverseFromId, inverseToId],
-  );
-
   const openContextMenu = (event: React.MouseEvent<SVGSVGElement>) => {
     event.preventDefault();
     const rect = containerRef.current?.getBoundingClientRect();
@@ -2160,36 +1989,6 @@ const MapView: React.FC<MapViewProps> = ({
           : null,
     });
   };
-
-  const openTool = (tool: Exclude<MapToolPanel, 'none'>) => {
-    setActiveTool(tool);
-    setToolPickTarget(null);
-    setContextMenu((prev) => ({ ...prev, open: false, planningPolygon: null }));
-  };
-
-  const closeTool = () => {
-    setActiveTool('none');
-    setToolPickTarget(null);
-  };
-
-  const toggleToolPickTarget = useCallback((target: MapToolPickTarget) => {
-    setToolPickTarget((current) => (current === target ? null : target));
-  }, []);
-
-  const applyPickedToolStation = useCallback((stationId: string) => {
-    if (toolPickTarget === 'inverse-from') {
-      setInverseFromInput(stationId);
-    } else if (toolPickTarget === 'inverse-to') {
-      setInverseToInput(stationId);
-    } else if (toolPickTarget === 'angle-pivot') {
-      setAnglePivotInput(stationId);
-    } else if (toolPickTarget === 'angle-from') {
-      setAngleFromInput(stationId);
-    } else if (toolPickTarget === 'angle-to') {
-      setAngleToInput(stationId);
-    }
-    setToolPickTarget(null);
-  }, [toolPickTarget]);
 
   const handleEditPlanningPolygon = useCallback(() => {
     const polygon = contextMenu.planningPolygon;
