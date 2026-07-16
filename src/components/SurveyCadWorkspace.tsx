@@ -10,7 +10,7 @@ import type {
 import { noteUiTabReady } from '../hooks/useUiPerfMonitor';
 import { useSurveyCadWorkspace } from '../hooks/surveyCad/useSurveyCadWorkspace';
 import SurveyCadBatchCogoPanel from './surveyCad/SurveyCadBatchCogoPanel';
-import SurveyCadCommandLine from './surveyCad/SurveyCadCommandLine';
+import SurveyCadCommandToolbar from './surveyCad/SurveyCadCommandToolbar';
 import SurveyCadCogoPanel from './surveyCad/SurveyCadCogoPanel';
 import SurveyCadParcelLayoutPanel from './surveyCad/SurveyCadParcelLayoutPanel';
 import SurveyCadPropertiesPanel from './surveyCad/SurveyCadPropertiesPanel';
@@ -19,6 +19,7 @@ import SurveyCadTraverseDraftPanel from './surveyCad/SurveyCadTraverseDraftPanel
 import { useSurveyCadCommandDisplay } from './useSurveyCadCommandDisplay';
 import { useSurveyCadFloatingPanels } from './useSurveyCadFloatingPanels';
 import { useSurveyCadParcelLayoutWorkflow } from './useSurveyCadParcelLayoutWorkflow';
+import { useSurveyCadTraverseDraftPanelState } from './useSurveyCadTraverseDraftPanelState';
 import { useSurveyCadWorkspaceKeyboard } from './useSurveyCadWorkspaceKeyboard';
 import {
   DEFAULT_PARCEL_LAYOUT_SETTINGS,
@@ -89,13 +90,14 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   );
   const [copiedEntityIds, setCopiedEntityIds] = useState<string[]>([]);
   const [reverseDirectionModifier, setReverseDirectionModifier] = useState(false);
-  const [editingTraverseLegIndex, setEditingTraverseLegIndex] = useState<number | null>(null);
-  const [editingTraverseLegInput, setEditingTraverseLegInput] = useState('');
-  const [insertingTraverseLegIndex, setInsertingTraverseLegIndex] = useState<number | null>(null);
-  const [insertingTraverseLegInput, setInsertingTraverseLegInput] = useState('');
-  const [newTraverseLegInput, setNewTraverseLegInput] = useState('');
-  const [newTraverseSideshotOccupyIndex, setNewTraverseSideshotOccupyIndex] = useState(1);
-  const [newTraverseSideshotInput, setNewTraverseSideshotInput] = useState('');
+  const cadWorkspace = useSurveyCadWorkspace(
+    cadProject,
+    persistedState,
+    onPersistedStateChange,
+    parcelLayoutState,
+    showParcelLabels,
+    reverseDirectionModifier,
+  );
   const {
     cadProject: activeProject,
     displayScene,
@@ -110,11 +112,6 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     activeBatchCogoDraft,
     activeTraverseDraft,
     selectionCount,
-    canUndo,
-    canRedo,
-    canUseSelectedLineCoreCogo,
-    canUseSelectedLinePairIntersection,
-    canUseSelectedArcCurveCogo,
     activeCommandKey,
     commandInputValue,
     statusText,
@@ -124,13 +121,6 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     commandExpectsPointPick,
     canCloseTraverseDraft,
     canFinishCommand,
-    canCreateIntersectionPoint,
-    canCreateAlignment,
-    canReportAlignmentStation,
-    canCreateAlignmentOffset,
-    canCreateAlignmentStationEquation,
-    canCreateAlignmentOffsetPoint,
-    canCreateAlignmentIntervalPoints,
     canCreateParcel,
     canSplitParcelByBearing,
     canSplitParcelByArea,
@@ -138,75 +128,14 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     canReportParcelDiagnostics,
     canReportParcelOverlap,
     canSplitParcelByLine,
-    canContinueCurve,
-    canTrimSelection,
-    canExtendSelection,
     isGripEditing,
     canCycleActiveSnap,
     activeSnap,
     nearbySnaps,
     snapConstructionContext,
     snapPreferences,
-    historyDepth,
-    redoDepth,
-    startPointCommand,
-    startCogoPointCommand,
-    startLineCommand,
-    startPolylineCommand,
-    startTraverseCommand,
-    startBatchCogoCommand,
     startParcelSplitBearingCommand,
     startParcelSplitAreaCommand,
-    startArc3PointCommand,
-    startArcStartCenterEndCommand,
-    startArcCenterStartEndCommand,
-    startArcStartCenterAngleCommand,
-    startArcCenterStartAngleCommand,
-    startArcStartCenterChordCommand,
-    startArcCenterStartChordCommand,
-    startArcStartEndAngleCommand,
-    startArcStartEndDirectionCommand,
-    startArcStartEndRadiusCommand,
-    startContinueCurveCommand,
-    startTangentCurveCommand,
-    startInverseCommand,
-    startMultiInverseCommand,
-    startAreaCommand,
-    startBearingReportCommand,
-    startDistanceReportCommand,
-    startTurnedPointCommand,
-    startDeflectionPointCommand,
-    startPointAlongLineCommand,
-    startExtendLineCommand,
-    startOffsetPointCommand,
-    startAlignmentOffsetCreateCommand,
-    startAlignmentStationEquationCommand,
-    startAlignmentOffsetPointCommand,
-    startAlignmentIntervalPointsCommand,
-    startCurveSolverCommand,
-    startRadialBearingCommand,
-    startPointOnCurveCommand,
-    startSubdivideCurveCommand,
-    startOffsetCurveCommand,
-    startPiCurveCommand,
-    startChordBearingCurveCommand,
-    startReverseCurveCommand,
-    startCompoundCurveCommand,
-    startBearingBearingIntersectionCommand,
-    startBearingDistanceIntersectionCommand,
-    startDistanceDistanceIntersectionCommand,
-    startLineCircleIntersectionCommand,
-    startPerpendicularIntersectionCommand,
-    startOffsetIntersectionCommand,
-    startSkewIntersectionCommand,
-    startMoveCommand,
-    startCopyCommand,
-    startExtendCommand,
-    startTrimCommand,
-    startFilletCommand,
-    createIntersectionPoint,
-    createAlignmentFromSelection,
-    reportAlignmentStationFromSelection,
     createParcelFromSelection,
     reportParcelGapFromSelection,
     reportParcelDiagnosticsFromSelection,
@@ -246,27 +175,14 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     setCommandHoverTarget,
     cycleActiveSnap,
     setSnapPreference,
-    selectAll,
     clearSelection,
     eraseSelection,
     startPasteFromClipboard,
     undo,
     redo,
-  } = useSurveyCadWorkspace(
-    cadProject,
-    persistedState,
-    onPersistedStateChange,
-    parcelLayoutState,
-    showParcelLabels,
-    reverseDirectionModifier,
-  );
+  } = cadWorkspace;
   const copiedEntityIdsRef = useRef<string[]>([]);
   const parcelLayoutHydrationKeyRef = useRef<string | null>(null);
-  const selectedTraverseClosePoint =
-    selectedEntities.length === 1 && selectedEntities[0]?.type === 'survey-point'
-      ? selectedEntities[0]
-      : null;
-
   useEffect(() => {
     copiedEntityIdsRef.current = copiedEntityIds;
   }, [copiedEntityIds]);
@@ -302,120 +218,38 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     [activeProject.entities, reportedComputation],
   );
 
-  useEffect(() => {
-    if (!activeTraverseDraft || editingTraverseLegIndex == null) {
-      if (editingTraverseLegIndex != null) {
-        setEditingTraverseLegIndex(null);
-        setEditingTraverseLegInput('');
-      }
-      return;
-    }
-    if (editingTraverseLegIndex >= activeTraverseDraft.legs.length) {
-      setEditingTraverseLegIndex(null);
-      setEditingTraverseLegInput('');
-    }
-  }, [activeTraverseDraft, editingTraverseLegIndex]);
-
-  useEffect(() => {
-    if (!activeTraverseDraft || insertingTraverseLegIndex == null) {
-      if (insertingTraverseLegIndex != null) {
-        setInsertingTraverseLegIndex(null);
-        setInsertingTraverseLegInput('');
-      }
-      return;
-    }
-    if (insertingTraverseLegIndex > activeTraverseDraft.legs.length) {
-      setInsertingTraverseLegIndex(null);
-      setInsertingTraverseLegInput('');
-    }
-  }, [activeTraverseDraft, insertingTraverseLegIndex]);
-
-  useEffect(() => {
-    if (!activeTraverseDraft) {
-      setInsertingTraverseLegIndex(null);
-      setInsertingTraverseLegInput('');
-      setNewTraverseLegInput('');
-      setNewTraverseSideshotOccupyIndex(1);
-      setNewTraverseSideshotInput('');
-      return;
-    }
-    if (activeTraverseDraft.points.length <= 1) {
-      setNewTraverseSideshotOccupyIndex(1);
-      return;
-    }
-    setNewTraverseSideshotOccupyIndex((current) =>
-      Math.min(Math.max(current, 1), activeTraverseDraft.points.length - 1),
-    );
-  }, [activeTraverseDraft]);
-
-  const startTraverseLegEdit = (legIndex: number) => {
-    const leg = activeTraverseDraft?.legs[legIndex];
-    if (!leg) return;
-    setEditingTraverseLegIndex(legIndex);
-    setEditingTraverseLegInput(leg.inputValue);
-  };
-
-  const cancelTraverseLegEdit = () => {
-    setEditingTraverseLegIndex(null);
-    setEditingTraverseLegInput('');
-  };
-
-  const applyTraverseLegEdit = () => {
-    if (editingTraverseLegIndex == null) return;
-    const nextValue = editingTraverseLegInput.trim();
-    if (nextValue.length === 0) return;
-    if (replaceTraverseDraftLeg(editingTraverseLegIndex, nextValue)) {
-      setEditingTraverseLegIndex(null);
-      setEditingTraverseLegInput('');
-    }
-  };
-
-  const appendTraverseLegFromPanel = () => {
-    const nextValue = newTraverseLegInput.trim();
-    if (nextValue.length === 0) return;
-    if (appendTraverseDraftPoint(nextValue)) {
-      setNewTraverseLegInput('');
-    }
-  };
-
-  const startTraverseLegInsert = (legIndex: number) => {
-    setEditingTraverseLegIndex(null);
-    setEditingTraverseLegInput('');
-    setInsertingTraverseLegIndex(legIndex);
-    setInsertingTraverseLegInput('');
-  };
-
-  const cancelTraverseLegInsert = () => {
-    setInsertingTraverseLegIndex(null);
-    setInsertingTraverseLegInput('');
-  };
-
-  const applyTraverseLegInsert = () => {
-    if (insertingTraverseLegIndex == null) return;
-    const nextValue = insertingTraverseLegInput.trim();
-    if (nextValue.length === 0) return;
-    if (insertTraverseDraftLeg(insertingTraverseLegIndex, nextValue)) {
-      setInsertingTraverseLegIndex(null);
-      setInsertingTraverseLegInput('');
-    }
-  };
-
-  const nudgeTraverseLeg = (legIndex: number, direction: -1 | 1) => {
-    if (moveTraverseDraftLeg(legIndex, direction)) {
-      setEditingTraverseLegIndex(null);
-      setEditingTraverseLegInput('');
-      setInsertingTraverseLegIndex(null);
-      setInsertingTraverseLegInput('');
-    }
-  };
-
-  const applyTraverseSideshot = () => {
-    if (newTraverseSideshotInput.trim().length === 0) return;
-    if (addTraverseDraftSideshot(newTraverseSideshotOccupyIndex, newTraverseSideshotInput.trim())) {
-      setNewTraverseSideshotInput('');
-    }
-  };
-
+  const {
+    editingTraverseLegIndex,
+    editingTraverseLegInput,
+    insertingTraverseLegIndex,
+    insertingTraverseLegInput,
+    newTraverseLegInput,
+    newTraverseSideshotInput,
+    newTraverseSideshotOccupyIndex,
+    selectedTraverseClosePoint,
+    applyTraverseLegEdit,
+    applyTraverseLegInsert,
+    applyTraverseSideshot,
+    appendTraverseLegFromPanel,
+    cancelTraverseLegEdit,
+    cancelTraverseLegInsert,
+    nudgeTraverseLeg,
+    setEditingTraverseLegInput,
+    setInsertingTraverseLegInput,
+    setNewTraverseLegInput,
+    setNewTraverseSideshotInput,
+    setNewTraverseSideshotOccupyIndex,
+    startTraverseLegEdit,
+    startTraverseLegInsert,
+  } = useSurveyCadTraverseDraftPanelState({
+    activeTraverseDraft,
+    selectedEntities,
+    addTraverseDraftSideshot,
+    appendTraverseDraftPoint,
+    insertTraverseDraftLeg,
+    moveTraverseDraftLeg,
+    replaceTraverseDraftLeg,
+  });
   const {
     commandInputPlaceholder,
     commandModifierHint,
@@ -535,112 +369,14 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   return (
     <div className="h-full min-h-0 overflow-hidden bg-slate-950 text-slate-100" data-survey-cad-dedicated-page>
       <div className="relative h-full min-h-0 bg-slate-950">
-        <div className="absolute left-3 right-3 top-3 z-30 overflow-visible px-2 py-1.5" data-survey-cad-toolbar-overlay>
-          <div>
-            <SurveyCadCommandLine
-              entityCount={activeProject.entities.length}
-              selectionCount={selectionCount}
-              canUndo={canUndo}
-              canRedo={canRedo}
-              historyDepth={historyDepth}
-              redoDepth={redoDepth}
-              canUseSelectedLineCoreCogo={canUseSelectedLineCoreCogo}
-              canUseSelectedLinePairIntersection={canUseSelectedLinePairIntersection}
-              canUseSelectedArcCurveCogo={canUseSelectedArcCurveCogo}
-              canCreateIntersectionPoint={canCreateIntersectionPoint}
-              canCreateAlignment={canCreateAlignment}
-              canReportAlignmentStation={canReportAlignmentStation}
-              canCreateAlignmentOffset={canCreateAlignmentOffset}
-              canCreateAlignmentStationEquation={canCreateAlignmentStationEquation}
-              canCreateAlignmentOffsetPoint={canCreateAlignmentOffsetPoint}
-              canCreateAlignmentIntervalPoints={canCreateAlignmentIntervalPoints}
-              canCreateParcel={canCreateParcel}
-              canSplitParcelByBearing={canSplitParcelByBearing}
-              canSplitParcelByArea={canSplitParcelByArea}
-              canReportParcelGap={canReportParcelGap}
-              canReportParcelDiagnostics={canReportParcelDiagnostics}
-              canReportParcelOverlap={canReportParcelOverlap}
-              canSplitParcelByLine={canSplitParcelByLine}
-              canContinueCurve={canContinueCurve}
-              canExtendSelection={canExtendSelection}
-              onStartPoint={startPointCommand}
-              onStartCogoPoint={startCogoPointCommand}
-              onStartLine={startLineCommand}
-              onStartPolyline={startPolylineCommand}
-              onStartTraverse={startTraverseCommand}
-              onStartBatchCogo={startBatchCogoCommand}
-              onStartParcelSplitBearing={startParcelSplitBearingCommand}
-              onStartParcelSplitArea={startParcelSplitAreaCommand}
-              onStartArc3Point={startArc3PointCommand}
-              onStartArcStartCenterEnd={startArcStartCenterEndCommand}
-              onStartArcCenterStartEnd={startArcCenterStartEndCommand}
-              onStartArcStartCenterAngle={startArcStartCenterAngleCommand}
-              onStartArcCenterStartAngle={startArcCenterStartAngleCommand}
-              onStartArcStartCenterChord={startArcStartCenterChordCommand}
-              onStartArcCenterStartChord={startArcCenterStartChordCommand}
-              onStartArcStartEndAngle={startArcStartEndAngleCommand}
-              onStartArcStartEndDirection={startArcStartEndDirectionCommand}
-              onStartArcStartEndRadius={startArcStartEndRadiusCommand}
-              onStartContinueCurve={startContinueCurveCommand}
-              onStartTangentCurve={startTangentCurveCommand}
-              onStartInverse={startInverseCommand}
-              onStartMultiInverse={startMultiInverseCommand}
-              onStartArea={startAreaCommand}
-              onStartBearingReport={startBearingReportCommand}
-              onStartDistanceReport={startDistanceReportCommand}
-              onStartTurnedPoint={startTurnedPointCommand}
-              onStartDeflectionPoint={startDeflectionPointCommand}
-              onStartPointAlongLine={startPointAlongLineCommand}
-              onStartExtendLine={startExtendLineCommand}
-              onStartOffsetPoint={startOffsetPointCommand}
-              onStartAlignmentOffsetCreate={startAlignmentOffsetCreateCommand}
-              onStartAlignmentStationEquation={startAlignmentStationEquationCommand}
-              onStartAlignmentOffsetPoint={startAlignmentOffsetPointCommand}
-              onStartAlignmentIntervalPoints={startAlignmentIntervalPointsCommand}
-              onStartCurveSolver={startCurveSolverCommand}
-              onStartRadialBearing={startRadialBearingCommand}
-              onStartPointOnCurve={startPointOnCurveCommand}
-              onStartSubdivideCurve={startSubdivideCurveCommand}
-              onStartOffsetCurve={startOffsetCurveCommand}
-              onStartPiCurve={startPiCurveCommand}
-              onStartChordBearingCurve={startChordBearingCurveCommand}
-              onStartReverseCurve={startReverseCurveCommand}
-              onStartCompoundCurve={startCompoundCurveCommand}
-              onStartBearingBearingIntersection={startBearingBearingIntersectionCommand}
-              onStartBearingDistanceIntersection={startBearingDistanceIntersectionCommand}
-              onStartDistanceDistanceIntersection={startDistanceDistanceIntersectionCommand}
-              onStartLineCircleIntersection={startLineCircleIntersectionCommand}
-              onStartPerpendicularIntersection={startPerpendicularIntersectionCommand}
-              onStartOffsetIntersection={startOffsetIntersectionCommand}
-              onStartSkewIntersection={startSkewIntersectionCommand}
-              onStartMove={startMoveCommand}
-              onStartCopy={startCopyCommand}
-              onStartExtend={startExtendCommand}
-              onStartTrim={startTrimCommand}
-              onStartFillet={startFilletCommand}
-              onCreateIntersectionPoint={createIntersectionPoint}
-              onCreateAlignment={createAlignmentFromSelection}
-              onReportAlignmentStation={reportAlignmentStationFromSelection}
-              onCreateParcel={createPrimaryParcelLayout}
-              onReportParcelGap={reportParcelGapFromSelection}
-              onReportParcelDiagnostics={reportParcelDiagnosticsFromSelection}
-              onReportParcelOverlap={reportParcelOverlapFromSelection}
-              canSplitParcelBySlide={canSplitParcelBySlideOrSwing}
-              canSplitParcelBySwing={canSplitParcelBySlideOrSwing}
-              onSplitParcelBySlide={splitParcelBySlide}
-              onSplitParcelBySwing={splitParcelBySwing}
-              onSplitParcelByLine={splitParcelBySelectedLine}
-              onToggleParcelLayoutPanel={toggleParcelLayoutPanel}
-              canTrimSelection={canTrimSelection}
-              onSelectAll={selectAll}
-              onClearSelection={clearSelection}
-              onErase={eraseSelection}
-              onUndo={undo}
-              onRedo={redo}
-            />
-          </div>
-        </div>
-        <div className="h-full">
+        <SurveyCadCommandToolbar
+          workspace={cadWorkspace}
+          canSplitParcelBySlideOrSwing={canSplitParcelBySlideOrSwing}
+          onCreateParcel={createPrimaryParcelLayout}
+          onSplitParcelBySlide={splitParcelBySlide}
+          onSplitParcelBySwing={splitParcelBySwing}
+          onToggleParcelLayoutPanel={toggleParcelLayoutPanel}
+        />        <div className="h-full">
           {isParcelLayoutDragging || parcelLayoutResizeDirection || isPropertiesPanelDragging ? (
             <div
               className={`fixed inset-0 z-[39] ${
