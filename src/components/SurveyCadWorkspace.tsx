@@ -1,17 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import type { AdjustmentResult, InstrumentLibrary, ParseOptions, UnitsMode } from '../types';
 import { buildSurveyCadSpikeProject } from '../engine/cad/cadModel';
-import {
-  cadBuildParcelFrontagePathAutoLayoutDraft,
-  cadBuildPreferredParcelAutoLayoutDraftFromFrontageReference,
-  cadBuildParcelLayoutFrontageReference,
-  cadBuildParcelLayoutFrontageReferenceFromParcelSegments,
-  cadSelectPreferredParcelLayoutPreviewCandidate,
-} from '../engine/cad/cadCogo';
 import { buildCadProjectSignature } from '../engine/cad/cadProjectState';
 import type {
   CadBounds,
-  CadEntityId,
   CadParcelLayoutUiState,
   SurveyCadPersistedState,
 } from '../engine/cad/cadTypes';
@@ -23,6 +15,7 @@ import SurveyCadParcelLayoutPanel from './surveyCad/SurveyCadParcelLayoutPanel';
 import type { FloatingPanelResizeDirection } from './surveyCad/SurveyCadFloatingPanelShell';
 import SurveyCadPropertiesPanel from './surveyCad/SurveyCadPropertiesPanel';
 import SurveyCadPreview from './surveyCad/SurveyCadPreview';
+import { useSurveyCadParcelLayoutWorkflow } from './useSurveyCadParcelLayoutWorkflow';
 import { useSurveyCadWorkspaceKeyboard } from './useSurveyCadWorkspaceKeyboard';
 import {
   CAD_SIDE_PANEL_GAP_PX,
@@ -37,7 +30,6 @@ import {
   PROPERTIES_PANEL_FLOATING_LEFT_PX,
   PROPERTIES_PANEL_FLOATING_TOP_PX,
   PROPERTIES_PANEL_HEIGHT_PX,
-  buildParcelLayoutPreviewPrimitives,
   cloneParcelLayoutSettings,
   cloneParcelLayoutUiState,
   type CadSidePanelDock,
@@ -618,447 +610,63 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     useState<FloatingPanelResizeDirection | null>(null);
   const previousPropertiesPanelVisibleRef = useRef(false);
   const previousParcelLayoutOpenRef = useRef(false);
-  const parcelLayoutParentEntity = useMemo(
-    () =>
-      parcelLayoutState.activeParentParcelId == null
-        ? null
-        : activeProject.entities.find(
-            (entity): entity is Extract<(typeof activeProject.entities)[number], { type: 'parcel' }> =>
-              entity.id === parcelLayoutState.activeParentParcelId && entity.type === 'parcel',
-          ) ?? null,
-    [activeProject, parcelLayoutState.activeParentParcelId],
-  );
-  const parcelLayoutFrontageEntity = useMemo(
-    () =>
-      parcelLayoutState.activeFrontageEntityId == null
-        ? null
-        : activeProject.entities.find(
-            (entity): entity is Extract<(typeof activeProject.entities)[number], { type: 'line' | 'polyline' | 'arc' }> =>
-              entity.id === parcelLayoutState.activeFrontageEntityId &&
-              (entity.type === 'line' || entity.type === 'polyline' || entity.type === 'arc'),
-          ) ?? null,
-    [activeProject, parcelLayoutState.activeFrontageEntityId],
-  );
-  const selectedParcelForLayout =
-    selectedEntities.length === 1 && selectedEntities[0]?.type === 'parcel'
-      ? selectedEntities[0]
-      : selectedEntities.find((entity) => entity.type === 'parcel') ?? null;
-  const selectedFrontageForLayout =
-    selectedEntities.find(
-      (entity): entity is Extract<(typeof selectedEntities)[number], { type: 'line' | 'polyline' | 'arc' }> =>
-        entity.type === 'line' || entity.type === 'polyline' || entity.type === 'arc',
-    ) ?? null;
-  const activeParcelSegmentFrontageReference = useMemo(
-    () =>
-      (parcelLayoutParentEntity ?? selectedParcelForLayout) && parcelLayoutState.activeFrontageParcelSegmentIds?.length
-        ? cadBuildParcelLayoutFrontageReferenceFromParcelSegments(
-            (parcelLayoutParentEntity ?? selectedParcelForLayout)!,
-            parcelLayoutState.activeFrontageParcelSegmentIds,
-          )
-        : null,
-    [parcelLayoutParentEntity, parcelLayoutState.activeFrontageParcelSegmentIds, selectedParcelForLayout],
-  );
-  const parcelLayoutFrontageReference = useMemo(
-    () =>
-      parcelLayoutFrontageEntity
-        ? cadBuildParcelLayoutFrontageReference(parcelLayoutFrontageEntity)
-        : null,
-    [parcelLayoutFrontageEntity],
-  );
-  const directParcelSplitTarget = useMemo(() => {
-    const parcel = parcelLayoutParentEntity ?? selectedParcelForLayout;
-    const frontage = parcelLayoutFrontageEntity ?? selectedFrontageForLayout;
-    const frontageReference = frontage
-      ? cadBuildParcelLayoutFrontageReference(frontage)
-      : null;
-    return parcel && frontage && frontageReference ? { parcel, frontage, frontageReference } : null;
-  }, [
-    parcelLayoutFrontageEntity,
-    parcelLayoutParentEntity,
-    selectedFrontageForLayout,
-    selectedParcelForLayout,
-  ]);
-  const effectiveParcelLayoutParentEntity =
-    directParcelSplitTarget?.parcel ?? parcelLayoutParentEntity ?? selectedParcelForLayout ?? null;
-  const draftParcelSegmentFrontageReference = useMemo(
-    () =>
-      parcelLayoutFrontageSegmentSelectionActive &&
-      effectiveParcelLayoutParentEntity &&
-      parcelLayoutFrontageSegmentSelectionIds.length > 0
-        ? cadBuildParcelLayoutFrontageReferenceFromParcelSegments(
-            effectiveParcelLayoutParentEntity,
-            parcelLayoutFrontageSegmentSelectionIds,
-          )
-        : null,
-    [
-      effectiveParcelLayoutParentEntity,
-      parcelLayoutFrontageSegmentSelectionActive,
-      parcelLayoutFrontageSegmentSelectionIds,
-    ],
-  );
-  const effectiveParcelLayoutFrontageEntity =
-    activeParcelSegmentFrontageReference == null && draftParcelSegmentFrontageReference == null
-      ? directParcelSplitTarget?.frontage ?? parcelLayoutFrontageEntity ?? selectedFrontageForLayout ?? null
-      : null;
-  const effectiveParcelLayoutFrontageReference =
-    draftParcelSegmentFrontageReference ??
-    activeParcelSegmentFrontageReference ??
-    directParcelSplitTarget?.frontageReference ??
-    parcelLayoutFrontageReference;
-  const effectiveParcelLayoutFrontageEntityId = effectiveParcelLayoutFrontageEntity?.id ?? null;
-  const effectiveParcelLayoutFrontageParcelSegmentIds =
-    effectiveParcelLayoutFrontageReference?.parcelSegmentIds ?? null;
-  const parcelLayoutFrontageLabel = useMemo(() => {
-    return effectiveParcelLayoutFrontageReference?.displayLabel ?? null;
-  }, [effectiveParcelLayoutFrontageReference]);
-  const canPreviewParcelSlideOrSwing =
-    effectiveParcelLayoutParentEntity != null && effectiveParcelLayoutFrontageReference != null;
-  const directParcelSlideCandidate = useMemo(
-    () =>
-      directParcelSplitTarget
-        ? cadSelectPreferredParcelLayoutPreviewCandidate(
-            directParcelSplitTarget.parcel,
-            directParcelSplitTarget.frontageReference.frontageLine,
-            parcelLayoutState.settings,
-            'slide',
-          )
-        : null,
-    [directParcelSplitTarget, parcelLayoutState.settings],
-  );
-  const directParcelSwingCandidate = useMemo(
-    () =>
-      directParcelSplitTarget
-        ? cadSelectPreferredParcelLayoutPreviewCandidate(
-            directParcelSplitTarget.parcel,
-            directParcelSplitTarget.frontageReference.frontageLine,
-            parcelLayoutState.settings,
-            'swing',
-          )
-        : null,
-    [directParcelSplitTarget, parcelLayoutState.settings],
-  );
-  const parcelLayoutPreviewPrimitives = useMemo(
-    () =>
-      buildParcelLayoutPreviewPrimitives(
-        parcelLayoutPreviewState,
-        parcelLayoutAutoPreviewState,
-        effectiveParcelLayoutParentEntity?.id ?? null,
-      ),
-    [effectiveParcelLayoutParentEntity?.id, parcelLayoutAutoPreviewState, parcelLayoutPreviewState],
-  );
-  const mergedCommandPreviewPrimitives = useMemo(
-    () => [...commandPreviewPrimitives, ...parcelLayoutPreviewPrimitives],
-    [commandPreviewPrimitives, parcelLayoutPreviewPrimitives],
-  );
-  const parcelAutoLayoutDraft = useMemo(() => {
-    if (!effectiveParcelLayoutParentEntity || !effectiveParcelLayoutFrontageReference) return null;
-    const preferredDraft = cadBuildPreferredParcelAutoLayoutDraftFromFrontageReference(
-      effectiveParcelLayoutParentEntity,
-      effectiveParcelLayoutFrontageReference,
-      parcelLayoutState.settings,
-      parcelLayoutAutoTool,
-    );
-    if (preferredDraft.isValid || parcelLayoutState.settings.automaticMode !== 'fill_parent') {
-      return preferredDraft;
-    }
-    return (
-      cadBuildParcelFrontagePathAutoLayoutDraft(
-        effectiveParcelLayoutParentEntity,
-        effectiveParcelLayoutFrontageReference,
-        parcelLayoutState.settings,
-        parcelLayoutAutoTool,
-      ) ?? preferredDraft
-    );
-  }, [
-    effectiveParcelLayoutFrontageReference,
+  const {
+    autoLayoutToolTitle,
+    canAcceptParcelLayoutPreview,
+    canCreateAllParcelLayout,
+    canPreviewAllParcelLayout,
+    canPreviewParcelSlideOrSwing,
+    canRunAutoLayoutTool,
+    canRunPrimaryParcelLayoutCreate,
+    canSplitParcelBySlideOrSwing,
+    canUseCurrentSelectionAsFrontage,
+    canUseCurrentSelectionAsParent,
+    canUseParcelFrontageSegments,
     effectiveParcelLayoutParentEntity,
-    parcelLayoutAutoTool,
-    parcelLayoutState.settings,
-  ]);
-  const parcelLayoutPreviewStatus = useMemo(() => {
-    if (!effectiveParcelLayoutParentEntity) {
-      return 'Choose one parent parcel for parcel-layout preview.';
-    }
-    if (!effectiveParcelLayoutFrontageReference) {
-      if (parcelLayoutFrontageSegmentSelectionActive) {
-        return parcelLayoutFrontageSegmentSelectionIds.length === 0
-          ? 'Click parcel edges to build frontage, then accept with ✓.'
-          : `Selected ${parcelLayoutFrontageSegmentSelectionIds.length} frontage segment${parcelLayoutFrontageSegmentSelectionIds.length === 1 ? '' : 's'}. Accept with ✓ or cancel with X.`;
-      }
-      return 'Choose one frontage entity that matches a parent parcel edge.';
-    }
-    if (parcelLayoutAutoPreviewState) {
-      const lotCount = parcelLayoutAutoPreviewState.draft.acceptedCandidates.length;
-      const previewIndex = Math.min(parcelLayoutAutoPreviewState.activeIndex + 1, lotCount);
-      return `Automatic preview ${previewIndex} of ${lotCount}: ${parcelLayoutAutoPreviewState.draft.acceptedCandidates[parcelLayoutAutoPreviewState.activeIndex]?.statusMessage ?? parcelLayoutAutoPreviewState.draft.statusMessage}`;
-    }
-    if (
-      parcelLayoutState.settings.automaticMode !== 'off' &&
-      parcelAutoLayoutDraft &&
-      !parcelAutoLayoutDraft.isValid
-    ) {
-      return parcelAutoLayoutDraft.statusMessage;
-    }
-    if (!parcelLayoutPreviewState) {
-      return 'Use Slide or Swing to preview one child lot from the active parent/frontage setup.';
-    }
-    return parcelLayoutPreviewState.candidate.statusMessage;
-  }, [
-    parcelAutoLayoutDraft,
-    parcelLayoutAutoPreviewState,
-    parcelLayoutFrontageSegmentSelectionActive,
-    parcelLayoutFrontageSegmentSelectionIds.length,
-    effectiveParcelLayoutFrontageReference,
-    effectiveParcelLayoutParentEntity,
+    frontageSegmentActionTitle,
+    hasParcelLayoutPreview,
+    mergedCommandPreviewPrimitives,
+    parcelLayoutFrontageLabel,
+    parcelLayoutPreviewDetails,
+    parcelLayoutPreviewStatus,
+    acceptFrontageSegmentSelection,
+    acceptParcelLayoutPreview,
+    cancelFrontageSegmentSelection,
+    createPrimaryParcelLayout,
+    cycleParcelLayoutPreviewAlternative,
+    previewAllParcelLayout,
+    previewParcelLayoutSplit,
+    createAllParcelLayout,
+    runAutoLayoutTool,
+    splitParcelBySlide,
+    splitParcelBySwing,
+    startFrontageSegmentSelection,
+    toggleFrontageSegmentSelection,
+    updateParcelLayoutState,
+    useSelectedFrontageEntity,
+    useSelectedParentParcel,
+  } = useSurveyCadParcelLayoutWorkflow({
+    activeProject,
+    commandPreviewPrimitives,
+    selectedEntities,
+    canCreateParcel,
+    createParcelFromSelection,
+    commitParcelSlideLayout,
+    commitParcelSwingLayout,
+    commitParcelAutoLayout,
+    parcelLayoutState,
+    setParcelLayoutState,
     parcelLayoutPreviewState,
-    parcelLayoutState.settings.automaticMode,
-  ]);
-
-  const parcelLayoutPreviewDetails = useMemo(() => {
-    if (parcelLayoutAutoPreviewState) {
-      const activeCandidate =
-        parcelLayoutAutoPreviewState.draft.acceptedCandidates[parcelLayoutAutoPreviewState.activeIndex] ?? null;
-      return [
-        `Generated parcels: ${parcelLayoutAutoPreviewState.draft.generatedParcels.length}`,
-        `Generated lots: ${parcelLayoutAutoPreviewState.draft.acceptedCandidates.length}`,
-        ...(activeCandidate?.evaluation?.messages ?? []),
-      ];
-    }
-    return parcelLayoutPreviewState?.candidate.evaluation?.messages ?? [];
-  }, [parcelLayoutAutoPreviewState, parcelLayoutPreviewState]);
-
-  const canCreateAllParcelLayout =
-    effectiveParcelLayoutParentEntity != null &&
-    effectiveParcelLayoutFrontageReference != null &&
-    parcelLayoutState.settings.automaticMode === 'fill_parent' &&
-    (parcelAutoLayoutDraft?.isValid ?? false);
-  const canCreateSingleAutomaticParcel =
-    parcelLayoutState.settings.automaticMode === 'single_preview' &&
-    effectiveParcelLayoutParentEntity != null &&
-    effectiveParcelLayoutFrontageReference != null &&
-    (
-      (parcelLayoutAutoPreviewState?.draft.acceptedCandidates[parcelLayoutAutoPreviewState.activeIndex]?.isValid ?? false) ||
-      (parcelAutoLayoutDraft?.acceptedCandidates[0]?.isValid ?? false)
-    );
-  const canRunPrimaryParcelLayoutCreate =
-    parcelLayoutState.settings.automaticMode === 'fill_parent'
-      ? canCreateAllParcelLayout
-      : parcelLayoutState.settings.automaticMode === 'single_preview'
-        ? canCreateSingleAutomaticParcel
-        : canCreateParcel;
-  const canPreviewAllParcelLayout =
-    effectiveParcelLayoutParentEntity != null &&
-    effectiveParcelLayoutFrontageReference != null &&
-    parcelLayoutState.settings.automaticMode !== 'off' &&
-    (parcelAutoLayoutDraft?.isValid ?? false);
-  const canRunAutoLayoutTool =
-    parcelLayoutState.settings.automaticMode === 'fill_parent'
-      ? canCreateAllParcelLayout
-      : canPreviewAllParcelLayout;
-  const autoLayoutToolTitle =
-    parcelLayoutState.settings.automaticMode === 'fill_parent'
-      ? 'Automatically create all parcels from the active parent/frontage setup'
-      : parcelLayoutState.settings.automaticMode === 'single_preview'
-        ? 'Preview the automatic parcel layout set from the active parent/frontage setup'
-        : 'Turn automatic mode on below to use automatic parcel layout';
-
-  const previewParcelLayoutSplit = (
-    tool: 'slide' | 'swing',
-    alternative = parcelLayoutPreviewState?.candidate.tool === tool
-      ? parcelLayoutPreviewState.candidate.alternative
-      : null,
-    ) => {
-    if (!effectiveParcelLayoutParentEntity || !effectiveParcelLayoutFrontageReference) return;
-    setParcelLayoutAutoTool(tool);
-    setParcelLayoutAutoPreviewState(null);
-    const preferredCandidate = cadSelectPreferredParcelLayoutPreviewCandidate(
-      effectiveParcelLayoutParentEntity,
-      effectiveParcelLayoutFrontageReference.frontageLine,
-      parcelLayoutState.settings,
-      tool,
-      alternative,
-    );
-    setParcelLayoutPreviewState({ candidate: preferredCandidate });
-  };
-
-  const cycleParcelLayoutPreviewAlternative = () => {
-    if (parcelLayoutAutoPreviewState) {
-      setParcelLayoutAutoPreviewState((current) =>
-        current == null
-          ? current
-          : {
-              ...current,
-              activeIndex: (current.activeIndex + 1) % Math.max(current.draft.acceptedCandidates.length, 1),
-            },
-      );
-      return;
-    }
-    if (!parcelLayoutPreviewState) return;
-    previewParcelLayoutSplit(
-      parcelLayoutPreviewState.candidate.tool,
-      parcelLayoutPreviewState.candidate.alternative === 'start' ? 'end' : 'start',
-    );
-  };
-
-  const acceptParcelLayoutPreview = () => {
-    if (
-      parcelLayoutAutoPreviewState &&
-      effectiveParcelLayoutParentEntity &&
-      effectiveParcelLayoutFrontageReference
-    ) {
-      const activeCandidate =
-        parcelLayoutAutoPreviewState.draft.acceptedCandidates[parcelLayoutAutoPreviewState.activeIndex] ?? null;
-      if (!activeCandidate?.isValid || !activeCandidate.draft) return;
-      if (activeCandidate.tool === 'slide') {
-        commitParcelSlideLayout({
-          parcelEntityId: effectiveParcelLayoutParentEntity.id,
-          frontageEntityId: effectiveParcelLayoutFrontageEntityId,
-          frontageParcelSegmentIds: effectiveParcelLayoutFrontageParcelSegmentIds,
-          targetAreaSquareMeters: parcelLayoutState.settings.minAreaSquareMeters,
-          minFrontageMeters: parcelLayoutState.settings.minFrontageMeters,
-          alternative: activeCandidate.alternative,
-          settings: cloneParcelLayoutSettings(parcelLayoutState.settings),
-        });
-      } else {
-        commitParcelSwingLayout({
-          parcelEntityId: effectiveParcelLayoutParentEntity.id,
-          frontageEntityId: effectiveParcelLayoutFrontageEntityId,
-          frontageParcelSegmentIds: effectiveParcelLayoutFrontageParcelSegmentIds,
-          targetAreaSquareMeters: parcelLayoutState.settings.minAreaSquareMeters,
-          minFrontageMeters: parcelLayoutState.settings.minFrontageMeters,
-          alternative: activeCandidate.alternative,
-          settings: cloneParcelLayoutSettings(parcelLayoutState.settings),
-        });
-      }
-      setParcelLayoutAutoPreviewState(null);
-      setParcelLayoutPreviewState(null);
-      return;
-    }
-    if (
-      !parcelLayoutPreviewState ||
-      !parcelLayoutPreviewState.candidate.isValid ||
-      !parcelLayoutPreviewState.candidate.draft ||
-      !effectiveParcelLayoutParentEntity ||
-      !effectiveParcelLayoutFrontageReference
-    ) {
-      return;
-    }
-    if (parcelLayoutPreviewState.candidate.tool === 'slide') {
-      commitParcelSlideLayout({
-        parcelEntityId: effectiveParcelLayoutParentEntity.id,
-        frontageEntityId: effectiveParcelLayoutFrontageEntityId,
-        frontageParcelSegmentIds: effectiveParcelLayoutFrontageParcelSegmentIds,
-        targetAreaSquareMeters: parcelLayoutState.settings.minAreaSquareMeters,
-        minFrontageMeters: parcelLayoutState.settings.minFrontageMeters,
-        alternative: parcelLayoutPreviewState.candidate.alternative,
-        settings: cloneParcelLayoutSettings(parcelLayoutState.settings),
-      });
-    } else {
-      commitParcelSwingLayout({
-        parcelEntityId: effectiveParcelLayoutParentEntity.id,
-        frontageEntityId: effectiveParcelLayoutFrontageEntityId,
-        frontageParcelSegmentIds: effectiveParcelLayoutFrontageParcelSegmentIds,
-        targetAreaSquareMeters: parcelLayoutState.settings.minAreaSquareMeters,
-        minFrontageMeters: parcelLayoutState.settings.minFrontageMeters,
-        alternative: parcelLayoutPreviewState.candidate.alternative,
-        settings: cloneParcelLayoutSettings(parcelLayoutState.settings),
-      });
-    }
-    setParcelLayoutPreviewState(null);
-  };
-
-  const commitAutomaticSinglePreviewCandidate = () => {
-    const activeCandidate = parcelLayoutAutoPreviewState?.draft.acceptedCandidates[parcelLayoutAutoPreviewState.activeIndex]
-      ?? parcelAutoLayoutDraft?.acceptedCandidates[0]
-      ?? null;
-    if (
-      !activeCandidate?.isValid ||
-      !effectiveParcelLayoutParentEntity ||
-      !effectiveParcelLayoutFrontageReference
-    ) {
-      return;
-    }
-    if (activeCandidate.tool === 'slide') {
-      commitParcelSlideLayout({
-        parcelEntityId: effectiveParcelLayoutParentEntity.id,
-        frontageEntityId: effectiveParcelLayoutFrontageEntityId,
-        frontageParcelSegmentIds: effectiveParcelLayoutFrontageParcelSegmentIds,
-        targetAreaSquareMeters: parcelLayoutState.settings.minAreaSquareMeters,
-        minFrontageMeters: parcelLayoutState.settings.minFrontageMeters,
-        alternative: activeCandidate.alternative,
-        settings: cloneParcelLayoutSettings(parcelLayoutState.settings),
-      });
-    } else {
-      commitParcelSwingLayout({
-        parcelEntityId: effectiveParcelLayoutParentEntity.id,
-        frontageEntityId: effectiveParcelLayoutFrontageEntityId,
-        frontageParcelSegmentIds: effectiveParcelLayoutFrontageParcelSegmentIds,
-        targetAreaSquareMeters: parcelLayoutState.settings.minAreaSquareMeters,
-        minFrontageMeters: parcelLayoutState.settings.minFrontageMeters,
-        alternative: activeCandidate.alternative,
-        settings: cloneParcelLayoutSettings(parcelLayoutState.settings),
-      });
-    }
-    setParcelLayoutAutoPreviewState(null);
-    setParcelLayoutPreviewState(null);
-  };
-
-  const previewAllParcelLayout = () => {
-    if (!canPreviewAllParcelLayout || !parcelAutoLayoutDraft) return;
-    setParcelLayoutPreviewState(null);
-    setParcelLayoutAutoPreviewState({
-      draft: parcelAutoLayoutDraft,
-      activeIndex: 0,
-    });
-  };
-
-  const createAllParcelLayout = () => {
-    if (
-      !canCreateAllParcelLayout ||
-      !effectiveParcelLayoutParentEntity ||
-      !effectiveParcelLayoutFrontageReference
-    ) {
-      return;
-    }
-    commitParcelAutoLayout({
-      parcelEntityId: effectiveParcelLayoutParentEntity.id,
-      frontageEntityId: effectiveParcelLayoutFrontageEntityId,
-      frontageParcelSegmentIds: effectiveParcelLayoutFrontageParcelSegmentIds,
-      tool: parcelLayoutAutoTool,
-      settings: cloneParcelLayoutSettings(parcelLayoutState.settings),
-    });
-    setParcelLayoutAutoPreviewState(null);
-    setParcelLayoutPreviewState(null);
-  };
-
-  const splitParcelBySlide = () => {
-    if (!directParcelSplitTarget) return;
-    commitParcelSlideLayout({
-      parcelEntityId: directParcelSplitTarget.parcel.id,
-      frontageEntityId: directParcelSplitTarget.frontage.id,
-      targetAreaSquareMeters: parcelLayoutState.settings.minAreaSquareMeters,
-      minFrontageMeters: parcelLayoutState.settings.minFrontageMeters,
-      alternative: directParcelSlideCandidate?.alternative ?? 'start',
-      settings: cloneParcelLayoutSettings(parcelLayoutState.settings),
-    });
-    setParcelLayoutAutoPreviewState(null);
-    setParcelLayoutPreviewState(null);
-  };
-
-  const splitParcelBySwing = () => {
-    if (!directParcelSplitTarget) return;
-    commitParcelSwingLayout({
-      parcelEntityId: directParcelSplitTarget.parcel.id,
-      frontageEntityId: directParcelSplitTarget.frontage.id,
-      targetAreaSquareMeters: parcelLayoutState.settings.minAreaSquareMeters,
-      minFrontageMeters: parcelLayoutState.settings.minFrontageMeters,
-      alternative: directParcelSwingCandidate?.alternative ?? 'start',
-      settings: cloneParcelLayoutSettings(parcelLayoutState.settings),
-    });
-    setParcelLayoutAutoPreviewState(null);
-    setParcelLayoutPreviewState(null);
-  };
-
+    setParcelLayoutPreviewState,
+    parcelLayoutAutoPreviewState,
+    setParcelLayoutAutoPreviewState,
+    parcelLayoutAutoTool,
+    setParcelLayoutAutoTool,
+    parcelLayoutFrontageSegmentSelectionActive,
+    setParcelLayoutFrontageSegmentSelectionActive,
+    parcelLayoutFrontageSegmentSelectionIds,
+    setParcelLayoutFrontageSegmentSelectionIds,
+  });
   useEffect(() => {
     if (parcelLayoutState.dock !== 'floating') return;
     const handlePointerMove = (event: PointerEvent) => {
@@ -1156,74 +764,6 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     parcelLayoutState.floatingWidthPx,
   ]);
 
-  const createPrimaryParcelLayout = () => {
-    if (parcelLayoutState.settings.automaticMode === 'fill_parent') {
-      createAllParcelLayout();
-      return;
-    }
-    if (parcelLayoutState.settings.automaticMode === 'single_preview') {
-      commitAutomaticSinglePreviewCandidate();
-      return;
-    }
-    createParcelFromSelection();
-  };
-
-  const startFrontageSegmentSelection = () => {
-    if (!effectiveParcelLayoutParentEntity) return;
-    setParcelLayoutFrontageSegmentSelectionIds([
-      ...(parcelLayoutState.activeFrontageParcelSegmentIds ?? []),
-    ]);
-    setParcelLayoutFrontageSegmentSelectionActive(true);
-  };
-
-  const acceptFrontageSegmentSelection = () => {
-    if (!effectiveParcelLayoutParentEntity || parcelLayoutFrontageSegmentSelectionIds.length === 0) {
-      setParcelLayoutFrontageSegmentSelectionActive(false);
-      setParcelLayoutFrontageSegmentSelectionIds([]);
-      return;
-    }
-    const nextSegmentIds = [...new Set(parcelLayoutFrontageSegmentSelectionIds)];
-    updateParcelLayoutState((current) => ({
-      ...current,
-      activeFrontageEntityId: null,
-      activeFrontageParcelSegmentIds: nextSegmentIds,
-    }));
-    setParcelLayoutFrontageSegmentSelectionActive(false);
-    setParcelLayoutFrontageSegmentSelectionIds([]);
-  };
-
-  const cancelFrontageSegmentSelection = () => {
-    setParcelLayoutFrontageSegmentSelectionActive(false);
-    setParcelLayoutFrontageSegmentSelectionIds([]);
-  };
-
-  const toggleFrontageSegmentSelection = (entityId: CadEntityId, segmentId?: string) => {
-    if (
-      !parcelLayoutFrontageSegmentSelectionActive ||
-      !effectiveParcelLayoutParentEntity ||
-      entityId !== effectiveParcelLayoutParentEntity.id ||
-      segmentId == null
-    ) {
-      return false;
-    }
-    setParcelLayoutFrontageSegmentSelectionIds((current) =>
-      current.includes(segmentId)
-        ? current.filter((entry) => entry !== segmentId)
-        : [...current, segmentId],
-    );
-    return true;
-  };
-
-  const runAutoLayoutTool = () => {
-    if (parcelLayoutState.settings.automaticMode === 'fill_parent') {
-      createAllParcelLayout();
-      return;
-    }
-    if (parcelLayoutState.settings.automaticMode === 'single_preview') {
-      previewAllParcelLayout();
-    }
-  };
-
   useEffect(() => {
     if (propertiesPanelUiState.dock !== 'floating' || propertiesPanelState == null) return;
     const handlePointerMove = (event: PointerEvent) => {
@@ -1291,45 +831,6 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   const toggleParcelLayoutPanel = () => {
     setParcelLayoutState((current) => ({ ...current, open: !current.open }));
   };
-
-  const updateParcelLayoutState = (updater: (_current: CadParcelLayoutUiState) => CadParcelLayoutUiState) => {
-    setParcelLayoutState((current) => updater(current));
-  };
-
-  useEffect(() => {
-    setParcelLayoutPreviewState(null);
-  }, [
-    parcelLayoutParentEntity?.id,
-    parcelLayoutFrontageEntity?.id,
-    parcelLayoutState.settings.minAreaSquareMeters,
-    parcelLayoutState.settings.minFrontageMeters,
-    parcelLayoutState.settings.useFrontageAtOffset,
-    parcelLayoutState.settings.frontageOffsetMeters,
-    parcelLayoutState.settings.minWidthMeters,
-    parcelLayoutState.settings.minDepthMeters,
-    parcelLayoutState.settings.useMaxDepth,
-    parcelLayoutState.settings.maxDepthMeters,
-    parcelLayoutState.settings.solutionPreference,
-    activeProject.entities.length,
-  ]);
-  useEffect(() => {
-    setParcelLayoutAutoPreviewState(null);
-  }, [
-    parcelLayoutParentEntity?.id,
-    parcelLayoutFrontageEntity?.id,
-    parcelLayoutState.settings.minAreaSquareMeters,
-    parcelLayoutState.settings.minFrontageMeters,
-    parcelLayoutState.settings.useFrontageAtOffset,
-    parcelLayoutState.settings.frontageOffsetMeters,
-    parcelLayoutState.settings.minWidthMeters,
-    parcelLayoutState.settings.minDepthMeters,
-    parcelLayoutState.settings.useMaxDepth,
-    parcelLayoutState.settings.maxDepthMeters,
-    parcelLayoutState.settings.solutionPreference,
-    parcelLayoutState.settings.automaticMode,
-    parcelLayoutState.settings.remainderDistribution,
-    activeProject.entities.length,
-  ]);
 
   useEffect(() => {
     setViewport({ zoom: 1, panX: 0, panY: 0 });
@@ -1452,8 +953,8 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               onReportParcelGap={reportParcelGapFromSelection}
               onReportParcelDiagnostics={reportParcelDiagnosticsFromSelection}
               onReportParcelOverlap={reportParcelOverlapFromSelection}
-              canSplitParcelBySlide={directParcelSplitTarget != null}
-              canSplitParcelBySwing={directParcelSplitTarget != null}
+              canSplitParcelBySlide={canSplitParcelBySlideOrSwing}
+              canSplitParcelBySwing={canSplitParcelBySlideOrSwing}
               onSplitParcelBySlide={splitParcelBySlide}
               onSplitParcelBySwing={splitParcelBySwing}
               onSplitParcelByLine={splitParcelBySelectedLine}
@@ -1543,16 +1044,12 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               frontageLabel={parcelLayoutFrontageLabel}
               previewStatus={parcelLayoutPreviewStatus}
               previewDetails={parcelLayoutPreviewDetails}
-              hasPreview={parcelLayoutPreviewState != null || parcelLayoutAutoPreviewState != null}
-              canAcceptPreview={
-                parcelLayoutAutoPreviewState != null
-                  ? parcelLayoutState.settings.automaticMode === 'single_preview'
-                  : (parcelLayoutPreviewState?.candidate.isValid ?? false)
-              }
+              hasPreview={hasParcelLayoutPreview}
+              canAcceptPreview={canAcceptParcelLayoutPreview}
               canPreviewLayout={canPreviewParcelSlideOrSwing}
-              canUseCurrentSelectionAsParent={selectedParcelForLayout != null}
-              canUseCurrentSelectionAsFrontage={selectedFrontageForLayout != null}
-              canUseParcelFrontageSegments={effectiveParcelLayoutParentEntity != null}
+              canUseCurrentSelectionAsParent={canUseCurrentSelectionAsParent}
+              canUseCurrentSelectionAsFrontage={canUseCurrentSelectionAsFrontage}
+              canUseParcelFrontageSegments={canUseParcelFrontageSegments}
               isSelectingFrontageSegments={parcelLayoutFrontageSegmentSelectionActive}
               onClose={() => updateParcelLayoutState((current) => ({ ...current, open: false }))}
               onToggleCollapsed={() => updateParcelLayoutState((current) => ({ ...current, collapsed: !current.collapsed }))}
@@ -1603,25 +1100,8 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
                 };
                 setParcelLayoutResizeDirection(direction);
               }}
-              onUseSelectedParent={() => {
-                if (!selectedParcelForLayout || selectedParcelForLayout.type !== 'parcel') return;
-                updateParcelLayoutState((current) => ({
-                  ...current,
-                  activeParentParcelId: selectedParcelForLayout.id,
-                  activeFrontageParcelSegmentIds:
-                    current.activeParentParcelId === selectedParcelForLayout.id
-                      ? current.activeFrontageParcelSegmentIds
-                      : null,
-                }));
-              }}
-              onUseSelectedFrontage={() => {
-                if (!selectedFrontageForLayout) return;
-                updateParcelLayoutState((current) => ({
-                  ...current,
-                  activeFrontageEntityId: selectedFrontageForLayout.id,
-                  activeFrontageParcelSegmentIds: null,
-                }));
-              }}
+              onUseSelectedParent={useSelectedParentParcel}
+              onUseSelectedFrontage={useSelectedFrontageEntity}
               onStartFrontageSegmentSelection={startFrontageSegmentSelection}
               onAcceptFrontageSegmentSelection={acceptFrontageSegmentSelection}
               onCancelFrontageSegmentSelection={cancelFrontageSegmentSelection}
@@ -1669,11 +1149,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               canReportCheck={canReportParcelDiagnostics}
               canReportOverlap={canReportParcelOverlap}
               autoToolTitle={autoLayoutToolTitle}
-              frontageSegmentActionTitle={
-                effectiveParcelLayoutParentEntity
-                  ? 'Pick frontage segments from active parent parcel'
-                  : 'Choose one parent parcel before selecting frontage segments'
-              }
+              frontageSegmentActionTitle={frontageSegmentActionTitle}
             />
           ) : null}
           {activeBatchCogoDraft ? (
