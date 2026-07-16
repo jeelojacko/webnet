@@ -13,29 +13,17 @@ import SurveyCadBatchCogoPanel from './surveyCad/SurveyCadBatchCogoPanel';
 import SurveyCadCommandLine from './surveyCad/SurveyCadCommandLine';
 import SurveyCadCogoPanel from './surveyCad/SurveyCadCogoPanel';
 import SurveyCadParcelLayoutPanel from './surveyCad/SurveyCadParcelLayoutPanel';
-import type { FloatingPanelResizeDirection } from './surveyCad/SurveyCadFloatingPanelShell';
 import SurveyCadPropertiesPanel from './surveyCad/SurveyCadPropertiesPanel';
 import SurveyCadPreview from './surveyCad/SurveyCadPreview';
 import SurveyCadTraverseDraftPanel from './surveyCad/SurveyCadTraverseDraftPanel';
+import { useSurveyCadCommandDisplay } from './useSurveyCadCommandDisplay';
+import { useSurveyCadFloatingPanels } from './useSurveyCadFloatingPanels';
 import { useSurveyCadParcelLayoutWorkflow } from './useSurveyCadParcelLayoutWorkflow';
 import { useSurveyCadWorkspaceKeyboard } from './useSurveyCadWorkspaceKeyboard';
 import {
-  CAD_SIDE_PANEL_GAP_PX,
-  CAD_SIDE_PANEL_TOP_PX,
-  CAD_SIDE_PANEL_WIDTH_PX,
-  DEFAULT_PARCEL_LAYOUT_FLOATING_HEIGHT_PX,
   DEFAULT_PARCEL_LAYOUT_SETTINGS,
-  MIN_PARCEL_LAYOUT_FLOATING_HEIGHT_PX,
-  MIN_PARCEL_LAYOUT_FLOATING_WIDTH_PX,
-  PARCEL_LAYOUT_FLOATING_MIN_TOP_PX,
-  PARCEL_LAYOUT_FLOATING_VIEWPORT_GUTTER_PX,
-  PROPERTIES_PANEL_FLOATING_LEFT_PX,
-  PROPERTIES_PANEL_FLOATING_TOP_PX,
-  PROPERTIES_PANEL_HEIGHT_PX,
   cloneParcelLayoutSettings,
   cloneParcelLayoutUiState,
-  type CadSidePanelDock,
-  type CadSidePanelId,
   type ParcelLayoutAutoPreviewState,
   type ParcelLayoutPreviewState,
 } from './surveyCadWorkspaceParcelLayout';
@@ -108,30 +96,6 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   const [newTraverseLegInput, setNewTraverseLegInput] = useState('');
   const [newTraverseSideshotOccupyIndex, setNewTraverseSideshotOccupyIndex] = useState(1);
   const [newTraverseSideshotInput, setNewTraverseSideshotInput] = useState('');
-  const [propertiesPanelUiState, setPropertiesPanelUiState] = useState<{
-    dock: CadSidePanelDock;
-    collapsed: boolean;
-    floatingLeftPx: number;
-    floatingTopPx: number;
-  }>({
-    dock: 'right',
-    collapsed: false,
-    floatingLeftPx: PROPERTIES_PANEL_FLOATING_LEFT_PX,
-    floatingTopPx: PROPERTIES_PANEL_FLOATING_TOP_PX,
-  });
-  const [panelDockOrders, setPanelDockOrders] = useState<Record<CadSidePanelId, number>>({
-    'parcel-layout': 0,
-    properties: 0,
-  });
-  const panelDockOrderCounterRef = useRef(0);
-  const touchPanelDockOrder = (panelId: CadSidePanelId) => {
-    panelDockOrderCounterRef.current += 1;
-    const nextOrder = panelDockOrderCounterRef.current;
-    setPanelDockOrders((current) => ({
-      ...current,
-      [panelId]: nextOrder,
-    }));
-  };
   const {
     cadProject: activeProject,
     displayScene,
@@ -318,21 +282,6 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     setShowParcelLabels(persistedState?.showParcelLabels ?? true);
   }, [persistedState]);
 
-  useEffect(() => {
-    const isVisible = propertiesPanelState != null;
-    if (isVisible && !previousPropertiesPanelVisibleRef.current) {
-      touchPanelDockOrder('properties');
-    }
-    previousPropertiesPanelVisibleRef.current = isVisible;
-  }, [propertiesPanelState]);
-
-  useEffect(() => {
-    if (parcelLayoutState.open && !previousParcelLayoutOpenRef.current) {
-      touchPanelDockOrder('parcel-layout');
-    }
-    previousParcelLayoutOpenRef.current = parcelLayoutState.open;
-  }, [parcelLayoutState.open]);
-
   const displaySceneWithParcelLabelToggle = useMemo(
     () =>
       showParcelLabels
@@ -345,41 +294,6 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         },
     [displayScene, showParcelLabels],
   );
-  const dockedPanelOffsets = useMemo(() => {
-    const visiblePanels: Array<{
-      id: CadSidePanelId;
-      dock: CadSidePanelDock;
-      order: number;
-    }> = [];
-    if (propertiesPanelState) {
-      visiblePanels.push({
-        id: 'properties',
-        dock: propertiesPanelUiState.dock,
-        order: panelDockOrders.properties,
-      });
-    }
-    if (parcelLayoutState.open && parcelLayoutState.dock !== 'floating') {
-      visiblePanels.push({
-        id: 'parcel-layout',
-        dock: parcelLayoutState.dock,
-        order: panelDockOrders['parcel-layout'],
-      });
-    }
-    const offsets: Record<CadSidePanelId, number> = {
-      'parcel-layout': CAD_SIDE_PANEL_GAP_PX,
-      properties: CAD_SIDE_PANEL_GAP_PX,
-    };
-    (['left', 'right'] as const).forEach((dock) => {
-      visiblePanels
-        .filter((panel) => panel.dock === dock)
-        .sort((left, right) => left.order - right.order)
-        .forEach((panel, index) => {
-          offsets[panel.id] = CAD_SIDE_PANEL_GAP_PX + index * (CAD_SIDE_PANEL_WIDTH_PX + CAD_SIDE_PANEL_GAP_PX);
-        });
-    });
-    return offsets;
-  }, [panelDockOrders, parcelLayoutState.dock, parcelLayoutState.open, propertiesPanelState, propertiesPanelUiState.dock]);
-
   const reportedComputationEntities = useMemo(
     () =>
       reportedComputation
@@ -502,116 +416,37 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     }
   };
 
-  const commandInputPlaceholder = useMemo(() => {
-    if (!activeCommandKey) return 'Choose a command, then click or type in the drawing window';
-    if (activeCommandKey === 'POINT') return 'Click in model space or type x,y / LABEL=x,y';
-    if (activeCommandKey === 'COGO_POINT') return 'Click base/target or type @azimuth,distance';
-    if (activeCommandKey === 'TRAVERSE') return 'Click start / next point or type bearing-distance';
-    if (activeCommandKey === 'BATCH_COGO') return 'Use batch COGO panel for pasted deed rows';
-    if (activeCommandKey === 'MULTI_INVERSE') return 'Click point sequence or type x,y / bearing-distance';
-    if (activeCommandKey === 'AREA') return 'Click point sequence or type x,y / bearing-distance, then Enter to close';
-    if (activeCommandKey === 'TURNED_POINT') return 'Pick occupy/backsight, then type Langle,distance or Rangle,distance';
-    if (activeCommandKey === 'DEFLECT_POINT') return 'Type Langle,distance or Rangle,distance from selected line';
-    if (activeCommandKey === 'POINT_ALONG_LINE') return 'Type distance or percent like 25 or 50% from selected line';
-    if (activeCommandKey === 'EXTEND_LINE') return 'Type extension distance from selected line end';
-    if (activeCommandKey === 'OFFSET_POINT') return 'Type Loffset,along or Roffset,along from selected line';
-    if (activeCommandKey === 'ALIGNMENT_OFFSET_CREATE') return 'Type offset or NAME=offset from selected alignment';
-    if (activeCommandKey === 'ALIGNMENT_STATION_EQUATION') return 'Type backStation,aheadStation from selected alignment';
-    if (activeCommandKey === 'ALIGNMENT_OFFSET_POINT') return 'Type station,offset or LABEL=station,offset from selected alignment';
-    if (activeCommandKey === 'ALIGNMENT_INTERVAL_POINTS') return 'Type interval or start,end,interval from selected alignment';
-    if (activeCommandKey === 'CURVE_SOLVER') return 'Type param1,param2,value1,value2 like radius,delta,200,60';
-    if (activeCommandKey === 'RADIAL_BEARING') return 'Type PC, PT, or MID from selected arc';
-    if (activeCommandKey === 'POINT_ON_CURVE') return 'Type ARC,distance or CHORD,distance from selected arc start';
-    if (activeCommandKey === 'SUBDIVIDE_CURVE') return 'Type EQUAL,count or ARC/CHORD interval for selected arc';
-    if (activeCommandKey === 'OFFSET_CURVE') return 'Type Ldistance or Rdistance from selected arc';
-    if (activeCommandKey === 'PI_CURVE') return 'Pick PI/back tangent, then type Lradius,delta or Rradius,delta';
-    if (activeCommandKey === 'CHORD_BEARING_CURVE') return 'Pick start, then type bearing,chord,radius,L|R';
-    if (activeCommandKey === 'REVERSE_CURVE') return 'Type Lradius,delta or Rradius,delta from selected arc';
-    if (activeCommandKey === 'COMPOUND_CURVE') return 'Type Lradius,delta or Rradius,delta from selected arc';
-    if (activeCommandKey === 'BEARING_BEARING_INTX') return 'Pick two points, then type bearing1;bearing2';
-    if (activeCommandKey === 'BEARING_DISTANCE_INTX') return 'Pick bearing point and center, then type bearing;distance';
-    if (activeCommandKey === 'DISTANCE_DISTANCE_INTX') return 'Pick two centers, then type distance1,distance2';
-    if (activeCommandKey === 'LINE_CIRCLE_INTX') return 'Select a line, pick a center point, then type radius';
-    if (activeCommandKey === 'PERP_INTX') return 'Select a line, then pick the external point';
-    if (activeCommandKey === 'OFFSET_INTX') return 'Select two lines, then type Loff1,Roff2';
-    if (activeCommandKey === 'SKEW_INTX') return 'Select a line, pick a source point, then type Langle or Rangle';
-    if (activeCommandKey === 'EXTEND') return 'Click entity to extend, then click boundary. Enter/Esc ends extend';
-    if (activeCommandKey === 'TRIM') return 'Click first entity, then click side to trim on second entity. Enter/Esc ends trim';
-    if (activeCommandKey === 'FILLET') return 'Type radius, then click two entities near the corner. Enter/Esc ends fillet';
-    if (activeCommandKey?.startsWith('ARC_') || activeCommandKey === 'CONTINUE_CURVE') {
-      return 'Pick arc points, then enter the required value. Hold Ctrl to reverse direction';
-    }
-    if (activeCommandKey === 'TANGENT_CURVE') return 'Click tangent points or type radius';
-    if (activeCommandKey === 'PASTE') return 'Click insertion point or type x,y / bearing-distance';
-    return 'Click in model space or type x,y / bearing-distance';
-  }, [activeCommandKey]);
-  const commandStatusText = useMemo(
-    () => (statusText.startsWith('Ready.') ? '' : statusText),
-    [statusText],
-  );
-  const commandModifierHint = useMemo(() => {
-    if (
-      activeCommandKey == null ||
-      ![
-        'ARC_SCE',
-        'ARC_CSE',
-        'ARC_SCA',
-        'ARC_CSA',
-        'ARC_SCL',
-        'ARC_CSL',
-        'ARC_SEA',
-        'ARC_SED',
-        'ARC_SER',
-        'CONTINUE_CURVE',
-      ].includes(activeCommandKey)
-    ) {
-      return '';
-    }
-    return reverseDirectionModifier ? 'Ctrl Held: Flip Arc' : 'Ctrl = Flip Arc';
-  }, [activeCommandKey, reverseDirectionModifier]);
-  const constructionHint = useMemo(() => {
-    if (!snapConstructionContext.active || !snapConstructionContext.basePoint) return '';
-    const enabledConstructionKinds = [
-      snapPreferences.extension ? 'Ext' : null,
-      snapPreferences.perpendicular ? 'Perp' : null,
-      snapPreferences.parallel ? 'Par' : null,
-      snapPreferences['apparent-intersection'] ? 'App' : null,
-      snapPreferences.tangent ? 'Tan' : null,
-    ].filter((value): value is string => value != null);
-    if (enabledConstructionKinds.length === 0) return '';
-    return `Base ${snapConstructionContext.basePoint.x.toFixed(3)},${snapConstructionContext.basePoint.y.toFixed(3)}: Construction snaps live (${enabledConstructionKinds.join('/')})`;
-  }, [snapConstructionContext, snapPreferences]);
+  const {
+    commandInputPlaceholder,
+    commandModifierHint,
+    commandStatusText,
+    constructionHint,
+  } = useSurveyCadCommandDisplay({
+    activeCommandKey,
+    reverseDirectionModifier,
+    snapConstructionContext,
+    snapPreferences,
+    statusText,
+  });
 
-  const parcelLayoutDragRef = useRef<{
-    pointerId: number;
-    startClientX: number;
-    startClientY: number;
-    startLeftPx: number;
-    startTopPx: number;
-  } | null>(null);
-  const propertiesPanelDragRef = useRef<{
-    pointerId: number;
-    startClientX: number;
-    startClientY: number;
-    startLeftPx: number;
-    startTopPx: number;
-  } | null>(null);
-  const parcelLayoutResizeRef = useRef<{
-    pointerId: number;
-    direction: FloatingPanelResizeDirection;
-    startClientX: number;
-    startClientY: number;
-    startWidthPx: number;
-    startHeightPx: number;
-    startLeftPx: number;
-    startTopPx: number;
-  } | null>(null);
-  const [isParcelLayoutDragging, setIsParcelLayoutDragging] = useState(false);
-  const [isPropertiesPanelDragging, setIsPropertiesPanelDragging] = useState(false);
-  const [parcelLayoutResizeDirection, setParcelLayoutResizeDirection] =
-    useState<FloatingPanelResizeDirection | null>(null);
-  const previousPropertiesPanelVisibleRef = useRef(false);
-  const previousParcelLayoutOpenRef = useRef(false);
+  const {
+    dockedPanelOffsets,
+    isParcelLayoutDragging,
+    isPropertiesPanelDragging,
+    parcelLayoutResizeDirection,
+    propertiesPanelUiState,
+    setParcelLayoutDock,
+    setPropertiesPanelDock,
+    startParcelLayoutDrag,
+    startParcelLayoutResize,
+    startPropertiesPanelDrag,
+    toggleParcelLayoutPanel,
+    togglePropertiesPanelCollapsed,
+  } = useSurveyCadFloatingPanels({
+    parcelLayoutState,
+    setParcelLayoutState,
+    propertiesPanelVisible: propertiesPanelState != null,
+  });
   const {
     autoLayoutToolTitle,
     canAcceptParcelLayoutPreview,
@@ -669,171 +504,6 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     parcelLayoutFrontageSegmentSelectionIds,
     setParcelLayoutFrontageSegmentSelectionIds,
   });
-  useEffect(() => {
-    if (parcelLayoutState.dock !== 'floating') return;
-    const handlePointerMove = (event: PointerEvent) => {
-      const drag = parcelLayoutDragRef.current;
-      if (drag && drag.pointerId === event.pointerId) {
-        event.preventDefault();
-        const maxLeft = Math.max(
-          PARCEL_LAYOUT_FLOATING_VIEWPORT_GUTTER_PX,
-          window.innerWidth - parcelLayoutState.floatingWidthPx - PARCEL_LAYOUT_FLOATING_VIEWPORT_GUTTER_PX,
-        );
-        const maxTop = Math.max(
-          PARCEL_LAYOUT_FLOATING_MIN_TOP_PX,
-          window.innerHeight - parcelLayoutState.floatingHeightPx - PARCEL_LAYOUT_FLOATING_VIEWPORT_GUTTER_PX,
-        );
-        const nextLeft = drag.startLeftPx + (event.clientX - drag.startClientX);
-        const nextTop = drag.startTopPx + (event.clientY - drag.startClientY);
-        setParcelLayoutState((current) => ({
-          ...current,
-          floatingLeftPx: Math.min(
-            maxLeft,
-            Math.max(PARCEL_LAYOUT_FLOATING_VIEWPORT_GUTTER_PX, nextLeft),
-          ),
-          floatingTopPx: Math.min(
-            maxTop,
-            Math.max(PARCEL_LAYOUT_FLOATING_MIN_TOP_PX, nextTop),
-          ),
-        }));
-        return;
-      }
-      const resize = parcelLayoutResizeRef.current;
-      if (!resize || resize.pointerId !== event.pointerId) return;
-      event.preventDefault();
-      setParcelLayoutState((current) => {
-        const maxWidth = Math.max(
-          MIN_PARCEL_LAYOUT_FLOATING_WIDTH_PX,
-          window.innerWidth - current.floatingLeftPx - PARCEL_LAYOUT_FLOATING_VIEWPORT_GUTTER_PX,
-        );
-        const maxHeight = Math.min(
-          DEFAULT_PARCEL_LAYOUT_FLOATING_HEIGHT_PX,
-          Math.max(
-            MIN_PARCEL_LAYOUT_FLOATING_HEIGHT_PX,
-            window.innerHeight - current.floatingTopPx - PARCEL_LAYOUT_FLOATING_VIEWPORT_GUTTER_PX,
-          ),
-        );
-        const minHeight = Math.min(
-          MIN_PARCEL_LAYOUT_FLOATING_HEIGHT_PX,
-          DEFAULT_PARCEL_LAYOUT_FLOATING_HEIGHT_PX,
-        );
-        const deltaX = event.clientX - resize.startClientX;
-        const deltaY = event.clientY - resize.startClientY;
-        const widthDelta =
-          resize.direction === 'right' || resize.direction === 'corner' ? deltaX : 0;
-        const heightDelta =
-          resize.direction === 'bottom' || resize.direction === 'corner' ? deltaY : 0;
-        return {
-          ...current,
-          floatingWidthPx: Math.min(
-            maxWidth,
-            Math.max(MIN_PARCEL_LAYOUT_FLOATING_WIDTH_PX, resize.startWidthPx + widthDelta),
-          ),
-          floatingHeightPx: Math.min(
-            maxHeight,
-            Math.max(minHeight, resize.startHeightPx + heightDelta),
-          ),
-        };
-      });
-    };
-    const clearDrag = (pointerId: number) => {
-      if (parcelLayoutDragRef.current?.pointerId === pointerId) {
-        parcelLayoutDragRef.current = null;
-        setIsParcelLayoutDragging(false);
-      }
-      if (parcelLayoutResizeRef.current?.pointerId === pointerId) {
-        parcelLayoutResizeRef.current = null;
-        setParcelLayoutResizeDirection(null);
-      }
-    };
-    const handlePointerUp = (event: PointerEvent) => {
-      clearDrag(event.pointerId);
-    };
-    const handlePointerCancel = (event: PointerEvent) => {
-      clearDrag(event.pointerId);
-    };
-    window.addEventListener('pointermove', handlePointerMove);
-    window.addEventListener('pointerup', handlePointerUp);
-    window.addEventListener('pointercancel', handlePointerCancel);
-    return () => {
-      window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerup', handlePointerUp);
-      window.removeEventListener('pointercancel', handlePointerCancel);
-    };
-  }, [
-    parcelLayoutState.dock,
-    parcelLayoutState.floatingHeightPx,
-    parcelLayoutState.floatingWidthPx,
-  ]);
-
-  useEffect(() => {
-    if (propertiesPanelUiState.dock !== 'floating' || propertiesPanelState == null) return;
-    const handlePointerMove = (event: PointerEvent) => {
-      const drag = propertiesPanelDragRef.current;
-      if (!drag || drag.pointerId !== event.pointerId) return;
-      event.preventDefault();
-      const maxLeft = Math.max(
-        PARCEL_LAYOUT_FLOATING_VIEWPORT_GUTTER_PX,
-        window.innerWidth - CAD_SIDE_PANEL_WIDTH_PX - PARCEL_LAYOUT_FLOATING_VIEWPORT_GUTTER_PX,
-      );
-      const maxTop = Math.max(
-        CAD_SIDE_PANEL_TOP_PX,
-        window.innerHeight - PROPERTIES_PANEL_HEIGHT_PX - PARCEL_LAYOUT_FLOATING_VIEWPORT_GUTTER_PX,
-      );
-      const nextLeft = drag.startLeftPx + (event.clientX - drag.startClientX);
-      const nextTop = drag.startTopPx + (event.clientY - drag.startClientY);
-      setPropertiesPanelUiState((current) => ({
-        ...current,
-        floatingLeftPx: Math.min(
-          maxLeft,
-          Math.max(PARCEL_LAYOUT_FLOATING_VIEWPORT_GUTTER_PX, nextLeft),
-        ),
-        floatingTopPx: Math.min(
-          maxTop,
-          Math.max(CAD_SIDE_PANEL_TOP_PX, nextTop),
-        ),
-      }));
-    };
-    const clearDrag = (pointerId: number) => {
-      if (propertiesPanelDragRef.current?.pointerId === pointerId) {
-        propertiesPanelDragRef.current = null;
-        setIsPropertiesPanelDragging(false);
-      }
-    };
-    const handlePointerUp = (event: PointerEvent) => {
-      clearDrag(event.pointerId);
-    };
-    const handlePointerCancel = (event: PointerEvent) => {
-      clearDrag(event.pointerId);
-    };
-    window.addEventListener('pointermove', handlePointerMove);
-    window.addEventListener('pointerup', handlePointerUp);
-    window.addEventListener('pointercancel', handlePointerCancel);
-    return () => {
-      window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerup', handlePointerUp);
-      window.removeEventListener('pointercancel', handlePointerCancel);
-    };
-  }, [propertiesPanelState, propertiesPanelUiState.dock]);
-
-  useEffect(() => {
-    if (parcelLayoutState.open && parcelLayoutState.dock === 'floating') return;
-    parcelLayoutDragRef.current = null;
-    parcelLayoutResizeRef.current = null;
-    setIsParcelLayoutDragging(false);
-    setParcelLayoutResizeDirection(null);
-  }, [parcelLayoutState.dock, parcelLayoutState.open]);
-
-  useEffect(() => {
-    if (propertiesPanelState && propertiesPanelUiState.dock === 'floating') return;
-    propertiesPanelDragRef.current = null;
-    setIsPropertiesPanelDragging(false);
-  }, [propertiesPanelState, propertiesPanelUiState.dock]);
-
-  const toggleParcelLayoutPanel = () => {
-    setParcelLayoutState((current) => ({ ...current, open: !current.open }));
-  };
-
   useEffect(() => {
     setViewport({ zoom: 1, panX: 0, panY: 0 });
     setViewBounds(cloneBounds(cadProject.bounds));
@@ -996,38 +666,10 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               floatingLeftPx={propertiesPanelUiState.floatingLeftPx}
               floatingTopPx={propertiesPanelUiState.floatingTopPx}
               collapsed={propertiesPanelUiState.collapsed}
-              onSetDock={(dock) => {
-                setPropertiesPanelUiState((current) => ({ ...current, dock }));
-                if (dock !== 'floating') touchPanelDockOrder('properties');
-              }}
-              onToggleCollapsed={() =>
-                setPropertiesPanelUiState((current) => ({
-                  ...current,
-                  collapsed: !current.collapsed,
-                }))
-              }
+              onSetDock={setPropertiesPanelDock}
+              onToggleCollapsed={togglePropertiesPanelCollapsed}
               onClose={() => clearSelection()}
-              onStartDrag={(event) => {
-                if (propertiesPanelUiState.dock !== 'floating') return;
-                if (event.button !== 0) return;
-                const target = event.target;
-                if (
-                  target instanceof HTMLElement &&
-                  target.closest('button, input, select, textarea, label, a')
-                ) {
-                  return;
-                }
-                event.preventDefault();
-                event.stopPropagation();
-                propertiesPanelDragRef.current = {
-                  pointerId: event.pointerId,
-                  startClientX: event.clientX,
-                  startClientY: event.clientY,
-                  startLeftPx: propertiesPanelUiState.floatingLeftPx,
-                  startTopPx: propertiesPanelUiState.floatingTopPx,
-                };
-                setIsPropertiesPanelDragging(true);
-              }}
+              onStartDrag={startPropertiesPanelDrag}
               onSelectEntity={(entityId) => selectEntity(entityId)}
               onEditField={editPropertiesField}
             />
@@ -1055,53 +697,10 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               isSelectingFrontageSegments={parcelLayoutFrontageSegmentSelectionActive}
               onClose={() => updateParcelLayoutState((current) => ({ ...current, open: false }))}
               onToggleCollapsed={() => updateParcelLayoutState((current) => ({ ...current, collapsed: !current.collapsed }))}
-              onSetDock={(dock) => {
-                updateParcelLayoutState((current) => ({ ...current, dock }));
-                touchPanelDockOrder('parcel-layout');
-              }}
+              onSetDock={setParcelLayoutDock}
               dockOffsetPx={dockedPanelOffsets['parcel-layout']}
-              onStartDrag={(event) => {
-                if (parcelLayoutState.dock !== 'floating') return;
-                if (event.button !== 0) return;
-                const target = event.target;
-                if (
-                  target instanceof HTMLElement &&
-                  target.closest('button, input, select, textarea, label, a')
-                ) {
-                  return;
-                }
-                event.preventDefault();
-                event.stopPropagation();
-                parcelLayoutResizeRef.current = null;
-                setParcelLayoutResizeDirection(null);
-                parcelLayoutDragRef.current = {
-                  pointerId: event.pointerId,
-                  startClientX: event.clientX,
-                  startClientY: event.clientY,
-                  startLeftPx: parcelLayoutState.floatingLeftPx,
-                  startTopPx: parcelLayoutState.floatingTopPx,
-                };
-                setIsParcelLayoutDragging(true);
-              }}
-              onStartResize={(direction, event) => {
-                if (parcelLayoutState.dock !== 'floating') return;
-                if (event.button !== 0) return;
-                event.preventDefault();
-                event.stopPropagation();
-                parcelLayoutDragRef.current = null;
-                setIsParcelLayoutDragging(false);
-                parcelLayoutResizeRef.current = {
-                  pointerId: event.pointerId,
-                  direction,
-                  startClientX: event.clientX,
-                  startClientY: event.clientY,
-                  startWidthPx: parcelLayoutState.floatingWidthPx,
-                  startHeightPx: parcelLayoutState.floatingHeightPx,
-                  startLeftPx: parcelLayoutState.floatingLeftPx,
-                  startTopPx: parcelLayoutState.floatingTopPx,
-                };
-                setParcelLayoutResizeDirection(direction);
-              }}
+              onStartDrag={startParcelLayoutDrag}
+              onStartResize={startParcelLayoutResize}
               onUseSelectedParent={useSelectedParentParcel}
               onUseSelectedFrontage={useSelectedFrontageEntity}
               onStartFrontageSegmentSelection={startFrontageSegmentSelection}
