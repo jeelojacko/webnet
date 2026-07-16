@@ -138,7 +138,7 @@ Representative areas:
 - `InputPane`
 - `ReportView` and `src/components/report/*`
 - `MapView`
-- `SurveyCadWorkspace`, `surveyCadWorkspaceParcelLayout.ts`, and `src/components/surveyCad/*` as the current CAD spike entry seam
+- `SurveyCadWorkspace`, `surveyCadWorkspaceParcelLayout.ts`, `useSurveyCadWorkspaceKeyboard.ts`, and `src/components/surveyCad/*` as the current CAD spike entry seam
 - import-review modal
 - Project Options modal
 - workspace shell and toolbar components

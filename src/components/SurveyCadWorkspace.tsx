@@ -23,6 +23,7 @@ import SurveyCadParcelLayoutPanel from './surveyCad/SurveyCadParcelLayoutPanel';
 import type { FloatingPanelResizeDirection } from './surveyCad/SurveyCadFloatingPanelShell';
 import SurveyCadPropertiesPanel from './surveyCad/SurveyCadPropertiesPanel';
 import SurveyCadPreview from './surveyCad/SurveyCadPreview';
+import { useSurveyCadWorkspaceKeyboard } from './useSurveyCadWorkspaceKeyboard';
 import {
   CAD_SIDE_PANEL_GAP_PX,
   CAD_SIDE_PANEL_TOP_PX,
@@ -1335,122 +1336,28 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     setViewBounds(cloneBounds(cadProject.bounds));
   }, [cadProject.bounds, cadProject.id]);
 
-  useEffect(() => {
-    const isEditableTarget = (target: EventTarget | null): boolean =>
-      (target instanceof HTMLInputElement && !target.disabled && !target.readOnly) ||
-      (target instanceof HTMLTextAreaElement && !target.disabled && !target.readOnly) ||
-      (target instanceof HTMLElement && target.isContentEditable);
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      const target = event.target;
-      if (event.key === 'Escape') {
-        if (activeCommandKey == null && selectionCount === 0) return;
-        event.preventDefault();
-        if (activeCommandKey) {
-          handleEscapeKey();
-          return;
-        }
-        clearSelection();
-        return;
-      }
-      if (event.key === ' ' && (canCycleActiveSnap || isGripEditing) && nearbySnaps.length > 1) {
-        event.preventDefault();
-        cycleActiveSnap();
-        return;
-      }
-      if (event.key === 'Control') {
-        setReverseDirectionModifier(true);
-      }
-      const modifierKey = event.ctrlKey || event.metaKey;
-      if (modifierKey && !isEditableTarget(target)) {
-        const lowerKey = event.key.toLowerCase();
-        if (lowerKey === 'c' && selectionCount > 0) {
-          event.preventDefault();
-          setCopiedEntityIds(selectedEntityIds);
-          copiedEntityIdsRef.current = selectedEntityIds;
-          return;
-        }
-        if (lowerKey === 'v' && copiedEntityIdsRef.current.length > 0) {
-          event.preventDefault();
-          startPasteFromClipboard(copiedEntityIdsRef.current);
-          return;
-        }
-        if (lowerKey === 'z') {
-          event.preventDefault();
-          if (event.shiftKey) {
-            redo();
-            return;
-          }
-          undo();
-          return;
-        }
-        if (lowerKey === 'y') {
-          event.preventDefault();
-          redo();
-          return;
-        }
-      }
-      if (event.key === 'Enter' && activeCommandKey != null) {
-        if (isEditableTarget(target)) return;
-        event.preventDefault();
-        handleEnterKey();
-        return;
-      }
-      if (
-        activeCommandKey == null &&
-        !modifierKey &&
-        !isEditableTarget(target) &&
-        !event.altKey &&
-        selectionCount > 0 &&
-        (event.key === 'Backspace' || event.key === 'Delete')
-      ) {
-        event.preventDefault();
-        eraseSelection();
-        return;
-      }
-      if (activeCommandKey == null || modifierKey || isEditableTarget(target) || event.altKey) return;
-      if (event.key === 'Backspace') {
-        event.preventDefault();
-        backspaceCommandInputValue();
-        return;
-      }
-      if (event.key.length !== 1) return;
-      event.preventDefault();
-      appendCommandInputValue(event.key);
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    const handleKeyUp = (event: KeyboardEvent) => {
-      if (event.key === 'Control') {
-        setReverseDirectionModifier(false);
-      }
-    };
-    const handleBlur = () => setReverseDirectionModifier(false);
-    window.addEventListener('keyup', handleKeyUp);
-    window.addEventListener('blur', handleBlur);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-      window.removeEventListener('blur', handleBlur);
-    };
-  }, [
+  useSurveyCadWorkspaceKeyboard({
     activeCommandKey,
     appendCommandInputValue,
     backspaceCommandInputValue,
-    clearSelection,
     canCycleActiveSnap,
-    isGripEditing,
+    clearSelection,
+    copiedEntityIds,
+    copiedEntityIdsRef,
     cycleActiveSnap,
     eraseSelection,
     handleEnterKey,
     handleEscapeKey,
-    nearbySnaps.length,
-    copiedEntityIds,
+    isGripEditing,
+    nearbySnapCount: nearbySnaps.length,
     redo,
     selectedEntityIds,
     selectionCount,
+    setCopiedEntityIds,
+    setReverseDirectionModifier,
     startPasteFromClipboard,
     undo,
-  ]);
+  });
 
   return (
     <div className="h-full min-h-0 overflow-hidden bg-slate-950 text-slate-100" data-survey-cad-dedicated-page>
