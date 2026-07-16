@@ -76,6 +76,9 @@ Representative modules include:
 - `projectStorage.ts`
 - `projectBundle.ts`
 
+Current listing seams:
+- `industryListing.ts` owns the industry-style listing ordering and top-level section assembly, while `industryListingStationContext.ts` builds lost-station filtering, entered-station classification, classic traverse station order, and display-factor context, and `industryListingGpsDisplay.ts` builds GNSS display vectors, covariance displays, and listing-only GPS statistical rows.
+
 ### Parser decomposition
 Parser responsibilities are now split across focused modules. The main parser delegates to extracted families and state helpers such as:
 

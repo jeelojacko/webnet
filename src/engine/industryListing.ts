@@ -4,11 +4,6 @@ import {
   DEFAULT_QFIX_LINEAR_SIGMA_M,
 } from './defaults';
 import {
-  computeClassicTraverseLegacyDisplayGridFactors,
-  ecefDeltaToLocalEnu,
-  transformFactoredEcefDeltaCovarianceToLocalEnu,
-} from './geodesy';
-import {
   buildResultStatisticalSummaryModel,
   buildResultTraceabilityModel,
 } from './resultDerivedModels';
@@ -24,6 +19,14 @@ import {
   buildDistanceAzimuthPrecision,
   buildHorizontalErrorEllipse,
 } from './precisionPropagation';
+import {
+  buildIndustryListingStationContext,
+  observationStationIds,
+} from './industryListingStationContext';
+import {
+  buildIndustryListingGpsDisplayHelpers,
+  formatGpsStdResValue,
+} from './industryListingGpsDisplay';
 import { buildLevelingOnlyIndustryListingText } from './industryListingLeveling';
 import {
   appendAdjustedObservationSections,
@@ -99,17 +102,6 @@ export const buildIndustryStyleListingText = (
   const unitScale = settings.units === 'ft' ? FT_PER_M : 1;
   const runDiag = runDiagnostics;
   const showLostStations = settings.listingShowLostStations ?? true;
-  let stationEntriesInputOrder = Object.entries(res.stations).filter(
-    ([, st]) => showLostStations || !st.lost,
-  );
-  let stationEntriesForListing =
-    settings.listingSortCoordinatesBy === 'name'
-      ? [...stationEntriesInputOrder].sort((a, b) =>
-          a[0].localeCompare(b[0], undefined, { numeric: true }),
-        )
-      : stationEntriesInputOrder;
-  let fixedStations = stationEntriesInputOrder.filter(([, st]) => st.fixed).length;
-  let freeStations = stationEntriesInputOrder.length - fixedStations;
   const statisticalSummary = buildResultStatisticalSummaryModel(res, 'listing');
   const observationCount =
     statisticalSummary.totalCount > 0 ? statisticalSummary.totalCount : res.observations.length;
@@ -246,12 +238,6 @@ export const buildIndustryStyleListingText = (
   const stationDescription = (stationId: string): string => reconciledDescriptions[stationId] ?? '';
   const traceabilityModel = buildResultTraceabilityModel(parseState);
   const lostStationIds = traceabilityModel.lostStationIds;
-  const observationStationIds = (obs: Observation): string[] => {
-    if (obs.type === 'angle') return [obs.at, obs.from, obs.to];
-    if (obs.type === 'direction') return [obs.at, obs.to];
-    if ('from' in obs && 'to' in obs) return [obs.from, obs.to];
-    return [];
-  };
   const isHiddenLostStation = (stationId: string): boolean => {
     if (showLostStations) return false;
     const station = res.stations[stationId];
@@ -345,219 +331,31 @@ export const buildIndustryStyleListingText = (
       : Math.abs(gpsVectorFactorHorizontal - gpsVectorFactorVertical) <= 1e-12
         ? gpsVectorFactorHorizontal.toFixed(4)
         : `H=${gpsVectorFactorHorizontal.toFixed(4)} V=${gpsVectorFactorVertical.toFixed(4)}`;
-  const enteredInputStationSnapshots =
-    parseState?.inputStationSnapshots?.filter(
-      (station) => showLostStations || !res.stations[station.stationId]?.lost,
-    ) ??
-    stationEntriesInputOrder
-      .filter(([, station]) => station.coordInputClass != null && station.coordInputClass !== 'unknown')
-      .map(([stationId, station]) => ({
-        stationId,
-        x: station.x,
-        y: station.y,
-        h: station.h,
-        coordInputClass: station.coordInputClass,
-        constraintModeX: station.constraintModeX,
-        constraintModeY: station.constraintModeY,
-        constraintModeH: station.constraintModeH,
-      }));
-  const observedStationIds = new Set<string>();
-  observationsForListing.forEach((obs) => {
-    observationStationIds(obs).forEach((stationId) => {
-      if (stationId) observedStationIds.add(stationId);
-    });
+  const {
+    classicTraverseLegacyFactorByStation,
+    classicTraverseStationOrder,
+    displayFactorsForStation,
+    enteredInputStationSnapshots,
+    fixedStations,
+    fixedUsedEnteredStationSnapshots,
+    freeStations,
+    freeUsedEnteredStationSnapshots,
+    partiallyFixedUsedEnteredStationSnapshots,
+    stationEntriesForListing,
+    stationEntriesInputOrder,
+    unusedEnteredStationSnapshots,
+    usesLegacyNbDisplayFactors,
+  } = buildIndustryListingStationContext({
+    coordSystemMode,
+    crsId,
+    isPreanalysis,
+    observationsForListing,
+    res,
+    settings,
+    showLostStations,
+    sideshotsForListing,
+    usesClassicParityLayout,
   });
-  sideshotsForListing.forEach((row) => {
-    if (row.from) observedStationIds.add(row.from);
-    if (row.to) observedStationIds.add(row.to);
-  });
-  const stationHasActiveControlConstraint = (
-    station:
-      | Station
-      | {
-          constraintModeX?: Station['constraintModeX'];
-          constraintModeY?: Station['constraintModeY'];
-          constraintModeH?: Station['constraintModeH'];
-        },
-  ): boolean =>
-    station.constraintModeX === 'fixed' ||
-    station.constraintModeX === 'weighted' ||
-    station.constraintModeY === 'fixed' ||
-    station.constraintModeY === 'weighted' ||
-    station.constraintModeH === 'fixed' ||
-    station.constraintModeH === 'weighted';
-  const stationHasWeightedControlConstraint = (
-    station:
-      | Station
-      | {
-          constraintModeX?: Station['constraintModeX'];
-          constraintModeY?: Station['constraintModeY'];
-          constraintModeH?: Station['constraintModeH'];
-        },
-  ): boolean =>
-    station.constraintModeX === 'weighted' ||
-    station.constraintModeY === 'weighted' ||
-    station.constraintModeH === 'weighted';
-  const stationHasOnlyFixedControlConstraint = (
-    station:
-      | Station
-      | {
-          constraintModeX?: Station['constraintModeX'];
-          constraintModeY?: Station['constraintModeY'];
-          constraintModeH?: Station['constraintModeH'];
-        },
-  ): boolean => stationHasActiveControlConstraint(station) && !stationHasWeightedControlConstraint(station);
-  const inputStationIsUsed = (
-    stationId: string,
-    station:
-      | Station
-      | {
-          constraintModeX?: Station['constraintModeX'];
-          constraintModeY?: Station['constraintModeY'];
-          constraintModeH?: Station['constraintModeH'];
-        },
-  ): boolean =>
-    observedStationIds.has(stationId) || stationHasActiveControlConstraint(station);
-  const usedEnteredStationSnapshots = enteredInputStationSnapshots.filter((station) =>
-    inputStationIsUsed(station.stationId, station),
-  );
-  const usedEnteredStationIdSet = new Set(
-    usedEnteredStationSnapshots.map((station) => station.stationId),
-  );
-  const unusedEnteredStationSnapshots = enteredInputStationSnapshots.filter(
-    (station) => !usedEnteredStationIdSet.has(station.stationId),
-  );
-  const fixedUsedEnteredStationSnapshots = usedEnteredStationSnapshots.filter((station) =>
-    useClassicPreanalysisListing
-      ? stationHasOnlyFixedControlConstraint(station)
-      : stationHasActiveControlConstraint(station),
-  );
-  const partiallyFixedUsedEnteredStationSnapshots = useClassicPreanalysisListing
-    ? usedEnteredStationSnapshots.filter((station) => stationHasWeightedControlConstraint(station))
-    : [];
-  const freeUsedEnteredStationSnapshots = usedEnteredStationSnapshots.filter(
-    (station) =>
-      !fixedUsedEnteredStationSnapshots.some(
-        (fixedStation) => fixedStation.stationId === station.stationId,
-      ) &&
-      !partiallyFixedUsedEnteredStationSnapshots.some(
-        (partialStation) => partialStation.stationId === station.stationId,
-      ),
-  );
-  const classicTraverseStationOrder: string[] = [];
-  const pushClassicTraverseStation = (stationId?: string) => {
-    if (!stationId) return;
-    if (classicTraverseStationOrder.includes(stationId)) return;
-    if (!res.stations[stationId]) return;
-    classicTraverseStationOrder.push(stationId);
-  };
-  usedEnteredStationSnapshots.forEach((station) => pushClassicTraverseStation(station.stationId));
-  [...observationsForListing]
-    .sort(
-      (a, b) =>
-        (a.sourceLine ?? Number.MAX_SAFE_INTEGER) - (b.sourceLine ?? Number.MAX_SAFE_INTEGER) ||
-        a.id - b.id,
-    )
-    .forEach((obs) => {
-    switch (obs.type) {
-      case 'angle':
-        pushClassicTraverseStation(obs.at);
-        pushClassicTraverseStation(obs.from);
-        pushClassicTraverseStation(obs.to);
-        break;
-      case 'direction':
-        pushClassicTraverseStation(obs.at);
-        pushClassicTraverseStation(obs.to);
-        break;
-      case 'dist':
-      case 'dir':
-      case 'bearing':
-      case 'gps':
-      case 'zenith':
-      case 'lev':
-        pushClassicTraverseStation(obs.from);
-        pushClassicTraverseStation(obs.to);
-        break;
-      default:
-        break;
-    }
-  });
-  sideshotsForListing.forEach((row) => {
-    pushClassicTraverseStation(row.from);
-    pushClassicTraverseStation(row.to);
-  });
-  const usesLegacyNbDisplayFactors =
-    coordSystemMode === 'grid' && crsId === 'CA_NAD83_CSRS_NB_STEREO_DOUBLE';
-  const classicTraverseLegacyFactorByStation = new Map(
-    usesLegacyNbDisplayFactors
-      ? (usesClassicParityLayout
-          ? classicTraverseStationOrder
-          : stationEntriesInputOrder.map(([stationId]) => stationId)
-        ).flatMap((stationId) => {
-          const station = res.stations[stationId];
-          if (
-            !station ||
-            !Number.isFinite(station.latDeg ?? Number.NaN) ||
-            !Number.isFinite(station.lonDeg ?? Number.NaN)
-          ) {
-            return [];
-          }
-          const legacyFactors = computeClassicTraverseLegacyDisplayGridFactors(
-            station.latDeg as number,
-            station.lonDeg as number,
-          );
-          if (!legacyFactors) return [];
-          const elevationFactor = station.elevationFactor ?? 1;
-          return [
-            [
-              stationId,
-              {
-                convergenceAngleRad: legacyFactors.convergenceAngleRad,
-                gridScaleFactor: legacyFactors.gridScaleFactor,
-                elevationFactor,
-                combinedFactor: legacyFactors.gridScaleFactor * elevationFactor,
-              },
-            ] as const,
-          ];
-        })
-      : [],
-  );
-  const displayFactorsForStation = (
-    stationId: string,
-    station: Station,
-  ): {
-    convergenceAngleRad: number;
-    gridScaleFactor: number;
-    elevationFactor: number;
-    combinedFactor: number;
-  } => {
-    const displayFactors = classicTraverseLegacyFactorByStation.get(stationId);
-    if (displayFactors) return displayFactors;
-    const elevationFactor = station.elevationFactor ?? 1;
-    const gridScaleFactor = station.gridScaleFactor ?? 1;
-    return {
-      convergenceAngleRad: station.convergenceAngleRad ?? 0,
-      gridScaleFactor,
-      elevationFactor,
-      combinedFactor: station.combinedFactor ?? gridScaleFactor * elevationFactor,
-    };
-  };
-  if (usesClassicParityLayout && unusedEnteredStationSnapshots.length > 0) {
-    const unusedStationIdSet = new Set(
-      unusedEnteredStationSnapshots.map((station) => station.stationId),
-    );
-    stationEntriesInputOrder = stationEntriesInputOrder.filter(
-      ([stationId]) => !unusedStationIdSet.has(stationId),
-    );
-    stationEntriesForListing =
-      settings.listingSortCoordinatesBy === 'name'
-        ? [...stationEntriesInputOrder].sort((a, b) =>
-            a[0].localeCompare(b[0], undefined, { numeric: true }),
-          )
-        : stationEntriesInputOrder;
-    fixedStations = fixedUsedEnteredStationSnapshots.length;
-    freeStations = freeUsedEnteredStationSnapshots.length;
-  }
   const formatReductionUsage = (summary?: ReductionUsageSummary): string => {
     if (!summary) return 'unavailable';
     return [
@@ -782,248 +580,18 @@ export const buildIndustryStyleListingText = (
   );
   const hasTraverseStyleAngularFamilies = measuredDirectionCount > 0 || bearingCount > 0;
   const angleUnitToken = (parseState?.angleUnits ?? parseSettings.angleUnits).toUpperCase();
-  const stationEllipsoidHeightForGnssDisplay = (station: Station): number =>
-    Number.isFinite(station.ellipsoidHeightUsed ?? Number.NaN)
-      ? (station.ellipsoidHeightUsed as number)
-      : station.h;
-  const geodeticToEcefForGnssDisplay = (
-    latDeg: number,
-    lonDeg: number,
-    heightM: number,
-  ): { x: number; y: number; z: number } => {
-    const lat = (latDeg * Math.PI) / 180;
-    const lon = (lonDeg * Math.PI) / 180;
-    const sinLat = Math.sin(lat);
-    const cosLat = Math.cos(lat);
-    const sinLon = Math.sin(lon);
-    const cosLon = Math.cos(lon);
-    const a = 6378137;
-    const f = 1 / 298.257223563;
-    const e2 = f * (2 - f);
-    const n = a / Math.sqrt(1 - e2 * sinLat * sinLat);
-    return {
-      x: (n + heightM) * cosLat * cosLon,
-      y: (n + heightM) * cosLat * sinLon,
-      z: (n * (1 - e2) + heightM) * sinLat,
-    };
-  };
-  const gpsDisplayVector = (
-    obs: GpsObservation,
-  ):
-    | {
-        calc: { dE: number; dN: number; dU?: number };
-        residual: { vE: number; vN: number; vU?: number };
-      }
-    | undefined => {
-    if (obs.gpsOffsetDistanceM != null || obs.gpsAntennaHiM != null || obs.gpsAntennaHtM != null) {
-      return undefined;
-    }
-    const frame: GnssVectorFrame = obs.gnssVectorFrame ?? gnssVectorFrameDefault;
-    if (frame !== 'ecefDelta' && frame !== 'enuLocal' && frame !== 'llhBaseline') {
-      return undefined;
-    }
-    const fromStation = res.stations[obs.from];
-    const toStation = res.stations[obs.to];
-    if (
-      !fromStation ||
-      !toStation ||
-      !Number.isFinite(fromStation.latDeg ?? Number.NaN) ||
-      !Number.isFinite(fromStation.lonDeg ?? Number.NaN) ||
-      !Number.isFinite(toStation.latDeg ?? Number.NaN) ||
-      !Number.isFinite(toStation.lonDeg ?? Number.NaN)
-    ) {
-      return undefined;
-    }
-    const observed =
-      frame === 'ecefDelta'
-        ? ecefDeltaToLocalEnu(
-            obs.obs.dE,
-            obs.obs.dN,
-            obs.obs.dU ?? 0,
-            fromStation.latDeg as number,
-            fromStation.lonDeg as number,
-          )
-        : {
-            east: obs.obs.dE,
-            north: obs.obs.dN,
-            up: obs.obs.dU ?? 0,
-          };
-    const fromEcef = geodeticToEcefForGnssDisplay(
-      fromStation.latDeg as number,
-      fromStation.lonDeg as number,
-      stationEllipsoidHeightForGnssDisplay(fromStation),
-    );
-    const toEcef = geodeticToEcefForGnssDisplay(
-      toStation.latDeg as number,
-      toStation.lonDeg as number,
-      stationEllipsoidHeightForGnssDisplay(toStation),
-    );
-    const adjusted = ecefDeltaToLocalEnu(
-      toEcef.x - fromEcef.x,
-      toEcef.y - fromEcef.y,
-      toEcef.z - fromEcef.z,
-      fromStation.latDeg as number,
-      fromStation.lonDeg as number,
-    );
-    const includeVertical = Number.isFinite(obs.obs.dU ?? Number.NaN);
-    return {
-      calc: {
-        dE: adjusted.east,
-        dN: adjusted.north,
-        dU: includeVertical ? adjusted.up : undefined,
-      },
-      residual: {
-        vE: observed.east - adjusted.east,
-        vN: observed.north - adjusted.north,
-        vU: includeVertical ? observed.up - adjusted.up : undefined,
-      },
-    };
-  };
-  const gpsCovarianceDisplay = (obs: GpsObservation) => {
-    if (obs.gpsCovariance3d) {
-      const frame: GnssVectorFrame = obs.gnssVectorFrame ?? gnssVectorFrameDefault;
-      const fromStation = res.stations[obs.from];
-      const transformed =
-        frame === 'ecefDelta' &&
-        fromStation &&
-        Number.isFinite(fromStation.latDeg ?? Number.NaN) &&
-        Number.isFinite(fromStation.lonDeg ?? Number.NaN)
-          ? transformFactoredEcefDeltaCovarianceToLocalEnu(
-              obs.gpsCovariance3d,
-              fromStation.latDeg as number,
-              fromStation.lonDeg as number,
-              obs.gpsVectorHorizontalFactor,
-              obs.gpsVectorVerticalFactor,
-            )
-          : null;
-      const sigmaX = Math.sqrt(Math.max(transformed?.cEE ?? obs.gpsCovariance3d.cXX, 0));
-      const sigmaY = Math.sqrt(Math.max(transformed?.cNN ?? obs.gpsCovariance3d.cYY, 0));
-      const sigmaZ = Math.sqrt(Math.max(transformed?.cUU ?? obs.gpsCovariance3d.cZZ, 0));
-      const corrXY =
-        sigmaX > 0 && sigmaY > 0
-          ? (transformed?.cEN ?? obs.gpsCovariance3d.cXY) / (sigmaX * sigmaY)
-          : 0;
-      const corrXZ =
-        sigmaX > 0 && sigmaZ > 0
-          ? (transformed?.cEU ?? obs.gpsCovariance3d.cXZ) / (sigmaX * sigmaZ)
-          : 0;
-      const corrYZ =
-        sigmaY > 0 && sigmaZ > 0
-          ? (transformed?.cNU ?? obs.gpsCovariance3d.cYZ) / (sigmaY * sigmaZ)
-          : 0;
-      return { sigmaX, sigmaY, sigmaZ, corrXY, corrXZ, corrYZ };
-    }
-    const sigmaX = Math.max(obs.stdDevE ?? obs.stdDev ?? 0, 0);
-    const sigmaY = Math.max(obs.stdDevN ?? obs.stdDev ?? 0, 0);
-    const sigmaZ = Math.max(obs.stdDevU ?? obs.stdDev ?? 0, 0);
-    return {
-      sigmaX,
-      sigmaY,
-      sigmaZ,
-      corrXY: obs.corrEN ?? 0,
-      corrXZ: obs.corrEU ?? 0,
-      corrYZ: obs.corrNU ?? 0,
-    };
-  };
-  const gpsInputCovarianceDisplay = (obs: GpsObservation) => {
-    if (!obs.gpsCovariance3d) return gpsCovarianceDisplay(obs);
-    const sigmaX = Math.sqrt(Math.max(obs.gpsCovariance3d.cXX, 0));
-    const sigmaY = Math.sqrt(Math.max(obs.gpsCovariance3d.cYY, 0));
-    const sigmaZ = Math.sqrt(Math.max(obs.gpsCovariance3d.cZZ, 0));
-    return {
-      sigmaX,
-      sigmaY,
-      sigmaZ,
-      corrXY:
-        sigmaX > 0 && sigmaY > 0 ? obs.gpsCovariance3d.cXY / (sigmaX * sigmaY) : 0,
-      corrXZ:
-        sigmaX > 0 && sigmaZ > 0 ? obs.gpsCovariance3d.cXZ / (sigmaX * sigmaZ) : 0,
-      corrYZ:
-        sigmaY > 0 && sigmaZ > 0 ? obs.gpsCovariance3d.cYZ / (sigmaY * sigmaZ) : 0,
-    };
-  };
-  const gpsHorizontalCovarianceForRelationship = (
-    obs: GpsObservation,
-  ): { cEE: number; cEN: number; cNN: number } | undefined => {
-    if (obs.gpsCovariance3d) {
-      const frame: GnssVectorFrame = obs.gnssVectorFrame ?? gnssVectorFrameDefault;
-      const fromStation = res.stations[obs.from];
-      const transformed =
-        frame === 'ecefDelta' &&
-        fromStation &&
-        Number.isFinite(fromStation.latDeg ?? Number.NaN) &&
-        Number.isFinite(fromStation.lonDeg ?? Number.NaN)
-          ? transformFactoredEcefDeltaCovarianceToLocalEnu(
-              obs.gpsCovariance3d,
-              fromStation.latDeg as number,
-              fromStation.lonDeg as number,
-              obs.gpsVectorHorizontalFactor,
-              obs.gpsVectorVerticalFactor,
-            )
-          : null;
-      return {
-        cEE: transformed?.cEE ?? obs.gpsCovariance3d.cXX,
-        cEN: transformed?.cEN ?? obs.gpsCovariance3d.cXY,
-        cNN: transformed?.cNN ?? obs.gpsCovariance3d.cYY,
-      };
-    }
-    const sigmaE = Math.max(obs.stdDevE ?? obs.stdDev ?? 0, 0);
-    const sigmaN = Math.max(obs.stdDevN ?? obs.stdDev ?? 0, 0);
-    const corrEN = obs.corrEN ?? 0;
-    return {
-      cEE: sigmaE * sigmaE,
-      cEN: corrEN * sigmaE * sigmaN,
-      cNN: sigmaN * sigmaN,
-    };
-  };
-  const gpsListingStatisticalRow = () => {
-    let count = 0;
-    let sumSquares = 0;
-    gpsObservationRows.forEach((obs) => {
-      const displayVector = gpsDisplayVector(obs);
-      const residual =
-        displayVector?.residual ??
-        ((obs.residual as { vE?: number; vN?: number; vU?: number } | undefined) ?? undefined);
-      const cov = gpsCovarianceDisplay(obs);
-      const components = [
-        {
-          stdRes:
-            Number.isFinite(residual?.vN ?? Number.NaN) && Number.isFinite(cov.sigmaY) && cov.sigmaY > 0
-              ? Math.abs((residual?.vN as number) / cov.sigmaY)
-              : undefined,
-        },
-        {
-          stdRes:
-            Number.isFinite(residual?.vE ?? Number.NaN) && Number.isFinite(cov.sigmaX) && cov.sigmaX > 0
-              ? Math.abs((residual?.vE as number) / cov.sigmaX)
-              : undefined,
-        },
-        {
-          stdRes:
-            obs.componentStdRes?.tU ??
-            (Number.isFinite(residual?.vU ?? Number.NaN) && Number.isFinite(cov.sigmaZ) && cov.sigmaZ > 0
-              ? Math.abs((residual?.vU as number) / cov.sigmaZ)
-              : undefined),
-        },
-      ];
-      components.forEach(({ stdRes }) => {
-        if (!Number.isFinite(stdRes ?? Number.NaN)) {
-          return;
-        }
-        count += 1;
-        sumSquares += (stdRes as number) ** 2;
-      });
-    });
-    if (count === 0) return null;
-    return {
-      label: 'GPS',
-      count,
-      sumSquares,
-      errorFactor: res.dof > 0 ? Math.sqrt(sumSquares / res.dof) : Math.sqrt(sumSquares / count),
-    };
-  };
-  const formatGpsStdResValue = (value: number | undefined): string =>
-    value != null && Number.isFinite(value) ? Math.abs(value).toFixed(1) : '-';
+  const {
+    gpsCovarianceDisplay,
+    gpsDisplayVector,
+    gpsHorizontalCovarianceForRelationship,
+    gpsInputCovarianceDisplay,
+    gpsListingStatisticalRow,
+  } = buildIndustryListingGpsDisplayHelpers({
+    dof: res.dof,
+    gnssVectorFrameDefault,
+    gpsObservationRows,
+    stations: res.stations,
+  });
   const renderAdjustedGnssVectorSection = () => {
     if (!shouldRenderAdjustedGnssVectorSection) return;
     lines.push('');
