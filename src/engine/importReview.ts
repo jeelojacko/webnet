@@ -13,136 +13,48 @@ import {
   serializeImportedObservationRecord,
 } from './importedRecordSerialization';
 import type { CoordMode, FaceNormalizationMode } from '../types';
+import type {
+  BuildImportReviewTextOptions,
+  ImportReviewGroup,
+  ImportReviewItem,
+  ImportReviewItemKind,
+  ImportReviewModel,
+  ImportReviewOutputPreset,
+  ImportReviewRowTypeOverride,
+  ImportReviewWorkspaceSource,
+} from './importReviewTypes';
 
-export type ImportReviewItemKind = 'control' | 'observation' | 'comment';
-export type ImportReviewGroupKind = 'control' | 'setup' | 'resection' | 'gps';
-export type ImportReviewOutputPreset =
-  | 'clean-webnet'
-  | 'field-grouped'
-  | 'ts-direction-set'
-  | 'industry-style';
-export type ImportReviewRowTypeOverride =
-  | 'auto'
-  | 'measurement'
-  | 'distance'
-  | 'distance-vertical'
-  | 'angle'
-  | 'vertical'
-  | 'bearing'
-  | 'direction-angle'
-  | 'direction-measurement';
+export {
+  buildImportReviewComparisonKeyForItem,
+  buildImportReviewComparisonSummary,
+} from './importReviewComparison';
+export {
+  createEmptyImportReviewGroup,
+  createImportReviewGroupFromItem,
+  duplicateImportReviewItem,
+  insertImportReviewCommentRow,
+  moveImportReviewItem,
+  removeImportReviewGroup,
+  removeImportReviewItem,
+  reorderImportReviewItemWithinGroup,
+} from './importReviewModelEditing';
 
-export interface ImportReviewItem {
-  id: string;
-  kind: ImportReviewItemKind;
-  index: number;
-  groupKey: string;
-  sourceKey?: string;
-  sourceName?: string;
-  sourceType: string;
-  sourceLine?: number;
-  sourceCode?: string;
-  sourceMethod?: string;
-  sourceClassification?: string;
-  sourceObservationKind?: ImportedObservationRecord['kind'];
-  setupId?: string;
-  backsightId?: string;
-  targetId?: string;
-  stationId?: string;
-  synthetic?: boolean;
-  defaultText?: string;
-}
-
-export interface ImportReviewGroup {
-  key: string;
-  kind: ImportReviewGroupKind;
-  label: string;
-  defaultComment: string;
-  sourceKey?: string;
-  sourceName?: string;
-  synthetic?: boolean;
-  manualOrder?: boolean;
-  setupId?: string;
-  backsightId?: string;
-  itemIds: string[];
-}
-
-export interface ImportReviewModel {
-  groups: ImportReviewGroup[];
-  items: ImportReviewItem[];
-  warnings: ImportedTraceEntry[];
-  errors: ImportedTraceEntry[];
-}
-
-export interface ImportReviewComparisonTotals {
-  controlStations: number;
-  observations: number;
-  comparedObservations: number;
-  warnings: number;
-  errors: number;
-}
-
-export type ImportReviewComparisonMode = 'non-mta-only' | 'all-raw';
-
-export interface ImportReviewComparisonSourceSummary {
-  key: string;
-  sourceName: string;
-  notice: ImportedInputNotice;
-  importerId: string;
-  formatLabel: string;
-  isPrimary: boolean;
-  totals: ImportReviewComparisonTotals;
-}
-
-export interface ImportReviewComparisonRow {
-  key: string;
-  setupLabel: string;
-  targetLabel: string;
-  family: string;
-  countsBySource: number[];
-  minCount: number;
-  maxCount: number;
-  spread: number;
-  sourcePresenceCount: number;
-}
-
-export interface ImportReviewComparisonSummary {
-  mode: ImportReviewComparisonMode;
-  sources: ImportReviewComparisonSourceSummary[];
-  rows: ImportReviewComparisonRow[];
-}
-
-export interface ImportReviewWorkspaceSource {
-  key: string;
-  sourceName: string;
-  notice: ImportedInputNotice;
-  dataset: ImportedDataset;
-  isPrimary: boolean;
-}
-
-export interface BuildImportReviewTextOptions {
-  includedItemIds: Set<string>;
-  groupComments?: Record<string, string>;
-  itemCommentLines?: Record<string, string[]>;
-  rowOverrides?: Record<string, string>;
-  rowTypeOverrides?: Record<string, ImportReviewRowTypeOverride>;
-  fixedItemIds?: Set<string>;
-  preset?: ImportReviewOutputPreset;
-  faceNormalizationMode?: FaceNormalizationMode;
-  syntheticDirectionBacksightMode?: 'auto' | 'always' | 'never';
-  emitDirectionFaceHints?: boolean;
-  emitSourceHeaders?: boolean;
-  coordMode?: CoordMode;
-  force2D?: boolean;
-}
-
-const isComparableObservation = (observation: ImportedObservationRecord): boolean =>
-  observation.sourceMeta?.method !== 'MEANTURNEDANGLE';
-
-const isObservationIncludedInComparison = (
-  observation: ImportedObservationRecord,
-  mode: ImportReviewComparisonMode,
-): boolean => (mode === 'all-raw' ? true : isComparableObservation(observation));
+export type {
+  BuildImportReviewTextOptions,
+  ImportReviewComparisonMode,
+  ImportReviewComparisonRow,
+  ImportReviewComparisonSourceSummary,
+  ImportReviewComparisonSummary,
+  ImportReviewComparisonTotals,
+  ImportReviewGroup,
+  ImportReviewGroupKind,
+  ImportReviewItem,
+  ImportReviewItemKind,
+  ImportReviewModel,
+  ImportReviewOutputPreset,
+  ImportReviewRowTypeOverride,
+  ImportReviewWorkspaceSource,
+} from './importReviewTypes';
 
 const prettifyToken = (value: string): string =>
   value
@@ -165,44 +77,10 @@ const splitOverrideLines = (value: string | undefined): string[] =>
 const compareImportTokens = (left: string | undefined, right: string | undefined): number =>
   (left ?? '').localeCompare(right ?? '', undefined, { numeric: true, sensitivity: 'base' });
 
-const comparisonFamilyLabel = (observation: ImportedObservationRecord): string => {
-  if (observation.kind === 'measurement') return 'M';
-  if (observation.kind === 'angle') return 'A';
-  if (observation.kind === 'distance-vertical') return 'DV';
-  if (observation.kind === 'distance') return 'D';
-  if (observation.kind === 'vertical') return 'V';
-  if (observation.kind === 'bearing') return 'B';
-  if (observation.kind === 'gnss-vector') return 'G';
-  return 'Obs';
-};
-
-const comparisonFamilyLabelForKind = (kind: ImportedObservationRecord['kind']): string => {
-  if (kind === 'measurement') return 'M';
-  if (kind === 'angle') return 'A';
-  if (kind === 'distance-vertical') return 'DV';
-  if (kind === 'distance') return 'D';
-  if (kind === 'vertical') return 'V';
-  if (kind === 'bearing') return 'B';
-  if (kind === 'gnss-vector') return 'G';
-  return 'Obs';
-};
-
 const deriveObservationSetupId = (observation: ImportedObservationRecord): string => {
   if (observation.kind === 'measurement' || observation.kind === 'angle') return observation.atId;
   return observation.fromId;
 };
-
-const deriveObservationBacksightId = (
-  observation: ImportedObservationRecord,
-): string | undefined =>
-  observation.kind === 'measurement' || observation.kind === 'angle'
-    ? observation.fromId
-    : undefined;
-
-const deriveObservationTargetId = (observation: ImportedObservationRecord): string =>
-  observation.kind === 'measurement' || observation.kind === 'angle'
-    ? observation.toId
-    : observation.toId;
 
 const isResectionSetupType = (value: string | undefined): boolean =>
   /resection/i.test((value ?? '').trim());
@@ -943,321 +821,6 @@ export const appendImportReviewSource = (
       errors: [...model.errors, ...scopedModel.errors],
     },
   };
-};
-
-export const buildImportReviewComparisonSummary = (
-  sources: Array<{
-    key: string;
-    sourceName: string;
-    notice: ImportedInputNotice;
-    dataset: ImportedDataset;
-    isPrimary?: boolean;
-  }>,
-  mode: ImportReviewComparisonMode = 'non-mta-only',
-): ImportReviewComparisonSummary => {
-  const makeTotals = (dataset: ImportedDataset): ImportReviewComparisonTotals => ({
-    controlStations: dataset.controlStations.length,
-    observations: dataset.observations.length,
-    comparedObservations: dataset.observations.filter((observation) =>
-      isObservationIncludedInComparison(observation, mode),
-    ).length,
-    warnings: dataset.trace.filter((entry) => entry.level === 'warning').length,
-    errors: dataset.trace.filter((entry) => entry.level === 'error').length,
-  });
-
-  const accumulate = (
-    dataset: ImportedDataset,
-  ): Map<
-    string,
-    Omit<
-      ImportReviewComparisonRow,
-      'countsBySource' | 'minCount' | 'maxCount' | 'spread' | 'sourcePresenceCount'
-    >
-  > => {
-    const buckets = new Map<
-      string,
-      Omit<
-        ImportReviewComparisonRow,
-        'countsBySource' | 'minCount' | 'maxCount' | 'spread' | 'sourcePresenceCount'
-      >
-    >();
-    dataset.observations
-      .filter((observation) => isObservationIncludedInComparison(observation, mode))
-      .forEach((observation) => {
-        const setupId = deriveObservationSetupId(observation);
-        const backsightId = deriveObservationBacksightId(observation);
-        const targetId = deriveObservationTargetId(observation);
-        const family = comparisonFamilyLabel(observation);
-        const key = [setupId, backsightId ?? '', targetId, family].join('|');
-        if (!buckets.has(key)) {
-          buckets.set(key, {
-            key,
-            setupLabel: backsightId ? `Setup ${setupId} (BS ${backsightId})` : `Setup ${setupId}`,
-            targetLabel: targetId,
-            family,
-          });
-        }
-      });
-    return buckets;
-  };
-
-  const comparisonSources = sources.map((source) => ({
-    key: source.key,
-    sourceName: source.sourceName,
-    notice: source.notice,
-    importerId: source.dataset.importerId,
-    formatLabel: source.dataset.formatLabel,
-    isPrimary: source.isPrimary ?? false,
-    totals: makeTotals(source.dataset),
-  }));
-
-  const sourceCounts = sources.map((source) => {
-    const counts = new Map<string, number>();
-    source.dataset.observations
-      .filter((observation) => isObservationIncludedInComparison(observation, mode))
-      .forEach((observation) => {
-        const key = [
-          deriveObservationSetupId(observation),
-          deriveObservationBacksightId(observation) ?? '',
-          deriveObservationTargetId(observation),
-          comparisonFamilyLabel(observation),
-        ].join('|');
-        counts.set(key, (counts.get(key) ?? 0) + 1);
-      });
-    return counts;
-  });
-
-  const rowMeta = new Map(
-    sources.flatMap((source) => [...accumulate(source.dataset).entries()]),
-  );
-
-  const allKeys = [...new Set(sourceCounts.flatMap((counts) => [...counts.keys()]))];
-
-  const rows = allKeys
-    .map((key) => {
-      const meta = rowMeta.get(key);
-      const countsBySource = sourceCounts.map((counts) => counts.get(key) ?? 0);
-      const minCount = Math.min(...countsBySource);
-      const maxCount = Math.max(...countsBySource);
-      return {
-        key,
-        setupLabel: meta?.setupLabel ?? key,
-        targetLabel: meta?.targetLabel ?? '',
-        family: meta?.family ?? '',
-        countsBySource,
-        minCount,
-        maxCount,
-        spread: maxCount - minCount,
-        sourcePresenceCount: countsBySource.filter((value) => value > 0).length,
-      };
-    })
-    .filter((row) => row.spread !== 0)
-    .sort((left, right) => {
-      const magnitudeCompare = right.spread - left.spread;
-      if (magnitudeCompare !== 0) return magnitudeCompare;
-      const sourceCompare = right.sourcePresenceCount - left.sourcePresenceCount;
-      if (sourceCompare !== 0) return sourceCompare;
-      const setupCompare = compareImportTokens(left.setupLabel, right.setupLabel);
-      if (setupCompare !== 0) return setupCompare;
-      const targetCompare = compareImportTokens(left.targetLabel, right.targetLabel);
-      if (targetCompare !== 0) return targetCompare;
-      return compareImportTokens(left.family, right.family);
-    });
-
-  return {
-    mode,
-    sources: comparisonSources,
-    rows,
-  };
-};
-
-export const buildImportReviewComparisonKeyForItem = (
-  item: ImportReviewItem,
-  mode: ImportReviewComparisonMode,
-): string | null => {
-  if (item.kind !== 'observation' || !item.sourceObservationKind) return null;
-  if (mode === 'non-mta-only' && item.sourceMethod === 'MEANTURNEDANGLE') return null;
-  const setupId = item.setupId ?? '';
-  const backsightId = item.backsightId ?? '';
-  const targetId = item.targetId ?? '';
-  const family = comparisonFamilyLabelForKind(item.sourceObservationKind);
-  return [setupId, backsightId, targetId, family].join('|');
-};
-
-const cloneImportReviewModel = (model: ImportReviewModel): ImportReviewModel => ({
-  groups: model.groups.map((group) => ({
-    ...group,
-    itemIds: [...group.itemIds],
-  })),
-  items: model.items.map((item) => ({ ...item })),
-  warnings: [...model.warnings],
-  errors: [...model.errors],
-});
-
-export const duplicateImportReviewItem = (
-  model: ImportReviewModel,
-  itemId: string,
-  nextId: string,
-): ImportReviewModel => {
-  const nextModel = cloneImportReviewModel(model);
-  const sourceItem = nextModel.items.find((item) => item.id === itemId);
-  if (!sourceItem || sourceItem.kind === 'comment') return nextModel;
-  const group = nextModel.groups.find((entry) => entry.key === sourceItem.groupKey);
-  if (!group) return nextModel;
-  const insertIndex = group.itemIds.indexOf(itemId);
-  const duplicateItem: ImportReviewItem = {
-    ...sourceItem,
-    id: nextId,
-    synthetic: true,
-  };
-  nextModel.items.push(duplicateItem);
-  group.itemIds.splice(insertIndex + 1, 0, nextId);
-  return nextModel;
-};
-
-export const createImportReviewGroupFromItem = (
-  model: ImportReviewModel,
-  itemId: string,
-  nextGroupKey: string,
-  label: string,
-  defaultComment: string,
-): ImportReviewModel => {
-  const nextModel = cloneImportReviewModel(model);
-  const item = nextModel.items.find((entry) => entry.id === itemId);
-  if (!item || item.groupKey === 'control') return nextModel;
-  const sourceGroupIndex = nextModel.groups.findIndex((group) => group.key === item.groupKey);
-  if (sourceGroupIndex < 0) return nextModel;
-  const sourceGroup = nextModel.groups[sourceGroupIndex];
-  const nextGroup: ImportReviewGroup = {
-    key: nextGroupKey,
-    kind: sourceGroup.kind === 'control' ? 'setup' : sourceGroup.kind,
-    label,
-    defaultComment,
-    synthetic: true,
-    manualOrder: true,
-    setupId: item.setupId ?? sourceGroup.setupId,
-    backsightId: item.backsightId ?? sourceGroup.backsightId,
-    itemIds: [itemId],
-  };
-  sourceGroup.itemIds = sourceGroup.itemIds.filter((entry) => entry !== itemId);
-  item.groupKey = nextGroupKey;
-  nextModel.groups.splice(sourceGroupIndex + 1, 0, nextGroup);
-  return nextModel;
-};
-
-export const createEmptyImportReviewGroup = (
-  model: ImportReviewModel,
-  nextGroupKey: string,
-  label: string,
-  defaultComment: string,
-  afterGroupKey?: string,
-): ImportReviewModel => {
-  const nextModel = cloneImportReviewModel(model);
-  if (nextModel.groups.some((group) => group.key === nextGroupKey)) return nextModel;
-  const insertAfterIndex =
-    afterGroupKey != null
-      ? nextModel.groups.findIndex((group) => group.key === afterGroupKey)
-      : nextModel.groups.length - 1;
-  const nextGroup: ImportReviewGroup = {
-    key: nextGroupKey,
-    kind: 'setup',
-    label,
-    defaultComment,
-    synthetic: true,
-    manualOrder: true,
-    itemIds: [],
-  };
-  nextModel.groups.splice(Math.max(insertAfterIndex, 0) + 1, 0, nextGroup);
-  return nextModel;
-};
-
-export const removeImportReviewGroup = (
-  model: ImportReviewModel,
-  groupKey: string,
-): ImportReviewModel => {
-  const nextModel = cloneImportReviewModel(model);
-  nextModel.groups = nextModel.groups.filter(
-    (group) => !(group.key === groupKey && group.synthetic && group.itemIds.length === 0),
-  );
-  return nextModel;
-};
-
-export const insertImportReviewCommentRow = (
-  model: ImportReviewModel,
-  afterItemId: string,
-  nextId: string,
-): ImportReviewModel => {
-  const nextModel = cloneImportReviewModel(model);
-  const sourceItem = nextModel.items.find((item) => item.id === afterItemId);
-  if (!sourceItem) return nextModel;
-  const group = nextModel.groups.find((entry) => entry.key === sourceItem.groupKey);
-  if (!group) return nextModel;
-  const insertIndex = group.itemIds.indexOf(afterItemId);
-  const commentItem: ImportReviewItem = {
-    id: nextId,
-    kind: 'comment',
-    index: -1,
-    groupKey: sourceItem.groupKey,
-    sourceType: 'Comment',
-    synthetic: true,
-    defaultText: '# COMMENT',
-  };
-  nextModel.items.push(commentItem);
-  group.itemIds.splice(insertIndex + 1, 0, nextId);
-  return nextModel;
-};
-
-export const moveImportReviewItem = (
-  model: ImportReviewModel,
-  itemId: string,
-  nextGroupKey: string,
-): ImportReviewModel => {
-  const nextModel = cloneImportReviewModel(model);
-  const item = nextModel.items.find((entry) => entry.id === itemId);
-  if (!item || item.groupKey === nextGroupKey) return nextModel;
-  const sourceGroup = nextModel.groups.find((group) => group.key === item.groupKey);
-  const targetGroup = nextModel.groups.find((group) => group.key === nextGroupKey);
-  if (!sourceGroup || !targetGroup) return nextModel;
-  sourceGroup.itemIds = sourceGroup.itemIds.filter((entry) => entry !== itemId);
-  targetGroup.itemIds.push(itemId);
-  sourceGroup.manualOrder = true;
-  targetGroup.manualOrder = true;
-  item.groupKey = nextGroupKey;
-  return nextModel;
-};
-
-export const reorderImportReviewItemWithinGroup = (
-  model: ImportReviewModel,
-  itemId: string,
-  direction: 'up' | 'down',
-): ImportReviewModel => {
-  const nextModel = cloneImportReviewModel(model);
-  const item = nextModel.items.find((entry) => entry.id === itemId);
-  if (!item) return nextModel;
-  const group = nextModel.groups.find((entry) => entry.key === item.groupKey);
-  if (!group) return nextModel;
-  const index = group.itemIds.indexOf(itemId);
-  if (index < 0) return nextModel;
-  const targetIndex = direction === 'up' ? index - 1 : index + 1;
-  if (targetIndex < 0 || targetIndex >= group.itemIds.length) return nextModel;
-  const [moved] = group.itemIds.splice(index, 1);
-  group.itemIds.splice(targetIndex, 0, moved);
-  group.manualOrder = true;
-  return nextModel;
-};
-
-export const removeImportReviewItem = (
-  model: ImportReviewModel,
-  itemId: string,
-): ImportReviewModel => {
-  const nextModel = cloneImportReviewModel(model);
-  const item = nextModel.items.find((entry) => entry.id === itemId);
-  if (!item?.synthetic) return nextModel;
-  nextModel.items = nextModel.items.filter((entry) => entry.id !== itemId);
-  nextModel.groups.forEach((group) => {
-    group.itemIds = group.itemIds.filter((entry) => entry !== itemId);
-  });
-  return nextModel;
 };
 
 const serializeTsDirectionSetMeasurement = (
