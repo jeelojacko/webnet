@@ -44,8 +44,6 @@ import {
   buildProjectLegacySolveInput,
   buildProjectRunFiles,
   cloneProjectSessionState,
-  createManifestFromFlatProject,
-  createProjectManifest,
   createProjectId,
   createManifestEntry,
   getProjectFocusedFile,
@@ -90,6 +88,13 @@ import {
   normalizeSessionWorkspace,
   resolveNextFocusedFileId,
 } from './projectFileSessionHelpers';
+import {
+  buildParsedPayloadFromSession,
+  buildPortablePayloadFromState,
+  createFlatProjectManifestSeed,
+  createManifestSeedFromPortablePayload,
+  type ProjectFlatWorkspacePayloadOptions,
+} from './projectFilePayloadBuilders';
 
 export { applyPersistedProjectSession } from './projectFileSessionHelpers';
 export type { PreparedAssociatedProjectSettingsImport } from './projectFileAssociatedSettings';
@@ -495,57 +500,21 @@ export const useProjectFileWorkflow = ({
     ],
   );
 
-  const buildPortablePayload = useCallback(
-    (): ParsedProjectPayload => ({
-      schemaVersion: 5,
-      input: projectSession
-        ? projectSession.sourceTexts[getProjectFocusedFile(projectSession.manifest)?.id ?? ''] ?? ''
-        : input,
-      includeFiles: projectSession
-        ? buildProjectEditorIncludeFiles(
-            projectSession.manifest,
-            projectSession.sourceTexts,
-            getProjectFocusedFile(projectSession.manifest)?.id,
-          )
-        : projectIncludeFiles,
-      workspaceFileContents: projectSession ? { ...projectSession.sourceTexts } : undefined,
-      savedRuns: savedRunSnapshots,
-      ui: {
-        settings: settings as unknown as Record<string, unknown>,
-        parseSettings: parseSettings as unknown as Record<string, unknown>,
-        exportFormat,
-        adjustedPointsExport: adjustedPointsExportSettings,
-        planningMap: clonePlanningMapState(planningMap),
-        geoidSourceDataBase64: encodeUint8ArrayToBase64(geoidSourceData),
-        geoidSourceDataLabel,
-      },
-      project: {
-        projectInstruments,
-        selectedInstrument,
-        levelLoopCustomPresets,
-        surveyCad: surveyCadState ? cloneSurveyCadPersistedState(surveyCadState) : undefined,
-      },
-      workspace: projectSession
-        ? {
-            projectId: projectSession.manifest.projectId,
-            name: projectSession.manifest.name,
-            createdAt: projectSession.manifest.createdAt,
-            updatedAt: projectSession.manifest.updatedAt,
-            files: projectSession.manifest.files.map((file) => ({ ...file })),
-            openFileIds: normalizeWorkspaceState(
-              projectSession.manifest.files,
-              projectSession.manifest.workspace,
-            ).openFileIds,
-            focusedFileId: normalizeWorkspaceState(
-              projectSession.manifest.files,
-              projectSession.manifest.workspace,
-            ).focusedFileId,
-            mainFileId: normalizeWorkspaceState(
-              projectSession.manifest.files,
-              projectSession.manifest.workspace,
-            ).mainFileId,
-          }
-        : undefined,
+  const projectFlatWorkspacePayload = useMemo<ProjectFlatWorkspacePayloadOptions>(
+    () => ({
+      input,
+      includeFiles: projectIncludeFiles,
+      settings,
+      parseSettings,
+      geoidSourceData,
+      geoidSourceDataLabel,
+      exportFormat,
+      adjustedPointsExportSettings,
+      planningMap,
+      projectInstruments,
+      selectedInstrument,
+      levelLoopCustomPresets,
+      surveyCadState,
     }),
     [
       adjustedPointsExportSettings,
@@ -554,16 +523,23 @@ export const useProjectFileWorkflow = ({
       geoidSourceDataLabel,
       input,
       levelLoopCustomPresets,
-      planningMap,
       parseSettings,
+      planningMap,
       projectIncludeFiles,
       projectInstruments,
-      projectSession,
-      savedRunSnapshots,
       selectedInstrument,
       settings,
       surveyCadState,
     ],
+  );
+  const buildPortablePayload = useCallback(
+    (): ParsedProjectPayload =>
+      buildPortablePayloadFromState({
+        projectSession,
+        savedRunSnapshots,
+        workspace: projectFlatWorkspacePayload,
+      }),
+    [projectFlatWorkspacePayload, projectSession, savedRunSnapshots],
   );
 
   const effectiveProjectRunFiles = useMemo(
@@ -842,45 +818,6 @@ export const useProjectFileWorkflow = ({
     updateProjectSession,
   ]);
 
-  const buildParsedPayloadFromSession = useCallback(
-    (session: ProjectSessionState): ParsedProjectPayload => {
-      const workspace = normalizeWorkspaceState(session.manifest.files, session.manifest.workspace);
-      const focusedFile = getProjectFocusedFile(session.manifest);
-      return {
-        schemaVersion: 5,
-        input: focusedFile ? session.sourceTexts[focusedFile.id] ?? '' : '',
-        includeFiles: buildProjectEditorIncludeFiles(
-          session.manifest,
-          session.sourceTexts,
-          focusedFile?.id,
-        ),
-        savedRuns: [],
-        ui: {
-          settings: session.manifest.ui.settings,
-          parseSettings: session.manifest.ui.parseSettings,
-          geoidSourceDataBase64: session.manifest.ui.geoidSourceDataBase64 ?? null,
-          geoidSourceDataLabel: session.manifest.ui.geoidSourceDataLabel ?? '',
-          exportFormat: session.manifest.ui.exportFormat,
-          adjustedPointsExport: session.manifest.ui.adjustedPointsExport,
-          planningMap: session.manifest.ui.planningMap,
-          migration: session.manifest.ui.migration,
-        },
-        project: session.manifest.project,
-        workspace: {
-          projectId: session.manifest.projectId,
-          name: session.manifest.name,
-          createdAt: session.manifest.createdAt,
-          updatedAt: session.manifest.updatedAt,
-          files: session.manifest.files.map((file) => ({ ...file })),
-          openFileIds: [...workspace.openFileIds],
-          focusedFileId: workspace.focusedFileId,
-          mainFileId: workspace.mainFileId,
-        },
-      };
-    },
-    [],
-  );
-
   const createLocalProjectFromCurrentWorkspace = useCallback(async (): Promise<ProjectSessionState | null> => {
     if (!canUseNamedProjectStorage) {
       setImportNotice({
@@ -896,33 +833,13 @@ export const useProjectFileWorkflow = ({
     const name = window.prompt('Project name', suggestedName)?.trim();
     if (!name) return null;
     const createdAt = new Date().toISOString();
-    const seed = createManifestFromFlatProject({
+    const seed = createFlatProjectManifestSeed({
       projectId: createProjectId(),
       name,
       createdAt,
       updatedAt: createdAt,
-      input,
-      includeFiles: projectIncludeFiles,
-      ui: {
-        settings: settings as unknown as Record<string, unknown>,
-        parseSettings: parseSettings as unknown as Record<string, unknown>,
-        geoidSourceDataBase64: encodeUint8ArrayToBase64(geoidSourceData),
-        geoidSourceDataLabel,
-        exportFormat,
-        adjustedPointsExport: cloneAdjustedPointsExportSettings(adjustedPointsExportSettings),
-        planningMap: clonePlanningMapState(planningMap),
-        migration: {
-          parseModeMigrated: true,
-          migratedAt: createdAt,
-          listingSortModeVersion: 2,
-        },
-      },
-      project: {
-        projectInstruments: cloneInstrumentLibrary(projectInstruments),
-        selectedInstrument,
-        levelLoopCustomPresets: levelLoopCustomPresets.map((preset) => ({ ...preset })),
-        surveyCad: surveyCadState ? cloneSurveyCadPersistedState(surveyCadState) : undefined,
-      },
+      workspace: projectFlatWorkspacePayload,
+      cloneInstrumentLibrary,
     });
     const preferredBackend = storageStatus?.preferredBackend ?? 'indexeddb';
     const session = await storage.createProject({
@@ -962,25 +879,13 @@ export const useProjectFileWorkflow = ({
       lastAutosaveError: null,
     };
   }, [
-    adjustedPointsExportSettings,
     canUseNamedProjectStorage,
     cloneInstrumentLibrary,
-    exportFormat,
-    geoidSourceData,
-    geoidSourceDataLabel,
-    input,
-    levelLoopCustomPresets,
-    parseSettings,
-    planningMap,
-    projectIncludeFiles,
-    projectInstruments,
+    projectFlatWorkspacePayload,
     refreshStorageContext,
-    selectedInstrument,
     setImportNotice,
-    settings,
     storage,
     storageStatus?.preferredBackend,
-    surveyCadState,
   ]);
 
   const handleSaveProject = useCallback(async () => {
@@ -1020,7 +925,6 @@ export const useProjectFileWorkflow = ({
     },
     [
       applyLoadedProjectPayload,
-      buildParsedPayloadFromSession,
       setImportNotice,
       storage,
       upsertRecentProjectRow,
@@ -1085,32 +989,11 @@ export const useProjectFileWorkflow = ({
             manifest: projectSession.manifest,
             sourceTexts: projectSession.sourceTexts,
           }
-        : createManifestFromFlatProject({
+        : createFlatProjectManifestSeed({
             name: `WebNet Project ${new Date().toISOString().slice(0, 10)}`,
-            input,
-            includeFiles: projectIncludeFiles,
-            ui: {
-              settings: settings as unknown as Record<string, unknown>,
-              parseSettings: parseSettings as unknown as Record<string, unknown>,
-              geoidSourceDataBase64: encodeUint8ArrayToBase64(geoidSourceData),
-              geoidSourceDataLabel,
-              exportFormat,
-              adjustedPointsExport: cloneAdjustedPointsExportSettings(
-                adjustedPointsExportSettings,
-              ),
-              planningMap: clonePlanningMapState(planningMap),
-              migration: {
-                parseModeMigrated: true,
-                migratedAt: new Date().toISOString(),
-                listingSortModeVersion: 2,
-              },
-            },
-            project: {
-              projectInstruments: cloneInstrumentLibrary(projectInstruments),
-              selectedInstrument,
-              levelLoopCustomPresets: levelLoopCustomPresets.map((preset) => ({ ...preset })),
-              surveyCad: surveyCadState ? cloneSurveyCadPersistedState(surveyCadState) : undefined,
-            },
+            updatedAt: new Date().toISOString(),
+            workspace: projectFlatWorkspacePayload,
+            cloneInstrumentLibrary,
           });
     const bundleBytes = buildProjectBundleBytes(seed);
     const suggestedName = `${(projectSession?.manifest.name ?? 'webnet-project')
@@ -1123,22 +1006,10 @@ export const useProjectFileWorkflow = ({
       detailLines: [`Wrote ${suggestedName}.`],
     });
   }, [
-    adjustedPointsExportSettings,
     cloneInstrumentLibrary,
-    exportFormat,
-    geoidSourceData,
-    geoidSourceDataLabel,
-    input,
-    levelLoopCustomPresets,
-    parseSettings,
-    planningMap,
-    projectIncludeFiles,
-    projectInstruments,
+    projectFlatWorkspacePayload,
     projectSession,
-    selectedInstrument,
     setImportNotice,
-    settings,
-    surveyCadState,
   ]);
 
   const importPortablePayloadAsLocalProject = useCallback(
@@ -1157,63 +1028,11 @@ export const useProjectFileWorkflow = ({
       }
       const createdAt = parsed.workspace?.createdAt ?? new Date().toISOString();
       const updatedAt = new Date().toISOString();
-      const manifestSeed =
-        parsed.workspace?.files && parsed.workspace.files.length > 0
-          ? {
-              manifest: createProjectManifest({
-                projectId: parsed.workspace.projectId,
-                name: parsed.workspace.name,
-                createdAt,
-                updatedAt,
-                files: parsed.workspace.files,
-                ui: {
-                  settings: parsed.ui.settings,
-                  parseSettings: parsed.ui.parseSettings,
-                  exportFormat: parsed.ui.exportFormat,
-                  adjustedPointsExport: parsed.ui.adjustedPointsExport,
-                  planningMap: parsed.ui.planningMap,
-                  migration: parsed.ui.migration,
-                },
-                project: parsed.project,
-                workspace: {
-                  openFileIds: parsed.workspace.openFileIds,
-                  focusedFileId: parsed.workspace.focusedFileId,
-                  mainFileId: parsed.workspace.mainFileId,
-                },
-              }),
-              sourceTexts: Object.fromEntries(
-                parsed.workspace.files.map((file) => [
-                  file.id,
-                  file.id === parsed.workspace?.focusedFileId
-                    ? parsed.input
-                    : parsed.workspaceFileContents?.[file.id] ??
-                      parsed.includeFiles[file.name] ??
-                      '',
-                ]),
-              ),
-            }
-          : createManifestFromFlatProject({
-              projectId: parsed.workspace?.projectId,
-              name:
-                parsed.workspace?.name ??
-                `Imported Project ${new Date().toISOString().slice(0, 10)}`,
-              createdAt,
-              updatedAt,
-              input: parsed.input,
-              includeFiles: parsed.includeFiles,
-              ui: {
-                settings: parsed.ui.settings,
-                parseSettings: parsed.ui.parseSettings,
-                geoidSourceDataBase64: parsed.ui.geoidSourceDataBase64 ?? null,
-                geoidSourceDataLabel: parsed.ui.geoidSourceDataLabel ?? '',
-                exportFormat: parsed.ui.exportFormat,
-                adjustedPointsExport: parsed.ui.adjustedPointsExport,
-                planningMap: parsed.ui.planningMap,
-                migration: parsed.ui.migration,
-              },
-              project: parsed.project,
-              preferredFocusedFileId: parsed.workspace?.focusedFileId,
-            });
+      const manifestSeed = createManifestSeedFromPortablePayload({
+        parsed,
+        createdAt,
+        updatedAt,
+      });
       const backend = storageStatus?.preferredBackend ?? 'indexeddb';
       const session = await storage.createProject({
         indexRow: buildProjectIndexRow({
@@ -1308,7 +1127,6 @@ export const useProjectFileWorkflow = ({
     },
     [
       applyLoadedProjectPayload,
-      buildParsedPayloadFromSession,
       canUseNamedProjectStorage,
       refreshStorageContext,
       setImportNotice,
