@@ -1,5 +1,8 @@
 import { RAD_TO_DEG, radToDmsStr } from './angles';
+import { appendCoordinateAndCovarianceSections } from './runResultsTextCoordinateSections';
 import { appendSolveProfileDiagnostics } from './runResultsTextDiagnostics';
+import { appendPreanalysisGeometrySections } from './runResultsTextPreanalysisSections';
+import { appendTypeAndResidualSections } from './runResultsTextResidualSections';
 import { prepareRunResultsTextContext } from './runResultsTextContext';
 import { INDUSTRY_CONFIDENCE_95_SCALE } from './resultPrecision';
 import type { ParseSettings, RunDiagnostics, SettingsState } from '../appStateTypes';
@@ -38,9 +41,7 @@ export const createRunResultsTextBuilder = ({
       unitScale,
       runDiag,
       aliasTrace,
-      stationDescription,
       aliasRefsForLine,
-      outputStationEntries,
       outputObservations,
       outputRelativePrecision,
       outputStationCovariances,
@@ -191,295 +192,21 @@ export const createRunResultsTextBuilder = ({
       );
     }
     lines.push('');
-    lines.push(
-      isPreanalysis
-        ? '--- Predicted Coordinates and Precision ---'
-        : '--- Adjusted Coordinates ---',
-    );
-    lines.push(
-      'ID\tDescription\tNorthing\tEasting\tHeight\tType\tσN\tσE\tσH\tEllMaj\tEllMin\tEllAz\tEllMaj95\tEllMin95',
-    );
-    outputStationEntries.forEach(([id, st]) => {
-      const type = st.fixed ? 'FIXED' : 'ADJ';
-      const sN = st.sN != null ? (st.sN * unitScale).toFixed(4) : '-';
-      const sE = st.sE != null ? (st.sE * unitScale).toFixed(4) : '-';
-      const sH = st.sH != null ? (st.sH * unitScale).toFixed(4) : '-';
-      const ellMaj = st.errorEllipse ? (st.errorEllipse.semiMajor * unitScale).toFixed(4) : '-';
-      const ellMin = st.errorEllipse ? (st.errorEllipse.semiMinor * unitScale).toFixed(4) : '-';
-      const ellAz = st.errorEllipse ? st.errorEllipse.theta.toFixed(2) : '-';
-      const ellMaj95 = st.errorEllipse
-        ? (st.errorEllipse.semiMajor * ellipse95Scale * unitScale).toFixed(4)
-        : '-';
-      const ellMin95 = st.errorEllipse
-        ? (st.errorEllipse.semiMinor * ellipse95Scale * unitScale).toFixed(4)
-        : '-';
-      lines.push(
-        `${id}\t${stationDescription(id) || '-'}\t${(st.y * unitScale).toFixed(4)}\t${(st.x * unitScale).toFixed(4)}\t${(
-          st.h * unitScale
-        ).toFixed(
-          4,
-        )}\t${type}\t${sN}\t${sE}\t${sH}\t${ellMaj}\t${ellMin}\t${ellAz}\t${ellMaj95}\t${ellMin95}`,
-      );
+    appendCoordinateAndCovarianceSections({
+      lines,
+      context: textContext,
+      ellipse95Scale,
     });
-    lines.push('');
-    if (isPreanalysis && outputStationCovariances.length > 0) {
-      lines.push(`--- Station Covariance Blocks (${linearUnit}^2) ---`);
-      lines.push('Station\tCEE\tCEN\tCNN\tCHH');
-      outputStationCovariances.forEach((row) => {
-        lines.push(
-          `${row.stationId}\t${(row.cEE * unitScale * unitScale).toExponential(4)}\t${(
-            row.cEN *
-            unitScale *
-            unitScale
-          ).toExponential(4)}\t${(row.cNN * unitScale * unitScale).toExponential(4)}\t${
-            row.cHH != null ? (row.cHH * unitScale * unitScale).toExponential(4) : '-'
-          }`,
-        );
-      });
-      lines.push('');
-    }
-    if (isPreanalysis && outputRelativeCovariances.length > 0) {
-      lines.push(`--- Predicted Relative Precision (Connected Pairs) ---`);
-      lines.push('From\tTo\tTypes\tσN\tσE\tσDist\tσAz(")\tCEE\tCEN\tCNN');
-      outputRelativeCovariances.forEach((row) => {
-        lines.push(
-          `${row.from}\t${row.to}\t${row.connectionTypes.join(',')}\t${(
-            row.sigmaN * unitScale
-          ).toFixed(4)}\t${(row.sigmaE * unitScale).toFixed(4)}\t${
-            row.sigmaDist != null ? (row.sigmaDist * unitScale).toFixed(4) : '-'
-          }\t${row.sigmaAz != null ? (row.sigmaAz * RAD_TO_DEG * 3600).toFixed(2) : '-'}\t${(
-            row.cEE *
-            unitScale *
-            unitScale
-          ).toExponential(4)}\t${(row.cEN * unitScale * unitScale).toExponential(4)}\t${(
-            row.cNN *
-            unitScale *
-            unitScale
-          ).toExponential(4)}`,
-        );
-      });
-      lines.push('');
-    }
-    if (isPreanalysis && res.weakGeometryDiagnostics) {
-      const flaggedStationCues = res.weakGeometryDiagnostics.stationCues.filter(
-        (cue) => cue.severity !== 'ok',
-      );
-      const flaggedRelativeCues = res.weakGeometryDiagnostics.relativeCues.filter(
-        (cue) => cue.severity !== 'ok',
-      );
-      lines.push('--- Weak Geometry Cues ---');
-      lines.push(
-        `Median station major=${(
-          res.weakGeometryDiagnostics.stationMedianHorizontal * unitScale
-        ).toFixed(4)} ${linearUnit}; median pair sigmaDist=${
-          res.weakGeometryDiagnostics.relativeMedianDistance != null
-            ? `${(res.weakGeometryDiagnostics.relativeMedianDistance * unitScale).toFixed(4)} ${linearUnit}`
-            : '-'
-        }`,
-      );
-      if (flaggedStationCues.length === 0 && flaggedRelativeCues.length === 0) {
-        lines.push('No weak-geometry cues flagged.');
-      } else {
-        flaggedStationCues.forEach((cue) => {
-          lines.push(
-            `Station ${cue.stationId}: ${cue.severity.toUpperCase()} metric=${(
-              cue.horizontalMetric * unitScale
-            ).toFixed(4)} ${linearUnit} ratio=${
-              cue.relativeToMedian != null ? `${cue.relativeToMedian.toFixed(2)}x` : '-'
-            } shape=${cue.ellipseRatio != null ? `${cue.ellipseRatio.toFixed(2)}x` : '-'} ${cue.note}`,
-          );
-        });
-        flaggedRelativeCues.forEach((cue) => {
-          lines.push(
-            `Pair ${cue.from}-${cue.to}: ${cue.severity.toUpperCase()} metric=${
-              cue.distanceMetric != null
-                ? `${(cue.distanceMetric * unitScale).toFixed(4)} ${linearUnit}`
-                : '-'
-            } ratio=${cue.relativeToMedian != null ? `${cue.relativeToMedian.toFixed(2)}x` : '-'} shape=${
-              cue.ellipseRatio != null ? `${cue.ellipseRatio.toFixed(2)}x` : '-'
-            } ${cue.note}`,
-          );
-        });
-      }
-      lines.push('');
-    }
-    if (isPreanalysis && res.preanalysisImpactDiagnostics) {
-      const formatPreanalysisValue = (value?: number): string => {
-        if (value == null || !Number.isFinite(value)) return '-';
-        const scaled = value * unitScale;
-        const fixed = scaled.toFixed(4);
-        return scaled !== 0 && Number.parseFloat(fixed) === 0 ? scaled.toExponential(3) : fixed;
-      };
-      lines.push('--- Preanalysis Added-Set / Brace Recommendations ---');
-      lines.push(
-        `appliedScenarios=${res.preanalysisImpactDiagnostics.activeSyntheticAdditionCount}, candidateScenarios=${res.preanalysisImpactDiagnostics.candidateTemplateCount}, worstStationMajor=${
-          res.preanalysisImpactDiagnostics.baseWorstStationMajor != null
-            ? `${formatPreanalysisValue(res.preanalysisImpactDiagnostics.baseWorstStationMajor)} ${linearUnit}`
-            : '-'
-        }, worstPairSigmaDist=${
-          res.preanalysisImpactDiagnostics.baseWorstPairSigmaDist != null
-            ? `${formatPreanalysisValue(res.preanalysisImpactDiagnostics.baseWorstPairSigmaDist)} ${linearUnit}`
-            : '-'
-        }, weakStations=${res.preanalysisImpactDiagnostics.baseWeakStationCount}, weakPairs=${res.preanalysisImpactDiagnostics.baseWeakPairCount}, targetThreshold=${
-          res.preanalysisImpactDiagnostics.targetThresholdMeters != null
-            ? `${formatPreanalysisValue(res.preanalysisImpactDiagnostics.targetThresholdMeters)} ${linearUnit}`
-            : '-'
-        }`,
-      );
-      lines.push(
-        `thresholdPlan: reached=${res.preanalysisImpactDiagnostics.thresholdPlan.thresholdReached ? 'yes' : 'no'}, steps=${res.preanalysisImpactDiagnostics.thresholdPlan.appliedStepCount}, finalWorstMajor=${
-          res.preanalysisImpactDiagnostics.thresholdPlan.finalWorstStationMajor != null
-            ? `${formatPreanalysisValue(res.preanalysisImpactDiagnostics.thresholdPlan.finalWorstStationMajor)} ${linearUnit}`
-            : '-'
-        }, note=${res.preanalysisImpactDiagnostics.thresholdPlan.unmetReason ?? '-'}`,
-      );
-      lines.push('Setup\tSet\tAffected\tLine\tAddedObs\tdWorstMaj\tdMedianMaj\tdWorstPair\tdWeakStn\tdWeakPair\tScore\tThreshold\tStatus');
-      res.preanalysisImpactDiagnostics.rows.forEach((row) => {
-        lines.push(
-          `${row.setupStationIds.join(',')}\t${row.templateLabel}\t${row.affectedStations.join(',')}\t${row.sourceLines[0] ?? '-'}\t${row.addedObservationCount}\t${formatPreanalysisValue(row.deltaWorstStationMajor)}\t${formatPreanalysisValue(row.deltaMedianStationMajor)}\t${formatPreanalysisValue(row.deltaWorstPairSigmaDist)}\t${row.deltaWeakStationCount ?? '-'}\t${row.deltaWeakPairCount ?? '-'}\t${
-            row.score != null ? row.score.toFixed(2) : '-'
-          }\t${row.thresholdReached ? 'yes' : 'no'}\t${row.status}`,
-        );
-      });
-      lines.push('');
-    }
-    if (!isPreanalysis && res.typeSummary && Object.keys(res.typeSummary).length > 0) {
-      lines.push('--- Per-Type Summary ---');
-      const summaryRows = Object.entries(res.typeSummary).map(([type, s]) => ({
-        type,
-        count: s.count.toString(),
-        rms: (s.unit === 'm' ? s.rms * unitScale : s.rms).toFixed(4),
-        maxAbs: (s.unit === 'm' ? s.maxAbs * unitScale : s.maxAbs).toFixed(4),
-        maxStdRes: s.maxStdRes.toFixed(3),
-        over3: s.over3.toString(),
-        over4: s.over4.toString(),
-        unit: s.unit === 'm' ? linearUnit : s.unit,
-      }));
-      const header = {
-        type: 'Type',
-        count: 'Count',
-        rms: 'RMS',
-        maxAbs: 'MaxAbs',
-        maxStdRes: 'MaxStdRes',
-        over3: '>3σ',
-        over4: '>4σ',
-        unit: 'Unit',
-      };
-      const widths = {
-        type: Math.max(header.type.length, ...summaryRows.map((r) => r.type.length)),
-        count: Math.max(header.count.length, ...summaryRows.map((r) => r.count.length)),
-        rms: Math.max(header.rms.length, ...summaryRows.map((r) => r.rms.length)),
-        maxAbs: Math.max(header.maxAbs.length, ...summaryRows.map((r) => r.maxAbs.length)),
-        maxStdRes: Math.max(header.maxStdRes.length, ...summaryRows.map((r) => r.maxStdRes.length)),
-        over3: Math.max(header.over3.length, ...summaryRows.map((r) => r.over3.length)),
-        over4: Math.max(header.over4.length, ...summaryRows.map((r) => r.over4.length)),
-        unit: Math.max(header.unit.length, ...summaryRows.map((r) => r.unit.length)),
-      };
-      const pad = (value: string, size: number) => value.padEnd(size, ' ');
-      lines.push(
-        [
-          pad(header.type, widths.type),
-          pad(header.count, widths.count),
-          pad(header.rms, widths.rms),
-          pad(header.maxAbs, widths.maxAbs),
-          pad(header.maxStdRes, widths.maxStdRes),
-          pad(header.over3, widths.over3),
-          pad(header.over4, widths.over4),
-          pad(header.unit, widths.unit),
-        ].join('  '),
-      );
-      summaryRows.forEach((row) => {
-        lines.push(
-          [
-            pad(row.type, widths.type),
-            pad(row.count, widths.count),
-            pad(row.rms, widths.rms),
-            pad(row.maxAbs, widths.maxAbs),
-            pad(row.maxStdRes, widths.maxStdRes),
-            pad(row.over3, widths.over3),
-            pad(row.over4, widths.over4),
-            pad(row.unit, widths.unit),
-          ].join('  '),
-        );
-      });
-      lines.push('');
-    }
-    if (!isPreanalysis && res.residualDiagnostics) {
-      const rd = res.residualDiagnostics;
-      lines.push('--- Residual Diagnostics ---');
-      lines.push(
-        `Obs=${rd.observationCount}, WithStdRes=${rd.withStdResCount}, LocalFail=${rd.localFailCount}, |t|>2=${rd.over2SigmaCount}, |t|>3=${rd.over3SigmaCount}, |t|>4=${rd.over4SigmaCount}`,
-      );
-      lines.push(
-        `Redundancy: mean=${rd.meanRedundancy != null ? rd.meanRedundancy.toFixed(4) : '-'}, min=${rd.minRedundancy != null ? rd.minRedundancy.toFixed(4) : '-'}, <0.2=${rd.lowRedundancyCount}, <0.1=${rd.veryLowRedundancyCount}`,
-      );
-      lines.push(`Critical |t| threshold: ${rd.criticalT.toFixed(2)}`);
-      if (rd.worst) {
-        lines.push(
-          `Worst: #${rd.worst.obsId} ${rd.worst.type.toUpperCase()} ${rd.worst.stations} line=${rd.worst.sourceLine ?? '-'} |t|=${rd.worst.stdRes != null ? rd.worst.stdRes.toFixed(2) : '-'} r=${rd.worst.redundancy != null ? rd.worst.redundancy.toFixed(3) : '-'} local=${rd.worst.localPass == null ? '-' : rd.worst.localPass ? 'PASS' : 'FAIL'}`,
-        );
-      }
-      if (rd.byType.length > 0) {
-        const rows = rd.byType.map((b) => ({
-          type: String(b.type).toUpperCase(),
-          count: String(b.count),
-          withStd: String(b.withStdResCount),
-          localFail: String(b.localFailCount),
-          over3: String(b.over3SigmaCount),
-          maxStd: b.maxStdRes != null ? b.maxStdRes.toFixed(2) : '-',
-          meanR: b.meanRedundancy != null ? b.meanRedundancy.toFixed(3) : '-',
-          minR: b.minRedundancy != null ? b.minRedundancy.toFixed(3) : '-',
-        }));
-        const header = {
-          type: 'Type',
-          count: 'Count',
-          withStd: 'WithStdRes',
-          localFail: 'LocalFail',
-          over3: '>3σ',
-          maxStd: 'Max|t|',
-          meanR: 'MeanRedund',
-          minR: 'MinRedund',
-        };
-        const widths = {
-          type: Math.max(header.type.length, ...rows.map((r) => r.type.length)),
-          count: Math.max(header.count.length, ...rows.map((r) => r.count.length)),
-          withStd: Math.max(header.withStd.length, ...rows.map((r) => r.withStd.length)),
-          localFail: Math.max(header.localFail.length, ...rows.map((r) => r.localFail.length)),
-          over3: Math.max(header.over3.length, ...rows.map((r) => r.over3.length)),
-          maxStd: Math.max(header.maxStd.length, ...rows.map((r) => r.maxStd.length)),
-          meanR: Math.max(header.meanR.length, ...rows.map((r) => r.meanR.length)),
-          minR: Math.max(header.minR.length, ...rows.map((r) => r.minR.length)),
-        };
-        const pad = (value: string, size: number) => value.padEnd(size, ' ');
-        lines.push(
-          [
-            pad(header.type, widths.type),
-            pad(header.count, widths.count),
-            pad(header.withStd, widths.withStd),
-            pad(header.localFail, widths.localFail),
-            pad(header.over3, widths.over3),
-            pad(header.maxStd, widths.maxStd),
-            pad(header.meanR, widths.meanR),
-            pad(header.minR, widths.minR),
-          ].join('  '),
-        );
-        rows.forEach((r) => {
-          lines.push(
-            [
-              pad(r.type, widths.type),
-              pad(r.count, widths.count),
-              pad(r.withStd, widths.withStd),
-              pad(r.localFail, widths.localFail),
-              pad(r.over3, widths.over3),
-              pad(r.maxStd, widths.maxStd),
-              pad(r.meanR, widths.meanR),
-              pad(r.minR, widths.minR),
-            ].join('  '),
-          );
-        });
-      }
-      lines.push('');
-    }
+    appendPreanalysisGeometrySections({
+      lines,
+      res,
+      context: textContext,
+    });
+    appendTypeAndResidualSections({
+      lines,
+      res,
+      context: textContext,
+    });
     if (!isPreanalysis && outputRelativePrecision.length > 0) {
       lines.push('--- Relative Precision (Unknowns) ---');
       const relRows = outputRelativePrecision.map((r) => ({
