@@ -51,6 +51,7 @@ import {
   type SelectionBoxMode,
 } from './mapViewInteraction';
 import { useMapView2dRenderState } from './useMapView2dRenderState';
+import { useMapViewDragInteractions } from './useMapViewDragInteractions';
 import { useMapViewLayerRenderer } from './useMapViewLayerRenderer';
 import { useMapViewPlanningActions } from './useMapViewPlanningActions';
 import {
@@ -71,9 +72,6 @@ import {
   LABEL_GRID_PX,
   LINE_HIT_RADIUS_PX,
   MAX_ELLIPSOID_SAMPLES,
-  MAX_ZOOM,
-  MIDDLE_DBLCLICK_MS,
-  MIN_ZOOM,
   OSM_IDLE_PREFETCH_DELAY_MS,
   OSM_INTERACTION_TILE_CAP,
   OSM_INTERACTION_ZOOM_DELTA,
@@ -595,255 +593,36 @@ const MapView: React.FC<MapViewProps> = ({
     toolPickTarget,
   ]);
 
-  const stopDrag = useCallback(() => {
-    if (!dragRef.current.active) return;
-    if (dragRef.current.mode === 'pan2d') {
-      const previewOffset = panPreviewOffsetRef.current;
-      const commitView = panPreviewCommitViewRef.current;
-      applyPanPreviewOffset(0, 0);
-      if (commitView && (previewOffset.x !== 0 || previewOffset.y !== 0)) {
-        const nextView = {
-          ...commitView,
-          panX: commitView.panX + previewOffset.x,
-          panY: commitView.panY + previewOffset.y,
-        };
-        pendingView2dRef.current = nextView;
-        setView2d(nextView);
-      }
-      panPreviewOffsetRef.current = { x: 0, y: 0 };
-      panPreviewCommitViewRef.current = null;
-      setFrozenDerivedView2d(null);
-    }
-    dragRef.current.active = false;
-    dragRef.current.mode = 'none';
-    pendingDragClientRef.current = null;
-    if (dragMoveFrameRef.current != null) {
-      cancelAnimationFrame(dragMoveFrameRef.current);
-      dragMoveFrameRef.current = null;
-    }
-    planningVertexDragRef.current = null;
-    setIsDragging(false);
-    noteMapViewPerfCounter('map:stop-drag');
-  }, [applyPanPreviewOffset, planningVertexDragRef]);
-
-  const handleDragMoveClient = useCallback(
-    (clientX: number, clientY: number) => {
-      if (!dragRef.current.active) return;
-      noteMapViewPerfCounter(`map:drag-move:${dragRef.current.mode}`);
-      if (dragRef.current.mode === 'pan2d') {
-        const dx = clientX - dragRef.current.lastX;
-        const dy = clientY - dragRef.current.lastY;
-        dragRef.current.lastX = clientX;
-        dragRef.current.lastY = clientY;
-        markInteracting('pan');
-        const nextPreviewOffset = {
-          x: panPreviewOffsetRef.current.x + dx,
-          y: panPreviewOffsetRef.current.y + dy,
-        };
-        panPreviewOffsetRef.current = nextPreviewOffset;
-        applyPanPreviewOffset(nextPreviewOffset.x, nextPreviewOffset.y);
-        return;
-      }
-      const next = toSvgCoords(clientX, clientY);
-      if (!next) return;
-      const dx = next.x - dragRef.current.lastX;
-      const dy = next.y - dragRef.current.lastY;
-      dragRef.current.lastX = next.x;
-      dragRef.current.lastY = next.y;
-      if (dragRef.current.mode === 'planning-vertex') {
-        const activeVertex = planningVertexDragRef.current;
-        if (!activeVertex) return;
-        const nextMap = svgToMapCoords(next.x, next.y);
-        const sourcePolygons =
-          activeVertex.polygonSource === 'user'
-            ? planningMap.blockedPolygons
-            : planningMap.obstaclePolygons;
-        const polygon = sourcePolygons.find((entry) => entry.id === activeVertex.polygonId);
-        if (!polygon) return;
-        const nextVertices = polygon.vertices.map((vertex, index) =>
-          index === activeVertex.vertexIndex ? nextMap : vertex,
-        );
-        updatePlanningPolygonVertices(
-          activeVertex.polygonId,
-          activeVertex.polygonSource,
-          nextVertices,
-        );
-        return;
-      }
-      if (effectiveMode !== '3d') return;
-      if (dragRef.current.mode === 'orbit3d') {
-        setCamera3d((prev) => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            yawDeg: prev.yawDeg + dx * 0.22,
-            pitchDeg: clamp(prev.pitchDeg - dy * 0.22, -89, 89),
-          };
-        });
-        return;
-      }
-      if (dragRef.current.mode === 'pan3d') {
-        const panScale = Math.max(0.2, (camera3d?.distance ?? 10) * 0.0025);
-        setCamera3d((prev) => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            panX: prev.panX - dx * panScale,
-            panY: prev.panY + dy * panScale,
-          };
-        });
-      }
-    },
-    [
-      toSvgCoords,
-      svgToMapCoords,
-      effectiveMode,
+  const { beginDrag, handleMouseDown, handleMouseUp, handleWheel } =
+    useMapViewDragInteractions({
       applyPanPreviewOffset,
-      camera3d?.distance,
+      camera3d,
+      dragMoveFrameRef,
+      dragRef,
+      effectiveMode,
+      isDragging,
       markInteracting,
-      planningMap.blockedPolygons,
-      planningMap.obstaclePolygons,
+      middleClickRef,
+      panPreviewCommitViewRef,
+      panPreviewOffsetRef,
+      pendingDragClientRef,
+      pendingView2dRef,
+      planningMap,
       planningVertexDragRef,
+      queueView2dUpdate,
+      reset2dView,
+      reset3dView,
+      scene3d,
+      selectionBox,
+      setCamera3d,
+      setFrozenDerivedView2d,
+      setIsDragging,
+      setSelectionBox,
+      setView2d,
+      svgToMapCoords,
+      toSvgCoords,
       updatePlanningPolygonVertices,
-    ],
-  );
-
-  const scheduleDragMoveClient = useCallback(
-    (clientX: number, clientY: number) => {
-      pendingDragClientRef.current = { x: clientX, y: clientY };
-      if (dragMoveFrameRef.current != null) return;
-      dragMoveFrameRef.current = requestAnimationFrame(() => {
-        dragMoveFrameRef.current = null;
-        const next = pendingDragClientRef.current;
-        pendingDragClientRef.current = null;
-        if (!next) return;
-        noteMapViewPerfCounter('map:drag-move-frame-commits');
-        handleDragMoveClient(next.x, next.y);
-      });
-    },
-    [handleDragMoveClient],
-  );
-
-  useEffect(() => {
-    if (!isDragging && selectionBox == null) return;
-    const onMouseMove = (event: MouseEvent) => {
-      if (dragRef.current.active) {
-        scheduleDragMoveClient(event.clientX, event.clientY);
-        return;
-      }
-      if (selectionBox == null) return;
-      const pointer = toSvgCoords(event.clientX, event.clientY);
-      if (!pointer) return;
-      setSelectionBox((current) =>
-        current == null
-          ? current
-          : {
-              ...current,
-              currentX: pointer.x,
-              currentY: pointer.y,
-            },
-      );
-    };
-    const onMouseUp = () => {
-      stopDrag();
-    };
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup', onMouseUp);
-    return () => {
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseup', onMouseUp);
-    };
-  }, [isDragging, scheduleDragMoveClient, selectionBox, stopDrag, toSvgCoords]);
-
-  const handleWheel = (event: React.WheelEvent<SVGSVGElement>) => {
-    event.preventDefault();
-    noteMapViewPerfCounter('map:wheel-events');
-    if (effectiveMode === '3d') {
-      setCamera3d((prev) => {
-        if (!prev) return prev;
-        const factor = Math.exp(event.deltaY * 0.0015);
-        return {
-          ...prev,
-          distance: clamp(
-            prev.distance * factor,
-            0.6,
-            Math.max(50000, scene3d.extents.radius * 80),
-          ),
-        };
-      });
-      return;
-    }
-    const anchor = toSvgCoords(event.clientX, event.clientY);
-    if (!anchor) return;
-    markInteracting('wheel');
-    queueView2dUpdate((prev) => {
-      const factor = Math.exp(-event.deltaY * 0.0015);
-      const nextZoom = clamp(prev.zoom * factor, MIN_ZOOM, MAX_ZOOM);
-      if (nextZoom === prev.zoom) return prev;
-      const ratio = nextZoom / prev.zoom;
-      const panX = anchor.x - (anchor.x - prev.panX) * ratio;
-      const panY = anchor.y - (anchor.y - prev.panY) * ratio;
-      return { zoom: nextZoom, panX, panY };
     });
-  };
-
-  const beginDrag = useCallback(
-    (modeName: DragMode, clientX: number, clientY: number) => {
-      noteMapViewPerfCounter(`map:begin-drag:${modeName}`);
-      if (modeName === 'pan2d') {
-        panPreviewOffsetRef.current = { x: 0, y: 0 };
-        panPreviewCommitViewRef.current = pendingView2dRef.current;
-        applyPanPreviewOffset(0, 0);
-        setFrozenDerivedView2d(pendingView2dRef.current);
-        dragRef.current = { active: true, mode: modeName, lastX: clientX, lastY: clientY };
-        setIsDragging(true);
-        return;
-      }
-      const start = toSvgCoords(clientX, clientY);
-      if (!start) return;
-      dragRef.current = { active: true, mode: modeName, lastX: start.x, lastY: start.y };
-      setIsDragging(true);
-    },
-    [applyPanPreviewOffset, toSvgCoords],
-  );
-
-  const handleMouseDown = (event: React.MouseEvent<SVGSVGElement>) => {
-    if (effectiveMode === '3d') {
-      if (event.button === 0) {
-        event.preventDefault();
-        beginDrag('orbit3d', event.clientX, event.clientY);
-        return;
-      }
-      if (event.button === 1) {
-        event.preventDefault();
-        const now = performance.now();
-        const sinceLastMiddle = now - middleClickRef.current;
-        middleClickRef.current = now;
-        if (sinceLastMiddle > 0 && sinceLastMiddle <= MIDDLE_DBLCLICK_MS) {
-          stopDrag();
-          reset3dView();
-          return;
-        }
-        beginDrag('pan3d', event.clientX, event.clientY);
-      }
-      return;
-    }
-    if (event.button !== 1) return;
-    event.preventDefault();
-    const now = performance.now();
-    const sinceLastMiddle = now - middleClickRef.current;
-    middleClickRef.current = now;
-    if (sinceLastMiddle > 0 && sinceLastMiddle <= MIDDLE_DBLCLICK_MS) {
-      stopDrag();
-      reset2dView();
-      return;
-    }
-    beginDrag('pan2d', event.clientX, event.clientY);
-  };
-
-  const handleMouseUp = (event: React.MouseEvent<SVGSVGElement>) => {
-    if (event.button === 0 || event.button === 1) stopDrag();
-  };
 
   const map2dRenderState = useMapView2dRenderState({
     bbox,
