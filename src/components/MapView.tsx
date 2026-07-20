@@ -7,7 +7,6 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import type { AdjustedPointsExportSettings, AdjustmentResult, PlanningMapState } from '../types';
 import {
   buildMap3DScene,
   createDefaultMap3DCamera,
@@ -15,7 +14,6 @@ import {
   type Vec3,
 } from '../engine/map3d';
 import { RAD_TO_DEG } from '../engine/angles';
-import type { DerivedQaResult } from '../engine/qaWorkflow';
 import {
   buildMapLinkByPairKey,
   buildObservationMapLinks,
@@ -34,7 +32,7 @@ import {
 import { DEFAULT_PLANNING_MAP_STATE } from '../engine/planningMapState';
 import MapViewSvg2d from './mapView/MapViewSvg2d';
 import MapViewScene3d from './mapView/MapViewScene3d';
-import MapViewContextMenu, { type MapToolPanel } from './mapView/MapViewContextMenu';
+import MapViewContextMenu from './mapView/MapViewContextMenu';
 import MapViewToolOverlay, { type MapToolPickTarget } from './mapView/MapViewToolOverlay';
 import { buildMapViewHitIndex } from './mapView/mapViewHitIndex';
 import { MapViewTileStore } from './mapView/mapViewTileStore';
@@ -81,70 +79,37 @@ import { useMapViewSnapshotSync } from './mapView/useMapViewSnapshotSync';
 import { useMapViewStationDisplay } from './mapView/useMapViewStationDisplay';
 import { useMapViewToolState } from './mapView/useMapViewToolState';
 import { useMapViewTransformOverlay } from './mapView/useMapViewTransformOverlay';
+import type { DragMode, MapViewProps, MapViewSnapshot } from './mapView/MapView.types';
+import {
+  DENSE_LABEL_EDGE_THRESHOLD,
+  DENSE_LABEL_POINT_THRESHOLD,
+  EMPTY_MAP_LINKS,
+  FT_PER_M,
+  INTERACTION_DENSE_LINE_THRESHOLD,
+  INTERACTION_DENSE_POINT_THRESHOLD,
+  INTERACTION_SETTLE_MS,
+  LABEL_GRID_PX,
+  LINE_HIT_RADIUS_PX,
+  MAX_ELLIPSOID_SAMPLES,
+  MAX_ZOOM,
+  MIDDLE_DBLCLICK_MS,
+  MIN_ZOOM,
+  OSM_FULL_LABEL_POINT_THRESHOLD,
+  OSM_IDLE_PREFETCH_DELAY_MS,
+  OSM_IDLE_PREFETCH_TILE_BUFFER,
+  OSM_IDLE_PREFETCH_TILE_COUNT_THRESHOLD,
+  OSM_INTERACTION_TILE_BUFFER,
+  OSM_INTERACTION_TILE_CAP,
+  OSM_INTERACTION_ZOOM_DELTA,
+  OSM_VISIBLE_TILE_BUFFER,
+  OSM_VISIBLE_TILE_CAP,
+  POINT_HIT_RADIUS_PX,
+  VIEWPORT_CLIP_MARGIN_PX,
+  VIEW_H,
+  VIEW_W,
+} from './mapView/mapViewConstants';
 
-const FT_PER_M = 3.280839895;
-const VIEW_W = 1000;
-const VIEW_H = 700;
-const MIN_ZOOM = 0.35;
-const MAX_ZOOM = 200;
-const MIDDLE_DBLCLICK_MS = 320;
-const MAX_ELLIPSOID_SAMPLES = 28;
-const VIEWPORT_CLIP_MARGIN_PX = 80;
-const DENSE_LABEL_POINT_THRESHOLD = 90;
-const DENSE_LABEL_EDGE_THRESHOLD = 180;
-const OSM_FULL_LABEL_POINT_THRESHOLD = 160;
-const LABEL_GRID_PX = 48;
-const INTERACTION_SETTLE_MS = 90;
-const OSM_IDLE_PREFETCH_DELAY_MS = 260;
-const INTERACTION_DENSE_POINT_THRESHOLD = 180;
-const INTERACTION_DENSE_LINE_THRESHOLD = 360;
-const POINT_HIT_RADIUS_PX = 10;
-const LINE_HIT_RADIUS_PX = 8;
-const OSM_VISIBLE_TILE_BUFFER = 1;
-const OSM_IDLE_PREFETCH_TILE_BUFFER = 2;
-const OSM_IDLE_PREFETCH_TILE_COUNT_THRESHOLD = 30;
-const OSM_INTERACTION_TILE_BUFFER = 0;
-const OSM_INTERACTION_ZOOM_DELTA = 1;
-const OSM_VISIBLE_TILE_CAP = 72;
-const OSM_INTERACTION_TILE_CAP = 42;
-const EMPTY_MAP_LINKS: ReturnType<typeof buildObservationMapLinks> = [];
-
-export interface MapViewSnapshot {
-  view2d: { zoom: number; panX: number; panY: number };
-  camera3d: Map3DCamera | null;
-  activeTool: MapToolPanel;
-  inverseFromInput: string;
-  inverseToInput: string;
-  anglePivotInput: string;
-  angleFromInput: string;
-  angleToInput: string;
-  showTransformedCoordinates: boolean;
-  showLabels: boolean;
-  hideMinorGeometry: boolean;
-  focusSelection: boolean;
-}
-
-interface MapViewProps {
-  result: AdjustmentResult;
-  units: 'm' | 'ft';
-  planningMap?: PlanningMapState;
-  onPlanningMapChange?: (_value: PlanningMapState) => void;
-  inputPointsLoaded?: boolean;
-  onLoadInputPoints?: (() => void) | null;
-  showLostStations?: boolean;
-  mode?: '2d' | '3d';
-  viewportWidthOverride?: number;
-  adjustedPointsExportSettings?: AdjustedPointsExportSettings;
-  derivedResult?: DerivedQaResult | null;
-  selectedStationId?: string | null;
-  selectedObservationId?: number | null;
-  onSelectStation?: (_stationId: string | null) => void;
-  onSelectObservation?: (_observationId: number | null) => void;
-  snapshot?: MapViewSnapshot | null;
-  onSnapshotChange?: (_snapshot: MapViewSnapshot) => void;
-}
-
-type DragMode = 'none' | 'pan2d' | 'orbit3d' | 'pan3d' | 'planning-vertex';
+export type { MapViewSnapshot } from './mapView/MapView.types';
 
 const MapView: React.FC<MapViewProps> = ({
   result,

@@ -21,6 +21,7 @@ At a high level:
 Primary app-facing state and workflow orchestration live in the app shell plus hooks:
 
 - `src/App.tsx`
+- `src/app/AppLazyLoaders.ts`, `src/app/AppLazyViews.tsx`, and `src/app/appLevelLoopPresets.ts`
 - `src/appStateTypes.ts`
 - `src/hooks/useWorkspaceProjectState.ts`
 - `src/hooks/useProjectOptionsState.ts`
@@ -177,6 +178,7 @@ Current Survey CAD spike seams:
 The UI should treat solve results as the source of truth and avoid duplicating engine logic in view code.
 
 `MapView` now has an explicit 2D layered-render split under `src/components/mapView/`:
+- `MapView.types.ts` owns the public `MapView` prop and snapshot contracts, and `mapViewConstants.ts` owns shared sizing, threshold, interaction, and OSM tile constants used by the top-level map component
 - `mapViewWebgl2d.ts` owns the preferred WebGL2 render controller for OSM tiles plus non-selected static geometry
 - `mapViewWebglBuffers.ts` builds GPU-ready line/point/ellipse/preview buffers from the same projected survey geometry used elsewhere, including the visibility-oriented halo passes and screen-readable point sizing used to keep map symbols legible over imagery
 - `mapViewTileStore.ts` owns imperative tile lifecycle, fallback coverage, and eviction state

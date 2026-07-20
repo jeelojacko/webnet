@@ -7,8 +7,6 @@ import React, {
   useMemo,
   useRef,
   useState,
-  type Dispatch,
-  type SetStateAction,
 } from 'react';
 import { AlertTriangle, CheckCircle } from 'lucide-react';
 import InputPane, { type InputPaneHandle } from './components/InputPane';
@@ -19,6 +17,8 @@ import WorkspaceRecoveryBanner from './components/WorkspaceRecoveryBanner';
 import WorkspaceChrome from './components/WorkspaceChrome';
 import ReviewQueuePanel from './components/ReviewQueuePanel';
 import SurveyCadWorkspace from './components/SurveyCadWorkspace';
+import AdjustedPointsTransformSelectModal from './components/app/AdjustedPointsTransformSelectModal';
+import ImportAnglePromptModal from './components/app/ImportAnglePromptModal';
 import type { MapViewSnapshot } from './components/MapView';
 
 import { DEFAULT_INPUT } from './defaultInput';
@@ -37,10 +37,7 @@ import {
   DEFAULT_QFIX_ANGULAR_SIGMA_SEC,
   DEFAULT_QFIX_LINEAR_SIGMA_M,
 } from './engine/defaults';
-import {
-  LEVEL_LOOP_TOLERANCE_PRESETS,
-  findLevelLoopTolerancePreset,
-} from './engine/levelLoopTolerance';
+import { LEVEL_LOOP_TOLERANCE_PRESETS } from './engine/levelLoopTolerance';
 import {
   CRS_CATALOG,
   DEFAULT_CANADA_CRS_ID,
@@ -58,7 +55,6 @@ import { useAppReviewQueue } from './hooks/useAppReviewQueue';
 import { useAppRunWorkspaceReview } from './hooks/useAppRunWorkspaceReview';
 import { useAppWorkspaceDraft } from './hooks/useAppWorkspaceDraft';
 import { useHeavyTabHydration, useSequentialTabPrewarm } from './hooks/useHeavyTabHydration';
-import { createStableRuntimeId } from './engine/id';
 import { useProjectOptionsState } from './hooks/useProjectOptionsState';
 import {
   DEFAULT_LISTING_SORT_OBSERVATIONS_BY,
@@ -89,6 +85,23 @@ import {
   parseProj4Parameters,
   resolveCatalogGroupFromCrsId,
 } from './app/appHelpers';
+import {
+  createCustomLevelLoopTolerancePreset,
+  resolveLevelLoopTolerancePreset,
+} from './app/appLevelLoopPresets';
+import {
+  ImportReviewModal,
+  IndustryOutputView,
+  MapView,
+  ProcessingSummaryView,
+  ProjectOptionsModal,
+  ReportView,
+} from './app/AppLazyViews';
+import {
+  loadIndustryOutputView,
+  loadMapView,
+  loadProcessingSummaryView,
+} from './app/AppLazyLoaders';
 import type {
   CrsCatalogGroupFilter,
   ListingSortCoordinatesBy,
@@ -137,75 +150,7 @@ import type {
   RunMode,
 } from './types';
 
-const loadImportReviewModal = () => import('./components/ImportReviewModal');
-const loadReportView = () => import('./components/ReportView');
-const loadMapView = () => import('./components/MapView');
-const loadProcessingSummaryView = () => import('./components/ProcessingSummaryView');
-const loadIndustryOutputView = () => import('./components/IndustryOutputView');
-const loadProjectOptionsModal = () => import('./components/ProjectOptionsModal');
-
-const ImportReviewModal = React.lazy(loadImportReviewModal);
-const ReportView = React.lazy(loadReportView);
-const MapView = React.lazy(loadMapView);
-const ProcessingSummaryView = React.lazy(loadProcessingSummaryView);
-const IndustryOutputView = React.lazy(loadIndustryOutputView);
-const ProjectOptionsModal = React.lazy(loadProjectOptionsModal);
-
 type TabKey = WorkspaceTabKey;
-
-type ResolvedLevelLoopTolerancePreset = {
-  id: string;
-  label: string;
-  description: string;
-};
-
-const createCustomLevelLoopTolerancePreset = (
-  seed?: Partial<Omit<CustomLevelLoopTolerancePreset, 'id'>>,
-): CustomLevelLoopTolerancePreset => ({
-  id: createStableRuntimeId('lvl'),
-  name: seed?.name?.trim() || 'Custom Preset',
-  baseMm: seed?.baseMm ?? 0,
-  perSqrtKmMm: seed?.perSqrtKmMm ?? 4,
-});
-
-const findCustomLevelLoopTolerancePreset = (
-  presets: CustomLevelLoopTolerancePreset[],
-  baseMm: number,
-  perSqrtKmMm: number,
-): CustomLevelLoopTolerancePreset | undefined =>
-  presets.find(
-    (preset) =>
-      Math.abs(preset.baseMm - baseMm) <= 1e-9 &&
-      Math.abs(preset.perSqrtKmMm - perSqrtKmMm) <= 1e-9,
-  );
-
-const resolveLevelLoopTolerancePreset = (
-  presets: CustomLevelLoopTolerancePreset[],
-  baseMm: number,
-  perSqrtKmMm: number,
-): ResolvedLevelLoopTolerancePreset => {
-  const builtin = findLevelLoopTolerancePreset(baseMm, perSqrtKmMm);
-  if (builtin) {
-    return {
-      id: builtin.id,
-      label: builtin.label,
-      description: builtin.description,
-    };
-  }
-  const custom = findCustomLevelLoopTolerancePreset(presets, baseMm, perSqrtKmMm);
-  if (custom) {
-    return {
-      id: custom.id,
-      label: custom.name.trim() || 'Custom Preset',
-      description: `Saved custom tolerance model (${custom.baseMm.toFixed(1)} + ${custom.perSqrtKmMm.toFixed(1)}*sqrt(km)).`,
-    };
-  }
-  return {
-    id: 'custom',
-    label: 'Custom',
-    description: 'Custom tolerance model: edits to Base or K leave the preset selector on Custom.',
-  };
-};
 
 type AppProps = {
   initialSettingsModalOpen?: boolean;
@@ -1422,74 +1367,13 @@ const App: React.FC<AppProps> = ({
       </React.Suspense>
 
       {isSettingsModalOpen && isAdjustedPointsTransformSelectOpen && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/85 px-4 py-6"
-          onClick={closeAdjustedPointsTransformSelectModal}
-        >
-          <div
-            className="w-full max-w-md border border-slate-500 bg-slate-900 shadow-2xl"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="border-b border-slate-700 bg-slate-800 px-5 py-4">
-              <div className="text-[11px] uppercase tracking-[0.24em] text-cyan-300">
-                Transform Scope
-              </div>
-              <div className="mt-1 text-lg font-semibold text-white">Select Points</div>
-              <div className="mt-1 text-xs text-slate-400">
-                Select points to transform. Reference point is auto-included in transform scope.
-              </div>
-            </div>
-            <div className="max-h-[50vh] space-y-2 overflow-auto px-5 py-4">
-              {adjustedPointsDraftStationIds.length === 0 ? (
-                <div className="rounded border border-slate-600 bg-slate-800/70 px-3 py-2 text-xs text-slate-300">
-                  No stations available. Run adjustment to populate the export set.
-                </div>
-              ) : (
-                adjustedPointsDraftStationIds.map((stationId) => {
-                  const checked = adjustedPointsTransformSelectedDraft.includes(stationId);
-                  return (
-                    <label
-                      key={`adj-transform-select-${stationId}`}
-                      className={`flex items-center gap-2 rounded border px-3 py-2 text-xs ${
-                        checked
-                          ? 'border-cyan-500/70 bg-cyan-900/25 text-cyan-100'
-                          : 'border-slate-600 bg-slate-800/60 text-slate-200'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={(event) =>
-                          handleAdjustedPointsTransformToggleSelected(
-                            stationId,
-                            event.target.checked,
-                          )
-                        }
-                      />
-                      <span>{stationId}</span>
-                    </label>
-                  );
-                })
-              )}
-            </div>
-            <div className="flex items-center justify-end border-t border-slate-700 bg-slate-800 px-5 py-4">
-              <button
-                type="button"
-                onClick={closeAdjustedPointsTransformSelectModal}
-                className="border border-slate-500 bg-slate-700 px-4 py-2 text-xs uppercase tracking-wide text-slate-200 hover:bg-slate-600"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={applyAdjustedPointsTransformSelection}
-                className="ml-2 border border-cyan-500 bg-cyan-900/40 px-4 py-2 text-xs uppercase tracking-wide text-cyan-100 hover:bg-cyan-800/60"
-              >
-                OK
-              </button>
-            </div>
-          </div>
-        </div>
+        <AdjustedPointsTransformSelectModal
+          stationIds={adjustedPointsDraftStationIds}
+          selectedStationIds={adjustedPointsTransformSelectedDraft}
+          onToggleStation={handleAdjustedPointsTransformToggleSelected}
+          onApply={applyAdjustedPointsTransformSelection}
+          onClose={closeAdjustedPointsTransformSelectModal}
+        />
       )}
 
       <div ref={layoutRef} className="flex-1 flex overflow-hidden w-full">
@@ -1793,166 +1677,14 @@ const App: React.FC<AppProps> = ({
       </div>
 
       {pendingAnglePromptFile && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 px-4 py-6">
-          <div className="w-full max-w-md border border-slate-500 bg-slate-900 shadow-2xl">
-            <div className="border-b border-slate-700 bg-slate-800 px-5 py-4">
-              <div className="text-[11px] uppercase tracking-[0.24em] text-cyan-300">
-                Import Settings
-              </div>
-              <div className="mt-1 text-lg font-semibold text-white">
-                Choose JXL Import Handling
-              </div>
-              <div className="mt-1 text-xs text-slate-400">{pendingAnglePromptFile.file.name}</div>
-            </div>
-            <div className="space-y-3 px-5 py-4 text-sm text-slate-200">
-              <div>
-                <div className="text-[11px] uppercase tracking-[0.22em] text-cyan-300">
-                  Import Style
-                </div>
-                <div className="mt-2 space-y-3">
-                  <div>
-                    <button
-                      type="button"
-                      onClick={() => handleImportAnglePromptSetImportStyle('generic')}
-                      className={`w-full border px-3 py-3 text-left text-xs uppercase tracking-wide ${
-                        pendingAnglePromptFile.importStyle === 'generic'
-                          ? 'border-cyan-500 bg-cyan-900/40 text-cyan-100'
-                          : 'border-slate-600 bg-slate-950 text-slate-100 hover:border-cyan-400'
-                      }`}
-                    >
-                      Generic
-                    </button>
-                    <div className="mt-1 text-xs text-slate-400">
-                      Keep current WebNet-style grouped import flow and serializer behavior.
-                    </div>
-                  </div>
-                  <div>
-                    <button
-                      type="button"
-                      onClick={() => handleImportAnglePromptSetImportStyle('industry-style')}
-                      className={`w-full border px-3 py-3 text-left text-xs uppercase tracking-wide ${
-                        pendingAnglePromptFile.importStyle === 'industry-style'
-                          ? 'border-cyan-500 bg-cyan-900/40 text-cyan-100'
-                          : 'border-slate-600 bg-slate-950 text-slate-100 hover:border-cyan-400'
-                      }`}
-                    >
-                      Industry Style
-                    </button>
-                    <div className="mt-1 text-xs text-slate-400">
-                      Preserve raw JobXML fieldbook HZ, zenith, corrected slope distance, and
-                      round-based `DB/DM/DE` blocks.
-                    </div>
-                  </div>
-                </div>
-                {pendingAnglePromptFile.importStyle === 'industry-style' && (
-                  <div className="mt-2 text-xs text-amber-300">
-                    Industry Style is fixed mode: raw fieldbook order, raw circles, and no
-                    face-split prompt options.
-                  </div>
-                )}
-              </div>
-              <div>
-                <button
-                  type="button"
-                  onClick={() => handleImportAnglePromptSetAngleMode('raw')}
-                  disabled={pendingAnglePromptFile.importStyle === 'industry-style'}
-                  className={`w-full border px-3 py-3 text-left text-xs uppercase tracking-wide ${
-                    pendingAnglePromptFile.importStyle === 'industry-style'
-                      ? 'cursor-not-allowed border-slate-800 bg-slate-950 text-slate-500'
-                      : pendingAnglePromptFile.angleMode === 'raw'
-                      ? 'border-cyan-500 bg-cyan-900/40 text-cyan-100'
-                      : 'border-slate-600 bg-slate-950 text-slate-100 hover:border-cyan-400'
-                  }`}
-                >
-                  Raw Angles
-                </button>
-                <div className="mt-1 text-xs text-slate-400">
-                  Keep imported angle values as-is from the source file.
-                </div>
-              </div>
-              <div>
-                <button
-                  type="button"
-                  onClick={() => handleImportAnglePromptSetAngleMode('reduced')}
-                  disabled={pendingAnglePromptFile.importStyle === 'industry-style'}
-                  className={`w-full border px-3 py-3 text-left text-xs uppercase tracking-wide ${
-                    pendingAnglePromptFile.importStyle === 'industry-style'
-                      ? 'cursor-not-allowed border-slate-800 bg-slate-950 text-slate-500'
-                      : pendingAnglePromptFile.angleMode === 'reduced'
-                      ? 'border-cyan-500 bg-cyan-900/40 text-cyan-100'
-                      : 'border-slate-600 bg-slate-950 text-slate-100 hover:border-cyan-400'
-                  }`}
-                >
-                  Reduced Angles (BS = 0)
-                </button>
-                <div className="mt-1 text-xs text-slate-400">
-                  Use reduced-angle workflow with backsight-zero direction-set shaping.
-                </div>
-              </div>
-              <div className="border-t border-slate-700 pt-3">
-                <div className="text-[11px] uppercase tracking-[0.22em] text-cyan-300">
-                  Face Treatment
-                </div>
-                <div className="mt-2 space-y-3">
-                  <div>
-                    <button
-                      type="button"
-                      onClick={() => handleImportAnglePromptSetFaceMode('on')}
-                      disabled={pendingAnglePromptFile.importStyle === 'industry-style'}
-                      className={`w-full border px-3 py-3 text-left text-xs uppercase tracking-wide ${
-                        pendingAnglePromptFile.importStyle === 'industry-style'
-                          ? 'cursor-not-allowed border-slate-800 bg-slate-950 text-slate-500'
-                          : pendingAnglePromptFile.faceMode === 'on'
-                          ? 'border-cyan-500 bg-cyan-900/40 text-cyan-100'
-                          : 'border-slate-600 bg-slate-950 text-slate-100 hover:border-cyan-400'
-                      }`}
-                    >
-                      Normalized Behavior
-                    </button>
-                    <div className="mt-1 text-xs text-slate-400">
-                      Keep one logical direction set and normalize reliable face-II shots to face-I.
-                    </div>
-                  </div>
-                  <div>
-                    <button
-                      type="button"
-                      onClick={() => handleImportAnglePromptSetFaceMode('off')}
-                      disabled={pendingAnglePromptFile.importStyle === 'industry-style'}
-                      className={`w-full border px-3 py-3 text-left text-xs uppercase tracking-wide ${
-                        pendingAnglePromptFile.importStyle === 'industry-style'
-                          ? 'cursor-not-allowed border-slate-800 bg-slate-950 text-slate-500'
-                          : pendingAnglePromptFile.faceMode === 'off'
-                          ? 'border-cyan-500 bg-cyan-900/40 text-cyan-100'
-                          : 'border-slate-600 bg-slate-950 text-slate-100 hover:border-cyan-400'
-                      }`}
-                    >
-                      Split Behavior
-                    </button>
-                    <div className="mt-1 text-xs text-slate-400">
-                      Split reliable face-I and face-II shots into separate direction-set blocks.
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center justify-end border-t border-slate-700 bg-slate-800 px-5 py-4">
-              <button
-                type="button"
-                onClick={handleImportAnglePromptCancel}
-                className="border border-slate-500 bg-slate-700 px-4 py-2 text-xs uppercase tracking-wide text-slate-200 hover:bg-slate-600"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleImportAnglePromptAccept}
-                className="ml-2 border border-cyan-500 bg-cyan-900/40 px-4 py-2 text-xs uppercase tracking-wide text-cyan-100 hover:bg-cyan-800/60"
-              >
-                Accept
-              </button>
-            </div>
-          </div>
-        </div>
+        <ImportAnglePromptModal
+          pendingFile={pendingAnglePromptFile}
+          onSetImportStyle={handleImportAnglePromptSetImportStyle}
+          onSetAngleMode={handleImportAnglePromptSetAngleMode}
+          onSetFaceMode={handleImportAnglePromptSetFaceMode}
+          onCancel={handleImportAnglePromptCancel}
+          onAccept={handleImportAnglePromptAccept}
+        />
       )}
 
       {importReviewState && (

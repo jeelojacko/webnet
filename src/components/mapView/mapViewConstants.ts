@@ -1,0 +1,28 @@
+import type { buildObservationMapLinks } from '../../engine/resultDerivedModels';
+
+export const FT_PER_M = 3.280839895;
+export const VIEW_W = 1000;
+export const VIEW_H = 700;
+export const MIN_ZOOM = 0.35;
+export const MAX_ZOOM = 200;
+export const MIDDLE_DBLCLICK_MS = 320;
+export const MAX_ELLIPSOID_SAMPLES = 28;
+export const VIEWPORT_CLIP_MARGIN_PX = 80;
+export const DENSE_LABEL_POINT_THRESHOLD = 90;
+export const DENSE_LABEL_EDGE_THRESHOLD = 180;
+export const OSM_FULL_LABEL_POINT_THRESHOLD = 160;
+export const LABEL_GRID_PX = 48;
+export const INTERACTION_SETTLE_MS = 90;
+export const OSM_IDLE_PREFETCH_DELAY_MS = 260;
+export const INTERACTION_DENSE_POINT_THRESHOLD = 180;
+export const INTERACTION_DENSE_LINE_THRESHOLD = 360;
+export const POINT_HIT_RADIUS_PX = 10;
+export const LINE_HIT_RADIUS_PX = 8;
+export const OSM_VISIBLE_TILE_BUFFER = 1;
+export const OSM_IDLE_PREFETCH_TILE_BUFFER = 2;
+export const OSM_IDLE_PREFETCH_TILE_COUNT_THRESHOLD = 30;
+export const OSM_INTERACTION_TILE_BUFFER = 0;
+export const OSM_INTERACTION_ZOOM_DELTA = 1;
+export const OSM_VISIBLE_TILE_CAP = 72;
+export const OSM_INTERACTION_TILE_CAP = 42;
+export const EMPTY_MAP_LINKS: ReturnType<typeof buildObservationMapLinks> = [];
