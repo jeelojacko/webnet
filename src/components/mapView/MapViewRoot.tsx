@@ -14,19 +14,12 @@ import {
   type Vec3,
 } from '../../engine/map3d';
 import { RAD_TO_DEG } from '../../engine/angles';
-import {
-  buildMapLinkByPairKey,
-  buildObservationMapLinks,
-  resolveSelectedObservationPairKey,
-} from '../../engine/resultDerivedModels';
 import { noteUiPerfStage, noteUiTabReady } from '../../hooks/useUiPerfMonitor';
 import {
   buildProjection2d,
   clamp,
   pointToSegmentDistancePx,
   projectPoint2d,
-  type ProjectedMapLine2D,
-  type ProjectedPoint2D,
   view2dEquals,
 } from './mapView2d';
 import { DEFAULT_PLANNING_MAP_STATE } from '../../engine/planningMapState';
@@ -35,29 +28,21 @@ import MapViewScene3d from './MapViewScene3d';
 import MapViewContextMenu from './MapViewContextMenu';
 import MapViewToolOverlay, { type MapToolPickTarget } from './MapViewToolOverlay';
 import MapViewContent from './MapViewContent';
-import { buildMapViewHitIndex } from './mapViewHitIndex';
 import { MapViewTileStore } from './mapViewTileStore';
 import { MapViewWebgl2d } from './mapViewWebgl2d';
-import { buildMapViewWebglScene2d } from './mapViewWebglBuffers';
 import {
-  measureMapViewPerf,
   noteMapViewPerfCounter,
-  noteMapViewPerfMetadata,
 } from './mapViewPerf';
 import {
   buildMapScenePointBounds2d,
-  buildMapViewStyle2d,
   buildProjectedMapState3d,
 } from './mapViewSelectors';
 import { projectPoint3d } from './mapView3d';
 import {
-  buildRenderSurfaceLayout,
   canRenderWebglLayers,
   DEFAULT_RENDER_SURFACE_LAYOUT,
   doesPolygonTouchRect,
   isPolygonInsideRect,
-  OSM_FETCH_BUFFER_M,
-  renderSurfaceLayoutEquals,
   type MapInteractionKind,
   type MapInteractionPhase,
   type PlanningPolygonTarget,
@@ -65,17 +50,14 @@ import {
   type ScreenSelectionBox,
   type SelectionBoxMode,
 } from './mapViewInteraction';
+import { useMapView2dRenderState } from './useMapView2dRenderState';
 import { useMapViewLayerRenderer } from './useMapViewLayerRenderer';
-import { useMapViewBasemapTiles2d } from './useMapViewBasemapTiles2d';
-import {
-  buildObstacleFetchSignature,
-  buildOverpassObstacleQuery,
-  parseOverpassObstaclePolygons,
-} from './mapViewObstacles';
-import { useMapViewDerived2d } from './useMapViewDerived2d';
-import { useFrozenMapViewOverlays } from './useFrozenMapViewOverlays';
-import { useMapViewPlanning2d } from './useMapViewPlanning2d';
 import { useMapViewPlanningActions } from './useMapViewPlanningActions';
+import {
+  useMapViewContextMenuDismiss,
+  useMapViewRenderSurfaceLayout,
+  useMapViewViewportWidth,
+} from './useMapViewShellEffects';
 import { useMapViewSnapshotSync } from './useMapViewSnapshotSync';
 import { useMapViewStationDisplay } from './useMapViewStationDisplay';
 import { useMapViewToolState } from './useMapViewToolState';
@@ -84,10 +66,7 @@ import type { DragMode, MapViewProps, MapViewSnapshot } from './MapView.types';
 import {
   DENSE_LABEL_EDGE_THRESHOLD,
   DENSE_LABEL_POINT_THRESHOLD,
-  EMPTY_MAP_LINKS,
   FT_PER_M,
-  INTERACTION_DENSE_LINE_THRESHOLD,
-  INTERACTION_DENSE_POINT_THRESHOLD,
   INTERACTION_SETTLE_MS,
   LABEL_GRID_PX,
   LINE_HIT_RADIUS_PX,
@@ -95,17 +74,11 @@ import {
   MAX_ZOOM,
   MIDDLE_DBLCLICK_MS,
   MIN_ZOOM,
-  OSM_FULL_LABEL_POINT_THRESHOLD,
   OSM_IDLE_PREFETCH_DELAY_MS,
-  OSM_IDLE_PREFETCH_TILE_BUFFER,
-  OSM_IDLE_PREFETCH_TILE_COUNT_THRESHOLD,
-  OSM_INTERACTION_TILE_BUFFER,
   OSM_INTERACTION_TILE_CAP,
   OSM_INTERACTION_ZOOM_DELTA,
-  OSM_VISIBLE_TILE_BUFFER,
   OSM_VISIBLE_TILE_CAP,
   POINT_HIT_RADIUS_PX,
-  VIEWPORT_CLIP_MARGIN_PX,
   VIEW_H,
   VIEW_W,
 } from './mapViewConstants';
@@ -282,57 +255,13 @@ const MapView: React.FC<MapViewProps> = ({
     visibleStationIds,
   });
 
-  useEffect(() => {
-    if (typeof window === 'undefined' || viewportWidthOverride != null) return;
-    const onResize = () => setViewportWidth(window.innerWidth);
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, [viewportWidthOverride]);
-
-  useLayoutEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-    const measure = () => {
-      const rect = container.getBoundingClientRect();
-      const nextLayout = buildRenderSurfaceLayout(rect.width, rect.height);
-      setRenderSurfaceLayout((current) =>
-        renderSurfaceLayoutEquals(current, nextLayout) ? current : nextLayout,
-      );
-    };
-    measure();
-    if (typeof ResizeObserver !== 'undefined') {
-      const observer = new ResizeObserver(() => {
-        measure();
-      });
-      observer.observe(container);
-      return () => observer.disconnect();
-    }
-    if (typeof window !== 'undefined') {
-      window.addEventListener('resize', measure);
-      return () => window.removeEventListener('resize', measure);
-    }
-    return undefined;
-  }, []);
-
-  useEffect(() => {
-    if (!contextMenu.open) return;
-    const onMouseDown = (event: MouseEvent) => {
-      const target = event.target as Node | null;
-      if (target && contextMenuRef.current?.contains(target)) return;
-      setContextMenu((prev) => ({ ...prev, open: false, planningPolygon: null }));
-    };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setContextMenu((prev) => ({ ...prev, open: false, planningPolygon: null }));
-      }
-    };
-    window.addEventListener('mousedown', onMouseDown);
-    window.addEventListener('keydown', onKeyDown);
-    return () => {
-      window.removeEventListener('mousedown', onMouseDown);
-      window.removeEventListener('keydown', onKeyDown);
-    };
-  }, [contextMenu.open]);
+  useMapViewViewportWidth({ setViewportWidth, viewportWidthOverride });
+  useMapViewRenderSurfaceLayout({ containerRef, setRenderSurfaceLayout });
+  useMapViewContextMenuDismiss({
+    contextMenuOpen: contextMenu.open,
+    contextMenuRef,
+    setContextMenu,
+  });
 
   const effectiveViewportWidth = viewportWidthOverride ?? viewportWidth;
   const derivedView2d = frozenDerivedView2d ?? deferredView2d;
@@ -398,14 +327,7 @@ const MapView: React.FC<MapViewProps> = ({
     setRenderer2d('canvas');
   }, []);
 
-  const {
-    latestBasemapRenderInputRef,
-    latestGeometryRenderInputRef,
-    latestPlanningRenderInputRef,
-    latestWebglRenderInputRef,
-    renderLayersNow,
-    scheduleLayerRender,
-  } = useMapViewLayerRenderer({
+  const layerRenderer = useMapViewLayerRenderer({
     basemapCanvasRef,
     effectiveMode,
     geometryCanvasRef,
@@ -923,38 +845,66 @@ const MapView: React.FC<MapViewProps> = ({
     if (event.button === 0 || event.button === 1) stopDrag();
   };
 
-  const {
-    pointRadius2d,
-    lineWidth2d,
-    ellipseStroke2d,
-    labelFont2d,
-    labelStroke2d,
-    labelOffset2d,
-    marker2d,
-    originalGeometryOpacity,
-  } = useMemo(
-    () => buildMapViewStyle2d({ zoom: view2d.zoom }, transformedOverlayActive),
-    [transformedOverlayActive, view2d.zoom],
-  );
-
-  const {
-    bracePreviewPoints2d,
-    findPlanningPolygonAtSvgPoint,
-    planningFetchExtent,
-    planningGeorefContext,
-    planningInputPoints2d,
-    planningPolygons2d,
-    scenarioPreviewSegments2d,
-  } = useMapViewPlanning2d({
+  const map2dRenderState = useMapView2dRenderState({
     bbox,
+    basemapDescriptorView2d,
+    derivedResult,
+    derivedView2d,
+    dragRef,
     draftBlockedPolygon,
-    fetchBufferM: OSM_FETCH_BUFFER_M,
+    effectiveMode,
+    ellipseStroke,
+    focusSelection,
+    hideMinorGeometry,
+    idlePrefetchReady,
+    interactionPhase,
+    layerRenderer,
+    obstacleFetchSignatureRef,
+    observations,
+    onPlanningMapChange,
     planningMap,
-    projectPoint: project2d,
+    points,
+    project2d,
+    projection2d,
+    renderer2d,
     result,
+    scheduleLayerRender: layerRenderer.scheduleLayerRender,
+    selectedObservationId,
+    selectedPlanningPolygonIds,
+    selectedStationId,
+    setBasemapDescriptorView2d,
+    showLabels,
+    showLostStations,
+    stationFill,
+    stationSeverity,
     stations,
+    tileStoreRef,
+    transformedOverlayActive,
+    units,
     view2d,
   });
+  const {
+    filteredVisibleMapLines2d,
+    filteredVisiblePoints2d,
+    findPlanningPolygonAtSvgPoint,
+    labelFont2d,
+    labelOffset2d,
+    labelStroke2d,
+    lineWidth2d,
+    mapDensitySummary,
+    mapHitIndex2d,
+    mapLinkByPairKey,
+    marker2d,
+    originalGeometryOpacity,
+    planningPolygons2d,
+    pointRadius2d,
+    selectedObservationPairKey,
+    svgBracePreviewPoints2d,
+    svgPlanningInputPoints2d,
+    svgPlanningPolygons2d,
+    svgScenarioPreviewSegments2d,
+    svgVisiblePointLabels2d,
+  } = map2dRenderState;
 
   const selectionBoxRect = useMemo(() => {
     if (selectionBox == null) return null;
@@ -1002,304 +952,6 @@ const MapView: React.FC<MapViewProps> = ({
       view2d.zoom,
     ],
   );
-
-  useMapViewBasemapTiles2d({
-    basemapDescriptorView2d,
-    bbox,
-    dragRef,
-    effectiveMode,
-    idlePrefetchReady,
-    idlePrefetchTileBuffer: OSM_IDLE_PREFETCH_TILE_BUFFER,
-    idlePrefetchTileCountThreshold: OSM_IDLE_PREFETCH_TILE_COUNT_THRESHOLD,
-    interactionPhase,
-    interactionTileBuffer: OSM_INTERACTION_TILE_BUFFER,
-    latestBasemapRenderInputRef,
-    latestWebglRenderInputRef,
-    planningBasemapMode: planningMap.basemapMode,
-    planningGeorefContext,
-    projectPoint: project2d,
-    projection2d,
-    renderLayersNow,
-    renderer2d,
-    scheduleLayerRender,
-    setBasemapDescriptorView2d,
-    tileStoreRef,
-    view2d,
-    viewHeight: VIEW_H,
-    viewWidth: VIEW_W,
-    visibleTileBuffer: OSM_VISIBLE_TILE_BUFFER,
-  });
-
-  useEffect(() => {
-    if (
-      effectiveMode !== '2d' ||
-      !planningGeorefContext ||
-      !planningFetchExtent ||
-      !planningMap.showObstacleLayer ||
-      !onPlanningMapChange
-    ) {
-      return;
-    }
-    const fetchSignature = buildObstacleFetchSignature(
-      planningGeorefContext,
-      planningFetchExtent,
-    );
-    if (obstacleFetchSignatureRef.current === fetchSignature) return;
-    obstacleFetchSignatureRef.current = fetchSignature;
-    const query = buildOverpassObstacleQuery(planningGeorefContext, planningFetchExtent);
-    if (query == null) return;
-    const controller = new AbortController();
-    void fetch('https://overpass-api.de/api/interpreter', {
-      method: 'POST',
-      body: query,
-      signal: controller.signal,
-    })
-      .then((response) => (response.ok ? response.json() : null))
-      .then((json) => {
-        if (!json || !Array.isArray(json.elements)) return;
-        const polygons = parseOverpassObstaclePolygons(json.elements, planningGeorefContext);
-        if (polygons.length === 0) return;
-        onPlanningMapChange({
-          ...planningMap,
-          obstaclePolygons: polygons,
-        });
-      })
-      .catch(() => {
-        if (obstacleFetchSignatureRef.current === fetchSignature) {
-          obstacleFetchSignatureRef.current = '';
-        }
-      });
-    return () => controller.abort();
-  }, [
-    effectiveMode,
-    onPlanningMapChange,
-    planningFetchExtent,
-    planningGeorefContext,
-    planningMap,
-  ]);
-
-  const fallbackMapLinks = useMemo(
-    () => (derivedResult ? EMPTY_MAP_LINKS : buildObservationMapLinks(observations)),
-    [derivedResult, observations],
-  );
-  const mapLinks = derivedResult?.mapLinks ?? fallbackMapLinks;
-  const mapLinkByPairKey = useMemo(() => buildMapLinkByPairKey(mapLinks), [mapLinks]);
-  const selectedObservationPairKey = useMemo(
-    () => resolveSelectedObservationPairKey(derivedResult?.observationById, selectedObservationId),
-    [derivedResult?.observationById, selectedObservationId],
-  );
-
-  const {
-    effectiveVisiblePointLabels2d,
-    filteredVisibleMapLines2d,
-    filteredVisiblePoints2d,
-    interactionDenseMode,
-    mapDensitySummary,
-    unselectedCanvasLines2d,
-  } = useMapViewDerived2d({
-    denseLabelEdgeThreshold: DENSE_LABEL_EDGE_THRESHOLD,
-    denseLabelPointThreshold: DENSE_LABEL_POINT_THRESHOLD,
-    derivedView2d,
-    effectiveMode,
-    focusSelection,
-    hideMinorGeometry,
-    interactionDenseLineThreshold: INTERACTION_DENSE_LINE_THRESHOLD,
-    interactionDensePointThreshold: INTERACTION_DENSE_POINT_THRESHOLD,
-    interactionPhase,
-    labelGridPx: LABEL_GRID_PX,
-    mapLinks,
-    osmFullLabelPointThreshold: OSM_FULL_LABEL_POINT_THRESHOLD,
-    planningBasemapMode: planningMap.basemapMode,
-    pointHitRadiusPx: POINT_HIT_RADIUS_PX,
-    points,
-    projectPoint: project2d,
-    selectedObservationId,
-    selectedObservationPairKey,
-    selectedStationId,
-    showLabels,
-    showLostStations,
-    stationSeverity,
-    stations,
-    viewportClipMarginPx: VIEWPORT_CLIP_MARGIN_PX,
-    viewHeight: VIEW_H,
-    viewWidth: VIEW_W,
-  });
-
-  const {
-    svgBracePreviewPoints2d,
-    svgPlanningInputPoints2d,
-    svgPlanningPolygons2d,
-    svgScenarioPreviewSegments2d,
-    svgVisiblePointLabels2d,
-  } = useFrozenMapViewOverlays({
-    bracePreviewPoints2d,
-    effectiveMode,
-    interactionPhase,
-    planningInputPoints2d,
-    planningPolygons2d,
-    scenarioPreviewSegments2d,
-    visiblePointLabels2d: effectiveVisiblePointLabels2d,
-  });
-
-  const webglScene2d = useMemo(
-    () =>
-      measureMapViewPerf('map:build-webgl-scene', () =>
-        {
-          noteMapViewPerfCounter('map:webgl-scene-rebuilds');
-          return buildMapViewWebglScene2d({
-            originalGeometryOpacity,
-            lineWidth2d,
-            pointRadius2d,
-            ellipseStroke2d,
-            viewZoom: view2d.zoom,
-            projectionScale: projection2d.scale,
-            units,
-            interactionDenseMode,
-            unselectedCanvasLines2d,
-            filteredVisiblePoints2d,
-            ellipseStroke,
-            stationFill,
-            bracePreviewPoints2d,
-            scenarioPreviewSegments2d,
-          });
-        },
-      ),
-    [
-      bracePreviewPoints2d,
-      ellipseStroke,
-      ellipseStroke2d,
-      filteredVisiblePoints2d,
-      interactionDenseMode,
-      lineWidth2d,
-      originalGeometryOpacity,
-      pointRadius2d,
-      view2d.zoom,
-      projection2d.scale,
-      scenarioPreviewSegments2d,
-      stationFill,
-      units,
-      unselectedCanvasLines2d,
-    ],
-  );
-
-  const mapHitIndex2d = useMemo(
-    () =>
-      buildMapViewHitIndex({
-        points: filteredVisiblePoints2d,
-        lines: filteredVisibleMapLines2d,
-      }),
-    [filteredVisibleMapLines2d, filteredVisiblePoints2d],
-  );
-
-  useLayoutEffect(() => {
-    if (effectiveMode !== '2d') return;
-    noteMapViewPerfMetadata('map:renderer2d', renderer2d);
-    noteMapViewPerfMetadata('map:show-labels', showLabels);
-    noteMapViewPerfMetadata('map:show-input-points', planningMap.showInputPoints);
-    noteMapViewPerfMetadata('map:show-obstacles', planningMap.showObstacleLayer);
-    noteMapViewPerfMetadata('map:show-blocked-areas', planningMap.showBlockedAreas);
-    noteMapViewPerfMetadata('map:basemap-mode', planningMap.basemapMode);
-    noteMapViewPerfMetadata('map:visible-point-count', filteredVisiblePoints2d.length);
-    noteMapViewPerfMetadata('map:visible-line-count', filteredVisibleMapLines2d.length);
-    noteMapViewPerfMetadata('map:planning-input-point-count', planningInputPoints2d.length);
-    noteMapViewPerfMetadata('map:planning-polygon-count', planningPolygons2d.length);
-    noteMapViewPerfMetadata('map:interaction-phase', interactionPhase);
-  }, [
-    effectiveMode,
-    filteredVisibleMapLines2d.length,
-    filteredVisiblePoints2d.length,
-    interactionPhase,
-    planningInputPoints2d.length,
-    planningMap.basemapMode,
-    planningMap.showBlockedAreas,
-    planningMap.showInputPoints,
-    planningMap.showObstacleLayer,
-    planningPolygons2d.length,
-    renderer2d,
-    showLabels,
-  ]);
-
-  useLayoutEffect(() => {
-    if (effectiveMode !== '2d') return;
-    latestGeometryRenderInputRef.current = {
-      interactionPhase,
-      view2d,
-      originalGeometryOpacity,
-      lineWidth2d,
-      pointRadius2d,
-      ellipseStroke2d,
-      projectionScale: projection2d.scale,
-      units,
-      interactionDenseMode,
-      unselectedCanvasLines2d,
-      filteredVisiblePoints2d,
-      ellipseStroke,
-      stationFill,
-    };
-    latestWebglRenderInputRef.current = {
-      interactionPhase,
-      viewWidth: VIEW_W,
-      viewHeight: VIEW_H,
-      view2d,
-      tiles: latestBasemapRenderInputRef.current?.tiles ?? [],
-      ...webglScene2d,
-    };
-    renderLayersNow({ geometry: true });
-  }, [
-    effectiveMode,
-    ellipseStroke,
-    ellipseStroke2d,
-    filteredVisiblePoints2d,
-    interactionDenseMode,
-    interactionPhase,
-    latestBasemapRenderInputRef,
-    latestGeometryRenderInputRef,
-    latestWebglRenderInputRef,
-    lineWidth2d,
-    originalGeometryOpacity,
-    pointRadius2d,
-    projection2d.scale,
-    renderLayersNow,
-    stationFill,
-    units,
-    unselectedCanvasLines2d,
-    view2d,
-    webglScene2d,
-  ]);
-
-  useLayoutEffect(() => {
-    if (effectiveMode !== '2d') return;
-    latestPlanningRenderInputRef.current = {
-      interactionPhase,
-      view2d,
-      pointRadius2d,
-      planningInputPoints2d,
-      planningPolygons2d: planningPolygons2d.map((polygon) => ({
-        id: polygon.id,
-        source: polygon.source,
-        kind: polygon.kind,
-        label: polygon.label,
-        vertices: polygon.vertices,
-      })),
-      selectedPlanningPolygonIds,
-    };
-    renderLayersNow({ planning: true });
-  }, [
-    effectiveMode,
-    interactionPhase,
-    latestPlanningRenderInputRef,
-    planningInputPoints2d,
-    planningPolygons2d,
-    pointRadius2d,
-    renderLayersNow,
-    selectedPlanningPolygonIds,
-    view2d,
-  ]);
-
-  useLayoutEffect(() => {
-    if (effectiveMode !== '2d') return;
-    renderLayersNow({ basemap: true, geometry: true, planning: true });
-  }, [effectiveMode, renderLayersNow, renderer2d]);
 
   const project3d = useCallback(
     (point: Vec3) => projectPoint3d(camera3d, point, VIEW_W, VIEW_H),
