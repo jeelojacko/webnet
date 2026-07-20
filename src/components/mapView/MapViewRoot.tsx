@@ -8,14 +8,9 @@ import React, {
 } from 'react';
 import {
   buildMap3DScene,
-  type Vec3,
 } from '../../engine/map3d';
 import { RAD_TO_DEG } from '../../engine/angles';
 import { noteUiPerfStage, noteUiTabReady } from '../../hooks/useUiPerfMonitor';
-import {
-  buildProjection2d,
-  projectPoint2d,
-} from './mapView2d';
 import { DEFAULT_PLANNING_MAP_STATE } from '../../engine/planningMapState';
 import MapViewSvg2d from './MapViewSvg2d';
 import MapViewScene3d from './MapViewScene3d';
@@ -27,11 +22,7 @@ import { MapViewWebgl2d } from './mapViewWebgl2d';
 import {
   noteMapViewPerfCounter,
 } from './mapViewPerf';
-import {
-  buildMapScenePointBounds2d,
-  buildProjectedMapState3d,
-} from './mapViewSelectors';
-import { projectPoint3d } from './mapView3d';
+import { buildMapScenePointBounds2d } from './mapViewSelectors';
 import {
   canRenderWebglLayers,
   DEFAULT_RENDER_SURFACE_LAYOUT,
@@ -40,6 +31,8 @@ import {
   type ScreenSelectionBox,
 } from './mapViewInteraction';
 import { useMapView2dRenderState } from './useMapView2dRenderState';
+import { useMapView3dProjection } from './useMapView3dProjection';
+import { useMapViewCoordinates } from './useMapViewCoordinates';
 import { useMapViewDragInteractions } from './useMapViewDragInteractions';
 import { useMapViewLayerRenderer } from './useMapViewLayerRenderer';
 import { useMapViewPlanningActions } from './useMapViewPlanningActions';
@@ -56,10 +49,8 @@ import { useMapViewToolState } from './useMapViewToolState';
 import { useMapViewTransformOverlay } from './useMapViewTransformOverlay';
 import type { MapViewProps, MapViewSnapshot } from './MapView.types';
 import {
-  DENSE_LABEL_EDGE_THRESHOLD,
-  DENSE_LABEL_POINT_THRESHOLD,
   FT_PER_M,
-  LABEL_GRID_PX,
+  DENSE_LABEL_EDGE_THRESHOLD,
   MAX_ELLIPSOID_SAMPLES,
   OSM_INTERACTION_TILE_CAP,
   OSM_INTERACTION_ZOOM_DELTA,
@@ -354,78 +345,24 @@ const MapView: React.FC<MapViewProps> = ({
     view2d,
   });
 
-  const projection2d = useMemo(() => buildProjection2d(bbox, VIEW_W, VIEW_H), [bbox]);
-
-  const project2d = useCallback(
-    (x: number, y: number) => projectPoint2d(x, y, bbox, projection2d, VIEW_H),
-    [bbox, projection2d],
-  );
-
-  const toSvgCoords = useCallback((clientX: number, clientY: number) => {
-    const svg = svgRef.current;
-    if (!svg) return null;
-    const rect = svg.getBoundingClientRect();
-    if (rect.width <= 0 || rect.height <= 0) return null;
-    const x = ((clientX - rect.left) / rect.width) * VIEW_W;
-    const y = ((clientY - rect.top) / rect.height) * VIEW_H;
-    return { x, y };
-  }, []);
-
-  const svgToMapCoords = useCallback(
-    (screenX: number, screenY: number): { x: number; y: number } => {
-      const projectedX = (screenX - view2d.panX) / Math.max(view2d.zoom, 1e-9);
-      const projectedY = (screenY - view2d.panY) / Math.max(view2d.zoom, 1e-9);
-      const x = bbox.minX + (projectedX - projection2d.offsetX) / Math.max(projection2d.scale, 1e-9);
-      const y = bbox.minY + (VIEW_H - projectedY - projection2d.offsetY) / Math.max(projection2d.scale, 1e-9);
-      return { x, y };
-    },
-    [bbox.minX, bbox.minY, projection2d.offsetX, projection2d.offsetY, projection2d.scale, view2d.panX, view2d.panY, view2d.zoom],
-  );
-
-  const clearMapSelection = useCallback(() => {
-    onSelectStation?.(null);
-    onSelectObservation?.(null);
-    setSelectedPlanningPolygonIds([]);
-    setSelectionBox(null);
-    planningVertexDragRef.current = null;
-  }, [onSelectObservation, onSelectStation, planningVertexDragRef, setSelectedPlanningPolygonIds]);
-
-  const clearMapSelectionBox = useCallback(() => {
-    setSelectionBox(null);
-  }, []);
-
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return;
-      setContextMenu((prev) => ({ ...prev, open: false, planningPolygon: null }));
-      if (toolPickTarget != null) {
-        clearToolPickTarget();
-        return;
-      }
-      if (selectionBox != null) {
-        clearMapSelectionBox();
-        return;
-      }
-      if (
-        selectedStationId != null ||
-        selectedObservationId != null ||
-        selectedPlanningPolygonIds.length > 0
-      ) {
-        clearMapSelection();
-      }
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [
-    clearMapSelection,
-    clearMapSelectionBox,
-    clearToolPickTarget,
-    selectedObservationId,
-    selectedPlanningPolygonIds.length,
-    selectedStationId,
-    selectionBox,
-    toolPickTarget,
-  ]);
+  const { clearMapSelection, project2d, projection2d, svgToMapCoords, toSvgCoords } =
+    useMapViewCoordinates({
+      bbox,
+      clearToolPickTarget,
+      onSelectObservation,
+      onSelectStation,
+      planningVertexDragRef,
+      selectedObservationId,
+      selectedPlanningPolygonIds,
+      selectedStationId,
+      selectionBox,
+      setContextMenu,
+      setSelectedPlanningPolygonIds,
+      setSelectionBox,
+      svgRef,
+      toolPickTarget,
+      view2d,
+    });
 
   const { beginDrag, handleMouseDown, handleMouseUp, handleWheel } =
     useMapViewDragInteractions({
@@ -558,35 +495,14 @@ const MapView: React.FC<MapViewProps> = ({
     view2d,
   });
 
-  const project3d = useCallback(
-    (point: Vec3) => projectPoint3d(camera3d, point, VIEW_W, VIEW_H),
-    [camera3d],
-  );
-
-  const { projected3d, projected3dById, visiblePointLabels3d } = useMemo(
-    () =>
-      buildProjectedMapState3d({
-        effectiveMode,
-        camera3d,
-        scene3d,
-        selectedStationId,
-        denseLabelPointThreshold: DENSE_LABEL_POINT_THRESHOLD,
-        labelGridPx: LABEL_GRID_PX,
-        viewWidth: VIEW_W,
-        viewHeight: VIEW_H,
-      }),
-    [camera3d, effectiveMode, scene3d, selectedStationId],
-  );
-
-  const applyCubeView = (preset: 'iso' | 'top' | 'front' | 'right') => {
-    setCamera3d((prev) => {
-      if (!prev) return prev;
-      if (preset === 'top') return { ...prev, yawDeg: 0, pitchDeg: 89 };
-      if (preset === 'front') return { ...prev, yawDeg: 0, pitchDeg: 0 };
-      if (preset === 'right') return { ...prev, yawDeg: 90, pitchDeg: 0 };
-      return { ...prev, yawDeg: -35, pitchDeg: 25 };
+  const { applyCubeView, project3d, projected3d, projected3dById, visiblePointLabels3d } =
+    useMapView3dProjection({
+      camera3d,
+      effectiveMode,
+      scene3d,
+      selectedStationId,
+      setCamera3d,
     });
-  };
 
   const svg2dProps = {
     marker2d,
