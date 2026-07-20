@@ -1,6 +1,5 @@
 import React, {
   useCallback,
-  useDeferredValue,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -9,8 +8,6 @@ import React, {
 } from 'react';
 import {
   buildMap3DScene,
-  createDefaultMap3DCamera,
-  type Map3DCamera,
   type Vec3,
 } from '../../engine/map3d';
 import { RAD_TO_DEG } from '../../engine/angles';
@@ -18,7 +15,6 @@ import { noteUiPerfStage, noteUiTabReady } from '../../hooks/useUiPerfMonitor';
 import {
   buildProjection2d,
   projectPoint2d,
-  view2dEquals,
 } from './mapView2d';
 import { DEFAULT_PLANNING_MAP_STATE } from '../../engine/planningMapState';
 import MapViewSvg2d from './MapViewSvg2d';
@@ -39,8 +35,6 @@ import { projectPoint3d } from './mapView3d';
 import {
   canRenderWebglLayers,
   DEFAULT_RENDER_SURFACE_LAYOUT,
-  type MapInteractionKind,
-  type MapInteractionPhase,
   type PlanningPolygonTarget,
   type RenderSurfaceLayout,
   type ScreenSelectionBox,
@@ -50,6 +44,7 @@ import { useMapViewDragInteractions } from './useMapViewDragInteractions';
 import { useMapViewLayerRenderer } from './useMapViewLayerRenderer';
 import { useMapViewPlanningActions } from './useMapViewPlanningActions';
 import { useMapViewSelectionInteractions } from './useMapViewSelectionInteractions';
+import { useMapViewViewportState } from './useMapViewViewportState';
 import {
   useMapViewContextMenuDismiss,
   useMapViewRenderSurfaceLayout,
@@ -59,15 +54,13 @@ import { useMapViewSnapshotSync } from './useMapViewSnapshotSync';
 import { useMapViewStationDisplay } from './useMapViewStationDisplay';
 import { useMapViewToolState } from './useMapViewToolState';
 import { useMapViewTransformOverlay } from './useMapViewTransformOverlay';
-import type { DragMode, MapViewProps, MapViewSnapshot } from './MapView.types';
+import type { MapViewProps, MapViewSnapshot } from './MapView.types';
 import {
   DENSE_LABEL_EDGE_THRESHOLD,
   DENSE_LABEL_POINT_THRESHOLD,
   FT_PER_M,
-  INTERACTION_SETTLE_MS,
   LABEL_GRID_PX,
   MAX_ELLIPSOID_SAMPLES,
-  OSM_IDLE_PREFETCH_DELAY_MS,
   OSM_INTERACTION_TILE_CAP,
   OSM_INTERACTION_ZOOM_DELTA,
   OSM_VISIBLE_TILE_CAP,
@@ -116,36 +109,7 @@ const MapView: React.FC<MapViewProps> = ({
   const [renderer2d, setRenderer2d] = useState<'canvas' | 'webgl'>(() =>
     canRenderWebglLayers() ? 'webgl' : 'canvas',
   );
-  const interactionKindRef = useRef<MapInteractionKind>('none');
-  const [basemapDescriptorView2d, setBasemapDescriptorView2d] = useState(
-    () => snapshot?.view2d ?? { zoom: 1, panX: 0, panY: 0 },
-  );
-  const [idlePrefetchReady, setIdlePrefetchReady] = useState(false);
   const obstacleFetchSignatureRef = useRef<string>('');
-  const dragRef = useRef<{ active: boolean; mode: DragMode; lastX: number; lastY: number }>({
-    active: false,
-    mode: 'none',
-    lastX: 0,
-    lastY: 0,
-  });
-  const middleClickRef = useRef(0);
-  const [view2d, setView2d] = useState(
-    () => snapshot?.view2d ?? { zoom: 1, panX: 0, panY: 0 },
-  );
-  const deferredView2d = useDeferredValue(view2d);
-  const [frozenDerivedView2d, setFrozenDerivedView2d] = useState<typeof view2d | null>(null);
-  const pendingView2dRef = useRef(view2d);
-  const view2dFrameRef = useRef<number | null>(null);
-  const dragMoveFrameRef = useRef<number | null>(null);
-  const pendingDragClientRef = useRef<{ x: number; y: number } | null>(null);
-  const panPreviewOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-  const panPreviewCommitViewRef = useRef<{ zoom: number; panX: number; panY: number } | null>(null);
-  const settleTimerRef = useRef<ReturnType<typeof globalThis.setTimeout> | null>(null);
-  const settleFrameRef = useRef<number | null>(null);
-  const [interactionPhase, setInteractionPhase] = useState<MapInteractionPhase>('idle');
-  const interactionPhaseRef = useRef<MapInteractionPhase>('idle');
-  const [camera3d, setCamera3d] = useState<Map3DCamera | null>(() => snapshot?.camera3d ?? null);
-  const [isDragging, setIsDragging] = useState(false);
   const [contextMenu, setContextMenu] = useState<{
     open: boolean;
     x: number;
@@ -181,7 +145,6 @@ const MapView: React.FC<MapViewProps> = ({
     planningMap,
   });
   const [selectionBox, setSelectionBox] = useState<ScreenSelectionBox | null>(null);
-  const skipNextAutoResetRef = useRef(snapshot != null);
   const [viewportWidth, setViewportWidth] = useState<number>(
     typeof window !== 'undefined' ? window.innerWidth : 1280,
   );
@@ -256,7 +219,6 @@ const MapView: React.FC<MapViewProps> = ({
   });
 
   const effectiveViewportWidth = viewportWidthOverride ?? viewportWidth;
-  const derivedView2d = frozenDerivedView2d ?? deferredView2d;
 
   const fallbackReason = useMemo(() => {
     if (mode !== '3d') return null;
@@ -272,6 +234,40 @@ const MapView: React.FC<MapViewProps> = ({
     return null;
   }, [mode, scene3d.edges.length, scene3d.stations.length, effectiveViewportWidth]);
   const effectiveMode: '2d' | '3d' = mode === '3d' && !fallbackReason ? '3d' : '2d';
+  const {
+    applyPanPreviewOffset,
+    basemapDescriptorView2d,
+    camera3d,
+    derivedView2d,
+    dragMoveFrameRef,
+    dragRef,
+    idlePrefetchReady,
+    interactionPhase,
+    isDragging,
+    markInteracting,
+    middleClickRef,
+    panPreviewCommitViewRef,
+    panPreviewOffsetRef,
+    pendingDragClientRef,
+    pendingView2dRef,
+    queueView2dUpdate,
+    reset2dView,
+    reset3dView,
+    setBasemapDescriptorView2d,
+    setCamera3d,
+    setFrozenDerivedView2d,
+    setIsDragging,
+    setView2d,
+    view2d,
+  } = useMapViewViewportState({
+    bbox,
+    containerRef,
+    effectiveMode,
+    planningBasemapMode: planningMap.basemapMode,
+    renderSurfaceRef,
+    scene3d,
+    snapshot,
+  });
   const webglEligible = effectiveMode === '2d' && canRenderWebglLayers();
   const {
     showTransformToggle,
@@ -333,139 +329,11 @@ const MapView: React.FC<MapViewProps> = ({
     webglRendererRef,
   });
 
-  const applyPanPreviewOffset = useCallback((offsetX: number, offsetY: number) => {
-    const translate = offsetX === 0 && offsetY === 0 ? '' : `translate(${offsetX}px, ${offsetY}px)`;
-    const applyTo = (node: HTMLElement | SVGElement | null) => {
-      if (!node) return;
-      node.style.transformOrigin = '0 0';
-      node.style.transform = translate;
-      node.style.willChange = translate ? 'transform' : '';
-    };
-    applyTo(renderSurfaceRef.current);
-    const container = containerRef.current;
-    if (container) {
-      container.dataset.mapPreviewPanX = offsetX.toFixed(6);
-      container.dataset.mapPreviewPanY = offsetY.toFixed(6);
-    }
-  }, []);
-
-  const clearInteractionSettle = useCallback(() => {
-    if (settleTimerRef.current != null) {
-      globalThis.clearTimeout(settleTimerRef.current);
-      settleTimerRef.current = null;
-    }
-    if (settleFrameRef.current != null) {
-      cancelAnimationFrame(settleFrameRef.current);
-      settleFrameRef.current = null;
-    }
-  }, []);
-
-  const scheduleView2dCommit = useCallback(() => {
-    if (view2dFrameRef.current != null) return;
-    view2dFrameRef.current = requestAnimationFrame(() => {
-      view2dFrameRef.current = null;
-      const next = pendingView2dRef.current;
-      setView2d((prev) => (view2dEquals(prev, next) ? prev : next));
-    });
-  }, []);
-
-  const queueView2dUpdate = useCallback(
-    (
-      updater: (_current: { zoom: number; panX: number; panY: number }) => {
-        zoom: number;
-        panX: number;
-        panY: number;
-      },
-    ) => {
-      noteMapViewPerfCounter('map:view-update-requests');
-      const next = updater(pendingView2dRef.current);
-      pendingView2dRef.current = next;
-      scheduleView2dCommit();
-    },
-    [scheduleView2dCommit],
-  );
-
-  const markInteracting = useCallback((kind: MapInteractionKind) => {
-    if (effectiveMode !== '2d') return;
-    clearInteractionSettle();
-    interactionKindRef.current = kind;
-    if (interactionPhaseRef.current !== 'interacting') {
-      interactionPhaseRef.current = 'interacting';
-      setInteractionPhase('interacting');
-    }
-    settleTimerRef.current = globalThis.setTimeout(() => {
-      settleTimerRef.current = null;
-      interactionPhaseRef.current = 'settling';
-      setInteractionPhase('settling');
-      settleFrameRef.current = requestAnimationFrame(() => {
-        settleFrameRef.current = null;
-        interactionKindRef.current = 'none';
-        interactionPhaseRef.current = 'idle';
-        setInteractionPhase('idle');
-      });
-    }, INTERACTION_SETTLE_MS);
-  }, [clearInteractionSettle, effectiveMode]);
-
-  useEffect(() => {
-    pendingView2dRef.current = view2d;
-  }, [view2d]);
-
-  useEffect(() => {
-    interactionPhaseRef.current = interactionPhase;
-  }, [interactionPhase]);
-
-  useEffect(() => {
-    if (effectiveMode !== '2d' || planningMap.basemapMode !== 'osm') {
-      setIdlePrefetchReady(false);
-      return;
-    }
-    if (interactionPhase !== 'idle') {
-      setIdlePrefetchReady(false);
-      return;
-    }
-    const timeout = window.setTimeout(() => {
-      setIdlePrefetchReady(true);
-    }, OSM_IDLE_PREFETCH_DELAY_MS);
-    return () => window.clearTimeout(timeout);
-  }, [effectiveMode, interactionPhase, planningMap.basemapMode]);
-
-  useEffect(
-    () => () => {
-      if (view2dFrameRef.current != null) {
-        cancelAnimationFrame(view2dFrameRef.current);
-      }
-      if (dragMoveFrameRef.current != null) {
-        cancelAnimationFrame(dragMoveFrameRef.current);
-      }
-      clearInteractionSettle();
-    },
-    [clearInteractionSettle],
-  );
-
   useEffect(() => {
     if (!transformedOverlayConfig.available || effectiveMode !== '2d') {
       setShowTransformedCoordinates(false);
     }
   }, [effectiveMode, transformedOverlayConfig.available]);
-
-  const reset2dView = useCallback(() => {
-    const reset = { zoom: 1, panX: 0, panY: 0 };
-    applyPanPreviewOffset(0, 0);
-    panPreviewOffsetRef.current = { x: 0, y: 0 };
-    panPreviewCommitViewRef.current = null;
-    pendingView2dRef.current = reset;
-    setView2d(reset);
-    setBasemapDescriptorView2d(reset);
-    setFrozenDerivedView2d(null);
-    clearInteractionSettle();
-    interactionKindRef.current = 'none';
-    interactionPhaseRef.current = 'idle';
-    setInteractionPhase('idle');
-  }, [applyPanPreviewOffset, clearInteractionSettle]);
-
-  const reset3dView = useCallback(() => {
-    setCamera3d(createDefaultMap3DCamera(scene3d));
-  }, [scene3d]);
 
   useMapViewSnapshotSync({
     activeTool,
@@ -485,34 +353,6 @@ const MapView: React.FC<MapViewProps> = ({
     showTransformedCoordinates,
     view2d,
   });
-
-  useEffect(() => {
-    if (effectiveMode === '3d') {
-      clearInteractionSettle();
-      interactionKindRef.current = 'none';
-      interactionPhaseRef.current = 'idle';
-      setInteractionPhase('idle');
-      if (skipNextAutoResetRef.current) {
-        skipNextAutoResetRef.current = false;
-        return;
-      }
-      reset3dView();
-      return;
-    }
-    if (skipNextAutoResetRef.current) {
-      skipNextAutoResetRef.current = false;
-      return;
-    }
-    reset2dView();
-  }, [
-    bbox.height,
-    bbox,
-    bbox.width,
-    clearInteractionSettle,
-    effectiveMode,
-    reset2dView,
-    reset3dView,
-  ]);
 
   const projection2d = useMemo(() => buildProjection2d(bbox, VIEW_W, VIEW_H), [bbox]);
 
