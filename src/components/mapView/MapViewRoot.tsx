@@ -17,8 +17,6 @@ import { RAD_TO_DEG } from '../../engine/angles';
 import { noteUiPerfStage, noteUiTabReady } from '../../hooks/useUiPerfMonitor';
 import {
   buildProjection2d,
-  clamp,
-  pointToSegmentDistancePx,
   projectPoint2d,
   view2dEquals,
 } from './mapView2d';
@@ -41,19 +39,17 @@ import { projectPoint3d } from './mapView3d';
 import {
   canRenderWebglLayers,
   DEFAULT_RENDER_SURFACE_LAYOUT,
-  doesPolygonTouchRect,
-  isPolygonInsideRect,
   type MapInteractionKind,
   type MapInteractionPhase,
   type PlanningPolygonTarget,
   type RenderSurfaceLayout,
   type ScreenSelectionBox,
-  type SelectionBoxMode,
 } from './mapViewInteraction';
 import { useMapView2dRenderState } from './useMapView2dRenderState';
 import { useMapViewDragInteractions } from './useMapViewDragInteractions';
 import { useMapViewLayerRenderer } from './useMapViewLayerRenderer';
 import { useMapViewPlanningActions } from './useMapViewPlanningActions';
+import { useMapViewSelectionInteractions } from './useMapViewSelectionInteractions';
 import {
   useMapViewContextMenuDismiss,
   useMapViewRenderSurfaceLayout,
@@ -70,13 +66,11 @@ import {
   FT_PER_M,
   INTERACTION_SETTLE_MS,
   LABEL_GRID_PX,
-  LINE_HIT_RADIUS_PX,
   MAX_ELLIPSOID_SAMPLES,
   OSM_IDLE_PREFETCH_DELAY_MS,
   OSM_INTERACTION_TILE_CAP,
   OSM_INTERACTION_ZOOM_DELTA,
   OSM_VISIBLE_TILE_CAP,
-  POINT_HIT_RADIUS_PX,
   VIEW_H,
   VIEW_W,
 } from './mapViewConstants';
@@ -685,52 +679,44 @@ const MapView: React.FC<MapViewProps> = ({
     svgVisiblePointLabels2d,
   } = map2dRenderState;
 
-  const selectionBoxRect = useMemo(() => {
-    if (selectionBox == null) return null;
-    const x = Math.min(selectionBox.anchorX, selectionBox.currentX);
-    const y = Math.min(selectionBox.anchorY, selectionBox.currentY);
-    const width = Math.abs(selectionBox.currentX - selectionBox.anchorX);
-    const height = Math.abs(selectionBox.currentY - selectionBox.anchorY);
-    const mode: SelectionBoxMode =
-      selectionBox.currentX >= selectionBox.anchorX ? 'window' : 'crossing';
-    return { x, y, width, height, mode };
-  }, [selectionBox]);
-
-  const applySelectionBoxToPlanningPolygons = useCallback(
-    (rect: { x: number; y: number; width: number; height: number; mode: SelectionBoxMode }) => {
-      const bounds = {
-        left: rect.x,
-        right: rect.x + rect.width,
-        top: rect.y,
-        bottom: rect.y + rect.height,
-      };
-      const hits = planningPolygons2d
-        .filter((polygon) => polygon.id !== 'draft-blocked-polygon')
-        .filter((polygon) => {
-          const screenVertices = polygon.vertices.map((vertex) => ({
-            x: vertex.x * view2d.zoom + view2d.panX,
-            y: vertex.y * view2d.zoom + view2d.panY,
-          }));
-          return rect.mode === 'window'
-            ? isPolygonInsideRect(screenVertices, bounds)
-            : doesPolygonTouchRect(screenVertices, bounds);
-        })
-        .map((polygon) => polygon.id);
-      setSelectedPlanningPolygonIds(hits);
-      onSelectStation?.(null);
-      onSelectObservation?.(null);
-      setSelectionBox(null);
-    },
-    [
-      onSelectObservation,
-      onSelectStation,
-      planningPolygons2d,
-      setSelectedPlanningPolygonIds,
-      view2d.panX,
-      view2d.panY,
-      view2d.zoom,
-    ],
-  );
+  const {
+    handleDeletePlanningPolygon,
+    handleEditPlanningPolygon,
+    handlePlanningVertexMouseDown,
+    handleRemoveSelectedPlanningPolygons,
+    handleSvgClick,
+    openContextMenu,
+    selectionBoxRect,
+  } = useMapViewSelectionInteractions({
+    applyPickedToolStation,
+    beginDrag,
+    clearMapSelection,
+    closeContextMenu,
+    containerRef,
+    contextMenu,
+    effectiveMode,
+    findPlanningPolygonAtSvgPoint,
+    mapHitIndex2d,
+    onSelectObservation,
+    onSelectStation,
+    planningMap,
+    planningPolygons2d,
+    planningVertexDragRef,
+    removePlanningPolygon,
+    removeSelectedPlanningPolygons,
+    selectedObservationId,
+    selectedPlanningPolygonIds,
+    selectedStationId,
+    selectionBox,
+    setContextMenu,
+    setDraftBlockedPolygon,
+    setSelectedPlanningPolygonIds,
+    setSelectionBox,
+    svgToMapCoords,
+    toSvgCoords,
+    toolPickTarget,
+    view2d,
+  });
 
   const project3d = useCallback(
     (point: Vec3) => projectPoint3d(camera3d, point, VIEW_W, VIEW_H),
@@ -759,184 +745,6 @@ const MapView: React.FC<MapViewProps> = ({
       if (preset === 'front') return { ...prev, yawDeg: 0, pitchDeg: 0 };
       if (preset === 'right') return { ...prev, yawDeg: 90, pitchDeg: 0 };
       return { ...prev, yawDeg: -35, pitchDeg: 25 };
-    });
-  };
-
-  const openContextMenu = (event: React.MouseEvent<SVGSVGElement>) => {
-    event.preventDefault();
-    const rect = containerRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const pointer = toSvgCoords(event.clientX, event.clientY);
-    const polygonHit =
-      effectiveMode === '2d' && pointer != null
-        ? findPlanningPolygonAtSvgPoint(pointer)
-        : null;
-    const polygonId = polygonHit?.polygonId ?? null;
-    const polygonSource = polygonHit?.polygonSource ?? null;
-    const polygonLabel = polygonHit?.polygonLabel ?? 'Planning obstacle';
-    const preserveMultiSelection = selectedPlanningPolygonIds.length > 1;
-    if (polygonId && !preserveMultiSelection) {
-      setSelectedPlanningPolygonIds([polygonId]);
-    }
-    const showMultiDelete = !polygonId && selectedPlanningPolygonIds.length > 1;
-    const effectiveMultiDelete = preserveMultiSelection || showMultiDelete;
-    const menuWidth = 240;
-    const menuHeight =
-      effectiveMultiDelete && !polygonId
-        ? 172
-        : preserveMultiSelection && polygonId
-          ? 172
-          : polygonId
-            ? 232
-            : 126;
-    const localX = event.clientX - rect.left;
-    const localY = event.clientY - rect.top;
-    const x = clamp(localX, 8, Math.max(8, rect.width - menuWidth - 8));
-    const y = clamp(localY, 8, Math.max(8, rect.height - menuHeight - 8));
-    setContextMenu({
-      open: true,
-      x,
-      y,
-      planningPolygon:
-        !preserveMultiSelection && polygonId && (polygonSource === 'user' || polygonSource === 'osm')
-          ? {
-              polygonId,
-              polygonSource,
-              polygonLabel,
-            }
-          : null,
-    });
-  };
-
-  const handleEditPlanningPolygon = useCallback(() => {
-    const polygon = contextMenu.planningPolygon;
-    if (!polygon) return;
-    setSelectedPlanningPolygonIds([polygon.polygonId]);
-    setContextMenu((current) => ({ ...current, open: false, planningPolygon: null }));
-  }, [contextMenu.planningPolygon, setSelectedPlanningPolygonIds]);
-
-  const handleDeletePlanningPolygon = useCallback(() => {
-    const polygon = contextMenu.planningPolygon;
-    if (!polygon) return;
-    removePlanningPolygon(polygon.polygonId, polygon.polygonSource);
-    closeContextMenu();
-  }, [closeContextMenu, contextMenu.planningPolygon, removePlanningPolygon]);
-
-  const handleRemoveSelectedPlanningPolygons = useCallback(() => {
-    removeSelectedPlanningPolygons();
-    closeContextMenu();
-  }, [closeContextMenu, removeSelectedPlanningPolygons]);
-
-  const handlePlanningVertexMouseDown = useCallback(
-    (polygonId: string, vertexIndex: number, event: React.MouseEvent<SVGCircleElement>) => {
-      const polygonSource = planningMap.obstaclePolygons.some((polygon) => polygon.id === polygonId)
-        ? ('osm' as const)
-        : ('user' as const);
-      planningVertexDragRef.current = { polygonId, polygonSource, vertexIndex };
-      setSelectedPlanningPolygonIds([polygonId]);
-      beginDrag('planning-vertex', event.clientX, event.clientY);
-      event.preventDefault();
-      event.stopPropagation();
-    },
-    [beginDrag, planningMap.obstaclePolygons, planningVertexDragRef, setSelectedPlanningPolygonIds],
-  );
-
-  const handleSvgClick = (event: React.MouseEvent<SVGSVGElement>) => {
-    if (effectiveMode === '3d') {
-      const target = event.target as HTMLElement | null;
-      const stationId = target?.getAttribute('data-map-station');
-      if (toolPickTarget != null && stationId) {
-        applyPickedToolStation(stationId);
-        return;
-      }
-      if (!target?.closest('[data-map-observation],[data-map-station]')) {
-        clearMapSelection();
-      }
-      return;
-    }
-    const target = event.target as HTMLElement | null;
-    if (target?.closest('[data-map-observation],[data-map-station]')) return;
-    const pointer = toSvgCoords(event.clientX, event.clientY);
-    if (!pointer) return;
-    const pointCandidates = mapHitIndex2d.pointCandidates(pointer.x, pointer.y, POINT_HIT_RADIUS_PX);
-    let nearestPointId: string | null = null;
-    let nearestPointDistance = Number.POSITIVE_INFINITY;
-    pointCandidates.forEach((point) => {
-      const distance = Math.hypot(pointer.x - point.screenX, pointer.y - point.screenY);
-      if (distance <= POINT_HIT_RADIUS_PX && distance < nearestPointDistance) {
-        nearestPointDistance = distance;
-        nearestPointId = point.id;
-      }
-    });
-    if (toolPickTarget != null) {
-      if (nearestPointId) applyPickedToolStation(nearestPointId);
-      return;
-    }
-    if (planningMap.blockEditMode) {
-      setDraftBlockedPolygon((current) => [...current, svgToMapCoords(pointer.x, pointer.y)]);
-      return;
-    }
-    if (selectionBox != null) {
-      const nextMode: SelectionBoxMode =
-        pointer.x >= selectionBox.anchorX ? 'window' : 'crossing';
-      const nextRect = {
-        x: Math.min(selectionBox.anchorX, pointer.x),
-        y: Math.min(selectionBox.anchorY, pointer.y),
-        width: Math.abs(pointer.x - selectionBox.anchorX),
-        height: Math.abs(pointer.y - selectionBox.anchorY),
-        mode: nextMode,
-      };
-      applySelectionBoxToPlanningPolygons(nextRect);
-      return;
-    }
-    if (nearestPointId) {
-      setSelectedPlanningPolygonIds([]);
-      onSelectStation?.(nearestPointId);
-      return;
-    }
-    const lineCandidates = mapHitIndex2d.lineCandidates(pointer.x, pointer.y, LINE_HIT_RADIUS_PX);
-    let nearestLineObservationId: number | null = null;
-    let nearestLineDistance = Number.POSITIVE_INFINITY;
-    lineCandidates.forEach((line) => {
-      const distance = pointToSegmentDistancePx(
-        pointer.x,
-        pointer.y,
-        line.screenX1,
-        line.screenY1,
-        line.screenX2,
-        line.screenY2,
-      );
-      if (distance <= LINE_HIT_RADIUS_PX && distance < nearestLineDistance) {
-        nearestLineDistance = distance;
-        nearestLineObservationId = line.observationId;
-      }
-    });
-    if (nearestLineObservationId != null) {
-      setSelectedPlanningPolygonIds([]);
-      onSelectObservation?.(nearestLineObservationId);
-      return;
-    }
-    const polygonHit = findPlanningPolygonAtSvgPoint(pointer);
-    if (polygonHit != null) {
-      setSelectedPlanningPolygonIds([polygonHit.polygonId]);
-      onSelectStation?.(null);
-      onSelectObservation?.(null);
-      setSelectionBox(null);
-      return;
-    }
-    if (
-      selectedStationId != null ||
-      selectedObservationId != null ||
-      selectedPlanningPolygonIds.length > 0
-    ) {
-      clearMapSelection();
-      return;
-    }
-    setSelectionBox({
-      anchorX: pointer.x,
-      anchorY: pointer.y,
-      currentX: pointer.x,
-      currentY: pointer.y,
     });
   };
 
