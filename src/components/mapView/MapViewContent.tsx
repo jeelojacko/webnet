@@ -13,7 +13,7 @@ type Scene3dProps = React.ComponentProps<typeof MapViewScene3d>;
 type ToolOverlayProps = React.ComponentProps<typeof MapViewToolOverlay>;
 type ContextMenuProps = React.ComponentProps<typeof MapViewContextMenu>;
 
-interface MapViewContentProps {
+export interface MapViewContentProps {
   activeTool: MapToolPanel;
   basemapCanvasRef: React.RefObject<HTMLCanvasElement | null>;
   canShowInputPointHint: boolean;
