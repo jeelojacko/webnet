@@ -1,3 +1,4 @@
+- [x] Adjust engine split batch 1 (July 2026): start reducing oversized `src/engine/adjust.ts` by extracting cohesive calculation helpers without changing solver behavior or output ordering.
 - [x] Dependency audit cleanup (July 2026): run npm audit fix to resolve high-severity transitive `brace-expansion` and `js-yaml` warnings, then validate install, lint, typecheck, tests, and build.
 - [x] Project file workflow split batch 5 (July 2026): continue splitting `useProjectFileWorkflow.ts` until the root hook is under 400 lines, preserving project file import, source-file editing, and local project behavior.
 - [x] Project file workflow split batch 4 (July 2026): split derived project workspace/run state out of oversized `useProjectFileWorkflow.ts`, keeping effective input/include and file-view behavior stable.
