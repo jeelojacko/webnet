@@ -1,3 +1,4 @@
+- [x] Project file workflow split batch 5 (July 2026): continue splitting `useProjectFileWorkflow.ts` until the root hook is under 400 lines, preserving project file import, source-file editing, and local project behavior.
 - [x] Project file workflow split batch 4 (July 2026): split derived project workspace/run state out of oversized `useProjectFileWorkflow.ts`, keeping effective input/include and file-view behavior stable.
 - [x] Project file workflow split batch 3 (July 2026): split imported-project payload normalization and application out of oversized `useProjectFileWorkflow.ts`, keep project import/load state restoration behavior stable, and validate focused project workflow coverage plus full checks.
 - [x] Map view under-400 continuation (July 2026): keep splitting the map-view root until the remaining implementation shell is under 400 lines before moving to another oversized source file; preserve 2D/3D interaction, planning controls, and renderer behavior.
