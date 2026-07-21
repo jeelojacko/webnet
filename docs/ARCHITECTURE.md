@@ -28,7 +28,7 @@ Primary app-facing state and workflow orchestration live in the app shell plus h
 - `src/hooks/useProjectOptionsModalController.ts`
 - `src/hooks/useImportReviewWorkflow.ts`
 - `src/hooks/useAdjustmentWorkflow.ts`
-- `src/hooks/useProjectFileWorkflow.ts` with payload load/apply normalization in `src/hooks/useProjectPayloadLoader.ts`
+- `src/hooks/useProjectFileWorkflow.ts` with payload load/apply normalization in `src/hooks/useProjectPayloadLoader.ts` and derived workspace/run state in `src/hooks/useProjectWorkflowDerivedState.ts`
 - `src/hooks/useWorkspaceRecovery.ts`
 - `src/hooks/useExportWorkflow.ts`
 - `src/hooks/useReportViewState.ts`
