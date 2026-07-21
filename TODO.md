@@ -1,3 +1,4 @@
+- [x] Parse engine split batch 1 (July 2026): split oversized `src/engine/parse.ts` until root parser is under 400 lines, preserving parse behavior, directive compatibility, and diagnostics ordering.
 - [x] App shell split batch 2 (July 2026): continue splitting oversized `src/App.tsx` until the root shell is under 400 lines, preserving app wiring, modal behavior, and validation output.
 - [x] Run results text builder split batch 3 (July 2026): continue splitting oversized `src/engine/runResultsTextBuilder.ts` until the root builder is under 400 lines, preserving generated report wording and ordering.
 - [x] Adjust engine split batch 1 (July 2026): start reducing oversized `src/engine/adjust.ts` by extracting cohesive calculation helpers without changing solver behavior or output ordering.
