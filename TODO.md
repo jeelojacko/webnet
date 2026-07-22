@@ -1,3 +1,4 @@
+- [x] Import review split batch 1 (July 2026): split oversized `src/engine/importReview.ts` until the root review module is under 400 lines, preserving staged import diagnostics, ordering, and applied override behavior.
 - [x] Preanalysis planning split batch 2 (July 2026): split oversized `src/engine/preanalysisPlanning.ts` until the root planner is under 400 lines, preserving recommendation ordering and diagnostics text.
 - [x] Parse engine split batch 1 (July 2026): split oversized `src/engine/parse.ts` until root parser is under 400 lines, preserving parse behavior, directive compatibility, and diagnostics ordering.
 - [x] App shell split batch 2 (July 2026): continue splitting oversized `src/App.tsx` until the root shell is under 400 lines, preserving app wiring, modal behavior, and validation output.
