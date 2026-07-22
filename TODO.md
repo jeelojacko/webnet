@@ -1,3 +1,4 @@
+- [x] Parse directive registry split batch 1 (July 2026): split oversized `src/engine/parseDirectiveRegistry.ts` until the root dispatcher is under 400 lines, preserving directive handling order, warnings, and parser state transitions.
 - [x] Shared types split batch 1 (July 2026): split oversized `src/types.ts` until the root type barrel is under 400 lines, preserving exported type names and import compatibility.
 - [x] Import review split batch 1 (July 2026): split oversized `src/engine/importReview.ts` until the root review module is under 400 lines, preserving staged import diagnostics, ordering, and applied override behavior.
 - [x] Preanalysis planning split batch 2 (July 2026): split oversized `src/engine/preanalysisPlanning.ts` until the root planner is under 400 lines, preserving recommendation ordering and diagnostics text.
