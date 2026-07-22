@@ -1,3 +1,4 @@
+- [x] Parse input core split batch 1 (July 2026): split oversized `src/engine/parseInputCore.ts` until the root parse-input workflow is under 400 lines, preserving parse ordering, diagnostics, include handling, and observation construction.
 - [x] Input pane split batch 1 (July 2026): split oversized `src/components/InputPane.tsx` until the root component is under 400 lines, preserving input editing, diagnostics, import controls, and sample/project actions.
 - [x] Survey CAD workspace hook split batch 2 (July 2026): continue splitting oversized `src/hooks/surveyCad/useSurveyCadWorkspace.ts` until the root hook is under 400 lines, preserving command state, geometry editing, import review, and parcel/traverse behavior.
 - [x] Adjustment statistics split batch 1 (July 2026): split oversized `src/engine/adjustStatistics.ts` until the root statistics workflow is under 400 lines, preserving residual statistics, diagnostics, and precision outputs.
