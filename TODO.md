@@ -1,3 +1,4 @@
+- [x] Adjustment statistics split batch 1 (July 2026): split oversized `src/engine/adjustStatistics.ts` until the root statistics workflow is under 400 lines, preserving residual statistics, diagnostics, and precision outputs.
 - [x] Import review workflow split batch 1 (July 2026): split oversized `src/hooks/useImportReviewWorkflow.ts` until the root hook is under 400 lines, preserving staged import review state, prompts, conflicts, and apply behavior.
 - [x] Industry listing sections split batch 1 (July 2026): split oversized `src/engine/industryListingSections.ts` until the root listing-section module is under 400 lines, preserving listing wording, ordering, and classic parity layout.
 - [x] Parse directive registry split batch 1 (July 2026): split oversized `src/engine/parseDirectiveRegistry.ts` until the root dispatcher is under 400 lines, preserving directive handling order, warnings, and parser state transitions.
