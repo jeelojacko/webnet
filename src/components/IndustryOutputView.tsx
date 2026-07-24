@@ -1,6 +1,18 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ListingSortObservationsBy } from '../listingSortObservations';
 import { noteUiPerfStage, noteUiTabReady } from '../hooks/useUiPerfMonitor';
+import {
+  MAIN_MENU_HEIGHT_PX,
+  MAIN_MENU_WIDTH_PX,
+  MENU_EDGE_PADDING_PX,
+  SECTION_SUBMENU_WIDTH_PX,
+  SORT_OPTIONS,
+  SORT_SUBMENU_WIDTH_PX,
+  SUBMENU_GAP_PX,
+  extractSectionTargets,
+  type MenuState,
+  type SectionTarget,
+} from './IndustryOutputView.helpers';
 
 interface IndustryOutputViewProps {
   text: string;
@@ -8,86 +20,6 @@ interface IndustryOutputViewProps {
   onChangeListingSortObservationsBy: (_value: ListingSortObservationsBy) => void;
   onJumpToSourceLine?: (_sourceLine: number) => void;
 }
-
-type SectionTarget = {
-  id: string;
-  label: string;
-  lineIndex: number;
-};
-
-type MenuState = {
-  x: number;
-  y: number;
-  submenu: 'none' | 'sections' | 'sort';
-  sortSubmenuLeft: boolean;
-  sectionsSubmenuLeft: boolean;
-};
-
-const MAIN_MENU_WIDTH_PX = 192;
-const MAIN_MENU_HEIGHT_PX = 72;
-const SUBMENU_GAP_PX = 4;
-const SORT_SUBMENU_WIDTH_PX = 192;
-const SECTION_SUBMENU_WIDTH_PX = 256;
-const MENU_EDGE_PADDING_PX = 6;
-
-const SORT_OPTIONS: Array<{ value: ListingSortObservationsBy; label: string }> = [
-  { value: 'name', label: 'Point Name' },
-  { value: 'input', label: 'Input Order' },
-  { value: 'residual', label: 'Residual' },
-  { value: 'stdError', label: 'Std Error' },
-  { value: 'stdResidual', label: 'Std Residual' },
-];
-
-const normalizeSectionMenuLabel = (label: string): string =>
-  label.replace(/\s*\([^)]*\)\s*/gu, ' ').replace(/\s{2,}/g, ' ').trim();
-
-const isStandaloneSectionHeading = (label: string): boolean => {
-  const compact = label.trim();
-  if (!compact) return false;
-  if (
-    /^Adjusted\s+(Measured\s+)?(Distance|Direction|Zenith)\s+Observations(?:\s*\([^)]*\))?$/iu.test(
-      compact,
-    )
-  ) {
-    return true;
-  }
-  if (
-    /^Convergence\s+Angles(?:\s*\([^)]*\))?\s+and\s+Grid\s+Factors\s+at\s+Stations$/iu.test(compact)
-  ) {
-    return true;
-  }
-  return false;
-};
-
-const extractSectionTargets = (text: string): SectionTarget[] => {
-  const lines = text.split('\n');
-  const targets: SectionTarget[] = [];
-  const seenLineIndexes = new Set<number>();
-  for (let index = 0; index < lines.length - 1; index += 1) {
-    const label = lines[index].trim();
-    if (!label) continue;
-    const underline = lines[index + 1].trim();
-    if (!/^[=-]{3,}$/.test(underline)) continue;
-    seenLineIndexes.add(index);
-    targets.push({
-      id: `section-${index + 1}`,
-      label: normalizeSectionMenuLabel(label),
-      lineIndex: index,
-    });
-  }
-  for (let index = 0; index < lines.length; index += 1) {
-    if (seenLineIndexes.has(index)) continue;
-    const label = lines[index].trim();
-    if (!isStandaloneSectionHeading(label)) continue;
-    targets.push({
-      id: `section-${index + 1}`,
-      label: normalizeSectionMenuLabel(label),
-      lineIndex: index,
-    });
-  }
-  targets.sort((a, b) => a.lineIndex - b.lineIndex);
-  return targets;
-};
 
 const IndustryOutputView: React.FC<IndustryOutputViewProps> = ({
   text,
