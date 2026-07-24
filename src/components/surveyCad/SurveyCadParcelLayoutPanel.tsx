@@ -4,112 +4,20 @@ import type {
   CadParcelLayoutRemainderDistribution,
   CadParcelLayoutSettings,
   CadParcelLayoutSolutionPreference,
-  CadParcelLayoutUiState,
 } from '../../engine/cad/cadTypes';
-import SurveyCadFloatingPanelShell, {
-  type FloatingPanelResizeDirection,
-} from './SurveyCadFloatingPanelShell';
-
-interface SurveyCadParcelLayoutPanelProps {
-  state: CadParcelLayoutUiState;
-  dockOffsetPx: number;
-  parentParcelName: string | null;
-  frontageLabel: string | null;
-  previewStatus: string;
-  previewDetails: string[];
-  hasPreview: boolean;
-  canAcceptPreview: boolean;
-  canPreviewLayout: boolean;
-  canUseCurrentSelectionAsParent: boolean;
-  canUseCurrentSelectionAsFrontage: boolean;
-  canUseParcelFrontageSegments: boolean;
-  isSelectingFrontageSegments: boolean;
-  onClose: () => void;
-  onToggleCollapsed: () => void;
-  onSetDock: (_dock: CadParcelLayoutUiState['dock']) => void;
-  onStartDrag: (_event: React.PointerEvent<HTMLDivElement>) => void;
-  onStartResize: (
-    _direction: FloatingPanelResizeDirection,
-    _event: React.PointerEvent<HTMLDivElement>,
-  ) => void;
-  onUseSelectedParent: () => void;
-  onUseSelectedFrontage: () => void;
-  onStartFrontageSegmentSelection: () => void;
-  onAcceptFrontageSegmentSelection: () => void;
-  onCancelFrontageSegmentSelection: () => void;
-  onClearParent: () => void;
-  onClearFrontage: () => void;
-  onUpdateSettings: (_settings: CadParcelLayoutSettings) => void;
-  onResetSettings: () => void;
-  onCreateParcel: () => void;
-  onSplitByLine: () => void;
-  onSplitByBearing: () => void;
-  onSplitByArea: () => void;
-  onPreviewSlide: () => void;
-  onPreviewSwing: () => void;
-  onAutoLayout: () => void;
-  onCyclePreviewAlternative: () => void;
-  onAcceptPreview: () => void;
-  onRejectPreview: () => void;
-  onPreviewAll: () => void;
-  onCreateAll: () => void;
-  onReportGap: () => void;
-  onReportCheck: () => void;
-  onReportOverlap: () => void;
-  canCreateAll: boolean;
-  canPreviewAll: boolean;
-  canCreateParcel: boolean;
-  canSplitByLine: boolean;
-  canSplitByBearing: boolean;
-  canSplitByArea: boolean;
-  canAutoLayout: boolean;
-  canReportGap: boolean;
-  canReportCheck: boolean;
-  canReportOverlap: boolean;
-  autoToolTitle: string;
-  frontageSegmentActionTitle: string;
-}
-
-const sectionLabelClassName =
-  'text-[8px] font-semibold uppercase tracking-[0.1em] text-cyan-200';
-const rowClassName = 'grid grid-cols-[minmax(0,1fr),auto] items-start gap-1.5';
-const inputClassName =
-  'w-20 rounded border border-slate-700 bg-slate-900 px-1.5 py-0.5 text-[9px] leading-3 text-slate-100 outline-none focus:border-cyan-500';
-const selectClassName =
-  'w-28 rounded border border-slate-700 bg-slate-900 px-1.5 py-0.5 text-[9px] leading-3 text-slate-100 outline-none focus:border-cyan-500';
-const buttonClassName =
-  'rounded border border-slate-700 bg-slate-950/85 px-1 py-0.5 text-[8px] font-semibold uppercase tracking-[0.04em] leading-3 text-slate-100 transition-colors hover:border-cyan-500/70 hover:bg-slate-900 disabled:cursor-not-allowed disabled:border-slate-800 disabled:text-slate-500';
-
-const solutionPreferenceOptions: Array<{
-  value: CadParcelLayoutSolutionPreference;
-  label: string;
-}> = [
-  { value: 'shortest_frontage', label: 'Shortest frontage' },
-  { value: 'smallest_area', label: 'Smallest area' },
-  { value: 'largest_area', label: 'Largest area' },
-  { value: 'most_rectangular', label: 'Most rectangular' },
-  { value: 'closest_to_target_area', label: 'Closest to target area' },
-];
-
-const automaticModeOptions: Array<{ value: CadParcelLayoutAutomaticMode; label: string }> = [
-  { value: 'off', label: 'Off' },
-  { value: 'single_preview', label: 'Single preview' },
-  { value: 'fill_parent', label: 'Fill parent' },
-];
-
-const remainderOptions: Array<{
-  value: CadParcelLayoutRemainderDistribution;
-  label: string;
-}> = [
-  { value: 'place_remainder_in_last_parcel', label: 'Place remainder in last parcel' },
-  { value: 'create_parcel_from_remainder', label: 'Create parcel from remainder' },
-  { value: 'redistribute_remainder', label: 'Redistribute remainder' },
-];
-
-const parseNumericInput = (value: string, fallback: number): number => {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-};
+import SurveyCadFloatingPanelShell from './SurveyCadFloatingPanelShell';
+import {
+  automaticModeOptions,
+  buttonClassName,
+  inputClassName,
+  parseNumericInput,
+  remainderOptions,
+  rowClassName,
+  sectionLabelClassName,
+  selectClassName,
+  solutionPreferenceOptions,
+} from './SurveyCadParcelLayoutPanel.constants';
+import type { SurveyCadParcelLayoutPanelProps } from './SurveyCadParcelLayoutPanel.types';
 
 const SurveyCadParcelLayoutPanel: React.FC<SurveyCadParcelLayoutPanelProps> = ({
   state,
