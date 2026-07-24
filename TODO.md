@@ -1,3 +1,4 @@
+- [x] Import review modal split batch 1 (July 2026): split oversized `src/components/ImportReviewModal.tsx` into focused modal section modules under 400 lines, preserving staged import review, compare, conflict, group editing, and import actions behavior.
 - [x] Run session split batch 1 (July 2026): split oversized `src/engine/runSession.ts` until the root session runner is under 400 lines, preserving profile normalization, impact diagnostics, auto-adjust, and progress reporting.
 - [x] Parse input core split batch 1 (July 2026): split oversized `src/engine/parseInputCore.ts` until the root parse-input workflow is under 400 lines, preserving parse ordering, diagnostics, include handling, and observation construction.
 - [x] Input pane split batch 1 (July 2026): split oversized `src/components/InputPane.tsx` until the root component is under 400 lines, preserving input editing, diagnostics, import controls, and sample/project actions.
