@@ -1,25 +1,6 @@
 import React from 'react';
-import type { AdjustmentResult } from '../../types';
-import type { CollapsibleDetailSectionId } from './reportSectionRegistry';
-
-interface HeaderParams {
-  sectionId: CollapsibleDetailSectionId;
-  label: string;
-  className: string;
-  labelClassName: string;
-  title?: string;
-}
-
-interface ReportDiagnosticsSectionsProps {
-  result: AdjustmentResult;
-  isPreanalysis: boolean;
-  isDataCheck: boolean;
-  isSpecialRunMode: boolean;
-  showTsCorrelationDiagnosticsSection: boolean;
-  renderCollapsibleSectionHeader: (_params: HeaderParams) => React.ReactNode;
-  isSectionCollapsed: (_sectionId: CollapsibleDetailSectionId) => boolean;
-  renderSourceLineLink: (_line: number | null | undefined) => React.ReactNode;
-}
+import type { ReportDiagnosticsSectionsProps } from './ReportDiagnosticsSections.types';
+import ReportTsCorrelationDiagnosticsSection from './ReportTsCorrelationDiagnosticsSection';
 
 const ReportDiagnosticsSections: React.FC<ReportDiagnosticsSectionsProps> = ({
   result,
@@ -371,68 +352,11 @@ const ReportDiagnosticsSections: React.FC<ReportDiagnosticsSectionsProps> = ({
       )}
 
       {showTsCorrelationDiagnosticsSection && result.tsCorrelationDiagnostics && (
-        <div className="mb-6 border border-slate-800 rounded overflow-hidden">
-          {renderCollapsibleSectionHeader({
-            sectionId: 'ts-correlation-diagnostics',
-            label: 'TS Correlation Diagnostics',
-            className:
-              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-800/75',
-            labelClassName: 'text-slate-100',
-          })}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
-            <div><div className="text-slate-500">Enabled</div><div>{result.tsCorrelationDiagnostics.enabled ? 'ON' : 'OFF'}</div></div>
-            <div><div className="text-slate-500">Scope</div><div>{result.tsCorrelationDiagnostics.scope.toUpperCase()}</div></div>
-            <div><div className="text-slate-500">Rho</div><div>{result.tsCorrelationDiagnostics.rho.toFixed(3)}</div></div>
-            <div><div className="text-slate-500">Groups</div><div>{result.tsCorrelationDiagnostics.groupCount}</div></div>
-            <div><div className="text-slate-500">Equations</div><div>{result.tsCorrelationDiagnostics.equationCount}</div></div>
-            <div><div className="text-slate-500">Pairs</div><div>{result.tsCorrelationDiagnostics.pairCount}</div></div>
-            <div><div className="text-slate-500">Max Group</div><div>{result.tsCorrelationDiagnostics.maxGroupSize}</div></div>
-            <div>
-              <div className="text-slate-500">Mean|OffDiagW|</div>
-              <div>
-                {result.tsCorrelationDiagnostics.meanAbsOffDiagWeight != null
-                  ? result.tsCorrelationDiagnostics.meanAbsOffDiagWeight.toExponential(3)
-                  : '-'}
-              </div>
-            </div>
-          </div>
-          {!isSectionCollapsed('ts-correlation-diagnostics') && (
-            <>
-              {result.tsCorrelationDiagnostics.enabled && result.tsCorrelationDiagnostics.groups.length > 0 && (
-                <div className="overflow-x-auto w-full border-t border-slate-800">
-                  <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="text-slate-200 border-b border-slate-700">
-                        <th className="py-2 px-3 font-semibold">#</th>
-                        <th className="py-2 px-3 font-semibold">Key</th>
-                        <th className="py-2 px-3 font-semibold">Setup</th>
-                        <th className="py-2 px-3 font-semibold">Set</th>
-                        <th className="py-2 px-3 font-semibold text-right">Rows</th>
-                        <th className="py-2 px-3 font-semibold text-right">Pair Count</th>
-                        <th className="py-2 px-3 font-semibold text-right">Mean|W|</th>
-                      </tr>
-                    </thead>
-                    <tbody className="text-slate-300">
-                      {result.tsCorrelationDiagnostics.groups.slice(0, 20).map((g, idx) => (
-                        <tr key={`${g.key}-${idx}`} className="border-b border-slate-800/50">
-                          <td className="py-1 px-3 text-slate-500">{idx + 1}</td>
-                          <td className="py-1 px-3 font-mono text-[11px]">{g.key}</td>
-                          <td className="py-1 px-3">{g.station}</td>
-                          <td className="py-1 px-3">{g.setId ?? '-'}</td>
-                          <td className="py-1 px-3 text-right">{g.rows}</td>
-                          <td className="py-1 px-3 text-right">{g.pairCount}</td>
-                          <td className="py-1 px-3 text-right">
-                            {g.meanAbsOffDiagWeight != null ? g.meanAbsOffDiagWeight.toExponential(3) : '-'}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </>
-          )}
-        </div>
+        <ReportTsCorrelationDiagnosticsSection
+          diagnostics={result.tsCorrelationDiagnostics}
+          renderCollapsibleSectionHeader={renderCollapsibleSectionHeader}
+          isSectionCollapsed={isSectionCollapsed}
+        />
       )}
     </>
   );
