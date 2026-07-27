@@ -1,165 +1,19 @@
-import type React from 'react';
-import type { Dispatch, MutableRefObject, RefObject, SetStateAction } from 'react';
-import { LEVEL_LOOP_TOLERANCE_PRESETS } from '../engine/levelLoopTolerance';
-import {
-  ADJUSTED_POINTS_PRESET_COLUMNS,
-  inferAdjustedPointsPresetId,
-} from '../engine/adjustedPointsExport';
-import { useProjectOptionsState } from './useProjectOptionsState';
 import type {
-  CrsCatalogGroupFilter,
   ParseSettings,
-  ProjectOptionsTab,
-  RunDiagnostics,
   SettingsState,
-  SolveProfile,
-  UiTheme,
 } from '../appStateTypes';
 import type {
-  AdjustedPointsColumnId,
-  AdjustedPointsExportSettings,
-  AdjustedPointsPresetId,
-  CustomLevelLoopTolerancePreset,
-  GeoidSourceFormat,
-  Instrument,
-  ObservationModeSettings,
-  ParseCompatibilityMode,
-  ProjectExportFormat,
   RunMode,
 } from '../types';
-import type { CrsDefinition, CrsProjectionParam } from '../engine/crsCatalog';
-import type { ProjectIndexRow, ProjectStorageStatus } from '../engine/projectWorkspace';
-import type { ProjectWorkspaceFileView } from './useProjectFileWorkflow';
-
-type SettingsCardProps = {
-  title: string;
-  tooltip: string;
-  children: React.ReactNode;
-  className?: string;
-  disabled?: boolean;
-};
-
-type SettingsRowProps = {
-  label: string;
-  tooltip?: string;
-  children: React.ReactNode;
-  className?: string;
-};
-
-type SettingsToggleProps = {
-  checked: boolean;
-  disabled?: boolean;
-  title: string;
-  onChange: (_checked: boolean) => void;
-};
-
-type ProjectOptionTabOption = { id: ProjectOptionsTab; label: string };
-type BuiltinGeoidModelOption = { id: string; label: string };
-type CrsCatalogGroupOption = { id: string; label: string };
-
-export type ProjectOptionsModalStaticContext = {
-  ADJUSTED_POINTS_ALL_COLUMNS: AdjustedPointsColumnId[];
-  ADJUSTED_POINTS_PRESET_COLUMNS: Partial<Record<AdjustedPointsPresetId, AdjustedPointsColumnId[]>>;
-  BUILTIN_GEOID_MODEL_OPTIONS: BuiltinGeoidModelOption[];
-  CRS_CATALOG_GROUP_OPTIONS: CrsCatalogGroupOption[];
-  DEFAULT_QFIX_ANGULAR_SIGMA_SEC: number;
-  DEFAULT_QFIX_LINEAR_SIGMA_M: number;
-  FT_PER_M: number;
-  Info: React.ComponentType<Record<string, unknown>>;
-  LEVEL_LOOP_TOLERANCE_PRESETS: typeof LEVEL_LOOP_TOLERANCE_PRESETS;
-  M_PER_FT: number;
-  PROJECT_OPTION_SECTION_TOOLTIPS: Record<string, string>;
-  PROJECT_OPTION_TABS: ProjectOptionTabOption[];
-  PROJECT_OPTION_TAB_TOOLTIPS: Record<string, string>;
-  RAD_TO_DEG: number;
-  SETTINGS_TOOLTIPS: Record<string, string>;
-  SettingsCard: React.ComponentType<SettingsCardProps>;
-  SettingsRow: React.ComponentType<SettingsRowProps>;
-  SettingsToggle: React.ComponentType<SettingsToggleProps>;
-  getExportFormatExtension: (_format: ProjectExportFormat) => string;
-  getExportFormatLabel: (_format: ProjectExportFormat) => string;
-  getExportFormatTooltip: (_format: ProjectExportFormat) => string;
-  normalizeUiTheme: (_value: unknown) => UiTheme;
-  optionInputClass: string;
-  optionLabelClass: string;
-};
-
-type ProjectOptionsModalStaticContextInput = Partial<ProjectOptionsModalStaticContext> &
-  Pick<ProjectOptionsModalStaticContext, 'FT_PER_M'>;
-
-type ProjectOptionsStateValue = ReturnType<typeof useProjectOptionsState>;
-
-type UseProjectOptionsModalControllerArgs = {
-  projectOptionsState: ProjectOptionsStateValue;
-  adjustedPointsDraftStationIds: string[];
-  adjustedPointsTransformDraftValidationMessage: string | null;
-  crsCatalogGroupCounts: Record<string, number>;
-  filteredDraftCrsCatalog: CrsDefinition[];
-  searchedDraftCrsCatalog: CrsDefinition[];
-  visibleDraftCrsCatalog: CrsDefinition[];
-  selectedDraftCrs?: CrsDefinition;
-  selectedCrsProj4Params: CrsProjectionParam[];
-  exportFormat: ProjectExportFormat;
-  setExportFormat: Dispatch<SetStateAction<ProjectExportFormat>>;
-  storageStatus?: ProjectStorageStatus | null;
-  recentProjects?: ProjectIndexRow[];
-  projectSession?: {
-    manifest: {
-      name: string;
-    };
-    indexRow: {
-      backend: string;
-      updatedAt: string;
-    };
-    autosaveState: string;
-    lastAutosavedAt?: string | null;
-  } | null;
-  activeProjectFileViews?: ProjectWorkspaceFileView[];
-  currentProjectFile?: {
-    id: string;
-    name: string;
-  } | null;
-  handleSaveProject: () => void;
-  triggerProjectFileSelect: () => void;
-  triggerProjectSourceFileSelect?: () => void;
-  createLocalProjectFromCurrentWorkspace?: () => void;
-  openProjectById?: (_projectId: string) => void;
-  deleteLocalProject?: (_projectId: string) => void;
-  exportPortableProject?: () => void;
-  exportProjectBundle?: () => void;
-  createBlankProjectFile?: () => void;
-  switchActiveProjectFile?: (_fileId: string) => void;
-  renameProjectFile?: (_fileId: string) => void;
-  toggleProjectFileEnabled?: (_fileId: string) => void;
-  moveProjectFile?: (_fileId: string, _direction: 'up' | 'down') => void;
-  removeProjectFile?: (_fileId: string) => void;
-  geoidSourceFileInputRef: RefObject<HTMLInputElement | null>;
-  settingsModalContentRef: RefObject<HTMLDivElement | null>;
-  adjustedPointsDragRef: MutableRefObject<AdjustedPointsColumnId | null>;
-  runDiagnostics: RunDiagnostics | null;
-  normalizeSolveProfile: (_profile: SolveProfile) => SolveProfile;
-  normalizeUiTheme: (_value: unknown) => UiTheme;
-  buildObservationModeFromGridFields: (_state: {
-    gridBearingMode: ParseSettings['gridBearingMode'];
-    gridDistanceMode: ParseSettings['gridDistanceMode'];
-    gridAngleMode: ParseSettings['gridAngleMode'];
-    gridDirectionMode: ParseSettings['gridDirectionMode'];
-  }) => ObservationModeSettings;
-  createInstrument: (_code: string, _desc?: string) => Instrument;
-  createCustomLevelLoopTolerancePreset: (
-    _seed?: Partial<Omit<CustomLevelLoopTolerancePreset, 'id'>>,
-  ) => CustomLevelLoopTolerancePreset;
-  resolveLevelLoopTolerancePreset: (
-    _presets: CustomLevelLoopTolerancePreset[],
-    _baseMm: number,
-    _perSqrtKmMm: number,
-  ) => {
-    id: string;
-    label: string;
-    description: string;
-  };
-  staticContext: ProjectOptionsModalStaticContextInput;
-};
+import { resolveProjectOptionsModalStaticContext } from './useProjectOptionsModalStaticContext';
+import type {
+  ProjectOptionsModalStaticContext,
+  UseProjectOptionsModalControllerArgs,
+} from './useProjectOptionsModalController.types';
+import { useProjectOptionsAdjustedPointsController } from './useProjectOptionsAdjustedPointsController';
+import { useProjectOptionsDraftSettingsController } from './useProjectOptionsDraftSettingsController';
+import { useProjectOptionsInstrumentController } from './useProjectOptionsInstrumentController';
+import { useProjectOptionsLevelLoopController } from './useProjectOptionsLevelLoopController';
 
 export const useProjectOptionsModalController = ({
   projectOptionsState,
@@ -204,33 +58,8 @@ export const useProjectOptionsModalController = ({
   resolveLevelLoopTolerancePreset,
   staticContext,
 }: UseProjectOptionsModalControllerArgs) => {
-  const resolvedStaticContext: ProjectOptionsModalStaticContext = {
-    ADJUSTED_POINTS_ALL_COLUMNS: staticContext.ADJUSTED_POINTS_ALL_COLUMNS ?? [],
-    ADJUSTED_POINTS_PRESET_COLUMNS: staticContext.ADJUSTED_POINTS_PRESET_COLUMNS ?? {},
-    BUILTIN_GEOID_MODEL_OPTIONS: staticContext.BUILTIN_GEOID_MODEL_OPTIONS ?? [],
-    CRS_CATALOG_GROUP_OPTIONS: staticContext.CRS_CATALOG_GROUP_OPTIONS ?? [],
-    DEFAULT_QFIX_ANGULAR_SIGMA_SEC: staticContext.DEFAULT_QFIX_ANGULAR_SIGMA_SEC ?? 0,
-    DEFAULT_QFIX_LINEAR_SIGMA_M: staticContext.DEFAULT_QFIX_LINEAR_SIGMA_M ?? 0,
-    FT_PER_M: staticContext.FT_PER_M,
-    Info: staticContext.Info ?? (() => null),
-    LEVEL_LOOP_TOLERANCE_PRESETS:
-      staticContext.LEVEL_LOOP_TOLERANCE_PRESETS ?? LEVEL_LOOP_TOLERANCE_PRESETS,
-    M_PER_FT: staticContext.M_PER_FT ?? 0,
-    PROJECT_OPTION_SECTION_TOOLTIPS: staticContext.PROJECT_OPTION_SECTION_TOOLTIPS ?? {},
-    PROJECT_OPTION_TABS: staticContext.PROJECT_OPTION_TABS ?? [],
-    PROJECT_OPTION_TAB_TOOLTIPS: staticContext.PROJECT_OPTION_TAB_TOOLTIPS ?? {},
-    RAD_TO_DEG: staticContext.RAD_TO_DEG ?? 0,
-    SETTINGS_TOOLTIPS: staticContext.SETTINGS_TOOLTIPS ?? {},
-    SettingsCard: staticContext.SettingsCard ?? (() => null),
-    SettingsRow: staticContext.SettingsRow ?? (() => null),
-    SettingsToggle: staticContext.SettingsToggle ?? (() => null),
-    getExportFormatExtension: staticContext.getExportFormatExtension ?? (() => ''),
-    getExportFormatLabel: staticContext.getExportFormatLabel ?? (() => ''),
-    getExportFormatTooltip: staticContext.getExportFormatTooltip ?? (() => ''),
-    normalizeUiTheme: staticContext.normalizeUiTheme ?? normalizeUiTheme,
-    optionInputClass: staticContext.optionInputClass ?? '',
-    optionLabelClass: staticContext.optionLabelClass ?? '',
-  };
+  const resolvedStaticContext: ProjectOptionsModalStaticContext =
+    resolveProjectOptionsModalStaticContext(staticContext, normalizeUiTheme);
 
   const {
     isSettingsModalOpen,
@@ -272,508 +101,99 @@ export const useProjectOptionsModalController = ({
     applyProjectOptions,
   } = projectOptionsState;
 
-  const convergenceDefaultForProfile = (_profile: SolveProfile): number => 0.001;
+  const {
+    clearDraftGeoidSourceData,
+    handleDraftConvergenceLimitChange,
+    handleDraftIterChange,
+    handleDraftParseSetting,
+    handleDraftUnitChange,
+    handleGeoidSourceFileChange,
+    handleGeoidSourceFilePick,
+    migrateDraftParseModeToStrict,
+  } = useProjectOptionsDraftSettingsController({
+    buildObservationModeFromGridFields,
+    geoidSourceFileInputRef,
+    normalizeSolveProfile,
+    parseSettingsDraft,
+    setGeoidSourceDataDraft,
+    setGeoidSourceDataLabelDraft,
+    setParseSettingsDraft,
+    setSettingsDraft,
+  });
 
-  const handleDraftUnitChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSettingsDraft((prev) => ({ ...prev, units: e.target.value as SettingsState['units'] }));
-  };
+  const {
+    applyAdjustedPointsTransformSelection,
+    closeAdjustedPointsTransformSelectModal,
+    handleAdjustedPointsDragStart,
+    handleAdjustedPointsDrop,
+    handleAdjustedPointsMoveColumn,
+    handleAdjustedPointsPresetChange,
+    handleAdjustedPointsToggleColumn,
+    handleAdjustedPointsTransformToggleSelected,
+    handleDraftAdjustedPointsRotationAngleInput,
+    handleDraftAdjustedPointsRotationSetting,
+    handleDraftAdjustedPointsScaleSetting,
+    handleDraftAdjustedPointsSetting,
+    handleDraftAdjustedPointsTransformSetting,
+    handleDraftAdjustedPointsTranslationAzimuthInput,
+    handleDraftAdjustedPointsTranslationSetting,
+    openAdjustedPointsTransformSelectModal,
+  } = useProjectOptionsAdjustedPointsController({
+    adjustedPointsDraftStationIds,
+    adjustedPointsDragRef,
+    adjustedPointsExportSettingsDraft,
+    adjustedPointsRotationAngleError,
+    adjustedPointsTranslationAzimuthError,
+    adjustedPointsTransformSelectedDraft,
+    projectOptionsState,
+    setAdjustedPointsExportSettingsDraft,
+    setAdjustedPointsRotationAngleError,
+    setAdjustedPointsRotationAngleInput,
+    setAdjustedPointsTransformSelectedDraft,
+    setAdjustedPointsTranslationAzimuthError,
+    setAdjustedPointsTranslationAzimuthInput,
+  });
 
-  const handleDraftIterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = parseInt(e.target.value, 10) || 1;
-    setSettingsDraft((prev) => ({ ...prev, maxIterations: val }));
-  };
-
-  const handleDraftConvergenceLimitChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const parsed = Number.parseFloat(e.target.value);
-    const val =
-      Number.isFinite(parsed) && parsed > 0
-        ? parsed
-        : convergenceDefaultForProfile(parseSettingsDraft.solveProfile);
-    setSettingsDraft((prev) => ({ ...prev, convergenceLimit: val }));
-  };
-
-  const handleDraftParseSetting = <K extends keyof ParseSettings>(
-    key: K,
-    value: ParseSettings[K],
-  ) => {
-    if (key === 'geoidSourceFormat' && value === 'builtin') {
-      setGeoidSourceDataDraft(null);
-      setGeoidSourceDataLabelDraft('');
-    }
-    setParseSettingsDraft((prev) => {
-      const next = { ...prev, [key]: value };
-      if (key === 'solveProfile') {
-        const previousProfile = normalizeSolveProfile(prev.solveProfile);
-        const profile = normalizeSolveProfile(value as SolveProfile);
-        next.solveProfile = profile;
-        next.parseCompatibilityMode = 'strict';
-        next.faceNormalizationMode = 'on';
-        next.parseModeMigrated = true;
-        next.normalize = true;
-        setSettingsDraft((prevSettings) => {
-          const previousDefault = convergenceDefaultForProfile(previousProfile);
-          if (Math.abs(prevSettings.convergenceLimit - previousDefault) > 1e-12) {
-            return prevSettings;
-          }
-          return {
-            ...prevSettings,
-            convergenceLimit: convergenceDefaultForProfile(profile),
-          };
-        });
-        return next;
-      }
-      if (key === 'runMode') {
-        const runMode = value as RunMode;
-        next.runMode = runMode;
-        next.preanalysisMode = runMode === 'preanalysis';
-        if (runMode !== 'adjustment') {
-          next.autoAdjustEnabled = false;
-        }
-        return next;
-      }
-      if (key === 'preanalysisMode') {
-        const preanalysisMode = value as boolean;
-        next.preanalysisMode = preanalysisMode;
-        next.runMode = preanalysisMode ? 'preanalysis' : 'adjustment';
-        if (preanalysisMode) {
-          next.autoAdjustEnabled = false;
-        }
-        return next;
-      }
-      if (key === 'observationMode') {
-        const mode = value as ObservationModeSettings | undefined;
-        if (mode) {
-          next.gridBearingMode = mode.bearing;
-          next.gridDistanceMode = mode.distance;
-          next.gridAngleMode = mode.angle;
-          next.gridDirectionMode = mode.direction;
-          next.observationMode = mode;
-        }
-        return next;
-      }
-      if (key === 'faceNormalizationMode') {
-        next.faceNormalizationMode = value as ParseSettings['faceNormalizationMode'];
-        next.normalize = next.faceNormalizationMode !== 'off';
-        return next;
-      }
-      if (key === 'normalize') {
-        next.normalize = value as boolean;
-        next.faceNormalizationMode = next.normalize ? 'on' : 'off';
-        return next;
-      }
-      if (
-        key === 'gridBearingMode' ||
-        key === 'gridDistanceMode' ||
-        key === 'gridAngleMode' ||
-        key === 'gridDirectionMode'
-      ) {
-        next.observationMode = buildObservationModeFromGridFields(next);
-      }
-      if (key === 'geoidSourceFormat' && value === 'builtin') {
-        next.geoidSourcePath = '';
-      }
-      return next;
-    });
-  };
-
-  const migrateDraftParseModeToStrict = () => {
-    setParseSettingsDraft((prev) => ({
-      ...prev,
-      parseCompatibilityMode: 'strict' as ParseCompatibilityMode,
-      parseModeMigrated: true,
-    }));
-  };
-
-  const clearDraftGeoidSourceData = () => {
-    setGeoidSourceDataDraft(null);
-    setGeoidSourceDataLabelDraft('');
-  };
-
-  const handleGeoidSourceFilePick = () => {
-    geoidSourceFileInputRef.current?.click();
-  };
-
-  const handleGeoidSourceFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (!(reader.result instanceof ArrayBuffer)) return;
-      const bytes = new Uint8Array(reader.result);
-      const lowerName = file.name.toLowerCase();
-      const inferredFormat: GeoidSourceFormat = lowerName.endsWith('.gtx')
-        ? 'gtx'
-        : lowerName.endsWith('.byn')
-          ? 'byn'
-          : parseSettingsDraft.geoidSourceFormat === 'builtin'
-            ? 'gtx'
-            : parseSettingsDraft.geoidSourceFormat;
-      setGeoidSourceDataDraft(bytes);
-      setGeoidSourceDataLabelDraft(`${file.name} (${bytes.byteLength.toLocaleString()} bytes)`);
-      setParseSettingsDraft((prev) => ({
-        ...prev,
-        geoidSourceFormat: inferredFormat,
-        geoidSourcePath: file.name,
-      }));
-    };
-    reader.readAsArrayBuffer(file);
-    e.target.value = '';
-  };
-
-  const handleDraftAdjustedPointsSetting = <K extends keyof AdjustedPointsExportSettings>(
-    key: K,
-    value: AdjustedPointsExportSettings[K],
-  ) => {
-    setAdjustedPointsExportSettingsDraft((prev) => ({ ...prev, [key]: value }));
-  };
-
-  const handleDraftAdjustedPointsTransformSetting = <
-    K extends keyof AdjustedPointsExportSettings['transform'],
-  >(
-    key: K,
-    value: AdjustedPointsExportSettings['transform'][K],
-  ) => {
-    setAdjustedPointsExportSettingsDraft((prev) => ({
-      ...prev,
-      transform: {
-        ...prev.transform,
-        [key]: value,
-      },
-    }));
-  };
-
-  const handleDraftAdjustedPointsRotationSetting = <
-    K extends keyof AdjustedPointsExportSettings['transform']['rotation'],
-  >(
-    key: K,
-    value: AdjustedPointsExportSettings['transform']['rotation'][K],
-  ) => {
-    setAdjustedPointsExportSettingsDraft((prev) => ({
-      ...prev,
-      transform: {
-        ...prev.transform,
-        rotation: {
-          ...prev.transform.rotation,
-          [key]: value,
-        },
-      },
-    }));
-  };
-
-  const handleDraftAdjustedPointsTranslationSetting = <
-    K extends keyof AdjustedPointsExportSettings['transform']['translation'],
-  >(
-    key: K,
-    value: AdjustedPointsExportSettings['transform']['translation'][K],
-  ) => {
-    setAdjustedPointsExportSettingsDraft((prev) => ({
-      ...prev,
-      transform: {
-        ...prev.transform,
-        translation: {
-          ...prev.transform.translation,
-          [key]: value,
-        },
-      },
-    }));
-  };
-
-  const handleDraftAdjustedPointsScaleSetting = <
-    K extends keyof AdjustedPointsExportSettings['transform']['scale'],
-  >(
-    key: K,
-    value: AdjustedPointsExportSettings['transform']['scale'][K],
-  ) => {
-    setAdjustedPointsExportSettingsDraft((prev) => ({
-      ...prev,
-      transform: {
-        ...prev.transform,
-        scale: {
-          ...prev.transform.scale,
-          [key]: value,
-        },
-      },
-    }));
-  };
-
-  const handleDraftAdjustedPointsRotationAngleInput = (raw: string) => {
-    setAdjustedPointsRotationAngleInput(raw);
-    if (adjustedPointsRotationAngleError) {
-      setAdjustedPointsRotationAngleError(null);
-    }
-  };
-
-  const handleDraftAdjustedPointsTranslationAzimuthInput = (raw: string) => {
-    setAdjustedPointsTranslationAzimuthInput(raw);
-    if (adjustedPointsTranslationAzimuthError) {
-      setAdjustedPointsTranslationAzimuthError(null);
-    }
-  };
-
-  const openAdjustedPointsTransformSelectModal = () => {
-    setAdjustedPointsTransformSelectedDraft([
-      ...adjustedPointsExportSettingsDraft.transform.selectedStationIds,
-    ]);
-    projectOptionsState.setIsAdjustedPointsTransformSelectOpen(true);
-  };
-
-  const closeAdjustedPointsTransformSelectModal = () => {
-    projectOptionsState.setIsAdjustedPointsTransformSelectOpen(false);
-    setAdjustedPointsTransformSelectedDraft([]);
-  };
-
-  const handleAdjustedPointsTransformToggleSelected = (stationId: string, enabled: boolean) => {
-    setAdjustedPointsTransformSelectedDraft((prev) => {
-      const exists = prev.includes(stationId);
-      if (enabled && exists) return prev;
-      if (!enabled && !exists) return prev;
-      if (enabled) return [...prev, stationId];
-      return prev.filter((entry) => entry !== stationId);
-    });
-  };
-
-  const applyAdjustedPointsTransformSelection = () => {
-    const stationSet = new Set(adjustedPointsDraftStationIds);
-    const nextSelected = [...new Set(adjustedPointsTransformSelectedDraft)].filter((id) =>
-      stationSet.has(id),
-    );
-    handleDraftAdjustedPointsTransformSetting('selectedStationIds', nextSelected);
-    closeAdjustedPointsTransformSelectModal();
-  };
-
-  const handleAdjustedPointsPresetChange = (presetId: AdjustedPointsPresetId) => {
-    if (presetId === 'custom') {
-      setAdjustedPointsExportSettingsDraft((prev) => ({ ...prev, presetId: 'custom' }));
-      return;
-    }
-    const columns = ADJUSTED_POINTS_PRESET_COLUMNS[presetId];
-    setAdjustedPointsExportSettingsDraft((prev) => ({
-      ...prev,
-      columns: [...columns],
-      presetId,
-    }));
-  };
-
-  const handleAdjustedPointsToggleColumn = (
-    columnId: AdjustedPointsColumnId,
-    enabled: boolean,
-  ) => {
-    setAdjustedPointsExportSettingsDraft((prev) => {
-      const currentlyEnabled = prev.columns.includes(columnId);
-      if (enabled === currentlyEnabled) return prev;
-      if (enabled) {
-        if (prev.columns.length >= 6) return prev;
-        const nextColumns = [...prev.columns, columnId];
-        return {
-          ...prev,
-          columns: nextColumns,
-          presetId: inferAdjustedPointsPresetId(nextColumns),
-        };
-      }
-      if (prev.columns.length <= 1) return prev;
-      const nextColumns = prev.columns.filter((entry) => entry !== columnId);
-      return {
-        ...prev,
-        columns: nextColumns,
-        presetId: inferAdjustedPointsPresetId(nextColumns),
-      };
-    });
-  };
-
-  const handleAdjustedPointsMoveColumn = (
-    columnId: AdjustedPointsColumnId,
-    direction: 'left' | 'right',
-  ) => {
-    setAdjustedPointsExportSettingsDraft((prev) => {
-      const index = prev.columns.indexOf(columnId);
-      if (index < 0) return prev;
-      const targetIndex = direction === 'left' ? index - 1 : index + 1;
-      if (targetIndex < 0 || targetIndex >= prev.columns.length) return prev;
-      const nextColumns = [...prev.columns];
-      const [moved] = nextColumns.splice(index, 1);
-      nextColumns.splice(targetIndex, 0, moved);
-      return {
-        ...prev,
-        columns: nextColumns,
-        presetId: inferAdjustedPointsPresetId(nextColumns),
-      };
-    });
-  };
-
-  const handleAdjustedPointsDragStart = (columnId: AdjustedPointsColumnId) => {
-    adjustedPointsDragRef.current = columnId;
-  };
-
-  const handleAdjustedPointsDrop = (targetColumnId: AdjustedPointsColumnId) => {
-    const sourceColumn = adjustedPointsDragRef.current;
-    adjustedPointsDragRef.current = null;
-    if (!sourceColumn || sourceColumn === targetColumnId) return;
-    setAdjustedPointsExportSettingsDraft((prev) => {
-      const sourceIndex = prev.columns.indexOf(sourceColumn);
-      const targetIndex = prev.columns.indexOf(targetColumnId);
-      if (sourceIndex < 0 || targetIndex < 0) return prev;
-      const nextColumns = [...prev.columns];
-      const [moved] = nextColumns.splice(sourceIndex, 1);
-      nextColumns.splice(targetIndex, 0, moved);
-      return {
-        ...prev,
-        columns: nextColumns,
-        presetId: inferAdjustedPointsPresetId(nextColumns),
-      };
-    });
-  };
-
-  const handleLevelLoopPresetChange = (presetId: string) => {
-    if (presetId === 'custom') return;
-    const preset = LEVEL_LOOP_TOLERANCE_PRESETS.find((row) => row.id === presetId);
-    if (preset) {
-      setParseSettingsDraft((prev) => ({
-        ...prev,
-        levelLoopToleranceBaseMm: preset.baseMm,
-        levelLoopTolerancePerSqrtKmMm: preset.perSqrtKmMm,
-      }));
-      return;
-    }
-    const customPreset = levelLoopCustomPresetsDraft.find((row) => row.id === presetId);
-    if (!customPreset) return;
-    setParseSettingsDraft((prev) => ({
-      ...prev,
-      levelLoopToleranceBaseMm: customPreset.baseMm,
-      levelLoopTolerancePerSqrtKmMm: customPreset.perSqrtKmMm,
-    }));
-  };
-
-  const handleLevelLoopCustomPresetFieldChange = (
-    id: string,
-    key: keyof Omit<CustomLevelLoopTolerancePreset, 'id'>,
-    value: string,
-  ) => {
-    setLevelLoopCustomPresetsDraft((prev) =>
-      prev.map((preset) => {
-        if (preset.id !== id) return preset;
-        if (key === 'name') {
-          return { ...preset, name: value };
-        }
-        const parsed = Number.parseFloat(value);
-        return {
-          ...preset,
-          [key]: Number.isFinite(parsed) ? Math.max(0, parsed) : 0,
-        };
-      }),
-    );
-  };
-
-  const addLevelLoopCustomPreset = () => {
-    setLevelLoopCustomPresetsDraft((prev) => [
-      ...prev,
-      createCustomLevelLoopTolerancePreset({
-        name: `Custom ${prev.length + 1}`,
-        baseMm: parseSettingsDraft.levelLoopToleranceBaseMm,
-        perSqrtKmMm: parseSettingsDraft.levelLoopTolerancePerSqrtKmMm,
-      }),
-    ]);
-  };
-
-  const removeLevelLoopCustomPreset = (id: string) => {
-    setLevelLoopCustomPresetsDraft((prev) => prev.filter((preset) => preset.id !== id));
-  };
+  const {
+    activeLevelLoopPreset,
+    activeLevelLoopPresetId,
+    addLevelLoopCustomPreset,
+    handleLevelLoopCustomPresetFieldChange,
+    handleLevelLoopPresetChange,
+    removeLevelLoopCustomPreset,
+  } = useProjectOptionsLevelLoopController({
+    createCustomLevelLoopTolerancePreset,
+    levelLoopCustomPresetsDraft,
+    parseSettingsDraft,
+    resolveLevelLoopTolerancePreset,
+    setLevelLoopCustomPresetsDraft,
+    setParseSettingsDraft,
+  });
 
   const handleDraftSetting = <K extends keyof SettingsState>(key: K, value: SettingsState[K]) => {
     setSettingsDraft((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleInstrumentFieldChange = (
-    code: string,
-    key: keyof Instrument,
-    value: number | string,
-  ) => {
-    setProjectInstrumentsDraft((prev) => {
-      const current = prev[code] ?? createInstrument(code, code);
-      return {
-        ...prev,
-        [code]: {
-          ...current,
-          [key]: value,
-        },
-      };
-    });
-  };
-
-  const handleInstrumentLinearFieldChange = (
-    code: string,
-    key: keyof Instrument,
-    value: string,
-    units: SettingsState['units'],
-  ) => {
-    const parsed = Number.parseFloat(value);
-    const displayValue = Number.isFinite(parsed) ? parsed : 0;
-    const metricValue =
-      units === 'ft'
-        ? displayValue / (resolvedStaticContext.FT_PER_M ?? 3.280839895)
-        : displayValue;
-    handleInstrumentFieldChange(code, key, metricValue);
-  };
-
-  const handleInstrumentNumericFieldChange = (
-    code: string,
-    key: keyof Instrument,
-    value: string,
-  ) => {
-    const parsed = Number.parseFloat(value);
-    handleInstrumentFieldChange(code, key, Number.isFinite(parsed) ? parsed : 0);
-  };
-
-  const addNewInstrument = () => {
-    const name = window.prompt('Instrument name');
-    if (!name) return;
-    const code = name.trim();
-    if (!code) return;
-    setProjectInstrumentsDraft((prev) => {
-      if (prev[code]) return prev;
-      return { ...prev, [code]: createInstrument(code, code) };
-    });
-    setSelectedInstrumentDraft(code);
-  };
-
-  const duplicateSelectedInstrument = () => {
-    const sourceInstrument = selectedInstrumentDraft
-      ? projectInstrumentsDraft[selectedInstrumentDraft]
-      : undefined;
-    if (!sourceInstrument) return;
-    const suggested = `${sourceInstrument.code}_COPY`;
-    const name = window.prompt('Name for duplicated instrument', suggested);
-    if (!name) return;
-    const code = name.trim();
-    if (!code) return;
-    if (projectInstrumentsDraft[code]) {
-      window.alert(`Instrument "${code}" already exists.`);
-      return;
-    }
-    setProjectInstrumentsDraft((prev) => ({
-      ...prev,
-      [code]: {
-        ...sourceInstrument,
-        code,
-      },
-    }));
-    setSelectedInstrumentDraft(code);
-  };
+  const {
+    addNewInstrument,
+    displayLinear,
+    duplicateSelectedInstrument,
+    handleInstrumentFieldChange,
+    handleInstrumentLinearFieldChange,
+    handleInstrumentNumericFieldChange,
+    instrumentLinearUnit,
+    selectedInstrumentMeta,
+  } = useProjectOptionsInstrumentController({
+    createInstrument,
+    projectInstrumentsDraft,
+    resolvedStaticContext,
+    selectedInstrumentDraft,
+    setProjectInstrumentsDraft,
+    setSelectedInstrumentDraft,
+    settingsDraft,
+  });
 
   const parityProfileActive = true;
-  const selectedInstrumentMeta = selectedInstrumentDraft
-    ? projectInstrumentsDraft[selectedInstrumentDraft]
-    : undefined;
-  const activeLevelLoopPreset = resolveLevelLoopTolerancePreset(
-    levelLoopCustomPresetsDraft,
-    parseSettingsDraft.levelLoopToleranceBaseMm,
-    parseSettingsDraft.levelLoopTolerancePerSqrtKmMm,
-  );
-  const activeLevelLoopPresetId = activeLevelLoopPreset.id;
-  const instrumentLinearUnit = settingsDraft.units === 'ft' ? 'FeetUS' : 'Meters';
-  const displayLinear = (meters: number): number =>
-    settingsDraft.units === 'ft'
-      ? meters * (resolvedStaticContext.FT_PER_M ?? 3.280839895)
-      : meters;
   const adjustedPointsTransformSelectedInSetCount = adjustedPointsExportSettingsDraft.transform.selectedStationIds.filter(
     (id) => adjustedPointsDraftStationIds.includes(id),
   ).length;
