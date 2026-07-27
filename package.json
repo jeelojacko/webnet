@@ -38,6 +38,7 @@
     "@babel/core": "^7.29.7",
     "flatted": "^3.4.0",
     "js-yaml": "^4.2.0",
+    "minimatch": "^10.2.5",
     "ws": "^8.21.0"
   },
   "devDependencies": {

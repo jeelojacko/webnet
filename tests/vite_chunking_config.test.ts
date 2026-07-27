@@ -28,4 +28,14 @@ describe('vite chunk routing', () => {
       'vendor-react',
     );
   });
+
+  it('routes Survey CAD modules into a dedicated chunk', () => {
+    expect(resolveChunkName('D:\\webnet-app\\src\\engine\\cad\\cadModel.ts')).toBe('survey-cad');
+    expect(resolveChunkName('D:\\webnet-app\\src\\hooks\\surveyCad\\useSurveyCadWorkspace.ts')).toBe(
+      'survey-cad',
+    );
+    expect(resolveChunkName('D:\\webnet-app\\src\\components\\SurveyCadWorkspace.tsx')).toBe(
+      'survey-cad',
+    );
+  });
 });

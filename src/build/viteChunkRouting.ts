@@ -78,6 +78,16 @@ export const APP_CHUNKS = [
       '/src/components/ImportReviewModal.tsx',
     ],
   },
+  {
+    name: 'survey-cad',
+    patterns: [
+      '/src/engine/cad/',
+      '/src/hooks/surveyCad/',
+      '/src/components/SurveyCadWorkspace',
+      '/src/components/useSurveyCad',
+      '/src/components/surveyCad/',
+    ],
+  },
 ] as const;
 
 export const resolveChunkName = (id: string): string | undefined => {
