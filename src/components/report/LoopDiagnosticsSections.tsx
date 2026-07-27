@@ -1,54 +1,6 @@
 import React from 'react';
-import type {
-  AdjustmentResult,
-  LevelingLoopDiagnosticRow,
-  LevelingLoopSegmentSuspectRow,
-} from '../../types';
-import type { CollapsibleDetailSectionId } from './reportSectionRegistry';
-
-interface HeaderParams {
-  sectionId: CollapsibleDetailSectionId;
-  label: string;
-  className: string;
-  labelClassName: string;
-  title?: string;
-}
-
-type TraverseLoop = NonNullable<
-  NonNullable<AdjustmentResult['traverseDiagnostics']>['loops']
->[number];
-type GpsLoop = NonNullable<NonNullable<AdjustmentResult['gpsLoopDiagnostics']>['loops']>[number];
-type LevelingLoop = LevelingLoopDiagnosticRow;
-type LevelingSegmentSuspect = LevelingLoopSegmentSuspectRow;
-
-interface LoopDiagnosticsSectionsProps {
-  result: AdjustmentResult;
-  units: 'm' | 'ft';
-  unitScale: number;
-  isPreanalysis: boolean;
-  isDataCheck: boolean;
-  showLevelingLoopDiagnosticsSection: boolean;
-  traverseLoops: TraverseLoop[];
-  traverseLoopSuspects: TraverseLoop[];
-  visibleTraverseLoopSuspects: TraverseLoop[];
-  gpsLoopSuspects: GpsLoop[];
-  visibleGpsLoopSuspects: GpsLoop[];
-  levelingLoopSuspects: LevelingLoop[];
-  visibleLevelingLoopSuspects: LevelingLoop[];
-  levelingSegmentSuspects: LevelingSegmentSuspect[];
-  highlightedLevelingSegmentLines: Set<number>;
-  gpsLoopDiagnostics: AdjustmentResult['gpsLoopDiagnostics'];
-  levelingLoopDiagnostics: AdjustmentResult['levelingLoopDiagnostics'];
-  renderCollapsibleSectionHeader: (_params: HeaderParams) => React.ReactNode;
-  isSectionCollapsed: (_sectionId: CollapsibleDetailSectionId) => boolean;
-  renderLoadMoreFooter: (
-    _key: string,
-    _shownCount: number,
-    _totalCount: number,
-    _step?: number,
-  ) => React.ReactNode;
-  renderSourceLineLink: (_line: number | null | undefined) => React.ReactNode;
-}
+import type { LoopDiagnosticsSectionsProps } from './LoopDiagnosticsSections.types';
+import TraverseLoopDiagnosticsSection from './TraverseLoopDiagnosticsSection';
 
 const LoopDiagnosticsSections: React.FC<LoopDiagnosticsSectionsProps> = ({
   result,
@@ -79,78 +31,16 @@ const LoopDiagnosticsSections: React.FC<LoopDiagnosticsSectionsProps> = ({
   const topLevelingSegmentSuspect = levelingSegmentSuspects[0];
   return (
     <>
-      {!isPreanalysis && !isDataCheck && result.traverseDiagnostics && (
-        <div className="mb-6 border border-slate-800 rounded overflow-hidden">
-          {renderCollapsibleSectionHeader({
-            sectionId: 'traverse-diagnostics',
-            label: 'Traverse Diagnostics',
-            className:
-              'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-700 bg-slate-800/75',
-            labelClassName: 'text-slate-100',
-          })}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
-            <div><div className="text-slate-500">Closure Count</div><div>{result.traverseDiagnostics.closureCount}</div></div>
-            <div><div className="text-slate-500">Status</div><div className={result.traverseDiagnostics.passes?.overall ? 'text-green-400' : 'text-yellow-400'}>{result.traverseDiagnostics.passes?.overall ? 'PASS' : 'WARN'}</div></div>
-            <div><div className="text-slate-500">Misclosure dE ({units})</div><div>{(result.traverseDiagnostics.misclosureE * unitScale).toFixed(4)}</div></div>
-            <div><div className="text-slate-500">Misclosure dN ({units})</div><div>{(result.traverseDiagnostics.misclosureN * unitScale).toFixed(4)}</div></div>
-            <div><div className="text-slate-500">Misclosure Mag ({units})</div><div>{(result.traverseDiagnostics.misclosureMag * unitScale).toFixed(4)}</div></div>
-            <div><div className="text-slate-500">Traverse Dist ({units})</div><div>{(result.traverseDiagnostics.totalTraverseDistance * unitScale).toFixed(4)}</div></div>
-            <div><div className="text-slate-500">Closure Ratio</div><div>{result.traverseDiagnostics.closureRatio != null ? `1:${result.traverseDiagnostics.closureRatio.toFixed(0)}` : '-'}</div></div>
-            <div><div className="text-slate-500">Linear (ppm)</div><div>{result.traverseDiagnostics.linearPpm != null ? result.traverseDiagnostics.linearPpm.toFixed(1) : '-'}</div></div>
-            <div><div className="text-slate-500">Angular Miscl (")</div><div>{result.traverseDiagnostics.angularMisclosureArcSec != null ? result.traverseDiagnostics.angularMisclosureArcSec.toFixed(2) : '-'}</div></div>
-            <div><div className="text-slate-500">Vertical Miscl ({units})</div><div>{result.traverseDiagnostics.verticalMisclosure != null ? (result.traverseDiagnostics.verticalMisclosure * unitScale).toFixed(4) : '-'}</div></div>
-            <div>
-              <div className="text-slate-500">Thresholds</div>
-              <div className="text-[10px] text-slate-500 leading-tight">
-                ratio {result.traverseDiagnostics.thresholds?.minClosureRatio != null ? `1:${result.traverseDiagnostics.thresholds.minClosureRatio}` : '-'}, ppm {result.traverseDiagnostics.thresholds?.maxLinearPpm ?? '-'}
-              </div>
-              <div className="text-[10px] text-slate-500 leading-tight">
-                ang {result.traverseDiagnostics.thresholds?.maxAngularArcSec ?? '-'}", dH {result.traverseDiagnostics.thresholds?.maxVerticalMisclosure != null ? (result.traverseDiagnostics.thresholds.maxVerticalMisclosure * unitScale).toFixed(4) : '-'}
-              </div>
-            </div>
-          </div>
-          {!isSectionCollapsed('traverse-diagnostics') && (
-            <>
-              {traverseLoops.length > 0 && (
-                <div className="overflow-x-auto w-full border-t border-slate-800">
-                  <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="text-slate-200 border-b border-slate-700">
-                        <th className="py-2 px-3 font-semibold">#</th>
-                        <th className="py-2 px-3 font-semibold">Loop</th>
-                        <th className="py-2 px-3 font-semibold text-right">Mag ({units})</th>
-                        <th className="py-2 px-3 font-semibold text-right">Dist ({units})</th>
-                        <th className="py-2 px-3 font-semibold text-right">Ratio</th>
-                        <th className="py-2 px-3 font-semibold text-right">Linear (ppm)</th>
-                        <th className="py-2 px-3 font-semibold text-right">Ang Miscl (")</th>
-                        <th className="py-2 px-3 font-semibold text-right">Vert Miscl ({units})</th>
-                        <th className="py-2 px-3 font-semibold text-right">Severity</th>
-                        <th className="py-2 px-3 font-semibold text-right">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="text-slate-300">
-                      {traverseLoops.map((l, idx) => (
-                        <tr key={`trav-loop-${l.key}-${idx}`} className="border-b border-slate-800/50">
-                          <td className="py-1 px-3 text-slate-500">{idx + 1}</td>
-                          <td className="py-1 px-3">{l.key}</td>
-                          <td className="py-1 px-3 text-right">{(l.misclosureMag * unitScale).toFixed(4)}</td>
-                          <td className="py-1 px-3 text-right">{(l.traverseDistance * unitScale).toFixed(4)}</td>
-                          <td className="py-1 px-3 text-right">{l.closureRatio != null ? `1:${l.closureRatio.toFixed(0)}` : '-'}</td>
-                          <td className="py-1 px-3 text-right">{l.linearPpm != null ? l.linearPpm.toFixed(1) : '-'}</td>
-                          <td className="py-1 px-3 text-right">{l.angularMisclosureArcSec != null ? l.angularMisclosureArcSec.toFixed(2) : '-'}</td>
-                          <td className="py-1 px-3 text-right">{l.verticalMisclosure != null ? (l.verticalMisclosure * unitScale).toFixed(4) : '-'}</td>
-                          <td className="py-1 px-3 text-right font-mono">{l.severity.toFixed(1)}</td>
-                          <td className={`py-1 px-3 text-right ${l.pass ? 'text-green-400' : 'text-yellow-400'}`}>{l.pass ? 'PASS' : 'WARN'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      )}
+      <TraverseLoopDiagnosticsSection
+        diagnostics={result.traverseDiagnostics}
+        traverseLoops={traverseLoops}
+        units={units}
+        unitScale={unitScale}
+        isPreanalysis={isPreanalysis}
+        isDataCheck={isDataCheck}
+        renderCollapsibleSectionHeader={renderCollapsibleSectionHeader}
+        isSectionCollapsed={isSectionCollapsed}
+      />
 
       {!isPreanalysis && !isDataCheck && traverseLoopSuspects.length > 0 && (
         <div className="mb-6 border border-slate-800 rounded overflow-hidden">
