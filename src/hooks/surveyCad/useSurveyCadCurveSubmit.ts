@@ -12,8 +12,8 @@ import {
   cadSolveCurveMetrics,
 } from '../../engine/cad/cadCogo';
 import { cadSignedSweepDeg } from '../../engine/cad/cadGeometry';
-import { runCadCommand, type CadHistoryState } from '../../engine/cad/cadUndoRedo';
-import type { CommandPoint, CommandSession } from './useSurveyCadCommandTypes';
+import { runCadCommand } from '../../engine/cad/cadUndoRedo';
+import type { CommandSession } from './useSurveyCadCommandTypes';
 import {
   parseChordBearingCurveInput,
   parseCurveMeasureInput,
@@ -23,30 +23,7 @@ import {
   parseInputPoint,
   parseOffsetArcInput,
 } from './useSurveyCadCommandParsing';
-import type { SurveyCadReportPublisher } from './useSurveyCadCommandReports';
-
-type ReplaceSession = (_nextSession: CommandSession | null) => void;
-type ApplyHistoryUpdate = (_updater: (_history: CadHistoryState) => CadHistoryState) => void;
-type ConsumePoint = (_point: CommandPoint) => void;
-type CommitArcDefinition = (
-  _modeLabel: string,
-  _arcDefinition: {
-    center: { x: number; y: number };
-    radius: number;
-    startAngleDeg: number;
-    endAngleDeg: number;
-  } | null,
-  _metadata?: Record<string, unknown>,
-) => boolean;
-
-interface HandleSurveyCadCurveSubmitOptions {
-  applyHistoryUpdate: ApplyHistoryUpdate;
-  commitArcDefinition: CommitArcDefinition;
-  consumePoint: ConsumePoint;
-  publishReport: SurveyCadReportPublisher;
-  replaceSession: ReplaceSession;
-  session: CommandSession;
-}
+import type { HandleSurveyCadCurveSubmitOptions } from './useSurveyCadCurveSubmit.types';
 
 const handleSelectedArcSubmit = ({
   applyHistoryUpdate,
