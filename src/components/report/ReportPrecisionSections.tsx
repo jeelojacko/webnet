@@ -7,53 +7,13 @@ import type {
   StationCovarianceBlock,
   WeakGeometryDiagnostics,
 } from '../../types';
-import CollapsibleSectionHeader from './CollapsibleSectionHeader';
+import PrecisionHeader from './ReportPrecisionHeader';
+import type {
+  LoadMoreRenderer,
+  SectionControls,
+  TooltipResolver,
+} from './ReportPrecisionSections.types';
 import type { CollapsibleDetailSectionId } from './reportSectionRegistry';
-
-type LoadMoreRenderer = (_key: string, _shownCount: number, _totalCount: number) => React.ReactNode;
-type TooltipResolver = (_label: string) => string | undefined;
-
-type SectionControls = {
-  isDetailSectionPinned: (_id: CollapsibleDetailSectionId) => boolean;
-  isSectionCollapsed: (_id: CollapsibleDetailSectionId) => boolean;
-  onHeaderRef: (_id: CollapsibleDetailSectionId, _node: HTMLDivElement | null) => void;
-  toggleDetailSection: (_id: CollapsibleDetailSectionId) => void;
-  togglePinnedDetailSection: (_id: CollapsibleDetailSectionId, _label: string) => void;
-};
-
-const PrecisionHeader: React.FC<
-  SectionControls & {
-    className?: string;
-    label: string;
-    labelClassName?: string;
-    sectionId: CollapsibleDetailSectionId;
-    title?: string;
-  }
-> = ({
-  className = 'px-3 py-2 text-xs uppercase tracking-wider border-b border-slate-800',
-  isDetailSectionPinned,
-  isSectionCollapsed,
-  label,
-  labelClassName = 'text-slate-400',
-  onHeaderRef,
-  sectionId,
-  title,
-  toggleDetailSection,
-  togglePinnedDetailSection,
-}) => (
-  <CollapsibleSectionHeader
-    sectionId={sectionId}
-    label={label}
-    className={className}
-    labelClassName={labelClassName}
-    title={title}
-    collapsed={isSectionCollapsed(sectionId)}
-    pinned={isDetailSectionPinned(sectionId)}
-    onToggleCollapse={toggleDetailSection}
-    onTogglePin={togglePinnedDetailSection}
-    onHeaderRef={onHeaderRef}
-  />
-);
 
 export const StationCovariancesSection: React.FC<
   SectionControls & {
