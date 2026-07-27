@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { ClusterApprovedMerge, AdjustmentResult, ObservationOverride } from '../types';
 import { deepClonePlain } from '../engine/plainData';
 import {
   buildComparisonCandidateSnapshots,
@@ -13,73 +12,17 @@ import {
   type ComparisonSelection,
   type RunSnapshot,
   type SavedRunSnapshot,
-  type SavedRunWorkspaceState,
 } from '../engine/qaWorkflow';
-
-interface RecordRunSnapshotArgs<TSettingsSnapshot, TRunDiagnostics> {
-  result: AdjustmentResult;
-  runDiagnostics: TRunDiagnostics;
-  settingsSnapshot: TSettingsSnapshot;
-  inputFingerprint: string;
-  excludedIds: number[];
-  activePreanalysisAdditionIds?: string[];
-  overrideIds: number[];
-  overrides: Record<number, ObservationOverride>;
-  approvedClusterMerges: ClusterApprovedMerge[];
-  reopenState?: SavedRunWorkspaceState | null;
-}
-
-interface SaveCurrentRunSnapshotOptions {
-  label?: string;
-  notes?: string;
-  reopenState?: SavedRunWorkspaceState | null;
-}
-
-type SaveCurrentRunSnapshotResult<TSettingsSnapshot, TRunDiagnostics> =
-  | {
-      status: 'saved';
-      snapshot: SavedRunSnapshot<TSettingsSnapshot, TRunDiagnostics>;
-    }
-  | {
-      status: 'already-saved';
-      snapshot: SavedRunSnapshot<TSettingsSnapshot, TRunDiagnostics>;
-    }
-  | {
-      status: 'missing-current-run';
-      snapshot: null;
-    };
-
-interface UseRunComparisonStateArgs<TSettingsSnapshot, TRunDiagnostics> {
-  buildSettingDiffs: (
-    _current: TSettingsSnapshot,
-    _previous: TSettingsSnapshot | null,
-  ) => string[];
-  initialSavedRunSnapshots?: Array<SavedRunSnapshot<TSettingsSnapshot, TRunDiagnostics>>;
-  savedRunSnapshotLimit?: number;
-  initialComparisonSelection?: ComparisonSelection;
-}
-
-const DEFAULT_COMPARISON_SELECTION: ComparisonSelection = {
-  baselineRunId: null,
-  pinnedBaselineRunId: null,
-  stationMovementThreshold: 0.001,
-  residualDeltaThreshold: 0.25,
-};
-
-const sanitizeComparisonSelection = (
-  selection: ComparisonSelection,
-  availableIds: Set<string>,
-): ComparisonSelection => ({
-  ...selection,
-  baselineRunId:
-    selection.baselineRunId && availableIds.has(selection.baselineRunId)
-      ? selection.baselineRunId
-      : null,
-  pinnedBaselineRunId:
-    selection.pinnedBaselineRunId && availableIds.has(selection.pinnedBaselineRunId)
-      ? selection.pinnedBaselineRunId
-      : null,
-});
+import {
+  DEFAULT_COMPARISON_SELECTION,
+  sanitizeComparisonSelection,
+} from './useRunComparisonState.selection';
+import type {
+  RecordRunSnapshotArgs,
+  SaveCurrentRunSnapshotOptions,
+  SaveCurrentRunSnapshotResult,
+  UseRunComparisonStateArgs,
+} from './useRunComparisonState.types';
 
 export const useRunComparisonState = <TSettingsSnapshot, TRunDiagnostics>({
   buildSettingDiffs,
