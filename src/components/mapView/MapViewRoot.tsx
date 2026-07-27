@@ -1,17 +1,9 @@
-import React, {
-  useMemo,
-} from 'react';
-import {
-  buildMap3DScene,
-} from '../../engine/map3d';
+import React from 'react';
 import { RAD_TO_DEG } from '../../engine/angles';
 import { DEFAULT_PLANNING_MAP_STATE } from '../../engine/planningMapState';
 import MapViewContent from './MapViewContent';
 import type { MapToolPickTarget } from './MapViewToolOverlay';
-import {
-  noteMapViewPerfCounter,
-} from './mapViewPerf';
-import { buildMapScenePointBounds2d } from './mapViewSelectors';
+import { noteMapViewPerfCounter } from './mapViewPerf';
 import { useMapViewContentProps } from './useMapViewContentProps';
 import { useMapViewCoordinates } from './useMapViewCoordinates';
 import { useMapViewDragInteractions } from './useMapViewDragInteractions';
@@ -19,22 +11,16 @@ import { useMapViewEffectiveMode } from './useMapViewEffectiveMode';
 import { useMapViewPlanningActions } from './useMapViewPlanningActions';
 import { useMapViewRenderSurfaces } from './useMapViewRenderSurfaces';
 import { useMapViewRootUiState } from './useMapViewRootUiState';
+import { useMapViewScene } from './useMapViewScene';
 import { useMapViewViewportState } from './useMapViewViewportState';
-import {
-  useMapViewContextMenuDismiss,
-} from './useMapViewShellEffects';
+import { useMapViewContextMenuDismiss } from './useMapViewShellEffects';
 import { useMapViewSnapshotSync } from './useMapViewSnapshotSync';
 import { useMapViewStationDisplay } from './useMapViewStationDisplay';
 import { useMapViewToolState } from './useMapViewToolState';
 import { useMapViewTransformAvailability } from './useMapViewTransformAvailability';
 import { useMapViewTransformOverlay } from './useMapViewTransformOverlay';
 import type { MapViewProps, MapViewSnapshot } from './MapView.types';
-import {
-  FT_PER_M,
-  OSM_INTERACTION_TILE_CAP,
-  OSM_INTERACTION_ZOOM_DELTA,
-  OSM_VISIBLE_TILE_CAP,
-} from './mapViewConstants';
+import { FT_PER_M, OSM_INTERACTION_TILE_CAP, OSM_INTERACTION_ZOOM_DELTA, OSM_VISIBLE_TILE_CAP } from './mapViewConstants';
 
 export type { MapViewSnapshot } from './MapView.types';
 
@@ -96,12 +82,7 @@ const MapView: React.FC<MapViewProps> = ({
     planningMap,
   });
 
-  const scene3d = useMemo(
-    () => buildMap3DScene(result, showLostStations),
-    [result, showLostStations],
-  );
-
-  const { points, bbox } = useMemo(() => buildMapScenePointBounds2d(scene3d), [scene3d]);
+  const { scene3d, points, bbox } = useMapViewScene(result, showLostStations);
 
   const {
     ellipseStroke,
