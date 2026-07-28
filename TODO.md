@@ -1810,3 +1810,4 @@
 - [x] Adjustment project options tab split batch 1 (July 2026): split oversized `src/components/projectOptions/tabs/AdjustmentProjectOptionsTab.tsx` into focused solver, geodetic framework, and coordinate-system cards while preserving option controls and draft updates.
 - [x] CLI split batch 1 (July 2026): split oversized `src/cli.ts` argument parsing into a focused CLI args module while preserving batch solve options, output modes, and exit codes.
 - [x] Geoid split batch 1 (July 2026): split oversized `src/engine/geoid.ts` into focused model types, grid helpers, and external GTX/BYN parser modules while preserving geoid load, cache, and interpolation behavior.
+- [x] Industry listing split batch 8 (July 2026): reduce oversized `src/engine/industryListing.ts` by extracting derived listing context and adjusted-observation workflow helpers while preserving listing wording, ordering, and parity behavior.
