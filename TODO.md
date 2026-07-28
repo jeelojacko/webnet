@@ -1805,3 +1805,4 @@
 - [x] Geodesy split batch 1 (July 2026): split oversized `src/engine/geodesy.ts` into focused constants, ECEF/covariance, projection, and factor helpers while preserving CRS projection, inverse, and grid-factor behavior.
 - [x] Survey CAD command line split batch 1 (July 2026): split oversized `src/components/surveyCad/SurveyCadCommandLine.tsx` into focused prop contracts, constants, and dropdown menu components while preserving CAD toolbar commands and disabled states.
 - [x] Map SVG 2D split batch 1 (July 2026): split oversized `src/components/mapView/MapViewSvg2d.tsx` into focused layer modules while preserving SVG map rendering, selections, planning overlays, labels, and perf counters.
+- [x] Importer shared split batch 1 (July 2026): split oversized `src/engine/importers/shared.ts` into focused text, markup, and dataset conversion helpers while preserving importer compatibility exports and generated WebNet input.
