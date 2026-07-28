@@ -1807,3 +1807,4 @@
 - [x] Map SVG 2D split batch 1 (July 2026): split oversized `src/components/mapView/MapViewSvg2d.tsx` into focused layer modules while preserving SVG map rendering, selections, planning overlays, labels, and perf counters.
 - [x] Importer shared split batch 1 (July 2026): split oversized `src/engine/importers/shared.ts` into focused text, markup, and dataset conversion helpers while preserving importer compatibility exports and generated WebNet input.
 - [x] Map WebGL 2D split batch 1 (July 2026): split oversized `src/components/mapView/mapViewWebgl2d.ts` into focused shader/program and vertex-buffer helpers while preserving WebGL map draw behavior and metrics.
+- [x] Adjustment project options tab split batch 1 (July 2026): split oversized `src/components/projectOptions/tabs/AdjustmentProjectOptionsTab.tsx` into focused solver, geodetic framework, and coordinate-system cards while preserving option controls and draft updates.
