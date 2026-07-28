@@ -1808,3 +1808,4 @@
 - [x] Importer shared split batch 1 (July 2026): split oversized `src/engine/importers/shared.ts` into focused text, markup, and dataset conversion helpers while preserving importer compatibility exports and generated WebNet input.
 - [x] Map WebGL 2D split batch 1 (July 2026): split oversized `src/components/mapView/mapViewWebgl2d.ts` into focused shader/program and vertex-buffer helpers while preserving WebGL map draw behavior and metrics.
 - [x] Adjustment project options tab split batch 1 (July 2026): split oversized `src/components/projectOptions/tabs/AdjustmentProjectOptionsTab.tsx` into focused solver, geodetic framework, and coordinate-system cards while preserving option controls and draft updates.
+- [x] CLI split batch 1 (July 2026): split oversized `src/cli.ts` argument parsing into a focused CLI args module while preserving batch solve options, output modes, and exit codes.
