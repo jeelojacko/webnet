@@ -1,14 +1,19 @@
-import { cadDistance, type CadWorldPoint } from './cadGeometry';
-import type { CadLineEntity, CadParcelLayoutSettings, CadParcelEntity } from './cadTypes';
+import type { CadWorldPoint } from './cadGeometry';
+import type { CadParcelLayoutSettings, CadParcelEntity } from './cadTypes';
 import { cadBuildParcelClosureSummary, cadPolygonSignedAreaDouble } from './cadCogoParcelGeometry';
 import type { CadParcelLayoutFrontageReference } from './cadCogoParcelFrontage';
-import { cadBuildAutoParcelVertexLabels, cadDeduplicateWorldPolygonVertices, cadSimplifyCollinearWorldPolygonVertices } from './cadCogoParcelLayoutPrimitives';
-import { cadBuildAutoLayoutPreviewCandidateFromGeneratedParcel, cadBuildParcelLayoutConstraintMessages } from './cadCogoParcelLayoutEvaluation';
+import { cadBuildAutoParcelVertexLabels, cadSimplifyCollinearWorldPolygonVertices } from './cadCogoParcelLayoutPrimitives';
 import {
-  type CadParcelAutoLayoutDraft,
-  type CadParcelLayoutConstraintEvaluation,
-  type CadParcelLayoutGeneratedParcelDraft,
-  type CadParcelLayoutPreviewCandidate,
+  buildClosedBoundaryEdgeMetrics,
+  createRingLotDraftBuilder,
+  pointAlongEdge,
+  pointInsideEdge,
+  type RingGeneratedParcelDraft,
+  type RingLotDraftParams,
+} from './cadCogoParcelClosedBoundaryHelpers';
+import type {
+  CadParcelAutoLayoutDraft,
+  CadParcelLayoutPreviewCandidate,
 } from './cadCogoParcelLayoutTypes';
 
 export const cadBuildClosedBoundaryFrontageVertices = (
@@ -46,66 +51,9 @@ export const cadBuildClosedBoundaryRingAutoLayoutDraft = (
   const outerAreaDouble = cadPolygonSignedAreaDouble(outerVertices);
   if (Math.abs(outerAreaDouble) <= 1e-9) return null;
   const orientationSign = outerAreaDouble >= 0 ? 1 : -1;
-  const solveDepthMeters = (frontageLengthMeters: number): number => {
-    const areaDepthMeters =
-      frontageLengthMeters > 1e-9
-        ? settings.minAreaSquareMeters / frontageLengthMeters
-        : settings.minDepthMeters;
-    return Math.min(
-      settings.maxDepthMeters,
-      Math.max(settings.minDepthMeters, areaDepthMeters),
-    );
-  };
-  const edgeMetrics = outerVertices.map((start, edgeIndex) => {
-    const end = outerVertices[(edgeIndex + 1) % outerVertices.length]!;
-    const lengthMeters = cadDistance(start, end);
-    const unitX = lengthMeters > 1e-9 ? (end.x - start.x) / lengthMeters : 0;
-    const unitY = lengthMeters > 1e-9 ? (end.y - start.y) / lengthMeters : 0;
-    const inwardNormal =
-      orientationSign >= 0
-        ? { x: -unitY, y: unitX }
-        : { x: unitY, y: -unitX };
-    const cornerTransitionMeters = Math.min(
-      settings.minFrontageMeters * 2,
-      lengthMeters * 0.25,
-    );
-    const usableStartMeters = cornerTransitionMeters;
-    const usableEndMeters = lengthMeters - cornerTransitionMeters;
-    const usableLengthMeters = Math.max(0, usableEndMeters - usableStartMeters);
-    const straightRunLotCount =
-      usableLengthMeters >= settings.minFrontageMeters - 1e-9
-        ? Math.max(1, Math.floor(usableLengthMeters / settings.minFrontageMeters))
-        : 0;
-    const straightRunFrontageMeters =
-      straightRunLotCount > 0
-        ? usableLengthMeters / straightRunLotCount
-        : settings.minFrontageMeters;
-    return {
-      start,
-      end,
-      lengthMeters,
-      unitX,
-      unitY,
-      inwardNormal,
-      cornerTransitionMeters,
-      usableStartMeters,
-      usableEndMeters,
-      usableLengthMeters,
-      straightRunLotCount,
-      straightRunFrontageMeters,
-      depthMeters: solveDepthMeters(straightRunFrontageMeters),
-    };
-  });
+  const edgeMetrics = buildClosedBoundaryEdgeMetrics(outerVertices, orientationSign, settings);
   if (edgeMetrics.some((edge) => edge.lengthMeters <= 1e-9)) return null;
 
-  type RingGeneratedParcelDraft = CadParcelLayoutGeneratedParcelDraft & {
-    frontageStart?: CadWorldPoint;
-    frontageEnd?: CadWorldPoint;
-    frontageLengthMeters?: number;
-    rearBoundaryPoints?: CadWorldPoint[];
-    rearSortEdgeIndex?: number;
-    rearSortDistanceMeters?: number;
-  };
   const generatedParcels: RingGeneratedParcelDraft[] = [];
   const acceptedCandidates: CadParcelLayoutPreviewCandidate[] = [];
   const firstStraightLotByEdgeIndex = new Map<
@@ -116,148 +64,22 @@ export const cadBuildClosedBoundaryRingAutoLayoutDraft = (
     number,
     { generatedIndex: number; candidateIndex: number }
   >();
-  let lotIndex = 0;
-  const pointAlongEdge = (
-    edge: (typeof edgeMetrics)[number],
-    distanceMeters: number,
-  ): CadWorldPoint => ({
-    x: edge.start.x + edge.unitX * distanceMeters,
-    y: edge.start.y + edge.unitY * distanceMeters,
-  });
-  const pointInsideEdge = (
-    edge: (typeof edgeMetrics)[number],
-    distanceMeters: number,
-    depthMeters: number,
-  ): CadWorldPoint => {
-    const outerPoint = pointAlongEdge(edge, distanceMeters);
-    return {
-      x: outerPoint.x + edge.inwardNormal.x * depthMeters,
-      y: outerPoint.y + edge.inwardNormal.y * depthMeters,
-    };
-  };
-  const buildRingLotDraft = ({
-    vertices,
-    edgeIndex,
-    frontageStart,
-    frontageEnd,
-    frontageLengthMeters,
-    pathDepthMeters,
-    rearBoundaryPoints,
-    rearSortEdgeIndex,
-    rearSortDistanceMeters,
-    cornerLot = false,
-  }: {
-    vertices: CadWorldPoint[];
-    edgeIndex: number;
-    frontageStart: CadWorldPoint;
-    frontageEnd: CadWorldPoint;
-    frontageLengthMeters: number;
-    pathDepthMeters: number;
-    rearBoundaryPoints: CadWorldPoint[];
-    rearSortEdgeIndex: number;
-    rearSortDistanceMeters: number;
-    cornerLot?: boolean;
-  }): {
-    generatedParcel: RingGeneratedParcelDraft;
-    candidate: CadParcelLayoutPreviewCandidate;
-  } | null => {
-    const normalizedVertices = cadDeduplicateWorldPolygonVertices(vertices);
-    if (normalizedVertices.length < 4) return null;
-    const areaSquareMeters = cadBuildParcelClosureSummary(normalizedVertices)?.areaSquareMeters ?? 0;
-    if (areaSquareMeters <= 1e-6) return null;
-    const frontageLine: CadLineEntity = {
-      id: `${parcel.id}:closed-boundary-frontage:${edgeIndex}:${lotIndex}`,
-      type: 'line',
-      layerId: parcel.layerId,
-      styleId: parcel.styleId,
-      visible: true,
-      locked: false,
-      fromStationId: `LOT${lotIndex + 1}F1`,
-      toStationId: `LOT${lotIndex + 1}F2`,
-      fromX: frontageStart.x,
-      fromY: frontageStart.y,
-      toX: frontageEnd.x,
-      toY: frontageEnd.y,
-      sourceObservationIds: [],
-    };
-    const generatedParcel: RingGeneratedParcelDraft = {
-      vertices: normalizedVertices,
-      vertexLabels: cadBuildAutoParcelVertexLabels(parcel, normalizedVertices, lotIndex),
-      role: 'lot',
-      sourceKind: cornerLot ? 'corner_remainder' : 'segment',
-      sourceSegmentIndex: edgeIndex,
-      frontageStart,
-      frontageEnd,
-      frontageLengthMeters,
-      rearBoundaryPoints: cadDeduplicateWorldPolygonVertices(rearBoundaryPoints),
-      rearSortEdgeIndex,
-      rearSortDistanceMeters,
-    };
-    let candidate = cadBuildAutoLayoutPreviewCandidateFromGeneratedParcel(
-      frontageLine,
-      frontageLengthMeters,
-      pathDepthMeters,
-      settings,
-      generatedParcel,
-    );
-    const areaToleranceSquareMeters = Math.max(settings.minAreaSquareMeters * 1e-6, 1e-3);
-    const tolerableFailedRuleCodes = candidate.evaluation?.failedRuleCodes.filter(
-      (ruleCode) =>
-        !(
-          ruleCode === 'min_width' ||
-          (ruleCode === 'min_area' && areaSquareMeters + areaToleranceSquareMeters >= settings.minAreaSquareMeters)
-        ),
-    ) ?? [];
-    if (
-      !candidate.isValid &&
-      candidate.evaluation &&
-      tolerableFailedRuleCodes.length === 0 &&
-      candidate.evaluation.failedRuleCodes.length > 0
-    ) {
-      const evaluationWithoutMessages: Omit<CadParcelLayoutConstraintEvaluation, 'messages'> = {
-        ...candidate.evaluation,
-        minimumSampledWidthMeters: settings.minWidthMeters,
-        failedRuleCodes: [],
-        score: Math.max(0, candidate.evaluation.score - 1_000_000),
-      };
-      candidate = {
-        ...candidate,
-        evaluation: {
-          ...evaluationWithoutMessages,
-          messages: cadBuildParcelLayoutConstraintMessages(
-            settings,
-            candidate.draft!,
-            evaluationWithoutMessages,
-          ),
-        },
-        isValid: true,
-        statusMessage: `Automatic ring lot valid: ${areaSquareMeters.toFixed(3)} m2 area and ${frontageLengthMeters.toFixed(3)} m frontage.`,
-      };
-    }
-    if (!candidate.isValid) return null;
-    return {
-      generatedParcel,
-      candidate: {
-        ...candidate,
-        tool,
-      },
-    };
-  };
-  const addRingLot = (params: Parameters<typeof buildRingLotDraft>[0]) => {
-    const built = buildRingLotDraft(params);
+  const ringLotBuilder = createRingLotDraftBuilder({ parcel, settings, tool });
+  const addRingLot = (params: RingLotDraftParams) => {
+    const built = ringLotBuilder.buildRingLotDraft(params);
     if (!built) return null;
     const generatedIndex = generatedParcels.length;
     const candidateIndex = acceptedCandidates.length;
     generatedParcels.push(built.generatedParcel);
     acceptedCandidates.push(built.candidate);
-    lotIndex += 1;
+    ringLotBuilder.incrementLotIndex();
     return { generatedIndex, candidateIndex };
   };
   const replaceRingLot = (
     indexes: { generatedIndex: number; candidateIndex: number },
-    params: Parameters<typeof buildRingLotDraft>[0],
+    params: RingLotDraftParams,
   ): boolean => {
-    const built = buildRingLotDraft(params);
+    const built = ringLotBuilder.buildRingLotDraft(params);
     if (!built) return false;
     generatedParcels[indexes.generatedIndex] = built.generatedParcel;
     acceptedCandidates[indexes.candidateIndex] = built.candidate;
@@ -330,7 +152,7 @@ export const cadBuildClosedBoundaryRingAutoLayoutDraft = (
     const splitCornerLotIndexes = {
       generatedStart: generatedParcels.length,
       candidateStart: acceptedCandidates.length,
-      lotIndexStart: lotIndex,
+      lotIndexStart: ringLotBuilder.getLotIndex(),
     };
     const splitFirstAccepted = addRingLot({
       vertices: [
@@ -375,7 +197,7 @@ export const cadBuildClosedBoundaryRingAutoLayoutDraft = (
     if (!splitFirstAccepted || !splitSecondAccepted) {
       generatedParcels.splice(splitCornerLotIndexes.generatedStart);
       acceptedCandidates.splice(splitCornerLotIndexes.candidateStart);
-      lotIndex = splitCornerLotIndexes.lotIndexStart;
+      ringLotBuilder.setLotIndex(splitCornerLotIndexes.lotIndexStart);
       const previousStraightLot = lastStraightLotByEdgeIndex.get(previousEdgeIndex);
       const currentStraightLot = firstStraightLotByEdgeIndex.get(vertexIndex);
       const previousSnapshot = previousStraightLot
@@ -400,12 +222,7 @@ export const cadBuildClosedBoundaryRingAutoLayoutDraft = (
             generatedParcels[previousStraightLot.generatedIndex]!.vertices.at(-1)!,
           ],
           edgeIndex: previousEdgeIndex,
-          frontageStart:
-            (
-              generatedParcels[previousStraightLot.generatedIndex] as CadParcelLayoutGeneratedParcelDraft & {
-                frontageStart?: CadWorldPoint;
-              }
-            ).frontageStart ?? outerBeforeCorner,
+          frontageStart: generatedParcels[previousStraightLot.generatedIndex]!.frontageStart ?? outerBeforeCorner,
           frontageEnd: outerCorner,
           frontageLengthMeters:
             previousEdge.cornerTransitionMeters +
@@ -430,12 +247,7 @@ export const cadBuildClosedBoundaryRingAutoLayoutDraft = (
           ],
           edgeIndex: vertexIndex,
           frontageStart: outerCorner,
-          frontageEnd:
-            (
-              generatedParcels[currentStraightLot.generatedIndex] as CadParcelLayoutGeneratedParcelDraft & {
-                frontageEnd?: CadWorldPoint;
-              }
-            ).frontageEnd ?? outerAfterCorner,
+          frontageEnd: generatedParcels[currentStraightLot.generatedIndex]!.frontageEnd ?? outerAfterCorner,
           frontageLengthMeters:
             currentEdge.cornerTransitionMeters +
             (generatedParcels[currentStraightLot.generatedIndex]!.frontageLengthMeters ?? 0),
@@ -479,12 +291,7 @@ export const cadBuildClosedBoundaryRingAutoLayoutDraft = (
           ],
           edgeIndex: vertexIndex,
           frontageStart: outerBeforeCorner,
-          frontageEnd:
-            (
-              generatedParcels[currentStraightLot.generatedIndex] as CadParcelLayoutGeneratedParcelDraft & {
-                frontageEnd?: CadWorldPoint;
-              }
-            ).frontageEnd ?? outerAfterCorner,
+          frontageEnd: generatedParcels[currentStraightLot.generatedIndex]!.frontageEnd ?? outerAfterCorner,
           frontageLengthMeters:
             previousEdge.cornerTransitionMeters +
             currentEdge.cornerTransitionMeters +
@@ -510,12 +317,7 @@ export const cadBuildClosedBoundaryRingAutoLayoutDraft = (
             generatedParcels[previousStraightLot.generatedIndex]!.vertices.at(-1)!,
           ],
           edgeIndex: previousEdgeIndex,
-          frontageStart:
-            (
-              generatedParcels[previousStraightLot.generatedIndex] as CadParcelLayoutGeneratedParcelDraft & {
-                frontageStart?: CadWorldPoint;
-              }
-            ).frontageStart ?? outerBeforeCorner,
+          frontageStart: generatedParcels[previousStraightLot.generatedIndex]!.frontageStart ?? outerBeforeCorner,
           frontageEnd: outerAfterCorner,
           frontageLengthMeters:
             previousEdge.cornerTransitionMeters +
