@@ -3,101 +3,26 @@ import { zeros } from './matrix';
 import type { SparseMatrixRows } from './matrix';
 import { applyCoordinateConstraintCorrelationWeights } from './adjustmentConstraints';
 import type {
-  CoordinateConstraintEquation,
   CoordinateConstraintRowPlacement,
   EquationRowInfo,
   SolveParameterIndex,
 } from './adjustmentSolveTypes';
+import type { Observation, StationId } from '../types';
+import { appendDistanceEquationRows } from './adjustmentDistanceEquationRows';
+import { appendGpsEquationRows } from './adjustmentGpsEquationRows';
 import type {
-  DistanceObservation,
-  GpsObservation,
-  Observation,
-  StationId,
-  StationMap,
-} from '../types';
+  AdjustmentEquationAssemblyDependencies,
+  AdjustmentEquationAssemblyOptions,
+  AdjustmentEquationAssemblyResult,
+  CoordinateConstraintEquation,
+  EquationRowAssemblyState,
+} from './adjustmentEquationAssemblyTypes';
 
-interface DistanceModelResult {
-  calcDistance: number;
-  mapScale: number;
-  prismCorrection: number;
-  horizontalDerivativeFactor?: number;
-  verticalDerivativeFactor?: number;
-  useReducedSlopeDerivatives?: boolean;
-}
-
-interface HorizontalDistanceObservation {
-  observedDistance: number;
-  sigmaDistance: number;
-  usedZenith: boolean;
-}
-
-interface ZenithGeometry {
-  z: number;
-  dist: number;
-  horiz: number;
-  dh: number;
-  crCorr: number;
-  horizontalScale?: number;
-}
-
-export interface AdjustmentEquationAssemblyDependencies {
-  stations: StationMap;
-  paramIndex: SolveParameterIndex;
-  is2D: boolean;
-  debug: boolean;
-  directionOrientations: Record<string, number>;
-  dirParamMap: Record<string, number>;
-  effectiveStdDev: (_observation: Observation) => number;
-  correctedDistanceModel: (
-    _observation: DistanceObservation,
-    _calcDistRaw: number,
-  ) => DistanceModelResult;
-  getObservedHorizontalDistanceIn2D: (
-    _observation: DistanceObservation,
-  ) => HorizontalDistanceObservation;
-  getAzimuth: (_fromId: StationId, _toId: StationId) => { az: number; dist: number };
-  measuredAngleCorrection: (_at: StationId, _from: StationId, _to: StationId) => number;
-  modeledAzimuth: (
-    _rawAz: number,
-    _atStationId?: StationId,
-    _applyConvergence?: boolean,
-  ) => number;
-  wrapToPi: (_value: number) => number;
-  gpsObservedVector: (
-    _observation: GpsObservation,
-  ) => { dE: number; dN: number; dU?: number; scale: number };
-  gpsModeledVector: (
-    _observation: GpsObservation,
-  ) => { dE: number; dN: number; dU?: number; scale: number };
-  gpsModeledVectorDerivatives: (_observation: GpsObservation) => {
-    from: { x?: { dE: number; dN: number; dU?: number }; y?: { dE: number; dN: number; dU?: number }; h?: { dE: number; dN: number; dU?: number } };
-    to: { x?: { dE: number; dN: number; dU?: number }; y?: { dE: number; dN: number; dU?: number }; h?: { dE: number; dN: number; dU?: number } };
-  };
-  gpsWeight: (_observation: Observation) => {
-    wEE: number;
-    wNN: number;
-    wEN: number;
-    wUU?: number;
-    wEU?: number;
-    wNU?: number;
-  };
-  getModeledZenith: (_observation: Observation & { type: 'zenith' }) => ZenithGeometry;
-  curvatureRefractionAngle: (_horiz: number) => number;
-  applyTsCorrelationToWeightMatrix: (_P: number[][], _rowInfo: EquationRowInfo[]) => void;
-  logObsDebug?: (_iteration: number, _label: string, _details: string) => void;
-}
-
-export interface AdjustmentEquationAssemblyResult {
-  A?: number[][];
-  L: number[][];
-  P: number[][];
-  rowInfo: EquationRowInfo[];
-  sparseRows: SparseMatrixRows;
-}
-
-interface AdjustmentEquationAssemblyOptions {
-  includeDenseA?: boolean;
-}
+export type {
+  AdjustmentEquationAssemblyDependencies,
+  AdjustmentEquationAssemblyOptions,
+  AdjustmentEquationAssemblyResult,
+} from './adjustmentEquationAssemblyTypes';
 
 const setAzimuthDerivativeColumns = (
   assignCoefficient: (_row: number, _column: number | undefined, _value: number) => void,
@@ -111,26 +36,6 @@ const setAzimuthDerivativeColumns = (
   assignCoefficient(row, toIdx?.y, dAz_dN_To);
   assignCoefficient(row, fromIdx?.x, -dAz_dE_To);
   assignCoefficient(row, fromIdx?.y, -dAz_dN_To);
-};
-
-const logDistanceDebug = (
-  dependencies: AdjustmentEquationAssemblyDependencies,
-  iterationNumber: number | undefined,
-  observation: DistanceObservation,
-  observedDistance: number,
-  calcDistance: number,
-  sigmaDistance: number,
-  usedZenith: boolean,
-  prismCorrection: number,
-  residual: number,
-) => {
-  if (!dependencies.debug || iterationNumber == null || !dependencies.logObsDebug) return;
-  const norm = sigmaDistance ? residual / sigmaDistance : 0;
-  dependencies.logObsDebug(
-    iterationNumber,
-    `DIST#${observation.id}`,
-    `from=${observation.from} to=${observation.to} obs=${observedDistance.toFixed(4)}m calc=${calcDistance.toFixed(4)}m w=${residual.toFixed(6)}m norm=${norm.toFixed(3)} sigma=${sigmaDistance.toFixed(6)}m mode=${observation.mode}${dependencies.is2D && usedZenith ? ' 2D-reduced' : ''} prism=${prismCorrection.toFixed(4)}m`,
-  );
 };
 
 const logAngularDebug = (
@@ -187,62 +92,22 @@ export const assembleAdjustmentEquations = (
     entries.push({ index: column, value });
   };
   let row = 0;
+  const rowAssemblyState: EquationRowAssemblyState = {
+    L,
+    P,
+    rowInfo,
+    assignCoefficient,
+  };
 
   activeObservations.forEach((observation) => {
     if (observation.type === 'dist') {
-      const { from, to } = observation;
-      const fromStation = dependencies.stations[from];
-      const toStation = dependencies.stations[to];
-      if (!fromStation || !toStation) return;
-      const dx = toStation.x - fromStation.x;
-      const dy = toStation.y - fromStation.y;
-      const dz = toStation.h + (observation.ht ?? 0) - (fromStation.h + (observation.hi ?? 0));
-      const horiz = Math.sqrt(dx * dx + dy * dy);
-      const calcDistRaw = dependencies.is2D
-        ? horiz
-        : observation.mode === 'slope'
-          ? Math.sqrt(horiz * horiz + dz * dz)
-          : horiz;
-      const corrected = dependencies.correctedDistanceModel(observation, calcDistRaw);
-      const observed2dDistance = dependencies.getObservedHorizontalDistanceIn2D(observation);
-      const residual = observed2dDistance.observedDistance - corrected.calcDistance;
-      L[row][0] = residual;
-      rowInfo.push({ obs: observation });
-      logDistanceDebug(
+      row = appendDistanceEquationRows({
         dependencies,
         iterationNumber,
         observation,
-        observed2dDistance.observedDistance,
-        corrected.calcDistance,
-        observed2dDistance.sigmaDistance,
-        observed2dDistance.usedZenith,
-        corrected.prismCorrection,
-        residual,
-      );
-
-      const denom = calcDistRaw || 1;
-      const dD_dE = corrected.useReducedSlopeDerivatives
-        ? dx * (corrected.horizontalDerivativeFactor ?? 0)
-        : (dx / denom) * corrected.mapScale;
-      const dD_dN = corrected.useReducedSlopeDerivatives
-        ? dy * (corrected.horizontalDerivativeFactor ?? 0)
-        : (dy / denom) * corrected.mapScale;
-      const dD_dH =
-        !dependencies.is2D && observation.mode === 'slope'
-          ? corrected.useReducedSlopeDerivatives
-            ? dz * (corrected.verticalDerivativeFactor ?? 0)
-            : (dz / denom) * corrected.mapScale
-          : 0;
-      const fromIdx = dependencies.paramIndex[from];
-      const toIdx = dependencies.paramIndex[to];
-      assignCoefficient(row, fromIdx?.x, -dD_dE);
-      assignCoefficient(row, fromIdx?.y, -dD_dN);
-      if (!dependencies.is2D) assignCoefficient(row, fromIdx?.h, -dD_dH);
-      assignCoefficient(row, toIdx?.x, dD_dE);
-      assignCoefficient(row, toIdx?.y, dD_dN);
-      if (!dependencies.is2D) assignCoefficient(row, toIdx?.h, dD_dH);
-      P[row][row] = 1 / (observed2dDistance.sigmaDistance * observed2dDistance.sigmaDistance);
-      row += 1;
+        row,
+        state: rowAssemblyState,
+      });
       return;
     }
 
@@ -288,60 +153,12 @@ export const assembleAdjustmentEquations = (
     }
 
     if (observation.type === 'gps') {
-      const fromStation = dependencies.stations[observation.from];
-      const toStation = dependencies.stations[observation.to];
-      if (!fromStation || !toStation) return;
-      const corrected = dependencies.gpsObservedVector(observation);
-      const modeled = dependencies.gpsModeledVector(observation);
-      const jacobian = dependencies.gpsModeledVectorDerivatives(observation);
-      const vE = corrected.dE - modeled.dE;
-      const vN = corrected.dN - modeled.dN;
-      L[row][0] = vE;
-      rowInfo.push({ obs: observation, component: 'E' });
-      const fromIdx = dependencies.paramIndex[observation.from];
-      const toIdx = dependencies.paramIndex[observation.to];
-      const weight = dependencies.gpsWeight(observation);
-      assignCoefficient(row, fromIdx?.x, jacobian.from.x?.dE ?? -1);
-      assignCoefficient(row, fromIdx?.y, jacobian.from.y?.dE ?? 0);
-      if (!dependencies.is2D) assignCoefficient(row, fromIdx?.h, jacobian.from.h?.dE ?? 0);
-      assignCoefficient(row, toIdx?.x, jacobian.to.x?.dE ?? 1);
-      assignCoefficient(row, toIdx?.y, jacobian.to.y?.dE ?? 0);
-      if (!dependencies.is2D) assignCoefficient(row, toIdx?.h, jacobian.to.h?.dE ?? 0);
-      P[row][row] = weight.wEE;
-      P[row][row + 1] = weight.wEN;
-      P[row + 1][row] = weight.wEN;
-      P[row + 1][row + 1] = weight.wNN;
-      L[row + 1][0] = vN;
-      rowInfo.push({ obs: observation, component: 'N' });
-      assignCoefficient(row + 1, fromIdx?.x, jacobian.from.x?.dN ?? 0);
-      assignCoefficient(row + 1, fromIdx?.y, jacobian.from.y?.dN ?? -1);
-      if (!dependencies.is2D) assignCoefficient(row + 1, fromIdx?.h, jacobian.from.h?.dN ?? 0);
-      assignCoefficient(row + 1, toIdx?.x, jacobian.to.x?.dN ?? 0);
-      assignCoefficient(row + 1, toIdx?.y, jacobian.to.y?.dN ?? 1);
-      if (!dependencies.is2D) assignCoefficient(row + 1, toIdx?.h, jacobian.to.h?.dN ?? 0);
-      if (
-        !dependencies.is2D &&
-        Number.isFinite(corrected.dU ?? Number.NaN) &&
-        Number.isFinite(modeled.dU ?? Number.NaN)
-      ) {
-        const vU = (corrected.dU as number) - (modeled.dU as number);
-        L[row + 2][0] = vU;
-        rowInfo.push({ obs: observation, component: 'U' });
-        assignCoefficient(row + 2, fromIdx?.x, jacobian.from.x?.dU ?? 0);
-        assignCoefficient(row + 2, fromIdx?.y, jacobian.from.y?.dU ?? 0);
-        assignCoefficient(row + 2, fromIdx?.h, jacobian.from.h?.dU ?? -1);
-        assignCoefficient(row + 2, toIdx?.x, jacobian.to.x?.dU ?? 0);
-        assignCoefficient(row + 2, toIdx?.y, jacobian.to.y?.dU ?? 0);
-        assignCoefficient(row + 2, toIdx?.h, jacobian.to.h?.dU ?? 1);
-        P[row][row + 2] = weight.wEU ?? 0;
-        P[row + 2][row] = weight.wEU ?? 0;
-        P[row + 1][row + 2] = weight.wNU ?? 0;
-        P[row + 2][row + 1] = weight.wNU ?? 0;
-        P[row + 2][row + 2] = weight.wUU ?? 0;
-        row += 3;
-        return;
-      }
-      row += 2;
+      row = appendGpsEquationRows({
+        dependencies,
+        observation,
+        row,
+        state: rowAssemblyState,
+      });
       return;
     }
 
