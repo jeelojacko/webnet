@@ -1,0 +1,40 @@
+import type { CadTraverseAdjustmentMethod } from '../../engine/cad/cadCogo';
+import type { ActiveTraverseDraftView } from '../../hooks/surveyCad/useSurveyCadCommandDrafts';
+import type { TraverseDraftMode } from '../../hooks/surveyCad/useSurveyCadCommandTypes';
+
+export interface SurveyCadTraverseDraftPanelProps {
+  draft: ActiveTraverseDraftView;
+  selectedClosePoint: { stationId: string; x: number; y: number } | null;
+  canCloseTraverseDraft: boolean;
+  canFinishCommand: boolean;
+  editingLegIndex: number | null;
+  editingLegInput: string;
+  insertingLegIndex: number | null;
+  insertingLegInput: string;
+  newLegInput: string;
+  newSideshotOccupyIndex: number;
+  newSideshotInput: string;
+  onSetMode: (_mode: TraverseDraftMode) => void;
+  onSetClosePoint: (_point: { label: string; x: number; y: number } | null) => void;
+  onRewindToPointCount: (_pointCount: number) => void;
+  onCloseLoop: () => void;
+  onFinish: () => void;
+  onCancel: () => void;
+  onNewLegInputChange: (_value: string) => void;
+  onAppendLeg: () => void;
+  onStartInsertLeg: (_legIndex: number) => void;
+  onInsertLegInputChange: (_value: string) => void;
+  onApplyInsertLeg: () => void;
+  onCancelInsertLeg: () => void;
+  onStartEditLeg: (_legIndex: number) => void;
+  onEditLegInputChange: (_value: string) => void;
+  onApplyEditLeg: () => void;
+  onCancelEditLeg: () => void;
+  onNudgeLeg: (_legIndex: number, _direction: -1 | 1) => void;
+  onApplyAdjustment: (_method: CadTraverseAdjustmentMethod) => void;
+  onClearAdjustment: () => void;
+  onSideshotOccupyIndexChange: (_index: number) => void;
+  onSideshotInputChange: (_value: string) => void;
+  onApplySideshot: () => void;
+  onRemoveSideshot: (_index: number) => void;
+}
