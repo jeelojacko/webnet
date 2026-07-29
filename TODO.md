@@ -1835,3 +1835,4 @@
 - [x] Project workspace split batch 1 (July 2026): reduce oversized `src/engine/projectWorkspace.ts` by extracting workspace manifest types and clone helpers while preserving public project workspace exports.
 - [x] CAD alignment split batch 1 (July 2026): reduce oversized `src/engine/cad/cadAlignment.ts` by extracting alignment types, shared element geometry, and alignment draft traversal while preserving public alignment exports.
 - [x] Browser exports split batch 1 (July 2026): split oversized `src/engine/browserExports.ts` into residual CSV and network GeoJSON modules while preserving public browser export names, units, deterministic ordering, and export text.
+- [x] QA workflow split batch 1 (July 2026): split oversized `src/engine/qaWorkflow.ts` into contracts, snapshot/fingerprint helpers, derived QA references, and run comparison builders while preserving public QA workflow exports and deterministic ordering.
