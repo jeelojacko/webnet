@@ -1,358 +1,42 @@
-import proj4 from 'proj4';
-
-import { RAD_TO_DEG } from './angles';
-import { getCanadianCrsDefinitionForTest } from './canadianCrsTestCatalog';
-import { computeElevationFactor, computeGridFactors } from './geodesy';
+import {
+  azimuthDeg,
+  createMulberry32,
+  distanceMeters,
+  findStation,
+  gaussianNoise,
+  hiHtToken,
+  precisionDigits,
+  turnedAngleDeg,
+  wrap360,
+  zenithDeg,
+} from './generateSyntheticObservationGeometry';
+import { renderSyntheticObservationJob } from './generateSyntheticObservationJob';
+import {
+  angleTripletsForTemplate,
+  directionSetConfigsForTemplate,
+  edgesForTemplate,
+} from './generateSyntheticObservationTemplates';
 import type {
   SyntheticCanadianNetwork,
   TrueStation,
 } from './generateSyntheticCanadianNetwork';
+import type {
+  SyntheticObservationGenerationOptions,
+  SyntheticObservationJob,
+  SyntheticObservationNoiseMode,
+} from './generateSyntheticObservations.types';
 
-export type SyntheticObservationNoiseMode = 'noise-free' | 'noisy';
-export type SyntheticObservationPrecisionMode = 'standard' | 'perfect';
-export interface SyntheticObservationGenerationOptions {
-  includeBearings?: boolean;
-  includeAngles?: boolean;
-  includeDirections?: boolean;
-  precisionMode?: SyntheticObservationPrecisionMode;
-}
-export interface SyntheticObservationInputRenderOptions {
-  observationOrder?: 'default' | 'reverse';
-  directionSetupOrder?: 'default' | 'reverse';
-}
-
-export interface SyntheticObservationJob {
-  input: string;
-  headerLines: string[];
-  stationLines: string[];
-  plainObservationLines: string[];
-  directionSetBlocks: string[][];
-  approximateStations: Array<{
-    id: string;
-    easting: number;
-    northing: number;
-    elevation: number;
-  }>;
-}
-
-const createMulberry32 = (seed: number): (() => number) => {
-  let state = seed >>> 0;
-  return () => {
-    state += 0x6d2b79f5;
-    let t = Math.imul(state ^ (state >>> 15), 1 | state);
-    t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-};
-
-const gaussianNoise = (random: () => number): number => {
-  const u1 = Math.max(random(), 1e-12);
-  const u2 = Math.max(random(), 1e-12);
-  return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
-};
-
-const azimuthDeg = (from: TrueStation, to: TrueStation): number => {
-  const az = Math.atan2(to.easting - from.easting, to.northing - from.northing) * RAD_TO_DEG;
-  return az >= 0 ? az : az + 360;
-};
-
-const wrap360 = (value: number): number => {
-  let wrapped = value % 360;
-  if (wrapped < 0) wrapped += 360;
-  return wrapped;
-};
-
-const turnedAngleDeg = (at: TrueStation, from: TrueStation, to: TrueStation): number =>
-  wrap360(azimuthDeg(at, to) - azimuthDeg(at, from));
-
-const geodeticFromProjected = (
-  network: SyntheticCanadianNetwork,
-  station: TrueStation,
-): { latDeg: number; lonDeg: number } | null => {
-  const def = getCanadianCrsDefinitionForTest(network.crsId);
-  const inverse = proj4(def.proj4, 'WGS84', [station.easting, station.northing]);
-  const lonDeg = inverse[0];
-  const latDeg = inverse[1];
-  if (!Number.isFinite(latDeg) || !Number.isFinite(lonDeg)) {
-    return null;
-  }
-  return { latDeg, lonDeg };
-};
-
-const combinedScaleAtStation = (network: SyntheticCanadianNetwork, station: TrueStation): number => {
-  const geodetic = geodeticFromProjected(network, station);
-  if (!geodetic) return 1;
-  const factors = computeGridFactors(geodetic.latDeg, geodetic.lonDeg, network.crsId);
-  const gridScale = factors?.gridScaleFactor ?? 1;
-  const elevationFactor = computeElevationFactor(station.elevation);
-  const combined = gridScale * elevationFactor;
-  return Number.isFinite(combined) && combined > 0 ? combined : 1;
-};
-
-const zenithHorizontalMeters = (
-  network: SyntheticCanadianNetwork,
-  from: TrueStation,
-  to: TrueStation,
-): number => {
-  const projectedHorizontal = Math.hypot(to.easting - from.easting, to.northing - from.northing);
-  if (network.coordMode !== '3D') return projectedHorizontal;
-  const combinedScale =
-    (combinedScaleAtStation(network, from) + combinedScaleAtStation(network, to)) * 0.5;
-  return projectedHorizontal / combinedScale;
-};
-
-const distanceMeters = (
-  from: TrueStation,
-  to: TrueStation,
-  hi = 0,
-  ht = 0,
-  coordMode: '2D' | '3D' = '2D',
-): number => {
-  const dE = to.easting - from.easting;
-  const dN = to.northing - from.northing;
-  const horizontal = Math.hypot(dE, dN);
-  if (coordMode === '2D') return horizontal;
-  const dH = to.elevation + ht - (from.elevation + hi);
-  return Math.hypot(horizontal, dH);
-};
-
-const zenithDeg = (
-  network: SyntheticCanadianNetwork,
-  from: TrueStation,
-  to: TrueStation,
-  hi = 0,
-  ht = 0,
-): number => {
-  const horizontal = zenithHorizontalMeters(network, from, to);
-  const dH = to.elevation + ht - (from.elevation + hi);
-  const slope = Math.hypot(horizontal, dH);
-  return Math.acos(dH / slope) * RAD_TO_DEG;
-};
-
-const findStation = (network: SyntheticCanadianNetwork, id: string): TrueStation => {
-  const station = network.stations.find((row) => row.id === id);
-  if (!station) throw new Error(`Synthetic station missing: ${id}`);
-  return station;
-};
-
-const hiHtToken = (hi = 1.5, ht = 1.7): string => `${hi.toFixed(4)}/${ht.toFixed(4)}`;
-
-const precisionDigits = (precisionMode: SyntheticObservationPrecisionMode) =>
-  precisionMode === 'perfect'
-    ? {
-        stationEN: 10,
-        stationH: 6,
-        distance: 12,
-        angle: 12,
-        sigmaDistance: 6,
-        sigmaAngle: 4,
-      }
-    : {
-        stationEN: 4,
-        stationH: 3,
-        distance: 4,
-        angle: 8,
-        sigmaDistance: 4,
-        sigmaAngle: 2,
-      };
-
-const angleTripletsForTemplate = (network: SyntheticCanadianNetwork): Array<[string, string, string]> => {
-  switch (network.template) {
-    case 'braced-quadrilateral':
-      return [
-        ['C', 'A', 'D'],
-        ['D', 'C', 'B'],
-        ['D', 'C', 'L'],
-      ];
-    case 'short-traverse':
-      return [
-        ['C', 'A', 'D'],
-        ['D', 'C', 'B'],
-        ['L', 'D', 'B'],
-      ];
-    case 'loop':
-      return [
-        ['C', 'A', 'B'],
-        ['D', 'C', 'E'],
-        ['E', 'D', 'B'],
-      ];
-    case 'mixed-3d':
-      return [
-        ['C', 'A', 'D'],
-        ['D', 'B', 'L'],
-        ['L', 'C', 'E'],
-      ];
-    default:
-      return [];
-  }
-};
-
-const edgesForTemplate = (network: SyntheticCanadianNetwork): Array<[string, string]> => {
-  switch (network.template) {
-    case 'braced-quadrilateral':
-      return [
-        ['A', 'C'],
-        ['B', 'C'],
-        ['A', 'D'],
-        ['B', 'D'],
-        ['C', 'D'],
-        ['C', 'L'],
-        ['D', 'L'],
-      ];
-    case 'short-traverse':
-      return [
-        ['A', 'C'],
-        ['C', 'D'],
-        ['B', 'D'],
-        ['A', 'D'],
-        ['D', 'L'],
-        ['B', 'L'],
-      ];
-    case 'loop':
-      return [
-        ['A', 'C'],
-        ['C', 'D'],
-        ['D', 'E'],
-        ['E', 'B'],
-        ['B', 'C'],
-        ['D', 'L'],
-        ['E', 'L'],
-      ];
-    case 'mixed-3d':
-      return [
-        ['A', 'C'],
-        ['B', 'C'],
-        ['E', 'C'],
-        ['A', 'D'],
-        ['B', 'D'],
-        ['E', 'D'],
-        ['C', 'D'],
-        ['E', 'L'],
-        ['B', 'L'],
-        ['C', 'L'],
-        ['D', 'L'],
-      ];
-    default:
-      return [];
-  }
-};
-
-const directionSetConfigsForTemplate = (
-  network: SyntheticCanadianNetwork,
-): Array<{ occupy: string; backsight: string; targets: string[] }> => {
-  switch (network.template) {
-    case 'braced-quadrilateral':
-      return [
-        { occupy: 'C', backsight: 'A', targets: ['D', 'L'] },
-        { occupy: 'D', backsight: 'B', targets: ['C', 'L'] },
-      ];
-    case 'short-traverse':
-      return [
-        { occupy: 'C', backsight: 'A', targets: ['D'] },
-        { occupy: 'D', backsight: 'B', targets: ['C', 'L'] },
-      ];
-    case 'loop':
-      return [
-        { occupy: 'C', backsight: 'A', targets: ['B', 'D'] },
-        { occupy: 'D', backsight: 'C', targets: ['E', 'L'] },
-      ];
-    case 'mixed-3d':
-      return [
-        { occupy: 'C', backsight: 'A', targets: ['B', 'D', 'L'] },
-        { occupy: 'D', backsight: 'B', targets: ['C', 'E', 'L'] },
-      ];
-    default:
-      return [];
-  }
-};
-
-export const renderSyntheticObservationJob = (
-  job: Pick<
-    SyntheticObservationJob,
-    'headerLines' | 'stationLines' | 'plainObservationLines' | 'directionSetBlocks'
-  >,
-  options: SyntheticObservationInputRenderOptions = {},
-): string => {
-  const observationOrder = options.observationOrder ?? 'default';
-  const directionSetupOrder = options.directionSetupOrder ?? 'default';
-  const plainObservationLines =
-    observationOrder === 'reverse'
-      ? [...job.plainObservationLines].reverse()
-      : [...job.plainObservationLines];
-  const directionSetBlocks =
-    directionSetupOrder === 'reverse'
-      ? [...job.directionSetBlocks].reverse()
-      : [...job.directionSetBlocks];
-  return [
-    ...job.headerLines,
-    ...job.stationLines,
-    ...plainObservationLines,
-    ...directionSetBlocks.flat(),
-  ].join('\n');
-};
-
-const renameStationToken = (token: string, mapping: Record<string, string>): string =>
-  mapping[token] ?? token;
-
-const renamePairToken = (token: string, mapping: Record<string, string>): string =>
-  token
-    .split('-')
-    .map((part) => renameStationToken(part, mapping))
-    .join('-');
-
-const renameSyntheticObservationLine = (line: string, mapping: Record<string, string>): string => {
-  const parts = line.split(' ');
-  const code = parts[0];
-  if (code == null) return line;
-  if (code === 'C' && parts[1]) {
-    parts[1] = renameStationToken(parts[1], mapping);
-    return parts.join(' ');
-  }
-  if ((code === 'D' || code === 'B' || code === 'V' || code === 'DV' || code === 'A') && parts[1]) {
-    parts[1] = renamePairToken(parts[1], mapping);
-    return parts.join(' ');
-  }
-  if (code === 'DB') {
-    if (parts[1]) parts[1] = renameStationToken(parts[1], mapping);
-    if (parts[2]) parts[2] = renameStationToken(parts[2], mapping);
-    return parts.join(' ');
-  }
-  if ((code === 'DN' || code === 'DM') && parts[1]) {
-    parts[1] = renameStationToken(parts[1], mapping);
-    return parts.join(' ');
-  }
-  return line;
-};
-
-export const renameSyntheticObservationJob = (
-  job: SyntheticObservationJob,
-  mapping: Record<string, string>,
-): SyntheticObservationJob => {
-  const stationLines = job.stationLines.map((line) => renameSyntheticObservationLine(line, mapping));
-  const plainObservationLines = job.plainObservationLines.map((line) =>
-    renameSyntheticObservationLine(line, mapping),
-  );
-  const directionSetBlocks = job.directionSetBlocks.map((block) =>
-    block.map((line) => renameSyntheticObservationLine(line, mapping)),
-  );
-  const approximateStations = job.approximateStations.map((station) => ({
-    ...station,
-    id: renameStationToken(station.id, mapping),
-  }));
-  return {
-    ...job,
-    stationLines,
-    plainObservationLines,
-    directionSetBlocks,
-    approximateStations,
-    input: renderSyntheticObservationJob({
-      headerLines: job.headerLines,
-      stationLines,
-      plainObservationLines,
-      directionSetBlocks,
-    }),
-  };
-};
+export {
+  renameSyntheticObservationJob,
+  renderSyntheticObservationJob,
+} from './generateSyntheticObservationJob';
+export type {
+  SyntheticObservationGenerationOptions,
+  SyntheticObservationInputRenderOptions,
+  SyntheticObservationJob,
+  SyntheticObservationNoiseMode,
+  SyntheticObservationPrecisionMode,
+} from './generateSyntheticObservations.types';
 
 export const generateSyntheticObservations = ({
   network,
@@ -457,7 +141,7 @@ export const generateSyntheticObservations = ({
         );
       } else {
         lines.push(
-          `DM ${targetId} ${directionValue.toFixed(digits.angle)} ${distanceValue.toFixed(digits.distance)} ${90 .toFixed(digits.angle)} ${bearingSigmaSec.toFixed(digits.sigmaAngle)} ${distanceSigmaM.toFixed(digits.sigmaDistance)} ${zenithSigmaSec.toFixed(digits.sigmaAngle)} ${hiHtToken(defaultHiM, defaultHtM)}`,
+          `DM ${targetId} ${directionValue.toFixed(digits.angle)} ${distanceValue.toFixed(digits.distance)} ${(90).toFixed(digits.angle)} ${bearingSigmaSec.toFixed(digits.sigmaAngle)} ${distanceSigmaM.toFixed(digits.sigmaDistance)} ${zenithSigmaSec.toFixed(digits.sigmaAngle)} ${hiHtToken(defaultHiM, defaultHtM)}`,
         );
       }
     });
