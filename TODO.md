@@ -1817,3 +1817,4 @@
 - [x] Direct run pipeline split batch 1 (July 2026): reduce oversized `src/engine/directRunPipeline.ts` by extracting focused run, compare, and export helpers while preserving direct-run outputs, diagnostics, and exit behavior.
 - [x] Adjustment workflow split batch 1 (July 2026): reduce oversized `src/hooks/useAdjustmentWorkflow.ts` by extracting focused workflow helpers while preserving run-session state, errors, profiles, and callback behavior.
 - [x] Legacy corpus harness split batch 1 (July 2026): reduce oversized `src/legacyCorpusHarness.ts` by extracting focused comparison/report helpers while preserving corpus diff behavior and deterministic output.
+- [x] Survey CAD parcel layout workflow split batch 2 (July 2026): reduce oversized `src/components/useSurveyCadParcelLayoutWorkflow.ts` by extracting focused layout derivation/action helpers while preserving parcel preview, commit, and warning behavior.
