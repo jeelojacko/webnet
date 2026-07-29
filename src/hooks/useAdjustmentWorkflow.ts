@@ -1,26 +1,24 @@
-import { startTransition, useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAdjustmentRunner } from './useAdjustmentRunner';
 import type { ClusterReviewDecision, ParseSettings, RunSettingsSnapshot, SettingsState } from '../appStateTypes';
 import type {
   AdjustmentResult,
   ClusterApprovedMerge,
-  ClusterRejectedProposal,
   InstrumentLibrary,
   ObservationOverride,
   PlanningMapState,
 } from '../types';
 import type { ProjectRunFile } from '../engine/projectWorkspace';
 import type { RunSessionOutcome, RunSessionRequest } from '../engine/runSession';
-import { buildValueFingerprint } from '../engine/qaWorkflow';
-import { noteUiPerfStage } from './useUiPerfMonitor';
 import { DEFAULT_PLANNING_MAP_STATE } from '../engine/planningMapState';
-
-type ClusterCandidate = NonNullable<AdjustmentResult['clusterDiagnostics']>['candidates'][number];
-
-type RunReviewContext = {
-  candidates: ClusterCandidate[];
-  decisions: Record<string, ClusterReviewDecision>;
-};
+import { useAdjustmentOutcomeApplication } from './useAdjustmentOutcomeApplication';
+import { buildRunRequestAndContext } from './useAdjustmentRunRequest';
+import {
+  buildApprovedClusterMerges,
+  buildClusterReviewDecisionsFromState,
+  buildPendingClusterReviewDecisions,
+  type RunReviewContext,
+} from './useAdjustmentWorkflowClusters';
 
 interface UseAdjustmentWorkflowArgs<TRunDiagnostics> {
   input: string;
@@ -55,128 +53,6 @@ interface UseAdjustmentWorkflowArgs<TRunDiagnostics> {
     approvedClusterMerges: ClusterApprovedMerge[];
   }) => void;
 }
-
-const normalizeClusterApprovedMerges = (
-  merges: ClusterApprovedMerge[],
-): ClusterApprovedMerge[] => {
-  const byAlias = new Map<string, string>();
-  merges
-    .map((merge) => ({
-      aliasId: String(merge.aliasId ?? '').trim(),
-      canonicalId: String(merge.canonicalId ?? '').trim(),
-    }))
-    .filter((merge) => merge.aliasId && merge.canonicalId && merge.aliasId !== merge.canonicalId)
-    .sort(
-      (a, b) =>
-        a.aliasId.localeCompare(b.aliasId, undefined, { numeric: true }) ||
-        a.canonicalId.localeCompare(b.canonicalId, undefined, { numeric: true }),
-    )
-    .forEach((merge) => {
-      const prior = byAlias.get(merge.aliasId);
-      if (!prior) {
-        byAlias.set(merge.aliasId, merge.canonicalId);
-        return;
-      }
-      if (merge.canonicalId.localeCompare(prior, undefined, { numeric: true }) < 0) {
-        byAlias.set(merge.aliasId, merge.canonicalId);
-      }
-    });
-  return [...byAlias.entries()]
-    .map(([aliasId, canonicalId]) => ({ aliasId, canonicalId }))
-    .sort(
-      (a, b) =>
-        a.canonicalId.localeCompare(b.canonicalId, undefined, { numeric: true }) ||
-        a.aliasId.localeCompare(b.aliasId, undefined, { numeric: true }),
-    );
-};
-
-const buildApprovedClusterMerges = (
-  result: AdjustmentResult | null,
-  decisions: Record<string, ClusterReviewDecision>,
-): ClusterApprovedMerge[] => {
-  const candidates = result?.clusterDiagnostics?.candidates ?? [];
-  const merges: ClusterApprovedMerge[] = [];
-  candidates.forEach((candidate) => {
-    const decision = decisions[candidate.key];
-    if (!decision || decision.status !== 'approve') return;
-    const canonicalId = candidate.stationIds.includes(decision.canonicalId)
-      ? decision.canonicalId
-      : candidate.representativeId;
-    candidate.stationIds.forEach((stationId) => {
-      if (stationId === canonicalId) return;
-      merges.push({ aliasId: stationId, canonicalId });
-    });
-  });
-  return normalizeClusterApprovedMerges(merges);
-};
-
-const buildRejectedClusterProposals = (
-  candidates: ClusterCandidate[],
-  decisions: Record<string, ClusterReviewDecision>,
-): ClusterRejectedProposal[] => {
-  const rows: ClusterRejectedProposal[] = [];
-  candidates.forEach((candidate) => {
-    const decision = decisions[candidate.key];
-    if (!decision || decision.status !== 'reject') return;
-    const retainedId =
-      decision.canonicalId && candidate.stationIds.includes(decision.canonicalId)
-        ? decision.canonicalId
-        : undefined;
-    rows.push({
-      key: candidate.key,
-      representativeId: candidate.representativeId,
-      stationIds: [...candidate.stationIds],
-      memberCount: candidate.memberCount,
-      retainedId,
-      reason: 'Rejected by user review',
-    });
-  });
-  return rows.sort((a, b) => a.key.localeCompare(b.key, undefined, { numeric: true }));
-};
-
-const buildClusterReviewDecisionsFromState = (
-  result: AdjustmentResult,
-  approvedMerges: ClusterApprovedMerge[],
-): Record<string, ClusterReviewDecision> => {
-  const decisions: Record<string, ClusterReviewDecision> = {};
-  const approvedByAlias = new Map<string, string>();
-  approvedMerges.forEach((merge) => {
-    approvedByAlias.set(merge.aliasId, merge.canonicalId);
-  });
-  const rejectedKeys = new Map(
-    (result.clusterDiagnostics?.rejectedProposals ?? []).map((entry) => [entry.key, entry]),
-  );
-  (result.clusterDiagnostics?.candidates ?? []).forEach((candidate) => {
-    const rejected = rejectedKeys.get(candidate.key);
-    if (rejected) {
-      decisions[candidate.key] = {
-        status: 'reject',
-        canonicalId:
-          rejected.retainedId && candidate.stationIds.includes(rejected.retainedId)
-            ? rejected.retainedId
-            : candidate.representativeId,
-      };
-      return;
-    }
-    const approvedCanonicalId = candidate.stationIds.find(
-      (stationId) => approvedByAlias.get(stationId) != null,
-    );
-    const canonicalId =
-      candidate.stationIds.find(
-        (stationId) =>
-          candidate.stationIds.includes(stationId) &&
-          candidate.stationIds.some((memberId) => approvedByAlias.get(memberId) === stationId),
-      ) ?? approvedCanonicalId ?? candidate.representativeId;
-    const isApproved = candidate.stationIds.some(
-      (stationId) => approvedByAlias.get(stationId) === canonicalId,
-    );
-    decisions[candidate.key] = {
-      status: isApproved ? 'approve' : 'pending',
-      canonicalId,
-    };
-  });
-  return decisions;
-};
 
 export const useAdjustmentWorkflow = <TRunDiagnostics>({
   input,
@@ -218,116 +94,28 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
   useEffect(() => {
     const candidates = result?.clusterDiagnostics?.candidates ?? [];
     setClusterReviewDecisions((prev) => {
-      const next: Record<string, ClusterReviewDecision> = {};
-      candidates.forEach((candidate) => {
-        const prior = prev[candidate.key];
-        const canonicalId =
-          prior && candidate.stationIds.includes(prior.canonicalId)
-            ? prior.canonicalId
-            : candidate.representativeId;
-        next[candidate.key] = {
-          status: prior?.status ?? 'pending',
-          canonicalId,
-        };
-      });
-      return next;
+      return buildPendingClusterReviewDecisions(candidates, prev);
     });
   }, [result?.clusterDiagnostics]);
 
-  const applyRunOutcome = useCallback(
-    (
-      outcome: RunSessionOutcome,
-      context: {
-        inputSnapshot: string;
-        parseSettingsSnapshot: ParseSettings;
-        settingsSnapshot: RunSettingsSnapshot;
-        inputFingerprint: string;
-        overrideIds: number[];
-        reviewContext?: RunReviewContext;
-      },
-    ) => {
-      noteUiPerfStage('applyRunOutcomeStart');
-      const solved = outcome.result;
-      if (solved.clusterDiagnostics?.enabled) {
-        const contextCandidates =
-          context.reviewContext?.candidates ?? result?.clusterDiagnostics?.candidates ?? [];
-        const contextDecisions = context.reviewContext?.decisions ?? clusterReviewDecisions;
-        const rejected = buildRejectedClusterProposals(contextCandidates, contextDecisions);
-        solved.clusterDiagnostics.rejectedProposals = rejected;
-        if (rejected.length > 0) {
-          solved.logs.unshift(`Cluster review: rejected proposals=${rejected.length}`);
-        }
-      }
-      const runProfile = buildRunDiagnostics(context.parseSettingsSnapshot, solved);
-      if ('parity' in (runProfile as object) && (runProfile as { parity?: boolean }).parity) {
-        solved.logs.unshift(
-          'Solve profile: Industry Standard parity (raw directions, classical weighting, industry default instrument fallback).',
-        );
-      }
-      const runMode = (runProfile as { runMode?: string }).runMode;
-      const plannedObservationCount =
-        (runProfile as { plannedObservationCount?: number }).plannedObservationCount ?? 0;
-      const preanalysisMode =
-        (runProfile as { preanalysisMode?: boolean }).preanalysisMode ?? false;
-      if (preanalysisMode) {
-        solved.logs.unshift(
-          `Run mode: preanalysis (planned observations=${plannedObservationCount}, residual-based QC disabled).`,
-        );
-      } else if (runMode && runMode !== 'adjustment') {
-        solved.logs.unshift(`Run mode: ${runMode}.`);
-      }
-      if (
-        outcome.inputChangedSinceLastRun &&
-        (outcome.droppedExclusions > 0 ||
-          outcome.droppedPreanalysisAdditions > 0 ||
-          outcome.droppedOverrides > 0 ||
-          outcome.droppedClusterMerges > 0)
-      ) {
-        solved.logs.unshift(
-          `Input changed since previous run: cleared ${outcome.droppedExclusions} exclusion(s), ${outcome.droppedPreanalysisAdditions} preanalysis addition(s), ${outcome.droppedOverrides} override(s), and ${outcome.droppedClusterMerges} approved cluster merge(s).`,
-        );
-        setActivePreanalysisAdditionIds(new Set());
-        setOverrides({});
-        setClusterReviewDecisions({});
-      }
-      setLastRunInput(context.inputSnapshot);
-      setLastRunSettingsSnapshot(context.settingsSnapshot);
-      setExcludedIds(new Set(outcome.effectiveExcludedIds));
-      setActivePreanalysisAdditionIds(new Set(outcome.activePreanalysisAdditionIds));
-      setResult(solved);
-      activateReportTab();
-      recordRunSnapshot({
-        result: solved,
-        runDiagnostics: runProfile,
-        settingsSnapshot: context.settingsSnapshot,
-        inputFingerprint: context.inputFingerprint,
-        excludedIds: outcome.effectiveExcludedIds,
-        activePreanalysisAdditionIds: outcome.activePreanalysisAdditionIds,
-        overrideIds: context.overrideIds,
-        overrides,
-        approvedClusterMerges: outcome.effectiveClusterApprovedMerges,
-      });
-      startTransition(() => {
-        setActiveClusterApprovedMerges(outcome.effectiveClusterApprovedMerges);
-        setRunDiagnostics(runProfile);
-        setRunElapsedMs(outcome.elapsedMs);
-      });
-      noteUiPerfStage('applyRunOutcomeComplete');
-    },
-    [
-      activateReportTab,
-      buildRunDiagnostics,
-      clusterReviewDecisions,
-      recordRunSnapshot,
-      overrides,
-      result?.clusterDiagnostics?.candidates,
-      setLastRunInput,
-      setLastRunSettingsSnapshot,
-      setResult,
-      setRunDiagnostics,
-      setRunElapsedMs,
-    ],
-  );
+  const applyRunOutcome = useAdjustmentOutcomeApplication({
+    result,
+    clusterReviewDecisions,
+    overrides,
+    buildRunDiagnostics,
+    setExcludedIds,
+    setActivePreanalysisAdditionIds,
+    setOverrides,
+    setClusterReviewDecisions,
+    setActiveClusterApprovedMerges,
+    setResult,
+    setRunDiagnostics,
+    setRunElapsedMs,
+    setLastRunInput,
+    setLastRunSettingsSnapshot,
+    activateReportTab,
+    recordRunSnapshot,
+  });
 
   const runWithExclusions = useCallback(
     (
@@ -336,46 +124,24 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
       approvedClusterMerges: ClusterApprovedMerge[] = activeClusterApprovedMerges,
       reviewContext?: RunReviewContext,
     ) => {
-      const overrideIds = Object.keys(overrides)
-        .map((value) => Number.parseInt(value, 10))
-        .filter((value) => Number.isFinite(value));
-      const request: RunSessionRequest = {
+      const { request, context } = buildRunRequestAndContext({
         input,
         lastRunInput,
-        maxIterations: settings.maxIterations,
-        convergenceLimit: settings.convergenceLimit,
-        units: settings.units,
-        parseSettings: {
-          ...parseSettings,
-          preanalysisMaxAddedSets: parseSettings.preanalysisMaxAddedSets ?? 5,
-        },
-        projectInstruments: Object.fromEntries(
-          Object.entries(projectInstruments).map(([code, instrument]) => [code, { ...instrument }]),
-        ),
+        settings,
+        parseSettings,
+        projectInstruments,
         selectedInstrument,
-        projectIncludeFiles: { ...projectIncludeFiles },
-        projectRunFiles: projectRunFiles?.map((file) => ({ ...file })),
+        projectIncludeFiles,
+        projectRunFiles,
         geoidSourceData,
-        planningMap: JSON.parse(JSON.stringify(planningMap)) as PlanningMapState,
-        excludedIds: [...excludeSet],
-        activePreanalysisAdditionIds: [...preanalysisAdditionSet].sort((a, b) =>
-          a.localeCompare(b, undefined, { numeric: true })
-        ),
-        overrides: { ...overrides },
+        planningMap,
+        excludeSet,
+        preanalysisAdditionSet,
+        overrides,
         approvedClusterMerges,
-      };
-      const context = {
-        inputSnapshot: input,
-        parseSettingsSnapshot: { ...parseSettings },
-        settingsSnapshot: currentRunSettingsSnapshot,
-        inputFingerprint: buildValueFingerprint({
-          input,
-          runFiles: projectRunFiles,
-          includeFiles: projectIncludeFiles,
-        }),
-        overrideIds,
+        currentRunSettingsSnapshot,
         reviewContext,
-      };
+      });
       void runAdjustment(request)
         .then((outcome) => applyRunOutcome(outcome, context))
         .catch((error) => {
@@ -399,9 +165,7 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
       projectRunFiles,
       runAdjustment,
       selectedInstrument,
-      settings.convergenceLimit,
-      settings.maxIterations,
-      settings.units,
+      settings,
     ],
   );
 
@@ -555,14 +319,7 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
 
   const resetClusterReview = useCallback(() => {
     const candidates = result?.clusterDiagnostics?.candidates ?? [];
-    const next: Record<string, ClusterReviewDecision> = {};
-    candidates.forEach((candidate) => {
-      next[candidate.key] = {
-        status: 'pending',
-        canonicalId: candidate.representativeId,
-      };
-    });
-    setClusterReviewDecisions(next);
+    setClusterReviewDecisions(buildPendingClusterReviewDecisions(candidates));
   }, [result?.clusterDiagnostics?.candidates]);
 
   const clearClusterApprovedMerges = useCallback(() => {
