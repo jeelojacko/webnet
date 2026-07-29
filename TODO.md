@@ -1832,3 +1832,4 @@
 - [x] Survey CAD preview split batch 1 (July 2026): reduce oversized `src/components/surveyCad/SurveyCadPreview.tsx` by extracting the SVG canvas/render layer while preserving interaction handlers, snap behavior, and overlay layout.
 - [x] Survey CAD traverse draft panel split batch 1 (July 2026): reduce oversized `src/components/surveyCad/SurveyCadTraverseDraftPanel.tsx` by extracting props/classes plus adjustment and sideshot sections while preserving panel wording and controls.
 - [x] CAD spatial index split batch 1 (July 2026): reduce oversized `src/engine/cad/cadSpatialIndex.ts` by extracting exact/apparent intersection candidate builders while preserving snap ranking and construction behavior.
+- [x] Project workspace split batch 1 (July 2026): reduce oversized `src/engine/projectWorkspace.ts` by extracting workspace manifest types and clone helpers while preserving public project workspace exports.

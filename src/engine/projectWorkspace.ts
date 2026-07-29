@@ -1,122 +1,30 @@
-import type {
-  AdjustedPointsExportSettings,
-  CustomLevelLoopTolerancePreset,
-  InstrumentLibrary,
-  PlanningMapState,
-  ProjectExportFormat,
-} from '../types';
 import type { PersistedSavedRunSnapshot } from '../appStateTypes';
-import type { SurveyCadPersistedState } from './cad/cadTypes';
 import { createStableRuntimeId } from './id';
-import { cloneSurveyCadPersistedState } from './cad/cadPersistence';
+import {
+  cloneFiles,
+  clonePortableProjectFileWithDependencies,
+  cloneProjectManifestWithDependencies,
+  cloneProjectPayload,
+  cloneProjectSessionStateWithDependencies,
+  cloneUiPayload,
+} from './projectWorkspaceClones';
+import type {
+  ProjectManifestFileEntry,
+  ProjectManifestProjectPayload,
+  ProjectManifestUiPayload,
+  ProjectManifestWorkspaceState,
+  ProjectRunFile,
+  ProjectSessionState,
+  ProjectSourceFileKind,
+  ProjectIndexRow,
+  WebNetPortableProjectFileV5,
+  WebNetProjectManifestV5,
+} from './projectWorkspaceTypes';
+import { createSessionFromManifestWithClone } from './projectWorkspaceSession';
+import { createPortableProjectFileWithDependencies } from './projectWorkspacePortable';
+export * from './projectWorkspaceTypes';
 
 export const WEBNET_PROJECT_SCHEMA_VERSION = 5;
-
-export type ProjectStorageBackend = 'opfs' | 'indexeddb';
-export type ProjectSourceFileKind = 'dat' | 'control' | 'notes' | 'report' | 'other';
-
-export interface ProjectIndexRow {
-  id: string;
-  name: string;
-  backend: ProjectStorageBackend;
-  rootKey: string;
-  schemaVersion: number;
-  createdAt: string;
-  updatedAt: string;
-  lastOpenedAt: string;
-  starred?: boolean;
-}
-
-export interface ProjectStorageStatus {
-  hasOpfs: boolean;
-  hasIndexedDb: boolean;
-  canPersist: boolean;
-  persisted: boolean | null;
-  preferredBackend: ProjectStorageBackend;
-}
-
-export interface ProjectManifestFileEntry {
-  id: string;
-  name: string;
-  kind: ProjectSourceFileKind;
-  path: string;
-  enabled: boolean;
-  order: number;
-  size?: number;
-  createdAt?: string;
-  updatedAt?: string;
-  modifiedAt?: string;
-}
-
-export interface ProjectManifestWorkspaceState {
-  openFileIds: string[];
-  focusedFileId?: string;
-  mainFileId?: string;
-  fileListCollapsed?: boolean;
-}
-
-export interface ProjectManifestUiPayload {
-  settings: Record<string, unknown>;
-  parseSettings: Record<string, unknown>;
-  exportFormat: ProjectExportFormat;
-  adjustedPointsExport: AdjustedPointsExportSettings;
-  planningMap?: PlanningMapState;
-  geoidSourceDataBase64?: string | null;
-  geoidSourceDataLabel?: string;
-  migration?: {
-    parseModeMigrated: boolean;
-    migratedAt?: string;
-    listingSortModeVersion?: number;
-  };
-}
-
-export interface ProjectManifestProjectPayload {
-  projectInstruments: InstrumentLibrary;
-  selectedInstrument: string;
-  levelLoopCustomPresets: CustomLevelLoopTolerancePreset[];
-  surveyCad?: SurveyCadPersistedState;
-}
-
-interface ProjectManifestV5Base {
-  kind: 'webnet-project';
-  schemaVersion: 5;
-  projectId: string;
-  name: string;
-  createdAt: string;
-  updatedAt: string;
-  files: ProjectManifestFileEntry[];
-  ui: ProjectManifestUiPayload;
-  project: ProjectManifestProjectPayload;
-  workspace?: ProjectManifestWorkspaceState;
-}
-
-export interface WebNetProjectManifestV5 extends ProjectManifestV5Base {
-  storageLayout: 'manifest';
-}
-
-export interface WebNetPortableProjectFileV5 extends ProjectManifestV5Base {
-  storageLayout: 'portable';
-  fileContents: Record<string, string>;
-  savedRuns?: PersistedSavedRunSnapshot[];
-}
-
-export interface ProjectSessionState {
-  indexRow: ProjectIndexRow;
-  manifest: WebNetProjectManifestV5;
-  sourceTexts: Record<string, string>;
-  dirtyFileIds: string[];
-  manifestDirty: boolean;
-  autosaveState: 'idle' | 'saving' | 'error';
-  lastAutosavedAt?: string | null;
-  lastAutosaveError?: string | null;
-}
-
-export interface ProjectRunFile {
-  fileId: string;
-  name: string;
-  order: number;
-  content: string;
-}
 
 const FILE_NAME_SANITIZE_RE = /[^a-zA-Z0-9._-]+/g;
 
@@ -130,41 +38,11 @@ export const sortProjectFiles = (files: ProjectManifestFileEntry[]): ProjectMani
       a.id.localeCompare(b.id, undefined, { numeric: true }),
   );
 
-const cloneFiles = (files: ProjectManifestFileEntry[]): ProjectManifestFileEntry[] =>
-  sortProjectFiles(files).map((file) => ({ ...file }));
-
-const cloneProjectPayload = (
-  payload: ProjectManifestProjectPayload,
-): ProjectManifestProjectPayload => ({
-  projectInstruments: Object.fromEntries(
-    Object.entries(payload.projectInstruments).map(([code, instrument]) => [code, { ...instrument }]),
-  ),
-  selectedInstrument: payload.selectedInstrument,
-  levelLoopCustomPresets: payload.levelLoopCustomPresets.map((preset) => ({ ...preset })),
-  surveyCad: payload.surveyCad ? cloneSurveyCadPersistedState(payload.surveyCad) : undefined,
-});
-
-const cloneUiPayload = (payload: ProjectManifestUiPayload): ProjectManifestUiPayload => ({
-  settings: { ...payload.settings },
-  parseSettings: { ...payload.parseSettings },
-  exportFormat: payload.exportFormat,
-  adjustedPointsExport: JSON.parse(JSON.stringify(payload.adjustedPointsExport)),
-  planningMap: payload.planningMap
-    ? JSON.parse(JSON.stringify(payload.planningMap))
-    : undefined,
-  geoidSourceDataBase64: payload.geoidSourceDataBase64 ?? null,
-  geoidSourceDataLabel: payload.geoidSourceDataLabel ?? '',
-  migration: payload.migration ? { ...payload.migration } : undefined,
-});
-
 const toValidFileIdSet = (files: ProjectManifestFileEntry[]): Set<string> =>
   new Set(files.map((file) => file.id));
 
-export const createProjectId = (): string =>
-  createStableRuntimeId('project');
-
-export const createProjectFileId = (): string =>
-  createStableRuntimeId('file');
+export const createProjectId = (): string => createStableRuntimeId('project');
+export const createProjectFileId = (): string => createStableRuntimeId('file');
 
 export const sanitizeProjectFileStorageName = (value: string): string => {
   const normalized = normalizeSourcePath(value);
@@ -173,13 +51,9 @@ export const sanitizeProjectFileStorageName = (value: string): string => {
   return sanitized || 'file.dat';
 };
 
-export const buildProjectFileStoragePath = (fileId: string, name: string): string =>
-  `data/${fileId}-${sanitizeProjectFileStorageName(name)}`;
+export const buildProjectFileStoragePath = (fileId: string, name: string): string => `data/${fileId}-${sanitizeProjectFileStorageName(name)}`;
 
-export const normalizeProjectFileKind = (
-  value: unknown,
-  fallback: ProjectSourceFileKind = 'dat',
-): ProjectSourceFileKind => {
+export const normalizeProjectFileKind = (value: unknown, fallback: ProjectSourceFileKind = 'dat'): ProjectSourceFileKind => {
   if (value === 'dat' || value === 'control' || value === 'notes' || value === 'report' || value === 'other') {
     return value;
   }
@@ -266,50 +140,27 @@ export const getCheckedProjectFiles = (
 
 export const cloneProjectManifest = (
   manifest: WebNetProjectManifestV5,
-): WebNetProjectManifestV5 => ({
-  kind: 'webnet-project',
-  schemaVersion: 5,
-  storageLayout: 'manifest',
-  projectId: manifest.projectId,
-  name: manifest.name,
-  createdAt: manifest.createdAt,
-  updatedAt: manifest.updatedAt,
-  files: cloneFiles(manifest.files),
-  ui: cloneUiPayload(manifest.ui),
-  project: cloneProjectPayload(manifest.project),
-  workspace: normalizeWorkspaceState(manifest.files, manifest.workspace),
-});
+): WebNetProjectManifestV5 =>
+  cloneProjectManifestWithDependencies(manifest, {
+    sortProjectFiles,
+    normalizeWorkspaceState,
+  });
 
 export const clonePortableProjectFile = (
   project: WebNetPortableProjectFileV5,
-): WebNetPortableProjectFileV5 => ({
-  kind: 'webnet-project',
-  schemaVersion: 5,
-  storageLayout: 'portable',
-  projectId: project.projectId,
-  name: project.name,
-  createdAt: project.createdAt,
-  updatedAt: project.updatedAt,
-  files: cloneFiles(project.files),
-  fileContents: { ...project.fileContents },
-  savedRuns: project.savedRuns?.map((snapshot) => JSON.parse(JSON.stringify(snapshot))) ?? undefined,
-  ui: cloneUiPayload(project.ui),
-  project: cloneProjectPayload(project.project),
-  workspace: normalizeWorkspaceState(project.files, project.workspace),
-});
+): WebNetPortableProjectFileV5 =>
+  clonePortableProjectFileWithDependencies(project, {
+    sortProjectFiles,
+    normalizeWorkspaceState,
+  });
 
 export const cloneProjectSessionState = (
   session: ProjectSessionState,
-): ProjectSessionState => ({
-  indexRow: { ...session.indexRow },
-  manifest: cloneProjectManifest(session.manifest),
-  sourceTexts: { ...session.sourceTexts },
-  dirtyFileIds: [...session.dirtyFileIds],
-  manifestDirty: session.manifestDirty,
-  autosaveState: session.autosaveState,
-  lastAutosavedAt: session.lastAutosavedAt ?? null,
-  lastAutosaveError: session.lastAutosaveError ?? null,
-});
+): ProjectSessionState =>
+  cloneProjectSessionStateWithDependencies(session, {
+    sortProjectFiles,
+    normalizeWorkspaceState,
+  });
 
 export const createManifestEntry = ({
   id = createProjectFileId(),
@@ -370,7 +221,7 @@ export const createProjectManifest = ({
   name: name.trim() || 'Untitled Project',
   createdAt,
   updatedAt,
-  files: cloneFiles(files),
+  files: cloneFiles(files, { sortProjectFiles }),
   ui: cloneUiPayload(ui),
   project: cloneProjectPayload(project),
   workspace: normalizeWorkspaceState(files, workspace),
@@ -435,21 +286,14 @@ export const createPortableProjectFile = ({
   manifest: WebNetProjectManifestV5;
   sourceTexts: Record<string, string>;
   savedRuns?: PersistedSavedRunSnapshot[];
-}): WebNetPortableProjectFileV5 => ({
-  kind: 'webnet-project',
-  schemaVersion: 5,
-  storageLayout: 'portable',
-  projectId: manifest.projectId,
-  name: manifest.name,
-  createdAt: manifest.createdAt,
-  updatedAt: manifest.updatedAt,
-  files: cloneFiles(manifest.files),
-  fileContents: Object.fromEntries(manifest.files.map((file) => [file.id, sourceTexts[file.id] ?? ''])),
-  savedRuns: savedRuns?.map((snapshot) => JSON.parse(JSON.stringify(snapshot))),
-  ui: cloneUiPayload(manifest.ui),
-  project: cloneProjectPayload(manifest.project),
-  workspace: normalizeWorkspaceState(manifest.files, manifest.workspace),
-});
+}): WebNetPortableProjectFileV5 =>
+  createPortableProjectFileWithDependencies({
+    manifest,
+    sourceTexts,
+    savedRuns,
+    sortProjectFiles,
+    normalizeWorkspaceState,
+  });
 
 export const createSessionFromManifest = ({
   indexRow,
@@ -459,16 +303,13 @@ export const createSessionFromManifest = ({
   indexRow: ProjectIndexRow;
   manifest: WebNetProjectManifestV5;
   sourceTexts: Record<string, string>;
-}): ProjectSessionState => ({
-  indexRow: { ...indexRow },
-  manifest: cloneProjectManifest(manifest),
-  sourceTexts: { ...sourceTexts },
-  dirtyFileIds: [],
-  manifestDirty: false,
-  autosaveState: 'idle',
-  lastAutosavedAt: null,
-  lastAutosaveError: null,
-});
+}): ProjectSessionState =>
+  createSessionFromManifestWithClone({
+    cloneProjectManifest,
+    indexRow,
+    manifest,
+    sourceTexts,
+  });
 
 export const createManifestFromFlatProject = ({
   projectId = createProjectId(),
