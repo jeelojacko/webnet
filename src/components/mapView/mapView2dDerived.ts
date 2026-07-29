@@ -1,0 +1,224 @@
+import type {
+  DerivedMapState2d,
+  MapDensitySummary,
+  ProjectedMapLine2D,
+  ProjectedPoint2D,
+  SelectionLinkedLine2D,
+  SelectionLinkedPoint2D,
+} from './mapView2d.types';
+
+export const buildVisiblePointLabels2d = (input: {
+  showLabels: boolean;
+  visiblePoints2d: ProjectedPoint2D[];
+  visibleMapLines2dLength: number;
+  interactionDenseMode: boolean;
+  selectedStationId: string | null;
+  pointThreshold: number;
+  edgeThreshold: number;
+  labelGridPx: number;
+  scorePriority: (_point: ProjectedPoint2D) => number;
+}): Set<string> => {
+  if (!input.showLabels) return new Set<string>();
+  if (input.visiblePoints2d.length === 0) return new Set<string>();
+  if (input.interactionDenseMode) {
+    const selectedOnly = new Set<string>();
+    if (input.selectedStationId) selectedOnly.add(input.selectedStationId);
+    return selectedOnly;
+  }
+  const next = new Set<string>();
+  const denseView =
+    input.visiblePoints2d.length > input.pointThreshold ||
+    input.visibleMapLines2dLength > input.edgeThreshold;
+  if (!denseView) {
+    input.visiblePoints2d.forEach((point) => next.add(point.id));
+    return next;
+  }
+  const occupied = new Set<string>();
+  const sortedPoints = [...input.visiblePoints2d].sort((left, right) => {
+    const leftPriority = input.scorePriority(left);
+    const rightPriority = input.scorePriority(right);
+    if (leftPriority !== rightPriority) return rightPriority - leftPriority;
+    return left.id.localeCompare(right.id, undefined, { numeric: true });
+  });
+  sortedPoints.forEach((point) => {
+    const cellX = Math.floor(point.screenX / input.labelGridPx);
+    const cellY = Math.floor(point.screenY / input.labelGridPx);
+    const key = `${cellX}:${cellY}`;
+    if (!occupied.has(key) || point.id === input.selectedStationId) {
+      occupied.add(key);
+      next.add(point.id);
+    }
+  });
+  return next;
+};
+
+export const buildFilteredVisibleMapLines2d = <TLine extends SelectionLinkedLine2D>(input: {
+  visibleMapLines2d: TLine[];
+  hideMinorGeometry: boolean;
+  focusSelection: boolean;
+  selectedObservationId: number | null;
+  selectedObservationPairKey: string | null;
+  selectedStationId: string | null;
+}): TLine[] => {
+  if (!input.hideMinorGeometry && !input.focusSelection) return input.visibleMapLines2d;
+  return input.visibleMapLines2d.filter((line) => {
+    const isSelected =
+      line.observationId === input.selectedObservationId ||
+      (input.selectedObservationPairKey != null && line.pairKey === input.selectedObservationPairKey);
+    const touchesSelectedStation =
+      input.selectedStationId != null &&
+      (line.fromId === input.selectedStationId || line.toId === input.selectedStationId);
+    if (isSelected || touchesSelectedStation) return true;
+    if (input.focusSelection) return false;
+    return !input.hideMinorGeometry || line.observationId % 2 === 0;
+  });
+};
+
+export const buildConnectedStationIds2d = (input: {
+  filteredVisibleMapLines2d: SelectionLinkedLine2D[];
+  focusSelection: boolean;
+  selectedStationId: string | null;
+}): Set<string> | null => {
+  if (!input.focusSelection || !input.selectedStationId) return null;
+  const connectedIds = new Set<string>([input.selectedStationId]);
+  input.filteredVisibleMapLines2d.forEach((line) => {
+    if (line.fromId === input.selectedStationId) connectedIds.add(line.toId);
+    if (line.toId === input.selectedStationId) connectedIds.add(line.fromId);
+  });
+  return connectedIds;
+};
+
+export const buildFilteredVisiblePoints2d = <TPoint extends SelectionLinkedPoint2D>(input: {
+  visiblePoints2d: TPoint[];
+  connectedStationIds: Set<string> | null;
+}): TPoint[] => {
+  if (!input.connectedStationIds) return input.visiblePoints2d;
+  return input.visiblePoints2d.filter((point) => input.connectedStationIds?.has(point.id));
+};
+
+export const buildUnselectedCanvasLines2d = (input: {
+  filteredVisibleMapLines2d: ProjectedMapLine2D[];
+  interactionDenseMode: boolean;
+  selectedObservationId: number | null;
+  selectedObservationPairKey: string | null;
+  selectedStationId: string | null;
+}): ProjectedMapLine2D[] => {
+  const base = input.filteredVisibleMapLines2d.filter(
+    (line) =>
+      line.observationId !== input.selectedObservationId &&
+      (input.selectedObservationPairKey == null || line.pairKey !== input.selectedObservationPairKey),
+  );
+  if (!input.interactionDenseMode) return base;
+  return base.filter((line, index) => {
+    const touchesSelectedStation =
+      input.selectedStationId != null &&
+      (line.fromId === input.selectedStationId || line.toId === input.selectedStationId);
+    return touchesSelectedStation || index % 2 === 0;
+  });
+};
+
+export const buildMapDensitySummary = (input: {
+  filteredVisibleMapLines2dLength: number;
+  filteredVisiblePoints2dLength: number;
+  totalProjectedMapLines2dLength: number;
+  projectedMapLines2dLength: number;
+  visiblePointLabels2dSize: number;
+  denseLabelEdgeThreshold: number;
+}): MapDensitySummary => {
+  const labelTotal = input.visiblePointLabels2dSize;
+  const labelSuppressed = input.filteredVisiblePoints2dLength - labelTotal;
+  const lineSuppressed = input.totalProjectedMapLines2dLength - input.filteredVisibleMapLines2dLength;
+  return {
+    dense:
+      labelSuppressed > 0 ||
+      lineSuppressed > 0 ||
+      input.projectedMapLines2dLength > input.denseLabelEdgeThreshold,
+    labelTotal,
+    labelSuppressed,
+    lineSuppressed,
+  };
+};
+
+export const buildDerivedMapState2d = (input: {
+  projectedMapLines2d: ProjectedMapLine2D[];
+  projectedPoints2d: ProjectedPoint2D[];
+  selectedStationId: string | null;
+  interactionPhaseInteracting: boolean;
+  interactionDensePointThreshold: number;
+  interactionDenseLineThreshold: number;
+  showLabels: boolean;
+  hideMinorGeometry: boolean;
+  focusSelection: boolean;
+  pointThreshold: number;
+  edgeThreshold: number;
+  labelGridPx: number;
+  totalProjectedMapLines2dLength: number;
+  selectedObservationId: number | null;
+  selectedObservationPairKey: string | null;
+  scorePriority: (_point: ProjectedPoint2D) => number;
+}): DerivedMapState2d => {
+  const interactionDenseMode =
+    input.interactionPhaseInteracting &&
+    (input.projectedPoints2d.length > input.interactionDensePointThreshold ||
+      input.projectedMapLines2d.length > input.interactionDenseLineThreshold);
+
+  const visiblePointLabels2d = buildVisiblePointLabels2d({
+    showLabels: input.showLabels,
+    visiblePoints2d: input.projectedPoints2d,
+    visibleMapLines2dLength: input.projectedMapLines2d.length,
+    interactionDenseMode,
+    selectedStationId: input.selectedStationId,
+    pointThreshold: input.pointThreshold,
+    edgeThreshold: input.edgeThreshold,
+    labelGridPx: input.labelGridPx,
+    scorePriority: input.scorePriority,
+  });
+
+  const filteredVisibleMapLines2d = buildFilteredVisibleMapLines2d({
+    visibleMapLines2d: input.projectedMapLines2d,
+    hideMinorGeometry: input.hideMinorGeometry,
+    focusSelection: input.focusSelection,
+    selectedObservationId: input.selectedObservationId,
+    selectedObservationPairKey: input.selectedObservationPairKey,
+    selectedStationId: input.selectedStationId,
+  });
+
+  const connectedStationIds = buildConnectedStationIds2d({
+    filteredVisibleMapLines2d,
+    focusSelection: input.focusSelection,
+    selectedStationId: input.selectedStationId,
+  });
+
+  const filteredVisiblePoints2d = buildFilteredVisiblePoints2d({
+    visiblePoints2d: input.projectedPoints2d,
+    connectedStationIds,
+  });
+
+  const unselectedCanvasLines2d = buildUnselectedCanvasLines2d({
+    filteredVisibleMapLines2d,
+    interactionDenseMode,
+    selectedObservationId: input.selectedObservationId,
+    selectedObservationPairKey: input.selectedObservationPairKey,
+    selectedStationId: input.selectedStationId,
+  });
+
+  const mapDensitySummary = buildMapDensitySummary({
+    filteredVisibleMapLines2dLength: filteredVisibleMapLines2d.length,
+    filteredVisiblePoints2dLength: filteredVisiblePoints2d.length,
+    totalProjectedMapLines2dLength: input.totalProjectedMapLines2dLength,
+    projectedMapLines2dLength: input.projectedMapLines2d.length,
+    visiblePointLabels2dSize: visiblePointLabels2d.size,
+    denseLabelEdgeThreshold: input.edgeThreshold,
+  });
+
+  return {
+    projectedMapLines2d: input.projectedMapLines2d,
+    projectedPoints2d: input.projectedPoints2d,
+    interactionDenseMode,
+    visiblePointLabels2d,
+    filteredVisibleMapLines2d,
+    filteredVisiblePoints2d,
+    unselectedCanvasLines2d,
+    mapDensitySummary,
+  };
+};
