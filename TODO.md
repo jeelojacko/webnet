@@ -1814,3 +1814,4 @@
 - [x] Report view split batch 7 (July 2026): reduce oversized src/components/ReportView.tsx by extracting focused workflow/section helpers while preserving report wording, ordering, filters, and layout behavior.
 - [x] App controller assessment (July 2026): leave oversized `src/hooks/useAppController.ts` for now because it is a composition root over already-focused hooks; splitting this batch would mainly add pass-through prop plumbing rather than a clearer responsibility boundary.
 - [x] Adjusted points export split batch 1 (July 2026): reduce oversized `src/engine/adjustedPointsExport.ts` by extracting focused export formatting/settings helpers while preserving adjusted point column ordering, transforms, and file output behavior.
+- [x] Direct run pipeline split batch 1 (July 2026): reduce oversized `src/engine/directRunPipeline.ts` by extracting focused run, compare, and export helpers while preserving direct-run outputs, diagnostics, and exit behavior.
