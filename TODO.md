@@ -1818,3 +1818,4 @@
 - [x] Adjustment workflow split batch 1 (July 2026): reduce oversized `src/hooks/useAdjustmentWorkflow.ts` by extracting focused workflow helpers while preserving run-session state, errors, profiles, and callback behavior.
 - [x] Legacy corpus harness split batch 1 (July 2026): reduce oversized `src/legacyCorpusHarness.ts` by extracting focused comparison/report helpers while preserving corpus diff behavior and deterministic output.
 - [x] Survey CAD parcel layout workflow split batch 2 (July 2026): reduce oversized `src/components/useSurveyCadParcelLayoutWorkflow.ts` by extracting focused layout derivation/action helpers while preserving parcel preview, commit, and warning behavior.
+- [x] Import conflict review split batch 1 (July 2026): reduce oversized `src/engine/importConflictReview.ts` by extracting focused conflict analysis helpers while preserving review decisions, diagnostics, and deterministic ordering.
