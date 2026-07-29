@@ -1825,3 +1825,4 @@
 - [x] CAD parcel closed-boundary split batch 1 (July 2026): reduce oversized `src/engine/cad/cadCogoParcelClosedBoundary.ts` by extracting focused boundary validation/geometry helpers while preserving closed-boundary parcel results and diagnostics.
 - [x] Other files project options tab split batch 1 (July 2026): reduce oversized `src/components/projectOptions/tabs/OtherFilesProjectOptionsTab.tsx` by extracting focused output/export/transform cards while preserving project file controls and wording.
 - [x] Matrix helper split batch 1 (July 2026): reduce oversized `src/engine/matrix.ts` by extracting matrix types, sparse helpers, Cholesky helpers, and LDLT helpers while preserving public `./matrix` exports and numeric behavior.
+- [x] Survey CAD typed submit split batch 1 (July 2026): reduce oversized `src/hooks/surveyCad/useSurveyCadTypedSubmit.ts` by extracting typed command submit handlers by command group while preserving dispatcher order and result wording.
