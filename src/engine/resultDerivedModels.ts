@@ -1,76 +1,34 @@
 import { RAD_TO_DEG } from './angles';
 import type {
   AdjustmentResult,
-  AliasTraceEntry,
-  DescriptionReconcileMode,
-  DescriptionScanSummary,
-  DescriptionTraceEntry,
   Observation,
-  ParseOptions,
   StationMap,
 } from '../types';
-
-export type SortedObservation = Observation & { originalIndex: number };
-
-export interface DataCheckDiffRow {
-  obs: Observation;
-  stations: string;
-  diffMagnitude: number;
-  diffLabel: string;
-}
-
-export interface ObservationMapLink {
-  key: string;
-  observationId: number;
-  type: Observation['type'];
-  fromId: string;
-  toId: string;
-  sourceLine: number | null;
-  pairKey: string;
-}
-
-export interface VisibleStationRow {
-  id: string;
-  station: StationMap[string];
-  severity: 'watch' | 'weak' | null;
-}
-
-export interface DescriptionReferenceRow {
-  key: string;
-  description: string;
-  lines: number[];
-}
-
-export interface ResultTraceabilityModel {
-  aliasTrace: AliasTraceEntry[];
-  descriptionTrace: DescriptionTraceEntry[];
-  descriptionScanSummary: DescriptionScanSummary[];
-  descriptionConflicts: DescriptionScanSummary[];
-  descriptionRefsByStation: Map<string, DescriptionReferenceRow[]>;
-  lostStationIds: string[];
-  descriptionReconcileMode: DescriptionReconcileMode;
-  descriptionAppendDelimiter: string;
-  descriptionRepeatedStationCount: number;
-  descriptionConflictCount: number;
-  reconciledDescriptions: Record<string, string>;
-}
-
-export interface ResultStatisticalSummaryRow {
-  label: string;
-  count: number;
-  sumSquares: number;
-  errorFactor: number;
-}
-
-export interface ResultStatisticalSummaryModel {
-  rows: ResultStatisticalSummaryRow[];
-  totalCount: number;
-  totalSumSquares: number;
-}
-
-export type StatisticalSummaryProfile = 'ui' | 'listing';
-
-const normalizeText = (value: string): string => value.replace(/\s+/g, ' ').trim().toUpperCase();
+import type {
+  DataCheckDiffRow,
+  DescriptionReferenceRow,
+  ObservationMapLink,
+  ResultStatisticalSummaryModel,
+  ResultTraceabilityModel,
+  SortedObservation,
+  StatisticalSummaryProfile,
+  VisibleStationRow,
+} from './resultDerivedModels.types';
+export {
+  buildDescriptionRefsByStation,
+  buildResultTraceabilityModel,
+} from './resultTraceabilityModel';
+export type {
+  DataCheckDiffRow,
+  DescriptionReferenceRow,
+  ObservationMapLink,
+  ResultStatisticalSummaryModel,
+  ResultStatisticalSummaryRow,
+  ResultTraceabilityModel,
+  SortedObservation,
+  StatisticalSummaryProfile,
+  VisibleStationRow,
+} from './resultDerivedModels.types';
 
 export const formatObservationStationsLabel = (obs: Observation): string => {
   if (obs.type === 'angle') return `${obs.at}-${obs.from}-${obs.to}`;
@@ -202,28 +160,6 @@ export const buildDataCheckDiffRows = (
     .slice(0, options.limit ?? 25);
 };
 
-export const buildDescriptionRefsByStation = (
-  descriptionTrace: DescriptionTraceEntry[],
-): Map<string, DescriptionReferenceRow[]> =>
-  descriptionTrace.reduce<Map<string, DescriptionReferenceRow[]>>((acc, entry) => {
-    const rows = acc.get(entry.stationId) ?? [];
-    const key = normalizeText(entry.description);
-    const existing = rows.find((row) => row.key === key);
-    if (existing) {
-      if (!existing.lines.includes(entry.sourceLine)) existing.lines.push(entry.sourceLine);
-      existing.lines.sort((a, b) => a - b);
-    } else {
-      rows.push({
-        key,
-        description: entry.description,
-        lines: [entry.sourceLine],
-      });
-      rows.sort((a, b) => a.description.localeCompare(b.description, undefined, { numeric: true }));
-    }
-    acc.set(entry.stationId, rows);
-    return acc;
-  }, new Map());
-
 export const buildVisibleStationIds = (
   stations: StationMap,
   showLostStations: boolean,
@@ -347,44 +283,6 @@ export const resolveMapEllipseStrokeColor = (
   if (severity === 'weak') return '#ef4444';
   if (severity === 'watch') return '#f97316';
   return '#2563eb';
-};
-
-export const buildResultTraceabilityModel = (
-  parseState?: ParseOptions,
-): ResultTraceabilityModel => {
-  const aliasTrace = [...(parseState?.aliasTrace ?? [])].sort((a, b) => {
-    const la = a.sourceLine ?? Number.MAX_SAFE_INTEGER;
-    const lb = b.sourceLine ?? Number.MAX_SAFE_INTEGER;
-    if (la !== lb) return la - lb;
-    const ca = a.context ?? '';
-    const cb = b.context ?? '';
-    if (ca !== cb) return ca.localeCompare(cb);
-    return a.sourceId.localeCompare(b.sourceId);
-  });
-  const descriptionTrace = [...(parseState?.descriptionTrace ?? [])].sort((a, b) => {
-    if (a.sourceLine !== b.sourceLine) return a.sourceLine - b.sourceLine;
-    return a.stationId.localeCompare(b.stationId, undefined, { numeric: true });
-  });
-  const descriptionScanSummary = [...(parseState?.descriptionScanSummary ?? [])].sort((a, b) =>
-    a.stationId.localeCompare(b.stationId, undefined, { numeric: true }),
-  );
-  const descriptionConflicts = descriptionScanSummary.filter((row) => row.conflict);
-
-  return {
-    aliasTrace,
-    descriptionTrace,
-    descriptionScanSummary,
-    descriptionConflicts,
-    descriptionRefsByStation: buildDescriptionRefsByStation(descriptionTrace),
-    lostStationIds: [...(parseState?.lostStationIds ?? [])].sort((a, b) =>
-      a.localeCompare(b, undefined, { numeric: true }),
-    ),
-    descriptionReconcileMode: parseState?.descriptionReconcileMode ?? 'first',
-    descriptionAppendDelimiter: parseState?.descriptionAppendDelimiter ?? ' | ',
-    descriptionRepeatedStationCount: parseState?.descriptionRepeatedStationCount ?? 0,
-    descriptionConflictCount: parseState?.descriptionConflictCount ?? 0,
-    reconciledDescriptions: parseState?.reconciledDescriptions ?? {},
-  };
 };
 
 const classifyObservationSummaryLabel = (
