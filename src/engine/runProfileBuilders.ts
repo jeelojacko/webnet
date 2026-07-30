@@ -10,25 +10,13 @@ import type {
 } from '../appStateTypes';
 import type {
   AdjustmentResult,
-  DirectionSetMode,
-  FaceNormalizationMode,
   Instrument,
   InstrumentLibrary,
   Observation,
-  ParseCompatibilityMode,
   ParseOptions,
-  RobustMode,
-  RunMode,
 } from '../types';
-
-export interface ProfileContext {
-  parity: boolean;
-  effectiveParse: ParseSettings;
-  directionSetMode: DirectionSetMode;
-  allowClusterFaceReliability: boolean;
-  effectiveInstrumentLibrary: InstrumentLibrary;
-  currentInstrument?: string;
-}
+import { resolveRunProfileContext } from './runProfileContext';
+export type { ProfileContext } from './runProfileContext';
 
 interface CreateRunProfileBuildersArgs {
   projectInstruments: InstrumentLibrary;
@@ -45,79 +33,15 @@ export const createRunProfileBuilders = ({
   defaultIndustryInstrument,
   normalizeSolveProfile,
 }: CreateRunProfileBuildersArgs) => {
-  const resolveProfileContext = (base: ParseSettings): ProfileContext => {
-    const solveProfile = normalizeSolveProfile(base.solveProfile);
-    const parity = solveProfile !== 'webnet';
-    const requestedRunMode: RunMode =
-      base.runMode ?? (base.preanalysisMode ? 'preanalysis' : 'adjustment');
-    const defaultParseCompatibilityMode: ParseCompatibilityMode =
-      solveProfile === 'legacy-compat' ? 'legacy' : parity ? 'strict' : 'legacy';
-    const defaultFaceNormalizationMode: FaceNormalizationMode =
-      solveProfile === 'industry-parity-current'
-        ? 'on'
-        : solveProfile === 'industry-parity-legacy'
-          ? 'off'
-          : solveProfile === 'legacy-compat'
-            ? 'auto'
-            : (base.faceNormalizationMode ?? (base.normalize ? 'on' : 'off'));
-    const normalizedBase: ParseSettings = {
-      ...base,
-      solveProfile,
-      runMode: requestedRunMode,
-      preanalysisMode: requestedRunMode === 'preanalysis',
-      parseCompatibilityMode: base.parseCompatibilityMode ?? defaultParseCompatibilityMode,
-      faceNormalizationMode: base.faceNormalizationMode ?? defaultFaceNormalizationMode,
-    };
-    normalizedBase.normalize = normalizedBase.faceNormalizationMode !== 'off';
-    const parityParse = parity
-      ? {
-          ...normalizedBase,
-          geometryDependentSigmaReference: 'initial' as const,
-          robustMode: 'none' as RobustMode,
-          tsCorrelationEnabled: false,
-          tsCorrelationRho: 0,
-        }
-      : {
-          ...normalizedBase,
-          geometryDependentSigmaReference:
-            normalizedBase.geometryDependentSigmaReference ?? 'current',
-        };
-    const effectiveParse =
-      requestedRunMode === 'preanalysis'
-        ? {
-            ...parityParse,
-            robustMode: 'none' as RobustMode,
-            autoAdjustEnabled: false,
-            preanalysisMode: true,
-          }
-        : {
-            ...parityParse,
-            preanalysisMode: false,
-          };
-    const directionSetMode: DirectionSetMode = parity ? 'raw' : 'reduced';
-    const allowClusterFaceReliability = solveProfile === 'legacy-compat';
-    const effectiveInstrumentLibrary = parity
-      ? {
-          ...projectInstruments,
-          ...(projectInstruments[defaultIndustryInstrumentCode]
-            ? {}
-            : { [defaultIndustryInstrumentCode]: defaultIndustryInstrument }),
-        }
-      : projectInstruments;
-    const currentInstrument = parity
-      ? selectedInstrument && effectiveInstrumentLibrary[selectedInstrument]
-        ? selectedInstrument
-        : defaultIndustryInstrumentCode
-      : selectedInstrument || undefined;
-    return {
-      parity,
-      effectiveParse,
-      directionSetMode,
-      allowClusterFaceReliability,
-      effectiveInstrumentLibrary,
-      currentInstrument,
-    };
-  };
+  const resolveProfileContext = (base: ParseSettings) =>
+    resolveRunProfileContext({
+      base,
+      projectInstruments,
+      selectedInstrument,
+      defaultIndustryInstrumentCode,
+      defaultIndustryInstrument,
+      normalizeSolveProfile,
+    });
 
   const buildRunDiagnostics = (base: ParseSettings, solved?: AdjustmentResult): RunDiagnostics => {
     const profileCtx = resolveProfileContext(base);
