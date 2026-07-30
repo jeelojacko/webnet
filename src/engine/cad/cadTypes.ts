@@ -1,5 +1,17 @@
 import type { ParseOptions, StationErrorEllipse, StationId, UnitsMode } from '../../types';
 import type { CadCogoComputation } from './cadCogoTypes';
+import type { CadDisplayPoint } from './cadDisplayTypes';
+export type {
+  CadDisplayArcPrimitive,
+  CadDisplayEllipsePrimitive,
+  CadDisplayLinePrimitive,
+  CadDisplayPoint,
+  CadDisplayPointPrimitive,
+  CadDisplayPrimitive,
+  CadDisplayPrimitiveBase,
+  CadDisplayScene,
+  CadDisplayTextPrimitive,
+} from './cadDisplayTypes';
 
 export type CadEntityId = string;
 export type CadLayerId = string;
@@ -265,73 +277,6 @@ export interface CadParcelLayoutUiState {
   activeFrontageEntityId: CadEntityId | null;
   activeFrontageParcelSegmentIds?: string[] | null;
   settings: CadParcelLayoutSettings;
-}
-
-export interface CadDisplayPoint {
-  x: number;
-  y: number;
-}
-
-export interface CadDisplayPrimitiveBase {
-  id: string;
-  layerId: string;
-  sourceEntityId: CadEntityId;
-  sourceSegmentId?: string;
-  stroke: string;
-  fill?: string;
-  opacity?: number;
-  strokeDasharray?: string;
-}
-
-export interface CadDisplayPointPrimitive extends CadDisplayPrimitiveBase {
-  kind: 'point';
-  point: CadDisplayPoint;
-  radius: number;
-}
-
-export interface CadDisplayLinePrimitive extends CadDisplayPrimitiveBase {
-  kind: 'line';
-  points: [CadDisplayPoint, CadDisplayPoint];
-  strokeWidth: number;
-}
-
-export interface CadDisplayArcPrimitive extends CadDisplayPrimitiveBase {
-  kind: 'arc';
-  center: CadDisplayPoint;
-  radius: number;
-  startAngleDeg: number;
-  endAngleDeg: number;
-  strokeWidth: number;
-}
-
-export interface CadDisplayTextPrimitive extends CadDisplayPrimitiveBase {
-  kind: 'text';
-  point: CadDisplayPoint;
-  text: string;
-  fontSize: number;
-  rotationDeg?: number;
-  textAnchor?: 'start' | 'middle' | 'end';
-}
-
-export interface CadDisplayEllipsePrimitive extends CadDisplayPrimitiveBase {
-  kind: 'ellipse';
-  center: CadDisplayPoint;
-  semiMajor: number;
-  semiMinor: number;
-  thetaDeg: number;
-  strokeWidth: number;
-}
-
-export type CadDisplayPrimitive =
-  | CadDisplayPointPrimitive
-  | CadDisplayLinePrimitive
-  | CadDisplayArcPrimitive
-  | CadDisplayTextPrimitive
-  | CadDisplayEllipsePrimitive;
-
-export interface CadDisplayScene {
-  bounds: CadBounds | null;
-  primitives: CadDisplayPrimitive[];
 }
 
 export type CadGripHandleKind =
