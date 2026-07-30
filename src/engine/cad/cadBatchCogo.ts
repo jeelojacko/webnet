@@ -3,245 +3,40 @@ import {
   cadArcEndTangentAzimuthDeg,
   cadBuildArcFromStartTangentRadiusDelta,
   cadParseBearingDegrees,
-  cadParseDmsDegrees,
-  cadPointFromAzimuthDistance,
-  type CadArcDefinition,
   type CadNamedPoint,
-  type CadWorldPoint,
 } from './cadGeometry';
-import { cadPointFromBearingDistance, formatCadBearing } from './cadCogo';
 import type { CadCogoWarning } from './cadCogoTypes';
 import type { CadDisplayPrimitive } from './cadTypes';
+import type {
+  CadBatchCogoDraft,
+  CadBatchCogoDraftOptions,
+  CadBatchCogoOperation,
+  CadBatchCogoPreviewRow,
+  CadBatchCogoStartSource,
+} from './cadBatchCogoTypes';
+import {
+  nextAvailableAutoPointLabel,
+  parseAbsolutePoint,
+  parseBearingDistance,
+  parseCurveCall,
+} from './cadBatchCogoParsing';
+import {
+  buildPreviewArcPrimitive,
+  buildPreviewLinePrimitive,
+  buildPreviewPointPrimitive,
+} from './cadBatchCogoPreviewPrimitives';
 
-export type CadBatchCogoRowStatus = 'ok' | 'warning' | 'error';
-export type CadBatchCogoRowKind = 'start' | 'line' | 'curve';
-export type CadBatchCogoStartSource = 'selected' | 'input';
-
-export interface CadBatchCogoPreviewRow {
-  lineNumber: number;
-  input: string;
-  kind: CadBatchCogoRowKind;
-  status: CadBatchCogoRowStatus;
-  summary: string;
-}
-
-export interface CadBatchCogoLineOperation {
-  kind: 'line';
-  lineNumber: number;
-  from: CadNamedPoint;
-  to: CadNamedPoint;
-  bearing: string;
-  distance: number;
-}
-
-export interface CadBatchCogoCurveOperation {
-  kind: 'curve';
-  lineNumber: number;
-  from: CadNamedPoint;
-  to: CadNamedPoint;
-  side: 'left' | 'right';
-  radius: number;
-  deltaDeg: number;
-  definition: CadArcDefinition;
-}
-
-export type CadBatchCogoOperation = CadBatchCogoLineOperation | CadBatchCogoCurveOperation;
-
-export interface CadBatchCogoDraft {
-  sourceText: string;
-  startPoint: CadNamedPoint | null;
-  startPointSource: CadBatchCogoStartSource | null;
-  endPoint: CadNamedPoint | null;
-  operations: CadBatchCogoOperation[];
-  previewRows: CadBatchCogoPreviewRow[];
-  warnings: CadCogoWarning[];
-  previewPrimitives: CadDisplayPrimitive[];
-  generatedPointCount: number;
-  generatedLineCount: number;
-  generatedArcCount: number;
-  canCommit: boolean;
-}
-
-interface CadBatchCogoDraftOptions {
-  sourceText: string;
-  selectedStartPoint?: CadNamedPoint | null;
-}
-
-const isNumeric = (value: string): boolean => {
-  const trimmed = value.trim();
-  if (trimmed.length === 0) return false;
-  return Number.isFinite(Number(trimmed));
-};
-
-const splitLabelFromBody = (token: string): { label?: string; body: string } => {
-  const normalized = token.trim();
-  const labelIndex = normalized.indexOf('=');
-  if (labelIndex < 0) return { body: normalized };
-  return {
-    label: normalized.slice(0, labelIndex).trim() || undefined,
-    body: normalized.slice(labelIndex + 1).trim(),
-  };
-};
-
-const parseAbsolutePoint = (token: string): CadNamedPoint | null => {
-  const { label, body } = splitLabelFromBody(token);
-  const parts = body.split(',').map((part) => part.trim());
-  if (parts.length !== 2 || !isNumeric(parts[0] ?? '') || !isNumeric(parts[1] ?? '')) return null;
-  const x = Number(parts[0]);
-  const y = Number(parts[1]);
-  return {
-    x,
-    y,
-    label: label ?? `${x.toFixed(3)},${y.toFixed(3)}`,
-  };
-};
-
-const normalizeAutoPointLabel = (sequence: number): string => `P${sequence}`;
-
-const nextAvailableAutoPointLabel = (
-  usedLabels: Set<string>,
-  nextSequence: number,
-): { label: string; nextSequence: number } => {
-  let sequence = nextSequence;
-  let label = normalizeAutoPointLabel(sequence);
-  while (usedLabels.has(label.toUpperCase())) {
-    sequence += 1;
-    label = normalizeAutoPointLabel(sequence);
-  }
-  usedLabels.add(label.toUpperCase());
-  return {
-    label,
-    nextSequence: sequence + 1,
-  };
-};
-
-const parseBearingDistance = (
-  token: string,
-  basePoint: CadNamedPoint,
-): { point: CadNamedPoint; bearing: string; distance: number } | null => {
-  const { label, body } = splitLabelFromBody(token);
-  const trimmed = body.trim();
-  if (trimmed.length === 0) return null;
-
-  if (trimmed.startsWith('@')) {
-    const parts = trimmed.slice(1).split(',').map((part) => part.trim());
-    if (parts.length !== 2 || !isNumeric(parts[0] ?? '') || !isNumeric(parts[1] ?? '')) return null;
-    const azimuthDeg = Number(parts[0]);
-    const distance = Number(parts[1]);
-    if (!Number.isFinite(distance) || distance <= 0) return null;
-    const point = cadPointFromAzimuthDistance(basePoint, azimuthDeg, distance);
-    return {
-      point: {
-        ...point,
-        label: label ?? `${trimmed}`,
-      },
-      bearing: formatCadBearing(((azimuthDeg % 360) + 360) % 360),
-      distance,
-    };
-  }
-
-  const commaParts = trimmed.split(',').map((part) => part.trim()).filter((part) => part.length > 0);
-  if (commaParts.length === 2 && isNumeric(commaParts[1] ?? '')) {
-    const distance = Number(commaParts[1]);
-    const point = cadPointFromBearingDistance(basePoint, commaParts[0] ?? '', distance);
-    if (!point || distance <= 0) return null;
-    return {
-      point: {
-        ...point,
-        label: label ?? `${commaParts[0]},${distance}`,
-      },
-      bearing: commaParts[0]!,
-      distance,
-    };
-  }
-
-  const match = /^(.+?)\s+([-+]?\d*\.?\d+)\s*$/.exec(trimmed);
-  if (!match) return null;
-  const bearingToken = (match[1] ?? '').trim();
-  const distance = Number(match[2]);
-  if (cadParseBearingDegrees(bearingToken) == null || !Number.isFinite(distance) || distance <= 0) {
-    return null;
-  }
-  const point = cadPointFromBearingDistance(basePoint, bearingToken, distance);
-  if (!point) return null;
-  return {
-    point: {
-      ...point,
-      label: label ?? `${bearingToken} ${distance}`,
-    },
-    bearing: bearingToken,
-    distance,
-  };
-};
-
-const parseCurveCall = (
-  token: string,
-): { label?: string; side: 'left' | 'right'; radius: number; deltaDeg: number } | null => {
-  const { label, body } = splitLabelFromBody(token);
-  const normalized = body.replace(/,/g, ' ').replace(/\s+/g, ' ').trim();
-  const match = /^CURVE\s+(LEFT|RIGHT|L|R)\s+(?:R(?:ADIUS)?=?\s*)?([-+]?\d*\.?\d+)\s+(?:DELTA|D)\s*=?\s*(.+)$/i.exec(
-    normalized,
-  );
-  if (!match) return null;
-  const radius = Number(match[2]);
-  const deltaDeg = cadParseDmsDegrees((match[3] ?? '').trim());
-  if (!Number.isFinite(radius) || radius <= 0 || deltaDeg == null || deltaDeg <= 0) return null;
-  return {
-    label,
-    side: /^(LEFT|L)$/i.test(match[1] ?? '') ? 'left' : 'right',
-    radius,
-    deltaDeg,
-  };
-};
-
-const buildPreviewPointPrimitive = (
-  id: string,
-  point: CadWorldPoint,
-): CadDisplayPrimitive => ({
-  kind: 'point',
-  id,
-  layerId: 'preview',
-  sourceEntityId: id,
-  stroke: '#22d3ee',
-  fill: '#22d3ee',
-  point,
-  radius: 2.6,
-  opacity: 0.9,
-});
-
-const buildPreviewLinePrimitive = (
-  id: string,
-  start: CadWorldPoint,
-  end: CadWorldPoint,
-): CadDisplayPrimitive => ({
-  kind: 'line',
-  id,
-  layerId: 'preview',
-  sourceEntityId: id,
-  stroke: '#22d3ee',
-  points: [start, end],
-  strokeWidth: 1.5,
-  opacity: 0.85,
-  strokeDasharray: '8 6',
-});
-
-const buildPreviewArcPrimitive = (
-  id: string,
-  definition: CadArcDefinition,
-): CadDisplayPrimitive => ({
-  kind: 'arc',
-  id,
-  layerId: 'preview',
-  sourceEntityId: id,
-  stroke: '#22d3ee',
-  center: definition.center,
-  radius: definition.radius,
-  startAngleDeg: definition.startAngleDeg,
-  endAngleDeg: definition.endAngleDeg,
-  strokeWidth: 1.5,
-  opacity: 0.85,
-  strokeDasharray: '8 6',
-});
+export type {
+  CadBatchCogoCurveOperation,
+  CadBatchCogoDraft,
+  CadBatchCogoDraftOptions,
+  CadBatchCogoLineOperation,
+  CadBatchCogoOperation,
+  CadBatchCogoPreviewRow,
+  CadBatchCogoRowKind,
+  CadBatchCogoRowStatus,
+  CadBatchCogoStartSource,
+} from './cadBatchCogoTypes';
 
 export const cadDraftBatchCogo = ({
   sourceText,
