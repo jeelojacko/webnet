@@ -1,3 +1,4 @@
+- [x] Map canvas basemap split batch 1 (July 2026): split oversized `src/components/mapView/mapViewCanvas2d.ts` by extracting basemap warp drawing while preserving canvas render options, tile mesh rendering, and 2D map canvas behavior.
 - [x] CAD renderer style split batch 1 (July 2026): split oversized `src/engine/cad/cadRenderer.ts` by extracting renderer style helpers while preserving display primitives, labels, and scene output.
 - [x] CAD frontage corner infill ranking split batch 1 (July 2026): split oversized `src/engine/cad/cadCogoParcelFrontageReferenceCornerInfill.ts` by extracting corner-draft ranking helpers while preserving lot selection, overlap/remainder ordering, and corner trim behavior.
 - [x] CAD COGO curve metric split batch 1 (July 2026): split oversized `src/engine/cad/cadCogoCurveMath.ts` by extracting curve metric summary/solver helpers while preserving public curve math exports and curve submit behavior.
