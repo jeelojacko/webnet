@@ -1,16 +1,10 @@
-import type { MutableRefObject } from 'react';
 import {
   cadAdjustTraverse,
   cadComputeTurnedAnglePoint,
   buildCadInverseSummary,
   type CadTraverseAdjustmentMethod,
 } from '../../engine/cad/cadCogo';
-import type {
-  CommandPoint,
-  CommandSession,
-  TraverseDraftMode,
-  TraverseSideshotDraft,
-} from './useSurveyCadCommandTypes';
+import type { CommandPoint, TraverseDraftMode } from './useSurveyCadCommandTypes';
 import {
   buildTraverseClosureTarget,
   buildTraverseLegInputFromPoints,
@@ -21,51 +15,13 @@ import {
   parseInputPoint,
   parseLeftRightAngleDistance,
 } from './useSurveyCadCommandParsing';
-
-type TraverseSession = Extract<CommandSession, { key: 'TRAVERSE' }>;
-type ReplaceSession = (_nextSession: CommandSession | null) => void;
-
-interface UseSurveyCadTraverseDraftActionsOptions {
-  projectStationIds: string[];
-  replaceSession: ReplaceSession;
-  sessionRef: MutableRefObject<CommandSession | null>;
-}
-
-export interface SurveyCadTraverseDraftActions {
-  setTraverseDraftMode: (_mode: TraverseDraftMode) => void;
-  setTraverseDraftClosePoint: (_point: CommandPoint | null) => void;
-  addTraverseDraftSideshot: (_occupyPointIndex: number, _inputValue: string) => boolean;
-  removeTraverseDraftSideshot: (_sideshotIndex: number) => void;
-  rewindTraverseDraftToPointCount: (_pointCount: number) => void;
-  editTraverseDraftLeg: (_legIndex: number) => void;
-  replaceTraverseDraftLeg: (_legIndex: number, _inputValue: string) => boolean;
-  appendTraverseDraftPoint: (_inputValue: string) => boolean;
-  insertTraverseDraftLeg: (_legIndex: number, _inputValue: string) => boolean;
-  moveTraverseDraftLeg: (_legIndex: number, _direction: -1 | 1) => boolean;
-  applyTraverseDraftAdjustment: (_method: CadTraverseAdjustmentMethod) => boolean;
-  clearTraverseDraftAdjustment: () => void;
-  closeTraverseDraftLoop: () => void;
-}
-
-const commandPointsMatch = (first: CommandPoint, second: CommandPoint): boolean =>
-  Math.abs(first.x - second.x) <= 1e-9 && Math.abs(first.y - second.y) <= 1e-9;
-
-const filterTraverseSideshotsForPoints = (
-  points: CommandPoint[],
-  sideshots: TraverseSideshotDraft[],
-): TraverseSideshotDraft[] =>
-  sideshots.filter((shot) =>
-    points.some((point, index, sourcePoints) =>
-      point.label === shot.occupyLabel && index > 0 && sourcePoints[index - 1]?.label === shot.backsightLabel,
-    ),
-  );
-
-const getTraverseSession = (
-  sessionRef: MutableRefObject<CommandSession | null>,
-): TraverseSession | null => {
-  const current = sessionRef.current;
-  return current?.key === 'TRAVERSE' ? current : null;
-};
+import type { SurveyCadTraverseDraftActions, TraverseSession, UseSurveyCadTraverseDraftActionsOptions } from './useSurveyCadTraverseDraftActions.types';
+import {
+  commandPointsMatch,
+  filterTraverseSideshotsForPoints,
+  getTraverseSession,
+} from './useSurveyCadTraverseDraftActions.utils';
+export type { SurveyCadTraverseDraftActions } from './useSurveyCadTraverseDraftActions.types';
 
 export const useSurveyCadTraverseDraftActions = ({
   projectStationIds,
