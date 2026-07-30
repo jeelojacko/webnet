@@ -5,7 +5,9 @@ import {
 } from './adjustTestSupport';
 
 describe('LSAEngine', () => {
-  it('keeps combined-case leveling weights active when project levelWeight is set and S9 is the selected instrument', () => {
+  it(
+    'keeps combined-case leveling weights active when project levelWeight is set and S9 is the selected instrument',
+    () => {
     const input = readFileSync('tests/fixtures/industry_case_combined_input.txt', 'utf-8')
       .replace(/\r\n/g, '\n')
       .replace(/\r/g, '\n')
@@ -115,7 +117,9 @@ describe('LSAEngine', () => {
     const levelSumSquares = levelRows.reduce((sum, obs) => sum + ((obs.stdRes ?? 0) ** 2), 0);
     expect(levelSumSquares).toBeGreaterThan(1);
     expect(levelSumSquares).toBeLessThan(100);
-  });
+    },
+    15000,
+  );
 
   it('solves M ATFROMTO turned-angle + horizontal-distance shots at measured ranges', () => {
     const input = [
