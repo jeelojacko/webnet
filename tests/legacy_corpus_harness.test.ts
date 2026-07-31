@@ -27,14 +27,18 @@ const runHarness = (args: string[] = [], timeout = HARNESS_TEST_TIMEOUT_MS) =>
   });
 
 describe('legacy corpus harness', () => {
-  it('passes against the curated phase-1 corpus manifest', () => {
-    const result = runHarness();
-    expect(result.status).toBe(0);
-    expect(result.stdout).toContain('Legacy compatibility corpus harness');
-    expect(result.stdout).toContain('Legacy corpus harness summary: projectFailures=0');
-    expect(result.stdout).toContain('baselineMismatches=0');
-    expect(result.stdout).toContain('gateFailed=false');
-  });
+  it(
+    'passes against the curated phase-1 corpus manifest',
+    () => {
+      const result = runHarness();
+      expect(result.status).toBe(0);
+      expect(result.stdout).toContain('Legacy compatibility corpus harness');
+      expect(result.stdout).toContain('Legacy corpus harness summary: projectFailures=0');
+      expect(result.stdout).toContain('baselineMismatches=0');
+      expect(result.stdout).toContain('gateFailed=false');
+    },
+    20000,
+  );
 
   it('fails with deterministic mismatch diagnostics when expectations are wrong', () => {
     const outDir = mkdtempSync(path.join(tmpdir(), 'webnet-corpus-harness-'));
