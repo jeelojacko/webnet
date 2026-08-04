@@ -1908,3 +1908,4 @@
 - [x] Camp design map profile test split batch 1 (August 2026): split oversized `tests/map_view_camp_design_profile.test.tsx` into shared map profiling harness support while preserving renderer sweeps, perf summaries, and hotspot assertions.
 - [x] Adjust bootstrap helper split batch 1 (August 2026): split oversized `src/engine/adjustBootstrapHelpers.ts` by extracting bootstrap pair metric aggregation while preserving traverse bootstrap exports and station seeding behavior.
 - [x] CAD fillet general helper split batch 1 (August 2026): split oversized `src/engine/cad/cadTransactionsFilletGeneralHelpers.ts` by extracting fillet types while preserving public helper exports and fillet transaction behavior.
+- [x] CAD properties test split batch 1 (August 2026): split oversized `tests/cad_properties.test.ts` by extracting the base CAD project fixture while preserving property panel coverage.

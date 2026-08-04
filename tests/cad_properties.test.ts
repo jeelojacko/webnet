@@ -1,56 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { buildSurveyCadSpikeProject } from '../src/engine/cad/cadModel';
 import { appendCadProjectEntities } from '../src/engine/cad/cadProjectState';
 import { buildCadPropertiesPanelState } from '../src/engine/cad/cadProperties';
-import type { ParseOptions } from '../src/types';
-
-const input = ['.2D', 'C A 0 0 0 ! !', 'C B 100 0 0 ! !', 'C C 60 40 5'].join('\n');
-
-const parseOptions: ParseOptions = {
-  units: 'm',
-  coordMode: '2D',
-  coordSystemMode: 'local',
-  localDatumScheme: 'average-scale',
-  averageScaleFactor: 1,
-  commonElevation: 0,
-  averageGeoidHeight: 0,
-  observationMode: {
-    bearing: 'grid',
-    distance: 'measured',
-    angle: 'measured',
-    direction: 'measured',
-  },
-  gridBearingMode: 'grid',
-  gridDistanceMode: 'measured',
-  gridAngleMode: 'measured',
-  gridDirectionMode: 'measured',
-  runMode: 'adjustment',
-  preanalysisMode: false,
-  order: 'EN',
-  angleStationOrder: 'atfromto',
-  deltaMode: 'slope',
-  mapMode: 'off',
-  normalize: true,
-  faceNormalizationMode: 'on',
-  lonSign: 'west-negative',
-};
-
-const buildBaseProject = () =>
-  buildSurveyCadSpikeProject({
-    input,
-    instrumentLibrary: {},
-    parseOptions,
-    units: 'm',
-    result: null,
-  });
+import { buildBaseCadPropertiesProject } from './cadPropertiesTestSupport';
 
 describe('Survey CAD properties builder', () => {
   it('returns null when nothing is selected', () => {
-    expect(buildCadPropertiesPanelState(buildBaseProject(), [])).toBeNull();
+    expect(buildCadPropertiesPanelState(buildBaseCadPropertiesProject(), [])).toBeNull();
   });
 
   it('builds single-point properties', () => {
-    const project = buildBaseProject();
+    const project = buildBaseCadPropertiesProject();
     const point = project.entities.find((entity) => entity.type === 'survey-point' && entity.stationId === 'A');
     if (!point || point.type !== 'survey-point') throw new Error('Point A not found');
 
@@ -71,7 +30,7 @@ describe('Survey CAD properties builder', () => {
   });
 
   it('builds single-line properties with forward/reverse azimuths, bearings, and deltas', () => {
-    const project = appendCadProjectEntities(buildBaseProject(), [
+    const project = appendCadProjectEntities(buildBaseCadPropertiesProject(), [
       {
         id: 'line:A|C',
         type: 'line',
@@ -112,7 +71,7 @@ describe('Survey CAD properties builder', () => {
   });
 
   it('builds polyline segment and vertex edit rows', () => {
-    const project = appendCadProjectEntities(buildBaseProject(), [
+    const project = appendCadProjectEntities(buildBaseCadPropertiesProject(), [
       {
         id: 'polyline:test',
         type: 'polyline',
@@ -158,7 +117,7 @@ describe('Survey CAD properties builder', () => {
   });
 
   it('builds parcel summary properties', () => {
-    const project = appendCadProjectEntities(buildBaseProject(), [
+    const project = appendCadProjectEntities(buildBaseCadPropertiesProject(), [
       {
         id: 'parcel:test',
         type: 'parcel',
@@ -193,7 +152,7 @@ describe('Survey CAD properties builder', () => {
   });
 
   it('shows friendly source labels instead of raw ids in COGO metadata rows', () => {
-    const project = appendCadProjectEntities(buildBaseProject(), [
+    const project = appendCadProjectEntities(buildBaseCadPropertiesProject(), [
       {
         id: 'polyline:source',
         type: 'polyline',
@@ -252,7 +211,7 @@ describe('Survey CAD properties builder', () => {
   });
 
   it('builds alignment station properties', () => {
-    const project = appendCadProjectEntities(buildBaseProject(), [
+    const project = appendCadProjectEntities(buildBaseCadPropertiesProject(), [
       {
         id: 'alignment:test',
         type: 'alignment',
@@ -285,7 +244,7 @@ describe('Survey CAD properties builder', () => {
   });
 
   it('builds stakeout point properties with alignment metadata', () => {
-    const project = appendCadProjectEntities(buildBaseProject(), [
+    const project = appendCadProjectEntities(buildBaseCadPropertiesProject(), [
       {
         id: 'point:stakeout',
         type: 'survey-point',
@@ -320,7 +279,7 @@ describe('Survey CAD properties builder', () => {
   });
 
   it('builds stakeout text properties with alignment metadata', () => {
-    const project = appendCadProjectEntities(buildBaseProject(), [
+    const project = appendCadProjectEntities(buildBaseCadPropertiesProject(), [
       {
         id: 'text:stakeout',
         type: 'text',
@@ -355,7 +314,7 @@ describe('Survey CAD properties builder', () => {
   });
 
   it('builds deterministic mixed-type multi-selection groups in selection order', () => {
-    const project = appendCadProjectEntities(buildBaseProject(), [
+    const project = appendCadProjectEntities(buildBaseCadPropertiesProject(), [
       {
         id: 'line:A|C',
         type: 'line',
