@@ -41,8 +41,8 @@ interface UseProjectPayloadLoaderArgs {
     gridDirectionMode: ParseSettings['gridDirectionMode'];
   }) => ObservationModeSettings;
   cloneInstrumentLibrary: (_library: InstrumentLibrary) => InstrumentLibrary;
+  currentUiTheme: SettingsState['uiTheme'];
   normalizeSolveProfile: (_profile: SolveProfile) => SolveProfile;
-  normalizeUiTheme: (_value: unknown) => SettingsState['uiTheme'];
   resetWorkspaceAfterProjectLoad: () => void;
   restoreSavedRunSnapshots: (_snapshots: PersistedSavedRunSnapshot[]) => void;
   setAdjustedPointsExportSettings: Dispatch<SetStateAction<AdjustedPointsExportSettings>>;
@@ -73,8 +73,8 @@ interface UseProjectPayloadLoaderArgs {
 export const useProjectPayloadLoader = ({
   buildObservationModeFromGridFields,
   cloneInstrumentLibrary,
+  currentUiTheme,
   normalizeSolveProfile,
-  normalizeUiTheme,
   resetWorkspaceAfterProjectLoad,
   restoreSavedRunSnapshots,
   setAdjustedPointsExportSettings,
@@ -111,7 +111,7 @@ export const useProjectPayloadLoader = ({
       const normalizedLoadedSettings: SettingsState = {
         ...loadedSettings,
         precisionReportingMode: 'industry-standard',
-        uiTheme: normalizeUiTheme(loadedSettings?.uiTheme),
+        uiTheme: currentUiTheme,
         showRunComparisonPanel: loadedSettings?.showRunComparisonPanel === true,
         showReviewQueuePanel: loadedSettings?.showReviewQueuePanel === true,
         listingSortObservationsBy: normalizeListingSortObservationsBy(
@@ -191,8 +191,8 @@ export const useProjectPayloadLoader = ({
     [
       buildObservationModeFromGridFields,
       cloneInstrumentLibrary,
+      currentUiTheme,
       normalizeSolveProfile,
-      normalizeUiTheme,
     ],
   );
 

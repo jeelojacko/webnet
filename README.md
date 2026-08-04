@@ -41,6 +41,7 @@ Successful startup looks like:
 - Use [public/examples/nb double stereo.dat](public/examples/nb%20double%20stereo.dat) for a projected-grid total station example focused on TS workflow only.
 - Keep [public/examples/industry_demo.dat](public/examples/industry_demo.dat) as a broader legacy/general sample, not the recommended first tutorial dataset.
 - In `Project Options -> Project Files`, use `Example Projects` to open the built-in `Pre-analysis`, `Combined`, or `Combined (split files)` project workspaces.
+- Portable project exports use sanitized project names for `.wnproj` files, keep UI theme local, and keep generated Survey CAD state in a sidecar when present.
 
 ## Validate
 

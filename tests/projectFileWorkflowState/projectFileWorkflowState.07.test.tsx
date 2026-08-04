@@ -306,7 +306,7 @@ describe('useProjectFileWorkflow', () => {
     });
 
     expect(container.querySelector('#input')?.textContent).toBe('LOADED NETWORK');
-    expect(container.querySelector('#theme')?.textContent).toBe('gruvbox-light');
+    expect(container.querySelector('#theme')?.textContent).toBe('gruvbox-dark');
     expect(container.querySelector('#precision-mode')?.textContent).toBe('industry-standard');
     expect(container.querySelector('#run-mode')?.textContent).toBe('preanalysis');
     expect(container.querySelector('#coord-system')?.textContent).toBe('grid');
@@ -325,7 +325,7 @@ describe('useProjectFileWorkflow', () => {
     expect(container.querySelector('#instrument')?.textContent).toBe('T1');
     expect(container.querySelector('#include-count')?.textContent).toBe('1');
     expect(container.querySelector('#saved-runs')?.textContent).toBe('1');
-    expect(container.querySelector('#draft-theme')?.textContent).toBe('gruvbox-light');
+    expect(container.querySelector('#draft-theme')?.textContent).toBe('gruvbox-dark');
     expect(container.querySelector('#draft-precision-mode')?.textContent).toBe(
       'industry-standard',
     );

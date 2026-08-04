@@ -6,7 +6,10 @@ import { sanitizePlanningMapState } from './planningMapState';
 import {
   sanitizeSurveyCadPersistedState,
 } from './cad/cadPersistence';
-import { clonePlanningMapStateForProjectExport } from './projectExportSlimming';
+import {
+  clonePlanningMapStateForProjectExport,
+  stripLocalOnlyProjectSettings,
+} from './projectExportSlimming';
 import { normalizeListingSortObservationsBy } from '../listingSortObservations';
 import {
   createManifestFromFlatProject,
@@ -45,7 +48,7 @@ export const serializeProjectFile = (project: ParsedProjectPayload): string => {
   const nowIso = new Date().toISOString();
   const parseSettings = cloneRecord(project.ui.parseSettings);
   normalizeRetiredParseSettings(parseSettings);
-  const settings = cloneRecord(project.ui.settings);
+  const settings = stripLocalOnlyProjectSettings(cloneRecord(project.ui.settings));
   settings.precisionReportingMode = 'industry-standard';
   settings.listingSortObservationsBy = normalizeListingSortObservationsBy(
     settings.listingSortObservationsBy,
@@ -218,7 +221,10 @@ export const parseProjectFile = (
   const project = isRecord(parsed.project) ? parsed.project : {};
   const parseSettingsRaw = isRecord(ui.parseSettings) ? ui.parseSettings : {};
 
-  const settings = mergeKnownKeys(defaults.settings, ui.settings);
+  const settingsCandidate = isRecord(ui.settings)
+    ? stripLocalOnlyProjectSettings(cloneRecord(ui.settings))
+    : ui.settings;
+  const settings = mergeKnownKeys(defaults.settings, settingsCandidate);
   const parseSettings = mergeKnownKeys(defaults.parseSettings, parseSettingsRaw);
   const exportFormat = sanitizeExportFormat(ui.exportFormat, defaults.exportFormat);
   const adjustedPointsExport = sanitizeAdjustedPointsExportSettings(

@@ -86,6 +86,7 @@ describe('project file serialization/parsing round trip', () => {
           convergenceLimit: 0.1,
           precisionReportingMode: 'posterior-scaled',
           units: 'ft',
+          uiTheme: 'gruvbox-light',
           listingShowLostStations: false,
         },
         parseSettings: {
@@ -191,6 +192,7 @@ describe('project file serialization/parsing round trip', () => {
     expect(parsed.project.ui.exportFormat).toBe('industry-style');
     expect(parsed.project.ui.settings.convergenceLimit).toBe(0.1);
     expect(parsed.project.ui.settings.precisionReportingMode).toBe('industry-standard');
+    expect(parsed.project.ui.settings.uiTheme).toBeUndefined();
     expect(parsed.project.ui.adjustedPointsExport.columns).toEqual(['P', 'E', 'N', 'Z']);
     expect(parsed.project.ui.adjustedPointsExport.transform.referenceStationId).toBe('A1');
     expect(parsed.project.ui.adjustedPointsExport.transform.scope).toBe('selected');
@@ -209,6 +211,7 @@ describe('project file serialization/parsing round trip', () => {
     expect(parsed.project.project.surveyCad).toBeUndefined();
     expect(text).not.toContain('OSM building');
     expect(text).not.toContain('parcel-1');
+    expect(text).not.toContain('"uiTheme"');
 
     const surveyCadSidecar = JSON.parse(buildSurveyCadSidecarText(surveyCadState));
     expect(surveyCadSidecar.kind).toBe('webnet-survey-cad');

@@ -1,7 +1,10 @@
 import { encodeUint8ArrayToBase64 } from './useWorkspaceRecovery';
 import { cloneAdjustedPointsExportSettings } from '../engine/adjustedPointsExport';
 import type { SurveyCadPersistedState } from '../engine/cad/cadTypes';
-import { clonePlanningMapStateForProjectExport } from '../engine/projectExportSlimming';
+import {
+  clonePlanningMapStateForProjectExport,
+  stripLocalOnlyProjectSettings,
+} from '../engine/projectExportSlimming';
 import type { ParsedProjectPayload } from '../engine/projectFile';
 import {
   buildProjectEditorIncludeFiles,
@@ -96,7 +99,7 @@ export const buildParsedPayloadFromSession = (
     ),
     savedRuns: [],
     ui: {
-      settings: session.manifest.ui.settings,
+      settings: stripLocalOnlyProjectSettings(session.manifest.ui.settings),
       parseSettings: session.manifest.ui.parseSettings,
       geoidSourceDataBase64: session.manifest.ui.geoidSourceDataBase64 ?? null,
       geoidSourceDataLabel: session.manifest.ui.geoidSourceDataLabel ?? '',
@@ -170,7 +173,7 @@ export const createManifestSeedFromPortablePayload = ({
           updatedAt,
           files: parsed.workspace.files,
           ui: {
-            settings: parsed.ui.settings,
+            settings: stripLocalOnlyProjectSettings(parsed.ui.settings),
             parseSettings: parsed.ui.parseSettings,
             exportFormat: parsed.ui.exportFormat,
             adjustedPointsExport: parsed.ui.adjustedPointsExport,
@@ -205,7 +208,7 @@ export const createManifestSeedFromPortablePayload = ({
         input: parsed.input,
         includeFiles: parsed.includeFiles,
         ui: {
-          settings: parsed.ui.settings,
+          settings: stripLocalOnlyProjectSettings(parsed.ui.settings),
           parseSettings: parsed.ui.parseSettings,
           geoidSourceDataBase64: parsed.ui.geoidSourceDataBase64 ?? null,
           geoidSourceDataLabel: parsed.ui.geoidSourceDataLabel ?? '',
@@ -228,7 +231,7 @@ const buildProjectUiPayload = (
       }
     | undefined,
 ) => ({
-  settings: workspace.settings as unknown as Record<string, unknown>,
+  settings: stripLocalOnlyProjectSettings(workspace.settings as unknown as Record<string, unknown>),
   parseSettings: workspace.parseSettings as unknown as Record<string, unknown>,
   geoidSourceDataBase64: encodeUint8ArrayToBase64(workspace.geoidSourceData),
   geoidSourceDataLabel: workspace.geoidSourceDataLabel,

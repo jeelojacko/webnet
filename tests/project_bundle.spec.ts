@@ -24,7 +24,7 @@ describe('project bundle serialization', () => {
         'obs/job-2.dat': '.INCLUDE obs/job-1.dat',
       },
       ui: {
-        settings: { units: 'm' },
+        settings: { units: 'm', uiTheme: 'gruvbox-light' },
         parseSettings: { solveProfile: 'industry-parity' },
         exportFormat: 'points',
         adjustedPointsExport: {
@@ -125,12 +125,23 @@ describe('project bundle serialization', () => {
     expect(parsed.manifest.files).toHaveLength(3);
     expect(buildProjectSolveInput(parsed.manifest, parsed.sourceTexts)).toContain('C A');
     expect(buildProjectSolveIncludeFiles(parsed.manifest, parsed.sourceTexts)).toEqual({
-      'obs/job-1.dat': 'C B 10 20 0',
-      'obs/job-2.dat': '.INCLUDE obs/job-1.dat',
+      'job-1.dat': 'C B 10 20 0',
+      'job-2.dat': '.INCLUDE obs/job-1.dat',
     });
     expect(parsed.manifest.project.surveyCad).toBeUndefined();
+    expect(parsed.manifest.ui.settings.uiTheme).toBeUndefined();
 
     const archive = unzipSync(bytes);
+    expect(Object.keys(archive)).toEqual(
+      expect.arrayContaining([
+        'Bundle_Test.wnproj',
+        'data/main.dat',
+        'data/job-1.dat',
+        'data/job-2.dat',
+        'survey-cad.json',
+      ]),
+    );
+    expect(archive['project.wnproj']).toBeUndefined();
     const surveyCadSidecar = JSON.parse(strFromU8(archive['survey-cad.json']));
     expect(surveyCadSidecar.surveyCad.project.entities[0]?.type).toBe('parcel');
     expect(surveyCadSidecar.surveyCad.project.entities[0]).toMatchObject({

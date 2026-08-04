@@ -13,6 +13,7 @@ import { cloneSurveyCadPersistedState } from '../engine/cad/cadPersistence';
 import type { SurveyCadPersistedState } from '../engine/cad/cadTypes';
 import { clonePlanningMapState } from '../engine/planningMapState';
 import { stableSerializePlain } from '../engine/plainData';
+import { stripLocalOnlyProjectSettings } from '../engine/projectExportSlimming';
 import {
   buildSavedSessionForStorage,
   createProjectStorage,
@@ -218,7 +219,7 @@ export const useProjectSessionPersistence = ({
   const serializedProjectShape = useMemo(
     () =>
       stableSerializePlain({
-        settings,
+        settings: stripLocalOnlyProjectSettings(settings as unknown as Record<string, unknown>),
         parseSettings,
         geoidSourceDataBase64: encodeUint8ArrayToBase64(geoidSourceData),
         geoidSourceDataLabel,
@@ -248,7 +249,7 @@ export const useProjectSessionPersistence = ({
   useEffect(() => {
     if (!projectSession) return;
     const currentShape = stableSerializePlain({
-      settings: projectSession.manifest.ui.settings,
+      settings: stripLocalOnlyProjectSettings(projectSession.manifest.ui.settings),
       parseSettings: projectSession.manifest.ui.parseSettings,
       geoidSourceDataBase64: projectSession.manifest.ui.geoidSourceDataBase64 ?? null,
       geoidSourceDataLabel: projectSession.manifest.ui.geoidSourceDataLabel ?? '',
@@ -266,7 +267,7 @@ export const useProjectSessionPersistence = ({
         const nowIso = new Date().toISOString();
         current.manifest.ui = {
           ...current.manifest.ui,
-          settings: settings as unknown as Record<string, unknown>,
+          settings: stripLocalOnlyProjectSettings(settings as unknown as Record<string, unknown>),
           parseSettings: parseSettings as unknown as Record<string, unknown>,
           geoidSourceDataBase64: encodeUint8ArrayToBase64(geoidSourceData),
           geoidSourceDataLabel,

@@ -41,9 +41,11 @@ describe('project file settings and CRS migrations', () => {
     ];
 
     for (const examplePath of examplePaths) {
-      const parsed = parseProjectFile(readFileSync(examplePath, 'utf8'), defaults);
+      const rawText = readFileSync(examplePath, 'utf8');
+      const parsed = parseProjectFile(rawText, defaults);
       expect(parsed.ok, examplePath).toBe(true);
       if (!parsed.ok) continue;
+      expect(rawText, examplePath).not.toContain('"uiTheme"');
       expect(parsed.project.workspace?.files.length, examplePath).toBeGreaterThan(0);
       expect(parsed.project.input.trim().length, examplePath).toBeGreaterThan(0);
       expect(parsed.project.ui.planningMap?.obstaclePolygons, examplePath).toEqual([]);
@@ -57,6 +59,24 @@ describe('project file settings and CRS migrations', () => {
     expect(splitProject.ok).toBe(true);
     if (!splitProject.ok) return;
     expect(splitProject.project.workspace?.files.every((file) => file.enabled)).toBe(true);
+    expect(splitProject.project.workspace?.files.map((file) => file.name)).toEqual([
+      'main.dat',
+      'lev.dat',
+      'gps.dat',
+    ]);
+    expect(splitProject.project.workspace?.files.map((file) => file.path)).toEqual([
+      'data/main.dat',
+      'data/lev.dat',
+      'data/gps.dat',
+    ]);
+
+    const combinedRaw = JSON.parse(readFileSync('public/examples/combined/project.wnproj', 'utf8'));
+    const splitRaw = JSON.parse(readFileSync('public/examples/combined-split/project.wnproj', 'utf8'));
+    const combinedSource = combinedRaw.fileContents[combinedRaw.files[0].id];
+    const splitSource = splitRaw.files
+      .map((file: { id: string }) => splitRaw.fileContents[file.id])
+      .join('\n');
+    expect(splitSource).toBe(combinedSource);
   });
 
   it('round-trips coordinate-system parse settings and browser geoid source state', () => {

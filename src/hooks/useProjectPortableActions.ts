@@ -17,7 +17,12 @@ import {
   buildProjectBundleBytes,
   parseProjectBundleBytes,
 } from '../engine/projectBundle';
-import { buildSurveyCadSidecarText } from '../engine/projectExportSlimming';
+import {
+  buildPortableProjectFileName,
+  buildSurveyCadSidecarFileName,
+  buildSurveyCadSidecarText,
+  sanitizeExportProjectName,
+} from '../engine/projectExportSlimming';
 import {
   parseProjectFile,
   serializeProjectFile,
@@ -104,8 +109,8 @@ export const useProjectPortableActions = ({
   const exportPortableProject = useCallback(async () => {
     const payload = buildPortablePayload();
     const suggestedName = projectSession
-      ? `${projectSession.manifest.name.replace(/\s+/g, '-').toLowerCase()}.wnproj.json`
-      : `webnet-project-${new Date().toISOString().slice(0, 10)}.wnproj.json`;
+      ? buildPortableProjectFileName(projectSession.manifest.name)
+      : buildPortableProjectFileName(`WebNet Project ${new Date().toISOString().slice(0, 10)}`);
     const saved = await saveBrowserTextFile(
       suggestedName,
       serializeProjectFile(payload),
@@ -114,7 +119,9 @@ export const useProjectPortableActions = ({
     if (!saved) return;
     const surveyCad = projectFlatWorkspacePayload.surveyCadState ?? payload.project.surveyCad;
     if (surveyCad) {
-      const sidecarName = suggestedName.replace(/\.wnproj(?:\.json)?$/i, '.survey-cad.json');
+      const sidecarName = buildSurveyCadSidecarFileName(
+        projectSession?.manifest.name ?? `WebNet Project ${new Date().toISOString().slice(0, 10)}`,
+      );
       await saveBrowserTextFile(
         sidecarName,
         buildSurveyCadSidecarText(surveyCad),
@@ -143,9 +150,9 @@ export const useProjectPortableActions = ({
             cloneInstrumentLibrary,
           });
     const bundleBytes = buildProjectBundleBytes(seed);
-    const suggestedName = `${(projectSession?.manifest.name ?? 'webnet-project')
-      .replace(/\s+/g, '-')
-      .toLowerCase()}.zip`;
+    const suggestedName = `${sanitizeExportProjectName(
+      projectSession?.manifest.name ?? `WebNet Project ${new Date().toISOString().slice(0, 10)}`,
+    )}.zip`;
     const saved = await saveBrowserBinaryFile(suggestedName, bundleBytes, PROJECT_IMPORT_FILE_TYPES);
     if (!saved) return;
     setImportNotice({

@@ -1,5 +1,10 @@
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
-import { buildSurveyCadSidecarText } from './projectExportSlimming';
+import {
+  buildExportSourceFileEntries,
+  buildPortableProjectFileName,
+  buildSurveyCadSidecarText,
+  stripLocalOnlyProjectSettings,
+} from './projectExportSlimming';
 import type { WebNetProjectManifestV5 } from './projectWorkspace';
 
 export interface ParsedProjectBundle {
@@ -12,17 +17,23 @@ export const buildProjectBundleBytes = ({
   sourceTexts,
 }: ParsedProjectBundle): Uint8Array => {
   const surveyCad = manifest.project.surveyCad;
+  const exportFiles = buildExportSourceFileEntries(manifest.files);
   const slimManifest: WebNetProjectManifestV5 = {
     ...manifest,
+    files: exportFiles,
     ui: manifest.ui.planningMap
       ? {
           ...manifest.ui,
+          settings: stripLocalOnlyProjectSettings(manifest.ui.settings),
           planningMap: {
             ...manifest.ui.planningMap,
             obstaclePolygons: [],
           },
         }
-      : manifest.ui,
+      : {
+          ...manifest.ui,
+          settings: stripLocalOnlyProjectSettings(manifest.ui.settings),
+        },
     project: {
       projectInstruments: manifest.project.projectInstruments,
       selectedInstrument: manifest.project.selectedInstrument,
@@ -30,9 +41,9 @@ export const buildProjectBundleBytes = ({
     },
   };
   const archiveEntries: Record<string, Uint8Array> = {
-    'project.wnproj': strToU8(JSON.stringify(slimManifest, null, 2)),
+    [buildPortableProjectFileName(manifest.name)]: strToU8(JSON.stringify(slimManifest, null, 2)),
   };
-  manifest.files.forEach((file) => {
+  exportFiles.forEach((file) => {
     archiveEntries[file.path] = strToU8(sourceTexts[file.id] ?? '');
   });
   if (surveyCad) {
@@ -43,11 +54,22 @@ export const buildProjectBundleBytes = ({
 
 export const parseProjectBundleBytes = (bytes: Uint8Array): ParsedProjectBundle => {
   const archive = unzipSync(bytes);
-  const manifestBytes = archive['project.wnproj'];
+  const manifestEntryName =
+    archive['project.wnproj'] != null
+      ? 'project.wnproj'
+      : Object.keys(archive).find((name) => name.toLowerCase().endsWith('.wnproj'));
+  const manifestBytes = manifestEntryName ? archive[manifestEntryName] : undefined;
   if (!manifestBytes) {
     throw new Error('Project bundle is missing project.wnproj.');
   }
-  const manifest = JSON.parse(strFromU8(manifestBytes)) as WebNetProjectManifestV5;
+  const parsedManifest = JSON.parse(strFromU8(manifestBytes)) as WebNetProjectManifestV5;
+  const manifest: WebNetProjectManifestV5 = {
+    ...parsedManifest,
+    ui: {
+      ...parsedManifest.ui,
+      settings: stripLocalOnlyProjectSettings(parsedManifest.ui.settings),
+    },
+  };
   const sourceTexts = Object.fromEntries(
     manifest.files.map((file) => {
       const entryBytes = archive[file.path];

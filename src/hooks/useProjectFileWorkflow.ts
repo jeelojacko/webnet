@@ -76,7 +76,7 @@ export const useProjectFileWorkflow = ({
   setImportNotice,
   resetWorkspaceAfterProjectLoad,
   restoreSavedRunSnapshots,
-  normalizeUiTheme,
+  normalizeUiTheme: _normalizeUiTheme,
   normalizeSolveProfile,
   buildObservationModeFromGridFields,
   cloneInstrumentLibrary,
@@ -114,8 +114,8 @@ export const useProjectFileWorkflow = ({
   const { applyLoadedProjectPayload, normalizeImportedProjectPayload } = useProjectPayloadLoader({
     buildObservationModeFromGridFields,
     cloneInstrumentLibrary,
+    currentUiTheme: settings.uiTheme,
     normalizeSolveProfile,
-    normalizeUiTheme,
     resetWorkspaceAfterProjectLoad,
     restoreSavedRunSnapshots,
     setAdjustedPointsExportSettings,

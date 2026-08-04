@@ -172,7 +172,7 @@ Current examples:
 - `Combined (split files)`
 
 ### Lean project exports
-Portable `.wnproj` exports and zipped project bundles keep adjustment settings and source files in the main project payload. Refetchable OSM obstacle footprints are omitted from exported planning-map state, while user-drawn blocked polygons remain in the project. Survey CAD state is exported separately as `*.survey-cad.json` when present, and zipped bundles place that same sidecar at `survey-cad.json`.
+Portable `.wnproj` exports and zipped project bundles keep adjustment settings and source files in the main project payload. Project files use the sanitized project name for the `.wnproj` filename and use visible source-file names for exported `data/` entries. Theme selection stays browser-local and is not written to, or restored from, project files. Refetchable OSM obstacle footprints are omitted from exported planning-map state, while user-drawn blocked polygons remain in the project. Survey CAD state is exported separately as `*.survey-cad.json` when present, and zipped bundles place that same sidecar at `survey-cad.json`.
 
 ## Reconciliation and conflict handling
 
