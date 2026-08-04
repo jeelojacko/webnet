@@ -17,13 +17,9 @@ describe('vite chunk routing', () => {
     );
   });
 
-  it('keeps project-workspace and vendor routing stable', () => {
-    expect(resolveChunkName('D:\\webnet-app\\src\\engine\\browserFileIo.ts')).toBe(
-      'project-workspace',
-    );
-    expect(resolveChunkName('D:\\webnet-app\\src\\hooks\\useWorkspaceRecovery.ts')).toBe(
-      'project-workspace',
-    );
+  it('lets workspace modules stay Rollup-owned while keeping vendor routing stable', () => {
+    expect(resolveChunkName('D:\\webnet-app\\src\\engine\\browserFileIo.ts')).toBeUndefined();
+    expect(resolveChunkName('D:\\webnet-app\\src\\hooks\\useWorkspaceRecovery.ts')).toBeUndefined();
     expect(resolveChunkName('D:\\webnet-app\\node_modules\\react\\index.js')).toBe(
       'vendor-react',
     );

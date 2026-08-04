@@ -1909,3 +1909,4 @@
 - [x] Adjust bootstrap helper split batch 1 (August 2026): split oversized `src/engine/adjustBootstrapHelpers.ts` by extracting bootstrap pair metric aggregation while preserving traverse bootstrap exports and station seeding behavior.
 - [x] CAD fillet general helper split batch 1 (August 2026): split oversized `src/engine/cad/cadTransactionsFilletGeneralHelpers.ts` by extracting fillet types while preserving public helper exports and fillet transaction behavior.
 - [x] CAD properties test split batch 1 (August 2026): split oversized `tests/cad_properties.test.ts` by extracting the base CAD project fixture while preserving property panel coverage.
+- [x] App controller split batch 1 (August 2026): carefully split oversized `src/hooks/useAppController.ts` into focused controller state/ref wiring while preserving the public `useAppController` return shape and app workflow behavior.
