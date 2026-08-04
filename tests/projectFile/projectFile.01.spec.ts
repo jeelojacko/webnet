@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   defaults,
+  buildSurveyCadSidecarText,
   parseProjectFile,
   savedRunResult,
   sanitizeAdjustedPointsExportSettings,
@@ -199,14 +200,19 @@ describe('project file serialization/parsing round trip', () => {
     ]);
     expect(parsed.project.ui.planningMap?.basemapMode).toBe('osm');
     expect(parsed.project.ui.planningMap?.blockedPolygons).toHaveLength(1);
-    expect(parsed.project.ui.planningMap?.obstaclePolygons).toHaveLength(1);
+    expect(parsed.project.ui.planningMap?.obstaclePolygons).toHaveLength(0);
     expect(parsed.project.ui.planningMap?.scenarioFamilies.promotedSetup).toBe(false);
     expect(parsed.project.ui.adjustedPointsExport.transform.rotation.enabled).toBe(true);
     expect(parsed.project.ui.adjustedPointsExport.transform.rotation.angleDeg).toBe(12.5);
     expect(parsed.project.project.selectedInstrument).toBe('S9');
     expect(parsed.project.project.levelLoopCustomPresets).toHaveLength(1);
-    expect(parsed.project.project.surveyCad?.project.entities[0]?.type).toBe('parcel');
-    expect(parsed.project.project.surveyCad?.project.entities[0]).toMatchObject({
+    expect(parsed.project.project.surveyCad).toBeUndefined();
+    expect(text).not.toContain('OSM building');
+    expect(text).not.toContain('parcel-1');
+
+    const surveyCadSidecar = JSON.parse(buildSurveyCadSidecarText(surveyCadState));
+    expect(surveyCadSidecar.kind).toBe('webnet-survey-cad');
+    expect(surveyCadSidecar.surveyCad.project.entities[0]).toMatchObject({
       id: 'parcel-1',
       parcelName: 'Lot 1',
     });

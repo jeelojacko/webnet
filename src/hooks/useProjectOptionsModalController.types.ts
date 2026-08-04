@@ -121,6 +121,7 @@ export type UseProjectOptionsModalControllerArgs = {
   triggerProjectSourceFileSelect?: () => void;
   createLocalProjectFromCurrentWorkspace?: () => void;
   openProjectById?: (_projectId: string) => void;
+  openPermanentExampleProject?: (_projectUrl: string) => void;
   deleteLocalProject?: (_projectId: string) => void;
   exportPortableProject?: () => void;
   exportProjectBundle?: () => void;

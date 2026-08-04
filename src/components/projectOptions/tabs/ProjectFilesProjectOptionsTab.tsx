@@ -1,4 +1,5 @@
 import React from 'react';
+import { PERMANENT_EXAMPLE_PROJECTS } from '../../../engine/permanentExampleProjects';
 import type { ProjectOptionsModalContext } from '../../../hooks/useProjectOptionsModalController';
 
 type ProjectFilesProjectOptionsTabProps = {
@@ -20,6 +21,7 @@ const ProjectFilesProjectOptionsTab: React.FC<ProjectFilesProjectOptionsTabProps
     exportProjectBundle,
     handleSaveProject,
     moveProjectFile,
+    openPermanentExampleProject,
     openProjectById,
     projectSession,
     recentProjects,
@@ -217,6 +219,31 @@ const ProjectFilesProjectOptionsTab: React.FC<ProjectFilesProjectOptionsTabProps
             </div>
           </div>
         )}
+        <div className="space-y-2">
+          <div className="text-[11px] uppercase tracking-wide text-slate-300">
+            Example Projects
+          </div>
+          <div className="space-y-2">
+            {PERMANENT_EXAMPLE_PROJECTS.map((project) => (
+              <div
+                key={project.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded border border-slate-400/60 bg-slate-700/20 px-3 py-2 text-[11px] text-slate-200"
+              >
+                <div>
+                  <div className="font-semibold text-slate-100">{project.title}</div>
+                  <div className="text-slate-300">{project.description}</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => openPermanentExampleProject(project.projectUrl)}
+                  className="rounded border border-slate-400 bg-slate-700 px-2 py-1 text-[11px] text-slate-100 hover:bg-slate-600"
+                >
+                  Open
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
         <div className="space-y-2">
           <div className="text-[11px] uppercase tracking-wide text-slate-300">
             Recent Local Projects

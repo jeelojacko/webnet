@@ -567,9 +567,9 @@
     - [ ] Move more non-urgent project/import utilities out of `App.tsx` so base `index` chunk shrinks further
     - [ ] Review `scenarioParsedModelCache.ts` request-key serialization and trim large cache key material without changing cache semantics
   - [ ] Phase 3 - maintainability follow-through
-    - [ ] Finish `App.tsx` composition-shell extraction
-    - [ ] Split `useProjectFileWorkflow.ts` into storage, import/export, source-file tabs, and associated-settings seams
-    - [ ] Split `InputPane.tsx` into editor, project-files popover, context menu, and tab-strip components
+    - [x] Finish `App.tsx` composition-shell extraction
+    - [x] Split `useProjectFileWorkflow.ts` into storage, import/export, source-file tabs, and associated-settings seams
+    - [x] Split `InputPane.tsx` into editor, project-files popover, context menu, and tab-strip components
     - [ ] Introduce shared typed browser file-IO/download/storage helpers across project/import/export paths
   - [ ] Phase 4 - security and hardening
     - [x] Current slice - add explicit size-limit handling for browser-local draft persistence
@@ -577,12 +577,12 @@
     - [ ] Guard local recovery storage toward minimal recoverable state where feasible, not full expanded snapshots by default
     - [ ] Document import trust boundaries and accepted offline file assumptions in `docs/IMPORT_WORKFLOW.md`
 
-- [ ] Big-file refactor batch (May 2026): split code-heavy monoliths into smaller seams with no behavior drift.
+- [x] Big-file refactor batch (May 2026): split code-heavy monoliths into smaller seams with no behavior drift.
   - [x] Batch 0 - baseline lock + extraction guards
     - [x] Record current big-file scope and target caps in planning
     - [x] Add focused characterization coverage for extracted App helpers before broader refactors
     - [x] Freeze App/project-options helper contracts while moving pure helpers and config out of `App.tsx`
-  - [ ] Batch 1 - app shell shrink
+  - [x] Batch 1 - app shell shrink
     - [x] Move pure App helper logic into `src/app/appHelpers.ts`
     - [x] Move project-options/static app config into `src/app/appConfig.ts`
     - [x] Move shared project-options shell controls into `src/components/projectOptions/SettingsControls.tsx`
@@ -590,23 +590,23 @@
     - [x] Current slice - extract App workspace draft/recovery orchestration hook
     - [x] Current slice - extract App run-comparison and workspace-reset orchestration hook
     - [x] Current slice - extract App project/import/workspace orchestration hook around project-file and import-review workflows
-    - [ ] Extract App orchestration hook and keep `App.tsx` as composition shell
+    - [x] Extract App orchestration hook and keep `App.tsx` as composition shell
     - [x] Current slice - extract remaining App run/workspace orchestration hook
   - [x] Batch 2 - heavy UI surfaces
     - [x] Split `ReportView.tsx` config/sections into focused modules
       - [x] Extract report formatters, sideshot section, header-tooltip resolver, residual/robust/TS-correlation diagnostics, traverse/GPS/leveling loop diagnostics, and direction diagnostics into `src/components/report/*`
     - [x] Split `ProjectOptionsModal.tsx` tabs and repeated controls into focused modules
       - [x] Extract `adjustment`, `general`, `instrument`, `listing-file`, `project-files`, `special`, `gps`, and `other-files` tab panels into dedicated components
-  - [ ] Batch 3 - listing/importer monoliths
+  - [x] Batch 3 - listing/importer monoliths
     - [x] Current slice - extract `industryListing.ts` shared formatters/sort helpers
     - [x] Current slice - extract `industryListing.ts` leveling-only section builder
     - [x] Current slice - extract `industryListing.ts` top/settings/project-metadata, adjusted-observation, and error-propagation section builders
     - [x] Current slice - move shared importer runtime helpers into `src/engine/importers/shared.ts` so importer-family modules no longer pin the importer shell into the lazy import chunk
-    - [ ] Split `industryListing.ts` into formatting and section-builder seams
-    - [ ] Split `importers.ts` into importer-family modules plus shared helpers
+    - [x] Split `industryListing.ts` into formatting and section-builder seams
+    - [x] Split `importers.ts` into importer-family modules plus shared helpers
     - [x] Current slice - extract importer families and shared importer helpers
-  - [ ] Batch 4 - solver-core decomposition
-    - [ ] Extract private `adjust.ts` helpers into focused engine modules without changing solve flow
+  - [x] Batch 4 - solver-core decomposition
+    - [x] Extract private `adjust.ts` helpers into focused engine modules without changing solve flow
     - [x] Current slice - extract adjust math, GPS, covariance, and diagnostics helpers
 
 - [x] Worker lazy-load split batch (May 2026): move heavy solve/export modules behind worker-side dynamic imports so worker entry bundles shrink further without changing solve/export behavior.
@@ -1910,3 +1910,4 @@
 - [x] CAD fillet general helper split batch 1 (August 2026): split oversized `src/engine/cad/cadTransactionsFilletGeneralHelpers.ts` by extracting fillet types while preserving public helper exports and fillet transaction behavior.
 - [x] CAD properties test split batch 1 (August 2026): split oversized `tests/cad_properties.test.ts` by extracting the base CAD project fixture while preserving property panel coverage.
 - [x] App controller split batch 1 (August 2026): carefully split oversized `src/hooks/useAppController.ts` into focused controller state/ref wiring while preserving the public `useAppController` return shape and app workflow behavior.
+- [x] Permanent example projects and lean export batch (August 2026): add Pre-analysis, Combined, and Combined (split files) as built-in project-file examples above Recent Local Projects, and keep exported project settings lean by excluding refetchable OSM obstacle/cache data plus moving Survey CAD state into a sidecar artifact.

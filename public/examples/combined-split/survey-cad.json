@@ -1,0 +1,773 @@
+{
+  "kind": "webnet-survey-cad",
+  "schemaVersion": 1,
+  "exportedAt": "2026-08-04T00:00:00.000Z",
+  "surveyCad": {
+    "version": 1,
+    "sourceSignature": "{\"version\":2,\"id\":\"survey-cad-spike-project\",\"name\":\"Adjusted Survey CAD Spike\",\"metadata\":{\"source\":\"adjustment-result\",\"runMode\":\"adjustment\",\"units\":\"m\",\"stationCount\":7,\"observationCount\":13,\"adjustedStationCount\":7},\"layers\":[{\"id\":\"control-points\",\"name\":\"Control Points\",\"color\":\"#f59e0b\",\"defaultStyleId\":\"style-control-point\",\"visible\":true,\"locked\":false,\"role\":\"control-points\"},{\"id\":\"points\",\"name\":\"Survey Points\",\"color\":\"#38bdf8\",\"defaultStyleId\":\"style-point\",\"visible\":true,\"locked\":false,\"role\":\"points\"},{\"id\":\"observation-lines\",\"name\":\"Observation Lines\",\"color\":\"#22c55e\",\"defaultStyleId\":\"style-observation-line\",\"visible\":true,\"locked\":false,\"role\":\"observation-lines\"},{\"id\":\"error-ellipses\",\"name\":\"Error Ellipses\",\"color\":\"#f472b6\",\"lineTypeId\":\"dash-short\",\"defaultStyleId\":\"style-error-ellipse\",\"visible\":true,\"locked\":false,\"role\":\"error-ellipses\"},{\"id\":\"labels\",\"name\":\"Labels\",\"color\":\"#e2e8f0\",\"defaultStyleId\":\"style-label\",\"visible\":true,\"locked\":false,\"role\":\"labels\"},{\"id\":\"parcels\",\"name\":\"Parcels\",\"color\":\"#f59e0b\",\"defaultStyleId\":\"style-parcel\",\"visible\":true,\"locked\":false,\"role\":\"parcels\"}],\"styleLibrary\":{\"lineTypes\":[{\"id\":\"continuous\",\"name\":\"Continuous\",\"dashPattern\":[]},{\"id\":\"dash-short\",\"name\":\"Dash Short\",\"dashPattern\":[6,4]}],\"textStyles\":[{\"id\":\"label-default\",\"name\":\"Label Default\",\"fontFamily\":\"ui-monospace, SFMono-Regular, Menlo, Consolas, monospace\",\"fontSize\":11}],\"pointSymbols\":[{\"id\":\"point-free\",\"name\":\"Free Point\",\"radius\":1.8},{\"id\":\"point-control\",\"name\":\"Control Point\",\"radius\":2.4}],\"styles\":[{\"id\":\"style-control-point\",\"name\":\"Control Point\",\"color\":\"#f59e0b\",\"strokeWidth\":1.2,\"pointSymbolId\":\"point-control\"},{\"id\":\"style-point\",\"name\":\"Survey Point\",\"color\":\"#38bdf8\",\"strokeWidth\":1.2,\"pointSymbolId\":\"point-free\"},{\"id\":\"style-observation-line\",\"name\":\"Observation Line\",\"color\":\"#22c55e\",\"strokeWidth\":1.25,\"lineTypeId\":\"continuous\"},{\"id\":\"style-error-ellipse\",\"name\":\"Error Ellipse\",\"color\":\"#f472b6\",\"strokeWidth\":1.1,\"lineTypeId\":\"dash-short\"},{\"id\":\"style-label\",\"name\":\"Label\",\"color\":\"#e2e8f0\",\"textStyleId\":\"label-default\"},{\"id\":\"style-parcel\",\"name\":\"Parcel\",\"color\":\"#f59e0b\",\"strokeWidth\":1.5,\"lineTypeId\":\"continuous\"}]},\"entities\":[{\"id\":\"pt:APOG\",\"type\":\"survey-point\",\"layerId\":\"points\",\"styleId\":\"style-point\",\"visible\":true,\"locked\":false,\"stationId\":\"APOG\",\"x\":2488813.5862798407,\"y\":7438154.060375579,\"z\":82.63120785264394,\"pointClass\":\"free\",\"source\":\"adjustment-result\",\"errorEllipse\":{\"semiMajor\":0.00043388528112806756,\"semiMinor\":0.0003368280669874889,\"theta\":-85.64078138978809},\"metadata\":{\"fixed\":false,\"coordInputClass\":\"grid\"}},{\"id\":\"pt:BROD\",\"type\":\"survey-point\",\"layerId\":\"points\",\"styleId\":\"style-point\",\"visible\":true,\"locked\":false,\"stationId\":\"BROD\",\"x\":2489016.3028707867,\"y\":7438971.1708240425,\"z\":16.808806892296605,\"pointClass\":\"free\",\"source\":\"adjustment-result\",\"errorEllipse\":{\"semiMajor\":0.000693878574160565,\"semiMinor\":0.0005227230900705901,\"theta\":89.79537642724496},\"metadata\":{\"fixed\":false,\"coordInputClass\":\"grid\"}},{\"id\":\"pt:FRDN\",\"type\":\"survey-point\",\"layerId\":\"control-points\",\"styleId\":\"style-control-point\",\"visible\":true,\"locked\":false,\"stationId\":\"FRDN\",\"x\":2487601.211,\"y\":7437047.544,\"z\":117.93,\"pointClass\":\"control\",\"source\":\"adjustment-result\",\"metadata\":{\"fixed\":true,\"coordInputClass\":\"grid\"}},{\"id\":\"pt:GPS2\",\"type\":\"survey-point\",\"layerId\":\"points\",\"styleId\":\"style-point\",\"visible\":true,\"locked\":false,\"stationId\":\"GPS2\",\"x\":2489236.287826796,\"y\":7438481.055385721,\"z\":37.70257005276448,\"pointClass\":\"free\",\"source\":\"adjustment-result\",\"errorEllipse\":{\"semiMajor\":0.0006705043570228824,\"semiMinor\":0.0005080487278912956,\"theta\":81.48878267703414},\"metadata\":{\"fixed\":false,\"coordInputClass\":\"grid\"}},{\"id\":\"pt:GPS5\",\"type\":\"survey-point\",\"layerId\":\"points\",\"styleId\":\"style-point\",\"visible\":true,\"locked\":false,\"stationId\":\"GPS5\",\"x\":2489408.523056841,\"y\":7438251.142361087,\"z\":44.69149344408647,\"pointClass\":\"free\",\"source\":\"adjustment-result\",\"errorEllipse\":{\"semiMajor\":0.0007534930641646705,\"semiMinor\":0.0006015377962053866,\"theta\":-77.68735149778057},\"metadata\":{\"fixed\":false,\"coordInputClass\":\"grid\"}},{\"id\":\"pt:GPS6\",\"type\":\"survey-point\",\"layerId\":\"points\",\"styleId\":\"style-point\",\"visible\":true,\"locked\":false,\"stationId\":\"GPS6\",\"x\":2488974.812477036,\"y\":7438735.414150915,\"z\":34.30541624460586,\"pointClass\":\"free\",\"source\":\"adjustment-result\",\"errorEllipse\":{\"semiMajor\":0.0008380778192752662,\"semiMinor\":0.0005819725809647814,\"theta\":-79.4213934674404},\"metadata\":{\"fixed\":false,\"coordInputClass\":\"grid\"}},{\"id\":\"pt:OOP\",\"type\":\"survey-point\",\"layerId\":\"points\",\"styleId\":\"style-point\",\"visible\":true,\"locked\":false,\"stationId\":\"OOP\",\"x\":2488810.237168115,\"y\":7438438.733022828,\"z\":64.8731801826285,\"pointClass\":\"free\",\"source\":\"adjustment-result\",\"errorEllipse\":{\"semiMajor\":0.00047134149273472727,\"semiMinor\":0.0003195575767188656,\"theta\":-79.94944190581751},\"metadata\":{\"fixed\":false,\"coordInputClass\":\"grid\"}},{\"id\":\"line:APOG|FRDN\",\"type\":\"line\",\"layerId\":\"observation-lines\",\"styleId\":\"style-observation-line\",\"visible\":true,\"locked\":false,\"fromStationId\":\"FRDN\",\"toStationId\":\"APOG\",\"fromX\":2487601.211,\"fromY\":7437047.544,\"toX\":2488813.5862798407,\"toY\":7438154.060375579,\"sourceObservationIds\":[1],\"metadata\":{\"pairKey\":\"APOG|FRDN\"}},{\"id\":\"line:APOG|GPS2\",\"type\":\"line\",\"layerId\":\"observation-lines\",\"styleId\":\"style-observation-line\",\"visible\":true,\"locked\":false,\"fromStationId\":\"APOG\",\"toStationId\":\"GPS2\",\"fromX\":2488813.5862798407,\"fromY\":7438154.060375579,\"toX\":2489236.287826796,\"toY\":7438481.055385721,\"sourceObservationIds\":[2],\"metadata\":{\"pairKey\":\"APOG|GPS2\"}},{\"id\":\"line:APOG|GPS5\",\"type\":\"line\",\"layerId\":\"observation-lines\",\"styleId\":\"style-observation-line\",\"visible\":true,\"locked\":false,\"fromStationId\":\"GPS5\",\"toStationId\":\"APOG\",\"fromX\":2489408.523056841,\"fromY\":7438251.142361087,\"toX\":2488813.5862798407,\"toY\":7438154.060375579,\"sourceObservationIds\":[6],\"metadata\":{\"pairKey\":\"APOG|GPS5\"}},{\"id\":\"line:BROD|FRDN\",\"type\":\"line\",\"layerId\":\"observation-lines\",\"styleId\":\"style-observation-line\",\"visible\":true,\"locked\":false,\"fromStationId\":\"FRDN\",\"toStationId\":\"BROD\",\"fromX\":2487601.211,\"fromY\":7437047.544,\"toX\":2489016.3028707867,\"toY\":7438971.1708240425,\"sourceObservationIds\":[4],\"metadata\":{\"pairKey\":\"BROD|FRDN\"}},{\"id\":\"line:BROD|GPS2\",\"type\":\"line\",\"layerId\":\"observation-lines\",\"styleId\":\"style-observation-line\",\"visible\":true,\"locked\":false,\"fromStationId\":\"GPS2\",\"toStationId\":\"BROD\",\"fromX\":2489236.287826796,\"fromY\":7438481.055385721,\"toX\":2489016.3028707867,\"toY\":7438971.1708240425,\"sourceObservationIds\":[3],\"metadata\":{\"pairKey\":\"BROD|GPS2\"}},{\"id\":\"line:BROD|GPS5\",\"type\":\"line\",\"layerId\":\"observation-lines\",\"styleId\":\"style-observation-line\",\"visible\":true,\"locked\":false,\"fromStationId\":\"BROD\",\"toStationId\":\"GPS5\",\"fromX\":2489016.3028707867,\"fromY\":7438971.1708240425,\"toX\":2489408.523056841,\"toY\":7438251.142361087,\"sourceObservationIds\":[5],\"metadata\":{\"pairKey\":\"BROD|GPS5\"}},{\"id\":\"line:FRDN|GPS5\",\"type\":\"line\",\"layerId\":\"observation-lines\",\"styleId\":\"style-observation-line\",\"visible\":true,\"locked\":false,\"fromStationId\":\"FRDN\",\"toStationId\":\"GPS5\",\"fromX\":2487601.211,\"fromY\":7437047.544,\"toX\":2489408.523056841,\"toY\":7438251.142361087,\"sourceObservationIds\":[7],\"metadata\":{\"pairKey\":\"FRDN|GPS5\"}},{\"id\":\"line:FRDN|OOP\",\"type\":\"line\",\"layerId\":\"observation-lines\",\"styleId\":\"style-observation-line\",\"visible\":true,\"locked\":false,\"fromStationId\":\"FRDN\",\"toStationId\":\"OOP\",\"fromX\":2487601.211,\"fromY\":7437047.544,\"toX\":2488810.237168115,\"toY\":7438438.733022828,\"sourceObservationIds\":[10],\"metadata\":{\"pairKey\":\"FRDN|OOP\"}},{\"id\":\"line:GPS2|GPS5\",\"type\":\"line\",\"layerId\":\"observation-lines\",\"styleId\":\"style-observation-line\",\"visible\":true,\"locked\":false,\"fromStationId\":\"GPS5\",\"toStationId\":\"GPS2\",\"fromX\":2489408.523056841,\"fromY\":7438251.142361087,\"toX\":2489236.287826796,\"toY\":7438481.055385721,\"sourceObservationIds\":[0],\"metadata\":{\"pairKey\":\"GPS2|GPS5\"}},{\"id\":\"line:GPS2|GPS6\",\"type\":\"line\",\"layerId\":\"observation-lines\",\"styleId\":\"style-observation-line\",\"visible\":true,\"locked\":false,\"fromStationId\":\"GPS6\",\"toStationId\":\"GPS2\",\"fromX\":2488974.812477036,\"fromY\":7438735.414150915,\"toX\":2489236.287826796,\"toY\":7438481.055385721,\"sourceObservationIds\":[12],\"metadata\":{\"pairKey\":\"GPS2|GPS6\"}},{\"id\":\"line:GPS5|OOP\",\"type\":\"line\",\"layerId\":\"observation-lines\",\"styleId\":\"style-observation-line\",\"visible\":true,\"locked\":false,\"fromStationId\":\"GPS5\",\"toStationId\":\"OOP\",\"fromX\":2489408.523056841,\"fromY\":7438251.142361087,\"toX\":2488810.237168115,\"toY\":7438438.733022828,\"sourceObservationIds\":[8],\"metadata\":{\"pairKey\":\"GPS5|OOP\"}},{\"id\":\"line:GPS6|OOP\",\"type\":\"line\",\"layerId\":\"observation-lines\",\"styleId\":\"style-observation-line\",\"visible\":true,\"locked\":false,\"fromStationId\":\"OOP\",\"toStationId\":\"GPS6\",\"fromX\":2488810.237168115,\"fromY\":7438438.733022828,\"toX\":2488974.812477036,\"toY\":7438735.414150915,\"sourceObservationIds\":[9,11],\"metadata\":{\"pairKey\":\"GPS6|OOP\"}},{\"id\":\"ellipse:APOG\",\"type\":\"error-ellipse\",\"layerId\":\"error-ellipses\",\"styleId\":\"style-error-ellipse\",\"visible\":true,\"locked\":false,\"stationId\":\"APOG\",\"centerX\":2488813.5862798407,\"centerY\":7438154.060375579,\"semiMajor\":0.00043388528112806756,\"semiMinor\":0.0003368280669874889,\"thetaDeg\":-85.64078138978809,\"metadata\":{\"stationId\":\"APOG\"}},{\"id\":\"ellipse:BROD\",\"type\":\"error-ellipse\",\"layerId\":\"error-ellipses\",\"styleId\":\"style-error-ellipse\",\"visible\":true,\"locked\":false,\"stationId\":\"BROD\",\"centerX\":2489016.3028707867,\"centerY\":7438971.1708240425,\"semiMajor\":0.000693878574160565,\"semiMinor\":0.0005227230900705901,\"thetaDeg\":89.79537642724496,\"metadata\":{\"stationId\":\"BROD\"}},{\"id\":\"ellipse:GPS2\",\"type\":\"error-ellipse\",\"layerId\":\"error-ellipses\",\"styleId\":\"style-error-ellipse\",\"visible\":true,\"locked\":false,\"stationId\":\"GPS2\",\"centerX\":2489236.287826796,\"centerY\":7438481.055385721,\"semiMajor\":0.0006705043570228824,\"semiMinor\":0.0005080487278912956,\"thetaDeg\":81.48878267703414,\"metadata\":{\"stationId\":\"GPS2\"}},{\"id\":\"ellipse:GPS5\",\"type\":\"error-ellipse\",\"layerId\":\"error-ellipses\",\"styleId\":\"style-error-ellipse\",\"visible\":true,\"locked\":false,\"stationId\":\"GPS5\",\"centerX\":2489408.523056841,\"centerY\":7438251.142361087,\"semiMajor\":0.0007534930641646705,\"semiMinor\":0.0006015377962053866,\"thetaDeg\":-77.68735149778057,\"metadata\":{\"stationId\":\"GPS5\"}},{\"id\":\"ellipse:GPS6\",\"type\":\"error-ellipse\",\"layerId\":\"error-ellipses\",\"styleId\":\"style-error-ellipse\",\"visible\":true,\"locked\":false,\"stationId\":\"GPS6\",\"centerX\":2488974.812477036,\"centerY\":7438735.414150915,\"semiMajor\":0.0008380778192752662,\"semiMinor\":0.0005819725809647814,\"thetaDeg\":-79.4213934674404,\"metadata\":{\"stationId\":\"GPS6\"}},{\"id\":\"ellipse:OOP\",\"type\":\"error-ellipse\",\"layerId\":\"error-ellipses\",\"styleId\":\"style-error-ellipse\",\"visible\":true,\"locked\":false,\"stationId\":\"OOP\",\"centerX\":2488810.237168115,\"centerY\":7438438.733022828,\"semiMajor\":0.00047134149273472727,\"semiMinor\":0.0003195575767188656,\"thetaDeg\":-79.94944190581751,\"metadata\":{\"stationId\":\"OOP\"}},{\"id\":\"label:APOG\",\"type\":\"text\",\"layerId\":\"labels\",\"styleId\":\"style-label\",\"visible\":true,\"locked\":false,\"x\":2488813.5862798407,\"y\":7438154.060375579,\"text\":\"APOG\",\"anchorEntityId\":\"pt:APOG\",\"metadata\":{\"stationId\":\"APOG\"}},{\"id\":\"label:BROD\",\"type\":\"text\",\"layerId\":\"labels\",\"styleId\":\"style-label\",\"visible\":true,\"locked\":false,\"x\":2489016.3028707867,\"y\":7438971.1708240425,\"text\":\"BROD\",\"anchorEntityId\":\"pt:BROD\",\"metadata\":{\"stationId\":\"BROD\"}},{\"id\":\"label:FRDN\",\"type\":\"text\",\"layerId\":\"labels\",\"styleId\":\"style-label\",\"visible\":true,\"locked\":false,\"x\":2487601.211,\"y\":7437047.544,\"text\":\"FRDN\",\"anchorEntityId\":\"pt:FRDN\",\"metadata\":{\"stationId\":\"FRDN\"}},{\"id\":\"label:GPS2\",\"type\":\"text\",\"layerId\":\"labels\",\"styleId\":\"style-label\",\"visible\":true,\"locked\":false,\"x\":2489236.287826796,\"y\":7438481.055385721,\"text\":\"GPS2\",\"anchorEntityId\":\"pt:GPS2\",\"metadata\":{\"stationId\":\"GPS2\"}},{\"id\":\"label:GPS5\",\"type\":\"text\",\"layerId\":\"labels\",\"styleId\":\"style-label\",\"visible\":true,\"locked\":false,\"x\":2489408.523056841,\"y\":7438251.142361087,\"text\":\"GPS5\",\"anchorEntityId\":\"pt:GPS5\",\"metadata\":{\"stationId\":\"GPS5\"}},{\"id\":\"label:GPS6\",\"type\":\"text\",\"layerId\":\"labels\",\"styleId\":\"style-label\",\"visible\":true,\"locked\":false,\"x\":2488974.812477036,\"y\":7438735.414150915,\"text\":\"GPS6\",\"anchorEntityId\":\"pt:GPS6\",\"metadata\":{\"stationId\":\"GPS6\"}},{\"id\":\"label:OOP\",\"type\":\"text\",\"layerId\":\"labels\",\"styleId\":\"style-label\",\"visible\":true,\"locked\":false,\"x\":2488810.237168115,\"y\":7438438.733022828,\"text\":\"OOP\",\"anchorEntityId\":\"pt:OOP\",\"metadata\":{\"stationId\":\"OOP\"}}],\"cogoComputations\":[],\"bounds\":{\"minX\":2487601.211,\"minY\":7437047.544,\"maxX\":2489408.523810334,\"maxY\":7438971.171517921}}",
+    "project": {
+      "version": 2,
+      "id": "survey-cad-spike-project",
+      "name": "Adjusted Survey CAD Spike",
+      "metadata": {
+        "source": "adjustment-result",
+        "runMode": "adjustment",
+        "units": "m",
+        "stationCount": 7,
+        "observationCount": 13,
+        "adjustedStationCount": 7
+      },
+      "layers": [
+        {
+          "id": "control-points",
+          "name": "Control Points",
+          "color": "#f59e0b",
+          "defaultStyleId": "style-control-point",
+          "visible": true,
+          "locked": false,
+          "role": "control-points"
+        },
+        {
+          "id": "points",
+          "name": "Survey Points",
+          "color": "#38bdf8",
+          "defaultStyleId": "style-point",
+          "visible": true,
+          "locked": false,
+          "role": "points"
+        },
+        {
+          "id": "observation-lines",
+          "name": "Observation Lines",
+          "color": "#22c55e",
+          "defaultStyleId": "style-observation-line",
+          "visible": true,
+          "locked": false,
+          "role": "observation-lines"
+        },
+        {
+          "id": "error-ellipses",
+          "name": "Error Ellipses",
+          "color": "#f472b6",
+          "lineTypeId": "dash-short",
+          "defaultStyleId": "style-error-ellipse",
+          "visible": true,
+          "locked": false,
+          "role": "error-ellipses"
+        },
+        {
+          "id": "labels",
+          "name": "Labels",
+          "color": "#e2e8f0",
+          "defaultStyleId": "style-label",
+          "visible": true,
+          "locked": false,
+          "role": "labels"
+        },
+        {
+          "id": "parcels",
+          "name": "Parcels",
+          "color": "#f59e0b",
+          "defaultStyleId": "style-parcel",
+          "visible": true,
+          "locked": false,
+          "role": "parcels"
+        }
+      ],
+      "styleLibrary": {
+        "lineTypes": [
+          {
+            "id": "continuous",
+            "name": "Continuous",
+            "dashPattern": []
+          },
+          {
+            "id": "dash-short",
+            "name": "Dash Short",
+            "dashPattern": [
+              6,
+              4
+            ]
+          }
+        ],
+        "textStyles": [
+          {
+            "id": "label-default",
+            "name": "Label Default",
+            "fontFamily": "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+            "fontSize": 11
+          }
+        ],
+        "pointSymbols": [
+          {
+            "id": "point-free",
+            "name": "Free Point",
+            "radius": 1.8
+          },
+          {
+            "id": "point-control",
+            "name": "Control Point",
+            "radius": 2.4
+          }
+        ],
+        "styles": [
+          {
+            "id": "style-control-point",
+            "name": "Control Point",
+            "color": "#f59e0b",
+            "strokeWidth": 1.2,
+            "pointSymbolId": "point-control"
+          },
+          {
+            "id": "style-point",
+            "name": "Survey Point",
+            "color": "#38bdf8",
+            "strokeWidth": 1.2,
+            "pointSymbolId": "point-free"
+          },
+          {
+            "id": "style-observation-line",
+            "name": "Observation Line",
+            "color": "#22c55e",
+            "strokeWidth": 1.25,
+            "lineTypeId": "continuous"
+          },
+          {
+            "id": "style-error-ellipse",
+            "name": "Error Ellipse",
+            "color": "#f472b6",
+            "strokeWidth": 1.1,
+            "lineTypeId": "dash-short"
+          },
+          {
+            "id": "style-label",
+            "name": "Label",
+            "color": "#e2e8f0",
+            "textStyleId": "label-default"
+          },
+          {
+            "id": "style-parcel",
+            "name": "Parcel",
+            "color": "#f59e0b",
+            "strokeWidth": 1.5,
+            "lineTypeId": "continuous"
+          }
+        ]
+      },
+      "entities": [
+        {
+          "id": "pt:APOG",
+          "type": "survey-point",
+          "layerId": "points",
+          "styleId": "style-point",
+          "visible": true,
+          "locked": false,
+          "stationId": "APOG",
+          "x": 2488813.5862798407,
+          "y": 7438154.060375579,
+          "z": 82.63120785264394,
+          "pointClass": "free",
+          "source": "adjustment-result",
+          "errorEllipse": {
+            "semiMajor": 0.00043388528112806756,
+            "semiMinor": 0.0003368280669874889,
+            "theta": -85.64078138978809
+          },
+          "metadata": {
+            "fixed": false,
+            "coordInputClass": "grid"
+          }
+        },
+        {
+          "id": "pt:BROD",
+          "type": "survey-point",
+          "layerId": "points",
+          "styleId": "style-point",
+          "visible": true,
+          "locked": false,
+          "stationId": "BROD",
+          "x": 2489016.3028707867,
+          "y": 7438971.1708240425,
+          "z": 16.808806892296605,
+          "pointClass": "free",
+          "source": "adjustment-result",
+          "errorEllipse": {
+            "semiMajor": 0.000693878574160565,
+            "semiMinor": 0.0005227230900705901,
+            "theta": 89.79537642724496
+          },
+          "metadata": {
+            "fixed": false,
+            "coordInputClass": "grid"
+          }
+        },
+        {
+          "id": "pt:FRDN",
+          "type": "survey-point",
+          "layerId": "control-points",
+          "styleId": "style-control-point",
+          "visible": true,
+          "locked": false,
+          "stationId": "FRDN",
+          "x": 2487601.211,
+          "y": 7437047.544,
+          "z": 117.93,
+          "pointClass": "control",
+          "source": "adjustment-result",
+          "metadata": {
+            "fixed": true,
+            "coordInputClass": "grid"
+          }
+        },
+        {
+          "id": "pt:GPS2",
+          "type": "survey-point",
+          "layerId": "points",
+          "styleId": "style-point",
+          "visible": true,
+          "locked": false,
+          "stationId": "GPS2",
+          "x": 2489236.287826796,
+          "y": 7438481.055385721,
+          "z": 37.70257005276448,
+          "pointClass": "free",
+          "source": "adjustment-result",
+          "errorEllipse": {
+            "semiMajor": 0.0006705043570228824,
+            "semiMinor": 0.0005080487278912956,
+            "theta": 81.48878267703414
+          },
+          "metadata": {
+            "fixed": false,
+            "coordInputClass": "grid"
+          }
+        },
+        {
+          "id": "pt:GPS5",
+          "type": "survey-point",
+          "layerId": "points",
+          "styleId": "style-point",
+          "visible": true,
+          "locked": false,
+          "stationId": "GPS5",
+          "x": 2489408.523056841,
+          "y": 7438251.142361087,
+          "z": 44.69149344408647,
+          "pointClass": "free",
+          "source": "adjustment-result",
+          "errorEllipse": {
+            "semiMajor": 0.0007534930641646705,
+            "semiMinor": 0.0006015377962053866,
+            "theta": -77.68735149778057
+          },
+          "metadata": {
+            "fixed": false,
+            "coordInputClass": "grid"
+          }
+        },
+        {
+          "id": "pt:GPS6",
+          "type": "survey-point",
+          "layerId": "points",
+          "styleId": "style-point",
+          "visible": true,
+          "locked": false,
+          "stationId": "GPS6",
+          "x": 2488974.812477036,
+          "y": 7438735.414150915,
+          "z": 34.30541624460586,
+          "pointClass": "free",
+          "source": "adjustment-result",
+          "errorEllipse": {
+            "semiMajor": 0.0008380778192752662,
+            "semiMinor": 0.0005819725809647814,
+            "theta": -79.4213934674404
+          },
+          "metadata": {
+            "fixed": false,
+            "coordInputClass": "grid"
+          }
+        },
+        {
+          "id": "pt:OOP",
+          "type": "survey-point",
+          "layerId": "points",
+          "styleId": "style-point",
+          "visible": true,
+          "locked": false,
+          "stationId": "OOP",
+          "x": 2488810.237168115,
+          "y": 7438438.733022828,
+          "z": 64.8731801826285,
+          "pointClass": "free",
+          "source": "adjustment-result",
+          "errorEllipse": {
+            "semiMajor": 0.00047134149273472727,
+            "semiMinor": 0.0003195575767188656,
+            "theta": -79.94944190581751
+          },
+          "metadata": {
+            "fixed": false,
+            "coordInputClass": "grid"
+          }
+        },
+        {
+          "id": "line:APOG|FRDN",
+          "type": "line",
+          "layerId": "observation-lines",
+          "styleId": "style-observation-line",
+          "visible": true,
+          "locked": false,
+          "fromStationId": "FRDN",
+          "toStationId": "APOG",
+          "fromX": 2487601.211,
+          "fromY": 7437047.544,
+          "toX": 2488813.5862798407,
+          "toY": 7438154.060375579,
+          "sourceObservationIds": [
+            1
+          ],
+          "metadata": {
+            "pairKey": "APOG|FRDN"
+          }
+        },
+        {
+          "id": "line:APOG|GPS2",
+          "type": "line",
+          "layerId": "observation-lines",
+          "styleId": "style-observation-line",
+          "visible": true,
+          "locked": false,
+          "fromStationId": "APOG",
+          "toStationId": "GPS2",
+          "fromX": 2488813.5862798407,
+          "fromY": 7438154.060375579,
+          "toX": 2489236.287826796,
+          "toY": 7438481.055385721,
+          "sourceObservationIds": [
+            2
+          ],
+          "metadata": {
+            "pairKey": "APOG|GPS2"
+          }
+        },
+        {
+          "id": "line:APOG|GPS5",
+          "type": "line",
+          "layerId": "observation-lines",
+          "styleId": "style-observation-line",
+          "visible": true,
+          "locked": false,
+          "fromStationId": "GPS5",
+          "toStationId": "APOG",
+          "fromX": 2489408.523056841,
+          "fromY": 7438251.142361087,
+          "toX": 2488813.5862798407,
+          "toY": 7438154.060375579,
+          "sourceObservationIds": [
+            6
+          ],
+          "metadata": {
+            "pairKey": "APOG|GPS5"
+          }
+        },
+        {
+          "id": "line:BROD|FRDN",
+          "type": "line",
+          "layerId": "observation-lines",
+          "styleId": "style-observation-line",
+          "visible": true,
+          "locked": false,
+          "fromStationId": "FRDN",
+          "toStationId": "BROD",
+          "fromX": 2487601.211,
+          "fromY": 7437047.544,
+          "toX": 2489016.3028707867,
+          "toY": 7438971.1708240425,
+          "sourceObservationIds": [
+            4
+          ],
+          "metadata": {
+            "pairKey": "BROD|FRDN"
+          }
+        },
+        {
+          "id": "line:BROD|GPS2",
+          "type": "line",
+          "layerId": "observation-lines",
+          "styleId": "style-observation-line",
+          "visible": true,
+          "locked": false,
+          "fromStationId": "GPS2",
+          "toStationId": "BROD",
+          "fromX": 2489236.287826796,
+          "fromY": 7438481.055385721,
+          "toX": 2489016.3028707867,
+          "toY": 7438971.1708240425,
+          "sourceObservationIds": [
+            3
+          ],
+          "metadata": {
+            "pairKey": "BROD|GPS2"
+          }
+        },
+        {
+          "id": "line:BROD|GPS5",
+          "type": "line",
+          "layerId": "observation-lines",
+          "styleId": "style-observation-line",
+          "visible": true,
+          "locked": false,
+          "fromStationId": "BROD",
+          "toStationId": "GPS5",
+          "fromX": 2489016.3028707867,
+          "fromY": 7438971.1708240425,
+          "toX": 2489408.523056841,
+          "toY": 7438251.142361087,
+          "sourceObservationIds": [
+            5
+          ],
+          "metadata": {
+            "pairKey": "BROD|GPS5"
+          }
+        },
+        {
+          "id": "line:FRDN|GPS5",
+          "type": "line",
+          "layerId": "observation-lines",
+          "styleId": "style-observation-line",
+          "visible": true,
+          "locked": false,
+          "fromStationId": "FRDN",
+          "toStationId": "GPS5",
+          "fromX": 2487601.211,
+          "fromY": 7437047.544,
+          "toX": 2489408.523056841,
+          "toY": 7438251.142361087,
+          "sourceObservationIds": [
+            7
+          ],
+          "metadata": {
+            "pairKey": "FRDN|GPS5"
+          }
+        },
+        {
+          "id": "line:FRDN|OOP",
+          "type": "line",
+          "layerId": "observation-lines",
+          "styleId": "style-observation-line",
+          "visible": true,
+          "locked": false,
+          "fromStationId": "FRDN",
+          "toStationId": "OOP",
+          "fromX": 2487601.211,
+          "fromY": 7437047.544,
+          "toX": 2488810.237168115,
+          "toY": 7438438.733022828,
+          "sourceObservationIds": [
+            10
+          ],
+          "metadata": {
+            "pairKey": "FRDN|OOP"
+          }
+        },
+        {
+          "id": "line:GPS2|GPS5",
+          "type": "line",
+          "layerId": "observation-lines",
+          "styleId": "style-observation-line",
+          "visible": true,
+          "locked": false,
+          "fromStationId": "GPS5",
+          "toStationId": "GPS2",
+          "fromX": 2489408.523056841,
+          "fromY": 7438251.142361087,
+          "toX": 2489236.287826796,
+          "toY": 7438481.055385721,
+          "sourceObservationIds": [
+            0
+          ],
+          "metadata": {
+            "pairKey": "GPS2|GPS5"
+          }
+        },
+        {
+          "id": "line:GPS2|GPS6",
+          "type": "line",
+          "layerId": "observation-lines",
+          "styleId": "style-observation-line",
+          "visible": true,
+          "locked": false,
+          "fromStationId": "GPS6",
+          "toStationId": "GPS2",
+          "fromX": 2488974.812477036,
+          "fromY": 7438735.414150915,
+          "toX": 2489236.287826796,
+          "toY": 7438481.055385721,
+          "sourceObservationIds": [
+            12
+          ],
+          "metadata": {
+            "pairKey": "GPS2|GPS6"
+          }
+        },
+        {
+          "id": "line:GPS5|OOP",
+          "type": "line",
+          "layerId": "observation-lines",
+          "styleId": "style-observation-line",
+          "visible": true,
+          "locked": false,
+          "fromStationId": "GPS5",
+          "toStationId": "OOP",
+          "fromX": 2489408.523056841,
+          "fromY": 7438251.142361087,
+          "toX": 2488810.237168115,
+          "toY": 7438438.733022828,
+          "sourceObservationIds": [
+            8
+          ],
+          "metadata": {
+            "pairKey": "GPS5|OOP"
+          }
+        },
+        {
+          "id": "line:GPS6|OOP",
+          "type": "line",
+          "layerId": "observation-lines",
+          "styleId": "style-observation-line",
+          "visible": true,
+          "locked": false,
+          "fromStationId": "OOP",
+          "toStationId": "GPS6",
+          "fromX": 2488810.237168115,
+          "fromY": 7438438.733022828,
+          "toX": 2488974.812477036,
+          "toY": 7438735.414150915,
+          "sourceObservationIds": [
+            9,
+            11
+          ],
+          "metadata": {
+            "pairKey": "GPS6|OOP"
+          }
+        },
+        {
+          "id": "ellipse:APOG",
+          "type": "error-ellipse",
+          "layerId": "error-ellipses",
+          "styleId": "style-error-ellipse",
+          "visible": true,
+          "locked": false,
+          "stationId": "APOG",
+          "centerX": 2488813.5862798407,
+          "centerY": 7438154.060375579,
+          "semiMajor": 0.00043388528112806756,
+          "semiMinor": 0.0003368280669874889,
+          "thetaDeg": -85.64078138978809,
+          "metadata": {
+            "stationId": "APOG"
+          }
+        },
+        {
+          "id": "ellipse:BROD",
+          "type": "error-ellipse",
+          "layerId": "error-ellipses",
+          "styleId": "style-error-ellipse",
+          "visible": true,
+          "locked": false,
+          "stationId": "BROD",
+          "centerX": 2489016.3028707867,
+          "centerY": 7438971.1708240425,
+          "semiMajor": 0.000693878574160565,
+          "semiMinor": 0.0005227230900705901,
+          "thetaDeg": 89.79537642724496,
+          "metadata": {
+            "stationId": "BROD"
+          }
+        },
+        {
+          "id": "ellipse:GPS2",
+          "type": "error-ellipse",
+          "layerId": "error-ellipses",
+          "styleId": "style-error-ellipse",
+          "visible": true,
+          "locked": false,
+          "stationId": "GPS2",
+          "centerX": 2489236.287826796,
+          "centerY": 7438481.055385721,
+          "semiMajor": 0.0006705043570228824,
+          "semiMinor": 0.0005080487278912956,
+          "thetaDeg": 81.48878267703414,
+          "metadata": {
+            "stationId": "GPS2"
+          }
+        },
+        {
+          "id": "ellipse:GPS5",
+          "type": "error-ellipse",
+          "layerId": "error-ellipses",
+          "styleId": "style-error-ellipse",
+          "visible": true,
+          "locked": false,
+          "stationId": "GPS5",
+          "centerX": 2489408.523056841,
+          "centerY": 7438251.142361087,
+          "semiMajor": 0.0007534930641646705,
+          "semiMinor": 0.0006015377962053866,
+          "thetaDeg": -77.68735149778057,
+          "metadata": {
+            "stationId": "GPS5"
+          }
+        },
+        {
+          "id": "ellipse:GPS6",
+          "type": "error-ellipse",
+          "layerId": "error-ellipses",
+          "styleId": "style-error-ellipse",
+          "visible": true,
+          "locked": false,
+          "stationId": "GPS6",
+          "centerX": 2488974.812477036,
+          "centerY": 7438735.414150915,
+          "semiMajor": 0.0008380778192752662,
+          "semiMinor": 0.0005819725809647814,
+          "thetaDeg": -79.4213934674404,
+          "metadata": {
+            "stationId": "GPS6"
+          }
+        },
+        {
+          "id": "ellipse:OOP",
+          "type": "error-ellipse",
+          "layerId": "error-ellipses",
+          "styleId": "style-error-ellipse",
+          "visible": true,
+          "locked": false,
+          "stationId": "OOP",
+          "centerX": 2488810.237168115,
+          "centerY": 7438438.733022828,
+          "semiMajor": 0.00047134149273472727,
+          "semiMinor": 0.0003195575767188656,
+          "thetaDeg": -79.94944190581751,
+          "metadata": {
+            "stationId": "OOP"
+          }
+        },
+        {
+          "id": "label:APOG",
+          "type": "text",
+          "layerId": "labels",
+          "styleId": "style-label",
+          "visible": true,
+          "locked": false,
+          "x": 2488813.5862798407,
+          "y": 7438154.060375579,
+          "text": "APOG",
+          "anchorEntityId": "pt:APOG",
+          "metadata": {
+            "stationId": "APOG"
+          }
+        },
+        {
+          "id": "label:BROD",
+          "type": "text",
+          "layerId": "labels",
+          "styleId": "style-label",
+          "visible": true,
+          "locked": false,
+          "x": 2489016.3028707867,
+          "y": 7438971.1708240425,
+          "text": "BROD",
+          "anchorEntityId": "pt:BROD",
+          "metadata": {
+            "stationId": "BROD"
+          }
+        },
+        {
+          "id": "label:FRDN",
+          "type": "text",
+          "layerId": "labels",
+          "styleId": "style-label",
+          "visible": true,
+          "locked": false,
+          "x": 2487601.211,
+          "y": 7437047.544,
+          "text": "FRDN",
+          "anchorEntityId": "pt:FRDN",
+          "metadata": {
+            "stationId": "FRDN"
+          }
+        },
+        {
+          "id": "label:GPS2",
+          "type": "text",
+          "layerId": "labels",
+          "styleId": "style-label",
+          "visible": true,
+          "locked": false,
+          "x": 2489236.287826796,
+          "y": 7438481.055385721,
+          "text": "GPS2",
+          "anchorEntityId": "pt:GPS2",
+          "metadata": {
+            "stationId": "GPS2"
+          }
+        },
+        {
+          "id": "label:GPS5",
+          "type": "text",
+          "layerId": "labels",
+          "styleId": "style-label",
+          "visible": true,
+          "locked": false,
+          "x": 2489408.523056841,
+          "y": 7438251.142361087,
+          "text": "GPS5",
+          "anchorEntityId": "pt:GPS5",
+          "metadata": {
+            "stationId": "GPS5"
+          }
+        },
+        {
+          "id": "label:GPS6",
+          "type": "text",
+          "layerId": "labels",
+          "styleId": "style-label",
+          "visible": true,
+          "locked": false,
+          "x": 2488974.812477036,
+          "y": 7438735.414150915,
+          "text": "GPS6",
+          "anchorEntityId": "pt:GPS6",
+          "metadata": {
+            "stationId": "GPS6"
+          }
+        },
+        {
+          "id": "label:OOP",
+          "type": "text",
+          "layerId": "labels",
+          "styleId": "style-label",
+          "visible": true,
+          "locked": false,
+          "x": 2488810.237168115,
+          "y": 7438438.733022828,
+          "text": "OOP",
+          "anchorEntityId": "pt:OOP",
+          "metadata": {
+            "stationId": "OOP"
+          }
+        }
+      ],
+      "cogoComputations": [],
+      "bounds": {
+        "minX": 2487601.211,
+        "minY": 7437047.544,
+        "maxX": 2489408.523810334,
+        "maxY": 7438971.171517921
+      }
+    },
+    "showParcelLabels": true
+  }
+}

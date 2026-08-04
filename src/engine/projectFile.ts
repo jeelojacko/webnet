@@ -2,11 +2,11 @@ import {
   DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
   sanitizeAdjustedPointsExportSettings,
 } from './adjustedPointsExport';
-import { clonePlanningMapState, sanitizePlanningMapState } from './planningMapState';
+import { sanitizePlanningMapState } from './planningMapState';
 import {
-  cloneSurveyCadPersistedState,
   sanitizeSurveyCadPersistedState,
 } from './cad/cadPersistence';
+import { clonePlanningMapStateForProjectExport } from './projectExportSlimming';
 import { normalizeListingSortObservationsBy } from '../listingSortObservations';
 import {
   createManifestFromFlatProject,
@@ -66,7 +66,7 @@ export const serializeProjectFile = (project: ParsedProjectPayload): string => {
         DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
       ),
       planningMap: project.ui.planningMap
-        ? clonePlanningMapState(project.ui.planningMap)
+        ? clonePlanningMapStateForProjectExport(project.ui.planningMap)
         : undefined,
       geoidSourceDataBase64:
         typeof project.ui.geoidSourceDataBase64 === 'string' &&
@@ -89,9 +89,6 @@ export const serializeProjectFile = (project: ParsedProjectPayload): string => {
       levelLoopCustomPresets: project.project.levelLoopCustomPresets.map((preset) => ({
         ...preset,
       })),
-      surveyCad: project.project.surveyCad
-        ? cloneSurveyCadPersistedState(project.project.surveyCad)
-        : undefined,
     },
     preferredFocusedFileId: project.workspace?.focusedFileId,
   });

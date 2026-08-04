@@ -17,6 +17,7 @@ import {
   buildProjectBundleBytes,
   parseProjectBundleBytes,
 } from '../engine/projectBundle';
+import { buildSurveyCadSidecarText } from '../engine/projectExportSlimming';
 import {
   parseProjectFile,
   serializeProjectFile,
@@ -101,20 +102,32 @@ export const useProjectPortableActions = ({
   storageStatus,
 }: UseProjectPortableActionsArgs) => {
   const exportPortableProject = useCallback(async () => {
+    const payload = buildPortablePayload();
     const suggestedName = projectSession
       ? `${projectSession.manifest.name.replace(/\s+/g, '-').toLowerCase()}.wnproj.json`
       : `webnet-project-${new Date().toISOString().slice(0, 10)}.wnproj.json`;
     const saved = await saveBrowserTextFile(
       suggestedName,
-      serializeProjectFile(buildPortablePayload()),
+      serializeProjectFile(payload),
       PROJECT_IMPORT_FILE_TYPES,
     );
     if (!saved) return;
+    const surveyCad = projectFlatWorkspacePayload.surveyCadState ?? payload.project.surveyCad;
+    if (surveyCad) {
+      const sidecarName = suggestedName.replace(/\.wnproj(?:\.json)?$/i, '.survey-cad.json');
+      await saveBrowserTextFile(
+        sidecarName,
+        buildSurveyCadSidecarText(surveyCad),
+        PROJECT_IMPORT_FILE_TYPES,
+      );
+    }
     setImportNotice({
       title: 'Portable project exported',
-      detailLines: [`Wrote ${suggestedName}.`],
+      detailLines: surveyCad
+        ? [`Wrote ${suggestedName}.`, 'Wrote Survey CAD state to a separate sidecar file.']
+        : [`Wrote ${suggestedName}.`],
     });
-  }, [buildPortablePayload, projectSession, setImportNotice]);
+  }, [buildPortablePayload, projectFlatWorkspacePayload.surveyCadState, projectSession, setImportNotice]);
 
   const exportProjectBundle = useCallback(async () => {
     const seed =
@@ -271,6 +284,51 @@ export const useProjectPortableActions = ({
     ],
   );
 
+  const openPermanentExampleProject = useCallback(
+    async (projectUrl: string) => {
+      try {
+        const response = await fetch(projectUrl);
+        if (!response.ok) {
+          throw new Error(`Example project request failed (${response.status}).`);
+        }
+        const rawText = await response.text();
+        const parsed = parseProjectFile(rawText, {
+          settings: settings as unknown as Record<string, unknown>,
+          parseSettings: parseSettings as unknown as Record<string, unknown>,
+          exportFormat,
+          adjustedPointsExport: adjustedPointsExportSettings,
+          projectInstruments,
+          selectedInstrument,
+          levelLoopCustomPresets,
+        });
+        if (!parsed.ok) {
+          setImportNotice({
+            title: 'Example project load failed',
+            detailLines: parsed.errors,
+          });
+          return;
+        }
+        await importPortablePayloadAsLocalProject(parsed.project);
+      } catch (error) {
+        setImportNotice({
+          title: 'Example project load failed',
+          detailLines: [error instanceof Error ? error.message : String(error)],
+        });
+      }
+    },
+    [
+      adjustedPointsExportSettings,
+      exportFormat,
+      importPortablePayloadAsLocalProject,
+      levelLoopCustomPresets,
+      parseSettings,
+      projectInstruments,
+      selectedInstrument,
+      setImportNotice,
+      settings,
+    ],
+  );
+
   const handleProjectFileChange = useCallback(
     async (e: ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
@@ -327,6 +385,7 @@ export const useProjectPortableActions = ({
     exportPortableProject,
     exportProjectBundle,
     handleProjectFileChange,
+    openPermanentExampleProject,
     importPortablePayloadAsLocalProject,
     importProjectBundleAsLocalProject,
   };

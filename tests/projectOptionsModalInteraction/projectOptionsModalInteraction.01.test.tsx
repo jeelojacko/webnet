@@ -42,6 +42,10 @@ describe('Project Options modal workspace and general interactions', () => {
 
       expect(container.textContent).toContain('Manifest schema');
       expect(container.textContent).toContain('Create Local Project');
+      expect(container.textContent).toContain('Example Projects');
+      expect(container.textContent).toContain('Pre-analysis');
+      expect(container.textContent).toContain('Combined');
+      expect(container.textContent).toContain('Combined (split files)');
       expect(container.textContent).toContain('Recent Local Projects');
     } finally {
       await act(async () => {

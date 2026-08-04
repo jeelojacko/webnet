@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { strFromU8, unzipSync } from 'fflate';
 
 import {
   buildProjectBundleBytes,
@@ -127,8 +128,12 @@ describe('project bundle serialization', () => {
       'obs/job-1.dat': 'C B 10 20 0',
       'obs/job-2.dat': '.INCLUDE obs/job-1.dat',
     });
-    expect(parsed.manifest.project.surveyCad?.project.entities[0]?.type).toBe('parcel');
-    expect(parsed.manifest.project.surveyCad?.project.entities[0]).toMatchObject({
+    expect(parsed.manifest.project.surveyCad).toBeUndefined();
+
+    const archive = unzipSync(bytes);
+    const surveyCadSidecar = JSON.parse(strFromU8(archive['survey-cad.json']));
+    expect(surveyCadSidecar.surveyCad.project.entities[0]?.type).toBe('parcel');
+    expect(surveyCadSidecar.surveyCad.project.entities[0]).toMatchObject({
       id: 'parcel-1',
       parcelName: 'Lot 1',
     });

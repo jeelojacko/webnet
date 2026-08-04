@@ -205,6 +205,7 @@ export const useProjectFileWorkflow = ({
     exportPortableProject,
     exportProjectBundle,
     handleProjectFileChange,
+    openPermanentExampleProject,
   } = useProjectPortableActions({
     adjustedPointsExportSettings,
     applyLoadedProjectPayload,
@@ -343,6 +344,7 @@ export const useProjectFileWorkflow = ({
     handleProjectSourceFileChange,
     createLocalProjectFromCurrentWorkspace,
     openProjectById,
+    openPermanentExampleProject,
     deleteLocalProject,
     exportPortableProject,
     exportProjectBundle,

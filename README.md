@@ -40,6 +40,7 @@ Successful startup looks like:
   In preanalysis mode, the report can now recommend added repeated setup sets plus obstacle-aware synthetic brace, promoted-setup, synthetic-setup, and cross-tie scenarios near weak geometry, and estimate how many added scenarios are needed to reach an optional planning threshold. The 2D `Map & Ellipses` tab can be used before the first run to load raw input points, show an OSM basemap, auto-fetch OSM building/wooded obstacle footprints for georeferenced runs near the measured network bounds, and store user-drawn or edited blocked polygons that feed back into the planner.
 - Use [public/examples/nb double stereo.dat](public/examples/nb%20double%20stereo.dat) for a projected-grid total station example focused on TS workflow only.
 - Keep [public/examples/industry_demo.dat](public/examples/industry_demo.dat) as a broader legacy/general sample, not the recommended first tutorial dataset.
+- In `Project Options -> Project Files`, use `Example Projects` to open the built-in `Pre-analysis`, `Combined`, or `Combined (split files)` project workspaces.
 
 ## Validate
 
@@ -91,6 +92,7 @@ npm run test:map-browser
 
 - Edit or load adjustment input in the browser.
 - Configure solve settings in `Project Options`.
+- Open built-in example projects from `Project Options -> Project Files -> Example Projects`.
 - Open `Survey CAD` from the toolbar to review the CAD roadmap plus the live native-model/renderer spike preview, first command-history actions (`Select All`, `Clear Selection`, `ERASE`, `Undo`, `Redo`), snap feedback (`point-node`, `endpoint`, `midpoint`, `center`, `arc-midpoint`, `quadrant`, `intersection`, `apparent-intersection`, `extension`, `perpendicular`, `parallel`, `tangent`, `nearest`) including curve-aware nearest/intersection behavior, zoom-aware snap range and endpoint-first priority, compound construction snapping where locked `extension` / `perpendicular` / `parallel` can refine onto on-line intersection targets, `Shift`-locked construction drafting, endpoint-scoped `parallel` plus two-hop line-based `extension` / `apparent-intersection` filtering with highlighted source guides, command-context construction and tangent snaps, visible arc-arc apparent intersections, a live base-point construction hint while those snaps are armed, a live colored snap-kind badge while hovering a resolved snap, and ghost guide lines for construction-style snap hits, typed command input (`POINT`, `COGO PT`, `LINE`, `PLINE`, `INVERSE`, `MOVE`, `COPY`, `INTX`) with coordinate / azimuth-distance / survey bearing-distance entry, and adapter export seam.
 - In `Run Mode = Preanalysis`, optionally set a planning accuracy threshold and max added sets, then review obstacle-aware planning recommendations in the report and on the 2D map.
 - Run `Adjust`.

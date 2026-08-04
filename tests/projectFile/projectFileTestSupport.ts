@@ -3,6 +3,7 @@ import {
   sanitizeAdjustedPointsExportSettings,
 } from '../../src/engine/adjustedPointsExport';
 import { parseProjectFile, serializeProjectFile } from '../../src/engine/projectFile';
+import { buildSurveyCadSidecarText } from '../../src/engine/projectExportSlimming';
 import type { RunSettingsSnapshot } from '../../src/appStateTypes';
 import type { AdjustmentResult, InstrumentLibrary } from '../../src/types';
 import type { SurveyCadPersistedState } from '../../src/engine/cad/cadTypes';
@@ -12,6 +13,7 @@ export {
   parseProjectFile,
   sanitizeAdjustedPointsExportSettings,
   serializeProjectFile,
+  buildSurveyCadSidecarText,
 };
 export type { RunSettingsSnapshot };
 export const savedRunResult = {

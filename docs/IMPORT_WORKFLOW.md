@@ -163,6 +163,17 @@ Current behavior:
 - unsupported foreign-only domains are ignored and reported in the import notice
 - importing settings does not replace the current project file list
 
+### Built-in example projects
+`Project Options -> Project Files` lists permanent example projects above recent local projects. These examples are loaded through the same portable-project parser as user-imported `.wnproj` files.
+
+Current examples:
+- `Pre-analysis`
+- `Combined`
+- `Combined (split files)`
+
+### Lean project exports
+Portable `.wnproj` exports and zipped project bundles keep adjustment settings and source files in the main project payload. Refetchable OSM obstacle footprints are omitted from exported planning-map state, while user-drawn blocked polygons remain in the project. Survey CAD state is exported separately as `*.survey-cad.json` when present, and zipped bundles place that same sidecar at `survey-cad.json`.
+
 ## Reconciliation and conflict handling
 
 ### Editor-content scan

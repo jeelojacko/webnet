@@ -1,4 +1,5 @@
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
+import { buildSurveyCadSidecarText } from './projectExportSlimming';
 import type { WebNetProjectManifestV5 } from './projectWorkspace';
 
 export interface ParsedProjectBundle {
@@ -10,12 +11,33 @@ export const buildProjectBundleBytes = ({
   manifest,
   sourceTexts,
 }: ParsedProjectBundle): Uint8Array => {
+  const surveyCad = manifest.project.surveyCad;
+  const slimManifest: WebNetProjectManifestV5 = {
+    ...manifest,
+    ui: manifest.ui.planningMap
+      ? {
+          ...manifest.ui,
+          planningMap: {
+            ...manifest.ui.planningMap,
+            obstaclePolygons: [],
+          },
+        }
+      : manifest.ui,
+    project: {
+      projectInstruments: manifest.project.projectInstruments,
+      selectedInstrument: manifest.project.selectedInstrument,
+      levelLoopCustomPresets: manifest.project.levelLoopCustomPresets,
+    },
+  };
   const archiveEntries: Record<string, Uint8Array> = {
-    'project.wnproj': strToU8(JSON.stringify(manifest, null, 2)),
+    'project.wnproj': strToU8(JSON.stringify(slimManifest, null, 2)),
   };
   manifest.files.forEach((file) => {
     archiveEntries[file.path] = strToU8(sourceTexts[file.id] ?? '');
   });
+  if (surveyCad) {
+    archiveEntries['survey-cad.json'] = strToU8(buildSurveyCadSidecarText(surveyCad));
+  }
   return zipSync(archiveEntries, { level: 6 });
 };
 

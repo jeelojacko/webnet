@@ -1,8 +1,7 @@
 import { encodeUint8ArrayToBase64 } from './useWorkspaceRecovery';
 import { cloneAdjustedPointsExportSettings } from '../engine/adjustedPointsExport';
-import { cloneSurveyCadPersistedState } from '../engine/cad/cadPersistence';
 import type { SurveyCadPersistedState } from '../engine/cad/cadTypes';
-import { clonePlanningMapState } from '../engine/planningMapState';
+import { clonePlanningMapStateForProjectExport } from '../engine/projectExportSlimming';
 import type { ParsedProjectPayload } from '../engine/projectFile';
 import {
   buildProjectEditorIncludeFiles,
@@ -237,7 +236,7 @@ const buildProjectUiPayload = (
   adjustedPointsExport: cloneAdjustedPointsExportSettings(
     workspace.adjustedPointsExportSettings,
   ),
-  planningMap: clonePlanningMapState(workspace.planningMap),
+  planningMap: clonePlanningMapStateForProjectExport(workspace.planningMap),
   migration,
 });
 
@@ -245,7 +244,4 @@ const buildProjectDomainPayload = (workspace: ProjectFlatWorkspacePayloadOptions
   projectInstruments: workspace.projectInstruments,
   selectedInstrument: workspace.selectedInstrument,
   levelLoopCustomPresets: workspace.levelLoopCustomPresets.map((preset) => ({ ...preset })),
-  surveyCad: workspace.surveyCadState
-    ? cloneSurveyCadPersistedState(workspace.surveyCadState)
-    : undefined,
 });

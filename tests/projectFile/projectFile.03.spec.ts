@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
 
 import {
   DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
@@ -30,6 +31,32 @@ describe('project file settings and CRS migrations', () => {
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
     expect(parsed.project.ui.exportFormat).toBe('geojson');
+  });
+
+  it('keeps built-in example project files parseable and ready to run', () => {
+    const examplePaths = [
+      'public/examples/preanalysis/project.wnproj',
+      'public/examples/combined/project.wnproj',
+      'public/examples/combined-split/project.wnproj',
+    ];
+
+    for (const examplePath of examplePaths) {
+      const parsed = parseProjectFile(readFileSync(examplePath, 'utf8'), defaults);
+      expect(parsed.ok, examplePath).toBe(true);
+      if (!parsed.ok) continue;
+      expect(parsed.project.workspace?.files.length, examplePath).toBeGreaterThan(0);
+      expect(parsed.project.input.trim().length, examplePath).toBeGreaterThan(0);
+      expect(parsed.project.ui.planningMap?.obstaclePolygons, examplePath).toEqual([]);
+      expect(parsed.project.project.surveyCad, examplePath).toBeUndefined();
+    }
+
+    const splitProject = parseProjectFile(
+      readFileSync('public/examples/combined-split/project.wnproj', 'utf8'),
+      defaults,
+    );
+    expect(splitProject.ok).toBe(true);
+    if (!splitProject.ok) return;
+    expect(splitProject.project.workspace?.files.every((file) => file.enabled)).toBe(true);
   });
 
   it('round-trips coordinate-system parse settings and browser geoid source state', () => {
