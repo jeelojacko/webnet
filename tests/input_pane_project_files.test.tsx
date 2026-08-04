@@ -1,24 +1,21 @@
 /** @vitest-environment jsdom */
 
-import React from 'react';
 import { act } from 'react';
-import { createRoot, type Root } from 'react-dom/client';
 import { describe, expect, it, vi } from 'vitest';
 
-import InputPane from '../src/components/InputPane';
+import {
+  clickProjectFilesButton,
+  findButtonByText,
+  makeProjectFile,
+  renderInputPane,
+} from './inputPaneProjectFilesTestSupport';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 describe('InputPane project files UI', () => {
   it('windows highlight and line-number rendering for large inputs', async () => {
-    const container = document.createElement('div');
-    document.body.appendChild(container);
-    const root: Root = createRoot(container);
     const input = Array.from({ length: 240 }, (_, index) => `C P${index + 1} ${index} ${index} 0`).join('\n');
-
-    await act(async () => {
-      root.render(<InputPane input={input} onChange={() => undefined} />);
-    });
+    const { container, unmount } = await renderInputPane({ input });
 
     const textarea = container.querySelector('textarea') as HTMLTextAreaElement | null;
     expect(textarea).not.toBeNull();
@@ -49,32 +46,17 @@ describe('InputPane project files UI', () => {
     expect(highlight?.textContent).toContain('P150');
     expect(highlight?.textContent).not.toContain('P40');
 
-    await act(async () => {
-      root.unmount();
-    });
-    container.remove();
+    await unmount();
   });
 
   it('keeps the project files button available before a named project exists', async () => {
-    const container = document.createElement('div');
-    document.body.appendChild(container);
-    const root: Root = createRoot(container);
     const onOpenProjectFiles = vi.fn();
-
-    await act(async () => {
-      root.render(
-        <InputPane
-          input="C A 0 0 0 ! !"
-          onChange={() => undefined}
-          projectFiles={[]}
-          onOpenProjectFiles={onOpenProjectFiles}
-        />,
-      );
+    const { container, unmount } = await renderInputPane({
+      projectFiles: [],
+      onOpenProjectFiles,
     });
 
-    const button = Array.from(container.querySelectorAll('button')).find((node) =>
-      node.textContent?.includes('Project Files'),
-    ) as HTMLButtonElement | undefined;
+    const button = findButtonByText(container, 'Project Files');
     expect(button).toBeDefined();
 
     await act(async () => {
@@ -83,52 +65,28 @@ describe('InputPane project files UI', () => {
 
     expect(onOpenProjectFiles).toHaveBeenCalledTimes(1);
 
-    await act(async () => {
-      root.unmount();
-    });
-    container.remove();
+    await unmount();
   });
 
   it('opens the project files popover and toggles run participation', async () => {
-    const container = document.createElement('div');
-    document.body.appendChild(container);
-    const root: Root = createRoot(container);
     const onSetProjectFileEnabled = vi.fn();
-
-    await act(async () => {
-      root.render(
-        <InputPane
-          input="C A 0 0 0 ! !"
-          onChange={() => undefined}
-          projectFiles={[
-            {
-              id: 'file-1',
-              name: 'alpha.dat',
-              kind: 'dat',
-              order: 0,
-              tabOrder: 0,
-              isCheckedForRun: true,
-              isOpenInTab: true,
-              isFocusedTab: true,
-              enabled: true,
-              isActive: true,
-              isMain: true,
-            },
-          ]}
-          projectRunValidation={{ ok: true, errors: [], warnings: [] }}
-          onSetProjectFileEnabled={onSetProjectFileEnabled}
-        />,
-      );
+    const { container, unmount } = await renderInputPane({
+      projectFiles: [
+        makeProjectFile({
+          id: 'file-1',
+          name: 'alpha.dat',
+          tabOrder: 0,
+          isOpenInTab: true,
+          isFocusedTab: true,
+          isActive: true,
+          isMain: true,
+        }),
+      ],
+      projectRunValidation: { ok: true, errors: [], warnings: [] },
+      onSetProjectFileEnabled,
     });
 
-    const button = Array.from(container.querySelectorAll('button')).find((node) =>
-      node.textContent?.includes('Project Files'),
-    ) as HTMLButtonElement | undefined;
-    expect(button).toBeDefined();
-
-    await act(async () => {
-      button?.click();
-    });
+    await clickProjectFilesButton(container);
 
     expect(container.textContent).toContain('alpha.dat');
     const checkbox = container.querySelector('input[type="checkbox"]') as HTMLInputElement | null;
@@ -140,68 +98,39 @@ describe('InputPane project files UI', () => {
 
     expect(onSetProjectFileEnabled).toHaveBeenCalledWith('file-1', false);
 
-    await act(async () => {
-      root.unmount();
-    });
-    container.remove();
+    await unmount();
   });
 
   it('shows explicit file-state markers and keeps checkbox clicks scoped to enable state', async () => {
-    const container = document.createElement('div');
-    document.body.appendChild(container);
-    const root: Root = createRoot(container);
     const onSetProjectFileEnabled = vi.fn();
     const onFocusProjectFile = vi.fn();
     const onOpenFileTab = vi.fn();
-
-    await act(async () => {
-      root.render(
-        <InputPane
-          input="C A 0 0 0 ! !"
-          onChange={() => undefined}
-          projectFiles={[
-            {
-              id: 'file-1',
-              name: 'main.dat',
-              kind: 'dat',
-              order: 0,
-              tabOrder: 0,
-              isCheckedForRun: true,
-              isOpenInTab: true,
-              isFocusedTab: true,
-              enabled: true,
-              isActive: true,
-              isMain: true,
-            },
-            {
-              id: 'file-2',
-              name: 'notes.txt',
-              kind: 'notes',
-              order: 1,
-              tabOrder: null,
-              isCheckedForRun: false,
-              isOpenInTab: false,
-              isFocusedTab: false,
-              enabled: false,
-              isActive: false,
-              isMain: false,
-            },
-          ]}
-          onSetProjectFileEnabled={onSetProjectFileEnabled}
-          onFocusProjectFile={onFocusProjectFile}
-          onOpenFileTab={onOpenFileTab}
-        />,
-      );
+    const { container, unmount } = await renderInputPane({
+      projectFiles: [
+        makeProjectFile({
+          id: 'file-1',
+          name: 'main.dat',
+          tabOrder: 0,
+          isOpenInTab: true,
+          isFocusedTab: true,
+          isActive: true,
+          isMain: true,
+        }),
+        makeProjectFile({
+          id: 'file-2',
+          name: 'notes.txt',
+          kind: 'notes',
+          order: 1,
+          isCheckedForRun: false,
+          enabled: false,
+        }),
+      ],
+      onSetProjectFileEnabled,
+      onFocusProjectFile,
+      onOpenFileTab,
     });
 
-    const button = Array.from(container.querySelectorAll('button')).find((node) =>
-      node.textContent?.includes('Project Files'),
-    ) as HTMLButtonElement | undefined;
-    expect(button).toBeDefined();
-
-    await act(async () => {
-      button?.click();
-    });
+    await clickProjectFilesButton(container);
 
     expect(container.textContent).toContain('main');
     expect(container.textContent).toContain('open');
@@ -221,41 +150,24 @@ describe('InputPane project files UI', () => {
     expect(onFocusProjectFile).not.toHaveBeenCalled();
     expect(onOpenFileTab).not.toHaveBeenCalled();
 
-    await act(async () => {
-      root.unmount();
-    });
-    container.remove();
+    await unmount();
   });
 
   it('renders open file tabs and closes a tab without deleting the file', async () => {
-    const container = document.createElement('div');
-    document.body.appendChild(container);
-    const root: Root = createRoot(container);
     const onCloseFileTab = vi.fn();
-
-    await act(async () => {
-      root.render(
-        <InputPane
-          input="C A 0 0 0 ! !"
-          onChange={() => undefined}
-          projectFiles={[
-            {
-              id: 'file-1',
-              name: 'alpha.dat',
-              kind: 'dat',
-              order: 0,
-              tabOrder: 0,
-              isCheckedForRun: true,
-              isOpenInTab: true,
-              isFocusedTab: true,
-              enabled: true,
-              isActive: true,
-              isMain: true,
-            },
-          ]}
-          onCloseFileTab={onCloseFileTab}
-        />,
-      );
+    const { container, unmount } = await renderInputPane({
+      projectFiles: [
+        makeProjectFile({
+          id: 'file-1',
+          name: 'alpha.dat',
+          tabOrder: 0,
+          isOpenInTab: true,
+          isFocusedTab: true,
+          isActive: true,
+          isMain: true,
+        }),
+      ],
+      onCloseFileTab,
     });
 
     expect(container.textContent).toContain('alpha.dat');
@@ -268,74 +180,45 @@ describe('InputPane project files UI', () => {
 
     expect(onCloseFileTab).toHaveBeenCalledWith('file-1');
 
-    await act(async () => {
-      root.unmount();
-    });
-    container.remove();
+    await unmount();
   });
 
   it('exposes quick project-file actions from the popover without using the context menu', async () => {
-    const container = document.createElement('div');
-    document.body.appendChild(container);
-    const root: Root = createRoot(container);
     const onOpenProjectFiles = vi.fn();
     const onAddProjectSourceFile = vi.fn();
     const onOpenFileTab = vi.fn();
     const onFocusProjectFile = vi.fn();
     const onDuplicateProjectFile = vi.fn();
     const onDeleteProjectFile = vi.fn();
-
-    await act(async () => {
-      root.render(
-        <InputPane
-          input="C A 0 0 0 ! !"
-          onChange={() => undefined}
-          projectFiles={[
-            {
-              id: 'file-1',
-              name: 'main.dat',
-              kind: 'dat',
-              order: 0,
-              tabOrder: 0,
-              isCheckedForRun: true,
-              isOpenInTab: true,
-              isFocusedTab: true,
-              enabled: true,
-              isActive: true,
-              isMain: true,
-            },
-            {
-              id: 'file-2',
-              name: 'notes.txt',
-              kind: 'notes',
-              order: 1,
-              tabOrder: null,
-              isCheckedForRun: false,
-              isOpenInTab: false,
-              isFocusedTab: false,
-              enabled: false,
-              isActive: false,
-              isMain: false,
-            },
-          ]}
-          onOpenProjectFiles={onOpenProjectFiles}
-          onAddProjectSourceFile={onAddProjectSourceFile}
-          onOpenFileTab={onOpenFileTab}
-          onFocusProjectFile={onFocusProjectFile}
-          onDuplicateProjectFile={onDuplicateProjectFile}
-          onDeleteProjectFile={onDeleteProjectFile}
-        />,
-      );
+    const { container, unmount } = await renderInputPane({
+      projectFiles: [
+        makeProjectFile({
+          id: 'file-1',
+          name: 'main.dat',
+          tabOrder: 0,
+          isOpenInTab: true,
+          isFocusedTab: true,
+          isActive: true,
+          isMain: true,
+        }),
+        makeProjectFile({
+          id: 'file-2',
+          name: 'notes.txt',
+          kind: 'notes',
+          order: 1,
+          isCheckedForRun: false,
+          enabled: false,
+        }),
+      ],
+      onOpenProjectFiles,
+      onAddProjectSourceFile,
+      onOpenFileTab,
+      onFocusProjectFile,
+      onDuplicateProjectFile,
+      onDeleteProjectFile,
     });
 
-    const button = Array.from(container.querySelectorAll('button')).find((node) =>
-      node.textContent?.includes('Project Files'),
-    ) as HTMLButtonElement | undefined;
-    expect(button).toBeDefined();
-
-    await act(async () => {
-      button?.click();
-    });
+    await clickProjectFilesButton(container);
 
     expect(container.textContent).toContain('1 checked / 1 open');
 
@@ -346,9 +229,7 @@ describe('InputPane project files UI', () => {
 
     await act(async () => {
       (
-        Array.from(container.querySelectorAll('button')).find((node) =>
-          node.textContent?.includes('Add Source'),
-        ) as HTMLButtonElement | undefined
+        findButtonByText(container, 'Add Source')
       )?.click();
     });
     expect(onAddProjectSourceFile).toHaveBeenCalledTimes(1);
@@ -379,59 +260,35 @@ describe('InputPane project files UI', () => {
 
     await act(async () => {
       (
-        Array.from(container.querySelectorAll('button')).find((node) =>
-          node.textContent?.includes('Project Options'),
-        ) as HTMLButtonElement | undefined
+        findButtonByText(container, 'Project Options')
       )?.click();
     });
     expect(onOpenProjectFiles).toHaveBeenCalledTimes(1);
 
-    await act(async () => {
-      root.unmount();
-    });
-    container.remove();
+    await unmount();
   });
 
   it('keeps open tab order stable when project file list order changes', async () => {
-    const container = document.createElement('div');
-    document.body.appendChild(container);
-    const root: Root = createRoot(container);
-
-    await act(async () => {
-      root.render(
-        <InputPane
-          input="C A 0 0 0 ! !"
-          onChange={() => undefined}
-          projectFiles={[
-            {
-              id: 'file-2',
-              name: 'beta.dat',
-              kind: 'dat',
-              order: 0,
-              tabOrder: 1,
-              isCheckedForRun: true,
-              isOpenInTab: true,
-              isFocusedTab: false,
-              enabled: true,
-              isActive: false,
-              isMain: false,
-            },
-            {
-              id: 'file-1',
-              name: 'alpha.dat',
-              kind: 'dat',
-              order: 1,
-              tabOrder: 0,
-              isCheckedForRun: true,
-              isOpenInTab: true,
-              isFocusedTab: true,
-              enabled: true,
-              isActive: true,
-              isMain: true,
-            },
-          ]}
-        />,
-      );
+    const { container, unmount } = await renderInputPane({
+      projectFiles: [
+        makeProjectFile({
+          id: 'file-2',
+          name: 'beta.dat',
+          order: 0,
+          tabOrder: 1,
+          isOpenInTab: true,
+        }),
+        makeProjectFile({
+          id: 'file-1',
+          name: 'alpha.dat',
+          order: 1,
+          tabOrder: 0,
+          isOpenInTab: true,
+          isFocusedTab: true,
+          isActive: true,
+          isMain: true,
+        }),
+      ],
     });
 
     const closeButtons = Array.from(
@@ -442,9 +299,6 @@ describe('InputPane project files UI', () => {
       'Close beta.dat',
     ]);
 
-    await act(async () => {
-      root.unmount();
-    });
-    container.remove();
+    await unmount();
   });
 });
