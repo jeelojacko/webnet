@@ -102,6 +102,11 @@ describe('official content import behavior', () => {
       importedAt: '2026-08-05T11:00:00.000Z',
     });
     expect(snapshot.legalDocuments).toHaveLength(10);
+    expect(snapshot.documents).toHaveLength(10);
+    expect(snapshot.documents.filter((document) => document.kind === 'regulation')).toHaveLength(5);
+    expect(snapshot.documents.find((document) => document.id === 'reg-surveys-84-76')?.title).toContain(
+      'Regulation 84-76',
+    );
     expect(snapshot.documents[0].summary).toBe('user summary');
     expect(snapshot.units[0].editableSummary).toBe('user unit summary');
     expect(snapshot.attempts).toHaveLength(1);

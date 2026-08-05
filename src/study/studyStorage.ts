@@ -1,6 +1,9 @@
 import { createSeedStudyData, createDefaultStudySettings } from './studySeed';
 import type { NbLawContentPackage } from './content/nbLawTypes';
-import { applyOfficialContentPackageToSnapshot } from './studyOfficialContent';
+import {
+  applyOfficialContentPackageToSnapshot,
+  upsertStudyDocumentsWithOfficialMetadata,
+} from './studyOfficialContent';
 import type {
   ImportedLegalComponent,
   ImportedLegalDocument,
@@ -163,10 +166,12 @@ export const migrateStudySnapshot = (input: Partial<StudyDataSnapshot>): StudyDa
     ...(input.settings ?? {}),
     schemaVersion: STUDY_SCHEMA_VERSION,
   };
+  const legalDocuments = input.legalDocuments ?? [];
+  const documents = upsertStudyDocumentsWithOfficialMetadata(input.documents ?? seed.documents, legalDocuments);
   return {
     schemaVersion: STUDY_SCHEMA_VERSION,
     exportedAt: input.exportedAt ?? nowIso,
-    documents: input.documents ?? seed.documents,
+    documents,
     units: input.units ?? seed.units,
     prompts: input.prompts ?? seed.prompts,
     concepts: input.concepts ?? seed.concepts,
@@ -174,7 +179,7 @@ export const migrateStudySnapshot = (input: Partial<StudyDataSnapshot>): StudyDa
     attempts: input.attempts ?? [],
     drafts: input.drafts ?? [],
     settings,
-    legalDocuments: input.legalDocuments ?? [],
+    legalDocuments,
     legalComponents: input.legalComponents ?? [],
     importHistory: input.importHistory ?? [],
   };

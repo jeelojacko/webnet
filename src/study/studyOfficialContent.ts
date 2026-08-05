@@ -237,12 +237,14 @@ export const previewOfficialContentPackage = (
   return preview;
 };
 
-const upsertSeedDocumentMetadata = (
+export const upsertStudyDocumentsWithOfficialMetadata = (
   documents: StudyDocument[],
   legalDocuments: ImportedLegalDocument[],
 ): StudyDocument[] => {
   const legalById = new Map(legalDocuments.map((document) => [document.id, document]));
-  return documents.map((document) => {
+  const existingIds = new Set(documents.map((document) => document.id));
+  const existingById = new Map(documents.map((document) => [document.id, document]));
+  const enrichedExisting = documents.map((document) => {
     const legal = legalById.get(document.id);
     if (!legal) return document;
     return {
@@ -253,6 +255,29 @@ const upsertSeedDocumentMetadata = (
       updatedAt: document.updatedAt,
     };
   });
+  const addedOfficialDocuments = legalDocuments
+    .filter((legal) => !existingIds.has(legal.id))
+    .map((legal): StudyDocument => {
+      const parent = legal.parentActId ? existingById.get(legal.parentActId) : undefined;
+      const title =
+        legal.documentType === 'regulation' && legal.officialNumberDisplay
+          ? `Regulation ${legal.officialNumberDisplay}${parent ? ` - ${parent.title}` : ''}`
+          : legal.officialTitle;
+      return {
+        id: legal.id,
+        title,
+        kind: legal.documentType,
+        jurisdiction: 'New Brunswick',
+        category: parent?.category ?? (legal.documentType === 'regulation' ? 'Regulation' : 'Statute law'),
+        priority: parent?.priority ?? 3,
+        citation: legal.officialCitationDisplay,
+        summary: '',
+        sourceFiles: [],
+        createdAt: legal.importedAt,
+        updatedAt: legal.importedAt,
+      };
+    });
+  return [...enrichedExisting, ...addedOfficialDocuments];
 };
 
 export const applyOfficialContentPackageToSnapshot = ({
@@ -312,7 +337,7 @@ export const applyOfficialContentPackageToSnapshot = ({
     legalComponents: [...retainedComponents, ...incomingComponents].sort((a, b) =>
       componentRecordKey(a.documentId, a.sourceKey).localeCompare(componentRecordKey(b.documentId, b.sourceKey)),
     ),
-    documents: upsertSeedDocumentMetadata(snapshot.documents, legalDocuments),
+    documents: upsertStudyDocumentsWithOfficialMetadata(snapshot.documents, legalDocuments),
     units,
     importHistory: [...snapshot.importHistory, history],
   };
