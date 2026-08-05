@@ -3,109 +3,235 @@
   "id": "reg-surveys-84-76",
   "officialTitle": "REGULATION 84-76",
   "officialCitation": "REGULATION 84-76",
+  "officialCitationDisplay": "REGULATION 84-76",
+  "officialCitationNormalized": "84-76",
+  "officialNumberDisplay": "84-76",
+  "officialNumberNormalized": "84-76",
   "documentType": "regulation",
   "parentActId": "doc-surveys-act",
+  "enablingActs": [
+    {
+      "title": "Surveys Act"
+    }
+  ],
   "sourceUrl": "https://laws.gnb.ca/en/document/cr/84-76",
-  "fetchDate": "2026-08-05T16:54:49.141Z",
+  "fetchDate": "2026-08-05T17:33:44.836Z",
   "consolidatedTo": "May 15, 2018",
   "contentHash": "bc2b454c3fead860410bf5748bdb922692ef5630928e165ee828bb44ff6de84c",
   "tableOfContents": [
     {
-      "id": "se-1",
+      "id": "section-1",
+      "sourceKey": "section:1",
       "label": "1"
     },
     {
-      "id": "se-2",
+      "id": "section-2",
+      "sourceKey": "section:2",
       "label": "2"
     },
     {
-      "id": "se-3",
+      "id": "section-3",
+      "sourceKey": "section:3",
       "label": "3"
     },
     {
-      "id": "se-4",
+      "id": "section-4",
+      "sourceKey": "section:4",
       "label": "4"
     },
     {
-      "id": "se-5",
+      "id": "section-5",
+      "sourceKey": "section:5",
       "label": "5"
     },
     {
-      "id": "se-6",
-      "label": "6(1)"
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "label": "6"
     },
     {
-      "id": "se-7",
+      "id": "section-7",
+      "sourceKey": "section:7",
       "label": "7"
     },
     {
-      "id": "se-8",
+      "id": "section-8",
+      "sourceKey": "section:8",
       "label": "8"
     }
   ],
-  "sections": [
+  "components": [
     {
-      "id": "se-1",
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
       "label": "1",
       "text": "1This Regulation may be cited as the General Regulation - Surveys Act.",
       "subsections": [],
       "contentHash": "02d3a14da2cab423a27248e4c6ea4af05e9731338dc0223bc6ed6b0a027c638a"
     },
     {
-      "id": "se-2",
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
       "label": "2",
       "text": "2In this Regulation\n“control point” means a coordinate monument, a previously accepted legal monument, or any semi-permanent point for which coordinates have been determined.(point de repère)\n\n99-21",
       "subsections": [],
       "contentHash": "f0cd045750bae22689201c372456013ef17b2a40bb98236eecd4e15971f446d5"
     },
     {
-      "id": "se-3",
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
       "label": "3",
       "text": "3Pursuant to paragraph 3(2)(b) of the Act, a coordinate monument may be a suitably inscribed brass, bronze or aluminum cap or plate\n\n(a)\ncemented into bedrock or into a concrete structure, or\n\n(b)\nsecured to the ground by a\n\n(i)\ntwenty-five millimetre square steel bar driven through the center of the cap or plate, or\n\n(ii)\ngalvanized pipe, nineteen millimetres in diameter, to which the cap or plate is attached.\n\n99-21",
       "subsections": [],
       "contentHash": "8ad765250b9b526eb4e4e2fb034be8857b8aa8c28bb647cfb5c84b0aeeb29511"
     },
     {
-      "id": "se-4",
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
       "label": "4",
       "text": "4A surveyor working under section 7 of the Act shall conform to instructions issued by the Director of Surveys.",
       "subsections": [],
       "contentHash": "364a45674f8e6844f09adef6b9c5db1a8c5bde0444865ab0979aff4ef0ec0e87"
     },
     {
-      "id": "se-5",
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "componentType": "section",
       "label": "5",
       "text": "5A surveyor need not plant legal monuments to mark corners of lots in a subdivision when\n\n(a)\nat least three control points are in the immediate area of the subdivision;\n\n(b)\nno corner is further from a control point than\n\n(i)\n150 metres for lots 0 to 0.2 hectare in area; or\n\n(ii)\n300 metres for lots 0.2 hectares to 4 hectares in area; and\n\n(c)\ncoordinates are computed for each corner.\n\n99-21",
       "subsections": [],
       "contentHash": "114a068c2eb11d510249cad1f69fcb4907d5192ba81c71059b16202102eea610"
     },
     {
-      "id": "se-6",
-      "label": "6(1)",
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "componentType": "section",
+      "label": "6",
       "text": "6(1)When a surveyor requests approval of a plan of survey he shall also submit the following\n\n(a)\nthe original field notes;\n\n(b)\ncomputation sheets; and\n\n(c)\nevidence on which the survey is based.\n\n6(2)When an examination of the plan of survey is completed the Director of Surveys shall file copies of the documents mentioned in subsection (1) and return the originals to the surveyor.",
       "subsections": [
         {
-          "id": "se-6-subsection-6-1-",
+          "id": "6-subsection-1",
+          "sourceKey": "section:6/subsection:1",
           "label": "6(1)",
-          "text": "6(1)When a surveyor requests approval of a plan of survey he shall also submit the following\n\n(a)\nthe original field notes;\n\n(b)\ncomputation sheets; and\n\n(c)\nevidence on which the survey is based."
+          "text": "6(1)When a surveyor requests approval of a plan of survey he shall also submit the following\n\n(a)\nthe original field notes;\n\n(b)\ncomputation sheets; and\n\n(c)\nevidence on which the survey is based.",
+          "contentHash": "3c0b1c61d87c968dc9cf55b79f0c22f4bff5ab4418a7fe2a4d66086610ba998e"
         },
         {
-          "id": "se-6-subsection-6-2-",
+          "id": "6-subsection-2",
+          "sourceKey": "section:6/subsection:2",
           "label": "6(2)",
-          "text": "6(2)When an examination of the plan of survey is completed the Director of Surveys shall file copies of the documents mentioned in subsection (1) and return the originals to the surveyor."
+          "text": "6(2)When an examination of the plan of survey is completed the Director of Surveys shall file copies of the documents mentioned in subsection (1) and return the originals to the surveyor.",
+          "contentHash": "82a6b96d68ce9980d5723e4552d6ed53a7ea25b6323a2b45453c23e7613a3e31"
         }
       ],
       "contentHash": "027bffc868457d89780472a4eeb76811a0a20a4fafee440e5d046d9f507bb678"
     },
     {
-      "id": "se-7",
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "componentType": "section",
       "label": "7",
       "text": "7The Director of Surveys may issue instructions governing the standards of survey and content of subdivision plans.",
       "subsections": [],
       "contentHash": "63d701c155a85d2e6b3876594f07c27dfa2730a573015f2f8540fcb21d28342d"
     },
     {
-      "id": "se-8",
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "componentType": "section",
+      "label": "8",
+      "text": "8Regulation 72-160 under the Surveys Act is repealed.\n\nN.B. This Regulation is consolidated to May 15, 2018.",
+      "subsections": [],
+      "contentHash": "f24a48d0fc08bbb9480e024fb86273f8ea36f875da418789c35708309505f49f"
+    }
+  ],
+  "sections": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
+      "label": "1",
+      "text": "1This Regulation may be cited as the General Regulation - Surveys Act.",
+      "subsections": [],
+      "contentHash": "02d3a14da2cab423a27248e4c6ea4af05e9731338dc0223bc6ed6b0a027c638a"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "label": "2",
+      "text": "2In this Regulation\n“control point” means a coordinate monument, a previously accepted legal monument, or any semi-permanent point for which coordinates have been determined.(point de repère)\n\n99-21",
+      "subsections": [],
+      "contentHash": "f0cd045750bae22689201c372456013ef17b2a40bb98236eecd4e15971f446d5"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
+      "label": "3",
+      "text": "3Pursuant to paragraph 3(2)(b) of the Act, a coordinate monument may be a suitably inscribed brass, bronze or aluminum cap or plate\n\n(a)\ncemented into bedrock or into a concrete structure, or\n\n(b)\nsecured to the ground by a\n\n(i)\ntwenty-five millimetre square steel bar driven through the center of the cap or plate, or\n\n(ii)\ngalvanized pipe, nineteen millimetres in diameter, to which the cap or plate is attached.\n\n99-21",
+      "subsections": [],
+      "contentHash": "8ad765250b9b526eb4e4e2fb034be8857b8aa8c28bb647cfb5c84b0aeeb29511"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
+      "label": "4",
+      "text": "4A surveyor working under section 7 of the Act shall conform to instructions issued by the Director of Surveys.",
+      "subsections": [],
+      "contentHash": "364a45674f8e6844f09adef6b9c5db1a8c5bde0444865ab0979aff4ef0ec0e87"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "componentType": "section",
+      "label": "5",
+      "text": "5A surveyor need not plant legal monuments to mark corners of lots in a subdivision when\n\n(a)\nat least three control points are in the immediate area of the subdivision;\n\n(b)\nno corner is further from a control point than\n\n(i)\n150 metres for lots 0 to 0.2 hectare in area; or\n\n(ii)\n300 metres for lots 0.2 hectares to 4 hectares in area; and\n\n(c)\ncoordinates are computed for each corner.\n\n99-21",
+      "subsections": [],
+      "contentHash": "114a068c2eb11d510249cad1f69fcb4907d5192ba81c71059b16202102eea610"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "componentType": "section",
+      "label": "6",
+      "text": "6(1)When a surveyor requests approval of a plan of survey he shall also submit the following\n\n(a)\nthe original field notes;\n\n(b)\ncomputation sheets; and\n\n(c)\nevidence on which the survey is based.\n\n6(2)When an examination of the plan of survey is completed the Director of Surveys shall file copies of the documents mentioned in subsection (1) and return the originals to the surveyor.",
+      "subsections": [
+        {
+          "id": "6-subsection-1",
+          "sourceKey": "section:6/subsection:1",
+          "label": "6(1)",
+          "text": "6(1)When a surveyor requests approval of a plan of survey he shall also submit the following\n\n(a)\nthe original field notes;\n\n(b)\ncomputation sheets; and\n\n(c)\nevidence on which the survey is based.",
+          "contentHash": "3c0b1c61d87c968dc9cf55b79f0c22f4bff5ab4418a7fe2a4d66086610ba998e"
+        },
+        {
+          "id": "6-subsection-2",
+          "sourceKey": "section:6/subsection:2",
+          "label": "6(2)",
+          "text": "6(2)When an examination of the plan of survey is completed the Director of Surveys shall file copies of the documents mentioned in subsection (1) and return the originals to the surveyor.",
+          "contentHash": "82a6b96d68ce9980d5723e4552d6ed53a7ea25b6323a2b45453c23e7613a3e31"
+        }
+      ],
+      "contentHash": "027bffc868457d89780472a4eeb76811a0a20a4fafee440e5d046d9f507bb678"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "componentType": "section",
+      "label": "7",
+      "text": "7The Director of Surveys may issue instructions governing the standards of survey and content of subdivision plans.",
+      "subsections": [],
+      "contentHash": "63d701c155a85d2e6b3876594f07c27dfa2730a573015f2f8540fcb21d28342d"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "componentType": "section",
       "label": "8",
       "text": "8Regulation 72-160 under the Surveys Act is repealed.\n\nN.B. This Regulation is consolidated to May 15, 2018.",
       "subsections": [],

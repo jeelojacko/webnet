@@ -6,9 +6,11 @@ Source: https://laws.gnb.ca/en/document/cs/2011%2C%20c.226
 Content hash: 72a472ac3b1f3e7857729bf87be2645538b54477ddbe38ce73e0d7e7b688ae13
 Consolidated to: October 1, 2015
 
-## Sections
+## Components
 
 ### 1 - Definitions
+
+Source key: section:1
 
 Definitions
 
@@ -29,12 +31,16 @@ R.S.1973, c.S-17, s.1; 1989, c.N-5.01, s.40; 1998, c.12, s.20; 1999, c.4, s.1
 
 ### 2 - Establishment of coordinate survey system
 
+Source key: section:2
+
 Establishment of coordinate survey system
 
 2Service New Brunswick shall establish and maintain a system of plane rectangular coordinates for locating points on the earth’s surface.
 R.S.1973, c.S-17, s.2; 1986, c.8, s.123; 1989, c.N-5.01, s.40; 1998, c.12, s.20; 1999, c.4, s.2
 
-### 3(1) - Director of Surveys
+### 3 - Director of Surveys
+
+Source key: section:3
 
 Director of Surveys
 
@@ -54,7 +60,9 @@ placed as prescribed by the regulations.
 
 R.S.1973, c.S-17, s.3; 1989, c.N-5.01, s.40; 1998, c.12, s.20; 1999, c.4, s.3; 2013, c.9, s.1
 
-### 4(1) - Duties of surveyor re coordinate survey system
+### 4 - Duties of surveyor re coordinate survey system
+
+Source key: section:4
 
 Duties of surveyor re coordinate survey system
 
@@ -72,6 +80,8 @@ R.S.1973, c.S-17, s.4; 1979, c.69, s.1; 1999, c.4, s.4
 
 ### 5 - Integrated survey area
 
+Source key: section:5
+
 Integrated survey area
 
 5The Lieutenant-Governor in Council
@@ -84,7 +94,9 @@ may extend, reduce, subdivide or annul any existing integrated survey area or me
 
 R.S.1973, c.S-17, s.5; 1999, c.4, s.5
 
-### 6(1) - Integrated survey area plan
+### 6 - Integrated survey area plan
+
+Source key: section:6
 
 Integrated survey area plan
 
@@ -128,6 +140,8 @@ R.S.1973, c.S-17, s.6; 1999, c.4, s.6
 
 ### 7 - Duties of surveyor re integrated survey area
 
+Source key: section:7
+
 Duties of surveyor re integrated survey area
 
 7When an integrated survey area has been constituted, every surveyor shall tie to the coordinate monuments all legal monuments established by the surveyor that pertain to
@@ -143,7 +157,9 @@ parcels of land which the owners request to be included.
 
 R.S.1973, c.S-17, s.7; 1999, c.4, s.7
 
-### 8(1) - Survey plan in integrated survey area
+### 8 - Survey plan in integrated survey area
+
+Source key: section:8
 
 Survey plan in integrated survey area
 
@@ -159,12 +175,16 @@ R.S.1973, c.S-17, s.8; 1999, c.4, s.8
 
 ### 9 - Filing of values of coordinate monuments
 
+Source key: section:9
+
 Filing of values of coordinate monuments
 
 9The values of coordinate monuments shall be filed in the Office of and under the direction of the Director of Surveys and when so filed shall be deemed to be correct and the method of arriving at these values is set out in Schedule A.
 R.S.1973, c.S-17, s.9; 1979, c.69, s.2; 1983, c.89, s.1; 1999, c.4, s.9
 
 ### 10 - Survey plan filed between August 1, 1979, and December 31, 1979
+
+Source key: section:10
 
 Survey plan filed between August 1, 1979, and December 31, 1979
 
@@ -173,12 +193,16 @@ Survey plan filed between August 1, 1979, and December 31, 1979
 
 ### 11 - Survey plan filed within six months after April 1, 1999
 
+Source key: section:11
+
 Survey plan filed within six months after April 1, 1999
 
 11Despite section 9, a subdivision plan or any other plan of survey prepared under the ATS77 datum, as described in Schedule A as it read immediately before April 1, 1999, may be filed at any time within six months after April 1, 1999, and a subdivision plan or any other plan of survey that is so filed is not improperly filed by virtue of the fact it was prepared in that manner.
 1999, c.4, s.11
 
 ### 12 - Lost legal monuments
+
+Source key: section:12
 
 Lost legal monuments
 
@@ -192,7 +216,9 @@ coordinates derived from the plan for the legal monuments pertinent to the surve
 
 R.S.1973, c.S-17, s.10; 1999, c.4, s.12
 
-### 13(1) - Authority re private property
+### 13 - Authority re private property
+
+Source key: section:13
 
 Authority re private property
 
@@ -210,7 +236,9 @@ may establish and maintain coordinate monuments at the places that he or she see
 
 R.S.1973, c.S-17, s.11; 1986, c.8, s.123; 1989, c.N-5.01, s.40; 1998, c.12, s.20; 1999, c.4, s.13
 
-### 14(1) - Offences and penalties
+### 14 - Offences and penalties
+
+Source key: section:14
 
 Offences and penalties
 
@@ -224,6 +252,8 @@ R.S.1973, c.S-17, s.12, s.13, s.14; 1989, c.N-5.01, s.40; 1990, c.61, s.135; 199
 
 ### 14.1 - Administration
 
+Source key: section:14.1
+
 Administration
 
 2015, c.44, s.111
@@ -232,6 +262,8 @@ Administration
 2015, c.44, s.111
 
 ### 15 - Regulations
+
+Source key: section:15
 
 Regulations
 
@@ -259,6 +291,10 @@ prescribing penalties for violation of the regulations;
 for the better administration of this Act.
 
 R.S.1973, c.S-17, s.16; 1999, c.4, s.17
+
+### SCHEDULE A
+
+Source key: schedule:schedule-a
 
 SCHEDULE A
 

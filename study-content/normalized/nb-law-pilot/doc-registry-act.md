@@ -4,10 +4,13 @@ Citation: Chapter R-6
 Document ID: doc-registry-act
 Source: https://laws.gnb.ca/en/document/cs/R-6
 Content hash: 91c452eec8106752778455a64ca051cb90a2c802bc2575bf7c6dff4456db0080
+Consolidated to: December 13, 2024
 
-## Sections
+## Components
 
 ### 1 - Definitions
+
+Source key: section:1
 
 Definitions
 
@@ -32,7 +35,9 @@ Definitions
 
 R.S., c.195, s.1; 2013, c.32, s.35; 2017, c.60, s.2
 
-### 1.1(1) - Interests within the scope of the Personal Property Security Act
+### 1.1 - Interests within the scope of the Personal Property Security Act
+
+Source key: section:1.1
 
 Interests within the scope of the Personal Property Security Act
 
@@ -52,12 +57,16 @@ the creation or transfer of a right to payment that arises in connection with an
 
 ### 2 - Administration
 
+Source key: section:2
+
 Administration
 
 2Service New Brunswick is charged with the general supervision of this Act.
 1961-62, c.67, s.1; 1967, c.38, s.2; 1989, c.N-5.01, s.38; 1998, c.12, s.18
 
-### 3(1) - Registry office
+### 3 - Registry office
+
+Source key: section:3
 
 Registry office
 
@@ -71,7 +80,9 @@ Registry office
 
 R.S., c.195, s.2; 1969, c.68, s.1
 
-### 4(1) - Appointment of registrars and deputy registrars
+### 4 - Appointment of registrars and deputy registrars
+
+Source key: section:4
 
 Appointment of registrars and deputy registrars
 
@@ -81,7 +92,9 @@ Appointment of registrars and deputy registrars
 
 R.S., c.195, s.5; 1961-62, c.67, s.2; 1969, c.68, s.3; 1989, c.N-5.01, s.38; 1998, c.12, s.18
 
-### 5(1) - Ex officio deputy registrars
+### 5 - Ex officio deputy registrars
+
+Source key: section:5
 
 Ex officio deputy registrars
 
@@ -91,7 +104,9 @@ Ex officio deputy registrars
 
 1963 (2nd Sess.), c.35, s.1; 1972, c.61, s.1
 
-### 6(1) - Chief Registrar of Deeds
+### 6 - Chief Registrar of Deeds
+
+Source key: section:6
 
 Chief Registrar of Deeds
 
@@ -125,12 +140,16 @@ may recommend to Service New Brunswick the suspension or removal from office of 
 
 ### 7 - Security of registrar and deputy registrar
 
+Source key: section:7
+
 Security of registrar and deputy registrar
 
 7Each registrar and each deputy registrar shall furnish such security for the due performance of the duties of his office as Service New Brunswick may prescribe.
 R.S., c.195, s.6; 1961-62, c.67, s.2; 1989, c.N-5.01, s.38; 1998, c.12, s.18
 
-### 8(1) - Oath of registrar and deputy registrar
+### 8 - Oath of registrar and deputy registrar
+
+Source key: section:8
 
 Oath of registrar and deputy registrar
 
@@ -160,12 +179,16 @@ R.S., c.195, s.7; 1961-62, c.67, s.2; 1966, c.93, s.2; 1979, c.41, s.109; 1983, 
 
 ### 9 - Powers and duties of deputy registrar
 
+Source key: section:9
+
 Powers and duties of deputy registrar
 
 9A deputy registrar for a county has the same powers and duties that the registrar for the county has under this or any other Act, subject to the direction and supervision of the registrar.
 R.S., c.195, s.8; 1961-62, c.67, s.2; 1966, c.93, s.3; 1972, c.61, s.3; 1986, c.69, s.2
 
-### 10(1) - When registry office open
+### 10 - When registry office open
+
+Source key: section:10
 
 When registry office open
 
@@ -177,7 +200,9 @@ When registry office open
 
 R.S., c.195, s.9; 1961-62, c.67, s.2; 1968, c.89, s.1; 1972, c.61, s.4; 2017, c.60, s.2
 
-### 11(1) - Conflict of interests
+### 11 - Conflict of interests
+
+Source key: section:11
 
 Conflict of interests
 
@@ -196,7 +221,9 @@ carry on or transact within the office any business or occupation other than his
 
 R.S., c.195, s.10; 1961-62, c.67, s.2
 
-### 12(1) - Duties of registrar
+### 12 - Duties of registrar
+
+Source key: section:12
 
 Duties of registrar
 
@@ -208,12 +235,16 @@ R.S., c.195, s.18; 1961-62, c.67, s.3; 1963 (2nd Sess.), c.35, s.2; 1966, c.93, 
 
 ### 13 - Seal of registrar; production of documents
 
+Source key: section:13
+
 Seal of registrar; production of documents
 
 13Every registrar shall have a seal of office to be approved by Service New Brunswick or other person appointed for that purpose, and on request shall furnish an exemplification or certified copy under his hand and seal of office of any instrument deposited, registered or filed in his office as registrar, which exemplification or certified copy shall, subject to the provisions of this Act or any Act relating thereto, be received as prima facie evidence of such instrument, and of the registration thereof, in every court in this Province, in the same manner and with the same effect as if the original thereof was produced; and no registrar or deputy shall be required to produce any document in his custody as registrar or deputy registrar unless ordered by a judge of The Court of King’s Bench of New Brunswick, which order shall be produced to the registrar or deputy registrar and accompany the summons to witness, if any, served upon him requiring the production.
 R.S., c.195, s.19; 1960, c.62, s.1; 1979, c.41, s.109; 1986, c.4, s.47; 1989, c.N-5.01, s.38; 1998, c.12, s.18; 2008, c.20, s.1; 2023, c.17, s.239
 
-### 13.1(1) - Powers regarding document maintenance and disposal
+### 13.1 - Powers regarding document maintenance and disposal
+
+Source key: section:13.1
 
 Powers regarding document maintenance and disposal
 
@@ -249,7 +280,9 @@ any index, book or record used in connection with a document destroyed or otherw
 
 2008, c.20, s.2
 
-### 13.2(1) - Electronic information storage system
+### 13.2 - Electronic information storage system
+
+Source key: section:13.2
 
 Electronic information storage system
 
@@ -272,12 +305,16 @@ a requirement imposed by or under this Act, any other Act or any regulation unde
 
 ### 14 - Contents of registry office
 
+Source key: section:14
+
 Contents of registry office
 
 14The books, records, plans and instruments of whatever description, the furniture and equipment provided by the county for the use of the registry office and heretofore deemed to be the property of the Crown for the use and benefit of the public, are continued so to be, and the responsibility for the further maintenance and upkeep thereof henceforth rests with the Province.
 R.S., c.195, s.20; 1961-62, c.67, s.5; 2023, c.17, s.239
 
-### 15(1) - Recopying or repairing of book
+### 15 - Recopying or repairing of book
+
+Source key: section:15
 
 Recopying or repairing of book
 
@@ -291,10 +328,14 @@ R.S., c.195, s.22; 1961-62, c.67, s.7; 1978, c.46, s.1; 1989, c.N-5.01, s.38; 19
 
 ### 15.1
 
+Source key: section:15.1
+
 15.1Repealed: 2008, c.20, s.4
 1980, c.47, s.1; 1989, c.N-5.01, s.38; 1998, c.12, s.18; 2008, c.20, s.4
 
 ### 16 - Death or removal of registrar
+
+Source key: section:16
 
 Death or removal of registrar
 
@@ -302,6 +343,8 @@ Death or removal of registrar
 R.S., c.195, s.23; 1969, c.68, s.4
 
 ### 17 - Powers of Chief Registrar
+
+Source key: section:17
 
 Powers of Chief Registrar
 
@@ -332,12 +375,16 @@ R.S., c.195, s.25; 1960, c.62, s.1; 1961-62, c.67, s.9, 10; 1989, c.N-5.01, s.38
 
 ### 18 - Replacement of registrar by temporary officer
 
+Source key: section:18
+
 Replacement of registrar by temporary officer
 
 18Whenever, by reason of death, dismissal, illness or other cause or incapacity, the office of registrar in any county becomes vacant, or is left temporarily without any duly authorized person to attend to the duties thereof, or if any registrar appears to the Chief Registrar of Deeds to be neglecting the duties of his office whereby the records, documents, books or instruments in the said office appear to the Chief Registrar of Deeds to be in jeopardy, or liable to be lost, taken away or injured, the Chief Registrar of Deeds shall authorize a suitable person to take possession thereof, and while in possession such person may receive and record all instruments offered for registry, entering the same and certifying thereto in his own name as acting registrar, and he shall continue so to act until order made to the contrary.
 R.S., c.195, s.26; 1960, c.62, s.1; 1989, c.N-5.01, s.38
 
-### 19(1) - Registration of instruments
+### 19 - Registration of instruments
+
+Source key: section:19
 
 Registration of instruments
 
@@ -363,7 +410,9 @@ Registration of instruments
 
 R.S., c.195, s.27; 1969, c.68, s.5; 1972, c.61, s.5; 1978, c.46, s.2; 1979, c.41, s.109; 1980, c.47, s.2; 1983, c.R-2.1, s.10; 1986, c.8, s.113; 1986, c.69, s.3; 1989, c.55, s.47; 1989, c.N-5.01, s.38; 2008, c.56, s.17; 2013, c.32, s.35; 2015, c.57, s.1
 
-### 19.01(1) - Instrument that may be submitted as a digitally scanned image
+### 19.01 - Instrument that may be submitted as a digitally scanned image
+
+Source key: section:19.01
 
 Instrument that may be submitted as a digitally scanned image
 
@@ -385,7 +434,9 @@ shall be submitted using the technology put in place by Service New Brunswick.
 
 2017, c.60, s.2
 
-### 19.02(1) - Authentication of digitally scanned image
+### 19.02 - Authentication of digitally scanned image
+
+Source key: section:19.02
 
 Authentication of digitally scanned image
 
@@ -413,6 +464,8 @@ the digitally scanned image of the instrument is an exact and complete scan of t
 
 ### 19.03 - Authorization to submit digitally scanned image
 
+Source key: section:19.03
+
 Authorization to submit digitally scanned image
 
 19.03The submission of a digitally scanned image of an instrument by a subscriber or land surveyor to a registry office is a certification by the subscriber or land surveyor that he or she is authorized to submit the digitally scanned image of the instrument for registration or filing.
@@ -420,12 +473,16 @@ Authorization to submit digitally scanned image
 
 ### 19.04 - Effect of digitally scanned image of an instrument
 
+Source key: section:19.04
+
 Effect of digitally scanned image of an instrument
 
 19.04Despite any provision in any other Act or any rule of law, a digitally scanned image of an instrument that is received at a registry office is not required to be in writing or to be signed by the parties and has the same effect for all purposes as an instrument that is in writing and is signed by the parties.
 2017, c.60, s.2
 
-### 19.05(1) - Subscriber or land surveyor agreement
+### 19.05 - Subscriber or land surveyor agreement
+
+Source key: section:19.05
 
 Subscriber or land surveyor agreement
 
@@ -470,7 +527,9 @@ for promptly giving notice to Service New Brunswick, in the manner determined un
 
 2017, c.60, s.2
 
-### 19.1(1) - Effect of registration in the Personal Property Registry
+### 19.1 - Effect of registration in the Personal Property Registry
+
+Source key: section:19.1
 
 Effect of registration in the Personal Property Registry
 
@@ -482,12 +541,16 @@ Effect of registration in the Personal Property Registry
 
 ### 20 - Contents of conveyance respecting intestacy
 
+Source key: section:20
+
 Contents of conveyance respecting intestacy
 
 20Every instrument executed by a person who has acquired an interest in the land thereby affected by devise or operation of law upon intestacy shall state the name of the person from whom the interest has devolved, together with the date and place of decease of such person, if known.
 1959, c.66, s.2
 
 ### 21 - Offences and penalty respecting false affidavit
+
+Source key: section:21
 
 Offences and penalty respecting false affidavit
 
@@ -496,12 +559,16 @@ Offences and penalty respecting false affidavit
 
 ### 22 - Enlargement of time for registration of will
 
+Source key: section:22
+
 Enlargement of time for registration of will
 
 22Where the person interested in lands devised by a will, by reason of the contesting of such will or other cause, is unable without his fault to exhibit the same for registry within the time before limited, and a memorial of such contest or cause is entered in the registry office within the space of six months after the decease of the testator if he died within the Province, or within the space of one year after his decease if he died without the Province, the registry of such will within the space of six months after obtaining the will or probate thereof or the removal of such cause shall be a sufficient registry within the meaning of this Act; but if there is any concealment or suppression of a will, no purchaser for a valuable consideration shall be disturbed or defeated by the will, unless it is registered within three years after the testator’s death.
 R.S., c.195, s.28
 
-### 23(1) - Registration of will in extra-provincial court, registration of notarial will
+### 23 - Registration of will in extra-provincial court, registration of notarial will
+
+Source key: section:23
 
 Registration of will in extra-provincial court, registration of notarial will
 
@@ -515,12 +582,16 @@ R.S., c.195, s.29; 1971, c.61, s.1; 1986, c.69, s.4
 
 ### 24 - Registration of will probated in British Dominion
 
+Source key: section:24
+
 Registration of will probated in British Dominion
 
 24Where a will affecting land in this Province, or any interest therein, has been proved and registered, and probate of such will, or letters of administration with the will annexed, has been granted in a Supreme or other Court in any of His Majesty’s dominions, colonies, provinces or dependencies out of this Province, a copy of such will purporting to be under the hand of a Master in Chancery, or other officer of the court in which such will was proved and registered, and purporting to be authenticated by the seal of the court in which such will was proved and registered, together with a certificate purporting to be signed by the Chief Justice or other judge of the Court in which such will was proved and registered, that such Master in Chancery or other officer is a Master in Chancery or other officer, as the case may be, in such court, shall be deemed to be evidence of the original will having been proved and registered in such court, and of the probate thereof, or of letters of administration thereof with the will annexed having been granted, and a copy of the will under the hand and seal aforesaid, certified as aforesaid, may be registered in the registry office for any county of the Province as other conveyances are registered, and the same when so registered, shall have the same effect as if the original will had been registered therein, and a certified copy thereof shall be admissible in evidence in the same manner as a certified copy of the original will, if registered, would be; and for the purposes of this Act it is immaterial whether the papers authenticated as hereby required were so authenticated before or after the passing of this Act, and any copy of a will authenticated as required by this Act, and heretofore registered in the registry office for any county of this Province, shall be deemed and taken to have been duly registered.
 R.S., c.195, s.30; 1969, c.68, s.7; 2023, c.17, s.239
 
-### 25(1) - Registration of unprobated will
+### 25 - Registration of unprobated will
+
+Source key: section:25
 
 Registration of unprobated will
 
@@ -532,7 +603,9 @@ Registration of unprobated will
 
 R.S., c.195, s.31; 1971, c.61, s.2; 1983, c.78, s.2
 
-### 26(1) - Registration of probated will, registration of sealed will
+### 26 - Registration of probated will, registration of sealed will
+
+Source key: section:26
 
 Registration of probated will, registration of sealed will
 
@@ -544,12 +617,16 @@ R.S., c.195, s.32; 1986, c.69, s.5; 1987, c.6, s.98
 
 ### 27 - Registration of foreign decree
 
+Source key: section:27
+
 Registration of foreign decree
 
 27The authenticated or certified copy of any decree, decretal or other order relating to or affecting any land in this Province made by a Court of Equity or Chancery or other Court of Record out of this Province, under any Act of the Imperial or Canadian Parliament or made by any Court within this Province under any Act of the Legislature, may be registered in the registry office for the county in which such lands are situate if the authenticated or certified copy of such decree, decretal or other order purports to be under the seal of the Court making the same or, if the Court has no seal, under the hand of the judge of such Court who certifies on the said copy that the Court whereof he is judge has no seal; and such seal, or the signature of such judge, shall be proved by affidavit or affirmation before an official or person authorized by section 47 to take proof or acknowledgements of the execution of a conveyance out of the Province.
 R.S., c.195, s.33
 
 ### 28 - Registration of corporate documents
+
+Source key: section:28
 
 Registration of corporate documents
 
@@ -558,12 +635,16 @@ Registration of corporate documents
 
 ### 29 - Registration of notice of sale under mortgage
 
+Source key: section:29
+
 Registration of notice of sale under mortgage
 
 29Where any mortgage on real property contains a power of sale upon default in payment of the money secured by the said mortgage, or upon default of the performance of the conditions therein contained, or upon default in doing or performing the acts or things to secure the doing or performing of which the said mortgage is given, and it is provided in and by such mortgage that notice of the time and place of sale shall be given or published prior to such sale, or where notice of sale under a mortgage is given as authorized by the Property Act, any such notice given as provided in and by any such mortgage, or under the Property Act, may, subject to section 30, be registered at full length in the registry office for the county in which the property covered by the mortgage is situate.
 R.S., c.195, s.34
 
-### 30(1) - Proof of signature and notice
+### 30 - Proof of signature and notice
+
+Source key: section:30
 
 Proof of signature and notice
 
@@ -577,7 +658,9 @@ Proof of signature and notice
 
 R.S., c.195, s.35
 
-### 31(1) - Duty of registrar respecting notice of sale
+### 31 - Duty of registrar respecting notice of sale
+
+Source key: section:31
 
 Duty of registrar respecting notice of sale
 
@@ -589,12 +672,16 @@ R.S., c.195, s.36
 
 ### 32 - Filing of notice of sale
 
+Source key: section:32
+
 Filing of notice of sale
 
 32Notwithstanding the provisions contained in sections 29, 30 and 31, the registrar, at the request of the person offering such notice of sale, affidavits and other proof for registration, shall file the same in his office instead of registering the same at full length, and on such filing enter in the index the name of the person giving the notice, and the names of the persons to whom such notice was given, and enter a certificate upon such notice of the day, hour and minute of filing, and duly enter the same in the order of its receipt with other instruments for registry.
 R.S., c.195, s.37
 
-### 33(1) - Registering lien or certificate under the Construction Remedies Act
+### 33 - Registering lien or certificate under the Construction Remedies Act
+
+Source key: section:33
 
 Registering lien or certificate under the Construction Remedies Act
 2020 c.29, s.115
@@ -607,6 +694,8 @@ R.S., c.195, s.38; 1966, c.93, s.5; 2020, c.29, s.115, 2020 c.29, s.115
 
 ### 34 - Effect of registration of conveyance
 
+Source key: section:34
+
 Effect of registration of conveyance
 
 34Every conveyance, duly acknowledged or proved and registered according to the law in force at the time of the registration, shall be effectual for the transferring of the land therein described and the possession thereof, according to the intent of such conveyance without livery of seisin or any other act.
@@ -614,12 +703,16 @@ R.S., c.195, s.39
 
 ### 35 - Registration of copy
 
+Source key: section:35
+
 Registration of copy
 
 35Where an instrument has been duly registered under the provisions of this Act, a copy thereof certified by the registrar according to this Act may be registered in any registry office upon deposit thereof without production of the original instrument, and without proof other than the production of such copy, and when so registered shall have the same effect as if the original had been registered in that office; if the acknowledgment or proof of execution of the original instrument was taken or made before a person having authority to take an acknowledgment or proof for registration in the registry office in which it is proposed to register such copy.
 R.S., c.195, s.41
 
-### 36(1) - Affidavit of execution or acknowledgment
+### 36 - Affidavit of execution or acknowledgment
+
+Source key: section:36
 
 Affidavit of execution or acknowledgment
 
@@ -639,12 +732,16 @@ R.S., c.195, s.42; 1986, c.69, s.6
 
 ### 37 - Proof of execution
 
+Source key: section:37
+
 Proof of execution
 
 37When proof is made by a subscribing witness to the execution of any instrument, such proof may be made either by oath or affidavit, or by affirmation or declaration when by the law of the country where such proof is made an affirmation or declaration is allowed instead of an oath or affidavit, and the registrar may receive such instrument so proved without any other or further proof of the due execution, if it be stated in such proof that, by the law of the country where the same is made, proof by affirmation or declaration is allowed instead of by oath or affidavit.
 R.S., c.195, s.43
 
 ### 38 - Sufficiency of name in affidavit
+
+Source key: section:38
 
 Sufficiency of name in affidavit
 
@@ -653,12 +750,16 @@ R.S., c.195, s.44
 
 ### 39 - Error or omission in affidavit of execution
 
+Source key: section:39
+
 Error or omission in affidavit of execution
 
 39No registration heretofore or hereafter made of any instrument shall be deemed or adjudged void or defective by reason of the name and place of residence of the subscribing witness thereto not being set forth in full, or being improperly or insufficiently given or described in the affidavit, affirmation or declaration mentioned in and required by this Act, nor by reason of the addition, occupation or calling of the witness being omitted from such affidavit, affirmation or declaration, nor by reason of any clerical error or omission of a merely formal or technical character therein, but nevertheless it shall continue to be the duty of every registrar not to register any instrument except on such proof as required by this Act, but this section does not apply to any instrument heretofore adjudicated upon in that behalf by any Court of competent jurisdiction.
 R.S., c.195, s.45
 
 ### 40 - Compellability of witness
+
+Source key: section:40
 
 Compellability of witness
 
@@ -667,6 +768,8 @@ R.S., c.195, s.46; 1979, c.41, s.109; 2023, c.17, s.239
 
 ### 41 - Certificate of proof of instrument
 
+Source key: section:41
+
 Certificate of proof of instrument
 
 41Where the witness to an instrument is dead, or has become insane, idiotic, imbecile or of unsound mind or understanding, and whether so found by inquisition or not, or where it is proved to the satisfaction of a judge of The Court of King’s Bench of New Brunswick that a witness to any instrument is without the Province and the place of abode or residence of such witness without the Province is unknown, any person who is or claims to be interested in the registration of the instrument may make proof viva voce or by affidavit, as the judge may require, before a judge of The Court of King’s Bench of New Brunswick, or a judge of any superior court of record in any other province of Canada, or any portion of the British Commonwealth of Nations, of the execution of such instrument, and upon a certificate endorsed upon such instrument and signed by such judge that the judge is satisfied, by the proof adduced, of the due execution of the instrument, the registrar shall register such instrument and certificate, if the certificate is sealed with the seal of the court to which the judge belongs.
@@ -674,12 +777,16 @@ R.S., c.195, s.47; 1979, c.41, s.109; 2023, c.17, s.239
 
 ### 42 - Proof of signature or seal
 
+Source key: section:42
+
 Proof of signature or seal
 
 42It is not necessary for the purpose of registration that there be any proof verifying the seal affixed to any acknowledgment, affidavit or other proof except where it may be otherwise required by this Act, nor is it necessary, except as otherwise required by this Act, to verify the signature or office of any person before whom such acknowledgment or affidavit is made, if the same purports to be sealed and certified by the proper officer as required.
 R.S., c.195, s.48
 
-### 43(1) - Seal of court of record, seal of corporation
+### 43 - Seal of court of record, seal of corporation
+
+Source key: section:43
 
 Seal of court of record, seal of corporation
 
@@ -691,7 +798,9 @@ Seal of court of record, seal of corporation
 
 R.S., c.195, s.49; 2013, c.32, s.35
 
-### 44(1) - Execution of instruments
+### 44 - Execution of instruments
+
+Source key: section:44
 
 Execution of instruments
 
@@ -785,12 +894,16 @@ R.S., c.195, s.50; 1979, c.41, s.109; 1982, c.57, s.1; 1983, c.78, s.4; 1984, c.
 
 ### 45 - Registrar and deputy registrar ex officio commissioner of oaths
 
+Source key: section:45
+
 Registrar and deputy registrar ex officio commissioner of oaths
 
 45Every registrar and deputy registrar is ex officio a Commissioner for Taking Affidavits to be read in The Court of King’s Bench of New Brunswick.
 1967, c.62, s.1; 1979, c.41, s.109; 2023, c.17, s.239
 
-### 46(1) - Certificate of development officer
+### 46 - Certificate of development officer
+
+Source key: section:46
 
 Certificate of development officer
 
@@ -830,6 +943,8 @@ R.S., c.195, s.51; 1956, c.56, s.1; 1961-62, c.67, s.11; 1967, c.62, s.2; 1972, 
 
 ### 47 - Persons before whom proof of execution made
 
+Source key: section:47
+
 Persons before whom proof of execution made
 
 47Any affidavit, oath, declaration or affirmation made without the Province, proving the execution of any power of attorney, will or probate, copy or memorial thereof, for the purpose of registry in this Province, may be made before any person authorized by section 44 to take proof of conveyances without the Province.
@@ -837,12 +952,16 @@ R.S., c.195, s.52
 
 ### 48 - Registration of Crown grant
 
+Source key: section:48
+
 Registration of Crown grant
 
 48Upon payment of the fees as provided by law, grants from the Crown as representing the Province of New Brunswick, and grants from the Crown as representing Canada may be registered without proof of the seal of the Province or of Canada or the signature, or official position, or authority of the persons purporting to act on behalf of the Crown in the matter of the execution of such grants.
 R.S., c.195, s.53
 
-### 49(1) - Certificate of cancellation of Crown grant
+### 49 - Certificate of cancellation of Crown grant
+
+Source key: section:49
 
 Certificate of cancellation of Crown grant
 
@@ -852,7 +971,9 @@ Certificate of cancellation of Crown grant
 
 R.S., c.195, s.54; 1960, c.62, s.2; 1966, c.53, s.2; 1986, c.8, s.113; 2004, c.20, s.57; 2016, c.37, s.168; 2019, c.29, s.208; 2024, c.28, s.54
 
-### 50(1) - Registration of original instrument, annexed plan, instrument conveying parcel
+### 50 - Registration of original instrument, annexed plan, instrument conveying parcel
+
+Source key: section:50
 
 Registration of original instrument, annexed plan, instrument conveying parcel
 
@@ -890,7 +1011,9 @@ the Director of Surveys if the land is in an integrated survey area constituted 
 
 R.S., c.195, s.55; 1961-62, c.67, s.12; 1972, c.61, s.8; 1983, c.78, s.5; 1984, c.31, s.1; 2008, c.20, s.6; 2013, c.32, s.35
 
-### 51(1) - Certificate of registrar
+### 51 - Certificate of registrar
+
+Source key: section:51
 
 Certificate of registrar
 
@@ -902,12 +1025,16 @@ R.S., c.195, s.56; 1982, c.57, s.2
 
 ### 52 - Repealed
 
+Source key: section:52
+
 Repealed
 
 52Repealed: 2008, c.20, s.7
 1963 (2nd Sess.), c.35, s.3; 1986, c.69, s.7, 8; 2008, c.20, s.7
 
 ### 53 - Court order respecting production of book or record
+
+Source key: section:53
 
 Court order respecting production of book or record
 
@@ -916,12 +1043,16 @@ R.S., c.195, s.57; 1986, c.4, s.47; 2008, c.20, s.8
 
 ### 54 - Certificate of satisfaction of mortgage
 
+Source key: section:54
+
 Certificate of satisfaction of mortgage
 
 54A registered mortgage may be discharged by a certificate of the satisfaction thereof signed by the mortgagee, his representatives or assigns, and acknowledged or proved in the same manner as an instrument, and registered with the acknowledgment or proof in the proper registry book in the office where the mortgage is registered.
 R.S., c.195, s.58; 2008, c.20, s.9
 
 ### 55 - Certificate of partial release of mortgage
+
+Source key: section:55
 
 Certificate of partial release of mortgage
 
@@ -930,12 +1061,16 @@ R.S., c.195, s.59; 1955, c.70, s.1
 
 ### 56 - Conveyance by married woman
 
+Source key: section:56
+
 Conveyance by married woman
 
 56Every conveyance of property of a married woman, acquired by her before her marriage, shall state the name under which such property was so acquired by her.
 R.S., c.195, s.60; 1960, c.62, s.3
 
 ### 57 - Certificate of satisfaction of judgment
+
+Source key: section:57
 
 Certificate of satisfaction of judgment
 
@@ -944,6 +1079,8 @@ R.S., c.195, s.61; 2008, c.20, s.10; 2013, c.32, s.35
 
 ### 58 - Registration of Order for Partition or Sale
 
+Source key: section:58
+
 Registration of Order for Partition or Sale
 
 58A copy of an Order for Partition or Sale endorsed with the certificate of the clerk in accordance with the Rules of Court under the Judicature Act may be registered in the registry office for the county in which the lands are situate and shall have the same effect as any registered conveyance within the provisions of this Act.
@@ -951,12 +1088,16 @@ R.S., c.195, s.62; 1979, c.41, s.109; 1980, c.32, s.35; 1983, c.78, s.6
 
 ### 59 - Registration of certificate of pending litigation
 
+Source key: section:59
+
 Registration of certificate of pending litigation
 
 59The instituting of an action or the taking of a proceeding, in which action or proceeding any title to, or interest in, land is brought in question, shall not be deemed notice of the action or proceeding to any person not being a party thereto until a certificate of pending litigation prescribed by the Rules of Court under the Judicature Act has been signed by the clerk of The Court of King’s Bench of New Brunswick in the judicial district wherein the action was instituted or the proceeding taken, and has been registered in the registry office for the county in which the land is situate.
 R.S., c.195, s.63; 1979, c.41, s.109; 1980, c.32, s.35; 1983, c.78, s.7; 2023, c.17, s.239
 
-### 60(1) - Registration of power of attorney, conveyance under power of attorney
+### 60 - Registration of power of attorney, conveyance under power of attorney
+
+Source key: section:60
 
 Registration of power of attorney, conveyance under power of attorney
 
@@ -968,12 +1109,16 @@ R.S., c.195, s.64
 
 ### 61 - Summons to witness
 
+Source key: section:61
+
 Summons to witness
 
 61A summons to witness may be issued from The Court of King’s Bench of New Brunswick, or any other court having jurisdiction, in the form as near as may be to that now in use for a cause in Court, to compel the attendance of any witness, or the production of any conveyance or instrument for the proof thereof, that the same may be registered agreeably to the provisions of this Act; disobedience to such summons may be punished by such court in the usual manner.
 R.S., c.195, s.65; 1979, c.41, s.109; 1986, c.4, s.47; 2023, c.17, s.239
 
 ### 62 - Orders of Provincial or Federal Cabinet
+
+Source key: section:62
 
 Orders of Provincial or Federal Cabinet
 
@@ -982,12 +1127,16 @@ R.S., c.195, s.66; 1980, c.47, s.3
 
 ### 63 - Registration of bond to Crown
 
+Source key: section:63
+
 Registration of bond to Crown
 
 63No bond to the Crown binds the land of any person executing the same unless and until it is recorded in the registry office for the county wherein the land is situate.
 R.S., c.195, s.67; 2023, c.17, s.239
 
 ### 64 - Registration as notice
+
+Source key: section:64
 
 Registration as notice
 
@@ -996,6 +1145,8 @@ R.S., c.195, s.68; 1982, c.3, s.67
 
 ### 65 - Payment of fees
 
+Source key: section:65
+
 Payment of fees
 
 65The registrar shall not be compelled to register any instrument unless the fees authorized by this Act are first paid thereon.
@@ -1003,12 +1154,16 @@ R.S., c.195, s.69
 
 ### 65.1 - Payment of fees of a digitally scanned image of an instrument
 
+Source key: section:65.1
+
 Payment of fees of a digitally scanned image of an instrument
 
 65.1 Payment of any fees or taxes in respect of the registration of a digitally scanned image of an instrument shall be made by electronic means in such manner and at such time as is established by the Chief Registrar of Deeds.
 2017, c.60, s.2
 
-### 66(1) - Offences and penalty respecting taking of fees by employees
+### 66 - Offences and penalty respecting taking of fees by employees
+
+Source key: section:66
 
 Offences and penalty respecting taking of fees by employees
 
@@ -1022,6 +1177,8 @@ R.S., c.195, s.70; 1961-62, c.67, s.13; O.C.67-164; 1982, c.57, s.3
 
 ### 66.1 - Liability of registrar, deputy registrar and clerk
 
+Source key: section:66.1
+
 Liability of registrar, deputy registrar and clerk
 
 66.1No action lies against a registrar of deeds, a deputy registrar of deeds or a clerk in a registry office with respect to any act or omission by that person if he acted in good faith in pursuing his duties under this or any other Act or law.
@@ -1029,12 +1186,16 @@ Liability of registrar, deputy registrar and clerk
 
 ### 66.2 - Proceedings against the Crown
 
+Source key: section:66.2
+
 Proceedings against the Crown
 
 66.2Notwithstanding section 66.1 of this Act and section 4 of the Proceedings Against the Crown Act, proceedings lie against the Crown in respect of an act or omission of a registrar of deeds, a deputy registrar of deeds or a clerk in a registry office.
 1984, c.31, s.2
 
-### 67(1) - Regulations and amendments respecting Schedule of Fees
+### 67 - Regulations and amendments respecting Schedule of Fees
+
+Source key: section:67
 
 Regulations and amendments respecting Schedule of Fees
 
@@ -1046,12 +1207,16 @@ R.S., c.195, s.71; 1961-62, c.67, s.15; 1973, c.74, s.68
 
 ### 68 - Posting of Schedule of Fees
 
+Source key: section:68
+
 Posting of Schedule of Fees
 
 68Every registrar shall keep posted up in some conspicuous place in his office a schedule of fees and charges authorized under this Act.
 R.S., c.195, s.74; 1966, c.93, s.7
 
 ### 69 - Statement of fees
+
+Source key: section:69
 
 Statement of fees
 
@@ -1060,12 +1225,16 @@ R.S., c.195, s.75
 
 ### 70 - Successor of registrar
 
+Source key: section:70
+
 Successor of registrar
 
 70If the registrar of any county dies or vacates the office without having made any certificate required by law, either in the registry book for the county in which the deed or other instrument is registered, or upon the deed or instrument received by law for registration during his tenure of office, the incoming registrar shall make the necessary certificates in respect of such documents in the name of the registrar who preceded him in the office, and adding to the ex-registrar’s name that the same is signed by him, the incoming registrar, under the authority of this Act.
 R.S., c.195, s.76
 
-### 71(1) - Regulations
+### 71 - Regulations
+
+Source key: section:71
 
 Regulations
 

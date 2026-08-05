@@ -6,9 +6,11 @@ Source: https://laws.gnb.ca/en/document/cs/L-1.1
 Content hash: d20b72deaffb8063e0425b730ea5a3a35075e54007e0c0a67df711ddaa970721
 Consolidated to: June 16, 2023
 
-## Sections
+## Components
 
 ### 1 - Purpose
+
+Source key: section:1
 
 Purpose
 
@@ -16,7 +18,9 @@ Purpose
 
 APPLICATION
 
-### 2(1) - Application
+### 2 - Application
+
+Source key: section:2
 
 Application
 
@@ -42,7 +46,9 @@ such other parcels of land as are brought under the operation of this Act by the
 
 1982, c.3, s.41; 1983, c.45, s.1; 2000, c.43, s.1
 
-### 2.1(1) - Interests within the scope of the Personal Property Security Act
+### 2.1 - Interests within the scope of the Personal Property Security Act
+
+Source key: section:2.1
 
 Interests within the scope of the Personal Property Security Act
 
@@ -63,6 +69,8 @@ the creation or transfer of a right to payment that arises in connection with an
 INTERPRETATION
 
 ### 3 - Definitions
+
+Source key: section:3
 
 Definitions
 
@@ -152,6 +160,8 @@ LAND TITLES SYSTEM
 
 ### 4 - Establishment of land titles system
 
+Source key: section:4
+
 Establishment of land titles system
 
 4There is hereby established in and for the Province a system of land titles registration to be administered by Service New Brunswick.
@@ -159,7 +169,9 @@ Establishment of land titles system
 
 OFFICERS
 
-### 5(1) - Appointment of Registrar General, registrar and deputies
+### 5 - Appointment of Registrar General, registrar and deputies
+
+Source key: section:5
 
 Appointment of Registrar General, registrar and deputies
 
@@ -179,12 +191,16 @@ Appointment of Registrar General, registrar and deputies
 
 ### 6 - Service New Brunswick
 
+Source key: section:6
+
 Service New Brunswick
 
 6Service New Brunswick may designate any person to perform any of the duties or exercise any of the powers of the Registrar General and shall specify the duties to be performed or powers to be exercised by the person so designated.
 1989, c.N-5.01, s.34; 1998, c.12, s.13
 
 ### 7 - Seals of office
+
+Source key: section:7
 
 Seals of office
 
@@ -195,13 +211,17 @@ PROTECTION
 
 ### 8 - Immunity of officers
 
+Source key: section:8
+
 Immunity of officers
 
 8No action lies against the Registrar General, the Deputy Registrar General, a registrar, a deputy registrar or any person acting under the authority of any of them with respect to any act or omission by that person if he acted in good faith in pursuing his duties under this Act or any other Act or law.
 
 EVIDENCE
 
-### 9(1) - Records and copies of records
+### 9 - Records and copies of records
+
+Source key: section:9
 
 Records and copies of records
 
@@ -217,6 +237,8 @@ Records and copies of records
 
 ### 10 - Documents signed, made or issued by officers
 
+Source key: section:10
+
 Documents signed, made or issued by officers
 
 10Every document purporting to be an order, direction, notice, certificate, requirement or decision of the Registrar General, his deputy or a person designated by Service New Brunswick to perform duties or exercise powers of the Registrar General, shall be presumed to be a document signed, made or issued by the Registrar General, his deputy or the person so designated without proof of the signature or the official character of the person appearing to have signed, made or issued the document.
@@ -226,7 +248,9 @@ PARCEL IDENTIFIERS
 
 1998, c.38, s.2
 
-### 10.1(1) - Parcel identifiers and descriptions of land
+### 10.1 - Parcel identifiers and descriptions of land
+
+Source key: section:10.1
 
 Parcel identifiers and descriptions of land
 
@@ -274,12 +298,16 @@ with respect to any newly created parcel, associate a description with the parce
 
 ### 10.2 - Record of parcel identifiers
 
+Source key: section:10.2
+
 Record of parcel identifiers
 
 10.2The registrar shall maintain a record of parcel identifiers assigned to parcels of land and of the descriptions associated with those parcel identifiers.
 1998, c.38, s.2
 
-### 10.3(1) - References to parcel identifiers
+### 10.3 - References to parcel identifiers
+
+Source key: section:10.3
 
 References to parcel identifiers
 
@@ -291,7 +319,9 @@ References to parcel identifiers
 
 1998, c.38, s.2
 
-### 10.4(1) - Parcel identifiers on consolidation
+### 10.4 - Parcel identifiers on consolidation
+
+Source key: section:10.4
 
 Parcel identifiers on consolidation
 
@@ -303,7 +333,9 @@ Parcel identifiers on consolidation
 
 REGISTRATION
 
-### 11(1) - Application to register land
+### 11 - Application to register land
+
+Source key: section:11
 
 Application to register land
 
@@ -347,7 +379,9 @@ certify in the application that he or she has possession of the affidavit of the
 
 1982, c.3, s.41; 1983, c.45, s.4; 1984, c.48, s.1; 1998, c.38, s.3; 2006, c.11, s.2
 
-### 12(1) - Completion of application, order by Registrar General
+### 12 - Completion of application, order by Registrar General
+
+Source key: section:12
 
 Completion of application, order by Registrar General
 
@@ -391,7 +425,9 @@ Completion of application, order by Registrar General
 
 1983, c.45, s.5; 1984, c.48, s.2; 1998, c.38, s.4
 
-### 13(1) - Court order or enactment
+### 13 - Court order or enactment
+
+Source key: section:13
 
 Court order or enactment
 
@@ -414,6 +450,8 @@ shall make an order directing the registrar to register the title to the land.
 
 ### 14 - Order of Registrar General
 
+Source key: section:14
+
 Order of Registrar General
 
 14Where the Registrar General is satisfied that any parcel of land should be brought under the operation of this Act and that title to such land should be registered without an application, and
@@ -426,7 +464,9 @@ the prescribed fee is paid,
 
 he may make an order directing the registrar to register the title to the land.
 
-### 14.1(1) - Land under Condominium Property Act
+### 14.1 - Land under Condominium Property Act
+
+Source key: section:14.1
 
 Land under Condominium Property Act
 
@@ -450,7 +490,9 @@ the owners of the land consent to the registration.
 
 EFFECT OF REGISTRATION
 
-### 15(1) - Registration necessary to pass estate or interest
+### 15 - Registration necessary to pass estate or interest
+
+Source key: section:15
 
 Registration necessary to pass estate or interest
 
@@ -466,11 +508,15 @@ Registration necessary to pass estate or interest
 
 ### 16 - Status of registered owner
 
+Source key: section:16
+
 Status of registered owner
 
 16Notwithstanding anything in any other enactment, the owner who is shown by the title register to be the owner of a parcel of land described therein holds the land in fee simple subject, in addition to the overriding incidents implied by this Act, to such encumbrances, liens, estates or interests as are shown by the title register to have been registered against or in respect of that land and free from all other encumbrances, liens, estates or interests whatever, except in case of fraud wherein he has participated or colluded.
 
-### 17(1) - Effect of registration on subsequent interests
+### 17 - Effect of registration on subsequent interests
+
+Source key: section:17
 
 Effect of registration on subsequent interests
 
@@ -550,7 +596,9 @@ ELECTRONIC INSTRUMENTS
 
 2006, c.11, s.3
 
-### 17.1(1) - Instruments to be submitted electronically
+### 17.1 - Instruments to be submitted electronically
+
+Source key: section:17.1
 
 Instruments to be submitted electronically
 
@@ -590,7 +638,9 @@ the instrument was executed before a date specified by regulation.
 
 2006, c.11, s.3; 2017, c.60, s.1
 
-### 17.11(1) - Instruments that may be submitted as digitally scanned images
+### 17.11 - Instruments that may be submitted as digitally scanned images
+
+Source key: section:17.11
 
 Instruments that may be submitted as digitally scanned images
 
@@ -608,7 +658,9 @@ shall be submitted using the technology put in place by Service New Brunswick.
 
 2017, c.60, s.1
 
-### 17.2(1) - Authentication of electronic instrument
+### 17.2 - Authentication of electronic instrument
+
+Source key: section:17.2
 
 Authentication of electronic instrument
 
@@ -660,7 +712,9 @@ the instrument was signed or witnessed by a person who is not the person who is 
 
 2006, c.11, s.3; 2017, c.60, s.1
 
-### 17.3(1) - Proof of execution and marital status
+### 17.3 - Proof of execution and marital status
+
+Source key: section:17.3
 
 Proof of execution and marital status
 
@@ -678,12 +732,16 @@ the affidavit of marital status, if any, that accompanies the instrument referre
 
 ### 17.4 - Retention of documents
 
+Source key: section:17.4
+
 Retention of documents
 
 17.4A subscriber who authenticates an electronic instrument pursuant to section 17.2 shall retain the instrument referred to in paragraph 17.2(3)(a) and the affidavits, certificate or statutory declaration that accompany the instrument for such minimum period of time as is required by the regulations.
 2006, c.11, s.3
 
 ### 17.5 - Authorization to submit
+
+Source key: section:17.5
 
 Authorization to submit
 
@@ -692,12 +750,16 @@ Authorization to submit
 
 ### 17.6 - Effect of electronic instrument
 
+Source key: section:17.6
+
 Effect of electronic instrument
 
 17.6Notwithstanding any provision in any other Act or any rule of law, an electronic instrument that is received at a land titles office is not required to be in writing or to be signed by the parties and has the same effect for all purposes as an instrument that is in writing and is signed by the parties.
 2006, c.11, s.3; 2014, c.47, s.3
 
-### 17.7(1) - Production of evidence
+### 17.7 - Production of evidence
+
+Source key: section:17.7
 
 Production of evidence
 
@@ -707,7 +769,9 @@ Production of evidence
 
 2006, c.11, s.3
 
-### 17.8(1) - Subscriber agreement
+### 17.8 - Subscriber agreement
+
+Source key: section:17.8
 
 Subscriber agreement
 
@@ -758,7 +822,9 @@ REGISTRATION AND REJECTION
 
 1987, c.6, s.50
 
-### 18(1) - Registration of instrument
+### 18 - Registration of instrument
+
+Source key: section:18
 
 Registration of instrument
 
@@ -817,7 +883,9 @@ issue to the owner, surviving owner, personal representative, agent or trustee, 
 
 PRIORITIES
 
-### 19(1) - Priority on registration
+### 19 - Priority on registration
+
+Source key: section:19
 
 Priority on registration
 
@@ -835,6 +903,8 @@ POSTPONEMENTS
 
 ### 20 - Postponement of priority
 
+Source key: section:20
+
 Postponement of priority
 
 20The priority of any instrument and interest or claim thereunder in respect of or affecting registered land may, by an instrument of postponement in prescribed form, be postponed to another instrument and interest or claim thereunder and upon the registration of the instrument of postponement the priority of the instrument and interest or claim postponed shall, with respect to the instrument and interest postponed to, rank immediately after the instrument and interest or claim postponed to.
@@ -843,12 +913,16 @@ TRANSFERS
 
 ### 21 - Execution of transfer
 
+Source key: section:21
+
 Execution of transfer
 
 21Registered land may be transferred by the registration of a transfer in prescribed form.
 2006, c.11, s.4
 
-### 22(1) - Effect of transfer
+### 22 - Effect of transfer
+
+Source key: section:22
 
 Effect of transfer
 
@@ -864,13 +938,17 @@ CROWN GRANTS
 
 ### 23 - Crown grants
 
+Source key: section:23
+
 Crown grants
 
 23Subject to section 18, upon receipt by the registrar of a grant from the Crown to a grantee named in the grant, the registrar shall, subject to the regulations, whether or not the land is registered land, register the title to the land in the name of the grantee as owner.
 
 EASEMENTS
 
-### 24(1) - Registration of easement or incorporeal right
+### 24 - Registration of easement or incorporeal right
+
+Source key: section:24
 
 Registration of easement or incorporeal right
 
@@ -888,7 +966,9 @@ the servient tenement, where it is registered land.
 
 MORTGAGES
 
-### 25(1) - Registration of mortgage
+### 25 - Registration of mortgage
+
+Source key: section:25
 
 Registration of mortgage
 
@@ -906,7 +986,9 @@ Registration of mortgage
 
 25(7)The Registrar General shall, upon the filing with him of an application in the prescribed form, assign a number to an optional mortgage covenant to which no number has previously been assigned.
 
-### 26(1) - Release
+### 26 - Release
+
+Source key: section:26
 
 Release
 
@@ -920,7 +1002,9 @@ DEBENTURES
 
 1986, c.49, s.7
 
-### 26.1(1) - Debentures
+### 26.1 - Debentures
+
+Source key: section:26.1
 
 Debentures
 
@@ -944,7 +1028,9 @@ Debentures
 
 LEASES
 
-### 27(1) - Registration of lease
+### 27 - Registration of lease
+
+Source key: section:27
 
 Registration of lease
 
@@ -979,7 +1065,9 @@ the holder of the encumbrance subsequently adopts the lease.
 
 1982, c.3, s.41; 1983, c.45, s.9; 2000, c.43, s.5
 
-### 28(1) - Surrender of lease
+### 28 - Surrender of lease
+
+Source key: section:28
 
 Surrender of lease
 
@@ -994,7 +1082,9 @@ LEASES AND DEBENTURES
 
 1986, c.49, s.8
 
-### 29(1) - Registration of assignment
+### 29 - Registration of assignment
+
+Source key: section:29
 
 Registration of assignment
 
@@ -1012,7 +1102,9 @@ Registration of assignment
 
 CAVEATS
 
-### 30(1) - Registration of caveat
+### 30 - Registration of caveat
+
+Source key: section:30
 
 Registration of caveat
 
@@ -1032,7 +1124,9 @@ subject to the regulations, forward the caveat to the Registrar General who shal
 
 1983, c.45, s.11; 1986, c.49, s.10
 
-### 31(1) - Effect of registration
+### 31 - Effect of registration
+
+Source key: section:31
 
 Effect of registration
 
@@ -1044,11 +1138,15 @@ Effect of registration
 
 ### 32 - Application by owner
 
+Source key: section:32
+
 Application by owner
 
 32Upon application by the owner, by a person claiming an interest in the land against which a caveat is registered or by the registrar, the court may require the caveator to show cause why the caveat should not be removed from registration, and the court may, upon proof that the caveator has been served and upon such evidence as it requires, make such order in respect of the caveat as it thinks fit.
 
-### 33(1) - Notice of request to withdraw caveat
+### 33 - Notice of request to withdraw caveat
+
+Source key: section:33
 
 Notice of request to withdraw caveat
 
@@ -1062,11 +1160,15 @@ Notice of request to withdraw caveat
 
 ### 34 - Instrument to withdraw caveat
 
+Source key: section:34
+
 Instrument to withdraw caveat
 
 34A registered caveat may be withdrawn from registration in whole or in part or as to all or any of the land affected thereby by an instrument in prescribed form registered in the land titles office for the district in which the land is situated.
 
-### 35(1) - Action for damages, restraining order
+### 35 - Action for damages, restraining order
+
+Source key: section:35
 
 Action for damages, restraining order
 
@@ -1078,7 +1180,9 @@ Action for damages, restraining order
 
 STOP ORDERS
 
-### 36(1) - Registration of stop order to prohibit registration
+### 36 - Registration of stop order to prohibit registration
+
+Source key: section:36
 
 Registration of stop order to prohibit registration
 
@@ -1094,7 +1198,9 @@ Registration of stop order to prohibit registration
 
 AFFIDAVIT TO PREVENT REGISTRATION
 
-### 37(1) - Registration of affidavit to prevent registration
+### 37 - Registration of affidavit to prevent registration
+
+Source key: section:37
 
 Registration of affidavit to prevent registration
 
@@ -1109,6 +1215,8 @@ CERTIFICATE OF PENDING LITIGATION
 1986, c.4, s.30
 
 ### 38 - Registration of certificate of pending litigation
+
+Source key: section:38
 
 Registration of certificate of pending litigation
 
@@ -1126,13 +1234,17 @@ PLANS AND SUBDIVISIONS
 
 ### 39 - Registration of instrument severing or consolidating registered land
 
+Source key: section:39
+
 Registration of instrument severing or consolidating registered land
 
 39The registrar is not obliged to register an instrument severing or consolidating registered land unless he is satisfied that the provisions of the Community Planning Act have been complied with, if it is applicable, and he is provided with such documentation as is necessary to enable him to register the instrument in accordance with this Act.
 
 JUDGMENTS
 
-### 40(1) - Application to register memorial of judgment
+### 40 - Application to register memorial of judgment
+
+Source key: section:40
 
 Application to register memorial of judgment
 
@@ -1170,12 +1282,16 @@ a person acting in the capacity of personal representative of the registered own
 
 ### 41 - Effect of registration of memorial of judgment
 
+Source key: section:41
+
 Effect of registration of memorial of judgment
 
 41While a judgment is registered and remains in force it binds the interest of the judgment debtor who is an owner of the land or an estate or interest therein against which it is registered as provided in the Enforcement of Money Judgments Act.
 2013, c.32, s.18
 
-### 41.1(1)
+### 41.1
+
+Source key: section:41.1
 
 41.1(1)If a judgment has been registered against the interest of a judgment debtor who is a joint tenant and the judgment debtor dies before the joint tenancy has been severed, the judgment does not bind the interest that the surviving joint tenant holds in the land after the death of the judgment debtor.
 
@@ -1185,12 +1301,16 @@ Effect of registration of memorial of judgment
 
 ### 42 - Notice of registration to owner
 
+Source key: section:42
+
 Notice of registration to owner
 
 42Upon the registration of a judgment against registered land, the registrar shall forthwith give notice of such registration to the owner of the interest in the land against which it is registered.
 2013, c.32, s.18
 
-### 43(1) - Notice to judgment creditor, cessation of registration, extension of registration period, registration of assignment
+### 43 - Notice to judgment creditor, cessation of registration, extension of registration period, registration of assignment
+
+Source key: section:43
 
 Notice to judgment creditor, cessation of registration, extension of registration period, registration of assignment
 
@@ -1232,12 +1352,16 @@ is satisfied.
 
 ### 44 - Instrument withdrawing memorial of judgment
 
+Source key: section:44
+
 Instrument withdrawing memorial of judgment
 
 44A registered judgment may be withdrawn or removed from registration in whole or in part or as to all or any land affected thereby by an instrument in prescribed form registered in the land titles office for the district in which the land is situated.
 2013, c.32, s.18
 
-### 45(1) - Action for damages against judgment creditor
+### 45 - Action for damages against judgment creditor
+
+Source key: section:45
 
 Action for damages against judgment creditor
 
@@ -1249,6 +1373,8 @@ Action for damages against judgment creditor
 
 ### 46 - Paramountcy of Act
 
+Source key: section:46
+
 Paramountcy of Act
 
 46Where there is a conflict between the provisions of the Enforcement of Money Judgments Act and section 40, 41, 42, 43, 44 or 45 of this Act, the provisions of this Act apply.
@@ -1256,7 +1382,9 @@ Paramountcy of Act
 
 POWERS OF ATTORNEY
 
-### 47(1) - Registration or filing of power of attorney
+### 47 - Registration or filing of power of attorney
+
+Source key: section:47
 
 Registration or filing of power of attorney
 
@@ -1276,7 +1404,9 @@ Registration or filing of power of attorney
 
 CONDITIONS AND COVENANTS
 
-### 48(1) - Registration of instrument containing conditions or covenants
+### 48 - Registration of instrument containing conditions or covenants
+
+Source key: section:48
 
 Registration of instrument containing conditions or covenants
 
@@ -1305,7 +1435,9 @@ constitute a determination by the registrar of its essential nature or enforceab
 
 1983, c.45, s.17
 
-### 48.1(1) - Conditions and covenants in a transfer
+### 48.1 - Conditions and covenants in a transfer
+
+Source key: section:48.1
 
 Conditions and covenants in a transfer
 
@@ -1321,13 +1453,17 @@ EXPROPRIATIONS
 
 ### 49 - Instrument evidencing expropriation of registered land
 
+Source key: section:49
+
 Instrument evidencing expropriation of registered land
 
 49The registrar shall receive instruments evidencing an expropriation of registered land pursuant to an enactment of Canada or the Province and he may request such further documentation as he determines necessary to carry out the intent and purpose of this Act.
 
 BANKRUPTCY PROCEEDINGS
 
-### 50(1) - Bankruptcy proceedings
+### 50 - Bankruptcy proceedings
+
+Source key: section:50
 
 Bankruptcy proceedings
 
@@ -1347,7 +1483,9 @@ Bankruptcy proceedings
 
 TAX SALE PROCEEDINGS
 
-### 51(1) - Tax sale proceedings
+### 51 - Tax sale proceedings
+
+Source key: section:51
 
 Tax sale proceedings
 
@@ -1361,7 +1499,9 @@ Tax sale proceedings
 
 MISCELLANEOUS TRANSFERS
 
-### 52(1) - Registration of claimant as owner
+### 52 - Registration of claimant as owner
+
+Source key: section:52
 
 Registration of claimant as owner
 
@@ -1403,7 +1543,9 @@ TRANSMISSION ON DEATH
 
 1998, c.38, s.11
 
-### 53(1) - Transmission on death
+### 53 - Transmission on death
+
+Source key: section:53
 
 Transmission on death
 
@@ -1427,7 +1569,9 @@ Transmission on death
 
 IMPLIED COVENANTS IN INSTRUMENTS
 
-### 54(1) - Implied covenants in instruments
+### 54 - Implied covenants in instruments
+
+Source key: section:54
 
 Implied covenants in instruments
 
@@ -1448,7 +1592,9 @@ Implied covenants in instruments
 PROOF OF EXECUTION FOR
 REGISTRATION
 
-### 55(1) - Proof of execution
+### 55 - Proof of execution
+
+Source key: section:55
 
 Proof of execution
 
@@ -1482,7 +1628,9 @@ a person authorized by any law of the Province to administer an oath or affirmat
 
 SERVICE
 
-### 56(1) - Address for service
+### 56 - Address for service
+
+Source key: section:56
 
 Address for service
 
@@ -1494,7 +1642,9 @@ Address for service
 
 1983, c.45, s.22; 2006, c.11, s.8
 
-### 57(1) - Method of service
+### 57 - Method of service
+
+Source key: section:57
 
 Method of service
 
@@ -1506,7 +1656,9 @@ Method of service
 
 TRUSTS
 
-### 58(1) - Registered land in trust
+### 58 - Registered land in trust
+
+Source key: section:58
 
 Registered land in trust
 
@@ -1517,6 +1669,8 @@ Registered land in trust
 1983, c.45, s.24
 
 ### 59 - Trust must be in accordance with Act
+
+Source key: section:59
 
 Trust must be in accordance with Act
 
@@ -1532,7 +1686,9 @@ the registrar shall treat any instrument containing any such notice as if there 
 
 SEALS AND CONSIDERATION
 
-### 60(1) - Seals and consideration
+### 60 - Seals and consideration
+
+Source key: section:60
 
 Seals and consideration
 
@@ -1546,7 +1702,9 @@ Seals and consideration
 
 TITLE REGISTER KNOWLEDGE
 
-### 61(1) - Unregistered instrument or interest
+### 61 - Unregistered instrument or interest
+
+Source key: section:61
 
 Unregistered instrument or interest
 
@@ -1571,12 +1729,16 @@ THE REGISTRAR
 
 ### 62 - Repealed
 
+Source key: section:62
+
 Repealed
 
 62Repealed: 1998, c.38, s.16
 1998, c.38, s.16
 
-### 63(1) - Certificate of registered ownership
+### 63 - Certificate of registered ownership
+
+Source key: section:63
 
 Certificate of registered ownership
 
@@ -1594,6 +1756,8 @@ CO-OWNERSHIP
 
 ### 64 - Instrument to state tenancy
 
+Source key: section:64
+
 Instrument to state tenancy
 
 64Where, by any instrument, land or an estate or interest therein is granted, transferred, conveyed or assigned to two or more persons, the instrument shall state whether the persons in whose favour it is executed are intended to take as joint tenants or as tenants in common and if the instrument does not so state the persons to whom the land, estate or interest is granted, transferred, conveyed or assigned take in accordance with the Property Act.
@@ -1602,6 +1766,8 @@ SURVIVORSHIP
 
 ### 65 - Survivorship in joint tenancy
 
+Source key: section:65
+
 Survivorship in joint tenancy
 
 65Where two or more persons are registered owners as joint tenants of any land or interest therein and one of the owners dies, the registrar shall, upon the filing with him of an application in prescribed form accompanied by such other documents as are, in the opinion of the Registrar General, necessary, register the land or interest therein in the name of the survivor as owner.
@@ -1609,7 +1775,9 @@ Survivorship in joint tenancy
 
 NO SURVIVORSHIP
 
-### 66(1) - Entry of “No Survivorship”
+### 66 - Entry of “No Survivorship”
+
+Source key: section:66
 
 Entry of “No Survivorship”
 
@@ -1624,6 +1792,8 @@ Entry of “No Survivorship”
 EJECTMENT
 
 ### 67 - Action of ejectment or recovery
+
+Source key: section:67
 
 Action of ejectment or recovery
 
@@ -1644,6 +1814,8 @@ RECTIFICATION OF THE
 TITLE REGISTER
 
 ### 68 - Cases where registrar may rectify
+
+Source key: section:68
 
 Cases where registrar may rectify
 
@@ -1667,6 +1839,8 @@ but in any case referred to in paragraph (a), (b), (c) or (d) the registrar shal
 
 ### 69 - Powers of registrar
 
+Source key: section:69
+
 Powers of registrar
 
 69The registrar may
@@ -1677,7 +1851,9 @@ subject to the regulations, cancel any entry in the title register when he is sa
 (b)
 recall a document issued by him if it has been issued in error, if it contains a clerical error or if an omission has been made therefrom, and may cause the necessary corrections to be made therein or cancel the document as the circumstances require.
 
-### 70(1) - Court order respecting rectification
+### 70 - Court order respecting rectification
+
+Source key: section:70
 
 Court order respecting rectification
 
@@ -1698,6 +1874,8 @@ where the court is satisfied that any registration, including a first registrati
 
 ### 71 - Rectification and registered owner in possession
 
+Source key: section:71
+
 Rectification and registered owner in possession
 
 71The title register shall not be rectified so as to affect detrimentally the title of the registered owner who is in possession unless
@@ -1713,7 +1891,9 @@ for any other reason, in any particular case it is considered that it would be u
 
 1983, c.45, s.32
 
-### 72(1) - Notation of rectification
+### 72 - Notation of rectification
+
+Source key: section:72
 
 Notation of rectification
 
@@ -1729,7 +1909,9 @@ in the case of an omission from the title register, from the time the entry or m
 
 INDEMNIFICATION
 
-### 73(1) - Indemnification on rectification
+### 73 - Indemnification on rectification
+
+Source key: section:73
 
 Indemnification on rectification
 
@@ -1757,7 +1939,9 @@ where the damage is occasioned by the registrar’s necessary delay in bringing 
 
 1998, c.38, s.18
 
-### 74(1) - Award of indemnity
+### 74 - Award of indemnity
+
+Source key: section:74
 
 Award of indemnity
 
@@ -1769,17 +1953,23 @@ Award of indemnity
 
 ### 75 - Payment
 
+Source key: section:75
+
 Payment
 
 75Where an amount has been awarded as an indemnity under any of the provisions of this Act, it shall be paid forthwith to the person being indemnified upon such person executing in favour of the Registrar General an assignment of any rights which such person would have been entitled to enforce against any person in relation to the matter in respect of which the indemnity has been paid.
 
 ### 76 - Recovery of payment from third parties
 
+Source key: section:76
+
 Recovery of payment from third parties
 
 76Where any money is paid by way of indemnity under this Act, the Registrar General may take proceedings to recover the amount so paid from any person who has caused or substantially contributed to the damage by his fraud or negligence, and to enforce any express or implied agreement or other right which the person who is indemnified would have been entitled to enforce in relation to the matter in respect of which the indemnity has been paid.
 
 ### 76.01 - Agreements with respect to liability
+
+Source key: section:76.01
 
 Agreements with respect to liability
 
@@ -1788,12 +1978,16 @@ Agreements with respect to liability
 
 ### 76.1 - Repealed
 
+Source key: section:76.1
+
 Repealed
 
 76.1Repealed: 1998, c.38, s.20
 1984, c.48, s.3; 1998, c.38, s.20
 
-### 77(1) - Time of valuation
+### 77 - Time of valuation
+
+Source key: section:77
 
 Time of valuation
 
@@ -1811,13 +2005,17 @@ LIMITATION PERIOD
 
 ### 78 - Two year limitation period
 
+Source key: section:78
+
 Two year limitation period
 
 78Any application for indemnity under any provision of this Act shall be commenced within and not later than two years from the date that the applicant knew of the event that occasioned the damage.
 
 APPLICATION TO COURT
 
-### 79(1) - Application to court
+### 79 - Application to court
+
+Source key: section:79
 
 Application to court
 
@@ -1843,7 +2041,9 @@ Application to court
 
 FEES
 
-### 80(1) - Fees
+### 80 - Fees
+
+Source key: section:80
 
 Fees
 
@@ -1877,6 +2077,8 @@ MARITAL STATUS
 
 ### 81 - Affidavit of marital status
 
+Source key: section:81
+
 Affidavit of marital status
 
 81Except as otherwise prescribed, the registered owner who executes a transfer, mortgage, lease or easement or an assignment of a lease, mortgage or judgment shall make an affidavit of marital status in prescribed form.
@@ -1884,7 +2086,9 @@ Affidavit of marital status
 
 REGISTERED INFORMATION
 
-### 82(1) - Request for registered information
+### 82 - Request for registered information
+
+Source key: section:82
 
 Request for registered information
 
@@ -1897,6 +2101,8 @@ Request for registered information
 REGULATIONS
 
 ### 83 - Regulations
+
+Source key: section:83
 
 Regulations
 
@@ -2007,6 +2213,8 @@ REFERENCES IN OTHER ENACTMENTS
 
 ### 84 - Transitional provisions
 
+Source key: section:84
+
 Transitional provisions
 
 84Where in any enactment, other than this Act or the Registry Act or any regulation made pursuant thereto, reference is made
@@ -2039,6 +2247,8 @@ REPEAL
 
 ### 85 - Repeal
 
+Source key: section:85
+
 Repeal
 
 85The Land Titles Act, chapter 22 of the Acts of New Brunswick, 1914, is repealed.
@@ -2046,6 +2256,8 @@ Repeal
 COMING INTO FORCE
 
 ### 86 - Commencement
+
+Source key: section:86
 
 Commencement
 

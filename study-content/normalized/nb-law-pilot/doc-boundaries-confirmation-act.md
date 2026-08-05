@@ -6,9 +6,11 @@ Source: https://laws.gnb.ca/en/document/cs/2012-c.101
 Content hash: 8cc46f684af0dc3e9bfaa765cf8f39d9092b22ec6f22906663bdccbf1cccc2c0
 Consolidated to: June 16, 2023
 
-## Sections
+## Components
 
 ### 1 - Definitions
+
+Source key: section:1
 
 Definitions
 
@@ -47,12 +49,16 @@ GENERAL
 
 ### 2 - This Act binds the Crown
 
+Source key: section:2
+
 This Act binds the Crown
 
 2This Act binds the Crown.
 1994, c.B-7.2, s.2
 
 ### 3 - Administration
+
+Source key: section:3
 
 Administration
 
@@ -61,12 +67,16 @@ Administration
 
 ### 4 - Designated person
 
+Source key: section:4
+
 Designated person
 
 4Service New Brunswick may designate any person to perform any of the duties or exercise any of the powers of the Registrar General under this Act and the regulations and shall specify the duties to be performed or powers to be exercised by the person so designated.
 1994, c.B-7.2, s.4; 1998, c.12, s.10
 
 ### 5 - Immunity
+
+Source key: section:5
 
 Immunity
 
@@ -75,7 +85,9 @@ Immunity
 
 APPLICATION TO CONFIRM A BOUNDARY
 
-### 6(1) - Applicant
+### 6 - Applicant
+
+Source key: section:6
 
 Applicant
 
@@ -113,7 +125,9 @@ a surveyor, with the consent of the owner of an interest in the parcel.
 
 1994, c.B-7.2, s.6; 2005, c.7, s.7; 2017, c.20, s.12
 
-### 7(1) - Application
+### 7 - Application
+
+Source key: section:7
 
 Application
 
@@ -142,7 +156,9 @@ advise the applicant as to any alternate proceeding by which those issues may be
 
 1994, c.B-7.2, s.7
 
-### 8(1) - Initiation of proceeding by Registrar General
+### 8 - Initiation of proceeding by Registrar General
+
+Source key: section:8
 
 Initiation of proceeding by Registrar General
 
@@ -152,7 +168,9 @@ Initiation of proceeding by Registrar General
 
 1994, c.B-7.2, s.8
 
-### 9(1) - Notice of application or proceeding
+### 9 - Notice of application or proceeding
+
+Source key: section:9
 
 Notice of application or proceeding
 
@@ -175,7 +193,9 @@ if a copy of the plan of survey is not included with the notice, indicate the pl
 
 OBJECTION, HEARING AND ORDER
 
-### 10(1) - Objection
+### 10 - Objection
+
+Source key: section:10
 
 Objection
 
@@ -199,7 +219,9 @@ if not satisfied by all the material filed in the proceeding, including the appl
 
 1994, c.B-7.2, s.10
 
-### 11(1) - Hearing
+### 11 - Hearing
+
+Source key: section:11
 
 Hearing
 
@@ -213,7 +235,9 @@ Hearing
 
 1994, c.B-7.2, s.11; 2023, c.17, s.16
 
-### 12(1) - Order
+### 12 - Order
+
+Source key: section:12
 
 Order
 
@@ -234,7 +258,9 @@ by order refuse to confirm the location of any boundary or boundaries as shown o
 
 APPEAL
 
-### 13(1) - Appeal
+### 13 - Appeal
+
+Source key: section:13
 
 Appeal
 
@@ -256,7 +282,9 @@ Appeal
 
 CERTIFICATION, FILING AND CORRECTION
 
-### 14(1) - Certification
+### 14 - Certification
+
+Source key: section:14
 
 Certification
 
@@ -266,7 +294,9 @@ Certification
 
 1994, c.B-7.2, s.14
 
-### 15(1) - Filing of plan of survey
+### 15 - Filing of plan of survey
+
+Source key: section:15
 
 Filing of plan of survey
 
@@ -288,7 +318,9 @@ the plan supersedes all previously filed or registered plans and descriptions or
 
 1994, c.B-7.2, s.15
 
-### 16(1) - Correction
+### 16 - Correction
+
+Source key: section:16
 
 Correction
 
@@ -308,6 +340,8 @@ Correction
 
 ### 17 - Removal of monument
 
+Source key: section:17
+
 Removal of monument
 
 17Subject to subsection 12(1) of the Crown Lands and Forests Act, the Registrar General may order the removal of a monument that conflicts with the location of a boundary confirmed under this Act.
@@ -315,7 +349,9 @@ Removal of monument
 
 BOUNDARIES CONFIRMATION FUND
 
-### 18(1) - Boundaries Confirmation Fund
+### 18 - Boundaries Confirmation Fund
+
+Source key: section:18
 
 Boundaries Confirmation Fund
 
@@ -333,7 +369,9 @@ Boundaries Confirmation Fund
 
 FEES, COSTS, CHARGES AND EXPENSES
 
-### 19(1) - Reduction of fees
+### 19 - Reduction of fees
+
+Source key: section:19
 
 Reduction of fees
 
@@ -343,7 +381,9 @@ Reduction of fees
 
 1994, c.B-7.2, s.19
 
-### 20(1) - Costs, charges and expenses
+### 20 - Costs, charges and expenses
+
+Source key: section:20
 
 Costs, charges and expenses
 
@@ -356,6 +396,8 @@ Costs, charges and expenses
 REGULATIONS
 
 ### 21 - Regulations
+
+Source key: section:21
 
 Regulations
 

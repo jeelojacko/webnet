@@ -1,0 +1,322 @@
+{
+  "createdAt": "2026-08-05T17:34:01.186Z",
+  "documents": [
+    {
+      "documentId": "doc-surveys-act",
+      "officialTitle": "Surveys Act",
+      "officialCitation": "2011, c.226",
+      "documentType": "act",
+      "extractedEnablingActs": [],
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/2011%2C%20c.226",
+      "consolidationDate": "October 1, 2015",
+      "sectionCount": 16,
+      "subsectionCount": 19,
+      "scheduleCount": 1,
+      "formCount": 0,
+      "parsingWarnings": [],
+      "boilerplateContamination": {
+        "ok": true,
+        "markers": []
+      },
+      "duplicateSourceKeys": {
+        "ok": true,
+        "keys": []
+      },
+      "tableOfContentsReferences": {
+        "ok": true,
+        "missingSourceKeys": []
+      },
+      "contentHash": "72a472ac3b1f3e7857729bf87be2645538b54477ddbe38ce73e0d7e7b688ae13",
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "documentId": "doc-boundaries-confirmation-act",
+      "officialTitle": "Boundaries Confirmation Act",
+      "officialCitation": "2012, c.101",
+      "documentType": "act",
+      "extractedEnablingActs": [],
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/2012-c.101",
+      "consolidationDate": "June 16, 2023",
+      "sectionCount": 21,
+      "subsectionCount": 51,
+      "scheduleCount": 0,
+      "formCount": 0,
+      "parsingWarnings": [],
+      "boilerplateContamination": {
+        "ok": true,
+        "markers": []
+      },
+      "duplicateSourceKeys": {
+        "ok": true,
+        "keys": []
+      },
+      "tableOfContentsReferences": {
+        "ok": true,
+        "missingSourceKeys": []
+      },
+      "contentHash": "8cc46f684af0dc3e9bfaa765cf8f39d9092b22ec6f22906663bdccbf1cccc2c0",
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "documentId": "doc-community-planning-act",
+      "officialTitle": "Community Planning Act",
+      "officialCitation": "Chapter 2017, c.19",
+      "documentType": "act",
+      "extractedEnablingActs": [],
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/2017%2C%20c.19",
+      "consolidationDate": "May 15, 2024",
+      "sectionCount": 164,
+      "subsectionCount": 446,
+      "scheduleCount": 1,
+      "formCount": 0,
+      "parsingWarnings": [],
+      "boilerplateContamination": {
+        "ok": true,
+        "markers": []
+      },
+      "duplicateSourceKeys": {
+        "ok": true,
+        "keys": []
+      },
+      "tableOfContentsReferences": {
+        "ok": true,
+        "missingSourceKeys": []
+      },
+      "contentHash": "3973ff2c40d06fbca416a7be2c4b8147eb576b3c8c9970932ecca137acd75d12",
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "documentId": "doc-registry-act",
+      "officialTitle": "Registry Act",
+      "officialCitation": "Chapter R-6",
+      "documentType": "act",
+      "extractedEnablingActs": [],
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/R-6",
+      "consolidationDate": "December 13, 2024",
+      "sectionCount": 84,
+      "subsectionCount": 115,
+      "scheduleCount": 0,
+      "formCount": 0,
+      "parsingWarnings": [],
+      "boilerplateContamination": {
+        "ok": true,
+        "markers": []
+      },
+      "duplicateSourceKeys": {
+        "ok": true,
+        "keys": []
+      },
+      "tableOfContentsReferences": {
+        "ok": true,
+        "missingSourceKeys": []
+      },
+      "contentHash": "91c452eec8106752778455a64ca051cb90a2c802bc2575bf7c6dff4456db0080",
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "documentId": "doc-land-titles-act",
+      "officialTitle": "Land Titles Act",
+      "officialCitation": "Chapter L-1.1",
+      "documentType": "act",
+      "extractedEnablingActs": [],
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/L-1.1",
+      "consolidationDate": "June 16, 2023",
+      "sectionCount": 106,
+      "subsectionCount": 284,
+      "scheduleCount": 0,
+      "formCount": 0,
+      "parsingWarnings": [],
+      "boilerplateContamination": {
+        "ok": true,
+        "markers": []
+      },
+      "duplicateSourceKeys": {
+        "ok": true,
+        "keys": []
+      },
+      "tableOfContentsReferences": {
+        "ok": true,
+        "missingSourceKeys": []
+      },
+      "contentHash": "d20b72deaffb8063e0425b730ea5a3a35075e54007e0c0a67df711ddaa970721",
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "documentId": "reg-surveys-84-76",
+      "officialTitle": "REGULATION 84-76",
+      "officialCitation": "REGULATION 84-76",
+      "documentType": "regulation",
+      "expectedParentAct": "Surveys Act",
+      "extractedEnablingActs": [
+        {
+          "title": "Surveys Act"
+        }
+      ],
+      "sourceUrl": "https://laws.gnb.ca/en/document/cr/84-76",
+      "consolidationDate": "May 15, 2018",
+      "sectionCount": 8,
+      "subsectionCount": 2,
+      "scheduleCount": 0,
+      "formCount": 0,
+      "parsingWarnings": [],
+      "boilerplateContamination": {
+        "ok": true,
+        "markers": []
+      },
+      "duplicateSourceKeys": {
+        "ok": true,
+        "keys": []
+      },
+      "tableOfContentsReferences": {
+        "ok": true,
+        "missingSourceKeys": []
+      },
+      "contentHash": "bc2b454c3fead860410bf5748bdb922692ef5630928e165ee828bb44ff6de84c",
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "documentId": "reg-boundaries-95-166",
+      "officialTitle": "REGULATION 95-166",
+      "officialCitation": "REGULATION 95-166",
+      "documentType": "regulation",
+      "expectedParentAct": "Boundaries Confirmation Act",
+      "extractedEnablingActs": [
+        {
+          "title": "Boundaries Confirmation Act"
+        }
+      ],
+      "sourceUrl": "https://laws.gnb.ca/en/document/cr/95-166",
+      "consolidationDate": "May 15, 2018",
+      "sectionCount": 11,
+      "subsectionCount": 18,
+      "scheduleCount": 0,
+      "formCount": 1,
+      "parsingWarnings": [],
+      "boilerplateContamination": {
+        "ok": true,
+        "markers": []
+      },
+      "duplicateSourceKeys": {
+        "ok": true,
+        "keys": []
+      },
+      "tableOfContentsReferences": {
+        "ok": true,
+        "missingSourceKeys": []
+      },
+      "contentHash": "42edb7a060c18176156cb011b97c0d4dfb8c087c876a575c7747448567549673",
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "documentId": "reg-community-planning-80-159",
+      "officialTitle": "REGULATION 80-159",
+      "officialCitation": "REGULATION 80-159",
+      "documentType": "regulation",
+      "expectedParentAct": "Community Planning Act",
+      "extractedEnablingActs": [
+        {
+          "title": "Community Planning Act"
+        }
+      ],
+      "sourceUrl": "https://laws.gnb.ca/en/document/cr/80-159",
+      "consolidationDate": "January 1, 2018",
+      "sectionCount": 10,
+      "subsectionCount": 18,
+      "scheduleCount": 0,
+      "formCount": 0,
+      "parsingWarnings": [],
+      "boilerplateContamination": {
+        "ok": true,
+        "markers": []
+      },
+      "duplicateSourceKeys": {
+        "ok": true,
+        "keys": []
+      },
+      "tableOfContentsReferences": {
+        "ok": true,
+        "missingSourceKeys": []
+      },
+      "contentHash": "020f01ec96f9dbf49a8a3efdb703260fc650d23179ff779fe50623d8481c2034",
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "documentId": "reg-registry-84-190",
+      "officialTitle": "REGULATION 84-190",
+      "officialCitation": "REGULATION 84-190",
+      "documentType": "regulation",
+      "expectedParentAct": "Registry Act",
+      "extractedEnablingActs": [
+        {
+          "title": "Registry Act"
+        }
+      ],
+      "sourceUrl": "https://laws.gnb.ca/en/document/cr/84-190",
+      "consolidationDate": "May 15, 2018",
+      "sectionCount": 4,
+      "subsectionCount": 5,
+      "scheduleCount": 0,
+      "formCount": 0,
+      "parsingWarnings": [],
+      "boilerplateContamination": {
+        "ok": true,
+        "markers": []
+      },
+      "duplicateSourceKeys": {
+        "ok": true,
+        "keys": []
+      },
+      "tableOfContentsReferences": {
+        "ok": true,
+        "missingSourceKeys": []
+      },
+      "contentHash": "ce0c3a55c91763926c623f0e3560acc86f16e7a5b970bac90c88ebdf93475b59",
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "officialTitle": "REGULATION 83-130",
+      "officialCitation": "REGULATION 83-130",
+      "documentType": "regulation",
+      "expectedParentAct": "Land Titles Act",
+      "extractedEnablingActs": [
+        {
+          "title": "Land Titles Act"
+        }
+      ],
+      "sourceUrl": "https://laws.gnb.ca/en/document/cr/83-130",
+      "consolidationDate": "April 1, 2025",
+      "sectionCount": 40,
+      "subsectionCount": 66,
+      "scheduleCount": 4,
+      "formCount": 63,
+      "parsingWarnings": [],
+      "boilerplateContamination": {
+        "ok": true,
+        "markers": []
+      },
+      "duplicateSourceKeys": {
+        "ok": true,
+        "keys": []
+      },
+      "tableOfContentsReferences": {
+        "ok": true,
+        "missingSourceKeys": []
+      },
+      "contentHash": "2c8cd9166d6c909b371fe4fd97b459a4ff5f382f4f58ff1dbc1be51d7bf7e689",
+      "errors": [],
+      "warnings": []
+    }
+  ],
+  "errors": [],
+  "warnings": []
+}

@@ -2,7 +2,10 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import manifest from '../../study-content/manifests/nb-law-pilot.json';
-import { buildNbLawContentPackage, validateNbLawContentPackage } from '../../src/study/content/nbLawContentPackage';
+import {
+  buildNbLawContentPackage,
+  validateNbLawContentPackage,
+} from '../../src/study/content/nbLawContentPackage';
 import { buildNbLawSourceUrl, getEnabledNbLawEntries, validateNbLawManifest } from '../../src/study/content/nbLawManifest';
 import { hashTextSha256, normalizeNbLawDocument } from '../../src/study/content/nbLawNormalize';
 import type { NbLawManifest, NbLawNormalizedDocument } from '../../src/study/content/nbLawTypes';
@@ -35,9 +38,12 @@ describe('NB law pilot manifest', () => {
     expect(buildNbLawSourceUrl(pilotManifest.documents[5], pilotManifest.sourceBaseUrl)).toBe(
       'https://laws.gnb.ca/en/document/cr/84-76',
     );
-    expect(buildNbLawSourceUrl(pilotManifest.documents[7], pilotManifest.sourceBaseUrl)).toBe(
-      'https://laws.gnb.ca/en/document/ar/2019-29',
+    const communityReg = pilotManifest.documents.find((entry) => entry.id === 'reg-community-planning-80-159');
+    expect(communityReg).toBeTruthy();
+    expect(buildNbLawSourceUrl(communityReg!, pilotManifest.sourceBaseUrl)).toBe(
+      'https://laws.gnb.ca/en/document/cr/80-159',
     );
+    expect(pilotManifest.documents.some((entry) => entry.id.includes('2019-29'))).toBe(false);
   });
 });
 
@@ -46,15 +52,18 @@ describe('NB law normalization', () => {
     for (const entry of getEnabledNbLawEntries(pilotManifest)) {
       const document = await normalizeFixture(entry.id);
       expect(document.officialTitle).toBeTruthy();
-      expect(document.officialCitation).toBeTruthy();
+      expect(document.officialCitationDisplay).toBeTruthy();
+      expect(document.officialCitationNormalized).toBeTruthy();
+      expect(document.components.length).toBeGreaterThanOrEqual(2);
       expect(document.sections.length).toBeGreaterThanOrEqual(2);
       expect(document.tableOfContents.map((toc) => toc.label)).toEqual(
-        document.sections.map((section) => section.label),
+        document.components.map((component) => component.label),
       );
       expect(document.sections[0].text).toContain(document.sections[0].label);
       expect(document.sections.every((section) => section.text.length > 20)).toBe(true);
       if (entry.sourceType === 'regulation') {
         expect(document.parentActId).toBe(entry.parentActId);
+        expect(document.enablingActs?.length).toBeGreaterThan(0);
       }
     }
   });
@@ -69,10 +78,67 @@ describe('NB law normalization', () => {
 
   it('excludes unsafe HTML from displayed source text', async () => {
     const document = await normalizeFixture('doc-surveys-act');
-    const renderedText = document.sections.map((section) => section.text).join('\n');
+    const renderedText = document.components.map((component) => component.text).join('\n');
     expect(renderedText).not.toContain('bad()');
     expect(renderedText).not.toContain('.x{}');
     expect(renderedText).not.toMatch(/<script|<style/i);
+  });
+
+  it('extracts the Community Planning regulation enabling Act from 80-159', async () => {
+    const document = await normalizeFixture('reg-community-planning-80-159');
+    expect(document.officialNumberNormalized).toBe('80-159');
+    expect(document.enablingActs).toContainEqual({
+      title: 'Community Planning Act',
+      citation: '2017, c.19',
+    });
+  });
+
+  it('keeps laws.gnb.ca interface text outside normalized legal components', async () => {
+    const document = await normalizeFixture('reg-land-titles-83-130');
+    const renderedText = document.components.map((component) => component.text).join('\n');
+    expect(renderedText).not.toContain('Copy to Drafting');
+    expect(renderedText).not.toContain('Select this element');
+    expect(renderedText).not.toContain('Copy to LAW');
+  });
+
+  it('uses legal source keys and separates subsections from top-level sections', async () => {
+    const document = await normalizeFixture('doc-surveys-act');
+    const section3 = document.sections.find((section) => section.sourceKey === 'section:3');
+    expect(section3?.label).toBe('3');
+    expect(section3?.heading).toBe('Director of Surveys');
+    expect(section3?.subsections.map((subsection) => subsection.sourceKey)).toEqual([
+      'section:3/subsection:1',
+      'section:3/subsection:1.1',
+      'section:3/subsection:1.2',
+      'section:3/subsection:2',
+    ]);
+  });
+
+  it('separates schedules and forms from preceding numbered sections', async () => {
+    const surveys = await normalizeFixture('doc-surveys-act');
+    const scheduleA = surveys.components.find((component) => component.sourceKey === 'schedule:schedule-a');
+    expect(scheduleA?.componentType).toBe('schedule');
+    expect(surveys.sections.find((section) => section.sourceKey === 'section:15')?.text).not.toContain(
+      'SCHEDULE A',
+    );
+
+    const boundariesReg = await normalizeFixture('reg-boundaries-95-166');
+    expect(boundariesReg.components.some((component) => component.sourceKey === 'form:form-1')).toBe(true);
+  });
+
+  it('extracts consolidation dates across pilot markup variants', async () => {
+    await expect(normalizeFixture('doc-registry-act')).resolves.toMatchObject({
+      consolidatedTo: 'December 13, 2024',
+    });
+    await expect(normalizeFixture('doc-surveys-act')).resolves.toMatchObject({
+      consolidatedTo: 'October 1, 2015',
+    });
+    await expect(normalizeFixture('doc-boundaries-confirmation-act')).resolves.toMatchObject({
+      consolidatedTo: 'June 16, 2023',
+    });
+    await expect(normalizeFixture('reg-land-titles-83-130')).resolves.toMatchObject({
+      consolidatedTo: 'January 1, 2026',
+    });
   });
 
   it('warns when malformed HTML has text but no structured sections', () => {
@@ -108,9 +174,28 @@ describe('NB law content package', () => {
     });
     expect(contentPackage.relationships).toHaveLength(5);
     expect(contentPackage.relationships).toContainEqual({
-      parentActId: 'doc-surveys-act',
-      regulationId: 'reg-surveys-84-76',
+      parentActId: 'doc-community-planning-act',
+      regulationId: 'reg-community-planning-80-159',
     });
+    expect(contentPackage.integrityReport?.errors).toEqual([]);
     expect(validateNbLawContentPackage(contentPackage)).toEqual({ valid: true, errors: [] });
+  });
+
+  it('fails package validation on wrong enabling Act relationships', async () => {
+    const documents = await Promise.all(
+      getEnabledNbLawEntries(pilotManifest).map((entry) => normalizeFixture(entry.id)),
+    );
+    const wrongRegulation = documents.find((document) => document.id === 'reg-community-planning-80-159');
+    if (!wrongRegulation) throw new Error('Missing normalized regulation fixture.');
+    wrongRegulation.enablingActs = [{ title: 'Highway Act' }];
+    const contentPackage = buildNbLawContentPackage({
+      id: 'nb-law-pilot-test',
+      manifestId: pilotManifest.id,
+      createdAt: '2026-08-05T00:00:00.000Z',
+      documents,
+    });
+    expect(validateNbLawContentPackage(contentPackage).errors.join('\n')).toContain(
+      'Enabling Act mismatch',
+    );
   });
 });

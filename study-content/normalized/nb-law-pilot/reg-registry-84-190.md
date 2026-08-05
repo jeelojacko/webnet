@@ -6,13 +6,17 @@ Source: https://laws.gnb.ca/en/document/cr/84-190
 Content hash: ce0c3a55c91763926c623f0e3560acc86f16e7a5b970bac90c88ebdf93475b59
 Consolidated to: May 15, 2018
 
-## Sections
+## Components
 
 ### 1
 
+Source key: section:1
+
 1This Regulation may be cited as the Instrument Standards Regulation - Registry Act.
 
-### 2(1)
+### 2
+
+Source key: section:2
 
 2(1)Subject to this section, unless it is prepared in book form for deposit, an instrument shall be printed or typewritten on good quality white paper, 8.5 inches by 11 inches (22.6 cm by 27.94 cm) or 8.5 inches by 14 inches (22.6 cm by 35.6 cm), with a margin of not less than one inch (2.5 cm) on the top and left side of the page and, if printed on the reverse side thereof, a margin of not less than one inch (2.5 cm) on the top and right side of the page and shall be of sufficient clarity to permit photocopying or other reproduction.
 
@@ -34,9 +38,13 @@ with respect to a digitally scanned image of an instrument referred to in subsec
 
 ### 3
 
+Source key: section:3
+
 3New Brunswick Regulation 84-114 under the Registry Act is repealed.
 
 ### 4
+
+Source key: section:4
 
 4Sections 1 and 2 of this Regulation come into force on January 7, 1985.
 

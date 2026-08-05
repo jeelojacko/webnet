@@ -6,15 +6,19 @@ Source: https://laws.gnb.ca/en/document/cr/95-166
 Content hash: 42edb7a060c18176156cb011b97c0d4dfb8c087c876a575c7747448567549673
 Consolidated to: May 15, 2018
 
-## Sections
+## Components
 
 ### 1
+
+Source key: section:1
 
 1This Regulation may be cited as the General Regulation - Boundaries Confirmation Act.
 
 DEFINITIONS
 
 ### 2
+
+Source key: section:2
 
 2In this Regulation
 “Act” means the Boundaries Confirmation Act;(Loi)
@@ -23,7 +27,9 @@ DEFINITIONS
 
 APPLICATIONS
 
-### 3(1)
+### 3
+
+Source key: section:3
 
 3(1)An application to confirm the location of a boundary made under subsection 6(1) or (3) of the Act shall be in Form 1.
 
@@ -74,7 +80,9 @@ an explanation of the reasons for accepting or rejecting the location of the bou
 
 3(5)The Registrar General may waive any of the requirements of subsection (3), subject to such terms and conditions as the Registrar General considers appropriate.
 
-### 4(1)
+### 4
+
+Source key: section:4
 
 4(1)A consent and waiver of notice provided to the Registrar General shall be on a form provided by the Registrar General.
 
@@ -84,9 +92,13 @@ PROCEEDINGS
 
 ### 5
 
+Source key: section:5
+
 5If the New Brunswick Geographic Information Corporation designates a layperson to hold a hearing or handle another matter under the Act and the layperson is not an employee as defined in the Civil Service Act, remuneration may be paid to the layperson but the remuneration, excluding reimbursements and other expenses, shall not exceed one hundred and fifty dollars for each day or portion of a day during which the layperson prepares for the hearing, holds the hearing or otherwise handles that or any other matter.
 
-### 6(1)
+### 6
+
+Source key: section:6
 
 6(1)The Registrar General and all other parties to a hearing may introduce evidence at the hearing and may cross-examine witnesses.
 
@@ -102,17 +114,23 @@ PROCEEDINGS
 
 ### 7
 
+Source key: section:7
+
 7At any time before or during a hearing or other proceeding under the Act, the Registrar General may allow the evidence of any witness, prospective witness or other person to be given or provided by affidavit or solemn declaration or any fact or document to be proven by affidavit or solemn declaration, in accordance with the Evidence Act, unless a party requires the attendance of the deponent or declarant at a hearing for cross-examination.
 
 APPEALS
 
 ### 8
 
+Source key: section:8
+
 8The Rules of Court and the forms prescribed under the Rules of Court apply to an appeal under the Act in so far as they are not inconsistent with the provisions of the Act.
 
 FILING
 
-### 9(1)
+### 9
+
+Source key: section:9
 
 9(1)The Registrar General may certify a plan of survey to be filed under the Act in the manner the Registrar General considers appropriate.
 
@@ -120,7 +138,9 @@ FILING
 
 FEES
 
-### 10(1)
+### 10
+
+Source key: section:10
 
 10(1)The fee for the making of an application under the Act is four hundred dollars.
 
@@ -132,7 +152,13 @@ COMMENCEMENT
 
 ### 11
 
+Source key: section:11
+
 11This Regulation comes into force on January 1, 1996.
+
+### Form 1
+
+Source key: form:form-1
 
 Form 1
 

@@ -3,80 +3,185 @@
   "id": "reg-registry-84-190",
   "officialTitle": "REGULATION 84-190",
   "officialCitation": "REGULATION 84-190",
+  "officialCitationDisplay": "REGULATION 84-190",
+  "officialCitationNormalized": "84-190",
+  "officialNumberDisplay": "84-190",
+  "officialNumberNormalized": "84-190",
   "documentType": "regulation",
   "parentActId": "doc-registry-act",
+  "enablingActs": [
+    {
+      "title": "Registry Act"
+    }
+  ],
   "sourceUrl": "https://laws.gnb.ca/en/document/cr/84-190",
-  "fetchDate": "2026-08-05T16:54:52.612Z",
+  "fetchDate": "2026-08-05T17:33:48.281Z",
   "consolidatedTo": "May 15, 2018",
   "contentHash": "ce0c3a55c91763926c623f0e3560acc86f16e7a5b970bac90c88ebdf93475b59",
   "tableOfContents": [
     {
-      "id": "se-1",
+      "id": "section-1",
+      "sourceKey": "section:1",
       "label": "1"
     },
     {
-      "id": "se-2",
-      "label": "2(1)"
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "label": "2"
     },
     {
-      "id": "se-3",
+      "id": "section-3",
+      "sourceKey": "section:3",
       "label": "3"
     },
     {
-      "id": "se-4",
+      "id": "section-4",
+      "sourceKey": "section:4",
       "label": "4"
     }
   ],
-  "sections": [
+  "components": [
     {
-      "id": "se-1",
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
       "label": "1",
       "text": "1This Regulation may be cited as the Instrument Standards Regulation - Registry Act.",
       "subsections": [],
       "contentHash": "ecd0cfc810ad8dbd6b6bf96198a738938b008c75bb96daea5bdd93502bd21e9b"
     },
     {
-      "id": "se-2",
-      "label": "2(1)",
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "label": "2",
       "text": "2(1)Subject to this section, unless it is prepared in book form for deposit, an instrument shall be printed or typewritten on good quality white paper, 8.5 inches by 11 inches (22.6 cm by 27.94 cm) or 8.5 inches by 14 inches (22.6 cm by 35.6 cm), with a margin of not less than one inch (2.5 cm) on the top and left side of the page and, if printed on the reverse side thereof, a margin of not less than one inch (2.5 cm) on the top and right side of the page and shall be of sufficient clarity to permit photocopying or other reproduction.\n\n2(2)Subsection (1) applies to all attachments to instruments referred to therein other than plans, instruments issued by a court, instruments and documents requiring registration under the Bankruptcy Act (Canada), instruments and documents prepared in book form for deposit and such other attached instruments and documents as, in the opinion of the registrar, are suitable for acceptance in a form other than that prescribed in subsection (1).\n\n2(3)If an instrument is to be filed or registered under the Act by submitting a digitally scanned image of the instrument, the digitally scanned image shall be of sufficient clarity to be readable when reproduced.\n\n2(4)If an instrument with a crimped or raised seal affixed to it is to be filed or registered under the Act by submitting a digitally scanned image of the instrument, the seal must be darkened or otherwise sufficiently enhanced so that the seal may be identified.\n\n2(5)A registrar may refuse to file or register an instrument,\n\n(a)\nwith respect to a digitally scanned image of an instrument referred to in subsection (3), if the instrument is not of sufficient clarity to be readable by the registrar when reproduced, or\n\n(b)\nwith respect to a digitally scanned image of an instrument referred to in subsection (4), if the seal cannot be identified by the registrar.\n\n2018-44",
       "subsections": [
         {
-          "id": "se-2-subsection-2-1-",
+          "id": "2-subsection-1",
+          "sourceKey": "section:2/subsection:1",
           "label": "2(1)",
-          "text": "2(1)Subject to this section, unless it is prepared in book form for deposit, an instrument shall be printed or typewritten on good quality white paper, 8.5 inches by 11 inches (22.6 cm by 27.94 cm) or 8.5 inches by 14 inches (22.6 cm by 35.6 cm), with a margin of not less than one inch (2.5 cm) on the top and left side of the page and, if printed on the reverse side thereof, a margin of not less than one inch (2.5 cm) on the top and right side of the page and shall be of sufficient clarity to permit photocopying or other reproduction."
+          "text": "2(1)Subject to this section, unless it is prepared in book form for deposit, an instrument shall be printed or typewritten on good quality white paper, 8.5 inches by 11 inches (22.6 cm by 27.94 cm) or 8.5 inches by 14 inches (22.6 cm by 35.6 cm), with a margin of not less than one inch (2.5 cm) on the top and left side of the page and, if printed on the reverse side thereof, a margin of not less than one inch (2.5 cm) on the top and right side of the page and shall be of sufficient clarity to permit photocopying or other reproduction.",
+          "contentHash": "d8ed8648704aa51581ee92bd016703051338a7662e2103927cf1c68766d298e0"
         },
         {
-          "id": "se-2-subsection-2-2-",
+          "id": "2-subsection-2",
+          "sourceKey": "section:2/subsection:2",
           "label": "2(2)",
-          "text": "2(2)Subsection (1) applies to all attachments to instruments referred to therein other than plans, instruments issued by a court, instruments and documents requiring registration under the Bankruptcy Act (Canada), instruments and documents prepared in book form for deposit and such other attached instruments and documents as, in the opinion of the registrar, are suitable for acceptance in a form other than that prescribed in subsection (1)."
+          "text": "2(2)Subsection (1) applies to all attachments to instruments referred to therein other than plans, instruments issued by a court, instruments and documents requiring registration under the Bankruptcy Act (Canada), instruments and documents prepared in book form for deposit and such other attached instruments and documents as, in the opinion of the registrar, are suitable for acceptance in a form other than that prescribed in subsection (1).",
+          "contentHash": "2587a751413b05a91304cce68efb13e28bb2a154a456b4063dc69a68761ea53f"
         },
         {
-          "id": "se-2-subsection-2-3-",
+          "id": "2-subsection-3",
+          "sourceKey": "section:2/subsection:3",
           "label": "2(3)",
-          "text": "2(3)If an instrument is to be filed or registered under the Act by submitting a digitally scanned image of the instrument, the digitally scanned image shall be of sufficient clarity to be readable when reproduced."
+          "text": "2(3)If an instrument is to be filed or registered under the Act by submitting a digitally scanned image of the instrument, the digitally scanned image shall be of sufficient clarity to be readable when reproduced.",
+          "contentHash": "b057d67c8a0d26bd71485f0b4621c4066bac50d0a8f1537441390e0ec83f3593"
         },
         {
-          "id": "se-2-subsection-2-4-",
+          "id": "2-subsection-4",
+          "sourceKey": "section:2/subsection:4",
           "label": "2(4)",
-          "text": "2(4)If an instrument with a crimped or raised seal affixed to it is to be filed or registered under the Act by submitting a digitally scanned image of the instrument, the seal must be darkened or otherwise sufficiently enhanced so that the seal may be identified."
+          "text": "2(4)If an instrument with a crimped or raised seal affixed to it is to be filed or registered under the Act by submitting a digitally scanned image of the instrument, the seal must be darkened or otherwise sufficiently enhanced so that the seal may be identified.",
+          "contentHash": "97ea7706a92a42733e9bf02cb5222821f5e2c2f3c4ccefe787695e8b01e9f488"
         },
         {
-          "id": "se-2-subsection-2-5-",
+          "id": "2-subsection-5",
+          "sourceKey": "section:2/subsection:5",
           "label": "2(5)",
-          "text": "2(5)A registrar may refuse to file or register an instrument,\n\n(a)\nwith respect to a digitally scanned image of an instrument referred to in subsection (3), if the instrument is not of sufficient clarity to be readable by the registrar when reproduced, or\n\n(b)\nwith respect to a digitally scanned image of an instrument referred to in subsection (4), if the seal cannot be identified by the registrar.\n\n2018-44"
+          "text": "2(5)A registrar may refuse to file or register an instrument,\n\n(a)\nwith respect to a digitally scanned image of an instrument referred to in subsection (3), if the instrument is not of sufficient clarity to be readable by the registrar when reproduced, or\n\n(b)\nwith respect to a digitally scanned image of an instrument referred to in subsection (4), if the seal cannot be identified by the registrar.\n\n2018-44",
+          "contentHash": "ebd2bd12fe7928da047ea0c0d7cd9fc37720b968b3a7e0719e258ce5d53eefdd"
         }
       ],
       "contentHash": "4f97a0f02dfd16d2256ec0e9e6e6993b58197895a7d8acdd49b914785605fbad"
     },
     {
-      "id": "se-3",
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
       "label": "3",
       "text": "3New Brunswick Regulation 84-114 under the Registry Act is repealed.",
       "subsections": [],
       "contentHash": "2654839e50925598517dd784b7069a68649b423037b9600e7a22099ec43a4e5c"
     },
     {
-      "id": "se-4",
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
+      "label": "4",
+      "text": "4Sections 1 and 2 of this Regulation come into force on January 7, 1985.\n\nN.B. This Regulation is consolidated to May 15, 2018.",
+      "subsections": [],
+      "contentHash": "600d7ffeceda5478727a416f761a1c60f7c825623b165ef032f06b79560e778a"
+    }
+  ],
+  "sections": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
+      "label": "1",
+      "text": "1This Regulation may be cited as the Instrument Standards Regulation - Registry Act.",
+      "subsections": [],
+      "contentHash": "ecd0cfc810ad8dbd6b6bf96198a738938b008c75bb96daea5bdd93502bd21e9b"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "label": "2",
+      "text": "2(1)Subject to this section, unless it is prepared in book form for deposit, an instrument shall be printed or typewritten on good quality white paper, 8.5 inches by 11 inches (22.6 cm by 27.94 cm) or 8.5 inches by 14 inches (22.6 cm by 35.6 cm), with a margin of not less than one inch (2.5 cm) on the top and left side of the page and, if printed on the reverse side thereof, a margin of not less than one inch (2.5 cm) on the top and right side of the page and shall be of sufficient clarity to permit photocopying or other reproduction.\n\n2(2)Subsection (1) applies to all attachments to instruments referred to therein other than plans, instruments issued by a court, instruments and documents requiring registration under the Bankruptcy Act (Canada), instruments and documents prepared in book form for deposit and such other attached instruments and documents as, in the opinion of the registrar, are suitable for acceptance in a form other than that prescribed in subsection (1).\n\n2(3)If an instrument is to be filed or registered under the Act by submitting a digitally scanned image of the instrument, the digitally scanned image shall be of sufficient clarity to be readable when reproduced.\n\n2(4)If an instrument with a crimped or raised seal affixed to it is to be filed or registered under the Act by submitting a digitally scanned image of the instrument, the seal must be darkened or otherwise sufficiently enhanced so that the seal may be identified.\n\n2(5)A registrar may refuse to file or register an instrument,\n\n(a)\nwith respect to a digitally scanned image of an instrument referred to in subsection (3), if the instrument is not of sufficient clarity to be readable by the registrar when reproduced, or\n\n(b)\nwith respect to a digitally scanned image of an instrument referred to in subsection (4), if the seal cannot be identified by the registrar.\n\n2018-44",
+      "subsections": [
+        {
+          "id": "2-subsection-1",
+          "sourceKey": "section:2/subsection:1",
+          "label": "2(1)",
+          "text": "2(1)Subject to this section, unless it is prepared in book form for deposit, an instrument shall be printed or typewritten on good quality white paper, 8.5 inches by 11 inches (22.6 cm by 27.94 cm) or 8.5 inches by 14 inches (22.6 cm by 35.6 cm), with a margin of not less than one inch (2.5 cm) on the top and left side of the page and, if printed on the reverse side thereof, a margin of not less than one inch (2.5 cm) on the top and right side of the page and shall be of sufficient clarity to permit photocopying or other reproduction.",
+          "contentHash": "d8ed8648704aa51581ee92bd016703051338a7662e2103927cf1c68766d298e0"
+        },
+        {
+          "id": "2-subsection-2",
+          "sourceKey": "section:2/subsection:2",
+          "label": "2(2)",
+          "text": "2(2)Subsection (1) applies to all attachments to instruments referred to therein other than plans, instruments issued by a court, instruments and documents requiring registration under the Bankruptcy Act (Canada), instruments and documents prepared in book form for deposit and such other attached instruments and documents as, in the opinion of the registrar, are suitable for acceptance in a form other than that prescribed in subsection (1).",
+          "contentHash": "2587a751413b05a91304cce68efb13e28bb2a154a456b4063dc69a68761ea53f"
+        },
+        {
+          "id": "2-subsection-3",
+          "sourceKey": "section:2/subsection:3",
+          "label": "2(3)",
+          "text": "2(3)If an instrument is to be filed or registered under the Act by submitting a digitally scanned image of the instrument, the digitally scanned image shall be of sufficient clarity to be readable when reproduced.",
+          "contentHash": "b057d67c8a0d26bd71485f0b4621c4066bac50d0a8f1537441390e0ec83f3593"
+        },
+        {
+          "id": "2-subsection-4",
+          "sourceKey": "section:2/subsection:4",
+          "label": "2(4)",
+          "text": "2(4)If an instrument with a crimped or raised seal affixed to it is to be filed or registered under the Act by submitting a digitally scanned image of the instrument, the seal must be darkened or otherwise sufficiently enhanced so that the seal may be identified.",
+          "contentHash": "97ea7706a92a42733e9bf02cb5222821f5e2c2f3c4ccefe787695e8b01e9f488"
+        },
+        {
+          "id": "2-subsection-5",
+          "sourceKey": "section:2/subsection:5",
+          "label": "2(5)",
+          "text": "2(5)A registrar may refuse to file or register an instrument,\n\n(a)\nwith respect to a digitally scanned image of an instrument referred to in subsection (3), if the instrument is not of sufficient clarity to be readable by the registrar when reproduced, or\n\n(b)\nwith respect to a digitally scanned image of an instrument referred to in subsection (4), if the seal cannot be identified by the registrar.\n\n2018-44",
+          "contentHash": "ebd2bd12fe7928da047ea0c0d7cd9fc37720b968b3a7e0719e258ce5d53eefdd"
+        }
+      ],
+      "contentHash": "4f97a0f02dfd16d2256ec0e9e6e6993b58197895a7d8acdd49b914785605fbad"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
+      "label": "3",
+      "text": "3New Brunswick Regulation 84-114 under the Registry Act is repealed.",
+      "subsections": [],
+      "contentHash": "2654839e50925598517dd784b7069a68649b423037b9600e7a22099ec43a4e5c"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
       "label": "4",
       "text": "4Sections 1 and 2 of this Regulation come into force on January 7, 1985.\n\nN.B. This Regulation is consolidated to May 15, 2018.",
       "subsections": [],

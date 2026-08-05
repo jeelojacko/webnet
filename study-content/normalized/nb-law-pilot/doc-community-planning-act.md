@@ -6,9 +6,11 @@ Source: https://laws.gnb.ca/en/document/cs/2017%2C%20c.19
 Content hash: 3973ff2c40d06fbca416a7be2c4b8147eb576b3c8c9970932ecca137acd75d12
 Consolidated to: May 15, 2024
 
-## Sections
+## Components
 
-### 1(1) - Definitions and interpretation
+### 1 - Definitions and interpretation
+
+Source key: section:1
 
 Definitions and interpretation
 
@@ -128,6 +130,8 @@ a form of access other than a street and approved by an advisory committee or re
 
 ### 2 - Purposes of Act
 
+Source key: section:2
+
 Purposes of Act
 
 2The purposes of this Act are as follows:
@@ -147,7 +151,9 @@ to enable co-operation between local governments, rural districts, regional serv
 
 PLANNING ADMINISTRATION AND AUTHORITIES
 
-### 3(1) - Establishment of advisory committees
+### 3 - Establishment of advisory committees
+
+Source key: section:3
 
 Establishment of advisory committees
 
@@ -156,6 +162,8 @@ Establishment of advisory committees
 3(2)No by-law establishing a planning advisory committee is valid unless the requirement of paragraph 112(1)(b) is complied with and comes into force when filed in the land registration office in accordance with that paragraph or on a date after the filing as the by-law provides.
 
 ### 4 - Duties and powers of advisory committee
+
+Source key: section:4
 
 Duties and powers of advisory committee
 
@@ -173,7 +181,9 @@ to give its views to the council on any by-law proposed to be made under this Ac
 (d)
 to exercise the powers and perform the duties relating to community planning that are given to it by this Act or the council.
 
-### 5(1) - Membership of advisory committee
+### 5 - Membership of advisory committee
+
+Source key: section:5
 
 Membership of advisory committee
 
@@ -203,7 +213,9 @@ eligible to vote under the Municipal Elections Act, and
 (b)
 a resident of the local government.
 
-### 6(1) - Terms of office
+### 6 - Terms of office
+
+Source key: section:6
 
 Terms of office
 
@@ -242,6 +254,8 @@ if the council replaces the member of the council or the employee or agent under
 
 ### 7 - Administration of advisory committee
 
+Source key: section:7
+
 Administration of advisory committee
 
 7An advisory committee,
@@ -260,11 +274,15 @@ shall keep records of its proceedings.
 
 ### 8 - Expenses of advisory committee
 
+Source key: section:8
+
 Expenses of advisory committee
 
 8The expenses of an advisory committee that are approved by the council shall be paid by the council.
 
-### 9(1) - Provincial Planning Director
+### 9 - Provincial Planning Director
+
+Source key: section:9
 
 Provincial Planning Director
 
@@ -294,7 +312,9 @@ exercise the powers and perform the duties in relation to community planning tha
 
 2021, c.44, s.1
 
-### 10(1) - Local government planning director
+### 10 - Local government planning director
+
+Source key: section:10
 
 Local government planning director
 
@@ -323,11 +343,15 @@ the Director is the development officer for the village or rural community, as t
 
 ### 11 - Design review committee by-law
 
+Source key: section:11
+
 Design review committee by-law
 
 11A council may make a by-law to establish one or more committees, called a design review committee, which shall advise the local government on development within the local government.
 
-### 12(1) - Content of design review committee by-law
+### 12 - Content of design review committee by-law
+
+Source key: section:12
 
 Content of design review committee by-law
 
@@ -366,7 +390,9 @@ Statement of Public Interest
 
 2021, c.44, s.1
 
-### 13(1) - Establishing statement of public interest
+### 13 - Establishing statement of public interest
+
+Source key: section:13
 
 Establishing statement of public interest
 2021, c.44, s.1
@@ -387,6 +413,8 @@ establish policies and, if applicable, minimum standards to align planning polic
 
 ### 14 - Activities of the Province to be consistent with statement of public interest
 
+Source key: section:14
+
 Activities of the Province to be consistent with statement of public interest
 
 2021, c.44, s.1
@@ -394,7 +422,9 @@ Activities of the Province to be consistent with statement of public interest
 14The activities of the Province shall be consistent with a statement of public interest.
 2021, c.44, s.1
 
-### 15(1) - Plans, by-laws and regulations to be consistent with statement of public interest
+### 15 - Plans, by-laws and regulations to be consistent with statement of public interest
+
+Source key: section:15
 
 Plans, by-laws and regulations to be consistent with statement of public interest
 2020, c.8, s.28; 2021, c.44, s.1
@@ -405,7 +435,9 @@ Plans, by-laws and regulations to be consistent with statement of public interes
 
 2020, c.8, s.28; 2021, c.44, s.1
 
-### 16(1) - Enforcement
+### 16 - Enforcement
+
+Source key: section:16
 
 Enforcement
 
@@ -417,7 +449,9 @@ Enforcement
 
 2021, c.44, s.1
 
-### 17(1) - Review
+### 17 - Review
+
+Source key: section:17
 
 Review
 
@@ -431,7 +465,9 @@ B
 
 Regional Planning and Development
 
-### 18(1) - Regional land use plans
+### 18 - Regional land use plans
+
+Source key: section:18
 
 Regional land use plans
 2021, c.44, s.1
@@ -442,7 +478,9 @@ Regional land use plans
 
 2021, c.44, s.1
 
-### 18.1(1) - Preparation and content of regional land use plan
+### 18.1 - Preparation and content of regional land use plan
+
+Source key: section:18.1
 
 Preparation and content of regional land use plan
 2021, c.44, s.1
@@ -470,6 +508,8 @@ in consultation with any other local government or regional service commission a
 
 ### 19 - Province to consider regional land use plan
 
+Source key: section:19
+
 Province to consider regional land use plan
 
 2021, c.44, s.1
@@ -478,6 +518,8 @@ Province to consider regional land use plan
 2021, c.44, s.1
 
 ### 20 - Effect of regional land use plan
+
+Source key: section:20
 
 Effect of regional land use plan
 
@@ -490,7 +532,9 @@ C
 
 Municipal Plans
 
-### 21(1) - Adoption and approval of municipal plan
+### 21 - Adoption and approval of municipal plan
+
+Source key: section:21
 
 Adoption and approval of municipal plan
 
@@ -500,7 +544,9 @@ Adoption and approval of municipal plan
 
 2021, c.44, s.1
 
-### 22(1) - Province to consider municipal plan
+### 22 - Province to consider municipal plan
+
+Source key: section:22
 
 Province to consider municipal plan
 2021, c.44, s.1
@@ -528,7 +574,9 @@ a courthouse.
 
 2021, c.44, s.1
 
-### 23(1) - Failure to adopt municipal plan
+### 23 - Failure to adopt municipal plan
+
+Source key: section:23
 
 Failure to adopt municipal plan
 
@@ -540,7 +588,9 @@ Failure to adopt municipal plan
 
 2021, c.44, s.1
 
-### 24(1) - Preparation and content of municipal plan
+### 24 - Preparation and content of municipal plan
+
+Source key: section:24
 
 Preparation and content of municipal plan
 
@@ -679,7 +729,9 @@ provide a copy of the revised budget to the Minister.
 
 2021, c.44, s.1; 2022, c.56, s.1
 
-### 25(1) - Public notice of municipal plan
+### 25 - Public notice of municipal plan
+
+Source key: section:25
 
 Public notice of municipal plan
 
@@ -713,7 +765,9 @@ posting the notice on the municipality’s website for the period of time that t
 
 25(6)If a notice is given in a manner authorized by subsection (2), any person may submit to the council written objections to the proposed municipal plan within the period referred to in subsection (1).
 
-### 26(1) - Validity and coming into force of municipal plan
+### 26 - Validity and coming into force of municipal plan
+
+Source key: section:26
 
 Validity and coming into force of municipal plan
 2021, c.44, s.1
@@ -735,6 +789,8 @@ paragraph 112(1)(b) is complied with.
 
 ### 27 - Effect of municipal plan
 
+Source key: section:27
+
 Effect of municipal plan
 
 27The adoption of a municipal plan does not commit the municipality or the Province to undertake a proposal outlined or suggested in the plan, but shall prevent the municipality from undertaking a development in a manner that is inconsistent with a proposal or policy outlined or suggested in the plan.
@@ -742,11 +798,15 @@ Effect of municipal plan
 
 ### 28 - Conflict between municipal plan and zoning or subdivision by-law
 
+Source key: section:28
+
 Conflict between municipal plan and zoning or subdivision by-law
 
 28If there is a conflict between a municipal plan and a zoning or subdivision by-law, the municipal plan prevails.
 
-### 29(1) - Secondary municipal plan
+### 29 - Secondary municipal plan
+
+Source key: section:29
 
 Secondary municipal plan
 
@@ -760,17 +820,23 @@ Secondary municipal plan
 
 ### 30 - Effect of secondary municipal plan
 
+Source key: section:30
+
 Effect of secondary municipal plan
 
 30The adoption of a secondary municipal plan does not commit the municipality to undertake any proposal in the secondary municipal plan.
 
 ### 31 - Conflict between secondary municipal plan and a municipal plan
 
+Source key: section:31
+
 Conflict between secondary municipal plan and a municipal plan
 
 31If there is a conflict between a secondary municipal plan and a municipal plan, the municipal plan prevails.
 
-### 32(1) - Review
+### 32 - Review
+
+Source key: section:32
 
 Review
 
@@ -784,6 +850,8 @@ Review
 
 ### 32.1 - Non-application of Division to villages
 
+Source key: section:32.1
+
 Non-application of Division to villages
 
 2021, c.44, s.1
@@ -795,7 +863,9 @@ D
 
 Rural Plans for Villages
 
-### 33(1) - Adoption and approval of rural plans for villages
+### 33 - Adoption and approval of rural plans for villages
+
+Source key: section:33
 
 Adoption and approval of rural plans for villages
 
@@ -805,7 +875,9 @@ Adoption and approval of rural plans for villages
 
 2021, c.44, s.1
 
-### 33.1(1) - Province to consider rural plan
+### 33.1 - Province to consider rural plan
+
+Source key: section:33.1
 
 Province to consider rural plan
 2021, c.44, s.1
@@ -833,7 +905,9 @@ a courthouse.
 
 2021, c.44, s.1
 
-### 34(1) - Failure to adopt rural plan for a village
+### 34 - Failure to adopt rural plan for a village
+
+Source key: section:34
 
 Failure to adopt rural plan for a village
 2021, c.44, s.1
@@ -846,7 +920,9 @@ Failure to adopt rural plan for a village
 
 2021, c.44, s.1
 
-### 35(1) - Preparation and content of rural plan for a village
+### 35 - Preparation and content of rural plan for a village
+
+Source key: section:35
 
 Preparation and content of rural plan for a village
 
@@ -927,7 +1003,9 @@ zoning provisions.
 
 2021, c.44, s.1; 2022, c.56, s.1
 
-### 36(1) - Secondary rural plan
+### 36 - Secondary rural plan
+
+Source key: section:36
 
 Secondary rural plan
 
@@ -941,17 +1019,23 @@ Secondary rural plan
 
 ### 37 - Effect of secondary rural plan
 
+Source key: section:37
+
 Effect of secondary rural plan
 
 37The adoption of a secondary rural plan does not commit the council of a village to undertake any proposal in the secondary rural plan.
 
 ### 38 - Conflict between secondary rural plan and a rural plan
 
+Source key: section:38
+
 Conflict between secondary rural plan and a rural plan
 
 38If there is a conflict between a secondary rural plan and a rural plan, the rural plan prevails.
 
-### 39(1) - Public notice of rural plan
+### 39 - Public notice of rural plan
+
+Source key: section:39
 
 Public notice of rural plan
 
@@ -961,7 +1045,9 @@ Public notice of rural plan
 
 39(3)If the council of the village substantially amends the proposed rural plan after the notice under paragraph 111(1)(b) is published, section 111 and subsections (1) and (2) apply with the necessary modifications to the amendment.
 
-### 40(1) - Validity and coming into force of rural plan for a village
+### 40 - Validity and coming into force of rural plan for a village
+
+Source key: section:40
 
 Validity and coming into force of rural plan for a village
 2021, c.44, s.1
@@ -983,6 +1069,8 @@ paragraph 112(1)(b) is complied with.
 
 ### 41 - Effect of rural plan for a village
 
+Source key: section:41
+
 Effect of rural plan for a village
 
 41The adoption of a rural plan does not commit the village or the Province to undertake a proposal outlined or suggested in the rural plan, but shall prevent the village from undertaking a development in a manner that is inconsistent with a proposal or policy outlined or suggested in the plan.
@@ -990,11 +1078,15 @@ Effect of rural plan for a village
 
 ### 42 - Conflict between rural plan for a village and a subdivision by-law
 
+Source key: section:42
+
 Conflict between rural plan for a village and a subdivision by-law
 
 42If there is a conflict between a rural plan and a subdivision by-law, the rural plan prevails.
 
-### 43(1) - Review
+### 43 - Review
+
+Source key: section:43
 
 Review
 
@@ -1010,7 +1102,9 @@ E
 
 Rural Plans for Rural Communities
 
-### 44(1) - Adoption and approval of rural plans for rural communities
+### 44 - Adoption and approval of rural plans for rural communities
+
+Source key: section:44
 
 Adoption and approval of rural plans for rural communities
 
@@ -1075,7 +1169,9 @@ the powers in sections 55 and 56 with respect to certain proposed uses and varia
 
 2021, c.44, s.1
 
-### 44.1(1) - Failure to adopt rural plan for a rural community
+### 44.1 - Failure to adopt rural plan for a rural community
+
+Source key: section:44.1
 
 Failure to adopt rural plan for a rural community
 2021, c.44, s.1
@@ -1088,7 +1184,9 @@ Failure to adopt rural plan for a rural community
 
 2021, c.44, s.1
 
-### 44.2(1) - Province to consider rural plan
+### 44.2 - Province to consider rural plan
+
+Source key: section:44.2
 
 Province to consider rural plan
 2021, c.44, s.1
@@ -1116,7 +1214,9 @@ a courthouse.
 
 2021, c.44, s.1
 
-### 45(1) - Validity and coming into force of rural plan for a rural community
+### 45 - Validity and coming into force of rural plan for a rural community
+
+Source key: section:45
 
 Validity and coming into force of rural plan for a rural community
 2021, c.44, s.1
@@ -1136,7 +1236,9 @@ paragraph 112(1)(b) is complied with.
 
 2021, c.44, s.1
 
-### 46(1) - Secondary rural plan
+### 46 - Secondary rural plan
+
+Source key: section:46
 
 Secondary rural plan
 
@@ -1150,11 +1252,15 @@ Secondary rural plan
 
 ### 47 - Conflict between secondary rural plan and a rural plan
 
+Source key: section:47
+
 Conflict between secondary rural plan and a rural plan
 
 47If there is a conflict between a secondary rural plan and a rural plan for a rural community, the rural plan for the rural community prevails.
 
 ### 48 - Effect of secondary rural plan
+
+Source key: section:48
 
 Effect of secondary rural plan
 
@@ -1162,12 +1268,16 @@ Effect of secondary rural plan
 
 ### 49 - Effect of rural plan for a rural community
 
+Source key: section:49
+
 Effect of rural plan for a rural community
 
 49The adoption of a rural plan does not commit the rural community or the Province to undertake a proposal outlined or suggested in the rural plan, but shall prevent the rural community from undertaking a development in a manner that is inconsistent with a proposal or policy outlined or suggested in the plan.
 2021, c.44, s.1
 
-### 50(1) - Review
+### 50 - Review
+
+Source key: section:50
 
 Review
 
@@ -1185,7 +1295,9 @@ Rural Plans for Rural Districts
 
 2021, c.44, s.1
 
-### 51(1) - Ministerial regulations respecting rural plans for rural districts
+### 51 - Ministerial regulations respecting rural plans for rural districts
+
+Source key: section:51
 
 Ministerial regulations respecting rural plans for rural districts
 2021, c.44, s.1
@@ -1207,7 +1319,9 @@ in consultation with any government department or person specified by the Direct
 
 2021, c.44, s.1
 
-### 51.1(1) - Province to consider rural plan
+### 51.1 - Province to consider rural plan
+
+Source key: section:51.1
 
 Province to consider rural plan
 2021, c.44, s.1
@@ -1235,7 +1349,9 @@ a courthouse.
 
 2021, c.44, s.1
 
-### 52(1) - Content of regulation
+### 52 - Content of regulation
+
+Source key: section:52
 
 Content of regulation
 
@@ -1320,7 +1436,9 @@ a map showing the zones referred to in paragraph (c).
 
 2021, c.44, s.1
 
-### 52.1(1) - Review
+### 52.1 - Review
+
+Source key: section:52.1
 
 Review
 2021, c.44, s.1
@@ -1339,7 +1457,9 @@ A
 
 Zoning By-laws
 
-### 53(1) - Making of zoning by-law
+### 53 - Making of zoning by-law
+
+Source key: section:53
 
 Making of zoning by-law
 
@@ -1564,7 +1684,9 @@ any limitations, terms or conditions on the manner in which the delegate is to e
 
 2021, c.44, s.1
 
-### 54(1) - Validity and coming into force of zoning by-law
+### 54 - Validity and coming into force of zoning by-law
+
+Source key: section:54
 
 Validity and coming into force of zoning by-law
 2021, c.44, s.1
@@ -1584,7 +1706,9 @@ paragraph 112(1)(b) is complied with.
 
 2021, c.44, s.1
 
-### 55(1) - Variances from zoning by-law
+### 55 - Variances from zoning by-law
+
+Source key: section:55
 
 Variances from zoning by-law
 
@@ -1608,6 +1732,8 @@ a reasonable variance from the requirements referred to in paragraph 53(2)(a) or
 
 ### 56 - Notice of variance
 
+Source key: section:56
+
 Notice of variance
 
 56If requested to permit a proposed use or variance under section 55, the advisory committee, regional service commission or development officer may give notice to owners of land in the neighbourhood of the land in respect of which the request is received
@@ -1623,11 +1749,15 @@ giving the right to make representation to the advisory committee, regional serv
 
 ### 57 - Payments by developer
 
+Source key: section:57
+
 Payments by developer
 
 57All money received by the council under paragraph 53(2)(k) is to be paid into a special account, and the money in that account is to be expended by the council for acquiring or developing land for public off-street parking and for no other purpose.
 
 ### 58 - Integrated development zone
+
+Source key: section:58
 
 Integrated development zone
 
@@ -1635,7 +1765,9 @@ Integrated development zone
 
 58An integrated development zone shall not be described or shown as set out in subsection 53(5) except on compliance with the provisions of paragraph 53(3)(b).
 
-### 59(1) - Re-zoning and amendments
+### 59 - Re-zoning and amendments
+
+Source key: section:59
 
 Re-zoning and amendments
 
@@ -1693,7 +1825,9 @@ take the necessary steps to have the re-zoning by-law repealed.
 
 59(9)Before entering into an agreement with a person under this section, the council may require a person to deliver a performance bond, negotiable instrument or other security acceptable to the council assuring implementation of the agreement.
 
-### 60(1) - Non-conforming use
+### 60 - Non-conforming use
+
+Source key: section:60
 
 Non-conforming use
 
@@ -1719,7 +1853,9 @@ if a building or structure that contains a non-conforming use has, in the opinio
 
 60(5)Except as required by an Act or regulation or a by-law, no person shall enlarge, add to or structurally alter a building containing a non-conforming use.
 
-### 61(1) - Standards to be met re non-conforming use
+### 61 - Standards to be met re non-conforming use
+
+Source key: section:61
 
 Standards to be met re non-conforming use
 
@@ -1754,7 +1890,9 @@ the time for appeal of the action under section 120 has expired and no appeal ha
 (b)
 an appeal referred to in paragraph (a) has been disposed of.
 
-### 61.1(1) - Province to consider zoning by-law
+### 61.1 - Province to consider zoning by-law
+
+Source key: section:61.1
 
 Province to consider zoning by-law
 2021, c.44, s.1
@@ -1794,6 +1932,8 @@ Repealed: 2020, c.8, s.28
 
 ### 62 - Building standards and permits
 
+Source key: section:62
+
 Building standards and permits
 
 Repealed: 2020, c.8, s.28
@@ -1807,7 +1947,9 @@ C
 
 Deferred Widening By-laws
 
-### 63(1) - Altering of streets and establishing building lines
+### 63 - Altering of streets and establishing building lines
+
+Source key: section:63
 
 Altering of streets and establishing building lines
 
@@ -1831,7 +1973,9 @@ prohibits the placing, erecting, altering or repairing of anything on land betwe
 
 2021, c.44, s.1
 
-### 64(1) - Validity and coming into force of deferred widening by-law
+### 64 - Validity and coming into force of deferred widening by-law
+
+Source key: section:64
 
 Validity and coming into force of deferred widening by-law
 2021, c.44, s.1
@@ -1846,7 +1990,9 @@ the requirement of paragraph 112(1)(b) is complied with.
 
 64(2)A deferred widening by-law comes into force when filed in the land registration office in accordance with paragraph 112(1)(b) or on a date after the filing as the by-law provides.
 
-### 65(1) - Amendment and filing
+### 65 - Amendment and filing
+
+Source key: section:65
 
 Amendment and filing
 
@@ -1872,7 +2018,9 @@ when registered in the land registration office, is binding on a subsequent owne
 
 2021, c.44, s.1
 
-### 66(1) - Acquisition of land
+### 66 - Acquisition of land
+
+Source key: section:66
 
 Acquisition of land
 
@@ -1880,7 +2028,9 @@ Acquisition of land
 
 66(2)If the owner of land proposed to be acquired under a deferred widening by-law requests in writing at any time after the filing of the by-law in the land registration office that the council purchase the land, and the land is free of buildings and structures, subsection 65(1) ceases to apply to the land at the expiration of six months from the day the request is made.
 
-### 67(1) - Valid for five years
+### 67 - Valid for five years
+
+Source key: section:67
 
 Valid for five years
 
@@ -1892,7 +2042,9 @@ D
 
 Controlled Access Street By-laws
 
-### 68(1) - Access to streets
+### 68 - Access to streets
+
+Source key: section:68
 
 Access to streets
 
@@ -1924,7 +2076,9 @@ be provided by the local government with an alternative access to another street
 
 2021, c.44, s.1
 
-### 69(1) - Validity and coming into force of controlled access street by-law
+### 69 - Validity and coming into force of controlled access street by-law
+
+Source key: section:69
 
 Validity and coming into force of controlled access street by-law
 2021, c.44, s.1
@@ -1945,6 +2099,8 @@ Flood Risk Area By-laws
 
 ### 70 - Definition of “development”
 
+Source key: section:70
+
 Definition of “development”
 
 70The following definition applies in this Division.
@@ -1962,7 +2118,9 @@ the alteration of land levels on the topography of an area, including excavation
 (d)
 the placing or dumping of landfill in any manner.
 
-### 71(1) - Designation of flood risk area
+### 71 - Designation of flood risk area
+
+Source key: section:71
 
 Designation of flood risk area
 
@@ -1976,7 +2134,9 @@ Designation of flood risk area
 
 2021, c.44, s.1
 
-### 72(1) - Making and enforcement of flood risk area by-law
+### 72 - Making and enforcement of flood risk area by-law
+
+Source key: section:72
 
 Making and enforcement of flood risk area by-law
 
@@ -2023,7 +2183,9 @@ the necessary construction costs to provide the capacity.
 
 2021, c.44, s.1
 
-### 73(1) - Permits re flood risk area by-law
+### 73 - Permits re flood risk area by-law
+
+Source key: section:73
 
 Permits re flood risk area by-law
 
@@ -2039,7 +2201,9 @@ F
 
 Subdivision By-laws
 
-### 74(1) - Making of subdivision by-law
+### 74 - Making of subdivision by-law
+
+Source key: section:74
 
 Making of subdivision by-law
 
@@ -2075,7 +2239,9 @@ paragraph 112(1)(b) is complied with.
 
 2021, c.44, s.1
 
-### 75(1) - Content of subdivision by-law
+### 75 - Content of subdivision by-law
+
+Source key: section:75
 
 Content of subdivision by-law
 
@@ -2185,7 +2351,9 @@ when registered in the land registration office, is binding on a subsequent owne
 
 2021, c.44, s.1
 
-### 76(1) - Land for public purposes
+### 76 - Land for public purposes
+
+Source key: section:76
 
 Land for public purposes
 
@@ -2199,7 +2367,9 @@ a majority of the members of council vote in favour of the sale.
 
 76(2)All money received by the council under subsection (1) or under paragraph 75(1)(g) is to be paid into a special account, and the money in that account is to be expended by the council for acquiring or developing land for public purposes and for no other purpose.
 
-### 77(1) - Exemptions and variances
+### 77 - Exemptions and variances
+
+Source key: section:77
 
 Exemptions and variances
 
@@ -2325,7 +2495,9 @@ it is approved by the development officer despite an objection being received un
 
 2021, c.44, s.1
 
-### 78(1) - Approval of variances
+### 78 - Approval of variances
+
+Source key: section:78
 
 Approval of variances
 
@@ -2368,7 +2540,9 @@ giving the right to make representation to the advisory committee, regional serv
 
 2021, c.44, s.1
 
-### 79(1) - Subdivision plan
+### 79 - Subdivision plan
+
+Source key: section:79
 
 Subdivision plan
 
@@ -2432,7 +2606,9 @@ in the case of a remnant, state that the land is a remnant of the land of which 
 
 2021, c.44, s.1
 
-### 80(1) - Exemptions for certain parcels or conveyances
+### 80 - Exemptions for certain parcels or conveyances
+
+Source key: section:80
 
 Exemptions for certain parcels or conveyances
 
@@ -2472,7 +2648,9 @@ is not in keeping with the general intent of this Act or a by-law under this Act
 
 2021, c.44, s.1
 
-### 81(1) - Tentative subdivision plan
+### 81 - Tentative subdivision plan
+
+Source key: section:81
 
 Tentative subdivision plan
 
@@ -2530,11 +2708,15 @@ any further information required by the development officer to assure compliance
 
 ### 82 - Expiry of tentative subdivision plan
 
+Source key: section:82
+
 Expiry of tentative subdivision plan
 
 82The approval of a tentative plan or an exemption from submitting a tentative plan is null and void at the expiration of one year from the day the approval or exemption was given and shall not be renewed except as regards a portion of the land in respect of which a subdivision plan corresponding to the tentative subdivision plan or the instructions of the development officer under paragraph 77(1)(b) has been approved by the officer.
 
-### 83(1) - Lay-out of streets and lots
+### 83 - Lay-out of streets and lots
+
+Source key: section:83
 
 Lay-out of streets and lots
 
@@ -2542,7 +2724,9 @@ Lay-out of streets and lots
 
 83(2)A person acting under this section shall use legal survey monuments of a design and standard in accordance with the by-laws under the New Brunswick Land Surveyors Act, 1986.
 
-### 84(1) - Application for approval of subdivision plan
+### 84 - Application for approval of subdivision plan
+
+Source key: section:84
 
 Application for approval of subdivision plan
 
@@ -2664,7 +2848,9 @@ if the plan is signed by an agent under paragraph (c), a copy of a written autho
 
 2021, c.44, s.1
 
-### 85(1) - Approval of subdivision plan
+### 85 - Approval of subdivision plan
+
+Source key: section:85
 
 Approval of subdivision plan
 
@@ -2678,7 +2864,9 @@ Approval of subdivision plan
 
 85(5)On the approval of a subdivision plan, the development officer shall return the copies of the plan to the person who submitted them.
 
-### 86(1) - Filing of subdivision plan
+### 86 - Filing of subdivision plan
+
+Source key: section:86
 
 Filing of subdivision plan
 
@@ -2712,7 +2900,9 @@ the person who presented the plan for filing.
 
 2021, c.44, s.1
 
-### 87(1) - Subdivision plan for roads and streets
+### 87 - Subdivision plan for roads and streets
+
+Source key: section:87
 
 Subdivision plan for roads and streets
 
@@ -2788,7 +2978,9 @@ on the filing of the document in the land registration office, the system as cer
 
 2020, c.25, s.29; 2021, c.44, s.1; 2022, c.56, s.1; 2023, c.40, s.15
 
-### 88(1) - Approval of subdivision plan for streets and land for public purposes
+### 88 - Approval of subdivision plan for streets and land for public purposes
+
+Source key: section:88
 
 Approval of subdivision plan for streets and land for public purposes
 2021, c.44, s.1
@@ -2852,7 +3044,9 @@ convenient further subdividing of the land proposed for subdivision or the subdi
 
 2021, c.44, s.1; 2022, c.56, s.1
 
-### 89(1) - Amendments to subdivision plan
+### 89 - Amendments to subdivision plan
+
+Source key: section:89
 
 Amendments to subdivision plan
 
@@ -2884,7 +3078,9 @@ a document transferring ownership of the land supporting the new use of the land
 
 89(5)Land referred to in subsection (4) shall vest, free from any lien or encumbrance, in the new owner of the land on filing.
 
-### 90(1) - Subdivision plan by local government
+### 90 - Subdivision plan by local government
+
+Source key: section:90
 
 Subdivision plan by local government
 
@@ -2923,7 +3119,9 @@ G
 
 Development Charge By-laws
 
-### 91(1) - Making of development charge by-law
+### 91 - Making of development charge by-law
+
+Source key: section:91
 
 Making of development charge by-law
 
@@ -2989,7 +3187,9 @@ the collection of the charge for the purpose authorized in the by-law is specifi
 
 2021, c.44, s.1
 
-### 92(1) - Development charge agreement
+### 92 - Development charge agreement
+
+Source key: section:92
 
 Development charge agreement
 
@@ -3009,7 +3209,9 @@ provides for any other matter necessary or desirable to effect the agreement.
 
 92(2)A development charge by-law may prescribe the circumstances in which a development charge agreement is entered into and the general terms that it contains.
 
-### 93(1) - Validity and coming into force of development charge by-law
+### 93 - Validity and coming into force of development charge by-law
+
+Source key: section:93
 
 Validity and coming into force of development charge by-law
 2021, c.44, s.1
@@ -3030,6 +3232,8 @@ paragraph 112(1)(b) is complied with.
 2021, c.44, s.1
 
 ### 94 - Effect of development charge agreement
+
+Source key: section:94
 
 Effect of development charge agreement
 
@@ -3058,12 +3262,16 @@ Incentive or Bonus Zoning Agreement By-laws
 
 ### 95 - Definition of “incentive or bonus zoning agreement”
 
+Source key: section:95
+
 Definition of “incentive or bonus zoning agreement”
 
 95The following definition applies to this Division.
 “incentive or bonus zoning agreement” means an agreement that permits the relaxation of specific requirements with respect to zoning if an applicant exceeds other requirements or undertakes other action, in the public interest, as specified in the agreement.(entente de zonage incitatif)
 
-### 96(1) - Incentive or bonus zoning agreements
+### 96 - Incentive or bonus zoning agreements
+
+Source key: section:96
 
 Incentive or bonus zoning agreements
 
@@ -3126,7 +3334,9 @@ when registered in the land registration office, is binding on a subsequent owne
 
 2021, c.44, s.1
 
-### 97(1) - Validity and coming into force of incentive or bonus zoning agreement by-law
+### 97 - Validity and coming into force of incentive or bonus zoning agreement by-law
+
+Source key: section:97
 
 Validity and coming into force of incentive or bonus zoning agreement by-law
 2021, c.44, s.1
@@ -3148,6 +3358,8 @@ paragraph 112(1)(b) is complied with.
 
 ### 98 - Prohibition on breach of agreement
 
+Source key: section:98
+
 Prohibition on breach of agreement
 
 98No person shall breach the terms of an incentive or bonus zoning agreement.
@@ -3156,7 +3368,9 @@ I
 
 Local Government Agreement By-laws
 
-### 99(1) - Local government agreements
+### 99 - Local government agreements
+
+Source key: section:99
 
 Local government agreements
 
@@ -3188,7 +3402,9 @@ any other matters related to economic, physical, social or cultural development 
 
 2021, c.44, s.1
 
-### 100(1) - Comply with notice provisions
+### 100 - Comply with notice provisions
+
+Source key: section:100
 
 Comply with notice provisions
 
@@ -3208,6 +3424,8 @@ Development Scheme By-laws
 
 ### 101 - Development scheme
 
+Source key: section:101
+
 Development scheme
 
 101If a municipal plan or rural plan under section 33 or 44 is in effect, a council may make a by-law adopting a development scheme to carry out or amplify
@@ -3218,7 +3436,9 @@ a proposal suggested or outlined in the plan, or
 (b)
 a project that is not inconsistent with the plan.
 
-### 102(1) - Preparation and content of development scheme
+### 102 - Preparation and content of development scheme
+
+Source key: section:102
 
 Preparation and content of development scheme
 
@@ -3296,7 +3516,9 @@ when registered in the land registration office, is binding on a subsequent owne
 
 2020, c.8, s.28; 2021, c.44, s.1
 
-### 103(1) - Comply with notice provisions
+### 103 - Comply with notice provisions
+
+Source key: section:103
 
 Comply with notice provisions
 
@@ -3312,6 +3534,8 @@ the requirement of paragraph 112(1)(b) is complied with.
 
 ### 104 - Conflict
 
+Source key: section:104
+
 Conflict
 
 104If there is a conflict between a development scheme and a zoning by-law, subdivision by-law or zoning provisions in a rural plan under section 33 or 44, the development scheme shall prevail.
@@ -3320,7 +3544,9 @@ K
 
 Acquisition of Land
 
-### 105(1) - Acquisition of land by local government
+### 105 - Acquisition of land by local government
+
+Source key: section:105
 
 Acquisition of land by local government
 
@@ -3342,7 +3568,9 @@ any land that the council considers could be conveniently subdivided or re-arran
 
 105(3)An expropriation under subsection (1) shall be undertaken in accordance with section 184 of the Local Governance Act.
 
-### 106(1) - Acquisition of land by Minister
+### 106 - Acquisition of land by Minister
+
+Source key: section:106
 
 Acquisition of land by Minister
 
@@ -3354,7 +3582,9 @@ Acquisition of land by Minister
 
 2021, c.44, s.1
 
-### 107(1) - Compensation
+### 107 - Compensation
+
+Source key: section:107
 
 Compensation
 
@@ -3368,7 +3598,9 @@ L
 
 Prohibition re Development
 
-### 108(0.1) - Approval for a development
+### 108 - Approval for a development
+
+Source key: section:108
 
 Approval for a development
 2021, c.44, s.1
@@ -3451,7 +3683,9 @@ the duly authorized agent of the owner referred to in paragraph (a).
 MAKING, AMENDMENT, REPEAL
 AND REVIEW OF BY-LAWS
 
-### 109(1) - Procedure for making by-laws
+### 109 - Procedure for making by-laws
+
+Source key: section:109
 
 Procedure for making by-laws
 
@@ -3463,7 +3697,9 @@ Procedure for making by-laws
 
 109(4)Despite any by-law, unless otherwise ineligible, the mayor or a presiding officer of the council may vote once on a motion if a majority vote of the members of council is required.
 
-### 110(1) - Request for views of advisory committee
+### 110 - Request for views of advisory committee
+
+Source key: section:110
 
 Request for views of advisory committee
 
@@ -3485,7 +3721,9 @@ if the by-law fails to give effect to the written views of the advisory committe
 
 110(3)The advisory committee or regional service commission shall be deemed to have approved a proposed by-law if it fails to give the views requested on the by-law under subsection (1) within 30 days of the request, or within a longer period as the council may decide.
 
-### 111(1) - Public notice of by-law
+### 111 - Public notice of by-law
+
+Source key: section:111
 
 Public notice of by-law
 
@@ -3551,7 +3789,9 @@ a notice of the proposed amendment is posted in a prominent place on the propert
 
 2020, c.8, s.28; 2021, c.44, s.1
 
-### 112(1) - Approval by Minister
+### 112 - Approval by Minister
+
+Source key: section:112
 
 Approval by Minister
 
@@ -3590,11 +3830,15 @@ a copy of any report on which a plan or scheme referred to in paragraph (a) is b
 
 ### 113 - Approval of an amendment to zoning by-law
 
+Source key: section:113
+
 Approval of an amendment to zoning by-law
 
 113If a written objection to a proposed by-law to amend a zoning by-law or zoning provisions in a rural plan under section 33 or 44 is signed by the owners of at least one-third of the area of the land within the area affected by the by-law and within 100 m of that area, but not including land owned by a person who made application for the amendment, and is presented to the council not fewer than two days before the hearing required by section 111, the by-law shall not become valid unless a majority of the members of the council vote in favour of making the by-law.
 
-### 114(1) - Construction freeze
+### 114 - Construction freeze
+
+Source key: section:114
 
 Construction freeze
 
@@ -3604,18 +3848,24 @@ Construction freeze
 
 ### 115 - Review of planning documents
 
+Source key: section:115
+
 Review of planning documents
 
 115Despite any other provision of this Act, the Minister may require a council to review a plan or development scheme adopted under this Act if the Minister considers a review necessary.
 
 ### 116 - Consultations by council
 
+Source key: section:116
+
 Consultations by council
 
 116A council may submit a proposed by-law to the Director for the Director’s comments.
 2021, c.44, s.1
 
-### 117(1) - Amendment or repeal of by-laws
+### 117 - Amendment or repeal of by-laws
+
+Source key: section:117
 
 Amendment or repeal of by-laws
 
@@ -3635,11 +3885,15 @@ makes an amendment to, or repeals, a municipal plan, rural plan under section 33
 
 ### 118 - No injurious affection
 
+Source key: section:118
+
 No injurious affection
 
 118Land shall not be deemed to be injuriously affected by reason only of the making of a by-law or regulation under this Act, or the amendment or repeal of the by-law or regulation.
 
 ### 119 - Severability of by-law
+
+Source key: section:119
 
 Severability of by-law
 
@@ -3652,7 +3906,9 @@ PLANNING APPEAL TRIBUNAL
 
 2023, c.18, s.94
 
-### 120(1) - Jurisdiction of Board
+### 120 - Jurisdiction of Board
+
+Source key: section:120
 
 Jurisdiction of Board
 
@@ -3718,7 +3974,9 @@ under paragraph (1)(d), 60 days from the date of the refusal referred to in that
 
 2021, c.44, s.1
 
-### 121(1) - Orders and decisions
+### 121 - Orders and decisions
+
+Source key: section:121
 
 Orders and decisions
 
@@ -3782,11 +4040,15 @@ is the basis for the action appealed.
 
 ### 122 - Publication of decision
 
+Source key: section:122
+
 Publication of decision
 
 122The Minister shall cause the decisions of the Board that the Minister considers to be of significance to be published annually.
 
-### 123(1) - Power of inspection
+### 123 - Power of inspection
+
+Source key: section:123
 
 Power of inspection
 
@@ -3802,7 +4064,9 @@ Power of inspection
 
 REGULATIONS
 
-### 124(1) - Regulations – general
+### 124 - Regulations – general
+
+Source key: section:124
 
 Regulations – general
 
@@ -3888,7 +4152,9 @@ if the regional land use plan is specific or general in its application.
 
 2020, c.8, s.28; 2021, c.44, s.1; 2022, c.56, s.1
 
-### 125(1) - Regulations re planning and development
+### 125 - Regulations re planning and development
+
+Source key: section:125
 
 Regulations re planning and development
 
@@ -4089,7 +4355,9 @@ follow, with the necessary modifications, the procedure preliminary to the makin
 
 MISCELLANEOUS AND GENERAL
 
-### 126(1) - Administration
+### 126 - Administration
+
+Source key: section:126
 
 Administration
 
@@ -4099,12 +4367,16 @@ Administration
 
 ### 126.1 - Review of this Act
 
+Source key: section:126.1
+
 Review of this Act
 
 126.1Within seven years after January 1, 2023, the Minister shall undertake a comprehensive review of the operation of this Act and shall, within one year after the review is undertaken or within such further time as the Legislative Assembly allows, submit a report on the review to the Legislative Assembly.
 2021, c.44, s.1
 
-### 127(1) - Fees
+### 127 - Fees
+
+Source key: section:127
 
 Fees
 
@@ -4129,6 +4401,8 @@ examining an instrument under paragraph 77(1)(l).
 
 ### 128 - Approvals for pipeline construction
 
+Source key: section:128
+
 Approvals for pipeline construction
 
 128A development officer may grant approvals for pipeline construction for which the development officer is the approving authority under the Pipeline Act, 2005.
@@ -4136,12 +4410,16 @@ Approvals for pipeline construction
 
 ### 129 - Development on Crown land
 
+Source key: section:129
+
 Development on Crown land
 
 129Except as to the Crown or an agent of the Crown, a person is not exempt from compliance with this Act, a by-law or regulation under this Act, an order or demand or terms and conditions made or imposed in accordance with an order, or a decision of the Board, by reason only of the fact that the land, building or structure in respect of which the person undertakes a development is owned by the Crown.
 2021, c.44, s.1
 
-### 130(1) - Proof of a by-law
+### 130 - Proof of a by-law
+
+Source key: section:130
 
 Proof of a by-law
 
@@ -4153,7 +4431,9 @@ Proof of a by-law
 
 2021, c.44, s.1
 
-### 131(1) - Agreement with developer
+### 131 - Agreement with developer
+
+Source key: section:131
 
 Agreement with developer
 
@@ -4181,7 +4461,9 @@ at any time, discharge a covenant or condition of an agreement.
 
 ENFORCEMENT
 
-### 132(1) - Powers of Minister
+### 132 - Powers of Minister
+
+Source key: section:132
 
 Powers of Minister
 
@@ -4199,7 +4481,9 @@ Powers of Minister
 
 2021, c.44, s.1
 
-### 133(1) - Inspection of property
+### 133 - Inspection of property
+
+Source key: section:133
 
 Inspection of property
 
@@ -4213,7 +4497,9 @@ Inspection of property
 
 2021, c.44, s.1
 
-### 134(1) - Violation of Act
+### 134 - Violation of Act
+
+Source key: section:134
 
 Violation of Act
 
@@ -4254,7 +4540,9 @@ state that the action specified in the order is to be taken within the period st
 
 2020, c.8, s.28; 2021, c.44, s.1
 
-### 135(1) - Application for an order of the Court
+### 135 - Application for an order of the Court
+
+Source key: section:135
 
 Application for an order of the Court
 
@@ -4291,7 +4579,9 @@ make any other order as is required to enforce the provision in respect of which
 
 2023, c.17, s.35
 
-### 136(1) - Powers of the Court
+### 136 - Powers of the Court
+
+Source key: section:136
 
 Powers of the Court
 
@@ -4314,6 +4604,8 @@ in the opinion of the Court, the application raises substantially the same matte
 2023, c.17, s.35
 
 ### 137 - Prohibition
+
+Source key: section:137
 
 Prohibition
 
@@ -4339,7 +4631,9 @@ obstruct any person in the performance of the person’s duty under this Act.
 
 2021, c.44, s.1
 
-### 138(1) - Offences and penalties
+### 138 - Offences and penalties
+
+Source key: section:138
 
 Offences and penalties
 
@@ -4361,11 +4655,15 @@ the date of the final disposition of the appeal.
 
 ### 139 - Proceedings
 
+Source key: section:139
+
 Proceedings
 
 139Proceedings for an offence under this Act shall be commenced in the name of the Minister or the clerk of the local government or any other person who is designated for that purpose by the council.
 
 ### 140 - Ministerial enforcement of rural plans
+
+Source key: section:140
 
 Ministerial enforcement of rural plans
 
@@ -4378,11 +4676,15 @@ TRANSITIONAL PROVISIONS, REPEAL AND COMMENCEMENT
 
 ### 141 - Definition of “former Act”
 
+Source key: section:141
+
 Definition of “former Act”
 
 141For the purposes of this Part, “former Act” means the Community Planning Act, chapter C-12 of the Revised Statutes, 1973.
 
 ### 142 - Municipal development plan under former Act
+
+Source key: section:142
 
 Municipal development plan under former Act
 
@@ -4390,11 +4692,15 @@ Municipal development plan under former Act
 
 ### 143 - Resolutions under former Act
 
+Source key: section:143
+
 Resolutions under former Act
 
 143Despite any inconsistency with a provision of this Act, a resolution made by a council of a municipality or rural community or a regional service commission under the authority of the former Act that was in force immediately before the commencement of this section, shall be deemed to have been made under this Act and is valid and continues in force until amended or repealed.
 
 ### 144 - By-laws under former Act
+
+Source key: section:144
 
 By-laws under former Act
 
@@ -4402,11 +4708,15 @@ By-laws under former Act
 
 ### 145 - Permits, approvals and orders continue
 
+Source key: section:145
+
 Permits, approvals and orders continue
 
 145Despite any inconsistency with a provision of this Act, a permit, approval or order made or issued under the former Act that was in force immediately before the commencement of this section shall be deemed to have been made under this Act and is valid and continues in force until amended or repealed.
 
 ### 146 - Agreements and contracts continue
+
+Source key: section:146
 
 Agreements and contracts continue
 
@@ -4414,17 +4724,23 @@ Agreements and contracts continue
 
 ### 147 - Applications before Act in force
 
+Source key: section:147
+
 Applications before Act in force
 
 147Despite any inconsistency with a provision of this Act, any application received by a council of a municipality, rural community or village before the coming into force of this section is to be dealt with in accordance with the process in effect in the municipality, rural community or village at the time the application was received.
 
 ### 148 - Appeals before the Board
 
+Source key: section:148
+
 Appeals before the Board
 
 148Despite any inconsistency with a provision of this Act, any appeal commenced under the previous Act before the Assessment and Planning Appeal Board before the coming into force of this section is to be dealt with in accordance with the process in effect under this Act.
 
 ### 149 - Terms of office of members appointed to planning advisory committees continue
+
+Source key: section:149
 
 Terms of office of members appointed to planning advisory committees continue
 
@@ -4435,11 +4751,15 @@ Terms of office of members appointed to planning advisory committees continue
 
 ### 150 - Payments under section 45 of former Act
 
+Source key: section:150
+
 Payments under section 45 of former Act
 
 150Despite any inconsistency with a provision of this Act, if payments are still due or owing under the provision of section 45 of the former Act immediately before the coming into force of this section with respect to the an amount equal to the initial cost of the facilities, or equal to the share of the cost required to be paid by a person, section 45 of the former Act is continued as if that Act was not repealed.
 
 ### 151 - Provincial Planning Director continues
+
+Source key: section:151
 
 Provincial Planning Director continues
 
@@ -4447,17 +4767,23 @@ Provincial Planning Director continues
 
 ### 152 - Municipal planning directors, municipal planning officers, rural community planning directors and rural community planning officers continue
 
+Source key: section:152
+
 Municipal planning directors, municipal planning officers, rural community planning directors and rural community planning officers continue
 
 152Despite any inconsistency with a provision of this Act, a person who was appointed as a municipal planning director, municipal planning officer, rural community planning director or rural community planning officer under section 16 of the former Act and holding office immediately before the commencement of this section shall be deemed to have been appointed as a planning director or planning officer, as the case may be, under section 10 of this Act and continues in office until he or she resigns or is reappointed or replaced .
 
 ### 153 - Repeal of the Community Planning Act
 
+Source key: section:153
+
 Repeal of the Community Planning Act
 
 153 The Community Planning Act, chapter C-12 of the Revised Statutes, 1973, is repealed.
 
 ### 154 - Regulations under the Community Planning Act
+
+Source key: section:154
 
 Regulations under the Community Planning Act
 
@@ -4513,9 +4839,15 @@ a regulation referred to in paragraph (a) may be amended under the Community Pla
 
 ### 155 - Commencement
 
+Source key: section:155
+
 Commencement
 
 155This Act or any provision of this Act comes into force on a day or days to be fixed by proclamation.
+
+### SCHEDULE A
+
+Source key: schedule:schedule-a
 
 SCHEDULE A
 
@@ -4566,77 +4898,3 @@ SCHEDULE A
 N.B. This Act was proclaimed and came into force January 1, 2018
 
 N.B. This Act is consolidated to May 15, 2024.
-
-Copy
-
-Select this element
-
-Select parent element
-
-Unselect all
-
-Copy to Drafting
-
-Copy to LAW
-
-Copy to Clipboard
-
-To copy : Ctrl+C
-
-OK
-
->"/>
-
-0
-
-Advanced search (includes point-in-time)
-
-Consolidated Acts and Regulations
-Acts
-by title
-by chapter
-by Minister
-
-Regulations
-by regulation number
-
-Annual Acts and Regulations
-Acts
-by year
-
-Regulations
-by year
-
-Access Rules of Court
-by rule number
-
-Repealed Legislation (2011 onward)
-Acts
-by title
-
-Drafted, consolidated and published with © Irosoft LIMS, 2026
-
-Feedback
-
-Disclaimer
-
-Privacy Statement
-
-Selections
-
-Show
-Selections in current document
-All selections in the collection
-Selected elements
-Delete all selections
-Show selections
-
-Close
-
-Cyberlex
-
-Version 2.2.6.0
-
->">
-
->">

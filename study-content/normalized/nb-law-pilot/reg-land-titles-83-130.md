@@ -6,13 +6,17 @@ Source: https://laws.gnb.ca/en/document/cr/83-130
 Content hash: 2c8cd9166d6c909b371fe4fd97b459a4ff5f382f4f58ff1dbc1be51d7bf7e689
 Consolidated to: April 1, 2025
 
-## Sections
+## Components
 
 ### 1
+
+Source key: section:1
 
 1This Regulation may be cited as the General Regulation - Land Titles Act.
 
 ### 2
+
+Source key: section:2
 
 2In this Regulation
 “Act” means the Land Titles Act;(Loi)
@@ -23,7 +27,9 @@ Consolidated to: April 1, 2025
 
 2000-38
 
-### 3(1)
+### 3
+
+Source key: section:3
 
 3(1)The Act applies to the registration of the title to every parcel of land in the Province, including land owned by the Crown, unless the parcel of land is excepted from the operation of the Act under subsection (2).
 
@@ -64,7 +70,9 @@ the transfer is made pursuant to a trust, whether from the trustee to the benefi
 
 83-213; 84-136; 2000-38; 2000-50; 2001-13
 
-### 4(1)
+### 4
+
+Source key: section:4
 
 4(1)The matters referred to in subsections 3(5) and (6) may be proved by the affidavit of a person having knowledge of the facts, and such affidavit, if provided, shall be endorsed on or annexed to the instrument or document and recorded under the Registry Act.
 
@@ -93,7 +101,9 @@ THE REGISTRY ACT
 
 2000-38; 2000-50
 
-### 5(1)
+### 5
+
+Source key: section:5
 
 5(1)The Province of New Brunswick is established as a land registration district, which shall be known as the District of New Brunswick.
 
@@ -107,43 +117,82 @@ THE REGISTRY ACT
 
 ### 6
 
+Source key: section:6
+
 6The Registrar General of Land Titles may from time to time issue directives to provide for the manner in which business is to be conducted in a land titles office.
 
 ### 7
 
-7The certificate referred to in paragraph 11(2)(b) of the Act shall be a Certificate of Title in Form 3.
-2000-38
+Source key: section:7
+
+7The certificate referred to in paragraph 11(2)(b) of the Act shall be a Certificate of Title in
+
+### Form 3
+
+Source key: form:form-3
+
+Form 3
 
 ### 8
+
+Source key: section:8
 
 8Repealed: 2000-38
 2000-38
 
-### 9(1)
+### 9
+
+Source key: section:9
 
 9(1)When the registrar receives for registration a grant from the Crown of previously unregistered land, the registrar shall register the Crown grant in the manner directed by the Registrar General.
 
 9(2)When the registrar receives for registration a grant from the Crown of registered land, the registrar shall register the Crown grant in a manner similar to the registration of a transfer.
 
-### 10(1)
+### 10
 
-10(1)A debenture which contains a mortgage or other charge of registered land shall be in Form 56 and the heading is part of the form.
+Source key: section:10
 
-10(2)The holder of a debenture who wishes to register the debenture against registered land shall file an application with the registrar in Form 57.
+10(1)A debenture which contains a mortgage or other charge of registered land shall be in
 
-10(3)Repealed: 2000-38
+### Form 56
 
-10(4)A registered debenture may be discharged as to all or any of the registered land charged by the registration of a Discharge of Debenture or Partial Discharge of Debenture in Form 58.
+Source key: form:form-56
 
-10(5)The holder of a debenture which contains a floating charge may (by itself or through its agent or a receiver) give notice that the charge has crystallized by registering a Notice of Crystallization of Debenture in Form 59 against any parcel with respect to which the debenture has been registered.
+Form 56
 
-84-136; 2000-38
+### Form 57
+
+Source key: form:form-57
+
+Form 57
+
+### Form 58
+
+Source key: form:form-58
+
+Form 58
+
+### Form 59
+
+Source key: form:form-59
+
+Form 59
 
 ### 11
 
-11The registrar shall make a notation of any rectification of the title register by registering a Notation of Title Register Rectification in Form 52.
+Source key: section:11
 
-### 12(1)
+11The registrar shall make a notation of any rectification of the title register by registering a Notation of Title Register Rectification in
+
+### Form 52
+
+Source key: form:form-52
+
+Form 52
+
+### 12
+
+Source key: section:12
 
 12(1)Service of a notice may be proved by affidavit.
 
@@ -163,7 +212,9 @@ where the delivery is not local, on the fifth day following the date it was mail
 
 2000-38
 
-### 13(1)
+### 13
+
+Source key: section:13
 
 13(1)Registered land shall be described and diagrammed in such manner as the Registrar General considers is best calculated to secure accuracy.
 
@@ -171,15 +222,21 @@ where the delivery is not local, on the fifth day following the date it was mail
 
 ### 14
 
+Source key: section:14
+
 14The registrar shall maintain an alphabetical list of owners of interests in registered land containing the name of each owner and the approved parcel identifier of each registered parcel in which that person owns an interest.
 2000-38
 
 ### 14.1
 
+Source key: section:14.1
+
 14.1Any person upon payment of the prescribed fee may require the registrar to make a search of the alphabetical list of owners of interests in registered land and is entitled to receive a Certificate of Alphabetical List Search.
 84-136; 2000-38
 
-### 15(1)
+### 15
+
+Source key: section:15
 
 15(1)The registrar shall receive survey plans of registered land which comply with the requirements of the Act and regulations upon payment of the prescribed fee.
 
@@ -189,6 +246,8 @@ where the delivery is not local, on the fifth day following the date it was mail
 
 ### 16
 
+Source key: section:16
+
 16The registrar may delete from the title register the entry of a lease
 
 (a)
@@ -197,7 +256,9 @@ when a surrender of the lease is registered, or
 (b)
 one month following the expiration of the term of the lease if the lease does not contain an option for renewal.
 
-### 17(1)
+### 17
+
+Source key: section:17
 
 17(1)All instruments presented for registration or filing may be in either or both of the official languages.
 
@@ -207,10 +268,14 @@ one month following the expiration of the term of the lease if the lease does no
 
 ### 18
 
+Source key: section:18
+
 18In all instruments wherein a date is specified, the name of the month shall be printed in full or abbreviated form and shall not be expressed in numeric form, unless it is clear in the instrument which number represents the month.
 2000-38
 
-### 18.1(1)
+### 18.1
+
+Source key: section:18.1
 
 18.1(1)In this section,
 
@@ -224,6 +289,8 @@ one month following the expiration of the term of the lease if the lease does no
 
 ### 18.2
 
+Source key: section:18.2
+
 18.2Where registration particulars are required in an instrument, the following shall be provided:
 
 (a)
@@ -234,7 +301,9 @@ if the instrument is registered under the Land Titles Act, the registration numb
 
 2000-38; 2008-85
 
-### 18.3(1)
+### 18.3
+
+Source key: section:18.3
 
 18.3(1)Where the spouse of a party to an instrument joins in the instrument and consents to the disposition for the purpose of complying with section 19 of the Marital Property Act, the spouse shall be identified in the instrument by the label “Spouse of _________________”, with the name of the spouse who is the party to the instrument inserted in the blank space.
 
@@ -244,7 +313,9 @@ if the instrument is registered under the Land Titles Act, the registration numb
 
 2000-38
 
-### 19(1)
+### 19
+
+Source key: section:19
 
 19(1)An affidavit of marital status is not required to be made by a registered owner who is not a natural person.
 
@@ -254,25 +325,51 @@ if the instrument is registered under the Land Titles Act, the registration numb
 
 ### 19.1
 
-19.1Where an instrument is executed by an individual representing an unincorporated organization, the instrument shall be accompanied by an Affidavit of Execution in Form 43.1.
-2000-38
+Source key: section:19.1
+
+19.1Where an instrument is executed by an individual representing an unincorporated organization, the instrument shall be accompanied by an Affidavit of Execution in
+
+### Form 43
+
+Source key: form:form-43
+
+Form 43
+
+### Form 43.1
+
+Source key: form:form-43.1
+
+Form 43.1
 
 ### 19.2
 
-19.2Where an instrument is accompanied by a Certificate of Execution in Form 44, the notary public who signs the Certificate of Execution shall sign the instrument next to the signature of the party for whom the notary is providing the Certificate of Execution, with the notary’s name printed legibly underneath his or her signature.
-2000-38
+Source key: section:19.2
+
+19.2Where an instrument is accompanied by a Certificate of Execution in
+
+### Form 44
+
+Source key: form:form-44
+
+Form 44
 
 ### 19.3
+
+Source key: section:19.3
 
 19.3Where a trustee in bankruptcy registers a receiving order or assignment, or a copy of it, under section 50 of the Act, the trustee shall provide the registrar with the PID for land affected by the registration.
 2000-38
 
 ### 19.4
 
+Source key: section:19.4
+
 19.4If an application to register a judgment under section 40 of the Act relates to a judgment that affects an interest in or title to land or requires the payment of money but also includes provisions that do not do so, the judgment annexed to the application under subsection 40(5) of the Act shall be an abbreviated judgment issued under the Rules of Court, unless otherwise ordered by the Registrar General.
 2019-34
 
-### 20(1)
+### 20
+
+Source key: section:20
 
 20(1)The forms prescribed for the purposes of the Act are those set out in Schedule A, and the heading is part of the form.
 
@@ -288,42 +385,23 @@ if the instrument is registered under the Land Titles Act, the registration numb
 
 20(6)Information required to be included in a form set out in Schedule A may be attached as a schedule thereto.
 
-20(7)In a transfer which is made subject to restrictions, either of the following paragraphs may be added to Form 13 to include the restrictions by reference:
+20(7)In a transfer which is made subject to restrictions, either of the following paragraphs may be added to
 
-To the intent that the burden of this covenant run with the parcel being transferred, the transferor and the transferee respectively covenant and agree with each other and, as to the transferee, with the owner or owners of any other parcel to which is attached the benefit of the restrictions set out below, that the transferee and the successors in title of the transferee will comply with the restrictions:
+### Form 1
 
-Restrictions: insert number or set out in Schedule E
+Source key: form:form-1
 
-OR
+Form 1
 
-To the intent that the burden of this covenant run with the parcel being transferred to the benefit of the parcel described in the restrictive covenant below, the transferee covenants and agrees with the transferor that the transferee and the successors in title of the transferee will comply with the restrictions:
+### Form 13
 
-Restrictions: insert number or set out in Schedule E
+Source key: form:form-13
 
-20(8)For the purposes of subsection (7), restrictions that are used in the second restrictive convenant shall include a description of the parcel being benefited as a part of its description.
+Form 13
 
-20(9)The forms set out in Schedule A, except Forms 1, 9, 10 and 47, may be modified as required to provide for application to more than one parcel of land.
+### 20.1
 
-20(10)In Forms 1, 9, 10 and 47, the name of an owner shall be specified both according to the Naming Conventions Regulation - Land Titles Act and as shown on the instrument by which that owner acquired an interest in that land.
-
-20(11)Subsection (10) does not apply where the owner or the owner’s agent submits an application for registration of title to land before the commencement of this subsection.
-
-20(12)In Form 1,
-
-(a)
-both registered and unregistered encumbrances shall be indicated,
-
-(b)
-a leasehold interest shall be shown with the lessor as the owner and the lessee as an encumbrance, and
-
-(c)
-a life estate shall be shown with the remainderman as the owner and the life tenant as an encumbrance.
-
-20(13)In Forms 1 and 2, “public utility” means a public utility as defined in subsection 87(8) of the Community Planning Act.
-
-84-136; 2000-38; 2008-20; 2017, c.20, s.89
-
-### 20.1(1)
+Source key: section:20.1
 
 20.1(1)Where the Crown in right of the Province is identified as a party to an instrument, that party shall be entered in the instrument record as “Crown, New Brunswick”, and, where the Crown is represented in the instrument by a member of the Executive Council, that entry shall be followed by the designation of the member; for example, the Crown in right of the Province as represented by the Minister of Transportation and Infrastructure shall be entered in the instrument record as “Crown, New Brunswick, Transportation and Infrastructure”.
 
@@ -333,7 +411,9 @@ a life estate shall be shown with the remainderman as the owner and the life ten
 
 2000-38; 2010, c.31, s.79; 2023, c.17, s.136
 
-### 21(1)
+### 21
+
+Source key: section:21
 
 21(1)Subject to this section, unless prepared in book form for deposit, all instruments shall be printed or typewritten on good quality white paper, 8.5 inches by 11 inches (22.6 cm by 27.94 cm) or 8.5 inches by 14 inches (22.6 cm by 35.6 cm), with a margin of not less than one inch (2.5 cm) on the top and left side of the page and, if printed on the reverse thereof a margin of not less than one inch (2.5 cm) on the top and right side of the page, and shall be of sufficient clarity to permit photocopying or other reproduction.
 
@@ -357,6 +437,8 @@ with respect to a digitally scanned image of an instrument referred to in subsec
 
 ### 21.1
 
+Source key: section:21.1
+
 21.1The following instruments are designated for the purposes of subsection 17.1(1) of the Act:
 
 (a)
@@ -372,30 +454,67 @@ specify any interest to benefit or burden the parcel, or
 specify any conditions or covenants to which the transfer is subject, unless there is designated in the appropriate place in the transfer the numbers that have been assigned to those conditions or covenants by the Registrar General;
 
 (b)
-mortgages (Form 15) and collateral mortgages (Form 15.1) where there is no restriction as to the interest being mortgaged;
+mortgages (
 
-(c)
-discharges of mortgages (Form 17) where the entirety of the parcel is being discharged from a mortgage;
+### Form 15
 
-(d)
-assignments (Form 23) if there is no restriction as to the interest being assigned; and
+Source key: form:form-15
 
-(e)
-applications of survivor (Form 48) and applications of survivors (Form 48.1).
+Form 15
 
-2008-19; 2013-35
+### Form 15.1
+
+Source key: form:form-15.1
+
+Form 15.1
+
+### Form 17
+
+Source key: form:form-17
+
+Form 17
+
+### Form 2
+
+Source key: form:form-2
+
+Form 2
+
+### Form 23
+
+Source key: form:form-23
+
+Form 23
+
+### Form 48
+
+Source key: form:form-48
+
+Form 48
+
+### Form 48.1
+
+Source key: form:form-48.1
+
+Form 48.1
 
 ### 21.2
+
+Source key: section:21.2
 
 21.2Repealed: 2013-35
 2008-19; 2013-35
 
 ### 21.21
 
+Source key: section:21.21
+
 21.21For the purposes of paragraph 17.1(6)(d) of the Act, an instrument referred to in paragraph 21.1(d) or (e) may be submitted in paper format to a land titles office for filing or registration if it was executed before the date that is four months after the commencement of this section.
 2013-35
 
 ### 21.22
+
+Source key: section:21.22
 
 21.22For the purposes of subsection 17.11(1) of the Act, the following instruments shall not be filed or registered under the Act by submitting a digitally scanned image of the instrument:
 
@@ -412,10 +531,14 @@ an instrument designated under section 21.1 of this Regulation for the purposes 
 
 ### 21.3
 
+Source key: section:21.3
+
 21.3The minimum period of time that a subscriber or former subscriber who authenticates or authenticated an electronic instrument shall retain the counterpart instrument referred to in paragraph 17.2(3)(a) of the Act and the affidavits, certificate or statutory declaration that accompanied the instrument is 10 years from the date of the authentication.
 2008-19
 
 ### 21.4
+
+Source key: section:21.4
 
 21.4An owner of a mortgage who wishes to submit an assignment of the mortgage or a discharge of the mortgage in electronic format shall enter into an agreement with Service New Brunswick for the purposes of
 
@@ -432,23 +555,35 @@ establishing an account with Service New Brunswick for electronic funds transfer
 
 ### 22
 
+Source key: section:22
+
 22The fees prescribed for the purposes of the Act are those set out in Schedule B.
 
 ### 23
+
+Source key: section:23
 
 23The covenants and conditions and the numbers corresponding to each covenant and condition prescribed pursuant to subsection 25(4) of the Act are the “Statutory Mortgage Covenants” set out in Schedule C.
 
 ### 24
 
+Source key: section:24
+
 24The covenants and conditions and the numbers corresponding to each covenant and condition prescribed pursuant to subsection 27(2) of the Act are the “Statutory Lease Covenants” set out in Schedule D.
 
-### 25(1)
+### 25
+
+Source key: section:25
 
 25(1)Subject to subsection (2) this Regulation comes into force on July 9, 1984.
 
 25(2)Subsections 3(1), (2) and (2.1) of this Regulation come into force on January 1, 1984.
 
 83-213; 84-136
+
+### SCHEDULE A
+
+Source key: schedule:schedule-a
 
 SCHEDULE A
 
@@ -794,69 +929,279 @@ COVENANT ON A TRANSFER
 
 84-136; 87-51; 2000-37; 2008-20; 2019-34
 
-Form 1
-Form 2
-Form 3
+### Form 4.1
+
+Source key: form:form-4.1
+
 Form 4.1
+
+### Form 8.1
+
+Source key: form:form-8.1
+
 Form 8.1
+
+### Form 9
+
+Source key: form:form-9
+
 Form 9
+
+### Form 10
+
+Source key: form:form-10
+
 Form 10
+
+### Form 11
+
+Source key: form:form-11
+
 Form 11
+
+### Form 12
+
+Source key: form:form-12
+
 Form 12
-Form 13
+
+### Form 13.2
+
+Source key: form:form-13.2
+
 Form 13.2
+
+### Form 13.3
+
+Source key: form:form-13.3
+
 Form 13.3
+
+### Form 14
+
+Source key: form:form-14
+
 Form 14
-Form 15
-Form 15.1
+
+### Form 16
+
+Source key: form:form-16
+
 Form 16
-Form 17
+
+### Form 18
+
+Source key: form:form-18
+
 Form 18
+
+### Form 19
+
+Source key: form:form-19
+
 Form 19
+
+### Form 20
+
+Source key: form:form-20
+
 Form 20
+
+### Form 21
+
+Source key: form:form-21
+
 Form 21
+
+### Form 22
+
+Source key: form:form-22
+
 Form 22
-Form 23
+
+### Form 24
+
+Source key: form:form-24
+
 Form 24
+
+### Form 25
+
+Source key: form:form-25
+
 Form 25
+
+### Form 26
+
+Source key: form:form-26
+
 Form 26
+
+### Form 27
+
+Source key: form:form-27
+
 Form 27
+
+### Form 28
+
+Source key: form:form-28
+
 Form 28
+
+### Form 29
+
+Source key: form:form-29
+
 Form 29
+
+### Form 30
+
+Source key: form:form-30
+
 Form 30
+
+### Form 31
+
+Source key: form:form-31
+
 Form 31
+
+### Form 31.1
+
+Source key: form:form-31.1
+
 Form 31.1
+
+### Form 32
+
+Source key: form:form-32
+
 Form 32
+
+### Form 32.1
+
+Source key: form:form-32.1
+
 Form 32.1
+
+### Form 33
+
+Source key: form:form-33
+
 Form 33
+
+### Form 34
+
+Source key: form:form-34
+
 Form 34
+
+### Form 35
+
+Source key: form:form-35
+
 Form 35
+
+### Form 36
+
+Source key: form:form-36
+
 Form 36
+
+### Form 36.1
+
+Source key: form:form-36.1
+
 Form 36.1
+
+### Form 37
+
+Source key: form:form-37
+
 Form 37
+
+### Form 38
+
+Source key: form:form-38
+
 Form 38
+
+### Form 39
+
+Source key: form:form-39
+
 Form 39
+
+### Form 41
+
+Source key: form:form-41
+
 Form 41
-Form 43
-Form 43.1
-Form 44
+
+### Form 45
+
+Source key: form:form-45
+
 Form 45
+
+### Form 47
+
+Source key: form:form-47
+
 Form 47
-Form 48
-Form 48.1
+
+### Form 49
+
+Source key: form:form-49
+
 Form 49
+
+### Form 50
+
+Source key: form:form-50
+
 Form 50
+
+### Form 51
+
+Source key: form:form-51
+
 Form 51
-Form 52
+
+### Form 53
+
+Source key: form:form-53
+
 Form 53
+
+### Form 54
+
+Source key: form:form-54
+
 Form 54
+
+### Form 55
+
+Source key: form:form-55
+
 Form 55
-Form 56
-Form 57
-Form 58
-Form 59
+
+### Form 61
+
+Source key: form:form-61
+
 Form 61
+
+### Form 62
+
+Source key: form:form-62
+
 Form 62
+
+### SCHEDULE B
+
+Source key: schedule:schedule-b
 
 SCHEDULE B
 
@@ -1044,6 +1389,10 @@ Application for optional debenture covenant61
 
 84-136; 87-51; 88-73; 88-117; 91-108; 2000-38; 2004-121; 2008-134; 2010-11; 2011-12; 2016-8; 2019-34; 2025-9
 
+### SCHEDULE C
+
+Source key: schedule:schedule-c
+
 SCHEDULE C
 
 STATUTORY MORTGAGE COVENANTS
@@ -1087,6 +1436,10 @@ STATUTORY MORTGAGE COVENANTS
 119.The mortgagor covenants with the mortgagee that any sum owing or required by this mortgage to be paid by the mortgagor to the mortgagee shall be added to the principal sum and shall form a charge upon the lands and premises and shall bear interest at the rate herein stipulated until paid.
 
 84-136; 2000-38, 2020, c.29, s.111
+
+### SCHEDULE D
+
+Source key: schedule:schedule-d
 
 SCHEDULE D
 
@@ -1165,77 +1518,3 @@ all costs and expenses incurred by the lessor in insuring and heating the lessor
 84-136; 2000-38; 2005-64; 2017, c.20, s.89; 2023, c.17, s.136
 
 N.B. This Regulation is consolidated to April 1, 2025.
-
-Copy
-
-Select this element
-
-Select parent element
-
-Unselect all
-
-Copy to Drafting
-
-Copy to LAW
-
-Copy to Clipboard
-
-To copy : Ctrl+C
-
-OK
-
->"/>
-
-0
-
-Advanced search (includes point-in-time)
-
-Consolidated Acts and Regulations
-Acts
-by title
-by chapter
-by Minister
-
-Regulations
-by regulation number
-
-Annual Acts and Regulations
-Acts
-by year
-
-Regulations
-by year
-
-Access Rules of Court
-by rule number
-
-Repealed Legislation (2011 onward)
-Acts
-by title
-
-Drafted, consolidated and published with © Irosoft LIMS, 2026
-
-Feedback
-
-Disclaimer
-
-Privacy Statement
-
-Selections
-
-Show
-Selections in current document
-All selections in the collection
-Selected elements
-Delete all selections
-Show selections
-
-Close
-
-Cyberlex
-
-Version 2.2.6.0
-
->">
-
->">

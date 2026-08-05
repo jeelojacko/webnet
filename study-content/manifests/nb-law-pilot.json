@@ -92,17 +92,16 @@
       "enabled": true
     },
     {
-      "id": "reg-community-planning-2019-29",
-      "manualTitle": "New Brunswick Regulation 2019-29 under the Community Planning Act",
-      "currentTitle": "Subdivision Regulation",
+      "id": "reg-community-planning-80-159",
+      "manualTitle": "New Brunswick Regulation 80-159 under the Community Planning Act",
+      "currentTitle": "Provincial Subdivision",
       "sourceType": "regulation",
-      "sourceCorpus": "ar",
-      "sourceIdentifier": "2019-29",
+      "sourceIdentifier": "80-159",
       "parentActId": "doc-community-planning-act",
       "priority": 2,
       "categories": ["Regulation", "Planning law"],
       "tags": ["subdivision", "planning", "approval"],
-      "expectedCitation": "N.B. Reg. 2019-29",
+      "expectedCitation": "N.B. Reg. 80-159",
       "enabled": true
     },
     {

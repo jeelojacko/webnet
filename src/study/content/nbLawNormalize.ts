@@ -1,5 +1,14 @@
 import { createHash } from 'node:crypto';
-import type { NbLawManifestEntry, NbLawNormalizedDocument, NbLawSection } from './nbLawTypes';
+import type {
+  NbLawDocumentComponent,
+  NbLawEnablingAct,
+  NbLawManifestEntry,
+  NbLawNormalizedDocument,
+  NbLawSection,
+  NbLawSubsection,
+  NbLawSupplementalComponent,
+  NbLawSupplementalComponentType,
+} from './nbLawTypes';
 
 type NormalizeArgs = {
   entry: NbLawManifestEntry;
@@ -45,6 +54,19 @@ const stripUnsafeHtml = (html: string): string =>
     .replace(/<form\b[\s\S]*?<\/form>/gi, '')
     .replace(/<nav\b[\s\S]*?<\/nav>/gi, '');
 
+const trimAfterLegalBody = (html: string): string => {
+  const boundaryPatterns = [
+    /<ul\b[^>]*\bid=["']contextMenu["'][^>]*>/i,
+    /<div\b[^>]*\bid=["']copyToClipboard["'][^>]*>/i,
+    /<input\b[^>]*\bid=["']copyToClipboardMenu["'][^>]*>/i,
+    /<div\b[^>]*\bid=["']rightNav["'][^>]*>/i,
+  ];
+  const indexes = boundaryPatterns
+    .map((pattern) => html.search(pattern))
+    .filter((index) => index >= 0);
+  return indexes.length > 0 ? html.slice(0, Math.min(...indexes)) : html;
+};
+
 const extractDivById = (html: string, id: string): string | undefined => {
   const startPattern = new RegExp(`<div\\b[^>]*\\bid=["']${id}["'][^>]*>`, 'i');
   const startMatch = html.match(startPattern);
@@ -65,14 +87,14 @@ const extractDivById = (html: string, id: string): string | undefined => {
 
 const extractMainHtml = (html: string, notes: string[]): string => {
   const main = extractDivById(html, 'mainContent-document');
-  if (main) return main;
+  if (main) return trimAfterLegalBody(main);
   const fallback = extractDivById(html, 'contentDiv');
   if (fallback) {
     notes.push('Used contentDiv fallback because mainContent-document was not found.');
-    return fallback;
+    return trimAfterLegalBody(fallback);
   }
   notes.push('Main laws.gnb.ca content container was not found; parser used full HTML fallback.');
-  return html;
+  return trimAfterLegalBody(html);
 };
 
 const htmlToText = (html: string): string => {
@@ -106,12 +128,42 @@ const extractCitation = (mainHtml: string, entry: NbLawManifestEntry, notes: str
   return entry.expectedCitation;
 };
 
+const normalizeCitationDisplay = (citation: string | undefined): string | undefined =>
+  citation?.replace(/^CHAPTER\s+/i, 'Chapter ').trim();
+
+const normalizeCitationKey = (citation: string | undefined): string | undefined => {
+  if (!citation) return undefined;
+  return citation
+    .replace(/^Chapter\s+/i, '')
+    .replace(/^REGULATION\s+/i, '')
+    .replace(/^N\.B\.\s*Reg\.\s*/i, '')
+    .trim();
+};
+
+const extractRegulationNumber = (mainHtml: string): string | undefined => {
+  const title = getFirstText(
+    mainHtml,
+    /<div[^>]+class=["'][^"']*long-title-regulation[^"']*["'][^>]*>([\s\S]*?)<\/div>/i,
+  );
+  const match = title?.match(/REGULATION\s+([0-9]+-[0-9]+)/i);
+  return match?.[1];
+};
+
 const extractConsolidatedTo = (text: string): string | undefined => {
-  const match = text.match(/N\.B\.\s+This (?:Act|Regulation) is consolidated to ([^.]+)\./i);
+  const match = text.match(/N\.B\.\s*This\s+(?:Act|Regulation)\s+is\s+consolidated\s+to\s+([A-Za-z]+\s+\d{1,2},\s+\d{4})\.?/i);
   return match?.[1]?.trim();
 };
 
-const findSectionBlocks = (html: string): { id: string; html: string }[] => {
+const decodeSectionIdLabel = (id: string): string => id.replace(/^se:/, '').replace(/_/g, '.');
+
+const toSourceSlug = (value: string): string =>
+  value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9.]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+const findTopLevelSectionBlocks = (html: string): { id: string; html: string }[] => {
   const starts = [...html.matchAll(/<div\b[^>]*\bid=["'](se:[0-9]+(?:_[0-9]+)?)["'][^>]*>/gi)].map((match) => ({
     id: match[1],
     index: match.index ?? 0,
@@ -124,59 +176,147 @@ const findSectionBlocks = (html: string): { id: string; html: string }[] => {
     });
 };
 
-const extractSectionLabel = (blockHtml: string): string | undefined => {
-  const dataCodeLabel = getFirstText(
-    blockHtml,
-    /<a[^>]+class=["'][^"']*linkOtherLang[^"']*["'][^>]*data-code=["']se:[^"']+["'][^>]*>([\s\S]*?)<\/a>/i,
-  );
-  if (dataCodeLabel) return dataCodeLabel;
-  const plain = htmlToText(blockHtml).match(/^([0-9]+(?:\.[0-9]+)?(?:\([0-9a-z]+\))?)/i);
-  return plain?.[1];
-};
-
 const extractSectionHeading = (blockHtml: string): string | undefined =>
   getFirstText(blockHtml, /<div[^>]+class=["'][^"']*sectionheading[^"']*["'][^>]*>([\s\S]*?)<\/div>/i);
 
-const extractSubsections = (sectionId: string, text: string) =>
-  [...text.matchAll(/(^|\n)([0-9]+(?:\.[0-9]+)?\([0-9a-z]+\))/gi)].map((match, index, matches) => {
-    const start = match.index ?? 0;
-    const end = matches[index + 1]?.index ?? text.length;
+const extractSubsections = (sectionLabel: string, sectionSourceKey: string, blockHtml: string): NbLawSubsection[] => {
+  const subsectionStarts = [
+    ...blockHtml.matchAll(
+      new RegExp(`<div\\b[^>]*\\bid=["']se:${sectionLabel.replace('.', '_')}-ss:([0-9]+(?:_[0-9]+)?)["'][^>]*>`, 'gi'),
+    ),
+  ].map((match) => ({
+    labelPart: match[1].replace(/_/g, '.'),
+    index: match.index ?? 0,
+  }));
+  return subsectionStarts.map((start, index) => {
+    const end = subsectionStarts[index + 1]?.index ?? blockHtml.length;
+    const label = `${sectionLabel}(${start.labelPart})`;
+    const text = htmlToText(blockHtml.slice(start.index, end));
     return {
-      id: `${sectionId}-subsection-${match[2].replace(/[^0-9a-z]+/gi, '-')}`,
-      label: match[2],
-      text: text.slice(start, end).trim(),
+      id: `${sectionLabel.replace(/[^0-9a-z.]+/gi, '-')}-subsection-${start.labelPart}`,
+      sourceKey: `${sectionSourceKey}/subsection:${start.labelPart}`,
+      label,
+      text,
+      contentHash: hashTextSha256(text),
     };
   });
+};
 
 const normalizeSections = (mainHtml: string, notes: string[]): NbLawSection[] => {
-  const blocks = findSectionBlocks(mainHtml);
+  const blocks = findTopLevelSectionBlocks(mainHtml);
   if (blocks.length === 0) {
     notes.push('No section blocks with id="se:*" were found.');
     return [];
   }
   return blocks.flatMap((block) => {
     const text = htmlToText(block.html);
-    const label = extractSectionLabel(block.html);
-    if (!label) {
-      notes.push(`Section block ${block.id} did not include a section label.`);
-      return [];
-    }
+    const label = decodeSectionIdLabel(block.id);
     if (!text) {
       notes.push(`Section ${label} had no normalized text.`);
       return [];
     }
-    const id = `${block.id.replace(/[^a-z0-9]+/gi, '-')}`;
+    const sourceKey = `section:${label}`;
+    const id = `section-${label.replace(/[^0-9a-z.]+/gi, '-')}`;
     return [
       {
         id,
+        sourceKey,
+        componentType: 'section' as const,
         label,
         heading: extractSectionHeading(block.html),
         text,
-        subsections: extractSubsections(id, text),
+        subsections: extractSubsections(label, sourceKey, block.html),
         contentHash: hashTextSha256(text),
       },
     ];
   });
+};
+
+const supplementalPatterns: Array<{
+  componentType: NbLawSupplementalComponentType;
+  pattern: RegExp;
+}> = [
+  { componentType: 'schedule', pattern: /(?:^|\n)(SCHEDULE\s+[A-Z0-9]+)\b/gi },
+  { componentType: 'form', pattern: /(?:^|\n)(Form\s+[0-9]+(?:\.[0-9]+)?)\b/gi },
+  { componentType: 'appendix', pattern: /(?:^|\n)(APPENDIX\s+[A-Z0-9]+)\b/gi },
+];
+
+const collectSupplementalStarts = (text: string) =>
+  supplementalPatterns
+    .flatMap(({ componentType, pattern }) =>
+      [...text.matchAll(pattern)].map((match) => ({
+        componentType,
+        label: match[1],
+        index: (match.index ?? 0) + (match[0].startsWith('\n') ? 1 : 0),
+      })),
+    )
+    .sort((a, b) => a.index - b.index)
+    .filter((start, index, all) => all.findIndex((entry) => entry.index === start.index) === index);
+
+const normalizeSupplementalComponents = (mainHtml: string): NbLawSupplementalComponent[] => {
+  const text = htmlToText(mainHtml);
+  const starts = collectSupplementalStarts(text);
+  const sourceKeyCounts = new Map<string, number>();
+  return starts.map((start, index) => {
+    const end = starts[index + 1]?.index ?? text.length;
+    const componentText = text.slice(start.index, end).trim();
+    const baseSourceKey = `${start.componentType}:${toSourceSlug(start.label)}`;
+    const count = (sourceKeyCounts.get(baseSourceKey) ?? 0) + 1;
+    sourceKeyCounts.set(baseSourceKey, count);
+    const sourceKey = count === 1 ? baseSourceKey : `${baseSourceKey}#${count}`;
+    return {
+      id: sourceKey.replace(/[^a-z0-9.]+/gi, '-'),
+      sourceKey,
+      componentType: start.componentType,
+      label: start.label,
+      text: componentText,
+      contentHash: hashTextSha256(componentText),
+    };
+  });
+};
+
+const compareComponentOrder = (mainText: string, component: NbLawDocumentComponent): number => {
+  const index = mainText.indexOf(component.text.slice(0, Math.min(60, component.text.length)));
+  return index >= 0 ? index : Number.MAX_SAFE_INTEGER;
+};
+
+const normalizeComponents = (mainHtml: string, notes: string[]): NbLawDocumentComponent[] => {
+  const mainText = htmlToText(mainHtml);
+  const sections = normalizeSections(mainHtml, notes);
+  const supplemental = normalizeSupplementalComponents(mainHtml);
+  const supplementalStarts = new Map(supplemental.map((component) => [component.label, mainText.indexOf(component.text)]));
+  const trimmedSections = sections.map((section) => {
+    const sectionStart = mainText.indexOf(section.text.slice(0, Math.min(60, section.text.length)));
+    const nextSupplementalStart = [...supplementalStarts.values()]
+      .filter((index) => index >= 0 && index > sectionStart)
+      .sort((a, b) => a - b)[0];
+    if (nextSupplementalStart === undefined || sectionStart < 0) return section;
+    const localCut = nextSupplementalStart - sectionStart;
+    if (localCut <= 0 || localCut >= section.text.length) return section;
+    const text = section.text.slice(0, localCut).trim();
+    return {
+      ...section,
+      text,
+      contentHash: hashTextSha256(text),
+    };
+  });
+  return [...trimmedSections, ...supplemental].sort(
+    (a, b) => compareComponentOrder(mainText, a) - compareComponentOrder(mainText, b),
+  );
+};
+
+const extractEnablingActs = (mainHtml: string): NbLawEnablingAct[] => {
+  const enablingHtml = mainHtml.match(/<div[^>]+class=["'][^"']*regulation-id-enabling[^"']*["'][^>]*>([\s\S]*?)<\/div>\s*<\/div>/i)?.[1];
+  const scope = enablingHtml ?? mainHtml.slice(0, Math.min(mainHtml.length, 3000));
+  const linkActs = [
+    ...scope.matchAll(/<a\b[^>]*href=["'][^"']*\/document\/cs\/([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi),
+  ].map((match) => ({
+    title: htmlToText(match[2]),
+    citation: decodeURIComponent(match[1]).replace(/-/g, ', '),
+  }));
+  if (linkActs.length > 0) return linkActs;
+  const underMatch = htmlToText(scope).match(/under the\s+([A-Z][A-Za-z0-9 .’'&-]+? Act)\b/i);
+  return underMatch ? [{ title: underMatch[1].trim() }] : [];
 };
 
 export const normalizeNbLawDocument = ({
@@ -189,7 +329,10 @@ export const normalizeNbLawDocument = ({
   const notes: string[] = [];
   const mainHtml = stripUnsafeHtml(extractMainHtml(html, notes));
   const fullText = htmlToText(mainHtml);
-  const sections = normalizeSections(mainHtml, notes);
+  const components = normalizeComponents(mainHtml, notes);
+  const sections = components.filter((component): component is NbLawSection => component.componentType === 'section');
+  const citationDisplay = normalizeCitationDisplay(extractCitation(mainHtml, entry, notes));
+  const regulationNumber = extractRegulationNumber(mainHtml);
   if (/<script|<style|<form/i.test(mainHtml)) {
     notes.push('Unsafe script, style, or form markup remained after sanitization.');
   }
@@ -200,18 +343,25 @@ export const normalizeNbLawDocument = ({
     schemaVersion: 1,
     id: entry.id,
     officialTitle: extractTitle(mainHtml, entry, notes),
-    officialCitation: extractCitation(mainHtml, entry, notes),
+    officialCitation: citationDisplay,
+    officialCitationDisplay: citationDisplay,
+    officialCitationNormalized: normalizeCitationKey(citationDisplay),
+    officialNumberDisplay: regulationNumber,
+    officialNumberNormalized: normalizeCitationKey(regulationNumber),
     documentType: entry.sourceType,
     parentActId: entry.parentActId,
+    enablingActs: entry.sourceType === 'regulation' ? extractEnablingActs(mainHtml) : undefined,
     sourceUrl,
     fetchDate,
     consolidatedTo: extractConsolidatedTo(fullText),
     contentHash,
-    tableOfContents: sections.map((section) => ({
-      id: section.id,
-      label: section.label,
-      heading: section.heading,
+    tableOfContents: components.map((component) => ({
+      id: component.id,
+      sourceKey: component.sourceKey,
+      label: component.label,
+      heading: component.heading,
     })),
+    components,
     sections,
     notes,
   };
@@ -227,11 +377,18 @@ export const renderNbLawNormalizedMarkdown = (document: NbLawNormalizedDocument)
     `Content hash: ${document.contentHash}`,
     document.consolidatedTo ? `Consolidated to: ${document.consolidatedTo}` : undefined,
     '',
-    '## Sections',
+    '## Components',
     '',
   ].filter((line): line is string => line !== undefined);
-  for (const section of document.sections) {
-    lines.push(`### ${section.label}${section.heading ? ` - ${section.heading}` : ''}`, '', section.text, '');
+  for (const component of document.components) {
+    lines.push(
+      `### ${component.label}${component.heading ? ` - ${component.heading}` : ''}`,
+      '',
+      `Source key: ${component.sourceKey}`,
+      '',
+      component.text,
+      '',
+    );
   }
   if (document.notes.length > 0) {
     lines.push('## Parser Notes', '', ...document.notes.map((note) => `- ${note}`), '');

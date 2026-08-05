@@ -56,7 +56,7 @@ Phase 2A adds a development-side official-source pipeline for a small New Brunsw
 study-content/manifests/nb-law-pilot.json
 ```
 
-The manifest is versioned and lists only the five seeded Acts plus five key regulations. Each entry carries a stable internal document ID, manual-listed title, current title, source type, optional explicit laws.gnb corpus (`cs`, `cr`, or `ar`), official source identifier, parent Act ID for regulations, priority, categories, tags, expected citation, and enabled status.
+The manifest is versioned and lists only the five seeded Acts plus five key regulations. Each entry carries a stable internal document ID, manual-listed title, current title, source type, optional explicit laws.gnb corpus (`cs`, `cr`, or `ar`), official source identifier, parent Act ID for regulations, priority, categories, tags, expected citation, and enabled status. The Community Planning pilot regulation is `reg-community-planning-80-159` (`80-159`, Provincial Subdivision), not annual regulation `2019-29`; `2019-29` is a Highway Act document and must not be packaged under the Community Planning Act.
 
 The commands are:
 
@@ -76,7 +76,25 @@ npm run study:build-content-pack
 study-content/packages/nb-law-pilot.content-package.json
 ```
 
-The package includes document metadata, structured sections, Act-regulation relationships, source hashes, package creation date, and schema version. Raw HTML, normalized exact source text, and user-authored study content remain separate layers.
+The package includes document metadata, ordered legal components, structured sections and subsections, schedules/forms as independent components, Act-regulation relationships, extracted enabling Acts, source hashes, package creation date, and schema version. Raw HTML, normalized exact source text, and user-authored study content remain separate layers.
+
+Package construction also writes:
+
+```text
+study-content/reports/nb-law-pilot.integrity-report.json
+study-content/reports/nb-law-pilot.integrity-report.md
+```
+
+The integrity report fails package construction on wrong enabling Act relationships, missing required documents, duplicate component source keys, table-of-contents references without components, known laws.gnb.ca interface contamination, zero extracted legal components, and missing title or citation. Warnings are reserved for non-destructive parser observations such as genuinely missing consolidation dates.
+
+Stable source references are based on legal labels:
+
+```text
+section:3
+section:3/subsection:1.1
+schedule:schedule-a
+form:form-1
+```
 
 Current live pilot normalization yields:
 - Surveys Act: 16 sections
@@ -86,15 +104,27 @@ Current live pilot normalization yields:
 - Land Titles Act: 106 sections
 - N.B. Reg. 84-76: 8 sections
 - N.B. Reg. 95-166: 11 sections
-- N.B. Reg. 2019-29: 1 section
+- N.B. Reg. 80-159: 10 sections
 - N.B. Reg. 84-190: 4 sections
 - N.B. Reg. 83-130: 40 sections
 
+Current live pilot component counts from the integrity report:
+- Surveys Act: 16 sections, 19 subsections, 1 schedule, 0 forms
+- Boundaries Confirmation Act: 21 sections, 51 subsections, 0 schedules, 0 forms
+- Community Planning Act: 164 sections, 446 subsections, 1 schedule, 0 forms
+- Registry Act: 84 sections, 115 subsections, 0 schedules, 0 forms
+- Land Titles Act: 106 sections, 284 subsections, 0 schedules, 0 forms
+- N.B. Reg. 84-76: 8 sections, 2 subsections, 0 schedules, 0 forms
+- N.B. Reg. 95-166: 11 sections, 18 subsections, 0 schedules, 1 form
+- N.B. Reg. 80-159: 10 sections, 18 subsections, 0 schedules, 0 forms
+- N.B. Reg. 84-190: 4 sections, 5 subsections, 0 schedules, 0 forms
+- N.B. Reg. 83-130: 40 sections, 66 subsections, 4 schedules, 63 forms
+
 Known laws.gnb pilot findings:
 - Some pages emit volatile generated anchor names in otherwise identical HTML responses, so the fetch command canonicalizes those anchor IDs only for hash comparison.
-- New Brunswick Regulation 2019-29 is available through the annual regulation corpus path `/en/document/ar/2019-29`, not the consolidated regulation path `/en/document/cr/2019-29`.
+- New Brunswick Regulation 2019-29 is available through an annual regulation path but is a Highway Act regulation concerning the Route 11 Caraquet Bypass, so it was removed from the Community Planning pilot.
 - The laws.gnb site can return a missing-document message with HTTP 200; the fetcher treats that page as a failed required document.
-- The annual 2019-29 page is an amendment regulation and currently normalizes as one operative section.
+- Some laws.gnb pages include context-menu and search/navigation markup after the legal body; the normalizer cuts at the legal body boundary and package construction also scans for known interface markers.
 
 Parser fixtures live under:
 
@@ -133,4 +163,5 @@ Due reviews sort before new units. New units are then selected by priority and d
 2. Run it a second time and confirm it reports `Unchanged: 10`.
 3. Run `npm run study:normalize-nb-laws` and confirm all ten documents normalize with non-zero sections.
 4. Run `npm run study:build-content-pack`.
-5. Inspect `study-content/packages/nb-law-pilot.content-package.json` and the Markdown files under `study-content/normalized/nb-law-pilot/`.
+5. Inspect `study-content/packages/nb-law-pilot.content-package.json`, `study-content/reports/nb-law-pilot.integrity-report.md`, and the Markdown files under `study-content/normalized/nb-law-pilot/`.
+6. Confirm `reg-community-planning-80-159` is related to `doc-community-planning-act`, Registry Act has consolidation date `December 13, 2024`, Surveys Act section `3` exposes subsections `3(1)`, `3(1.1)`, `3(1.2)`, and `3(2)`, and Surveys Act `SCHEDULE A` is separate from section `15`.

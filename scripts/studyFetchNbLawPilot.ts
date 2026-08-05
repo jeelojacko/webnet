@@ -81,7 +81,6 @@ const fetchEntry = async (
       await writeFile(metadataPath, `${JSON.stringify(metadata, null, 2)}\n`, 'utf8');
       return { id: entry.id, status: 'changed', detail: `HTTP ${response.status}` };
     }
-    await writeFile(metadataPath, `${JSON.stringify(metadata, null, 2)}\n`, 'utf8');
     return { id: entry.id, status: 'unchanged', detail: `HTTP ${response.status}` };
   } catch (error) {
     return {
