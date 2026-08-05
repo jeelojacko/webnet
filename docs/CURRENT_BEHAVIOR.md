@@ -15,6 +15,7 @@ Core delivered outcomes include:
 - station precision, relative precision, and error ellipses
 - processing summaries, industry-style listing output, and text exports
 - map, review, compare, recovery, and staged-import workflows
+- a separate local-first `/study` module for New Brunswick statute and survey-law study workflows
 
 ## Current defaults and operator-facing posture
 Current startup and workflow defaults include:
@@ -459,4 +460,3 @@ Do not use this file for:
 - low-level coding instructions -> use `AGENTS.md`
 - deep import workflow notes -> use `docs/IMPORT_WORKFLOW.md`
 - deep parity procedure notes -> use `docs/PARITY_WORKFLOW.md`
-

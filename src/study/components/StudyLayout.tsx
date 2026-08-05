@@ -1,0 +1,86 @@
+import type React from 'react';
+import { BookOpen, FileText, Home, Library, RotateCcw, Settings } from 'lucide-react';
+
+type StudyLayoutProps = {
+  activePath: string;
+  onNavigate: (_path: string) => void;
+  children: React.ReactNode;
+};
+
+const NAV_ITEMS = [
+  { path: '/study', label: 'Dashboard', icon: Home },
+  { path: '/study/library', label: 'Library', icon: Library },
+  { path: '/study/session', label: 'Session', icon: BookOpen },
+  { path: '/study/manage', label: 'Manage', icon: Settings },
+];
+
+const StudyLayout = ({ activePath, onNavigate, children }: StudyLayoutProps) => (
+  <div className="fixed inset-0 flex flex-col bg-slate-950 text-slate-100">
+    <header className="flex shrink-0 flex-wrap items-center gap-3 border-b border-slate-800 bg-slate-900 px-4 py-3">
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <FileText className="text-emerald-400" size={24} />
+        <div className="min-w-0">
+          <h1 className="truncate text-lg font-semibold leading-none text-white">WebNet Study</h1>
+          <p className="truncate text-xs text-slate-500">New Brunswick statute and survey law</p>
+        </div>
+      </div>
+      <button
+        className="rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs uppercase tracking-wide text-slate-300 hover:bg-slate-700"
+        onClick={() => {
+          window.location.href = '/';
+        }}
+      >
+        Back To Adjustment
+      </button>
+    </header>
+    <div className="flex min-h-0 flex-1">
+      <nav className="hidden w-56 shrink-0 border-r border-slate-800 bg-slate-900/70 p-3 md:block">
+        <div className="space-y-1">
+          {NAV_ITEMS.map(({ path, label, icon: Icon }) => {
+            const active = activePath === path || (path !== '/study' && activePath.startsWith(path));
+            return (
+              <button
+                key={path}
+                onClick={() => onNavigate(path)}
+                className={`flex w-full items-center gap-2 rounded px-3 py-2 text-left text-sm ${
+                  active
+                    ? 'bg-emerald-700/30 text-emerald-100'
+                    : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
+                }`}
+              >
+                <Icon size={16} />
+                <span>{label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+      <main className="min-w-0 flex-1 overflow-auto">
+        <div className="mx-auto w-full max-w-7xl p-4 md:p-6">{children}</div>
+      </main>
+    </div>
+    <div className="grid grid-cols-4 border-t border-slate-800 bg-slate-900 md:hidden">
+      {NAV_ITEMS.map(({ path, label, icon: Icon }) => (
+        <button
+          key={path}
+          onClick={() => onNavigate(path)}
+          className={`flex flex-col items-center gap-1 px-2 py-2 text-[11px] ${
+            activePath === path ? 'text-emerald-200' : 'text-slate-500'
+          }`}
+        >
+          <Icon size={16} />
+          <span>{label}</span>
+        </button>
+      ))}
+    </div>
+  </div>
+);
+
+export const StudyEmptyState = ({ text }: { text: string }) => (
+  <div className="flex min-h-[18rem] flex-col items-center justify-center gap-3 rounded border border-slate-800 bg-slate-900/50 text-slate-500">
+    <RotateCcw size={28} />
+    <p className="text-sm">{text}</p>
+  </div>
+);
+
+export default StudyLayout;

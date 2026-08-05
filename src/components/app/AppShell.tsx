@@ -96,6 +96,9 @@ const AppShell = ({ controller }: AppShellProps) => {
         onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         onOpenProjectOptions={openProjectOptions}
         onOpenSurveyCad={() => setActiveTab(isSurveyCadWorkspaceActive ? 'report' : 'survey-cad')}
+        onOpenStudy={() => {
+          window.location.href = '/study';
+        }}
         onOpenImportFile={() => triggerFileSelect()}
         onOpenProjectFile={handleOpenProjectWorkspacePanel}
         onSaveProject={handleSaveProject}
@@ -343,4 +346,3 @@ const AppShell = ({ controller }: AppShellProps) => {
 };
 
 export default AppShell;
-

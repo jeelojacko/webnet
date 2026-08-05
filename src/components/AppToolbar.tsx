@@ -4,6 +4,7 @@ import {
   Download,
   FileText,
   FolderOpen,
+  GraduationCap,
   PanelLeftClose,
   PanelLeftOpen,
   Play,
@@ -25,6 +26,7 @@ interface AppToolbarProps {
   onToggleSidebar: () => void;
   onOpenProjectOptions: () => void;
   onOpenSurveyCad: () => void;
+  onOpenStudy: () => void;
   onOpenImportFile: () => void;
   onOpenProjectFile: () => void;
   onSaveProject: () => void;
@@ -54,6 +56,7 @@ const AppToolbar: React.FC<AppToolbarProps> = ({
   onToggleSidebar,
   onOpenProjectOptions,
   onOpenSurveyCad,
+  onOpenStudy,
   onOpenImportFile,
   onOpenProjectFile,
   onSaveProject,
@@ -133,6 +136,14 @@ const AppToolbar: React.FC<AppToolbarProps> = ({
           <Ruler size={14} />
           <span>{isSurveyCadActive ? 'Back To Results' : 'Survey CAD'}</span>
         </button>
+        <button
+          onClick={onOpenStudy}
+          title="Open WebNet Study"
+          className="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded border text-xs uppercase tracking-wide bg-slate-900/60 border-slate-700 text-slate-300 hover:bg-slate-700"
+        >
+          <GraduationCap size={14} />
+          <span>Study</span>
+        </button>
       </div>
 
       <div className="flex flex-wrap items-center gap-2 ml-auto shrink-0 justify-end w-full lg:w-auto">
@@ -149,6 +160,13 @@ const AppToolbar: React.FC<AppToolbarProps> = ({
           className="sm:hidden p-2 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 transition-colors"
         >
           <Ruler size={18} />
+        </button>
+        <button
+          onClick={onOpenStudy}
+          title="Open WebNet Study"
+          className="sm:hidden p-2 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 transition-colors"
+        >
+          <GraduationCap size={18} />
         </button>
         <button
           onClick={onOpenImportFile}

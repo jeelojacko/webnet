@@ -25,11 +25,12 @@ npm run dev
 
 5. Open the local Vite URL shown in the terminal.
 Usually this is `http://localhost:5173`.
+The study module is available at `http://localhost:5173/study`.
 
 Successful startup looks like:
 - the terminal shows a local development URL
 - the browser opens the WebNet app shell
-- the toolbar shows `Project Options`, `Survey CAD`, and `Adjust`
+- the toolbar shows `Project Options`, `Survey CAD`, `Study`, and `Adjust`
 - the workspace tabs are available, and `Map & Ellipses` can be opened before the first run to load input points for planning-map work
 
 ## Recommended First Steps
@@ -83,6 +84,7 @@ npm run test:map-browser
 - [docs/CURRENT_BEHAVIOR.md](docs/CURRENT_BEHAVIOR.md) - maintained feature inventory and current workflow contract
 - [docs/IMPORT_WORKFLOW.md](docs/IMPORT_WORKFLOW.md) - staged import and reconciliation workflow
 - [docs/PARITY_WORKFLOW.md](docs/PARITY_WORKFLOW.md) - parity-sensitive validation workflow
+- [docs/STUDY_MODULE.md](docs/STUDY_MODULE.md) - local-first statute and survey-law study module
 - [docs/INLINE_OPTION_APPLICATION_MATRIX.md](docs/INLINE_OPTION_APPLICATION_MATRIX.md) - inline option application reference
 - [docs/run-semantics.md](docs/run-semantics.md) - ordered checked-file project run rules
 - [docs/webnet-survey-cad-master-plan.md](docs/webnet-survey-cad-master-plan.md) - Survey CAD architecture and phased roadmap
@@ -95,6 +97,7 @@ npm run test:map-browser
 - Configure solve settings in `Project Options`.
 - Open built-in example projects from `Project Options -> Project Files -> Example Projects`.
 - Open `Survey CAD` from the toolbar to work in a standalone CAD drawing. Use the CAD file controls for `New Drawing`, `Open Drawing`, `Save Drawing`, `Export Drawing`, and `Import Adjusted Points`; adjustment projects no longer auto-own CAD state.
+- Open `Study` from the toolbar, or visit `/study`, for a separate local-first New Brunswick statute and survey-law study app.
 - In `Run Mode = Preanalysis`, optionally set a planning accuracy threshold and max added sets, then review obstacle-aware planning recommendations in the report and on the 2D map.
 - Run `Adjust`.
 - Review results in `Adjustment Report`, `Processing Summary`, `Industry Standard Output`, and `Map & Ellipses`.

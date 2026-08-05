@@ -47,6 +47,18 @@ These modules coordinate:
 - saved runs and compare workflows
 - post-solve hydration timing, deferred QA-derived review state, and staged heavy-tab warmup
 
+### Study module
+The `/study` route is a separate local-first study application under `src/study/`.
+
+It owns:
+- `studyTypes.ts` for study document/unit/prompt/concept/progress/attempt/draft/settings contracts
+- `studyStorage.ts` for IndexedDB-backed metadata, progress, attempt, draft, scheduler-state, and settings storage
+- `studyOpfs.ts` for OPFS source-file, normalized-text, imported-file, PDF, and backup path generation/writes
+- `studyScheduler.ts` for deterministic phase transitions and due-before-new session ordering
+- `StudyApp.tsx`, `useStudyApp.ts`, and `components/*` for the dashboard, library, document reader/editor, session, and manage pages
+
+The study module does not use adjustment, parser, solver, network, import-review, or Survey CAD domain state. Authoritative source-file metadata remains on `StudyDocument.sourceFiles`; editable summaries and reference answers remain on study-unit or prompt records. See `docs/STUDY_MODULE.md` for the schema and manual workflow.
+
 ### Engine core
 The engine is centered under `src/engine/`.
 
