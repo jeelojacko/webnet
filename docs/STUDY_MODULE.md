@@ -49,6 +49,61 @@ Roles are:
 
 Authoritative source files are tracked by OPFS path in `StudyDocument.sourceFiles`. User-editable summaries and reference answers remain in `StudyUnit` or `StudyPrompt` records.
 
+## Official NB Law Pilot Content
+Phase 2A adds a development-side official-source pipeline for a small New Brunswick legislation pilot. The pilot manifest is:
+
+```text
+study-content/manifests/nb-law-pilot.json
+```
+
+The manifest is versioned and lists only the five seeded Acts plus five key regulations. Each entry carries a stable internal document ID, manual-listed title, current title, source type, optional explicit laws.gnb corpus (`cs`, `cr`, or `ar`), official source identifier, parent Act ID for regulations, priority, categories, tags, expected citation, and enabled status.
+
+The commands are:
+
+```bash
+npm run study:fetch-nb-laws
+npm run study:normalize-nb-laws
+npm run study:build-content-pack
+```
+
+`study:fetch-nb-laws` fetches only enabled manifest entries from `laws.gnb.ca`, one request at a time, with a delay between requests and a descriptive User-Agent. It writes untouched raw HTML plus per-document metadata under `study-content/raw/nb-law-pilot/`. Change detection uses a SHA-256 hash after removing volatile laws.gnb generated anchor IDs; the raw HTML file is still saved untouched when canonical source content changes.
+
+`study:normalize-nb-laws` converts fetched HTML into exact-text structured JSON under `study-content/normalized/nb-law-pilot/` and writes matching Markdown inspection files. The normalizer strips script/style/form chrome, extracts title, citation, consolidated-to text, table of contents, ordered sections, subsections where reliable, section labels/headings, exact source text with safe whitespace normalization, content hashes, and parser notes.
+
+`study:build-content-pack` combines normalized documents into:
+
+```text
+study-content/packages/nb-law-pilot.content-package.json
+```
+
+The package includes document metadata, structured sections, Act-regulation relationships, source hashes, package creation date, and schema version. Raw HTML, normalized exact source text, and user-authored study content remain separate layers.
+
+Current live pilot normalization yields:
+- Surveys Act: 16 sections
+- Boundaries Confirmation Act: 21 sections
+- Community Planning Act: 164 sections
+- Registry Act: 84 sections
+- Land Titles Act: 106 sections
+- N.B. Reg. 84-76: 8 sections
+- N.B. Reg. 95-166: 11 sections
+- N.B. Reg. 2019-29: 1 section
+- N.B. Reg. 84-190: 4 sections
+- N.B. Reg. 83-130: 40 sections
+
+Known laws.gnb pilot findings:
+- Some pages emit volatile generated anchor names in otherwise identical HTML responses, so the fetch command canonicalizes those anchor IDs only for hash comparison.
+- New Brunswick Regulation 2019-29 is available through the annual regulation corpus path `/en/document/ar/2019-29`, not the consolidated regulation path `/en/document/cr/2019-29`.
+- The laws.gnb site can return a missing-document message with HTTP 200; the fetcher treats that page as a failed required document.
+- The annual 2019-29 page is an amendment regulation and currently normalizes as one operative section.
+
+Parser fixtures live under:
+
+```text
+tests/fixtures/study/nb-law-pilot/html/
+```
+
+They are compact saved HTML fixtures for all ten pilot entries. The fixtures preserve the laws.gnb section/title/citation markup patterns used by the normalizer without embedding the full official corpus in tests.
+
 ## Session Rules
 Initial phases:
 - `unread`
@@ -72,3 +127,10 @@ Due reviews sort before new units. New units are then selected by priority and d
 4. Open `Session`, type a long answer, refresh the browser, and confirm the answer restores.
 5. Click `Reveal`, compare the answer with the reference, check concepts, rate `Good`, and confirm the attempt count increments on the dashboard.
 6. Open `Manage`, copy the export JSON, paste it into import, import it, and confirm counts are restored.
+
+## Official Content Manual Procedure
+1. Run `npm run study:fetch-nb-laws`.
+2. Run it a second time and confirm it reports `Unchanged: 10`.
+3. Run `npm run study:normalize-nb-laws` and confirm all ten documents normalize with non-zero sections.
+4. Run `npm run study:build-content-pack`.
+5. Inspect `study-content/packages/nb-law-pilot.content-package.json` and the Markdown files under `study-content/normalized/nb-law-pilot/`.

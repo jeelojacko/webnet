@@ -54,10 +54,13 @@ It owns:
 - `studyTypes.ts` for study document/unit/prompt/concept/progress/attempt/draft/settings contracts
 - `studyStorage.ts` for IndexedDB-backed metadata, progress, attempt, draft, scheduler-state, and settings storage
 - `studyOpfs.ts` for OPFS source-file, normalized-text, imported-file, PDF, and backup path generation/writes
+- `src/study/content/*` for the development-side official NB law manifest validation, laws.gnb URL generation, exact-text normalization models, and content-package validation
 - `studyScheduler.ts` for deterministic phase transitions and due-before-new session ordering
 - `StudyApp.tsx`, `useStudyApp.ts`, and `components/*` for the dashboard, library, document reader/editor, session, and manage pages
 
 The study module does not use adjustment, parser, solver, network, import-review, or Survey CAD domain state. Authoritative source-file metadata remains on `StudyDocument.sourceFiles`; editable summaries and reference answers remain on study-unit or prompt records. See `docs/STUDY_MODULE.md` for the schema and manual workflow.
+
+Official source fetching is Node-only and runs through `scripts/studyFetchNbLawPilot.ts`; normal browser runtime does not request legislation from external sites. Fetched raw HTML, normalized exact source text, and JSON content packages are stored under `study-content/` as separate layers from user-authored summaries, prompts, concepts, attempts, and progress.
 
 ### Engine core
 The engine is centered under `src/engine/`.

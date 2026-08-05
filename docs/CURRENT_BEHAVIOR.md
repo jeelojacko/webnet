@@ -16,6 +16,7 @@ Core delivered outcomes include:
 - processing summaries, industry-style listing output, and text exports
 - map, review, compare, recovery, and staged-import workflows
 - a separate local-first `/study` module for New Brunswick statute and survey-law study workflows
+- a development-side `/study` official-source pilot pipeline for the five seeded New Brunswick Acts and five key regulations, using only manifest-listed `laws.gnb.ca` URLs and producing raw HTML, normalized exact source text, and a JSON content package without browser-runtime network fetches
 
 ## Current defaults and operator-facing posture
 Current startup and workflow defaults include:
