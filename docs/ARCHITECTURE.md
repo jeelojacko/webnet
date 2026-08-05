@@ -340,7 +340,7 @@ Use this routing guide when deciding where a change belongs:
 - New operator workflow or modal behavior -> hooks plus focused component modules
 - New Survey CAD model/command/COGO work -> planned `src/engine/cad/`, `src/hooks/surveyCad/`, and `src/components/surveyCad/` seams described in `docs/webnet-survey-cad-master-plan.md`
 - New regression contract -> `tests/` with focused fixture-backed coverage
-- Canadian CRS synthetic harness foundation -> `src/engine/canadianCrsTestCatalog.ts`, `src/engine/generateSyntheticCanadianNetwork.ts`, `src/engine/generateSyntheticObservations.ts`, `src/engine/runSyntheticCrsAdjustmentTest.ts`, and `tests/canadian_crs_harness.spec.ts`
+- Canadian CRS synthetic harness foundation -> `src/engine/canadianCrsTestCatalog.ts`, `src/engine/generateSyntheticCanadianNetwork.ts`, `src/engine/generateSyntheticObservations.ts`, `src/engine/runSyntheticCrsAdjustmentTest.ts`, and `tests/canadianCrsHarness/`
 
 ## Related docs
 - `docs/CURRENT_BEHAVIOR.md`
