@@ -1,10 +1,15 @@
 import { createSeedStudyData, createDefaultStudySettings } from './studySeed';
+import type { NbLawContentPackage } from './content/nbLawTypes';
+import { applyOfficialContentPackageToSnapshot } from './studyOfficialContent';
 import type {
+  ImportedLegalComponent,
+  ImportedLegalDocument,
   StudyAttempt,
   StudyConcept,
   StudyDataSnapshot,
   StudyDocument,
   StudyDraft,
+  StudyOfficialImportHistory,
   StudyProgress,
   StudyPrompt,
   StudySettings,
@@ -12,8 +17,8 @@ import type {
 } from './studyTypes';
 
 export const STUDY_DB_NAME = 'webnet.study.v1';
-export const STUDY_DB_VERSION = 1;
-export const STUDY_SCHEMA_VERSION = 1;
+export const STUDY_DB_VERSION = 2;
+export const STUDY_SCHEMA_VERSION = 2;
 
 const STORES = [
   'documents',
@@ -24,6 +29,9 @@ const STORES = [
   'attempts',
   'drafts',
   'settings',
+  'legalDocuments',
+  'legalComponents',
+  'importHistory',
 ] as const;
 
 type StudyStoreName = (typeof STORES)[number];
@@ -37,6 +45,9 @@ const STORE_KEYS: Record<StudyStoreName, string> = {
   attempts: 'id',
   drafts: 'id',
   settings: 'id',
+  legalDocuments: 'id',
+  legalComponents: 'recordKey',
+  importHistory: 'id',
 };
 
 type StudyStorePayloads = {
@@ -48,6 +59,9 @@ type StudyStorePayloads = {
   attempts: StudyAttempt;
   drafts: StudyDraft;
   settings: StudySettings;
+  legalDocuments: ImportedLegalDocument;
+  legalComponents: ImportedLegalComponent & { recordKey: string };
+  importHistory: StudyOfficialImportHistory;
 };
 
 export interface StudyStorage {
@@ -60,6 +74,7 @@ export interface StudyStorage {
   clearDraft: (_draftId: string) => Promise<void>;
   saveSettings: (_settings: StudySettings) => Promise<void>;
   replaceAll: (_snapshot: StudyDataSnapshot) => Promise<void>;
+  importOfficialContentPackage: (_contentPackage: NbLawContentPackage) => Promise<StudyDataSnapshot>;
 }
 
 const hasIndexedDb = (): boolean =>
@@ -126,6 +141,20 @@ const putMany = <TStore extends StudyStoreName>(
   values.forEach((value) => store.put(value));
 };
 
+const legalComponentRecord = (
+  component: ImportedLegalComponent,
+): ImportedLegalComponent & { recordKey: string } => ({
+  ...component,
+  recordKey: `${component.documentId}::${component.sourceKey}`,
+});
+
+const legalComponentFromRecord = (
+  component: ImportedLegalComponent & { recordKey?: string },
+): ImportedLegalComponent => {
+  const { recordKey: _recordKey, ...rest } = component;
+  return rest;
+};
+
 export const migrateStudySnapshot = (input: Partial<StudyDataSnapshot>): StudyDataSnapshot => {
   const nowIso = new Date().toISOString();
   const seed = createSeedStudyData(nowIso);
@@ -145,6 +174,9 @@ export const migrateStudySnapshot = (input: Partial<StudyDataSnapshot>): StudyDa
     attempts: input.attempts ?? [],
     drafts: input.drafts ?? [],
     settings,
+    legalDocuments: input.legalDocuments ?? [],
+    legalComponents: input.legalComponents ?? [],
+    importHistory: input.importHistory ?? [],
   };
 };
 
@@ -179,6 +211,12 @@ export const createStudyStorage = (): StudyStorage => ({
           readStore(db, 'drafts'),
           readStore(db, 'settings'),
         ]);
+      const [legalDocuments, legalComponents, importHistory] =
+        await Promise.all([
+          readStore(db, 'legalDocuments'),
+          readStore(db, 'legalComponents'),
+          readStore(db, 'importHistory'),
+        ]);
       return migrateStudySnapshot({
         documents,
         units,
@@ -188,6 +226,9 @@ export const createStudyStorage = (): StudyStorage => ({
         attempts,
         drafts,
         settings: settings[0],
+        legalDocuments,
+        legalComponents: legalComponents.map(legalComponentFromRecord),
+        importHistory,
       });
     } finally {
       db.close();
@@ -265,7 +306,62 @@ export const createStudyStorage = (): StudyStorage => ({
       putMany(transaction, 'attempts', next.attempts);
       putMany(transaction, 'drafts', next.drafts);
       putMany(transaction, 'settings', [next.settings]);
+      putMany(transaction, 'legalDocuments', next.legalDocuments);
+      putMany(transaction, 'legalComponents', next.legalComponents.map(legalComponentRecord));
+      putMany(transaction, 'importHistory', next.importHistory);
       await transactionDone(transaction);
+    } finally {
+      db.close();
+    }
+  },
+  async importOfficialContentPackage(contentPackage) {
+    const db = await openStudyDatabase();
+    try {
+      const [documents, units, prompts, concepts, progress, attempts, drafts, settings, legalDocuments, legalComponents, importHistory] =
+        await Promise.all([
+          readStore(db, 'documents'),
+          readStore(db, 'units'),
+          readStore(db, 'prompts'),
+          readStore(db, 'concepts'),
+          readStore(db, 'progress'),
+          readStore(db, 'attempts'),
+          readStore(db, 'drafts'),
+          readStore(db, 'settings'),
+          readStore(db, 'legalDocuments'),
+          readStore(db, 'legalComponents'),
+          readStore(db, 'importHistory'),
+        ]);
+      const current = migrateStudySnapshot({
+        documents,
+        units,
+        prompts,
+        concepts,
+        progress,
+        attempts,
+        drafts,
+        settings: settings[0],
+        legalDocuments,
+        legalComponents: legalComponents.map(legalComponentFromRecord),
+        importHistory,
+      });
+      const { snapshot } = applyOfficialContentPackageToSnapshot({
+        snapshot: current,
+        contentPackage,
+      });
+      const transaction = db.transaction(
+        ['documents', 'units', 'legalDocuments', 'legalComponents', 'importHistory'],
+        'readwrite',
+      );
+      ['documents', 'units', 'legalDocuments', 'legalComponents', 'importHistory'].forEach((storeName) =>
+        transaction.objectStore(storeName).clear(),
+      );
+      putMany(transaction, 'documents', snapshot.documents);
+      putMany(transaction, 'units', snapshot.units);
+      putMany(transaction, 'legalDocuments', snapshot.legalDocuments);
+      putMany(transaction, 'legalComponents', snapshot.legalComponents.map(legalComponentRecord));
+      putMany(transaction, 'importHistory', snapshot.importHistory);
+      await transactionDone(transaction);
+      return snapshot;
     } finally {
       db.close();
     }

@@ -28,6 +28,9 @@ const StudyApp = () => {
           onSaveDocument={study.saveDocument}
           onSaveUnit={study.saveUnit}
           onCompleteReading={study.completeReading}
+          onCreateUnitFromSelection={study.createUnitFromSourceSelection}
+          onAcknowledgeSourceReview={study.acknowledgeSourceReview}
+          onSelectDocument={study.selectDocument}
         />
       );
     }
@@ -53,6 +56,11 @@ const StudyApp = () => {
           importText={study.importText}
           onImportTextChange={study.setImportText}
           onImport={study.importData}
+          officialPackageText={study.officialPackageText}
+          onOfficialPackageTextChange={study.setOfficialPackageText}
+          officialPackagePreview={study.officialPackagePreview}
+          onPreviewOfficialPackage={study.previewOfficialPackage}
+          onImportOfficialPackage={study.importOfficialPackage}
           statusMessage={study.statusMessage}
         />
       );

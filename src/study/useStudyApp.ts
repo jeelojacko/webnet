@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { exportStudyData, parseStudyImport } from './studyExportImport';
+import type { NbLawContentPackage } from './content/nbLawTypes';
+import {
+  acknowledgeUnitSourceReview,
+  createStudyUnitFromSourceSelection,
+  parseOfficialContentPackage,
+  previewOfficialContentPackage,
+  type OfficialContentPreview,
+} from './studyOfficialContent';
 import { buildSessionItems, markReadingComplete, updateProgressAfterAttempt } from './studyScheduler';
 import { createStudyStorage } from './studyStorage';
 import type {
@@ -11,6 +19,7 @@ import type {
   StudyRating,
   StudySessionItem,
   StudyUnit,
+  ImportedLegalComponent,
 } from './studyTypes';
 
 const ACTIVE_DRAFT_ID = 'active-session';
@@ -38,6 +47,8 @@ export const useStudyApp = () => {
   const [coveredConceptIds, setCoveredConceptIds] = useState<string[]>([]);
   const [statusMessage, setStatusMessage] = useState('');
   const [importText, setImportText] = useState('');
+  const [officialPackageText, setOfficialPackageText] = useState('');
+  const [officialPackagePreview, setOfficialPackagePreview] = useState<OfficialContentPreview | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -199,6 +210,83 @@ export const useStudyApp = () => {
     setStatusMessage('Study data imported.');
   }, [importText, storage]);
 
+  const previewOfficialPackage = useCallback(() => {
+    if (!data) return;
+    try {
+      const contentPackage = parseOfficialContentPackage(officialPackageText);
+      setOfficialPackagePreview(previewOfficialContentPackage(data, contentPackage));
+    } catch (error) {
+      setOfficialPackagePreview({
+        valid: false,
+        errors: [error instanceof Error ? error.message : String(error)],
+        newDocuments: [],
+        updatedDocuments: [],
+        unchangedDocuments: [],
+        absentExistingDocuments: [],
+        newComponents: [],
+        changedComponents: [],
+        removedComponents: [],
+        unchangedComponents: [],
+        referenceOnlyForms: [],
+        unitsRequiringSourceReview: [],
+      });
+    }
+  }, [data, officialPackageText]);
+
+  const importOfficialPackage = useCallback(async () => {
+    const contentPackage: NbLawContentPackage = parseOfficialContentPackage(officialPackageText);
+    const snapshot = await storage.importOfficialContentPackage(contentPackage);
+    setData(snapshot);
+    setOfficialPackagePreview(previewOfficialContentPackage(snapshot, contentPackage));
+    setStatusMessage(`Official content package imported: ${contentPackage.id}.`);
+  }, [officialPackageText, storage]);
+
+  const createUnitFromSourceSelection = useCallback(
+    async (documentId: string, selectedComponents: ImportedLegalComponent[]) => {
+      if (!data) return;
+      const document = data.documents.find((entry) => entry.id === documentId);
+      if (!document || selectedComponents.length === 0) return;
+      const unit = createStudyUnitFromSourceSelection({
+        document,
+        components: selectedComponents,
+        existingUnits: data.units,
+      });
+      await storage.saveUnit(unit);
+      const progress = {
+        unitId: unit.id,
+        phase: 'unread' as const,
+        dueAt: unit.createdAt,
+        lastStudiedAt: null,
+        successfulGuidedRecallDays: [],
+        successfulFreeRecallDays: [],
+        applicationSuccessCount: 0,
+        reviewCount: 0,
+        createdAt: unit.createdAt,
+        updatedAt: unit.createdAt,
+      };
+      await storage.saveProgress(progress);
+      setData({
+        ...data,
+        units: [...data.units, unit],
+        progress: [...data.progress, progress],
+      });
+      setStatusMessage(`Study unit created: ${unit.title}.`);
+    },
+    [data, storage],
+  );
+
+  const acknowledgeSourceReview = useCallback(
+    async (unitId: string) => {
+      if (!data) return;
+      const unit = data.units.find((entry) => entry.id === unitId);
+      if (!unit) return;
+      const updated = acknowledgeUnitSourceReview(unit, data.legalComponents);
+      await storage.saveUnit(updated);
+      setData({ ...data, units: replaceById(data.units, updated) });
+    },
+    [data, storage],
+  );
+
   return {
     data,
     routePath,
@@ -222,6 +310,13 @@ export const useStudyApp = () => {
     importText,
     setImportText,
     importData,
+    officialPackageText,
+    setOfficialPackageText,
+    officialPackagePreview,
+    previewOfficialPackage,
+    importOfficialPackage,
+    createUnitFromSourceSelection,
+    acknowledgeSourceReview,
     statusMessage,
   };
 };

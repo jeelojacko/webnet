@@ -61,6 +61,10 @@ export type StudyUnit = {
   title: string;
   documentIds: string[];
   sectionRefs: StudySectionRef[];
+  sourceReferences?: StudySourceReference[];
+  sourceReviewRequired?: boolean;
+  sourceReferenceMissing?: boolean;
+  sourceReviewAcknowledgedAt?: string;
   category: string;
   priority: StudyPriority;
   editableSummary: string;
@@ -139,6 +143,70 @@ export type StudySettings = {
   updatedAt: string;
 };
 
+export type StudySourceReference = {
+  documentId: string;
+  sourceKey: string;
+  contentHashAtLinkTime: string;
+};
+
+export type ImportedLegalDocument = {
+  id: string;
+  packageId: string;
+  manifestId: string;
+  officialTitle: string;
+  officialCitationDisplay: string;
+  officialCitationNormalized: string;
+  officialNumberDisplay?: string;
+  officialNumberNormalized?: string;
+  documentType: 'act' | 'regulation';
+  parentActId?: string;
+  enablingActs?: Array<{ title: string; citation?: string }>;
+  sourceUrl: string;
+  fetchDate: string;
+  consolidatedTo?: string;
+  contentHash: string;
+  importedAt: string;
+  packageCreatedAt: string;
+};
+
+export type ImportedLegalSubsection = {
+  id: string;
+  sourceKey: string;
+  label: string;
+  text: string;
+  contentHash: string;
+};
+
+export type ImportedLegalComponent = {
+  documentId: string;
+  id: string;
+  sourceKey: string;
+  componentType: 'section' | 'schedule' | 'form' | 'appendix' | 'part-heading' | 'division-heading';
+  label: string;
+  heading?: string;
+  text: string;
+  contentHash: string;
+  subsections?: ImportedLegalSubsection[];
+  extractionStatus: 'complete' | 'reference-only' | 'unknown';
+};
+
+export type StudyOfficialImportHistory = {
+  id: string;
+  packageId: string;
+  manifestId: string;
+  packageCreatedAt: string;
+  importedAt: string;
+  addedDocuments: number;
+  changedDocuments: number;
+  addedComponents: number;
+  changedComponents: number;
+  removedComponents: number;
+  referenceOnlyForms: number;
+  unitsFlaggedForReview: number;
+  result: 'success' | 'failed';
+  message: string;
+};
+
 export type StudyDataSnapshot = {
   schemaVersion: number;
   exportedAt: string;
@@ -150,6 +218,9 @@ export type StudyDataSnapshot = {
   attempts: StudyAttempt[];
   drafts: StudyDraft[];
   settings: StudySettings;
+  legalDocuments: ImportedLegalDocument[];
+  legalComponents: ImportedLegalComponent[];
+  importHistory: StudyOfficialImportHistory[];
 };
 
 export type StudySessionItem = {

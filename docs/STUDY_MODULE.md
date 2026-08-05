@@ -9,7 +9,8 @@ It does not use adjustment, parser, solver, network, or Survey CAD domain state.
 - `src/study/studyTypes.ts` - record contracts for documents, units, prompts, concepts, progress, attempts, drafts, settings, and snapshots
 - `src/study/studySeed.ts` - five initial New Brunswick statute document records plus sample units, concepts, prompts, and initial progress
 - `src/study/studyScheduler.ts` - phase transition and session ordering rules
-- `src/study/studyStorage.ts` - IndexedDB schema, seed loading, migrations, and CRUD/replace operations
+- `src/study/studyStorage.ts` - IndexedDB schema, seed loading, migrations, CRUD/replace operations, and atomic official-content package import
+- `src/study/studyOfficialContent.ts` - official package parsing, browser import validation, preview, source-reference review flags, reference-only form detection, and source-selection study-unit creation
 - `src/study/studyOpfs.ts` - OPFS path generation and source-file text asset writes
 - `src/study/studyExportImport.ts` - JSON export/import round trip helpers
 - `src/study/useStudyApp.ts` - route-local state, autosave, reveal/rating flow, and persistence orchestration
@@ -19,7 +20,7 @@ It does not use adjustment, parser, solver, network, or Survey CAD domain state.
 ## IndexedDB Schema
 Database: `webnet.study.v1`
 
-Version: `1`
+Version: `2`
 
 Stores:
 - `documents`, key `id`: source metadata such as title, kind, jurisdiction, category, priority, summary, and OPFS source-file asset records
@@ -30,8 +31,11 @@ Stores:
 - `attempts`, key `id`: immutable completed attempts with answer text, covered concepts, rating, and timestamps
 - `drafts`, key `id`: autosaved in-progress typed answers
 - `settings`, key `id`: configurable phase rules, priority limit, and schema version
+- `legalDocuments`, key `id`: imported authoritative legal document metadata, package IDs, official citation/title, source URL, fetch/import dates, content hash, parent Act and enabling Act metadata
+- `legalComponents`, key `recordKey`: imported authoritative components keyed by `{documentId}::{sourceKey}`, including sections, schedules, forms, source text, source hash, subsections, and extraction status
+- `importHistory`, key `id`: compact official-package import history with added/changed counts, reference-only form counts, and flagged-unit counts
 
-Schema migration currently normalizes imported or partially missing snapshots to schema version `1` and fills default settings.
+Schema migration currently normalizes imported or partially missing snapshots to schema version `2`, fills default settings, and defaults official-content stores to empty arrays. Existing Study data is not reset or deleted by the v2 migration.
 
 ## OPFS Layout
 Source and backup assets use generated paths under:
@@ -134,6 +138,21 @@ tests/fixtures/study/nb-law-pilot/html/
 
 They are compact saved HTML fixtures for all ten pilot entries. The fixtures preserve the laws.gnb section/title/citation markup patterns used by the normalizer without embedding the full official corpus in tests.
 
+## Official Package Import
+`/study/manage` supports importing the generated official content package from pasted JSON or a selected `.json` file. Browser import validation checks schema version, package and manifest IDs, unique document IDs, unique component `sourceKey`s per document, valid Act-regulation relationships, TOC source keys, required metadata, component hashes, document source-hash consistency, embedded integrity errors, forbidden laws.gnb.ca interface markers, and non-empty legal components.
+
+The preview groups new, updated, unchanged, and absent existing documents; new, changed, removed, and unchanged components; reference-only forms; and units that will require source review. Import writes official records atomically across `documents`, `units`, `legalDocuments`, `legalComponents`, and `importHistory`. Official text is stored only in `legalComponents`; it is not copied into editable summaries, prompts, concepts, attempts, progress, or drafts.
+
+Study units linked to official source material store `documentId`, `sourceKey`, and `contentHashAtLinkTime`. Later package imports mark `sourceReviewRequired` or `sourceReferenceMissing` when linked components change or disappear. Acknowledging review updates link-time hashes for still-present components and records `sourceReviewAcknowledgedAt`.
+
+## Reference-Only Forms
+Some prescribed forms normalize only as a label. Import classifies a form as `reference-only` when its normalized text, after trimming whitespace and optional consolidation text, contains only its own label. These forms remain navigable, keep source keys and hashes, display an incomplete-body warning, and require explicit confirmation before selection for study-unit creation. Short statutory sections such as repealed provisions are not classified as form stubs.
+
+## Legal Reader
+`/study/document/:id` displays imported official metadata, Act-regulation navigation, source URL, content hash, consolidated-to date, fetch/import dates, package ID, and safe React-rendered normalized text. The user-authored document summary remains in a visually separate editor.
+
+The reader supports table-of-contents navigation, case-insensitive search, section/schedule/form filtering, expand/collapse, subsection display, copy reference/text, component selection, and creating an empty study unit from selected official components. Created units store source references with current component hashes and leave editable study summary, reference answer, concepts, prompts, and scenarios empty.
+
 ## Session Rules
 Initial phases:
 - `unread`
@@ -157,6 +176,10 @@ Due reviews sort before new units. New units are then selected by priority and d
 4. Open `Session`, type a long answer, refresh the browser, and confirm the answer restores.
 5. Click `Reveal`, compare the answer with the reference, check concepts, rate `Good`, and confirm the attempt count increments on the dashboard.
 6. Open `Manage`, copy the export JSON, paste it into import, import it, and confirm counts are restored.
+7. In `Manage`, paste or choose `study-content/packages/nb-law-pilot.content-package.json`, validate preview, and confirm import.
+8. Open `Library`, filter Acts/regulations, and confirm official metadata and review counts appear.
+9. Open `Surveys Act`, search for `Director of Surveys`, expand section `3`, select section `3` or Schedule A, and create a study unit from the selection.
+10. Confirm the new unit has empty editable summary/reference answer and source references with hashes.
 
 ## Official Content Manual Procedure
 1. Run `npm run study:fetch-nb-laws`.
@@ -165,3 +188,6 @@ Due reviews sort before new units. New units are then selected by priority and d
 4. Run `npm run study:build-content-pack`.
 5. Inspect `study-content/packages/nb-law-pilot.content-package.json`, `study-content/reports/nb-law-pilot.integrity-report.md`, and the Markdown files under `study-content/normalized/nb-law-pilot/`.
 6. Confirm `reg-community-planning-80-159` is related to `doc-community-planning-act`, Registry Act has consolidation date `December 13, 2024`, Surveys Act section `3` exposes subsections `3(1)`, `3(1.1)`, `3(1.2)`, and `3(2)`, and Surveys Act `SCHEDULE A` is separate from section `15`.
+
+## Phase 3 FSRS Boundary
+Phase 2B intentionally keeps the existing deterministic phase scheduler. Phase 3 should add FSRS fields beside `StudyProgress`, preserve current phase/progress import compatibility, and use official-source review flags as a scheduling input rather than replacing legal-source integrity checks.

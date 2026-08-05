@@ -179,7 +179,7 @@ const prompts: StudyPrompt[] = units.flatMap((unit) => [
 
 export const createDefaultStudySettings = (updatedAt = SEED_CREATED_AT): StudySettings => ({
   id: 'default',
-  schemaVersion: 1,
+  schemaVersion: 2,
   phaseRules: DEFAULT_STUDY_PHASE_RULES,
   newUnitPriorityLimit: 5,
   includeMaintenanceReviews: true,
@@ -187,7 +187,7 @@ export const createDefaultStudySettings = (updatedAt = SEED_CREATED_AT): StudySe
 });
 
 export const createSeedStudyData = (nowIso = SEED_CREATED_AT): StudyDataSnapshot => ({
-  schemaVersion: 1,
+  schemaVersion: 2,
   exportedAt: nowIso,
   documents: documents.map((entry) => ({ ...entry })),
   units: units.map((entry) => ({ ...entry })),
@@ -197,4 +197,7 @@ export const createSeedStudyData = (nowIso = SEED_CREATED_AT): StudyDataSnapshot
   attempts: [],
   drafts: [],
   settings: createDefaultStudySettings(nowIso),
+  legalDocuments: [],
+  legalComponents: [],
+  importHistory: [],
 });
