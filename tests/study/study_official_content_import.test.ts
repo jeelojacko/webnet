@@ -153,7 +153,7 @@ describe('official content import behavior', () => {
     expect(snapshot.units[0].editableSummary).toBe('keep me');
   });
 
-  it('creates an empty study unit from selected official source references', () => {
+  it('creates a generated editable study unit from selected official source references', () => {
     const imported = importSeed();
     const document = imported.documents.find((entry) => entry.id === 'doc-surveys-act')!;
     const components = imported.legalComponents.filter((entry) => entry.documentId === document.id).slice(0, 2);
@@ -165,6 +165,7 @@ describe('official content import behavior', () => {
     });
     expect(unit.editableSummary).toBe('');
     expect(unit.referenceAnswer).toBe('');
+    expect(unit.generatedContentState?.title).toBe('generated');
     expect(unit.sourceReferences).toHaveLength(2);
     expect(unit.sourceReferences?.[0].contentHashAtLinkTime).toBe(components[0].contentHash);
   });

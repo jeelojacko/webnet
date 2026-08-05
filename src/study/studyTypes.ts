@@ -26,6 +26,24 @@ export type StudyRating = 'again' | 'hard' | 'good' | 'easy';
 
 export type StudyFileRole = 'raw-html' | 'pdf' | 'imported-source' | 'normalized-markdown' | 'backup';
 
+export type StudyGeneratedFieldState = 'empty' | 'generated' | 'user-edited';
+
+export type StudyReferenceAnswerFormat = 'structured-exact' | 'complete-exact-text' | 'empty';
+
+export type StudyGeneratedContentState = {
+  title: StudyGeneratedFieldState;
+  question: StudyGeneratedFieldState;
+  referenceAnswer: StudyGeneratedFieldState;
+  editableSummary: StudyGeneratedFieldState;
+  concepts: StudyGeneratedFieldState;
+};
+
+export type StudySourceCitationSummary = {
+  text: string;
+  officialSource?: string;
+  consolidatedTo?: string;
+};
+
 export type StudyFileAsset = {
   id: string;
   role: StudyFileRole;
@@ -62,6 +80,8 @@ export type StudyUnit = {
   documentIds: string[];
   sectionRefs: StudySectionRef[];
   sourceReferences?: StudySourceReference[];
+  sourceCitationSummary?: StudySourceCitationSummary;
+  generatedContentState?: StudyGeneratedContentState;
   sourceReviewRequired?: boolean;
   sourceReferenceMissing?: boolean;
   sourceReviewAcknowledgedAt?: string;

@@ -71,6 +71,8 @@ export interface StudyStorage {
   loadAll: () => Promise<StudyDataSnapshot>;
   saveDocument: (_document: StudyDocument) => Promise<void>;
   saveUnit: (_unit: StudyUnit) => Promise<void>;
+  savePrompt: (_prompt: StudyPrompt) => Promise<void>;
+  replaceUnitConcepts: (_unitId: string, _concepts: StudyConcept[]) => Promise<void>;
   saveProgress: (_progress: StudyProgress) => Promise<void>;
   saveAttempt: (_attempt: StudyAttempt) => Promise<void>;
   saveDraft: (_draft: StudyDraft) => Promise<void>;
@@ -251,6 +253,27 @@ export const createStudyStorage = (): StudyStorage => ({
     const db = await openStudyDatabase();
     try {
       await putRecord(db, 'units', unit);
+    } finally {
+      db.close();
+    }
+  },
+  async savePrompt(prompt) {
+    const db = await openStudyDatabase();
+    try {
+      await putRecord(db, 'prompts', prompt);
+    } finally {
+      db.close();
+    }
+  },
+  async replaceUnitConcepts(unitId, concepts) {
+    const db = await openStudyDatabase();
+    try {
+      const existing = await readStore(db, 'concepts');
+      const transaction = db.transaction('concepts', 'readwrite');
+      const store = transaction.objectStore('concepts');
+      existing.filter((concept) => concept.unitId === unitId).forEach((concept) => store.delete(concept.id));
+      concepts.forEach((concept) => store.put(concept));
+      await transactionDone(transaction);
     } finally {
       db.close();
     }

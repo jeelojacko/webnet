@@ -3,11 +3,19 @@ import { exportStudyData, parseStudyImport } from './studyExportImport';
 import type { NbLawContentPackage } from './content/nbLawTypes';
 import {
   acknowledgeUnitSourceReview,
-  createStudyUnitFromSourceSelection,
+  createStudyContentFromSourceSelection,
   parseOfficialContentPackage,
   previewOfficialContentPackage,
   type OfficialContentPreview,
 } from './studyOfficialContent';
+import {
+  DEFAULT_REFERENCE_ANSWER_OPTIONS,
+  generateReferenceAnswer,
+  generateSourceCitationSummary,
+  generateStudyQuestion,
+  generateStudyTitle,
+  suggestRequiredConcepts,
+} from './studyDraftGeneration';
 import { buildSessionItems, markReadingComplete, updateProgressAfterAttempt } from './studyScheduler';
 import { createStudyStorage } from './studyStorage';
 import type {
@@ -15,7 +23,9 @@ import type {
   StudyDataSnapshot,
   StudyDocument,
   StudyDraft,
+  StudyConcept,
   StudyProgress,
+  StudyPrompt,
   StudyRating,
   StudySessionItem,
   StudyUnit,
@@ -69,8 +79,8 @@ export const useStudyApp = () => {
     return () => window.removeEventListener('popstate', handlePop);
   }, []);
 
-  const navigate = useCallback((path: string) => {
-    window.history.pushState(null, '', path);
+  const navigate = useCallback((path: string, state: unknown = null) => {
+    window.history.pushState(state, '', path);
     setRoutePath(path);
   }, []);
 
@@ -139,6 +149,123 @@ export const useStudyApp = () => {
       );
     },
     [storage],
+  );
+
+  const saveUnitAuthoring = useCallback(
+    async ({ unit, prompt, concepts }: { unit: StudyUnit; prompt: StudyPrompt; concepts: StudyConcept[] }) => {
+      const nowIso = new Date().toISOString();
+      const updatedUnit = { ...unit, updatedAt: nowIso };
+      const updatedPrompt = { ...prompt, referenceAnswer: updatedUnit.referenceAnswer, updatedAt: nowIso };
+      const updatedConcepts = concepts.map((concept) => ({ ...concept, updatedAt: nowIso }));
+      await storage.saveUnit(updatedUnit);
+      await storage.savePrompt(updatedPrompt);
+      await storage.replaceUnitConcepts(updatedUnit.id, updatedConcepts);
+      setData((current) =>
+        current
+          ? {
+              ...current,
+              units: replaceById(current.units, updatedUnit),
+              prompts: replaceById(current.prompts, updatedPrompt),
+              concepts: [
+                ...current.concepts.filter((concept) => concept.unitId !== updatedUnit.id),
+                ...updatedConcepts,
+              ],
+            }
+          : current,
+      );
+      setStatusMessage(`Study unit saved: ${updatedUnit.title}.`);
+    },
+    [storage],
+  );
+
+  const generateMissingStudyContent = useCallback(
+    async (unitId: string) => {
+      if (!data) return;
+      const unit = data.units.find((entry) => entry.id === unitId);
+      if (!unit?.sourceReferences?.length) return;
+      const selectedKeys = new Set(unit.sourceReferences.map((reference) => `${reference.documentId}::${reference.sourceKey}`));
+      const sourceComponents = data.legalComponents.filter((component) =>
+        selectedKeys.has(`${component.documentId}::${component.sourceKey}`),
+      );
+      const documentId = unit.documentIds[0] ?? unit.sourceReferences[0]?.documentId;
+      const studyDocument = data.documents.find((entry) => entry.id === documentId);
+      const legalDocument = data.legalDocuments.find((entry) => entry.id === documentId);
+      if (!studyDocument || sourceComponents.length === 0) return;
+      const nowIso = new Date().toISOString();
+      const documentTitle = legalDocument?.officialTitle ?? studyDocument.title;
+      const currentState = unit.generatedContentState ?? {
+        title: unit.title ? 'user-edited' as const : 'empty' as const,
+        question: 'empty' as const,
+        referenceAnswer: unit.referenceAnswer ? 'user-edited' as const : 'empty' as const,
+        editableSummary: unit.editableSummary ? 'user-edited' as const : 'empty' as const,
+        concepts: data.concepts.some((concept) => concept.unitId === unit.id) ? 'user-edited' as const : 'empty' as const,
+      };
+      const title = unit.title.trim() ? unit.title : generateStudyTitle({ documentTitle, selectedSources: sourceComponents });
+      const referenceAnswer =
+        unit.referenceAnswer.trim() || !legalDocument
+          ? unit.referenceAnswer
+          : generateReferenceAnswer({
+              document: legalDocument,
+              selectedSources: sourceComponents,
+              options: DEFAULT_REFERENCE_ANSWER_OPTIONS,
+            }).text;
+      const updatedUnit: StudyUnit = {
+        ...unit,
+        title,
+        referenceAnswer,
+        sourceCitationSummary: legalDocument
+          ? generateSourceCitationSummary({ document: legalDocument, selectedSources: sourceComponents })
+          : unit.sourceCitationSummary,
+        generatedContentState: {
+          ...currentState,
+          title: unit.title.trim() ? currentState.title : 'generated',
+          referenceAnswer: unit.referenceAnswer.trim() ? currentState.referenceAnswer : referenceAnswer ? 'generated' : 'empty',
+        },
+        updatedAt: nowIso,
+      };
+      const existingPrompt = data.prompts.find((entry) => entry.unitId === unit.id && entry.kind === 'guided-recall')
+        ?? data.prompts.find((entry) => entry.unitId === unit.id);
+      const generatedQuestion = generateStudyQuestion({ documentTitle, selectedSources: sourceComponents }).question;
+      const prompt: StudyPrompt = existingPrompt
+        ? {
+            ...existingPrompt,
+            question: existingPrompt.question.trim() ? existingPrompt.question : generatedQuestion,
+            referenceAnswer,
+            updatedAt: nowIso,
+          }
+        : {
+            id: `${unit.id}-guided`,
+            unitId: unit.id,
+            kind: 'guided-recall',
+            question: generatedQuestion,
+            referenceAnswer,
+            conceptIds: [],
+            createdAt: nowIso,
+            updatedAt: nowIso,
+          };
+      const existingConcepts = data.concepts.filter((concept) => concept.unitId === unit.id);
+      const concepts = existingConcepts.length
+        ? existingConcepts
+        : suggestRequiredConcepts(sourceComponents).map((label, index): StudyConcept => ({
+            id: `${unit.id}-concept-${index + 1}`,
+            unitId: unit.id,
+            label,
+            required: true,
+            createdAt: nowIso,
+            updatedAt: nowIso,
+          }));
+      await storage.saveUnit(updatedUnit);
+      await storage.savePrompt({ ...prompt, conceptIds: concepts.map((concept) => concept.id) });
+      if (existingConcepts.length === 0) await storage.replaceUnitConcepts(unit.id, concepts);
+      setData({
+        ...data,
+        units: replaceById(data.units, updatedUnit),
+        prompts: replaceById(data.prompts, { ...prompt, conceptIds: concepts.map((concept) => concept.id) }),
+        concepts: existingConcepts.length ? data.concepts : [...data.concepts, ...concepts],
+      });
+      setStatusMessage(`Missing generated content filled for ${updatedUnit.title}.`);
+    },
+    [data, storage],
   );
 
   const completeReading = useCallback(
@@ -245,13 +372,17 @@ export const useStudyApp = () => {
     async (documentId: string, selectedComponents: ImportedLegalComponent[]) => {
       if (!data) return;
       const document = data.documents.find((entry) => entry.id === documentId);
+      const legalDocument = data.legalDocuments.find((entry) => entry.id === documentId);
       if (!document || selectedComponents.length === 0) return;
-      const unit = createStudyUnitFromSourceSelection({
+      const { unit, prompt, concepts } = createStudyContentFromSourceSelection({
         document,
+        legalDocument,
         components: selectedComponents,
         existingUnits: data.units,
       });
       await storage.saveUnit(unit);
+      await storage.savePrompt(prompt);
+      await storage.replaceUnitConcepts(unit.id, concepts);
       const progress = {
         unitId: unit.id,
         phase: 'unread' as const,
@@ -268,11 +399,17 @@ export const useStudyApp = () => {
       setData({
         ...data,
         units: [...data.units, unit],
+        prompts: [...data.prompts, prompt],
+        concepts: [...data.concepts, ...concepts],
         progress: [...data.progress, progress],
       });
       setStatusMessage(`Study unit created: ${unit.title}.`);
+      navigate(`/study/unit/${encodeURIComponent(unit.id)}/edit`, {
+        returnTo: `/study/document/${encodeURIComponent(documentId)}`,
+        sourceKeys: selectedComponents.map((component) => component.sourceKey),
+      });
     },
-    [data, storage],
+    [data, navigate, storage],
   );
 
   const acknowledgeSourceReview = useCallback(
@@ -306,6 +443,8 @@ export const useStudyApp = () => {
     selectDocument,
     saveDocument,
     saveUnit,
+    saveUnitAuthoring,
+    generateMissingStudyContent,
     exportText,
     importText,
     setImportText,

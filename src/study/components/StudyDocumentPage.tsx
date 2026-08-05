@@ -18,8 +18,10 @@ type StudyDocumentPageProps = {
   onSaveUnit: (_unit: StudyUnit) => Promise<void>;
   onCompleteReading: (_unitId: string) => Promise<void>;
   onCreateUnitFromSelection: (_documentId: string, _components: ImportedLegalComponent[]) => Promise<void>;
+  onGenerateMissingStudyContent: (_unitId: string) => Promise<void>;
   onAcknowledgeSourceReview: (_unitId: string) => Promise<void>;
   onSelectDocument: (_documentId: string) => void;
+  onNavigate: (_path: string) => void;
 };
 
 const normalizeSearch = (value: string): string => value.trim().toLowerCase();
@@ -60,8 +62,10 @@ const StudyDocumentPage = ({
   onSaveUnit,
   onCompleteReading,
   onCreateUnitFromSelection,
+  onGenerateMissingStudyContent,
   onAcknowledgeSourceReview,
   onSelectDocument,
+  onNavigate,
 }: StudyDocumentPageProps) => {
   const document = data.documents.find((entry) => entry.id === documentId);
   const legalDocument = data.legalDocuments.find((entry) => entry.id === documentId);
@@ -344,6 +348,20 @@ const StudyDocumentPage = ({
                   ) : null}
                 </div>
                 <div className="flex gap-2">
+                  <button
+                    onClick={() => onNavigate(`/study/unit/${encodeURIComponent(unit.id)}/edit`)}
+                    className="rounded border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-800"
+                  >
+                    Edit
+                  </button>
+                  {unit.sourceReferences?.length ? (
+                    <button
+                      onClick={() => onGenerateMissingStudyContent(unit.id)}
+                      className="rounded border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-800"
+                    >
+                      Generate Missing Study Content
+                    </button>
+                  ) : null}
                   <button
                     onClick={() => onCompleteReading(unit.id)}
                     className="rounded border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-800"

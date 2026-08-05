@@ -4,6 +4,7 @@ import StudyLayout, { StudyEmptyState } from './components/StudyLayout';
 import StudyLibrary from './components/StudyLibrary';
 import StudyManagePage from './components/StudyManagePage';
 import StudySessionPage from './components/StudySessionPage';
+import StudyUnitEditorPage from './components/StudyUnitEditorPage';
 import { useStudyApp } from './useStudyApp';
 
 const decodeDocumentIdFromPath = (path: string): string | null => {
@@ -11,12 +12,28 @@ const decodeDocumentIdFromPath = (path: string): string | null => {
   return match ? decodeURIComponent(match[1]) : null;
 };
 
+const decodeUnitEditIdFromPath = (path: string): string | null => {
+  const match = path.match(/^\/study\/unit\/([^/]+)\/edit$/);
+  return match ? decodeURIComponent(match[1]) : null;
+};
+
 const StudyApp = () => {
   const study = useStudyApp();
   const documentId = decodeDocumentIdFromPath(study.routePath);
+  const unitEditId = decodeUnitEditIdFromPath(study.routePath);
 
   const renderPage = () => {
     if (!study.data) return <StudyEmptyState text="Loading study data..." />;
+    if (unitEditId) {
+      return (
+        <StudyUnitEditorPage
+          data={study.data}
+          unitId={unitEditId}
+          onSave={study.saveUnitAuthoring}
+          onNavigate={study.navigate}
+        />
+      );
+    }
     if (study.routePath === '/study/library') {
       return <StudyLibrary data={study.data} onSelectDocument={study.selectDocument} />;
     }
@@ -29,8 +46,10 @@ const StudyApp = () => {
           onSaveUnit={study.saveUnit}
           onCompleteReading={study.completeReading}
           onCreateUnitFromSelection={study.createUnitFromSourceSelection}
+          onGenerateMissingStudyContent={study.generateMissingStudyContent}
           onAcknowledgeSourceReview={study.acknowledgeSourceReview}
           onSelectDocument={study.selectDocument}
+          onNavigate={study.navigate}
         />
       );
     }

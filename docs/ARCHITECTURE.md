@@ -56,6 +56,7 @@ It owns:
 - `studyOpfs.ts` for OPFS source-file, normalized-text, imported-file, PDF, and backup path generation/writes
 - `src/study/content/*` for the development-side official NB law manifest validation, laws.gnb URL generation, exact-text normalization models, and content-package validation
 - `studyOfficialContent.ts` for browser-side official package validation, import preview, reference-only form classification, source-review flagging, and source-selection unit creation
+- `studyDraftGeneration.ts` for deterministic source-linked title, question, citation, structured reference-answer, and conservative concept drafting
 - `studyScheduler.ts` for deterministic phase transitions and due-before-new session ordering
 - `StudyApp.tsx`, `useStudyApp.ts`, and `components/*` for the dashboard, library, document reader/editor, session, and manage pages
 
@@ -64,6 +65,8 @@ The study module does not use adjustment, parser, solver, network, import-review
 Official source fetching is Node-only and runs through `scripts/studyFetchNbLawPilot.ts`; normal browser runtime does not request legislation from external sites. Fetched raw HTML, normalized exact source text, and JSON content packages are stored under `study-content/` as separate layers from user-authored summaries, prompts, concepts, attempts, and progress.
 
 Browser official-package import stores authoritative metadata in `legalDocuments` and exact legal text in `legalComponents`. Existing seeded `documents` keep user-authored summaries and are enriched by stable IDs rather than overwritten. Study units may carry source references keyed by legal `sourceKey` plus link-time content hash so later imports can mark source review without changing user-authored summaries, prompts, concepts, progress, attempts, or drafts.
+
+The source-selection authoring workflow creates editable generated study records while keeping authoritative legal text read-only in `legalComponents`. Generated title and reference-answer state lives on `StudyUnit`, guided questions live on `StudyPrompt`, and required concept suggestions live on `StudyConcept`. The `/study/unit/:id/edit` route displays selected official source text beside the editable unit draft and guards regeneration of user-edited fields with confirmation.
 
 ### Engine core
 The engine is centered under `src/engine/`.

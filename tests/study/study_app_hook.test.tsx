@@ -32,6 +32,8 @@ vi.mock('../../src/study/studyStorage', () => ({
     })),
     saveDocument: vi.fn(),
     saveUnit: vi.fn(),
+    savePrompt: vi.fn(),
+    replaceUnitConcepts: vi.fn(),
     saveProgress: vi.fn(async (progress: StudyProgress) => {
       storageState.progress = [
         ...storageState.progress.filter((entry) => entry.unitId !== progress.unitId),

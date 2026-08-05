@@ -11,6 +11,7 @@ It does not use adjustment, parser, solver, network, or Survey CAD domain state.
 - `src/study/studyScheduler.ts` - phase transition and session ordering rules
 - `src/study/studyStorage.ts` - IndexedDB schema, seed loading, migrations, CRUD/replace operations, and atomic official-content package import
 - `src/study/studyOfficialContent.ts` - official package parsing, browser import validation, preview, source-reference review flags, reference-only form detection, and source-selection study-unit creation
+- `src/study/studyDraftGeneration.ts` - deterministic title, question, citation, reference-answer, and conservative concept drafting for source-linked study units
 - `src/study/studyOpfs.ts` - OPFS path generation and source-file text asset writes
 - `src/study/studyExportImport.ts` - JSON export/import round trip helpers
 - `src/study/useStudyApp.ts` - route-local state, autosave, reveal/rating flow, and persistence orchestration
@@ -151,7 +152,24 @@ Some prescribed forms normalize only as a label. Import classifies a form as `re
 ## Legal Reader
 `/study/document/:id` displays imported official metadata, Act-regulation navigation, source URL, content hash, consolidated-to date, fetch/import dates, package ID, and safe React-rendered normalized text. The user-authored document summary remains in a visually separate editor.
 
-The reader supports table-of-contents navigation, case-insensitive search, section/schedule/form filtering, expand/collapse, subsection display, copy reference/text, component selection, and creating an empty study unit from selected official components. Created units store source references with current component hashes and leave editable study summary, reference answer, concepts, prompts, and scenarios empty.
+The reader supports table-of-contents navigation, case-insensitive search, section/schedule/form filtering, expand/collapse, subsection display, copy reference/text, component selection, and creating a generated draft study unit from selected official components. Created units store source references with current component hashes, generate editable study content, and then open `/study/unit/:id/edit`.
+
+## Automatic Study-Unit Drafting
+Creating a unit from selected official source components now generates:
+- a study-unit title from document title, selected labels, and headings
+- one guided-recall question using deterministic heading/text templates
+- a structured exact-wording reference-answer draft
+- a read-only citation summary
+- optional conservative concept suggestions
+
+The content layers remain separate:
+- exact official source text stays in `legalComponents` and is displayed read-only in the unit editor
+- deterministic generated drafts live on `StudyUnit`, `StudyPrompt`, and `StudyConcept`
+- user edits are saved back only to those study records
+
+Reference-answer generation defaults to structured exact wording. It preserves selected source order, groups subsections under their section, strips repeated labels where safe, excludes amendment-history and consolidation-note text by default, includes repealed provisions as `Repealed.`, and avoids legal interpretation or broad paraphrase. The editor can switch the answer format to complete exact source text or empty.
+
+Generated field state is tracked on `StudyUnit.generatedContentState` for title, question, reference answer, study summary, and concepts. Regeneration controls confirm before replacing a user-edited field. Existing source-linked units expose `Generate Missing Study Content`, which fills only empty generated fields and does not overwrite manual titles, prompts, reference answers, summaries, concepts, progress, attempts, or drafts.
 
 ## Session Rules
 Initial phases:
@@ -179,7 +197,9 @@ Due reviews sort before new units. New units are then selected by priority and d
 7. In `Manage`, paste or choose `study-content/packages/nb-law-pilot.content-package.json`, validate preview, and confirm import.
 8. Open `Library`, filter Acts/regulations, and confirm official metadata and review counts appear.
 9. Open `Surveys Act`, search for `Director of Surveys`, expand section `3`, select section `3` or Schedule A, and create a study unit from the selection.
-10. Confirm the new unit has empty editable summary/reference answer and source references with hashes.
+10. Confirm the unit editor opens with read-only official source text on the left and editable generated title/question/reference answer on the right.
+11. Edit the generated question, click `Regenerate question`, and confirm overwrite confirmation appears.
+12. Save or cancel and confirm the app returns to the source document.
 
 ## Official Content Manual Procedure
 1. Run `npm run study:fetch-nb-laws`.

@@ -17,7 +17,9 @@ Core delivered outcomes include:
 - map, review, compare, recovery, and staged-import workflows
 - a separate local-first `/study` module for New Brunswick statute and survey-law study workflows
 - a development-side `/study` official-source pilot pipeline for the five seeded New Brunswick Acts and five key regulations, using only manifest-listed `laws.gnb.ca` URLs and producing raw HTML, normalized exact source text, integrity reports, and a JSON content package without browser-runtime network fetches
-- `/study/manage` can validate, preview, and import that official package into browser-local IndexedDB; `/study/document/:id` can read/search/select imported official components and create empty study units linked by source hashes while preserving user-authored study data
+- `/study/manage` can validate, preview, and import that official package into browser-local IndexedDB; `/study/document/:id` can read/search/select imported official components and create generated draft study units linked by source hashes while preserving user-authored study data
+
+Source-linked Study unit creation now opens `/study/unit/:id/edit` with selected official source text read-only on the left and editable generated title, guided question, structured exact-wording reference answer, study summary, and concept suggestions on the right. Regeneration controls confirm before replacing user-edited fields, and existing source-linked units can explicitly generate only missing study content without overwriting manual content, attempts, progress, or drafts.
 
 ## Current defaults and operator-facing posture
 Current startup and workflow defaults include:

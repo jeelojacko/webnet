@@ -3,12 +3,22 @@ import {
   NB_LAW_FORBIDDEN_BOILERPLATE_MARKERS,
   validateNbLawContentPackage,
 } from './content/nbLawContentPackage';
+import {
+  DEFAULT_REFERENCE_ANSWER_OPTIONS,
+  generateReferenceAnswer,
+  generateSourceCitationSummary,
+  generateStudyQuestion,
+  generateStudyTitle,
+  suggestRequiredConcepts,
+} from './studyDraftGeneration';
 import type {
   ImportedLegalComponent,
   ImportedLegalDocument,
+  StudyConcept,
   StudyDataSnapshot,
   StudyDocument,
   StudyOfficialImportHistory,
+  StudyPrompt,
   StudySourceReference,
   StudyUnit,
 } from './studyTypes';
@@ -424,24 +434,33 @@ export const acknowledgeUnitSourceReview = (
 
 export const createStudyUnitFromSourceSelection = ({
   document,
+  legalDocument,
   components,
   existingUnits,
   nowIso = new Date().toISOString(),
 }: {
   document: StudyDocument;
+  legalDocument?: ImportedLegalDocument;
   components: ImportedLegalComponent[];
   existingUnits: StudyUnit[];
   nowIso?: string;
 }): StudyUnit => {
-  const labels = components.map((component) => component.heading ? `${component.label} ${component.heading}` : component.label);
   const sourceReferences = components.map((component) => ({
     documentId: component.documentId,
     sourceKey: component.sourceKey,
     contentHashAtLinkTime: component.contentHash,
   }));
+  const documentTitle = legalDocument?.officialTitle ?? document.title;
+  const referenceAnswer = legalDocument
+    ? generateReferenceAnswer({
+        document: legalDocument,
+        selectedSources: components,
+        options: DEFAULT_REFERENCE_ANSWER_OPTIONS,
+      }).text
+    : '';
   return {
     id: `unit-source-${document.id}-${Date.now().toString(36)}-${existingUnits.length + 1}`,
-    title: `${document.title}: ${labels.slice(0, 3).join(', ')}`,
+    title: generateStudyTitle({ documentTitle, selectedSources: components }),
     documentIds: [document.id],
     sectionRefs: components.map((component) => ({
       documentId: component.documentId,
@@ -449,13 +468,80 @@ export const createStudyUnitFromSourceSelection = ({
       anchor: component.sourceKey,
     })),
     sourceReferences,
+    sourceCitationSummary: legalDocument
+      ? generateSourceCitationSummary({ document: legalDocument, selectedSources: components })
+      : undefined,
+    generatedContentState: {
+      title: 'generated',
+      question: 'generated',
+      referenceAnswer: referenceAnswer ? 'generated' : 'empty',
+      editableSummary: 'empty',
+      concepts: 'empty',
+    },
     sourceReviewRequired: false,
     sourceReferenceMissing: false,
     category: document.category,
     priority: document.priority,
     editableSummary: '',
-    referenceAnswer: '',
+    referenceAnswer,
     createdAt: nowIso,
     updatedAt: nowIso,
+  };
+};
+
+export const createStudyContentFromSourceSelection = ({
+  document,
+  legalDocument,
+  components,
+  existingUnits,
+  nowIso = new Date().toISOString(),
+}: {
+  document: StudyDocument;
+  legalDocument?: ImportedLegalDocument;
+  components: ImportedLegalComponent[];
+  existingUnits: StudyUnit[];
+  nowIso?: string;
+}): { unit: StudyUnit; prompt: StudyPrompt; concepts: StudyConcept[] } => {
+  const unit = createStudyUnitFromSourceSelection({
+    document,
+    legalDocument,
+    components,
+    existingUnits,
+    nowIso,
+  });
+  const documentTitle = legalDocument?.officialTitle ?? document.title;
+  const question = generateStudyQuestion({
+    documentTitle,
+    officialCitation: legalDocument?.officialCitationDisplay ?? document.citation,
+    selectedSources: components,
+  }).question;
+  const conceptLabels = suggestRequiredConcepts(components);
+  const concepts = conceptLabels.map((label, index): StudyConcept => ({
+    id: `${unit.id}-concept-${index + 1}`,
+    unitId: unit.id,
+    label,
+    required: true,
+    createdAt: nowIso,
+    updatedAt: nowIso,
+  }));
+  return {
+    unit: {
+      ...unit,
+      generatedContentState: {
+        ...unit.generatedContentState!,
+        concepts: concepts.length > 0 ? 'generated' : 'empty',
+      },
+    },
+    prompt: {
+      id: `${unit.id}-guided`,
+      unitId: unit.id,
+      kind: 'guided-recall',
+      question,
+      referenceAnswer: unit.referenceAnswer,
+      conceptIds: concepts.map((concept) => concept.id),
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    },
+    concepts,
   };
 };
