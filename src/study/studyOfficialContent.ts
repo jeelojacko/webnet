@@ -53,6 +53,60 @@ const emptyPreview = (errors: string[] = []): OfficialContentPreview => ({
 
 const componentRecordKey = (documentId: string, sourceKey: string): string => `${documentId}::${sourceKey}`;
 
+const componentTypeRank: Record<ImportedLegalComponent['componentType'], number> = {
+  'part-heading': 0,
+  'division-heading': 1,
+  section: 2,
+  schedule: 3,
+  appendix: 4,
+  form: 5,
+};
+
+const splitLegalLabel = (value: string): Array<number | string> =>
+  value
+    .toLowerCase()
+    .split(/([0-9]+)/)
+    .filter(Boolean)
+    .map((part) => (/^[0-9]+(?:\.[0-9]+)?$/.test(part) ? Number(part) : part));
+
+const compareLegalLabels = (left: string, right: string): number => {
+  const leftParts = splitLegalLabel(left);
+  const rightParts = splitLegalLabel(right);
+  const length = Math.max(leftParts.length, rightParts.length);
+  for (let index = 0; index < length; index += 1) {
+    const a = leftParts[index];
+    const b = rightParts[index];
+    if (a === undefined) return -1;
+    if (b === undefined) return 1;
+    if (typeof a === 'number' && typeof b === 'number' && a !== b) return a - b;
+    const compared = String(a).localeCompare(String(b));
+    if (compared !== 0) return compared;
+  }
+  return 0;
+};
+
+export const compareImportedLegalComponents = (
+  left: ImportedLegalComponent,
+  right: ImportedLegalComponent,
+): number => {
+  const rank = componentTypeRank[left.componentType] - componentTypeRank[right.componentType];
+  if (rank !== 0) return rank;
+  const label = compareLegalLabels(left.label, right.label);
+  if (label !== 0) return label;
+  return left.sourceKey.localeCompare(right.sourceKey);
+};
+
+export const shouldShowLegalComponentInReader = (component: ImportedLegalComponent): boolean =>
+  !(component.componentType === 'form' && component.extractionStatus === 'reference-only');
+
+export const buildCompleteDocumentText = (components: ImportedLegalComponent[]): string =>
+  components
+    .filter(shouldShowLegalComponentInReader)
+    .slice()
+    .sort(compareImportedLegalComponents)
+    .map((component) => component.text)
+    .join('\n\n');
+
 export const parseOfficialContentPackage = (text: string): NbLawContentPackage => {
   const parsed = JSON.parse(text) as NbLawContentPackage;
   return parsed;
@@ -334,9 +388,10 @@ export const applyOfficialContentPackageToSnapshot = ({
   const nextSnapshot: StudyDataSnapshot = {
     ...snapshot,
     legalDocuments,
-    legalComponents: [...retainedComponents, ...incomingComponents].sort((a, b) =>
-      componentRecordKey(a.documentId, a.sourceKey).localeCompare(componentRecordKey(b.documentId, b.sourceKey)),
-    ),
+    legalComponents: [...retainedComponents, ...incomingComponents].sort((a, b) => {
+      const documentCompared = a.documentId.localeCompare(b.documentId);
+      return documentCompared !== 0 ? documentCompared : compareImportedLegalComponents(a, b);
+    }),
     documents: upsertStudyDocumentsWithOfficialMetadata(snapshot.documents, legalDocuments),
     units,
     importHistory: [...snapshot.importHistory, history],

@@ -1,4 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
+import {
+  buildCompleteDocumentText,
+  compareImportedLegalComponents,
+  shouldShowLegalComponentInReader,
+} from '../studyOfficialContent';
 import type {
   ImportedLegalComponent,
   StudyDataSnapshot,
@@ -61,7 +66,11 @@ const StudyDocumentPage = ({
   const document = data.documents.find((entry) => entry.id === documentId);
   const legalDocument = data.legalDocuments.find((entry) => entry.id === documentId);
   const components = useMemo(
-    () => data.legalComponents.filter((component) => component.documentId === documentId),
+    () =>
+      data.legalComponents
+        .filter((component) => component.documentId === documentId)
+        .slice()
+        .sort(compareImportedLegalComponents),
     [data.legalComponents, documentId],
   );
   const units = useMemo(
@@ -88,11 +97,16 @@ const StudyDocumentPage = ({
     ? data.documents.find((entry) => entry.id === legalDocument.parentActId)
     : undefined;
   const normalizedQuery = normalizeSearch(query);
-  const visibleComponents = components.filter((component) => {
+  const readerComponents = components.filter(shouldShowLegalComponentInReader);
+  const completeDocumentText = useMemo(() => buildCompleteDocumentText(components), [components]);
+  const completeDocumentMatches =
+    filter === 'all' &&
+    (!normalizedQuery || completeDocumentText.toLowerCase().includes(normalizedQuery) || 'complete document'.includes(normalizedQuery));
+  const visibleComponents = readerComponents.filter((component) => {
     const filterMatch = filter === 'all' || component.componentType === filter;
     return filterMatch && componentMatches(component, normalizedQuery);
   });
-  const selectedComponents = components.filter((component) => selectedKeys.includes(component.sourceKey));
+  const selectedComponents = readerComponents.filter((component) => selectedKeys.includes(component.sourceKey));
   const selectedTextLength = selectedComponents.reduce((sum, component) => sum + component.text.length, 0);
 
   if (!document || !documentDraft) {
@@ -188,7 +202,9 @@ const StudyDocumentPage = ({
             <button onClick={() => setExpanded({})} className="rounded bg-slate-800 px-3 py-2 text-xs text-slate-300">
               Collapse All
             </button>
-            <span className="text-xs text-slate-500">{visibleComponents.length} results</span>
+            <span className="text-xs text-slate-500">
+              {visibleComponents.length + (completeDocumentMatches ? 1 : 0)} results
+            </span>
           </div>
           <div className="mb-3 rounded border border-slate-800 bg-slate-900 p-3 text-xs text-slate-300">
             Selected {selectedComponents.length} components · approximately {selectedTextLength.toLocaleString()} characters
@@ -202,6 +218,11 @@ const StudyDocumentPage = ({
           </div>
           <div className="grid gap-3 lg:grid-cols-[16rem_1fr]">
             <nav className="max-h-[70vh] overflow-auto rounded border border-slate-800 bg-slate-900 p-3 text-xs">
+              {filter === 'all' ? (
+                <a href="#complete-document" className="mb-2 block border-b border-slate-800 pb-2 text-emerald-300 hover:text-emerald-200">
+                  Complete document
+                </a>
+              ) : null}
               {visibleComponents.slice(0, 300).map((component) => (
                 <a key={component.sourceKey} href={`#${component.sourceKey}`} className="block py-1 text-slate-400 hover:text-emerald-300">
                   {component.label} {component.heading ?? ''}
@@ -209,6 +230,24 @@ const StudyDocumentPage = ({
               ))}
             </nav>
             <div className="max-h-[70vh] space-y-3 overflow-auto pr-1">
+              {completeDocumentMatches ? (
+                <article id="complete-document" className="rounded border border-emerald-900 bg-slate-900 p-4">
+                  <div className="text-xs uppercase tracking-wide text-emerald-300">Official source text</div>
+                  <h3 className="font-semibold text-white">Complete document</h3>
+                  <p className="text-xs text-slate-500">
+                    Combined reader text, with reference-only form stubs omitted.
+                  </p>
+                  <div className="mt-3 max-h-[60vh] overflow-auto whitespace-pre-wrap text-sm leading-6 text-slate-200">
+                    {highlight(completeDocumentText, normalizedQuery)}
+                  </div>
+                  <button
+                    className="mt-3 rounded bg-slate-800 px-2 py-1 text-xs text-slate-300"
+                    onClick={() => navigator.clipboard?.writeText(completeDocumentText)}
+                  >
+                    Copy Complete Text
+                  </button>
+                </article>
+              ) : null}
               {visibleComponents.map((component) => {
                 const isExpanded = expanded[component.sourceKey] ?? normalizedQuery.length > 0;
                 const isSelected = selectedKeys.includes(component.sourceKey);

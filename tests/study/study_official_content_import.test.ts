@@ -3,9 +3,12 @@ import contentPackageJson from '../../study-content/packages/nb-law-pilot.conten
 import type { NbLawContentPackage } from '../../src/study/content/nbLawTypes';
 import {
   applyOfficialContentPackageToSnapshot,
+  buildCompleteDocumentText,
   classifyLegalComponentExtractionStatus,
+  compareImportedLegalComponents,
   createStudyUnitFromSourceSelection,
   previewOfficialContentPackage,
+  shouldShowLegalComponentInReader,
   validateOfficialContentPackageForImport,
 } from '../../src/study/studyOfficialContent';
 import { createSeedStudyData } from '../../src/study/studySeed';
@@ -194,5 +197,59 @@ describe('reference-only form classification', () => {
       extractionStatus: 'complete',
     };
     expect(classifyLegalComponentExtractionStatus(component)).toBe('complete');
+  });
+});
+
+describe('legal reader component display', () => {
+  it('sorts legal sections by numeric label rather than lexicographic source key', () => {
+    const components = ['1', '10', '2', '18.2', '18.10', '18.3'].map(
+      (label): ImportedLegalComponent => ({
+        documentId: 'doc',
+        id: `section-${label}`,
+        sourceKey: `section:${label}`,
+        componentType: 'section',
+        label,
+        text: label,
+        contentHash: label,
+        extractionStatus: 'complete',
+      }),
+    );
+    expect(components.sort(compareImportedLegalComponents).map((component) => component.label)).toEqual([
+      '1',
+      '2',
+      '10',
+      '18.2',
+      '18.3',
+      '18.10',
+    ]);
+  });
+
+  it('omits reference-only forms from reader text while retaining schedules', () => {
+    const components: ImportedLegalComponent[] = [
+      {
+        documentId: 'doc',
+        id: 'schedule-a',
+        sourceKey: 'schedule:schedule-a',
+        componentType: 'schedule',
+        label: 'SCHEDULE A',
+        text: 'SCHEDULE A\nForm 1 APPLICATION',
+        contentHash: 'schedule',
+        extractionStatus: 'complete',
+      },
+      {
+        documentId: 'doc',
+        id: 'form-1',
+        sourceKey: 'form:form-1',
+        componentType: 'form',
+        label: 'Form 1',
+        text: 'Form 1',
+        contentHash: 'form',
+        extractionStatus: 'reference-only',
+      },
+    ];
+    expect(shouldShowLegalComponentInReader(components[0])).toBe(true);
+    expect(shouldShowLegalComponentInReader(components[1])).toBe(false);
+    expect(buildCompleteDocumentText(components)).toContain('SCHEDULE A');
+    expect(buildCompleteDocumentText(components)).not.toBe('SCHEDULE A\nForm 1 APPLICATION\n\nForm 1');
   });
 });
