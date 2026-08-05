@@ -19,7 +19,7 @@ const SurveyCadCommandToolbar: React.FC<SurveyCadCommandToolbarProps> = ({
   onSplitParcelBySwing,
   onToggleParcelLayoutPanel,
 }) => (
-  <div className="absolute left-3 right-3 top-3 z-30 overflow-visible px-2 py-1.5" data-survey-cad-toolbar-overlay>
+  <div className="absolute left-3 right-3 top-12 z-30 overflow-visible px-2 py-1.5" data-survey-cad-toolbar-overlay>
     <div>
       <SurveyCadCommandLine
         entityCount={workspace.cadProject.entities.length}

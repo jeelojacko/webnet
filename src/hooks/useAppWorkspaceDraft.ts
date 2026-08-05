@@ -29,8 +29,8 @@ import {
   useWorkspaceRecovery,
 } from './useWorkspaceRecovery';
 import { normalizeListingSortObservationsBy } from '../listingSortObservations';
-import type { SurveyCadPersistedState } from '../engine/cad/cadTypes';
-import { cloneSurveyCadPersistedState } from '../engine/cad/cadPersistence';
+import type { CadDrawingDocument } from '../engine/cad/cadTypes';
+import { cloneCadDrawingDocument } from '../engine/cad/cadDrawingFile';
 
 interface UseAppWorkspaceDraftArgs {
   input: string;
@@ -44,7 +44,7 @@ interface UseAppWorkspaceDraftArgs {
   levelLoopCustomPresets: CustomLevelLoopTolerancePreset[];
   geoidSourceData: Uint8Array | null;
   geoidSourceDataLabel: string;
-  surveyCadState: SurveyCadPersistedState | null;
+  surveyCadState: CadDrawingDocument | null;
   activeTab: WorkspaceTabKey;
   splitPercent: number;
   isSidebarOpen: boolean;
@@ -101,7 +101,7 @@ interface UseAppWorkspaceDraftArgs {
   setPlanningMap: Dispatch<
     SetStateAction<NonNullable<WorkspaceDraftSnapshot['view']['planningMap']>>
   >;
-  setSurveyCadState: Dispatch<SetStateAction<SurveyCadPersistedState | null>>;
+  setSurveyCadState: Dispatch<SetStateAction<CadDrawingDocument | null>>;
   setComparisonSelection: Dispatch<
     SetStateAction<{
       baselineRunId: string | null;
@@ -198,7 +198,7 @@ export const useAppWorkspaceDraft = ({
       levelLoopCustomPresets: levelLoopCustomPresets.map((preset) => ({ ...preset })),
       geoidSourceDataBase64: encodeUint8ArrayToBase64(geoidSourceData),
       geoidSourceDataLabel,
-      surveyCadState: surveyCadState ? cloneSurveyCadPersistedState(surveyCadState) : undefined,
+      surveyCadState: surveyCadState ? cloneCadDrawingDocument(surveyCadState) : undefined,
       view: {
         activeTab,
         splitPercent,
@@ -289,7 +289,7 @@ export const useAppWorkspaceDraft = ({
     setGeoidSourceDataLabel(snapshot.geoidSourceDataLabel);
     setGeoidSourceDataLabelDraft(snapshot.geoidSourceDataLabel);
     setSurveyCadState(
-      snapshot.surveyCadState ? cloneSurveyCadPersistedState(snapshot.surveyCadState) : null,
+      snapshot.surveyCadState ? cloneCadDrawingDocument(snapshot.surveyCadState) : null,
     );
     setExportFormat(snapshot.exportFormat);
     setAdjustedPointsExportSettings(clonedAdjustedPointsExport);

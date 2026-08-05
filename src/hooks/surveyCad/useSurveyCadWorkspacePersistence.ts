@@ -1,34 +1,35 @@
 import { useEffect, type Dispatch, type SetStateAction } from 'react';
 import { buildCadProjectSignature } from '../../engine/cad/cadProjectState';
-import { cloneSurveyCadPersistedState } from '../../engine/cad/cadPersistence';
-import type { CadParcelLayoutUiState, CadProject, SurveyCadPersistedState } from '../../engine/cad/cadTypes';
+import { cloneCadDrawingDocument } from '../../engine/cad/cadDrawingFile';
+import type { CadDrawingDocument, CadParcelLayoutUiState, CadProject } from '../../engine/cad/cadTypes';
 
 type SurveyCadWorkspacePersistenceOptions = {
   cadProject: CadProject;
-  onPersistedStateChange: Dispatch<SetStateAction<SurveyCadPersistedState | null>>;
+  drawing: CadDrawingDocument;
+  onDrawingChange: Dispatch<SetStateAction<CadDrawingDocument | null>>;
   parcelLayoutState: CadParcelLayoutUiState | undefined;
-  projectSignature: string;
   showParcelLabels: boolean;
 };
 
 export const useSurveyCadWorkspacePersistence = ({
   cadProject,
-  onPersistedStateChange,
+  drawing,
+  onDrawingChange,
   parcelLayoutState,
-  projectSignature,
   showParcelLabels,
 }: SurveyCadWorkspacePersistenceOptions): void => {
   useEffect(() => {
-    onPersistedStateChange((current) => {
-      const nextState = cloneSurveyCadPersistedState({
-        version: 1,
-        sourceSignature: projectSignature,
+    onDrawingChange((current) => {
+      if (!current || current.drawingId !== drawing.drawingId) return current;
+      const nowIso = new Date().toISOString();
+      const nextState = cloneCadDrawingDocument({
+        ...current,
+        updatedAt: nowIso,
         project: cadProject,
         parcelLayout: parcelLayoutState,
         showParcelLabels,
       });
       if (
-        current?.sourceSignature === nextState.sourceSignature &&
         buildCadProjectSignature(current.project) === buildCadProjectSignature(nextState.project) &&
         JSON.stringify(current.parcelLayout ?? null) === JSON.stringify(nextState.parcelLayout ?? null) &&
         (current?.showParcelLabels ?? true) === nextState.showParcelLabels
@@ -37,5 +38,5 @@ export const useSurveyCadWorkspacePersistence = ({
       }
       return nextState;
     });
-  }, [cadProject, onPersistedStateChange, parcelLayoutState, projectSignature, showParcelLabels]);
+  }, [cadProject, drawing, onDrawingChange, parcelLayoutState, showParcelLabels]);
 };

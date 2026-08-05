@@ -1,29 +1,19 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { buildCadProjectSignature } from '../../engine/cad/cadProjectState';
+import { useEffect, useRef, useState } from 'react';
 import { createCadHistoryState, type CadHistoryState } from '../../engine/cad/cadUndoRedo';
-import type { CadProject, SurveyCadPersistedState } from '../../engine/cad/cadTypes';
+import type { CadProject } from '../../engine/cad/cadTypes';
 
 export const useSurveyCadWorkspaceHistory = (
   baseProject: CadProject,
-  persistedState: SurveyCadPersistedState | null,
+  resetKey: string,
 ) => {
-  const projectSignature = useMemo(() => buildCadProjectSignature(baseProject), [baseProject]);
-  const persistedProjectRef = useRef(persistedState?.project ?? null);
-  const historySourceSignatureRef = useRef<string | null>(
-    persistedState?.sourceSignature === projectSignature ? persistedState.sourceSignature : projectSignature,
-  );
-
-  useEffect(() => {
-    persistedProjectRef.current = persistedState?.project ?? null;
-  }, [persistedState]);
-
   const [history, setHistory] = useState(() =>
     createCadHistoryState(
-      persistedState?.sourceSignature === projectSignature ? persistedState.project : baseProject,
+      baseProject,
       baseProject.entities[0] ? [baseProject.entities[0].id] : [],
     ),
   );
   const historyRef = useRef(history);
+  const resetKeyRef = useRef(resetKey);
 
   useEffect(() => {
     historyRef.current = history;
@@ -41,24 +31,19 @@ export const useSurveyCadWorkspaceHistory = (
   };
 
   useEffect(() => {
-    const nextSourceSignature =
-      persistedState?.sourceSignature === projectSignature ? persistedState.sourceSignature : projectSignature;
-    if (historySourceSignatureRef.current === nextSourceSignature) return;
-    historySourceSignatureRef.current = nextSourceSignature;
+    if (resetKeyRef.current === resetKey) return;
+    resetKeyRef.current = resetKey;
     replaceHistory(
       createCadHistoryState(
-        persistedState?.sourceSignature === projectSignature && persistedProjectRef.current
-          ? persistedProjectRef.current
-          : baseProject,
+        baseProject,
         baseProject.entities[0] ? [baseProject.entities[0].id] : [],
       ),
     );
-  }, [baseProject, persistedState?.sourceSignature, projectSignature]);
+  }, [baseProject, resetKey]);
 
 
 
   return {
-    projectSignature,
     history,
     historyRef,
     applyHistoryUpdate,

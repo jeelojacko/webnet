@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { cadIntersectLineLikeEntities } from '../../engine/cad/cadCogo';
+import { cloneCadDrawingDocument } from '../../engine/cad/cadDrawingFile';
 import { buildMlightcadSpikeScene } from '../../engine/cad/cadMlightcadAdapter';
 import { buildCadDisplayScene } from '../../engine/cad/cadRenderer';
 import type { CadCogoComputation } from '../../engine/cad/cadCogoTypes';
@@ -30,22 +31,42 @@ import type {
   CadSnapCandidate,
   CadSnapConstructionContext,
   CadSnapKind,
-  SurveyCadPersistedState,
 } from '../../engine/cad/cadTypes';
 import type { CadEntityId } from '../../engine/cad/cadTypes';
+import { createCadSelectionState } from '../../engine/cad/cadSelection';
 
 export const useSurveyCadWorkspace = (
   baseProject: CadProject,
-  persistedState: SurveyCadPersistedState | null,
-  onPersistedStateChange: Dispatch<SetStateAction<SurveyCadPersistedState | null>>,
+  resetKey: string,
+  onProjectChange: Dispatch<SetStateAction<import('../../engine/cad/cadTypes').CadDrawingDocument | null>>,
+  drawing: import('../../engine/cad/cadTypes').CadDrawingDocument,
   parcelLayoutState: CadParcelLayoutUiState | undefined,
   showParcelLabels: boolean,
   reverseDirectionModifier = false,
 ): UseSurveyCadWorkspaceResult => {
-  const { projectSignature, history, historyRef, applyHistoryUpdate } = useSurveyCadWorkspaceHistory(
+  const { history, historyRef, applyHistoryUpdate: applyHistoryUpdateBase } = useSurveyCadWorkspaceHistory(
     baseProject,
-    persistedState,
+    resetKey,
   );
+  const applyHistoryUpdate = (updater: (_history: import('../../engine/cad/cadUndoRedo').CadHistoryState) => import('../../engine/cad/cadUndoRedo').CadHistoryState) => {
+    let nextProject: CadProject | null = null;
+    applyHistoryUpdateBase((current) => {
+      const next = updater(current);
+      nextProject = next.present.project;
+      return next;
+    });
+    if (!nextProject) return;
+    onProjectChange((current) => {
+      if (!current || current.drawingId !== drawing.drawingId) return current;
+      return cloneCadDrawingDocument({
+        ...current,
+        updatedAt: new Date().toISOString(),
+        project: nextProject!,
+        parcelLayout: parcelLayoutState,
+        showParcelLabels,
+      });
+    });
+  };
   const cadProject = history.present.project;
   const selection = history.present.selection;
   const activeGripHandleRef = useRef<CadGripHandle | null>(null);
@@ -198,9 +219,9 @@ export const useSurveyCadWorkspace = (
   }, [selectedLineLikes]);
   useSurveyCadWorkspacePersistence({
     cadProject,
-    onPersistedStateChange,
+    drawing,
+    onDrawingChange: onProjectChange,
     parcelLayoutState,
-    projectSignature,
     showParcelLabels,
   });
 
@@ -326,6 +347,22 @@ export const useSurveyCadWorkspace = (
     snapPreferences,
     historyDepth: history.undoStack.length,
     redoDepth: history.redoStack.length,
+    replaceCadProject: (project: CadProject, statusText = 'Drawing updated.') => {
+      applyHistoryUpdate((current) => ({
+        ...current,
+        present: {
+          project,
+          selection: createCadSelectionState(project, project.entities[0] ? [project.entities[0].id] : []),
+        },
+        undoStack: [],
+        redoStack: [],
+        commandState: {
+          key: 'IDLE',
+          phase: 'idle',
+          prompt: statusText,
+        },
+      }));
+    },
     startPointCommand: commandState.startPointCommand,
     startCogoPointCommand: commandState.startCogoPointCommand,
     startLineCommand: commandState.startLineCommand,

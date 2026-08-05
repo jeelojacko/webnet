@@ -50,7 +50,7 @@ import type {
   ImportReviewWorkspaceSource,
 } from './engine/importReview';
 import type { PreparedAssociatedProjectSettingsImport } from './hooks/useProjectFileWorkflow';
-import type { SurveyCadPersistedState } from './engine/cad/cadTypes';
+import type { CadDrawingDocument } from './engine/cad/cadTypes';
 import type { PersistedSavedRunSnapshot, SolveProfile, Units } from './appRunStateTypes';
 
 export type {
@@ -188,7 +188,7 @@ export type WorkspaceDraftSnapshot = {
   levelLoopCustomPresets: CustomLevelLoopTolerancePreset[];
   geoidSourceDataBase64: string | null;
   geoidSourceDataLabel: string;
-  surveyCadState?: SurveyCadPersistedState;
+  surveyCadState?: CadDrawingDocument;
   view: WorkspaceViewState;
   comparisonView: WorkspaceComparisonViewState;
   savedRunSnapshots: PersistedSavedRunSnapshot[];

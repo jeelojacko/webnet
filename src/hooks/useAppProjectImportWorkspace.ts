@@ -22,7 +22,7 @@ import type {
   InstrumentLibrary,
   ProjectExportFormat,
 } from '../types';
-import type { SurveyCadPersistedState } from '../engine/cad/cadTypes';
+import type { CadDrawingDocument } from '../engine/cad/cadTypes';
 import type { InputPaneHandle } from '../components/InputPane';
 import type { ProjectRunFile } from '../engine/projectWorkspace';
 import { useImportReviewWorkflow } from './useImportReviewWorkflow';
@@ -41,7 +41,7 @@ interface UseAppProjectImportWorkspaceArgs {
   adjustedPointsExportSettings: AdjustedPointsExportSettings;
   adjustedPointsExportSettingsDraft: AdjustedPointsExportSettings;
   planningMap: NonNullable<WorkspaceDraftSnapshot['view']['planningMap']>;
-  surveyCadState: SurveyCadPersistedState | null;
+  surveyCadState: CadDrawingDocument | null;
   projectInstruments: InstrumentLibrary;
   selectedInstrument: string;
   levelLoopCustomPresets: CustomLevelLoopTolerancePreset[];
@@ -59,7 +59,7 @@ interface UseAppProjectImportWorkspaceArgs {
   setPlanningMap: Dispatch<
     SetStateAction<NonNullable<WorkspaceDraftSnapshot['view']['planningMap']>>
   >;
-  setSurveyCadState: Dispatch<SetStateAction<SurveyCadPersistedState | null>>;
+  setSurveyCadState: Dispatch<SetStateAction<CadDrawingDocument | null>>;
   setProjectInstruments: Dispatch<SetStateAction<InstrumentLibrary>>;
   setSelectedInstrument: Dispatch<SetStateAction<string>>;
   setLevelLoopCustomPresets: Dispatch<SetStateAction<CustomLevelLoopTolerancePreset[]>>;

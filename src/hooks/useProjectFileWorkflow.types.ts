@@ -9,7 +9,7 @@ import type {
   SettingsState,
   SolveProfile,
 } from '../appStateTypes';
-import type { SurveyCadPersistedState } from '../engine/cad/cadTypes';
+import type { CadDrawingDocument } from '../engine/cad/cadTypes';
 import type {
   AdjustedPointsExportSettings,
   CustomLevelLoopTolerancePreset,
@@ -36,7 +36,7 @@ export interface UseProjectFileWorkflowArgs {
   exportFormat: ProjectExportFormat;
   adjustedPointsExportSettings: AdjustedPointsExportSettings;
   planningMap?: PlanningMapState;
-  surveyCadState?: SurveyCadPersistedState | null;
+  surveyCadState?: CadDrawingDocument | null;
   savedRunSnapshots: PersistedSavedRunSnapshot[];
   projectInstruments: InstrumentLibrary;
   selectedInstrument: string;
@@ -50,7 +50,7 @@ export interface UseProjectFileWorkflowArgs {
   setExportFormat: Dispatch<SetStateAction<ProjectExportFormat>>;
   setAdjustedPointsExportSettings: Dispatch<SetStateAction<AdjustedPointsExportSettings>>;
   setPlanningMap?: Dispatch<SetStateAction<PlanningMapState>>;
-  setSurveyCadState?: Dispatch<SetStateAction<SurveyCadPersistedState | null>>;
+  setSurveyCadState?: Dispatch<SetStateAction<CadDrawingDocument | null>>;
   setProjectInstruments: Dispatch<SetStateAction<InstrumentLibrary>>;
   setSelectedInstrument: Dispatch<SetStateAction<string>>;
   setLevelLoopCustomPresets: Dispatch<SetStateAction<CustomLevelLoopTolerancePreset[]>>;

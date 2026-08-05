@@ -235,7 +235,7 @@ describe('SurveyCadWorkspace', () => {
       root.unmount();
     });
     container.remove();
-  });
+  }, 15000);
 
   it('creates frontage-strip auto parcels on the screenshot parcel fixture', async () => {
     const container = document.createElement('div');

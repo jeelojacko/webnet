@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import type { ParseSettings, PersistedSavedRunSnapshot, SettingsState } from '../appStateTypes';
-import type { SurveyCadPersistedState } from '../engine/cad/cadTypes';
+import type { CadDrawingDocument } from '../engine/cad/cadTypes';
 import type { ParsedProjectPayload } from '../engine/projectFile';
 import {
   buildProjectEditorIncludeFiles,
@@ -63,7 +63,7 @@ interface UseProjectWorkflowDerivedStateArgs {
   savedRunSnapshots: PersistedSavedRunSnapshot[];
   selectedInstrument: string;
   settings: SettingsState;
-  surveyCadState: SurveyCadPersistedState | null;
+  surveyCadState: CadDrawingDocument | null;
 }
 
 export const useProjectWorkflowDerivedState = ({

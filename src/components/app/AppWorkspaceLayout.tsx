@@ -38,7 +38,7 @@ type ReviewQueue = ReturnType<typeof useAppReviewQueue>;
 type ProjectWorkflowResult = ReturnType<typeof useProjectFileWorkflow>;
 type ImportWorkspace = ReturnType<typeof useAppProjectImportWorkspace>;
 type ProjectSession = ImportWorkspace['projectSession'];
-type SurveyCadState = React.ComponentProps<typeof SurveyCadWorkspace>['persistedState'];
+type SurveyCadState = React.ComponentProps<typeof SurveyCadWorkspace>['drawing'];
 
 export type AppWorkspaceLayoutProps = {
   layoutRef: RefObject<HTMLDivElement | null>;
@@ -73,7 +73,7 @@ export type AppWorkspaceLayoutProps = {
   units: React.ComponentProps<typeof ReportView>['units'];
   result: AdjustmentResult | null;
   surveyCadState: SurveyCadState;
-  setSurveyCadState: React.ComponentProps<typeof SurveyCadWorkspace>['onPersistedStateChange'];
+  setSurveyCadState: React.ComponentProps<typeof SurveyCadWorkspace>['onDrawingChange'];
   settingsShowRunComparisonPanel: boolean;
   showRunComparisonPanel: RunComparison['showRunComparisonPanel'];
   runComparisonPanelProps: Omit<
@@ -169,9 +169,6 @@ const AppWorkspaceLayout = ({
   importNotice,
   setImportNotice,
   handleDividerMouseDown,
-  effectiveRunInput,
-  projectInstruments,
-  surveyCadParseOptions,
   units,
   result,
   surveyCadState,
@@ -272,13 +269,10 @@ const AppWorkspaceLayout = ({
     <div className="flex flex-col bg-slate-950 flex-1 min-w-0 overflow-hidden">
       {isSurveyCadWorkspaceActive ? (
         <SurveyCadWorkspace
-          input={effectiveRunInput}
-          instrumentLibrary={projectInstruments}
-          parseOptions={surveyCadParseOptions}
           units={units}
           result={result}
-          persistedState={surveyCadState}
-          onPersistedStateChange={setSurveyCadState}
+          drawing={surveyCadState}
+          onDrawingChange={setSurveyCadState}
         />
       ) : (
         <>

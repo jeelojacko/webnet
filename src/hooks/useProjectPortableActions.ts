@@ -19,8 +19,6 @@ import {
 } from '../engine/projectBundle';
 import {
   buildPortableProjectFileName,
-  buildSurveyCadSidecarFileName,
-  buildSurveyCadSidecarText,
   sanitizeExportProjectName,
 } from '../engine/projectExportSlimming';
 import {
@@ -117,24 +115,11 @@ export const useProjectPortableActions = ({
       PROJECT_IMPORT_FILE_TYPES,
     );
     if (!saved) return;
-    const surveyCad = projectFlatWorkspacePayload.surveyCadState ?? payload.project.surveyCad;
-    if (surveyCad) {
-      const sidecarName = buildSurveyCadSidecarFileName(
-        projectSession?.manifest.name ?? `WebNet Project ${new Date().toISOString().slice(0, 10)}`,
-      );
-      await saveBrowserTextFile(
-        sidecarName,
-        buildSurveyCadSidecarText(surveyCad),
-        PROJECT_IMPORT_FILE_TYPES,
-      );
-    }
     setImportNotice({
       title: 'Portable project exported',
-      detailLines: surveyCad
-        ? [`Wrote ${suggestedName}.`, 'Wrote Survey CAD state to a separate sidecar file.']
-        : [`Wrote ${suggestedName}.`],
+      detailLines: [`Wrote ${suggestedName}.`],
     });
-  }, [buildPortablePayload, projectFlatWorkspacePayload.surveyCadState, projectSession, setImportNotice]);
+  }, [buildPortablePayload, projectSession, setImportNotice]);
 
   const exportProjectBundle = useCallback(async () => {
     const seed =

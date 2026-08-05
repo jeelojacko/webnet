@@ -9,8 +9,7 @@ import {
 } from 'react';
 import type { ParseSettings, SettingsState } from '../appStateTypes';
 import { cloneAdjustedPointsExportSettings } from '../engine/adjustedPointsExport';
-import { cloneSurveyCadPersistedState } from '../engine/cad/cadPersistence';
-import type { SurveyCadPersistedState } from '../engine/cad/cadTypes';
+import type { CadDrawingDocument } from '../engine/cad/cadTypes';
 import { clonePlanningMapState } from '../engine/planningMapState';
 import { stableSerializePlain } from '../engine/plainData';
 import { stripLocalOnlyProjectSettings } from '../engine/projectExportSlimming';
@@ -54,7 +53,7 @@ interface UseProjectSessionPersistenceArgs {
   setInput: Dispatch<SetStateAction<string>>;
   setProjectIncludeFiles: Dispatch<SetStateAction<Record<string, string>>>;
   settings: SettingsState;
-  surveyCadState: SurveyCadPersistedState | null;
+  surveyCadState: CadDrawingDocument | null;
 }
 
 export const useProjectSessionPersistence = ({
@@ -71,7 +70,6 @@ export const useProjectSessionPersistence = ({
   setInput,
   setProjectIncludeFiles,
   settings,
-  surveyCadState,
 }: UseProjectSessionPersistenceArgs) => {
   const storage = useMemo(() => createProjectStorage(), []);
   const autosaveTimerRef = useRef<number | null>(null);
@@ -229,7 +227,6 @@ export const useProjectSessionPersistence = ({
         projectInstruments,
         selectedInstrument,
         levelLoopCustomPresets,
-        surveyCadState,
       }),
     [
       adjustedPointsExportSettings,
@@ -242,7 +239,6 @@ export const useProjectSessionPersistence = ({
       projectInstruments,
       selectedInstrument,
       settings,
-      surveyCadState,
     ],
   );
 
@@ -259,7 +255,6 @@ export const useProjectSessionPersistence = ({
       projectInstruments: projectSession.manifest.project.projectInstruments,
       selectedInstrument: projectSession.manifest.project.selectedInstrument,
       levelLoopCustomPresets: projectSession.manifest.project.levelLoopCustomPresets,
-      surveyCadState: projectSession.manifest.project.surveyCad ?? null,
     });
     if (currentShape === serializedProjectShape) return;
     updateProjectSession(
@@ -284,7 +279,6 @@ export const useProjectSessionPersistence = ({
           projectInstruments: cloneInstrumentLibrary(projectInstruments),
           selectedInstrument,
           levelLoopCustomPresets: levelLoopCustomPresets.map((preset) => ({ ...preset })),
-          surveyCad: surveyCadState ? cloneSurveyCadPersistedState(surveyCadState) : undefined,
         };
         current.manifest.updatedAt = nowIso;
         current.indexRow = touchProjectIndexRow(current.indexRow, nowIso);
@@ -308,7 +302,6 @@ export const useProjectSessionPersistence = ({
     selectedInstrument,
     serializedProjectShape,
     settings,
-    surveyCadState,
     updateProjectSession,
   ]);
 

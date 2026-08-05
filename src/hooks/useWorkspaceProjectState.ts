@@ -1,7 +1,8 @@
 import { useCallback, useState } from 'react';
 import type { AdjustmentResult, PlanningMapState, ProjectExportFormat } from '../types';
 import { clonePlanningMapState, DEFAULT_PLANNING_MAP_STATE } from '../engine/planningMapState';
-import type { SurveyCadPersistedState } from '../engine/cad/cadTypes';
+import type { CadDrawingDocument } from '../engine/cad/cadTypes';
+import { createBlankCadDrawingDocument } from '../engine/cad/cadDrawingFile';
 
 interface UseWorkspaceProjectStateArgs<
   TImportNotice,
@@ -46,7 +47,9 @@ export const useWorkspaceProjectState = <
   const [planningMap, setPlanningMap] = useState<PlanningMapState>(
     clonePlanningMapState(DEFAULT_PLANNING_MAP_STATE),
   );
-  const [surveyCadState, setSurveyCadState] = useState<SurveyCadPersistedState | null>(null);
+  const [surveyCadState, setSurveyCadState] = useState<CadDrawingDocument | null>(() =>
+    createBlankCadDrawingDocument({ units: 'm' }),
+  );
 
   const clearWorkspaceArtifacts = useCallback(() => {
     setResult(null);

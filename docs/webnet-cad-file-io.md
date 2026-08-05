@@ -5,14 +5,17 @@ Track preferred file I/O order for Survey CAD.
 
 ## Native persistence
 Preferred:
-- extend current WebNet project persistence with CAD domains
+- use standalone `.wncad` drawing documents for native CAD persistence
+- keep adjustment `.wnproj` files focused on adjustment sources, settings, runs, and export preferences
+- bridge adjustment results into CAD only through explicit `Import Adjusted Points`
 
 Avoid:
 - using DXF as native project format
+- silently rebuilding or overwriting CAD drawings from the active adjustment project
 
 ## Recommended interop order
 1. CSV/TXT point import/export
-2. native WebNet project persistence with CAD domains
+2. native `.wncad` drawing persistence
 3. DXF export
 4. DXF import
 5. LandXML parcel/surface support

@@ -88,7 +88,7 @@ Examples:
 - `PARCEL_CREATE`
 
 ### 4. Exchange formats are boundaries
-Native project persistence remains WebNet project storage.
+Native adjustment persistence remains WebNet project storage. Native CAD persistence is a standalone `.wncad` drawing document.
 
 Exchange/import/export formats:
 - CSV/TXT point files
@@ -134,7 +134,7 @@ src/hooks/surveyCad/
 ```
 
 ### Project state boundary
-CAD state should plug into current project persistence as a new domain, not a separate app.
+CAD state should persist as a standalone drawing document, not as an adjustment project domain.
 
 Recommended persisted domains:
 - CAD entities
@@ -145,6 +145,8 @@ Recommended persisted domains:
 - parcel metadata
 - surfaces metadata
 - CAD import/export metadata
+
+The only adjustment-to-CAD bridge in the main app should be explicit imports, starting with `Import Adjusted Points`.
 
 ## Native data model direction
 Detailed shapes live in [webnet-cad-data-model.md](webnet-cad-data-model.md).

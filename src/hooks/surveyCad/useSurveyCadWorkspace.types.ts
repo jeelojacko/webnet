@@ -196,6 +196,7 @@ export interface UseSurveyCadWorkspaceResult {
   snapPreferences: CadSnapPreferences;
   historyDepth: number;
   redoDepth: number;
+  replaceCadProject: (_project: CadProject, _statusText?: string) => void;
   startPointCommand: () => void;
   startCogoPointCommand: () => void;
   startLineCommand: () => void;

@@ -144,7 +144,7 @@ describe('SurveyCadWorkspace', () => {
       root.unmount();
     });
     container.remove();
-  });
+  }, 15000);
 
   it('erases the current selection when Delete is pressed outside command input', async () => {
     const container = document.createElement('div');

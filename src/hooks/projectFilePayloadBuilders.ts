@@ -1,6 +1,6 @@
 import { encodeUint8ArrayToBase64 } from './useWorkspaceRecovery';
 import { cloneAdjustedPointsExportSettings } from '../engine/adjustedPointsExport';
-import type { SurveyCadPersistedState } from '../engine/cad/cadTypes';
+import type { CadDrawingDocument } from '../engine/cad/cadTypes';
 import {
   clonePlanningMapStateForProjectExport,
   stripLocalOnlyProjectSettings,
@@ -36,7 +36,7 @@ export type ProjectFlatWorkspacePayloadOptions = {
   projectInstruments: InstrumentLibrary;
   selectedInstrument: string;
   levelLoopCustomPresets: CustomLevelLoopTolerancePreset[];
-  surveyCadState: SurveyCadPersistedState | null;
+  surveyCadState: CadDrawingDocument | null;
 };
 
 export const buildPortablePayloadFromState = ({

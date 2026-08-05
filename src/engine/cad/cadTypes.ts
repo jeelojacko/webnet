@@ -237,6 +237,30 @@ export interface SurveyCadPersistedState {
   showParcelLabels?: boolean;
 }
 
+export interface CadDrawingImportRecord {
+  id: string;
+  kind: 'adjusted-points';
+  sourceName: string;
+  importedAtIso: string;
+  createdPointCount: number;
+  updatedPointCount: number;
+  ellipseCount: number;
+}
+
+export interface CadDrawingDocument {
+  kind: 'webnet-cad-drawing';
+  schemaVersion: 1;
+  drawingId: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+  units: UnitsMode;
+  project: CadProject;
+  parcelLayout?: CadParcelLayoutUiState;
+  showParcelLabels?: boolean;
+  imports?: CadDrawingImportRecord[];
+}
+
 export type CadParcelLayoutSolutionPreference =
   | 'shortest_frontage'
   | 'smallest_area'

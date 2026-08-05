@@ -2,7 +2,6 @@ import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
 import {
   buildExportSourceFileEntries,
   buildPortableProjectFileName,
-  buildSurveyCadSidecarText,
   stripLocalOnlyProjectSettings,
 } from './projectExportSlimming';
 import type { WebNetProjectManifestV5 } from './projectWorkspace';
@@ -16,7 +15,6 @@ export const buildProjectBundleBytes = ({
   manifest,
   sourceTexts,
 }: ParsedProjectBundle): Uint8Array => {
-  const surveyCad = manifest.project.surveyCad;
   const exportFiles = buildExportSourceFileEntries(manifest.files);
   const slimManifest: WebNetProjectManifestV5 = {
     ...manifest,
@@ -46,9 +44,6 @@ export const buildProjectBundleBytes = ({
   exportFiles.forEach((file) => {
     archiveEntries[file.path] = strToU8(sourceTexts[file.id] ?? '');
   });
-  if (surveyCad) {
-    archiveEntries['survey-cad.json'] = strToU8(buildSurveyCadSidecarText(surveyCad));
-  }
   return zipSync(archiveEntries, { level: 6 });
 };
 

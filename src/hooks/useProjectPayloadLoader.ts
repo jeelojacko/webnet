@@ -10,8 +10,8 @@ import {
   cloneAdjustedPointsExportSettings,
   sanitizeAdjustedPointsExportSettings,
 } from '../engine/adjustedPointsExport';
-import { cloneSurveyCadPersistedState } from '../engine/cad/cadPersistence';
-import type { SurveyCadPersistedState } from '../engine/cad/cadTypes';
+import { cloneCadDrawingDocument, migrateSurveyCadStateToDrawing } from '../engine/cad/cadDrawingFile';
+import type { CadDrawingDocument } from '../engine/cad/cadTypes';
 import { clonePlanningMapState, DEFAULT_PLANNING_MAP_STATE } from '../engine/planningMapState';
 import type { ParsedProjectPayload } from '../engine/projectFile';
 import {
@@ -67,7 +67,7 @@ interface UseProjectPayloadLoaderArgs {
   setSelectedInstrumentDraft: Dispatch<SetStateAction<string>>;
   setSettings: Dispatch<SetStateAction<SettingsState>>;
   setSettingsDraft: Dispatch<SetStateAction<SettingsState>>;
-  setSurveyCadState?: Dispatch<SetStateAction<SurveyCadPersistedState | null>> | undefined;
+  setSurveyCadState?: Dispatch<SetStateAction<CadDrawingDocument | null>> | undefined;
 }
 
 export const useProjectPayloadLoader = ({
@@ -176,7 +176,7 @@ export const useProjectPayloadLoader = ({
         loadedAdjustedPointsSettings,
         planningMap: clonePlanningMapState(parsed.ui.planningMap ?? DEFAULT_PLANNING_MAP_STATE),
         surveyCadState: parsed.project.surveyCad
-          ? cloneSurveyCadPersistedState(parsed.project.surveyCad)
+          ? migrateSurveyCadStateToDrawing({ state: parsed.project.surveyCad })
           : null,
         geoidSourceData: decodeBase64ToUint8Array(parsed.ui.geoidSourceDataBase64),
         geoidSourceDataLabel: parsed.ui.geoidSourceDataLabel ?? '',
@@ -233,9 +233,9 @@ export const useProjectPayloadLoader = ({
         cloneAdjustedPointsExportSettings(normalized.loadedAdjustedPointsSettings),
       );
       setPlanningMap?.(clonePlanningMapState(normalized.planningMap));
-      setSurveyCadState?.(
-        normalized.surveyCadState ? cloneSurveyCadPersistedState(normalized.surveyCadState) : null,
-      );
+      if (normalized.surveyCadState) {
+        setSurveyCadState?.(cloneCadDrawingDocument(normalized.surveyCadState));
+      }
       restoreSavedRunSnapshots(savedRuns);
       setProjectInstruments(normalized.projectInstruments);
       setSelectedInstrument(normalized.selectedInstrument);

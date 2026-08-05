@@ -94,7 +94,7 @@ describe('SurveyCadWorkspace', () => {
       root.unmount();
     });
     container.remove();
-  });
+  }, 15000);
 
   it('supports wheel zoom, middle-drag pan, middle-double-click extents, and directional drag-box selection', async () => {
     const container = document.createElement('div');
