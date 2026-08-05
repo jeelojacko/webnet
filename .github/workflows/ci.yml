@@ -37,7 +37,7 @@ jobs:
         run: npm run corpus:legacy:ci
       - name: Upload Legacy Corpus Artifact
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: legacy-corpus-summary
           path: artifacts/legacy-corpus/
