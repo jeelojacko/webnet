@@ -87,6 +87,7 @@ const StudyDocumentPage = ({
   const [filter, setFilter] = useState('all');
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
+  const [focusedSourceKey, setFocusedSourceKey] = useState('');
 
   useEffect(() => {
     setDocumentDraft(document);
@@ -101,7 +102,32 @@ const StudyDocumentPage = ({
     ? data.documents.find((entry) => entry.id === legalDocument.parentActId)
     : undefined;
   const normalizedQuery = normalizeSearch(query);
-  const readerComponents = components.filter(shouldShowLegalComponentInReader);
+  const readerComponents = useMemo(
+    () => components.filter(shouldShowLegalComponentInReader),
+    [components],
+  );
+
+  const navigateToSourceKey = (sourceKey: string, parentSourceKey = sourceKey) => {
+    setExpanded((current) => ({ ...current, [parentSourceKey]: true }));
+    setFocusedSourceKey(sourceKey);
+    window.history.replaceState(window.history.state, '', `#${encodeURIComponent(sourceKey)}`);
+    window.setTimeout(() => {
+      const target = globalThis.document.getElementById(sourceKey);
+      target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const heading = globalThis.document.getElementById(`${sourceKey}-heading`);
+      if (heading instanceof HTMLElement) heading.focus({ preventScroll: true });
+    }, 0);
+    window.setTimeout(() => setFocusedSourceKey((current) => (current === sourceKey ? '' : current)), 1400);
+  };
+
+  useEffect(() => {
+    const sourceKey = decodeURIComponent(window.location.hash.replace(/^#/, ''));
+    if (!sourceKey || readerComponents.length === 0) return;
+    const parent = readerComponents.find((component) =>
+      component.sourceKey === sourceKey || component.subsections?.some((subsection) => subsection.sourceKey === sourceKey),
+    );
+    if (parent) navigateToSourceKey(sourceKey, parent.sourceKey);
+  }, [readerComponents]);
   const completeDocumentText = useMemo(() => buildCompleteDocumentText(components), [components]);
   const completeDocumentMatches =
     filter === 'all' &&
@@ -223,21 +249,41 @@ const StudyDocumentPage = ({
           <div className="grid gap-3 lg:grid-cols-[16rem_1fr]">
             <nav className="max-h-[70vh] overflow-auto rounded border border-slate-800 bg-slate-900 p-3 text-xs">
               {filter === 'all' ? (
-                <a href="#complete-document" className="mb-2 block border-b border-slate-800 pb-2 text-emerald-300 hover:text-emerald-200">
+                <button
+                  onClick={() => navigateToSourceKey('complete-document')}
+                  className="mb-2 block w-full border-b border-slate-800 pb-2 text-left text-emerald-300 hover:text-emerald-200"
+                >
                   Complete document
-                </a>
+                </button>
               ) : null}
               {visibleComponents.slice(0, 300).map((component) => (
-                <a key={component.sourceKey} href={`#${component.sourceKey}`} className="block py-1 text-slate-400 hover:text-emerald-300">
-                  {component.label} {component.heading ?? ''}
-                </a>
+                <div key={component.sourceKey}>
+                  <button
+                    onClick={() => navigateToSourceKey(component.sourceKey)}
+                    className="block w-full py-1 text-left text-slate-400 hover:text-emerald-300"
+                  >
+                    {component.label} {component.heading ?? ''}
+                  </button>
+                  {component.subsections?.map((subsection) => (
+                    <button
+                      key={subsection.sourceKey}
+                      onClick={() => navigateToSourceKey(subsection.sourceKey, component.sourceKey)}
+                      className="block w-full py-0.5 pl-3 text-left text-slate-500 hover:text-emerald-300"
+                    >
+                      {subsection.label}
+                    </button>
+                  ))}
+                </div>
               ))}
             </nav>
             <div className="max-h-[70vh] space-y-3 overflow-auto pr-1">
               {completeDocumentMatches ? (
-                <article id="complete-document" className="rounded border border-emerald-900 bg-slate-900 p-4">
+                <article
+                  id="complete-document"
+                  className={`rounded border bg-slate-900 p-4 ${focusedSourceKey === 'complete-document' ? 'border-amber-400 ring-2 ring-amber-400/40' : 'border-emerald-900'}`}
+                >
                   <div className="text-xs uppercase tracking-wide text-emerald-300">Official source text</div>
-                  <h3 className="font-semibold text-white">Complete document</h3>
+                  <h3 id="complete-document-heading" tabIndex={-1} className="font-semibold text-white">Complete document</h3>
                   <p className="text-xs text-slate-500">
                     Combined reader text, with reference-only form stubs omitted.
                   </p>
@@ -257,14 +303,18 @@ const StudyDocumentPage = ({
                 const isSelected = selectedKeys.includes(component.sourceKey);
                 const referenceOnly = component.extractionStatus === 'reference-only';
                 return (
-                  <article key={component.sourceKey} id={component.sourceKey} className="rounded border border-slate-800 bg-slate-900 p-4">
+                  <article
+                    key={component.sourceKey}
+                    id={component.sourceKey}
+                    className={`rounded border bg-slate-900 p-4 ${focusedSourceKey === component.sourceKey ? 'border-amber-400 ring-2 ring-amber-400/40' : 'border-slate-800'}`}
+                  >
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <button
                         onClick={() => setExpanded({ ...expanded, [component.sourceKey]: !isExpanded })}
                         className="text-left"
                       >
                         <div className="text-xs uppercase tracking-wide text-emerald-300">Official source text</div>
-                        <h3 className="font-semibold text-white">
+                        <h3 id={`${component.sourceKey}-heading`} tabIndex={-1} className="font-semibold text-white">
                           {highlight(component.label, normalizedQuery)} {component.heading ? highlight(component.heading, normalizedQuery) : null}
                         </h3>
                         <p className="text-xs text-slate-500">{component.componentType} · {component.sourceKey}</p>
@@ -296,8 +346,14 @@ const StudyDocumentPage = ({
                     {isExpanded && component.subsections?.length ? (
                       <div className="mt-3 space-y-2 border-t border-slate-800 pt-3">
                         {component.subsections.map((subsection) => (
-                          <div key={subsection.sourceKey} className="rounded bg-slate-950 p-3 text-xs text-slate-300">
-                            <div className="font-semibold text-slate-100">{highlight(subsection.label, normalizedQuery)}</div>
+                          <div
+                            key={subsection.sourceKey}
+                            id={subsection.sourceKey}
+                            className={`rounded p-3 text-xs text-slate-300 ${focusedSourceKey === subsection.sourceKey ? 'bg-amber-950/40 ring-2 ring-amber-400/40' : 'bg-slate-950'}`}
+                          >
+                            <div id={`${subsection.sourceKey}-heading`} tabIndex={-1} className="font-semibold text-slate-100">
+                              {highlight(subsection.label, normalizedQuery)}
+                            </div>
                             <div className="mt-1 whitespace-pre-wrap">{highlight(subsection.text, normalizedQuery)}</div>
                           </div>
                         ))}

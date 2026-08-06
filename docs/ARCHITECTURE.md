@@ -56,7 +56,8 @@ It owns:
 - `studyOpfs.ts` for OPFS source-file, normalized-text, imported-file, PDF, and backup path generation/writes
 - `src/study/content/*` for the development-side official NB law manifest validation, laws.gnb URL generation, exact-text normalization models, and content-package validation
 - `studyOfficialContent.ts` for browser-side official package validation, import preview, reference-only form classification, source-review flagging, and source-selection unit creation
-- `studyDraftGeneration.ts` for deterministic source-linked title, question, citation, structured reference-answer, and conservative concept drafting
+- `studyDraftGeneration.ts` for deterministic source-linked title, question, citation, and structured reference-answer drafting
+- `studyConceptGeneration.ts` for pure deterministic required-concept suggestions with rule/confidence metadata
 - `studyScheduler.ts` for deterministic phase transitions and due-before-new session ordering
 - `StudyApp.tsx`, `useStudyApp.ts`, and `components/*` for the dashboard, library, document reader/editor, session, and manage pages
 
@@ -66,7 +67,7 @@ Official source fetching is Node-only and runs through `scripts/studyFetchNbLawP
 
 Browser official-package import stores authoritative metadata in `legalDocuments` and exact legal text in `legalComponents`. Existing seeded `documents` keep user-authored summaries and are enriched by stable IDs rather than overwritten. Study units may carry source references keyed by legal `sourceKey` plus link-time content hash so later imports can mark source review without changing user-authored summaries, prompts, concepts, progress, attempts, or drafts.
 
-The source-selection authoring workflow creates editable generated study records while keeping authoritative legal text read-only in `legalComponents`. Generated title and reference-answer state lives on `StudyUnit`, guided questions live on `StudyPrompt`, and required concept suggestions live on `StudyConcept`. The `/study/unit/:id/edit` route displays selected official source text beside the editable unit draft and guards regeneration of user-edited fields with confirmation.
+The source-selection authoring workflow creates editable generated study records while keeping authoritative legal text read-only in `legalComponents`. Generated title and reference-answer state lives on `StudyUnit`, guided questions live on `StudyPrompt`, and required concepts live on `StudyConcept` with manual/generated origin and display order. The `/study/unit/:id/edit` route displays selected official source text beside the editable unit draft for official units, supports custom unlinked units through `sourceMode: "custom"`, and guards replacement of user-authored/generated concept content with explicit actions.
 
 ### Engine core
 The engine is centered under `src/engine/`.

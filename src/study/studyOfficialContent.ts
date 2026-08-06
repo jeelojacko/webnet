@@ -461,6 +461,7 @@ export const createStudyUnitFromSourceSelection = ({
   return {
     id: `unit-source-${document.id}-${Date.now().toString(36)}-${existingUnits.length + 1}`,
     title: generateStudyTitle({ documentTitle, selectedSources: components }),
+    sourceMode: 'official',
     documentIds: [document.id],
     sectionRefs: components.map((component) => ({
       documentId: component.documentId,
@@ -521,6 +522,8 @@ export const createStudyContentFromSourceSelection = ({
     unitId: unit.id,
     label,
     required: true,
+    origin: 'generated',
+    order: index,
     createdAt: nowIso,
     updatedAt: nowIso,
   }));

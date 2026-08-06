@@ -3,11 +3,13 @@ import contentPackageJson from '../../study-content/packages/nb-law-pilot.conten
 import type { NbLawContentPackage } from '../../src/study/content/nbLawTypes';
 import {
   DEFAULT_REFERENCE_ANSWER_OPTIONS,
+  generateRequiredConcepts,
   generateReferenceAnswer,
   generateStudyQuestion,
   generateStudyTitle,
   suggestRequiredConcepts,
 } from '../../src/study/studyDraftGeneration';
+import { normalizeConceptLabelKey } from '../../src/study/studyConceptGeneration';
 import {
   applyOfficialContentPackageToSnapshot,
   createStudyContentFromSourceSelection,
@@ -255,5 +257,97 @@ describe('source-linked generated unit creation', () => {
   it('suggests conservative concepts when reliable phrases are available', () => {
     const concepts = suggestRequiredConcepts([component('reg-land-titles-83-130', 'section:5')]);
     expect(concepts.length).toBeGreaterThan(0);
+  });
+
+  it('marks generated concept origin and order during source-linked unit creation', () => {
+    const document = imported.documents.find((entry) => entry.id === 'reg-land-titles-83-130')!;
+    const created = createStudyContentFromSourceSelection({
+      document,
+      legalDocument: legalDocument('reg-land-titles-83-130'),
+      components: [component('reg-land-titles-83-130', 'section:5')],
+      existingUnits: imported.units,
+      nowIso: '2026-08-05T12:00:00.000Z',
+    });
+    expect(created.concepts[0]?.origin).toBe('generated');
+    expect(created.concepts.map((concept) => concept.order)).toEqual(created.concepts.map((_, index) => index));
+  });
+});
+
+describe('deterministic required concept generation', () => {
+  it('extracts formally defined terms', () => {
+    const suggestions = generateRequiredConcepts({
+      selectedSources: [
+        testComponent({
+          label: '1',
+          heading: 'Definitions',
+          text: '1 In this Act, “legal monument” means a monument established under this Act.',
+        }),
+      ],
+    });
+    expect(suggestions).toContainEqual(expect.objectContaining({ label: 'Legal Monument', reason: 'defined-term', confidence: 'high' }));
+  });
+
+  it('extracts deadlines and legal effects', () => {
+    const suggestions = generateRequiredConcepts({
+      selectedSources: [
+        testComponent({
+          label: '13',
+          heading: 'Appeal',
+          text: '13 A person may appeal within 30 days. The decision is final and binding.',
+        }),
+      ],
+    });
+    expect(suggestions.some((suggestion) => suggestion.reason === 'deadline' && suggestion.label.includes('30'))).toBe(true);
+    expect(suggestions).toContainEqual(expect.objectContaining({ label: 'Final and Binding', reason: 'legal-effect' }));
+  });
+
+  it('extracts actor-action requirements', () => {
+    const suggestions = generateRequiredConcepts({
+      selectedSources: [
+        testComponent({
+          label: '4',
+          heading: 'Duties',
+          text: '4 A surveyor shall use grid azimuth when required by regulation.',
+        }),
+      ],
+    });
+    expect(suggestions.some((suggestion) => suggestion.reason === 'actor-action')).toBe(true);
+  });
+
+  it('extracts materially distinct subsection topics', () => {
+    const suggestions = generateRequiredConcepts({
+      selectedSources: [component('reg-land-titles-83-130', 'section:5')],
+    });
+    expect(suggestions.map((suggestion) => suggestion.label)).toContain('District of New Brunswick');
+    expect(suggestions.some((suggestion) => suggestion.reason === 'subsection-topic')).toBe(true);
+  });
+
+  it('falls back for substantive sections and returns zero for repealed or reference-only components', () => {
+    const fallback = generateRequiredConcepts({
+      selectedSources: [testComponent({ label: '8', text: '8 The Registrar General may hold a hearing.' })],
+    });
+    const repealed = generateRequiredConcepts({
+      selectedSources: [testComponent({ label: '9', text: '9 Repealed.' })],
+    });
+    const form = generateRequiredConcepts({
+      selectedSources: [{ ...testComponent({ label: 'FORM 1', text: 'FORM 1' }), componentType: 'form', extractionStatus: 'reference-only' }],
+    });
+    expect(fallback.length).toBeGreaterThan(0);
+    expect(repealed).toEqual([]);
+    expect(form).toEqual([]);
+  });
+
+  it('suppresses duplicate concepts case-insensitively and across punctuation', () => {
+    const suggestions = generateRequiredConcepts({
+      selectedSources: [
+        testComponent({
+          label: '2',
+          heading: 'Application requirements',
+          text: '2 Application requirements. An applicant shall provide application-requirements materials.',
+        }),
+      ],
+    });
+    const keys = suggestions.map((suggestion) => normalizeConceptLabelKey(suggestion.label));
+    expect(new Set(keys).size).toBe(keys.length);
   });
 });

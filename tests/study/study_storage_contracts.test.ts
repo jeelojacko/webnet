@@ -22,6 +22,42 @@ describe('study storage contracts', () => {
     expect(migrated.settings.phaseRules.guidedRecallSuccessDaysToFreeRecall).toBe(2);
   });
 
+  it('migrates existing units and concepts to Phase 2D fields', () => {
+    const seed = createSeedStudyData('2026-08-01T10:00:00.000Z');
+    const legacy = {
+      ...seed,
+      units: [
+        {
+          ...seed.units[0],
+          sourceMode: undefined,
+          tags: undefined,
+        },
+        {
+          ...seed.units[1],
+          id: 'legacy-unlinked',
+          documentIds: [],
+          sectionRefs: [],
+          sourceMode: undefined,
+        },
+      ],
+      concepts: [
+        {
+          ...seed.concepts[0],
+          origin: undefined,
+          order: undefined,
+        },
+      ],
+    } as unknown as Parameters<typeof migrateStudySnapshot>[0];
+
+    const migrated = migrateStudySnapshot(legacy);
+
+    expect(migrated.units.find((unit) => unit.id === seed.units[0].id)?.sourceMode).toBe('official');
+    expect(migrated.units.find((unit) => unit.id === 'legacy-unlinked')?.sourceMode).toBe('custom');
+    expect(migrated.units[0].tags).toEqual([]);
+    expect(migrated.concepts[0].origin).toBe('manual');
+    expect(migrated.concepts[0].order).toBe(0);
+  });
+
   it('round-trips exported study data and preserves attempts and drafts', () => {
     const seed = createSeedStudyData('2026-08-01T10:00:00.000Z');
     const snapshot = {

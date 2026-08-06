@@ -35,7 +35,16 @@ const StudyApp = () => {
       );
     }
     if (study.routePath === '/study/library') {
-      return <StudyLibrary data={study.data} onSelectDocument={study.selectDocument} />;
+      return (
+        <StudyLibrary
+          data={study.data}
+          onSelectDocument={study.selectDocument}
+          onCreateCustomUnit={study.createCustomUnit}
+          onEditUnit={(unitId) => study.navigate(`/study/unit/${encodeURIComponent(unitId)}/edit`, { returnTo: '/study/library' })}
+          onDeleteUnit={study.deleteUnit}
+          onDuplicateUnit={study.duplicateUnit}
+        />
+      );
     }
     if (documentId) {
       return (

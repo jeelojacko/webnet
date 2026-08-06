@@ -21,13 +21,13 @@ It does not use adjustment, parser, solver, network, or Survey CAD domain state.
 ## IndexedDB Schema
 Database: `webnet.study.v1`
 
-Version: `2`
+Version: `3`
 
 Stores:
 - `documents`, key `id`: source metadata such as title, kind, jurisdiction, category, priority, summary, and OPFS source-file asset records
-- `units`, key `id`: learnable topics linked to document IDs and section references, with editable summaries and reference answers
+- `units`, key `id`: learnable topics with editable summaries and reference answers. Units now carry `sourceMode: "official" | "custom"`. Official units keep document IDs, section refs, and source references; custom units keep those source fields empty and may carry tags, notes/citation text, and an optional custom source URL.
 - `prompts`, key `id`: guided recall, free recall, identification, scenario, or comparison prompts linked to units and concepts
-- `concepts`, key `id`: required checklist concepts linked to units
+- `concepts`, key `id`: required checklist concepts linked to units, including generated/manual origin and deterministic display order
 - `progress`, key `unitId`: current phase, due date, successful separate-day counters, and review counts
 - `attempts`, key `id`: immutable completed attempts with answer text, covered concepts, rating, and timestamps
 - `drafts`, key `id`: autosaved in-progress typed answers
@@ -36,7 +36,7 @@ Stores:
 - `legalComponents`, key `recordKey`: imported authoritative components keyed by `{documentId}::{sourceKey}`, including sections, schedules, forms, source text, source hash, subsections, and extraction status
 - `importHistory`, key `id`: compact official-package import history with added/changed counts, reference-only form counts, and flagged-unit counts
 
-Schema migration currently normalizes imported or partially missing snapshots to schema version `2`, fills default settings, and defaults official-content stores to empty arrays. Existing Study data is not reset or deleted by the v2 migration.
+Schema migration currently normalizes imported or partially missing snapshots to schema version `3`, fills default settings, defaults official-content stores to empty arrays, adds unit source mode, adds concept origin/order fields, and keeps existing Study data intact. Existing concepts without origin default to manual unless the linked unit already records generated concepts.
 
 ## OPFS Layout
 Source and backup assets use generated paths under:
@@ -152,7 +152,14 @@ Some prescribed forms normalize only as a label. Import classifies a form as `re
 ## Legal Reader
 `/study/document/:id` displays imported official metadata, Act-regulation navigation, source URL, content hash, consolidated-to date, fetch/import dates, package ID, and safe React-rendered normalized text. The user-authored document summary remains in a visually separate editor.
 
-The reader supports table-of-contents navigation, case-insensitive search, section/schedule/form filtering, expand/collapse, subsection display, copy reference/text, component selection, and creating a generated draft study unit from selected official components. Created units store source references with current component hashes, generate editable study content, and then open `/study/unit/:id/edit`.
+The reader supports table-of-contents navigation, case-insensitive search, section/schedule/form filtering, expand/collapse, subsection display, copy reference/text, component selection, and creating a generated draft study unit from selected official components. TOC and search-result navigation opens the selected section, schedule, or form with one click, expands subsection parents, scrolls the stable `sourceKey` target into view, updates the hash, applies a short focus highlight, and focuses the heading for keyboard users. Created units store source references with current component hashes, generate editable study content, and then open `/study/unit/:id/edit`.
+
+## Library
+The Library uses top-level `Documents` and `Study Units` tabs.
+
+Documents can be filtered by all, Acts, regulations, or custom sources. Document rows show priority, category, parent Act where applicable, consolidation date, source review counts, study-unit count, and reference-only form count.
+
+Study units can be filtered by source-linked, custom, needs-review, and learning phase. Unit rows show title, related Act/regulation or custom grouping, selected section references, priority, category, phase, concept count, prompt count, source-review state, last modified date, and attempt count. Sorting supports related source, unit title, priority, phase, last modified, and attempt count. Groups are collapsible and regulation-linked units include the parent Act in the group label so both records are discoverable.
 
 ## Automatic Study-Unit Drafting
 Creating a unit from selected official source components now generates:
@@ -170,6 +177,18 @@ The content layers remain separate:
 Reference-answer generation defaults to structured exact wording. It preserves selected source order, groups subsections under their section, strips repeated labels where safe, excludes amendment-history and consolidation-note text by default, includes repealed provisions as `Repealed.`, and avoids legal interpretation or broad paraphrase. The editor can switch the answer format to complete exact source text or empty.
 
 Generated field state is tracked on `StudyUnit.generatedContentState` for title, question, reference answer, study summary, and concepts. Regeneration controls confirm before replacing a user-edited field. Existing source-linked units expose `Generate Missing Study Content`, which fills only empty generated fields and does not overwrite manual titles, prompts, reference answers, summaries, concepts, progress, attempts, or drafts.
+
+## Required Concepts
+Required concepts are editable checklist rows. The unit editor supports `+ Add Concept`, Enter-to-save normalization, Escape cancellation for empty new rows, delete, and up/down reordering. Duplicate labels are rejected case-insensitively after punctuation and whitespace normalization. Empty concepts are dropped on save. Generated and manual concepts are both editable and removable.
+
+Concept suggestions are generated by the pure deterministic `generateRequiredConcepts` function. It extracts defined terms, meaningful headings, subsection topics, actor/action/object requirements, deadlines and numerical requirements, legal effects, and conservative fallbacks for substantive non-repealed source text. It intentionally skips reference-only forms, repealed-only components, source URLs, consolidation-note-only text, and amendment-history noise.
+
+The editor provides `Add Suggested Concepts`, `Replace Generated`, and `Replace All`. Adding suggestions preserves manual and generated concepts and adds only missing labels. Replacing generated concepts preserves manual concepts by default and requires confirmation; replacing all concepts is a separate confirmed action. Development builds may show a diagnostic panel with label, rule, confidence, and source key.
+
+## Custom Study Units
+`New Custom Study Unit` creates an unlinked unit with `sourceMode: "custom"`, empty official source references, editable title/category/priority/phase/tags, study summary, recall question, reference answer, required concepts, prompt type, optional notes/citation text, and optional custom source URL.
+
+Custom units participate in sessions, attempts, drafts, import/export, editing, deletion with confirmation, duplication, and later scheduling work. They do not show missing-source warnings, official-text labels, or source-hash review flags.
 
 ## Session Rules
 Initial phases:
@@ -196,10 +215,14 @@ Due reviews sort before new units. New units are then selected by priority and d
 6. Open `Manage`, copy the export JSON, paste it into import, import it, and confirm counts are restored.
 7. In `Manage`, paste or choose `study-content/packages/nb-law-pilot.content-package.json`, validate preview, and confirm import.
 8. Open `Library`, filter Acts/regulations, and confirm official metadata and review counts appear.
-9. Open `Surveys Act`, search for `Director of Surveys`, expand section `3`, select section `3` or Schedule A, and create a study unit from the selection.
-10. Confirm the unit editor opens with read-only official source text on the left and editable generated title/question/reference answer on the right.
-11. Edit the generated question, click `Regenerate question`, and confirm overwrite confirmation appears.
-12. Save or cancel and confirm the app returns to the source document.
+9. Switch between the `Documents` and `Study Units` tabs, filter source-linked/custom/needs-review units, and confirm grouped unit rows show concept, prompt, phase, source-review, modified-date, and attempt metadata.
+10. Open `Surveys Act`, search for `Director of Surveys`, click a TOC/search result, and confirm the target opens, scrolls, highlights, focuses, and updates the hash without a second click.
+11. Select section `3` or Schedule A, and create a study unit from the selection.
+12. Confirm the unit editor opens with read-only official source text on the left and editable generated title/question/reference answer on the right.
+13. Add, edit, delete, reorder, add suggested, and replace generated concepts; confirm manual concepts are preserved unless `Replace All` is explicitly confirmed.
+14. Create a custom study unit from Library, edit custom fields, save, duplicate it, delete the duplicate, and confirm the original appears in Session.
+15. Edit the generated question, click `Regenerate question`, and confirm overwrite confirmation appears.
+16. Save or cancel and confirm the app returns to the source document.
 
 ## Official Content Manual Procedure
 1. Run `npm run study:fetch-nb-laws`.

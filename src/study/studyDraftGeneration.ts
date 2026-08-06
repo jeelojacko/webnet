@@ -4,6 +4,10 @@ import type {
   StudyReferenceAnswerFormat,
   StudySourceCitationSummary,
 } from './studyTypes';
+import { generateRequiredConcepts } from './studyConceptGeneration';
+
+export { generateRequiredConcepts } from './studyConceptGeneration';
+export type { GeneratedConceptSuggestion } from './studyConceptGeneration';
 
 export type SelectedLegalSource = ImportedLegalComponent;
 
@@ -264,51 +268,6 @@ export const generateSourceCitationSummary = ({
   };
 };
 
-const stopWords = new Set([
-  'the',
-  'and',
-  'or',
-  'of',
-  'to',
-  'in',
-  'for',
-  'by',
-  'with',
-  'under',
-  'this',
-  'that',
-  'shall',
-  'may',
-  'be',
-  'is',
-  'are',
-  'a',
-  'an',
-]);
-
-const titleCaseConcept = (value: string): string =>
-  value
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((word) => (word.length <= 3 ? word.toLowerCase() : `${word[0].toUpperCase()}${word.slice(1).toLowerCase()}`))
-    .join(' ');
-
 export const suggestRequiredConcepts = (selectedSources: SelectedLegalSource[], limit = 6): string[] => {
-  const candidates: string[] = [];
-  for (const source of selectedSources) {
-    if (source.heading && source.heading.length <= 80) candidates.push(source.heading);
-    for (const subsection of source.subsections ?? []) {
-      const text = stripLeadingLabel(subsection.text, subsection.label);
-      const phrase = text.match(/\b(?:land titles offices?|instrument-filing hours|office hours|District of New Brunswick)\b/i)?.[0];
-      if (phrase) candidates.push(phrase);
-    }
-  }
-  const cleaned = candidates
-    .map((candidate) => candidate.replace(/[^A-Za-z0-9 .'-]/g, ' ').replace(/\s+/g, ' ').trim())
-    .filter((candidate) => {
-      const words = candidate.split(/\s+/);
-      return words.length >= 2 && words.length <= 7 && words.some((word) => !stopWords.has(word.toLowerCase()));
-    })
-    .map(titleCaseConcept);
-  return cleaned.filter((concept, index) => cleaned.indexOf(concept) === index).slice(0, limit);
+  return generateRequiredConcepts({ selectedSources, limit }).map((suggestion) => suggestion.label);
 };

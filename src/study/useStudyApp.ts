@@ -16,7 +16,8 @@ import {
   generateStudyTitle,
   suggestRequiredConcepts,
 } from './studyDraftGeneration';
-import { buildSessionItems, markReadingComplete, updateProgressAfterAttempt } from './studyScheduler';
+import { normalizeConceptLabelKey } from './studyConceptGeneration';
+import { buildSessionItems, createInitialProgress, markReadingComplete, updateProgressAfterAttempt } from './studyScheduler';
 import { createStudyStorage } from './studyStorage';
 import type {
   StudyAttempt,
@@ -251,6 +252,8 @@ export const useStudyApp = () => {
             unitId: unit.id,
             label,
             required: true,
+            origin: 'generated',
+            order: index,
             createdAt: nowIso,
             updatedAt: nowIso,
           }));
@@ -412,6 +415,128 @@ export const useStudyApp = () => {
     [data, navigate, storage],
   );
 
+  const createCustomUnit = useCallback(async () => {
+    if (!data) return;
+    const nowIso = new Date().toISOString();
+    const unit: StudyUnit = {
+      id: createId('unit-custom'),
+      title: 'New custom study unit',
+      sourceMode: 'custom',
+      documentIds: [],
+      sectionRefs: [],
+      sourceReferences: [],
+      category: '',
+      priority: 3,
+      promptKind: 'guided-recall',
+      phase: 'unread',
+      tags: [],
+      editableSummary: '',
+      referenceAnswer: '',
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    };
+    const prompt: StudyPrompt = {
+      id: `${unit.id}-guided`,
+      unitId: unit.id,
+      kind: 'guided-recall',
+      question: '',
+      referenceAnswer: '',
+      conceptIds: [],
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    };
+    const progress = createInitialProgress(unit.id, nowIso);
+    await storage.saveUnit(unit);
+    await storage.savePrompt(prompt);
+    await storage.saveProgress(progress);
+    setData({
+      ...data,
+      units: [...data.units, unit],
+      prompts: [...data.prompts, prompt],
+      progress: [...data.progress, progress],
+    });
+    navigate(`/study/unit/${encodeURIComponent(unit.id)}/edit`, { returnTo: '/study/library' });
+  }, [data, navigate, storage]);
+
+  const deleteUnit = useCallback(
+    async (unitId: string) => {
+      if (!data || !window.confirm('Delete this study unit and its local study records?')) return;
+      const next: StudyDataSnapshot = {
+        ...data,
+        units: data.units.filter((unit) => unit.id !== unitId),
+        prompts: data.prompts.filter((prompt) => prompt.unitId !== unitId),
+        concepts: data.concepts.filter((concept) => concept.unitId !== unitId),
+        progress: data.progress.filter((progress) => progress.unitId !== unitId),
+        attempts: data.attempts.filter((attempt) => attempt.unitId !== unitId),
+        drafts: data.drafts.filter((draft) => draft.unitId !== unitId),
+      };
+      await storage.replaceAll(next);
+      setData(next);
+      setStatusMessage('Study unit deleted.');
+    },
+    [data, storage],
+  );
+
+  const duplicateUnit = useCallback(
+    async (unitId: string) => {
+      if (!data) return;
+      const source = data.units.find((unit) => unit.id === unitId);
+      if (!source) return;
+      const nowIso = new Date().toISOString();
+      const duplicateId = createId(source.sourceMode === 'custom' ? 'unit-custom-copy' : 'unit-source-copy');
+      const unit: StudyUnit = {
+        ...source,
+        id: duplicateId,
+        title: `${source.title} copy`,
+        sourceReviewRequired: false,
+        sourceReferenceMissing: false,
+        sourceReviewAcknowledgedAt: undefined,
+        createdAt: nowIso,
+        updatedAt: nowIso,
+      };
+      const sourcePrompts = data.prompts.filter((prompt) => prompt.unitId === unitId);
+      const sourceConcepts = data.concepts
+        .filter((concept) => concept.unitId === unitId)
+        .slice()
+        .sort((a, b) => a.order - b.order || a.label.localeCompare(b.label));
+      const concepts = sourceConcepts.map((concept, index): StudyConcept => ({
+        ...concept,
+        id: `${duplicateId}-concept-${index + 1}`,
+        unitId: duplicateId,
+        order: index,
+        createdAt: nowIso,
+        updatedAt: nowIso,
+      }));
+      const conceptIdByKey = new Map(
+        sourceConcepts.map((concept, index) => [normalizeConceptLabelKey(concept.label), concepts[index].id]),
+      );
+      const prompts = sourcePrompts.map((prompt, index): StudyPrompt => ({
+        ...prompt,
+        id: `${duplicateId}-${prompt.kind}-${index + 1}`,
+        unitId: duplicateId,
+        conceptIds: prompt.conceptIds
+          .map((conceptId) => sourceConcepts.find((concept) => concept.id === conceptId))
+          .map((concept) => (concept ? conceptIdByKey.get(normalizeConceptLabelKey(concept.label)) : undefined))
+          .filter((conceptId): conceptId is string => Boolean(conceptId)),
+        createdAt: nowIso,
+        updatedAt: nowIso,
+      }));
+      const progress = createInitialProgress(duplicateId, nowIso);
+      const next: StudyDataSnapshot = {
+        ...data,
+        units: [...data.units, unit],
+        prompts: [...data.prompts, ...prompts],
+        concepts: [...data.concepts, ...concepts],
+        progress: [...data.progress, progress],
+      };
+      await storage.replaceAll(next);
+      setData(next);
+      setStatusMessage(`Study unit duplicated: ${unit.title}.`);
+      navigate(`/study/unit/${encodeURIComponent(unit.id)}/edit`, { returnTo: '/study/library' });
+    },
+    [data, navigate, storage],
+  );
+
   const acknowledgeSourceReview = useCallback(
     async (unitId: string) => {
       if (!data) return;
@@ -455,6 +580,9 @@ export const useStudyApp = () => {
     previewOfficialPackage,
     importOfficialPackage,
     createUnitFromSourceSelection,
+    createCustomUnit,
+    deleteUnit,
+    duplicateUnit,
     acknowledgeSourceReview,
     statusMessage,
   };

@@ -20,8 +20,8 @@ import type {
 } from './studyTypes';
 
 export const STUDY_DB_NAME = 'webnet.study.v1';
-export const STUDY_DB_VERSION = 2;
-export const STUDY_SCHEMA_VERSION = 2;
+export const STUDY_DB_VERSION = 3;
+export const STUDY_SCHEMA_VERSION = 3;
 
 const STORES = [
   'documents',
@@ -170,13 +170,39 @@ export const migrateStudySnapshot = (input: Partial<StudyDataSnapshot>): StudyDa
   };
   const legalDocuments = input.legalDocuments ?? [];
   const documents = upsertStudyDocumentsWithOfficialMetadata(input.documents ?? seed.documents, legalDocuments);
+  const incomingUnits = input.units ?? seed.units;
+  const units = incomingUnits.map((unit) => ({
+    ...unit,
+    sourceMode:
+      unit.sourceMode ??
+      ((unit.sourceReferences?.length ?? 0) > 0 || (unit.documentIds?.length ?? 0) > 0 ? 'official' : 'custom'),
+    documentIds: unit.documentIds ?? [],
+    sectionRefs: unit.sectionRefs ?? [],
+    tags: unit.tags ?? [],
+  }));
+  const unitById = new Map(units.map((unit) => [unit.id, unit]));
+  const orderByUnit = new Map<string, number>();
+  const concepts = (input.concepts ?? seed.concepts).map((concept) => {
+    const order = concept.order ?? orderByUnit.get(concept.unitId) ?? 0;
+    orderByUnit.set(concept.unitId, order + 1);
+    const unit = unitById.get(concept.unitId);
+    return {
+      ...concept,
+      label: concept.label.replace(/\s+/g, ' ').trim(),
+      required: concept.required ?? true,
+      origin:
+        concept.origin ??
+        (unit?.generatedContentState?.concepts === 'generated' ? 'generated' : 'manual'),
+      order,
+    };
+  });
   return {
     schemaVersion: STUDY_SCHEMA_VERSION,
     exportedAt: input.exportedAt ?? nowIso,
     documents,
-    units: input.units ?? seed.units,
+    units,
     prompts: input.prompts ?? seed.prompts,
-    concepts: input.concepts ?? seed.concepts,
+    concepts,
     progress: input.progress ?? seed.progress,
     attempts: input.attempts ?? [],
     drafts: input.drafts ?? [],

@@ -38,6 +38,8 @@ export type StudyGeneratedContentState = {
   concepts: StudyGeneratedFieldState;
 };
 
+export type StudySourceMode = 'official' | 'custom';
+
 export type StudySourceCitationSummary = {
   text: string;
   officialSource?: string;
@@ -77,6 +79,7 @@ export type StudySectionRef = {
 export type StudyUnit = {
   id: string;
   title: string;
+  sourceMode: StudySourceMode;
   documentIds: string[];
   sectionRefs: StudySectionRef[];
   sourceReferences?: StudySourceReference[];
@@ -87,6 +90,11 @@ export type StudyUnit = {
   sourceReviewAcknowledgedAt?: string;
   category: string;
   priority: StudyPriority;
+  promptKind?: StudyPromptKind;
+  phase?: StudyPhase;
+  tags?: string[];
+  notesCitationText?: string;
+  customSourceUrl?: string;
   editableSummary: string;
   referenceAnswer: string;
   createdAt: string;
@@ -108,7 +116,10 @@ export type StudyConcept = {
   id: string;
   unitId: string;
   label: string;
+  explanation?: string;
   required: boolean;
+  origin: 'generated' | 'manual';
+  order: number;
   createdAt: string;
   updatedAt: string;
 };

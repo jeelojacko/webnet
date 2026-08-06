@@ -70,6 +70,7 @@ const units: StudyUnit[] = [
   {
     id: 'unit-surveys-monuments',
     title: 'Survey monuments and statutory evidence',
+    sourceMode: 'official',
     documentIds: ['doc-surveys-act'],
     sectionRefs: [{ documentId: 'doc-surveys-act', label: 'Monuments and plans' }],
     category: 'Survey law',
@@ -83,6 +84,7 @@ const units: StudyUnit[] = [
   {
     id: 'unit-boundaries-confirmation-process',
     title: 'Boundary confirmation workflow',
+    sourceMode: 'official',
     documentIds: ['doc-boundaries-confirmation-act'],
     sectionRefs: [{ documentId: 'doc-boundaries-confirmation-act', label: 'Application and effect' }],
     category: 'Boundary law',
@@ -96,6 +98,7 @@ const units: StudyUnit[] = [
   {
     id: 'unit-community-planning-subdivision',
     title: 'Subdivision approval constraints',
+    sourceMode: 'official',
     documentIds: ['doc-community-planning-act'],
     sectionRefs: [{ documentId: 'doc-community-planning-act', label: 'Subdivision control' }],
     category: 'Planning law',
@@ -109,6 +112,7 @@ const units: StudyUnit[] = [
   {
     id: 'unit-registry-search-priority',
     title: 'Registry records and priority risk',
+    sourceMode: 'official',
     documentIds: ['doc-registry-act'],
     sectionRefs: [{ documentId: 'doc-registry-act', label: 'Registration and search' }],
     category: 'Title records',
@@ -122,6 +126,7 @@ const units: StudyUnit[] = [
   {
     id: 'unit-land-titles-parcel',
     title: 'Land titles parcel certainty',
+    sourceMode: 'official',
     documentIds: ['doc-land-titles-act'],
     sectionRefs: [{ documentId: 'doc-land-titles-act', label: 'Parcel and title registration' }],
     category: 'Title records',
@@ -134,6 +139,7 @@ const units: StudyUnit[] = [
   },
 ];
 
+const conceptOrderByUnit = new Map<string, number>();
 const concepts: StudyConcept[] = [
   ['concept-monument-evidence', 'unit-surveys-monuments', 'Physical monuments are evidence', true],
   ['concept-plan-evidence', 'unit-surveys-monuments', 'Plans and statutory source text stay separate', true],
@@ -145,14 +151,21 @@ const concepts: StudyConcept[] = [
   ['concept-record-not-boundary', 'unit-registry-search-priority', 'Recorded text is not physical boundary proof alone', true],
   ['concept-title-certainty', 'unit-land-titles-parcel', 'Title registration changes certainty posture', true],
   ['concept-parcel-description', 'unit-land-titles-parcel', 'Parcel descriptions require careful interpretation', true],
-].map(([id, unitId, label, required]) => ({
-  id: String(id),
-  unitId: String(unitId),
-  label: String(label),
-  required: Boolean(required),
-  createdAt: SEED_CREATED_AT,
-  updatedAt: SEED_CREATED_AT,
-}));
+].map(([id, unitId, label, required]) => {
+  const normalizedUnitId = String(unitId);
+  const order = conceptOrderByUnit.get(normalizedUnitId) ?? 0;
+  conceptOrderByUnit.set(normalizedUnitId, order + 1);
+  return {
+    id: String(id),
+    unitId: normalizedUnitId,
+    label: String(label),
+    required: Boolean(required),
+    origin: 'manual' as const,
+    order,
+    createdAt: SEED_CREATED_AT,
+    updatedAt: SEED_CREATED_AT,
+  };
+});
 
 const prompts: StudyPrompt[] = units.flatMap((unit) => [
   {
