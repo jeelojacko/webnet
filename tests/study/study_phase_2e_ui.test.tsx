@@ -4,6 +4,7 @@ import React, { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import StudyLayout from '../../src/study/components/StudyLayout';
+import StudyManagePage from '../../src/study/components/StudyManagePage';
 import StudyPreviewPage from '../../src/study/components/StudyPreviewPage';
 import StudyRubricEditor from '../../src/study/components/StudyRubricEditor';
 import { createSeedStudyData } from '../../src/study/studySeed';
@@ -124,5 +125,40 @@ describe('study phase 2E UI', () => {
     const question = document.querySelector('input[aria-label="Rubric question"]');
     expect(question?.getAttribute('title')).toBe(data.rubrics[0].prompt);
     expect(question?.parentElement?.className).toContain('grid gap-2');
+  });
+
+  it('opens an in-app confirmation before deleting all manage data', async () => {
+    const data: StudyDataSnapshot = createSeedStudyData('2026-08-05T10:00:00.000Z');
+    const onDeleteAllData = vi.fn(async () => {});
+    await renderIntoRoot(
+      <StudyManagePage
+        data={data}
+        exportText="{}"
+        importText=""
+        onImportTextChange={vi.fn()}
+        onImport={vi.fn()}
+        onDeleteAllData={onDeleteAllData}
+        officialPackageText=""
+        onOfficialPackageTextChange={vi.fn()}
+        officialPackagePreview={null}
+        onPreviewOfficialPackage={vi.fn()}
+        onImportOfficialPackage={vi.fn()}
+        statusMessage=""
+      />,
+      root,
+    );
+
+    const deleteButton = Array.from(document.querySelectorAll('button')).find((button) => button.textContent === 'Delete All Data');
+    await act(async () => {
+      deleteButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    expect(document.body.textContent).toContain('Delete all Study data?');
+    expect(onDeleteAllData).not.toHaveBeenCalled();
+
+    const confirmButton = Array.from(document.querySelectorAll('button')).find((button) => button.textContent === 'Confirm Delete All Data');
+    await act(async () => {
+      confirmButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    expect(onDeleteAllData).toHaveBeenCalledTimes(1);
   });
 });

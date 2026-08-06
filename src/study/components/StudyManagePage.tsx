@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { OfficialContentPreview } from '../studyOfficialContent';
 import type { StudyDataSnapshot } from '../studyTypes';
 
@@ -29,7 +30,21 @@ const StudyManagePage = ({
   onPreviewOfficialPackage,
   onImportOfficialPackage,
   statusMessage,
-}: StudyManagePageProps) => (
+}: StudyManagePageProps) => {
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const confirmDeleteAllData = async () => {
+    setDeleting(true);
+    try {
+      await onDeleteAllData();
+      setConfirmingDelete(false);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  return (
   <div className="space-y-5">
     <div>
       <h2 className="text-xl font-semibold text-white">Manage</h2>
@@ -59,12 +74,40 @@ const StudyManagePage = ({
       <p className="text-sm text-slate-400">
         Delete every local Study record and return to an empty valid Study database.
       </p>
-      <button
-        onClick={onDeleteAllData}
-        className="mt-3 rounded bg-rose-700 px-4 py-2 text-sm font-medium text-white hover:bg-rose-600"
-      >
-        Delete All Data
-      </button>
+      {!confirmingDelete ? (
+        <button
+          type="button"
+          onClick={() => setConfirmingDelete(true)}
+          className="mt-3 rounded bg-rose-700 px-4 py-2 text-sm font-medium text-white hover:bg-rose-600"
+        >
+          Delete All Data
+        </button>
+      ) : (
+        <div className="mt-3 rounded border border-rose-800 bg-rose-950/30 p-3">
+          <div className="text-sm font-semibold text-rose-100">Delete all Study data?</div>
+          <p className="mt-1 text-sm text-rose-200">
+            This removes documents, official imports, study units, attempts, drafts, progress, rubrics, and import history.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={confirmDeleteAllData}
+              disabled={deleting}
+              className="rounded bg-rose-700 px-4 py-2 text-sm font-medium text-white hover:bg-rose-600 disabled:bg-slate-700"
+            >
+              {deleting ? 'Deleting...' : 'Confirm Delete All Data'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirmingDelete(false)}
+              disabled={deleting}
+              className="rounded border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:bg-slate-800 disabled:text-slate-600"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </section>
     <section className="rounded border border-slate-800 bg-slate-900 p-4">
       <div className="mb-2 text-xs uppercase tracking-wide text-slate-500">Import Official Content Package</div>
@@ -174,6 +217,7 @@ const StudyManagePage = ({
       </button>
     </section>
   </div>
-);
+  );
+};
 
 export default StudyManagePage;

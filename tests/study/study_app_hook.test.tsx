@@ -163,8 +163,7 @@ describe('study app hook persistence', () => {
     ]);
   });
 
-  it('deletes all study data after confirmation', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+  it('deletes all study data when requested', async () => {
     const hookValue: { current: HookValue | null } = { current: null };
     await act(async () => {
       root?.render(<HookHarness onValue={(value) => { hookValue.current = value; }} />);

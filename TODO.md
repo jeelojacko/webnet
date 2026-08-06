@@ -1,3 +1,4 @@
+- [x] Study Manage reset confirmation fix batch (August 2026): replace browser confirm with visible in-app delete confirmation panel, make reset action execute directly, update tests, validate, commit, and push.
 - [x] Study reset persistence fix batch (August 2026): prevent clean-slate resets from being auto-seeded on reload, add storage regression coverage, validate, commit, and push.
 - [x] Study Manage testing reset batch (August 2026): add confirmed Delete All Data action that replaces Study IndexedDB with an empty valid snapshot, clears transient session/import state, updates docs/tests, validates, commits, and pushes.
 - [x] Study module Phase 2E UX correction batch (August 2026): fix Library search highlight offsets, widen expanded sidebar label fit, move rubric question prompt to its own row with tooltip, make Preview close return to Study Units tab, add focused tests, validate, commit, and push.

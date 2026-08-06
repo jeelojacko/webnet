@@ -398,7 +398,6 @@ export const useStudyApp = () => {
   }, [importText, storage]);
 
   const deleteAllData = useCallback(async () => {
-    if (!window.confirm('Delete all Study data and reset to a clean slate? This cannot be undone.')) return;
     const nowIso = new Date().toISOString();
     const snapshot: StudyDataSnapshot = {
       schemaVersion: data?.schemaVersion ?? STUDY_SCHEMA_VERSION,
