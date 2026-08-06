@@ -73,7 +73,9 @@ const StudyLibrary = ({
   onDeleteUnit,
   onDuplicateUnit,
 }: StudyLibraryProps) => {
-  const [tab, setTab] = useState<LibraryTab>('documents');
+  const [tab, setTab] = useState<LibraryTab>(() =>
+    new URLSearchParams(window.location.search).get('tab') === 'units' ? 'units' : 'documents',
+  );
   const [documentFilter, setDocumentFilter] = useState('all');
   const [unitFilter, setUnitFilter] = useState<UnitFilter>('all');
   const [phaseFilter, setPhaseFilter] = useState<StudyPhase | 'all'>('all');

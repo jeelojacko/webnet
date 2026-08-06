@@ -164,12 +164,7 @@ const StudyRubricEditor = ({
                   <option key={category} value={category}>{STUDY_RUBRIC_CATEGORY_LABELS[category]}</option>
                 ))}
               </select>
-              <input
-                value={rubric.prompt}
-                onChange={(event) => updateRubric(index, { prompt: event.target.value })}
-                className="rounded border border-slate-700 bg-slate-950 p-2 text-sm text-slate-100"
-                placeholder="Rubric prompt"
-              />
+              <div className="hidden sm:block" />
               <button onClick={() => moveRubric(index, -1)} disabled={index === 0} className="rounded bg-slate-800 px-2 py-1 text-xs text-slate-300 disabled:text-slate-600">
                 Up
               </button>
@@ -180,6 +175,14 @@ const StudyRubricEditor = ({
                 Delete
               </button>
             </div>
+            <input
+              value={rubric.prompt}
+              title={rubric.prompt}
+              onChange={(event) => updateRubric(index, { prompt: event.target.value })}
+              className="w-full rounded border border-slate-700 bg-slate-950 p-2 text-sm text-slate-100"
+              placeholder="Rubric question"
+              aria-label="Rubric question"
+            />
             <textarea
               value={rubric.referenceAnswer}
               onChange={(event) => updateRubric(index, { referenceAnswer: event.target.value })}

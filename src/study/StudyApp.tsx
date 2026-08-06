@@ -57,7 +57,7 @@ const StudyApp = () => {
           onSelectDocument={study.selectDocument}
           onCreateCustomUnit={study.createCustomUnit}
           onEditUnit={(unitId) => study.navigate(`/study/unit/${encodeURIComponent(unitId)}/edit`, { returnTo: '/study/library' })}
-          onPreviewUnit={(unitId) => study.navigate(`/study/unit/${encodeURIComponent(unitId)}/preview`, { returnTo: '/study/library' })}
+          onPreviewUnit={(unitId) => study.navigate(`/study/unit/${encodeURIComponent(unitId)}/preview`, { returnTo: '/study/library?tab=units' })}
           onOpenProvision={(documentId, sourceKey) =>
             study.navigate(`/study/document/${encodeURIComponent(documentId)}#${encodeURIComponent(sourceKey)}`)
           }

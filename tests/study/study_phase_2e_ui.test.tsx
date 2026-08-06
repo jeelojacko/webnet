@@ -5,6 +5,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import StudyLayout from '../../src/study/components/StudyLayout';
 import StudyPreviewPage from '../../src/study/components/StudyPreviewPage';
+import StudyRubricEditor from '../../src/study/components/StudyRubricEditor';
 import { createSeedStudyData } from '../../src/study/studySeed';
 import type { StudyDataSnapshot } from '../../src/study/studyTypes';
 
@@ -71,11 +72,12 @@ describe('study phase 2E UI', () => {
     const data: StudyDataSnapshot = createSeedStudyData('2026-08-05T10:00:00.000Z');
     data.units[0] = { ...data.units[0], responseModeOverride: 'guided' };
     const before = JSON.stringify(data);
+    const onNavigate = vi.fn();
     await renderIntoRoot(
       <StudyPreviewPage
         data={data}
         unitId={data.units[0].id}
-        onNavigate={vi.fn()}
+        onNavigate={onNavigate}
       />,
       root,
     );
@@ -97,5 +99,30 @@ describe('study phase 2E UI', () => {
     expect(document.body.textContent).toContain('Preview mode - progress and review history will not be changed.');
     expect(document.body.textContent).not.toContain('Good');
     expect(JSON.stringify(data)).toBe(before);
+
+    const closePreview = Array.from(document.querySelectorAll('button')).find((button) => button.textContent === 'Close Preview');
+    await act(async () => {
+      closePreview?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    expect(onNavigate).toHaveBeenCalledWith('/study/library?tab=units');
+  });
+
+  it('renders rubric question on its own row with a title tooltip', async () => {
+    const data: StudyDataSnapshot = createSeedStudyData('2026-08-05T10:00:00.000Z');
+    await renderIntoRoot(
+      <StudyRubricEditor
+        unitId={data.units[0].id}
+        unitType="section"
+        generatedStateLabel="generated"
+        rubrics={data.rubrics.slice(0, 1)}
+        sourceComponents={[]}
+        onRubricsChange={vi.fn()}
+      />,
+      root,
+    );
+
+    const question = document.querySelector('input[aria-label="Rubric question"]');
+    expect(question?.getAttribute('title')).toBe(data.rubrics[0].prompt);
+    expect(question?.parentElement?.className).toContain('grid gap-2');
   });
 });

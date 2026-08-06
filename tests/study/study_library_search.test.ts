@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildStudyLibrarySearchIndex,
+  highlightLibraryMatch,
   searchStudyLibrary,
 } from '../../src/study/studyLibrarySearch';
 import { createSeedStudyData } from '../../src/study/studySeed';
@@ -153,5 +154,11 @@ describe('study library search', () => {
       expect.objectContaining({ category: 'documents', documentId: 'doc-search-act' }),
     );
     expect(searchStudyLibrary(index, '')).toEqual([]);
+  });
+
+  it('highlights the original matching word after punctuation and whitespace normalization', () => {
+    const parts = highlightLibraryMatch('...subdivisions, (c) provide that every lot, block and parcel', 'lot');
+    expect(parts).toContainEqual({ text: 'lot', match: true });
+    expect(parts.map((part) => part.match ? `[${part.text}]` : part.text).join('')).toContain('[lot], block');
   });
 });

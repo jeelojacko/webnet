@@ -39,6 +39,33 @@ const normalizeSearchText = (value: string): string =>
     .replace(/\s+/g, ' ')
     .trim();
 
+const normalizeSearchTextWithMap = (value: string): { normalized: string; map: number[] } => {
+  let normalized = '';
+  const map: number[] = [];
+  let pendingSpaceIndex: number | null = null;
+  for (let index = 0; index < value.length; index += 1) {
+    const normalizedChars = value[index]
+      .normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '')
+      .toLowerCase();
+    for (const char of normalizedChars) {
+      const mapped = /[a-z0-9.-]/.test(char) ? char : ' ';
+      if (mapped === ' ') {
+        if (normalized && pendingSpaceIndex === null) pendingSpaceIndex = index;
+        continue;
+      }
+      if (pendingSpaceIndex !== null) {
+        normalized += ' ';
+        map.push(pendingSpaceIndex);
+        pendingSpaceIndex = null;
+      }
+      normalized += mapped;
+      map.push(index);
+    }
+  }
+  return { normalized: normalized.trim(), map };
+};
+
 const tokensFor = (value: string): string[] => normalizeSearchText(value).split(' ').filter(Boolean);
 
 const fuzzyScore = (query: string, target: string): number => {
@@ -55,10 +82,11 @@ const fuzzyScore = (query: string, target: string): number => {
 
 const bestMatchSnippet = (original: string, normalizedQuery: string): string => {
   if (!original) return '';
-  const normalizedOriginal = normalizeSearchText(original);
-  const index = normalizedOriginal.indexOf(normalizedQuery);
+  const { normalized, map } = normalizeSearchTextWithMap(original);
+  const index = normalized.indexOf(normalizedQuery);
   if (index < 0) return original.slice(0, 180);
-  const start = Math.max(0, index - 70);
+  const originalIndex = map[index] ?? 0;
+  const start = Math.max(0, originalIndex - 70);
   return `${start > 0 ? '...' : ''}${original.slice(start, start + 220)}${start + 220 < original.length ? '...' : ''}`;
 };
 
@@ -203,12 +231,14 @@ export const searchStudyLibrary = (
 export const highlightLibraryMatch = (text: string, query: string): Array<{ text: string; match: boolean }> => {
   const normalizedQuery = normalizeSearchText(query);
   if (!normalizedQuery) return [{ text, match: false }];
-  const normalizedText = normalizeSearchText(text);
-  const index = normalizedText.indexOf(normalizedQuery);
+  const { normalized, map } = normalizeSearchTextWithMap(text);
+  const index = normalized.indexOf(normalizedQuery);
   if (index < 0) return [{ text, match: false }];
+  const start = map[index] ?? 0;
+  const end = (map[index + normalizedQuery.length - 1] ?? start) + 1;
   return [
-    { text: text.slice(0, index), match: false },
-    { text: text.slice(index, index + normalizedQuery.length), match: true },
-    { text: text.slice(index + normalizedQuery.length), match: false },
+    { text: text.slice(0, start), match: false },
+    { text: text.slice(start, end), match: true },
+    { text: text.slice(end), match: false },
   ].filter((part) => part.text);
 };

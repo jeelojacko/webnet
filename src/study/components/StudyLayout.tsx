@@ -38,7 +38,7 @@ const StudyLayout = ({ activePath, sidebarCollapsed, onSidebarCollapsedChange, o
     <div className="flex min-h-0 flex-1">
       <nav
         className={`hidden shrink-0 border-r border-slate-800 bg-slate-900/70 p-2 md:block ${
-          sidebarCollapsed ? 'w-[2.875rem]' : 'w-[7rem]'
+          sidebarCollapsed ? 'w-[2.875rem]' : 'w-36'
         }`}
         aria-label="Study navigation"
       >

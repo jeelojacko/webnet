@@ -83,7 +83,7 @@ const StudyPreviewPage = ({ data, unitId, onNavigate }: StudyPreviewPageProps) =
       onRate={async () => {}}
       previewMode
       sourceText={sourceTextFor(data, item)}
-      onClosePreview={() => onNavigate(typeof window.history.state?.returnTo === 'string' ? window.history.state.returnTo : '/study/library')}
+      onClosePreview={() => onNavigate('/study/library?tab=units')}
     />
   );
 };
