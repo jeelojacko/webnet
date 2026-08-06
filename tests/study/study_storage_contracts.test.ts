@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { exportStudyData, parseStudyImport } from '../../src/study/studyExportImport';
 import { buildStudyOpfsPath, sanitizeStudyPathSegment } from '../../src/study/studyOpfs';
 import { createSeedStudyData } from '../../src/study/studySeed';
-import { migrateStudySnapshot, STUDY_SCHEMA_VERSION } from '../../src/study/studyStorage';
+import { migrateStudySnapshot, shouldSeedStudyData, STUDY_SCHEMA_VERSION } from '../../src/study/studyStorage';
 
 describe('study storage contracts', () => {
   it('migrates partial imported data to the current schema version', () => {
@@ -20,6 +20,12 @@ describe('study storage contracts', () => {
     expect(migrated.schemaVersion).toBe(STUDY_SCHEMA_VERSION);
     expect(migrated.settings.schemaVersion).toBe(STUDY_SCHEMA_VERSION);
     expect(migrated.settings.phaseRules.guidedRecallSuccessDaysToFreeRecall).toBe(2);
+  });
+
+  it('does not auto-seed after an intentional clean-slate reset leaves settings behind', () => {
+    expect(shouldSeedStudyData({ documentCount: 0, settingsCount: 0 })).toBe(true);
+    expect(shouldSeedStudyData({ documentCount: 0, settingsCount: 1 })).toBe(false);
+    expect(shouldSeedStudyData({ documentCount: 5, settingsCount: 0 })).toBe(false);
   });
 
   it('migrates existing units and concepts to Phase 2D fields', () => {

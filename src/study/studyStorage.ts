@@ -165,6 +165,14 @@ const legalComponentFromRecord = (
   return rest;
 };
 
+export const shouldSeedStudyData = ({
+  documentCount,
+  settingsCount,
+}: {
+  documentCount: number;
+  settingsCount: number;
+}): boolean => documentCount === 0 && settingsCount === 0;
+
 export const migrateStudySnapshot = (input: Partial<StudyDataSnapshot>): StudyDataSnapshot => {
   const nowIso = new Date().toISOString();
   const seed = createSeedStudyData(nowIso);
@@ -234,8 +242,9 @@ export const migrateStudySnapshot = (input: Partial<StudyDataSnapshot>): StudyDa
 };
 
 const seedIfEmpty = async (db: IDBDatabase): Promise<void> => {
+  const settings = await readStore(db, 'settings');
   const documents = await readStore(db, 'documents');
-  if (documents.length > 0) return;
+  if (!shouldSeedStudyData({ documentCount: documents.length, settingsCount: settings.length })) return;
   const seed = createSeedStudyData(new Date().toISOString());
   const transaction = db.transaction(STORES, 'readwrite');
   putMany(transaction, 'documents', seed.documents);
