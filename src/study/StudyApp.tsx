@@ -114,6 +114,7 @@ const StudyApp = () => {
           importText={study.importText}
           onImportTextChange={study.setImportText}
           onImport={study.importData}
+          onDeleteAllData={study.deleteAllData}
           officialPackageText={study.officialPackageText}
           onOfficialPackageTextChange={study.setOfficialPackageText}
           officialPackagePreview={study.officialPackagePreview}

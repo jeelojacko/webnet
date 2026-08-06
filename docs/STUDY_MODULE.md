@@ -147,6 +147,8 @@ They are compact saved HTML fixtures for all ten pilot entries. The fixtures pre
 
 The preview groups new, updated, unchanged, and absent existing documents; new, changed, removed, and unchanged components; reference-only forms; and units that will require source review. Import writes official records atomically across `documents`, `units`, `legalDocuments`, `legalComponents`, and `importHistory`. Official text is stored only in `legalComponents`; it is not copied into editable summaries, prompts, concepts, attempts, progress, or drafts.
 
+For testing, Manage also exposes `Delete All Data`. After confirmation, it replaces the browser Study database with an empty valid snapshot: no documents, official legal records, units, prompts, concepts, rubrics, progress, attempts, drafts, or import history remain. Default Study settings are recreated so the app can immediately import a package or create new custom content.
+
 Study units linked to official source material store `documentId`, `sourceKey`, and `contentHashAtLinkTime`. Later package imports mark `sourceReviewRequired` or `sourceReferenceMissing` when linked components change or disappear. Acknowledging review updates link-time hashes for still-present components and records `sourceReviewAcknowledgedAt`.
 
 ## Reference-Only Forms
@@ -252,6 +254,7 @@ Default response modes are phase-driven unless a unit override is set. Guided-re
 20. In Library, search by document citation, fuzzy title, section number, exact official source text, study question, rubric prompt, and custom citation note. Confirm categorized counts and keyboard Up/Down/Enter navigation.
 21. From Library search, open an official provision result and confirm its parent component expands, the target scrolls once, focus lands on the heading, and the highlight clears.
 22. Preview a source-linked unit, type and reveal responses, mark rubric coverage, close preview, and confirm attempts, drafts, progress, and review counts did not change.
+23. In Manage, click `Delete All Data`, cancel once, then confirm once; verify counts return to zero and the app can import the official package again.
 
 ## Official Content Manual Procedure
 1. Run `npm run study:fetch-nb-laws`.

@@ -18,8 +18,9 @@ import {
 } from './studyDraftGeneration';
 import { normalizeConceptLabelKey } from './studyConceptGeneration';
 import { generateStudyRubric } from './studyRubricGeneration';
+import { createDefaultStudySettings } from './studySeed';
 import { buildSessionItems, createInitialProgress, markReadingComplete, updateProgressAfterAttempt } from './studyScheduler';
-import { createStudyStorage } from './studyStorage';
+import { createStudyStorage, STUDY_SCHEMA_VERSION } from './studyStorage';
 import type {
   StudyAttempt,
   StudyDataSnapshot,
@@ -396,6 +397,40 @@ export const useStudyApp = () => {
     setStatusMessage('Study data imported.');
   }, [importText, storage]);
 
+  const deleteAllData = useCallback(async () => {
+    if (!window.confirm('Delete all Study data and reset to a clean slate? This cannot be undone.')) return;
+    const nowIso = new Date().toISOString();
+    const snapshot: StudyDataSnapshot = {
+      schemaVersion: data?.schemaVersion ?? STUDY_SCHEMA_VERSION,
+      exportedAt: nowIso,
+      documents: [],
+      units: [],
+      prompts: [],
+      concepts: [],
+      rubrics: [],
+      progress: [],
+      attempts: [],
+      drafts: [],
+      settings: createDefaultStudySettings(nowIso),
+      legalDocuments: [],
+      legalComponents: [],
+      importHistory: [],
+    };
+    await storage.replaceAll(snapshot);
+    setData(snapshot);
+    setAnswer('');
+    setGuidedResponses({});
+    setRevealed(false);
+    setCoveredConceptIds([]);
+    setRubricCoverage([]);
+    setActiveItemIndex(0);
+    setImportText('');
+    setOfficialPackageText('');
+    setOfficialPackagePreview(null);
+    setStatusMessage('All Study data deleted. Clean slate ready.');
+    navigate('/study/manage');
+  }, [data?.schemaVersion, navigate, storage]);
+
   const previewOfficialPackage = useCallback(() => {
     if (!data) return;
     try {
@@ -652,6 +687,7 @@ export const useStudyApp = () => {
     importText,
     setImportText,
     importData,
+    deleteAllData,
     officialPackageText,
     setOfficialPackageText,
     officialPackagePreview,

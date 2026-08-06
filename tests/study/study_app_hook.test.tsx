@@ -162,4 +162,29 @@ describe('study app hook persistence', () => {
       { rubricItemId: rubricId, status: 'covered' },
     ]);
   });
+
+  it('deletes all study data after confirmation', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const hookValue: { current: HookValue | null } = { current: null };
+    await act(async () => {
+      root?.render(<HookHarness onValue={(value) => { hookValue.current = value; }} />);
+    });
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
+
+    await act(async () => {
+      await hookValue.current?.deleteAllData();
+    });
+
+    expect(storageState.snapshot?.documents).toEqual([]);
+    expect(storageState.snapshot?.units).toEqual([]);
+    expect(storageState.snapshot?.prompts).toEqual([]);
+    expect(storageState.snapshot?.concepts).toEqual([]);
+    expect(storageState.snapshot?.rubrics).toEqual([]);
+    expect(storageState.snapshot?.attempts).toEqual([]);
+    expect(storageState.snapshot?.legalDocuments).toEqual([]);
+    expect(hookValue.current?.data?.documents).toEqual([]);
+    expect(hookValue.current?.statusMessage).toBe('All Study data deleted. Clean slate ready.');
+  });
 });

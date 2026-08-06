@@ -25,6 +25,8 @@ The Study Library separates `Documents` from `Study Units`. Document rows retain
 
 The Study sidebar is compact and desktop-collapsible with persisted state. Library search is unified across documents, official provisions, source-linked study units, and custom units, with categorized counts, highlighted snippets, debounced input, keyboard result navigation, and official-provision results routed through the optimized source-key navigation path. Study-unit preview reuses the real session UI, supports typed answers, reveal, rubric coverage, and exact source text, and keeps preview responses local so progress, drafts, attempts, and review history are unchanged.
 
+For testing-phase cleanup, `/study/manage` includes a confirmed `Delete All Data` action that replaces local Study storage with an empty valid snapshot and recreates default settings.
+
 ## Current defaults and operator-facing posture
 Current startup and workflow defaults include:
 - run profile defaults to strict industry parity mode

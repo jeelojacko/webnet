@@ -7,6 +7,7 @@ type StudyManagePageProps = {
   importText: string;
   onImportTextChange: (_text: string) => void;
   onImport: () => Promise<void>;
+  onDeleteAllData: () => Promise<void>;
   officialPackageText: string;
   onOfficialPackageTextChange: (_text: string) => void;
   officialPackagePreview: OfficialContentPreview | null;
@@ -21,6 +22,7 @@ const StudyManagePage = ({
   importText,
   onImportTextChange,
   onImport,
+  onDeleteAllData,
   officialPackageText,
   onOfficialPackageTextChange,
   officialPackagePreview,
@@ -51,6 +53,18 @@ const StudyManagePage = ({
         <div className="text-lg font-semibold text-white">{data.attempts.length}</div>
         <div className="text-xs uppercase tracking-wide text-slate-500">Attempts</div>
       </div>
+    </section>
+    <section className="rounded border border-slate-800 bg-slate-900 p-4">
+      <div className="mb-2 text-xs uppercase tracking-wide text-rose-300">Testing Reset</div>
+      <p className="text-sm text-slate-400">
+        Delete every local Study record and return to an empty valid Study database.
+      </p>
+      <button
+        onClick={onDeleteAllData}
+        className="mt-3 rounded bg-rose-700 px-4 py-2 text-sm font-medium text-white hover:bg-rose-600"
+      >
+        Delete All Data
+      </button>
     </section>
     <section className="rounded border border-slate-800 bg-slate-900 p-4">
       <div className="mb-2 text-xs uppercase tracking-wide text-slate-500">Import Official Content Package</div>
