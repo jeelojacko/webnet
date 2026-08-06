@@ -6,6 +6,7 @@ import type {
   StudyProgress,
   StudyPrompt,
   StudyRating,
+  StudyRubricItem,
   StudySessionItem,
   StudyUnit,
 } from './studyTypes';
@@ -133,6 +134,7 @@ export const buildSessionItems = ({
   units,
   prompts,
   concepts,
+  rubrics = [],
   progress,
   nowIso,
   newPriorityLimit = 5,
@@ -141,6 +143,7 @@ export const buildSessionItems = ({
   units: StudyUnit[];
   prompts: StudyPrompt[];
   concepts: StudyConcept[];
+  rubrics?: StudyRubricItem[];
   progress: StudyProgress[];
   nowIso: string;
   newPriorityLimit?: number;
@@ -153,6 +156,10 @@ export const buildSessionItems = ({
   const conceptsByUnit = new Map<string, StudyConcept[]>();
   concepts.forEach((concept) => {
     conceptsByUnit.set(concept.unitId, [...(conceptsByUnit.get(concept.unitId) ?? []), concept]);
+  });
+  const rubricsByUnit = new Map<string, StudyRubricItem[]>();
+  rubrics.forEach((rubric) => {
+    rubricsByUnit.set(rubric.unitId, [...(rubricsByUnit.get(rubric.unitId) ?? []), rubric]);
   });
   const progressByUnit = new Map(progress.map((entry) => [entry.unitId, entry]));
   const candidates = units
@@ -172,6 +179,9 @@ export const buildSessionItems = ({
         prompt,
         progress: entry,
         concepts: (conceptsByUnit.get(unit.id) ?? []).sort((a, b) => a.label.localeCompare(b.label)),
+        rubrics: (rubricsByUnit.get(unit.id) ?? []).sort(
+          (a, b) => a.order - b.order || a.prompt.localeCompare(b.prompt) || a.id.localeCompare(b.id),
+        ),
         due: entry.phase !== 'unread' && entry.dueAt <= nowIso,
       } satisfies StudySessionItem;
     })

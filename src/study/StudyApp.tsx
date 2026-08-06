@@ -68,10 +68,15 @@ const StudyApp = () => {
           activeItem={study.activeItem}
           answer={study.answer}
           onAnswerChange={study.setAnswer}
+          guidedResponses={study.guidedResponses}
+          onGuidedResponsesChange={study.setGuidedResponses}
+          responseMode={study.responseMode}
           revealed={study.revealed}
           onRevealChange={study.setRevealed}
           coveredConceptIds={study.coveredConceptIds}
           onToggleConcept={study.toggleConcept}
+          rubricCoverage={study.rubricCoverage}
+          onRubricCoverageChange={study.setRubricCoverage}
           onRate={study.rateActiveItem}
         />
       );

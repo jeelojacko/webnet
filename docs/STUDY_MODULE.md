@@ -21,13 +21,14 @@ It does not use adjustment, parser, solver, network, or Survey CAD domain state.
 ## IndexedDB Schema
 Database: `webnet.study.v1`
 
-Version: `3`
+Version: `4`
 
 Stores:
 - `documents`, key `id`: source metadata such as title, kind, jurisdiction, category, priority, summary, and OPFS source-file asset records
 - `units`, key `id`: learnable topics with editable summaries and reference answers. Units now carry `sourceMode: "official" | "custom"`. Official units keep document IDs, section refs, and source references; custom units keep those source fields empty and may carry tags, notes/citation text, and an optional custom source URL.
 - `prompts`, key `id`: guided recall, free recall, identification, scenario, or comparison prompts linked to units and concepts
 - `concepts`, key `id`: required checklist concepts linked to units, including generated/manual origin and deterministic display order
+- `rubrics`, key `id`: structured answer-rubric items linked to study units, including category, prompt, reference answer, required flag, generated/manual origin, display order, and optional source references
 - `progress`, key `unitId`: current phase, due date, successful separate-day counters, and review counts
 - `attempts`, key `id`: immutable completed attempts with answer text, covered concepts, rating, and timestamps
 - `drafts`, key `id`: autosaved in-progress typed answers
@@ -36,7 +37,7 @@ Stores:
 - `legalComponents`, key `recordKey`: imported authoritative components keyed by `{documentId}::{sourceKey}`, including sections, schedules, forms, source text, source hash, subsections, and extraction status
 - `importHistory`, key `id`: compact official-package import history with added/changed counts, reference-only form counts, and flagged-unit counts
 
-Schema migration currently normalizes imported or partially missing snapshots to schema version `3`, fills default settings, defaults official-content stores to empty arrays, adds unit source mode, adds concept origin/order fields, and keeps existing Study data intact. Existing concepts without origin default to manual unless the linked unit already records generated concepts.
+Schema migration currently normalizes imported or partially missing snapshots to schema version `4`, fills default settings, defaults official-content stores to empty arrays, adds unit source mode, adds concept origin/order fields, adds the rubric store, and keeps existing Study data intact. Existing concepts without origin default to manual unless the linked unit already records generated concepts. Legacy snapshots without rubrics receive conservative supplemental `custom` rubric rows from existing concepts with empty reference answers, so migration does not invent legal answers or delete concept content.
 
 ## OPFS Layout
 Source and backup assets use generated paths under:
@@ -178,7 +179,16 @@ Reference-answer generation defaults to structured exact wording. It preserves s
 
 Generated field state is tracked on `StudyUnit.generatedContentState` for title, question, reference answer, study summary, and concepts. Regeneration controls confirm before replacing a user-edited field. Existing source-linked units expose `Generate Missing Study Content`, which fills only empty generated fields and does not overwrite manual titles, prompts, reference answers, summaries, concepts, progress, attempts, or drafts.
 
-## Required Concepts
+## Answer Rubrics
+Answer rubrics are now the primary study-session assessment structure. A rubric item has a category such as purpose, scope/trigger, actor, power/duty, required material, procedure, notice, deadline/number, limit/exception, legal effect, filing/record, survey relevance, related provision, or custom. Each item carries an editable prompt and reference answer plus generated/manual origin and source-reference metadata when generated from official text.
+
+Creating a source-linked legal unit now generates structured rubric items in addition to the older concept suggestions. For legal provisions, `generateStudyRubric` classifies subsection wording deterministically using statutory signals such as `subject to`, `if`, `on receiving`, `may`, `shall`, `notice`, numeric deadlines, filing/registry language, legal-effect wording, and cross-references. Generated reference answers stay close to the source subsection wording and survey-relevance notes are explicitly labelled as study notes.
+
+Section 16 of the Boundaries Confirmation Act has deterministic coverage for correction purpose, Registrar General authority and evidence threshold, discretionary notice, confirmed-boundary limitation, corrected-plan filing, superseded-plan notation, related subsection 15(2), and clear survey relevance.
+
+The unit editor shows `Answer Rubric` above `Keywords / Concepts`. Users can add, edit, duplicate, reorder, delete, apply templates, add generated items, replace only generated items, and clear generated items. Manual rubric rows are not overwritten by generated replacement actions.
+
+## Keywords / Concepts
 Required concepts are editable checklist rows. The unit editor supports `+ Add Concept`, Enter-to-save normalization, Escape cancellation for empty new rows, delete, and up/down reordering. Duplicate labels are rejected case-insensitively after punctuation and whitespace normalization. Empty concepts are dropped on save. Generated and manual concepts are both editable and removable.
 
 Concept suggestions are generated by the pure deterministic `generateRequiredConcepts` function. It extracts defined terms, meaningful headings, subsection topics, actor/action/object requirements, deadlines and numerical requirements, legal effects, and conservative fallbacks for substantive non-repealed source text. It intentionally skips reference-only forms, repealed-only components, source URLs, consolidation-note-only text, and amendment-history noise.
@@ -206,6 +216,8 @@ Default transitions:
 
 Due reviews sort before new units. New units are then selected by priority and deterministic title/id ordering.
 
+Default response modes are phase-driven unless a unit override is set. Guided-recall uses guided mode with one answer textbox per rubric item. Free-recall, application, and maintenance use the large free-recall answer by default. Hybrid mode keeps the free-recall answer and guided rubric prompts available together. After reveal, the session shows the rubric reference answers and lets the learner mark each item as covered, partially covered, or missed. Attempts persist response mode, guided responses, and rubric coverage. Preview-specific mutation isolation is not part of this starter batch yet.
+
 ## Manual Test Procedure
 1. Run `npm run dev` and open `/study`.
 2. Open `Library`, choose a seeded document, edit a document summary, and save it.
@@ -220,9 +232,11 @@ Due reviews sort before new units. New units are then selected by priority and d
 11. Select section `3` or Schedule A, and create a study unit from the selection.
 12. Confirm the unit editor opens with read-only official source text on the left and editable generated title/question/reference answer on the right.
 13. Add, edit, delete, reorder, add suggested, and replace generated concepts; confirm manual concepts are preserved unless `Replace All` is explicitly confirmed.
-14. Create a custom study unit from Library, edit custom fields, save, duplicate it, delete the duplicate, and confirm the original appears in Session.
-15. Edit the generated question, click `Regenerate question`, and confirm overwrite confirmation appears.
-16. Save or cancel and confirm the app returns to the source document.
+14. Add, edit, duplicate, reorder, delete, apply template, add suggested rubric items, replace generated rubric items, and clear generated rubric items; confirm manual rubric items are preserved by replacement actions.
+15. Create a custom study unit from Library, edit custom fields, save, duplicate it, delete the duplicate, and confirm the original appears in Session.
+16. Edit the generated question, click `Regenerate question`, and confirm overwrite confirmation appears.
+17. Save or cancel and confirm the app returns to the source document.
+18. Open Session for a guided-recall unit and confirm rubric prompts each have their own answer box, reveal shows rubric reference answers, and coverage choices persist with the completed attempt.
 
 ## Official Content Manual Procedure
 1. Run `npm run study:fetch-nb-laws`.

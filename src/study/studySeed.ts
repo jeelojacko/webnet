@@ -4,6 +4,7 @@ import type {
   StudyDataSnapshot,
   StudyDocument,
   StudyPrompt,
+  StudyRubricItem,
   StudySettings,
   StudyUnit,
 } from './studyTypes';
@@ -190,9 +191,22 @@ const prompts: StudyPrompt[] = units.flatMap((unit) => [
   },
 ]);
 
+const rubrics: StudyRubricItem[] = concepts.map((concept): StudyRubricItem => ({
+  id: `${concept.id}-rubric`,
+  unitId: concept.unitId,
+  category: 'custom',
+  prompt: concept.label,
+  referenceAnswer: concept.explanation ?? '',
+  required: concept.required,
+  origin: 'manual',
+  order: concept.order,
+  createdAt: SEED_CREATED_AT,
+  updatedAt: SEED_CREATED_AT,
+}));
+
 export const createDefaultStudySettings = (updatedAt = SEED_CREATED_AT): StudySettings => ({
   id: 'default',
-  schemaVersion: 2,
+  schemaVersion: 4,
   phaseRules: DEFAULT_STUDY_PHASE_RULES,
   newUnitPriorityLimit: 5,
   includeMaintenanceReviews: true,
@@ -200,12 +214,13 @@ export const createDefaultStudySettings = (updatedAt = SEED_CREATED_AT): StudySe
 });
 
 export const createSeedStudyData = (nowIso = SEED_CREATED_AT): StudyDataSnapshot => ({
-  schemaVersion: 2,
+  schemaVersion: 4,
   exportedAt: nowIso,
   documents: documents.map((entry) => ({ ...entry })),
   units: units.map((entry) => ({ ...entry })),
   prompts: prompts.map((entry) => ({ ...entry, conceptIds: entry.conceptIds.slice() })),
   concepts: concepts.map((entry) => ({ ...entry })),
+  rubrics: rubrics.map((entry) => ({ ...entry })),
   progress: units.map((unit) => createInitialProgress(unit.id, nowIso)),
   attempts: [],
   drafts: [],

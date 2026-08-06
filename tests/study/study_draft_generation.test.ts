@@ -10,6 +10,7 @@ import {
   suggestRequiredConcepts,
 } from '../../src/study/studyDraftGeneration';
 import { normalizeConceptLabelKey } from '../../src/study/studyConceptGeneration';
+import { generateStudyRubric, getStudyRubricTemplate } from '../../src/study/studyRubricGeneration';
 import {
   applyOfficialContentPackageToSnapshot,
   createStudyContentFromSourceSelection,
@@ -252,6 +253,8 @@ describe('source-linked generated unit creation', () => {
     expect(created.unit.generatedContentState?.referenceAnswer).toBe('generated');
     expect(created.prompt.question).toContain('section 5');
     expect(created.unit.sourceReferences?.[0].contentHashAtLinkTime).toBe(source.contentHash);
+    expect(created.rubrics.length).toBeGreaterThan(0);
+    expect(created.unit.generatedContentState?.rubrics).toBe('generated');
   });
 
   it('suggests conservative concepts when reliable phrases are available', () => {
@@ -270,6 +273,36 @@ describe('source-linked generated unit creation', () => {
     });
     expect(created.concepts[0]?.origin).toBe('generated');
     expect(created.concepts.map((concept) => concept.order)).toEqual(created.concepts.map((_, index) => index));
+  });
+});
+
+describe('structured rubric generation', () => {
+  it('generates the expected section 16 correction rubric', () => {
+    const rubric = generateStudyRubric({
+      document: legalDocument('doc-boundaries-confirmation-act'),
+      selectedSources: [component('doc-boundaries-confirmation-act', 'section:16')],
+      unitType: 'section',
+    });
+
+    expect(rubric.map((item) => item.category)).toEqual([
+      'purpose',
+      'actor',
+      'notice',
+      'limit-exception',
+      'filing-record',
+      'legal-effect',
+      'related-provision',
+      'survey-relevance',
+    ]);
+    expect(rubric[0]?.referenceAnswer).toContain('inconsistency, error or omission');
+    expect(rubric[3]?.referenceAnswer).toContain('shall not affect the location of a boundary');
+    expect(rubric[7]?.referenceAnswer).toContain('Study note:');
+  });
+
+  it('provides default templates for whole acts, cases and custom principles', () => {
+    expect(getStudyRubricTemplate('whole-act').map((item) => item.category)).toContain('survey-relevance');
+    expect(getStudyRubricTemplate('survey-law-case').map((item) => item.prompt)).toContain('What boundary issue was before the court?');
+    expect(getStudyRubricTemplate('custom-principle').map((item) => item.category)).toContain('limit-exception');
   });
 });
 

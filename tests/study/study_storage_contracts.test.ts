@@ -56,6 +56,12 @@ describe('study storage contracts', () => {
     expect(migrated.units[0].tags).toEqual([]);
     expect(migrated.concepts[0].origin).toBe('manual');
     expect(migrated.concepts[0].order).toBe(0);
+    expect(migrated.rubrics[0]).toMatchObject({
+      unitId: seed.concepts[0].unitId,
+      category: 'custom',
+      prompt: seed.concepts[0].label,
+      referenceAnswer: '',
+    });
   });
 
   it('round-trips exported study data and preserves attempts and drafts', () => {
@@ -86,12 +92,27 @@ describe('study storage contracts', () => {
           updatedAt: '2026-08-01T10:02:00.000Z',
         },
       ],
+      rubrics: [
+        {
+          id: 'rubric-1',
+          unitId: seed.units[0].id,
+          category: 'purpose' as const,
+          prompt: 'What is the purpose?',
+          referenceAnswer: 'Reference answer.',
+          required: true,
+          origin: 'manual' as const,
+          order: 0,
+          createdAt: '2026-08-01T10:00:00.000Z',
+          updatedAt: '2026-08-01T10:00:00.000Z',
+        },
+      ],
     };
 
     const restored = parseStudyImport(exportStudyData(snapshot, '2026-08-01T12:00:00.000Z'));
 
     expect(restored.attempts).toHaveLength(1);
     expect(restored.drafts[0]?.answer).toBe('autosaved answer');
+    expect(restored.rubrics[0]?.prompt).toBe('What is the purpose?');
   });
 
   it('generates deterministic OPFS paths for source assets', () => {

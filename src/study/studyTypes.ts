@@ -30,12 +30,33 @@ export type StudyGeneratedFieldState = 'empty' | 'generated' | 'user-edited';
 
 export type StudyReferenceAnswerFormat = 'structured-exact' | 'complete-exact-text' | 'empty';
 
+export type StudyRubricCategory =
+  | 'purpose'
+  | 'scope-trigger'
+  | 'actor'
+  | 'power-duty'
+  | 'required-material'
+  | 'procedure'
+  | 'notice'
+  | 'deadline-number'
+  | 'limit-exception'
+  | 'legal-effect'
+  | 'filing-record'
+  | 'survey-relevance'
+  | 'related-provision'
+  | 'custom';
+
+export type StudyUnitType = 'section' | 'whole-act' | 'survey-law-case' | 'custom-principle' | 'custom';
+
+export type StudyResponseMode = 'guided' | 'free-recall' | 'hybrid';
+
 export type StudyGeneratedContentState = {
   title: StudyGeneratedFieldState;
   question: StudyGeneratedFieldState;
   referenceAnswer: StudyGeneratedFieldState;
   editableSummary: StudyGeneratedFieldState;
   concepts: StudyGeneratedFieldState;
+  rubrics?: StudyGeneratedFieldState;
 };
 
 export type StudySourceMode = 'official' | 'custom';
@@ -92,6 +113,8 @@ export type StudyUnit = {
   priority: StudyPriority;
   promptKind?: StudyPromptKind;
   phase?: StudyPhase;
+  unitType?: StudyUnitType;
+  responseModeOverride?: StudyResponseMode;
   tags?: string[];
   notesCitationText?: string;
   customSourceUrl?: string;
@@ -124,6 +147,27 @@ export type StudyConcept = {
   updatedAt: string;
 };
 
+export type StudyRubricItem = {
+  id: string;
+  unitId: string;
+  category: StudyRubricCategory;
+  prompt: string;
+  referenceAnswer: string;
+  required: boolean;
+  origin: 'generated' | 'manual';
+  order: number;
+  sourceReferences?: StudySourceReference[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type StudyRubricCoverageStatus = 'covered' | 'partially-covered' | 'missed';
+
+export type StudyRubricCoverage = {
+  rubricItemId: string;
+  status: StudyRubricCoverageStatus;
+};
+
 export type StudyProgress = {
   unitId: string;
   phase: StudyPhase;
@@ -143,7 +187,10 @@ export type StudyAttempt = {
   promptId: string;
   phase: StudyPhase;
   answer: string;
+  responseMode?: StudyResponseMode;
+  guidedResponses?: Record<string, string>;
   coveredConceptIds: string[];
+  rubricCoverage?: StudyRubricCoverage[];
   rating: StudyRating;
   startedAt: string;
   revealedAt: string;
@@ -155,6 +202,8 @@ export type StudyDraft = {
   unitId: string;
   promptId: string;
   answer: string;
+  responseMode?: StudyResponseMode;
+  guidedResponses?: Record<string, string>;
   startedAt: string;
   updatedAt: string;
 };
@@ -171,6 +220,7 @@ export type StudySettings = {
   phaseRules: StudyPhaseRules;
   newUnitPriorityLimit: StudyPriority;
   includeMaintenanceReviews: boolean;
+  studySidebarCollapsed?: boolean;
   updatedAt: string;
 };
 
@@ -245,6 +295,7 @@ export type StudyDataSnapshot = {
   units: StudyUnit[];
   prompts: StudyPrompt[];
   concepts: StudyConcept[];
+  rubrics: StudyRubricItem[];
   progress: StudyProgress[];
   attempts: StudyAttempt[];
   drafts: StudyDraft[];
@@ -259,5 +310,6 @@ export type StudySessionItem = {
   prompt: StudyPrompt;
   progress: StudyProgress;
   concepts: StudyConcept[];
+  rubrics: StudyRubricItem[];
   due: boolean;
 };

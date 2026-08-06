@@ -1,14 +1,25 @@
-import type { StudyRating, StudySessionItem } from '../studyTypes';
+import type {
+  StudyRating,
+  StudyResponseMode,
+  StudyRubricCoverage,
+  StudyRubricCoverageStatus,
+  StudySessionItem,
+} from '../studyTypes';
 import { StudyEmptyState } from './StudyLayout';
 
 type StudySessionPageProps = {
   activeItem: StudySessionItem | null;
   answer: string;
   onAnswerChange: (_answer: string) => void;
+  guidedResponses: Record<string, string>;
+  onGuidedResponsesChange: (_responses: Record<string, string>) => void;
+  responseMode: StudyResponseMode;
   revealed: boolean;
   onRevealChange: (_revealed: boolean) => void;
   coveredConceptIds: string[];
   onToggleConcept: (_conceptId: string) => void;
+  rubricCoverage: StudyRubricCoverage[];
+  onRubricCoverageChange: (_coverage: StudyRubricCoverage[]) => void;
   onRate: (_rating: StudyRating) => Promise<void>;
 };
 
@@ -19,14 +30,25 @@ const RATINGS: Array<{ rating: StudyRating; label: string; className: string }> 
   { rating: 'easy', label: 'Easy', className: 'bg-sky-700 hover:bg-sky-600' },
 ];
 
+const COVERAGE_OPTIONS: Array<{ status: StudyRubricCoverageStatus; label: string }> = [
+  { status: 'covered', label: 'Covered' },
+  { status: 'partially-covered', label: 'Partially covered' },
+  { status: 'missed', label: 'Missed' },
+];
+
 const StudySessionPage = ({
   activeItem,
   answer,
   onAnswerChange,
+  guidedResponses,
+  onGuidedResponsesChange,
+  responseMode,
   revealed,
   onRevealChange,
   coveredConceptIds,
   onToggleConcept,
+  rubricCoverage,
+  onRubricCoverageChange,
   onRate,
 }: StudySessionPageProps) => {
   if (!activeItem) return <StudyEmptyState text="No study units are available." />;
@@ -48,17 +70,41 @@ const StudySessionPage = ({
         <div className="text-xs uppercase tracking-wide text-slate-500">Prompt</div>
         <div className="mt-2 text-base text-slate-100">{activeItem.prompt.question}</div>
       </section>
-      <section className="rounded border border-slate-800 bg-slate-900 p-4">
-        <div className="mb-2 flex items-center justify-between gap-3">
-          <label className="text-xs uppercase tracking-wide text-slate-500">Typed Recall</label>
-          <span className="text-xs text-slate-600">Autosaves locally</span>
-        </div>
-        <textarea
-          value={answer}
-          onChange={(event) => onAnswerChange(event.target.value)}
-          className="min-h-[18rem] w-full rounded border border-slate-700 bg-slate-950 p-4 text-sm leading-6 text-slate-100"
-        />
-      </section>
+      {responseMode !== 'guided' ? (
+        <section className="rounded border border-slate-800 bg-slate-900 p-4">
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <label className="text-xs uppercase tracking-wide text-slate-500">Typed Recall</label>
+            <span className="text-xs text-slate-600">Autosaves locally</span>
+          </div>
+          <textarea
+            value={answer}
+            onChange={(event) => onAnswerChange(event.target.value)}
+            className="min-h-[18rem] w-full rounded border border-slate-700 bg-slate-950 p-4 text-sm leading-6 text-slate-100"
+          />
+        </section>
+      ) : null}
+      {responseMode !== 'free-recall' ? (
+        <section className="rounded border border-slate-800 bg-slate-900 p-4">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <label className="text-xs uppercase tracking-wide text-slate-500">Guided Prompts</label>
+            <span className="text-xs text-slate-600">Autosaves locally</span>
+          </div>
+          <div className="space-y-3">
+            {activeItem.rubrics.map((rubric) => (
+              <label key={rubric.id} className="grid gap-2 text-sm text-slate-200">
+                {rubric.prompt}
+                <textarea
+                  value={guidedResponses[rubric.id] ?? ''}
+                  onChange={(event) =>
+                    onGuidedResponsesChange({ ...guidedResponses, [rubric.id]: event.target.value })
+                  }
+                  className="min-h-24 rounded border border-slate-700 bg-slate-950 p-3 text-sm leading-6 text-slate-100"
+                />
+              </label>
+            ))}
+          </div>
+        </section>
+      ) : null}
       {!revealed ? (
         <button
           onClick={() => onRevealChange(true)}
@@ -72,7 +118,9 @@ const StudySessionPage = ({
             <div className="rounded border border-slate-800 bg-slate-900 p-4">
               <div className="text-xs uppercase tracking-wide text-slate-500">Your Answer</div>
               <div className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-200">
-                {answer || 'No answer entered.'}
+                {responseMode === 'guided'
+                  ? activeItem.rubrics.map((rubric) => `${rubric.prompt}\n${guidedResponses[rubric.id] ?? ''}`).join('\n\n')
+                  : answer || 'No answer entered.'}
               </div>
             </div>
             <div className="rounded border border-slate-800 bg-slate-900 p-4">
@@ -83,7 +131,41 @@ const StudySessionPage = ({
             </div>
           </section>
           <section className="rounded border border-slate-800 bg-slate-900 p-4">
-            <div className="text-xs uppercase tracking-wide text-slate-500">Required Concepts</div>
+            <div className="text-xs uppercase tracking-wide text-slate-500">Answer Rubric</div>
+            <div className="mt-3 space-y-3">
+              {activeItem.rubrics.map((rubric) => {
+                const selected = rubricCoverage.find((entry) => entry.rubricItemId === rubric.id)?.status;
+                return (
+                  <div key={rubric.id} className="rounded border border-slate-800 bg-slate-950 p-3">
+                    <div className="font-medium text-slate-100">{rubric.prompt}</div>
+                    <div className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-300">
+                      {rubric.referenceAnswer || 'No reference answer has been set for this rubric item.'}
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {COVERAGE_OPTIONS.map((option) => (
+                        <button
+                          key={option.status}
+                          onClick={() =>
+                            onRubricCoverageChange([
+                              ...rubricCoverage.filter((entry) => entry.rubricItemId !== rubric.id),
+                              { rubricItemId: rubric.id, status: option.status },
+                            ])
+                          }
+                          className={`rounded px-3 py-1.5 text-xs ${
+                            selected === option.status ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-300'
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+          <section className="rounded border border-slate-800 bg-slate-900 p-4">
+            <div className="text-xs uppercase tracking-wide text-slate-500">Keywords / Concepts</div>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
               {activeItem.concepts.map((concept) => (
                 <label

@@ -15,19 +15,21 @@ import type {
   StudyOfficialImportHistory,
   StudyProgress,
   StudyPrompt,
+  StudyRubricItem,
   StudySettings,
   StudyUnit,
 } from './studyTypes';
 
 export const STUDY_DB_NAME = 'webnet.study.v1';
-export const STUDY_DB_VERSION = 3;
-export const STUDY_SCHEMA_VERSION = 3;
+export const STUDY_DB_VERSION = 4;
+export const STUDY_SCHEMA_VERSION = 4;
 
 const STORES = [
   'documents',
   'units',
   'prompts',
   'concepts',
+  'rubrics',
   'progress',
   'attempts',
   'drafts',
@@ -44,6 +46,7 @@ const STORE_KEYS: Record<StudyStoreName, string> = {
   units: 'id',
   prompts: 'id',
   concepts: 'id',
+  rubrics: 'id',
   progress: 'unitId',
   attempts: 'id',
   drafts: 'id',
@@ -58,6 +61,7 @@ type StudyStorePayloads = {
   units: StudyUnit;
   prompts: StudyPrompt;
   concepts: StudyConcept;
+  rubrics: StudyRubricItem;
   progress: StudyProgress;
   attempts: StudyAttempt;
   drafts: StudyDraft;
@@ -73,6 +77,7 @@ export interface StudyStorage {
   saveUnit: (_unit: StudyUnit) => Promise<void>;
   savePrompt: (_prompt: StudyPrompt) => Promise<void>;
   replaceUnitConcepts: (_unitId: string, _concepts: StudyConcept[]) => Promise<void>;
+  replaceUnitRubrics: (_unitId: string, _rubrics: StudyRubricItem[]) => Promise<void>;
   saveProgress: (_progress: StudyProgress) => Promise<void>;
   saveAttempt: (_attempt: StudyAttempt) => Promise<void>;
   saveDraft: (_draft: StudyDraft) => Promise<void>;
@@ -196,6 +201,20 @@ export const migrateStudySnapshot = (input: Partial<StudyDataSnapshot>): StudyDa
       order,
     };
   });
+  const rubrics =
+    input.rubrics ??
+    concepts.map((concept): StudyRubricItem => ({
+      id: `${concept.id}-rubric`,
+      unitId: concept.unitId,
+      category: 'custom',
+      prompt: concept.label,
+      referenceAnswer: concept.explanation ?? '',
+      required: concept.required,
+      origin: concept.origin,
+      order: concept.order,
+      createdAt: concept.createdAt,
+      updatedAt: concept.updatedAt,
+    }));
   return {
     schemaVersion: STUDY_SCHEMA_VERSION,
     exportedAt: input.exportedAt ?? nowIso,
@@ -203,6 +222,7 @@ export const migrateStudySnapshot = (input: Partial<StudyDataSnapshot>): StudyDa
     units,
     prompts: input.prompts ?? seed.prompts,
     concepts,
+    rubrics,
     progress: input.progress ?? seed.progress,
     attempts: input.attempts ?? [],
     drafts: input.drafts ?? [],
@@ -222,6 +242,7 @@ const seedIfEmpty = async (db: IDBDatabase): Promise<void> => {
   putMany(transaction, 'units', seed.units);
   putMany(transaction, 'prompts', seed.prompts);
   putMany(transaction, 'concepts', seed.concepts);
+  putMany(transaction, 'rubrics', seed.rubrics);
   putMany(transaction, 'progress', seed.progress);
   putMany(transaction, 'settings', [seed.settings]);
   await transactionDone(transaction);
@@ -233,12 +254,13 @@ export const createStudyStorage = (): StudyStorage => ({
     const db = await openStudyDatabase();
     try {
       await seedIfEmpty(db);
-      const [documents, units, prompts, concepts, progress, attempts, drafts, settings] =
+      const [documents, units, prompts, concepts, rubrics, progress, attempts, drafts, settings] =
         await Promise.all([
           readStore(db, 'documents'),
           readStore(db, 'units'),
           readStore(db, 'prompts'),
           readStore(db, 'concepts'),
+          readStore(db, 'rubrics'),
           readStore(db, 'progress'),
           readStore(db, 'attempts'),
           readStore(db, 'drafts'),
@@ -255,6 +277,7 @@ export const createStudyStorage = (): StudyStorage => ({
         units,
         prompts,
         concepts,
+        rubrics,
         progress,
         attempts,
         drafts,
@@ -299,6 +322,19 @@ export const createStudyStorage = (): StudyStorage => ({
       const store = transaction.objectStore('concepts');
       existing.filter((concept) => concept.unitId === unitId).forEach((concept) => store.delete(concept.id));
       concepts.forEach((concept) => store.put(concept));
+      await transactionDone(transaction);
+    } finally {
+      db.close();
+    }
+  },
+  async replaceUnitRubrics(unitId, rubrics) {
+    const db = await openStudyDatabase();
+    try {
+      const existing = await readStore(db, 'rubrics');
+      const transaction = db.transaction('rubrics', 'readwrite');
+      const store = transaction.objectStore('rubrics');
+      existing.filter((rubric) => rubric.unitId === unitId).forEach((rubric) => store.delete(rubric.id));
+      rubrics.forEach((rubric) => store.put(rubric));
       await transactionDone(transaction);
     } finally {
       db.close();
@@ -356,6 +392,7 @@ export const createStudyStorage = (): StudyStorage => ({
       putMany(transaction, 'units', next.units);
       putMany(transaction, 'prompts', next.prompts);
       putMany(transaction, 'concepts', next.concepts);
+      putMany(transaction, 'rubrics', next.rubrics);
       putMany(transaction, 'progress', next.progress);
       putMany(transaction, 'attempts', next.attempts);
       putMany(transaction, 'drafts', next.drafts);
@@ -371,12 +408,13 @@ export const createStudyStorage = (): StudyStorage => ({
   async importOfficialContentPackage(contentPackage) {
     const db = await openStudyDatabase();
     try {
-      const [documents, units, prompts, concepts, progress, attempts, drafts, settings, legalDocuments, legalComponents, importHistory] =
+      const [documents, units, prompts, concepts, rubrics, progress, attempts, drafts, settings, legalDocuments, legalComponents, importHistory] =
         await Promise.all([
           readStore(db, 'documents'),
           readStore(db, 'units'),
           readStore(db, 'prompts'),
           readStore(db, 'concepts'),
+          readStore(db, 'rubrics'),
           readStore(db, 'progress'),
           readStore(db, 'attempts'),
           readStore(db, 'drafts'),
@@ -390,6 +428,7 @@ export const createStudyStorage = (): StudyStorage => ({
         units,
         prompts,
         concepts,
+        rubrics,
         progress,
         attempts,
         drafts,

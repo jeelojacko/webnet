@@ -32,8 +32,9 @@ vi.mock('../../src/study/studyStorage', () => ({
     })),
     saveDocument: vi.fn(),
     saveUnit: vi.fn(),
-    savePrompt: vi.fn(),
-    replaceUnitConcepts: vi.fn(),
+  savePrompt: vi.fn(),
+  replaceUnitConcepts: vi.fn(),
+  replaceUnitRubrics: vi.fn(),
     saveProgress: vi.fn(async (progress: StudyProgress) => {
       storageState.progress = [
         ...storageState.progress.filter((entry) => entry.unitId !== progress.unitId),
@@ -57,10 +58,10 @@ vi.mock('../../src/study/studyStorage', () => ({
       storageState.snapshot = snapshot;
     }),
   }),
-  STUDY_SCHEMA_VERSION: 1,
+  STUDY_SCHEMA_VERSION: 4,
   STUDY_DB_NAME: 'webnet.study.v1',
   STUDY_DB_VERSION: 1,
-  migrateStudySnapshot: (input: Partial<StudyDataSnapshot>) => ({ ...input, schemaVersion: 1 }),
+  migrateStudySnapshot: (input: Partial<StudyDataSnapshot>) => ({ ...input, schemaVersion: 4 }),
 }));
 
 type HookValue = ReturnType<typeof useStudyApp>;
@@ -130,5 +131,35 @@ describe('study app hook persistence', () => {
     expect(storageState.attempts).toHaveLength(1);
     expect(storageState.attempts[0]?.answer).toBe('Long typed recall answer.');
     expect(storageState.drafts).toEqual([]);
+  });
+
+  it('persists guided responses and rubric coverage with attempts', async () => {
+    const hookValue: { current: HookValue | null } = { current: null };
+    await act(async () => {
+      root?.render(<HookHarness onValue={(value) => { hookValue.current = value; }} />);
+    });
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
+
+    const rubricId = hookValue.current?.activeItem?.rubrics[0]?.id ?? '';
+    await act(async () => {
+      hookValue.current?.setGuidedResponses({ [rubricId]: 'Guided answer.' });
+      hookValue.current?.setRubricCoverage([{ rubricItemId: rubricId, status: 'covered' }]);
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(300);
+    });
+
+    expect(storageState.drafts[0]?.guidedResponses?.[rubricId]).toBe('Guided answer.');
+
+    await act(async () => {
+      await hookValue.current?.rateActiveItem('good');
+    });
+
+    expect(storageState.attempts.at(-1)?.guidedResponses?.[rubricId]).toBe('Guided answer.');
+    expect(storageState.attempts.at(-1)?.rubricCoverage).toEqual([
+      { rubricItemId: rubricId, status: 'covered' },
+    ]);
   });
 });

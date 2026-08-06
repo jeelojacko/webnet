@@ -17,14 +17,18 @@ import type {
   StudyPhase,
   StudyPrompt,
   StudyPromptKind,
+  StudyResponseMode,
+  StudyRubricItem,
   StudyReferenceAnswerFormat,
   StudyUnit,
+  StudyUnitType,
 } from '../studyTypes';
+import StudyRubricEditor from './StudyRubricEditor';
 
 type StudyUnitEditorPageProps = {
   data: StudyDataSnapshot;
   unitId: string;
-  onSave: (_draft: { unit: StudyUnit; prompt: StudyPrompt; concepts: StudyConcept[] }) => Promise<void>;
+  onSave: (_draft: { unit: StudyUnit; prompt: StudyPrompt; concepts: StudyConcept[]; rubrics: StudyRubricItem[] }) => Promise<void>;
   onNavigate: (_path: string) => void;
 };
 
@@ -34,6 +38,7 @@ const emptyGeneratedState = (): StudyGeneratedContentState => ({
   referenceAnswer: 'empty',
   editableSummary: 'empty',
   concepts: 'empty',
+  rubrics: 'empty',
 });
 
 const sourceRecordKey = (component: Pick<ImportedLegalComponent, 'documentId' | 'sourceKey'>): string =>
@@ -65,8 +70,16 @@ const orderedConcepts = (concepts: StudyConcept[]): StudyConcept[] =>
 const conceptRowsWithOrder = (concepts: StudyConcept[]): StudyConcept[] =>
   concepts.map((concept, index) => ({ ...concept, order: index }));
 
+const orderedRubrics = (rubrics: StudyRubricItem[]): StudyRubricItem[] =>
+  rubrics.slice().sort((left, right) => left.order - right.order || left.prompt.localeCompare(right.prompt) || left.id.localeCompare(right.id));
+
+const rubricRowsWithOrder = (rubrics: StudyRubricItem[]): StudyRubricItem[] =>
+  rubrics.map((rubric, index) => ({ ...rubric, order: index }));
+
 const phaseOptions: StudyPhase[] = ['unread', 'guided-recall', 'free-recall', 'application', 'maintenance'];
 const promptOptions: StudyPromptKind[] = ['guided-recall', 'free-recall', 'identification', 'scenario', 'comparison'];
+const responseModeOptions: Array<StudyResponseMode | ''> = ['', 'guided', 'free-recall', 'hybrid'];
+const unitTypeOptions: StudyUnitType[] = ['section', 'whole-act', 'survey-law-case', 'custom-principle', 'custom'];
 
 const StudyUnitEditorPage = ({ data, unitId, onSave, onNavigate }: StudyUnitEditorPageProps) => {
   const unit = data.units.find((entry) => entry.id === unitId);
@@ -75,6 +88,7 @@ const StudyUnitEditorPage = ({ data, unitId, onSave, onNavigate }: StudyUnitEdit
     data.prompts.find((entry) => entry.unitId === unitId && entry.kind === 'guided-recall') ??
     data.prompts.find((entry) => entry.unitId === unitId);
   const initialConcepts = orderedConcepts(data.concepts.filter((concept) => concept.unitId === unitId));
+  const initialRubrics = orderedRubrics(data.rubrics.filter((rubric) => rubric.unitId === unitId));
   const selectedKeys = new Set(unit?.sourceReferences?.map((reference) => `${reference.documentId}::${reference.sourceKey}`) ?? []);
   const sourceComponents = data.legalComponents.filter((component) => selectedKeys.has(sourceRecordKey(component)));
   const legalDocument = unit?.documentIds[0]
@@ -93,6 +107,7 @@ const StudyUnitEditorPage = ({ data, unitId, onSave, onNavigate }: StudyUnitEdit
   const [unitDraft, setUnitDraft] = useState(unit);
   const [promptDraft, setPromptDraft] = useState(initialPrompt);
   const [conceptDrafts, setConceptDrafts] = useState(initialConcepts);
+  const [rubricDrafts, setRubricDrafts] = useState(initialRubrics);
   const [generatedState, setGeneratedState] = useState(unit?.generatedContentState ?? emptyGeneratedState());
   const [options, setOptions] = useState<ReferenceAnswerOptions>(DEFAULT_REFERENCE_ANSWER_OPTIONS);
   const [selectedSuggestionKeys, setSelectedSuggestionKeys] = useState<string[]>([]);
@@ -266,6 +281,11 @@ const StudyUnitEditorPage = ({ data, unitId, onSave, onNavigate }: StudyUnitEdit
       },
       prompt: { ...promptDraft, referenceAnswer: unitDraft.referenceAnswer, conceptIds: cleanedConcepts.map((concept) => concept.id) },
       concepts: cleanedConcepts,
+      rubrics: rubricRowsWithOrder(
+        rubricDrafts
+          .map((rubric) => ({ ...rubric, prompt: rubric.prompt.trim(), referenceAnswer: rubric.referenceAnswer.trim() }))
+          .filter((rubric) => rubric.prompt),
+      ),
     });
     onNavigate(returnTo);
   };
@@ -363,6 +383,31 @@ const StudyUnitEditorPage = ({ data, unitId, onSave, onNavigate }: StudyUnitEdit
               className="rounded border border-slate-700 bg-slate-950 p-3 text-sm normal-case tracking-normal text-slate-100"
             >
               {phaseOptions.map((phase) => <option key={phase} value={phase}>{phase}</option>)}
+            </select>
+          </label>
+          <label className="grid gap-2 text-xs uppercase tracking-wide text-slate-500">
+            Unit type
+            <select
+              value={unitDraft.unitType ?? 'section'}
+              onChange={(event) => setUnitDraft({ ...unitDraft, unitType: event.target.value as StudyUnitType })}
+              className="rounded border border-slate-700 bg-slate-950 p-3 text-sm normal-case tracking-normal text-slate-100"
+            >
+              {unitTypeOptions.map((unitType) => <option key={unitType} value={unitType}>{unitType}</option>)}
+            </select>
+          </label>
+          <label className="grid gap-2 text-xs uppercase tracking-wide text-slate-500">
+            Response mode override
+            <select
+              value={unitDraft.responseModeOverride ?? ''}
+              onChange={(event) =>
+                setUnitDraft({
+                  ...unitDraft,
+                  responseModeOverride: (event.target.value || undefined) as StudyResponseMode | undefined,
+                })
+              }
+              className="rounded border border-slate-700 bg-slate-950 p-3 text-sm normal-case tracking-normal text-slate-100"
+            >
+              {responseModeOptions.map((mode) => <option key={mode || 'default'} value={mode}>{mode || 'phase default'}</option>)}
             </select>
           </label>
         </div>
@@ -482,6 +527,18 @@ const StudyUnitEditorPage = ({ data, unitId, onSave, onNavigate }: StudyUnitEdit
             />
           </label>
         </div>
+        <StudyRubricEditor
+          unitId={unit.id}
+          unitType={unitDraft.unitType ?? 'section'}
+          generatedStateLabel={generatedState.rubrics ?? 'empty'}
+          rubrics={rubricDrafts}
+          sourceComponents={sourceComponents}
+          legalDocument={legalDocument}
+          onRubricsChange={(nextRubrics) => {
+            setRubricDrafts(nextRubrics);
+            setGeneratedState({ ...generatedState, rubrics: nextRubrics.length > 0 ? 'user-edited' : 'empty' });
+          }}
+        />
         <div className="rounded border border-slate-800 bg-slate-950 p-3">
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
             <div className="text-xs uppercase tracking-wide text-slate-500">Required concepts ({generatedState.concepts})</div>

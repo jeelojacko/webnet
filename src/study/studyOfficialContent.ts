@@ -11,6 +11,7 @@ import {
   generateStudyTitle,
   suggestRequiredConcepts,
 } from './studyDraftGeneration';
+import { generateStudyRubric } from './studyRubricGeneration';
 import type {
   ImportedLegalComponent,
   ImportedLegalDocument,
@@ -19,6 +20,7 @@ import type {
   StudyDocument,
   StudyOfficialImportHistory,
   StudyPrompt,
+  StudyRubricItem,
   StudySourceReference,
   StudyUnit,
 } from './studyTypes';
@@ -502,7 +504,7 @@ export const createStudyContentFromSourceSelection = ({
   components: ImportedLegalComponent[];
   existingUnits: StudyUnit[];
   nowIso?: string;
-}): { unit: StudyUnit; prompt: StudyPrompt; concepts: StudyConcept[] } => {
+}): { unit: StudyUnit; prompt: StudyPrompt; concepts: StudyConcept[]; rubrics: StudyRubricItem[] } => {
   const unit = createStudyUnitFromSourceSelection({
     document,
     legalDocument,
@@ -527,12 +529,25 @@ export const createStudyContentFromSourceSelection = ({
     createdAt: nowIso,
     updatedAt: nowIso,
   }));
+  const rubrics = generateStudyRubric({
+    document: legalDocument,
+    selectedSources: components,
+    unitType: 'section',
+  }).map((rubric, index): StudyRubricItem => ({
+    ...rubric,
+    id: `${unit.id}-rubric-${index + 1}`,
+    unitId: unit.id,
+    createdAt: nowIso,
+    updatedAt: nowIso,
+  }));
   return {
     unit: {
       ...unit,
+      unitType: 'section',
       generatedContentState: {
         ...unit.generatedContentState!,
         concepts: concepts.length > 0 ? 'generated' : 'empty',
+        rubrics: rubrics.length > 0 ? 'generated' : 'empty',
       },
     },
     prompt: {
@@ -546,5 +561,6 @@ export const createStudyContentFromSourceSelection = ({
       updatedAt: nowIso,
     },
     concepts,
+    rubrics,
   };
 };
