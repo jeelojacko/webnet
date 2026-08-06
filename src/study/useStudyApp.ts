@@ -91,8 +91,17 @@ export const useStudyApp = () => {
 
   const navigate = useCallback((path: string, state: unknown = null) => {
     window.history.pushState(state, '', path);
-    setRoutePath(path);
+    setRoutePath(window.location.pathname);
   }, []);
+
+  const saveSettings = useCallback(
+    async (settings: StudyDataSnapshot['settings']) => {
+      const updated = { ...settings, updatedAt: new Date().toISOString() };
+      await storage.saveSettings(updated);
+      setData((current) => (current ? { ...current, settings: updated } : current));
+    },
+    [storage],
+  );
 
   const sessionItems = useMemo<StudySessionItem[]>(() => {
     if (!data) return [];
@@ -636,6 +645,7 @@ export const useStudyApp = () => {
     selectDocument,
     saveDocument,
     saveUnit,
+    saveSettings,
     saveUnitAuthoring,
     generateMissingStudyContent,
     exportText,

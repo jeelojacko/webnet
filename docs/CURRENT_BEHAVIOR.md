@@ -23,6 +23,8 @@ Source-linked Study unit creation now opens `/study/unit/:id/edit` with selected
 
 The Study Library separates `Documents` from `Study Units`. Document rows retain official-source metadata, parent Act relationships, review counts, study-unit counts, and reference-only form counts. Study-unit rows support source/custom/review and phase filtering, related-source grouping, sorting, duplication, deletion, and creation of custom unlinked units. Custom units carry `sourceMode: "custom"`, have no official source references, and participate in sessions, drafts, attempts, export/import, and later scheduling work without source-hash warnings.
 
+The Study sidebar is compact and desktop-collapsible with persisted state. Library search is unified across documents, official provisions, source-linked study units, and custom units, with categorized counts, highlighted snippets, debounced input, keyboard result navigation, and official-provision results routed through the optimized source-key navigation path. Study-unit preview reuses the real session UI, supports typed answers, reveal, rubric coverage, and exact source text, and keeps preview responses local so progress, drafts, attempts, and review history are unchanged.
+
 ## Current defaults and operator-facing posture
 Current startup and workflow defaults include:
 - run profile defaults to strict industry parity mode

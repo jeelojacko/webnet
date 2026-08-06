@@ -3,6 +3,7 @@ import StudyDocumentPage from './components/StudyDocumentPage';
 import StudyLayout, { StudyEmptyState } from './components/StudyLayout';
 import StudyLibrary from './components/StudyLibrary';
 import StudyManagePage from './components/StudyManagePage';
+import StudyPreviewPage from './components/StudyPreviewPage';
 import StudySessionPage from './components/StudySessionPage';
 import StudyUnitEditorPage from './components/StudyUnitEditorPage';
 import { useStudyApp } from './useStudyApp';
@@ -17,10 +18,16 @@ const decodeUnitEditIdFromPath = (path: string): string | null => {
   return match ? decodeURIComponent(match[1]) : null;
 };
 
+const decodeUnitPreviewIdFromPath = (path: string): string | null => {
+  const match = path.match(/^\/study\/unit\/([^/]+)\/preview$/);
+  return match ? decodeURIComponent(match[1]) : null;
+};
+
 const StudyApp = () => {
   const study = useStudyApp();
   const documentId = decodeDocumentIdFromPath(study.routePath);
   const unitEditId = decodeUnitEditIdFromPath(study.routePath);
+  const unitPreviewId = decodeUnitPreviewIdFromPath(study.routePath);
 
   const renderPage = () => {
     if (!study.data) return <StudyEmptyState text="Loading study data..." />;
@@ -34,6 +41,15 @@ const StudyApp = () => {
         />
       );
     }
+    if (unitPreviewId) {
+      return (
+        <StudyPreviewPage
+          data={study.data}
+          unitId={unitPreviewId}
+          onNavigate={study.navigate}
+        />
+      );
+    }
     if (study.routePath === '/study/library') {
       return (
         <StudyLibrary
@@ -41,6 +57,10 @@ const StudyApp = () => {
           onSelectDocument={study.selectDocument}
           onCreateCustomUnit={study.createCustomUnit}
           onEditUnit={(unitId) => study.navigate(`/study/unit/${encodeURIComponent(unitId)}/edit`, { returnTo: '/study/library' })}
+          onPreviewUnit={(unitId) => study.navigate(`/study/unit/${encodeURIComponent(unitId)}/preview`, { returnTo: '/study/library' })}
+          onOpenProvision={(documentId, sourceKey) =>
+            study.navigate(`/study/document/${encodeURIComponent(documentId)}#${encodeURIComponent(sourceKey)}`)
+          }
           onDeleteUnit={study.deleteUnit}
           onDuplicateUnit={study.duplicateUnit}
         />
@@ -59,6 +79,11 @@ const StudyApp = () => {
           onAcknowledgeSourceReview={study.acknowledgeSourceReview}
           onSelectDocument={study.selectDocument}
           onNavigate={study.navigate}
+          onPreviewUnit={(unitId) =>
+            study.navigate(`/study/unit/${encodeURIComponent(unitId)}/preview`, {
+              returnTo: `/study/document/${encodeURIComponent(documentId)}`,
+            })
+          }
         />
       );
     }
@@ -108,7 +133,14 @@ const StudyApp = () => {
   };
 
   return (
-    <StudyLayout activePath={study.routePath} onNavigate={study.navigate}>
+    <StudyLayout
+      activePath={study.routePath}
+      sidebarCollapsed={Boolean(study.data?.settings.studySidebarCollapsed)}
+      onSidebarCollapsedChange={(collapsed) => {
+        if (study.data) void study.saveSettings({ ...study.data.settings, studySidebarCollapsed: collapsed });
+      }}
+      onNavigate={study.navigate}
+    >
       {renderPage()}
     </StudyLayout>
   );

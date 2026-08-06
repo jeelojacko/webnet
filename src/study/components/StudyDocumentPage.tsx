@@ -22,6 +22,7 @@ type StudyDocumentPageProps = {
   onAcknowledgeSourceReview: (_unitId: string) => Promise<void>;
   onSelectDocument: (_documentId: string) => void;
   onNavigate: (_path: string) => void;
+  onPreviewUnit: (_unitId: string) => void;
 };
 
 const normalizeSearch = (value: string): string => value.trim().toLowerCase();
@@ -66,6 +67,7 @@ const StudyDocumentPage = ({
   onAcknowledgeSourceReview,
   onSelectDocument,
   onNavigate,
+  onPreviewUnit,
 }: StudyDocumentPageProps) => {
   const document = data.documents.find((entry) => entry.id === documentId);
   const legalDocument = data.legalDocuments.find((entry) => entry.id === documentId);
@@ -88,6 +90,7 @@ const StudyDocumentPage = ({
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [focusedSourceKey, setFocusedSourceKey] = useState('');
+  const [pendingNavigation, setPendingNavigation] = useState<{ sourceKey: string; parentSourceKey: string } | null>(null);
 
   useEffect(() => {
     setDocumentDraft(document);
@@ -111,14 +114,29 @@ const StudyDocumentPage = ({
     setExpanded((current) => ({ ...current, [parentSourceKey]: true }));
     setFocusedSourceKey(sourceKey);
     window.history.replaceState(window.history.state, '', `#${encodeURIComponent(sourceKey)}`);
-    window.setTimeout(() => {
-      const target = globalThis.document.getElementById(sourceKey);
-      target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      const heading = globalThis.document.getElementById(`${sourceKey}-heading`);
-      if (heading instanceof HTMLElement) heading.focus({ preventScroll: true });
-    }, 0);
+    setPendingNavigation({ sourceKey, parentSourceKey });
     window.setTimeout(() => setFocusedSourceKey((current) => (current === sourceKey ? '' : current)), 1400);
   };
+
+  useEffect(() => {
+    if (!pendingNavigation) return;
+    const startedAt = performance.now();
+    const frame = window.requestAnimationFrame(() => {
+      const target = globalThis.document.getElementById(pendingNavigation.sourceKey);
+      if (!target) return;
+      target.scrollIntoView({ behavior: 'auto', block: 'start' });
+      const heading = globalThis.document.getElementById(`${pendingNavigation.sourceKey}-heading`);
+      if (heading instanceof HTMLElement) heading.focus({ preventScroll: true });
+      if (import.meta.env.DEV) {
+        console.debug('Study document navigation', {
+          sourceKey: pendingNavigation.sourceKey,
+          elapsedMs: Math.round(performance.now() - startedAt),
+        });
+      }
+      setPendingNavigation(null);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [pendingNavigation, expanded]);
 
   useEffect(() => {
     const sourceKey = decodeURIComponent(window.location.hash.replace(/^#/, ''));
@@ -409,6 +427,12 @@ const StudyDocumentPage = ({
                     className="rounded border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-800"
                   >
                     Edit
+                  </button>
+                  <button
+                    onClick={() => onPreviewUnit(unit.id)}
+                    className="rounded border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-800"
+                  >
+                    Preview
                   </button>
                   {unit.sourceReferences?.length ? (
                     <button

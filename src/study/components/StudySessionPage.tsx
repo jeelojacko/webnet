@@ -21,6 +21,9 @@ type StudySessionPageProps = {
   rubricCoverage: StudyRubricCoverage[];
   onRubricCoverageChange: (_coverage: StudyRubricCoverage[]) => void;
   onRate: (_rating: StudyRating) => Promise<void>;
+  previewMode?: boolean;
+  sourceText?: string;
+  onClosePreview?: () => void;
 };
 
 const RATINGS: Array<{ rating: StudyRating; label: string; className: string }> = [
@@ -50,6 +53,9 @@ const StudySessionPage = ({
   rubricCoverage,
   onRubricCoverageChange,
   onRate,
+  previewMode = false,
+  sourceText,
+  onClosePreview,
 }: StudySessionPageProps) => {
   if (!activeItem) return <StudyEmptyState text="No study units are available." />;
 
@@ -57,15 +63,27 @@ const StudySessionPage = ({
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-xl font-semibold text-white">Study Session</h2>
+          <h2 className="text-xl font-semibold text-white">{previewMode ? 'Study Unit Preview' : 'Study Session'}</h2>
           <p className="text-sm text-slate-500">
             {activeItem.unit.title} · {activeItem.progress.phase} · priority {activeItem.unit.priority}
           </p>
         </div>
-        <span className="rounded bg-slate-900 px-3 py-1.5 text-xs text-slate-400">
-          {activeItem.due ? 'Due review' : 'New or upcoming'}
-        </span>
+        <div className="flex flex-wrap gap-2">
+          <span className="rounded bg-slate-900 px-3 py-1.5 text-xs text-slate-400">
+            {previewMode ? 'Preview' : activeItem.due ? 'Due review' : 'New or upcoming'}
+          </span>
+          {onClosePreview ? (
+            <button onClick={onClosePreview} className="rounded border border-slate-700 px-3 py-1.5 text-xs text-slate-300">
+              Close Preview
+            </button>
+          ) : null}
+        </div>
       </div>
+      {previewMode ? (
+        <section className="rounded border border-amber-700 bg-amber-950/30 p-3 text-sm text-amber-100">
+          Preview mode - progress and review history will not be changed.
+        </section>
+      ) : null}
       <section className="rounded border border-slate-800 bg-slate-900 p-4">
         <div className="text-xs uppercase tracking-wide text-slate-500">Prompt</div>
         <div className="mt-2 text-base text-slate-100">{activeItem.prompt.question}</div>
@@ -164,6 +182,12 @@ const StudySessionPage = ({
               })}
             </div>
           </section>
+          {sourceText ? (
+            <details className="rounded border border-slate-800 bg-slate-900 p-4">
+              <summary className="cursor-pointer text-xs uppercase tracking-wide text-slate-500">Exact Official Source Text</summary>
+              <div className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-200">{sourceText}</div>
+            </details>
+          ) : null}
           <section className="rounded border border-slate-800 bg-slate-900 p-4">
             <div className="text-xs uppercase tracking-wide text-slate-500">Keywords / Concepts</div>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -183,17 +207,19 @@ const StudySessionPage = ({
               ))}
             </div>
           </section>
-          <div className="flex flex-wrap gap-2">
-            {RATINGS.map(({ rating, label, className }) => (
-              <button
-                key={rating}
-                onClick={() => onRate(rating)}
-                className={`rounded px-4 py-2 text-sm font-medium text-white ${className}`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+          {!previewMode ? (
+            <div className="flex flex-wrap gap-2">
+              {RATINGS.map(({ rating, label, className }) => (
+                <button
+                  key={rating}
+                  onClick={() => onRate(rating)}
+                  className={`rounded px-4 py-2 text-sm font-medium text-white ${className}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
       )}
     </div>

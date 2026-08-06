@@ -107,7 +107,7 @@ const clickButtonContaining = async (text: string) => {
   expect(button).toBeTruthy();
   await act(async () => {
     button?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    await new Promise((resolve) => window.setTimeout(resolve, 0));
+    await new Promise((resolve) => window.requestAnimationFrame(resolve));
   });
 };
 
@@ -146,6 +146,7 @@ describe('study legal reader navigation', () => {
           onAcknowledgeSourceReview={vi.fn()}
           onSelectDocument={vi.fn()}
           onNavigate={vi.fn()}
+          onPreviewUnit={vi.fn()}
         />,
       );
     });
@@ -156,10 +157,12 @@ describe('study legal reader navigation', () => {
     expect(document.body.textContent).toContain('Substantive body text.');
     expect(document.activeElement?.id).toBe('section:2-heading');
     expect(window.location.hash).toBe('#section%3A2');
+    expect(window.HTMLElement.prototype.scrollIntoView).toHaveBeenCalledTimes(1);
 
     await clickButtonContaining('2(1)');
     expect(document.body.textContent).toContain('Subsection body text.');
     expect(document.activeElement?.id).toBe('section:2/subsection:1-heading');
+    expect(window.HTMLElement.prototype.scrollIntoView).toHaveBeenCalledTimes(2);
 
     await clickButtonContaining('SCHEDULE A Schedule topic');
     expect(document.body.textContent).toContain('Schedule body text.');

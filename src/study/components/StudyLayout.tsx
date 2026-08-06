@@ -1,8 +1,10 @@
 import type React from 'react';
-import { BookOpen, FileText, Home, Library, RotateCcw, Settings } from 'lucide-react';
+import { BookOpen, ChevronLeft, ChevronRight, FileText, Home, Library, RotateCcw, Settings } from 'lucide-react';
 
 type StudyLayoutProps = {
   activePath: string;
+  sidebarCollapsed: boolean;
+  onSidebarCollapsedChange: (_collapsed: boolean) => void;
   onNavigate: (_path: string) => void;
   children: React.ReactNode;
 };
@@ -14,7 +16,7 @@ const NAV_ITEMS = [
   { path: '/study/manage', label: 'Manage', icon: Settings },
 ];
 
-const StudyLayout = ({ activePath, onNavigate, children }: StudyLayoutProps) => (
+const StudyLayout = ({ activePath, sidebarCollapsed, onSidebarCollapsedChange, onNavigate, children }: StudyLayoutProps) => (
   <div className="fixed inset-0 flex flex-col bg-slate-950 text-slate-100">
     <header className="flex shrink-0 flex-wrap items-center gap-3 border-b border-slate-800 bg-slate-900 px-4 py-3">
       <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -34,7 +36,21 @@ const StudyLayout = ({ activePath, onNavigate, children }: StudyLayoutProps) => 
       </button>
     </header>
     <div className="flex min-h-0 flex-1">
-      <nav className="hidden w-56 shrink-0 border-r border-slate-800 bg-slate-900/70 p-3 md:block">
+      <nav
+        className={`hidden shrink-0 border-r border-slate-800 bg-slate-900/70 p-2 md:block ${
+          sidebarCollapsed ? 'w-[2.875rem]' : 'w-[7rem]'
+        }`}
+        aria-label="Study navigation"
+      >
+        <button
+          type="button"
+          onClick={() => onSidebarCollapsedChange(!sidebarCollapsed)}
+          className="mb-2 flex h-8 w-full items-center justify-center rounded text-slate-400 hover:bg-slate-800 hover:text-slate-100"
+          aria-label={sidebarCollapsed ? 'Expand Study sidebar' : 'Collapse Study sidebar'}
+          title={sidebarCollapsed ? 'Expand' : 'Collapse'}
+        >
+          {sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+        </button>
         <div className="space-y-1">
           {NAV_ITEMS.map(({ path, label, icon: Icon }) => {
             const active = activePath === path || (path !== '/study' && activePath.startsWith(path));
@@ -42,14 +58,19 @@ const StudyLayout = ({ activePath, onNavigate, children }: StudyLayoutProps) => 
               <button
                 key={path}
                 onClick={() => onNavigate(path)}
-                className={`flex w-full items-center gap-2 rounded px-3 py-2 text-left text-sm ${
+                aria-label={label}
+                title={sidebarCollapsed ? label : undefined}
+                aria-current={active ? 'page' : undefined}
+                className={`flex h-9 w-full items-center rounded text-sm ${
+                  sidebarCollapsed ? 'justify-center px-0' : 'gap-2 px-2 text-left'
+                } ${
                   active
                     ? 'bg-emerald-700/30 text-emerald-100'
                     : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
                 }`}
               >
-                <Icon size={16} />
-                <span>{label}</span>
+                <Icon size={16} className="shrink-0" />
+                {!sidebarCollapsed ? <span className="truncate">{label}</span> : null}
               </button>
             );
           })}

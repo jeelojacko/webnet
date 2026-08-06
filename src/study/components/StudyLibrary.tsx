@@ -1,4 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  buildStudyLibrarySearchIndex,
+  highlightLibraryMatch,
+  searchStudyLibrary,
+  type StudyLibrarySearchCategory,
+  type StudyLibrarySearchResult,
+} from '../studyLibrarySearch';
 import type { StudyDataSnapshot, StudyPhase, StudyUnit } from '../studyTypes';
 
 type StudyLibraryProps = {
@@ -6,6 +13,8 @@ type StudyLibraryProps = {
   onSelectDocument: (_documentId: string) => void;
   onCreateCustomUnit: () => void;
   onEditUnit: (_unitId: string) => void;
+  onPreviewUnit: (_unitId: string) => void;
+  onOpenProvision: (_documentId: string, _sourceKey: string) => void;
   onDeleteUnit: (_unitId: string) => void;
   onDuplicateUnit: (_unitId: string) => void;
 };
@@ -45,11 +54,22 @@ const unitSourceLabel = (unit: StudyUnit, data: StudyDataSnapshot): string => {
 
 const unique = (values: string[]): string[] => values.filter((value, index) => values.indexOf(value) === index);
 
+const searchCategoryLabels: Record<StudyLibrarySearchCategory, string> = {
+  documents: 'Documents',
+  'official-provisions': 'Official Provisions',
+  'study-units': 'Study Units',
+  'custom-units': 'Custom Units',
+};
+
+const searchCategoryOrder: StudyLibrarySearchCategory[] = ['documents', 'official-provisions', 'study-units', 'custom-units'];
+
 const StudyLibrary = ({
   data,
   onSelectDocument,
   onCreateCustomUnit,
   onEditUnit,
+  onPreviewUnit,
+  onOpenProvision,
   onDeleteUnit,
   onDuplicateUnit,
 }: StudyLibraryProps) => {
@@ -59,6 +79,9 @@ const StudyLibrary = ({
   const [phaseFilter, setPhaseFilter] = useState<StudyPhase | 'all'>('all');
   const [unitSort, setUnitSort] = useState<UnitSort>('related-source');
   const [collapsedGroups, setCollapsedGroups] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+  const [activeSearchIndex, setActiveSearchIndex] = useState(0);
 
   const legalById = useMemo(() => new Map(data.legalDocuments.map((document) => [document.id, document])), [data.legalDocuments]);
   const progressByUnitId = useMemo(() => new Map(data.progress.map((progress) => [progress.unitId, progress])), [data.progress]);
@@ -77,6 +100,40 @@ const StudyLibrary = ({
     data.attempts.forEach((attempt) => map.set(attempt.unitId, (map.get(attempt.unitId) ?? 0) + 1));
     return map;
   }, [data.attempts]);
+  const searchIndex = useMemo(() => buildStudyLibrarySearchIndex(data), [data]);
+  const searchResults = useMemo(
+    () => searchStudyLibrary(searchIndex, debouncedSearchQuery),
+    [debouncedSearchQuery, searchIndex],
+  );
+  const searchResultsByCategory = useMemo(
+    () =>
+      searchCategoryOrder.map((category) => ({
+        category,
+        label: searchCategoryLabels[category],
+        results: searchResults.filter((result) => result.category === category),
+      })),
+    [searchResults],
+  );
+
+  useEffect(() => {
+    const handle = window.setTimeout(() => setDebouncedSearchQuery(searchQuery), 120);
+    return () => window.clearTimeout(handle);
+  }, [searchQuery]);
+
+  useEffect(() => setActiveSearchIndex(0), [debouncedSearchQuery]);
+
+  const openSearchResult = (result: StudyLibrarySearchResult) => {
+    if (result.category === 'documents' && result.documentId) onSelectDocument(result.documentId);
+    if (result.category === 'official-provisions' && result.documentId && result.sourceKey) {
+      onOpenProvision(result.documentId, result.sourceKey);
+    }
+    if ((result.category === 'study-units' || result.category === 'custom-units') && result.unitId) onEditUnit(result.unitId);
+  };
+
+  const renderHighlighted = (text: string) =>
+    highlightLibraryMatch(text, debouncedSearchQuery).map((part, index) =>
+      part.match ? <mark key={index} className="bg-amber-400/80 text-slate-950">{part.text}</mark> : <span key={index}>{part.text}</span>,
+    );
 
   const filteredDocuments = data.documents.filter((document) => {
     const legal = legalById.get(document.id);
@@ -135,6 +192,67 @@ const StudyLibrary = ({
             {value === 'documents' ? 'Documents' : 'Study Units'}
           </button>
         ))}
+      </div>
+      <div className="rounded border border-slate-800 bg-slate-900 p-3">
+        <label className="grid gap-2 text-xs uppercase tracking-wide text-slate-500">
+          Library Search
+          <input
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'ArrowDown') {
+                event.preventDefault();
+                setActiveSearchIndex((index) => Math.min(index + 1, Math.max(searchResults.length - 1, 0)));
+              }
+              if (event.key === 'ArrowUp') {
+                event.preventDefault();
+                setActiveSearchIndex((index) => Math.max(index - 1, 0));
+              }
+              if (event.key === 'Enter' && searchResults[activeSearchIndex]) {
+                event.preventDefault();
+                openSearchResult(searchResults[activeSearchIndex]);
+              }
+            }}
+            placeholder="Search documents, provisions and study units"
+            className="rounded border border-slate-700 bg-slate-950 px-3 py-2 text-sm normal-case tracking-normal text-slate-100"
+          />
+        </label>
+        {debouncedSearchQuery ? (
+          <div className="mt-3 grid gap-3 lg:grid-cols-2">
+            {searchResultsByCategory.map(({ category, label, results }) => (
+              <section key={category} className="rounded border border-slate-800 bg-slate-950 p-3">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <h3 className="text-sm font-semibold text-slate-100">{label}</h3>
+                  <span className="rounded bg-slate-900 px-2 py-1 text-xs text-slate-500">{results.length}</span>
+                </div>
+                {results.length ? (
+                  <div className="space-y-2">
+                    {results.map((result) => {
+                      const flatIndex = searchResults.findIndex((entry) => entry.id === result.id);
+                      return (
+                        <button
+                          key={result.id}
+                          onClick={() => openSearchResult(result)}
+                          className={`w-full rounded border p-3 text-left ${
+                            activeSearchIndex === flatIndex ? 'border-emerald-500 bg-emerald-950/20' : 'border-slate-800 bg-slate-900'
+                          }`}
+                        >
+                          <div className="text-sm font-medium text-slate-100">{renderHighlighted(result.title)}</div>
+                          <div className="mt-1 text-xs text-slate-500">{result.subtitle}</div>
+                          {result.matchText ? <div className="mt-2 text-xs text-slate-300">{renderHighlighted(result.matchText)}</div> : null}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-xs text-slate-500">No results.</div>
+                )}
+              </section>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-2 text-xs text-slate-500">Enter a search term to find documents, official provisions, study units, and custom units.</div>
+        )}
       </div>
 
       {tab === 'documents' ? (
@@ -273,6 +391,9 @@ const StudyLibrary = ({
                               <div className="flex flex-wrap gap-2">
                                 <button onClick={() => onEditUnit(unit.id)} className="rounded bg-slate-700 px-3 py-1.5 text-xs text-white">
                                   Edit
+                                </button>
+                                <button onClick={() => onPreviewUnit(unit.id)} className="rounded bg-slate-800 px-3 py-1.5 text-xs text-slate-300">
+                                  Preview
                                 </button>
                                 <button onClick={() => onDuplicateUnit(unit.id)} className="rounded bg-slate-800 px-3 py-1.5 text-xs text-slate-300">
                                   Duplicate

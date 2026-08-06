@@ -6,12 +6,14 @@ The study module is an isolated local-first application at `/study` for New Brun
 It does not use adjustment, parser, solver, network, or Survey CAD domain state.
 
 ## File Structure
-- `src/study/studyTypes.ts` - record contracts for documents, units, prompts, concepts, progress, attempts, drafts, settings, and snapshots
+- `src/study/studyTypes.ts` - record contracts for documents, units, prompts, concepts, rubrics, progress, attempts, drafts, settings, and snapshots
 - `src/study/studySeed.ts` - five initial New Brunswick statute document records plus sample units, concepts, prompts, and initial progress
 - `src/study/studyScheduler.ts` - phase transition and session ordering rules
 - `src/study/studyStorage.ts` - IndexedDB schema, seed loading, migrations, CRUD/replace operations, and atomic official-content package import
 - `src/study/studyOfficialContent.ts` - official package parsing, browser import validation, preview, source-reference review flags, reference-only form detection, and source-selection study-unit creation
 - `src/study/studyDraftGeneration.ts` - deterministic title, question, citation, reference-answer, and conservative concept drafting for source-linked study units
+- `src/study/studyRubricGeneration.ts` - deterministic answer-rubric templates and legal-provision rubric generation
+- `src/study/studyLibrarySearch.ts` - in-memory categorized Library search index and matching helpers
 - `src/study/studyOpfs.ts` - OPFS path generation and source-file text asset writes
 - `src/study/studyExportImport.ts` - JSON export/import round trip helpers
 - `src/study/useStudyApp.ts` - route-local state, autosave, reveal/rating flow, and persistence orchestration
@@ -150,13 +152,20 @@ Study units linked to official source material store `documentId`, `sourceKey`, 
 ## Reference-Only Forms
 Some prescribed forms normalize only as a label. Import classifies a form as `reference-only` when its normalized text, after trimming whitespace and optional consolidation text, contains only its own label. These forms remain navigable, keep source keys and hashes, display an incomplete-body warning, and require explicit confirmation before selection for study-unit creation. Short statutory sections such as repealed provisions are not classified as form stubs.
 
+## Navigation Shell
+The Study sidebar is compact and collapsible on desktop. Expanded width is 7rem and collapsed width is 2.875rem. The collapsed state is stored on `StudySettings.studySidebarCollapsed`, restored after reload, and changed through an accessible icon button. Expanded entries show icon plus text; collapsed entries keep icon-only visible chrome with accessible labels and title tooltips. The selected route continues to expose `aria-current="page"` and the main content immediately uses the released width.
+
 ## Legal Reader
 `/study/document/:id` displays imported official metadata, Act-regulation navigation, source URL, content hash, consolidated-to date, fetch/import dates, package ID, and safe React-rendered normalized text. The user-authored document summary remains in a visually separate editor.
 
-The reader supports table-of-contents navigation, case-insensitive search, section/schedule/form filtering, expand/collapse, subsection display, copy reference/text, component selection, and creating a generated draft study unit from selected official components. TOC and search-result navigation opens the selected section, schedule, or form with one click, expands subsection parents, scrolls the stable `sourceKey` target into view, updates the hash, applies a short focus highlight, and focuses the heading for keyboard users. Created units store source references with current component hashes, generate editable study content, and then open `/study/unit/:id/edit`.
+The reader supports table-of-contents navigation, case-insensitive search, section/schedule/form filtering, expand/collapse, subsection display, copy reference/text, component selection, and creating a generated draft study unit from selected official components. TOC, hash, and Library search-result navigation opens the selected section, schedule, form, or subsection with one click, expands subsection parents before scrolling, updates the hash, waits for React to commit the expanded DOM, performs exactly one `scrollIntoView({ behavior: "auto", block: "start" })`, focuses the heading with `preventScroll: true`, and applies a short focus highlight without another scroll. Development builds log a compact timing diagnostic for this navigation path. Created units store source references with current component hashes, generate editable study content, and then open `/study/unit/:id/edit`.
 
 ## Library
 The Library uses top-level `Documents` and `Study Units` tabs.
+
+A unified search bar sits near those tabs with placeholder `Search documents, provisions and study units`. Search uses a prebuilt in-memory index refreshed whenever the Study snapshot changes. The index records document metadata, official provision labels/headings/source keys/subsection labels/exact text, study-unit titles/questions/reference answers/summaries/rubric prompts/rubric answers/concepts/tags, and custom citation notes.
+
+Matching is case-insensitive and accent-insensitive. Short metadata fields use weighted substring, token, and fuzzy matching. Long official source text uses normalized substring matching only, so complete statutory bodies are not fuzzied on every keystroke. The UI debounces input by 120 ms, groups results as `Documents`, `Official Provisions`, `Study Units`, and `Custom Units`, shows counts for each category, highlights matched snippets, and supports keyboard result navigation with Up/Down/Enter. Document results open the document, official-provision results open the document at the source-key hash, and unit/custom-unit results open the unit editor.
 
 Documents can be filtered by all, Acts, regulations, or custom sources. Document rows show priority, category, parent Act where applicable, consolidation date, source review counts, study-unit count, and reference-only form count.
 
@@ -187,6 +196,8 @@ Creating a source-linked legal unit now generates structured rubric items in add
 Section 16 of the Boundaries Confirmation Act has deterministic coverage for correction purpose, Registrar General authority and evidence threshold, discretionary notice, confirmed-boundary limitation, corrected-plan filing, superseded-plan notation, related subsection 15(2), and clear survey relevance.
 
 The unit editor shows `Answer Rubric` above `Keywords / Concepts`. Users can add, edit, duplicate, reorder, delete, apply templates, add generated items, replace only generated items, and clear generated items. Manual rubric rows are not overwritten by generated replacement actions.
+
+Every Library and document-reader study-unit row includes `Preview`. Preview opens `/study/unit/:id/preview`, renders the real session UI for that unit, allows typed guided/free/hybrid responses, allows reveal, shows reference answers, rubric self-assessment, and exact official source text when linked. Preview state is local to the preview page and does not create attempts, advance phase, change progress, alter statistics, save drafts, or persist temporary responses.
 
 ## Keywords / Concepts
 Required concepts are editable checklist rows. The unit editor supports `+ Add Concept`, Enter-to-save normalization, Escape cancellation for empty new rows, delete, and up/down reordering. Duplicate labels are rejected case-insensitively after punctuation and whitespace normalization. Empty concepts are dropped on save. Generated and manual concepts are both editable and removable.
@@ -237,6 +248,10 @@ Default response modes are phase-driven unless a unit override is set. Guided-re
 16. Edit the generated question, click `Regenerate question`, and confirm overwrite confirmation appears.
 17. Save or cancel and confirm the app returns to the source document.
 18. Open Session for a guided-recall unit and confirm rubric prompts each have their own answer box, reveal shows rubric reference answers, and coverage choices persist with the completed attempt.
+19. Collapse and expand the desktop Study sidebar, refresh, and confirm the state is restored and the active route remains indicated.
+20. In Library, search by document citation, fuzzy title, section number, exact official source text, study question, rubric prompt, and custom citation note. Confirm categorized counts and keyboard Up/Down/Enter navigation.
+21. From Library search, open an official provision result and confirm its parent component expands, the target scrolls once, focus lands on the heading, and the highlight clears.
+22. Preview a source-linked unit, type and reveal responses, mark rubric coverage, close preview, and confirm attempts, drafts, progress, and review counts did not change.
 
 ## Official Content Manual Procedure
 1. Run `npm run study:fetch-nb-laws`.

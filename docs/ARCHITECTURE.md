@@ -59,6 +59,7 @@ It owns:
 - `studyDraftGeneration.ts` for deterministic source-linked title, question, citation, and structured reference-answer drafting
 - `studyConceptGeneration.ts` for pure deterministic keyword/concept suggestions with rule/confidence metadata
 - `studyRubricGeneration.ts` for pure deterministic answer-rubric templates and source-linked legal-provision rubric generation
+- `studyLibrarySearch.ts` for the in-memory categorized Library search index, short-field fuzzy matching, and long official-text substring matching
 - `studyScheduler.ts` for deterministic phase transitions and due-before-new session ordering
 - `StudyApp.tsx`, `useStudyApp.ts`, and `components/*` for the dashboard, library, document reader/editor, session, and manage pages
 
