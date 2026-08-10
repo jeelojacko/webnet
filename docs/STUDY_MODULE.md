@@ -72,6 +72,7 @@ The commands are:
 npm run study:fetch-nb-laws
 npm run study:normalize-nb-laws
 npm run study:build-content-pack
+npm run study:audit-generation
 ```
 
 `study:fetch-nb-laws` fetches only enabled manifest entries from `laws.gnb.ca`, one request at a time, with a delay between requests and a descriptive User-Agent. It writes untouched raw HTML plus per-document metadata under `study-content/raw/nb-law-pilot/`. Change detection uses a SHA-256 hash after removing volatile laws.gnb generated anchor IDs; the raw HTML file is still saved untouched when canonical source content changes.
@@ -94,6 +95,17 @@ study-content/reports/nb-law-pilot.integrity-report.md
 ```
 
 The integrity report fails package construction on wrong enabling Act relationships, missing required documents, duplicate component source keys, table-of-contents references without components, known laws.gnb.ca interface contamination, zero extracted legal components, and missing title or citation. Warnings are reserved for non-destructive parser observations such as genuinely missing consolidation dates.
+
+`study:audit-generation` is a developer QA harness for the deterministic Study generator. It reads `study-content/packages/nb-law-pilot.content-package.json`, audits every section component in the ten-document pilot by default, and calls the same pure production title, question, reference-answer, rubric, and concept generation functions used by source-linked Study unit creation. It does not import the package into Study storage and does not write IndexedDB or OPFS user data. The active audit artifacts are overwritten on each run:
+
+```text
+study-content/reports/study-generation-audit.json
+study-content/reports/study-generation-audit.md
+study-content/reports/study-generation-warnings.md
+study-content/reports/study-generation-audit.csv
+```
+
+Useful filters include `--document <document-id>`, `--section <label>`, `--include-schedules`, `--include-forms`, and `--warnings-only`. Passing `--baseline <previous-audit.json>` writes `study-content/reports/study-generation-baseline-diff.md` with changed main questions, rubric prompts, warning codes, and QA scores. Baseline snapshots can be saved manually under `study-content/reports/baselines/`; the command does not overwrite named baselines automatically.
 
 Stable source references are based on legal labels:
 

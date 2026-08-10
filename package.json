@@ -20,6 +20,7 @@
     "study:fetch-nb-laws": "tsx scripts/studyFetchNbLawPilot.ts",
     "study:normalize-nb-laws": "tsx scripts/studyNormalizeNbLawPilot.ts",
     "study:build-content-pack": "tsx scripts/studyBuildContentPack.ts",
+    "study:audit-generation": "tsx scripts/studyAuditGeneration.ts",
     "crs:report:canada": "tsx scripts/reportCanadianCrsCatalog.ts",
     "crs:report:synthetic": "tsx scripts/generateSyntheticCrsReports.ts",
     "crs:report:synthetic:perfect": "tsx scripts/generateSyntheticCrsReports.ts --perfect",
