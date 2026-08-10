@@ -11,6 +11,12 @@ import {
   generateStudyRubricWithDiagnostics,
   type ExtractedLegalFact,
 } from './studyRubricGeneration';
+import {
+  questionHasUnsupportedTopic,
+  suggestStudyChunks,
+  type StudyQuestionTier,
+  type SuggestedStudyChunk,
+} from './studyQuestionSupport';
 import { toImportedLegalComponents, toImportedLegalDocuments } from './studyOfficialContent';
 import type {
   ImportedLegalComponent,
@@ -43,11 +49,13 @@ export type StudyGenerationAuditSection = {
   generated: {
     title: string;
     mainQuestion: string;
+    mainQuestionTier: StudyQuestionTier;
     referenceAnswer: string;
     rubricItems: Array<{
       id: string;
       category: StudyRubricCategory;
       prompt: string;
+      questionTier: StudyQuestionTier;
       referenceAnswer: string;
       sourceKeys: string[];
       generatedFromFacts?: unknown[];
@@ -61,6 +69,7 @@ export type StudyGenerationAuditSection = {
   diagnostics: {
     extractedFacts?: unknown[];
     questionTemplate?: string;
+    suggestedChunks?: SuggestedStudyChunk[];
     rejectedRubricItems?: unknown[];
     removedAmendmentHistory?: string[];
     removedConsolidationText?: string[];
@@ -86,6 +95,9 @@ export type StudyGenerationAuditSummary = {
   warningsByType: Record<string, number>;
   warningsByDocument: Record<string, number>;
   averageQaScore: number;
+  questionTierCounts: Record<StudyQuestionTier, number>;
+  sectionsWithChunkSuggestions: number;
+  suggestedChunkCount: number;
   lowestScoringSections: Array<{
     documentId: string;
     documentTitle: string;
@@ -193,7 +205,7 @@ const warning = (
   code,
   severity,
   field,
-  text,
+  text: normalizeSpaces(text),
   explanation,
 });
 
@@ -213,7 +225,7 @@ const hasMalformedQuestionText = (question: string): boolean => {
   if (/\b(?:alth|th)\?$/i.test(compact) || (/\b[A-Z][a-z]{1,2}\?$/.test(compact) && !/\bAct\?$/.test(compact))) {
     return true;
   }
-  if (/\b(?:if|to|the|by|of|for|from|with|and|or|not)\s*\?$/i.test(compact)) return true;
+  if (/\b(?:if|to|the|by|of|from|with|and|or|not)\s*\?$/i.test(compact)) return true;
   if (/\(\s*\?/.test(compact)) return true;
   if (/\s+[,.!?]|[,:;]\s*\?|\?\?/.test(compact)) return true;
   return false;
@@ -326,6 +338,9 @@ export const collectStudyGenerationWarnings = (section: {
   if (hasTopicMismatch(section.source, section.detectedTopic, section.mainQuestion)) {
     warnings.push(warning('MAIN_QUESTION_TOPIC_MISMATCH', 'warning', 'generated.mainQuestion', section.mainQuestion, 'The main question topic does not match the section heading or detected topic.'));
   }
+  if (questionHasUnsupportedTopic([section.source], section.mainQuestion)) {
+    warnings.push(warning('MAIN_QUESTION_UNSUPPORTED_TOPIC', 'critical', 'generated.mainQuestion', section.mainQuestion, 'The main question asks about a specialized topic that is not supported by the section heading or operative source text.'));
+  }
   if (amendmentHistoryPattern.test(section.referenceAnswer)) {
     warnings.push(warning('AMENDMENT_HISTORY_LEAK', 'critical', 'generated.referenceAnswer', section.referenceAnswer.match(amendmentHistoryPattern)?.[0] ?? section.referenceAnswer, 'The generated reference answer appears to contain amendment history or citation residue.'));
   }
@@ -394,6 +409,7 @@ export const scoreStudyGenerationWarnings = (warnings: StudyGenerationWarning[])
   const penalties: Record<string, number> = {
     MALFORMED_QUESTION: 20,
     MAIN_QUESTION_TOPIC_MISMATCH: 15,
+    MAIN_QUESTION_UNSUPPORTED_TOPIC: 25,
     AMENDMENT_HISTORY_LEAK: 15,
     UNGROUNDED_RUBRIC_ITEM: 100,
     RUBRIC_SOURCE_KEY_NOT_FOUND: 100,
@@ -440,6 +456,7 @@ const buildSectionAudit = (
     id: `${componentRecordKey(source)}::rubric:${index + 1}`,
     category: item.category,
     prompt: item.prompt,
+    questionTier: item.questionTier ?? 'C',
     referenceAnswer: item.referenceAnswer,
     sourceKeys: item.sourceReferences?.map((reference) => reference.sourceKey) ?? [source.sourceKey],
     generatedFromFacts: rubric.diagnostic.extractedFacts.filter((fact) =>
@@ -450,6 +467,7 @@ const buildSectionAudit = (
     ),
   }));
   const detectedTopic = rubric.diagnostic.sectionTopic || classifyStudyRubricSectionTopic(source);
+  const suggestedChunks = suggestStudyChunks(source);
   const warnings = collectStudyGenerationWarnings({
     source,
     detectedTopic,
@@ -471,6 +489,7 @@ const buildSectionAudit = (
     generated: {
       title,
       mainQuestion: question.question,
+      mainQuestionTier: question.questionTier,
       referenceAnswer: referenceAnswer.text,
       rubricItems: generatedRubricItems,
       concepts: concepts.map((concept) => ({
@@ -482,6 +501,7 @@ const buildSectionAudit = (
     diagnostics: {
       extractedFacts: rubric.diagnostic.extractedFacts,
       questionTemplate: question.template,
+      suggestedChunks,
       rejectedRubricItems: rubric.diagnostic.rejectedDuplicatePrompts,
       removedAmendmentHistory: rubric.diagnostic.removedSourceText,
       removedConsolidationText: referenceAnswer.warnings,
@@ -546,6 +566,11 @@ const summarizeAudit = (documents: StudyGenerationAuditDocument[]): StudyGenerat
   const average = sections.length
     ? sections.reduce((sum, section) => sum + section.quality.score, 0) / sections.length
     : 0;
+  const questionTierCounts: Record<StudyQuestionTier, number> = { A: 0, B: 0, C: 0 };
+  for (const section of sections) {
+    questionTierCounts[section.generated.mainQuestionTier] += 1;
+    for (const item of section.generated.rubricItems) questionTierCounts[item.questionTier] += 1;
+  }
   return {
     totalSections: sections.length,
     totalRubricItems: sections.reduce((sum, section) => sum + section.generated.rubricItems.length, 0),
@@ -554,6 +579,9 @@ const summarizeAudit = (documents: StudyGenerationAuditDocument[]): StudyGenerat
     warningsByType,
     warningsByDocument,
     averageQaScore: Number(average.toFixed(2)),
+    questionTierCounts,
+    sectionsWithChunkSuggestions: sections.filter((section) => (section.diagnostics.suggestedChunks?.length ?? 0) > 0).length,
+    suggestedChunkCount: sections.reduce((sum, section) => sum + (section.diagnostics.suggestedChunks?.length ?? 0), 0),
     lowestScoringSections: sections
       .slice()
       .sort((a, b) => a.quality.score - b.quality.score || a.documentTitle.localeCompare(b.documentTitle) || compareLabels(a.sectionLabel, b.sectionLabel))
@@ -631,6 +659,11 @@ export const renderStudyGenerationAuditMarkdown = (audit: StudyGenerationAudit):
     `Total rubric items: ${audit.summary.totalRubricItems}`,
     `Sections with warnings: ${audit.summary.sectionsWithWarnings}`,
     `Average QA score: ${audit.summary.averageQaScore}`,
+    `Tier A questions: ${audit.summary.questionTierCounts.A}`,
+    `Tier B questions: ${audit.summary.questionTierCounts.B}`,
+    `Tier C questions: ${audit.summary.questionTierCounts.C}`,
+    `Sections with chunk suggestions: ${audit.summary.sectionsWithChunkSuggestions}`,
+    `Suggested chunks: ${audit.summary.suggestedChunkCount}`,
     '',
     'Warnings by type:',
     ...Object.entries(audit.summary.warningsByType).map(([code, count]) => `- ${code}: ${count}`),
@@ -647,6 +680,7 @@ export const renderStudyGenerationAuditMarkdown = (audit: StudyGenerationAudit):
       }
       lines.push(
         `Detected topic: ${section.detectedTopic ?? ''}`,
+        `Main question tier: ${section.generated.mainQuestionTier}`,
         '',
         'Main question:',
         section.generated.mainQuestion,
@@ -658,8 +692,15 @@ export const renderStudyGenerationAuditMarkdown = (audit: StudyGenerationAudit):
         '',
       );
       section.generated.rubricItems.forEach((item, index) => {
-        lines.push(`${index + 1}. [${item.category}]`, `   Question: ${item.prompt}`, `   Answer: ${item.referenceAnswer}`, '');
+        lines.push(`${index + 1}. [${item.category}] [Tier ${item.questionTier}]`, `   Question: ${item.prompt}`, `   Answer: ${item.referenceAnswer}`, '');
       });
+      if (section.diagnostics.suggestedChunks?.length) {
+        lines.push('Suggested chunks:', '');
+        section.diagnostics.suggestedChunks.forEach((chunk) => {
+          lines.push(`- ${chunk.title} (${chunk.reason}, estimated rubric items: ${chunk.estimatedRubricItems})`);
+        });
+        lines.push('');
+      }
       lines.push('Concepts:', section.generated.concepts.map((concept) => `- ${concept.label}`).join('\n') || 'none', '', ...renderWarnings(section.quality.warnings), '');
     }
   }
@@ -700,14 +741,16 @@ const csvEscape = (value: string | number): string => {
 
 export const renderStudyGenerationAuditCsv = (audit: StudyGenerationAudit): string => {
   const rows = [
-    ['Document', 'Section', 'Heading', 'Main Question', 'Rubric Count', 'Concept Count', 'QA Score', 'Warning Count', 'Warning Codes'],
+    ['Document', 'Section', 'Heading', 'Main Question', 'Main Question Tier', 'Rubric Count', 'Concept Count', 'Chunk Suggestions', 'QA Score', 'Warning Count', 'Warning Codes'],
     ...flattenAuditSections(audit).map((section) => [
       section.documentTitle,
       section.sectionLabel,
       section.sectionHeading ?? '',
       section.generated.mainQuestion,
+      section.generated.mainQuestionTier,
       section.generated.rubricItems.length,
       section.generated.concepts.length,
+      section.diagnostics.suggestedChunks?.length ?? 0,
       section.quality.score,
       section.quality.warnings.length,
       section.quality.warnings.map((entry) => entry.code).join(';'),

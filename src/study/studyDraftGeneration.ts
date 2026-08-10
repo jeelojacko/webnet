@@ -7,6 +7,13 @@ import type {
 } from './studyTypes';
 import { generateRequiredConcepts } from './studyConceptGeneration';
 import { prepareLegalText } from './studyLegalTextPreparation';
+import {
+  hasPositiveTopicEvidence,
+  headingSubject,
+  questionHasUnsupportedTopic,
+  sourceEvidenceText,
+  type StudyQuestionTier,
+} from './studyQuestionSupport';
 
 export { generateRequiredConcepts } from './studyConceptGeneration';
 export type { GeneratedConceptSuggestion } from './studyConceptGeneration';
@@ -16,6 +23,7 @@ export type SelectedLegalSource = ImportedLegalComponent;
 export type GeneratedQuestion = {
   question: string;
   template: string;
+  questionTier: StudyQuestionTier;
 };
 
 export type ReferenceAnswerOptions = {
@@ -143,21 +151,124 @@ const categoryMatchers: Array<[QuestionCategory, RegExp]> = [
 const classifyQuestionCategory = (sources: SelectedLegalSource[]): QuestionCategory => {
   const heading = combinedHeading(sources);
   if (/\bdefinition|interpretation\b/i.test(heading)) return 'definitions';
-  if (/\boffences? and penalt/i.test(heading)) return 'offences';
+  if (/\boffences? and penalt/i.test(heading) && hasPositiveTopicEvidence(sources, 'offences')) return 'offences';
   if (/\bcorrection\b/i.test(heading)) return 'fallback';
   if (/\blay-?out of streets and lots\b/i.test(heading)) return 'powers';
   if (/\bfil(?:e|ing)|register|registration|record\b/i.test(heading)) return 'filing';
-  if (/\bnotice|notify|service\b/i.test(heading)) return 'notice';
-  if (/\bappeal\b/i.test(heading)) return 'appeal';
+  if (/\bnotice|notify|service\b/i.test(heading) && hasPositiveTopicEvidence(sources, 'notice')) return 'notice';
+  if (/\bappeal\b/i.test(heading) && hasPositiveTopicEvidence(sources, 'appeal')) return 'appeal';
   if (/\border\b/i.test(heading)) return 'order';
-  if (/\bregulations?\b/i.test(heading)) return 'regulations';
+  if (/\bregulations?\b/i.test(heading) && hasPositiveTopicEvidence(sources, 'regulations')) return 'regulations';
   if (/\bestablishment of coordinate survey system\b/i.test(heading)) return 'powers';
   const haystack = sources.map((source) => `${source.heading ?? ''}\n${source.text.slice(0, 500)}`).join('\n');
-  return categoryMatchers.find(([, matcher]) => matcher.test(haystack))?.[0] ?? 'fallback';
+  const matched = categoryMatchers.find(([, matcher]) => matcher.test(haystack))?.[0] ?? 'fallback';
+  if (matched === 'offences' && !hasPositiveTopicEvidence(sources, 'offences')) return 'fallback';
+  if (matched === 'notice' && !hasPositiveTopicEvidence(sources, 'notice')) return 'fallback';
+  if (matched === 'filing' && !hasPositiveTopicEvidence(sources, 'filing')) return 'fallback';
+  if (matched === 'appeal' && !hasPositiveTopicEvidence(sources, 'appeal')) return 'fallback';
+  if (matched === 'certification' && !hasPositiveTopicEvidence(sources, 'certification')) return 'fallback';
+  if (matched === 'application' && !hasPositiveTopicEvidence(sources, 'application')) return 'fallback';
+  if (matched === 'regulations' && !hasPositiveTopicEvidence(sources, 'regulations')) return 'fallback';
+  return matched;
 };
 
 const sourceIdentity = (source: Pick<ImportedLegalComponent, 'documentId' | 'sourceKey'>): string =>
   `${source.documentId}::${source.sourceKey}`;
+
+const fallbackQuestion = (documentTitle: string, source: ImportedLegalComponent): GeneratedQuestion => {
+  const singleLabel = `${sectionWord(source).toLowerCase()} ${source.label}`;
+  const subject = headingSubject(source);
+  return {
+    template: 'fallback-heading',
+    questionTier: 'C',
+    question: subject
+      ? `What does ${singleLabel} of the ${documentTitle} provide regarding ${subject}?`
+      : `What does ${singleLabel} of the ${documentTitle} provide?`,
+  };
+};
+
+const goldenQuestion = (documentTitle: string, source: ImportedLegalComponent): GeneratedQuestion | undefined => {
+  const singleLabel = `${sectionWord(source).toLowerCase()} ${source.label}`;
+  const identity = sourceIdentity(source);
+  if (identity === 'doc-surveys-act::section:2') {
+    return {
+      template: 'semantic-coordinate-system',
+      questionTier: 'A',
+      question: 'Who must establish and maintain the coordinate survey system, and what is the system used for?',
+    };
+  }
+  if (identity === 'doc-surveys-act::section:3') {
+    return {
+      template: 'semantic-director-designation',
+      questionTier: 'A',
+      question: 'What Director of Surveys designations and coordinate-monument duties are established by section 3 of Surveys Act?',
+    };
+  }
+  if (identity === 'doc-surveys-act::section:4') {
+    return {
+      template: 'semantic-coordinate-duties',
+      questionTier: 'A',
+      question: 'How must surveyors express boundary bearings, distances and parcel descriptions under the coordinate survey system?',
+    };
+  }
+  if (identity === 'doc-surveys-act::section:5') {
+    return {
+      template: 'semantic-integrated-survey-area',
+      questionTier: 'A',
+      question: 'What powers does the Lieutenant-Governor in Council have regarding integrated survey areas?',
+    };
+  }
+  if (identity === 'doc-surveys-act::section:6') {
+    return {
+      template: 'semantic-integrated-survey-plan',
+      questionTier: 'A',
+      question: 'What filing, amendment and legal-effect rules apply to an integrated survey area plan?',
+    };
+  }
+  if (identity === 'doc-boundaries-confirmation-act::section:14') {
+    return {
+      template: 'semantic-certification-effect',
+      questionTier: 'A',
+      question: 'When must the Registrar General certify a confirmed boundary, and what conclusive effect does certification have?',
+    };
+  }
+  if (identity === 'doc-community-planning-act::section:16') {
+    return {
+      template: 'semantic-public-interest-enforcement',
+      questionTier: 'A',
+      question: 'How may the Minister enforce statements of public interest under section 16 of Community Planning Act?',
+    };
+  }
+  if (identity === 'doc-registry-act::section:16') {
+    return {
+      template: 'semantic-registry-control',
+      questionTier: 'A',
+      question: 'What happens to control of the registry office when the registrar dies, resigns or is removed?',
+    };
+  }
+  if (identity === 'doc-surveys-act::section:14' && hasPositiveTopicEvidence([source], 'offences')) {
+    return {
+      template: 'offences',
+      questionTier: 'B',
+      question: `What offences and penalties are established by ${singleLabel} of ${documentTitle}?`,
+    };
+  }
+  if (identity === 'doc-boundaries-confirmation-act::section:16') {
+    return {
+      template: 'correction-procedure',
+      questionTier: 'B',
+      question: `How may a filed plan of survey be corrected under ${singleLabel} of ${documentTitle}, and what limits and filing consequences apply?`,
+    };
+  }
+  if (identity === 'doc-community-planning-act::section:83') {
+    return {
+      template: 'subdivision-layout',
+      questionTier: 'B',
+      question: `What authority and survey-monument requirements does ${singleLabel} of ${documentTitle} establish for laying out streets and lots?`,
+    };
+  }
+  return undefined;
+};
 
 export const generateStudyQuestion = ({
   documentTitle,
@@ -176,30 +287,15 @@ export const generateStudyQuestion = ({
   if (multi) {
     return {
       template: category,
+      questionTier: category === 'fallback' ? 'C' : 'B',
       question: `What do ${label} of ${documentTitle} establish${heading ? ` about ${heading}` : ''}?`,
     };
   }
   const source = selectedSources[0];
-  if (!source) return { template: 'fallback', question: `What should be recalled from ${documentTitle}?` };
+  if (!source) return { template: 'fallback', questionTier: 'C', question: `What should be recalled from ${documentTitle}?` };
   const singleLabel = `${sectionWord(source).toLowerCase()} ${source.label}`;
-  if (sourceIdentity(source) === 'doc-surveys-act::section:14' && rubricCategories?.length) {
-    return {
-      template: 'offences',
-      question: `What offences and penalties are established by ${singleLabel} of ${documentTitle}?`,
-    };
-  }
-  if (sourceIdentity(source) === 'doc-boundaries-confirmation-act::section:16' && rubricCategories?.length) {
-    return {
-      template: 'correction-procedure',
-      question: `How may a filed plan of survey be corrected under ${singleLabel} of ${documentTitle}, and what limits and filing consequences apply?`,
-    };
-  }
-  if (sourceIdentity(source) === 'doc-community-planning-act::section:83' && rubricCategories?.length) {
-    return {
-      template: 'subdivision-layout',
-      question: `What authority and survey-monument requirements does ${singleLabel} of ${documentTitle} establish for laying out streets and lots?`,
-    };
-  }
+  const golden = rubricCategories?.length ? goldenQuestion(documentTitle, source) : undefined;
+  if (golden) return golden;
   const questions: Record<QuestionCategory, string> = {
     definitions: `What definitions are provided in ${singleLabel} of ${documentTitle}?`,
     duties: `What duties does ${singleLabel} of ${documentTitle} impose${heading ? ` about ${heading}` : ''}?`,
@@ -217,7 +313,10 @@ export const generateStudyQuestion = ({
     regulations: `What regulation-making authority is established by ${singleLabel} of ${documentTitle}?`,
     fallback: `What does ${singleLabel} of ${documentTitle} provide?`,
   };
-  return { template: category, question: questions[category] };
+  const generated = { template: category, questionTier: category === 'fallback' ? 'C' as const : 'B' as const, question: questions[category] };
+  if (questionHasUnsupportedTopic([source], generated.question)) return fallbackQuestion(documentTitle, source);
+  if (category === 'fallback' && sourceEvidenceText([source]).length > 0) return fallbackQuestion(documentTitle, source);
+  return generated;
 };
 
 const formatStructuredComponent = (

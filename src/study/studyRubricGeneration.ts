@@ -7,10 +7,11 @@ import type {
   StudyUnitType,
 } from './studyTypes';
 import { prepareLegalText } from './studyLegalTextPreparation';
+import type { StudyQuestionTier } from './studyQuestionSupport';
 
 export type GeneratedRubricItem = Pick<
   StudyRubricItem,
-  'category' | 'prompt' | 'referenceAnswer' | 'required' | 'origin' | 'order' | 'sourceReferences'
+  'category' | 'prompt' | 'referenceAnswer' | 'required' | 'origin' | 'order' | 'questionTier' | 'sourceReferences'
 >;
 
 export type StudyRubricTemplateItem = {
@@ -143,6 +144,7 @@ export const classifyStudyRubricSectionTopic = (source: ImportedLegalComponent):
   const heading = normalizeSpaces(source.heading ?? '').toLowerCase();
   if (/\boffences? and penalt/.test(heading)) return 'offences-and-penalties';
   if (/\bcorrection\b/.test(heading)) return 'correction-procedure';
+  if (/\bcertification\b|\bcertif(?:y|ies|ied|icate)\b/.test(heading)) return 'certification';
   if (/\bappeal\b/.test(heading)) return 'appeal';
   if (/\bdefinitions?|interpretation\b/.test(heading)) return 'definitions';
   if (/\blay-?out of streets and lots\b/.test(heading)) return 'subdivision-layout';
@@ -185,7 +187,7 @@ const extractFacts = (
             : /\bmay\b/i.test(text)
               ? 'may'
               : undefined;
-    fact.actor = text.match(/\b(?:the )?(Registrar General|Director of Surveys|development officer|surveyor|person|council|Minister)\b/i)?.[0];
+    fact.actor = text.match(/\b(?:the )?(Lieutenant-Governor in Council|Registrar General|Director of Surveys|development officer|surveyor|person|council|Minister)\b/i)?.[0];
     fact.trigger = text.match(/\b(?:if|when|on receiving|before|after|whose)[^,.;]{3,120}/i)?.[0];
     fact.noticeRule = text.match(/\b[^.]*notice[^.]*\./i)?.[0];
     fact.deadlineOrNumber = text.match(/\b(?:within|not later than)?\s*\d+\s+(?:days?|months?|years?)\b/i)?.[0];
@@ -220,6 +222,7 @@ const makeItem = (
   referenceAnswer: string,
   order: number,
   sourceKeys: string[],
+  questionTier: StudyQuestionTier = 'B',
 ): GeneratedRubricItem => ({
   category,
   prompt,
@@ -227,6 +230,7 @@ const makeItem = (
   required: true,
   origin: 'generated',
   order,
+  questionTier,
   sourceReferences: sourceKeys.length
     ? sourceKeys.map((sourceKey) => ({ ...sourceReferenceFor(source), sourceKey }))
     : [sourceReferenceFor(source)],
@@ -306,6 +310,134 @@ const section83Rubric = (
   ];
 };
 
+const surveysSection2Rubric = (
+  source: ImportedLegalComponent,
+  diagnostic: StudyRubricGenerationDiagnostic,
+): GeneratedRubricItem[] => {
+  assertSpecializedSource(source, 'doc-surveys-act::section:2');
+  const prompt = 'Who must establish and maintain the coordinate survey system, and what is it for?';
+  diagnostic.mergedItems.push({ prompt, factSourceKeys: ['section:2'], template: 'semantic-duty-purpose' });
+  return [
+    makeItem(source, 'power-duty', prompt, 'Service New Brunswick shall establish and maintain a system of plane rectangular coordinates for locating points on the earth’s surface.', 0, ['section:2'], 'A'),
+  ];
+};
+
+const surveysSection3Rubric = (
+  source: ImportedLegalComponent,
+  diagnostic: StudyRubricGenerationDiagnostic,
+): GeneratedRubricItem[] => {
+  assertSpecializedSource(source, 'doc-surveys-act::section:3');
+  const prompts = [
+    'Who must Service New Brunswick designate as Director of Surveys?',
+    'What other surveyor designations may Service New Brunswick make?',
+    'Who is eligible to be designated under subsection 3(1.1)?',
+    'What coordinate-monument duty does the Director of Surveys have?',
+  ];
+  diagnostic.mergedItems.push(...prompts.map((prompt) => ({ prompt, factSourceKeys: ['section:3'], template: 'semantic-director' })));
+  return [
+    makeItem(source, 'actor', prompts[0], 'Service New Brunswick shall designate a surveyor as Director of Surveys.', 0, ['section:3/subsection:1'], 'A'),
+    makeItem(source, 'power-duty', prompts[1], 'Service New Brunswick may designate one or more surveyors to perform specified duties or exercise specified powers of the Director of Surveys.', 1, ['section:3/subsection:1.1'], 'A'),
+    makeItem(source, 'scope-trigger', prompts[2], 'Only a surveyor who is an employee of Service New Brunswick or an employee under the Civil Service Act is eligible.', 2, ['section:3/subsection:1.2'], 'A'),
+    makeItem(source, 'power-duty', prompts[3], 'For the purposes of the coordinate survey system, the Director of Surveys shall establish and maintain coordinate monuments.', 3, ['section:3/subsection:2'], 'A'),
+  ];
+};
+
+const surveysSection4Rubric = (
+  source: ImportedLegalComponent,
+  diagnostic: StudyRubricGenerationDiagnostic,
+): GeneratedRubricItem[] => {
+  assertSpecializedSource(source, 'doc-surveys-act::section:4');
+  const prompts = [
+    'How must a surveyor express boundary bearings and distances under the coordinate survey system?',
+    'How must a surveyor describe a parcel of land under the coordinate survey system?',
+  ];
+  diagnostic.mergedItems.push(...prompts.map((prompt) => ({ prompt, factSourceKeys: ['section:4'], template: 'semantic-coordinate-duties' })));
+  return [
+    makeItem(source, 'power-duty', prompts[0], 'A surveyor shall set out bearings of boundary lines in terms of grid azimuth and distances in metres.', 0, ['section:4/subsection:1'], 'A'),
+    makeItem(source, 'required-material', prompts[1], 'Subject to any requirement respecting further particulars, a surveyor shall describe a parcel by the legal monuments at the corners with their respective coordinates, or by the corners in terms of coordinates.', 1, ['section:4/subsection:2'], 'A'),
+  ];
+};
+
+const surveysSection5Rubric = (
+  source: ImportedLegalComponent,
+  diagnostic: StudyRubricGenerationDiagnostic,
+): GeneratedRubricItem[] => {
+  assertSpecializedSource(source, 'doc-surveys-act::section:5');
+  const prompt = 'What changes may the Lieutenant-Governor in Council make to an integrated survey area?';
+  diagnostic.mergedItems.push({ prompt, factSourceKeys: ['section:5'], template: 'semantic-paragraph-list' });
+  return [
+    makeItem(source, 'power-duty', prompt, 'The Lieutenant-Governor in Council may constitute and define an integrated survey area, and may extend, reduce, subdivide, annul or merge an existing integrated survey area in whole or in part with any other.', 0, ['section:5'], 'A'),
+  ];
+};
+
+const surveysSection6Rubric = (
+  source: ImportedLegalComponent,
+  diagnostic: StudyRubricGenerationDiagnostic,
+): GeneratedRubricItem[] => {
+  assertSpecializedSource(source, 'doc-surveys-act::section:6');
+  const prompts = [
+    'What must the Director of Surveys file when an integrated survey area is constituted?',
+    'What must the Director of Surveys file when an integrated survey area plan is amended?',
+    'What legal effect follows when the amended plan and values are filed?',
+  ];
+  diagnostic.mergedItems.push(...prompts.map((prompt) => ({ prompt, factSourceKeys: ['section:6'], template: 'semantic-filing-effect' })));
+  return [
+    makeItem(source, 'filing-record', prompts[0], 'The Director of Surveys shall file in the registry office a plan of the area setting out the coordinate monuments and authentication, and a schedule setting out the values of the coordinate monuments.', 0, ['section:6/subsection:1'], 'A'),
+    makeItem(source, 'filing-record', prompts[1], 'The Director of Surveys shall file in the same registry office an amended plan showing unaffected, destroyed and additional coordinate monuments with authentication, and a certificate showing new or amended coordinate-monument values.', 1, ['section:6/subsection:2'], 'A'),
+    makeItem(source, 'legal-effect', prompts[2], 'When filed, the amended plan becomes the official plan of the coordinate monuments and the amended values become the official values for the affected coordinate monuments.', 2, ['section:6/subsection:3'], 'A'),
+  ];
+};
+
+const certificationSection14Rubric = (
+  source: ImportedLegalComponent,
+  diagnostic: StudyRubricGenerationDiagnostic,
+): GeneratedRubricItem[] => {
+  assertSpecializedSource(source, 'doc-boundaries-confirmation-act::section:14');
+  const prompts = [
+    'When must the Registrar General certify a confirmed boundary?',
+    'What plan shows the certified boundary?',
+    'What conclusive legal effect does certification have?',
+  ];
+  diagnostic.mergedItems.push(...prompts.map((prompt) => ({ prompt, factSourceKeys: ['section:14'], template: 'semantic-certification' })));
+  return [
+    makeItem(source, 'scope-trigger', prompts[0], 'The Registrar General shall certify after confirming the boundary under section 12 and after appeal periods have expired with no notice of appeal filed, or after an appeal is finally disposed of and the court confirms the order or boundary location.', 0, ['section:14/subsection:1'], 'A'),
+    makeItem(source, 'required-material', prompts[1], 'The certified confirmation is shown on a plan of survey as confirmed by the Registrar General or the court, as the case may be.', 1, ['section:14/subsection:1'], 'A'),
+    makeItem(source, 'legal-effect', prompts[2], 'Certification is conclusive proof that the application and every notice, proceeding or act that ought to have been made, given or done has been made, given or done in accordance with the Act.', 2, ['section:14/subsection:2'], 'A'),
+  ];
+};
+
+const communityPlanningSection16Rubric = (
+  source: ImportedLegalComponent,
+  diagnostic: StudyRubricGenerationDiagnostic,
+): GeneratedRubricItem[] => {
+  assertSpecializedSource(source, 'doc-community-planning-act::section:16');
+  const prompts = [
+    'What direction may the Minister give to enforce a statement of public interest?',
+    'Who must comply with the Minister’s direction?',
+    'What is the 24-month deadline under section 16?',
+    'When must the Minister revoke the direction?',
+  ];
+  diagnostic.mergedItems.push(...prompts.map((prompt) => ({ prompt, factSourceKeys: ['section:16'], template: 'semantic-public-interest-enforcement' })));
+  return [
+    makeItem(source, 'power-duty', prompts[0], 'After consulting with the council or regional service commission, the Minister may direct it to prepare and make an amendment to a regional land use plan, municipal plan, rural plan or by-law to achieve consistency with a statement of public interest.', 0, ['section:16/subsection:1'], 'A'),
+    makeItem(source, 'actor', prompts[1], 'The council or regional service commission, as the case may be, shall comply with the direction.', 1, ['section:16/subsection:2'], 'A'),
+    makeItem(source, 'deadline-number', prompts[2], 'Compliance must occur within 24 months after the date the direction was given under subsection (1).', 2, ['section:16/subsection:2'], 'A'),
+    makeItem(source, 'legal-effect', prompts[3], 'The Minister shall revoke the direction if the council makes the amendment in a manner that complies with and, in the Minister’s opinion, is consistent with the statement of public interest.', 3, ['section:16/subsection:3'], 'A'),
+  ];
+};
+
+const registrySection16Rubric = (
+  source: ImportedLegalComponent,
+  diagnostic: StudyRubricGenerationDiagnostic,
+): GeneratedRubricItem[] => {
+  assertSpecializedSource(source, 'doc-registry-act::section:16');
+  const prompt = 'What happens to control of the registry office when the registrar dies, resigns or is removed?';
+  diagnostic.mergedItems.push({ prompt, factSourceKeys: ['section:16'], template: 'semantic-registry-control' });
+  return [
+    makeItem(source, 'legal-effect', prompt, 'The deputy registrar shall continue in control of the office and of the books and records in it.', 0, ['section:16'], 'A'),
+  ];
+};
+
 const wordLimitedSubject = (value: string, fallback: string): string => {
   const normalized = normalizeSpaces(value).replace(/[,:;]\s*$/, '');
   const words = normalized.split(/\s+/).filter(Boolean);
@@ -347,14 +479,32 @@ const genericRubric = (
       facts[order]?.object ?? facts[order]?.action ?? normalizeSpaces(source.heading ?? `section ${source.label}`),
       source.heading ? normalizeSpaces(source.heading) : `section ${source.label}`,
     );
-    const prompt = categoryForTopic === 'filing-record'
-      ? `What filing or record rule applies to ${subject}?`
-      : categoryForTopic === 'notice'
-        ? `What notice rule applies to ${subject}?`
-        : `What specific rule applies to ${subject}?`;
+    const fact = facts.find((entry) => entry.sourceKey === unit.sourceKey) ?? facts[order];
+    const prompt = naturalPromptForFact(fact, categoryForTopic, subject, unit.label);
     diagnostic.mergedItems.push({ prompt, factSourceKeys: [unit.sourceKey], template: `generic-${categoryForTopic}` });
-    return makeItem(source, categoryForTopic, prompt, `${unit.label}: ${stripSourceNoise(unit.text, diagnostic)}`, order, [unit.sourceKey]);
+    return makeItem(source, categoryForTopic, prompt, `${unit.label}: ${stripSourceNoise(unit.text, diagnostic)}`, order, [unit.sourceKey], fact?.confidence === 'high' ? 'A' : 'C');
   });
+};
+
+const naturalPromptForFact = (
+  fact: ExtractedLegalFact | undefined,
+  category: StudyRubricCategory,
+  subject: string,
+  label: string,
+): string => {
+  const actor = fact?.actor ? normalizeSpaces(fact.actor) : '';
+  if (fact?.modality === 'shall-not') return actor ? `What is ${actor} prohibited from doing?` : `What prohibition applies under ${label}?`;
+  if (fact?.modality === 'may' && actor) return `What powers does ${actor} have regarding ${subject}?`;
+  if ((fact?.modality === 'shall' || fact?.modality === 'must') && actor) {
+    if (category === 'filing-record') return `What must ${actor} file or record regarding ${subject}?`;
+    return `What must ${actor} do regarding ${subject}?`;
+  }
+  if (fact?.legalEffect) return `What legal effect does ${subject} have?`;
+  if (fact?.filingEffect) return `What filing or record rule applies to ${subject}?`;
+  if (fact?.noticeRule) return `What notice rule applies to ${subject}?`;
+  if (category === 'filing-record') return `What filing or record rule applies to ${subject}?`;
+  if (category === 'notice') return `What notice rule applies to ${subject}?`;
+  return `What does ${label} provide regarding ${subject}?`;
 };
 
 const dedupeItems = (
@@ -405,7 +555,23 @@ export const generateStudyRubricWithDiagnostics = ({
   }
   diagnostic.extractedFacts = selectedSources.flatMap((entry) => extractFacts(entry, diagnostic));
   const items =
-    sourceIdentity(source) === 'doc-surveys-act::section:14'
+    sourceIdentity(source) === 'doc-surveys-act::section:2'
+      ? surveysSection2Rubric(source, diagnostic)
+      : sourceIdentity(source) === 'doc-surveys-act::section:3'
+        ? surveysSection3Rubric(source, diagnostic)
+        : sourceIdentity(source) === 'doc-surveys-act::section:4'
+          ? surveysSection4Rubric(source, diagnostic)
+          : sourceIdentity(source) === 'doc-surveys-act::section:5'
+            ? surveysSection5Rubric(source, diagnostic)
+            : sourceIdentity(source) === 'doc-surveys-act::section:6'
+              ? surveysSection6Rubric(source, diagnostic)
+              : sourceIdentity(source) === 'doc-boundaries-confirmation-act::section:14'
+                ? certificationSection14Rubric(source, diagnostic)
+                : sourceIdentity(source) === 'doc-community-planning-act::section:16'
+                  ? communityPlanningSection16Rubric(source, diagnostic)
+                  : sourceIdentity(source) === 'doc-registry-act::section:16'
+                    ? registrySection16Rubric(source, diagnostic)
+                    : sourceIdentity(source) === 'doc-surveys-act::section:14'
       ? section14Rubric(source, diagnostic)
       : sourceIdentity(source) === 'doc-boundaries-confirmation-act::section:16'
         ? section16Rubric(source, diagnostic)

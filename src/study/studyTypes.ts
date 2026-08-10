@@ -156,6 +156,7 @@ export type StudyRubricItem = {
   required: boolean;
   origin: 'generated' | 'manual';
   order: number;
+  questionTier?: 'A' | 'B' | 'C';
   sourceReferences?: StudySourceReference[];
   createdAt: string;
   updatedAt: string;

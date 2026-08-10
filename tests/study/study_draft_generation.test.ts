@@ -116,8 +116,8 @@ describe('study question generation', () => {
       documentTitle: 'Regulation 83-130 under the Land Titles Act',
       selectedSources: [testComponent({ label: '5', text: '5 The Province is established.' })],
     });
-    expect(generated.template).toBe('fallback');
-    expect(generated.question).toBe('What does section 5 of Regulation 83-130 under the Land Titles Act provide?');
+    expect(generated.template).toBe('fallback-heading');
+    expect(generated.question).toBe('What does section 5 of the Regulation 83-130 under the Land Titles Act provide?');
   });
 
   it('generates one combined question for multiple sections', () => {
@@ -319,8 +319,8 @@ describe('structured rubric generation', () => {
     expect(combinedAnswers).not.toContain('corrected plan');
     expect(combinedAnswers).not.toContain('tentative plan');
     expect(landTitles14.map((item) => item.prompt).join('\n')).toContain('register the title to the land');
-    expect(registry16.map((item) => item.prompt).join('\n')).toContain('books and records');
-    expect(landTitles83.map((item) => item.prompt).join('\n')).toContain('Regulations');
+    expect(registry16.map((item) => item.prompt).join('\n')).toContain('control of the registry office');
+    expect(landTitles83.map((item) => item.prompt).join('\n')).toContain('Lieutenant-Governor in Council');
   });
 
   it('generates the expected section 16 correction rubric', () => {

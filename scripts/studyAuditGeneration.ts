@@ -74,6 +74,8 @@ const main = async (): Promise<void> => {
   console.log(`Audited sections: ${audit.summary.totalSections}`);
   console.log(`Generated rubric items: ${audit.summary.totalRubricItems}`);
   console.log(`Sections with warnings: ${audit.summary.sectionsWithWarnings}`);
+  console.log(`Question tiers: ${JSON.stringify(audit.summary.questionTierCounts)}`);
+  console.log(`Sections with chunk suggestions: ${audit.summary.sectionsWithChunkSuggestions}`);
   console.log(`JSON report: ${AUDIT_JSON_PATH}`);
   console.log(`Warnings report: ${WARNINGS_MD_PATH}`);
   if (!options.warningsOnly) {

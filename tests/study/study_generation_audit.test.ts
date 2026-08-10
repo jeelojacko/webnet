@@ -51,6 +51,10 @@ describe('study generation audit', () => {
     expect(audit.documents).toHaveLength(10);
     expect(flattenAuditSections(audit).every((section) => section.sourceKey.startsWith('section:'))).toBe(true);
     expect(audit.summary.totalRubricItems).toBeGreaterThan(audit.summary.totalSections);
+    expect(audit.summary.questionTierCounts.A).toBeGreaterThan(0);
+    expect(audit.summary.questionTierCounts.B).toBeGreaterThan(0);
+    expect(audit.summary.questionTierCounts.C).toBeGreaterThan(0);
+    expect(audit.summary.sectionsWithChunkSuggestions).toBeGreaterThan(0);
   });
 
   it('filters by document, section, schedules and forms', () => {
@@ -145,6 +149,19 @@ describe('study generation audit', () => {
       'CONCEPT_FRAGMENT',
     ]));
     expect(scoreStudyGenerationWarnings(warnings)).toBeLessThan(100);
+  });
+
+  it('flags unsupported specialized main-question topics', () => {
+    const warnings = collectStudyGenerationWarnings({
+      source: testSection({ heading: 'Integrated survey area', text: '5 The Lieutenant-Governor in Council may constitute an integrated survey area.' }),
+      detectedTopic: 'power-duty',
+      mainQuestion: 'What offences or penalties are established by section 5 of Surveys Act?',
+      referenceAnswer: 'Clean answer.',
+      rubricItems: [{ prompt: 'What powers does the Lieutenant-Governor in Council have regarding integrated survey areas?', referenceAnswer: 'Answer.' }],
+      concepts: [],
+      extractedFacts: [{ sourceKey: 'section:5', actor: 'Lieutenant-Governor in Council', action: 'constitute an integrated survey area', confidence: 'high' }],
+    });
+    expect(warnings.map((entry) => entry.code)).toContain('MAIN_QUESTION_UNSUPPORTED_TOPIC');
   });
 
   it('flags ungrounded rubric items, missing source keys and source-answer mismatches', () => {
@@ -254,6 +271,37 @@ describe('study generation audit', () => {
     expect(surveys8.quality.warnings.length + regulation3.quality.warnings.length).toBeGreaterThan(0);
   });
 
+  it('locks golden main-question meanings and chunk suggestions for Phase 2E.3', () => {
+    const audit = buildPilotAudit();
+    const sections = flattenAuditSections(audit);
+    const findSection = (documentId: string, sectionLabel: string) =>
+      sections.find((section) => section.documentId === documentId && section.sectionLabel === sectionLabel)!;
+
+    expect(findSection('doc-surveys-act', '2').generated.mainQuestion).toContain('establish and maintain the coordinate survey system');
+    expect(findSection('doc-surveys-act', '5').generated.mainQuestion).toBe(
+      'What powers does the Lieutenant-Governor in Council have regarding integrated survey areas?',
+    );
+    expect(findSection('doc-surveys-act', '5').generated.mainQuestion).not.toMatch(/offences?|penalt/i);
+    expect(findSection('doc-surveys-act', '6').generated.mainQuestion).toMatch(/filing, amendment and legal-effect/i);
+    expect(findSection('doc-boundaries-confirmation-act', '14').generated.mainQuestion).toMatch(/certify a confirmed boundary/i);
+    expect(findSection('doc-boundaries-confirmation-act', '14').generated.mainQuestion).not.toMatch(/^What notice/i);
+    expect(findSection('doc-community-planning-act', '16').generated.mainQuestion).toMatch(/statements of public interest|public interest/i);
+    expect(findSection('doc-community-planning-act', '16').generated.mainQuestion).not.toMatch(/^What notice/i);
+    expect(findSection('doc-registry-act', '16').generated.mainQuestion).toMatch(/registrar dies, resigns or is removed/i);
+    expect(findSection('doc-community-planning-act', '83').generated.mainQuestion).toMatch(/laying out streets and lots/i);
+    expect(findSection('doc-boundaries-confirmation-act', '16').generated.mainQuestion).toMatch(/corrected/i);
+
+    for (const [documentId, sectionLabel] of [
+      ['doc-community-planning-act', '52'],
+      ['doc-community-planning-act', '53'],
+      ['doc-community-planning-act', '125'],
+      ['doc-land-titles-act', '18'],
+      ['doc-land-titles-act', '83'],
+    ]) {
+      expect(findSection(documentId, sectionLabel).diagnostics.suggestedChunks?.length).toBeGreaterThan(0);
+    }
+  });
+
   it('keeps section 14, 16 and 83 regression templates scoped to their source documents', () => {
     const audit = buildPilotAudit();
     const sections = flattenAuditSections(audit);
@@ -282,8 +330,10 @@ describe('study generation audit', () => {
     const csv = renderStudyGenerationAuditCsv(audit);
     expect(markdown).toContain('# Study Generation Audit');
     expect(markdown).toContain('Rubric:');
+    expect(markdown).toContain('Tier A questions:');
+    expect(markdown).toContain('Main question tier:');
     expect(warnings).toContain('# Study Generation Warnings');
-    expect(csv.split('\n')[0]).toContain('Document,Section,Heading');
+    expect(csv.split('\n')[0]).toContain('Document,Section,Heading,Main Question,Main Question Tier');
     expect(JSON.parse(JSON.stringify(audit)).summary.totalSections).toBe(1);
 
     const changed = JSON.parse(JSON.stringify(audit)) as StudyGenerationAudit;
