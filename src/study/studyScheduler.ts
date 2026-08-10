@@ -70,6 +70,13 @@ const nextPhaseAfterAttempt = (
 export const createInitialProgress = (unitId: string, nowIso: string): StudyProgress => ({
   unitId,
   phase: 'unread',
+  scheduling: {
+    schemaVersion: 1,
+    algorithm: 'fsrs',
+    initialized: false,
+    configVersion: 1,
+    legacyDueAt: nowIso,
+  },
   dueAt: nowIso,
   lastStudiedAt: null,
   successfulGuidedRecallDays: [],

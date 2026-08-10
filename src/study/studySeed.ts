@@ -1,4 +1,5 @@
 import { createInitialProgress, DEFAULT_STUDY_PHASE_RULES } from './studyScheduler';
+import { createStudyFsrsConfigRecord } from './fsrs/studyFsrsMigration';
 import type {
   StudyConcept,
   StudyDataSnapshot,
@@ -206,15 +207,16 @@ const rubrics: StudyRubricItem[] = concepts.map((concept): StudyRubricItem => ({
 
 export const createDefaultStudySettings = (updatedAt = SEED_CREATED_AT): StudySettings => ({
   id: 'default',
-  schemaVersion: 4,
+  schemaVersion: 5,
   phaseRules: DEFAULT_STUDY_PHASE_RULES,
+  fsrsConfig: createStudyFsrsConfigRecord({ now: new Date(updatedAt), configVersion: 1 }),
   newUnitPriorityLimit: 5,
   includeMaintenanceReviews: true,
   updatedAt,
 });
 
 export const createSeedStudyData = (nowIso = SEED_CREATED_AT): StudyDataSnapshot => ({
-  schemaVersion: 4,
+  schemaVersion: 5,
   exportedAt: nowIso,
   documents: documents.map((entry) => ({ ...entry })),
   units: units.map((entry) => ({ ...entry })),

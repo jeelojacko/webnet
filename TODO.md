@@ -6,8 +6,9 @@
     - [x] Add a focused Study FSRS adapter/serialization/config foundation under `src/study/fsrs/` so React components do not call `ts-fsrs` directly.
     - [x] Add fixed/system Study clock helpers and deterministic adapter tests with fuzz disabled.
   - [ ] Batch 3B - Study data model and migration:
-    - [ ] Extend `StudyProgress`, `StudyAttempt`, settings, snapshot, IndexedDB schema, export/import, and migrations for serialized FSRS scheduling state and attempt scheduling metadata without data loss.
-    - [ ] Preserve ambiguous legacy due dates as `legacyDueAt` instead of fabricating FSRS history; add replay predicates and idempotent migration tests.
+    - [x] Extend `StudyProgress`, `StudyAttempt`, settings, snapshot, IndexedDB schema, export/import, and migrations for serialized FSRS scheduling state and attempt scheduling metadata without data loss.
+    - [x] Preserve ambiguous legacy due dates as `legacyDueAt` instead of fabricating FSRS history; add replay predicates and idempotent migration tests.
+    - [ ] Add old-schema IndexedDB fixture coverage and any safe historical replay/reschedule path needed after real counted scheduling attempts exist.
   - [ ] Batch 3C - pure queue builder:
     - [ ] Build a pure Study queue model with source-review-required first, due Learning/Relearning, due/overdue Review, limited New units, and optional surprise practice outside normal scheduling.
     - [ ] Add queue ordering, due-boundary, new-unit-limit, and deterministic tie-break tests.

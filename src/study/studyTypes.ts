@@ -169,9 +169,72 @@ export type StudyRubricCoverage = {
   status: StudyRubricCoverageStatus;
 };
 
+export type StudySchedulingAlgorithm = 'fsrs';
+
+export type SerializedStudyFsrsCard = {
+  due: string;
+  stability: number;
+  difficulty: number;
+  elapsed_days: number;
+  scheduled_days: number;
+  learning_steps: number;
+  reps: number;
+  lapses: number;
+  state: 'New' | 'Learning' | 'Review' | 'Relearning';
+  last_review: string | null;
+};
+
+export type SerializedStudyFsrsReviewLog = {
+  rating: 'Again' | 'Hard' | 'Good' | 'Easy';
+  state: 'New' | 'Learning' | 'Review' | 'Relearning';
+  due: string;
+  stability: number;
+  difficulty: number;
+  elapsed_days: number;
+  last_elapsed_days: number;
+  scheduled_days: number;
+  learning_steps: number;
+  review: string;
+};
+
+export type StudyFsrsSchedule = {
+  schemaVersion: 1;
+  algorithm: 'fsrs';
+  initialized: boolean;
+  card?: SerializedStudyFsrsCard;
+  initializedAt?: string;
+  lastScheduledAt?: string;
+  configVersion: number;
+  legacyDueAt?: string;
+};
+
+export type StudyAttemptSchedulingReason =
+  | 'scheduled-review'
+  | 'new-learning'
+  | 'manual-counted-practice'
+  | 'preview'
+  | 'surprise-practice'
+  | 'source-review';
+
+export type StudyAttemptScheduling = {
+  algorithm: 'fsrs';
+  schedulingApplied: boolean;
+  rating?: StudyRating;
+  reviewedAt: string;
+  cardBefore?: SerializedStudyFsrsCard;
+  cardAfter?: SerializedStudyFsrsCard;
+  fsrsReviewLog?: SerializedStudyFsrsReviewLog;
+  dueBefore?: string;
+  dueAfter?: string;
+  configVersion?: number;
+  reason: StudyAttemptSchedulingReason;
+  undoneAt?: string;
+};
+
 export type StudyProgress = {
   unitId: string;
   phase: StudyPhase;
+  scheduling?: StudyFsrsSchedule;
   dueAt: string;
   lastStudiedAt: string | null;
   successfulGuidedRecallDays: string[];
@@ -192,6 +255,9 @@ export type StudyAttempt = {
   guidedResponses?: Record<string, string>;
   coveredConceptIds: string[];
   rubricCoverage?: StudyRubricCoverage[];
+  scheduling?: StudyAttemptScheduling;
+  phaseBefore?: StudyPhase;
+  phaseAfter?: StudyPhase;
   rating: StudyRating;
   startedAt: string;
   revealedAt: string;
@@ -219,9 +285,30 @@ export type StudySettings = {
   id: 'default';
   schemaVersion: number;
   phaseRules: StudyPhaseRules;
+  fsrsConfig?: StudyFsrsConfigRecord;
   newUnitPriorityLimit: StudyPriority;
   includeMaintenanceReviews: boolean;
   studySidebarCollapsed?: boolean;
+  updatedAt: string;
+};
+
+export type StudyFsrsSettings = {
+  enabled: boolean;
+  requestRetention: number;
+  maximumIntervalDays: number;
+  enableFuzz: boolean;
+  enableShortTerm: boolean;
+  learningSteps: string[];
+  relearningSteps: string[];
+  newUnitsPerSession: number;
+};
+
+export type StudyFsrsConfigRecord = {
+  schemaVersion: 1;
+  configVersion: number;
+  userSettings: StudyFsrsSettings;
+  resolvedParameters: unknown;
+  createdAt: string;
   updatedAt: string;
 };
 

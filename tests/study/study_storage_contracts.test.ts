@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { exportStudyData, parseStudyImport } from '../../src/study/studyExportImport';
+import { createStudyFsrsScheduler } from '../../src/study/fsrs/studyFsrs';
+import { isFsrsReplayableAttempt } from '../../src/study/fsrs/studyFsrsMigration';
 import { buildStudyOpfsPath, sanitizeStudyPathSegment } from '../../src/study/studyOpfs';
 import { createSeedStudyData } from '../../src/study/studySeed';
 import { migrateStudySnapshot, shouldSeedStudyData, STUDY_SCHEMA_VERSION } from '../../src/study/studyStorage';
@@ -20,6 +22,111 @@ describe('study storage contracts', () => {
     expect(migrated.schemaVersion).toBe(STUDY_SCHEMA_VERSION);
     expect(migrated.settings.schemaVersion).toBe(STUDY_SCHEMA_VERSION);
     expect(migrated.settings.phaseRules.guidedRecallSuccessDaysToFreeRecall).toBe(2);
+    expect(migrated.settings.fsrsConfig?.schemaVersion).toBe(1);
+    expect(migrated.settings.fsrsConfig?.configVersion).toBe(1);
+  });
+
+  it('migrates legacy progress to uninitialized FSRS schedules with legacy due dates', () => {
+    const migrated = migrateStudySnapshot({
+      documents: [],
+      units: [],
+      prompts: [],
+      concepts: [],
+      progress: [
+        {
+          unitId: 'unit-1',
+          phase: 'guided-recall',
+          dueAt: '2026-08-11T10:00:00.000Z',
+          lastStudiedAt: null,
+          successfulGuidedRecallDays: [],
+          successfulFreeRecallDays: [],
+          applicationSuccessCount: 0,
+          reviewCount: 0,
+          createdAt: '2026-08-10T10:00:00.000Z',
+          updatedAt: '2026-08-10T10:00:00.000Z',
+        },
+      ],
+      attempts: [],
+      drafts: [],
+    });
+
+    expect(migrated.progress[0]?.scheduling).toMatchObject({
+      schemaVersion: 1,
+      algorithm: 'fsrs',
+      initialized: false,
+      legacyDueAt: '2026-08-11T10:00:00.000Z',
+    });
+  });
+
+  it('preserves valid FSRS card schedules and sanitizes corrupt ones during migration', () => {
+    const scheduler = createStudyFsrsScheduler({ ...createSeedStudyData().settings.fsrsConfig!.userSettings, enableFuzz: false });
+    const now = new Date('2026-08-10T10:00:00.000Z');
+    const result = scheduler.applyStudyRating(
+      {
+        schemaVersion: 1,
+        algorithm: 'fsrs',
+        initialized: false,
+        configVersion: 1,
+      },
+      'good',
+      now,
+    );
+    const migrated = migrateStudySnapshot({
+      documents: [],
+      units: [],
+      prompts: [],
+      concepts: [],
+      progress: [
+        {
+          unitId: 'valid',
+          phase: 'guided-recall',
+          scheduling: {
+            schemaVersion: 1,
+            algorithm: 'fsrs',
+            initialized: true,
+            card: result.card,
+            initializedAt: now.toISOString(),
+            lastScheduledAt: now.toISOString(),
+            configVersion: 1,
+          },
+          dueAt: '2026-08-11T10:00:00.000Z',
+          lastStudiedAt: now.toISOString(),
+          successfulGuidedRecallDays: [],
+          successfulFreeRecallDays: [],
+          applicationSuccessCount: 0,
+          reviewCount: 1,
+          createdAt: now.toISOString(),
+          updatedAt: now.toISOString(),
+        },
+        {
+          unitId: 'corrupt',
+          phase: 'guided-recall',
+          scheduling: {
+            schemaVersion: 1,
+            algorithm: 'fsrs',
+            initialized: true,
+            card: { due: 'not-a-date' } as never,
+            configVersion: 1,
+          },
+          dueAt: '2026-08-12T10:00:00.000Z',
+          lastStudiedAt: null,
+          successfulGuidedRecallDays: [],
+          successfulFreeRecallDays: [],
+          applicationSuccessCount: 0,
+          reviewCount: 0,
+          createdAt: now.toISOString(),
+          updatedAt: now.toISOString(),
+        },
+      ],
+      attempts: [],
+      drafts: [],
+    });
+
+    expect(migrated.progress.find((entry) => entry.unitId === 'valid')?.scheduling?.card).toEqual(result.card);
+    expect(migrated.progress.find((entry) => entry.unitId === 'corrupt')?.scheduling).toMatchObject({
+      initialized: false,
+      legacyDueAt: '2026-08-12T10:00:00.000Z',
+    });
   });
 
   it('does not auto-seed after an intentional clean-slate reset leaves settings behind', () => {
@@ -119,6 +226,27 @@ describe('study storage contracts', () => {
     expect(restored.attempts).toHaveLength(1);
     expect(restored.drafts[0]?.answer).toBe('autosaved answer');
     expect(restored.rubrics[0]?.prompt).toBe('What is the purpose?');
+    expect(restored.settings.fsrsConfig?.resolvedParameters).toBeTruthy();
+    expect(restored.progress[0]?.scheduling?.algorithm).toBe('fsrs');
+  });
+
+  it('identifies only counted FSRS review attempts as replayable', () => {
+    const counted = {
+      scheduling: {
+        algorithm: 'fsrs' as const,
+        schedulingApplied: true,
+        rating: 'good' as const,
+        reviewedAt: '2026-08-10T10:00:00.000Z',
+        reason: 'scheduled-review' as const,
+      },
+    };
+
+    expect(isFsrsReplayableAttempt(counted)).toBe(true);
+    expect(isFsrsReplayableAttempt({ scheduling: { ...counted.scheduling, schedulingApplied: false } })).toBe(false);
+    expect(isFsrsReplayableAttempt({ scheduling: { ...counted.scheduling, reason: 'preview' } })).toBe(false);
+    expect(isFsrsReplayableAttempt({ scheduling: { ...counted.scheduling, reason: 'source-review' } })).toBe(false);
+    expect(isFsrsReplayableAttempt({ scheduling: { ...counted.scheduling, reviewedAt: 'bad-date' } })).toBe(false);
+    expect(isFsrsReplayableAttempt({ scheduling: { ...counted.scheduling, undoneAt: '2026-08-10T11:00:00.000Z' } })).toBe(false);
   });
 
   it('generates deterministic OPFS paths for source assets', () => {

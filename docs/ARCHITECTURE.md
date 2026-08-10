@@ -60,7 +60,7 @@ It owns:
 - `studyQuestionSupport.ts` for shared Study question evidence gating, Tier A/B/C metadata, Tier A surface-quality checks, unsupported-topic checks, topic-mismatch support, semantic audit support, and audit chunk suggestions
 - `studyConceptGeneration.ts` for pure deterministic keyword/concept suggestions with rule/confidence metadata
 - `studyRubricGeneration.ts` for pure deterministic answer-rubric templates, source-linked legal-provision fact extraction, fixture-locked rubric generation, and development diagnostics
-- `src/study/fsrs/*` for the Phase 3 FSRS adapter boundary, including Study-domain settings, serialized card/review-log records, runtime parameter validation, fixed/system clocks, and `ts-fsrs` scheduling calls isolated away from React components
+- `src/study/fsrs/*` for the Phase 3 FSRS adapter boundary, including Study-domain settings, serialized card/review-log records, runtime parameter validation, fixed/system clocks, legacy schedule migration helpers, replay predicates, and `ts-fsrs` scheduling calls isolated away from React components
 - `studyLibrarySearch.ts` for the in-memory categorized Library search index, short-field fuzzy matching, and long official-text substring matching
 - `studyScheduler.ts` for deterministic phase transitions and due-before-new session ordering
 - `StudyApp.tsx`, `useStudyApp.ts`, and `components/*` for the dashboard, library, document reader/editor, session, and manage pages

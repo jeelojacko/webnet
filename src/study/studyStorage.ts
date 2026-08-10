@@ -1,4 +1,8 @@
 import { createSeedStudyData, createDefaultStudySettings } from './studySeed';
+import {
+  createStudyFsrsConfigRecord,
+  migrateStudyFsrsSchedule,
+} from './fsrs/studyFsrsMigration';
 import type { NbLawContentPackage } from './content/nbLawTypes';
 import {
   applyOfficialContentPackageToSnapshot,
@@ -21,8 +25,8 @@ import type {
 } from './studyTypes';
 
 export const STUDY_DB_NAME = 'webnet.study.v1';
-export const STUDY_DB_VERSION = 4;
-export const STUDY_SCHEMA_VERSION = 4;
+export const STUDY_DB_VERSION = 5;
+export const STUDY_SCHEMA_VERSION = 5;
 
 const STORES = [
   'documents',
@@ -176,10 +180,18 @@ export const shouldSeedStudyData = ({
 export const migrateStudySnapshot = (input: Partial<StudyDataSnapshot>): StudyDataSnapshot => {
   const nowIso = new Date().toISOString();
   const seed = createSeedStudyData(nowIso);
+  const existingConfigVersion = input.settings?.fsrsConfig?.configVersion;
+  const fsrsConfig =
+    input.settings?.fsrsConfig ??
+    createStudyFsrsConfigRecord({
+      now: new Date(nowIso),
+      configVersion: typeof existingConfigVersion === 'number' ? existingConfigVersion : 1,
+    });
   const settings = {
     ...createDefaultStudySettings(nowIso),
     ...(input.settings ?? {}),
     schemaVersion: STUDY_SCHEMA_VERSION,
+    fsrsConfig,
   };
   const legalDocuments = input.legalDocuments ?? [];
   const documents = upsertStudyDocumentsWithOfficialMetadata(input.documents ?? seed.documents, legalDocuments);
@@ -223,6 +235,14 @@ export const migrateStudySnapshot = (input: Partial<StudyDataSnapshot>): StudyDa
       createdAt: concept.createdAt,
       updatedAt: concept.updatedAt,
     }));
+  const progress = (input.progress ?? seed.progress).map((entry) => ({
+    ...entry,
+    scheduling: migrateStudyFsrsSchedule({
+      schedule: entry.scheduling,
+      legacyDueAt: entry.dueAt,
+      configVersion: settings.fsrsConfig.configVersion,
+    }),
+  }));
   return {
     schemaVersion: STUDY_SCHEMA_VERSION,
     exportedAt: input.exportedAt ?? nowIso,
@@ -231,7 +251,7 @@ export const migrateStudySnapshot = (input: Partial<StudyDataSnapshot>): StudyDa
     prompts: input.prompts ?? seed.prompts,
     concepts,
     rubrics,
-    progress: input.progress ?? seed.progress,
+    progress,
     attempts: input.attempts ?? [],
     drafts: input.drafts ?? [],
     settings,

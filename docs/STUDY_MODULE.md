@@ -25,7 +25,7 @@ It does not use adjustment, parser, solver, network, or Survey CAD domain state.
 ## IndexedDB Schema
 Database: `webnet.study.v1`
 
-Version: `4`
+Version: `5`
 
 Stores:
 - `documents`, key `id`: source metadata such as title, kind, jurisdiction, category, priority, summary, and OPFS source-file asset records
@@ -36,12 +36,19 @@ Stores:
 - `progress`, key `unitId`: current phase, due date, successful separate-day counters, and review counts
 - `attempts`, key `id`: immutable completed attempts with answer text, covered concepts, rating, and timestamps
 - `drafts`, key `id`: autosaved in-progress typed answers
-- `settings`, key `id`: configurable phase rules, priority limit, and schema version
+- `settings`, key `id`: configurable phase rules, priority limit, Study FSRS configuration, and schema version
 - `legalDocuments`, key `id`: imported authoritative legal document metadata, package IDs, official citation/title, source URL, fetch/import dates, content hash, parent Act and enabling Act metadata
 - `legalComponents`, key `recordKey`: imported authoritative components keyed by `{documentId}::{sourceKey}`, including sections, schedules, forms, source text, source hash, subsections, and extraction status
 - `importHistory`, key `id`: compact official-package import history with added/changed counts, reference-only form counts, and flagged-unit counts
 
-Schema migration currently normalizes imported or partially missing snapshots to schema version `4`, fills default settings, defaults official-content stores to empty arrays, adds unit source mode, adds concept origin/order fields, adds the rubric store, and keeps existing Study data intact. Existing concepts without origin default to manual unless the linked unit already records generated concepts. Legacy snapshots without rubrics receive conservative supplemental `custom` rubric rows from existing concepts with empty reference answers, so migration does not invent legal answers or delete concept content.
+Schema migration currently normalizes imported or partially missing snapshots to schema version `5`, fills default settings, defaults official-content stores to empty arrays, adds unit source mode, adds concept origin/order fields, adds the rubric store, adds Study FSRS settings/configuration, adds optional progress/attempt scheduling wrappers, and keeps existing Study data intact. Existing concepts without origin default to manual unless the linked unit already records generated concepts. Legacy snapshots without rubrics receive conservative supplemental `custom` rubric rows from existing concepts with empty reference answers, so migration does not invent legal answers or delete concept content.
+
+Study scheduling metadata is additive in schema version `5`:
+- `StudySettings.fsrsConfig` stores schema version, config version, user settings, and the complete resolved `ts-fsrs` parameter object.
+- `StudyProgress.scheduling` stores a Study-side FSRS schedule wrapper. Existing provisional `dueAt` values migrate to `legacyDueAt` with `initialized: false`; migration does not invent stability, difficulty, or review history.
+- `StudyAttempt.scheduling` is available for future immutable review evidence, including selected rating, card before/after snapshots, review log, due before/after, config version, reason, and undo timestamp.
+- Invalid imported FSRS card snapshots are sanitized to uninitialized scheduling while preserving the unit, progress, and legacy due date.
+- `isFsrsReplayableAttempt` accepts only counted FSRS review attempts with explicit rating and review timestamp, and rejects preview/source-review/undone/non-applied records.
 
 ## OPFS Layout
 Source and backup assets use generated paths under:
@@ -298,4 +305,4 @@ Phase 3A has started the scheduler foundation without changing live Study sessio
 - `StudyClock` provides `systemStudyClock` for runtime and `fixedStudyClock` for deterministic tests.
 - Uninitialized schedules do not fabricate historical FSRS state. The first real counted rating will create a fresh card at the review timestamp; ambiguous legacy due dates are intended to be preserved separately as `legacyDueAt` in a later schema batch.
 
-The browser session, IndexedDB schema, queue builder, import/export, undo, and Study UI scheduling indicators are still pending Phase 3 batches.
+The browser session rating transaction, queue builder, undo, and Study UI scheduling indicators are still pending Phase 3 batches.
