@@ -260,9 +260,19 @@ export const useStudyApp = () => {
         },
         updatedAt: nowIso,
       };
+      const existingRubrics = data.rubrics.filter((rubric) => rubric.unitId === unit.id);
+      const generatedRubrics = generateStudyRubric({
+        document: legalDocument,
+        selectedSources: sourceComponents,
+        unitType: unit.unitType ?? 'section',
+      });
       const existingPrompt = data.prompts.find((entry) => entry.unitId === unit.id && entry.kind === 'guided-recall')
         ?? data.prompts.find((entry) => entry.unitId === unit.id);
-      const generatedQuestion = generateStudyQuestion({ documentTitle, selectedSources: sourceComponents }).question;
+      const generatedQuestion = generateStudyQuestion({
+        documentTitle,
+        selectedSources: sourceComponents,
+        rubricCategories: (existingRubrics.length ? existingRubrics : generatedRubrics).map((rubric) => rubric.category),
+      }).question;
       const prompt: StudyPrompt = existingPrompt
         ? {
             ...existingPrompt,
@@ -293,14 +303,9 @@ export const useStudyApp = () => {
             createdAt: nowIso,
             updatedAt: nowIso,
           }));
-      const existingRubrics = data.rubrics.filter((rubric) => rubric.unitId === unit.id);
       const rubrics = existingRubrics.length
         ? existingRubrics
-        : generateStudyRubric({
-            document: legalDocument,
-            selectedSources: sourceComponents,
-            unitType: unit.unitType ?? 'section',
-          }).map((rubric, index): StudyRubricItem => ({
+        : generatedRubrics.map((rubric, index): StudyRubricItem => ({
             ...rubric,
             id: `${unit.id}-rubric-${index + 1}`,
             unitId: unit.id,

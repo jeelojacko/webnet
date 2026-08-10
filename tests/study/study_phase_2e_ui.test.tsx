@@ -7,8 +7,9 @@ import StudyLayout from '../../src/study/components/StudyLayout';
 import StudyManagePage from '../../src/study/components/StudyManagePage';
 import StudyPreviewPage from '../../src/study/components/StudyPreviewPage';
 import StudyRubricEditor from '../../src/study/components/StudyRubricEditor';
+import StudySessionPage from '../../src/study/components/StudySessionPage';
 import { createSeedStudyData } from '../../src/study/studySeed';
-import type { StudyDataSnapshot } from '../../src/study/studyTypes';
+import type { StudyDataSnapshot, StudySessionItem } from '../../src/study/studyTypes';
 
 const renderIntoRoot = async (node: React.ReactNode, root: Root | null) => {
   await act(async () => {
@@ -23,6 +24,15 @@ const input = (label: string): HTMLTextAreaElement | HTMLInputElement => {
   expect(element).toBeTruthy();
   return element as HTMLTextAreaElement | HTMLInputElement;
 };
+
+const sessionItemFromSeed = (data: StudyDataSnapshot): StudySessionItem => ({
+  unit: data.units[0],
+  prompt: data.prompts[0],
+  progress: data.progress[0],
+  concepts: data.concepts.filter((concept) => concept.unitId === data.units[0].id),
+  rubrics: data.rubrics.filter((rubric) => rubric.unitId === data.units[0].id),
+  due: true,
+});
 
 describe('study phase 2E UI', () => {
   let root: Root | null = null;
@@ -106,6 +116,84 @@ describe('study phase 2E UI', () => {
       closePreview?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
     expect(onNavigate).toHaveBeenCalledWith('/study/library?tab=units');
+  });
+
+  it('renders guided mode with required rubric textboxes and no monolithic textbox', async () => {
+    const data: StudyDataSnapshot = createSeedStudyData('2026-08-05T10:00:00.000Z');
+    await renderIntoRoot(
+      <StudySessionPage
+        activeItem={sessionItemFromSeed(data)}
+        answer=""
+        onAnswerChange={vi.fn()}
+        guidedResponses={{}}
+        onGuidedResponsesChange={vi.fn()}
+        responseMode="guided"
+        revealed={false}
+        onRevealChange={vi.fn()}
+        coveredConceptIds={[]}
+        onToggleConcept={vi.fn()}
+        rubricCoverage={[]}
+        onRubricCoverageChange={vi.fn()}
+        onRate={vi.fn()}
+      />,
+      root,
+    );
+
+    const textareas = Array.from(document.querySelectorAll('textarea'));
+    expect(textareas).toHaveLength(data.rubrics.filter((rubric) => rubric.unitId === data.units[0].id && rubric.required).length);
+    expect(document.body.textContent).not.toContain('Typed Recall');
+  });
+
+  it('keeps free-recall monolithic textbox and hybrid guided prompts', async () => {
+    const data: StudyDataSnapshot = createSeedStudyData('2026-08-05T10:00:00.000Z');
+    const baseProps = {
+      activeItem: sessionItemFromSeed(data),
+      answer: '',
+      onAnswerChange: vi.fn(),
+      guidedResponses: {},
+      onGuidedResponsesChange: vi.fn(),
+      revealed: false,
+      onRevealChange: vi.fn(),
+      coveredConceptIds: [],
+      onToggleConcept: vi.fn(),
+      rubricCoverage: [],
+      onRubricCoverageChange: vi.fn(),
+      onRate: vi.fn(),
+    };
+    await renderIntoRoot(<StudySessionPage {...baseProps} responseMode="free-recall" />, root);
+    expect(document.body.textContent).toContain('Typed Recall');
+    expect(document.body.textContent).not.toContain('Guided Prompts');
+
+    await renderIntoRoot(<StudySessionPage {...baseProps} responseMode="hybrid" />, root);
+    expect(document.body.textContent).toContain('Typed Recall');
+    expect(document.body.textContent).toContain('Guided Prompts');
+  });
+
+  it('reveals each guided response with the matching rubric item', async () => {
+    const data: StudyDataSnapshot = createSeedStudyData('2026-08-05T10:00:00.000Z');
+    const item = sessionItemFromSeed(data);
+    await renderIntoRoot(
+      <StudySessionPage
+        activeItem={item}
+        answer=""
+        onAnswerChange={vi.fn()}
+        guidedResponses={{ [item.rubrics[0].id]: 'Matched guided answer' }}
+        onGuidedResponsesChange={vi.fn()}
+        responseMode="guided"
+        revealed
+        onRevealChange={vi.fn()}
+        coveredConceptIds={[]}
+        onToggleConcept={vi.fn()}
+        rubricCoverage={[]}
+        onRubricCoverageChange={vi.fn()}
+        onRate={vi.fn()}
+      />,
+      root,
+    );
+
+    expect(document.body.textContent).toContain(item.rubrics[0].prompt);
+    expect(document.body.textContent).toContain('Matched guided answer');
+    expect(document.body.textContent).toContain(item.rubrics[0].referenceAnswer);
   });
 
   it('renders rubric question on its own row with a title tooltip', async () => {

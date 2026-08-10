@@ -229,7 +229,13 @@ const StudyUnitEditorPage = ({ data, unitId, onSave, onNavigate }: StudyUnitEdit
 
   const regenerateQuestion = () => {
     if (!fieldCanOverwrite(generatedState, 'question')) return;
-    const question = isCustom ? promptDraft.question : generateStudyQuestion({ documentTitle, selectedSources: sourceComponents }).question;
+    const question = isCustom
+      ? promptDraft.question
+      : generateStudyQuestion({
+          documentTitle,
+          selectedSources: sourceComponents,
+          rubricCategories: rubricDrafts.map((rubric) => rubric.category),
+        }).question;
     setPromptDraft({ ...promptDraft, question });
     setGeneratedState({ ...generatedState, question: question ? 'generated' : 'empty' });
   };
@@ -539,9 +545,12 @@ const StudyUnitEditorPage = ({ data, unitId, onSave, onNavigate }: StudyUnitEdit
             setGeneratedState({ ...generatedState, rubrics: nextRubrics.length > 0 ? 'user-edited' : 'empty' });
           }}
         />
-        <div className="rounded border border-slate-800 bg-slate-950 p-3">
-          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-            <div className="text-xs uppercase tracking-wide text-slate-500">Required concepts ({generatedState.concepts})</div>
+        <details className="rounded border border-slate-800 bg-slate-950 p-3">
+          <summary className="cursor-pointer text-xs uppercase tracking-wide text-slate-500">
+            Keywords / Concepts ({generatedState.concepts})
+          </summary>
+          <div className="mt-3 mb-2 flex flex-wrap items-center justify-between gap-2">
+            <div className="text-xs uppercase tracking-wide text-slate-500">Required concepts</div>
             <button onClick={() => addConcept()} className="rounded bg-emerald-600 px-2 py-1 text-xs font-medium text-white">
               + Add Concept
             </button>
@@ -633,7 +642,7 @@ const StudyUnitEditorPage = ({ data, unitId, onSave, onNavigate }: StudyUnitEdit
               ) : null}
             </div>
           ) : null}
-        </div>
+        </details>
       </section>
     </div>
   );

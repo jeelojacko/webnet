@@ -277,6 +277,25 @@ describe('source-linked generated unit creation', () => {
 });
 
 describe('structured rubric generation', () => {
+  it('generates distinct offence-and-penalty prompts for Surveys Act section 14', () => {
+    const source = component('doc-surveys-act', 'section:14');
+    const rubric = generateStudyRubric({
+      document: legalDocument('doc-surveys-act'),
+      selectedSources: [source],
+      unitType: 'section',
+    });
+
+    expect(rubric.map((item) => item.prompt)).toEqual([
+      'What offence and penalty apply to violating the regulations?',
+      'What offence and penalty apply to obstructing coordinate-monument work?',
+      'What offence and penalty apply to obstructing a survey or coordinate tie?',
+    ]);
+    expect(rubric[0].referenceAnswer).toContain('category B offence');
+    expect(rubric[1].referenceAnswer).toContain('category E offence');
+    expect(rubric.map((item) => item.prompt).join('\n')).not.toContain('procedure');
+    expect(rubric.map((item) => item.referenceAnswer).join('\n')).not.toContain('R.S.1973');
+  });
+
   it('generates the expected section 16 correction rubric', () => {
     const rubric = generateStudyRubric({
       document: legalDocument('doc-boundaries-confirmation-act'),
@@ -297,6 +316,68 @@ describe('structured rubric generation', () => {
     expect(rubric[0]?.referenceAnswer).toContain('inconsistency, error or omission');
     expect(rubric[3]?.referenceAnswer).toContain('shall not affect the location of a boundary');
     expect(rubric[7]?.referenceAnswer).toContain('Study note:');
+  });
+
+  it('generates distinct layout, plan and monument prompts for Community Planning Act section 83', () => {
+    const rubric = generateStudyRubric({
+      document: legalDocument('doc-community-planning-act'),
+      selectedSources: [component('doc-community-planning-act', 'section:83')],
+      unitType: 'section',
+    });
+
+    expect(rubric.map((item) => item.category)).toEqual([
+      'scope-trigger',
+      'power-duty',
+      'required-material',
+      'survey-relevance',
+    ]);
+    expect(rubric.map((item) => item.prompt)).toEqual([
+      'When may a person proceed with laying out the subdivision?',
+      'What may be laid out, and according to what instructions?',
+      'What subdivision plan must be prepared?',
+      'What legal survey monument requirement applies when acting under section 83?',
+    ]);
+    expect(new Set(rubric.map((item) => item.prompt)).size).toBe(rubric.length);
+  });
+
+  it('builds main questions from the finished rubric topic for sections 14, 16 and 83', () => {
+    const section14Rubric = generateStudyRubric({
+      document: legalDocument('doc-surveys-act'),
+      selectedSources: [component('doc-surveys-act', 'section:14')],
+      unitType: 'section',
+    });
+    const section16Rubric = generateStudyRubric({
+      document: legalDocument('doc-boundaries-confirmation-act'),
+      selectedSources: [component('doc-boundaries-confirmation-act', 'section:16')],
+      unitType: 'section',
+    });
+    const section83Rubric = generateStudyRubric({
+      document: legalDocument('doc-community-planning-act'),
+      selectedSources: [component('doc-community-planning-act', 'section:83')],
+      unitType: 'section',
+    });
+
+    expect(
+      generateStudyQuestion({
+        documentTitle: 'Surveys Act',
+        selectedSources: [component('doc-surveys-act', 'section:14')],
+        rubricCategories: section14Rubric.map((item) => item.category),
+      }).question,
+    ).toBe('What offences and penalties are established by section 14 of Surveys Act?');
+    expect(
+      generateStudyQuestion({
+        documentTitle: 'Boundaries Confirmation Act',
+        selectedSources: [component('doc-boundaries-confirmation-act', 'section:16')],
+        rubricCategories: section16Rubric.map((item) => item.category),
+      }).question,
+    ).toBe('How may a filed plan of survey be corrected under section 16 of Boundaries Confirmation Act, and what limits and filing consequences apply?');
+    expect(
+      generateStudyQuestion({
+        documentTitle: 'Community Planning Act',
+        selectedSources: [component('doc-community-planning-act', 'section:83')],
+        rubricCategories: section83Rubric.map((item) => item.category),
+      }).question,
+    ).toBe('What authority and survey-monument requirements does section 83 of Community Planning Act establish for laying out streets and lots?');
   });
 
   it('provides default templates for whole acts, cases and custom principles', () => {

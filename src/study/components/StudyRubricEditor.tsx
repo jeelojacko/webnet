@@ -1,5 +1,6 @@
 import {
   generateStudyRubric,
+  generateStudyRubricWithDiagnostics,
   getStudyRubricTemplate,
   STUDY_RUBRIC_CATEGORY_LABELS,
 } from '../studyRubricGeneration';
@@ -39,6 +40,14 @@ const StudyRubricEditor = ({
   onRubricsChange,
 }: StudyRubricEditorProps) => {
   const setRubrics = (next: StudyRubricItem[]) => onRubricsChange(rubricRowsWithOrder(next));
+  const generationDiagnostic =
+    import.meta.env.DEV && sourceComponents.length > 0
+      ? generateStudyRubricWithDiagnostics({
+          document: legalDocument,
+          selectedSources: sourceComponents,
+          unitType,
+        }).diagnostic
+      : null;
 
   const addRubric = (category: StudyRubricCategory = 'custom', prompt = '') => {
     const nowIso = new Date().toISOString();
@@ -141,7 +150,7 @@ const StudyRubricEditor = ({
             Add Suggested Rubric Items
           </button>
           <button onClick={replaceGeneratedRubrics} className="rounded bg-slate-800 px-2 py-1 text-xs text-slate-300">
-            Replace Generated Rubric Items
+            Regenerate Generated Rubric Items
           </button>
           <button onClick={applyRubricTemplate} className="rounded bg-slate-800 px-2 py-1 text-xs text-slate-300">
             Apply Template
@@ -207,6 +216,49 @@ const StudyRubricEditor = ({
           </div>
         ))}
       </div>
+      {generationDiagnostic ? (
+        <details className="mt-3 rounded border border-slate-800 bg-slate-900 p-3">
+          <summary className="cursor-pointer text-xs uppercase tracking-wide text-slate-500">
+            Rubric generation diagnostics
+          </summary>
+          <div className="mt-3 grid gap-3 text-xs text-slate-300">
+            <div>
+              <div className="font-medium text-slate-100">Section topic selected</div>
+              <div>{generationDiagnostic.sectionTopic}</div>
+            </div>
+            <div>
+              <div className="font-medium text-slate-100">Extracted legal facts</div>
+              <pre className="mt-1 max-h-52 overflow-auto rounded bg-slate-950 p-2">
+                {JSON.stringify(generationDiagnostic.extractedFacts, null, 2)}
+              </pre>
+            </div>
+            <div>
+              <div className="font-medium text-slate-100">Merged rubric items</div>
+              <pre className="mt-1 max-h-52 overflow-auto rounded bg-slate-950 p-2">
+                {JSON.stringify(generationDiagnostic.mergedItems, null, 2)}
+              </pre>
+            </div>
+            {generationDiagnostic.rejectedDuplicatePrompts.length > 0 ? (
+              <div>
+                <div className="font-medium text-slate-100">Rejected duplicate prompts</div>
+                <div>{generationDiagnostic.rejectedDuplicatePrompts.join('; ')}</div>
+              </div>
+            ) : null}
+            {generationDiagnostic.removedSourceText.length > 0 ? (
+              <div>
+                <div className="font-medium text-slate-100">Text removed as amendment history</div>
+                <div>{generationDiagnostic.removedSourceText.join('; ')}</div>
+              </div>
+            ) : null}
+            {generationDiagnostic.qualityWarnings.length > 0 ? (
+              <div>
+                <div className="font-medium text-slate-100">Quality warnings</div>
+                <div>{generationDiagnostic.qualityWarnings.join('; ')}</div>
+              </div>
+            ) : null}
+          </div>
+        </details>
+      ) : null}
     </div>
   );
 };

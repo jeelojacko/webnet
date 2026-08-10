@@ -513,11 +513,6 @@ export const createStudyContentFromSourceSelection = ({
     nowIso,
   });
   const documentTitle = legalDocument?.officialTitle ?? document.title;
-  const question = generateStudyQuestion({
-    documentTitle,
-    officialCitation: legalDocument?.officialCitationDisplay ?? document.citation,
-    selectedSources: components,
-  }).question;
   const conceptLabels = suggestRequiredConcepts(components);
   const concepts = conceptLabels.map((label, index): StudyConcept => ({
     id: `${unit.id}-concept-${index + 1}`,
@@ -540,6 +535,12 @@ export const createStudyContentFromSourceSelection = ({
     createdAt: nowIso,
     updatedAt: nowIso,
   }));
+  const question = generateStudyQuestion({
+    documentTitle,
+    officialCitation: legalDocument?.officialCitationDisplay ?? document.citation,
+    selectedSources: components,
+    rubricCategories: rubrics.map((rubric) => rubric.category),
+  }).question;
   return {
     unit: {
       ...unit,

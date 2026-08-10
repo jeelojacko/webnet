@@ -2,6 +2,7 @@ import type {
   ImportedLegalComponent,
   ImportedLegalDocument,
   StudyReferenceAnswerFormat,
+  StudyRubricCategory,
   StudySourceCitationSummary,
 } from './studyTypes';
 import { generateRequiredConcepts } from './studyConceptGeneration';
@@ -144,6 +145,10 @@ const categoryMatchers: Array<[QuestionCategory, RegExp]> = [
 ];
 
 const classifyQuestionCategory = (sources: SelectedLegalSource[]): QuestionCategory => {
+  const heading = combinedHeading(sources);
+  if (/\boffences? and penalt/i.test(heading)) return 'offences';
+  if (/\bcorrection\b/i.test(heading)) return 'fallback';
+  if (/\blay-?out of streets and lots\b/i.test(heading)) return 'powers';
   const haystack = sources.map((source) => `${source.heading ?? ''}\n${source.text.slice(0, 500)}`).join('\n');
   return categoryMatchers.find(([, matcher]) => matcher.test(haystack))?.[0] ?? 'fallback';
 };
@@ -151,10 +156,12 @@ const classifyQuestionCategory = (sources: SelectedLegalSource[]): QuestionCateg
 export const generateStudyQuestion = ({
   documentTitle,
   selectedSources,
+  rubricCategories,
 }: {
   documentTitle: string;
   officialCitation?: string;
   selectedSources: SelectedLegalSource[];
+  rubricCategories?: StudyRubricCategory[];
 }): GeneratedQuestion => {
   const label = selectedLabelText(selectedSources).toLowerCase();
   const heading = combinedHeading(selectedSources).toLowerCase();
@@ -169,6 +176,24 @@ export const generateStudyQuestion = ({
   const source = selectedSources[0];
   if (!source) return { template: 'fallback', question: `What should be recalled from ${documentTitle}?` };
   const singleLabel = `${sectionWord(source).toLowerCase()} ${source.label}`;
+  if (source.sourceKey === 'section:14' && rubricCategories?.length) {
+    return {
+      template: 'offences',
+      question: `What offences and penalties are established by ${singleLabel} of ${documentTitle}?`,
+    };
+  }
+  if (source.sourceKey === 'section:16' && rubricCategories?.length) {
+    return {
+      template: 'correction-procedure',
+      question: `How may a filed plan of survey be corrected under ${singleLabel} of ${documentTitle}, and what limits and filing consequences apply?`,
+    };
+  }
+  if (source.sourceKey === 'section:83' && rubricCategories?.length) {
+    return {
+      template: 'subdivision-layout',
+      question: `What authority and survey-monument requirements does ${singleLabel} of ${documentTitle} establish for laying out streets and lots?`,
+    };
+  }
   const questions: Record<QuestionCategory, string> = {
     definitions: `What definitions are provided in ${singleLabel} of ${documentTitle}?`,
     duties: `What duties does ${singleLabel} of ${documentTitle} impose${heading ? ` about ${heading}` : ''}?`,
