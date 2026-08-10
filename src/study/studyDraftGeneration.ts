@@ -13,6 +13,7 @@ import {
   hasTierASurfaceQualityFailure,
   classifyStrongHeadingTopic,
   normalizeHeadingSubject,
+  normalizeGeneratedQuestionText,
   questionHasUnsupportedTopic,
   sourceEvidenceText,
   strongHeadingTopicMismatch,
@@ -298,6 +299,27 @@ const fallbackQuestion = (documentTitle: string, source: ImportedLegalComponent)
   };
 };
 
+const citationTitleFromSource = (source: ImportedLegalComponent): string | undefined =>
+  stripLeadingLabel(prepareLegalText(source.text).operativeText, source.label)
+    .match(/\bThis Regulation may be cited as\s+(.+?)\.?\s*$/i)?.[1]
+    ?.trim()
+    .replace(/^the\s+/i, '')
+    .replace(/[.;]\s*$/, '');
+
+const citationTitleQuestion = (
+  documentTitle: string,
+  source: ImportedLegalComponent,
+): GeneratedQuestion | undefined => {
+  if (source.label !== '1') return undefined;
+  if (!citationTitleFromSource(source)) return undefined;
+  const regulationName = documentTitle.match(/\bREGULATION\s+\d+-\d+\b/i)?.[0] ?? 'this Regulation';
+  return {
+    template: 'citation-title',
+    questionTier: 'B',
+    question: `What is ${regulationName} cited as?`,
+  };
+};
+
 const goldenQuestion = (documentTitle: string, source: ImportedLegalComponent): GeneratedQuestion | undefined => {
   const singleLabel = `${sectionWord(source).toLowerCase()} ${source.label}`;
   const identity = sourceIdentity(source);
@@ -427,18 +449,23 @@ export const generateStudyQuestion = ({
     return {
       template: category,
       questionTier: category === 'fallback' ? 'C' : 'B',
-      question: `What do ${label} of ${documentTitle} establish${heading ? ` about ${heading}` : ''}?`,
+      question: normalizeGeneratedQuestionText(`What do ${label} of ${documentTitle} establish${heading ? ` about ${heading}` : ''}?`),
     };
   }
   const source = selectedSources[0];
   if (!source) return { template: 'fallback', questionTier: 'C', question: `What should be recalled from ${documentTitle}?` };
+  const citationTitle = citationTitleQuestion(documentTitle, source);
+  if (citationTitle) return { ...citationTitle, question: normalizeGeneratedQuestionText(citationTitle.question) };
   const singleLabel = `${sectionWord(source).toLowerCase()} ${source.label}`;
   const golden = rubricCategories?.length ? goldenQuestion(documentTitle, source) : undefined;
-  if (golden) return hasTierASurfaceQualityFailure(golden.question) && golden.questionTier === 'A'
-    ? { ...golden, questionTier: 'B', template: `${golden.template}-quality-downgraded` }
-    : golden;
+  if (golden) {
+    const normalizedGolden = { ...golden, question: normalizeGeneratedQuestionText(golden.question) };
+    return hasTierASurfaceQualityFailure(normalizedGolden.question) && normalizedGolden.questionTier === 'A'
+      ? { ...normalizedGolden, questionTier: 'B', template: `${normalizedGolden.template}-quality-downgraded` }
+      : normalizedGolden;
+  }
   const strongHeading = strongHeadingQuestion(documentTitle, source);
-  if (strongHeading) return strongHeading;
+  if (strongHeading) return { ...strongHeading, question: normalizeGeneratedQuestionText(strongHeading.question) };
   const dutyHeadingSubject = headingSubject(source);
   const dutySuffix = dutyHeadingSubject && !/^dut(?:y|ies)$/.test(dutyHeadingSubject) && heading ? ` about ${heading}` : '';
   const questions: Record<QuestionCategory, string> = {
@@ -458,10 +485,19 @@ export const generateStudyQuestion = ({
     regulations: `What regulation-making authority is established by ${singleLabel} of ${documentTitle}?`,
     fallback: `What does ${singleLabel} of ${documentTitle} provide?`,
   };
-  const generated = { template: category, questionTier: category === 'fallback' ? 'C' as const : 'B' as const, question: questions[category] };
-  if (questionHasUnsupportedTopic([source], generated.question)) return fallbackQuestion(documentTitle, source);
-  if (strongHeadingTopicMismatch(source.heading, generated.question)) return fallbackQuestion(documentTitle, source);
-  if (category === 'fallback' && sourceEvidenceText([source]).length > 0) return fallbackQuestion(documentTitle, source);
+  const generated = { template: category, questionTier: category === 'fallback' ? 'C' as const : 'B' as const, question: normalizeGeneratedQuestionText(questions[category]) };
+  if (questionHasUnsupportedTopic([source], generated.question)) {
+    const fallback = fallbackQuestion(documentTitle, source);
+    return { ...fallback, question: normalizeGeneratedQuestionText(fallback.question) };
+  }
+  if (strongHeadingTopicMismatch(source.heading, generated.question)) {
+    const fallback = fallbackQuestion(documentTitle, source);
+    return { ...fallback, question: normalizeGeneratedQuestionText(fallback.question) };
+  }
+  if (category === 'fallback' && sourceEvidenceText([source]).length > 0) {
+    const fallback = fallbackQuestion(documentTitle, source);
+    return { ...fallback, question: normalizeGeneratedQuestionText(fallback.question) };
+  }
   return generated;
 };
 

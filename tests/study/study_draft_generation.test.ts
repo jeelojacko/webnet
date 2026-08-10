@@ -177,6 +177,40 @@ describe('study question generation', () => {
     expect(generated.question).toBe('What does section 5 of the Regulation 83-130 under the Land Titles Act provide?');
   });
 
+  it('normalizes duplicated connector wording in generated questions', () => {
+    const generated = generateStudyQuestion({
+      documentTitle: 'Community Planning Act',
+      selectedSources: [component('doc-community-planning-act', 'section:59')],
+      rubricCategories: generateStudyRubric({
+        document: legalDocument('doc-community-planning-act'),
+        selectedSources: [component('doc-community-planning-act', 'section:59')],
+        unitType: 'section',
+      }).map((item) => item.category),
+    });
+
+    expect(generated.question).toBe('What does section 59 of the Community Planning Act provide regarding re-zoning and amendments?');
+    expect(generated.question).not.toContain('regarding regarding-zoning');
+  });
+
+  it('generates citation-title questions for pilot regulation section 1', () => {
+    const expected = [
+      ['reg-surveys-84-76', 'What is REGULATION 84-76 cited as?'],
+      ['reg-registry-84-190', 'What is REGULATION 84-190 cited as?'],
+      ['reg-land-titles-83-130', 'What is REGULATION 83-130 cited as?'],
+      ['reg-community-planning-80-159', 'What is REGULATION 80-159 cited as?'],
+      ['reg-boundaries-95-166', 'What is REGULATION 95-166 cited as?'],
+    ] as const;
+
+    for (const [documentId, question] of expected) {
+      expect(
+        generateStudyQuestion({
+          documentTitle: legalDocument(documentId).officialTitle,
+          selectedSources: [component(documentId, 'section:1')],
+        }).question,
+      ).toBe(question);
+    }
+  });
+
   it('generates one combined question for multiple sections', () => {
     const generated = generateStudyQuestion({
       documentTitle: 'Boundaries Confirmation Act',
@@ -237,6 +271,22 @@ describe('reference answer generation', () => {
     expect(answer).toContain('Body text');
     expect(answer).not.toContain('consolidated to April');
     expect(answer).not.toContain('2024, c.12');
+  });
+
+  it('strips trailing structural headings from generated reference answers', () => {
+    const landTitles1 = generateReferenceAnswer({
+      document: legalDocument('doc-land-titles-act'),
+      selectedSources: [component('doc-land-titles-act', 'section:1')],
+      options: DEFAULT_REFERENCE_ANSWER_OPTIONS,
+    }).text;
+    const landTitles85 = generateReferenceAnswer({
+      document: legalDocument('doc-land-titles-act'),
+      selectedSources: [component('doc-land-titles-act', 'section:85')],
+      options: DEFAULT_REFERENCE_ANSWER_OPTIONS,
+    }).text;
+
+    expect(landTitles1).not.toContain('APPLICATION');
+    expect(landTitles85).not.toContain('COMING INTO FORCE');
   });
 
   it('supports exact-text mode', () => {
@@ -457,7 +507,7 @@ describe('structured rubric generation', () => {
     expect(boundaries6.map((item) => item.prompt).join('\n')).not.toMatch(/\bmust\b/i);
     expect(community13.map((item) => item.prompt).join('\n')).toContain('What authority does the Minister have to consult with any person the Minister considers appropriate?');
     expect(community13.map((item) => item.prompt).join('\n')).not.toContain('must consult');
-    expect(registry71.map((item) => item.prompt).join('\n')).toContain('What prohibition applies to an instrument that does not comply with the regulations?');
+    expect(registry71.map((item) => item.prompt).join('\n')).toContain('When may an instrument be accepted for registration in a registry office?');
     expect(registry71.map((item) => item.prompt).join('\n')).not.toContain('Lieutenant-Governor in Council prohibited');
     expect(landTitles83.map((item) => item.prompt)).toEqual(['What regulation-making authority does the Lieutenant-Governor in Council have under section 83?']);
     expect(landTitles83[0].questionTier).toBe('B');
@@ -551,6 +601,52 @@ describe('structured rubric generation', () => {
       unitType: 'section',
     });
     expect(rubric.map((item) => item.prompt).join('\n')).not.toMatch(/What must person|What powers does The|regarding appoint|regarding file/i);
+  });
+
+  it('handles citation-title regulation sections as titles instead of may authority', () => {
+    const expected = [
+      ['reg-surveys-84-76', 'General Regulation - Surveys Act.'],
+      ['reg-registry-84-190', 'Instrument Standards Regulation - Registry Act.'],
+      ['reg-land-titles-83-130', 'General Regulation - Land Titles Act.'],
+      ['reg-community-planning-80-159', 'Provincial Subdivision Regulation - Community Planning Act.'],
+      ['reg-boundaries-95-166', 'General Regulation - Boundaries Confirmation Act.'],
+    ] as const;
+
+    for (const [documentId, answer] of expected) {
+      const rubric = generateStudyRubric({
+        document: legalDocument(documentId),
+        selectedSources: [component(documentId, 'section:1')],
+        unitType: 'section',
+      });
+      expect(rubric.map((item) => item.prompt)).toEqual(['What is this Regulation cited as?']);
+      expect(rubric[0].referenceAnswer).toBe(answer);
+      expect(rubric.map((item) => item.prompt).join('\n')).not.toContain('What may This Regulation do?');
+    }
+  });
+
+  it('rewrites inanimate passive instrument duties into object-focused prompts', () => {
+    const received = generateStudyRubric({
+      selectedSources: [
+        testComponent({
+          label: '8',
+          text: '8 No instrument shall be received for filing or registration except between the hours of nine and five.',
+        }),
+      ],
+      unitType: 'section',
+    });
+    const registered = generateStudyRubric({
+      selectedSources: [
+        testComponent({
+          label: '9',
+          text: '9 Every instrument shall be registered at full length.',
+        }),
+      ],
+      unitType: 'section',
+    });
+
+    expect(received.map((item) => item.prompt)).toContain('When may an instrument be received for filing or registration?');
+    expect(registered.map((item) => item.prompt)).toContain('How must an instrument be registered?');
+    expect([...received, ...registered].map((item) => item.prompt).join('\n')).not.toMatch(/What must (?:an? )?instrument do\?/i);
   });
 
   it('provides default templates for whole acts, cases and custom principles', () => {

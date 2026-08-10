@@ -7,7 +7,7 @@ import type {
   StudyUnitType,
 } from './studyTypes';
 import { prepareLegalText } from './studyLegalTextPreparation';
-import { hasTierASurfaceQualityFailure } from './studyQuestionSupport';
+import { hasTierASurfaceQualityFailure, normalizeGeneratedQuestionText } from './studyQuestionSupport';
 import type { StudyQuestionTier } from './studyQuestionSupport';
 
 export type GeneratedRubricItem = Pick<
@@ -34,6 +34,7 @@ export type StudyRubricTemplateItem = {
 };
 
 export type ExtractedLegalFact = {
+  kind?: 'citation-title';
   sourceKey: string;
   sourceClause?: string;
   operativeActor?: string;
@@ -146,6 +147,20 @@ const sourceReferenceFor = (source: ImportedLegalComponent): StudySourceReferenc
 
 const normalizeSpaces = (value: string): string => value.replace(/\s+/g, ' ').trim();
 
+const INANIMATE_LEGAL_OBJECT_PATTERN = /\b(?:instrument|plan|document|application|certificate|notice|record|deed|transfer|mortgage|registration|by-law)\b/i;
+
+const isInanimateLegalObject = (value: string): boolean => INANIMATE_LEGAL_OBJECT_PATTERN.test(value);
+
+const withArticle = (value: string): string => {
+  const normalized = normalizeSpaces(value)
+    .replace(/^(?:No|Every|Any)\s+/i, '')
+    .replace(/^The\b/, 'the');
+  if (!normalized) return '';
+  if (/^(?:the|a|an|this)\b/i.test(normalized)) return normalized;
+  const lower = normalized.toLowerCase();
+  return `${/^[aeiou]/i.test(lower) ? 'an' : 'a'} ${lower}`;
+};
+
 const ACTOR_NORMALIZATIONS: Array<[RegExp, string]> = [
   [/^person$/i, 'a person'],
   [/^surveyor$/i, 'a surveyor'],
@@ -214,10 +229,10 @@ const sentenceBoundAfter = (text: string, index: number): number => {
 };
 
 const triggerFromPrefix = (prefix: string): string | undefined =>
-  prefix.match(/\b(?:unless|if|when|on receiving|before|after|whose)[^,.;]{3,140},?/i)?.[0];
+  prefix.match(/\b(?:unless|if|where|when|on receiving|before|after|whose)[^,.;]{3,140},?/i)?.[0];
 
 const cleanActorCandidate = (value: string): string => normalizeSpaces(value)
-  .replace(/\b(?:unless|if|when|on receiving|before|after|whose)\b[^,.;]{3,160},?/gi, '')
+  .replace(/\b(?:unless|if|where|when|on receiving|before|after|whose)\b[^,.;]{3,160},?/gi, '')
   .replace(/\band thereafter\b/gi, '')
   .replace(/^(?:and|or|then|thereafter)\s+/i, '')
   .replace(/\bwhich\b.*$/i, '')
@@ -231,13 +246,15 @@ const knownActorFromSubject = (subject: string): string | undefined =>
 const actorFromSubject = (subject: string): string | undefined => {
   const cleaned = cleanActorCandidate(subject);
   if (!cleaned || /^[^A-Za-z]+/.test(cleaned) || /\([^)]*\)/.test(cleaned)) return undefined;
+  if (/^(?:where|if|unless|in every|except as|subject to)\b/i.test(cleaned)) return undefined;
+  if (/\b(?:shall|must|may)\b/i.test(cleaned)) return undefined;
   if (/\bmore than one person or authority\b/i.test(cleaned)) return 'more than one person or authority referred to in subsection (2) or (3)';
   if (/^(?:he|she|he or she|they|it)$/i.test(cleaned)) return undefined;
   const known = knownActorFromSubject(cleaned);
   if (known) return known;
   const passiveApplication = cleaned.match(/\bapplication respecting a parcel\b/i)?.[0];
   if (passiveApplication) return 'persons or authorities referred to in subsection (2)';
-  const passiveInstrument = cleaned.match(/\binstrument\b/i)?.[0];
+  const passiveInstrument = cleaned.match(/^(?:any|every|no|an?|the)\s+instrument\b/i)?.[0];
   if (passiveInstrument) return passiveInstrument;
   const words = cleaned.split(/\s+/).filter(Boolean);
   if (words.length > 0 && words.length <= 12 && !/\b(?:subject to|under|referred to)\b/i.test(cleaned)) return cleaned;
@@ -280,7 +297,23 @@ const stripSourceNoise = (text: string, diagnostic: StudyRubricGenerationDiagnos
   const prepared = prepareLegalText(text);
   if (prepared.amendmentHistoryText) diagnostic.removedSourceText.push(normalizeSpaces(prepared.amendmentHistoryText));
   if (prepared.consolidationText) diagnostic.removedSourceText.push(normalizeSpaces(prepared.consolidationText));
+  if (prepared.trailingStructuralHeadingText) diagnostic.removedSourceText.push(normalizeSpaces(prepared.trailingStructuralHeadingText));
   return normalizeSpaces(prepared.operativeText);
+};
+
+const citationTitleFact = (unit: { sourceKey: string; text: string }): ExtractedLegalFact | undefined => {
+  const title = unit.text.match(/\bThis Regulation may be cited as\s+(.+?)\.?\s*$/i)?.[1]?.trim().replace(/^the\s+/i, '').replace(/[.;]\s*$/, '');
+  if (!title) return undefined;
+  return {
+    kind: 'citation-title',
+    sourceKey: unit.sourceKey,
+    sourceClause: unit.text,
+    operativeActor: 'This Regulation',
+    actor: 'This Regulation',
+    modality: 'none',
+    object: title,
+    confidence: 'high',
+  };
 };
 
 export const classifyStudyRubricSectionTopic = (source: ImportedLegalComponent): string => {
@@ -293,7 +326,7 @@ export const classifyStudyRubricSectionTopic = (source: ImportedLegalComponent):
   if (/\blay-?out of streets and lots\b/.test(heading)) return 'subdivision-layout';
   if (/\bfiling of .*plan/.test(heading)) return 'filing';
   if (/\bauthority re private property\b/.test(heading)) return 'entry-authority';
-  const body = source.text.toLowerCase().slice(0, 500);
+  const body = prepareLegalText(source.text).operativeText.toLowerCase().slice(0, 500);
   if (/\bcommits an offence\b|\bpunishable\b/.test(body)) return 'offences-and-penalties';
   if (/\bfiled?\b|\bregistered?\b/.test(body)) return 'filing';
   if (/\bnotice\b/.test(body)) return 'notice';
@@ -318,6 +351,8 @@ const extractFacts = (
 ): ExtractedLegalFact[] =>
   sourceUnits(source).flatMap((unit) => {
     const text = stripSourceNoise(unit.text, diagnostic);
+    const citationFact = citationTitleFact({ ...unit, text });
+    if (citationFact) return [citationFact];
     const modalFacts = extractModalFacts(unit.sourceKey, text);
     if (modalFacts.length > 2) {
       diagnostic.qualityWarnings.push(`Clause binding ambiguous in ${unit.label}; multiple modal clauses require a safe fallback.`);
@@ -644,12 +679,14 @@ const landTitlesSection83Rubric = (
 const wordLimitedSubject = (value: string, fallback: string): string => {
   const normalized = normalizeSpaces(value).replace(/[,:;]\s*$/, '');
   if (!normalized || /^[^A-Za-z]+/.test(normalized) || /\([^)]*$/.test(normalized)) return fallback;
+  if (/^(?:where|if|unless|in every|except as|subject to)\b/i.test(normalized)) return fallback;
+  if (/\b(?:shall|must|may)\b/i.test(normalized)) return fallback;
   const words = normalized.split(/\s+/).filter(Boolean);
   if (words.length === 0) return fallback;
   let limited = words.slice(0, 16).join(' ').replace(/[,:;]\s*$/, '');
   if (/\bService New$/i.test(limited) && /\bService New Brunswick\b/i.test(normalized)) limited = `${limited} Brunswick`;
   if (/\(|\)/.test(limited)) return fallback;
-  if (/\b(?:if|to|the|by|of|for|from|with|and|or|not|shall|may|must|it|this|that)$/i.test(limited)) return fallback;
+  if (/\b(?:if|to|the|by|of|for|from|with|and|or|not|shall|may|must|it|this|that|although)$/i.test(limited)) return fallback;
   return limited;
 };
 
@@ -688,9 +725,73 @@ const genericRubric = (
       );
       const prompt = naturalPromptForFact(fact, categoryForTopic, subject, unit.label);
       diagnostic.mergedItems.push({ prompt, factSourceKeys: [unit.sourceKey], template: `generic-${categoryForTopic}` });
-      return makeItem(source, categoryForTopic, prompt, `${unit.label}: ${fact?.sourceClause ?? stripSourceNoise(unit.text, diagnostic)}`, 0, [unit.sourceKey], fact?.confidence === 'high' ? 'A' : 'C');
+      const rawReferenceAnswer = fact?.kind === 'citation-title' && fact.object
+        ? `${fact.object}${/[.]$/.test(fact.object) ? '' : '.'}`
+        : `${unit.label}: ${fact?.sourceClause ?? stripSourceNoise(unit.text, diagnostic)}`;
+      const referenceAnswer = cleanGeneratedRubricAnswer({
+        label: unit.label,
+        heading: source.heading,
+        answer: rawReferenceAnswer,
+      });
+      return makeItem(source, fact?.kind === 'citation-title' ? 'purpose' : categoryForTopic, prompt, referenceAnswer, 0, [unit.sourceKey], fact?.confidence === 'high' ? 'A' : 'C');
     });
   });
+};
+
+export const cleanGeneratedRubricAnswer = ({
+  label,
+  heading,
+  answer,
+}: {
+  label: string;
+  heading?: string;
+  answer: string;
+}): string => {
+  let cleaned = normalizeSpaces(answer);
+  const escapedLabel = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const headingText = normalizeSpaces(heading ?? '');
+  if (headingText) {
+    const escapedHeading = headingText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    cleaned = cleaned.replace(new RegExp(`^${escapedLabel}:\\s*${escapedHeading}\\s+${escapedLabel}\\s*`, 'i'), '');
+    cleaned = cleaned.replace(new RegExp(`^${escapedLabel}:\\s*${escapedHeading}\\s+`, 'i'), '');
+  }
+  cleaned = cleaned.replace(new RegExp(`^${escapedLabel}:\\s*${escapedLabel}\\s*`, 'i'), '');
+  cleaned = cleaned.replace(new RegExp(`^${escapedLabel}:\\s*`, 'i'), '');
+  cleaned = cleaned.replace(new RegExp(`^${escapedLabel}\\s*`, 'i'), '');
+  return cleaned.trim();
+};
+
+const passiveOperation = (action: string): string =>
+  normalizeSpaces(action)
+    .replace(/^,\s*(?:subject to|unless)\b[^,]+,\s*/i, '')
+    .replace(/^then\s+/i, '')
+    .replace(/^be\s+/i, '')
+    .replace(/\s+unless\b.*$/i, '')
+    .replace(/\s+until\b.*$/i, '')
+    .replace(/\s+except\b.*$/i, '')
+    .replace(/[.;:,]\s*$/, '');
+
+const passiveObjectPrompt = (fact: ExtractedLegalFact, actor: string, action: string): string | undefined => {
+  const object = withArticle(actor);
+  const clause = fact.sourceClause ?? '';
+  const operation = passiveOperation(action);
+  const operationIsSafe = operation.length > 0 && operation.length <= 120 && (operation.match(/\(/g)?.length ?? 0) === (operation.match(/\)/g)?.length ?? 0);
+  if (!object || !operationIsSafe) return `What requirement applies to ${object}?`;
+  if (/\bmay be cited as\b/i.test(clause)) return undefined;
+  if (/\bcertif/i.test(clause) && /\b(?:not\s+)?be registered until\b/i.test(clause)) {
+    return `What certification is required before ${object} may be registered?`;
+  }
+  if (/\bshall not be filed unless\b|\bmay not be filed unless\b/i.test(clause)) {
+    return `What condition must be satisfied before ${object} may be filed?`;
+  }
+  if (/\bshall not be received\b|\bmay not be received\b/i.test(clause)) {
+    return `When may ${object} be received${/\bfiling or registration\b/i.test(clause) ? ' for filing or registration' : ''}?`;
+  }
+  if (/^registered\b/i.test(operation)) return `How must ${object} be registered?`;
+  if (/^(?:filed|received|accepted|recorded)\b/i.test(operation)) return `When may ${object} be ${operation}?`;
+  if (/^amended\b/i.test(operation)) return `How may ${object} be amended?`;
+  if (/^(?:prepared|identified|executed|submitted)\b/i.test(operation)) return `How must ${object} be ${operation}?`;
+  return `What requirement applies to ${object}?`;
 };
 
 const naturalPromptForFact = (
@@ -700,28 +801,34 @@ const naturalPromptForFact = (
   label: string,
 ): string => {
   const actor = fact?.actor ? normalizeLegalActor(fact.actor) : '';
-  const action = bareVerbObject(fact?.action ?? '');
+  const rawAction = fact?.action ?? '';
+  const action = bareVerbObject(rawAction);
   const verb = actionVerb(action);
   const trigger = safeTriggerClause(fact?.trigger);
   const actionIsSafe = action.length > 0 && action.length <= 140 && (action.match(/\(/g)?.length ?? 0) === (action.match(/\)/g)?.length ?? 0);
+  if (fact?.kind === 'citation-title') return 'What is this Regulation cited as?';
+  if (actor && isInanimateLegalObject(actor)) {
+    const passivePrompt = passiveObjectPrompt(fact ?? { sourceKey: '', confidence: 'low' }, actor, rawAction);
+    if (passivePrompt) return passivePrompt;
+  }
   if (fact?.modality === 'shall-not' || fact?.modality === 'may-not') {
     if (actor && /\binstrument\b/i.test(actor)) return `What prohibition applies to an instrument that does not comply with the regulations?`;
     if (trigger && actor) return `When must ${actor} not ${actionIsSafe ? action : 'act'}?`;
-    return actor ? `What is ${actor} prohibited from doing?` : `What prohibition applies under ${label}?`;
+    return actor ? `What is ${withArticle(actor)} prohibited from doing?` : `What prohibition applies under ${label}?`;
   }
   if (fact?.modality === 'deemed') return `What legal effect is deemed under ${label}?`;
-  if (fact?.modality === 'entitled' && actor) return `What is ${actor} entitled to do?`;
+  if (fact?.modality === 'entitled' && actor) return `What is ${withArticle(actor)} entitled to do?`;
   if (fact?.modality === 'may' && actor) {
     if (/\bapplication respecting a parcel may be made\b/i.test(fact.sourceClause ?? '')) return 'Who may make an application under subsection 6(1)?';
     if (verb && actionIsSafe) return `What authority does ${actor} have to ${action}?`;
-    return `What may ${actor} do?`;
+    return `What may ${withArticle(actor)} do?`;
   }
   if ((fact?.modality === 'shall' || fact?.modality === 'must') && actor) {
-    if (trigger) return `What must ${actor} do when ${trigger}?`;
+    if (trigger) return `What must ${withArticle(actor)} do when ${trigger}?`;
     if (verb && ['file', 'provide', 'establish', 'prepare', 'submit', 'approve', 'certify', 'register', 'record'].includes(verb)) {
-      return `What must ${actor} ${verb}?`;
+      return `What must ${withArticle(actor)} ${verb}?`;
     }
-    if (action) return `What must ${actor} do?`;
+    if (action) return `What must ${withArticle(actor)} do?`;
   }
   if (fact?.legalEffect) return `What legal effect does ${subject} have?`;
   if (fact?.filingEffect) return `What filing or record rule applies to ${subject}?`;
@@ -733,6 +840,7 @@ const naturalPromptForFact = (
 
 const inferPromptModality = (prompt: string): LegalModality => {
   if (/\bprohibit|prohibited|must .+ not |shall .+ not |may .+ not |not accept\b/i.test(prompt)) return 'shall-not';
+  if (/^When may (?:an?\s+)?(?:instrument|plan|document|application|certificate|notice|record|deed|transfer|mortgage|registration|by-law)\s+be\s+(?:received|accepted|filed|registered)\b/i.test(prompt)) return 'shall-not';
   if (/\bmay\b|\bauthority\b|\bpower\b|\bempowered\b/i.test(prompt)) return 'may';
   if (/\bmust\b|\brequired\b|\bduty\b|\bshall\b/i.test(prompt)) return 'must';
   if (/\bdeemed\b|\blegal effect\b/i.test(prompt)) return 'deemed';
@@ -793,14 +901,14 @@ const dedupeItems = (
 ): GeneratedRubricItem[] => {
   const seen = new Set<string>();
   return items.filter((item) => {
-    const key = item.prompt.toLowerCase().replace(/\bsection\s+\d+(?:\([^)]+\))?\b/g, 'section #').replace(/[^a-z0-9]+/g, ' ').trim();
+    const key = normalizeGeneratedQuestionText(item.prompt).toLowerCase().replace(/\bsection\s+\d+(?:\([^)]+\))?\b/g, 'section #').replace(/[^a-z0-9]+/g, ' ').trim();
     if (seen.has(key)) {
       diagnostic.rejectedDuplicatePrompts.push(item.prompt);
       return false;
     }
     seen.add(key);
     return true;
-  }).map((item, order) => ({ ...item, order }));
+  }).map((item, order) => ({ ...item, prompt: normalizeGeneratedQuestionText(item.prompt), order }));
 };
 
 export const generateStudyRubricWithDiagnostics = ({

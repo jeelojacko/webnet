@@ -16,6 +16,7 @@ import {
   estimateRubricFacts,
   headingQuestionTokenOverlap,
   hasTierASurfaceQualityFailure,
+  normalizeGeneratedQuestionText,
   questionHasUnsupportedTopic,
   strongHeadingTopicMismatch,
   suggestStudyChunks,
@@ -23,6 +24,7 @@ import {
   type SuggestedStudyChunk,
 } from './studyQuestionSupport';
 import { toImportedLegalComponents, toImportedLegalDocuments } from './studyOfficialContent';
+import { prepareLegalText } from './studyLegalTextPreparation';
 import type {
   ImportedLegalComponent,
   ImportedLegalDocument,
@@ -248,6 +250,18 @@ const hasMalformedQuestionText = (question: string): boolean => {
   return false;
 };
 
+const hasDuplicatedConnectorWord = (question: string): boolean =>
+  normalizeGeneratedQuestionText(question) !== normalizeSpaces(question);
+
+const hasInanimateActorQuestion = (question: string): boolean =>
+  /\bWhat\s+(?:must|may)\s+(?:an?\s+)?(?:instrument|plan|document|application|certificate|notice|record|deed|transfer|mortgage|registration|by-law)\s+do\?/i.test(question);
+
+const trailingStructuralHeadingLeak = (source: ImportedLegalComponent, text: string): string | undefined => {
+  const heading = prepareLegalText(source.text).trailingStructuralHeadingText;
+  if (!heading) return undefined;
+  return normalizeSpaces(text).includes(normalizeSpaces(heading)) ? heading : undefined;
+};
+
 const hasMissingSubject = (prompt: string): boolean =>
   /\b(?:it|this|that)\?$/i.test(prompt) ||
   /\b(?:applies to|required for|establishes for)\s*\?$/i.test(prompt);
@@ -367,6 +381,7 @@ const normalizeActorForComparison = (value: string): string =>
 
 const inferQuestionModality = (question: string): LegalModality => {
   if (/\bprohibit|prohibited|must .+ not |shall .+ not |may .+ not |not accept\b/i.test(question)) return 'shall-not';
+  if (/^When may (?:an?\s+)?(?:instrument|plan|document|application|certificate|notice|record|deed|transfer|mortgage|registration|by-law)\s+be\s+(?:received|accepted|filed|registered)\b/i.test(question)) return 'shall-not';
   if (/\bmay\b|\bauthority\b|\bpower\b|\bempowered\b/i.test(question)) return 'may';
   if (/\bmust\b|\brequired\b|\bduty\b|\bshall\b/i.test(question)) return 'must';
   if (/\bdeemed\b|\blegal effect\b/i.test(question)) return 'deemed';
@@ -448,6 +463,12 @@ export const collectStudyGenerationWarnings = (section: {
   if (hasMalformedQuestionText(section.mainQuestion)) {
     warnings.push(warning('MALFORMED_QUESTION', 'critical', 'generated.mainQuestion', section.mainQuestion, 'The main question appears to have malformed punctuation or a truncated ending.'));
   }
+  if (hasDuplicatedConnectorWord(section.mainQuestion)) {
+    warnings.push(warning('DUPLICATED_CONNECTOR_WORD', 'warning', 'generated.mainQuestion', section.mainQuestion, 'The main question contains duplicated connector wording.'));
+  }
+  if (hasInanimateActorQuestion(section.mainQuestion)) {
+    warnings.push(warning('INANIMATE_ACTOR_QUESTION', 'warning', 'generated.mainQuestion', section.mainQuestion, 'The question asks an inanimate legal object what it must or may do.'));
+  }
   if (section.mainQuestion.length > QUESTION_TOO_LONG_THRESHOLD) {
     warnings.push(warning('QUESTION_TOO_LONG', 'warning', 'generated.mainQuestion', section.mainQuestion, `The main question is longer than ${QUESTION_TOO_LONG_THRESHOLD} characters.`));
   }
@@ -471,6 +492,10 @@ export const collectStudyGenerationWarnings = (section: {
   }
   if (amendmentHistoryPattern.test(section.referenceAnswer)) {
     warnings.push(warning('AMENDMENT_HISTORY_LEAK', 'critical', 'generated.referenceAnswer', section.referenceAnswer.match(amendmentHistoryPattern)?.[0] ?? section.referenceAnswer, 'The generated reference answer appears to contain amendment history or citation residue.'));
+  }
+  const referenceHeadingLeak = trailingStructuralHeadingLeak(section.source, section.referenceAnswer);
+  if (referenceHeadingLeak) {
+    warnings.push(warning('TRAILING_STRUCTURAL_HEADING', 'warning', 'generated.referenceAnswer', referenceHeadingLeak, 'The generated reference answer includes a trailing structural heading that belongs to the next division.'));
   }
   const promptCounts = new Map<string, string[]>();
   for (const item of section.rubricItems) {
@@ -502,6 +527,12 @@ export const collectStudyGenerationWarnings = (section: {
     if (hasMalformedQuestionText(item.prompt)) {
       warnings.push(warning('MALFORMED_QUESTION', 'critical', 'generated.rubricItems.prompt', item.prompt, 'The rubric prompt appears to have malformed punctuation or a truncated ending.'));
     }
+    if (hasDuplicatedConnectorWord(item.prompt)) {
+      warnings.push(warning('DUPLICATED_CONNECTOR_WORD', 'warning', 'generated.rubricItems.prompt', item.prompt, 'The rubric prompt contains duplicated connector wording.'));
+    }
+    if (hasInanimateActorQuestion(item.prompt)) {
+      warnings.push(warning('INANIMATE_ACTOR_QUESTION', 'warning', 'generated.rubricItems.prompt', item.prompt, 'The prompt asks an inanimate legal object what it must or may do.'));
+    }
     if (item.questionTier === 'A' && hasTierASurfaceQualityFailure(item.prompt)) {
       warnings.push(warning('TIER_A_SURFACE_QUALITY_FAILURE', 'warning', 'generated.rubricItems.prompt', item.prompt, 'A Tier A rubric prompt failed the grammatical surface-quality gate.'));
     }
@@ -522,6 +553,10 @@ export const collectStudyGenerationWarnings = (section: {
     }
     if (amendmentHistoryPattern.test(item.referenceAnswer)) {
       warnings.push(warning('AMENDMENT_HISTORY_LEAK', 'critical', 'generated.rubricItems.referenceAnswer', item.referenceAnswer.match(amendmentHistoryPattern)?.[0] ?? item.referenceAnswer, 'The rubric answer appears to contain amendment history or citation residue.'));
+    }
+    const rubricHeadingLeak = trailingStructuralHeadingLeak(section.source, item.referenceAnswer);
+    if (rubricHeadingLeak) {
+      warnings.push(warning('TRAILING_STRUCTURAL_HEADING', 'warning', 'generated.rubricItems.referenceAnswer', rubricHeadingLeak, 'The rubric answer includes a trailing structural heading that belongs to the next division.'));
     }
     if (item.referenceAnswer.length > RUBRIC_ANSWER_TOO_LONG_THRESHOLD && /\(\d+(?:\.\d+)?\)/.test(item.referenceAnswer)) {
       warnings.push(warning('RUBRIC_ANSWER_TOO_LONG', 'warning', 'generated.rubricItems.referenceAnswer', item.referenceAnswer.slice(0, 220), 'A rubric answer is long and appears to contain several independent subsection units.'));
@@ -569,6 +604,9 @@ export const scoreStudyGenerationWarnings = (warnings: StudyGenerationWarning[])
     ACTOR_MISMATCH: 100,
     MODALITY_MISMATCH: 100,
     CLAUSE_BINDING_AMBIGUOUS: 20,
+    INANIMATE_ACTOR_QUESTION: 10,
+    DUPLICATED_CONNECTOR_WORD: 10,
+    TRAILING_STRUCTURAL_HEADING: 10,
     DUPLICATE_RUBRIC_PROMPT: 10,
     QUESTION_MISSING_SUBJECT: 10,
     GENERIC_RUBRIC_PROMPT: 5,

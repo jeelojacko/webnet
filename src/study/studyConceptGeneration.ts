@@ -1,4 +1,5 @@
 import type { ImportedLegalComponent, ImportedLegalDocument } from './studyTypes';
+import { prepareLegalText } from './studyLegalTextPreparation';
 
 export type ConceptGenerationReason =
   | 'defined-term'
@@ -38,6 +39,9 @@ const stripLabel = (text: string, label: string): string => {
   const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   return normalizeSpaces(text.replace(new RegExp(`^\\s*${escaped}\\s*`, 'i'), ''));
 };
+
+const operativeTextFor = (source: Pick<ImportedLegalComponent, 'text' | 'label'>): string =>
+  stripLabel(prepareLegalText(source.text).operativeText, source.label);
 
 const toTitleCase = (value: string): string =>
   normalizeSpaces(value)
@@ -89,7 +93,7 @@ const extractDefinedTerms = (
   source: ImportedLegalComponent,
   suggestions: GeneratedConceptSuggestion[],
 ): void => {
-  const text = stripLabel(source.text, source.label);
+  const text = operativeTextFor(source);
   const matches = text.matchAll(/[“"]([^”"]{2,60})[”"]\s+means\b/gi);
   for (const match of matches) {
     addSuggestion(suggestions, {
@@ -120,7 +124,7 @@ const extractSubsectionTopics = (
   suggestions: GeneratedConceptSuggestion[],
 ): void => {
   for (const subsection of source.subsections ?? []) {
-    const text = stripLabel(subsection.text, subsection.label);
+    const text = operativeTextFor(subsection);
     const firstSentence = normalizeSpaces(text.split(/[.;:]/)[0] ?? '');
     const namedPhrase =
       firstSentence.match(/\b(?:District of New Brunswick|land titles offices?|instrument filing hours|office hours|office locations?)\b/i)?.[0] ??
@@ -139,7 +143,7 @@ const extractActorActions = (
   source: ImportedLegalComponent,
   suggestions: GeneratedConceptSuggestion[],
 ): void => {
-  const sentences = stripLabel(source.text, source.label).split(/(?<=[.;])\s+/);
+  const sentences = operativeTextFor(source).split(/(?<=[.;])\s+/);
   const matcher = new RegExp(`\\b([A-Z][A-Za-z ]{1,45}|[a-z][a-z ]{1,45})\\s+(${STATUTORY_VERBS})\\s+([^.;]{3,80})`, 'i');
   for (const sentence of sentences) {
     const match = normalizeSpaces(sentence).match(matcher);
@@ -163,7 +167,7 @@ const extractDeadlines = (
   source: ImportedLegalComponent,
   suggestions: GeneratedConceptSuggestion[],
 ): void => {
-  const text = stripLabel(source.text, source.label);
+  const text = operativeTextFor(source);
   const matches = text.matchAll(/\b(?:within|not later than|before|after)?\s*(\d+|one|two|three|six|twelve)\s+(day|days|month|months|year|years|hour|hours)\b[^.;]{0,45}/gi);
   for (const match of matches) {
     addSuggestion(suggestions, {
@@ -187,7 +191,7 @@ const extractLegalEffects = (
     'right of appeal',
     'no right of action',
   ];
-  const text = stripLabel(source.text, source.label);
+  const text = operativeTextFor(source);
   for (const effect of effects) {
     if (!new RegExp(`\\b${effect}\\b`, 'i').test(text)) continue;
     addSuggestion(suggestions, {
@@ -209,7 +213,7 @@ const extractFallback = (
     addSuggestion(suggestions, { label: heading, sourceKey: source.sourceKey, reason: 'fallback', confidence: 'low' });
     return;
   }
-  const text = stripLabel(source.text, source.label);
+  const text = operativeTextFor(source);
   const quoted = text.match(/[“"]([^”"]{3,50})[”"]/);
   const firstSentence = normalizeSpaces(text.split(/[.;:]/)[0] ?? '');
   addSuggestion(suggestions, {
@@ -231,7 +235,8 @@ export const generateRequiredConcepts = ({
 }): GeneratedConceptSuggestion[] => {
   const suggestions: GeneratedConceptSuggestion[] = [];
   for (const source of selectedSources) {
-    if (source.extractionStatus === 'reference-only' || isRepealedOnly(source) || isNoiseText(source.text)) continue;
+    const operativeText = prepareLegalText(source.text).operativeText;
+    if (source.extractionStatus === 'reference-only' || isRepealedOnly({ ...source, text: operativeText }) || isNoiseText(operativeText)) continue;
     extractDefinedTerms(source, suggestions);
     extractHeading(source, suggestions);
     extractSubsectionTopics(source, suggestions);

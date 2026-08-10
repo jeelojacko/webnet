@@ -3,6 +3,7 @@ export type PreparedLegalText = {
   operativeText: string;
   amendmentHistoryText?: string;
   consolidationText?: string;
+  trailingStructuralHeadingText?: string;
 };
 
 const normalizeTrailingWhitespace = (value: string): string =>
@@ -23,6 +24,29 @@ const isAmendmentHistoryLine = (line: string): boolean => {
   if (/^\d{2,4}-\d{1,3}(?:\s*;\s*\d{2,4}-\d{1,3})*;?\.?$/i.test(text)) return true;
   if (/^\d{2,4}-\d{1,3}\s*;.*\b(?:19|20)\d{2},\s*c\./i.test(text)) return true;
   return false;
+};
+
+const STRUCTURAL_HEADINGS = new Set([
+  'APPLICATION',
+  'APPLICATIONS',
+  'APPLICATION TO CONFIRM A BOUNDARY',
+  'APPLICATION TO COURT',
+  'DEFINITIONS',
+  'GENERAL',
+  'ADMINISTRATION',
+  'REGULATIONS',
+  'OFFENCES',
+  'APPEALS',
+  'TRANSITIONAL PROVISIONS',
+  'COMING INTO FORCE',
+  'REPEAL',
+  'REFERENCES IN OTHER ENACTMENTS',
+]);
+
+const isTrailingStructuralHeadingLine = (line: string): boolean => {
+  const text = line.trim();
+  if (!STRUCTURAL_HEADINGS.has(text)) return false;
+  return /^[A-Z][A-Z\s-]{2,}$/.test(text);
 };
 
 const splitTrailingInlineAmendmentHistory = (text: string): { operativeText: string; amendmentHistoryText?: string } => {
@@ -63,9 +87,15 @@ export const prepareLegalText = (text: string): PreparedLegalText => {
 
   let end = lines.length;
   const amendmentLines: string[] = [];
+  const structuralHeadingLines: string[] = [];
   while (end > start) {
     const line = lines[end - 1];
     if (line.trim() === '') {
+      end -= 1;
+      continue;
+    }
+    if (isTrailingStructuralHeadingLine(line) && end - 1 > start) {
+      structuralHeadingLines.unshift(line.trim());
       end -= 1;
       continue;
     }
@@ -88,5 +118,6 @@ export const prepareLegalText = (text: string): PreparedLegalText => {
     operativeText: normalizeTrailingWhitespace(normalizeRepealedHistory(operativeLines.join('\n'))),
     amendmentHistoryText: amendmentLines.length ? amendmentLines.join('\n') : undefined,
     consolidationText: consolidationLines.length ? consolidationLines.join('\n') : undefined,
+    trailingStructuralHeadingText: structuralHeadingLines.length ? structuralHeadingLines.join('\n') : undefined,
   };
 };

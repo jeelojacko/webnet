@@ -128,6 +128,29 @@ describe('study generation audit', () => {
     expect(warnings.map((entry) => entry.code)).toContain('QUESTION_MISSING_SUBJECT');
   });
 
+  it('flags duplicated connector words, inanimate actor questions and trailing structural headings', () => {
+    const warnings = collectStudyGenerationWarnings({
+      source: testSection({
+        heading: 'Purpose',
+        text: 'Purpose\n\n1Body text.\n\nAPPLICATION',
+      }),
+      detectedTopic: 'procedure',
+      mainQuestion: 'What does section 1 provide regarding regarding-zoning?',
+      referenceAnswer: 'Body text. APPLICATION',
+      rubricItems: [
+        { prompt: 'What must instrument do?', referenceAnswer: 'Body text. APPLICATION' },
+      ],
+      concepts: [],
+      extractedFacts: [],
+    });
+
+    expect(warnings.map((entry) => entry.code)).toEqual(expect.arrayContaining([
+      'DUPLICATED_CONNECTOR_WORD',
+      'INANIMATE_ACTOR_QUESTION',
+      'TRAILING_STRUCTURAL_HEADING',
+    ]));
+  });
+
   it('flags generic prompts, duplicates, topic mismatch and amendment residue', () => {
     const warnings = collectStudyGenerationWarnings({
       source: testSection({ heading: 'Filing of values of coordinate monuments' }),
@@ -422,7 +445,7 @@ describe('study generation audit', () => {
     expect(community13.generated.rubricItems.map((item) => item.prompt).join('\n')).not.toContain('must consult');
 
     const registry71 = findSection('doc-registry-act', '71');
-    expect(registry71.generated.rubricItems.map((item) => item.prompt).join('\n')).toContain('What prohibition applies to an instrument that does not comply with the regulations?');
+    expect(registry71.generated.rubricItems.map((item) => item.prompt).join('\n')).toContain('When may an instrument be accepted for registration in a registry office?');
     expect(registry71.generated.rubricItems.map((item) => item.prompt).join('\n')).not.toContain('Lieutenant-Governor in Council prohibited');
 
     const landTitles83 = findSection('doc-land-titles-act', '83');
@@ -439,6 +462,55 @@ describe('study generation audit', () => {
     const surveys7 = findSection('doc-surveys-act', '7');
     expect(surveys7.generated.mainQuestion).toBe('What duties does a surveyor have regarding legal monuments in an integrated survey area?');
     expect(surveys7.generated.mainQuestion).not.toMatch(/duties.*about duties|regarding regarding/i);
+  });
+
+  it('locks Phase 2E.7 generator cleanup regressions', () => {
+    const audit = buildPilotAudit();
+    const sections = flattenAuditSections(audit);
+    const findSection = (documentId: string, sectionLabel: string) =>
+      sections.find((section) => section.documentId === documentId && section.sectionLabel === sectionLabel)!;
+
+    expect(audit.summary.warningsByType.INANIMATE_ACTOR_QUESTION ?? 0).toBe(0);
+    expect(audit.summary.warningsByType.DUPLICATED_CONNECTOR_WORD ?? 0).toBe(0);
+    expect(audit.summary.warningsByType.TRAILING_STRUCTURAL_HEADING ?? 0).toBe(0);
+
+    const community59 = findSection('doc-community-planning-act', '59');
+    expect(community59.generated.mainQuestion).toBe('What does section 59 of the Community Planning Act provide regarding re-zoning and amendments?');
+    expect(community59.generated.mainQuestion).not.toContain('regarding regarding-zoning');
+
+    const regulationTitles = [
+      ['reg-surveys-84-76', 'General Regulation - Surveys Act.'],
+      ['reg-registry-84-190', 'Instrument Standards Regulation - Registry Act.'],
+      ['reg-land-titles-83-130', 'General Regulation - Land Titles Act.'],
+      ['reg-community-planning-80-159', 'Provincial Subdivision Regulation - Community Planning Act.'],
+      ['reg-boundaries-95-166', 'General Regulation - Boundaries Confirmation Act.'],
+    ] as const;
+    for (const [documentId, answer] of regulationTitles) {
+      const section = findSection(documentId, '1');
+      expect(section.generated.mainQuestion).toContain('cited as');
+      expect(section.generated.rubricItems.map((item) => item.prompt)).toEqual(['What is this Regulation cited as?']);
+      expect(section.generated.rubricItems[0].referenceAnswer).toBe(answer);
+      expect(section.generated.rubricItems.map((item) => item.prompt).join('\n')).not.toContain('What may This Regulation do?');
+    }
+
+    const generatedPrompts = sections.flatMap((section) => section.generated.rubricItems.map((item) => item.prompt));
+    expect(generatedPrompts.join('\n')).not.toMatch(/What must (?:an? )?instrument do\?/i);
+
+    expect(findSection('doc-land-titles-act', '1').generated.referenceAnswer).not.toContain('APPLICATION');
+    expect(findSection('doc-land-titles-act', '85').generated.referenceAnswer).not.toContain('COMING INTO FORCE');
+
+    for (const [documentId, sectionLabel] of [
+      ['doc-surveys-act', '8'],
+      ['doc-boundaries-confirmation-act', '6'],
+      ['doc-community-planning-act', '13'],
+      ['doc-registry-act', '71'],
+      ['doc-land-titles-act', '83'],
+    ]) {
+      expect(findSection(documentId, sectionLabel).quality.warnings.map((entry) => entry.code)).not.toEqual(expect.arrayContaining([
+        'ACTOR_MISMATCH',
+        'MODALITY_MISMATCH',
+      ]));
+    }
   });
 
   it('keeps section 14, 16 and 83 regression templates scoped to their source documents', () => {

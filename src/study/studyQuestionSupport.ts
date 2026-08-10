@@ -49,6 +49,18 @@ const topicPatterns: Record<SpecializedQuestionTopic, RegExp[]> = {
 
 export const normalizeStudyQuestionText = (value: string): string => value.replace(/\s+/g, ' ').trim();
 
+export const normalizeGeneratedQuestionText = (value: string): string => {
+  let normalized = normalizeStudyQuestionText(value)
+    .replace(/\bregarding\s+regarding-([A-Za-z])/gi, 'regarding re-$1')
+    .replace(/\bregarding\s+regarding\b/gi, 'regarding')
+    .replace(/\babout\s+about\b/gi, 'about')
+    .replace(/\bunder\s+under\b/gi, 'under')
+    .replace(/\bof\s+of\b/gi, 'of')
+    .replace(/\b(section\s+\d+(?:\.\d+)?)\s+\1\b/gi, '$1');
+  normalized = normalized.replace(/\s+\?/g, '?');
+  return normalized;
+};
+
 const BARE_REGARDING_VERBS = [
   'adopt',
   'authorize',
@@ -77,6 +89,7 @@ export const hasTierASurfaceQualityFailure = (question: string): boolean => {
   if (/\bWhat powers does The\b/.test(compact)) return true;
   if (/\b(.{12,80})\b(?:\s+\1\b)/i.test(compact)) return true;
   if (/\b(?:regarding|about)\s+(?:the\s+)?(?:provision|section|subsection)\b/i.test(compact)) return true;
+  if (normalizeGeneratedQuestionText(compact) !== compact) return true;
   return BARE_REGARDING_VERBS.some((verb) => new RegExp(`\\bregarding\\s+${verb}\\b`, 'i').test(compact));
 };
 
@@ -129,13 +142,12 @@ export const headingSubject = (source: ImportedLegalComponent): string => {
 export const normalizeHeadingSubject = (heading: string): string =>
   normalizeStudyQuestionText(heading)
     .toLowerCase()
-    .replace(/\bre\b/g, 'regarding')
+    .replace(/\bre\s+/g, 'regarding ')
     .replace(/\bduties\s+of\s+.+?\s+regarding\s+/i, '')
     .replace(/\bpreparation\s+and\s+content\s+of\s+/i, '')
     .replace(/\bvalidity\s+and\s+coming\s+into\s+force\s+of\s+/i, '')
     .replace(/\bfailure\s+to\s+adopt\s+/i, '')
     .replace(/\bapplication\s+requirements\s+application\b/i, 'application requirements')
-    .replace(/\bregarding\s+regarding\b/i, 'regarding')
     .trim();
 
 export const classifyStrongHeadingTopic = (heading: string | undefined): StrongHeadingTopic | undefined => {
