@@ -5,7 +5,7 @@ Surveys Act,3,Director of Surveys,What Director of Surveys designations and coor
 Surveys Act,4,Duties of surveyor re coordinate survey system,"How must surveyors express boundary bearings, distances and parcel descriptions under the coordinate survey system?",A,2,1,0,100,0,
 Surveys Act,5,Integrated survey area,What authority does the Lieutenant-Governor in Council have to create or change integrated survey areas?,A,1,1,0,100,0,
 Surveys Act,6,Integrated survey area plan,"What filing, amendment and legal-effect rules apply to an integrated survey area plan?",A,3,2,0,95,1,CONCEPT_FRAGMENT
-Surveys Act,7,Duties of surveyor re integrated survey area,What duties does section 7 of Surveys Act impose about duties of surveyor re integrated survey area?,B,1,1,0,100,0,
+Surveys Act,7,Duties of surveyor re integrated survey area,What duties does a surveyor have regarding legal monuments in an integrated survey area?,B,1,1,0,100,0,
 Surveys Act,8,Survey plan in integrated survey area,What duties does section 8 of Surveys Act impose about survey plan in integrated survey area?,B,4,2,0,100,0,
 Surveys Act,9,Filing of values of coordinate monuments,What filing or registration requirements are established by section 9 of Surveys Act?,B,2,1,0,100,0,
 Surveys Act,10,"Survey plan filed between August 1, 1979, and December 31, 1979",What filing or registration requirements are established by section 10 of Surveys Act?,B,1,0,0,100,0,
@@ -13,11 +13,11 @@ Surveys Act,11,"Survey plan filed within six months after April 1, 1999",What fi
 Surveys Act,12,Lost legal monuments,What does section 12 of the Surveys Act provide regarding lost legal monuments?,C,1,2,0,100,0,
 Surveys Act,13,Authority re private property,What powers or authority are established by section 13 of Surveys Act?,B,3,1,0,100,0,
 Surveys Act,14,Offences and penalties,What offences and penalties are established by section 14 of Surveys Act?,B,3,1,0,100,0,
-Surveys Act,14.1,Administration,What does section 14.1 of the Surveys Act provide regarding administration?,C,1,1,0,100,0,
+Surveys Act,14.1,Administration,"Who is responsible for administering the Act, and what authority or limitations apply?",B,1,1,0,100,0,
 Surveys Act,15,Regulations,What regulation-making authority is established by section 15 of Surveys Act?,B,1,0,0,100,0,
 Boundaries Confirmation Act,1,Definitions,What definitions are provided in section 1 of Boundaries Confirmation Act?,B,8,11,1,100,0,
 Boundaries Confirmation Act,2,This Act binds the Crown,What does section 2 of the Boundaries Confirmation Act provide regarding this act binds the crown?,C,1,1,0,100,0,
-Boundaries Confirmation Act,3,Administration,What does section 3 of the Boundaries Confirmation Act provide regarding administration?,C,1,0,0,100,0,
+Boundaries Confirmation Act,3,Administration,"Who is responsible for administering the Act, and what authority or limitations apply?",B,1,0,0,100,0,
 Boundaries Confirmation Act,4,Designated person,What duties does section 4 of Boundaries Confirmation Act impose about designated person?,B,2,1,0,100,0,
 Boundaries Confirmation Act,5,Immunity,What duties does section 5 of Boundaries Confirmation Act impose about immunity?,B,1,1,0,100,0,
 Boundaries Confirmation Act,6,Applicant,What powers or authority are established by section 6 of Boundaries Confirmation Act?,B,4,5,0,85,3,CONCEPT_FRAGMENT;CONCEPT_FRAGMENT;CONCEPT_FRAGMENT
@@ -37,7 +37,7 @@ Boundaries Confirmation Act,19,Reduction of fees,What order-making rules are est
 Boundaries Confirmation Act,20,"Costs, charges and expenses",What are the application requirements under section 20 of Boundaries Confirmation Act?,B,2,3,0,100,0,
 Boundaries Confirmation Act,21,Regulations,What regulation-making authority is established by section 21 of Boundaries Confirmation Act?,B,1,0,1,100,0,
 Community Planning Act,1,Definitions and interpretation,What definitions are provided in section 1 of Community Planning Act?,B,8,12,1,100,0,
-Community Planning Act,2,Purposes of Act,What does section 2 of the Community Planning Act provide regarding purposes of act?,C,1,1,0,100,0,
+Community Planning Act,2,Purposes of Act,What are the purposes of the Community Planning Act?,B,1,1,0,100,0,
 Community Planning Act,3,Establishment of advisory committees,What requirements are established by section 3 of Community Planning Act?,B,2,3,0,85,1,MAIN_QUESTION_TOPIC_MISMATCH
 Community Planning Act,4,Duties and powers of advisory committee,What duties does section 4 of Community Planning Act impose about duties and powers of advisory committee?,B,1,1,0,95,1,RUBRIC_ANSWER_TOO_LONG
 Community Planning Act,5,Membership of advisory committee,What does section 5 of the Community Planning Act provide regarding membership of advisory committee?,C,4,1,0,100,0,
@@ -54,15 +54,15 @@ Community Planning Act,15,"Plans, by-laws and regulations to be consistent with 
 Community Planning Act,16,Enforcement,How may the Minister enforce statements of public interest under section 16 of Community Planning Act?,A,4,2,0,100,0,
 Community Planning Act,17,Review,What does section 17 of the Community Planning Act provide regarding review?,C,1,2,0,100,0,
 Community Planning Act,18,Regional land use plans,What does section 18 of the Community Planning Act provide regarding regional land use plans?,C,2,1,0,100,0,
-Community Planning Act,18.1,Preparation and content of regional land use plan,What powers or authority are established by section 18.1 of Community Planning Act?,B,2,1,0,100,0,
+Community Planning Act,18.1,Preparation and content of regional land use plan,What requirements govern the preparation and content of regional land use plan?,B,2,1,0,100,0,
 Community Planning Act,19,Province to consider regional land use plan,What does section 19 of the Community Planning Act provide regarding province to consider regional land use plan?,C,1,1,0,100,0,
 Community Planning Act,20,Effect of regional land use plan,What does section 20 of the Community Planning Act provide regarding effect of regional land use plan?,C,1,1,0,100,0,
 Community Planning Act,21,Adoption and approval of municipal plan,What requirements are established by section 21 of Community Planning Act?,B,3,2,0,100,0,
 Community Planning Act,22,Province to consider municipal plan,What requirements are established by section 22 of Community Planning Act?,B,3,2,1,90,1,DUPLICATE_RUBRIC_PROMPT
-Community Planning Act,23,Failure to adopt municipal plan,What powers or authority are established by section 23 of Community Planning Act?,B,2,2,0,85,1,MAIN_QUESTION_TOPIC_MISMATCH
-Community Planning Act,24,Preparation and content of municipal plan,What powers or authority are established by section 24 of Community Planning Act?,B,7,1,2,85,2,RUBRIC_ANSWER_TOO_LONG;DUPLICATE_RUBRIC_PROMPT
+Community Planning Act,23,Failure to adopt municipal plan,What happens if a council fails to adopt municipal plan?,B,2,2,0,100,0,
+Community Planning Act,24,Preparation and content of municipal plan,What requirements govern the preparation and content of municipal plan?,B,7,1,2,85,2,RUBRIC_ANSWER_TOO_LONG;DUPLICATE_RUBRIC_PROMPT
 Community Planning Act,25,Public notice of municipal plan,What notice requirements are established by section 25 of Community Planning Act?,B,5,6,2,95,1,CONCEPT_FRAGMENT
-Community Planning Act,26,Validity and coming into force of municipal plan,What does section 26 of the Community Planning Act provide regarding validity and coming into force of municipal plan?,C,1,2,0,95,1,CONCEPT_FRAGMENT
+Community Planning Act,26,Validity and coming into force of municipal plan,What conditions determine the validity and coming into force of municipal plan?,B,1,2,0,95,1,CONCEPT_FRAGMENT
 Community Planning Act,27,Effect of municipal plan,What does section 27 of the Community Planning Act provide regarding effect of municipal plan?,C,1,1,0,100,0,
 Community Planning Act,28,Conflict between municipal plan and zoning or subdivision by-law,What does section 28 of the Community Planning Act provide regarding conflict between municipal plan and zoning or subdivision by-law?,C,1,1,0,100,0,
 Community Planning Act,29,Secondary municipal plan,What are the application requirements under section 29 of Community Planning Act?,B,3,1,0,100,0,
@@ -72,20 +72,20 @@ Community Planning Act,32,Review,What does section 32 of the Community Planning 
 Community Planning Act,32.1,Non-application of Division to villages,What are the application requirements under section 32.1 of Community Planning Act?,B,1,1,0,100,0,
 Community Planning Act,33,Adoption and approval of rural plans for villages,What requirements are established by section 33 of Community Planning Act?,B,2,1,0,100,0,
 Community Planning Act,33.1,Province to consider rural plan,What requirements are established by section 33.1 of Community Planning Act?,B,3,2,1,90,1,DUPLICATE_RUBRIC_PROMPT
-Community Planning Act,34,Failure to adopt rural plan for a village,What powers or authority are established by section 34 of Community Planning Act?,B,2,2,0,85,1,MAIN_QUESTION_TOPIC_MISMATCH
-Community Planning Act,35,Preparation and content of rural plan for a village,What powers or authority are established by section 35 of Community Planning Act?,B,5,1,2,85,2,RUBRIC_ANSWER_TOO_LONG;DUPLICATE_RUBRIC_PROMPT
+Community Planning Act,34,Failure to adopt rural plan for a village,What happens if a body fails to adopt rural plan for a village?,B,2,2,0,100,0,
+Community Planning Act,35,Preparation and content of rural plan for a village,What requirements govern the preparation and content of rural plan for a village?,B,5,1,2,85,2,RUBRIC_ANSWER_TOO_LONG;DUPLICATE_RUBRIC_PROMPT
 Community Planning Act,36,Secondary rural plan,What does section 36 of the Community Planning Act provide regarding secondary rural plan?,C,3,1,0,100,0,
 Community Planning Act,37,Effect of secondary rural plan,What does section 37 of the Community Planning Act provide regarding effect of secondary rural plan?,C,1,1,0,100,0,
 Community Planning Act,38,Conflict between secondary rural plan and a rural plan,What does section 38 of the Community Planning Act provide regarding conflict between secondary rural plan and a rural plan?,C,1,1,0,100,0,
 Community Planning Act,39,Public notice of rural plan,What notice requirements are established by section 39 of Community Planning Act?,B,3,3,1,100,0,
-Community Planning Act,40,Validity and coming into force of rural plan for a village,What does section 40 of the Community Planning Act provide regarding validity and coming into force of rural plan for a village?,C,1,1,0,95,1,CONCEPT_FRAGMENT
+Community Planning Act,40,Validity and coming into force of rural plan for a village,What conditions determine the validity and coming into force of rural plan for a village?,B,1,1,0,95,1,CONCEPT_FRAGMENT
 Community Planning Act,41,Effect of rural plan for a village,What does section 41 of the Community Planning Act provide regarding effect of rural plan for a village?,C,1,1,0,100,0,
 Community Planning Act,42,Conflict between rural plan for a village and a subdivision by-law,What does section 42 of the Community Planning Act provide regarding conflict between rural plan for a village and a subdivision by-law?,C,1,0,0,100,0,
 Community Planning Act,43,Review,What does section 43 of the Community Planning Act provide regarding review?,C,2,2,0,100,0,
 Community Planning Act,44,Adoption and approval of rural plans for rural communities,What requirements are established by section 44 of Community Planning Act?,B,11,1,3,75,4,RUBRIC_ANSWER_TOO_LONG;RUBRIC_ANSWER_TOO_LONG;DUPLICATE_RUBRIC_PROMPT;TOO_MANY_RUBRIC_ITEMS
-Community Planning Act,44.1,Failure to adopt rural plan for a rural community,What powers or authority are established by section 44.1 of Community Planning Act?,B,2,2,0,85,1,MAIN_QUESTION_TOPIC_MISMATCH
+Community Planning Act,44.1,Failure to adopt rural plan for a rural community,What happens if a body fails to adopt rural plan for a rural community?,B,2,2,0,100,0,
 Community Planning Act,44.2,Province to consider rural plan,What requirements are established by section 44.2 of Community Planning Act?,B,3,1,1,90,1,DUPLICATE_RUBRIC_PROMPT
-Community Planning Act,45,Validity and coming into force of rural plan for a rural community,What does section 45 of the Community Planning Act provide regarding validity and coming into force of rural plan for a rural community?,C,1,1,0,95,1,CONCEPT_FRAGMENT
+Community Planning Act,45,Validity and coming into force of rural plan for a rural community,What conditions determine the validity and coming into force of rural plan for a rural community?,B,1,1,0,95,1,CONCEPT_FRAGMENT
 Community Planning Act,46,Secondary rural plan,What are the application requirements under section 46 of Community Planning Act?,B,3,1,0,100,0,
 Community Planning Act,47,Conflict between secondary rural plan and a rural plan,What does section 47 of the Community Planning Act provide regarding conflict between secondary rural plan and a rural plan?,C,1,1,0,100,0,
 Community Planning Act,48,Effect of secondary rural plan,What does section 48 of the Community Planning Act provide regarding effect of secondary rural plan?,C,1,1,0,100,0,
@@ -96,7 +96,7 @@ Community Planning Act,51.1,Province to consider rural plan,What requirements ar
 Community Planning Act,52,Content of regulation,What are the application requirements under section 52 of Community Planning Act?,B,13,4,4,85,2,DUPLICATE_RUBRIC_PROMPT;TOO_MANY_RUBRIC_ITEMS
 Community Planning Act,52.1,Review,What does section 52.1 of the Community Planning Act provide regarding review?,C,1,2,0,100,0,
 Community Planning Act,53,Making of zoning by-law,What powers or authority are established by section 53 of Community Planning Act?,B,10,1,3,90,1,DUPLICATE_RUBRIC_PROMPT
-Community Planning Act,54,Validity and coming into force of zoning by-law,What does section 54 of the Community Planning Act provide regarding validity and coming into force of zoning by-law?,C,1,2,0,95,1,CONCEPT_FRAGMENT
+Community Planning Act,54,Validity and coming into force of zoning by-law,What conditions determine the validity and coming into force of zoning by-law?,B,1,2,0,95,1,CONCEPT_FRAGMENT
 Community Planning Act,55,Variances from zoning by-law,What requirements are established by section 55 of Community Planning Act?,B,3,2,2,95,1,RUBRIC_ANSWER_TOO_LONG
 Community Planning Act,56,Notice of variance,What notice requirements are established by section 56 of Community Planning Act?,B,1,1,0,100,0,
 Community Planning Act,57,Payments by developer,What does section 57 of the Community Planning Act provide regarding payments by developer?,C,1,1,0,100,0,
@@ -107,12 +107,12 @@ Community Planning Act,61,Standards to be met re non-conforming use,What notice 
 Community Planning Act,61.1,Province to consider zoning by-law,What are the application requirements under section 61.1 of Community Planning Act?,B,5,3,1,90,1,DUPLICATE_RUBRIC_PROMPT
 Community Planning Act,62,Building standards and permits,What does section 62 of the Community Planning Act provide regarding building standards and permits?,C,1,1,0,100,0,
 Community Planning Act,63,Altering of streets and establishing building lines,What requirements are established by section 63 of Community Planning Act?,B,3,1,0,100,0,
-Community Planning Act,64,Validity and coming into force of deferred widening by-law,What requirements are established by section 64 of Community Planning Act?,B,1,2,0,80,2,MAIN_QUESTION_TOPIC_MISMATCH;CONCEPT_FRAGMENT
+Community Planning Act,64,Validity and coming into force of deferred widening by-law,What conditions determine the validity and coming into force of deferred widening by-law?,B,1,2,0,95,1,CONCEPT_FRAGMENT
 Community Planning Act,65,Amendment and filing,What filing or registration requirements are established by section 65 of Community Planning Act?,B,4,3,1,95,1,CONCEPT_FRAGMENT
 Community Planning Act,66,Acquisition of land,What are the application requirements under section 66 of Community Planning Act?,B,2,3,0,100,0,
 Community Planning Act,67,Valid for five years,What filing or registration requirements are established by section 67 of Community Planning Act?,B,2,2,0,100,0,
 Community Planning Act,68,Access to streets,What does section 68 of the Community Planning Act provide regarding access to streets?,C,4,1,0,90,1,DUPLICATE_RUBRIC_PROMPT
-Community Planning Act,69,Validity and coming into force of controlled access street by-law,What requirements are established by section 69 of Community Planning Act?,B,1,1,0,80,2,MAIN_QUESTION_TOPIC_MISMATCH;CONCEPT_FRAGMENT
+Community Planning Act,69,Validity and coming into force of controlled access street by-law,What conditions determine the validity and coming into force of controlled access street by-law?,B,1,1,0,95,1,CONCEPT_FRAGMENT
 Community Planning Act,70,Definition of “development”,What definitions are provided in section 70 of Community Planning Act?,B,1,1,1,100,0,
 Community Planning Act,71,Designation of flood risk area,What does section 71 of the Community Planning Act provide regarding designation of flood risk area?,C,4,1,0,100,0,
 Community Planning Act,72,Making and enforcement of flood risk area by-law,What does section 72 of the Community Planning Act provide regarding making and enforcement of flood risk area by-law?,C,6,3,2,100,0,
@@ -136,21 +136,21 @@ Community Planning Act,89,Amendments to subdivision plan,What requirements are e
 Community Planning Act,90,Subdivision plan by local government,What requirements are established by section 90 of Community Planning Act?,B,2,2,1,95,1,RUBRIC_ANSWER_TOO_LONG
 Community Planning Act,91,Making of development charge by-law,What powers or authority are established by section 91 of Community Planning Act?,B,6,1,2,90,1,DUPLICATE_RUBRIC_PROMPT
 Community Planning Act,92,Development charge agreement,What does section 92 of the Community Planning Act provide regarding development charge agreement?,C,2,1,0,100,0,
-Community Planning Act,93,Validity and coming into force of development charge by-law,What does section 93 of the Community Planning Act provide regarding validity and coming into force of development charge by-law?,C,1,2,0,95,1,CONCEPT_FRAGMENT
+Community Planning Act,93,Validity and coming into force of development charge by-law,What conditions determine the validity and coming into force of development charge by-law?,B,1,2,0,95,1,CONCEPT_FRAGMENT
 Community Planning Act,94,Effect of development charge agreement,What certification requirements are established by section 94 of Community Planning Act?,B,1,1,1,100,0,
 Community Planning Act,95,Definition of “incentive or bonus zoning agreement”,What definitions are provided in section 95 of Community Planning Act?,B,1,2,1,100,0,
 Community Planning Act,96,Incentive or bonus zoning agreements,What powers or authority are established by section 96 of Community Planning Act?,B,7,2,3,85,2,RUBRIC_ANSWER_TOO_LONG;DUPLICATE_RUBRIC_PROMPT
-Community Planning Act,97,Validity and coming into force of incentive or bonus zoning agreement by-law,What does section 97 of the Community Planning Act provide regarding validity and coming into force of incentive or bonus zoning agreement by-law?,C,1,1,0,95,1,CONCEPT_FRAGMENT
+Community Planning Act,97,Validity and coming into force of incentive or bonus zoning agreement by-law,What conditions determine the validity and coming into force of incentive or bonus zoning agreement by-law?,B,1,1,0,95,1,CONCEPT_FRAGMENT
 Community Planning Act,98,Prohibition on breach of agreement,What does section 98 of the Community Planning Act provide regarding prohibition on breach of agreement?,C,1,1,0,100,0,
 Community Planning Act,99,Local government agreements,What requirements are established by section 99 of Community Planning Act?,B,4,1,1,100,0,
 Community Planning Act,100,Comply with notice provisions,What requirements are established by section 100 of Community Planning Act?,B,1,2,0,75,3,MAIN_QUESTION_TOPIC_MISMATCH;CONCEPT_FRAGMENT;CONCEPT_FRAGMENT
 Community Planning Act,101,Development scheme,What does section 101 of the Community Planning Act provide regarding development scheme?,C,1,1,0,100,0,
-Community Planning Act,102,Preparation and content of development scheme,What does section 102 of the Community Planning Act provide regarding preparation and content of development scheme?,C,6,2,2,85,2,RUBRIC_ANSWER_TOO_LONG;DUPLICATE_RUBRIC_PROMPT
+Community Planning Act,102,Preparation and content of development scheme,What requirements govern the preparation and content of development scheme?,B,6,2,2,85,2,RUBRIC_ANSWER_TOO_LONG;DUPLICATE_RUBRIC_PROMPT
 Community Planning Act,103,Comply with notice provisions,What requirements are established by section 103 of Community Planning Act?,B,1,2,0,75,3,MAIN_QUESTION_TOPIC_MISMATCH;CONCEPT_FRAGMENT;CONCEPT_FRAGMENT
 Community Planning Act,104,Conflict,What does section 104 of the Community Planning Act provide regarding conflict?,C,1,2,0,100,0,
 Community Planning Act,105,Acquisition of land by local government,What requirements are established by section 105 of Community Planning Act?,B,3,1,0,100,0,
 Community Planning Act,106,Acquisition of land by Minister,What requirements are established by section 106 of Community Planning Act?,B,3,2,0,100,0,
-Community Planning Act,107,Compensation,What powers or authority are established by section 107 of Community Planning Act?,B,2,3,0,80,2,MAIN_QUESTION_TOPIC_MISMATCH;CONCEPT_FRAGMENT
+Community Planning Act,107,Compensation,What compensation rules and limits apply?,B,2,3,0,95,1,CONCEPT_FRAGMENT
 Community Planning Act,108,Approval for a development,What does section 108 of the Community Planning Act provide regarding approval for a development?,C,6,3,2,95,1,RUBRIC_ANSWER_TOO_LONG
 Community Planning Act,109,Procedure for making by-laws,What are the application requirements under section 109 of Community Planning Act?,B,4,2,0,90,1,DUPLICATE_RUBRIC_PROMPT
 Community Planning Act,110,Request for views of advisory committee,What notice requirements are established by section 110 of Community Planning Act?,B,4,2,0,100,0,
@@ -169,7 +169,7 @@ Community Planning Act,122,Publication of decision,What does section 122 of the 
 Community Planning Act,123,Power of inspection,What powers or authority are established by section 123 of Community Planning Act?,B,4,3,0,100,0,
 Community Planning Act,124,Regulations – general,What regulation-making authority is established by section 124 of Community Planning Act?,B,4,3,1,95,1,RUBRIC_ANSWER_TOO_LONG
 Community Planning Act,125,Regulations re planning and development,What regulation-making authority is established by section 125 of Community Planning Act?,B,16,6,4,60,7,RUBRIC_ANSWER_TOO_LONG;RUBRIC_ANSWER_TOO_LONG;RUBRIC_ANSWER_TOO_LONG;RUBRIC_ANSWER_TOO_LONG;DUPLICATE_RUBRIC_PROMPT;TOO_MANY_RUBRIC_ITEMS;CONCEPT_FRAGMENT
-Community Planning Act,126,Administration,What powers or authority are established by section 126 of Community Planning Act?,B,2,0,0,100,0,
+Community Planning Act,126,Administration,"Who is responsible for administering the Act, and what authority or limitations apply?",B,2,0,0,100,0,
 Community Planning Act,126.1,Review of this Act,What does section 126.1 of the Community Planning Act provide regarding review of this act?,C,1,1,0,100,0,
 Community Planning Act,127,Fees,What does section 127 of the Community Planning Act provide regarding fees?,C,2,1,0,100,0,
 Community Planning Act,128,Approvals for pipeline construction,What powers or authority are established by section 128 of Community Planning Act?,B,1,1,0,100,0,
@@ -202,7 +202,7 @@ Community Planning Act,154,Regulations under the Community Planning Act,What doe
 Community Planning Act,155,Commencement,What does section 155 of the Community Planning Act provide regarding commencement?,C,1,1,0,100,0,
 Registry Act,1,Definitions,What definitions are provided in section 1 of Registry Act?,B,4,5,1,100,0,
 Registry Act,1.1,Interests within the scope of the Personal Property Security Act,What are the application requirements under section 1.1 of Registry Act?,B,3,0,0,90,1,DUPLICATE_RUBRIC_PROMPT
-Registry Act,2,Administration,What does section 2 of the Registry Act provide regarding administration?,C,1,0,0,100,0,
+Registry Act,2,Administration,"Who is responsible for administering the Act, and what authority or limitations apply?",B,1,0,0,100,0,
 Registry Act,3,Registry office,What does section 3 of the Registry Act provide regarding registry office?,C,4,1,0,90,1,DUPLICATE_RUBRIC_PROMPT
 Registry Act,4,Appointment of registrars and deputy registrars,What notice requirements are established by section 4 of Registry Act?,B,2,1,0,100,0,
 Registry Act,5,Ex officio deputy registrars,What duties does section 5 of Registry Act impose about ex officio deputy registrars?,B,2,1,0,90,1,DUPLICATE_RUBRIC_PROMPT
@@ -212,7 +212,7 @@ Registry Act,8,Oath of registrar and deputy registrar,What duties does section 8
 Registry Act,9,Powers and duties of deputy registrar,What duties does section 9 of Registry Act impose about powers and duties of deputy registrar?,B,1,1,0,100,0,
 Registry Act,10,When registry office open,What filing or registration requirements are established by section 10 of Registry Act?,B,3,2,0,95,1,CONCEPT_FRAGMENT
 Registry Act,11,Conflict of interests,What duties does section 11 of Registry Act impose about conflict of interests?,B,2,1,0,100,0,
-Registry Act,12,Duties of registrar,What duties does section 12 of Registry Act impose about duties of registrar?,B,2,2,1,95,1,RUBRIC_ANSWER_TOO_LONG
+Registry Act,12,Duties of registrar,What duties does a registrar have regarding duties of registrar?,B,2,2,1,95,1,RUBRIC_ANSWER_TOO_LONG
 Registry Act,13,Seal of registrar; production of documents,What notice requirements are established by section 13 of Registry Act?,B,1,1,0,85,1,MAIN_QUESTION_TOPIC_MISMATCH
 Registry Act,13.1,Powers regarding document maintenance and disposal,What powers or authority are established by section 13.1 of Registry Act?,B,3,2,2,85,1,MAIN_QUESTION_TOPIC_MISMATCH
 Registry Act,13.2,Electronic information storage system,What filing or registration requirements are established by section 13.2 of Registry Act?,B,2,2,0,90,2,RUBRIC_ANSWER_TOO_LONG;CONCEPT_FRAGMENT
@@ -284,7 +284,7 @@ Registry Act,68,Posting of Schedule of Fees,What powers or authority are establi
 Registry Act,69,Statement of fees,What notice requirements are established by section 69 of Registry Act?,B,1,1,0,100,0,
 Registry Act,70,Successor of registrar,What requirements are established by section 70 of Registry Act?,B,1,1,0,85,1,MAIN_QUESTION_TOPIC_MISMATCH
 Registry Act,71,Regulations,What regulation-making authority is established by section 71 of Registry Act?,B,4,4,1,100,0,
-Land Titles Act,1,Purpose,What powers or authority are established by section 1 of Land Titles Act?,B,1,1,0,100,0,
+Land Titles Act,1,Purpose,What is the purpose of the Land Titles Act?,B,1,1,0,100,0,
 Land Titles Act,2,Application,What are the application requirements under section 2 of Land Titles Act?,B,7,5,2,90,1,DUPLICATE_RUBRIC_PROMPT
 Land Titles Act,2.1,Interests within the scope of the Personal Property Security Act,What are the application requirements under section 2.1 of Land Titles Act?,B,3,0,0,90,1,DUPLICATE_RUBRIC_PROMPT
 Land Titles Act,3,Definitions,What definitions are provided in section 3 of Land Titles Act?,B,8,12,1,100,0,
@@ -293,7 +293,7 @@ Land Titles Act,5,"Appointment of Registrar General, registrar and deputies","Wh
 Land Titles Act,6,Service New Brunswick,What notice requirements are established by section 6 of Land Titles Act?,B,2,1,0,100,0,
 Land Titles Act,7,Seals of office,What notice requirements are established by section 7 of Land Titles Act?,B,1,1,0,100,0,
 Land Titles Act,8,Immunity of officers,What duties does section 8 of Land Titles Act impose about immunity of officers?,B,1,1,0,100,0,
-Land Titles Act,9,Records and copies of records,What requirements are established by section 9 of Land Titles Act?,B,3,3,1,100,0,
+Land Titles Act,9,Records and copies of records,"What rules govern access to, copies of, and evidentiary use of records?",B,3,3,1,100,0,
 Land Titles Act,10,"Documents signed, made or issued by officers","What duties does section 10 of Land Titles Act impose about documents signed, made or issued by officers?",B,1,1,0,100,0,
 Land Titles Act,10.1,Parcel identifiers and descriptions of land,What are the application requirements under section 10.1 of Land Titles Act?,B,2,2,2,100,0,
 Land Titles Act,10.2,Record of parcel identifiers,What filing or registration requirements are established by section 10.2 of Land Titles Act?,B,1,1,0,100,0,

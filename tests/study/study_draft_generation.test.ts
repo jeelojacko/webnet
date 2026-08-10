@@ -91,6 +91,63 @@ describe('study question generation', () => {
     });
     expect(generated.template).toBe('duties');
     expect(generated.question).toContain('What duties does section 4 of Surveys Act impose');
+    expect(generated.question).not.toContain('about duties');
+  });
+
+  it('uses strong semantic heading templates before generic templates', () => {
+    const examples = [
+      {
+        heading: 'Purpose',
+        text: '1 The intent and purpose of this Act is to provide a system for registration.',
+        expected: 'What is the purpose of the Land Titles Act?',
+        documentTitle: 'Land Titles Act',
+      },
+      {
+        heading: 'Administration',
+        text: '2 The Minister is responsible for the administration of this Act and may designate a person.',
+        expected: 'Who is responsible for administering the Act, and what authority or limitations apply?',
+        documentTitle: 'Community Planning Act',
+      },
+      {
+        heading: 'Compensation',
+        text: '3 Compensation shall not include unauthorized development.',
+        expected: 'What compensation rules and limits apply?',
+        documentTitle: 'Community Planning Act',
+      },
+      {
+        heading: 'Validity and coming into force of municipal plan',
+        text: '4 No municipal plan is valid unless filed. A municipal plan comes into force when filed.',
+        expected: 'What conditions determine the validity and coming into force of municipal plan?',
+        documentTitle: 'Community Planning Act',
+      },
+      {
+        heading: 'Failure to adopt municipal plan',
+        text: '5 If a council fails to make a by-law adopting a municipal plan, the Minister may do so.',
+        expected: 'What happens if a council fails to adopt municipal plan?',
+        documentTitle: 'Community Planning Act',
+      },
+      {
+        heading: 'Preparation and content of municipal plan',
+        text: '6 A council shall prepare a municipal plan.',
+        expected: 'What requirements govern the preparation and content of municipal plan?',
+        documentTitle: 'Community Planning Act',
+      },
+      {
+        heading: 'Records and copies of records',
+        text: '7 A registrar shall permit inspection and furnish copies of records as evidence.',
+        expected: 'What rules govern access to, copies of, and evidentiary use of records?',
+        documentTitle: 'Land Titles Act',
+      },
+    ];
+
+    for (const [index, example] of examples.entries()) {
+      expect(
+        generateStudyQuestion({
+          documentTitle: example.documentTitle,
+          selectedSources: [testComponent({ label: String(index + 1), heading: example.heading, text: example.text })],
+        }).question,
+      ).toBe(example.expected);
+    }
   });
 
   it('uses the application template', () => {
@@ -422,6 +479,16 @@ describe('structured rubric generation', () => {
       selectedSources: [component('doc-community-planning-act', 'section:83')],
       unitType: 'section',
     });
+    const landTitles1Rubric = generateStudyRubric({
+      document: legalDocument('doc-land-titles-act'),
+      selectedSources: [component('doc-land-titles-act', 'section:1')],
+      unitType: 'section',
+    });
+    const surveys7Rubric = generateStudyRubric({
+      document: legalDocument('doc-surveys-act'),
+      selectedSources: [component('doc-surveys-act', 'section:7')],
+      unitType: 'section',
+    });
 
     expect(
       generateStudyQuestion({
@@ -455,6 +522,20 @@ describe('structured rubric generation', () => {
         }).map((item) => item.category),
       }).question,
     ).toBe('What regulation-making authority is established by section 83 of Land Titles Act?');
+    expect(
+      generateStudyQuestion({
+        documentTitle: 'Land Titles Act',
+        selectedSources: [component('doc-land-titles-act', 'section:1')],
+        rubricCategories: landTitles1Rubric.map((item) => item.category),
+      }).question,
+    ).toBe('What is the purpose of the Land Titles Act?');
+    expect(
+      generateStudyQuestion({
+        documentTitle: 'Surveys Act',
+        selectedSources: [component('doc-surveys-act', 'section:7')],
+        rubricCategories: surveys7Rubric.map((item) => item.category),
+      }).question,
+    ).toBe('What duties does a surveyor have regarding legal monuments in an integrated survey area?');
   });
 
   it('normalizes generic legal-fact prompts and downgrades awkward Tier A surfaces', () => {

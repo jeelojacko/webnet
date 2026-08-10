@@ -190,6 +190,40 @@ describe('study generation audit', () => {
     expect(warnings.map((entry) => entry.code)).toContain('MAIN_QUESTION_UNSUPPORTED_TOPIC');
   });
 
+  it('flags strong-heading topic mismatches', () => {
+    const purposeWarnings = collectStudyGenerationWarnings({
+      source: testSection({ heading: 'Purpose' }),
+      detectedTopic: 'power-duty',
+      mainQuestion: 'What powers or authority are established by section 1 of Land Titles Act?',
+      referenceAnswer: 'Clean answer.',
+      rubricItems: [],
+      concepts: [],
+      extractedFacts: [],
+    });
+    const compensationWarnings = collectStudyGenerationWarnings({
+      source: testSection({ heading: 'Compensation' }),
+      detectedTopic: 'power-duty',
+      mainQuestion: 'What powers or authority are established by section 107 of Community Planning Act?',
+      referenceAnswer: 'Clean answer.',
+      rubricItems: [],
+      concepts: [],
+      extractedFacts: [],
+    });
+    const validityWarnings = collectStudyGenerationWarnings({
+      source: testSection({ heading: 'Validity and coming into force of municipal plan' }),
+      detectedTopic: 'requirements',
+      mainQuestion: 'What requirements are established by section 26 of Community Planning Act?',
+      referenceAnswer: 'Clean answer.',
+      rubricItems: [],
+      concepts: [],
+      extractedFacts: [],
+    });
+
+    expect(purposeWarnings.map((entry) => entry.code)).toContain('STRONG_HEADING_TOPIC_MISMATCH');
+    expect(compensationWarnings.map((entry) => entry.code)).toContain('STRONG_HEADING_TOPIC_MISMATCH');
+    expect(validityWarnings.map((entry) => entry.code)).toContain('STRONG_HEADING_TOPIC_MISMATCH');
+  });
+
   it('flags Tier A actor and modality mismatches against generated facts', () => {
     const warnings = collectStudyGenerationWarnings({
       source: testSection({ text: '1 The Lieutenant-Governor in Council may make regulations and an instrument shall not be accepted.' }),
@@ -397,6 +431,14 @@ describe('study generation audit', () => {
 
     const surveysDefinitions = findSection('doc-surveys-act', '1');
     expect(surveysDefinitions.diagnostics.suggestedChunks?.[0]?.estimatedRubricItems).toBeGreaterThan(1);
+
+    const landTitlesPurpose = findSection('doc-land-titles-act', '1');
+    expect(landTitlesPurpose.generated.mainQuestion).toBe('What is the purpose of the Land Titles Act?');
+    expect(landTitlesPurpose.generated.mainQuestion).not.toMatch(/powers? or authority/i);
+
+    const surveys7 = findSection('doc-surveys-act', '7');
+    expect(surveys7.generated.mainQuestion).toBe('What duties does a surveyor have regarding legal monuments in an integrated survey area?');
+    expect(surveys7.generated.mainQuestion).not.toMatch(/duties.*about duties|regarding regarding/i);
   });
 
   it('keeps section 14, 16 and 83 regression templates scoped to their source documents', () => {

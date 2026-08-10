@@ -1,42 +1,42 @@
 {
   "schemaVersion": 1,
-  "createdAt": "2026-08-10T17:16:09.808Z",
+  "createdAt": "2026-08-10T17:44:35.283Z",
   "contentPackageId": "nb-law-pilot-2026-08-05",
   "generatorVersion": "study-deterministic-v1",
   "summary": {
     "totalSections": 464,
     "totalRubricItems": 1233,
-    "sectionsWithNoWarnings": 341,
-    "sectionsWithWarnings": 123,
+    "sectionsWithNoWarnings": 344,
+    "sectionsWithWarnings": 120,
     "warningsByType": {
       "CONCEPT_FRAGMENT": 33,
       "RUBRIC_ANSWER_TOO_LONG": 59,
       "DUPLICATE_RUBRIC_PROMPT": 45,
-      "MAIN_QUESTION_TOPIC_MISMATCH": 28,
+      "MAIN_QUESTION_TOPIC_MISMATCH": 22,
       "TOO_MANY_RUBRIC_ITEMS": 8
     },
     "warningsByDocument": {
       "doc-surveys-act": 1,
       "doc-boundaries-confirmation-act": 6,
-      "doc-community-planning-act": 94,
+      "doc-community-planning-act": 88,
       "doc-registry-act": 23,
       "doc-land-titles-act": 34,
       "reg-boundaries-95-166": 3,
       "reg-community-planning-80-159": 3,
       "reg-land-titles-83-130": 9
     },
-    "averageQaScore": 97.05,
+    "averageQaScore": 97.24,
     "questionTierCounts": {
       "A": 727,
-      "B": 433,
-      "C": 537
+      "B": 444,
+      "C": 526
     },
     "sectionsWithChunkSuggestions": 129,
     "suggestedChunkCount": 215,
     "uniqueSuggestedChunkCount": 215,
     "tierAQualityDowngradeCount": 15,
     "semanticQualityDowngradeCount": 31,
-    "genuineTopicMismatchCount": 28,
+    "genuineTopicMismatchCount": 22,
     "actorMismatchCount": 0,
     "modalityMismatchCount": 0,
     "clauseBindingAmbiguousCount": 0,
@@ -112,39 +112,6 @@
       {
         "documentId": "doc-community-planning-act",
         "documentTitle": "Community Planning Act",
-        "sectionLabel": "64",
-        "sectionHeading": "Validity and coming into force of deferred widening by-law",
-        "score": 80,
-        "warnings": [
-          "MAIN_QUESTION_TOPIC_MISMATCH",
-          "CONCEPT_FRAGMENT"
-        ]
-      },
-      {
-        "documentId": "doc-community-planning-act",
-        "documentTitle": "Community Planning Act",
-        "sectionLabel": "69",
-        "sectionHeading": "Validity and coming into force of controlled access street by-law",
-        "score": 80,
-        "warnings": [
-          "MAIN_QUESTION_TOPIC_MISMATCH",
-          "CONCEPT_FRAGMENT"
-        ]
-      },
-      {
-        "documentId": "doc-community-planning-act",
-        "documentTitle": "Community Planning Act",
-        "sectionLabel": "107",
-        "sectionHeading": "Compensation",
-        "score": 80,
-        "warnings": [
-          "MAIN_QUESTION_TOPIC_MISMATCH",
-          "CONCEPT_FRAGMENT"
-        ]
-      },
-      {
-        "documentId": "doc-community-planning-act",
-        "documentTitle": "Community Planning Act",
         "sectionLabel": "111",
         "sectionHeading": "Public notice of by-law",
         "score": 80,
@@ -164,6 +131,40 @@
         "warnings": [
           "RUBRIC_ANSWER_TOO_LONG",
           "DUPLICATE_RUBRIC_PROMPT",
+          "CONCEPT_FRAGMENT"
+        ]
+      },
+      {
+        "documentId": "doc-land-titles-act",
+        "documentTitle": "Land Titles Act",
+        "sectionLabel": "79",
+        "sectionHeading": "Application to court",
+        "score": 80,
+        "warnings": [
+          "DUPLICATE_RUBRIC_PROMPT",
+          "DUPLICATE_RUBRIC_PROMPT"
+        ]
+      },
+      {
+        "documentId": "reg-land-titles-83-130",
+        "documentTitle": "REGULATION 83-130",
+        "sectionLabel": "20",
+        "score": 80,
+        "warnings": [
+          "RUBRIC_ANSWER_TOO_LONG",
+          "DUPLICATE_RUBRIC_PROMPT",
+          "TOO_MANY_RUBRIC_ITEMS"
+        ]
+      },
+      {
+        "documentId": "doc-boundaries-confirmation-act",
+        "documentTitle": "Boundaries Confirmation Act",
+        "sectionLabel": "6",
+        "sectionHeading": "Applicant",
+        "score": 85,
+        "warnings": [
+          "CONCEPT_FRAGMENT",
+          "CONCEPT_FRAGMENT",
           "CONCEPT_FRAGMENT"
         ]
       }
@@ -961,7 +962,7 @@
           "detectedTopic": "power-duty",
           "generated": {
             "title": "Surveys Act - Section 7: Duties of surveyor re integrated survey area",
-            "mainQuestion": "What duties does section 7 of Surveys Act impose about duties of surveyor re integrated survey area?",
+            "mainQuestion": "What duties does a surveyor have regarding legal monuments in an integrated survey area?",
             "mainQuestionTier": "B",
             "referenceAnswer": "Section 7 - Duties of surveyor re integrated survey area\n\nDuties of surveyor re integrated survey area\n\n7When an integrated survey area has been constituted, every surveyor shall tie to the coordinate monuments all legal monuments established by the surveyor that pertain to\n\n(a)\nCrown Lands,\n\n(b)\nsubdivisions when a subdivision plan is required under the Community Planning Act, and\n\n(c)\nparcels of land which the owners request to be included.",
             "rubricItems": [
@@ -1009,7 +1010,7 @@
                 "object": "coordinate monuments"
               }
             ],
-            "questionTemplate": "duties",
+            "questionTemplate": "strong-heading-duties",
             "suggestedChunks": [],
             "rejectedRubricItems": [],
             "removedAmendmentHistory": [],
@@ -1794,8 +1795,8 @@
           "detectedTopic": "procedure",
           "generated": {
             "title": "Surveys Act - Section 14.1: Administration",
-            "mainQuestion": "What does section 14.1 of the Surveys Act provide regarding administration?",
-            "mainQuestionTier": "C",
+            "mainQuestion": "Who is responsible for administering the Act, and what authority or limitations apply?",
+            "mainQuestionTier": "B",
             "referenceAnswer": "Section 14.1 - Administration\n\nAdministration",
             "rubricItems": [
               {
@@ -1832,7 +1833,7 @@
                 "sourceClause": "Administration"
               }
             ],
-            "questionTemplate": "fallback-heading",
+            "questionTemplate": "strong-heading-administration",
             "suggestedChunks": [],
             "rejectedRubricItems": [],
             "removedAmendmentHistory": [],
@@ -2298,8 +2299,8 @@
           "detectedTopic": "procedure",
           "generated": {
             "title": "Boundaries Confirmation Act - Section 3: Administration",
-            "mainQuestion": "What does section 3 of the Boundaries Confirmation Act provide regarding administration?",
-            "mainQuestionTier": "C",
+            "mainQuestion": "Who is responsible for administering the Act, and what authority or limitations apply?",
+            "mainQuestionTier": "B",
             "referenceAnswer": "Section 3 - Administration\n\nAdministration\n\n3Service New Brunswick is responsible for the administration of this Act.",
             "rubricItems": [
               {
@@ -2330,7 +2331,7 @@
                 "sourceClause": "Administration 3Service New Brunswick is responsible for the administration of this Act."
               }
             ],
-            "questionTemplate": "fallback-heading",
+            "questionTemplate": "strong-heading-administration",
             "suggestedChunks": [],
             "rejectedRubricItems": [],
             "removedAmendmentHistory": [],
@@ -5704,8 +5705,8 @@
           "detectedTopic": "procedure",
           "generated": {
             "title": "Community Planning Act - Section 2: Purposes of Act",
-            "mainQuestion": "What does section 2 of the Community Planning Act provide regarding purposes of act?",
-            "mainQuestionTier": "C",
+            "mainQuestion": "What are the purposes of the Community Planning Act?",
+            "mainQuestionTier": "B",
             "referenceAnswer": "Section 2 - Purposes of Act\n\nPurposes of Act\n\n2The purposes of this Act are as follows:\n\n(a)\nto support the development of environmentally, economically, socially and culturally sustainable communities;\n\n(b)\nto enable the articulation of provincial priorities and to guide regional and local planning decisions in the development of communities; and\n\n(c)\nto enable co-operation between local governments, rural districts, regional service commissions and other jurisdictions and agencies in the delivery of planning services and infrastructure development.",
             "rubricItems": [
               {
@@ -5742,7 +5743,7 @@
                 "sourceClause": "Purposes of Act 2The purposes of this Act are as follows: (a) to support the development of environmentally, economically, socially and culturally sustainable communities; (b) to enable the articulation of provincial priorities and to guide regional and local planning decisions in the development of communities; and (c) to enable co-operation between local governments, rural districts, regional service commissions and other jurisdictions and agencies in the delivery of planning services and infrastructure development."
               }
             ],
-            "questionTemplate": "fallback-heading",
+            "questionTemplate": "strong-heading-purpose",
             "suggestedChunks": [],
             "rejectedRubricItems": [],
             "removedAmendmentHistory": [],
@@ -7816,7 +7817,7 @@
           "detectedTopic": "power-duty",
           "generated": {
             "title": "Community Planning Act - Section 18.1: Preparation and content of regional land use plan",
-            "mainQuestion": "What powers or authority are established by section 18.1 of Community Planning Act?",
+            "mainQuestion": "What requirements govern the preparation and content of regional land use plan?",
             "mainQuestionTier": "B",
             "referenceAnswer": "Section 18.1 - Preparation and content of regional land use plan\n\n* 18.1(1): A regional land use plan shall be prepared or amended\n\n(a)\nunder the direction of\n\n(i)\nthe planning director as defined in the Regional Service Delivery Act;\n\n(ii)\nthe planning director of a local government; or\n\n(iii)\nanother planner engaged by the Minister, local government or regional service commission, as the case may be, and responsible to the planning director referred to in subparagraph (i) or (ii); and\n\n(b)\nin consultation with any other local government or regional service commission affected by the plan.\n\n* 18.1(2): The planning director or other planner referred to in subparagraph (1)(a)(i), (ii) or (iii), as the case may be, shall certify that the content of the regional land use plan complies with the provisions of this Act and the regulations under this Act.",
             "rubricItems": [
@@ -7888,7 +7889,7 @@
                 "action": "be, shall certify that the content of the regional land use plan complies with the provisions of this Act and the regulations under this Act"
               }
             ],
-            "questionTemplate": "powers",
+            "questionTemplate": "strong-heading-preparation-content",
             "suggestedChunks": [],
             "rejectedRubricItems": [],
             "removedAmendmentHistory": [],
@@ -8347,7 +8348,7 @@
           "detectedTopic": "notice",
           "generated": {
             "title": "Community Planning Act - Section 23: Failure to adopt municipal plan",
-            "mainQuestion": "What powers or authority are established by section 23 of Community Planning Act?",
+            "mainQuestion": "What happens if a council fails to adopt municipal plan?",
             "mainQuestionTier": "B",
             "referenceAnswer": "Section 23 - Failure to adopt municipal plan\n\n* 23(1): If a council fails to make a by-law adopting a municipal plan or adopting an amendment to it when required to do so, the Minister may do so and may exercise any of the powers of the council under this Act on giving at least 30 days’ written notice to the municipality of the Minister’s intention to do so.\n\n* 23(2): The costs of adopting a municipal plan under subsection (1) are chargeable to the municipality and become a debt due to the Crown.\n\n* 23(3): If a municipality is in arrears for a period in excess of 90 days with respect to any payment due under subsection (2), the Minister may deduct the amount in arrears from any money owed by the Province to the municipality.",
             "rubricItems": [
@@ -8461,7 +8462,7 @@
                 "deadlineOrNumber": " 90 days"
               }
             ],
-            "questionTemplate": "powers",
+            "questionTemplate": "strong-heading-failure-to-adopt",
             "suggestedChunks": [],
             "rejectedRubricItems": [
               "What may the Minister do?",
@@ -8473,16 +8474,8 @@
             "semanticQualityDowngrades": []
           },
           "quality": {
-            "score": 85,
-            "warnings": [
-              {
-                "code": "MAIN_QUESTION_TOPIC_MISMATCH",
-                "severity": "warning",
-                "field": "generated.mainQuestion",
-                "text": "What powers or authority are established by section 23 of Community Planning Act?",
-                "explanation": "The main question topic does not match the section heading or detected topic."
-              }
-            ]
+            "score": 100,
+            "warnings": []
           }
         },
         {
@@ -8496,7 +8489,7 @@
           "detectedTopic": "power-duty",
           "generated": {
             "title": "Community Planning Act - Section 24: Preparation and content of municipal plan",
-            "mainQuestion": "What powers or authority are established by section 24 of Community Planning Act?",
+            "mainQuestion": "What requirements govern the preparation and content of municipal plan?",
             "mainQuestionTier": "B",
             "referenceAnswer": "Section 24 - Preparation and content of municipal plan\n\n* 24(1): A council shall prepare a municipal plan for the municipality for approval by the Minister.\n\n* 24(2): A municipal plan shall be prepared or amended\n\n(a)\nunder the direction of\n\n(i)\nthe planning director or another planner engaged by the council and responsible to the planning director, or\n\n(ii)\nin the case of a municipality not providing its own land use planning service, the planning director as defined in the Regional Service Delivery Act, or another planner engaged by the regional service commission and responsible to the planning director, if the regional service commission prepares the plan,\n\n(b)\non the basis of a written report of studies of the economy, finances, resources, population, land use, transportation facilities, municipal facilities and services, and any other matter related to the present or future economic, social or physical conditions of the municipality, and\n\n(c)\nin consultation with the Minister and any government department or person specified by the Director.\n\n* 24(2.1): The planning director or other planner referred to in subparagraph (2)(a)(i) or (ii), as the case may be, shall certify that the content of the municipal plan complies with the provisions of this Act and the regulations under this Act.\n\n* 24(3): The zones into which the municipality is proposed to be divided by the zoning by-law shall be delineated on a map or plan attached to and forming part of the municipal plan.\n\n* 24(4): In preparing a municipal plan, a planner shall\n\n(a)\nascertain the assumptions of policy of the council in relation to the proposed plan,\n\n(b)\nif the planner is engaged by a municipality that is not providing its own land use planning service, seek the advice and assistance of the regional service commission, and\n\n(c)\nhave regard to\n\n(i)\nthe results of the studies referred to in subsection (2),\n\n(ii)\nthe regional land use plan, if any, and\n\n(iii)\nthe resources likely to be available for carrying out the proposals referred to in the plan.\n\n* 24(5): A municipal plan shall contain the following:\n\n(a)\nstatements of policy with respect to\n\n(i)\nthe development and use of land in the municipality,\n\n(ii)\nthe conservation and improvement of the physical environment,\n\n(ii.1)\nclimate change adaptation and mitigation,\n\n(iii)\nthe control and abatement of all forms of pollution of the natural environment,\n\n(iv)\nthe development of communication, utility and transportation systems,\n\n(v)\nthe reservation and projected use of land for municipal purposes, and\n\n(vi)\nthe provision of municipal services and facilities, including\n\n(A)\nsewage collection, treatment and disposal,\n\n(B)\nwater supply and distribution,\n\n(C)\nsolid waste disposal,\n\n(D)\neducational and cultural institutions,\n\n(E)\nrecreational facilities, parks, playgrounds and other public open spaces,\n\n(F)\nfire and police facilities,\n\n(G)\ncemeteries and crematoria,\n\n(H)\nurban renewal,\n\n(I)\nhousing,\n\n(J)\npreservation of buildings and sites of historical interest, and\n\n(K)\nfacilities for the provision of health and social services,\n\n(vi.1)\nhousing, including affordable housing and rental housing,\n\n(vi.2)\nRepealed:\n\n* 24(6): With respect to a five-year capital budget contained in a municipal plan, the council shall annually\n\n(a)\nrevise the budget to make it applicable to the next five years, and\n\n(b)\nprovide a copy of the revised budget to the Minister.\n\n* 24(7): Section 26 does not apply to a revision of a budget under subsection (6).",
             "rubricItems": [
@@ -8721,7 +8714,7 @@
                 "relatedProvision": "Section 26"
               }
             ],
-            "questionTemplate": "powers",
+            "questionTemplate": "strong-heading-preparation-content",
             "suggestedChunks": [
               {
                 "id": "section:24:chunk-1",
@@ -9066,8 +9059,8 @@
           "detectedTopic": "filing",
           "generated": {
             "title": "Community Planning Act - Section 26: Validity and coming into force of municipal plan",
-            "mainQuestion": "What does section 26 of the Community Planning Act provide regarding validity and coming into force of municipal plan?",
-            "mainQuestionTier": "C",
+            "mainQuestion": "What conditions determine the validity and coming into force of municipal plan?",
+            "mainQuestionTier": "B",
             "referenceAnswer": "Section 26 - Validity and coming into force of municipal plan\n\n* 26(1): Subject to subsection 24(7), no municipal plan is valid unless\n\n(a)\nits content is certified as complying with the provisions of this Act and the regulations under this Act in accordance with subsection 24(2.1),\n\n(b)\nsection 111 is complied with, and\n\n(c)\nparagraph 112(1)(b) is complied with.\n\n* 26(2): A municipal plan comes into force when filed in the land registration office in accordance with paragraph 112(1)(b) or on a date after the filing as the by-law adopting the municipal plan provides.",
             "rubricItems": [
               {
@@ -9121,7 +9114,7 @@
                 "filingEffect": "A municipal plan comes into force when filed in the land registration office in accordance with paragraph 112(1)(b) or on a date after the filing as the by-law adopting the municipal plan provides."
               }
             ],
-            "questionTemplate": "fallback-heading",
+            "questionTemplate": "strong-heading-validity-commencement",
             "suggestedChunks": [],
             "rejectedRubricItems": [
               "What filing or record rule applies to Validity and coming into force of municipal plan?"
@@ -9964,7 +9957,7 @@
           "detectedTopic": "notice",
           "generated": {
             "title": "Community Planning Act - Section 34: Failure to adopt rural plan for a village",
-            "mainQuestion": "What powers or authority are established by section 34 of Community Planning Act?",
+            "mainQuestion": "What happens if a body fails to adopt rural plan for a village?",
             "mainQuestionTier": "B",
             "referenceAnswer": "Section 34 - Failure to adopt rural plan for a village\n\n* 34(1): If a council of a village fails to make a by-law adopting a rural plan or adopting an amendment to it when required to do so, the Minister may do so and may exercise any of the powers of the council under this Act on giving at least 30 days’ written notice to the village of the Minister’s intention to do so.\n\n* 34(2): The costs of adopting a rural plan under subsection (1) are chargeable to the village and become a debt due to the Crown.\n\n* 34(3): If a village is in arrears for a period in excess of 90 days with respect to any payment due under subsection (2), the Minister may deduct the amount in arrears from any money owed by the Province to the village.",
             "rubricItems": [
@@ -10078,7 +10071,7 @@
                 "deadlineOrNumber": " 90 days"
               }
             ],
-            "questionTemplate": "powers",
+            "questionTemplate": "strong-heading-failure-to-adopt",
             "suggestedChunks": [],
             "rejectedRubricItems": [
               "What may the Minister do?",
@@ -10090,16 +10083,8 @@
             "semanticQualityDowngrades": []
           },
           "quality": {
-            "score": 85,
-            "warnings": [
-              {
-                "code": "MAIN_QUESTION_TOPIC_MISMATCH",
-                "severity": "warning",
-                "field": "generated.mainQuestion",
-                "text": "What powers or authority are established by section 34 of Community Planning Act?",
-                "explanation": "The main question topic does not match the section heading or detected topic."
-              }
-            ]
+            "score": 100,
+            "warnings": []
           }
         },
         {
@@ -10113,7 +10098,7 @@
           "detectedTopic": "power-duty",
           "generated": {
             "title": "Community Planning Act - Section 35: Preparation and content of rural plan for a village",
-            "mainQuestion": "What powers or authority are established by section 35 of Community Planning Act?",
+            "mainQuestion": "What requirements govern the preparation and content of rural plan for a village?",
             "mainQuestionTier": "B",
             "referenceAnswer": "Section 35 - Preparation and content of rural plan for a village\n\n* 35(1): A council of a village shall prepare a rural plan for the village for approval by the Minister.\n\n* 35(1.1): A rural plan for a village shall be prepared or amended\n\n(a)\nunder the direction of\n\n(i)\nthe planning director or another planner engaged by the council of the village and responsible to the planning director, or\n\n(ii)\nin the case of a village not providing its own land use planning service, the planning director as defined in the Regional Service Delivery Act, or another planner engaged by the regional service commission and responsible to the planning director, if the regional service commission prepares the plan,\n\n(b)\non the basis of a written report of studies of the economy, finances, resources, population, land use, transportation facilities, public facilities and services, and any other matter related to the present or future economic, social or physical conditions of the village, and\n\n(c)\nin consultation with the Minister and any government department or person specified by the Director.\n\n* 35(1.2): The planning director or other planner referred to in subparagraph (1.1)(a)(i) or (ii), as the case may be, shall certify that the content of the rural plan for a village complies with the provisions of this Act and the regulations under this Act.\n\n* 35(2): A rural plan for a village shall contain\n\n(a)\nstatements of policy with respect to\n\n(i)\nresidential uses,\n\n(i.1)\nhousing, including affordable housing and rental housing,\n\n(i.2)\nRepealed:\n\n* 35(3): Subsections 53(1.1) to (8) and sections 55 to 59 apply with the necessary modifications to zoning provisions referred to in paragraph (2)(d).\n\n* 35(4): If there is a conflict between a policy or a proposal referred to in paragraphs (2)(a) and (b) and a zoning provision referred to in paragraph (2)(d), the policy or proposal prevails.",
             "rubricItems": [
@@ -10270,7 +10255,7 @@
                 "trigger": "If there is a conflict between a policy or a proposal referred to in paragraphs (2)(a) and (b) and a zoning provision refe"
               }
             ],
-            "questionTemplate": "powers",
+            "questionTemplate": "strong-heading-preparation-content",
             "suggestedChunks": [
               {
                 "id": "section:35:chunk-1",
@@ -10753,8 +10738,8 @@
           "detectedTopic": "filing",
           "generated": {
             "title": "Community Planning Act - Section 40: Validity and coming into force of rural plan for a village",
-            "mainQuestion": "What does section 40 of the Community Planning Act provide regarding validity and coming into force of rural plan for a village?",
-            "mainQuestionTier": "C",
+            "mainQuestion": "What conditions determine the validity and coming into force of rural plan for a village?",
+            "mainQuestionTier": "B",
             "referenceAnswer": "Section 40 - Validity and coming into force of rural plan for a village\n\n* 40(1): Subject to section 39, no rural plan for a village is valid unless\n\n(a)\nits content is certified as complying with the provisions of this Act and the regulations under this Act in accordance with subsection 35(1.2),\n\n(b)\nsection 111 is complied with, and\n\n(c)\nparagraph 112(1)(b) is complied with.\n\n* 40(2): A rural plan for a village comes into force when filed in the land registration office in accordance with paragraph 112(1)(b) or on a date after the filing as the by-law adopting the rural plan provides.",
             "rubricItems": [
               {
@@ -10803,7 +10788,7 @@
                 "filingEffect": "A rural plan for a village comes into force when filed in the land registration office in accordance with paragraph 112(1)(b) or on a date after the filing as the by-law adopting the rural plan provides."
               }
             ],
-            "questionTemplate": "fallback-heading",
+            "questionTemplate": "strong-heading-validity-commencement",
             "suggestedChunks": [],
             "rejectedRubricItems": [
               "What filing or record rule applies to Validity and coming into force of rural plan for a village?"
@@ -11509,7 +11494,7 @@
           "detectedTopic": "notice",
           "generated": {
             "title": "Community Planning Act - Section 44.1: Failure to adopt rural plan for a rural community",
-            "mainQuestion": "What powers or authority are established by section 44.1 of Community Planning Act?",
+            "mainQuestion": "What happens if a body fails to adopt rural plan for a rural community?",
             "mainQuestionTier": "B",
             "referenceAnswer": "Section 44.1 - Failure to adopt rural plan for a rural community\n\n* 44.1(1): If a council of a rural community fails to make a by-law adopting a rural plan or adopting an amendment to it when required to do so, the Minister may do so and may exercise any of the powers of the council under this Act on giving at least 30 days’ written notice to the rural community of the Minister’s intention to do so.\n\n* 44.1(2): The costs of adopting a rural plan under subsection (1) are chargeable to the rural community and become a debt due to the Crown.\n\n* 44.1(3): If a rural community is in arrears for a period in excess of 90 days with respect to any payment due under subsection (2), the Minister may deduct the amount in arrears from any money owed by the Province to the rural community.",
             "rubricItems": [
@@ -11623,7 +11608,7 @@
                 "deadlineOrNumber": " 90 days"
               }
             ],
-            "questionTemplate": "powers",
+            "questionTemplate": "strong-heading-failure-to-adopt",
             "suggestedChunks": [],
             "rejectedRubricItems": [
               "What may the Minister do?",
@@ -11635,16 +11620,8 @@
             "semanticQualityDowngrades": []
           },
           "quality": {
-            "score": 85,
-            "warnings": [
-              {
-                "code": "MAIN_QUESTION_TOPIC_MISMATCH",
-                "severity": "warning",
-                "field": "generated.mainQuestion",
-                "text": "What powers or authority are established by section 44.1 of Community Planning Act?",
-                "explanation": "The main question topic does not match the section heading or detected topic."
-              }
-            ]
+            "score": 100,
+            "warnings": []
           }
         },
         {
@@ -11807,8 +11784,8 @@
           "detectedTopic": "filing",
           "generated": {
             "title": "Community Planning Act - Section 45: Validity and coming into force of rural plan for a rural community",
-            "mainQuestion": "What does section 45 of the Community Planning Act provide regarding validity and coming into force of rural plan for a rural community?",
-            "mainQuestionTier": "C",
+            "mainQuestion": "What conditions determine the validity and coming into force of rural plan for a rural community?",
+            "mainQuestionTier": "B",
             "referenceAnswer": "Section 45 - Validity and coming into force of rural plan for a rural community\n\n* 45(1): No rural plan for a rural community is valid unless\n\n(a)\nits content is certified as complying with the provisions of this Act and the regulations under this Act in accordance with subsection 44(2.3),\n\n(b)\nsection 111 is complied with, and\n\n(c)\nparagraph 112(1)(b) is complied with.\n\n* 45(2): A rural plan for a rural community comes into force when filed in the land registration office in accordance with paragraph 112(1)(b) or on a date after the filing as the by-law adopting the rural plan provides.",
             "rubricItems": [
               {
@@ -11855,7 +11832,7 @@
                 "filingEffect": "A rural plan for a rural community comes into force when filed in the land registration office in accordance with paragraph 112(1)(b) or on a date after the filing as the by-law adopting the rural plan provides."
               }
             ],
-            "questionTemplate": "fallback-heading",
+            "questionTemplate": "strong-heading-validity-commencement",
             "suggestedChunks": [],
             "rejectedRubricItems": [
               "What filing or record rule applies to Validity and coming into force of rural plan for a rural community?"
@@ -13607,8 +13584,8 @@
           "detectedTopic": "filing",
           "generated": {
             "title": "Community Planning Act - Section 54: Validity and coming into force of zoning by-law",
-            "mainQuestion": "What does section 54 of the Community Planning Act provide regarding validity and coming into force of zoning by-law?",
-            "mainQuestionTier": "C",
+            "mainQuestion": "What conditions determine the validity and coming into force of zoning by-law?",
+            "mainQuestionTier": "B",
             "referenceAnswer": "Section 54 - Validity and coming into force of zoning by-law\n\n* 54(1): No zoning by-law is valid unless\n\n(a)\nits content is certified as complying with the provisions of this Act and the regulations under this Act in accordance with subsection 53(1.2),\n\n(b)\nsection 111 is complied with, and\n\n(c)\nparagraph 112(1)(b) is complied with.\n\n* 54(2): A zoning by-law comes into force when filed in the land registration office in accordance with paragraph 112(1)(b) or on a date after the filing as the by-law provides.",
             "rubricItems": [
               {
@@ -13660,7 +13637,7 @@
                 "filingEffect": "A zoning by-law comes into force when filed in the land registration office in accordance with paragraph 112(1)(b) or on a date after the filing as the by-law provides."
               }
             ],
-            "questionTemplate": "fallback-heading",
+            "questionTemplate": "strong-heading-validity-commencement",
             "suggestedChunks": [],
             "rejectedRubricItems": [
               "What filing or record rule applies to Validity and coming into force of zoning by-law?"
@@ -15398,7 +15375,7 @@
           "detectedTopic": "filing",
           "generated": {
             "title": "Community Planning Act - Section 64: Validity and coming into force of deferred widening by-law",
-            "mainQuestion": "What requirements are established by section 64 of Community Planning Act?",
+            "mainQuestion": "What conditions determine the validity and coming into force of deferred widening by-law?",
             "mainQuestionTier": "B",
             "referenceAnswer": "Section 64 - Validity and coming into force of deferred widening by-law\n\n* 64(1): No deferred widening by-law is valid unless\n\n(a)\nthe procedure set out in section 111 is complied with, and\n\n(b)\nthe requirement of paragraph 112(1)(b) is complied with.\n\n* 64(2): A deferred widening by-law comes into force when filed in the land registration office in accordance with paragraph 112(1)(b) or on a date after the filing as the by-law provides.",
             "rubricItems": [
@@ -15451,7 +15428,7 @@
                 "filingEffect": "A deferred widening by-law comes into force when filed in the land registration office in accordance with paragraph 112(1)(b) or on a date after the filing as the by-law provides."
               }
             ],
-            "questionTemplate": "requirements",
+            "questionTemplate": "strong-heading-validity-commencement",
             "suggestedChunks": [],
             "rejectedRubricItems": [
               "What filing or record rule applies to Validity and coming into force of deferred widening by-law?"
@@ -15462,15 +15439,8 @@
             "semanticQualityDowngrades": []
           },
           "quality": {
-            "score": 80,
+            "score": 95,
             "warnings": [
-              {
-                "code": "MAIN_QUESTION_TOPIC_MISMATCH",
-                "severity": "warning",
-                "field": "generated.mainQuestion",
-                "text": "What requirements are established by section 64 of Community Planning Act?",
-                "explanation": "The main question topic does not match the section heading or detected topic."
-              },
               {
                 "code": "CONCEPT_FRAGMENT",
                 "severity": "info",
@@ -16074,7 +16044,7 @@
           "detectedTopic": "filing",
           "generated": {
             "title": "Community Planning Act - Section 69: Validity and coming into force of controlled access street by-law",
-            "mainQuestion": "What requirements are established by section 69 of Community Planning Act?",
+            "mainQuestion": "What conditions determine the validity and coming into force of controlled access street by-law?",
             "mainQuestionTier": "B",
             "referenceAnswer": "Section 69 - Validity and coming into force of controlled access street by-law\n\n* 69(1): No controlled access street by-law is valid unless\n\n(a)\nthe procedure set out in section 111 is complied with, and\n\n(b)\nthe requirement of paragraph 112(1)(b) is complied with.\n\n* 69(2): A controlled access street by-law comes into force when filed in the land registration office in accordance with paragraph 112(1)(b) or on a date after the filing as the by-law provides.\n\nE\n\nFlood Risk Area By-laws",
             "rubricItems": [
@@ -16122,7 +16092,7 @@
                 "filingEffect": "A controlled access street by-law comes into force when filed in the land registration office in accordance with paragraph 112(1)(b) or on a date after the filing as the by-law provides."
               }
             ],
-            "questionTemplate": "requirements",
+            "questionTemplate": "strong-heading-validity-commencement",
             "suggestedChunks": [],
             "rejectedRubricItems": [
               "What filing or record rule applies to Validity and coming into force of controlled access street by-law?"
@@ -16133,15 +16103,8 @@
             "semanticQualityDowngrades": []
           },
           "quality": {
-            "score": 80,
+            "score": 95,
             "warnings": [
-              {
-                "code": "MAIN_QUESTION_TOPIC_MISMATCH",
-                "severity": "warning",
-                "field": "generated.mainQuestion",
-                "text": "What requirements are established by section 69 of Community Planning Act?",
-                "explanation": "The main question topic does not match the section heading or detected topic."
-              },
               {
                 "code": "CONCEPT_FRAGMENT",
                 "severity": "info",
@@ -21106,8 +21069,8 @@
           "detectedTopic": "filing",
           "generated": {
             "title": "Community Planning Act - Section 93: Validity and coming into force of development charge by-law",
-            "mainQuestion": "What does section 93 of the Community Planning Act provide regarding validity and coming into force of development charge by-law?",
-            "mainQuestionTier": "C",
+            "mainQuestion": "What conditions determine the validity and coming into force of development charge by-law?",
+            "mainQuestionTier": "B",
             "referenceAnswer": "Section 93 - Validity and coming into force of development charge by-law\n\n* 93(1): No development charge by-law is valid unless\n\n(a)\nits content is certified as complying with the provisions of this Act and the regulations under this Act in accordance with subsection 91(1.2),\n\n(b)\nsection 111 is complied with, and\n\n(c)\nparagraph 112(1)(b) is complied with.\n\n* 93(2): A development charge by-law comes into force when filed in the land registration office in accordance with paragraph 112(1)(b) or on a date after the filing as the by-law provides.",
             "rubricItems": [
               {
@@ -21159,7 +21122,7 @@
                 "filingEffect": "A development charge by-law comes into force when filed in the land registration office in accordance with paragraph 112(1)(b) or on a date after the filing as the by-law provides."
               }
             ],
-            "questionTemplate": "fallback-heading",
+            "questionTemplate": "strong-heading-validity-commencement",
             "suggestedChunks": [],
             "rejectedRubricItems": [
               "What filing or record rule applies to Validity and coming into force of development charge by-law?"
@@ -21691,8 +21654,8 @@
           "detectedTopic": "filing",
           "generated": {
             "title": "Community Planning Act - Section 97: Validity and coming into force of incentive or bonus zoning agreement by-law",
-            "mainQuestion": "What does section 97 of the Community Planning Act provide regarding validity and coming into force of incentive or bonus zoning agreement by-law?",
-            "mainQuestionTier": "C",
+            "mainQuestion": "What conditions determine the validity and coming into force of incentive or bonus zoning agreement by-law?",
+            "mainQuestionTier": "B",
             "referenceAnswer": "Section 97 - Validity and coming into force of incentive or bonus zoning agreement by-law\n\n* 97(1): No incentive or bonus zoning agreement by-law is valid unless\n\n(a)\nits content is certified as complying with the provisions of this Act and the regulations under this Act in accordance with subsection 96(1.2),\n\n(b)\nsection 111 is complied with, and\n\n(c)\nparagraph 112(1)(b) is complied with.\n\n* 97(2): An incentive or bonus zoning agreement by-law comes into force when filed in the land registration office in accordance with paragraph 112(1)(b) or on a date after the filing as the by-law provides.",
             "rubricItems": [
               {
@@ -21739,7 +21702,7 @@
                 "filingEffect": "An incentive or bonus zoning agreement by-law comes into force when filed in the land registration office in accordance with paragraph 112(1)(b) or on a date after the filing as the by-law provides."
               }
             ],
-            "questionTemplate": "fallback-heading",
+            "questionTemplate": "strong-heading-validity-commencement",
             "suggestedChunks": [],
             "rejectedRubricItems": [
               "What filing or record rule applies to Validity and coming into force of incentive or bonus zoning agreement by-law?"
@@ -22203,8 +22166,8 @@
           "detectedTopic": "power-duty",
           "generated": {
             "title": "Community Planning Act - Section 102: Preparation and content of development scheme",
-            "mainQuestion": "What does section 102 of the Community Planning Act provide regarding preparation and content of development scheme?",
-            "mainQuestionTier": "C",
+            "mainQuestion": "What requirements govern the preparation and content of development scheme?",
+            "mainQuestionTier": "B",
             "referenceAnswer": "Section 102 - Preparation and content of development scheme\n\n* 102(1): For greater certainty and without limiting section 101, a development scheme\n\n(a)\nshall\n\n(i)\nconsist of written statements, maps, drawings and other descriptive matter, all under seal, signed by the clerk and indicating that they are a part of the scheme, as may be necessary to illustrate the scheme,\n\n(ii)\ndelineate the land affected by the scheme,\n\n(iii)\nset out details of the development or redevelopment to be carried out in the scheme area,\n\n(iv)\ndescribe the manner in which the scheme is intended to be implemented,\n\n(v)\nindicate the amount of any land to be reserved in the scheme area, or if feasible the particular land to be reserved, and the manner in which the reservation is to be effected, and\n\n(vi)\nprescribe the manner in which land in the scheme area is to be subdivided; and\n\n(b)\nmay, in relation to the scheme area,\n\n(i)\nprescribe\n\n(A)\nthe manner in which existing buildings and structures may be altered or repaired where the developments would not otherwise be permitted by the scheme, and\n\n(B)\ndevelopments for which no building permit is required under the Building Code Administration Act,\n\n(ii)\nprovide for the acquisition, assembly, consolidation, sale or lease by the local government of the land, buildings or structures necessary to carry out the scheme,\n\n(iii)\nindicate land to be acquired as the site or location of streets, public buildings, schools, parks or recreation areas or other public services such as light, water or sewerage,\n\n(iv)\nprovide for agreements with the owners of land referred to in subparagraph (iii) in order to permit the acquisition of the land for those purposes,\n\n(v)\nallocate areas of land available for residential, commercial, industrial, agricultural or other purpose at any particular time, and\n\n(vi)\nspecify the order and timing for subdivision or development of a particular part of the area.\n\n* 102(2): A development scheme shall make provision for any general matters the Minister may require.\n\n* 102(3): The provisions of sections 25 and 27 with respect to a municipal plan apply with the necessary modifications to a development scheme.\n\n* 102(4): Despite a development scheme by-law, a council may authorize the constructing, altering or repairing of any land, building or structure if\n\n(a)\nin its opinion, the land, building or structure will conform to the scheme, or\n\n(b)\nthe owner of the land, building or structure enters into an agreement with the council containing the terms and conditions that the council considers fit.\n\n* 102(5): A council may enter into an agreement referred to in subparagraph (1)(b)(iv) or paragraph (4)(b), as the case may be, with an owner and the agreement\n\n(a)\nshall not become effective until certified copies of the agreement are filed in the land registration office, and\n\n(b)\nwhen registered in the land registration office, is binding on a subsequent owner of the land in respect of which the agreement is made until discharged by the local government.\n\n* 102(6): An expense incurred by a council in acquiring land or taking any other action for the purposes of a development scheme is considered part of the cost of the scheme and the proceeds of a sale or other disposition of land acquired for the purposes is applied against the cost of the scheme.",
             "rubricItems": [
               {
@@ -22420,7 +22383,7 @@
                 "operativeActor": "council"
               }
             ],
-            "questionTemplate": "fallback-heading",
+            "questionTemplate": "strong-heading-preparation-content",
             "suggestedChunks": [
               {
                 "id": "section:102:chunk-1",
@@ -22925,7 +22888,7 @@
           "detectedTopic": "notice",
           "generated": {
             "title": "Community Planning Act - Section 107: Compensation",
-            "mainQuestion": "What powers or authority are established by section 107 of Community Planning Act?",
+            "mainQuestion": "What compensation rules and limits apply?",
             "mainQuestionTier": "B",
             "referenceAnswer": "Section 107 - Compensation\n\n* 107(1): Subject to subsection (2), if a regional land use plan, rural plan, municipal plan or development scheme indicates that certain land may be required by the Minister or a local government for a purpose described in it, compensation for the land on expropriation shall not include an amount in respect of an unauthorized development on the land after the date of the notice of intention to make, or to recommend the making of, the plan or scheme.\n\n* 107(2): On application by a person affected by subsection (1), a judge of The Court of King’s Bench of New Brunswick may order that compensation be paid in respect of a development referred to in the application, if the judge is satisfied that the development was undertaken in good faith without knowledge of a restriction imposed on the development by this Act or a plan or scheme under this Act.",
             "rubricItems": [
@@ -23019,7 +22982,7 @@
                 "action": "order that compensation be paid in respect of a development referred to in the application, if the judge is satisfied that the development was undertaken in good faith without knowledge of a restriction imposed on the development by this Act or a plan or scheme under this Act"
               }
             ],
-            "questionTemplate": "powers",
+            "questionTemplate": "strong-heading-compensation",
             "suggestedChunks": [],
             "rejectedRubricItems": [],
             "removedAmendmentHistory": [],
@@ -23028,15 +22991,8 @@
             "semanticQualityDowngrades": []
           },
           "quality": {
-            "score": 80,
+            "score": 95,
             "warnings": [
-              {
-                "code": "MAIN_QUESTION_TOPIC_MISMATCH",
-                "severity": "warning",
-                "field": "generated.mainQuestion",
-                "text": "What powers or authority are established by section 107 of Community Planning Act?",
-                "explanation": "The main question topic does not match the section heading or detected topic."
-              },
               {
                 "code": "CONCEPT_FRAGMENT",
                 "severity": "info",
@@ -26618,7 +26574,7 @@
           "detectedTopic": "power-duty",
           "generated": {
             "title": "Community Planning Act - Section 126: Administration",
-            "mainQuestion": "What powers or authority are established by section 126 of Community Planning Act?",
+            "mainQuestion": "Who is responsible for administering the Act, and what authority or limitations apply?",
             "mainQuestionTier": "B",
             "referenceAnswer": "Section 126 - Administration\n\n* 126(1): The Minister is responsible for the administration of this Act and may designate one or more persons to act on the Minister’s behalf.\n\n* 126(2): Despite subsection (1), the Minister shall not delegate the powers referred to in section 51, 125 or 132.",
             "rubricItems": [
@@ -26690,7 +26646,7 @@
                 "action": "not delegate the powers referred to in section 51, 125 or 132"
               }
             ],
-            "questionTemplate": "powers",
+            "questionTemplate": "strong-heading-administration",
             "suggestedChunks": [],
             "rejectedRubricItems": [],
             "removedAmendmentHistory": [],
@@ -30028,8 +29984,8 @@
           "detectedTopic": "procedure",
           "generated": {
             "title": "Registry Act - Section 2: Administration",
-            "mainQuestion": "What does section 2 of the Registry Act provide regarding administration?",
-            "mainQuestionTier": "C",
+            "mainQuestion": "Who is responsible for administering the Act, and what authority or limitations apply?",
+            "mainQuestionTier": "B",
             "referenceAnswer": "Section 2 - Administration\n\nAdministration\n\n2Service New Brunswick is charged with the general supervision of this Act.",
             "rubricItems": [
               {
@@ -30060,7 +30016,7 @@
                 "sourceClause": "Administration 2Service New Brunswick is charged with the general supervision of this Act."
               }
             ],
-            "questionTemplate": "fallback-heading",
+            "questionTemplate": "strong-heading-administration",
             "suggestedChunks": [],
             "rejectedRubricItems": [],
             "removedAmendmentHistory": [],
@@ -31222,7 +31178,7 @@
           "detectedTopic": "filing",
           "generated": {
             "title": "Registry Act - Section 12: Duties of registrar",
-            "mainQuestion": "What duties does section 12 of Registry Act impose about duties of registrar?",
+            "mainQuestion": "What duties does a registrar have regarding duties of registrar?",
             "mainQuestionTier": "B",
             "referenceAnswer": "Section 12 - Duties of registrar\n\n* 12(1): The registrar shall, when required and upon being tendered legal fees therefor in the manner hereinafter prescribed for so doing, allow searches to be made and furnish copies and abstracts of or concerning all instruments or documents registered, recorded or filed in his office, the fees for the making of which copies and abstracts shall be returned or paid over by the registrar as required in respect of other receipts of the office under this Act, and he shall exhibit the original registered instruments, if in his possession, and also the books of the office relating thereto, when any party desires to make a personal inspection thereof, and shall give certificates of all copies and extracts under his hand of the same; but no registrar shall allow any such book or instrument filed but not registered to be taken out of his possession or custody.\n\n* 12(2): The Executive Director of Assessment under the Assessment Act and persons designated by him to act on his behalf may search free of charge in the office of any registrar of deeds for such information as he or they consider necessary.",
             "rubricItems": [
@@ -31357,7 +31313,7 @@
                 "action": "search free of charge in the office of any registrar of deeds for such information as he or they consider necessary"
               }
             ],
-            "questionTemplate": "duties",
+            "questionTemplate": "strong-heading-duties",
             "suggestedChunks": [
               {
                 "id": "section:12:chunk-1",
@@ -40120,7 +40076,7 @@
           "detectedTopic": "procedure",
           "generated": {
             "title": "Land Titles Act - Section 1: Purpose",
-            "mainQuestion": "What powers or authority are established by section 1 of Land Titles Act?",
+            "mainQuestion": "What is the purpose of the Land Titles Act?",
             "mainQuestionTier": "B",
             "referenceAnswer": "Section 1 - Purpose\n\nPurpose\n\n1The intent and purpose of this Act is to provide a system for the registration of the title to land in the Province and instruments related thereto and to provide statutory authority for guaranteed land title.\n\nAPPLICATION",
             "rubricItems": [
@@ -40158,7 +40114,7 @@
                 "sourceClause": "Purpose 1The intent and purpose of this Act is to provide a system for the registration of the title to land in the Province and instruments related thereto and to provide statutory authority for guaranteed land title. APPLICATION"
               }
             ],
-            "questionTemplate": "powers",
+            "questionTemplate": "strong-heading-purpose",
             "suggestedChunks": [],
             "rejectedRubricItems": [],
             "removedAmendmentHistory": [],
@@ -41558,7 +41514,7 @@
           "detectedTopic": "power-duty",
           "generated": {
             "title": "Land Titles Act - Section 9: Records and copies of records",
-            "mainQuestion": "What requirements are established by section 9 of Land Titles Act?",
+            "mainQuestion": "What rules govern access to, copies of, and evidentiary use of records?",
             "mainQuestionTier": "B",
             "referenceAnswer": "Section 9 - Records and copies of records\n\n* 9(1): A registrar shall, upon request and payment of the prescribed fee, permit the inspection and furnish under his seal copies of records that are in his custody or that are obtainable by him from any other land titles office and every such copy shall, in any action or proceeding, be received as evidence and have the same force and effect as if the original of that record were produced.\n\n* 9(1.1): Notwithstanding subsection (1), a registrar shall not be required to permit the inspection or furnish under his seal copies of records that are contained in or accompany an application made under section 11.\n\n* 9(2): All records and copies of records that are required or permitted by law to be kept or held by a registrar, the Registrar General or the Director of Surveys appointed under the Surveys Act and accurate reproductions of such records or copies thereof shall be admissible in evidence in any court as proof of the contents thereof if certified as correct by the proper officer without proof of the official character of the person or persons appearing to have signed the same, and without further proof thereof.\n\n* 9(3): In this section “records” means any information set down by handwriting, drawing, typewriting, printing, photostating, photographing, magnetic impulse, mechanical or electronic recording, or other manner of setting down information for the purpose of data compilation and storage and includes a printout from a computer or similar device in a form which may be understood whether the printout is the result of a process of data retrieval or a replica of data stored.",
             "rubricItems": [
@@ -41695,7 +41651,7 @@
                 "action": "be understood whether the printout is the result of a process of data retrieval or a replica of data stored"
               }
             ],
-            "questionTemplate": "requirements",
+            "questionTemplate": "strong-heading-records-copies",
             "suggestedChunks": [
               {
                 "id": "section:9:chunk-1",

@@ -11,8 +11,11 @@ import {
   hasPositiveTopicEvidence,
   headingSubject,
   hasTierASurfaceQualityFailure,
+  classifyStrongHeadingTopic,
+  normalizeHeadingSubject,
   questionHasUnsupportedTopic,
   sourceEvidenceText,
+  strongHeadingTopicMismatch,
   type StudyQuestionTier,
 } from './studyQuestionSupport';
 
@@ -181,6 +184,108 @@ const classifyQuestionCategory = (sources: SelectedLegalSource[]): QuestionCateg
 const sourceIdentity = (source: Pick<ImportedLegalComponent, 'documentId' | 'sourceKey'>): string =>
   `${source.documentId}::${source.sourceKey}`;
 
+const withIndefiniteArticle = (value: string): string => {
+  const normalized = sentenceCase(value).toLowerCase();
+  if (!normalized) return '';
+  if (/^(?:the|a|an|service new brunswick|minister|registrar general|lieutenant-governor)/i.test(normalized)) return normalized;
+  return `${/^[aeiou]/i.test(normalized) ? 'an' : 'a'} ${normalized}`;
+};
+
+const headingAfter = (heading: string, prefix: RegExp): string =>
+  normalizeHeadingSubject(sentenceCase(heading).replace(prefix, ''));
+
+const dutyActorFromHeading = (heading: string): string =>
+  sentenceCase(heading).match(/^duties\s+of\s+(.+?)(?:\s+(?:re|regarding|about)\s+.+)?$/i)?.[1] ?? '';
+
+const dutySubject = (source: ImportedLegalComponent): string => {
+  const heading = source.heading ?? '';
+  const headingSubjectText = headingAfter(heading, /^duties\s+of\s+.+?\s+(?:re|regarding|about)\s+/i);
+  const text = sourceEvidenceText([source]);
+  if (/integrated survey area/i.test(heading) && /\blegal monuments?\b/i.test(text)) {
+    return 'legal monuments in an integrated survey area';
+  }
+  if (/coordinate survey system/i.test(heading) && /\bbearings?\b/i.test(text) && /\bdistances?\b/i.test(text)) {
+    return 'boundary bearings, distances and parcel descriptions under the coordinate survey system';
+  }
+  return headingSubjectText;
+};
+
+const failureActorFromText = (source: ImportedLegalComponent): string => {
+  const text = sourceEvidenceText([source]);
+  return text.match(/\bif\s+(.+?)\s+fails?\s+to\s+(?:make\s+a\s+by-law\s+adopting|adopt)\b/i)?.[1] ?? '';
+};
+
+const strongHeadingQuestion = (
+  documentTitle: string,
+  source: ImportedLegalComponent,
+): GeneratedQuestion | undefined => {
+  const topic = classifyStrongHeadingTopic(source.heading);
+  if (!topic) return undefined;
+  const heading = source.heading ?? '';
+  const subject = normalizeHeadingSubject(heading);
+  const actor = dutyActorFromHeading(heading);
+  if (topic === 'purpose') {
+    const plural = /^purposes\b/i.test(heading);
+    return {
+      template: 'strong-heading-purpose',
+      questionTier: 'B',
+      question: `What ${plural ? 'are the purposes' : 'is the purpose'} of the ${documentTitle}?`,
+    };
+  }
+  if (topic === 'duties' && actor) {
+    const dutyTarget = dutySubject(source);
+    return {
+      template: 'strong-heading-duties',
+      questionTier: 'B',
+      question: `What duties does ${withIndefiniteArticle(actor)} have${dutyTarget ? ` regarding ${dutyTarget}` : ''}?`,
+    };
+  }
+  if (topic === 'administration') {
+    return {
+      template: 'strong-heading-administration',
+      questionTier: 'B',
+      question: 'Who is responsible for administering the Act, and what authority or limitations apply?',
+    };
+  }
+  if (topic === 'compensation') {
+    return {
+      template: 'strong-heading-compensation',
+      questionTier: 'B',
+      question: 'What compensation rules and limits apply?',
+    };
+  }
+  if (topic === 'validity-commencement' && subject) {
+    return {
+      template: 'strong-heading-validity-commencement',
+      questionTier: 'B',
+      question: `What conditions determine the validity and coming into force of ${subject}?`,
+    };
+  }
+  if (topic === 'failure-to-adopt' && subject) {
+    const actorText = failureActorFromText(source);
+    return {
+      template: 'strong-heading-failure-to-adopt',
+      questionTier: 'B',
+      question: `What happens if ${actorText ? withIndefiniteArticle(actorText) : 'a body'} fails to adopt ${subject}?`,
+    };
+  }
+  if (topic === 'preparation-content' && subject) {
+    return {
+      template: 'strong-heading-preparation-content',
+      questionTier: 'B',
+      question: `What requirements govern the preparation and content of ${subject}?`,
+    };
+  }
+  if (topic === 'records-copies') {
+    return {
+      template: 'strong-heading-records-copies',
+      questionTier: 'B',
+      question: 'What rules govern access to, copies of, and evidentiary use of records?',
+    };
+  }
+  return undefined;
+};
+
 const fallbackQuestion = (documentTitle: string, source: ImportedLegalComponent): GeneratedQuestion => {
   const singleLabel = `${sectionWord(source).toLowerCase()} ${source.label}`;
   const subject = headingSubject(source);
@@ -332,9 +437,13 @@ export const generateStudyQuestion = ({
   if (golden) return hasTierASurfaceQualityFailure(golden.question) && golden.questionTier === 'A'
     ? { ...golden, questionTier: 'B', template: `${golden.template}-quality-downgraded` }
     : golden;
+  const strongHeading = strongHeadingQuestion(documentTitle, source);
+  if (strongHeading) return strongHeading;
+  const dutyHeadingSubject = headingSubject(source);
+  const dutySuffix = dutyHeadingSubject && !/^dut(?:y|ies)$/.test(dutyHeadingSubject) && heading ? ` about ${heading}` : '';
   const questions: Record<QuestionCategory, string> = {
     definitions: `What definitions are provided in ${singleLabel} of ${documentTitle}?`,
-    duties: `What duties does ${singleLabel} of ${documentTitle} impose${heading ? ` about ${heading}` : ''}?`,
+    duties: `What duties does ${singleLabel} of ${documentTitle} impose${dutySuffix}?`,
     powers: `What powers or authority are established by ${singleLabel} of ${documentTitle}?`,
     application: `What are the application requirements under ${singleLabel} of ${documentTitle}?`,
     requirements: `What requirements are established by ${singleLabel} of ${documentTitle}?`,
@@ -351,6 +460,7 @@ export const generateStudyQuestion = ({
   };
   const generated = { template: category, questionTier: category === 'fallback' ? 'C' as const : 'B' as const, question: questions[category] };
   if (questionHasUnsupportedTopic([source], generated.question)) return fallbackQuestion(documentTitle, source);
+  if (strongHeadingTopicMismatch(source.heading, generated.question)) return fallbackQuestion(documentTitle, source);
   if (category === 'fallback' && sourceEvidenceText([source]).length > 0) return fallbackQuestion(documentTitle, source);
   return generated;
 };

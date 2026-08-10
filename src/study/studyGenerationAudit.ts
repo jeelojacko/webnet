@@ -17,6 +17,7 @@ import {
   headingQuestionTokenOverlap,
   hasTierASurfaceQualityFailure,
   questionHasUnsupportedTopic,
+  strongHeadingTopicMismatch,
   suggestStudyChunks,
   type StudyQuestionTier,
   type SuggestedStudyChunk,
@@ -459,6 +460,9 @@ export const collectStudyGenerationWarnings = (section: {
   if (hasTopicMismatch(section.source, section.detectedTopic, section.mainQuestion)) {
     warnings.push(warning('MAIN_QUESTION_TOPIC_MISMATCH', 'warning', 'generated.mainQuestion', section.mainQuestion, 'The main question topic does not match the section heading or detected topic.'));
   }
+  if (strongHeadingTopicMismatch(section.source.heading, section.mainQuestion)) {
+    warnings.push(warning('STRONG_HEADING_TOPIC_MISMATCH', 'critical', 'generated.mainQuestion', section.mainQuestion, 'The main question does not preserve a highly explicit section-heading topic.'));
+  }
   if (questionHasUnsupportedTopic([section.source], section.mainQuestion)) {
     warnings.push(warning('MAIN_QUESTION_UNSUPPORTED_TOPIC', 'critical', 'generated.mainQuestion', section.mainQuestion, 'The main question asks about a specialized topic that is not supported by the section heading or operative source text.'));
   }
@@ -552,6 +556,7 @@ export const scoreStudyGenerationWarnings = (warnings: StudyGenerationWarning[])
   const penalties: Record<string, number> = {
     MALFORMED_QUESTION: 20,
     MAIN_QUESTION_TOPIC_MISMATCH: 15,
+    STRONG_HEADING_TOPIC_MISMATCH: 50,
     MAIN_QUESTION_UNSUPPORTED_TOPIC: 25,
     AMENDMENT_HISTORY_LEAK: 15,
     UNGROUNDED_RUBRIC_ITEM: 100,

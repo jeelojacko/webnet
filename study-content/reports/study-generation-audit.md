@@ -1,6 +1,6 @@
 # Study Generation Audit
 
-Created: 2026-08-10T17:16:09.808Z
+Created: 2026-08-10T17:44:35.283Z
 Content package: nb-law-pilot-2026-08-05
 Generator: study-deterministic-v1
 
@@ -8,17 +8,17 @@ Generator: study-deterministic-v1
 
 Total sections: 464
 Total rubric items: 1233
-Sections with warnings: 123
-Average QA score: 97.05
+Sections with warnings: 120
+Average QA score: 97.24
 Tier A questions: 727
-Tier B questions: 433
-Tier C questions: 537
+Tier B questions: 444
+Tier C questions: 526
 Sections with chunk suggestions: 129
 Suggested chunks: 215
 Unique suggested chunks: 215
 Tier A questions downgraded by quality gate: 15
 Tier A questions downgraded by semantic gate: 31
-Genuine topic mismatches: 28
+Genuine topic mismatches: 22
 Actor mismatches: 0
 Modality mismatches: 0
 Ambiguous clause bindings: 0
@@ -30,7 +30,7 @@ Warnings by type:
 - CONCEPT_FRAGMENT: 33
 - RUBRIC_ANSWER_TOO_LONG: 59
 - DUPLICATE_RUBRIC_PROMPT: 45
-- MAIN_QUESTION_TOPIC_MISMATCH: 28
+- MAIN_QUESTION_TOPIC_MISMATCH: 22
 - TOO_MANY_RUBRIC_ITEMS: 8
 
 ## Surveys Act
@@ -459,7 +459,7 @@ Detected topic: power-duty
 Main question tier: B
 
 Main question:
-What duties does section 7 of Surveys Act impose about duties of surveyor re integrated survey area?
+What duties does a surveyor have regarding legal monuments in an integrated survey area?
 
 Reference answer:
 Section 7 - Duties of surveyor re integrated survey area
@@ -815,10 +815,10 @@ Administration
 2015, c.44, s.111
 
 Detected topic: procedure
-Main question tier: C
+Main question tier: B
 
 Main question:
-What does section 14.1 of the Surveys Act provide regarding administration?
+Who is responsible for administering the Act, and what authority or limitations apply?
 
 Reference answer:
 Section 14.1 - Administration
@@ -1094,10 +1094,10 @@ Administration
 1994, c.B-7.2, s.3; 1998, c.12, s.10
 
 Detected topic: procedure
-Main question tier: C
+Main question tier: B
 
 Main question:
-What does section 3 of the Boundaries Confirmation Act provide regarding administration?
+Who is responsible for administering the Act, and what authority or limitations apply?
 
 Reference answer:
 Section 3 - Administration
@@ -2660,10 +2660,10 @@ to enable co-operation between local governments, rural districts, regional serv
 PLANNING ADMINISTRATION AND AUTHORITIES
 
 Detected topic: procedure
-Main question tier: C
+Main question tier: B
 
 Main question:
-What does section 2 of the Community Planning Act provide regarding purposes of act?
+What are the purposes of the Community Planning Act?
 
 Reference answer:
 Section 2 - Purposes of Act
@@ -3698,7 +3698,7 @@ Detected topic: power-duty
 Main question tier: B
 
 Main question:
-What powers or authority are established by section 18.1 of Community Planning Act?
+What requirements govern the preparation and content of regional land use plan?
 
 Reference answer:
 Section 18.1 - Preparation and content of regional land use plan
@@ -3957,7 +3957,7 @@ Detected topic: notice
 Main question tier: B
 
 Main question:
-What powers or authority are established by section 23 of Community Planning Act?
+What happens if a council fails to adopt municipal plan?
 
 Reference answer:
 Section 23 - Failure to adopt municipal plan
@@ -3982,8 +3982,7 @@ Concepts:
 - Failure to Adopt Municipal Plan
 - Notice to the Municipality of the Minister
 
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What powers or authority are established by section 23 of Community Planning Act?
+Warnings: none
 
 ### Section 24 - Preparation and content of municipal plan
 
@@ -4133,7 +4132,7 @@ Detected topic: power-duty
 Main question tier: B
 
 Main question:
-What powers or authority are established by section 24 of Community Planning Act?
+What requirements govern the preparation and content of municipal plan?
 
 Reference answer:
 Section 24 - Preparation and content of municipal plan
@@ -4437,10 +4436,10 @@ paragraph 112(1)(b) is complied with.
 2021, c.44, s.1
 
 Detected topic: filing
-Main question tier: C
+Main question tier: B
 
 Main question:
-What does section 26 of the Community Planning Act provide regarding validity and coming into force of municipal plan?
+What conditions determine the validity and coming into force of municipal plan?
 
 Reference answer:
 Section 26 - Validity and coming into force of municipal plan
@@ -4876,7 +4875,7 @@ Detected topic: notice
 Main question tier: B
 
 Main question:
-What powers or authority are established by section 34 of Community Planning Act?
+What happens if a body fails to adopt rural plan for a village?
 
 Reference answer:
 Section 34 - Failure to adopt rural plan for a village
@@ -4901,8 +4900,7 @@ Concepts:
 - Failure to Adopt Rural Plan for a Village
 - Notice to the Village of the Minister
 
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What powers or authority are established by section 34 of Community Planning Act?
+Warnings: none
 
 ### Section 35 - Preparation and content of rural plan for a village
 
@@ -4994,7 +4992,7 @@ Detected topic: power-duty
 Main question tier: B
 
 Main question:
-What powers or authority are established by section 35 of Community Planning Act?
+What requirements govern the preparation and content of rural plan for a village?
 
 Reference answer:
 Section 35 - Preparation and content of rural plan for a village
@@ -5259,10 +5257,10 @@ paragraph 112(1)(b) is complied with.
 2021, c.44, s.1
 
 Detected topic: filing
-Main question tier: C
+Main question tier: B
 
 Main question:
-What does section 40 of the Community Planning Act provide regarding validity and coming into force of rural plan for a village?
+What conditions determine the validity and coming into force of rural plan for a village?
 
 Reference answer:
 Section 40 - Validity and coming into force of rural plan for a village
@@ -5624,7 +5622,7 @@ Detected topic: notice
 Main question tier: B
 
 Main question:
-What powers or authority are established by section 44.1 of Community Planning Act?
+What happens if a body fails to adopt rural plan for a rural community?
 
 Reference answer:
 Section 44.1 - Failure to adopt rural plan for a rural community
@@ -5649,8 +5647,7 @@ Concepts:
 - Failure to Adopt Rural Plan for a Rural Community
 - Notice to the Rural Community of the Minister
 
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What powers or authority are established by section 44.1 of Community Planning Act?
+Warnings: none
 
 ### Section 44.2 - Province to consider rural plan
 
@@ -5759,10 +5756,10 @@ paragraph 112(1)(b) is complied with.
 2021, c.44, s.1
 
 Detected topic: filing
-Main question tier: C
+Main question tier: B
 
 Main question:
-What does section 45 of the Community Planning Act provide regarding validity and coming into force of rural plan for a rural community?
+What conditions determine the validity and coming into force of rural plan for a rural community?
 
 Reference answer:
 Section 45 - Validity and coming into force of rural plan for a rural community
@@ -6972,10 +6969,10 @@ paragraph 112(1)(b) is complied with.
 2021, c.44, s.1
 
 Detected topic: filing
-Main question tier: C
+Main question tier: B
 
 Main question:
-What does section 54 of the Community Planning Act provide regarding validity and coming into force of zoning by-law?
+What conditions determine the validity and coming into force of zoning by-law?
 
 Reference answer:
 Section 54 - Validity and coming into force of zoning by-law
@@ -7822,7 +7819,7 @@ Detected topic: filing
 Main question tier: B
 
 Main question:
-What requirements are established by section 64 of Community Planning Act?
+What conditions determine the validity and coming into force of deferred widening by-law?
 
 Reference answer:
 Section 64 - Validity and coming into force of deferred widening by-law
@@ -7848,7 +7845,6 @@ Concepts:
 - Registration Office in Accordance With Paragraph
 
 Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What requirements are established by section 64 of Community Planning Act?
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Office in Accordance With Paragraph
 
 ### Section 65 - Amendment and filing
@@ -8149,7 +8145,7 @@ Detected topic: filing
 Main question tier: B
 
 Main question:
-What requirements are established by section 69 of Community Planning Act?
+What conditions determine the validity and coming into force of controlled access street by-law?
 
 Reference answer:
 Section 69 - Validity and coming into force of controlled access street by-law
@@ -8178,7 +8174,6 @@ Concepts:
 - Registration Office in Accordance With Paragraph
 
 Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What requirements are established by section 69 of Community Planning Act?
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Office in Accordance With Paragraph
 
 ### Section 70 - Definition of “development”
@@ -11201,10 +11196,10 @@ paragraph 112(1)(b) is complied with.
 2021, c.44, s.1
 
 Detected topic: filing
-Main question tier: C
+Main question tier: B
 
 Main question:
-What does section 93 of the Community Planning Act provide regarding validity and coming into force of development charge by-law?
+What conditions determine the validity and coming into force of development charge by-law?
 
 Reference answer:
 Section 93 - Validity and coming into force of development charge by-law
@@ -11547,10 +11542,10 @@ paragraph 112(1)(b) is complied with.
 2021, c.44, s.1
 
 Detected topic: filing
-Main question tier: C
+Main question tier: B
 
 Main question:
-What does section 97 of the Community Planning Act provide regarding validity and coming into force of incentive or bonus zoning agreement by-law?
+What conditions determine the validity and coming into force of incentive or bonus zoning agreement by-law?
 
 Reference answer:
 Section 97 - Validity and coming into force of incentive or bonus zoning agreement by-law
@@ -11905,10 +11900,10 @@ when registered in the land registration office, is binding on a subsequent owne
 </details>
 
 Detected topic: power-duty
-Main question tier: C
+Main question tier: B
 
 Main question:
-What does section 102 of the Community Planning Act provide regarding preparation and content of development scheme?
+What requirements govern the preparation and content of development scheme?
 
 Reference answer:
 Section 102 - Preparation and content of development scheme
@@ -12257,7 +12252,7 @@ Detected topic: notice
 Main question tier: B
 
 Main question:
-What powers or authority are established by section 107 of Community Planning Act?
+What compensation rules and limits apply?
 
 Reference answer:
 Section 107 - Compensation
@@ -12282,7 +12277,6 @@ Concepts:
 - Application by a Person Affected by Subsection
 
 Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What powers or authority are established by section 107 of Community Planning Act?
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Application by a Person Affected by Subsection
 
 ### Section 108 - Approval for a development
@@ -14373,7 +14367,7 @@ Detected topic: power-duty
 Main question tier: B
 
 Main question:
-What powers or authority are established by section 126 of Community Planning Act?
+Who is responsible for administering the Act, and what authority or limitations apply?
 
 Reference answer:
 Section 126 - Administration
@@ -16089,10 +16083,10 @@ Administration
 1961-62, c.67, s.1; 1967, c.38, s.2; 1989, c.N-5.01, s.38; 1998, c.12, s.18
 
 Detected topic: procedure
-Main question tier: C
+Main question tier: B
 
 Main question:
-What does section 2 of the Registry Act provide regarding administration?
+Who is responsible for administering the Act, and what authority or limitations apply?
 
 Reference answer:
 Section 2 - Administration
@@ -16640,7 +16634,7 @@ Detected topic: filing
 Main question tier: B
 
 Main question:
-What duties does section 12 of Registry Act impose about duties of registrar?
+What duties does a registrar have regarding duties of registrar?
 
 Reference answer:
 Section 12 - Duties of registrar
@@ -20285,7 +20279,7 @@ Detected topic: procedure
 Main question tier: B
 
 Main question:
-What powers or authority are established by section 1 of Land Titles Act?
+What is the purpose of the Land Titles Act?
 
 Reference answer:
 Section 1 - Purpose
@@ -20961,7 +20955,7 @@ Detected topic: power-duty
 Main question tier: B
 
 Main question:
-What requirements are established by section 9 of Land Titles Act?
+What rules govern access to, copies of, and evidentiary use of records?
 
 Reference answer:
 Section 9 - Records and copies of records

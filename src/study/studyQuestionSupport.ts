@@ -3,6 +3,16 @@ import { prepareLegalText } from './studyLegalTextPreparation';
 
 export type StudyQuestionTier = 'A' | 'B' | 'C';
 
+export type StrongHeadingTopic =
+  | 'purpose'
+  | 'duties'
+  | 'administration'
+  | 'compensation'
+  | 'validity-commencement'
+  | 'failure-to-adopt'
+  | 'preparation-content'
+  | 'records-copies';
+
 export type SpecializedQuestionTopic =
   | 'offences'
   | 'notice'
@@ -113,7 +123,48 @@ export const questionHasUnsupportedTopic = (
 export const headingSubject = (source: ImportedLegalComponent): string => {
   const heading = normalizeStudyQuestionText(source.heading ?? '').toLowerCase();
   if (!heading) return '';
-  return heading.replace(/\bre\b/g, 'regarding');
+  return normalizeHeadingSubject(heading);
+};
+
+export const normalizeHeadingSubject = (heading: string): string =>
+  normalizeStudyQuestionText(heading)
+    .toLowerCase()
+    .replace(/\bre\b/g, 'regarding')
+    .replace(/\bduties\s+of\s+.+?\s+regarding\s+/i, '')
+    .replace(/\bpreparation\s+and\s+content\s+of\s+/i, '')
+    .replace(/\bvalidity\s+and\s+coming\s+into\s+force\s+of\s+/i, '')
+    .replace(/\bfailure\s+to\s+adopt\s+/i, '')
+    .replace(/\bapplication\s+requirements\s+application\b/i, 'application requirements')
+    .replace(/\bregarding\s+regarding\b/i, 'regarding')
+    .trim();
+
+export const classifyStrongHeadingTopic = (heading: string | undefined): StrongHeadingTopic | undefined => {
+  const normalized = normalizeStudyQuestionText(heading ?? '').toLowerCase();
+  if (!normalized) return undefined;
+  if (/^purposes?(?:\s+of\s+(?:the\s+)?act)?$/.test(normalized)) return 'purpose';
+  if (/^duties\s+of\s+.+?(?:\s+(?:re|regarding|about)\s+.+)?$/.test(normalized)) return 'duties';
+  if (normalized === 'administration') return 'administration';
+  if (normalized === 'compensation') return 'compensation';
+  if (/^validity\s+and\s+coming\s+into\s+force\s+of\s+.+/.test(normalized)) return 'validity-commencement';
+  if (/^failure\s+to\s+adopt\s+.+/.test(normalized)) return 'failure-to-adopt';
+  if (/^preparation\s+and\s+content\s+of\s+.+/.test(normalized)) return 'preparation-content';
+  if (/^records\s+and\s+copies\s+of\s+records$/.test(normalized)) return 'records-copies';
+  return undefined;
+};
+
+export const strongHeadingTopicMismatch = (heading: string | undefined, question: string): boolean => {
+  const topic = classifyStrongHeadingTopic(heading);
+  if (!topic) return false;
+  const normalizedQuestion = normalizeStudyQuestionText(question).toLowerCase();
+  if (topic === 'purpose') return !/\bpurposes?\b/.test(normalizedQuestion) || /\bpowers?\s+or\s+authority\b/.test(normalizedQuestion);
+  if (topic === 'duties') return !/\bdut(?:y|ies)\b|\bmust\b|\bshall\b/.test(normalizedQuestion);
+  if (topic === 'administration') return !/\badminister(?:ing|ed|s|ation)?\b|\bresponsible\b/.test(normalizedQuestion);
+  if (topic === 'compensation') return !/\bcompensation\b/.test(normalizedQuestion) || /\bpowers?\s+or\s+authority\b/.test(normalizedQuestion);
+  if (topic === 'validity-commencement') return !/\bvalid(?:ity)?\b|\bcoming\s+into\s+force\b|\bcomes?\s+into\s+force\b/.test(normalizedQuestion);
+  if (topic === 'failure-to-adopt') return !/\bfails?\s+to\s+adopt\b|\bfailure\s+to\s+adopt\b/.test(normalizedQuestion);
+  if (topic === 'preparation-content') return !/\bpreparation\b|\bcontent\b|\bprepare(?:d|s|)\b/.test(normalizedQuestion);
+  if (topic === 'records-copies') return !/\brecords?\b|\bcopies\b/.test(normalizedQuestion);
+  return false;
 };
 
 const normalizeTopicTokens = (value: string): Set<string> =>

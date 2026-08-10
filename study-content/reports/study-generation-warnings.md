@@ -1,7 +1,7 @@
 # Study Generation Warnings
 
-Created: 2026-08-10T17:16:09.808Z
-Sections with warnings: 123
+Created: 2026-08-10T17:44:35.283Z
+Sections with warnings: 120
 
 ## Community Planning Act section 125 - Regulations re planning and development
 
@@ -58,33 +58,6 @@ Warnings:
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Comply With Notice Provisions
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Office in Accordance With Paragraph
 
-## Community Planning Act section 64 - Validity and coming into force of deferred widening by-law
-
-QA score: 80
-Main question: What requirements are established by section 64 of Community Planning Act?
-
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What requirements are established by section 64 of Community Planning Act?
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Office in Accordance With Paragraph
-
-## Community Planning Act section 69 - Validity and coming into force of controlled access street by-law
-
-QA score: 80
-Main question: What requirements are established by section 69 of Community Planning Act?
-
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What requirements are established by section 69 of Community Planning Act?
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Office in Accordance With Paragraph
-
-## Community Planning Act section 107 - Compensation
-
-QA score: 80
-Main question: What powers or authority are established by section 107 of Community Planning Act?
-
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What powers or authority are established by section 107 of Community Planning Act?
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Application by a Person Affected by Subsection
-
 ## Community Planning Act section 111 - Public notice of by-law
 
 QA score: 80
@@ -133,47 +106,23 @@ Main question: What requirements are established by section 3 of Community Plann
 Warnings:
 - [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What requirements are established by section 3 of Community Planning Act?
 
-## Community Planning Act section 23 - Failure to adopt municipal plan
-
-QA score: 85
-Main question: What powers or authority are established by section 23 of Community Planning Act?
-
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What powers or authority are established by section 23 of Community Planning Act?
-
 ## Community Planning Act section 24 - Preparation and content of municipal plan
 
 QA score: 85
-Main question: What powers or authority are established by section 24 of Community Planning Act?
+Main question: What requirements govern the preparation and content of municipal plan?
 
 Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 24(2): A municipal plan shall be prepared or amended (a) under the direction of (i) the planning director or another planner engaged by the council and responsible to the planning director, or (ii) in the case of a munic
 - [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 24(2.1) provide regarding Preparation and content of municipal plan? | What does 24(7) provide regarding Preparation and content of municipal plan?
 
-## Community Planning Act section 34 - Failure to adopt rural plan for a village
-
-QA score: 85
-Main question: What powers or authority are established by section 34 of Community Planning Act?
-
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What powers or authority are established by section 34 of Community Planning Act?
-
 ## Community Planning Act section 35 - Preparation and content of rural plan for a village
 
 QA score: 85
-Main question: What powers or authority are established by section 35 of Community Planning Act?
+Main question: What requirements govern the preparation and content of rural plan for a village?
 
 Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 35(1.1): A rural plan for a village shall be prepared or amended (a) under the direction of (i) the planning director or another planner engaged by the council of the village and responsible to the planning director, or
 - [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 35(1.2) provide regarding Preparation and content of rural plan for a village? | What does 35(3) provide regarding Preparation and content of rural plan for a village? | What does 35(4) provide regarding Preparation and content of rural plan for a village?
-
-## Community Planning Act section 44.1 - Failure to adopt rural plan for a rural community
-
-QA score: 85
-Main question: What powers or authority are established by section 44.1 of Community Planning Act?
-
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What powers or authority are established by section 44.1 of Community Planning Act?
 
 ## Community Planning Act section 52 - Content of regulation
 
@@ -223,7 +172,7 @@ Warnings:
 ## Community Planning Act section 102 - Preparation and content of development scheme
 
 QA score: 85
-Main question: What does section 102 of the Community Planning Act provide regarding preparation and content of development scheme?
+Main question: What requirements govern the preparation and content of development scheme?
 
 Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 102(1): For greater certainty and without limiting section 101, a development scheme (a) shall (i) consist of written statements, maps, drawings and other descriptive matter, all under seal, signed by the clerk and indic
@@ -896,7 +845,7 @@ Warnings:
 ## Registry Act section 12 - Duties of registrar
 
 QA score: 95
-Main question: What duties does section 12 of Registry Act impose about duties of registrar?
+Main question: What duties does a registrar have regarding duties of registrar?
 
 Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 12(1): The registrar shall, when required and upon being tendered legal fees therefor in the manner hereinafter prescribed for so doing, allow searches to be made and furnish copies and abstracts of or concerning all ins
@@ -952,7 +901,7 @@ Warnings:
 ## Community Planning Act section 26 - Validity and coming into force of municipal plan
 
 QA score: 95
-Main question: What does section 26 of the Community Planning Act provide regarding validity and coming into force of municipal plan?
+Main question: What conditions determine the validity and coming into force of municipal plan?
 
 Warnings:
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Office in Accordance With Paragraph
@@ -960,7 +909,7 @@ Warnings:
 ## Community Planning Act section 40 - Validity and coming into force of rural plan for a village
 
 QA score: 95
-Main question: What does section 40 of the Community Planning Act provide regarding validity and coming into force of rural plan for a village?
+Main question: What conditions determine the validity and coming into force of rural plan for a village?
 
 Warnings:
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Office in Accordance With Paragraph
@@ -968,7 +917,7 @@ Warnings:
 ## Community Planning Act section 45 - Validity and coming into force of rural plan for a rural community
 
 QA score: 95
-Main question: What does section 45 of the Community Planning Act provide regarding validity and coming into force of rural plan for a rural community?
+Main question: What conditions determine the validity and coming into force of rural plan for a rural community?
 
 Warnings:
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Office in Accordance With Paragraph
@@ -976,7 +925,15 @@ Warnings:
 ## Community Planning Act section 54 - Validity and coming into force of zoning by-law
 
 QA score: 95
-Main question: What does section 54 of the Community Planning Act provide regarding validity and coming into force of zoning by-law?
+Main question: What conditions determine the validity and coming into force of zoning by-law?
+
+Warnings:
+- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Office in Accordance With Paragraph
+
+## Community Planning Act section 64 - Validity and coming into force of deferred widening by-law
+
+QA score: 95
+Main question: What conditions determine the validity and coming into force of deferred widening by-law?
 
 Warnings:
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Office in Accordance With Paragraph
@@ -989,10 +946,18 @@ Main question: What filing or registration requirements are established by secti
 Warnings:
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Office Under Paragraph
 
+## Community Planning Act section 69 - Validity and coming into force of controlled access street by-law
+
+QA score: 95
+Main question: What conditions determine the validity and coming into force of controlled access street by-law?
+
+Warnings:
+- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Office in Accordance With Paragraph
+
 ## Community Planning Act section 93 - Validity and coming into force of development charge by-law
 
 QA score: 95
-Main question: What does section 93 of the Community Planning Act provide regarding validity and coming into force of development charge by-law?
+Main question: What conditions determine the validity and coming into force of development charge by-law?
 
 Warnings:
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Office in Accordance With Paragraph
@@ -1000,10 +965,18 @@ Warnings:
 ## Community Planning Act section 97 - Validity and coming into force of incentive or bonus zoning agreement by-law
 
 QA score: 95
-Main question: What does section 97 of the Community Planning Act provide regarding validity and coming into force of incentive or bonus zoning agreement by-law?
+Main question: What conditions determine the validity and coming into force of incentive or bonus zoning agreement by-law?
 
 Warnings:
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Office in Accordance With Paragraph
+
+## Community Planning Act section 107 - Compensation
+
+QA score: 95
+Main question: What compensation rules and limits apply?
+
+Warnings:
+- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Application by a Person Affected by Subsection
 
 ## Community Planning Act section 151 - Provincial Planning Director continues
 
