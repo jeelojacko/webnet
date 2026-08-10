@@ -236,7 +236,14 @@ export const generateRequiredConcepts = ({
   const suggestions: GeneratedConceptSuggestion[] = [];
   for (const source of selectedSources) {
     const operativeText = prepareLegalText(source.text).operativeText;
-    if (source.extractionStatus === 'reference-only' || isRepealedOnly({ ...source, text: operativeText }) || isNoiseText(operativeText)) continue;
+    if (
+      source.extractionStatus === 'reference-only' ||
+      !operativeTextFor(source) ||
+      isRepealedOnly({ ...source, text: operativeText }) ||
+      isNoiseText(operativeText)
+    ) {
+      continue;
+    }
     extractDefinedTerms(source, suggestions);
     extractHeading(source, suggestions);
     extractSubsectionTopics(source, suggestions);

@@ -273,6 +273,35 @@ describe('reference answer generation', () => {
     expect(answer).not.toContain('2024, c.12');
   });
 
+  it('treats standalone consolidation notes after labels as metadata, not study facts', () => {
+    const source = testComponent({
+      label: '1',
+      text: '1\nN.B. This Regulation is consolidated to May 15, 2018.\nThis Regulation may be cited as the Test Regulation.',
+    });
+    const metadataOnly = testComponent({
+      label: '2',
+      text: '2\nN.B. This Act is consolidated to May 15, 2018.',
+    });
+
+    const answer = generateReferenceAnswer({
+      document: legalDocument('reg-land-titles-83-130'),
+      selectedSources: [source],
+      options: DEFAULT_REFERENCE_ANSWER_OPTIONS,
+    }).text;
+    const question = generateStudyQuestion({
+      documentTitle: 'REGULATION 99-99 under the Test Act',
+      selectedSources: [source],
+    }).question;
+    const rubric = generateStudyRubric({ selectedSources: [source], unitType: 'section' });
+
+    expect(answer).toContain('This Regulation may be cited as the Test Regulation.');
+    expect(answer).not.toContain('consolidated to May 15, 2018');
+    expect(question).toBe('What is REGULATION 99-99 cited as?');
+    expect(rubric.map((item) => item.prompt)).toEqual(['What is this Regulation cited as?']);
+    expect(generateRequiredConcepts({ selectedSources: [metadataOnly] })).toEqual([]);
+    expect(generateStudyRubric({ selectedSources: [metadataOnly], unitType: 'section' })).toEqual([]);
+  });
+
   it('strips trailing structural headings from generated reference answers', () => {
     const landTitles1 = generateReferenceAnswer({
       document: legalDocument('doc-land-titles-act'),
@@ -287,6 +316,17 @@ describe('reference answer generation', () => {
 
     expect(landTitles1).not.toContain('APPLICATION');
     expect(landTitles85).not.toContain('COMING INTO FORCE');
+  });
+
+  it('strips COMMENCEMENT as a trailing structural heading from generated reference answers', () => {
+    const answer = generateReferenceAnswer({
+      document: legalDocument('reg-land-titles-83-130'),
+      selectedSources: [testComponent({ label: '9', text: '9 Body text.\n\nCOMMENCEMENT' })],
+      options: DEFAULT_REFERENCE_ANSWER_OPTIONS,
+    }).text;
+
+    expect(answer).toContain('Body text.');
+    expect(answer).not.toContain('COMMENCEMENT');
   });
 
   it('supports exact-text mode', () => {

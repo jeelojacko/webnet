@@ -1,6 +1,6 @@
 # Study Generation Audit
 
-Created: 2026-08-10T18:47:28.729Z
+Created: 2026-08-10T19:26:20.834Z
 Content package: nb-law-pilot-2026-08-05
 Generator: study-deterministic-v1
 
@@ -10,9 +10,9 @@ Total sections: 464
 Total rubric items: 1190
 Sections with warnings: 106
 Average QA score: 97.6
-Tier A questions: 686
+Tier A questions: 684
 Tier B questions: 472
-Tier C questions: 496
+Tier C questions: 498
 Sections with chunk suggestions: 129
 Suggested chunks: 215
 Unique suggested chunks: 215
@@ -27201,13 +27201,11 @@ Commencement
 
 N.B. This Act was proclaimed and came into force January 1, 1984.
 
-N.B. This Act is consolidated to June 16, 2023.
-
 Rubric:
 
 1. [power-duty] [Tier C]
    Question: What does 86 provide regarding Commencement?
-   Answer: This Act or any provision thereof comes into force on a day to be fixed by proclamation. N.B. This Act was proclaimed and came into force January 1, 1984. N.B. This Act is consolidated to June 16, 2023.
+   Answer: This Act or any provision thereof comes into force on a day to be fixed by proclamation. N.B. This Act was proclaimed and came into force January 1, 1984.
 
 Concepts:
 - Commencement
@@ -27514,7 +27512,7 @@ Source:
 
 N.B. This Regulation is consolidated to May 15, 2018.
 
-Detected topic: power-duty
+Detected topic: procedure
 Main question tier: C
 
 Main question:
@@ -27523,15 +27521,13 @@ What does section 8 of the REGULATION 84-76 provide?
 Reference answer:
 Section 8
 
-Regulation 72-160 under the Surveys Act is repealed.
-
-N.B. This Regulation is consolidated to May 15, 2018.
+Repealed.
 
 Rubric:
 
-1. [power-duty] [Tier A]
-   Question: What may This Regulation is consolidated to do?
-   Answer: This Regulation is consolidated to May 15, 2018
+1. [power-duty] [Tier C]
+   Question: What does 8 provide regarding section 8?
+   Answer: Regulation 72-160 under the Surveys Act is repealed.
 
 Concepts:
 none
@@ -28025,8 +28021,6 @@ Section 10
 
 * 10(3): A fee payable under subsection (1) or (2) shall be paid into the Fund.
 
-COMMENCEMENT
-
 Rubric:
 
 1. [power-duty] [Tier C]
@@ -28039,7 +28033,7 @@ Rubric:
 
 3. [power-duty] [Tier C]
    Question: What does 10(3) provide regarding be paid into the Fund?
-   Answer: A fee payable under subsection (1) or (2) shall be paid into the Fund. COMMENCEMENT
+   Answer: A fee payable under subsection (1) or (2) shall be paid into the Fund.
 
 Concepts:
 - Application Under the act is Four Hundred Dollars
@@ -28685,16 +28679,14 @@ Section 9
 
 This Regulation comes into effect on January 1, 1981.
 
-N.B. This Regulation is consolidated to January 1, 2018.
-
 Rubric:
 
 1. [power-duty] [Tier C]
    Question: What does 9 provide regarding section 9?
-   Answer: This Regulation comes into effect on January 1, 1981. N.B. This Regulation is consolidated to January 1, 2018.
+   Answer: This Regulation comes into effect on January 1, 1981.
 
 Concepts:
-none
+- This Regulation Comes Into Effect on January 1, 1981
 
 Warnings: none
 
@@ -28848,7 +28840,7 @@ Source:
 
 N.B. This Regulation is consolidated to May 15, 2018.
 
-Detected topic: power-duty
+Detected topic: procedure
 Main question tier: C
 
 Main question:
@@ -28859,13 +28851,11 @@ Section 4
 
 Sections 1 and 2 of this Regulation come into force on January 7, 1985.
 
-N.B. This Regulation is consolidated to May 15, 2018.
-
 Rubric:
 
-1. [power-duty] [Tier A]
-   Question: What may This Regulation is consolidated to do?
-   Answer: This Regulation is consolidated to May 15, 2018
+1. [power-duty] [Tier C]
+   Question: What does 4 provide regarding section 4?
+   Answer: Sections 1 and 2 of this Regulation come into force on January 7, 1985.
 
 Concepts:
 none

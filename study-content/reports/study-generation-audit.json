@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "createdAt": "2026-08-10T18:47:28.729Z",
+  "createdAt": "2026-08-10T19:26:20.834Z",
   "contentPackageId": "nb-law-pilot-2026-08-05",
   "generatorVersion": "study-deterministic-v1",
   "summary": {
@@ -27,9 +27,9 @@
     },
     "averageQaScore": 97.6,
     "questionTierCounts": {
-      "A": 686,
+      "A": 684,
       "B": 472,
-      "C": 496
+      "C": 498
     },
     "sectionsWithChunkSuggestions": 129,
     "suggestedChunkCount": 215,
@@ -53292,14 +53292,14 @@
             "title": "Land Titles Act - Section 86: Commencement",
             "mainQuestion": "What does section 86 of the Land Titles Act provide regarding commencement?",
             "mainQuestionTier": "C",
-            "referenceAnswer": "Section 86 - Commencement\n\nCommencement\n\n86This Act or any provision thereof comes into force on a day to be fixed by proclamation.\n\nN.B. This Act was proclaimed and came into force January 1, 1984.\n\nN.B. This Act is consolidated to June 16, 2023.",
+            "referenceAnswer": "Section 86 - Commencement\n\nCommencement\n\n86This Act or any provision thereof comes into force on a day to be fixed by proclamation.\n\nN.B. This Act was proclaimed and came into force January 1, 1984.",
             "rubricItems": [
               {
                 "id": "doc-land-titles-act::section:86::rubric:1",
                 "category": "power-duty",
                 "prompt": "What does 86 provide regarding Commencement?",
                 "questionTier": "C",
-                "referenceAnswer": "This Act or any provision thereof comes into force on a day to be fixed by proclamation. N.B. This Act was proclaimed and came into force January 1, 1984. N.B. This Act is consolidated to June 16, 2023.",
+                "referenceAnswer": "This Act or any provision thereof comes into force on a day to be fixed by proclamation. N.B. This Act was proclaimed and came into force January 1, 1984.",
                 "sourceKeys": [
                   "section:86"
                 ],
@@ -53307,7 +53307,7 @@
                   {
                     "sourceKey": "section:86",
                     "confidence": "low",
-                    "sourceClause": "Commencement 86This Act or any provision thereof comes into force on a day to be fixed by proclamation. N.B. This Act was proclaimed and came into force January 1, 1984. N.B. This Act is consolidated to June 16, 2023."
+                    "sourceClause": "Commencement 86This Act or any provision thereof comes into force on a day to be fixed by proclamation. N.B. This Act was proclaimed and came into force January 1, 1984."
                   }
                 ]
               }
@@ -53325,7 +53325,7 @@
               {
                 "sourceKey": "section:86",
                 "confidence": "low",
-                "sourceClause": "Commencement 86This Act or any provision thereof comes into force on a day to be fixed by proclamation. N.B. This Act was proclaimed and came into force January 1, 1984. N.B. This Act is consolidated to June 16, 2023."
+                "sourceClause": "Commencement 86This Act or any provision thereof comes into force on a day to be fixed by proclamation. N.B. This Act was proclaimed and came into force January 1, 1984."
               }
             ],
             "questionTemplate": "fallback-heading",
@@ -53853,31 +53853,27 @@
           "sourceKey": "section:8",
           "sectionLabel": "8",
           "sourceText": "8Regulation 72-160 under the Surveys Act is repealed.\n\nN.B. This Regulation is consolidated to May 15, 2018.",
-          "detectedTopic": "power-duty",
+          "detectedTopic": "procedure",
           "generated": {
             "title": "REGULATION 84-76 - Section 8",
             "mainQuestion": "What does section 8 of the REGULATION 84-76 provide?",
             "mainQuestionTier": "C",
-            "referenceAnswer": "Section 8\n\nRegulation 72-160 under the Surveys Act is repealed.\n\nN.B. This Regulation is consolidated to May 15, 2018.",
+            "referenceAnswer": "Section 8\n\nRepealed.",
             "rubricItems": [
               {
                 "id": "reg-surveys-84-76::section:8::rubric:1",
                 "category": "power-duty",
-                "prompt": "What may This Regulation is consolidated to do?",
-                "questionTier": "A",
-                "referenceAnswer": "This Regulation is consolidated to May 15, 2018",
+                "prompt": "What does 8 provide regarding section 8?",
+                "questionTier": "C",
+                "referenceAnswer": "Regulation 72-160 under the Surveys Act is repealed.",
                 "sourceKeys": [
                   "section:8"
                 ],
                 "generatedFromFacts": [
                   {
                     "sourceKey": "section:8",
-                    "sourceClause": "This Regulation is consolidated to May 15, 2018",
-                    "operativeActor": "This Regulation is consolidated to",
-                    "actor": "This Regulation is consolidated to",
-                    "modality": "may",
-                    "action": "15, 2018",
-                    "confidence": "high"
+                    "confidence": "low",
+                    "sourceClause": "Regulation 72-160 under the Surveys Act is repealed."
                   }
                 ]
               }
@@ -53888,12 +53884,8 @@
             "extractedFacts": [
               {
                 "sourceKey": "section:8",
-                "sourceClause": "This Regulation is consolidated to May 15, 2018",
-                "operativeActor": "This Regulation is consolidated to",
-                "actor": "This Regulation is consolidated to",
-                "modality": "may",
-                "action": "15, 2018",
-                "confidence": "high"
+                "confidence": "low",
+                "sourceClause": "Regulation 72-160 under the Surveys Act is repealed."
               }
             ],
             "questionTemplate": "fallback-heading",
@@ -54927,7 +54919,7 @@
             "title": "REGULATION 95-166 - Section 10",
             "mainQuestion": "What are the application requirements under section 10 of REGULATION 95-166?",
             "mainQuestionTier": "B",
-            "referenceAnswer": "Section 10\n\n* 10(1): The fee for the making of an application under the Act is four hundred dollars.\n\n* 10(2): The fee for a transcript of evidence provided to a party under subsection 11(4) of the Act is six dollars per page for each copy requested.\n\n* 10(3): A fee payable under subsection (1) or (2) shall be paid into the Fund.\n\nCOMMENCEMENT",
+            "referenceAnswer": "Section 10\n\n* 10(1): The fee for the making of an application under the Act is four hundred dollars.\n\n* 10(2): The fee for a transcript of evidence provided to a party under subsection 11(4) of the Act is six dollars per page for each copy requested.\n\n* 10(3): A fee payable under subsection (1) or (2) shall be paid into the Fund.",
             "rubricItems": [
               {
                 "id": "reg-boundaries-95-166::section:10::rubric:1",
@@ -54969,7 +54961,7 @@
                 "category": "power-duty",
                 "prompt": "What does 10(3) provide regarding be paid into the Fund?",
                 "questionTier": "C",
-                "referenceAnswer": "A fee payable under subsection (1) or (2) shall be paid into the Fund. COMMENCEMENT",
+                "referenceAnswer": "A fee payable under subsection (1) or (2) shall be paid into the Fund.",
                 "sourceKeys": [
                   "section:10/subsection:3"
                 ],
@@ -54977,7 +54969,7 @@
                   {
                     "sourceKey": "section:10/subsection:3",
                     "confidence": "medium",
-                    "sourceClause": "A fee payable under subsection (1) or (2) shall be paid into the Fund. COMMENCEMENT",
+                    "sourceClause": "A fee payable under subsection (1) or (2) shall be paid into the Fund.",
                     "modality": "shall",
                     "action": "be paid into the Fund"
                   }
@@ -55008,7 +55000,7 @@
               {
                 "sourceKey": "section:10/subsection:3",
                 "confidence": "medium",
-                "sourceClause": "A fee payable under subsection (1) or (2) shall be paid into the Fund. COMMENCEMENT",
+                "sourceClause": "A fee payable under subsection (1) or (2) shall be paid into the Fund.",
                 "modality": "shall",
                 "action": "be paid into the Fund"
               }
@@ -56098,14 +56090,14 @@
             "title": "REGULATION 80-159 - Section 9",
             "mainQuestion": "What does section 9 of the REGULATION 80-159 provide?",
             "mainQuestionTier": "C",
-            "referenceAnswer": "Section 9\n\nThis Regulation comes into effect on January 1, 1981.\n\nN.B. This Regulation is consolidated to January 1, 2018.",
+            "referenceAnswer": "Section 9\n\nThis Regulation comes into effect on January 1, 1981.",
             "rubricItems": [
               {
                 "id": "reg-community-planning-80-159::section:9::rubric:1",
                 "category": "power-duty",
                 "prompt": "What does 9 provide regarding section 9?",
                 "questionTier": "C",
-                "referenceAnswer": "This Regulation comes into effect on January 1, 1981. N.B. This Regulation is consolidated to January 1, 2018.",
+                "referenceAnswer": "This Regulation comes into effect on January 1, 1981.",
                 "sourceKeys": [
                   "section:9"
                 ],
@@ -56113,19 +56105,25 @@
                   {
                     "sourceKey": "section:9",
                     "confidence": "low",
-                    "sourceClause": "This Regulation comes into effect on January 1, 1981. N.B. This Regulation is consolidated to January 1, 2018."
+                    "sourceClause": "This Regulation comes into effect on January 1, 1981."
                   }
                 ]
               }
             ],
-            "concepts": []
+            "concepts": [
+              {
+                "label": "This Regulation Comes Into Effect on January 1, 1981",
+                "reason": "fallback",
+                "confidence": "low"
+              }
+            ]
           },
           "diagnostics": {
             "extractedFacts": [
               {
                 "sourceKey": "section:9",
                 "confidence": "low",
-                "sourceClause": "This Regulation comes into effect on January 1, 1981. N.B. This Regulation is consolidated to January 1, 2018."
+                "sourceClause": "This Regulation comes into effect on January 1, 1981."
               }
             ],
             "questionTemplate": "fallback-heading",
@@ -56500,31 +56498,27 @@
           "sourceKey": "section:4",
           "sectionLabel": "4",
           "sourceText": "4Sections 1 and 2 of this Regulation come into force on January 7, 1985.\n\nN.B. This Regulation is consolidated to May 15, 2018.",
-          "detectedTopic": "power-duty",
+          "detectedTopic": "procedure",
           "generated": {
             "title": "REGULATION 84-190 - Section 4",
             "mainQuestion": "What does section 4 of the REGULATION 84-190 provide?",
             "mainQuestionTier": "C",
-            "referenceAnswer": "Section 4\n\nSections 1 and 2 of this Regulation come into force on January 7, 1985.\n\nN.B. This Regulation is consolidated to May 15, 2018.",
+            "referenceAnswer": "Section 4\n\nSections 1 and 2 of this Regulation come into force on January 7, 1985.",
             "rubricItems": [
               {
                 "id": "reg-registry-84-190::section:4::rubric:1",
                 "category": "power-duty",
-                "prompt": "What may This Regulation is consolidated to do?",
-                "questionTier": "A",
-                "referenceAnswer": "This Regulation is consolidated to May 15, 2018",
+                "prompt": "What does 4 provide regarding section 4?",
+                "questionTier": "C",
+                "referenceAnswer": "Sections 1 and 2 of this Regulation come into force on January 7, 1985.",
                 "sourceKeys": [
                   "section:4"
                 ],
                 "generatedFromFacts": [
                   {
                     "sourceKey": "section:4",
-                    "sourceClause": "This Regulation is consolidated to May 15, 2018",
-                    "operativeActor": "This Regulation is consolidated to",
-                    "actor": "This Regulation is consolidated to",
-                    "modality": "may",
-                    "action": "15, 2018",
-                    "confidence": "high"
+                    "confidence": "low",
+                    "sourceClause": "Sections 1 and 2 of this Regulation come into force on January 7, 1985."
                   }
                 ]
               }
@@ -56535,12 +56529,8 @@
             "extractedFacts": [
               {
                 "sourceKey": "section:4",
-                "sourceClause": "This Regulation is consolidated to May 15, 2018",
-                "operativeActor": "This Regulation is consolidated to",
-                "actor": "This Regulation is consolidated to",
-                "modality": "may",
-                "action": "15, 2018",
-                "confidence": "high"
+                "confidence": "low",
+                "sourceClause": "Sections 1 and 2 of this Regulation come into force on January 7, 1985."
               }
             ],
             "questionTemplate": "fallback-heading",

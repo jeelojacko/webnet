@@ -345,6 +345,9 @@ const sourceUnits = (source: ImportedLegalComponent): Array<{ sourceKey: string;
   return [{ sourceKey: source.sourceKey, label: source.label, text: stripLeadingLabel(prepareLegalText(source.text).operativeText, source.label) }];
 };
 
+const hasOperativeStudyText = (source: ImportedLegalComponent): boolean =>
+  sourceUnits(source).some((unit) => normalizeSpaces(unit.text).length > 0);
+
 const extractFacts = (
   source: ImportedLegalComponent,
   diagnostic: StudyRubricGenerationDiagnostic,
@@ -942,6 +945,9 @@ export const generateStudyRubricWithDiagnostics = ({
       })),
       diagnostic,
     };
+  }
+  if (!selectedSources.some(hasOperativeStudyText)) {
+    return { items: [], diagnostic };
   }
   diagnostic.extractedFacts = selectedSources.flatMap((entry) => extractFacts(entry, diagnostic));
   const items =

@@ -14,6 +14,7 @@ It does not use adjustment, parser, solver, network, or Survey CAD domain state.
 - `src/study/studyDraftGeneration.ts` - deterministic title, question, citation, reference-answer, and conservative concept drafting for source-linked study units
 - `src/study/studyRubricGeneration.ts` - deterministic answer-rubric templates and legal-provision rubric generation
 - `src/study/studyQuestionSupport.ts` - shared main-question evidence gating, Tier A/B/C metadata, unsupported-topic checks, and suggested study chunk rules
+- `src/study/fsrs/*` - Phase 3 FSRS adapter, Study-domain scheduler settings, JSON-safe card/review-log serialization, parameter validation, and fixed/system clocks
 - `src/study/studyLibrarySearch.ts` - in-memory categorized Library search index and matching helpers
 - `src/study/studyOpfs.ts` - OPFS path generation and source-file text asset writes
 - `src/study/studyExportImport.ts` - JSON export/import round trip helpers
@@ -287,3 +288,14 @@ Default response modes are phase-driven unless a unit override is set. Guided-re
 
 ## Phase 3 FSRS Boundary
 Phase 2B intentionally keeps the existing deterministic phase scheduler. Phase 3 should add FSRS fields beside `StudyProgress`, preserve current phase/progress import compatibility, and use official-source review flags as a scheduling input rather than replacing legal-source integrity checks.
+
+Phase 3A has started the scheduler foundation without changing live Study session persistence yet:
+- `ts-fsrs` is locked at `5.4.1`, which requires Node.js `>=20.0.0`; local implementation verification used Node `v22.23.1` and npm `10.9.8`.
+- One Study Unit maps to one future FSRS card. Rubric items, guided prompts, concepts, and responses remain evidence for a single overall unit rating, not separately scheduled cards.
+- The adapter exposes Study-facing `again`, `hard`, `good`, and `easy` ratings and maps them directly to the installed `Rating` enum inside `src/study/fsrs/studyFsrs.ts`.
+- Study FSRS settings resolve through the installed `generatorParameters()` API, and the complete resolved parameter object is persisted through the Study-side config record shape.
+- Serialized cards and review logs store Date fields as normalized ISO strings and restore real `Date` objects before calling `ts-fsrs`.
+- `StudyClock` provides `systemStudyClock` for runtime and `fixedStudyClock` for deterministic tests.
+- Uninitialized schedules do not fabricate historical FSRS state. The first real counted rating will create a fresh card at the review timestamp; ambiguous legacy due dates are intended to be preserved separately as `legacyDueAt` in a later schema batch.
+
+The browser session, IndexedDB schema, queue builder, import/export, undo, and Study UI scheduling indicators are still pending Phase 3 batches.

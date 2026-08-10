@@ -1,3 +1,24 @@
+- [ ] Study module Phase 3 FSRS scheduling implementation (August 2026): replace the provisional Study scheduler with a `ts-fsrs` based per-StudyUnit scheduler while preserving StudyPhase behavior, local/offline persistence, source-review flags, preview/practice non-mutation rules, import/export compatibility, undo, docs, validation, commit, and push.
+  - [x] Batch 3A - required pre-FSRS cleanup and scheduler foundation:
+    - [x] Treat standalone `N.B. This Act/Regulation is consolidated to ...` lines as source metadata only: preserve exact official text, exclude from operative fact extraction, rubric/concept generation, actor/modality extraction, and add focused regressions.
+    - [x] Extend existing trailing structural-heading cleanup to cover `COMMENCEMENT` leakage while preserving document structure, and add focused regressions.
+    - [x] Inspect local Node/npm versions, install and lock the current `ts-fsrs` package, verify its installed TypeScript API/types, and document the locked version.
+    - [x] Add a focused Study FSRS adapter/serialization/config foundation under `src/study/fsrs/` so React components do not call `ts-fsrs` directly.
+    - [x] Add fixed/system Study clock helpers and deterministic adapter tests with fuzz disabled.
+  - [ ] Batch 3B - Study data model and migration:
+    - [ ] Extend `StudyProgress`, `StudyAttempt`, settings, snapshot, IndexedDB schema, export/import, and migrations for serialized FSRS scheduling state and attempt scheduling metadata without data loss.
+    - [ ] Preserve ambiguous legacy due dates as `legacyDueAt` instead of fabricating FSRS history; add replay predicates and idempotent migration tests.
+  - [ ] Batch 3C - pure queue builder:
+    - [ ] Build a pure Study queue model with source-review-required first, due Learning/Relearning, due/overdue Review, limited New units, and optional surprise practice outside normal scheduling.
+    - [ ] Add queue ordering, due-boundary, new-unit-limit, and deterministic tie-break tests.
+  - [ ] Batch 3D - session rating persistence:
+    - [ ] Wire Again/Hard/Good/Easy into atomic progress plus attempt writes with idempotency/double-click guards, while keeping StudyPhase transition logic independent.
+    - [ ] Keep Preview, default Manual Practice, default Surprise Practice, and source acknowledgement non-mutating for FSRS; add focused session tests.
+  - [ ] Batch 3E - UI integration:
+    - [ ] Add rating previews, dashboard scheduling counts, Library scheduling badges/filters/sort, unit-editor read-only scheduling panel, session completion summary, and dev-only diagnostics.
+  - [ ] Batch 3F - undo, docs, full validation:
+    - [ ] Add immediate undo of the latest eligible scheduling rating using stored card/phase snapshots.
+    - [ ] Update `README.md`, `docs/ARCHITECTURE.md`, `docs/CURRENT_BEHAVIOR.md`, and `docs/STUDY_MODULE.md`; run required validation including full lint/typecheck/test/build and parity where applicable; commit and push.
 - [x] Study generation Phase 2E.7 final generator cleanup batch (August 2026): add conservative final question normalization, citation-title handling for regulation section 1, inanimate/passive legal-object prompt cleanup and audit warnings, trailing structural-heading stripping for generated study text, rubric-answer prefix cleanup, focused regression tests, pilot audit rerun, validation, commit, and push.
 - [x] Study generation Phase 2E.6 final heading-question polish batch (August 2026): add narrow strong-heading main-question templates, reject strong-heading topic mismatches, normalize duplicated heading wording, rerun pilot audit, validate, commit, and push.
 - [x] Study generation Phase 2E.5 semantic consistency gate batch (August 2026): represent legal fact modality with operative actor/source clause, bind modal questions to extracted facts, add actor/modality semantic audit warnings and Tier A semantic downgrades, improve definition chunk estimates, mark section-level paragraph chunk granularity limits, lock regression cases, regenerate audit reports, validate, commit, and push.

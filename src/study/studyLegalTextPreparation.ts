@@ -39,6 +39,7 @@ const STRUCTURAL_HEADINGS = new Set([
   'APPEALS',
   'TRANSITIONAL PROVISIONS',
   'COMING INTO FORCE',
+  'COMMENCEMENT',
   'REPEAL',
   'REFERENCES IN OTHER ENACTMENTS',
 ]);
@@ -108,6 +109,10 @@ export const prepareLegalText = (text: string): PreparedLegalText => {
   const inlineSplit = splitTrailingInlineAmendmentHistory(lineOperative);
   if (inlineSplit.amendmentHistoryText) amendmentLines.unshift(inlineSplit.amendmentHistoryText);
   const operativeLines = inlineSplit.operativeText.split('\n').filter((line) => {
+    if (isConsolidationLine(line)) {
+      consolidationLines.push(line.trim());
+      return false;
+    }
     if (!isAmendmentHistoryLine(line)) return true;
     amendmentLines.push(line.trim());
     return false;
