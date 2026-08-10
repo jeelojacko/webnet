@@ -1,188 +1,188 @@
 Document,Section,Heading,Main Question,Rubric Count,Concept Count,QA Score,Warning Count,Warning Codes
-Surveys Act,1,Definitions,What definitions are provided in section 1 of Surveys Act?,1,7,95,1,GENERIC_RUBRIC_PROMPT
-Surveys Act,2,Establishment of coordinate survey system,What notice requirements are established by section 2 of Surveys Act?,1,1,45,4,AMENDMENT_HISTORY_LEAK;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;AMENDMENT_HISTORY_LEAK
-Surveys Act,3,Director of Surveys,What duties does section 3 of Surveys Act impose about director of surveys?,4,2,80,4,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-Surveys Act,4,Duties of surveyor re coordinate survey system,What duties does section 4 of Surveys Act impose about duties of surveyor re coordinate survey system?,2,1,40,5,AMENDMENT_HISTORY_LEAK;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;AMENDMENT_HISTORY_LEAK
+Surveys Act,1,Definitions,What definitions are provided in section 1 of Surveys Act?,6,7,100,0,
+Surveys Act,2,Establishment of coordinate survey system,What powers or authority are established by section 2 of Surveys Act?,1,1,95,1,GENERIC_RUBRIC_PROMPT
+Surveys Act,3,Director of Surveys,What duties does section 3 of Surveys Act impose about director of surveys?,3,2,85,3,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Surveys Act,4,Duties of surveyor re coordinate survey system,What duties does section 4 of Surveys Act impose about duties of surveyor re coordinate survey system?,2,1,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Surveys Act,5,Integrated survey area,What offences or penalties are established by section 5 of Surveys Act?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 Surveys Act,6,Integrated survey area plan,What powers or authority are established by section 6 of Surveys Act?,1,2,80,2,MAIN_QUESTION_TOPIC_MISMATCH;CONCEPT_FRAGMENT
 Surveys Act,7,Duties of surveyor re integrated survey area,What duties does section 7 of Surveys Act impose about duties of surveyor re integrated survey area?,1,1,95,1,GENERIC_RUBRIC_PROMPT
-Surveys Act,8,Survey plan in integrated survey area,What duties does section 8 of Surveys Act impose about survey plan in integrated survey area?,3,2,55,5,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;QUESTION_MISSING_SUBJECT;GENERIC_RUBRIC_PROMPT
-Surveys Act,9,Filing of values of coordinate monuments,What powers or authority are established by section 9 of Surveys Act?,1,1,55,3,MAIN_QUESTION_TOPIC_MISMATCH;AMENDMENT_HISTORY_LEAK;AMENDMENT_HISTORY_LEAK
+Surveys Act,8,Survey plan in integrated survey area,What duties does section 8 of Surveys Act impose about survey plan in integrated survey area?,1,2,85,2,GENERIC_RUBRIC_PROMPT;TOO_FEW_RUBRIC_ITEMS
+Surveys Act,9,Filing of values of coordinate monuments,What filing or registration requirements are established by section 9 of Surveys Act?,1,1,100,0,
 Surveys Act,10,"Survey plan filed between August 1, 1979, and December 31, 1979",What filing or registration requirements are established by section 10 of Surveys Act?,1,0,100,0,
 Surveys Act,11,"Survey plan filed within six months after April 1, 1999",What filing or registration requirements are established by section 11 of Surveys Act?,1,0,100,0,
 Surveys Act,12,Lost legal monuments,What does section 12 of Surveys Act provide?,1,2,100,0,
-Surveys Act,13,Authority re private property,What powers or authority are established by section 13 of Surveys Act?,3,1,55,5,AMENDMENT_HISTORY_LEAK;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;AMENDMENT_HISTORY_LEAK
+Surveys Act,13,Authority re private property,What powers or authority are established by section 13 of Surveys Act?,2,1,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Surveys Act,14,Offences and penalties,What offences and penalties are established by section 14 of Surveys Act?,3,1,100,0,
 Surveys Act,14.1,Administration,What notice requirements are established by section 14.1 of Surveys Act?,1,1,100,0,
-Surveys Act,15,Regulations,What offences or penalties are established by section 15 of Surveys Act?,1,0,95,1,GENERIC_RUBRIC_PROMPT
-Boundaries Confirmation Act,1,Definitions,What definitions are provided in section 1 of Boundaries Confirmation Act?,1,11,95,1,GENERIC_RUBRIC_PROMPT
+Surveys Act,15,Regulations,What regulation-making authority is established by section 15 of Surveys Act?,1,0,95,1,GENERIC_RUBRIC_PROMPT
+Boundaries Confirmation Act,1,Definitions,What definitions are provided in section 1 of Boundaries Confirmation Act?,8,11,100,0,
 Boundaries Confirmation Act,2,This Act binds the Crown,What does section 2 of Boundaries Confirmation Act provide?,1,1,100,0,
 Boundaries Confirmation Act,3,Administration,What notice requirements are established by section 3 of Boundaries Confirmation Act?,1,0,100,0,
-Boundaries Confirmation Act,4,Designated person,What duties does section 4 of Boundaries Confirmation Act impose about designated person?,1,1,75,2,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION
+Boundaries Confirmation Act,4,Designated person,What duties does section 4 of Boundaries Confirmation Act impose about designated person?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 Boundaries Confirmation Act,5,Immunity,What duties does section 5 of Boundaries Confirmation Act impose about immunity?,1,1,95,1,GENERIC_RUBRIC_PROMPT
-Boundaries Confirmation Act,6,Applicant,What powers or authority are established by section 6 of Boundaries Confirmation Act?,4,5,45,8,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;CONCEPT_FRAGMENT;CONCEPT_FRAGMENT;CONCEPT_FRAGMENT
+Boundaries Confirmation Act,6,Applicant,What powers or authority are established by section 6 of Boundaries Confirmation Act?,3,5,70,6,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;CONCEPT_FRAGMENT;CONCEPT_FRAGMENT;CONCEPT_FRAGMENT
 Boundaries Confirmation Act,7,Application,What are the application requirements under section 7 of Boundaries Confirmation Act?,3,4,85,3,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Boundaries Confirmation Act,8,Initiation of proceeding by Registrar General,What are the application requirements under section 8 of Boundaries Confirmation Act?,2,3,80,2,MAIN_QUESTION_TOPIC_MISMATCH;CONCEPT_FRAGMENT
-Boundaries Confirmation Act,9,Notice of application or proceeding,What are the application requirements under section 9 of Boundaries Confirmation Act?,3,4,75,3,MAIN_QUESTION_TOPIC_MISMATCH;CONCEPT_FRAGMENT;CONCEPT_FRAGMENT
-Boundaries Confirmation Act,10,Objection,What notice requirements are established by section 10 of Boundaries Confirmation Act?,4,7,75,3,MAIN_QUESTION_TOPIC_MISMATCH;CONCEPT_FRAGMENT;CONCEPT_FRAGMENT
+Boundaries Confirmation Act,9,Notice of application or proceeding,What notice requirements are established by section 9 of Boundaries Confirmation Act?,2,4,90,2,CONCEPT_FRAGMENT;CONCEPT_FRAGMENT
+Boundaries Confirmation Act,10,Objection,What notice requirements are established by section 10 of Boundaries Confirmation Act?,3,7,75,3,MAIN_QUESTION_TOPIC_MISMATCH;CONCEPT_FRAGMENT;CONCEPT_FRAGMENT
 Boundaries Confirmation Act,11,Hearing,What are the application requirements under section 11 of Boundaries Confirmation Act?,3,4,85,3,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-Boundaries Confirmation Act,12,Order,What objection process is established by section 12 of Boundaries Confirmation Act?,2,2,85,3,GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT
-Boundaries Confirmation Act,13,Appeal,What order-making rules are established by section 13 of Boundaries Confirmation Act?,4,10,75,5,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;CONCEPT_FRAGMENT
-Boundaries Confirmation Act,14,Certification,What offences and penalties are established by section 14 of Boundaries Confirmation Act?,3,4,85,1,MAIN_QUESTION_TOPIC_MISMATCH
-Boundaries Confirmation Act,15,Filing of plan of survey,What certification requirements are established by section 15 of Boundaries Confirmation Act?,1,2,95,1,CONCEPT_FRAGMENT
-Boundaries Confirmation Act,16,Correction,"How may a filed plan of survey be corrected under section 16 of Boundaries Confirmation Act, and what limits and filing consequences apply?",8,5,75,4,QUESTION_MISSING_SUBJECT;CONCEPT_FRAGMENT;CONCEPT_FRAGMENT;CONCEPT_FRAGMENT
+Boundaries Confirmation Act,12,Order,What order-making rules are established by section 12 of Boundaries Confirmation Act?,2,2,85,3,GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT
+Boundaries Confirmation Act,13,Appeal,"What appeal rights, restrictions and deadlines are established by section 13 of Boundaries Confirmation Act?",2,10,85,3,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;CONCEPT_FRAGMENT
+Boundaries Confirmation Act,14,Certification,What notice requirements are established by section 14 of Boundaries Confirmation Act?,2,4,85,1,MAIN_QUESTION_TOPIC_MISMATCH
+Boundaries Confirmation Act,15,Filing of plan of survey,What filing or registration requirements are established by section 15 of Boundaries Confirmation Act?,1,2,95,1,CONCEPT_FRAGMENT
+Boundaries Confirmation Act,16,Correction,"How may a filed plan of survey be corrected under section 16 of Boundaries Confirmation Act, and what limits and filing consequences apply?",8,5,85,3,CONCEPT_FRAGMENT;CONCEPT_FRAGMENT;CONCEPT_FRAGMENT
 Boundaries Confirmation Act,17,Removal of monument,What order-making rules are established by section 17 of Boundaries Confirmation Act?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 Boundaries Confirmation Act,18,Boundaries Confirmation Fund,What are the application requirements under section 18 of Boundaries Confirmation Act?,5,2,75,5,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-Boundaries Confirmation Act,19,Reduction of fees,What order-making rules are established by section 19 of Boundaries Confirmation Act?,2,1,70,3,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION
+Boundaries Confirmation Act,19,Reduction of fees,What order-making rules are established by section 19 of Boundaries Confirmation Act?,2,1,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Boundaries Confirmation Act,20,"Costs, charges and expenses",What are the application requirements under section 20 of Boundaries Confirmation Act?,2,3,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-Boundaries Confirmation Act,21,Regulations,What powers or authority are established by section 21 of Boundaries Confirmation Act?,1,0,95,1,GENERIC_RUBRIC_PROMPT
-Community Planning Act,1,Definitions and interpretation,What definitions are provided in section 1 of Community Planning Act?,1,12,80,3,GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;TOO_FEW_RUBRIC_ITEMS
+Boundaries Confirmation Act,21,Regulations,What regulation-making authority is established by section 21 of Boundaries Confirmation Act?,1,0,95,1,GENERIC_RUBRIC_PROMPT
+Community Planning Act,1,Definitions and interpretation,What definitions are provided in section 1 of Community Planning Act?,8,12,100,0,
 Community Planning Act,2,Purposes of Act,What notice requirements are established by section 2 of Community Planning Act?,1,1,100,0,
 Community Planning Act,3,Establishment of advisory committees,What requirements are established by section 3 of Community Planning Act?,2,3,85,1,MAIN_QUESTION_TOPIC_MISMATCH
 Community Planning Act,4,Duties and powers of advisory committee,What duties does section 4 of Community Planning Act impose about duties and powers of advisory committee?,1,1,90,2,GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG
-Community Planning Act,5,Membership of advisory committee,What does section 5 of Community Planning Act provide?,4,1,60,5,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-Community Planning Act,6,Terms of office,What does section 6 of Community Planning Act provide?,7,2,65,7,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-Community Planning Act,7,Administration of advisory committee,What does section 7 of Community Planning Act provide?,1,1,75,2,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION
+Community Planning Act,5,Membership of advisory committee,What does section 5 of Community Planning Act provide?,2,1,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Community Planning Act,6,Terms of office,What does section 6 of Community Planning Act provide?,6,2,70,6,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Community Planning Act,7,Administration of advisory committee,What does section 7 of Community Planning Act provide?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 Community Planning Act,8,Expenses of advisory committee,What does section 8 of Community Planning Act provide?,1,2,95,1,GENERIC_RUBRIC_PROMPT
-Community Planning Act,9,Provincial Planning Director,What powers or authority are established by section 9 of Community Planning Act?,3,1,85,3,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-Community Planning Act,10,Local government planning director,What powers or authority are established by section 10 of Community Planning Act?,3,1,80,4,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;CONCEPT_FRAGMENT
+Community Planning Act,9,Provincial Planning Director,What powers or authority are established by section 9 of Community Planning Act?,2,1,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Community Planning Act,10,Local government planning director,What powers or authority are established by section 10 of Community Planning Act?,2,1,85,3,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;CONCEPT_FRAGMENT
 Community Planning Act,11,Design review committee by-law,What does section 11 of Community Planning Act provide?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 Community Planning Act,12,Content of design review committee by-law,What does section 12 of Community Planning Act provide?,2,1,85,3,GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT
-Community Planning Act,13,Establishing statement of public interest,What order-making rules are established by section 13 of Community Planning Act?,3,1,65,4,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT
-Community Planning Act,14,Activities of the Province to be consistent with statement of public interest,What offences and penalties are established by section 14 of Community Planning Act?,3,1,100,0,
+Community Planning Act,13,Establishing statement of public interest,What order-making rules are established by section 13 of Community Planning Act?,3,1,85,3,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Community Planning Act,14,Activities of the Province to be consistent with statement of public interest,What does section 14 of Community Planning Act provide?,1,1,100,0,
 Community Planning Act,15,"Plans, by-laws and regulations to be consistent with statement of public interest",What regulation-making authority is established by section 15 of Community Planning Act?,2,1,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-Community Planning Act,16,Enforcement,"How may a filed plan of survey be corrected under section 16 of Community Planning Act, and what limits and filing consequences apply?",8,2,90,1,QUESTION_MISSING_SUBJECT
+Community Planning Act,16,Enforcement,What notice requirements are established by section 16 of Community Planning Act?,2,2,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Community Planning Act,17,Review,What does section 17 of Community Planning Act provide?,2,2,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Community Planning Act,18,Regional land use plans,What notice requirements are established by section 18 of Community Planning Act?,2,1,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-Community Planning Act,18.1,Preparation and content of regional land use plan,What powers or authority are established by section 18.1 of Community Planning Act?,2,1,70,3,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT
-Community Planning Act,19,Province to consider regional land use plan,What does section 19 of Community Planning Act provide?,1,1,95,1,GENERIC_RUBRIC_PROMPT
+Community Planning Act,18.1,Preparation and content of regional land use plan,What powers or authority are established by section 18.1 of Community Planning Act?,2,1,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Community Planning Act,19,Province to consider regional land use plan,What does section 19 of Community Planning Act provide?,1,1,100,0,
 Community Planning Act,20,Effect of regional land use plan,What regulation-making authority is established by section 20 of Community Planning Act?,1,1,100,0,
-Community Planning Act,21,Adoption and approval of municipal plan,What requirements are established by section 21 of Community Planning Act?,2,2,50,4,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION
+Community Planning Act,21,Adoption and approval of municipal plan,What requirements are established by section 21 of Community Planning Act?,2,2,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Community Planning Act,22,Province to consider municipal plan,What requirements are established by section 22 of Community Planning Act?,2,2,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-Community Planning Act,23,Failure to adopt municipal plan,What powers or authority are established by section 23 of Community Planning Act?,3,2,65,2,MAIN_QUESTION_TOPIC_MISMATCH;MALFORMED_QUESTION
-Community Planning Act,24,Preparation and content of municipal plan,What powers or authority are established by section 24 of Community Planning Act?,8,1,30,11,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-Community Planning Act,25,Public notice of municipal plan,What requirements are established by section 25 of Community Planning Act?,6,7,35,5,MAIN_QUESTION_TOPIC_MISMATCH;MALFORMED_QUESTION;MALFORMED_QUESTION;CONCEPT_FRAGMENT;CONCEPT_FRAGMENT
+Community Planning Act,23,Failure to adopt municipal plan,What powers or authority are established by section 23 of Community Planning Act?,3,2,85,1,MAIN_QUESTION_TOPIC_MISMATCH
+Community Planning Act,24,Preparation and content of municipal plan,What powers or authority are established by section 24 of Community Planning Act?,3,1,80,4,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT
+Community Planning Act,25,Public notice of municipal plan,What notice requirements are established by section 25 of Community Planning Act?,3,7,90,2,CONCEPT_FRAGMENT;CONCEPT_FRAGMENT
 Community Planning Act,26,Validity and coming into force of municipal plan,What certification requirements are established by section 26 of Community Planning Act?,1,2,80,2,MAIN_QUESTION_TOPIC_MISMATCH;CONCEPT_FRAGMENT
 Community Planning Act,27,Effect of municipal plan,What does section 27 of Community Planning Act provide?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 Community Planning Act,28,Conflict between municipal plan and zoning or subdivision by-law,What does section 28 of Community Planning Act provide?,1,1,100,0,
 Community Planning Act,29,Secondary municipal plan,What are the application requirements under section 29 of Community Planning Act?,3,1,85,3,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Community Planning Act,30,Effect of secondary municipal plan,What does section 30 of Community Planning Act provide?,1,1,100,0,
 Community Planning Act,31,Conflict between secondary municipal plan and a municipal plan,What does section 31 of Community Planning Act provide?,1,1,100,0,
-Community Planning Act,32,Review,What does section 32 of Community Planning Act provide?,3,2,65,4,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Community Planning Act,32,Review,What does section 32 of Community Planning Act provide?,3,2,85,3,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Community Planning Act,32.1,Non-application of Division to villages,What are the application requirements under section 32.1 of Community Planning Act?,1,1,100,0,
 Community Planning Act,33,Adoption and approval of rural plans for villages,What requirements are established by section 33 of Community Planning Act?,2,1,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Community Planning Act,33.1,Province to consider rural plan,What requirements are established by section 33.1 of Community Planning Act?,2,2,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-Community Planning Act,34,Failure to adopt rural plan for a village,What powers or authority are established by section 34 of Community Planning Act?,3,2,65,2,MAIN_QUESTION_TOPIC_MISMATCH;MALFORMED_QUESTION
-Community Planning Act,35,Preparation and content of rural plan for a village,What powers or authority are established by section 35 of Community Planning Act?,5,1,45,8,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT
-Community Planning Act,36,Secondary rural plan,What does section 36 of Community Planning Act provide?,3,1,65,4,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Community Planning Act,34,Failure to adopt rural plan for a village,What powers or authority are established by section 34 of Community Planning Act?,3,2,85,1,MAIN_QUESTION_TOPIC_MISMATCH
+Community Planning Act,35,Preparation and content of rural plan for a village,What powers or authority are established by section 35 of Community Planning Act?,2,1,85,3,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG
+Community Planning Act,36,Secondary rural plan,What does section 36 of Community Planning Act provide?,3,1,85,3,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Community Planning Act,37,Effect of secondary rural plan,What does section 37 of Community Planning Act provide?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 Community Planning Act,38,Conflict between secondary rural plan and a rural plan,What does section 38 of Community Planning Act provide?,1,1,100,0,
-Community Planning Act,39,Public notice of rural plan,What notice requirements are established by section 39 of Community Planning Act?,3,3,100,0,
+Community Planning Act,39,Public notice of rural plan,What notice requirements are established by section 39 of Community Planning Act?,2,3,100,0,
 Community Planning Act,40,Validity and coming into force of rural plan for a village,What certification requirements are established by section 40 of Community Planning Act?,1,1,80,2,MAIN_QUESTION_TOPIC_MISMATCH;CONCEPT_FRAGMENT
 Community Planning Act,41,Effect of rural plan for a village,What does section 41 of Community Planning Act provide?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 Community Planning Act,42,Conflict between rural plan for a village and a subdivision by-law,What does section 42 of Community Planning Act provide?,1,0,100,0,
-Community Planning Act,43,Review,What does section 43 of Community Planning Act provide?,3,2,65,4,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-Community Planning Act,44,Adoption and approval of rural plans for rural communities,What requirements are established by section 44 of Community Planning Act?,7,1,55,9,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG
-Community Planning Act,44.1,Failure to adopt rural plan for a rural community,What powers or authority are established by section 44.1 of Community Planning Act?,3,2,65,2,MAIN_QUESTION_TOPIC_MISMATCH;MALFORMED_QUESTION
+Community Planning Act,43,Review,What does section 43 of Community Planning Act provide?,3,2,85,3,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Community Planning Act,44,Adoption and approval of rural plans for rural communities,What requirements are established by section 44 of Community Planning Act?,3,1,85,3,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Community Planning Act,44.1,Failure to adopt rural plan for a rural community,What powers or authority are established by section 44.1 of Community Planning Act?,3,2,85,1,MAIN_QUESTION_TOPIC_MISMATCH
 Community Planning Act,44.2,Province to consider rural plan,What requirements are established by section 44.2 of Community Planning Act?,2,1,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Community Planning Act,45,Validity and coming into force of rural plan for a rural community,What certification requirements are established by section 45 of Community Planning Act?,1,1,80,2,MAIN_QUESTION_TOPIC_MISMATCH;CONCEPT_FRAGMENT
-Community Planning Act,46,Secondary rural plan,What are the application requirements under section 46 of Community Planning Act?,3,1,65,4,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Community Planning Act,46,Secondary rural plan,What are the application requirements under section 46 of Community Planning Act?,3,1,85,3,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Community Planning Act,47,Conflict between secondary rural plan and a rural plan,What does section 47 of Community Planning Act provide?,1,1,100,0,
 Community Planning Act,48,Effect of secondary rural plan,What does section 48 of Community Planning Act provide?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 Community Planning Act,49,Effect of rural plan for a rural community,What does section 49 of Community Planning Act provide?,1,1,95,1,GENERIC_RUBRIC_PROMPT
-Community Planning Act,50,Review,What does section 50 of Community Planning Act provide?,3,2,65,4,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-Community Planning Act,51,Ministerial regulations respecting rural plans for rural districts,What powers or authority are established by section 51 of Community Planning Act?,3,1,45,5,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT
+Community Planning Act,50,Review,What does section 50 of Community Planning Act provide?,3,2,85,3,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Community Planning Act,51,Ministerial regulations respecting rural plans for rural districts,What regulation-making authority is established by section 51 of Community Planning Act?,3,1,85,3,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Community Planning Act,51.1,Province to consider rural plan,What requirements are established by section 51.1 of Community Planning Act?,2,1,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-Community Planning Act,52,Content of regulation,What are the application requirements under section 52 of Community Planning Act?,8,4,0,12,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION
+Community Planning Act,52,Content of regulation,What regulation-making authority is established by section 52 of Community Planning Act?,4,4,80,4,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Community Planning Act,52.1,Review,What regulation-making authority is established by section 52.1 of Community Planning Act?,2,2,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-Community Planning Act,53,Making of zoning by-law,What powers or authority are established by section 53 of Community Planning Act?,11,1,0,16,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;TOO_MANY_RUBRIC_ITEMS
+Community Planning Act,53,Making of zoning by-law,What powers or authority are established by section 53 of Community Planning Act?,4,1,75,5,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Community Planning Act,54,Validity and coming into force of zoning by-law,What certification requirements are established by section 54 of Community Planning Act?,1,2,80,2,MAIN_QUESTION_TOPIC_MISMATCH;CONCEPT_FRAGMENT
-Community Planning Act,55,Variances from zoning by-law,What requirements are established by section 55 of Community Planning Act?,5,2,50,7,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Community Planning Act,55,Variances from zoning by-law,What requirements are established by section 55 of Community Planning Act?,3,2,80,4,GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Community Planning Act,56,Notice of variance,What notice requirements are established by section 56 of Community Planning Act?,1,1,100,0,
 Community Planning Act,57,Payments by developer,What does section 57 of Community Planning Act provide?,1,1,95,1,GENERIC_RUBRIC_PROMPT
-Community Planning Act,58,Integrated development zone,What does section 58 of Community Planning Act provide?,1,1,95,1,GENERIC_RUBRIC_PROMPT
-Community Planning Act,59,Re-zoning and amendments,What does section 59 of Community Planning Act provide?,9,6,5,13,GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;CONCEPT_FRAGMENT
-Community Planning Act,60,Non-conforming use,What regulation-making authority is established by section 60 of Community Planning Act?,5,1,70,6,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-Community Planning Act,61,Standards to be met re non-conforming use,What notice requirements are established by section 61 of Community Planning Act?,5,5,75,2,MALFORMED_QUESTION;CONCEPT_FRAGMENT
-Community Planning Act,61.1,Province to consider zoning by-law,What are the application requirements under section 61.1 of Community Planning Act?,3,4,60,5,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;CONCEPT_FRAGMENT
+Community Planning Act,58,Integrated development zone,What does section 58 of Community Planning Act provide?,1,1,100,0,
+Community Planning Act,59,Re-zoning and amendments,What does section 59 of Community Planning Act provide?,6,6,60,8,GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;CONCEPT_FRAGMENT
+Community Planning Act,60,Non-conforming use,What regulation-making authority is established by section 60 of Community Planning Act?,4,1,80,4,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Community Planning Act,61,Standards to be met re non-conforming use,What notice requirements are established by section 61 of Community Planning Act?,4,5,95,1,CONCEPT_FRAGMENT
+Community Planning Act,61.1,Province to consider zoning by-law,What are the application requirements under section 61.1 of Community Planning Act?,2,4,85,3,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;CONCEPT_FRAGMENT
 Community Planning Act,62,Building standards and permits,What does section 62 of Community Planning Act provide?,1,1,100,0,
-Community Planning Act,63,Altering of streets and establishing building lines,What requirements are established by section 63 of Community Planning Act?,3,1,85,3,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Community Planning Act,63,Altering of streets and establishing building lines,What requirements are established by section 63 of Community Planning Act?,1,1,85,2,GENERIC_RUBRIC_PROMPT;TOO_FEW_RUBRIC_ITEMS
 Community Planning Act,64,Validity and coming into force of deferred widening by-law,What requirements are established by section 64 of Community Planning Act?,1,2,80,2,MAIN_QUESTION_TOPIC_MISMATCH;CONCEPT_FRAGMENT
-Community Planning Act,65,Amendment and filing,What filing or registration requirements are established by section 65 of Community Planning Act?,4,3,75,2,MALFORMED_QUESTION;CONCEPT_FRAGMENT
+Community Planning Act,65,Amendment and filing,What filing or registration requirements are established by section 65 of Community Planning Act?,3,3,95,1,CONCEPT_FRAGMENT
 Community Planning Act,66,Acquisition of land,What are the application requirements under section 66 of Community Planning Act?,2,3,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Community Planning Act,67,Valid for five years,What filing or registration requirements are established by section 67 of Community Planning Act?,2,2,100,0,
-Community Planning Act,68,Access to streets,What does section 68 of Community Planning Act provide?,4,1,80,4,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Community Planning Act,68,Access to streets,What does section 68 of Community Planning Act provide?,2,1,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Community Planning Act,69,Validity and coming into force of controlled access street by-law,What requirements are established by section 69 of Community Planning Act?,1,1,80,2,MAIN_QUESTION_TOPIC_MISMATCH;CONCEPT_FRAGMENT
 Community Planning Act,70,Definition of “development”,What definitions are provided in section 70 of Community Planning Act?,1,1,100,0,
 Community Planning Act,71,Designation of flood risk area,What does section 71 of Community Planning Act provide?,4,1,80,4,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-Community Planning Act,72,Making and enforcement of flood risk area by-law,What does section 72 of Community Planning Act provide?,7,3,5,10,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-Community Planning Act,73,Permits re flood risk area by-law,What are the application requirements under section 73 of Community Planning Act?,4,3,80,4,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-Community Planning Act,74,Making of subdivision by-law,What powers or authority are established by section 74 of Community Planning Act?,5,2,50,7,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;CONCEPT_FRAGMENT
-Community Planning Act,75,Content of subdivision by-law,What does section 75 of Community Planning Act provide?,4,4,50,7,GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION
+Community Planning Act,72,Making and enforcement of flood risk area by-law,What does section 72 of Community Planning Act provide?,3,3,85,3,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Community Planning Act,73,Permits re flood risk area by-law,What are the application requirements under section 73 of Community Planning Act?,3,3,85,3,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Community Planning Act,74,Making of subdivision by-law,What powers or authority are established by section 74 of Community Planning Act?,3,2,80,4,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;CONCEPT_FRAGMENT
+Community Planning Act,75,Content of subdivision by-law,What does section 75 of Community Planning Act provide?,3,4,75,5,GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT
 Community Planning Act,76,Land for public purposes,What notice requirements are established by section 76 of Community Planning Act?,2,2,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-Community Planning Act,77,Exemptions and variances,What does section 77 of Community Planning Act provide?,5,3,70,6,GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Community Planning Act,77,Exemptions and variances,What does section 77 of Community Planning Act provide?,3,3,80,4,GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Community Planning Act,78,Approval of variances,What requirements are established by section 78 of Community Planning Act?,4,3,75,5,GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-Community Planning Act,79,Subdivision plan,What definitions are provided in section 79 of Community Planning Act?,2,4,85,1,MAIN_QUESTION_TOPIC_MISMATCH
-Community Planning Act,80,Exemptions for certain parcels or conveyances,What regulation-making authority is established by section 80 of Community Planning Act?,2,1,65,4,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT
-Community Planning Act,81,Tentative subdivision plan,What are the application requirements under section 81 of Community Planning Act?,5,5,50,7,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Community Planning Act,79,Subdivision plan,What definitions are provided in section 79 of Community Planning Act?,1,4,85,1,MAIN_QUESTION_TOPIC_MISMATCH
+Community Planning Act,80,Exemptions for certain parcels or conveyances,What regulation-making authority is established by section 80 of Community Planning Act?,1,1,80,3,GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;TOO_FEW_RUBRIC_ITEMS
+Community Planning Act,81,Tentative subdivision plan,What are the application requirements under section 81 of Community Planning Act?,5,5,70,6,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Community Planning Act,82,Expiry of tentative subdivision plan,What does section 82 of Community Planning Act provide?,1,1,95,1,GENERIC_RUBRIC_PROMPT
-Community Planning Act,83,Lay-out of streets and lots,What authority and survey-monument requirements does section 83 of Community Planning Act establish for laying out streets and lots?,4,1,90,1,QUESTION_MISSING_SUBJECT
+Community Planning Act,83,Lay-out of streets and lots,What authority and survey-monument requirements does section 83 of Community Planning Act establish for laying out streets and lots?,4,1,100,0,
 Community Planning Act,84,Application for approval of subdivision plan,What are the application requirements under section 84 of Community Planning Act?,2,3,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Community Planning Act,85,Approval of subdivision plan,What certification requirements are established by section 85 of Community Planning Act?,1,3,85,1,MAIN_QUESTION_TOPIC_MISMATCH
 Community Planning Act,86,Filing of subdivision plan,What filing or registration requirements are established by section 86 of Community Planning Act?,1,4,100,0,
-Community Planning Act,87,Subdivision plan for roads and streets,What notice requirements are established by section 87 of Community Planning Act?,6,7,20,10,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT
-Community Planning Act,88,Approval of subdivision plan for streets and land for public purposes,What are the application requirements under section 88 of Community Planning Act?,4,1,80,4,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Community Planning Act,87,Subdivision plan for roads and streets,What notice requirements are established by section 87 of Community Planning Act?,3,7,75,5,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG
+Community Planning Act,88,Approval of subdivision plan for streets and land for public purposes,What are the application requirements under section 88 of Community Planning Act?,2,1,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Community Planning Act,89,Amendments to subdivision plan,What filing or registration requirements are established by section 89 of Community Planning Act?,2,7,100,0,
 Community Planning Act,90,Subdivision plan by local government,What certification requirements are established by section 90 of Community Planning Act?,2,2,85,3,GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT
-Community Planning Act,91,Making of development charge by-law,What powers or authority are established by section 91 of Community Planning Act?,6,1,50,7,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-Community Planning Act,92,Development charge agreement,What does section 92 of Community Planning Act provide?,2,1,70,3,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION
+Community Planning Act,91,Making of development charge by-law,What powers or authority are established by section 91 of Community Planning Act?,2,1,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Community Planning Act,92,Development charge agreement,What does section 92 of Community Planning Act provide?,2,1,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Community Planning Act,93,Validity and coming into force of development charge by-law,What certification requirements are established by section 93 of Community Planning Act?,1,2,80,2,MAIN_QUESTION_TOPIC_MISMATCH;CONCEPT_FRAGMENT
 Community Planning Act,94,Effect of development charge agreement,What certification requirements are established by section 94 of Community Planning Act?,1,1,85,1,MAIN_QUESTION_TOPIC_MISMATCH
-Community Planning Act,95,Definition of “incentive or bonus zoning agreement”,What definitions are provided in section 95 of Community Planning Act?,1,2,95,1,GENERIC_RUBRIC_PROMPT
-Community Planning Act,96,Incentive or bonus zoning agreements,What powers or authority are established by section 96 of Community Planning Act?,8,2,35,10,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Community Planning Act,95,Definition of “incentive or bonus zoning agreement”,What definitions are provided in section 95 of Community Planning Act?,1,2,100,0,
+Community Planning Act,96,Incentive or bonus zoning agreements,What powers or authority are established by section 96 of Community Planning Act?,3,2,85,3,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Community Planning Act,97,Validity and coming into force of incentive or bonus zoning agreement by-law,What certification requirements are established by section 97 of Community Planning Act?,1,1,80,2,MAIN_QUESTION_TOPIC_MISMATCH;CONCEPT_FRAGMENT
 Community Planning Act,98,Prohibition on breach of agreement,What does section 98 of Community Planning Act provide?,1,1,95,1,GENERIC_RUBRIC_PROMPT
-Community Planning Act,99,Local government agreements,What requirements are established by section 99 of Community Planning Act?,4,1,55,6,GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-Community Planning Act,100,Comply with notice provisions,What requirements are established by section 100 of Community Planning Act?,1,2,75,3,MAIN_QUESTION_TOPIC_MISMATCH;CONCEPT_FRAGMENT;CONCEPT_FRAGMENT
+Community Planning Act,99,Local government agreements,What requirements are established by section 99 of Community Planning Act?,4,1,75,5,GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Community Planning Act,100,Comply with notice provisions,What notice requirements are established by section 100 of Community Planning Act?,1,2,75,3,MAIN_QUESTION_TOPIC_MISMATCH;CONCEPT_FRAGMENT;CONCEPT_FRAGMENT
 Community Planning Act,101,Development scheme,What does section 101 of Community Planning Act provide?,1,1,95,1,GENERIC_RUBRIC_PROMPT
-Community Planning Act,102,Preparation and content of development scheme,What does section 102 of Community Planning Act provide?,5,2,10,9,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION
-Community Planning Act,103,Comply with notice provisions,What requirements are established by section 103 of Community Planning Act?,1,2,75,3,MAIN_QUESTION_TOPIC_MISMATCH;CONCEPT_FRAGMENT;CONCEPT_FRAGMENT
+Community Planning Act,102,Preparation and content of development scheme,What does section 102 of Community Planning Act provide?,2,2,85,3,GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT
+Community Planning Act,103,Comply with notice provisions,What notice requirements are established by section 103 of Community Planning Act?,1,2,75,3,MAIN_QUESTION_TOPIC_MISMATCH;CONCEPT_FRAGMENT;CONCEPT_FRAGMENT
 Community Planning Act,104,Conflict,What does section 104 of Community Planning Act provide?,1,2,95,1,GENERIC_RUBRIC_PROMPT
-Community Planning Act,105,Acquisition of land by local government,What requirements are established by section 105 of Community Planning Act?,3,1,80,4,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT
-Community Planning Act,106,Acquisition of land by Minister,What requirements are established by section 106 of Community Planning Act?,3,2,85,3,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Community Planning Act,105,Acquisition of land by local government,What requirements are established by section 105 of Community Planning Act?,2,1,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Community Planning Act,106,Acquisition of land by Minister,What requirements are established by section 106 of Community Planning Act?,2,2,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Community Planning Act,107,Compensation,What powers or authority are established by section 107 of Community Planning Act?,2,3,80,2,MAIN_QUESTION_TOPIC_MISMATCH;CONCEPT_FRAGMENT
-Community Planning Act,108,Approval for a development,What does section 108 of Community Planning Act provide?,6,3,25,9,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-Community Planning Act,109,Procedure for making by-laws,What are the application requirements under section 109 of Community Planning Act?,4,2,60,5,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT
-Community Planning Act,110,Request for views of advisory committee,What notice requirements are established by section 110 of Community Planning Act?,3,2,65,4,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION
-Community Planning Act,111,Public notice of by-law,What notice requirements are established by section 111 of Community Planning Act?,6,8,75,5,RUBRIC_ANSWER_TOO_LONG;CONCEPT_FRAGMENT;CONCEPT_FRAGMENT;CONCEPT_FRAGMENT;CONCEPT_FRAGMENT
-Community Planning Act,112,Approval by Minister,What are the application requirements under section 112 of Community Planning Act?,3,3,55,4,MAIN_QUESTION_TOPIC_MISMATCH;RUBRIC_ANSWER_TOO_LONG;MALFORMED_QUESTION;CONCEPT_FRAGMENT
-Community Planning Act,113,Approval of an amendment to zoning by-law,What are the application requirements under section 113 of Community Planning Act?,1,1,75,2,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION
-Community Planning Act,114,Construction freeze,What objection process is established by section 114 of Community Planning Act?,2,3,70,3,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT
-Community Planning Act,115,Review of planning documents,What does section 115 of Community Planning Act provide?,1,1,75,2,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION
+Community Planning Act,108,Approval for a development,What does section 108 of Community Planning Act provide?,4,3,75,5,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Community Planning Act,109,Procedure for making by-laws,What are the application requirements under section 109 of Community Planning Act?,3,2,85,3,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Community Planning Act,110,Request for views of advisory committee,What notice requirements are established by section 110 of Community Planning Act?,2,2,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Community Planning Act,111,Public notice of by-law,What notice requirements are established by section 111 of Community Planning Act?,3,8,75,5,RUBRIC_ANSWER_TOO_LONG;CONCEPT_FRAGMENT;CONCEPT_FRAGMENT;CONCEPT_FRAGMENT;CONCEPT_FRAGMENT
+Community Planning Act,112,Approval by Minister,What are the application requirements under section 112 of Community Planning Act?,1,3,75,3,MAIN_QUESTION_TOPIC_MISMATCH;RUBRIC_ANSWER_TOO_LONG;CONCEPT_FRAGMENT
+Community Planning Act,113,Approval of an amendment to zoning by-law,What are the application requirements under section 113 of Community Planning Act?,1,1,95,1,GENERIC_RUBRIC_PROMPT
+Community Planning Act,114,Construction freeze,What objection process is established by section 114 of Community Planning Act?,2,3,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Community Planning Act,115,Review of planning documents,What does section 115 of Community Planning Act provide?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 Community Planning Act,116,Consultations by council,What powers or authority are established by section 116 of Community Planning Act?,1,1,95,1,GENERIC_RUBRIC_PROMPT
-Community Planning Act,117,Amendment or repeal of by-laws,What are the application requirements under section 117 of Community Planning Act?,2,1,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Community Planning Act,117,Amendment or repeal of by-laws,What are the application requirements under section 117 of Community Planning Act?,1,1,85,2,GENERIC_RUBRIC_PROMPT;TOO_FEW_RUBRIC_ITEMS
 Community Planning Act,118,No injurious affection,What regulation-making authority is established by section 118 of Community Planning Act?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 Community Planning Act,119,Severability of by-law,"What appeal rights, restrictions and deadlines are established by section 119 of Community Planning Act?",1,1,100,0,
-Community Planning Act,120,Jurisdiction of Board,What powers or authority are established by section 120 of Community Planning Act?,3,5,80,4,GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-Community Planning Act,121,Orders and decisions,"What appeal rights, restrictions and deadlines are established by section 121 of Community Planning Act?",10,5,5,13,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;CONCEPT_FRAGMENT
+Community Planning Act,120,Jurisdiction of Board,What powers or authority are established by section 120 of Community Planning Act?,2,5,85,3,GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT
+Community Planning Act,121,Orders and decisions,"What appeal rights, restrictions and deadlines are established by section 121 of Community Planning Act?",5,5,70,6,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;CONCEPT_FRAGMENT
 Community Planning Act,122,Publication of decision,What does section 122 of Community Planning Act provide?,1,1,95,1,GENERIC_RUBRIC_PROMPT
-Community Planning Act,123,Power of inspection,What powers or authority are established by section 123 of Community Planning Act?,4,3,40,6,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT
-Community Planning Act,124,Regulations – general,What powers or authority are established by section 124 of Community Planning Act?,4,3,70,6,GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-Community Planning Act,125,Regulations re planning and development,What does section 125 of Community Planning Act provide?,14,6,0,24,GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;TOO_MANY_RUBRIC_ITEMS;CONCEPT_FRAGMENT
+Community Planning Act,123,Power of inspection,What powers or authority are established by section 123 of Community Planning Act?,2,3,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Community Planning Act,124,Regulations – general,What regulation-making authority is established by section 124 of Community Planning Act?,1,3,80,3,GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;TOO_FEW_RUBRIC_ITEMS
+Community Planning Act,125,Regulations re planning and development,What regulation-making authority is established by section 125 of Community Planning Act?,7,6,50,10,GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;CONCEPT_FRAGMENT
 Community Planning Act,126,Administration,What powers or authority are established by section 126 of Community Planning Act?,2,0,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Community Planning Act,126.1,Review of this Act,What does section 126.1 of Community Planning Act provide?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 Community Planning Act,127,Fees,What are the application requirements under section 127 of Community Planning Act?,2,1,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Community Planning Act,128,Approvals for pipeline construction,What powers or authority are established by section 128 of Community Planning Act?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 Community Planning Act,129,Development on Crown land,What order-making rules are established by section 129 of Community Planning Act?,1,1,95,1,GENERIC_RUBRIC_PROMPT
-Community Planning Act,130,Proof of a by-law,What certification requirements are established by section 130 of Community Planning Act?,1,1,85,2,GENERIC_RUBRIC_PROMPT;TOO_FEW_RUBRIC_ITEMS
-Community Planning Act,131,Agreement with developer,What requirements are established by section 131 of Community Planning Act?,4,3,40,6,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT
-Community Planning Act,132,Powers of Minister,What powers or authority are established by section 132 of Community Planning Act?,6,4,85,1,MAIN_QUESTION_TOPIC_MISMATCH
-Community Planning Act,133,Inspection of property,What powers or authority are established by section 133 of Community Planning Act?,4,1,40,6,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION
-Community Planning Act,134,Violation of Act,What powers or authority are established by section 134 of Community Planning Act?,7,3,25,9,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-Community Planning Act,135,Application for an order of the Court,What are the application requirements under section 135 of Community Planning Act?,2,2,80,4,GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG
-Community Planning Act,136,Powers of the Court,What powers or authority are established by section 136 of Community Planning Act?,2,3,65,4,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;CONCEPT_FRAGMENT
+Community Planning Act,130,Proof of a by-law,What certification requirements are established by section 130 of Community Planning Act?,2,1,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Community Planning Act,131,Agreement with developer,What requirements are established by section 131 of Community Planning Act?,2,3,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Community Planning Act,132,Powers of Minister,What powers or authority are established by section 132 of Community Planning Act?,4,4,85,1,MAIN_QUESTION_TOPIC_MISMATCH
+Community Planning Act,133,Inspection of property,What powers or authority are established by section 133 of Community Planning Act?,3,1,85,3,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Community Planning Act,134,Violation of Act,What powers or authority are established by section 134 of Community Planning Act?,4,3,80,4,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Community Planning Act,135,Application for an order of the Court,What order-making rules are established by section 135 of Community Planning Act?,1,2,80,3,GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;TOO_FEW_RUBRIC_ITEMS
+Community Planning Act,136,Powers of the Court,What powers or authority are established by section 136 of Community Planning Act?,1,3,80,3,GENERIC_RUBRIC_PROMPT;TOO_FEW_RUBRIC_ITEMS;CONCEPT_FRAGMENT
 Community Planning Act,137,Prohibition,What order-making rules are established by section 137 of Community Planning Act?,1,1,95,1,GENERIC_RUBRIC_PROMPT
-Community Planning Act,138,Offences and penalties,What offences or penalties are established by section 138 of Community Planning Act?,3,1,65,4,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION
+Community Planning Act,138,Offences and penalties,What offences or penalties are established by section 138 of Community Planning Act?,2,1,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Community Planning Act,139,Proceedings,What offences or penalties are established by section 139 of Community Planning Act?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 Community Planning Act,140,Ministerial enforcement of rural plans,What powers or authority are established by section 140 of Community Planning Act?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 Community Planning Act,141,Definition of “former Act”,What definitions are provided in section 141 of Community Planning Act?,1,2,100,0,
@@ -193,273 +193,273 @@ Community Planning Act,145,"Permits, approvals and orders continue",What order-m
 Community Planning Act,146,Agreements and contracts continue,What does section 146 of Community Planning Act provide?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 Community Planning Act,147,Applications before Act in force,What are the application requirements under section 147 of Community Planning Act?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 Community Planning Act,148,Appeals before the Board,"What appeal rights, restrictions and deadlines are established by section 148 of Community Planning Act?",1,1,95,1,GENERIC_RUBRIC_PROMPT
-Community Planning Act,149,Terms of office of members appointed to planning advisory committees continue,What does section 149 of Community Planning Act provide?,1,0,95,1,GENERIC_RUBRIC_PROMPT
+Community Planning Act,149,Terms of office of members appointed to planning advisory committees continue,What does section 149 of Community Planning Act provide?,1,0,100,0,
 Community Planning Act,150,Payments under section 45 of former Act,What requirements are established by section 150 of Community Planning Act?,1,1,95,1,GENERIC_RUBRIC_PROMPT
-Community Planning Act,151,Provincial Planning Director continues,What powers or authority are established by section 151 of Community Planning Act?,1,1,70,3,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;CONCEPT_FRAGMENT
+Community Planning Act,151,Provincial Planning Director continues,What powers or authority are established by section 151 of Community Planning Act?,1,1,90,2,GENERIC_RUBRIC_PROMPT;CONCEPT_FRAGMENT
 Community Planning Act,152,"Municipal planning directors, municipal planning officers, rural community planning directors and rural community planning officers continue",What powers or authority are established by section 152 of Community Planning Act?,1,0,95,1,GENERIC_RUBRIC_PROMPT
 Community Planning Act,153,Repeal of the Community Planning Act,What does section 153 of Community Planning Act provide?,1,1,100,0,
 Community Planning Act,154,Regulations under the Community Planning Act,What regulation-making authority is established by section 154 of Community Planning Act?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 Community Planning Act,155,Commencement,What does section 155 of Community Planning Act provide?,1,1,100,0,
-Registry Act,1,Definitions,What definitions are provided in section 1 of Registry Act?,1,5,90,2,GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG
+Registry Act,1,Definitions,What definitions are provided in section 1 of Registry Act?,4,5,100,0,
 Registry Act,1.1,Interests within the scope of the Personal Property Security Act,What are the application requirements under section 1.1 of Registry Act?,1,0,90,1,TOO_FEW_RUBRIC_ITEMS
 Registry Act,2,Administration,What notice requirements are established by section 2 of Registry Act?,1,0,100,0,
 Registry Act,3,Registry office,What does section 3 of Registry Act provide?,2,1,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Registry Act,4,Appointment of registrars and deputy registrars,What notice requirements are established by section 4 of Registry Act?,2,1,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-Registry Act,5,Ex officio deputy registrars,What duties does section 5 of Registry Act impose about ex officio deputy registrars?,2,1,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-Registry Act,6,Chief Registrar of Deeds,What duties does section 6 of Registry Act impose about chief registrar of deeds?,6,2,50,7,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Registry Act,5,Ex officio deputy registrars,What duties does section 5 of Registry Act impose about ex officio deputy registrars?,1,1,85,2,GENERIC_RUBRIC_PROMPT;TOO_FEW_RUBRIC_ITEMS
+Registry Act,6,Chief Registrar of Deeds,What duties does section 6 of Registry Act impose about chief registrar of deeds?,5,2,75,5,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Registry Act,7,Security of registrar and deputy registrar,What duties does section 7 of Registry Act impose about security of registrar and deputy registrar?,1,1,95,1,GENERIC_RUBRIC_PROMPT
-Registry Act,8,Oath of registrar and deputy registrar,What duties does section 8 of Registry Act impose about oath of registrar and deputy registrar?,2,1,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Registry Act,8,Oath of registrar and deputy registrar,What duties does section 8 of Registry Act impose about oath of registrar and deputy registrar?,1,1,85,2,GENERIC_RUBRIC_PROMPT;TOO_FEW_RUBRIC_ITEMS
 Registry Act,9,Powers and duties of deputy registrar,What duties does section 9 of Registry Act impose about powers and duties of deputy registrar?,1,1,100,0,
 Registry Act,10,When registry office open,What filing or registration requirements are established by section 10 of Registry Act?,3,2,80,4,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;CONCEPT_FRAGMENT
-Registry Act,11,Conflict of interests,What duties does section 11 of Registry Act impose about conflict of interests?,2,1,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-Registry Act,12,Duties of registrar,What duties does section 12 of Registry Act impose about duties of registrar?,2,2,60,3,MAIN_QUESTION_TOPIC_MISMATCH;MALFORMED_QUESTION;RUBRIC_ANSWER_TOO_LONG
+Registry Act,11,Conflict of interests,What duties does section 11 of Registry Act impose about conflict of interests?,1,1,85,2,GENERIC_RUBRIC_PROMPT;TOO_FEW_RUBRIC_ITEMS
+Registry Act,12,Duties of registrar,What duties does section 12 of Registry Act impose about duties of registrar?,2,2,80,2,MAIN_QUESTION_TOPIC_MISMATCH;RUBRIC_ANSWER_TOO_LONG
 Registry Act,13,Seal of registrar; production of documents,What notice requirements are established by section 13 of Registry Act?,1,1,85,1,MAIN_QUESTION_TOPIC_MISMATCH
-Registry Act,13.1,Powers regarding document maintenance and disposal,What powers or authority are established by section 13.1 of Registry Act?,6,2,80,2,MAIN_QUESTION_TOPIC_MISMATCH;RUBRIC_ANSWER_TOO_LONG
+Registry Act,13.1,Powers regarding document maintenance and disposal,What powers or authority are established by section 13.1 of Registry Act?,4,2,80,2,MAIN_QUESTION_TOPIC_MISMATCH;RUBRIC_ANSWER_TOO_LONG
 Registry Act,13.2,Electronic information storage system,What filing or registration requirements are established by section 13.2 of Registry Act?,2,2,90,2,RUBRIC_ANSWER_TOO_LONG;CONCEPT_FRAGMENT
-Registry Act,14,Contents of registry office,What offences and penalties are established by section 14 of Registry Act?,3,1,100,0,
+Registry Act,14,Contents of registry office,What does section 14 of Registry Act provide?,1,1,100,0,
 Registry Act,15,Recopying or repairing of book,What powers or authority are established by section 15 of Registry Act?,3,1,80,4,GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-Registry Act,15.1,,What does section 15.1 of Registry Act provide?,1,1,90,1,QUESTION_MISSING_SUBJECT
-Registry Act,16,Death or removal of registrar,"How may a filed plan of survey be corrected under section 16 of Registry Act, and what limits and filing consequences apply?",8,1,90,1,QUESTION_MISSING_SUBJECT
+Registry Act,15.1,,What does section 15.1 of Registry Act provide?,1,1,100,0,
+Registry Act,16,Death or removal of registrar,What does section 16 of Registry Act provide?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 Registry Act,17,Powers of Chief Registrar,What powers or authority are established by section 17 of Registry Act?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 Registry Act,18,Replacement of registrar by temporary officer,What duties does section 18 of Registry Act impose about replacement of registrar by temporary officer?,1,1,95,1,GENERIC_RUBRIC_PROMPT
-Registry Act,19,Registration of instruments,What filing or registration requirements are established by section 19 of Registry Act?,6,2,100,0,
-Registry Act,19.01,Instrument that may be submitted as a digitally scanned image,What filing or registration requirements are established by section 19.01 of Registry Act?,5,2,80,1,MALFORMED_QUESTION
-Registry Act,19.02,Authentication of digitally scanned image,What duties does section 19.02 of Registry Act impose about authentication of digitally scanned image?,3,3,85,3,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Registry Act,19,Registration of instruments,What filing or registration requirements are established by section 19 of Registry Act?,5,2,100,0,
+Registry Act,19.01,Instrument that may be submitted as a digitally scanned image,What filing or registration requirements are established by section 19.01 of Registry Act?,5,2,100,0,
+Registry Act,19.02,Authentication of digitally scanned image,What duties does section 19.02 of Registry Act impose about authentication of digitally scanned image?,2,3,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Registry Act,19.03,Authorization to submit digitally scanned image,What powers or authority are established by section 19.03 of Registry Act?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 Registry Act,19.04,Effect of digitally scanned image of an instrument,What requirements are established by section 19.04 of Registry Act?,1,1,100,0,
-Registry Act,19.05,Subscriber or land surveyor agreement,What notice requirements are established by section 19.05 of Registry Act?,3,2,70,6,GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG
-Registry Act,19.1,Effect of registration in the Personal Property Registry,What notice requirements are established by section 19.1 of Registry Act?,1,3,85,1,MAIN_QUESTION_TOPIC_MISMATCH
+Registry Act,19.05,Subscriber or land surveyor agreement,What notice requirements are established by section 19.05 of Registry Act?,1,2,80,3,GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;TOO_FEW_RUBRIC_ITEMS
+Registry Act,19.1,Effect of registration in the Personal Property Registry,What filing or registration requirements are established by section 19.1 of Registry Act?,1,3,100,0,
 Registry Act,20,Contents of conveyance respecting intestacy,What does section 20 of Registry Act provide?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 Registry Act,21,Offences and penalty respecting false affidavit,What offences or penalties are established by section 21 of Registry Act?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 Registry Act,22,Enlargement of time for registration of will,What filing or registration requirements are established by section 22 of Registry Act?,1,2,95,1,GENERIC_RUBRIC_PROMPT
-Registry Act,23,"Registration of will in extra-provincial court, registration of notarial will",What certification requirements are established by section 23 of Registry Act?,3,1,75,5,GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG
-Registry Act,24,Registration of will probated in British Dominion,What filing or registration requirements are established by section 24 of Registry Act?,1,1,80,1,MALFORMED_QUESTION
-Registry Act,25,Registration of unprobated will,What filing or registration requirements are established by section 25 of Registry Act?,3,1,75,2,MALFORMED_QUESTION;RUBRIC_ANSWER_TOO_LONG
-Registry Act,26,"Registration of probated will, registration of sealed will",What certification requirements are established by section 26 of Registry Act?,1,1,85,1,MAIN_QUESTION_TOPIC_MISMATCH
-Registry Act,27,Registration of foreign decree,What order-making rules are established by section 27 of Registry Act?,1,1,65,2,MAIN_QUESTION_TOPIC_MISMATCH;MALFORMED_QUESTION
-Registry Act,28,Registration of corporate documents,What certification requirements are established by section 28 of Registry Act?,1,2,85,1,MAIN_QUESTION_TOPIC_MISMATCH
-Registry Act,29,Registration of notice of sale under mortgage,What powers or authority are established by section 29 of Registry Act?,1,1,85,1,MAIN_QUESTION_TOPIC_MISMATCH
-Registry Act,30,Proof of signature and notice,What powers or authority are established by section 30 of Registry Act?,4,5,85,1,MAIN_QUESTION_TOPIC_MISMATCH
-Registry Act,31,Duty of registrar respecting notice of sale,What duties does section 31 of Registry Act impose about duty of registrar respecting notice of sale?,2,3,95,1,CONCEPT_FRAGMENT
-Registry Act,32,Filing of notice of sale,What notice requirements are established by section 32 of Registry Act?,1,1,100,0,
-Registry Act,33,Registering lien or certificate under the Construction Remedies Act,What certification requirements are established by section 33 of Registry Act?,1,3,95,1,CONCEPT_FRAGMENT
+Registry Act,23,"Registration of will in extra-provincial court, registration of notarial will",What filing or registration requirements are established by section 23 of Registry Act?,3,1,75,5,GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG
+Registry Act,24,Registration of will probated in British Dominion,What filing or registration requirements are established by section 24 of Registry Act?,1,1,100,0,
+Registry Act,25,Registration of unprobated will,What filing or registration requirements are established by section 25 of Registry Act?,3,1,95,1,RUBRIC_ANSWER_TOO_LONG
+Registry Act,26,"Registration of probated will, registration of sealed will",What filing or registration requirements are established by section 26 of Registry Act?,1,1,100,0,
+Registry Act,27,Registration of foreign decree,What filing or registration requirements are established by section 27 of Registry Act?,1,1,100,0,
+Registry Act,28,Registration of corporate documents,What filing or registration requirements are established by section 28 of Registry Act?,1,2,100,0,
+Registry Act,29,Registration of notice of sale under mortgage,What filing or registration requirements are established by section 29 of Registry Act?,1,1,85,1,MAIN_QUESTION_TOPIC_MISMATCH
+Registry Act,30,Proof of signature and notice,What notice requirements are established by section 30 of Registry Act?,3,5,85,1,MAIN_QUESTION_TOPIC_MISMATCH
+Registry Act,31,Duty of registrar respecting notice of sale,What notice requirements are established by section 31 of Registry Act?,2,3,95,1,CONCEPT_FRAGMENT
+Registry Act,32,Filing of notice of sale,What filing or registration requirements are established by section 32 of Registry Act?,1,1,100,0,
+Registry Act,33,Registering lien or certificate under the Construction Remedies Act,What filing or registration requirements are established by section 33 of Registry Act?,1,3,95,1,CONCEPT_FRAGMENT
 Registry Act,34,Effect of registration of conveyance,What filing or registration requirements are established by section 34 of Registry Act?,1,1,100,0,
-Registry Act,35,Registration of copy,What certification requirements are established by section 35 of Registry Act?,1,1,85,1,MAIN_QUESTION_TOPIC_MISMATCH
-Registry Act,36,Affidavit of execution or acknowledgment,What does section 36 of Registry Act provide?,3,1,45,5,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT
+Registry Act,35,Registration of copy,What filing or registration requirements are established by section 35 of Registry Act?,1,1,100,0,
+Registry Act,36,Affidavit of execution or acknowledgment,What does section 36 of Registry Act provide?,1,1,85,2,GENERIC_RUBRIC_PROMPT;TOO_FEW_RUBRIC_ITEMS
 Registry Act,37,Proof of execution,What does section 37 of Registry Act provide?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 Registry Act,38,Sufficiency of name in affidavit,What filing or registration requirements are established by section 38 of Registry Act?,1,1,100,0,
-Registry Act,39,Error or omission in affidavit of execution,What requirements are established by section 39 of Registry Act?,1,1,75,2,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION
-Registry Act,40,Compellability of witness,What order-making rules are established by section 40 of Registry Act?,1,1,75,2,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION
+Registry Act,39,Error or omission in affidavit of execution,What requirements are established by section 39 of Registry Act?,1,1,95,1,GENERIC_RUBRIC_PROMPT
+Registry Act,40,Compellability of witness,What order-making rules are established by section 40 of Registry Act?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 Registry Act,41,Certificate of proof of instrument,What certification requirements are established by section 41 of Registry Act?,1,1,95,1,GENERIC_RUBRIC_PROMPT
-Registry Act,42,Proof of signature or seal,What requirements are established by section 42 of Registry Act?,1,1,75,2,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION
-Registry Act,43,"Seal of court of record, seal of corporation",What powers or authority are established by section 43 of Registry Act?,1,2,75,2,MAIN_QUESTION_TOPIC_MISMATCH;TOO_FEW_RUBRIC_ITEMS
+Registry Act,42,Proof of signature or seal,What requirements are established by section 42 of Registry Act?,1,1,95,1,GENERIC_RUBRIC_PROMPT
+Registry Act,43,"Seal of court of record, seal of corporation",What filing or registration requirements are established by section 43 of Registry Act?,1,2,90,1,TOO_FEW_RUBRIC_ITEMS
 Registry Act,44,Execution of instruments,What does section 44 of Registry Act provide?,2,1,85,3,GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT
 Registry Act,45,Registrar and deputy registrar ex officio commissioner of oaths,What does section 45 of Registry Act provide?,1,1,100,0,
-Registry Act,46,Certificate of development officer,What are the application requirements under section 46 of Registry Act?,4,2,60,3,MAIN_QUESTION_TOPIC_MISMATCH;MALFORMED_QUESTION;RUBRIC_ANSWER_TOO_LONG
-Registry Act,47,Persons before whom proof of execution made,What powers or authority are established by section 47 of Registry Act?,1,1,75,2,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION
-Registry Act,48,Registration of Crown grant,What powers or authority are established by section 48 of Registry Act?,1,1,65,2,MAIN_QUESTION_TOPIC_MISMATCH;MALFORMED_QUESTION
-Registry Act,49,Certificate of cancellation of Crown grant,What powers or authority are established by section 49 of Registry Act?,2,3,70,3,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT
-Registry Act,50,"Registration of original instrument, annexed plan, instrument conveying parcel",What filing or registration requirements are established by section 50 of Registry Act?,9,7,55,3,RUBRIC_ANSWER_TOO_LONG;MALFORMED_QUESTION;MALFORMED_QUESTION
+Registry Act,46,Certificate of development officer,What are the application requirements under section 46 of Registry Act?,4,2,80,2,MAIN_QUESTION_TOPIC_MISMATCH;RUBRIC_ANSWER_TOO_LONG
+Registry Act,47,Persons before whom proof of execution made,What powers or authority are established by section 47 of Registry Act?,1,1,95,1,GENERIC_RUBRIC_PROMPT
+Registry Act,48,Registration of Crown grant,What filing or registration requirements are established by section 48 of Registry Act?,1,1,100,0,
+Registry Act,49,Certificate of cancellation of Crown grant,What powers or authority are established by section 49 of Registry Act?,2,3,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Registry Act,50,"Registration of original instrument, annexed plan, instrument conveying parcel",What filing or registration requirements are established by section 50 of Registry Act?,6,7,95,1,RUBRIC_ANSWER_TOO_LONG
 Registry Act,51,Certificate of registrar,What order-making rules are established by section 51 of Registry Act?,2,2,85,3,GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT
 Registry Act,52,Repealed,What does section 52 of Registry Act provide?,1,1,100,0,
-Registry Act,53,Court order respecting production of book or record,What order-making rules are established by section 53 of Registry Act?,1,1,95,1,GENERIC_RUBRIC_PROMPT
+Registry Act,53,Court order respecting production of book or record,What filing or registration requirements are established by section 53 of Registry Act?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 Registry Act,54,Certificate of satisfaction of mortgage,What certification requirements are established by section 54 of Registry Act?,1,1,85,1,MAIN_QUESTION_TOPIC_MISMATCH
 Registry Act,55,Certificate of partial release of mortgage,What certification requirements are established by section 55 of Registry Act?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 Registry Act,56,Conveyance by married woman,What does section 56 of Registry Act provide?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 Registry Act,57,Certificate of satisfaction of judgment,What certification requirements are established by section 57 of Registry Act?,1,1,85,1,MAIN_QUESTION_TOPIC_MISMATCH
-Registry Act,58,Registration of Order for Partition or Sale,What order-making rules are established by section 58 of Registry Act?,1,1,85,1,MAIN_QUESTION_TOPIC_MISMATCH
-Registry Act,59,Registration of certificate of pending litigation,What notice requirements are established by section 59 of Registry Act?,1,1,100,0,
-Registry Act,60,"Registration of power of attorney, conveyance under power of attorney",What powers or authority are established by section 60 of Registry Act?,2,1,85,1,MAIN_QUESTION_TOPIC_MISMATCH
+Registry Act,58,Registration of Order for Partition or Sale,What filing or registration requirements are established by section 58 of Registry Act?,1,1,100,0,
+Registry Act,59,Registration of certificate of pending litigation,What filing or registration requirements are established by section 59 of Registry Act?,1,1,85,1,MAIN_QUESTION_TOPIC_MISMATCH
+Registry Act,60,"Registration of power of attorney, conveyance under power of attorney",What filing or registration requirements are established by section 60 of Registry Act?,2,1,100,0,
 Registry Act,61,Summons to witness,What filing or registration requirements are established by section 61 of Registry Act?,1,1,100,0,
 Registry Act,62,Orders of Provincial or Federal Cabinet,What order-making rules are established by section 62 of Registry Act?,1,1,85,1,MAIN_QUESTION_TOPIC_MISMATCH
 Registry Act,63,Registration of bond to Crown,What filing or registration requirements are established by section 63 of Registry Act?,1,1,95,1,GENERIC_RUBRIC_PROMPT
-Registry Act,64,Registration as notice,What duties does section 64 of Registry Act impose about registration as notice?,1,1,100,0,
+Registry Act,64,Registration as notice,What filing or registration requirements are established by section 64 of Registry Act?,1,1,85,1,MAIN_QUESTION_TOPIC_MISMATCH
 Registry Act,65,Payment of fees,What powers or authority are established by section 65 of Registry Act?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 Registry Act,65.1,Payment of fees of a digitally scanned image of an instrument,What filing or registration requirements are established by section 65.1 of Registry Act?,1,0,95,1,GENERIC_RUBRIC_PROMPT
 Registry Act,66,Offences and penalty respecting taking of fees by employees,What offences or penalties are established by section 66 of Registry Act?,2,2,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Registry Act,66.1,"Liability of registrar, deputy registrar and clerk","What duties does section 66.1 of Registry Act impose about liability of registrar, deputy registrar and clerk?",1,1,95,1,GENERIC_RUBRIC_PROMPT
 Registry Act,66.2,Proceedings against the Crown,What does section 66.2 of Registry Act provide?,1,1,100,0,
-Registry Act,67,Regulations and amendments respecting Schedule of Fees,What order-making rules are established by section 67 of Registry Act?,2,1,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Registry Act,67,Regulations and amendments respecting Schedule of Fees,What regulation-making authority is established by section 67 of Registry Act?,2,1,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Registry Act,68,Posting of Schedule of Fees,What powers or authority are established by section 68 of Registry Act?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 Registry Act,69,Statement of fees,What notice requirements are established by section 69 of Registry Act?,1,1,95,1,GENERIC_RUBRIC_PROMPT
-Registry Act,70,Successor of registrar,What requirements are established by section 70 of Registry Act?,1,1,65,2,MAIN_QUESTION_TOPIC_MISMATCH;MALFORMED_QUESTION
-Registry Act,71,Regulations,What does section 71 of Registry Act provide?,3,4,60,5,GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION
+Registry Act,70,Successor of registrar,What requirements are established by section 70 of Registry Act?,1,1,85,1,MAIN_QUESTION_TOPIC_MISMATCH
+Registry Act,71,Regulations,What regulation-making authority is established by section 71 of Registry Act?,2,4,85,3,GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT
 Land Titles Act,1,Purpose,What powers or authority are established by section 1 of Land Titles Act?,1,1,100,0,
-Land Titles Act,2,Application,What are the application requirements under section 2 of Land Titles Act?,6,5,30,8,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT
+Land Titles Act,2,Application,What are the application requirements under section 2 of Land Titles Act?,3,5,85,3,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Land Titles Act,2.1,Interests within the scope of the Personal Property Security Act,What are the application requirements under section 2.1 of Land Titles Act?,1,0,90,1,TOO_FEW_RUBRIC_ITEMS
-Land Titles Act,3,Definitions,What definitions are provided in section 3 of Land Titles Act?,1,12,95,1,GENERIC_RUBRIC_PROMPT
+Land Titles Act,3,Definitions,What definitions are provided in section 3 of Land Titles Act?,8,12,100,0,
 Land Titles Act,4,Establishment of land titles system,What notice requirements are established by section 4 of Land Titles Act?,1,1,100,0,
-Land Titles Act,5,"Appointment of Registrar General, registrar and deputies","What duties does section 5 of Land Titles Act impose about appointment of registrar general, registrar and deputies?",6,1,30,8,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-Land Titles Act,6,Service New Brunswick,What duties does section 6 of Land Titles Act impose about service new brunswick?,1,1,75,2,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION
+Land Titles Act,5,"Appointment of Registrar General, registrar and deputies","What duties does section 5 of Land Titles Act impose about appointment of registrar general, registrar and deputies?",2,1,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Land Titles Act,6,Service New Brunswick,What notice requirements are established by section 6 of Land Titles Act?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 Land Titles Act,7,Seals of office,What notice requirements are established by section 7 of Land Titles Act?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 Land Titles Act,8,Immunity of officers,What duties does section 8 of Land Titles Act impose about immunity of officers?,1,1,95,1,GENERIC_RUBRIC_PROMPT
-Land Titles Act,9,Records and copies of records,What requirements are established by section 9 of Land Titles Act?,4,4,55,6,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;CONCEPT_FRAGMENT
+Land Titles Act,9,Records and copies of records,What requirements are established by section 9 of Land Titles Act?,3,4,80,4,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;CONCEPT_FRAGMENT
 Land Titles Act,10,"Documents signed, made or issued by officers","What duties does section 10 of Land Titles Act impose about documents signed, made or issued by officers?",1,1,85,1,MAIN_QUESTION_TOPIC_MISMATCH
-Land Titles Act,10.1,Parcel identifiers and descriptions of land,What are the application requirements under section 10.1 of Land Titles Act?,4,2,60,5,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT
+Land Titles Act,10.1,Parcel identifiers and descriptions of land,What are the application requirements under section 10.1 of Land Titles Act?,2,2,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Land Titles Act,10.2,Record of parcel identifiers,What filing or registration requirements are established by section 10.2 of Land Titles Act?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 Land Titles Act,10.3,References to parcel identifiers,What filing or registration requirements are established by section 10.3 of Land Titles Act?,1,2,100,0,
 Land Titles Act,10.4,Parcel identifiers on consolidation,What are the application requirements under section 10.4 of Land Titles Act?,1,1,85,1,MAIN_QUESTION_TOPIC_MISMATCH
-Land Titles Act,11,Application to register land,What powers or authority are established by section 11 of Land Titles Act?,7,6,45,3,MAIN_QUESTION_TOPIC_MISMATCH;MALFORMED_QUESTION;MALFORMED_QUESTION
-Land Titles Act,12,"Completion of application, order by Registrar General",What are the application requirements under section 12 of Land Titles Act?,5,6,50,7,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;CONCEPT_FRAGMENT
+Land Titles Act,11,Application to register land,What filing or registration requirements are established by section 11 of Land Titles Act?,7,6,100,0,
+Land Titles Act,12,"Completion of application, order by Registrar General",What order-making rules are established by section 12 of Land Titles Act?,5,6,70,6,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;CONCEPT_FRAGMENT
 Land Titles Act,13,Court order or enactment,What order-making rules are established by section 13 of Land Titles Act?,2,3,85,1,MAIN_QUESTION_TOPIC_MISMATCH
-Land Titles Act,14,Order of Registrar General,What offences and penalties are established by section 14 of Land Titles Act?,3,1,85,1,MAIN_QUESTION_TOPIC_MISMATCH
-Land Titles Act,14.1,Land under Condominium Property Act,What notice requirements are established by section 14.1 of Land Titles Act?,4,4,95,1,CONCEPT_FRAGMENT
-Land Titles Act,15,Registration necessary to pass estate or interest,What are the application requirements under section 15 of Land Titles Act?,2,2,85,1,MAIN_QUESTION_TOPIC_MISMATCH
-Land Titles Act,16,Status of registered owner,"How may a filed plan of survey be corrected under section 16 of Land Titles Act, and what limits and filing consequences apply?",8,1,90,1,QUESTION_MISSING_SUBJECT
-Land Titles Act,17,Effect of registration on subsequent interests,What filing or registration requirements are established by section 17 of Land Titles Act?,4,4,90,2,RUBRIC_ANSWER_TOO_LONG;CONCEPT_FRAGMENT
-Land Titles Act,17.1,Instruments to be submitted electronically,What filing or registration requirements are established by section 17.1 of Land Titles Act?,8,4,60,8,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Land Titles Act,14,Order of Registrar General,What order-making rules are established by section 14 of Land Titles Act?,1,1,85,1,MAIN_QUESTION_TOPIC_MISMATCH
+Land Titles Act,14.1,Land under Condominium Property Act,What notice requirements are established by section 14.1 of Land Titles Act?,2,4,95,1,CONCEPT_FRAGMENT
+Land Titles Act,15,Registration necessary to pass estate or interest,What filing or registration requirements are established by section 15 of Land Titles Act?,2,2,100,0,
+Land Titles Act,16,Status of registered owner,What filing or registration requirements are established by section 16 of Land Titles Act?,1,1,100,0,
+Land Titles Act,17,Effect of registration on subsequent interests,What filing or registration requirements are established by section 17 of Land Titles Act?,3,4,95,1,CONCEPT_FRAGMENT
+Land Titles Act,17.1,Instruments to be submitted electronically,What filing or registration requirements are established by section 17.1 of Land Titles Act?,6,4,70,6,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Land Titles Act,17.11,Instruments that may be submitted as digitally scanned images,What requirements are established by section 17.11 of Land Titles Act?,3,1,85,1,MAIN_QUESTION_TOPIC_MISMATCH
-Land Titles Act,17.2,Authentication of electronic instrument,What notice requirements are established by section 17.2 of Land Titles Act?,5,4,30,8,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;CONCEPT_FRAGMENT
-Land Titles Act,17.3,Proof of execution and marital status,What powers or authority are established by section 17.3 of Land Titles Act?,2,2,70,3,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT
+Land Titles Act,17.2,Authentication of electronic instrument,What notice requirements are established by section 17.2 of Land Titles Act?,2,4,85,3,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;CONCEPT_FRAGMENT
+Land Titles Act,17.3,Proof of execution and marital status,What powers or authority are established by section 17.3 of Land Titles Act?,2,2,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Land Titles Act,17.4,Retention of documents,What requirements are established by section 17.4 of Land Titles Act?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 Land Titles Act,17.5,Authorization to submit,What powers or authority are established by section 17.5 of Land Titles Act?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 Land Titles Act,17.6,Effect of electronic instrument,What requirements are established by section 17.6 of Land Titles Act?,1,1,100,0,
-Land Titles Act,17.7,Production of evidence,What does section 17.7 of Land Titles Act provide?,2,1,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-Land Titles Act,17.8,Subscriber agreement,What duties does section 17.8 of Land Titles Act impose about subscriber agreement?,3,3,75,5,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG
-Land Titles Act,18,Registration of instrument,What filing or registration requirements are established by section 18 of Land Titles Act?,12,11,5,16,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;TOO_MANY_RUBRIC_ITEMS;CONCEPT_FRAGMENT
-Land Titles Act,19,Priority on registration,What order-making rules are established by section 19 of Land Titles Act?,3,5,85,3,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Land Titles Act,17.7,Production of evidence,What does section 17.7 of Land Titles Act provide?,1,1,85,2,GENERIC_RUBRIC_PROMPT;TOO_FEW_RUBRIC_ITEMS
+Land Titles Act,17.8,Subscriber agreement,What duties does section 17.8 of Land Titles Act impose about subscriber agreement?,1,3,85,2,GENERIC_RUBRIC_PROMPT;TOO_FEW_RUBRIC_ITEMS
+Land Titles Act,18,Registration of instrument,What filing or registration requirements are established by section 18 of Land Titles Act?,9,11,50,10,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;CONCEPT_FRAGMENT
+Land Titles Act,19,Priority on registration,What filing or registration requirements are established by section 19 of Land Titles Act?,3,5,85,3,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Land Titles Act,20,Postponement of priority,What filing or registration requirements are established by section 20 of Land Titles Act?,1,1,100,0,
 Land Titles Act,21,Execution of transfer,What filing or registration requirements are established by section 21 of Land Titles Act?,1,1,95,1,GENERIC_RUBRIC_PROMPT
-Land Titles Act,22,Effect of transfer,What filing or registration requirements are established by section 22 of Land Titles Act?,2,1,70,3,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT
+Land Titles Act,22,Effect of transfer,What filing or registration requirements are established by section 22 of Land Titles Act?,2,1,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Land Titles Act,23,Crown grants,What filing or registration requirements are established by section 23 of Land Titles Act?,1,1,100,0,
-Land Titles Act,24,Registration of easement or incorporeal right,What filing or registration requirements are established by section 24 of Land Titles Act?,2,1,100,0,
-Land Titles Act,25,Registration of mortgage,What filing or registration requirements are established by section 25 of Land Titles Act?,6,3,60,2,MALFORMED_QUESTION;MALFORMED_QUESTION
-Land Titles Act,26,Release,What filing or registration requirements are established by section 26 of Land Titles Act?,2,3,80,1,MALFORMED_QUESTION
-Land Titles Act,26.1,Debentures,What are the application requirements under section 26.1 of Land Titles Act?,8,7,45,3,MAIN_QUESTION_TOPIC_MISMATCH;MALFORMED_QUESTION;MALFORMED_QUESTION
-Land Titles Act,27,Registration of lease,What notice requirements are established by section 27 of Land Titles Act?,6,4,85,1,MAIN_QUESTION_TOPIC_MISMATCH
-Land Titles Act,28,Surrender of lease,What notice requirements are established by section 28 of Land Titles Act?,3,2,65,2,MAIN_QUESTION_TOPIC_MISMATCH;MALFORMED_QUESTION
-Land Titles Act,29,Registration of assignment,What powers or authority are established by section 29 of Land Titles Act?,3,3,85,1,MAIN_QUESTION_TOPIC_MISMATCH
-Land Titles Act,30,Registration of caveat,What notice requirements are established by section 30 of Land Titles Act?,4,3,65,2,MAIN_QUESTION_TOPIC_MISMATCH;MALFORMED_QUESTION
-Land Titles Act,31,Effect of registration,What filing or registration requirements are established by section 31 of Land Titles Act?,3,3,100,0,
-Land Titles Act,32,Application by owner,What are the application requirements under section 32 of Land Titles Act?,1,1,65,2,MAIN_QUESTION_TOPIC_MISMATCH;MALFORMED_QUESTION
-Land Titles Act,33,Notice of request to withdraw caveat,What notice requirements are established by section 33 of Land Titles Act?,3,4,60,3,MAIN_QUESTION_TOPIC_MISMATCH;MALFORMED_QUESTION;CONCEPT_FRAGMENT
+Land Titles Act,24,Registration of easement or incorporeal right,What filing or registration requirements are established by section 24 of Land Titles Act?,1,1,100,0,
+Land Titles Act,25,Registration of mortgage,What filing or registration requirements are established by section 25 of Land Titles Act?,5,3,100,0,
+Land Titles Act,26,Release,What filing or registration requirements are established by section 26 of Land Titles Act?,2,3,100,0,
+Land Titles Act,26.1,Debentures,What are the application requirements under section 26.1 of Land Titles Act?,8,7,85,1,MAIN_QUESTION_TOPIC_MISMATCH
+Land Titles Act,27,Registration of lease,What filing or registration requirements are established by section 27 of Land Titles Act?,5,4,100,0,
+Land Titles Act,28,Surrender of lease,What notice requirements are established by section 28 of Land Titles Act?,3,2,85,1,MAIN_QUESTION_TOPIC_MISMATCH
+Land Titles Act,29,Registration of assignment,What filing or registration requirements are established by section 29 of Land Titles Act?,3,3,100,0,
+Land Titles Act,30,Registration of caveat,What filing or registration requirements are established by section 30 of Land Titles Act?,3,3,100,0,
+Land Titles Act,31,Effect of registration,What filing or registration requirements are established by section 31 of Land Titles Act?,2,3,100,0,
+Land Titles Act,32,Application by owner,What are the application requirements under section 32 of Land Titles Act?,1,1,85,1,MAIN_QUESTION_TOPIC_MISMATCH
+Land Titles Act,33,Notice of request to withdraw caveat,What notice requirements are established by section 33 of Land Titles Act?,2,4,80,2,MAIN_QUESTION_TOPIC_MISMATCH;CONCEPT_FRAGMENT
 Land Titles Act,34,Instrument to withdraw caveat,What filing or registration requirements are established by section 34 of Land Titles Act?,1,1,100,0,
 Land Titles Act,35,"Action for damages, restraining order",What order-making rules are established by section 35 of Land Titles Act?,2,2,85,1,MAIN_QUESTION_TOPIC_MISMATCH
-Land Titles Act,36,Registration of stop order to prohibit registration,What are the application requirements under section 36 of Land Titles Act?,4,3,60,3,MAIN_QUESTION_TOPIC_MISMATCH;RUBRIC_ANSWER_TOO_LONG;MALFORMED_QUESTION
-Land Titles Act,37,Registration of affidavit to prevent registration,What powers or authority are established by section 37 of Land Titles Act?,2,2,85,1,MAIN_QUESTION_TOPIC_MISMATCH
-Land Titles Act,38,Registration of certificate of pending litigation,What order-making rules are established by section 38 of Land Titles Act?,1,1,85,1,MAIN_QUESTION_TOPIC_MISMATCH
+Land Titles Act,36,Registration of stop order to prohibit registration,What filing or registration requirements are established by section 36 of Land Titles Act?,3,3,95,1,RUBRIC_ANSWER_TOO_LONG
+Land Titles Act,37,Registration of affidavit to prevent registration,What filing or registration requirements are established by section 37 of Land Titles Act?,1,2,100,0,
+Land Titles Act,38,Registration of certificate of pending litigation,What filing or registration requirements are established by section 38 of Land Titles Act?,1,1,100,0,
 Land Titles Act,39,Registration of instrument severing or consolidating registered land,What filing or registration requirements are established by section 39 of Land Titles Act?,1,1,100,0,
-Land Titles Act,40,Application to register memorial of judgment,What are the application requirements under section 40 of Land Titles Act?,6,7,75,2,MALFORMED_QUESTION;RUBRIC_ANSWER_TOO_LONG
+Land Titles Act,40,Application to register memorial of judgment,What filing or registration requirements are established by section 40 of Land Titles Act?,5,7,100,0,
 Land Titles Act,41,Effect of registration of memorial of judgment,What filing or registration requirements are established by section 41 of Land Titles Act?,1,1,100,0,
-Land Titles Act,41.1,,What filing or registration requirements are established by section 41.1 of Land Titles Act?,1,0,90,1,QUESTION_MISSING_SUBJECT
-Land Titles Act,42,Notice of registration to owner,What notice requirements are established by section 42 of Land Titles Act?,1,1,85,1,MAIN_QUESTION_TOPIC_MISMATCH
-Land Titles Act,43,"Notice to judgment creditor, cessation of registration, extension of registration period, registration of assignment",What notice requirements are established by section 43 of Land Titles Act?,6,5,80,2,MAIN_QUESTION_TOPIC_MISMATCH;CONCEPT_FRAGMENT
+Land Titles Act,41.1,,What filing or registration requirements are established by section 41.1 of Land Titles Act?,1,0,100,0,
+Land Titles Act,42,Notice of registration to owner,What filing or registration requirements are established by section 42 of Land Titles Act?,1,1,100,0,
+Land Titles Act,43,"Notice to judgment creditor, cessation of registration, extension of registration period, registration of assignment",What filing or registration requirements are established by section 43 of Land Titles Act?,4,5,95,1,CONCEPT_FRAGMENT
 Land Titles Act,44,Instrument withdrawing memorial of judgment,What filing or registration requirements are established by section 44 of Land Titles Act?,1,1,100,0,
-Land Titles Act,45,Action for damages against judgment creditor,What filing or registration requirements are established by section 45 of Land Titles Act?,2,1,80,1,MALFORMED_QUESTION
+Land Titles Act,45,Action for damages against judgment creditor,What filing or registration requirements are established by section 45 of Land Titles Act?,2,1,100,0,
 Land Titles Act,46,Paramountcy of Act,What powers or authority are established by section 46 of Land Titles Act?,1,1,100,0,
-Land Titles Act,47,Registration or filing of power of attorney,What powers or authority are established by section 47 of Land Titles Act?,5,3,65,2,MAIN_QUESTION_TOPIC_MISMATCH;MALFORMED_QUESTION
-Land Titles Act,48,Registration of instrument containing conditions or covenants,What notice requirements are established by section 48 of Land Titles Act?,4,4,40,4,MAIN_QUESTION_TOPIC_MISMATCH;MALFORMED_QUESTION;MALFORMED_QUESTION;RUBRIC_ANSWER_TOO_LONG
-Land Titles Act,48.1,Conditions and covenants in a transfer,What are the application requirements under section 48.1 of Land Titles Act?,2,2,65,2,MAIN_QUESTION_TOPIC_MISMATCH;MALFORMED_QUESTION
+Land Titles Act,47,Registration or filing of power of attorney,What filing or registration requirements are established by section 47 of Land Titles Act?,5,3,100,0,
+Land Titles Act,48,Registration of instrument containing conditions or covenants,What filing or registration requirements are established by section 48 of Land Titles Act?,2,4,95,1,RUBRIC_ANSWER_TOO_LONG
+Land Titles Act,48.1,Conditions and covenants in a transfer,What are the application requirements under section 48.1 of Land Titles Act?,1,2,85,1,MAIN_QUESTION_TOPIC_MISMATCH
 Land Titles Act,49,Instrument evidencing expropriation of registered land,What filing or registration requirements are established by section 49 of Land Titles Act?,1,1,100,0,
-Land Titles Act,50,Bankruptcy proceedings,What notice requirements are established by section 50 of Land Titles Act?,6,4,65,2,MAIN_QUESTION_TOPIC_MISMATCH;MALFORMED_QUESTION
+Land Titles Act,50,Bankruptcy proceedings,What notice requirements are established by section 50 of Land Titles Act?,5,4,85,1,MAIN_QUESTION_TOPIC_MISMATCH
 Land Titles Act,51,Tax sale proceedings,What powers or authority are established by section 51 of Land Titles Act?,3,4,85,1,MAIN_QUESTION_TOPIC_MISMATCH
-Land Titles Act,52,Registration of claimant as owner,What order-making rules are established by section 52 of Land Titles Act?,2,3,55,4,MAIN_QUESTION_TOPIC_MISMATCH;RUBRIC_ANSWER_TOO_LONG;MALFORMED_QUESTION;RUBRIC_ANSWER_TOO_LONG
+Land Titles Act,52,Registration of claimant as owner,What filing or registration requirements are established by section 52 of Land Titles Act?,2,3,95,1,RUBRIC_ANSWER_TOO_LONG
 Land Titles Act,53,Transmission on death,What are the application requirements under section 53 of Land Titles Act?,6,5,85,1,MAIN_QUESTION_TOPIC_MISMATCH
-Land Titles Act,54,Implied covenants in instruments,What filing or registration requirements are established by section 54 of Land Titles Act?,6,2,100,0,
-Land Titles Act,55,Proof of execution,What requirements are established by section 55 of Land Titles Act?,7,5,15,5,MAIN_QUESTION_TOPIC_MISMATCH;MALFORMED_QUESTION;MALFORMED_QUESTION;MALFORMED_QUESTION;QUESTION_MISSING_SUBJECT
-Land Titles Act,56,Address for service,What are the application requirements under section 56 of Land Titles Act?,3,3,65,4,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-Land Titles Act,57,Method of service,What requirements are established by section 57 of Land Titles Act?,1,1,65,2,MAIN_QUESTION_TOPIC_MISMATCH;MALFORMED_QUESTION
+Land Titles Act,54,Implied covenants in instruments,What filing or registration requirements are established by section 54 of Land Titles Act?,4,2,100,0,
+Land Titles Act,55,Proof of execution,What requirements are established by section 55 of Land Titles Act?,3,5,85,1,MAIN_QUESTION_TOPIC_MISMATCH
+Land Titles Act,56,Address for service,What notice requirements are established by section 56 of Land Titles Act?,2,3,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Land Titles Act,57,Method of service,What notice requirements are established by section 57 of Land Titles Act?,1,1,100,0,
 Land Titles Act,58,Registered land in trust,What filing or registration requirements are established by section 58 of Land Titles Act?,2,1,100,0,
 Land Titles Act,59,Trust must be in accordance with Act,What requirements are established by section 59 of Land Titles Act?,1,2,85,1,MAIN_QUESTION_TOPIC_MISMATCH
 Land Titles Act,60,Seals and consideration,What does section 60 of Land Titles Act provide?,3,1,85,3,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-Land Titles Act,61,Unregistered instrument or interest,What are the application requirements under section 61 of Land Titles Act?,2,4,100,0,
+Land Titles Act,61,Unregistered instrument or interest,What filing or registration requirements are established by section 61 of Land Titles Act?,2,4,100,0,
 Land Titles Act,62,Repealed,What does section 62 of Land Titles Act provide?,1,1,100,0,
-Land Titles Act,63,Certificate of registered ownership,What certification requirements are established by section 63 of Land Titles Act?,3,2,60,2,MALFORMED_QUESTION;MALFORMED_QUESTION
+Land Titles Act,63,Certificate of registered ownership,What filing or registration requirements are established by section 63 of Land Titles Act?,3,2,100,0,
 Land Titles Act,64,Instrument to state tenancy,What does section 64 of Land Titles Act provide?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 Land Titles Act,65,Survivorship in joint tenancy,What are the application requirements under section 65 of Land Titles Act?,1,1,85,1,MAIN_QUESTION_TOPIC_MISMATCH
 Land Titles Act,66,Entry of “No Survivorship”,What order-making rules are established by section 66 of Land Titles Act?,2,3,85,1,MAIN_QUESTION_TOPIC_MISMATCH
-Land Titles Act,67,Action of ejectment or recovery,What filing or registration requirements are established by section 67 of Land Titles Act?,1,1,80,1,MALFORMED_QUESTION
+Land Titles Act,67,Action of ejectment or recovery,What filing or registration requirements are established by section 67 of Land Titles Act?,1,1,100,0,
 Land Titles Act,68,Cases where registrar may rectify,What filing or registration requirements are established by section 68 of Land Titles Act?,1,1,100,0,
 Land Titles Act,69,Powers of registrar,What powers or authority are established by section 69 of Land Titles Act?,1,1,95,1,GENERIC_RUBRIC_PROMPT
-Land Titles Act,70,Court order respecting rectification,What requirements are established by section 70 of Land Titles Act?,2,2,65,4,MAIN_QUESTION_TOPIC_MISMATCH;RUBRIC_ANSWER_TOO_LONG;QUESTION_MISSING_SUBJECT;CONCEPT_FRAGMENT
+Land Titles Act,70,Court order respecting rectification,What order-making rules are established by section 70 of Land Titles Act?,2,2,75,3,MAIN_QUESTION_TOPIC_MISMATCH;RUBRIC_ANSWER_TOO_LONG;CONCEPT_FRAGMENT
 Land Titles Act,71,Rectification and registered owner in possession,What filing or registration requirements are established by section 71 of Land Titles Act?,1,1,100,0,
-Land Titles Act,72,Notation of rectification,What filing or registration requirements are established by section 72 of Land Titles Act?,2,1,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Land Titles Act,72,Notation of rectification,What filing or registration requirements are established by section 72 of Land Titles Act?,1,1,85,2,GENERIC_RUBRIC_PROMPT;TOO_FEW_RUBRIC_ITEMS
 Land Titles Act,73,Indemnification on rectification,What certification requirements are established by section 73 of Land Titles Act?,1,2,80,2,MAIN_QUESTION_TOPIC_MISMATCH;RUBRIC_ANSWER_TOO_LONG
 Land Titles Act,74,Award of indemnity,What are the application requirements under section 74 of Land Titles Act?,2,3,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-Land Titles Act,75,Payment,What does section 75 of Land Titles Act provide?,1,1,75,2,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION
+Land Titles Act,75,Payment,What does section 75 of Land Titles Act provide?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 Land Titles Act,76,Recovery of payment from third parties,What does section 76 of Land Titles Act provide?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 Land Titles Act,76.01,Agreements with respect to liability,What notice requirements are established by section 76.01 of Land Titles Act?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 Land Titles Act,76.1,Repealed,What does section 76.1 of Land Titles Act provide?,1,1,100,0,
-Land Titles Act,77,Time of valuation,What filing or registration requirements are established by section 77 of Land Titles Act?,2,1,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-Land Titles Act,78,Two year limitation period,What are the application requirements under section 78 of Land Titles Act?,1,2,75,2,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION
-Land Titles Act,79,Application to court,What are the application requirements under section 79 of Land Titles Act?,9,7,10,12,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;CONCEPT_FRAGMENT
-Land Titles Act,80,Fees,What duties does section 80 of Land Titles Act impose about fees?,10,6,10,12,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+Land Titles Act,77,Time of valuation,What filing or registration requirements are established by section 77 of Land Titles Act?,1,1,85,2,GENERIC_RUBRIC_PROMPT;TOO_FEW_RUBRIC_ITEMS
+Land Titles Act,78,Two year limitation period,What are the application requirements under section 78 of Land Titles Act?,1,2,95,1,GENERIC_RUBRIC_PROMPT
+Land Titles Act,79,Application to court,What are the application requirements under section 79 of Land Titles Act?,7,7,60,8,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;CONCEPT_FRAGMENT
+Land Titles Act,80,Fees,What duties does section 80 of Land Titles Act impose about fees?,8,6,60,8,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 Land Titles Act,81,Affidavit of marital status,What filing or registration requirements are established by section 81 of Land Titles Act?,1,1,100,0,
-Land Titles Act,82,Request for registered information,What certification requirements are established by section 82 of Land Titles Act?,3,1,100,0,
-Land Titles Act,83,Regulations,What authority and survey-monument requirements does section 83 of Land Titles Act establish for laying out streets and lots?,4,1,90,1,QUESTION_MISSING_SUBJECT
+Land Titles Act,82,Request for registered information,What filing or registration requirements are established by section 82 of Land Titles Act?,3,1,100,0,
+Land Titles Act,83,Regulations,What regulation-making authority is established by section 83 of Land Titles Act?,1,1,90,2,GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG
 Land Titles Act,84,Transitional provisions,What filing or registration requirements are established by section 84 of Land Titles Act?,1,1,100,0,
 Land Titles Act,85,Repeal,What does section 85 of Land Titles Act provide?,1,1,100,0,
 Land Titles Act,86,Commencement,What does section 86 of Land Titles Act provide?,1,1,100,0,
 REGULATION 84-76,1,,What regulation-making authority is established by section 1 of REGULATION 84-76?,1,0,95,1,GENERIC_RUBRIC_PROMPT
-REGULATION 84-76,2,,What regulation-making authority is established by section 2 of REGULATION 84-76?,1,1,90,1,QUESTION_MISSING_SUBJECT
+REGULATION 84-76,2,,What regulation-making authority is established by section 2 of REGULATION 84-76?,1,1,100,0,
 REGULATION 84-76,3,,What does section 3 of REGULATION 84-76 provide?,1,0,95,1,GENERIC_RUBRIC_PROMPT
 REGULATION 84-76,4,,What powers or authority are established by section 4 of REGULATION 84-76?,1,0,95,1,GENERIC_RUBRIC_PROMPT
-REGULATION 84-76,5,,What does section 5 of REGULATION 84-76 provide?,1,0,85,2,GENERIC_RUBRIC_PROMPT;QUESTION_MISSING_SUBJECT
+REGULATION 84-76,5,,What does section 5 of REGULATION 84-76 provide?,1,0,95,1,GENERIC_RUBRIC_PROMPT
 REGULATION 84-76,6,,What duties does section 6 of REGULATION 84-76 impose?,1,1,100,0,
 REGULATION 84-76,7,,What powers or authority are established by section 7 of REGULATION 84-76?,1,0,95,1,GENERIC_RUBRIC_PROMPT
-REGULATION 84-76,8,,What regulation-making authority is established by section 8 of REGULATION 84-76?,1,0,90,1,QUESTION_MISSING_SUBJECT
+REGULATION 84-76,8,,What regulation-making authority is established by section 8 of REGULATION 84-76?,1,0,95,1,GENERIC_RUBRIC_PROMPT
 REGULATION 95-166,1,,What definitions are provided in section 1 of REGULATION 95-166?,1,0,95,1,GENERIC_RUBRIC_PROMPT
-REGULATION 95-166,2,,What powers or authority are established by section 2 of REGULATION 95-166?,1,2,85,2,GENERIC_RUBRIC_PROMPT;QUESTION_MISSING_SUBJECT
+REGULATION 95-166,2,,What powers or authority are established by section 2 of REGULATION 95-166?,1,2,95,1,GENERIC_RUBRIC_PROMPT
 REGULATION 95-166,3,,What are the application requirements under section 3 of REGULATION 95-166?,3,5,80,4,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;CONCEPT_FRAGMENT
 REGULATION 95-166,4,,What notice requirements are established by section 4 of REGULATION 95-166?,1,1,100,0,
 REGULATION 95-166,5,,What notice requirements are established by section 5 of REGULATION 95-166?,1,0,95,1,GENERIC_RUBRIC_PROMPT
-REGULATION 95-166,6,,What duties does section 6 of REGULATION 95-166 impose?,6,4,60,7,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;QUESTION_MISSING_SUBJECT;GENERIC_RUBRIC_PROMPT
+REGULATION 95-166,6,,What duties does section 6 of REGULATION 95-166 impose?,6,4,70,6,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 REGULATION 95-166,7,,What hearing process is established by section 7 of REGULATION 95-166?,1,0,95,1,GENERIC_RUBRIC_PROMPT
-REGULATION 95-166,8,,What are the application requirements under section 8 of REGULATION 95-166?,1,0,90,1,QUESTION_MISSING_SUBJECT
+REGULATION 95-166,8,,What are the application requirements under section 8 of REGULATION 95-166?,1,0,100,0,
 REGULATION 95-166,9,,What certification requirements are established by section 9 of REGULATION 95-166?,1,0,100,0,
-REGULATION 95-166,10,,What are the application requirements under section 10 of REGULATION 95-166?,2,1,80,3,GENERIC_RUBRIC_PROMPT;QUESTION_MISSING_SUBJECT;GENERIC_RUBRIC_PROMPT
-REGULATION 95-166,11,,What regulation-making authority is established by section 11 of REGULATION 95-166?,1,1,90,1,QUESTION_MISSING_SUBJECT
+REGULATION 95-166,10,,What are the application requirements under section 10 of REGULATION 95-166?,2,1,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+REGULATION 95-166,11,,What regulation-making authority is established by section 11 of REGULATION 95-166?,1,1,100,0,
 REGULATION 80-159,1,,What regulation-making authority is established by section 1 of REGULATION 80-159?,1,0,95,1,GENERIC_RUBRIC_PROMPT
-REGULATION 80-159,2,,What regulation-making authority is established by section 2 of REGULATION 80-159?,1,2,90,1,QUESTION_MISSING_SUBJECT
-REGULATION 80-159,3,,What are the application requirements under section 3 of REGULATION 80-159?,1,0,65,3,AMENDMENT_HISTORY_LEAK;QUESTION_MISSING_SUBJECT;TOO_FEW_RUBRIC_ITEMS
-REGULATION 80-159,4,,What regulation-making authority is established by section 4 of REGULATION 80-159?,1,0,90,1,QUESTION_MISSING_SUBJECT
-REGULATION 80-159,5,,What does section 5 of REGULATION 80-159 provide?,4,0,40,7,AMENDMENT_HISTORY_LEAK;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;QUESTION_MISSING_SUBJECT;GENERIC_RUBRIC_PROMPT;AMENDMENT_HISTORY_LEAK
-REGULATION 80-159,6,,What notice requirements are established by section 6 of REGULATION 80-159?,6,0,70,6,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+REGULATION 80-159,2,,What regulation-making authority is established by section 2 of REGULATION 80-159?,1,2,100,0,
+REGULATION 80-159,3,,What are the application requirements under section 3 of REGULATION 80-159?,1,0,90,1,TOO_FEW_RUBRIC_ITEMS
+REGULATION 80-159,4,,What regulation-making authority is established by section 4 of REGULATION 80-159?,1,0,100,0,
+REGULATION 80-159,5,,What does section 5 of REGULATION 80-159 provide?,2,0,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+REGULATION 80-159,6,,What notice requirements are established by section 6 of REGULATION 80-159?,4,0,80,4,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 REGULATION 80-159,7,,What notice requirements are established by section 7 of REGULATION 80-159?,2,2,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 REGULATION 80-159,7.1,,What notice requirements are established by section 7.1 of REGULATION 80-159?,2,0,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-REGULATION 80-159,8,,What does section 8 of REGULATION 80-159 provide?,1,0,90,1,QUESTION_MISSING_SUBJECT
-REGULATION 80-159,9,,What regulation-making authority is established by section 9 of REGULATION 80-159?,1,0,90,1,QUESTION_MISSING_SUBJECT
+REGULATION 80-159,8,,What does section 8 of REGULATION 80-159 provide?,1,0,100,0,
+REGULATION 80-159,9,,What regulation-making authority is established by section 9 of REGULATION 80-159?,1,0,100,0,
 REGULATION 84-190,1,,What regulation-making authority is established by section 1 of REGULATION 84-190?,1,0,95,1,GENERIC_RUBRIC_PROMPT
-REGULATION 84-190,2,,What does section 2 of REGULATION 84-190 provide?,5,1,45,7,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;QUESTION_MISSING_SUBJECT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION
-REGULATION 84-190,3,,What regulation-making authority is established by section 3 of REGULATION 84-190?,1,0,90,1,QUESTION_MISSING_SUBJECT
-REGULATION 84-190,4,,What regulation-making authority is established by section 4 of REGULATION 84-190?,1,0,90,1,QUESTION_MISSING_SUBJECT
+REGULATION 84-190,2,,What does section 2 of REGULATION 84-190 provide?,4,1,80,4,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+REGULATION 84-190,3,,What regulation-making authority is established by section 3 of REGULATION 84-190?,1,0,100,0,
+REGULATION 84-190,4,,What regulation-making authority is established by section 4 of REGULATION 84-190?,1,0,95,1,GENERIC_RUBRIC_PROMPT
 REGULATION 83-130,1,,What regulation-making authority is established by section 1 of REGULATION 83-130?,1,0,95,1,GENERIC_RUBRIC_PROMPT
-REGULATION 83-130,2,,What regulation-making authority is established by section 2 of REGULATION 83-130?,1,3,90,1,QUESTION_MISSING_SUBJECT
-REGULATION 83-130,3,,What are the application requirements under section 3 of REGULATION 83-130?,5,0,0,10,AMENDMENT_HISTORY_LEAK;GENERIC_RUBRIC_PROMPT;QUESTION_MISSING_SUBJECT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT
-REGULATION 83-130,4,,What powers or authority are established by section 4 of REGULATION 83-130?,2,1,35,6,AMENDMENT_HISTORY_LEAK;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;AMENDMENT_HISTORY_LEAK;CONCEPT_FRAGMENT
-REGULATION 83-130,5,,What filing or registration requirements are established by section 5 of REGULATION 83-130?,3,4,45,6,AMENDMENT_HISTORY_LEAK;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;QUESTION_MISSING_SUBJECT;GENERIC_RUBRIC_PROMPT;AMENDMENT_HISTORY_LEAK
+REGULATION 83-130,2,,What regulation-making authority is established by section 2 of REGULATION 83-130?,1,3,100,0,
+REGULATION 83-130,3,,What are the application requirements under section 3 of REGULATION 83-130?,4,0,80,4,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+REGULATION 83-130,4,,What powers or authority are established by section 4 of REGULATION 83-130?,2,1,85,3,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;CONCEPT_FRAGMENT
+REGULATION 83-130,5,,What filing or registration requirements are established by section 5 of REGULATION 83-130?,3,4,85,3,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
 REGULATION 83-130,6,,What does section 6 of REGULATION 83-130 provide?,1,0,95,1,GENERIC_RUBRIC_PROMPT
 REGULATION 83-130,7,,What certification requirements are established by section 7 of REGULATION 83-130?,1,1,95,1,GENERIC_RUBRIC_PROMPT
-REGULATION 83-130,8,,What does section 8 of REGULATION 83-130 provide?,1,1,90,1,QUESTION_MISSING_SUBJECT
+REGULATION 83-130,8,,What does section 8 of REGULATION 83-130 provide?,1,1,100,0,
 REGULATION 83-130,9,,What filing or registration requirements are established by section 9 of REGULATION 83-130?,2,2,100,0,
-REGULATION 83-130,10,,What filing or registration requirements are established by section 10 of REGULATION 83-130?,5,4,70,2,QUESTION_MISSING_SUBJECT;MALFORMED_QUESTION
-REGULATION 83-130,11,,What filing or registration requirements are established by section 11 of REGULATION 83-130?,1,0,75,2,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION
-REGULATION 83-130,12,,What notice requirements are established by section 12 of REGULATION 83-130?,5,5,90,1,QUESTION_MISSING_SUBJECT
-REGULATION 83-130,13,,What filing or registration requirements are established by section 13 of REGULATION 83-130?,2,0,90,1,QUESTION_MISSING_SUBJECT
-REGULATION 83-130,14,,What offences and penalties are established by section 14 of REGULATION 83-130?,3,0,100,0,
-REGULATION 83-130,14.1,,What certification requirements are established by section 14.1 of REGULATION 83-130?,1,0,80,1,MALFORMED_QUESTION
-REGULATION 83-130,15,,What requirements are established by section 15 of REGULATION 83-130?,2,0,70,2,MALFORMED_QUESTION;QUESTION_MISSING_SUBJECT
-REGULATION 83-130,16,,"How may a filed plan of survey be corrected under section 16 of REGULATION 83-130, and what limits and filing consequences apply?",8,0,90,1,QUESTION_MISSING_SUBJECT
+REGULATION 83-130,10,,What filing or registration requirements are established by section 10 of REGULATION 83-130?,3,4,100,0,
+REGULATION 83-130,11,,What filing or registration requirements are established by section 11 of REGULATION 83-130?,1,0,95,1,GENERIC_RUBRIC_PROMPT
+REGULATION 83-130,12,,What notice requirements are established by section 12 of REGULATION 83-130?,4,5,100,0,
+REGULATION 83-130,13,,What filing or registration requirements are established by section 13 of REGULATION 83-130?,1,0,100,0,
+REGULATION 83-130,14,,What filing or registration requirements are established by section 14 of REGULATION 83-130?,1,0,100,0,
+REGULATION 83-130,14.1,,What certification requirements are established by section 14.1 of REGULATION 83-130?,1,0,100,0,
+REGULATION 83-130,15,,What requirements are established by section 15 of REGULATION 83-130?,2,0,100,0,
+REGULATION 83-130,16,,What filing or registration requirements are established by section 16 of REGULATION 83-130?,1,0,100,0,
 REGULATION 83-130,17,,What filing or registration requirements are established by section 17 of REGULATION 83-130?,3,1,85,3,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
-REGULATION 83-130,18,,What does section 18 of REGULATION 83-130 provide?,1,0,75,2,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION
-REGULATION 83-130,18.1,,What notice requirements are established by section 18.1 of REGULATION 83-130?,3,2,60,3,AMENDMENT_HISTORY_LEAK;QUESTION_MISSING_SUBJECT;AMENDMENT_HISTORY_LEAK
-REGULATION 83-130,18.2,,What requirements are established by section 18.2 of REGULATION 83-130?,1,1,70,2,AMENDMENT_HISTORY_LEAK;AMENDMENT_HISTORY_LEAK
-REGULATION 83-130,18.3,,What does section 18.3 of REGULATION 83-130 provide?,3,1,45,5,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT
-REGULATION 83-130,19,,What requirements are established by section 19 of REGULATION 83-130?,1,1,90,1,QUESTION_MISSING_SUBJECT
+REGULATION 83-130,18,,What does section 18 of REGULATION 83-130 provide?,1,0,95,1,GENERIC_RUBRIC_PROMPT
+REGULATION 83-130,18.1,,What notice requirements are established by section 18.1 of REGULATION 83-130?,3,2,100,0,
+REGULATION 83-130,18.2,,What requirements are established by section 18.2 of REGULATION 83-130?,1,1,100,0,
+REGULATION 83-130,18.3,,What does section 18.3 of REGULATION 83-130 provide?,2,1,90,2,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+REGULATION 83-130,19,,What requirements are established by section 19 of REGULATION 83-130?,1,1,100,0,
 REGULATION 83-130,19.1,,What does section 19.1 of REGULATION 83-130 provide?,1,1,95,1,GENERIC_RUBRIC_PROMPT
-REGULATION 83-130,19.2,,What certification requirements are established by section 19.2 of REGULATION 83-130?,1,0,90,1,QUESTION_MISSING_SUBJECT
+REGULATION 83-130,19.2,,What certification requirements are established by section 19.2 of REGULATION 83-130?,1,0,100,0,
 REGULATION 83-130,19.3,,What order-making rules are established by section 19.3 of REGULATION 83-130?,1,0,95,1,GENERIC_RUBRIC_PROMPT
-REGULATION 83-130,19.4,,What are the application requirements under section 19.4 of REGULATION 83-130?,1,0,75,2,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION
-REGULATION 83-130,20,,What requirements are established by section 20 of REGULATION 83-130?,8,3,0,13,AMENDMENT_HISTORY_LEAK;GENERIC_RUBRIC_PROMPT;QUESTION_MISSING_SUBJECT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION
-REGULATION 83-130,20.1,,What filing or registration requirements are established by section 20.1 of REGULATION 83-130?,3,1,75,4,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;QUESTION_MISSING_SUBJECT;GENERIC_RUBRIC_PROMPT
-REGULATION 83-130,21,,What does section 21 of REGULATION 83-130 provide?,5,1,15,9,AMENDMENT_HISTORY_LEAK;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;QUESTION_MISSING_SUBJECT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION;AMENDMENT_HISTORY_LEAK
-REGULATION 83-130,21.1,,What does section 21.1 of REGULATION 83-130 provide?,1,0,85,2,GENERIC_RUBRIC_PROMPT;QUESTION_MISSING_SUBJECT
-REGULATION 83-130,21.2,,What does section 21.2 of REGULATION 83-130 provide?,1,1,60,3,AMENDMENT_HISTORY_LEAK;QUESTION_MISSING_SUBJECT;AMENDMENT_HISTORY_LEAK
-REGULATION 83-130,21.21,,What filing or registration requirements are established by section 21.21 of REGULATION 83-130?,1,1,75,2,GENERIC_RUBRIC_PROMPT;MALFORMED_QUESTION
+REGULATION 83-130,19.4,,What are the application requirements under section 19.4 of REGULATION 83-130?,1,0,95,1,GENERIC_RUBRIC_PROMPT
+REGULATION 83-130,20,,What requirements are established by section 20 of REGULATION 83-130?,6,3,70,6,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+REGULATION 83-130,20.1,,What filing or registration requirements are established by section 20.1 of REGULATION 83-130?,3,1,85,3,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+REGULATION 83-130,21,,What does section 21 of REGULATION 83-130 provide?,4,1,80,4,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT
+REGULATION 83-130,21.1,,What does section 21.1 of REGULATION 83-130 provide?,1,0,95,1,GENERIC_RUBRIC_PROMPT
+REGULATION 83-130,21.2,,What does section 21.2 of REGULATION 83-130 provide?,1,1,100,0,
+REGULATION 83-130,21.21,,What filing or registration requirements are established by section 21.21 of REGULATION 83-130?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 REGULATION 83-130,21.22,,What filing or registration requirements are established by section 21.22 of REGULATION 83-130?,1,1,100,0,
 REGULATION 83-130,21.3,,What certification requirements are established by section 21.3 of REGULATION 83-130?,1,1,95,1,GENERIC_RUBRIC_PROMPT
 REGULATION 83-130,21.4,,What duties does section 21.4 of REGULATION 83-130 impose?,1,0,95,1,GENERIC_RUBRIC_PROMPT
-REGULATION 83-130,22,,What does section 22 of REGULATION 83-130 provide?,1,0,90,1,QUESTION_MISSING_SUBJECT
-REGULATION 83-130,23,,What does section 23 of REGULATION 83-130 provide?,1,1,90,1,QUESTION_MISSING_SUBJECT
-REGULATION 83-130,24,,What does section 24 of REGULATION 83-130 provide?,1,1,90,1,QUESTION_MISSING_SUBJECT
-REGULATION 83-130,25,,What regulation-making authority is established by section 25 of REGULATION 83-130?,2,0,45,6,AMENDMENT_HISTORY_LEAK;GENERIC_RUBRIC_PROMPT;QUESTION_MISSING_SUBJECT;GENERIC_RUBRIC_PROMPT;AMENDMENT_HISTORY_LEAK;RUBRIC_ANSWER_TOO_LONG
+REGULATION 83-130,22,,What does section 22 of REGULATION 83-130 provide?,1,0,100,0,
+REGULATION 83-130,23,,What does section 23 of REGULATION 83-130 provide?,1,1,100,0,
+REGULATION 83-130,24,,What does section 24 of REGULATION 83-130 provide?,1,1,100,0,
+REGULATION 83-130,25,,What regulation-making authority is established by section 25 of REGULATION 83-130?,2,0,85,3,GENERIC_RUBRIC_PROMPT;GENERIC_RUBRIC_PROMPT;RUBRIC_ANSWER_TOO_LONG

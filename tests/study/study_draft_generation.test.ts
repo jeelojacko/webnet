@@ -296,6 +296,33 @@ describe('structured rubric generation', () => {
     expect(rubric.map((item) => item.referenceAnswer).join('\n')).not.toContain('R.S.1973');
   });
 
+  it('does not apply section-number regression templates to unrelated documents', () => {
+    const landTitles14 = generateStudyRubric({
+      document: legalDocument('doc-land-titles-act'),
+      selectedSources: [component('doc-land-titles-act', 'section:14')],
+      unitType: 'section',
+    });
+    const registry16 = generateStudyRubric({
+      document: legalDocument('doc-registry-act'),
+      selectedSources: [component('doc-registry-act', 'section:16')],
+      unitType: 'section',
+    });
+    const landTitles83 = generateStudyRubric({
+      document: legalDocument('doc-land-titles-act'),
+      selectedSources: [component('doc-land-titles-act', 'section:83')],
+      unitType: 'section',
+    });
+
+    const combinedAnswers = [...landTitles14, ...registry16, ...landTitles83].map((item) => item.referenceAnswer).join('\n');
+    expect(combinedAnswers).not.toContain('category B offence');
+    expect(combinedAnswers).not.toContain('coordinate monuments');
+    expect(combinedAnswers).not.toContain('corrected plan');
+    expect(combinedAnswers).not.toContain('tentative plan');
+    expect(landTitles14.map((item) => item.prompt).join('\n')).toContain('register the title to the land');
+    expect(registry16.map((item) => item.prompt).join('\n')).toContain('books and records');
+    expect(landTitles83.map((item) => item.prompt).join('\n')).toContain('Regulations');
+  });
+
   it('generates the expected section 16 correction rubric', () => {
     const rubric = generateStudyRubric({
       document: legalDocument('doc-boundaries-confirmation-act'),
@@ -378,6 +405,17 @@ describe('structured rubric generation', () => {
         rubricCategories: section83Rubric.map((item) => item.category),
       }).question,
     ).toBe('What authority and survey-monument requirements does section 83 of Community Planning Act establish for laying out streets and lots?');
+    expect(
+      generateStudyQuestion({
+        documentTitle: 'Land Titles Act',
+        selectedSources: [component('doc-land-titles-act', 'section:83')],
+        rubricCategories: generateStudyRubric({
+          document: legalDocument('doc-land-titles-act'),
+          selectedSources: [component('doc-land-titles-act', 'section:83')],
+          unitType: 'section',
+        }).map((item) => item.category),
+      }).question,
+    ).toBe('What regulation-making authority is established by section 83 of Land Titles Act?');
   });
 
   it('provides default templates for whole acts, cases and custom principles', () => {

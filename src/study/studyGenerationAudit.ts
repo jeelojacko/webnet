@@ -220,7 +220,7 @@ const hasMalformedQuestionText = (question: string): boolean => {
 };
 
 const hasMissingSubject = (prompt: string): boolean =>
-  /\b(?:it|this|that|section\s+\d+(?:\.\d+)?)\?$/i.test(prompt) ||
+  /\b(?:it|this|that)\?$/i.test(prompt) ||
   /\b(?:applies to|required for|establishes for)\s*\?$/i.test(prompt);
 
 const isGenericRubricPrompt = (prompt: string): boolean =>
@@ -229,7 +229,7 @@ const isGenericRubricPrompt = (prompt: string): boolean =>
   /^What power or duty does section\b/i.test(prompt);
 
 const hasSpecificFact = (facts: ExtractedLegalFact[]): boolean =>
-  facts.some((fact) => Boolean(fact.actor || fact.action || fact.object || fact.trigger || fact.filingEffect));
+  facts.some((fact) => fact.confidence !== 'low' && Boolean(fact.actor || fact.action || fact.object || fact.trigger || fact.filingEffect));
 
 const hasTopicMismatch = (section: ImportedLegalComponent, detectedTopic: string, mainQuestion: string): boolean => {
   const heading = normalizeSpaces(section.heading ?? '').toLowerCase();
@@ -247,7 +247,7 @@ const hasTopicMismatch = (section: ImportedLegalComponent, detectedTopic: string
 };
 
 const amendmentHistoryPattern =
-  /\b(?:R\.S\.\s*\d{4}|(?:19|20)\d{2},\s*c\.|O\.C\.\s*\d{4}-\d+|\d{4}-\d{1,3}\s*;\s*\d{4}-\d{1,3}|R\.S\.\s*(?:\d+\s*;\s*){2,}\d+)/i;
+  /(?:^|\n)\s*(?:R\.S\.|R\.S\.,|S\.N\.B\.|O\.C\.|(?:19|20)\d{2},\s*c\.|(?:19|20)\d{2}\s+\([^)]+\),\s*c\.|\d{2,4}-\d{1,3}(?:\s*;\s*\d{2,4}-\d{1,3})+)/i;
 
 const sourceCopyFragment = (question: string, sourceText: string): boolean => {
   const words = normalizeSpaces(question.replace(/[?]/g, '')).toLowerCase().split(/\s+/).filter((word) => word.length > 3);
@@ -262,6 +262,30 @@ const sourceCopyFragment = (question: string, sourceText: string): boolean => {
 const isSubstantive = (component: ImportedLegalComponent): boolean =>
   component.extractionStatus !== 'reference-only' && !/^\s*(?:[\w().\s-]+)?Repealed\.?\s*$/i.test(component.text);
 
+const sourceTextByKey = (component: ImportedLegalComponent): Map<string, string> => {
+  const entries: Array<[string, string]> = [[component.sourceKey, component.text]];
+  for (const subsection of component.subsections ?? []) entries.push([subsection.sourceKey, subsection.text]);
+  return new Map(entries);
+};
+
+const normalizedTokens = (value: string): string[] =>
+  normalizeSpaces(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]+/g, ' ')
+    .split(/\s+/)
+    .filter((token) => token.length > 3 && !['section', 'subsection', 'under', 'this', 'that', 'with', 'from', 'must', 'shall', 'person'].includes(token));
+
+const hasSourceOverlap = (answer: string, sourceText: string): boolean => {
+  const answerTokens = [...new Set(normalizedTokens(answer))];
+  if (answerTokens.length < 3) return true;
+  const sourceTokens = new Set(normalizedTokens(sourceText));
+  const overlap = answerTokens.filter((token) => sourceTokens.has(token)).length;
+  return overlap >= 2 && overlap / answerTokens.length >= 0.35;
+};
+
+const isStudyNoteRubric = (item: { category: StudyRubricCategory; referenceAnswer: string }): boolean =>
+  item.category === 'survey-relevance' && /^Study note:/i.test(item.referenceAnswer);
+
 const isConceptFragment = (label: string): boolean => {
   const words = normalizeSpaces(label).split(/\s+/);
   if (words.length < 4) return false;
@@ -275,11 +299,18 @@ export const collectStudyGenerationWarnings = (section: {
   detectedTopic: string;
   mainQuestion: string;
   referenceAnswer: string;
-  rubricItems: Array<{ prompt: string; referenceAnswer: string }>;
+  rubricItems: Array<{
+    category?: StudyRubricCategory;
+    prompt: string;
+    referenceAnswer: string;
+    sourceKeys?: string[];
+    generatedFromFacts?: unknown[];
+  }>;
   concepts: Array<{ label: string }>;
   extractedFacts: ExtractedLegalFact[];
 }): StudyGenerationWarning[] => {
   const warnings: StudyGenerationWarning[] = [];
+  const sourceTexts = sourceTextByKey(section.source);
   if (hasMalformedQuestionText(section.mainQuestion)) {
     warnings.push(warning('MALFORMED_QUESTION', 'critical', 'generated.mainQuestion', section.mainQuestion, 'The main question appears to have malformed punctuation or a truncated ending.'));
   }
@@ -300,6 +331,25 @@ export const collectStudyGenerationWarnings = (section: {
   }
   const promptCounts = new Map<string, string[]>();
   for (const item of section.rubricItems) {
+    const sourceKeys = item.sourceKeys ?? [];
+    const studyNote = isStudyNoteRubric({
+      category: item.category ?? 'custom',
+      referenceAnswer: item.referenceAnswer,
+    });
+    if (!studyNote && (sourceKeys.length === 0 || (item.generatedFromFacts?.length ?? 0) === 0)) {
+      warnings.push(warning('UNGROUNDED_RUBRIC_ITEM', 'critical', 'generated.rubricItems', item.prompt, 'Generated rubric has no source fact provenance.'));
+    }
+    for (const sourceKey of sourceKeys) {
+      if (!sourceTexts.has(sourceKey)) {
+        warnings.push(warning('RUBRIC_SOURCE_KEY_NOT_FOUND', 'critical', 'generated.rubricItems.sourceKeys', sourceKey, 'A generated rubric references a sourceKey that does not exist in the selected source.'));
+      }
+    }
+    if (!studyNote && sourceKeys.length > 0) {
+      const sourceText = sourceKeys.map((sourceKey) => sourceTexts.get(sourceKey) ?? '').join('\n');
+      if (sourceText && !hasSourceOverlap(item.referenceAnswer, sourceText)) {
+        warnings.push(warning('REFERENCE_ANSWER_SOURCE_MISMATCH', 'critical', 'generated.rubricItems.referenceAnswer', item.referenceAnswer, 'The source-derived reference answer is not sufficiently grounded in the referenced official source.'));
+      }
+    }
     if (isGenericRubricPrompt(item.prompt) && hasSpecificFact(section.extractedFacts)) {
       warnings.push(warning('GENERIC_RUBRIC_PROMPT', 'warning', 'generated.rubricItems.prompt', item.prompt, 'A generic fallback prompt was used even though structured legal facts were extracted.'));
     }
@@ -345,6 +395,13 @@ export const scoreStudyGenerationWarnings = (warnings: StudyGenerationWarning[])
     MALFORMED_QUESTION: 20,
     MAIN_QUESTION_TOPIC_MISMATCH: 15,
     AMENDMENT_HISTORY_LEAK: 15,
+    UNGROUNDED_RUBRIC_ITEM: 100,
+    RUBRIC_SOURCE_KEY_NOT_FOUND: 100,
+    REFERENCE_ANSWER_SOURCE_MISMATCH: 100,
+    SPECIAL_CASE_SCOPE_VIOLATION: 100,
+    RAW_CLAUSE_TRUNCATED: 20,
+    DEFINITION_SECTION_WRONG_RUBRIC_TYPE: 20,
+    CROSS_DOCUMENT_TEMPLATE_COLLISION: 100,
     DUPLICATE_RUBRIC_PROMPT: 10,
     QUESTION_MISSING_SUBJECT: 10,
     GENERIC_RUBRIC_PROMPT: 5,
@@ -386,7 +443,10 @@ const buildSectionAudit = (
     referenceAnswer: item.referenceAnswer,
     sourceKeys: item.sourceReferences?.map((reference) => reference.sourceKey) ?? [source.sourceKey],
     generatedFromFacts: rubric.diagnostic.extractedFacts.filter((fact) =>
-      item.sourceReferences?.some((reference) => reference.sourceKey === fact.sourceKey),
+      item.sourceReferences?.some((reference) =>
+        reference.sourceKey === fact.sourceKey ||
+        (reference.sourceKey === source.sourceKey && fact.sourceKey.startsWith(`${source.sourceKey}/`)),
+      ),
     ),
   }));
   const detectedTopic = rubric.diagnostic.sectionTopic || classifyStudyRubricSectionTopic(source);
@@ -431,6 +491,46 @@ const buildSectionAudit = (
       warnings,
     },
   };
+};
+
+const rubricSignature = (section: StudyGenerationAuditSection): string =>
+  section.generated.rubricItems
+    .map((item) => `${item.category}|${normalizePromptKey(item.prompt)}|${normalizePromptKey(item.referenceAnswer)}`)
+    .join('\n');
+
+const hasIndependentGrounding = (section: StudyGenerationAuditSection): boolean =>
+  section.generated.rubricItems.every((item) => item.sourceKeys.length > 0 && (item.generatedFromFacts?.length ?? 0) > 0);
+
+const withCrossDocumentCollisionWarnings = (
+  documents: StudyGenerationAuditDocument[],
+): StudyGenerationAuditDocument[] => {
+  const sections = documents.flatMap((document) => document.sections);
+  const groups = new Map<string, StudyGenerationAuditSection[]>();
+  for (const section of sections) {
+    const signature = rubricSignature(section);
+    if (!signature) continue;
+    const key = `${section.sectionLabel}::${signature}`;
+    groups.set(key, [...(groups.get(key) ?? []), section]);
+  }
+  const collided = new Set<string>();
+  for (const group of groups.values()) {
+    if (new Set(group.map((section) => section.documentId)).size < 2) continue;
+    for (const section of group) {
+      if (!hasIndependentGrounding(section)) collided.add(`${section.documentId}::${section.sourceKey}`);
+    }
+  }
+  if (collided.size === 0) return documents;
+  return documents.map((document) => ({
+    ...document,
+    sections: document.sections.map((section) => {
+      if (!collided.has(`${section.documentId}::${section.sourceKey}`)) return section;
+      const warnings = [
+        ...section.quality.warnings,
+        warning('CROSS_DOCUMENT_TEMPLATE_COLLISION', 'critical', 'generated.rubricItems', section.generated.rubricItems.map((item) => item.prompt).join(' | '), 'Two unrelated documents with the same section number received the same specialized rubric set without independent grounding.'),
+      ];
+      return { ...section, quality: { score: scoreStudyGenerationWarnings(warnings), warnings } };
+    }),
+  }));
 };
 
 const summarizeAudit = (documents: StudyGenerationAuditDocument[]): StudyGenerationAuditSummary => {
@@ -481,7 +581,7 @@ export const buildStudyGenerationAudit = (
     if (!isIncludedComponent(component, options)) continue;
     componentsByDocument.set(component.documentId, [...(componentsByDocument.get(component.documentId) ?? []), component]);
   }
-  const auditDocuments = documents
+  const auditDocuments = withCrossDocumentCollisionWarnings(documents
     .filter((document) => !options.documentId || document.id === options.documentId)
     .map((document): StudyGenerationAuditDocument => ({
       documentId: document.id,
@@ -492,7 +592,7 @@ export const buildStudyGenerationAudit = (
         .sort((a, b) => compareLabels(a.label, b.label))
         .map((component) => buildSectionAudit(document, component)),
     }))
-    .filter((document) => document.sections.length > 0);
+    .filter((document) => document.sections.length > 0));
   return {
     schemaVersion: STUDY_GENERATION_AUDIT_SCHEMA_VERSION,
     createdAt: importedAt,

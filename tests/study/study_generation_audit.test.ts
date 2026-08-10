@@ -129,23 +129,58 @@ describe('study generation audit', () => {
       source: testSection({ heading: 'Filing of values of coordinate monuments' }),
       detectedTopic: 'filing',
       mainQuestion: 'What powers or authority are established by section 9 of Surveys Act?',
-      referenceAnswer: 'Body. R.S.1973, c.S-17, s.9',
+      referenceAnswer: 'Body.\nR.S.1973, c.S-17, s.9',
       rubricItems: [
         { prompt: 'What specific rule applies to section 9?', referenceAnswer: 'A 1999, c.4, s.9 residue.' },
         { prompt: 'What specific rule applies to section 9?', referenceAnswer: 'Answer.' },
       ],
       concepts: [{ label: 'Plan of Survey Filed Under Subsection' }],
-      extractedFacts: [{ sourceKey: 'section:9', actor: 'Director of Surveys', object: 'coordinate monuments' }],
+      extractedFacts: [{ sourceKey: 'section:9', actor: 'Director of Surveys', object: 'coordinate monuments', confidence: 'high' }],
     });
     expect(warnings.map((entry) => entry.code)).toEqual(expect.arrayContaining([
       'GENERIC_RUBRIC_PROMPT',
       'DUPLICATE_RUBRIC_PROMPT',
       'MAIN_QUESTION_TOPIC_MISMATCH',
       'AMENDMENT_HISTORY_LEAK',
-      'QUESTION_MISSING_SUBJECT',
       'CONCEPT_FRAGMENT',
     ]));
     expect(scoreStudyGenerationWarnings(warnings)).toBeLessThan(100);
+  });
+
+  it('flags ungrounded rubric items, missing source keys and source-answer mismatches', () => {
+    const warnings = collectStudyGenerationWarnings({
+      source: testSection({
+        text: '1 The Registrar General may order title to be registered.',
+      }),
+      detectedTopic: 'order',
+      mainQuestion: 'What order-making rules are established by section 1 of Test Act?',
+      referenceAnswer: 'Clean answer.',
+      rubricItems: [
+        {
+          category: 'legal-effect',
+          prompt: 'What offence and penalty apply to obstructing coordinate-monument work?',
+          referenceAnswer: 'A person commits a category B offence for obstructing coordinate monuments.',
+          sourceKeys: ['section:1'],
+          generatedFromFacts: [],
+        },
+        {
+          category: 'actor',
+          prompt: 'Who may order the registration?',
+          referenceAnswer: 'The Registrar General may order title to be registered.',
+          sourceKeys: ['section:1/subsection:9'],
+          generatedFromFacts: [{ sourceKey: 'section:1/subsection:9', confidence: 'high' }],
+        },
+      ],
+      concepts: [],
+      extractedFacts: [{ sourceKey: 'section:1', actor: 'Registrar General', action: 'order title to be registered', confidence: 'high' }],
+    });
+
+    expect(warnings.map((entry) => entry.code)).toEqual(expect.arrayContaining([
+      'UNGROUNDED_RUBRIC_ITEM',
+      'RUBRIC_SOURCE_KEY_NOT_FOUND',
+      'REFERENCE_ANSWER_SOURCE_MISMATCH',
+    ]));
+    expect(scoreStudyGenerationWarnings(warnings)).toBe(0);
   });
 
   it('flags long copied questions and excessive rubric output conditions', () => {
@@ -214,9 +249,27 @@ describe('study generation audit', () => {
     const surveys8 = sections.find((section) => section.documentId === 'doc-surveys-act' && section.sectionLabel === '8')!;
     const regulation3 = sections.find((section) => section.documentId === 'reg-land-titles-83-130' && section.sectionLabel === '3')!;
 
-    expect(surveys9.quality.warnings.map((entry) => entry.code)).toContain('MAIN_QUESTION_TOPIC_MISMATCH');
+    expect(surveys9.generated.mainQuestion).toContain('filing');
     expect(surveys9.generated.referenceAnswer).not.toContain('R.S.1973');
     expect(surveys8.quality.warnings.length + regulation3.quality.warnings.length).toBeGreaterThan(0);
+  });
+
+  it('keeps section 14, 16 and 83 regression templates scoped to their source documents', () => {
+    const audit = buildPilotAudit();
+    const sections = flattenAuditSections(audit);
+    const landTitles14 = sections.find((section) => section.documentId === 'doc-land-titles-act' && section.sectionLabel === '14')!;
+    const registry16 = sections.find((section) => section.documentId === 'doc-registry-act' && section.sectionLabel === '16')!;
+    const landTitles83 = sections.find((section) => section.documentId === 'doc-land-titles-act' && section.sectionLabel === '83')!;
+
+    const unrelatedAnswers = [landTitles14, registry16, landTitles83]
+      .flatMap((section) => section.generated.rubricItems.map((item) => item.referenceAnswer))
+      .join('\n');
+    expect(unrelatedAnswers).not.toContain('category B offence');
+    expect(unrelatedAnswers).not.toContain('corrected plan of survey');
+    expect(unrelatedAnswers).not.toContain('tentative plan');
+    expect(landTitles14.quality.warnings.map((entry) => entry.code)).not.toContain('REFERENCE_ANSWER_SOURCE_MISMATCH');
+    expect(registry16.quality.warnings.map((entry) => entry.code)).not.toContain('REFERENCE_ANSWER_SOURCE_MISMATCH');
+    expect(landTitles83.quality.warnings.map((entry) => entry.code)).not.toContain('CROSS_DOCUMENT_TEMPLATE_COLLISION');
   });
 
   it('renders full markdown, warning markdown, csv and baseline diffs deterministically', () => {

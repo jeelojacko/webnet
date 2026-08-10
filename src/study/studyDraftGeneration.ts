@@ -6,6 +6,7 @@ import type {
   StudySourceCitationSummary,
 } from './studyTypes';
 import { generateRequiredConcepts } from './studyConceptGeneration';
+import { prepareLegalText } from './studyLegalTextPreparation';
 
 export { generateRequiredConcepts } from './studyConceptGeneration';
 export type { GeneratedConceptSuggestion } from './studyConceptGeneration';
@@ -50,16 +51,11 @@ const stripLeadingLabel = (text: string, label: string): string => {
 };
 
 const stripSourceNoise = (text: string, options: ReferenceAnswerOptions): string => {
-  let next = text;
-  if (!options.includeConsolidationNotes) {
-    next = next.replace(/N\.B\.\s*This Regulation is consolidated to [A-Za-z]+\s+\d{1,2},\s+\d{4}\.?\s*/gi, '');
-  }
-  if (!options.includeAmendmentHistory) {
-    next = next
-      .replace(/\s*\d{4},\s*c\.[^.\n]*(?:\.|\n|$)/gi, '\n')
-      .replace(/\s*O\.C\.\s*\d{4}-\d+[^.\n]*(?:\.|\n|$)/gi, '\n');
-  }
-  return next.replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+  const prepared = prepareLegalText(text);
+  const parts = [prepared.operativeText];
+  if (options.includeAmendmentHistory && prepared.amendmentHistoryText) parts.push(prepared.amendmentHistoryText);
+  if (options.includeConsolidationNotes && prepared.consolidationText) parts.unshift(prepared.consolidationText);
+  return parts.filter(Boolean).join('\n').trim();
 };
 
 const isRepealedText = (text: string): boolean => /^\s*(?:[0-9A-Za-z().\s-]+)?Repealed\.?\s*$/i.test(text);
@@ -146,12 +142,22 @@ const categoryMatchers: Array<[QuestionCategory, RegExp]> = [
 
 const classifyQuestionCategory = (sources: SelectedLegalSource[]): QuestionCategory => {
   const heading = combinedHeading(sources);
+  if (/\bdefinition|interpretation\b/i.test(heading)) return 'definitions';
   if (/\boffences? and penalt/i.test(heading)) return 'offences';
   if (/\bcorrection\b/i.test(heading)) return 'fallback';
   if (/\blay-?out of streets and lots\b/i.test(heading)) return 'powers';
+  if (/\bfil(?:e|ing)|register|registration|record\b/i.test(heading)) return 'filing';
+  if (/\bnotice|notify|service\b/i.test(heading)) return 'notice';
+  if (/\bappeal\b/i.test(heading)) return 'appeal';
+  if (/\border\b/i.test(heading)) return 'order';
+  if (/\bregulations?\b/i.test(heading)) return 'regulations';
+  if (/\bestablishment of coordinate survey system\b/i.test(heading)) return 'powers';
   const haystack = sources.map((source) => `${source.heading ?? ''}\n${source.text.slice(0, 500)}`).join('\n');
   return categoryMatchers.find(([, matcher]) => matcher.test(haystack))?.[0] ?? 'fallback';
 };
+
+const sourceIdentity = (source: Pick<ImportedLegalComponent, 'documentId' | 'sourceKey'>): string =>
+  `${source.documentId}::${source.sourceKey}`;
 
 export const generateStudyQuestion = ({
   documentTitle,
@@ -176,19 +182,19 @@ export const generateStudyQuestion = ({
   const source = selectedSources[0];
   if (!source) return { template: 'fallback', question: `What should be recalled from ${documentTitle}?` };
   const singleLabel = `${sectionWord(source).toLowerCase()} ${source.label}`;
-  if (source.sourceKey === 'section:14' && rubricCategories?.length) {
+  if (sourceIdentity(source) === 'doc-surveys-act::section:14' && rubricCategories?.length) {
     return {
       template: 'offences',
       question: `What offences and penalties are established by ${singleLabel} of ${documentTitle}?`,
     };
   }
-  if (source.sourceKey === 'section:16' && rubricCategories?.length) {
+  if (sourceIdentity(source) === 'doc-boundaries-confirmation-act::section:16' && rubricCategories?.length) {
     return {
       template: 'correction-procedure',
       question: `How may a filed plan of survey be corrected under ${singleLabel} of ${documentTitle}, and what limits and filing consequences apply?`,
     };
   }
-  if (source.sourceKey === 'section:83' && rubricCategories?.length) {
+  if (sourceIdentity(source) === 'doc-community-planning-act::section:83' && rubricCategories?.length) {
     return {
       template: 'subdivision-layout',
       question: `What authority and survey-monument requirements does ${singleLabel} of ${documentTitle} establish for laying out streets and lots?`,

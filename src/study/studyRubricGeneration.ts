@@ -6,6 +6,7 @@ import type {
   StudySourceReference,
   StudyUnitType,
 } from './studyTypes';
+import { prepareLegalText } from './studyLegalTextPreparation';
 
 export type GeneratedRubricItem = Pick<
   StudyRubricItem,
@@ -33,6 +34,7 @@ export type ExtractedLegalFact = {
   offenceConduct?: string;
   penaltyCategory?: string;
   relatedProvision?: string;
+  confidence: 'high' | 'medium' | 'low';
 };
 
 export type StudyRubricGenerationDiagnostic = {
@@ -131,20 +133,10 @@ const stripLeadingLabel = (text: string, label: string): string => {
 };
 
 const stripSourceNoise = (text: string, diagnostic: StudyRubricGenerationDiagnostic): string => {
-  let next = text;
-  const patterns = [
-    /\s*\d{4},\s*c\.[^.\n]*(?:\.|\n|$)/gi,
-    /\s*R\.S\.1973,[^.\n]*(?:\.|\n|$)/gi,
-    /\s*O\.C\.\s*\d{4}-\d+[^.\n]*(?:\.|\n|$)/gi,
-    /\s*N\.B\.\s*This [^.]+ consolidated to [^.]+\.?/gi,
-  ];
-  patterns.forEach((pattern) => {
-    next = next.replace(pattern, (match) => {
-      diagnostic.removedSourceText.push(normalizeSpaces(match));
-      return ' ';
-    });
-  });
-  return normalizeSpaces(next);
+  const prepared = prepareLegalText(text);
+  if (prepared.amendmentHistoryText) diagnostic.removedSourceText.push(normalizeSpaces(prepared.amendmentHistoryText));
+  if (prepared.consolidationText) diagnostic.removedSourceText.push(normalizeSpaces(prepared.consolidationText));
+  return normalizeSpaces(prepared.operativeText);
 };
 
 export const classifyStudyRubricSectionTopic = (source: ImportedLegalComponent): string => {
@@ -169,10 +161,10 @@ const sourceUnits = (source: ImportedLegalComponent): Array<{ sourceKey: string;
     return source.subsections.map((subsection) => ({
       sourceKey: subsection.sourceKey,
       label: subsection.label,
-      text: stripLeadingLabel(subsection.text, subsection.label),
+      text: stripLeadingLabel(prepareLegalText(subsection.text).operativeText, subsection.label),
     }));
   }
-  return [{ sourceKey: source.sourceKey, label: source.label, text: stripLeadingLabel(source.text, source.label) }];
+  return [{ sourceKey: source.sourceKey, label: source.label, text: stripLeadingLabel(prepareLegalText(source.text).operativeText, source.label) }];
 };
 
 const extractFacts = (
@@ -181,7 +173,7 @@ const extractFacts = (
 ): ExtractedLegalFact[] =>
   sourceUnits(source).map((unit) => {
     const text = stripSourceNoise(unit.text, diagnostic);
-    const fact: ExtractedLegalFact = { sourceKey: unit.sourceKey };
+    const fact: ExtractedLegalFact = { sourceKey: unit.sourceKey, confidence: 'low' };
     fact.modality = /\bshall not\b/i.test(text)
       ? 'shall-not'
       : /\bcommits an offence\b/i.test(text)
@@ -202,9 +194,22 @@ const extractFacts = (
     fact.filingEffect = text.match(/\b[^.]*\b(?:filed|file|registered|notation|superseded)[^.]*\./i)?.[0];
     fact.legalEffect = text.match(/\b[^.]*\b(?:final and binding|conclusive proof|shall not affect|superseded)[^.]*\./i)?.[0];
     fact.offenceConduct = text.match(/\b(?:violates|fails to comply|obstructs)[^.]*?(?=\s+commits an offence|\.)/i)?.[0];
-    fact.action = text.match(/\b(?:may|shall|must|shall not)\s+([^.;]{3,90})/i)?.[1];
+    fact.action = text.match(/\b(?:may|shall|must|shall not)\s+([^.;]+)/i)?.[1];
     fact.object = text.match(/\b(?:plan of survey|subdivision plan|legal survey monuments|streets, lots, blocks[^.]+|coordinate monuments|survey or tying to a coordinate monument)\b/i)?.[0];
     fact.condition = text.match(/\bsubject to [^,.;]+/i)?.[0];
+    const signalCount = [
+      fact.actor,
+      fact.modality,
+      fact.action,
+      fact.object,
+      fact.trigger,
+      fact.noticeRule,
+      fact.filingEffect,
+      fact.legalEffect,
+      fact.offenceConduct,
+      fact.penaltyCategory,
+    ].filter(Boolean).length;
+    fact.confidence = signalCount >= 3 ? 'high' : signalCount >= 1 ? 'medium' : 'low';
     return fact;
   });
 
@@ -222,13 +227,25 @@ const makeItem = (
   required: true,
   origin: 'generated',
   order,
-  sourceReferences: [{ ...sourceReferenceFor(source), sourceKey: sourceKeys[0] ?? source.sourceKey }],
+  sourceReferences: sourceKeys.length
+    ? sourceKeys.map((sourceKey) => ({ ...sourceReferenceFor(source), sourceKey }))
+    : [sourceReferenceFor(source)],
 });
+
+const sourceIdentity = (source: Pick<ImportedLegalComponent, 'documentId' | 'sourceKey'>): string =>
+  `${source.documentId}::${source.sourceKey}`;
+
+const assertSpecializedSource = (source: ImportedLegalComponent, expectedIdentity: string): void => {
+  if (sourceIdentity(source) !== expectedIdentity) {
+    throw new Error(`Study rubric specialized override scope violation: expected ${expectedIdentity}, got ${sourceIdentity(source)}`);
+  }
+};
 
 const section14Rubric = (
   source: ImportedLegalComponent,
   diagnostic: StudyRubricGenerationDiagnostic,
 ): GeneratedRubricItem[] => {
+  assertSpecializedSource(source, 'doc-surveys-act::section:14');
   diagnostic.mergedItems.push(
     { prompt: 'What offence and penalty apply to violating the regulations?', factSourceKeys: ['section:14/subsection:1'], template: 'offence-penalty' },
     { prompt: 'What offence and penalty apply to obstructing coordinate-monument work?', factSourceKeys: ['section:14/subsection:2'], template: 'offence-penalty' },
@@ -245,6 +262,7 @@ const section16Rubric = (
   source: ImportedLegalComponent,
   diagnostic: StudyRubricGenerationDiagnostic,
 ): GeneratedRubricItem[] => {
+  assertSpecializedSource(source, 'doc-boundaries-confirmation-act::section:16');
   const prompts = [
     'What is the correction purpose of section 16?',
     'Who may order a corrected plan of survey, and on what evidence?',
@@ -272,6 +290,7 @@ const section83Rubric = (
   source: ImportedLegalComponent,
   diagnostic: StudyRubricGenerationDiagnostic,
 ): GeneratedRubricItem[] => {
+  assertSpecializedSource(source, 'doc-community-planning-act::section:83');
   const prompts = [
     'When may a person proceed with laying out the subdivision?',
     'What may be laid out, and according to what instructions?',
@@ -287,6 +306,34 @@ const section83Rubric = (
   ];
 };
 
+const wordLimitedSubject = (value: string, fallback: string): string => {
+  const normalized = normalizeSpaces(value).replace(/[,:;]\s*$/, '');
+  const words = normalized.split(/\s+/).filter(Boolean);
+  if (words.length === 0) return fallback;
+  let limited = words.slice(0, 16).join(' ').replace(/[,:;]\s*$/, '');
+  if (/\bService New$/i.test(limited) && /\bService New Brunswick\b/i.test(normalized)) limited = `${limited} Brunswick`;
+  if (/\(|\)/.test(limited)) return fallback;
+  if (/\b(?:if|to|the|by|of|for|from|with|and|or|not|shall|may|must|it|this|that)$/i.test(limited)) return fallback;
+  return limited;
+};
+
+const definitionRubric = (
+  source: ImportedLegalComponent,
+  diagnostic: StudyRubricGenerationDiagnostic,
+): GeneratedRubricItem[] => {
+  const matches = [...prepareLegalText(source.text).operativeText.matchAll(/[“"]([^”"]{2,80})[”"]\s+means\s+([^.;]+(?:\.[^“"]*)?)/gi)];
+  const definitionSourceKey = sourceUnits(source)[0]?.sourceKey ?? source.sourceKey;
+  const items = matches.slice(0, 8).map((match, order) => {
+    const term = normalizeSpaces(match[1]);
+    const answer = normalizeSpaces(match[2]).replace(/\s+$/, '');
+    const prompt = `What is a "${term}"?`;
+    diagnostic.mergedItems.push({ prompt, factSourceKeys: [definitionSourceKey], template: 'definition' });
+    return makeItem(source, 'purpose', prompt, answer.endsWith('.') ? answer : `${answer}.`, order, [definitionSourceKey]);
+  });
+  if (matches.length > 8) diagnostic.qualityWarnings.push('Definition section should be chunked into smaller study units.');
+  return items.length ? items : [];
+};
+
 const genericRubric = (
   source: ImportedLegalComponent,
   topic: string,
@@ -296,7 +343,10 @@ const genericRubric = (
   const categoryForTopic: StudyRubricCategory =
     topic === 'offences-and-penalties' ? 'legal-effect' : topic === 'filing' ? 'filing-record' : topic === 'notice' ? 'notice' : 'power-duty';
   return sourceUnits(source).map((unit, order) => {
-    const subject = facts[order]?.object ?? facts[order]?.action ?? normalizeSpaces(source.heading ?? `section ${source.label}`);
+    const subject = wordLimitedSubject(
+      facts[order]?.object ?? facts[order]?.action ?? normalizeSpaces(source.heading ?? `section ${source.label}`),
+      source.heading ? normalizeSpaces(source.heading) : `section ${source.label}`,
+    );
     const prompt = categoryForTopic === 'filing-record'
       ? `What filing or record rule applies to ${subject}?`
       : categoryForTopic === 'notice'
@@ -355,13 +405,16 @@ export const generateStudyRubricWithDiagnostics = ({
   }
   diagnostic.extractedFacts = selectedSources.flatMap((entry) => extractFacts(entry, diagnostic));
   const items =
-    source.sourceKey === 'section:14'
+    sourceIdentity(source) === 'doc-surveys-act::section:14'
       ? section14Rubric(source, diagnostic)
-      : source.sourceKey === 'section:16'
+      : sourceIdentity(source) === 'doc-boundaries-confirmation-act::section:16'
         ? section16Rubric(source, diagnostic)
-        : source.sourceKey === 'section:83'
+        : sourceIdentity(source) === 'doc-community-planning-act::section:83'
           ? section83Rubric(source, diagnostic)
-          : selectedSources.flatMap((entry) => genericRubric(entry, topic, diagnostic.extractedFacts, diagnostic));
+          : selectedSources.flatMap((entry) => {
+              const definitionItems = topic === 'definitions' ? definitionRubric(entry, diagnostic) : [];
+              return definitionItems.length ? definitionItems : genericRubric(entry, topic, diagnostic.extractedFacts, diagnostic);
+            });
   const deduped = dedupeItems(items, diagnostic);
   if (deduped.length > 8) diagnostic.qualityWarnings.push('Generated more than 8 rubric items for a single section.');
   if (deduped.length > 1 && new Set(deduped.map((item) => item.prompt.split(' ').slice(0, 3).join(' '))).size === 1) {
