@@ -10,6 +10,7 @@ import {
   classifyStudyRubricSectionTopic,
   generateStudyRubricWithDiagnostics,
   type ExtractedLegalFact,
+  type LegalModality,
 } from './studyRubricGeneration';
 import {
   estimateRubricFacts,
@@ -77,6 +78,7 @@ export type StudyGenerationAuditSection = {
     removedAmendmentHistory?: string[];
     removedConsolidationText?: string[];
     tierAQualityDowngrades?: string[];
+    semanticQualityDowngrades?: string[];
   };
   quality: {
     score: number;
@@ -104,7 +106,12 @@ export type StudyGenerationAuditSummary = {
   suggestedChunkCount: number;
   uniqueSuggestedChunkCount: number;
   tierAQualityDowngradeCount: number;
+  semanticQualityDowngradeCount: number;
   genuineTopicMismatchCount: number;
+  actorMismatchCount: number;
+  modalityMismatchCount: number;
+  clauseBindingAmbiguousCount: number;
+  chunkGranularityLimitedSections: number;
   chunkPlanningFailedSections: number;
   averageEstimatedRubricItemsPerChunk: number;
   lowestScoringSections: Array<{
@@ -349,6 +356,74 @@ const isConceptFragment = (label: string): boolean => {
   return false;
 };
 
+const normalizeActorForComparison = (value: string): string =>
+  normalizeSpaces(value)
+    .toLowerCase()
+    .replace(/^(?:the|a|an)\s+/, '')
+    .replace(/[^a-z0-9\s]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const inferQuestionModality = (question: string): LegalModality => {
+  if (/\bprohibit|prohibited|must .+ not |shall .+ not |may .+ not |not accept\b/i.test(question)) return 'shall-not';
+  if (/\bmay\b|\bauthority\b|\bpower\b|\bempowered\b/i.test(question)) return 'may';
+  if (/\bmust\b|\brequired\b|\bduty\b|\bshall\b/i.test(question)) return 'must';
+  if (/\bdeemed\b|\blegal effect\b/i.test(question)) return 'deemed';
+  if (/\bentitled\b/i.test(question)) return 'entitled';
+  return 'none';
+};
+
+const modalityMatchesFact = (question: string, facts: ExtractedLegalFact[]): boolean => {
+  const questionModality = inferQuestionModality(question);
+  if (questionModality === 'none') return true;
+  return facts.some((fact) => {
+    if (questionModality === 'must') return fact.modality === 'shall' || fact.modality === 'must';
+    if (questionModality === 'shall-not') return fact.modality === 'shall-not' || fact.modality === 'may-not';
+    if (questionModality === 'may') return fact.modality === 'may';
+    return fact.modality === questionModality;
+  });
+};
+
+const modalityMatchesSingleFact = (questionModality: LegalModality, fact: ExtractedLegalFact): boolean => {
+  if (questionModality === 'none') return true;
+  if (questionModality === 'must') return fact.modality === 'shall' || fact.modality === 'must';
+  if (questionModality === 'shall-not') return fact.modality === 'shall-not' || fact.modality === 'may-not';
+  if (questionModality === 'may') return fact.modality === 'may';
+  return fact.modality === questionModality;
+};
+
+const actorMatchesSingleFact = (question: string, fact: ExtractedLegalFact): boolean => {
+  const actor = fact.operativeActor ?? fact.actor;
+  if (!actor) return true;
+  const normalizedQuestion = normalizeActorForComparison(question);
+  const normalizedActor = normalizeActorForComparison(actor);
+  if (normalizedQuestion.includes(normalizedActor)) return true;
+  if (/\binstrument\b/i.test(actor) && /\binstrument\b/i.test(question)) return true;
+  if (/persons or authorities/i.test(actor) && /\bwho may make an application\b/i.test(question)) return true;
+  return false;
+};
+
+const actorMatchesFact = (question: string, facts: ExtractedLegalFact[]): boolean => {
+  return facts.some((fact) => actorMatchesSingleFact(question, fact));
+};
+
+const semanticMatchesSingleFact = (question: string, facts: ExtractedLegalFact[]): boolean => {
+  const questionModality = inferQuestionModality(question);
+  return facts.some((fact) => actorMatchesSingleFact(question, fact) && modalityMatchesSingleFact(questionModality, fact));
+};
+
+const semanticFactsForItem = (
+  item: { sourceKeys?: string[]; generatedFromFacts?: unknown[] },
+  extractedFacts: ExtractedLegalFact[],
+): ExtractedLegalFact[] => {
+  const fromFacts = (item.generatedFromFacts ?? []).filter((fact): fact is ExtractedLegalFact =>
+    Boolean(fact && typeof fact === 'object' && 'sourceKey' in fact),
+  );
+  if (fromFacts.length) return fromFacts;
+  const sourceKeys = item.sourceKeys ?? [];
+  return extractedFacts.filter((fact) => sourceKeys.includes(fact.sourceKey));
+};
+
 export const collectStudyGenerationWarnings = (section: {
   source: ImportedLegalComponent;
   detectedTopic: string;
@@ -426,6 +501,21 @@ export const collectStudyGenerationWarnings = (section: {
     if (item.questionTier === 'A' && hasTierASurfaceQualityFailure(item.prompt)) {
       warnings.push(warning('TIER_A_SURFACE_QUALITY_FAILURE', 'warning', 'generated.rubricItems.prompt', item.prompt, 'A Tier A rubric prompt failed the grammatical surface-quality gate.'));
     }
+    if (item.questionTier === 'A') {
+      const semanticFacts = semanticFactsForItem(item, section.extractedFacts);
+      if (semanticFacts.length > 0 && !actorMatchesFact(item.prompt, semanticFacts)) {
+        warnings.push(warning('ACTOR_MISMATCH', 'critical', 'generated.rubricItems.prompt', item.prompt, 'The Tier A prompt names an actor that is not the operative actor of the grounded fact.'));
+      }
+      if (semanticFacts.length > 0 && !modalityMatchesFact(item.prompt, semanticFacts)) {
+        warnings.push(warning('MODALITY_MISMATCH', 'critical', 'generated.rubricItems.prompt', item.prompt, 'The Tier A prompt modality does not match the grounded source fact modality.'));
+      }
+      if (semanticFacts.length > 1 && !semanticMatchesSingleFact(item.prompt, semanticFacts)) {
+        warnings.push(warning('CLAUSE_BINDING_AMBIGUOUS', 'warning', 'generated.rubricItems.prompt', item.prompt, 'The prompt actor and modality do not bind to the same extracted source fact.'));
+      }
+      if (semanticFacts.length > 2 || semanticFacts.some((fact) => fact.confidence === 'medium' && /multiple modal clauses/i.test(fact.sourceClause ?? ''))) {
+        warnings.push(warning('CLAUSE_BINDING_AMBIGUOUS', 'warning', 'generated.rubricItems.prompt', item.prompt, 'Multiple actors or modal clauses exist and deterministic parsing cannot safely bind the prompt as Tier A.'));
+      }
+    }
     if (amendmentHistoryPattern.test(item.referenceAnswer)) {
       warnings.push(warning('AMENDMENT_HISTORY_LEAK', 'critical', 'generated.rubricItems.referenceAnswer', item.referenceAnswer.match(amendmentHistoryPattern)?.[0] ?? item.referenceAnswer, 'The rubric answer appears to contain amendment history or citation residue.'));
     }
@@ -471,6 +561,9 @@ export const scoreStudyGenerationWarnings = (warnings: StudyGenerationWarning[])
     RAW_CLAUSE_TRUNCATED: 20,
     DEFINITION_SECTION_WRONG_RUBRIC_TYPE: 20,
     CROSS_DOCUMENT_TEMPLATE_COLLISION: 100,
+    ACTOR_MISMATCH: 100,
+    MODALITY_MISMATCH: 100,
+    CLAUSE_BINDING_AMBIGUOUS: 20,
     DUPLICATE_RUBRIC_PROMPT: 10,
     QUESTION_MISSING_SUBJECT: 10,
     GENERIC_RUBRIC_PROMPT: 5,
@@ -565,6 +658,7 @@ const buildSectionAudit = (
       removedAmendmentHistory: rubric.diagnostic.removedSourceText,
       removedConsolidationText: referenceAnswer.warnings,
       tierAQualityDowngrades: rubric.diagnostic.tierAQualityDowngrades,
+      semanticQualityDowngrades: rubric.diagnostic.semanticQualityDowngrades,
     },
     quality: {
       score: scoreStudyGenerationWarnings(warnings),
@@ -662,7 +756,14 @@ const summarizeAudit = (documents: StudyGenerationAuditDocument[]): StudyGenerat
     suggestedChunkCount: allChunks.length,
     uniqueSuggestedChunkCount: uniqueChunkCount,
     tierAQualityDowngradeCount: sections.reduce((sum, section) => sum + (section.diagnostics.tierAQualityDowngrades?.length ?? 0), 0),
+    semanticQualityDowngradeCount: sections.reduce((sum, section) => sum + (section.diagnostics.semanticQualityDowngrades?.length ?? 0), 0),
     genuineTopicMismatchCount: sections.reduce((sum, section) => sum + section.quality.warnings.filter((entry) => entry.code === 'MAIN_QUESTION_TOPIC_MISMATCH').length, 0),
+    actorMismatchCount: sections.reduce((sum, section) => sum + section.quality.warnings.filter((entry) => entry.code === 'ACTOR_MISMATCH').length, 0),
+    modalityMismatchCount: sections.reduce((sum, section) => sum + section.quality.warnings.filter((entry) => entry.code === 'MODALITY_MISMATCH').length, 0),
+    clauseBindingAmbiguousCount: sections.reduce((sum, section) => sum + section.quality.warnings.filter((entry) => entry.code === 'CLAUSE_BINDING_AMBIGUOUS').length, 0),
+    chunkGranularityLimitedSections: sections.filter((section) =>
+      (section.diagnostics.suggestedChunks ?? []).some((chunk) => chunk.chunkGranularityLimited),
+    ).length,
     chunkPlanningFailedSections: sectionsWhereChunkPlanningFailed,
     averageEstimatedRubricItemsPerChunk: allChunks.length
       ? Number((allChunks.reduce((sum, chunk) => sum + chunk.estimatedRubricItems, 0) / allChunks.length).toFixed(2))
@@ -751,7 +852,12 @@ export const renderStudyGenerationAuditMarkdown = (audit: StudyGenerationAudit):
     `Suggested chunks: ${audit.summary.suggestedChunkCount}`,
     `Unique suggested chunks: ${audit.summary.uniqueSuggestedChunkCount}`,
     `Tier A questions downgraded by quality gate: ${audit.summary.tierAQualityDowngradeCount}`,
+    `Tier A questions downgraded by semantic gate: ${audit.summary.semanticQualityDowngradeCount}`,
     `Genuine topic mismatches: ${audit.summary.genuineTopicMismatchCount}`,
+    `Actor mismatches: ${audit.summary.actorMismatchCount}`,
+    `Modality mismatches: ${audit.summary.modalityMismatchCount}`,
+    `Ambiguous clause bindings: ${audit.summary.clauseBindingAmbiguousCount}`,
+    `Chunk granularity limited sections: ${audit.summary.chunkGranularityLimitedSections}`,
     `Sections where chunk planning failed: ${audit.summary.chunkPlanningFailedSections}`,
     `Average estimated rubric items per chunk: ${audit.summary.averageEstimatedRubricItemsPerChunk}`,
     '',
@@ -787,7 +893,7 @@ export const renderStudyGenerationAuditMarkdown = (audit: StudyGenerationAudit):
       if (section.diagnostics.suggestedChunks?.length) {
         lines.push('Suggested chunks:', '');
         section.diagnostics.suggestedChunks.forEach((chunk) => {
-          lines.push(`- ${chunk.title} (${chunk.reasons.join(', ')}, estimated rubric items: ${chunk.estimatedRubricItems}; sources: ${chunk.sourceKeys.join(', ')})`);
+          lines.push(`- ${chunk.title} (${chunk.reasons.join(', ')}, estimated rubric items: ${chunk.estimatedRubricItems}; sources: ${chunk.sourceKeys.join(', ')}${chunk.chunkGranularityLimited ? '; chunkGranularityLimited: true' : ''})`);
         });
         lines.push('');
       }

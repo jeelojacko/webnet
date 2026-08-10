@@ -1,15 +1,14 @@
 # Study Generation Warnings
 
-Created: 2026-08-10T16:33:10.815Z
-Sections with warnings: 140
+Created: 2026-08-10T17:16:09.808Z
+Sections with warnings: 123
 
 ## Community Planning Act section 125 - Regulations re planning and development
 
-QA score: 55
+QA score: 60
 Main question: What regulation-making authority is established by section 125 of Community Planning Act?
 
 Warnings:
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 125(1): Subject to this section, the Lieutenant-Governor in Council may make regulations (a) governing the setting back of buildings and structures from the boundaries of streets or classes of streets; (b) prescribing th
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 125(9): With respect to a zoning regulation or to zoning provisions in a rural plan under this section (a) the powers and functions referred to in paragraphs 53(2)(g), (g.1) and (h) or paragraph 53(3)(c), with respect to
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 125(10): A subdivision regulation under this section may (a) subject to subsections (12) and (13), provide for (i) the setting aside of land for public purposes at a location as may be approved by the Minister after cons
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 125(11): If a subdivision regulation under this section is in effect, (a) the provisions of section 77 with respect to a subdivision by-law apply with the necessary modifications to the regulation, except if a plan invol
@@ -18,27 +17,16 @@ Warnings:
 - [WARNING] TOO_MANY_RUBRIC_ITEMS (generated.rubricItems): The section produced more than 10 rubric items. Text: 16
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Application of a Regulation Under This Section
 
-## Land Titles Act section 17.2 - Authentication of electronic instrument
-
-QA score: 70
-Main question: What notice requirements are established by section 17.2 of Land Titles Act?
-
-Warnings:
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 17.2(7): When a subscriber authenticates an electronic instrument and the instrument referred to in paragraph (3)(a) has not been witnessed by the subscriber, the subscriber is entitled to rely on the certification of th
-- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What prohibition applies under 17.2(1)? | What prohibition applies under 17.2(2)?
-- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 17.2(3) provide regarding Authentication of electronic instrument? | What does 17.2(6) provide regarding Authentication of electronic instrument? | What does 17.2(7) provide regarding Authentication of electronic instrument? | What does 17.2(8) provide regarding Authentication of electronic instrument?
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Filing or Registration in Electronic Format Unless
-
-## Community Planning Act section 53 - Making of zoning by-law
+## Community Planning Act section 44 - Adoption and approval of rural plans for rural communities
 
 QA score: 75
-Main question: What powers or authority are established by section 53 of Community Planning Act?
+Main question: What requirements are established by section 44 of Community Planning Act?
 
 Warnings:
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 53(2): For greater certainty and without limiting subsection (1), a zoning by-law shall divide the municipality into zones, prescribe the purposes for which land, buildings and structures in a zone may be used and prohib
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 53(3): In prescribing the purposes for which land, buildings and structures in a zone may be used, a zoning by-law may (a) establish classes of purposes with respect to main, secondary and accessory uses and permit land,
-- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 53(1.2) provide regarding Making of zoning by-law? | What does 53(3) provide regarding Making of zoning by-law? | What does 53(6) provide regarding Making of zoning by-law? | What does 53(7) provide regarding Making of zoning by-law? | What does 53(8) provide regarding Making of zoning by-law? | What does 53(9) provide regarding Making of zoning by-law?
-- [WARNING] TOO_MANY_RUBRIC_ITEMS (generated.rubricItems): The section produced more than 10 rubric items. Text: 12
+- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 44(2.2): A rural plan for a rural community shall be prepared or amended (a) under the direction of (i) the planning director or another planner engaged by the council of the rural community and responsible to the planni
+- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 44(6): With respect to zoning provisions in a rural plan under this section, (a) the powers and functions in paragraphs 53(2)(g) and (h) or 53(3)(c) with respect to particular uses of land may be vested in a regional ser
+- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 44(2.3) provide regarding Adoption and approval of rural plans for rural communities? | What does 44(3) provide regarding Adoption and approval of rural plans for rural communities? | What does 44(4) provide regarding Adoption and approval of rural plans for rural communities? | What does 44(5) provide regarding Adoption and approval of rural plans for rural communities? | What does 44(7) provide regarding Adoption and approval of rural plans for rural communities?
+- [WARNING] TOO_MANY_RUBRIC_ITEMS (generated.rubricItems): The section produced more than 10 rubric items. Text: 11
 
 ## Community Planning Act section 88 - Approval of subdivision plan for streets and land for public purposes
 
@@ -48,7 +36,7 @@ Main question: What requirements are established by section 88 of Community Plan
 Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 88(6): If a subdivision plan has been assented to under this section and approved by the development officer, the land indicated on the plan as being streets or land for public purposes vests, on the filing of the plan i
 - [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 88(1.1) provide regarding Approval of subdivision plan for streets and land for public purposes? | What does 88(8) provide regarding Approval of subdivision plan for streets and land for public purposes?
-- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 88(5) provide regarding subdivision plan? | What does 88(6) provide regarding subdivision plan? | What does 88(7) provide regarding subdivision plan?
+- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 88(6) provide regarding subdivision plan? | What does 88(7) provide regarding subdivision plan?
 
 ## Community Planning Act section 100 - Comply with notice provisions
 
@@ -70,26 +58,6 @@ Warnings:
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Comply With Notice Provisions
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Office in Accordance With Paragraph
 
-## Community Planning Act section 24 - Preparation and content of municipal plan
-
-QA score: 80
-Main question: What powers or authority are established by section 24 of Community Planning Act?
-
-Warnings:
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 24(2): A municipal plan shall be prepared or amended (a) under the direction of (i) the planning director or another planner engaged by the council and responsible to the planning director, or (ii) in the case of a munic
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 24(5): A municipal plan shall contain the following: (a) statements of policy with respect to (i) the development and use of land in the municipality, (ii) the conservation and improvement of the physical environment, (i
-- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 24(2.1) provide regarding Preparation and content of municipal plan? | What does 24(5) provide regarding Preparation and content of municipal plan? | What does 24(7) provide regarding Preparation and content of municipal plan?
-
-## Community Planning Act section 44 - Adoption and approval of rural plans for rural communities
-
-QA score: 80
-Main question: What requirements are established by section 44 of Community Planning Act?
-
-Warnings:
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 44(2.2): A rural plan for a rural community shall be prepared or amended (a) under the direction of (i) the planning director or another planner engaged by the council of the rural community and responsible to the planni
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 44(6): With respect to zoning provisions in a rural plan under this section, (a) the powers and functions in paragraphs 53(2)(g) and (h) or 53(3)(c) with respect to particular uses of land may be vested in a regional ser
-- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 44(2.3) provide regarding Adoption and approval of rural plans for rural communities? | What does 44(3) provide regarding Adoption and approval of rural plans for rural communities? | What does 44(4) provide regarding Adoption and approval of rural plans for rural communities? | What does 44(5) provide regarding Adoption and approval of rural plans for rural communities? | What does 44(7) provide regarding Adoption and approval of rural plans for rural communities?
-
 ## Community Planning Act section 64 - Validity and coming into force of deferred widening by-law
 
 QA score: 80
@@ -107,16 +75,6 @@ Main question: What requirements are established by section 69 of Community Plan
 Warnings:
 - [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What requirements are established by section 69 of Community Planning Act?
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Office in Accordance With Paragraph
-
-## Community Planning Act section 87 - Subdivision plan for roads and streets
-
-QA score: 80
-Main question: What requirements are established by section 87 of Community Planning Act?
-
-Warnings:
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 87(2): The assent of the Minister of Transportation and Infrastructure under this section shall not be given until, (a) the regional service commission or the advisory committee, as the case may be, has recommended the l
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 87(8): If the requirements of subparagraph (2)(b)(i) have been satisfied in respect of a water or sanitary sewer system, or both, and certified under paragraph (2)(d), (a) the Minister shall file in the land registration
-- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 87(4) provide regarding subdivision plan? | What does 87(5) provide regarding subdivision plan? | What does 87(6) provide regarding subdivision plan?
 
 ## Community Planning Act section 107 - Compensation
 
@@ -138,33 +96,24 @@ Warnings:
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Notice is Given in a Manner Authorized by Paragraph
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Notice is Given in a Manner Authorized Under
 
-## Land Titles Act section 18 - Registration of instrument
+## Land Titles Act section 17.2 - Authentication of electronic instrument
 
 QA score: 80
-Main question: What filing or registration requirements are established by section 18 of Land Titles Act?
+Main question: What notice requirements are established by section 17.2 of Land Titles Act?
 
 Warnings:
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 18(4): Notwithstanding anything in this or any other enactment, the registrar may refuse to file or register and may reject an instrument where the appropriate fee has not been paid therefor or where the instrument (a) d
-- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 18(2) provide regarding Registration of instrument? | What does 18(8) provide regarding Registration of instrument?
-- [WARNING] TOO_MANY_RUBRIC_ITEMS (generated.rubricItems): The section produced more than 10 rubric items. Text: 12
+- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 17.2(7): When a subscriber authenticates an electronic instrument and the instrument referred to in paragraph (3)(a) has not been witnessed by the subscriber, the subscriber is entitled to rely on the certification of th
+- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 17.2(3) provide regarding Authentication of electronic instrument? | What does 17.2(6) provide regarding Authentication of electronic instrument? | What does 17.2(8) provide regarding Authentication of electronic instrument?
+- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Filing or Registration in Electronic Format Unless
 
-## Land Titles Act section 73 - Indemnification on rectification
+## Land Titles Act section 79 - Application to court
 
 QA score: 80
-Main question: What certification requirements are established by section 73 of Land Titles Act?
+Main question: What are the application requirements under section 79 of Land Titles Act?
 
 Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What certification requirements are established by section 73 of Land Titles Act?
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 73(1): Any person who suffers damage by reason of the rectification of the title register, an error or omission in the title register which is not rectified, an error or omission in a certificate of registered ownership
-
-## Registry Act section 13.1 - Powers regarding document maintenance and disposal
-
-QA score: 80
-Main question: What powers or authority are established by section 13.1 of Registry Act?
-
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What powers or authority are established by section 13.1 of Registry Act?
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 13.1(6): The registrar may destroy or otherwise dispose of the following documents, indices, books or records kept in the registry office, whether or not they have been converted to another form: (a) any document filed u
+- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 79(1) provide regarding Application to court? | What does 79(9) provide regarding Application to court?
+- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What prohibition applies under 79(6)? | What prohibition applies under 79(7)?
 
 ## REGULATION 83-130 section 20
 
@@ -173,7 +122,7 @@ Main question: What requirements are established by section 20 of REGULATION 83-
 
 Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 20(7): In a transfer which is made subject to restrictions, either of the following paragraphs may be added to Form 13 to include the restrictions by reference: To the intent that the burden of this covenant run with the
-- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 20(1) provide regarding section 20? | What does 20(2) provide regarding section 20? | What does 20(3) provide regarding section 20? | What does 20(3.1) provide regarding section 20? | What does 20(4) provide regarding section 20? | What does 20(7) provide regarding section 20? | What does 20(11) provide regarding section 20? | What does 20(13) provide regarding section 20?
+- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 20(1) provide regarding section 20? | What does 20(2) provide regarding section 20? | What does 20(3) provide regarding section 20? | What does 20(3.1) provide regarding section 20? | What does 20(4) provide regarding section 20? | What does 20(11) provide regarding section 20? | What does 20(13) provide regarding section 20?
 - [WARNING] TOO_MANY_RUBRIC_ITEMS (generated.rubricItems): The section produced more than 10 rubric items. Text: 14
 
 ## Community Planning Act section 3 - Establishment of advisory committees
@@ -192,6 +141,15 @@ Main question: What powers or authority are established by section 23 of Communi
 Warnings:
 - [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What powers or authority are established by section 23 of Community Planning Act?
 
+## Community Planning Act section 24 - Preparation and content of municipal plan
+
+QA score: 85
+Main question: What powers or authority are established by section 24 of Community Planning Act?
+
+Warnings:
+- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 24(2): A municipal plan shall be prepared or amended (a) under the direction of (i) the planning director or another planner engaged by the council and responsible to the planning director, or (ii) in the case of a munic
+- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 24(2.1) provide regarding Preparation and content of municipal plan? | What does 24(7) provide regarding Preparation and content of municipal plan?
+
 ## Community Planning Act section 34 - Failure to adopt rural plan for a village
 
 QA score: 85
@@ -207,7 +165,7 @@ Main question: What powers or authority are established by section 35 of Communi
 
 Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 35(1.1): A rural plan for a village shall be prepared or amended (a) under the direction of (i) the planning director or another planner engaged by the council of the village and responsible to the planning director, or
-- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 35(1.2) provide regarding Preparation and content of rural plan for a village? | What does 35(2) provide regarding Preparation and content of rural plan for a village? | What does 35(3) provide regarding Preparation and content of rural plan for a village? | What does 35(4) provide regarding Preparation and content of rural plan for a village?
+- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 35(1.2) provide regarding Preparation and content of rural plan for a village? | What does 35(3) provide regarding Preparation and content of rural plan for a village? | What does 35(4) provide regarding Preparation and content of rural plan for a village?
 
 ## Community Planning Act section 44.1 - Failure to adopt rural plan for a rural community
 
@@ -223,7 +181,7 @@ QA score: 85
 Main question: What are the application requirements under section 52 of Community Planning Act?
 
 Warnings:
-- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 52(3) provide regarding Content of regulation? | What does 52(4) provide regarding Content of regulation? | What does 52(9) provide regarding Content of regulation? | What does 52(10) provide regarding Content of regulation? | What does 52(11) provide regarding Content of regulation? | What does 52(12) provide regarding Content of regulation? | What does 52(13) provide regarding Content of regulation? | What does 52(14) provide regarding Content of regulation?
+- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 52(3) provide regarding Content of regulation? | What does 52(4) provide regarding Content of regulation? | What does 52(10) provide regarding Content of regulation? | What does 52(11) provide regarding Content of regulation? | What does 52(12) provide regarding Content of regulation? | What does 52(13) provide regarding Content of regulation? | What does 52(14) provide regarding Content of regulation?
 - [WARNING] TOO_MANY_RUBRIC_ITEMS (generated.rubricItems): The section produced more than 10 rubric items. Text: 13
 
 ## Community Planning Act section 59 - Re-zoning and amendments
@@ -244,14 +202,14 @@ Warnings:
 - [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 74(2.2) provide regarding Making of subdivision by-law? | What does 74(3) provide regarding Making of subdivision by-law?
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Office in Accordance With Paragraph
 
-## Community Planning Act section 81 - Tentative subdivision plan
+## Community Planning Act section 87 - Subdivision plan for roads and streets
 
 QA score: 85
-Main question: What requirements are established by section 81 of Community Planning Act?
+Main question: What requirements are established by section 87 of Community Planning Act?
 
 Warnings:
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 81(2): Subject to an exemption under paragraph 77(1)(c), a tentative plan shall be marked “Tentative Plan” and show the following, if applicable: (a) the proposed name of the proposed subdivision; (b) the boundaries of t
-- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What prohibition applies under 81(4)? | What prohibition applies under 81(5)?
+- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 87(8): If the requirements of subparagraph (2)(b)(i) have been satisfied in respect of a water or sanitary sewer system, or both, and certified under paragraph (2)(d), (a) the Minister shall file in the land registration
+- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 87(4) provide regarding subdivision plan? | What does 87(5) provide regarding subdivision plan? | What does 87(6) provide regarding subdivision plan?
 
 ## Community Planning Act section 96 - Incentive or bonus zoning agreements
 
@@ -286,7 +244,7 @@ Main question: What order-making rules are established by section 12 of Land Tit
 
 Warnings:
 - [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 12(4) provide regarding Completion of application, order by Registrar General? | What does 12(5) provide regarding Completion of application, order by Registrar General? | What does 12(6) provide regarding Completion of application, order by Registrar General? | What does 12(7) provide regarding Completion of application, order by Registrar General? | What does 12(7.1) provide regarding Completion of application, order by Registrar General? | What does 12(8) provide regarding Completion of application, order by Registrar General? | What does 12(11) provide regarding Completion of application, order by Registrar General? | What does 12(12) provide regarding Completion of application, order by Registrar General? | What does 12(13) provide regarding Completion of application, order by Registrar General? | What does 12(14) provide regarding Completion of application, order by Registrar General? | What does 12(15) provide regarding Completion of application, order by Registrar General? | What does 12(18) provide regarding Completion of application, order by Registrar General?
-- [WARNING] TOO_MANY_RUBRIC_ITEMS (generated.rubricItems): The section produced more than 10 rubric items. Text: 18
+- [WARNING] TOO_MANY_RUBRIC_ITEMS (generated.rubricItems): The section produced more than 10 rubric items. Text: 19
 
 ## Land Titles Act section 17.11 - Instruments that may be submitted as digitally scanned images
 
@@ -384,14 +342,13 @@ Main question: What order-making rules are established by section 66 of Land Tit
 Warnings:
 - [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What order-making rules are established by section 66 of Land Titles Act?
 
-## Land Titles Act section 80 - Fees
+## Land Titles Act section 73 - Indemnification on rectification
 
 QA score: 85
-Main question: What duties does section 80 of Land Titles Act impose about fees?
+Main question: What certification requirements are established by section 73 of Land Titles Act?
 
 Warnings:
-- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 80(3) provide regarding Fees? | What does 80(7) provide regarding Fees?
-- [WARNING] TOO_MANY_RUBRIC_ITEMS (generated.rubricItems): The section produced more than 10 rubric items. Text: 11
+- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What certification requirements are established by section 73 of Land Titles Act?
 
 ## Registry Act section 13 - Seal of registrar; production of documents
 
@@ -401,15 +358,13 @@ Main question: What notice requirements are established by section 13 of Registr
 Warnings:
 - [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What notice requirements are established by section 13 of Registry Act?
 
-## Registry Act section 19.05 - Subscriber or land surveyor agreement
+## Registry Act section 13.1 - Powers regarding document maintenance and disposal
 
 QA score: 85
-Main question: What notice requirements are established by section 19.05 of Registry Act?
+Main question: What powers or authority are established by section 13.1 of Registry Act?
 
 Warnings:
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 19.05(1): A member of the Law Society of New Brunswick or a land surveyor who wishes to submit a digitally scanned image of an instrument to a registry office shall enter into an agreement with Service New Brunswick for
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 19.05(2): Service New Brunswick shall not enter into an agreement under subsection (1) with a member of the Law Society of New Brunswick unless there is in place an agreement between the Law Society of New Brunswick and
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 19.05(3): Service New Brunswick shall not enter into an agreement under subsection (1) with a land surveyor unless there is in place an agreement between the Association of New Brunswick Land Surveyors and Service New Br
+- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What powers or authority are established by section 13.1 of Registry Act?
 
 ## Registry Act section 29 - Registration of notice of sale under mortgage
 
@@ -434,6 +389,16 @@ Main question: What requirements are established by section 70 of Registry Act?
 
 Warnings:
 - [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What requirements are established by section 70 of Registry Act?
+
+## REGULATION 83-130 section 25
+
+QA score: 85
+Main question: What does section 25 of the REGULATION 83-130 provide?
+
+Warnings:
+- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 25(2): The mortgagor covenants with the mortgagee that during the continuance of this mortgage, the mortgagor shall maintain the lands and premises and improvements of the lands and premises in good and sufficient order
+- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 25(2): The mortgagor covenants with the mortgagee that during the continuance of this mortgage, the mortgagor shall maintain the lands and premises and improvements of the lands and premises in good and sufficient order
+- [WARNING] TOO_MANY_RUBRIC_ITEMS (generated.rubricItems): The section produced more than 10 rubric items. Text: 28
 
 ## Boundaries Confirmation Act section 6 - Applicant
 
@@ -493,6 +458,14 @@ Main question: What requirements are established by section 51.1 of Community Pl
 Warnings:
 - [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 51.1(2) provide regarding Province to consider rural plan? | What does 51.1(3) provide regarding Province to consider rural plan?
 
+## Community Planning Act section 53 - Making of zoning by-law
+
+QA score: 90
+Main question: What powers or authority are established by section 53 of Community Planning Act?
+
+Warnings:
+- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 53(1.2) provide regarding Making of zoning by-law? | What does 53(6) provide regarding Making of zoning by-law? | What does 53(7) provide regarding Making of zoning by-law? | What does 53(9) provide regarding Making of zoning by-law?
+
 ## Community Planning Act section 61.1 - Province to consider zoning by-law
 
 QA score: 90
@@ -501,14 +474,6 @@ Main question: What are the application requirements under section 61.1 of Commu
 Warnings:
 - [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 61.1(3) provide regarding Province to consider zoning by-law? | What does 61.1(4) provide regarding Province to consider zoning by-law?
 
-## Community Planning Act section 63 - Altering of streets and establishing building lines
-
-QA score: 90
-Main question: What requirements are established by section 63 of Community Planning Act?
-
-Warnings:
-- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 63(2) provide regarding Altering of streets and establishing building lines? | What does 63(3) provide regarding Altering of streets and establishing building lines?
-
 ## Community Planning Act section 68 - Access to streets
 
 QA score: 90
@@ -516,22 +481,6 @@ Main question: What does section 68 of the Community Planning Act provide regard
 
 Warnings:
 - [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 68(2) provide regarding Access to streets? | What does 68(4) provide regarding Access to streets?
-
-## Community Planning Act section 72 - Making and enforcement of flood risk area by-law
-
-QA score: 90
-Main question: What does section 72 of the Community Planning Act provide regarding making and enforcement of flood risk area by-law?
-
-Warnings:
-- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 72(3) provide regarding Making and enforcement of flood risk area by-law? | What does 72(5) provide regarding Making and enforcement of flood risk area by-law?
-
-## Community Planning Act section 73 - Permits re flood risk area by-law
-
-QA score: 90
-Main question: What are the application requirements under section 73 of Community Planning Act?
-
-Warnings:
-- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 73(1) provide regarding Permits re flood risk area by-law? | What does 73(4) provide regarding Permits re flood risk area by-law?
 
 ## Community Planning Act section 75 - Content of subdivision by-law
 
@@ -560,14 +509,14 @@ Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 78(1): An advisory committee or regional service commission may (a) subject to the terms and conditions it considers fit, permit a reasonable variance from the requirements of a subdivision by-law, if it is of the opinio
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 78(2): A development officer may (a) subject to the terms and conditions that the development officer considers fit, permit a reasonable variance from the requirements of a subdivision by-law referred to in paragraph 75(
 
-## Community Planning Act section 84 - Application for approval of subdivision plan
+## Community Planning Act section 89 - Amendments to subdivision plan
 
 QA score: 90
-Main question: What requirements are established by section 84 of Community Planning Act?
+Main question: What requirements are established by section 89 of Community Planning Act?
 
 Warnings:
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 84(2): A subdivision plan referred to in subsection (1) shall be drawn (a) to a scale having a ratio of one to 1,000, except if, in the opinion of the development officer, a ratio of one to 500, one to 2,000 or one to 5,
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 84(3): A subdivision plan shall set out the following: (a) in the title block, (i) the name of the subdivision, (ii) if required by the development officer, the name of a street to which the subdivision has access, (iii)
+- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 89(3): On the filing of an amending subdivision plan in the land registration office, (a) if the plan has been assented to under section 87 and approved by the development officer, land indicated on the plan as being str
+- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 89(4): If land indicated on a subdivision plan as being streets or land for a public purpose has vested in the Crown or a local government, but under an amending subdivision plan the land is to be used for other purposes
 
 ## Community Planning Act section 91 - Making of development charge by-law
 
@@ -585,30 +534,13 @@ Main question: What are the application requirements under section 109 of Commun
 Warnings:
 - [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 109(1) provide regarding Procedure for making by-laws? | What does 109(2) provide regarding Procedure for making by-laws?
 
-## Community Planning Act section 117 - Amendment or repeal of by-laws
-
-QA score: 90
-Main question: What are the application requirements under section 117 of Community Planning Act?
-
-Warnings:
-- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 117(2) provide regarding Amendment or repeal of by-laws? | What does 117(3) provide regarding Amendment or repeal of by-laws?
-
 ## Community Planning Act section 121 - Orders and decisions
 
 QA score: 90
 Main question: What appeal rights, restrictions and deadlines are established by section 121 of Community Planning Act?
 
 Warnings:
-- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 121(1) provide regarding Orders and decisions? | What does 121(2) provide regarding Orders and decisions? | What does 121(7) provide regarding Orders and decisions? | What does 121(9) provide regarding Orders and decisions? | What does 121(10) provide regarding Orders and decisions?
-
-## Community Planning Act section 124 - Regulations – general
-
-QA score: 90
-Main question: What regulation-making authority is established by section 124 of Community Planning Act?
-
-Warnings:
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 124(1): The Lieutenant-Governor in Council may make regulations (a) respecting statements of public interest; (b) respecting regional land use plans; (b.1) for the purposes of paragraph 53(2)(g.1), prescribing (i) requir
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 124(2): Without limiting paragraph (1)(b), a regulation made under that paragraph may prescribe (a) the process, procedure or criteria for making or amending a regional land use plan, including by ministerial regulation;
+- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 121(1) provide regarding Orders and decisions? | What does 121(2) provide regarding Orders and decisions? | What does 121(7) provide regarding Orders and decisions? | What does 121(10) provide regarding Orders and decisions?
 
 ## Community Planning Act section 135 - Application for an order of the Court
 
@@ -643,22 +575,14 @@ Main question: What are the application requirements under section 2.1 of Land T
 Warnings:
 - [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 2.1(1) provide regarding Interests within the scope of the Personal Property Security Act? | What does 2.1(2) provide regarding Interests within the scope of the Personal Property Security Act? | What does 2.1(3) provide regarding Interests within the scope of the Personal Property Security Act?
 
-## Land Titles Act section 5 - Appointment of Registrar General, registrar and deputies
+## Land Titles Act section 36 - Registration of stop order to prohibit registration
 
 QA score: 90
-Main question: What duties does section 5 of Land Titles Act impose about appointment of registrar general, registrar and deputies?
+Main question: What filing or registration requirements are established by section 36 of Land Titles Act?
 
 Warnings:
-- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 5(4) provide regarding Appointment of Registrar General, registrar and deputies? | What does 5(6) provide regarding Appointment of Registrar General, registrar and deputies?
-
-## Land Titles Act section 17.8 - Subscriber agreement
-
-QA score: 90
-Main question: What duties does section 17.8 of Land Titles Act impose about subscriber agreement?
-
-Warnings:
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 17.8(2): Service New Brunswick shall not enter into an agreement under subsection (1) with a member of the Law Society of New Brunswick unless there is in place an agreement between the Law Society of New Brunswick and S
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 17.8(3): Service New Brunswick shall not enter into an agreement under subsection (1) with a land surveyor unless there is in place an agreement between the Association of New Brunswick Land Surveyors and Service New Bru
+- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 36(1): Where the Registrar General is satisfied upon an application to him or as a result of his own investigation that an error on the title register or in any registered instrument related thereto should be corrected o
+- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 36(1): Where the Registrar General is satisfied upon an application to him or as a result of his own investigation that an error on the title register or in any registered instrument related thereto should be corrected o
 
 ## Land Titles Act section 70 - Court order respecting rectification
 
@@ -668,14 +592,6 @@ Main question: What order-making rules are established by section 70 of Land Tit
 Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 70(1): Subject to section 71, the court may make an order directing the registrar to rectify the title register in the following cases: (a) where the court is satisfied that any person is entitled to any estate, right or
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Court Order Respecting Rectification
-
-## Land Titles Act section 79 - Application to court
-
-QA score: 90
-Main question: What are the application requirements under section 79 of Land Titles Act?
-
-Warnings:
-- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 79(1) provide regarding Application to court? | What does 79(9) provide regarding Application to court?
 
 ## Registry Act section 1.1 - Interests within the scope of the Personal Property Security Act
 
@@ -707,7 +623,7 @@ QA score: 90
 Main question: What duties does section 6 of Registry Act impose about chief registrar of deeds?
 
 Warnings:
-- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 6(2) provide regarding Chief Registrar of Deeds? | What does 6(4.1) provide regarding Chief Registrar of Deeds? | What does 6(6) provide regarding Chief Registrar of Deeds?
+- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 6(4.1) provide regarding Chief Registrar of Deeds? | What does 6(6) provide regarding Chief Registrar of Deeds?
 
 ## Registry Act section 13.2 - Electronic information storage system
 
@@ -726,22 +642,14 @@ Main question: What duties does section 19.02 of Registry Act impose about authe
 Warnings:
 - [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 19.02(2) provide regarding Authentication of digitally scanned image? | What does 19.02(4) provide regarding Authentication of digitally scanned image?
 
-## Registry Act section 23 - Registration of will in extra-provincial court, registration of notarial will
+## Registry Act section 19.05 - Subscriber or land surveyor agreement
 
 QA score: 90
-Main question: What filing or registration requirements are established by section 23 of Registry Act?
+Main question: What notice requirements are established by section 19.05 of Registry Act?
 
 Warnings:
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 23(1): Subject to subsection (2), where a will affecting land in this Province, or any interest therein, is deposited in any court out of this Province, a certified copy thereof, the probate of such will, or any letters
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 23(3): Where a will is a notarial will under the laws of the Province of Quebec or of South Africa, a notarial certified copy thereof with an affidavit of the officer, with whom such will is deposited, that such will is
-
-## Registry Act section 36 - Affidavit of execution or acknowledgment
-
-QA score: 90
-Main question: What does section 36 of the Registry Act provide regarding affidavit of execution or acknowledgment?
-
-Warnings:
-- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 36(1) provide regarding Affidavit of execution or acknowledgment? | What does 36(2) provide regarding Affidavit of execution or acknowledgment? | What does 36(3) provide regarding Affidavit of execution or acknowledgment?
+- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 19.05(1): A member of the Law Society of New Brunswick or a land surveyor who wishes to submit a digitally scanned image of an instrument to a registry office shall enter into an agreement with Service New Brunswick for
+- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 19.05(2): Service New Brunswick shall not enter into an agreement under subsection (1) with a member of the Law Society of New Brunswick unless there is in place an agreement between the Law Society of New Brunswick and
 
 ## Registry Act section 43 - Seal of court of record, seal of corporation
 
@@ -751,13 +659,14 @@ Main question: What filing or registration requirements are established by secti
 Warnings:
 - [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 43(1) provide regarding Seal of court of record, seal of corporation? | What does 43(2) provide regarding Seal of court of record, seal of corporation? | What does 43(3) provide regarding Seal of court of record, seal of corporation?
 
-## Registry Act section 66 - Offences and penalty respecting taking of fees by employees
+## Registry Act section 51 - Certificate of registrar
 
 QA score: 90
-Main question: What offences or penalties are established by section 66 of Registry Act?
+Main question: What order-making rules are established by section 51 of Registry Act?
 
 Warnings:
-- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 66(1) provide regarding Offences and penalty respecting taking of fees by employees? | What does 66(2) provide regarding Offences and penalty respecting taking of fees by employees?
+- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 51(1): The registrar shall, upon production to him of the original, or the requisite exemplification or sworn copy of instrument, endorse thereon, in the form prescribed by regulation, the registry number of such instrum
+- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 51(1): The registrar shall, upon production to him of the original, or the requisite exemplification or sworn copy of instrument, endorse thereon, in the form prescribed by regulation, the registry number of such instrum
 
 ## REGULATION 80-159 section 3
 
@@ -781,7 +690,7 @@ QA score: 90
 Main question: What notice requirements are established by section 6 of REGULATION 80-159?
 
 Warnings:
-- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 6(1) provide regarding section 6? | What does 6(2) provide regarding section 6? | What does 6(3) provide regarding section 6? | What does 6(4) provide regarding section 6?
+- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 6(2) provide regarding section 6? | What does 6(3) provide regarding section 6? | What does 6(4) provide regarding section 6?
 
 ## REGULATION 83-130 section 3
 
@@ -798,14 +707,6 @@ Main question: What filing or registration requirements are established by secti
 
 Warnings:
 - [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 5(1.1) provide regarding section 5? | What does 5(2) provide regarding section 5?
-
-## REGULATION 83-130 section 18.3
-
-QA score: 90
-Main question: What does section 18.3 of the REGULATION 83-130 provide?
-
-Warnings:
-- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 18.3(1) provide regarding section 18.3? | What does 18.3(2) provide regarding section 18.3?
 
 ## REGULATION 83-130 section 21
 
@@ -831,14 +732,6 @@ Main question: What are the application requirements under section 10 of REGULAT
 
 Warnings:
 - [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 10(1) provide regarding section 10? | What does 10(2) provide regarding section 10?
-
-## Surveys Act section 8 - Survey plan in integrated survey area
-
-QA score: 90
-Main question: What duties does section 8 of Surveys Act impose about survey plan in integrated survey area?
-
-Warnings:
-- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 8(3) provide regarding Survey plan in integrated survey area? | What does 8(4) provide regarding Survey plan in integrated survey area?
 
 ## Boundaries Confirmation Act section 12 - Order
 
@@ -888,21 +781,21 @@ Main question: What does section 80 of the Community Planning Act provide regard
 Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 80(1): Subject to paragraph 77(1)(l), a development officer may exempt from a subdivision by-law or the provisions of this Act respecting subdivisions the following: (a) a subdivision in which each parcel of land is not
 
-## Community Planning Act section 86 - Filing of subdivision plan
+## Community Planning Act section 81 - Tentative subdivision plan
 
 QA score: 95
-Main question: What requirements are established by section 86 of Community Planning Act?
+Main question: What requirements are established by section 81 of Community Planning Act?
 
 Warnings:
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 86(4): When a subdivision plan referred to in subsection (3) is filed in the land registration office, the registrar shall endorse the registration data on the face of each copy of the plan presented and (a) retain a cop
+- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 81(2): Subject to an exemption under paragraph 77(1)(c), a tentative plan shall be marked “Tentative Plan” and show the following, if applicable: (a) the proposed name of the proposed subdivision; (b) the boundaries of t
 
-## Community Planning Act section 89 - Amendments to subdivision plan
+## Community Planning Act section 84 - Application for approval of subdivision plan
 
 QA score: 95
-Main question: What requirements are established by section 89 of Community Planning Act?
+Main question: What requirements are established by section 84 of Community Planning Act?
 
 Warnings:
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 89(4): If land indicated on a subdivision plan as being streets or land for a public purpose has vested in the Crown or a local government, but under an amending subdivision plan the land is to be used for other purposes
+- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 84(2): A subdivision plan referred to in subsection (1) shall be drawn (a) to a scale having a ratio of one to 1,000, except if, in the opinion of the development officer, a ratio of one to 500, one to 2,000 or one to 5,
 
 ## Community Planning Act section 90 - Subdivision plan by local government
 
@@ -911,22 +804,6 @@ Main question: What requirements are established by section 90 of Community Plan
 
 Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 90(1): If a purchase or other acquisition of land by a local government that has a subdivision by-law in force would subdivide land, the council may, in lieu of complying with a provision of this Act, (a) prepare a plan
-
-## Community Planning Act section 99 - Local government agreements
-
-QA score: 95
-Main question: What requirements are established by section 99 of Community Planning Act?
-
-Warnings:
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 99(1): A council may make a by-law adopting a local government agreement entered into with one or more local governments that provides for the following: (a) joint land use planning and development matters; (b) mechanism
-
-## Community Planning Act section 105 - Acquisition of land by local government
-
-QA score: 95
-Main question: What requirements are established by section 105 of Community Planning Act?
-
-Warnings:
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 105(2): Land that may be acquired under subsection (1) or under subsection 66(1) includes (a) the remnants of parcels, portions of which are essential to a purpose referred to in those subsections, (b) any land that may
 
 ## Community Planning Act section 108 - Approval for a development
 
@@ -952,6 +829,14 @@ Main question: What powers or authority are established by section 120 of Commun
 Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 120(1): Subject to subsection (2), a person, including the Director, may appeal to the Board if the person alleges that (a) the terms and conditions imposed on or the prohibiting of the person’s development in accordance
 
+## Community Planning Act section 124 - Regulations – general
+
+QA score: 95
+Main question: What regulation-making authority is established by section 124 of Community Planning Act?
+
+Warnings:
+- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 124(2): Without limiting paragraph (1)(b), a regulation made under that paragraph may prescribe (a) the process, procedure or criteria for making or amending a regional land use plan, including by ministerial regulation;
+
 ## Land Titles Act section 17 - Effect of registration on subsequent interests
 
 QA score: 95
@@ -960,13 +845,21 @@ Main question: What filing or registration requirements are established by secti
 Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 17(4): Unless the contrary is expressly declared in the title register, all registered land is, by implication and without any special mention in the title register, subject to the following overriding incidents: (a) any
 
-## Land Titles Act section 36 - Registration of stop order to prohibit registration
+## Land Titles Act section 17.8 - Subscriber agreement
 
 QA score: 95
-Main question: What filing or registration requirements are established by section 36 of Land Titles Act?
+Main question: What duties does section 17.8 of Land Titles Act impose about subscriber agreement?
 
 Warnings:
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 36(1): Where the Registrar General is satisfied upon an application to him or as a result of his own investigation that an error on the title register or in any registered instrument related thereto should be corrected o
+- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 17.8(2): Service New Brunswick shall not enter into an agreement under subsection (1) with a member of the Law Society of New Brunswick unless there is in place an agreement between the Law Society of New Brunswick and S
+
+## Land Titles Act section 18 - Registration of instrument
+
+QA score: 95
+Main question: What filing or registration requirements are established by section 18 of Land Titles Act?
+
+Warnings:
+- [WARNING] TOO_MANY_RUBRIC_ITEMS (generated.rubricItems): The section produced more than 10 rubric items. Text: 11
 
 ## Land Titles Act section 40 - Application to register memorial of judgment
 
@@ -992,13 +885,13 @@ Main question: What filing or registration requirements are established by secti
 Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 52(2): Where a document forwarded to the Registrar General is (a) a judgment or order referred to in paragraph (1)(a), and the appeal period has expired, no notice of appeal has been given to the Registrar General and th
 
-## Land Titles Act section 83 - Regulations
+## Land Titles Act section 80 - Fees
 
 QA score: 95
-Main question: What regulation-making authority is established by section 83 of Land Titles Act?
+Main question: What duties does section 80 of Land Titles Act impose about fees?
 
 Warnings:
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 83: Regulations 83The Lieutenant-Governor in Council may make regulations (a) authorizing and prescribing fees to be paid to a registrar or the Registrar General; (b) respecting the collection, management, administration
+- [WARNING] TOO_MANY_RUBRIC_ITEMS (generated.rubricItems): The section produced more than 10 rubric items. Text: 13
 
 ## Registry Act section 12 - Duties of registrar
 
@@ -1008,13 +901,13 @@ Main question: What duties does section 12 of Registry Act impose about duties o
 Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 12(1): The registrar shall, when required and upon being tendered legal fees therefor in the manner hereinafter prescribed for so doing, allow searches to be made and furnish copies and abstracts of or concerning all ins
 
-## Registry Act section 15 - Recopying or repairing of book
+## Registry Act section 23 - Registration of will in extra-provincial court, registration of notarial will
 
 QA score: 95
-Main question: What powers or authority are established by section 15 of Registry Act?
+Main question: What filing or registration requirements are established by section 23 of Registry Act?
 
 Warnings:
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 15(1): When in any registry office any book, record, plan or instrument kept in paper form, from age or use, is becoming obliterated, unfit for further use or is in need of repair, the Chief Registrar of Deeds or other p
+- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 23(3): Where a will is a notarial will under the laws of the Province of Quebec or of South Africa, a notarial certified copy thereof with an affidavit of the officer, with whom such will is deposited, that such will is
 
 ## Registry Act section 25 - Registration of unprobated will
 
@@ -1024,14 +917,6 @@ Main question: What filing or registration requirements are established by secti
 Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 25(2): If it is desired to probate a will after it has been registered under the provisions of this section, the registrar of deeds, upon service on him of an order of a judge of probate having jurisdiction over the esta
 
-## Registry Act section 44 - Execution of instruments
-
-QA score: 95
-Main question: What does section 44 of the Registry Act provide regarding execution of instruments?
-
-Warnings:
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 44(1): Before the registry of any instrument, the execution of the same shall either be acknowledged by the person executing the same, or be proved by the oath of a subscribing witness in the manner following, except as
-
 ## Registry Act section 46 - Certificate of development officer
 
 QA score: 95
@@ -1039,38 +924,6 @@ Main question: What are the application requirements under section 46 of Registr
 
 Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 46(3): Subsection (1) does not apply to the registration of (a) a lease or other instrument that transfers only an interest in part of a building or structure; (b) an instrument that transfers an interest in a parcel of
-
-## Registry Act section 50 - Registration of original instrument, annexed plan, instrument conveying parcel
-
-QA score: 95
-Main question: What filing or registration requirements are established by section 50 of Registry Act?
-
-Warnings:
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 50(2): Where an instrument to be registered is in two or more original parts, and two or more of such original parts are produced together to the registrar at the time of registration, he shall register one of such parts
-
-## Registry Act section 51 - Certificate of registrar
-
-QA score: 95
-Main question: What order-making rules are established by section 51 of Registry Act?
-
-Warnings:
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 51(1): The registrar shall, upon production to him of the original, or the requisite exemplification or sworn copy of instrument, endorse thereon, in the form prescribed by regulation, the registry number of such instrum
-
-## Registry Act section 71 - Regulations
-
-QA score: 95
-Main question: What regulation-making authority is established by section 71 of Registry Act?
-
-Warnings:
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 71(1): The Lieutenant-Governor in Council may make regulations (a) respecting the books and records to be kept in the registry office; (b) respecting the reports and returns to be made by the registrar, and to whom they
-
-## REGULATION 83-130 section 25
-
-QA score: 95
-Main question: What does section 25 of the REGULATION 83-130 provide?
-
-Warnings:
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 25(2): Subsections 3(1), (2) and (2.1) of this Regulation come into force on January 1, 1984. SCHEDULE A | | | Form 1 | APPLICATION FOR FIRST REGISTRATION OF TITLE | | | Form 2 | AFFIDAVIT OF APPLICANT | | | Form 3 | CER
 
 ## Boundaries Confirmation Act section 10 - Objection
 

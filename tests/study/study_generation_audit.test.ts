@@ -190,6 +190,31 @@ describe('study generation audit', () => {
     expect(warnings.map((entry) => entry.code)).toContain('MAIN_QUESTION_UNSUPPORTED_TOPIC');
   });
 
+  it('flags Tier A actor and modality mismatches against generated facts', () => {
+    const warnings = collectStudyGenerationWarnings({
+      source: testSection({ text: '1 The Lieutenant-Governor in Council may make regulations and an instrument shall not be accepted.' }),
+      detectedTopic: 'power-duty',
+      mainQuestion: 'What does section 1 provide?',
+      referenceAnswer: 'Clean answer.',
+      rubricItems: [
+        {
+          category: 'power-duty',
+          prompt: 'What is the Lieutenant-Governor in Council prohibited from doing?',
+          referenceAnswer: 'Answer.',
+          sourceKeys: ['section:1'],
+          questionTier: 'A',
+          generatedFromFacts: [
+            { sourceKey: 'section:1', operativeActor: 'Lieutenant-Governor in Council', modality: 'may', confidence: 'high' },
+            { sourceKey: 'section:1', operativeActor: 'instrument', modality: 'shall-not', confidence: 'high' },
+          ],
+        },
+      ],
+      concepts: [],
+      extractedFacts: [],
+    });
+    expect(warnings.map((entry) => entry.code)).toEqual(expect.arrayContaining(['CLAUSE_BINDING_AMBIGUOUS']));
+  });
+
   it('flags ungrounded rubric items, missing source keys and source-answer mismatches', () => {
     const warnings = collectStudyGenerationWarnings({
       source: testSection({
@@ -339,6 +364,39 @@ describe('study generation audit', () => {
       'section:18/subsection:11|section:18/subsection:12',
     ]);
     expect(landTitles18Chunks.every((chunk) => chunk.reasons.length > 0 && chunk.estimatedRubricItems > 0)).toBe(true);
+  });
+
+  it('locks Phase 2E.5 semantic regression cases and chunk estimates', () => {
+    const audit = buildPilotAudit();
+    const sections = flattenAuditSections(audit);
+    const findSection = (documentId: string, sectionLabel: string) =>
+      sections.find((section) => section.documentId === documentId && section.sectionLabel === sectionLabel)!;
+
+    expect(audit.summary.actorMismatchCount).toBe(0);
+    expect(audit.summary.modalityMismatchCount).toBe(0);
+
+    const surveys8 = findSection('doc-surveys-act', '8');
+    expect(surveys8.generated.rubricItems.map((item) => item.prompt)).toContain('When must the Director of Surveys not accept a plan?');
+    expect(surveys8.generated.rubricItems.map((item) => item.prompt).join('\n')).not.toContain('What is a surveyor prohibited from doing?');
+
+    const boundaries6 = findSection('doc-boundaries-confirmation-act', '6');
+    expect(boundaries6.generated.rubricItems.map((item) => item.prompt).join('\n')).toContain('Who may make an application under subsection 6(1)?');
+    expect(boundaries6.generated.rubricItems.map((item) => item.prompt).join('\n')).not.toMatch(/\bmust\b/i);
+
+    const community13 = findSection('doc-community-planning-act', '13');
+    expect(community13.generated.rubricItems.map((item) => item.prompt).join('\n')).toContain('What authority does the Minister have to consult');
+    expect(community13.generated.rubricItems.map((item) => item.prompt).join('\n')).not.toContain('must consult');
+
+    const registry71 = findSection('doc-registry-act', '71');
+    expect(registry71.generated.rubricItems.map((item) => item.prompt).join('\n')).toContain('What prohibition applies to an instrument that does not comply with the regulations?');
+    expect(registry71.generated.rubricItems.map((item) => item.prompt).join('\n')).not.toContain('Lieutenant-Governor in Council prohibited');
+
+    const landTitles83 = findSection('doc-land-titles-act', '83');
+    expect(landTitles83.generated.rubricItems.map((item) => item.prompt)).toEqual(['What regulation-making authority does the Lieutenant-Governor in Council have under section 83?']);
+    expect(landTitles83.diagnostics.suggestedChunks?.[0]?.chunkGranularityLimited).toBe(true);
+
+    const surveysDefinitions = findSection('doc-surveys-act', '1');
+    expect(surveysDefinitions.diagnostics.suggestedChunks?.[0]?.estimatedRubricItems).toBeGreaterThan(1);
   });
 
   it('keeps section 14, 16 and 83 regression templates scoped to their source documents', () => {

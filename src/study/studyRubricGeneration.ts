@@ -15,6 +15,19 @@ export type GeneratedRubricItem = Pick<
   'category' | 'prompt' | 'referenceAnswer' | 'required' | 'origin' | 'order' | 'questionTier' | 'sourceReferences'
 >;
 
+export type LegalModality =
+  | 'shall'
+  | 'must'
+  | 'may'
+  | 'shall-not'
+  | 'may-not'
+  | 'entitled'
+  | 'deemed'
+  | 'none'
+  | 'commits-offence'
+  | 'is-final'
+  | 'is-conclusive';
+
 export type StudyRubricTemplateItem = {
   category: StudyRubricCategory;
   prompt: string;
@@ -22,9 +35,11 @@ export type StudyRubricTemplateItem = {
 
 export type ExtractedLegalFact = {
   sourceKey: string;
+  sourceClause?: string;
+  operativeActor?: string;
   actor?: string;
   trigger?: string;
-  modality?: 'may' | 'shall' | 'must' | 'shall-not' | 'commits-offence' | 'is-final' | 'is-conclusive';
+  modality?: LegalModality;
   action?: string;
   object?: string;
   condition?: string;
@@ -47,6 +62,7 @@ export type StudyRubricGenerationDiagnostic = {
   removedSourceText: string[];
   qualityWarnings: string[];
   tierAQualityDowngrades: string[];
+  semanticQualityDowngrades: string[];
 };
 
 export const STUDY_RUBRIC_CATEGORY_LABELS: Record<StudyRubricCategory, string> = {
@@ -159,16 +175,100 @@ const bareVerbObject = (action: string): string => {
 };
 
 const actionVerb = (action: string): string =>
-  bareVerbObject(action).match(/^(file|provide|establish|prepare|submit|approve|certify|register|record|appoint|adopt|make|give|serve|order|refuse|reject)\b/i)?.[1].toLowerCase() ?? '';
+  bareVerbObject(action).match(/^(file|provide|establish|prepare|submit|approve|certify|register|record|appoint|adopt|make|give|serve|order|refuse|reject|consult)\b/i)?.[1].toLowerCase() ?? '';
 
 const safeTriggerClause = (trigger: string | undefined): string => {
   const cleaned = normalizeSpaces(trigger ?? '')
-    .replace(/^(?:if|when|on receiving|before|after|whose)\s+/i, '')
+    .replace(/^(?:unless|if|when|on receiving|before|after|whose)\s+/i, '')
     .replace(/[.;:,]\s*$/, '');
   if (!cleaned || cleaned.length > 90) return '';
+  if (/^so registered\b/i.test(cleaned)) return '';
   if (/\b(?:and|or|to|of|the|not|by|for|with)\s*$/i.test(cleaned)) return '';
   if ((cleaned.match(/\(/g)?.length ?? 0) !== (cleaned.match(/\)/g)?.length ?? 0)) return '';
   return cleaned;
+};
+
+const MODALITY_PATTERN = /\b(shall not|may not|is deemed|is entitled|shall|must|may)\b/gi;
+
+const legalModalityFromText = (value: string): LegalModality => {
+  const normalized = value.toLowerCase();
+  if (normalized === 'shall not') return 'shall-not';
+  if (normalized === 'may not') return 'may-not';
+  if (normalized === 'is deemed') return 'deemed';
+  if (normalized === 'is entitled') return 'entitled';
+  if (normalized === 'shall') return 'shall';
+  if (normalized === 'must') return 'must';
+  if (normalized === 'may') return 'may';
+  return 'none';
+};
+
+const sentenceBoundBefore = (text: string, index: number): number => {
+  const sentenceStart = Math.max(text.lastIndexOf('.', index - 1), text.lastIndexOf(';', index - 1));
+  const thereafter = text.toLowerCase().lastIndexOf('and thereafter', index - 1);
+  return Math.max(sentenceStart, thereafter >= 0 ? thereafter - 1 : -1) + 1;
+};
+
+const sentenceBoundAfter = (text: string, index: number): number => {
+  const candidates = ['.', ';'].map((char) => text.indexOf(char, index)).filter((entry) => entry >= 0);
+  return candidates.length ? Math.min(...candidates) : text.length;
+};
+
+const triggerFromPrefix = (prefix: string): string | undefined =>
+  prefix.match(/\b(?:unless|if|when|on receiving|before|after|whose)[^,.;]{3,140},?/i)?.[0];
+
+const cleanActorCandidate = (value: string): string => normalizeSpaces(value)
+  .replace(/\b(?:unless|if|when|on receiving|before|after|whose)\b[^,.;]{3,160},?/gi, '')
+  .replace(/\band thereafter\b/gi, '')
+  .replace(/^(?:and|or|then|thereafter)\s+/i, '')
+  .replace(/\bwhich\b.*$/i, '')
+  .replace(/\bwho\b.*$/i, '')
+  .replace(/[,:;]\s*$/g, '')
+  .trim();
+
+const knownActorFromSubject = (subject: string): string | undefined =>
+  subject.match(/\b(?:the )?(Lieutenant-Governor in Council|Registrar General|Director of Surveys|development officer|surveyor|person|council|Minister|registrar|Chief Registrar of Deeds)\b/i)?.[0];
+
+const actorFromSubject = (subject: string): string | undefined => {
+  const cleaned = cleanActorCandidate(subject);
+  if (!cleaned || /^[^A-Za-z]+/.test(cleaned) || /\([^)]*\)/.test(cleaned)) return undefined;
+  if (/\bmore than one person or authority\b/i.test(cleaned)) return 'more than one person or authority referred to in subsection (2) or (3)';
+  if (/^(?:he|she|he or she|they|it)$/i.test(cleaned)) return undefined;
+  const known = knownActorFromSubject(cleaned);
+  if (known) return known;
+  const passiveApplication = cleaned.match(/\bapplication respecting a parcel\b/i)?.[0];
+  if (passiveApplication) return 'persons or authorities referred to in subsection (2)';
+  const passiveInstrument = cleaned.match(/\binstrument\b/i)?.[0];
+  if (passiveInstrument) return passiveInstrument;
+  const words = cleaned.split(/\s+/).filter(Boolean);
+  if (words.length > 0 && words.length <= 12 && !/\b(?:subject to|under|referred to)\b/i.test(cleaned)) return cleaned;
+  return undefined;
+};
+
+const extractModalFacts = (sourceKey: string, text: string): ExtractedLegalFact[] => {
+  const facts: ExtractedLegalFact[] = [];
+  for (const match of text.matchAll(MODALITY_PATTERN)) {
+    const modalText = match[1];
+    const modalIndex = match.index ?? 0;
+    const start = sentenceBoundBefore(text, modalIndex);
+    const end = sentenceBoundAfter(text, modalIndex + modalText.length);
+    const prefix = text.slice(start, modalIndex);
+    if (/\b(?:which|who|whom|during which|to whom)\b[^,.;]{0,35}$/i.test(prefix)) continue;
+    const action = normalizeSpaces(text.slice(modalIndex + modalText.length, end).replace(/\band thereafter\b.*$/i, ''));
+    const actor = actorFromSubject(prefix);
+    const sourceClause = normalizeSpaces(text.slice(start, end).replace(/^\s*(?:and thereafter)\s+/i, ''));
+    if (!actor || !action || action.length < 3) continue;
+    facts.push({
+      sourceKey,
+      sourceClause,
+      operativeActor: actor,
+      actor,
+      trigger: triggerFromPrefix(prefix),
+      modality: legalModalityFromText(modalText),
+      action,
+      confidence: 'high',
+    });
+  }
+  return facts;
 };
 
 const stripLeadingLabel = (text: string, label: string): string => {
@@ -216,13 +316,39 @@ const extractFacts = (
   source: ImportedLegalComponent,
   diagnostic: StudyRubricGenerationDiagnostic,
 ): ExtractedLegalFact[] =>
-  sourceUnits(source).map((unit) => {
+  sourceUnits(source).flatMap((unit) => {
     const text = stripSourceNoise(unit.text, diagnostic);
+    const modalFacts = extractModalFacts(unit.sourceKey, text);
+    if (modalFacts.length > 2) {
+      diagnostic.qualityWarnings.push(`Clause binding ambiguous in ${unit.label}; multiple modal clauses require a safe fallback.`);
+      return modalFacts.map((fact) => ({ ...fact, confidence: 'medium' as const }));
+    }
+    if (modalFacts.length > 0) {
+      return modalFacts.map((fact) => {
+        fact.noticeRule = text.match(/\b[^.]*notice[^.]*\./i)?.[0];
+        fact.deadlineOrNumber = text.match(/\b(?:within|not later than)?\s*\d+\s+(?:days?|months?|years?)\b/i)?.[0];
+        fact.penaltyCategory = text.match(/\bcategory\s+[A-Z]\b/i)?.[0];
+        fact.relatedProvision = text.match(/\b(?:section|subsection|paragraph)\s+\d+(?:\([^)]+\))?/i)?.[0];
+        fact.filingEffect = text.match(/\b[^.]*\b(?:filed|file|registered|notation|superseded)[^.]*\./i)?.[0];
+        fact.legalEffect = text.match(/\b[^.]*\b(?:final and binding|conclusive proof|shall not affect|superseded|does not constitute)[^.]*\./i)?.[0];
+        fact.offenceConduct = text.match(/\b(?:violates|fails to comply|obstructs)[^.]*?(?=\s+commits an offence|\.)/i)?.[0];
+        fact.object = text.match(/\b(?:plan of survey|subdivision plan|legal survey monuments|streets, lots, blocks[^.]+|coordinate monuments|survey or tying to a coordinate monument|instrument|application)\b/i)?.[0];
+        fact.condition = text.match(/\bsubject to [^,.;]+/i)?.[0];
+        return fact;
+      });
+    }
     const fact: ExtractedLegalFact = { sourceKey: unit.sourceKey, confidence: 'low' };
+    fact.sourceClause = text;
     fact.modality = /\bshall not\b/i.test(text)
       ? 'shall-not'
+      : /\bmay not\b/i.test(text)
+        ? 'may-not'
       : /\bcommits an offence\b/i.test(text)
         ? 'commits-offence'
+        : /\bis deemed\b/i.test(text)
+          ? 'deemed'
+          : /\bis entitled\b/i.test(text)
+            ? 'entitled'
         : /\bshall\b/i.test(text)
           ? 'shall'
           : /\bmust\b/i.test(text)
@@ -231,6 +357,7 @@ const extractFacts = (
               ? 'may'
               : undefined;
     fact.actor = text.match(/\b(?:the )?(Lieutenant-Governor in Council|Registrar General|Director of Surveys|development officer|surveyor|person|council|Minister)\b/i)?.[0];
+    fact.operativeActor = fact.actor;
     fact.trigger = text.match(/\b(?:if|when|on receiving|before|after|whose)[^,.;]{3,120}/i)?.[0];
     fact.noticeRule = text.match(/\b[^.]*notice[^.]*\./i)?.[0];
     fact.deadlineOrNumber = text.match(/\b(?:within|not later than)?\s*\d+\s+(?:days?|months?|years?)\b/i)?.[0];
@@ -431,6 +558,26 @@ const surveysSection6Rubric = (
   ];
 };
 
+const surveysSection8Rubric = (
+  source: ImportedLegalComponent,
+  diagnostic: StudyRubricGenerationDiagnostic,
+): GeneratedRubricItem[] => {
+  assertSpecializedSource(source, 'doc-surveys-act::section:8');
+  const prompts = [
+    'When must a surveyor not certify to the correctness of a plan?',
+    'When must the Director of Surveys not accept a plan?',
+    'What legal effect does acceptance by the Director of Surveys not have?',
+    'Where does section 8 apply?',
+  ];
+  diagnostic.mergedItems.push(...prompts.map((prompt) => ({ prompt, factSourceKeys: ['section:8'], template: 'semantic-plan-certification-acceptance' })));
+  return [
+    makeItem(source, 'power-duty', prompts[0], 'A surveyor shall not certify to the correctness of the plan unless it represents a survey carried out by the surveyor or under the surveyor’s personal supervision or direction, and the survey standard is in accordance with the regulations.', 0, ['section:8/subsection:1'], 'A'),
+    makeItem(source, 'power-duty', prompts[1], 'Unless a surveyor has certified to the correctness of a plan, the Director of Surveys shall not accept it.', 1, ['section:8/subsection:2'], 'A'),
+    makeItem(source, 'legal-effect', prompts[2], 'When the Director of Surveys accepts a plan, the acceptance does not constitute an adjudication on title.', 2, ['section:8/subsection:3'], 'B'),
+    makeItem(source, 'scope-trigger', prompts[3], 'Section 8 applies only to integrated survey areas as constituted under section 5.', 3, ['section:8/subsection:4'], 'B'),
+  ];
+};
+
 const certificationSection14Rubric = (
   source: ImportedLegalComponent,
   diagnostic: StudyRubricGenerationDiagnostic,
@@ -481,8 +628,22 @@ const registrySection16Rubric = (
   ];
 };
 
+const landTitlesSection83Rubric = (
+  source: ImportedLegalComponent,
+  diagnostic: StudyRubricGenerationDiagnostic,
+): GeneratedRubricItem[] => {
+  assertSpecializedSource(source, 'doc-land-titles-act::section:83');
+  const prompt = 'What regulation-making authority does the Lieutenant-Governor in Council have under section 83?';
+  diagnostic.mergedItems.push({ prompt, factSourceKeys: ['section:83'], template: 'semantic-regulation-making-limited-granularity' });
+  diagnostic.qualityWarnings.push('Paragraph-level source identifiers are not available for section 83; chunk granularity is limited.');
+  return [
+    makeItem(source, 'power-duty', prompt, 'The Lieutenant-Governor in Council may make regulations on the listed land-titles administration, instrument, notice, office, registrar, parcel, plan, form, electronic-system and implementation matters in section 83.', 0, ['section:83'], 'B'),
+  ];
+};
+
 const wordLimitedSubject = (value: string, fallback: string): string => {
   const normalized = normalizeSpaces(value).replace(/[,:;]\s*$/, '');
+  if (!normalized || /^[^A-Za-z]+/.test(normalized) || /\([^)]*$/.test(normalized)) return fallback;
   const words = normalized.split(/\s+/).filter(Boolean);
   if (words.length === 0) return fallback;
   let limited = words.slice(0, 16).join(' ').replace(/[,:;]\s*$/, '');
@@ -517,15 +678,18 @@ const genericRubric = (
 ): GeneratedRubricItem[] => {
   const categoryForTopic: StudyRubricCategory =
     topic === 'offences-and-penalties' ? 'legal-effect' : topic === 'filing' ? 'filing-record' : topic === 'notice' ? 'notice' : 'power-duty';
-  return sourceUnits(source).map((unit, order) => {
-    const subject = wordLimitedSubject(
-      facts[order]?.object ?? facts[order]?.action ?? normalizeSpaces(source.heading ?? `section ${source.label}`),
-      source.heading ? normalizeSpaces(source.heading) : `section ${source.label}`,
-    );
-    const fact = facts.find((entry) => entry.sourceKey === unit.sourceKey) ?? facts[order];
-    const prompt = naturalPromptForFact(fact, categoryForTopic, subject, unit.label);
-    diagnostic.mergedItems.push({ prompt, factSourceKeys: [unit.sourceKey], template: `generic-${categoryForTopic}` });
-    return makeItem(source, categoryForTopic, prompt, `${unit.label}: ${stripSourceNoise(unit.text, diagnostic)}`, order, [unit.sourceKey], fact?.confidence === 'high' ? 'A' : 'C');
+  return sourceUnits(source).flatMap((unit) => {
+    const unitFacts = facts.filter((entry) => entry.sourceKey === unit.sourceKey);
+    const usableFacts = unitFacts.length ? unitFacts : [undefined];
+    return usableFacts.map((fact) => {
+      const subject = wordLimitedSubject(
+        fact?.object ?? fact?.action ?? normalizeSpaces(source.heading ?? `section ${source.label}`),
+        source.heading ? normalizeSpaces(source.heading) : `section ${source.label}`,
+      );
+      const prompt = naturalPromptForFact(fact, categoryForTopic, subject, unit.label);
+      diagnostic.mergedItems.push({ prompt, factSourceKeys: [unit.sourceKey], template: `generic-${categoryForTopic}` });
+      return makeItem(source, categoryForTopic, prompt, `${unit.label}: ${fact?.sourceClause ?? stripSourceNoise(unit.text, diagnostic)}`, 0, [unit.sourceKey], fact?.confidence === 'high' ? 'A' : 'C');
+    });
   });
 };
 
@@ -539,13 +703,21 @@ const naturalPromptForFact = (
   const action = bareVerbObject(fact?.action ?? '');
   const verb = actionVerb(action);
   const trigger = safeTriggerClause(fact?.trigger);
-  if (trigger && fact?.modality && actor) return `What must ${actor} do when ${trigger}?`;
-  if (fact?.modality === 'shall-not') return actor ? `What is ${actor} prohibited from doing?` : `What prohibition applies under ${label}?`;
+  const actionIsSafe = action.length > 0 && action.length <= 140 && (action.match(/\(/g)?.length ?? 0) === (action.match(/\)/g)?.length ?? 0);
+  if (fact?.modality === 'shall-not' || fact?.modality === 'may-not') {
+    if (actor && /\binstrument\b/i.test(actor)) return `What prohibition applies to an instrument that does not comply with the regulations?`;
+    if (trigger && actor) return `When must ${actor} not ${actionIsSafe ? action : 'act'}?`;
+    return actor ? `What is ${actor} prohibited from doing?` : `What prohibition applies under ${label}?`;
+  }
+  if (fact?.modality === 'deemed') return `What legal effect is deemed under ${label}?`;
+  if (fact?.modality === 'entitled' && actor) return `What is ${actor} entitled to do?`;
   if (fact?.modality === 'may' && actor) {
-    if (verb && action) return `What authority does ${actor} have to ${action}?`;
+    if (/\bapplication respecting a parcel may be made\b/i.test(fact.sourceClause ?? '')) return 'Who may make an application under subsection 6(1)?';
+    if (verb && actionIsSafe) return `What authority does ${actor} have to ${action}?`;
     return `What may ${actor} do?`;
   }
   if ((fact?.modality === 'shall' || fact?.modality === 'must') && actor) {
+    if (trigger) return `What must ${actor} do when ${trigger}?`;
     if (verb && ['file', 'provide', 'establish', 'prepare', 'submit', 'approve', 'certify', 'register', 'record'].includes(verb)) {
       return `What must ${actor} ${verb}?`;
     }
@@ -559,12 +731,59 @@ const naturalPromptForFact = (
   return `What does ${label} provide regarding ${subject}?`;
 };
 
+const inferPromptModality = (prompt: string): LegalModality => {
+  if (/\bprohibit|prohibited|must .+ not |shall .+ not |may .+ not |not accept\b/i.test(prompt)) return 'shall-not';
+  if (/\bmay\b|\bauthority\b|\bpower\b|\bempowered\b/i.test(prompt)) return 'may';
+  if (/\bmust\b|\brequired\b|\bduty\b|\bshall\b/i.test(prompt)) return 'must';
+  if (/\bdeemed\b|\blegal effect\b/i.test(prompt)) return 'deemed';
+  if (/\bentitled\b/i.test(prompt)) return 'entitled';
+  return 'none';
+};
+
+const promptMatchesFactModality = (prompt: string, facts: ExtractedLegalFact[]): boolean => {
+  const promptModality = inferPromptModality(prompt);
+  if (promptModality === 'none') return true;
+  return facts.some((fact) => {
+    if (promptModality === 'must') return fact.modality === 'shall' || fact.modality === 'must';
+    if (promptModality === 'shall-not') return fact.modality === 'shall-not' || fact.modality === 'may-not';
+    if (promptModality === 'may') return fact.modality === 'may';
+    return fact.modality === promptModality;
+  });
+};
+
+const promptMatchesFactActor = (prompt: string, facts: ExtractedLegalFact[]): boolean => {
+  const normalizedPrompt = normalizeSpaces(prompt).toLowerCase();
+  return facts.some((fact) => {
+    const actor = fact.operativeActor ?? fact.actor;
+    if (!actor) return true;
+    const normalizedActor = normalizeLegalActor(actor).toLowerCase();
+    if (normalizedPrompt.includes(normalizedActor)) return true;
+    if (/\binstrument\b/i.test(actor) && /\binstrument\b/i.test(prompt)) return true;
+    if (/persons or authorities/i.test(actor) && /\bwho may make an application\b/i.test(prompt)) return true;
+    return false;
+  });
+};
+
 const applyTierAQualityGate = (
   item: GeneratedRubricItem,
   diagnostic: StudyRubricGenerationDiagnostic,
 ): GeneratedRubricItem => {
   if (item.questionTier !== 'A' || !hasTierASurfaceQualityFailure(item.prompt)) return item;
   diagnostic.tierAQualityDowngrades.push(item.prompt);
+  return { ...item, questionTier: 'B' };
+};
+
+const applyTierASemanticGate = (
+  item: GeneratedRubricItem,
+  facts: ExtractedLegalFact[],
+  diagnostic: StudyRubricGenerationDiagnostic,
+): GeneratedRubricItem => {
+  if (item.questionTier !== 'A') return item;
+  const sourceKeys = item.sourceReferences?.map((reference) => reference.sourceKey) ?? [];
+  const linkedFacts = facts.filter((fact) => sourceKeys.some((sourceKey) => sourceKey === fact.sourceKey));
+  if (linkedFacts.length === 0) return item;
+  if (promptMatchesFactActor(item.prompt, linkedFacts) && promptMatchesFactModality(item.prompt, linkedFacts)) return item;
+  diagnostic.semanticQualityDowngrades.push(item.prompt);
   return { ...item, questionTier: 'B' };
 };
 
@@ -602,6 +821,7 @@ export const generateStudyRubricWithDiagnostics = ({
     removedSourceText: [],
     qualityWarnings: [],
     tierAQualityDowngrades: [],
+    semanticQualityDowngrades: [],
   };
   if (unitType !== 'section' || !source) {
     return {
@@ -627,13 +847,17 @@ export const generateStudyRubricWithDiagnostics = ({
             ? surveysSection5Rubric(source, diagnostic)
             : sourceIdentity(source) === 'doc-surveys-act::section:6'
               ? surveysSection6Rubric(source, diagnostic)
-              : sourceIdentity(source) === 'doc-boundaries-confirmation-act::section:14'
+              : sourceIdentity(source) === 'doc-surveys-act::section:8'
+                ? surveysSection8Rubric(source, diagnostic)
+                : sourceIdentity(source) === 'doc-boundaries-confirmation-act::section:14'
                 ? certificationSection14Rubric(source, diagnostic)
                 : sourceIdentity(source) === 'doc-community-planning-act::section:16'
                   ? communityPlanningSection16Rubric(source, diagnostic)
                   : sourceIdentity(source) === 'doc-registry-act::section:16'
                     ? registrySection16Rubric(source, diagnostic)
-                    : sourceIdentity(source) === 'doc-surveys-act::section:14'
+                    : sourceIdentity(source) === 'doc-land-titles-act::section:83'
+                      ? landTitlesSection83Rubric(source, diagnostic)
+                      : sourceIdentity(source) === 'doc-surveys-act::section:14'
       ? section14Rubric(source, diagnostic)
       : sourceIdentity(source) === 'doc-boundaries-confirmation-act::section:16'
         ? section16Rubric(source, diagnostic)
@@ -643,7 +867,10 @@ export const generateStudyRubricWithDiagnostics = ({
               const definitionItems = topic === 'definitions' ? definitionRubric(entry, diagnostic) : [];
               return definitionItems.length ? definitionItems : genericRubric(entry, topic, diagnostic.extractedFacts, diagnostic);
             });
-  const deduped = dedupeItems(items, diagnostic).map((item) => applyTierAQualityGate(item, diagnostic));
+  const deduped = dedupeItems(items, diagnostic)
+    .map((item) => applyTierAQualityGate(item, diagnostic))
+    .map((item) => applyTierASemanticGate(item, diagnostic.extractedFacts, diagnostic))
+    .map((item, order) => ({ ...item, order }));
   if (deduped.length > 8) diagnostic.qualityWarnings.push('Generated more than 8 rubric items for a single section.');
   if (deduped.length > 1 && new Set(deduped.map((item) => item.prompt.split(' ').slice(0, 3).join(' '))).size === 1) {
     diagnostic.qualityWarnings.push('Generated prompts share the same opening stem.');

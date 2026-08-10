@@ -24,6 +24,7 @@ export type SuggestedStudyChunk = {
   sourceKeys: string[];
   estimatedRubricItems: number;
   reasons: SuggestedStudyChunkReason[];
+  chunkGranularityLimited?: boolean;
 };
 
 const topicPatterns: Record<SpecializedQuestionTopic, RegExp[]> = {
@@ -152,9 +153,10 @@ export const estimateRubricFacts = (source: ImportedLegalComponent): number => {
   const subsectionFacts = source.subsections?.filter((subsection) =>
     !/^\s*(?:[\w().\s-]+)?Repealed\.?\s*$/i.test(subsection.text),
   ).length ?? 0;
-  const paragraphFacts = [...text.matchAll(/(?:^|\n)\s*\([a-z](?:\.\d+)?\)/gi)].length;
+  const definitionFacts = [...text.matchAll(/[“"][^”"]{2,80}[”"]\s+means\b/gi)].length;
+  const paragraphFacts = [...text.matchAll(/\([a-z](?:\.\d+)?\)/gi)].length;
   const signalFacts = [...text.matchAll(/\b(?:shall|must|may|shall not|commits an offence|is conclusive|is final|filed|registered|notice)\b/gi)].length;
-  return Math.max(subsectionFacts, Math.ceil(paragraphFacts / 2), Math.min(signalFacts, 12));
+  return Math.max(subsectionFacts, definitionFacts, Math.ceil(paragraphFacts / 2), Math.min(signalFacts, 12));
 };
 
 const chunkTitle = (source: ImportedLegalComponent, units: Array<{ label: string; text: string }>): string => {
@@ -272,7 +274,7 @@ export const suggestStudyChunks = (source: ImportedLegalComponent): SuggestedStu
   const text = operativeSourceText(source);
   const reasons: SuggestedStudyChunkReason[] = [];
   const subsectionCount = source.subsections?.length ?? 0;
-  const paragraphCount = [...text.matchAll(/(?:^|\n)\s*\([a-z](?:\.\d+)?\)/gi)].length;
+  const paragraphCount = [...text.matchAll(/\([a-z](?:\.\d+)?\)/gi)].length;
   const topicMatches = [
     /\bnotice\b/i,
     /\bappeal\b/i,
@@ -307,5 +309,6 @@ export const suggestStudyChunks = (source: ImportedLegalComponent): SuggestedStu
     sourceKeys: [source.sourceKey],
     estimatedRubricItems: Math.max(1, estimatedRubricItems),
     reasons: uniqueReasons,
+    chunkGranularityLimited: paragraphCount > 8 && subsectionCount === 0,
   }];
 };

@@ -79,7 +79,12 @@ const main = async (): Promise<void> => {
   console.log(`Suggested chunks: ${audit.summary.suggestedChunkCount}`);
   console.log(`Unique suggested chunks: ${audit.summary.uniqueSuggestedChunkCount}`);
   console.log(`Tier A quality downgrades: ${audit.summary.tierAQualityDowngradeCount}`);
+  console.log(`Tier A semantic downgrades: ${audit.summary.semanticQualityDowngradeCount}`);
   console.log(`Genuine topic mismatches: ${audit.summary.genuineTopicMismatchCount}`);
+  console.log(`Actor mismatches: ${audit.summary.actorMismatchCount}`);
+  console.log(`Modality mismatches: ${audit.summary.modalityMismatchCount}`);
+  console.log(`Ambiguous clause bindings: ${audit.summary.clauseBindingAmbiguousCount}`);
+  console.log(`Chunk granularity limited sections: ${audit.summary.chunkGranularityLimitedSections}`);
   console.log(`Chunk planning failed sections: ${audit.summary.chunkPlanningFailedSections}`);
   console.log(`Average estimated rubric items per chunk: ${audit.summary.averageEstimatedRubricItemsPerChunk}`);
   console.log(`JSON report: ${AUDIT_JSON_PATH}`);

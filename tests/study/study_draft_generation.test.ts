@@ -367,6 +367,45 @@ describe('structured rubric generation', () => {
     expect(new Set(rubric.map((item) => item.prompt)).size).toBe(rubric.length);
   });
 
+  it('preserves actor and modality for semantic regression sections', () => {
+    const surveys8 = generateStudyRubric({
+      document: legalDocument('doc-surveys-act'),
+      selectedSources: [component('doc-surveys-act', 'section:8')],
+      unitType: 'section',
+    });
+    const boundaries6 = generateStudyRubric({
+      document: legalDocument('doc-boundaries-confirmation-act'),
+      selectedSources: [component('doc-boundaries-confirmation-act', 'section:6')],
+      unitType: 'section',
+    });
+    const community13 = generateStudyRubric({
+      document: legalDocument('doc-community-planning-act'),
+      selectedSources: [component('doc-community-planning-act', 'section:13')],
+      unitType: 'section',
+    });
+    const registry71 = generateStudyRubric({
+      document: legalDocument('doc-registry-act'),
+      selectedSources: [component('doc-registry-act', 'section:71')],
+      unitType: 'section',
+    });
+    const landTitles83 = generateStudyRubric({
+      document: legalDocument('doc-land-titles-act'),
+      selectedSources: [component('doc-land-titles-act', 'section:83')],
+      unitType: 'section',
+    });
+
+    expect(surveys8.map((item) => item.prompt)).toContain('When must the Director of Surveys not accept a plan?');
+    expect(surveys8.map((item) => item.prompt).join('\n')).not.toContain('What is a surveyor prohibited from doing?');
+    expect(boundaries6.map((item) => item.prompt).join('\n')).toContain('Who may make an application under subsection 6(1)?');
+    expect(boundaries6.map((item) => item.prompt).join('\n')).not.toMatch(/\bmust\b/i);
+    expect(community13.map((item) => item.prompt).join('\n')).toContain('What authority does the Minister have to consult with any person the Minister considers appropriate?');
+    expect(community13.map((item) => item.prompt).join('\n')).not.toContain('must consult');
+    expect(registry71.map((item) => item.prompt).join('\n')).toContain('What prohibition applies to an instrument that does not comply with the regulations?');
+    expect(registry71.map((item) => item.prompt).join('\n')).not.toContain('Lieutenant-Governor in Council prohibited');
+    expect(landTitles83.map((item) => item.prompt)).toEqual(['What regulation-making authority does the Lieutenant-Governor in Council have under section 83?']);
+    expect(landTitles83[0].questionTier).toBe('B');
+  });
+
   it('builds main questions from the finished rubric topic for sections 14, 16 and 83', () => {
     const section14Rubric = generateStudyRubric({
       document: legalDocument('doc-surveys-act'),
