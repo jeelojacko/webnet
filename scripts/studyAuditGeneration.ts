@@ -76,6 +76,12 @@ const main = async (): Promise<void> => {
   console.log(`Sections with warnings: ${audit.summary.sectionsWithWarnings}`);
   console.log(`Question tiers: ${JSON.stringify(audit.summary.questionTierCounts)}`);
   console.log(`Sections with chunk suggestions: ${audit.summary.sectionsWithChunkSuggestions}`);
+  console.log(`Suggested chunks: ${audit.summary.suggestedChunkCount}`);
+  console.log(`Unique suggested chunks: ${audit.summary.uniqueSuggestedChunkCount}`);
+  console.log(`Tier A quality downgrades: ${audit.summary.tierAQualityDowngradeCount}`);
+  console.log(`Genuine topic mismatches: ${audit.summary.genuineTopicMismatchCount}`);
+  console.log(`Chunk planning failed sections: ${audit.summary.chunkPlanningFailedSections}`);
+  console.log(`Average estimated rubric items per chunk: ${audit.summary.averageEstimatedRubricItemsPerChunk}`);
   console.log(`JSON report: ${AUDIT_JSON_PATH}`);
   console.log(`Warnings report: ${WARNINGS_MD_PATH}`);
   if (!options.warningsOnly) {

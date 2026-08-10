@@ -1,11 +1,11 @@
 # Study Generation Warnings
 
-Created: 2026-08-10T16:03:17.159Z
-Sections with warnings: 162
+Created: 2026-08-10T16:33:10.815Z
+Sections with warnings: 140
 
 ## Community Planning Act section 125 - Regulations re planning and development
 
-QA score: 60
+QA score: 55
 Main question: What regulation-making authority is established by section 125 of Community Planning Act?
 
 Warnings:
@@ -13,8 +13,9 @@ Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 125(9): With respect to a zoning regulation or to zoning provisions in a rural plan under this section (a) the powers and functions referred to in paragraphs 53(2)(g), (g.1) and (h) or paragraph 53(3)(c), with respect to
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 125(10): A subdivision regulation under this section may (a) subject to subsections (12) and (13), provide for (i) the setting aside of land for public purposes at a location as may be approved by the Minister after cons
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 125(11): If a subdivision regulation under this section is in effect, (a) the provisions of section 77 with respect to a subdivision by-law apply with the necessary modifications to the regulation, except if a plan invol
+- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 125(13): All money received by the Minister in lieu of land for public purposes or realized by the Minister on the sale of the land is to be paid into a special account, and the money in that account is to be expended by
 - [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 125(4) provide regarding Regulations re planning and development? | What does 125(5) provide regarding Regulations re planning and development? | What does 125(6) provide regarding Regulations re planning and development?
-- [WARNING] TOO_MANY_RUBRIC_ITEMS (generated.rubricItems): The section produced more than 10 rubric items. Text: 12
+- [WARNING] TOO_MANY_RUBRIC_ITEMS (generated.rubricItems): The section produced more than 10 rubric items. Text: 16
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Application of a Regulation Under This Section
 
 ## Land Titles Act section 17.2 - Authentication of electronic instrument
@@ -27,16 +28,6 @@ Warnings:
 - [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What prohibition applies under 17.2(1)? | What prohibition applies under 17.2(2)?
 - [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 17.2(3) provide regarding Authentication of electronic instrument? | What does 17.2(6) provide regarding Authentication of electronic instrument? | What does 17.2(7) provide regarding Authentication of electronic instrument? | What does 17.2(8) provide regarding Authentication of electronic instrument?
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Filing or Registration in Electronic Format Unless
-
-## Boundaries Confirmation Act section 10 - Objection
-
-QA score: 75
-Main question: What notice requirements are established by section 10 of Boundaries Confirmation Act?
-
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What notice requirements are established by section 10 of Boundaries Confirmation Act?
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Hearing Held Under This Section
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Notice Given Under Subsection
 
 ## Community Planning Act section 53 - Making of zoning by-law
 
@@ -52,7 +43,7 @@ Warnings:
 ## Community Planning Act section 88 - Approval of subdivision plan for streets and land for public purposes
 
 QA score: 75
-Main question: What are the application requirements under section 88 of Community Planning Act?
+Main question: What requirements are established by section 88 of Community Planning Act?
 
 Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 88(6): If a subdivision plan has been assented to under this section and approved by the development officer, the land indicated on the plan as being streets or land for public purposes vests, on the filing of the plan i
@@ -79,58 +70,6 @@ Warnings:
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Comply With Notice Provisions
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Office in Accordance With Paragraph
 
-## Community Planning Act section 111 - Public notice of by-law
-
-QA score: 75
-Main question: What notice requirements are established by section 111 of Community Planning Act?
-
-Warnings:
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 111(1): Subject to subsection (2), with respect to a by-law made under this Act, a council shall (a) by resolution, fix a time and place for the consideration of objections to the proposed by-law, and (b) subject to subs
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Notice in a Manner Authorized by Paragraph
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Notice is Given in a Manner Authorized by Paragraph
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Notice is Given in a Manner Authorized Under
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Notice was Given or Published Under Subsection
-
-## Community Planning Act section 112 - Approval by Minister
-
-QA score: 75
-Main question: What are the application requirements under section 112 of Community Planning Act?
-
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What are the application requirements under section 112 of Community Planning Act?
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 112(1): With respect to a by-law made under this Act and a municipal plan, rural plan under section 33 or 44 or development scheme made by a council, the council shall (a) subject to subsection (2), apply to the Minister
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Application Referred to in Paragraph
-
-## Land Titles Act section 18 - Registration of instrument
-
-QA score: 75
-Main question: What filing or registration requirements are established by section 18 of Land Titles Act?
-
-Warnings:
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 18(4): Notwithstanding anything in this or any other enactment, the registrar may refuse to file or register and may reject an instrument where the appropriate fee has not been paid therefor or where the instrument (a) d
-- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 18(2) provide regarding Registration of instrument? | What does 18(8) provide regarding Registration of instrument?
-- [WARNING] TOO_MANY_RUBRIC_ITEMS (generated.rubricItems): The section produced more than 10 rubric items. Text: 12
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Pursuant to Subsection
-
-## Land Titles Act section 70 - Court order respecting rectification
-
-QA score: 75
-Main question: What order-making rules are established by section 70 of Land Titles Act?
-
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What order-making rules are established by section 70 of Land Titles Act?
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 70(1): Subject to section 71, the court may make an order directing the registrar to rectify the title register in the following cases: (a) where the court is satisfied that any person is entitled to any estate, right or
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Court Order Respecting Rectification
-
-## Boundaries Confirmation Act section 8 - Initiation of proceeding by Registrar General
-
-QA score: 80
-Main question: What are the application requirements under section 8 of Boundaries Confirmation Act?
-
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What are the application requirements under section 8 of Boundaries Confirmation Act?
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Application has Been Made Under Section
-
 ## Community Planning Act section 24 - Preparation and content of municipal plan
 
 QA score: 80
@@ -141,24 +80,6 @@ Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 24(5): A municipal plan shall contain the following: (a) statements of policy with respect to (i) the development and use of land in the municipality, (ii) the conservation and improvement of the physical environment, (i
 - [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 24(2.1) provide regarding Preparation and content of municipal plan? | What does 24(5) provide regarding Preparation and content of municipal plan? | What does 24(7) provide regarding Preparation and content of municipal plan?
 
-## Community Planning Act section 26 - Validity and coming into force of municipal plan
-
-QA score: 80
-Main question: What does section 26 of the Community Planning Act provide regarding validity and coming into force of municipal plan?
-
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What does section 26 of the Community Planning Act provide regarding validity and coming into force of municipal plan?
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Office in Accordance With Paragraph
-
-## Community Planning Act section 40 - Validity and coming into force of rural plan for a village
-
-QA score: 80
-Main question: What does section 40 of the Community Planning Act provide regarding validity and coming into force of rural plan for a village?
-
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What does section 40 of the Community Planning Act provide regarding validity and coming into force of rural plan for a village?
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Office in Accordance With Paragraph
-
 ## Community Planning Act section 44 - Adoption and approval of rural plans for rural communities
 
 QA score: 80
@@ -168,34 +89,6 @@ Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 44(2.2): A rural plan for a rural community shall be prepared or amended (a) under the direction of (i) the planning director or another planner engaged by the council of the rural community and responsible to the planni
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 44(6): With respect to zoning provisions in a rural plan under this section, (a) the powers and functions in paragraphs 53(2)(g) and (h) or 53(3)(c) with respect to particular uses of land may be vested in a regional ser
 - [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 44(2.3) provide regarding Adoption and approval of rural plans for rural communities? | What does 44(3) provide regarding Adoption and approval of rural plans for rural communities? | What does 44(4) provide regarding Adoption and approval of rural plans for rural communities? | What does 44(5) provide regarding Adoption and approval of rural plans for rural communities? | What does 44(7) provide regarding Adoption and approval of rural plans for rural communities?
-
-## Community Planning Act section 45 - Validity and coming into force of rural plan for a rural community
-
-QA score: 80
-Main question: What does section 45 of the Community Planning Act provide regarding validity and coming into force of rural plan for a rural community?
-
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What does section 45 of the Community Planning Act provide regarding validity and coming into force of rural plan for a rural community?
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Office in Accordance With Paragraph
-
-## Community Planning Act section 54 - Validity and coming into force of zoning by-law
-
-QA score: 80
-Main question: What does section 54 of the Community Planning Act provide regarding validity and coming into force of zoning by-law?
-
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What does section 54 of the Community Planning Act provide regarding validity and coming into force of zoning by-law?
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Office in Accordance With Paragraph
-
-## Community Planning Act section 59 - Re-zoning and amendments
-
-QA score: 80
-Main question: What does section 59 of the Community Planning Act provide regarding regarding-zoning and amendments?
-
-Warnings:
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 59(1): Subject to this section, if a person applies to the council to have an area of land re-zoned to permit the carrying out of a specific proposal, the council may (a) by resolution, (i) set out the proposal, (ii) imp
-- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What prohibition applies under 59(2)? | What prohibition applies under 59(8)?
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Notice Referred to in Subsection
 
 ## Community Planning Act section 64 - Validity and coming into force of deferred widening by-law
 
@@ -215,23 +108,15 @@ Warnings:
 - [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What requirements are established by section 69 of Community Planning Act?
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Office in Accordance With Paragraph
 
-## Community Planning Act section 93 - Validity and coming into force of development charge by-law
+## Community Planning Act section 87 - Subdivision plan for roads and streets
 
 QA score: 80
-Main question: What does section 93 of the Community Planning Act provide regarding validity and coming into force of development charge by-law?
+Main question: What requirements are established by section 87 of Community Planning Act?
 
 Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What does section 93 of the Community Planning Act provide regarding validity and coming into force of development charge by-law?
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Office in Accordance With Paragraph
-
-## Community Planning Act section 97 - Validity and coming into force of incentive or bonus zoning agreement by-law
-
-QA score: 80
-Main question: What does section 97 of the Community Planning Act provide regarding validity and coming into force of incentive or bonus zoning agreement by-law?
-
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What does section 97 of the Community Planning Act provide regarding validity and coming into force of incentive or bonus zoning agreement by-law?
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Office in Accordance With Paragraph
+- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 87(2): The assent of the Minister of Transportation and Infrastructure under this section shall not be given until, (a) the regional service commission or the advisory committee, as the case may be, has recommended the l
+- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 87(8): If the requirements of subparagraph (2)(b)(i) have been satisfied in respect of a water or sanitary sewer system, or both, and certified under paragraph (2)(d), (a) the Minister shall file in the land registration
+- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 87(4) provide regarding subdivision plan? | What does 87(5) provide regarding subdivision plan? | What does 87(6) provide regarding subdivision plan?
 
 ## Community Planning Act section 107 - Compensation
 
@@ -242,24 +127,26 @@ Warnings:
 - [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What powers or authority are established by section 107 of Community Planning Act?
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Application by a Person Affected by Subsection
 
-## Land Titles Act section 12 - Completion of application, order by Registrar General
+## Community Planning Act section 111 - Public notice of by-law
 
 QA score: 80
-Main question: What order-making rules are established by section 12 of Land Titles Act?
+Main question: What notice requirements are established by section 111 of Community Planning Act?
 
 Warnings:
-- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 12(4) provide regarding Completion of application, order by Registrar General? | What does 12(5) provide regarding Completion of application, order by Registrar General? | What does 12(6) provide regarding Completion of application, order by Registrar General? | What does 12(7) provide regarding Completion of application, order by Registrar General? | What does 12(7.1) provide regarding Completion of application, order by Registrar General? | What does 12(8) provide regarding Completion of application, order by Registrar General? | What does 12(11) provide regarding Completion of application, order by Registrar General? | What does 12(12) provide regarding Completion of application, order by Registrar General? | What does 12(13) provide regarding Completion of application, order by Registrar General? | What does 12(14) provide regarding Completion of application, order by Registrar General? | What does 12(15) provide regarding Completion of application, order by Registrar General? | What does 12(18) provide regarding Completion of application, order by Registrar General?
-- [WARNING] TOO_MANY_RUBRIC_ITEMS (generated.rubricItems): The section produced more than 10 rubric items. Text: 18
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Application to the Registrar General Under Subsection
+- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 111(1): Subject to subsection (2), with respect to a by-law made under this Act, a council shall (a) by resolution, fix a time and place for the consideration of objections to the proposed by-law, and (b) subject to subs
+- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Notice in a Manner Authorized by Paragraph
+- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Notice is Given in a Manner Authorized by Paragraph
+- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Notice is Given in a Manner Authorized Under
 
-## Land Titles Act section 33 - Notice of request to withdraw caveat
+## Land Titles Act section 18 - Registration of instrument
 
 QA score: 80
-Main question: What notice requirements are established by section 33 of Land Titles Act?
+Main question: What filing or registration requirements are established by section 18 of Land Titles Act?
 
 Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What notice requirements are established by section 33 of Land Titles Act?
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Notice Pursuant to Subsection
+- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 18(4): Notwithstanding anything in this or any other enactment, the registrar may refuse to file or register and may reject an instrument where the appropriate fee has not been paid therefor or where the instrument (a) d
+- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 18(2) provide regarding Registration of instrument? | What does 18(8) provide regarding Registration of instrument?
+- [WARNING] TOO_MANY_RUBRIC_ITEMS (generated.rubricItems): The section produced more than 10 rubric items. Text: 12
 
 ## Land Titles Act section 73 - Indemnification on rectification
 
@@ -269,15 +156,6 @@ Main question: What certification requirements are established by section 73 of 
 Warnings:
 - [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What certification requirements are established by section 73 of Land Titles Act?
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 73(1): Any person who suffers damage by reason of the rectification of the title register, an error or omission in the title register which is not rectified, an error or omission in a certificate of registered ownership
-
-## Registry Act section 12 - Duties of registrar
-
-QA score: 80
-Main question: What duties does section 12 of Registry Act impose about duties of registrar?
-
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What duties does section 12 of Registry Act impose about duties of registrar?
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 12(1): The registrar shall, when required and upon being tendered legal fees therefor in the manner hereinafter prescribed for so doing, allow searches to be made and furnish copies and abstracts of or concerning all ins
 
 ## Registry Act section 13.1 - Powers regarding document maintenance and disposal
 
@@ -297,15 +175,6 @@ Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 20(7): In a transfer which is made subject to restrictions, either of the following paragraphs may be added to Form 13 to include the restrictions by reference: To the intent that the burden of this covenant run with the
 - [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 20(1) provide regarding section 20? | What does 20(2) provide regarding section 20? | What does 20(3) provide regarding section 20? | What does 20(3.1) provide regarding section 20? | What does 20(4) provide regarding section 20? | What does 20(7) provide regarding section 20? | What does 20(11) provide regarding section 20? | What does 20(13) provide regarding section 20?
 - [WARNING] TOO_MANY_RUBRIC_ITEMS (generated.rubricItems): The section produced more than 10 rubric items. Text: 14
-
-## Boundaries Confirmation Act section 13 - Appeal
-
-QA score: 85
-Main question: What appeal rights, restrictions and deadlines are established by section 13 of Boundaries Confirmation Act?
-
-Warnings:
-- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 13(1) provide regarding Appeal? | What does 13(7) provide regarding Appeal?
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Notice of an Appeal Under Subsection
 
 ## Community Planning Act section 3 - Establishment of advisory committees
 
@@ -357,14 +226,14 @@ Warnings:
 - [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 52(3) provide regarding Content of regulation? | What does 52(4) provide regarding Content of regulation? | What does 52(9) provide regarding Content of regulation? | What does 52(10) provide regarding Content of regulation? | What does 52(11) provide regarding Content of regulation? | What does 52(12) provide regarding Content of regulation? | What does 52(13) provide regarding Content of regulation? | What does 52(14) provide regarding Content of regulation?
 - [WARNING] TOO_MANY_RUBRIC_ITEMS (generated.rubricItems): The section produced more than 10 rubric items. Text: 13
 
-## Community Planning Act section 61.1 - Province to consider zoning by-law
+## Community Planning Act section 59 - Re-zoning and amendments
 
 QA score: 85
-Main question: What are the application requirements under section 61.1 of Community Planning Act?
+Main question: What does section 59 of the Community Planning Act provide regarding regarding-zoning and amendments?
 
 Warnings:
-- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 61.1(3) provide regarding Province to consider zoning by-law? | What does 61.1(4) provide regarding Province to consider zoning by-law?
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Application Referred to in Subsection
+- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 59(1): Subject to this section, if a person applies to the council to have an area of land re-zoned to permit the carrying out of a specific proposal, the council may (a) by resolution, (i) set out the proposal, (ii) imp
+- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What prohibition applies under 59(2)? | What prohibition applies under 59(8)?
 
 ## Community Planning Act section 74 - Making of subdivision by-law
 
@@ -375,47 +244,14 @@ Warnings:
 - [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 74(2.2) provide regarding Making of subdivision by-law? | What does 74(3) provide regarding Making of subdivision by-law?
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Office in Accordance With Paragraph
 
-## Community Planning Act section 79 - Subdivision plan
-
-QA score: 85
-Main question: What definitions are provided in section 79 of Community Planning Act?
-
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What definitions are provided in section 79 of Community Planning Act?
-
 ## Community Planning Act section 81 - Tentative subdivision plan
 
 QA score: 85
-Main question: What are the application requirements under section 81 of Community Planning Act?
+Main question: What requirements are established by section 81 of Community Planning Act?
 
 Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 81(2): Subject to an exemption under paragraph 77(1)(c), a tentative plan shall be marked “Tentative Plan” and show the following, if applicable: (a) the proposed name of the proposed subdivision; (b) the boundaries of t
 - [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What prohibition applies under 81(4)? | What prohibition applies under 81(5)?
-
-## Community Planning Act section 85 - Approval of subdivision plan
-
-QA score: 85
-Main question: What certification requirements are established by section 85 of Community Planning Act?
-
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What certification requirements are established by section 85 of Community Planning Act?
-
-## Community Planning Act section 87 - Subdivision plan for roads and streets
-
-QA score: 85
-Main question: What notice requirements are established by section 87 of Community Planning Act?
-
-Warnings:
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 87(8): If the requirements of subparagraph (2)(b)(i) have been satisfied in respect of a water or sanitary sewer system, or both, and certified under paragraph (2)(d), (a) the Minister shall file in the land registration
-- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 87(4) provide regarding subdivision plan? | What does 87(5) provide regarding subdivision plan? | What does 87(6) provide regarding subdivision plan?
-
-## Community Planning Act section 94 - Effect of development charge agreement
-
-QA score: 85
-Main question: What certification requirements are established by section 94 of Community Planning Act?
-
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What certification requirements are established by section 94 of Community Planning Act?
 
 ## Community Planning Act section 96 - Incentive or bonus zoning agreements
 
@@ -435,31 +271,6 @@ Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 102(1): For greater certainty and without limiting section 101, a development scheme (a) shall (i) consist of written statements, maps, drawings and other descriptive matter, all under seal, signed by the clerk and indic
 - [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 102(1) provide regarding Preparation and content of development scheme? | What does 102(3) provide regarding Preparation and content of development scheme? | What does 102(6) provide regarding Preparation and content of development scheme?
 
-## Community Planning Act section 121 - Orders and decisions
-
-QA score: 85
-Main question: What appeal rights, restrictions and deadlines are established by section 121 of Community Planning Act?
-
-Warnings:
-- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 121(1) provide regarding Orders and decisions? | What does 121(2) provide regarding Orders and decisions? | What does 121(7) provide regarding Orders and decisions? | What does 121(9) provide regarding Orders and decisions? | What does 121(10) provide regarding Orders and decisions?
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Appeal in a Manner Referred to in Paragraph
-
-## Community Planning Act section 132 - Powers of Minister
-
-QA score: 85
-Main question: What powers or authority are established by section 132 of Community Planning Act?
-
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What powers or authority are established by section 132 of Community Planning Act?
-
-## Land Titles Act section 10 - Documents signed, made or issued by officers
-
-QA score: 85
-Main question: What duties does section 10 of Land Titles Act impose about documents signed, made or issued by officers?
-
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What duties does section 10 of Land Titles Act impose about documents signed, made or issued by officers?
-
 ## Land Titles Act section 10.4 - Parcel identifiers on consolidation
 
 QA score: 85
@@ -468,21 +279,14 @@ Main question: What are the application requirements under section 10.4 of Land 
 Warnings:
 - [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What are the application requirements under section 10.4 of Land Titles Act?
 
-## Land Titles Act section 13 - Court order or enactment
+## Land Titles Act section 12 - Completion of application, order by Registrar General
 
 QA score: 85
-Main question: What order-making rules are established by section 13 of Land Titles Act?
+Main question: What order-making rules are established by section 12 of Land Titles Act?
 
 Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What order-making rules are established by section 13 of Land Titles Act?
-
-## Land Titles Act section 14 - Order of Registrar General
-
-QA score: 85
-Main question: What order-making rules are established by section 14 of Land Titles Act?
-
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What order-making rules are established by section 14 of Land Titles Act?
+- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 12(4) provide regarding Completion of application, order by Registrar General? | What does 12(5) provide regarding Completion of application, order by Registrar General? | What does 12(6) provide regarding Completion of application, order by Registrar General? | What does 12(7) provide regarding Completion of application, order by Registrar General? | What does 12(7.1) provide regarding Completion of application, order by Registrar General? | What does 12(8) provide regarding Completion of application, order by Registrar General? | What does 12(11) provide regarding Completion of application, order by Registrar General? | What does 12(12) provide regarding Completion of application, order by Registrar General? | What does 12(13) provide regarding Completion of application, order by Registrar General? | What does 12(14) provide regarding Completion of application, order by Registrar General? | What does 12(15) provide regarding Completion of application, order by Registrar General? | What does 12(18) provide regarding Completion of application, order by Registrar General?
+- [WARNING] TOO_MANY_RUBRIC_ITEMS (generated.rubricItems): The section produced more than 10 rubric items. Text: 18
 
 ## Land Titles Act section 17.11 - Instruments that may be submitted as digitally scanned images
 
@@ -508,21 +312,13 @@ Main question: What notice requirements are established by section 28 of Land Ti
 Warnings:
 - [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What notice requirements are established by section 28 of Land Titles Act?
 
-## Land Titles Act section 32 - Application by owner
+## Land Titles Act section 33 - Notice of request to withdraw caveat
 
 QA score: 85
-Main question: What are the application requirements under section 32 of Land Titles Act?
+Main question: What notice requirements are established by section 33 of Land Titles Act?
 
 Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What are the application requirements under section 32 of Land Titles Act?
-
-## Land Titles Act section 35 - Action for damages, restraining order
-
-QA score: 85
-Main question: What order-making rules are established by section 35 of Land Titles Act?
-
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What order-making rules are established by section 35 of Land Titles Act?
+- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What notice requirements are established by section 33 of Land Titles Act?
 
 ## Land Titles Act section 48.1 - Conditions and covenants in a transfer
 
@@ -588,15 +384,6 @@ Main question: What order-making rules are established by section 66 of Land Tit
 Warnings:
 - [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What order-making rules are established by section 66 of Land Titles Act?
 
-## Land Titles Act section 79 - Application to court
-
-QA score: 85
-Main question: What are the application requirements under section 79 of Land Titles Act?
-
-Warnings:
-- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 79(1) provide regarding Application to court? | What does 79(9) provide regarding Application to court?
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Notice Referred to in Subsection
-
 ## Land Titles Act section 80 - Fees
 
 QA score: 85
@@ -640,22 +427,6 @@ Main question: What notice requirements are established by section 30 of Registr
 Warnings:
 - [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What notice requirements are established by section 30 of Registry Act?
 
-## Registry Act section 62 - Orders of Provincial or Federal Cabinet
-
-QA score: 85
-Main question: What order-making rules are established by section 62 of Registry Act?
-
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What order-making rules are established by section 62 of Registry Act?
-
-## Registry Act section 64 - Registration as notice
-
-QA score: 85
-Main question: What filing or registration requirements are established by section 64 of Registry Act?
-
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What filing or registration requirements are established by section 64 of Registry Act?
-
 ## Registry Act section 70 - Successor of registrar
 
 QA score: 85
@@ -674,15 +445,13 @@ Warnings:
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Application Under This Section
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: They Power: Make a Joint Application Under This Section
 
-## Boundaries Confirmation Act section 16 - Correction
+## Boundaries Confirmation Act section 13 - Appeal
 
-QA score: 85
-Main question: How may a filed plan of survey be corrected under section 16 of Boundaries Confirmation Act, and what limits and filing consequences apply?
+QA score: 90
+Main question: What appeal rights, restrictions and deadlines are established by section 13 of Boundaries Confirmation Act?
 
 Warnings:
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Plan of Survey Made Under Subsection
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Plan of Survey Filed Under Subsection
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Plan of Survey is Filed Under Subsection
+- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 13(1) provide regarding Appeal? | What does 13(7) provide regarding Appeal?
 
 ## Community Planning Act section 6 - Terms of office
 
@@ -723,6 +492,14 @@ Main question: What requirements are established by section 51.1 of Community Pl
 
 Warnings:
 - [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 51.1(2) provide regarding Province to consider rural plan? | What does 51.1(3) provide regarding Province to consider rural plan?
+
+## Community Planning Act section 61.1 - Province to consider zoning by-law
+
+QA score: 90
+Main question: What are the application requirements under section 61.1 of Community Planning Act?
+
+Warnings:
+- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 61.1(3) provide regarding Province to consider zoning by-law? | What does 61.1(4) provide regarding Province to consider zoning by-law?
 
 ## Community Planning Act section 63 - Altering of streets and establishing building lines
 
@@ -783,6 +560,15 @@ Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 78(1): An advisory committee or regional service commission may (a) subject to the terms and conditions it considers fit, permit a reasonable variance from the requirements of a subdivision by-law, if it is of the opinio
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 78(2): A development officer may (a) subject to the terms and conditions that the development officer considers fit, permit a reasonable variance from the requirements of a subdivision by-law referred to in paragraph 75(
 
+## Community Planning Act section 84 - Application for approval of subdivision plan
+
+QA score: 90
+Main question: What requirements are established by section 84 of Community Planning Act?
+
+Warnings:
+- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 84(2): A subdivision plan referred to in subsection (1) shall be drawn (a) to a scale having a ratio of one to 1,000, except if, in the opinion of the development officer, a ratio of one to 500, one to 2,000 or one to 5,
+- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 84(3): A subdivision plan shall set out the following: (a) in the title block, (i) the name of the subdivision, (ii) if required by the development officer, the name of a street to which the subdivision has access, (iii)
+
 ## Community Planning Act section 91 - Making of development charge by-law
 
 QA score: 90
@@ -806,6 +592,14 @@ Main question: What are the application requirements under section 117 of Commun
 
 Warnings:
 - [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 117(2) provide regarding Amendment or repeal of by-laws? | What does 117(3) provide regarding Amendment or repeal of by-laws?
+
+## Community Planning Act section 121 - Orders and decisions
+
+QA score: 90
+Main question: What appeal rights, restrictions and deadlines are established by section 121 of Community Planning Act?
+
+Warnings:
+- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 121(1) provide regarding Orders and decisions? | What does 121(2) provide regarding Orders and decisions? | What does 121(7) provide regarding Orders and decisions? | What does 121(9) provide regarding Orders and decisions? | What does 121(10) provide regarding Orders and decisions?
 
 ## Community Planning Act section 124 - Regulations – general
 
@@ -857,15 +651,6 @@ Main question: What duties does section 5 of Land Titles Act impose about appoin
 Warnings:
 - [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 5(4) provide regarding Appointment of Registrar General, registrar and deputies? | What does 5(6) provide regarding Appointment of Registrar General, registrar and deputies?
 
-## Land Titles Act section 17 - Effect of registration on subsequent interests
-
-QA score: 90
-Main question: What filing or registration requirements are established by section 17 of Land Titles Act?
-
-Warnings:
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 17(4): Unless the contrary is expressly declared in the title register, all registered land is, by implication and without any special mention in the title register, subject to the following overriding incidents: (a) any
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Application Pursuant to Subsection
-
 ## Land Titles Act section 17.8 - Subscriber agreement
 
 QA score: 90
@@ -874,6 +659,23 @@ Main question: What duties does section 17.8 of Land Titles Act impose about sub
 Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 17.8(2): Service New Brunswick shall not enter into an agreement under subsection (1) with a member of the Law Society of New Brunswick unless there is in place an agreement between the Law Society of New Brunswick and S
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 17.8(3): Service New Brunswick shall not enter into an agreement under subsection (1) with a land surveyor unless there is in place an agreement between the Association of New Brunswick Land Surveyors and Service New Bru
+
+## Land Titles Act section 70 - Court order respecting rectification
+
+QA score: 90
+Main question: What order-making rules are established by section 70 of Land Titles Act?
+
+Warnings:
+- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 70(1): Subject to section 71, the court may make an order directing the registrar to rectify the title register in the following cases: (a) where the court is satisfied that any person is entitled to any estate, right or
+- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Court Order Respecting Rectification
+
+## Land Titles Act section 79 - Application to court
+
+QA score: 90
+Main question: What are the application requirements under section 79 of Land Titles Act?
+
+Warnings:
+- [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 79(1) provide regarding Application to court? | What does 79(9) provide regarding Application to court?
 
 ## Registry Act section 1.1 - Interests within the scope of the Personal Property Security Act
 
@@ -1038,24 +840,6 @@ Main question: What duties does section 8 of Surveys Act impose about survey pla
 Warnings:
 - [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 8(3) provide regarding Survey plan in integrated survey area? | What does 8(4) provide regarding Survey plan in integrated survey area?
 
-## Boundaries Confirmation Act section 9 - Notice of application or proceeding
-
-QA score: 90
-Main question: What notice requirements are established by section 9 of Boundaries Confirmation Act?
-
-Warnings:
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Notice of a Proceeding Initiated Under Section
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Notice Given Under Subsection
-
-## Community Planning Act section 25 - Public notice of municipal plan
-
-QA score: 90
-Main question: What notice requirements are established by section 25 of Community Planning Act?
-
-Warnings:
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Notice Referred to in Subsection
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Notice in a Manner Authorized by Subsection
-
 ## Boundaries Confirmation Act section 12 - Order
 
 QA score: 95
@@ -1104,18 +888,10 @@ Main question: What does section 80 of the Community Planning Act provide regard
 Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 80(1): Subject to paragraph 77(1)(l), a development officer may exempt from a subdivision by-law or the provisions of this Act respecting subdivisions the following: (a) a subdivision in which each parcel of land is not
 
-## Community Planning Act section 84 - Application for approval of subdivision plan
-
-QA score: 95
-Main question: What are the application requirements under section 84 of Community Planning Act?
-
-Warnings:
-- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 84(2): A subdivision plan referred to in subsection (1) shall be drawn (a) to a scale having a ratio of one to 1,000, except if, in the opinion of the development officer, a ratio of one to 500, one to 2,000 or one to 5,
-
 ## Community Planning Act section 86 - Filing of subdivision plan
 
 QA score: 95
-Main question: What filing or registration requirements are established by section 86 of Community Planning Act?
+Main question: What requirements are established by section 86 of Community Planning Act?
 
 Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 86(4): When a subdivision plan referred to in subsection (3) is filed in the land registration office, the registrar shall endorse the registration data on the face of each copy of the plan presented and (a) retain a cop
@@ -1123,7 +899,7 @@ Warnings:
 ## Community Planning Act section 89 - Amendments to subdivision plan
 
 QA score: 95
-Main question: What filing or registration requirements are established by section 89 of Community Planning Act?
+Main question: What requirements are established by section 89 of Community Planning Act?
 
 Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 89(4): If land indicated on a subdivision plan as being streets or land for a public purpose has vested in the Crown or a local government, but under an amending subdivision plan the land is to be used for other purposes
@@ -1131,7 +907,7 @@ Warnings:
 ## Community Planning Act section 90 - Subdivision plan by local government
 
 QA score: 95
-Main question: What certification requirements are established by section 90 of Community Planning Act?
+Main question: What requirements are established by section 90 of Community Planning Act?
 
 Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 90(1): If a purchase or other acquisition of land by a local government that has a subdivision by-law in force would subdivide land, the council may, in lieu of complying with a provision of this Act, (a) prepare a plan
@@ -1160,6 +936,14 @@ Main question: What does section 108 of the Community Planning Act provide regar
 Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 108(1): Before granting an approval for a development, the development officer having jurisdiction shall ensure that the development, in relation to the land on which the development is located, (a) conforms with any reg
 
+## Community Planning Act section 112 - Approval by Minister
+
+QA score: 95
+Main question: What are the application requirements under section 112 of Community Planning Act?
+
+Warnings:
+- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 112(1): With respect to a by-law made under this Act and a municipal plan, rural plan under section 33 or 44 or development scheme made by a council, the council shall (a) subject to subsection (2), apply to the Minister
+
 ## Community Planning Act section 120 - Jurisdiction of Board
 
 QA score: 95
@@ -1167,6 +951,14 @@ Main question: What powers or authority are established by section 120 of Commun
 
 Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 120(1): Subject to subsection (2), a person, including the Director, may appeal to the Board if the person alleges that (a) the terms and conditions imposed on or the prohibiting of the person’s development in accordance
+
+## Land Titles Act section 17 - Effect of registration on subsequent interests
+
+QA score: 95
+Main question: What filing or registration requirements are established by section 17 of Land Titles Act?
+
+Warnings:
+- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 17(4): Unless the contrary is expressly declared in the title register, all registered land is, by implication and without any special mention in the title register, subject to the following overriding incidents: (a) any
 
 ## Land Titles Act section 36 - Registration of stop order to prohibit registration
 
@@ -1207,6 +999,14 @@ Main question: What regulation-making authority is established by section 83 of 
 
 Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 83: Regulations 83The Lieutenant-Governor in Council may make regulations (a) authorizing and prescribing fees to be paid to a registrar or the Registrar General; (b) respecting the collection, management, administration
+
+## Registry Act section 12 - Duties of registrar
+
+QA score: 95
+Main question: What duties does section 12 of Registry Act impose about duties of registrar?
+
+Warnings:
+- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 12(1): The registrar shall, when required and upon being tendered legal fees therefor in the manner hereinafter prescribed for so doing, allow searches to be made and furnish copies and abstracts of or concerning all ins
 
 ## Registry Act section 15 - Recopying or repairing of book
 
@@ -1272,13 +1072,13 @@ Main question: What does section 25 of the REGULATION 83-130 provide?
 Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 25(2): Subsections 3(1), (2) and (2.1) of this Regulation come into force on January 1, 1984. SCHEDULE A | | | Form 1 | APPLICATION FOR FIRST REGISTRATION OF TITLE | | | Form 2 | AFFIDAVIT OF APPLICANT | | | Form 3 | CER
 
-## Boundaries Confirmation Act section 15 - Filing of plan of survey
+## Boundaries Confirmation Act section 10 - Objection
 
 QA score: 95
-Main question: What filing or registration requirements are established by section 15 of Boundaries Confirmation Act?
+Main question: What objection and hearing process is established by section 10 of Boundaries Confirmation Act?
 
 Warnings:
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Filing of a Plan of Survey Under Subsection
+- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Hearing Held Under This Section
 
 ## Community Planning Act section 10 - Local government planning director
 
@@ -1288,13 +1088,45 @@ Main question: What powers or authority are established by section 10 of Communi
 Warnings:
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Local Government Planning Director
 
-## Community Planning Act section 61 - Standards to be met re non-conforming use
+## Community Planning Act section 25 - Public notice of municipal plan
 
 QA score: 95
-Main question: What notice requirements are established by section 61 of Community Planning Act?
+Main question: What notice requirements are established by section 25 of Community Planning Act?
 
 Warnings:
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Appeal of the Action Under Section
+- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Notice in a Manner Authorized by Subsection
+
+## Community Planning Act section 26 - Validity and coming into force of municipal plan
+
+QA score: 95
+Main question: What does section 26 of the Community Planning Act provide regarding validity and coming into force of municipal plan?
+
+Warnings:
+- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Office in Accordance With Paragraph
+
+## Community Planning Act section 40 - Validity and coming into force of rural plan for a village
+
+QA score: 95
+Main question: What does section 40 of the Community Planning Act provide regarding validity and coming into force of rural plan for a village?
+
+Warnings:
+- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Office in Accordance With Paragraph
+
+## Community Planning Act section 45 - Validity and coming into force of rural plan for a rural community
+
+QA score: 95
+Main question: What does section 45 of the Community Planning Act provide regarding validity and coming into force of rural plan for a rural community?
+
+Warnings:
+- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Office in Accordance With Paragraph
+
+## Community Planning Act section 54 - Validity and coming into force of zoning by-law
+
+QA score: 95
+Main question: What does section 54 of the Community Planning Act provide regarding validity and coming into force of zoning by-law?
+
+Warnings:
+- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Office in Accordance With Paragraph
 
 ## Community Planning Act section 65 - Amendment and filing
 
@@ -1304,13 +1136,21 @@ Main question: What filing or registration requirements are established by secti
 Warnings:
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Office Under Paragraph
 
-## Community Planning Act section 136 - Powers of the Court
+## Community Planning Act section 93 - Validity and coming into force of development charge by-law
 
 QA score: 95
-Main question: What powers or authority are established by section 136 of Community Planning Act?
+Main question: What does section 93 of the Community Planning Act provide regarding validity and coming into force of development charge by-law?
 
 Warnings:
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Application Made Under Subsection
+- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Office in Accordance With Paragraph
+
+## Community Planning Act section 97 - Validity and coming into force of incentive or bonus zoning agreement by-law
+
+QA score: 95
+Main question: What does section 97 of the Community Planning Act provide regarding validity and coming into force of incentive or bonus zoning agreement by-law?
+
+Warnings:
+- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Office in Accordance With Paragraph
 
 ## Community Planning Act section 151 - Provincial Planning Director continues
 
@@ -1319,30 +1159,6 @@ Main question: What powers or authority are established by section 151 of Commun
 
 Warnings:
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Provincial Planning Director Continues
-
-## Land Titles Act section 9 - Records and copies of records
-
-QA score: 95
-Main question: What requirements are established by section 9 of Land Titles Act?
-
-Warnings:
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Application Made Under Section
-
-## Land Titles Act section 14.1 - Land under Condominium Property Act
-
-QA score: 95
-Main question: What notice requirements are established by section 14.1 of Land Titles Act?
-
-Warnings:
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Hearing Held Under Subsection
-
-## Land Titles Act section 43 - Notice to judgment creditor, cessation of registration, extension of registration period, registration of assignment
-
-QA score: 95
-Main question: What filing or registration requirements are established by section 43 of Land Titles Act?
-
-Warnings:
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Notice Pursuant to Subsection
 
 ## Registry Act section 10 - When registry office open
 
@@ -1359,22 +1175,6 @@ Main question: What notice requirements are established by section 31 of Registr
 
 Warnings:
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Notice Provided for in Section
-
-## Registry Act section 33 - Registering lien or certificate under the Construction Remedies Act
-
-QA score: 95
-Main question: What filing or registration requirements are established by section 33 of Registry Act?
-
-Warnings:
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Certificate Registered Under Subsection
-
-## REGULATION 83-130 section 4
-
-QA score: 95
-Main question: What powers or authority are established by section 4 of REGULATION 83-130?
-
-Warnings:
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Certificate Referred to in Subsection
 
 ## Surveys Act section 6 - Integrated survey area plan
 

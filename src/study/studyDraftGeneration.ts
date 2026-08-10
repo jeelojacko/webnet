@@ -10,6 +10,7 @@ import { prepareLegalText } from './studyLegalTextPreparation';
 import {
   hasPositiveTopicEvidence,
   headingSubject,
+  hasTierASurfaceQualityFailure,
   questionHasUnsupportedTopic,
   sourceEvidenceText,
   type StudyQuestionTier,
@@ -153,6 +154,11 @@ const classifyQuestionCategory = (sources: SelectedLegalSource[]): QuestionCateg
   if (/\bdefinition|interpretation\b/i.test(heading)) return 'definitions';
   if (/\boffences? and penalt/i.test(heading) && hasPositiveTopicEvidence(sources, 'offences')) return 'offences';
   if (/\bcorrection\b/i.test(heading)) return 'fallback';
+  if (/\bobjection\b/i.test(heading)) return 'objection';
+  if (/\bhearing\b/i.test(heading)) return 'hearing';
+  if (/\bsubdivision plan\b/i.test(heading)) return 'requirements';
+  if (/\bapproval of subdivision plan\b/i.test(heading)) return 'requirements';
+  if (/\binitiation of proceeding by registrar general\b/i.test(heading)) return 'application';
   if (/\blay-?out of streets and lots\b/i.test(heading)) return 'powers';
   if (/\bfil(?:e|ing)|register|registration|record\b/i.test(heading)) return 'filing';
   if (/\bnotice|notify|service\b/i.test(heading) && hasPositiveTopicEvidence(sources, 'notice')) return 'notice';
@@ -215,7 +221,35 @@ const goldenQuestion = (documentTitle: string, source: ImportedLegalComponent): 
     return {
       template: 'semantic-integrated-survey-area',
       questionTier: 'A',
-      question: 'What powers does the Lieutenant-Governor in Council have regarding integrated survey areas?',
+      question: 'What authority does the Lieutenant-Governor in Council have to create or change integrated survey areas?',
+    };
+  }
+  if (identity === 'doc-boundaries-confirmation-act::section:8') {
+    return {
+      template: 'registrar-general-initiation',
+      questionTier: 'B',
+      question: `How may the Registrar General initiate a boundary-confirmation proceeding under ${singleLabel} of ${documentTitle}?`,
+    };
+  }
+  if (identity === 'doc-boundaries-confirmation-act::section:10') {
+    return {
+      template: 'objection-hearing-process',
+      questionTier: 'B',
+      question: `What objection and hearing process is established by ${singleLabel} of ${documentTitle}?`,
+    };
+  }
+  if (identity === 'doc-community-planning-act::section:79') {
+    return {
+      template: 'subdivision-plan-requirements',
+      questionTier: 'B',
+      question: `What subdivision-plan requirements are established by ${singleLabel} of ${documentTitle}?`,
+    };
+  }
+  if (identity === 'doc-community-planning-act::section:85') {
+    return {
+      template: 'subdivision-plan-approval',
+      questionTier: 'B',
+      question: `What approval rules apply to a subdivision plan under ${singleLabel} of ${documentTitle}?`,
     };
   }
   if (identity === 'doc-surveys-act::section:6') {
@@ -295,7 +329,9 @@ export const generateStudyQuestion = ({
   if (!source) return { template: 'fallback', questionTier: 'C', question: `What should be recalled from ${documentTitle}?` };
   const singleLabel = `${sectionWord(source).toLowerCase()} ${source.label}`;
   const golden = rubricCategories?.length ? goldenQuestion(documentTitle, source) : undefined;
-  if (golden) return golden;
+  if (golden) return hasTierASurfaceQualityFailure(golden.question) && golden.questionTier === 'A'
+    ? { ...golden, questionTier: 'B', template: `${golden.template}-quality-downgraded` }
+    : golden;
   const questions: Record<QuestionCategory, string> = {
     definitions: `What definitions are provided in ${singleLabel} of ${documentTitle}?`,
     duties: `What duties does ${singleLabel} of ${documentTitle} impose${heading ? ` about ${heading}` : ''}?`,

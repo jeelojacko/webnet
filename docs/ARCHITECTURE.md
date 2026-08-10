@@ -57,7 +57,7 @@ It owns:
 - `src/study/content/*` for the development-side official NB law manifest validation, laws.gnb URL generation, exact-text normalization models, and content-package validation
 - `studyOfficialContent.ts` for browser-side official package validation, import preview, reference-only form classification, source-review flagging, and source-selection unit creation
 - `studyDraftGeneration.ts` for deterministic source-linked title, question, citation, and structured reference-answer drafting
-- `studyQuestionSupport.ts` for shared Study question evidence gating, Tier A/B/C metadata, unsupported-topic checks, and audit chunk suggestions
+- `studyQuestionSupport.ts` for shared Study question evidence gating, Tier A/B/C metadata, Tier A surface-quality checks, unsupported-topic checks, topic-mismatch support, and audit chunk suggestions
 - `studyConceptGeneration.ts` for pure deterministic keyword/concept suggestions with rule/confidence metadata
 - `studyRubricGeneration.ts` for pure deterministic answer-rubric templates, source-linked legal-provision fact extraction, fixture-locked rubric generation, and development diagnostics
 - `studyLibrarySearch.ts` for the in-memory categorized Library search index, short-field fuzzy matching, and long official-text substring matching

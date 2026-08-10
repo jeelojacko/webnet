@@ -69,11 +69,15 @@ const isRepealedOnly = (component: ImportedLegalComponent): boolean =>
 const isNoiseText = (text: string): boolean =>
   /\b(?:O\.C\.|consolidated to|laws\.gnb\.ca|amended by)\b/i.test(text) && text.length < 180;
 
+const isLowQualityGeneratedConcept = (label: string): boolean =>
+  /\b(?:Under Subsection|Under Section|Referred to in|Pursuant to|Has Been Made Under|Filed Under Paragraph|They Power:)\b/i.test(label);
+
 const addSuggestion = (
   suggestions: GeneratedConceptSuggestion[],
   suggestion: GeneratedConceptSuggestion,
 ): void => {
   const label = normalizeSpaces(suggestion.label.replace(/^[,;:.\s-]+|[,;:.\s-]+$/g, ''));
+  if (isLowQualityGeneratedConcept(label)) return;
   const words = label.split(' ').filter(Boolean);
   if (words.length === 0 || words.length > 9) return;
   if (normalizeConceptLabelKey(label).length === 0) return;

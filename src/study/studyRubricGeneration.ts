@@ -7,6 +7,7 @@ import type {
   StudyUnitType,
 } from './studyTypes';
 import { prepareLegalText } from './studyLegalTextPreparation';
+import { hasTierASurfaceQualityFailure } from './studyQuestionSupport';
 import type { StudyQuestionTier } from './studyQuestionSupport';
 
 export type GeneratedRubricItem = Pick<
@@ -45,6 +46,7 @@ export type StudyRubricGenerationDiagnostic = {
   rejectedDuplicatePrompts: string[];
   removedSourceText: string[];
   qualityWarnings: string[];
+  tierAQualityDowngrades: string[];
 };
 
 export const STUDY_RUBRIC_CATEGORY_LABELS: Record<StudyRubricCategory, string> = {
@@ -127,6 +129,47 @@ const sourceReferenceFor = (source: ImportedLegalComponent): StudySourceReferenc
 });
 
 const normalizeSpaces = (value: string): string => value.replace(/\s+/g, ' ').trim();
+
+const ACTOR_NORMALIZATIONS: Array<[RegExp, string]> = [
+  [/^person$/i, 'a person'],
+  [/^surveyor$/i, 'a surveyor'],
+  [/^applicant$/i, 'the applicant'],
+  [/^council$/i, 'the council'],
+  [/^Minister$/i, 'the Minister'],
+  [/^Registrar General$/i, 'the Registrar General'],
+  [/^Director of Surveys$/i, 'the Director of Surveys'],
+  [/^development officer$/i, 'the development officer'],
+  [/^registrar$/i, 'the registrar'],
+  [/^Lieutenant-Governor in Council$/i, 'the Lieutenant-Governor in Council'],
+  [/^Chief Registrar of Deeds$/i, 'the Chief Registrar of Deeds'],
+];
+
+const normalizeLegalActor = (actor: string): string => {
+  const cleaned = normalizeSpaces(actor).replace(/^(?:the|a|an)\s+/i, '');
+  return ACTOR_NORMALIZATIONS.find(([pattern]) => pattern.test(cleaned))?.[1] ?? cleaned.replace(/^The\b/, 'the');
+};
+
+const bareVerbObject = (action: string): string => {
+  const cleaned = normalizeSpaces(action)
+    .replace(/\s+thereof\b/gi, '')
+    .replace(/\s+in accordance\b.*$/i, '')
+    .replace(/\s+subject to\b.*$/i, '')
+    .replace(/[.;:,]\s*$/, '');
+  return cleaned;
+};
+
+const actionVerb = (action: string): string =>
+  bareVerbObject(action).match(/^(file|provide|establish|prepare|submit|approve|certify|register|record|appoint|adopt|make|give|serve|order|refuse|reject)\b/i)?.[1].toLowerCase() ?? '';
+
+const safeTriggerClause = (trigger: string | undefined): string => {
+  const cleaned = normalizeSpaces(trigger ?? '')
+    .replace(/^(?:if|when|on receiving|before|after|whose)\s+/i, '')
+    .replace(/[.;:,]\s*$/, '');
+  if (!cleaned || cleaned.length > 90) return '';
+  if (/\b(?:and|or|to|of|the|not|by|for|with)\s*$/i.test(cleaned)) return '';
+  if ((cleaned.match(/\(/g)?.length ?? 0) !== (cleaned.match(/\)/g)?.length ?? 0)) return '';
+  return cleaned;
+};
 
 const stripLeadingLabel = (text: string, label: string): string => {
   const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -492,12 +535,21 @@ const naturalPromptForFact = (
   subject: string,
   label: string,
 ): string => {
-  const actor = fact?.actor ? normalizeSpaces(fact.actor) : '';
+  const actor = fact?.actor ? normalizeLegalActor(fact.actor) : '';
+  const action = bareVerbObject(fact?.action ?? '');
+  const verb = actionVerb(action);
+  const trigger = safeTriggerClause(fact?.trigger);
+  if (trigger && fact?.modality && actor) return `What must ${actor} do when ${trigger}?`;
   if (fact?.modality === 'shall-not') return actor ? `What is ${actor} prohibited from doing?` : `What prohibition applies under ${label}?`;
-  if (fact?.modality === 'may' && actor) return `What powers does ${actor} have regarding ${subject}?`;
+  if (fact?.modality === 'may' && actor) {
+    if (verb && action) return `What authority does ${actor} have to ${action}?`;
+    return `What may ${actor} do?`;
+  }
   if ((fact?.modality === 'shall' || fact?.modality === 'must') && actor) {
-    if (category === 'filing-record') return `What must ${actor} file or record regarding ${subject}?`;
-    return `What must ${actor} do regarding ${subject}?`;
+    if (verb && ['file', 'provide', 'establish', 'prepare', 'submit', 'approve', 'certify', 'register', 'record'].includes(verb)) {
+      return `What must ${actor} ${verb}?`;
+    }
+    if (action) return `What must ${actor} do?`;
   }
   if (fact?.legalEffect) return `What legal effect does ${subject} have?`;
   if (fact?.filingEffect) return `What filing or record rule applies to ${subject}?`;
@@ -505,6 +557,15 @@ const naturalPromptForFact = (
   if (category === 'filing-record') return `What filing or record rule applies to ${subject}?`;
   if (category === 'notice') return `What notice rule applies to ${subject}?`;
   return `What does ${label} provide regarding ${subject}?`;
+};
+
+const applyTierAQualityGate = (
+  item: GeneratedRubricItem,
+  diagnostic: StudyRubricGenerationDiagnostic,
+): GeneratedRubricItem => {
+  if (item.questionTier !== 'A' || !hasTierASurfaceQualityFailure(item.prompt)) return item;
+  diagnostic.tierAQualityDowngrades.push(item.prompt);
+  return { ...item, questionTier: 'B' };
 };
 
 const dedupeItems = (
@@ -540,6 +601,7 @@ export const generateStudyRubricWithDiagnostics = ({
     rejectedDuplicatePrompts: [],
     removedSourceText: [],
     qualityWarnings: [],
+    tierAQualityDowngrades: [],
   };
   if (unitType !== 'section' || !source) {
     return {
@@ -581,7 +643,7 @@ export const generateStudyRubricWithDiagnostics = ({
               const definitionItems = topic === 'definitions' ? definitionRubric(entry, diagnostic) : [];
               return definitionItems.length ? definitionItems : genericRubric(entry, topic, diagnostic.extractedFacts, diagnostic);
             });
-  const deduped = dedupeItems(items, diagnostic);
+  const deduped = dedupeItems(items, diagnostic).map((item) => applyTierAQualityGate(item, diagnostic));
   if (deduped.length > 8) diagnostic.qualityWarnings.push('Generated more than 8 rubric items for a single section.');
   if (deduped.length > 1 && new Set(deduped.map((item) => item.prompt.split(' ').slice(0, 3).join(' '))).size === 1) {
     diagnostic.qualityWarnings.push('Generated prompts share the same opening stem.');

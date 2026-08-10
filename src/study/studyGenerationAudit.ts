@@ -12,6 +12,9 @@ import {
   type ExtractedLegalFact,
 } from './studyRubricGeneration';
 import {
+  estimateRubricFacts,
+  headingQuestionTokenOverlap,
+  hasTierASurfaceQualityFailure,
   questionHasUnsupportedTopic,
   suggestStudyChunks,
   type StudyQuestionTier,
@@ -73,6 +76,7 @@ export type StudyGenerationAuditSection = {
     rejectedRubricItems?: unknown[];
     removedAmendmentHistory?: string[];
     removedConsolidationText?: string[];
+    tierAQualityDowngrades?: string[];
   };
   quality: {
     score: number;
@@ -98,6 +102,11 @@ export type StudyGenerationAuditSummary = {
   questionTierCounts: Record<StudyQuestionTier, number>;
   sectionsWithChunkSuggestions: number;
   suggestedChunkCount: number;
+  uniqueSuggestedChunkCount: number;
+  tierAQualityDowngradeCount: number;
+  genuineTopicMismatchCount: number;
+  chunkPlanningFailedSections: number;
+  averageEstimatedRubricItemsPerChunk: number;
   lowestScoringSections: Array<{
     documentId: string;
     documentTitle: string;
@@ -247,6 +256,14 @@ const hasTopicMismatch = (section: ImportedLegalComponent, detectedTopic: string
   const heading = normalizeSpaces(section.heading ?? '').toLowerCase();
   const question = mainQuestion.toLowerCase();
   if (!heading) return false;
+  if (headingQuestionTokenOverlap(heading, mainQuestion) >= 0.5) return false;
+  if (/validity and coming into force|orders? of .*cabinet|order/.test(heading) && /validity|coming into force|order-making|orders?/.test(question)) {
+    return false;
+  }
+  if (/objection/.test(heading)) return /notice/.test(question) && !/objection|hearing/.test(question);
+  if (/subdivision plan/.test(heading)) return /definitions?/.test(question);
+  if (/approval/.test(heading)) return /certification/.test(question) && !/approval/.test(question);
+  if (/effect/.test(heading)) return /application requirements/.test(question);
   if (/fil(?:e|ing)|record|register|coordinate monument/.test(heading)) {
     return /powers? or authority|procedure/.test(question) && !/fil(?:e|ing)|record|register|coordinate monument/.test(question);
   }
@@ -256,6 +273,32 @@ const hasTopicMismatch = (section: ImportedLegalComponent, detectedTopic: string
   if (detectedTopic === 'notice') return !/notice/.test(question);
   if (detectedTopic === 'filing') return !/fil(?:e|ing)|record|register/.test(question);
   return false;
+};
+
+const chunkSignature = (chunk: SuggestedStudyChunk): string => chunk.sourceKeys.join('|');
+
+const auditChunkSignature = (section: StudyGenerationAuditSection, chunk: SuggestedStudyChunk): string =>
+  `${section.documentId}::${section.sourceKey}::${chunkSignature(chunk)}`;
+
+const collectChunkWarnings = (chunks: SuggestedStudyChunk[]): StudyGenerationWarning[] => {
+  const warnings: StudyGenerationWarning[] = [];
+  const signatures = new Map<string, number>();
+  for (const chunk of chunks) {
+    const signature = chunkSignature(chunk);
+    signatures.set(signature, (signatures.get(signature) ?? 0) + 1);
+    if (new Set(chunk.sourceKeys).size !== chunk.sourceKeys.length) {
+      warnings.push(warning('CHUNK_SOURCE_OVERLAP', 'warning', 'diagnostics.suggestedChunks.sourceKeys', chunk.title, 'A suggested study chunk repeats a sourceKey inside the same chunk.'));
+    }
+    if (chunk.estimatedRubricItems === 0) {
+      warnings.push(warning('CHUNK_ESTIMATE_ZERO', 'warning', 'diagnostics.suggestedChunks.estimatedRubricItems', chunk.title, 'A suggested study chunk has a zero rubric-item estimate.'));
+    }
+  }
+  for (const [signature, count] of signatures) {
+    if (count > 1) {
+      warnings.push(warning('DUPLICATE_CHUNK_SUGGESTION', 'warning', 'diagnostics.suggestedChunks.sourceKeys', signature, 'Two or more suggested chunks cover the same sourceKeys.'));
+    }
+  }
+  return warnings;
 };
 
 const amendmentHistoryPattern =
@@ -310,16 +353,19 @@ export const collectStudyGenerationWarnings = (section: {
   source: ImportedLegalComponent;
   detectedTopic: string;
   mainQuestion: string;
+  mainQuestionTier?: StudyQuestionTier;
   referenceAnswer: string;
   rubricItems: Array<{
     category?: StudyRubricCategory;
     prompt: string;
     referenceAnswer: string;
     sourceKeys?: string[];
+    questionTier?: StudyQuestionTier;
     generatedFromFacts?: unknown[];
   }>;
   concepts: Array<{ label: string }>;
   extractedFacts: ExtractedLegalFact[];
+  suggestedChunks?: SuggestedStudyChunk[];
 }): StudyGenerationWarning[] => {
   const warnings: StudyGenerationWarning[] = [];
   const sourceTexts = sourceTextByKey(section.source);
@@ -340,6 +386,9 @@ export const collectStudyGenerationWarnings = (section: {
   }
   if (questionHasUnsupportedTopic([section.source], section.mainQuestion)) {
     warnings.push(warning('MAIN_QUESTION_UNSUPPORTED_TOPIC', 'critical', 'generated.mainQuestion', section.mainQuestion, 'The main question asks about a specialized topic that is not supported by the section heading or operative source text.'));
+  }
+  if (section.mainQuestionTier === 'A' && hasTierASurfaceQualityFailure(section.mainQuestion)) {
+    warnings.push(warning('TIER_A_SURFACE_QUALITY_FAILURE', 'warning', 'generated.mainQuestion', section.mainQuestion, 'A Tier A main question failed the grammatical surface-quality gate.'));
   }
   if (amendmentHistoryPattern.test(section.referenceAnswer)) {
     warnings.push(warning('AMENDMENT_HISTORY_LEAK', 'critical', 'generated.referenceAnswer', section.referenceAnswer.match(amendmentHistoryPattern)?.[0] ?? section.referenceAnswer, 'The generated reference answer appears to contain amendment history or citation residue.'));
@@ -374,6 +423,9 @@ export const collectStudyGenerationWarnings = (section: {
     if (hasMalformedQuestionText(item.prompt)) {
       warnings.push(warning('MALFORMED_QUESTION', 'critical', 'generated.rubricItems.prompt', item.prompt, 'The rubric prompt appears to have malformed punctuation or a truncated ending.'));
     }
+    if (item.questionTier === 'A' && hasTierASurfaceQualityFailure(item.prompt)) {
+      warnings.push(warning('TIER_A_SURFACE_QUALITY_FAILURE', 'warning', 'generated.rubricItems.prompt', item.prompt, 'A Tier A rubric prompt failed the grammatical surface-quality gate.'));
+    }
     if (amendmentHistoryPattern.test(item.referenceAnswer)) {
       warnings.push(warning('AMENDMENT_HISTORY_LEAK', 'critical', 'generated.rubricItems.referenceAnswer', item.referenceAnswer.match(amendmentHistoryPattern)?.[0] ?? item.referenceAnswer, 'The rubric answer appears to contain amendment history or citation residue.'));
     }
@@ -402,6 +454,7 @@ export const collectStudyGenerationWarnings = (section: {
       warnings.push(warning('CONCEPT_FRAGMENT', 'info', 'generated.concepts.label', concept.label, 'The concept label looks like an incomplete source-text fragment.'));
     }
   }
+  warnings.push(...collectChunkWarnings(section.suggestedChunks ?? []));
   return warnings;
 };
 
@@ -424,10 +477,14 @@ export const scoreStudyGenerationWarnings = (warnings: StudyGenerationWarning[])
     CONCEPT_FRAGMENT: 5,
     QUESTION_TOO_LONG: 5,
     QUESTION_FRAGMENT_TOO_LONG: 5,
+    TIER_A_SURFACE_QUALITY_FAILURE: 10,
     RUBRIC_ANSWER_TOO_LONG: 5,
     TOO_MANY_RUBRIC_ITEMS: 5,
     TOO_FEW_RUBRIC_ITEMS: 10,
     NO_RUBRIC_ITEMS: 20,
+    DUPLICATE_CHUNK_SUGGESTION: 10,
+    CHUNK_SOURCE_OVERLAP: 10,
+    CHUNK_ESTIMATE_ZERO: 5,
   };
   const score = warnings.reduce((total, entry) => total - (penalties[entry.code] ?? 5), 100);
   return Math.max(0, Math.min(100, score));
@@ -472,10 +529,12 @@ const buildSectionAudit = (
     source,
     detectedTopic,
     mainQuestion: question.question,
+    mainQuestionTier: question.questionTier,
     referenceAnswer: referenceAnswer.text,
     rubricItems: generatedRubricItems,
     concepts,
     extractedFacts: rubric.diagnostic.extractedFacts,
+    suggestedChunks,
   });
   return {
     documentId: document.id,
@@ -505,6 +564,7 @@ const buildSectionAudit = (
       rejectedRubricItems: rubric.diagnostic.rejectedDuplicatePrompts,
       removedAmendmentHistory: rubric.diagnostic.removedSourceText,
       removedConsolidationText: referenceAnswer.warnings,
+      tierAQualityDowngrades: rubric.diagnostic.tierAQualityDowngrades,
     },
     quality: {
       score: scoreStudyGenerationWarnings(warnings),
@@ -571,6 +631,24 @@ const summarizeAudit = (documents: StudyGenerationAuditDocument[]): StudyGenerat
     questionTierCounts[section.generated.mainQuestionTier] += 1;
     for (const item of section.generated.rubricItems) questionTierCounts[item.questionTier] += 1;
   }
+  const allChunks = sections.flatMap((section) => section.diagnostics.suggestedChunks ?? []);
+  const uniqueChunkCount = new Set(sections.flatMap((section) =>
+    (section.diagnostics.suggestedChunks ?? []).map((chunk) => auditChunkSignature(section, chunk)),
+  )).size;
+  const sectionsWhereChunkPlanningFailed = sections.filter((section) =>
+    estimateRubricFacts({
+      documentId: section.documentId,
+      id: section.sourceKey,
+      sourceKey: section.sourceKey,
+      componentType: 'section',
+      label: section.sectionLabel,
+      heading: section.sectionHeading,
+      text: section.sourceText,
+      contentHash: '',
+      subsections: [],
+      extractionStatus: 'complete',
+    }) > 8 && (section.diagnostics.suggestedChunks?.length ?? 0) === 0,
+  ).length;
   return {
     totalSections: sections.length,
     totalRubricItems: sections.reduce((sum, section) => sum + section.generated.rubricItems.length, 0),
@@ -581,7 +659,14 @@ const summarizeAudit = (documents: StudyGenerationAuditDocument[]): StudyGenerat
     averageQaScore: Number(average.toFixed(2)),
     questionTierCounts,
     sectionsWithChunkSuggestions: sections.filter((section) => (section.diagnostics.suggestedChunks?.length ?? 0) > 0).length,
-    suggestedChunkCount: sections.reduce((sum, section) => sum + (section.diagnostics.suggestedChunks?.length ?? 0), 0),
+    suggestedChunkCount: allChunks.length,
+    uniqueSuggestedChunkCount: uniqueChunkCount,
+    tierAQualityDowngradeCount: sections.reduce((sum, section) => sum + (section.diagnostics.tierAQualityDowngrades?.length ?? 0), 0),
+    genuineTopicMismatchCount: sections.reduce((sum, section) => sum + section.quality.warnings.filter((entry) => entry.code === 'MAIN_QUESTION_TOPIC_MISMATCH').length, 0),
+    chunkPlanningFailedSections: sectionsWhereChunkPlanningFailed,
+    averageEstimatedRubricItemsPerChunk: allChunks.length
+      ? Number((allChunks.reduce((sum, chunk) => sum + chunk.estimatedRubricItems, 0) / allChunks.length).toFixed(2))
+      : 0,
     lowestScoringSections: sections
       .slice()
       .sort((a, b) => a.quality.score - b.quality.score || a.documentTitle.localeCompare(b.documentTitle) || compareLabels(a.sectionLabel, b.sectionLabel))
@@ -664,6 +749,11 @@ export const renderStudyGenerationAuditMarkdown = (audit: StudyGenerationAudit):
     `Tier C questions: ${audit.summary.questionTierCounts.C}`,
     `Sections with chunk suggestions: ${audit.summary.sectionsWithChunkSuggestions}`,
     `Suggested chunks: ${audit.summary.suggestedChunkCount}`,
+    `Unique suggested chunks: ${audit.summary.uniqueSuggestedChunkCount}`,
+    `Tier A questions downgraded by quality gate: ${audit.summary.tierAQualityDowngradeCount}`,
+    `Genuine topic mismatches: ${audit.summary.genuineTopicMismatchCount}`,
+    `Sections where chunk planning failed: ${audit.summary.chunkPlanningFailedSections}`,
+    `Average estimated rubric items per chunk: ${audit.summary.averageEstimatedRubricItemsPerChunk}`,
     '',
     'Warnings by type:',
     ...Object.entries(audit.summary.warningsByType).map(([code, count]) => `- ${code}: ${count}`),
@@ -697,7 +787,7 @@ export const renderStudyGenerationAuditMarkdown = (audit: StudyGenerationAudit):
       if (section.diagnostics.suggestedChunks?.length) {
         lines.push('Suggested chunks:', '');
         section.diagnostics.suggestedChunks.forEach((chunk) => {
-          lines.push(`- ${chunk.title} (${chunk.reason}, estimated rubric items: ${chunk.estimatedRubricItems})`);
+          lines.push(`- ${chunk.title} (${chunk.reasons.join(', ')}, estimated rubric items: ${chunk.estimatedRubricItems}; sources: ${chunk.sourceKeys.join(', ')})`);
         });
         lines.push('');
       }

@@ -1,26 +1,31 @@
 # Study Generation Audit
 
-Created: 2026-08-10T16:03:17.159Z
+Created: 2026-08-10T16:33:10.815Z
 Content package: nb-law-pilot-2026-08-05
 Generator: study-deterministic-v1
 
 ## Summary
 
 Total sections: 464
-Total rubric items: 1178
-Sections with warnings: 162
-Average QA score: 95.65
-Tier A questions: 684
-Tier B questions: 383
-Tier C questions: 575
+Total rubric items: 1177
+Sections with warnings: 140
+Average QA score: 96.62
+Tier A questions: 662
+Tier B questions: 409
+Tier C questions: 570
 Sections with chunk suggestions: 114
-Suggested chunks: 175
+Suggested chunks: 191
+Unique suggested chunks: 191
+Tier A questions downgraded by quality gate: 25
+Genuine topic mismatches: 28
+Sections where chunk planning failed: 0
+Average estimated rubric items per chunk: 5.99
 
 Warnings by type:
-- CONCEPT_FRAGMENT: 60
+- CONCEPT_FRAGMENT: 33
 - DUPLICATE_RUBRIC_PROMPT: 57
-- MAIN_QUESTION_TOPIC_MISMATCH: 50
-- RUBRIC_ANSWER_TOO_LONG: 73
+- RUBRIC_ANSWER_TOO_LONG: 76
+- MAIN_QUESTION_TOPIC_MISMATCH: 28
 - TOO_MANY_RUBRIC_ITEMS: 7
 
 ## Surveys Act
@@ -100,7 +105,7 @@ Rubric:
 
 Suggested chunks:
 
-- 1 - Definitions (definitions, estimated rubric items: 0)
+- 1 - Definitions (definitions, estimated rubric items: 1; sources: section:1)
 
 Concepts:
 - Coordinate Monument
@@ -287,7 +292,7 @@ Detected topic: power-duty
 Main question tier: A
 
 Main question:
-What powers does the Lieutenant-Governor in Council have regarding integrated survey areas?
+What authority does the Lieutenant-Governor in Council have to create or change integrated survey areas?
 
 Reference answer:
 Section 5 - Integrated survey area
@@ -470,7 +475,7 @@ parcels of land which the owners request to be included.
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must surveyor do regarding coordinate monuments?
+   Question: What must a surveyor do when a subdivision plan is required under the Community Planning Act?
    Answer: 7: Duties of surveyor re integrated survey area 7When an integrated survey area has been constituted, every surveyor shall tie to the coordinate monuments all legal monuments established by the surveyor that pertain to (a) Crown Lands, (b) subdivisions when a subdivision plan is required under the Community Planning Act, and (c) parcels of land which the owners request to be included.
 
 Concepts:
@@ -514,14 +519,18 @@ Section 8 - Survey plan in integrated survey area
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What is surveyor prohibited from doing?
+   Question: What must a surveyor do when a surveyor prepares a subdivision or other plan under section 7?
    Answer: 8(1): When a surveyor prepares a subdivision or other plan under section 7, he or she shall not certify to the correctness of the plan unless it represents a survey carried out by the surveyor or under his or her personal supervision or direction, and the standard of survey employed is in accordance with the regulations.
 
-2. [power-duty] [Tier C]
+2. [power-duty] [Tier A]
+   Question: What is a surveyor prohibited from doing?
+   Answer: 8(2): Unless a surveyor has certified to the correctness of a plan, the Director of Surveys shall not accept it.
+
+3. [power-duty] [Tier C]
    Question: What does 8(3) provide regarding Survey plan in integrated survey area?
    Answer: 8(3): When the Director of Surveys accepts a plan, the acceptance does not constitute an adjudication on title.
 
-3. [power-duty] [Tier C]
+4. [power-duty] [Tier C]
    Question: What does 8(4) provide regarding Survey plan in integrated survey area?
    Answer: 8(4): This section applies to only integrated survey areas as constituted under section 5.
 
@@ -557,7 +566,7 @@ Filing of values of coordinate monuments
 Rubric:
 
 1. [filing-record] [Tier A]
-   Question: What must the Director of Surveys file or record regarding coordinate monuments?
+   Question: What must the Director of Surveys do?
    Answer: 9: Filing of values of coordinate monuments 9The values of coordinate monuments shall be filed in the Office of and under the direction of the Director of Surveys and when so filed shall be deemed to be correct and the method of arriving at these values is set out in Schedule A.
 
 Concepts:
@@ -722,11 +731,11 @@ may establish and maintain coordinate monuments at the places that he or she see
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does The Director of Surveys have regarding coordinate monuments?
+   Question: What may the Director of Surveys do?
    Answer: 13(1): The Director of Surveys (a) may enter on private property for the purpose of this Act, and (b) may establish and maintain coordinate monuments at the places that he or she sees fit on private property.
 
 2. [power-duty] [Tier A]
-   Question: What powers does surveyor have regarding Authority re private property?
+   Question: What may a surveyor do?
    Answer: 13(2): A surveyor, a surveyor’s assistant or any person authorized by Service New Brunswick may enter on private property in the course of a survey for the purpose of tying to a coordinate monument.
 
 3. [power-duty] [Tier C]
@@ -887,7 +896,7 @@ for the better administration of this Act.
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does Lieutenant-Governor in Council have regarding coordinate monuments?
+   Question: What authority does the Lieutenant-Governor in Council have to make regulations (a) respecting coordinate monuments and legal monuments?
    Answer: 15: Regulations 15The Lieutenant-Governor in Council may make regulations (a) respecting coordinate monuments and legal monuments; (b) prescribing standards of survey; (c) respecting the recording of surveys; (d) prescribing forms and the procedure for submitting reports, notes and plans of survey; (e) respecting large scale mapping; (f) prescribing penalties for violation of the regulations; (g) for the better administration of this Act.
 
 Concepts:
@@ -1017,7 +1026,7 @@ Rubric:
 
 Suggested chunks:
 
-- 1 - Definitions (definitions, estimated rubric items: 6)
+- 1 - Definitions (definitions, estimated rubric items: 6; sources: section:1)
 
 Concepts:
 - air Space Parcel
@@ -1125,7 +1134,7 @@ Designated person
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must person do regarding Designated person?
+   Question: What must a person do?
    Answer: 4: Designated person 4Service New Brunswick may designate any person to perform any of the duties or exercise any of the powers of the Registrar General under this Act and the regulations and shall specify the duties to be performed or powers to be exercised by the person so designated.
 
 Concepts:
@@ -1243,19 +1252,19 @@ Repealed:
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does person have regarding Applicant?
+   Question: What must a person do when doubt exists as to the location of any boundary of a parcel?
    Answer: 6(1): If doubt exists as to the location of any boundary of a parcel, a person or authority referred to in subsection (2) may make an application in the prescribed form to the Registrar General to confirm the location of the boundary.
 
 2. [power-duty] [Tier A]
-   Question: What powers does Minister have regarding Applicant?
+   Question: What must the Minister do when the boundary in question is located wholly or partly within a local government?
    Answer: 6(2): Subject to subsection (3), an application respecting a parcel may be made under subsection (1) by (a) an owner of an interest in the parcel, (b) a Minister appointed under the Executive Council Act, (c) the council of the local government, if the boundary in question is located wholly or partly within a local government, (d) Repealed:
 
 3. [power-duty] [Tier A]
-   Question: What powers does Minister have regarding apply to the Registrar General, in the prescribed form, to confirm the location of a boundary?
+   Question: What may the Minister do?
    Answer: 6(3): A Minister appointed under the Executive Council Act, the council of a local government or any other authority having jurisdiction over a public highway may apply to the Registrar General, in the prescribed form, to confirm the location of a boundary of a public highway over which the Minister, council or other authority has jurisdiction.
 
 4. [power-duty] [Tier A]
-   Question: What powers does person have regarding make a joint application under this section?
+   Question: What authority does a person have to make a joint application under this section?
    Answer: 6(4): If more than one person or authority referred to in subsection (2) or (3) agrees as to the location of all boundaries to be confirmed, they may make a joint application under this section.
 
 Concepts:
@@ -1339,24 +1348,19 @@ advise the applicant as to any alternate proceeding by which those issues may be
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must surveyor do regarding plan of survey?
+   Question: What must a surveyor do?
    Answer: 7(1): An application under section 6 shall be accompanied by (a) a copy of a plan of survey conforming to the standards provided for by regulation and signed by a surveyor, showing all boundaries that the applicant wishes to have confirmed, in the locations where the applicant believes them to be, (b) such other information, plan of survey or other material as required by regulation, and (c) the fee prescribed by regulation.
 
 2. [power-duty] [Tier A]
-   Question: What powers does The Registrar General have regarding plan of survey?
+   Question: What may the Registrar General do?
    Answer: 7(2): The Registrar General may at any time require an applicant to furnish such additional information, plan of survey or other material as the Registrar General specifies.
 
 3. [power-duty] [Tier A]
-   Question: What powers does the Registrar General have regarding be resolved?
-   Answer: 7(3): If of the opinion that issues raised in an application relate to matters other than or in addition to the location of any boundary of a parcel, the Registrar General may, at any time, (a) refuse to proceed with the application, or to proceed with all or any of the issues raised in the application that relate to matters other than or in addition to the location of any boundary of a parcel, and (b) advise the applicant as to any alternate proceeding by which those issues may be resolved.
-
-4. [power-duty] [Tier A]
-   Question: What must the Registrar General do regarding give written notice, with reasons, to all parties to the proceeding and to any other persons?
+   Question: What must the Registrar General do when refusing to proceed under subsection (3)?
    Answer: 7(4): If refusing to proceed under subsection (3), the Registrar General shall give written notice, with reasons, to all parties to the proceeding and to any other persons the Registrar General considers appropriate in the circumstances.
 
 Concepts:
 - Application
-- Application Under Section
 - Application Relate to Matters Other Than or in Addition
 - Notice
 
@@ -1378,7 +1382,7 @@ Detected topic: notice
 Main question tier: B
 
 Main question:
-What are the application requirements under section 8 of Boundaries Confirmation Act?
+How may the Registrar General initiate a boundary-confirmation proceeding under section 8 of Boundaries Confirmation Act?
 
 Reference answer:
 Section 8 - Initiation of proceeding by Registrar General
@@ -1390,21 +1394,17 @@ Section 8 - Initiation of proceeding by Registrar General
 Rubric:
 
 1. [notice] [Tier A]
-   Question: What powers does The Registrar General have regarding plan of survey?
+   Question: What may the Registrar General do?
    Answer: 8(1): The Registrar General may initiate a proceeding under this Act respecting the boundary or boundaries of a parcel even though no application has been made under section 6 respecting the boundary or boundaries and may engage a surveyor to make a survey and plan of survey of the parcel or of boundaries.
 
 2. [notice] [Tier A]
-   Question: What powers does the Registrar General have regarding Initiation of proceeding by Registrar General?
+   Question: What must the Registrar General do when sending a notice under subsection 9(2)?
    Answer: 8(2): At any time before sending a notice under subsection 9(2), the Registrar General may, if satisfied by the results of a proceeding under subsection (1) that no boundary should be confirmed, terminate the proceeding without confirming any boundary.
 
 Concepts:
 - Initiation of Proceeding by Registrar General
-- Application has Been Made Under Section
-- Notice Under Subsection
 
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What are the application requirements under section 8 of Boundaries Confirmation Act?
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Application has Been Made Under Section
+Warnings: none
 
 ### Section 9 - Notice of application or proceeding
 
@@ -1461,26 +1461,26 @@ if a copy of the plan of survey is not included with the notice, indicate the pl
 Rubric:
 
 1. [notice] [Tier A]
-   Question: What must the Registrar General do regarding Notice of application or proceeding?
+   Question: What must the Registrar General do?
    Answer: 9(1): An applicant shall give notice of the application in accordance with subsection (3) and otherwise in the form and manner, within the time period and to the persons considered appropriate by the Registrar General in the circumstances.
 
 2. [notice] [Tier A]
-   Question: What must the person do regarding plan of survey?
+   Question: What must the Registrar General do when the Registrar General considers it appropriate?
+   Answer: 9(2): The Registrar General shall, if the Registrar General considers it appropriate, cause a notice of a proceeding initiated under section 8 to be given in accordance with subsection (3) and otherwise in the form and manner, within the time period and to the persons considered appropriate by the Registrar General in the circumstances.
+
+3. [notice] [Tier A]
+   Question: What must a person do when applicable?
    Answer: 9(3): A notice given under subsection (1) or (2) shall (a) set out the reasons for the making of the application or the initiating of the proceeding, as the case may be, and any grounds and arguments in relation to it or, if applicable, shall indicate where the person served may view the application, (b) stipulate the deadline for delivering objections to the Registrar General, and (c) if a copy of the plan of survey is not included with the notice, indicate the place where a copy of the plan of survey may be inspected.
 
 Suggested chunks:
 
-- 9 - Notice of application or proceeding (many-subsections, estimated rubric items: 12)
+- 9 - Notice of application or proceeding (many-subsections, estimated rubric items: 12; sources: section:9)
 
 Concepts:
 - Notice of Application or Proceeding
 - Notice of the Application in Accordance With
-- Notice of a Proceeding Initiated Under Section
-- Notice Given Under Subsection
 
-Warnings:
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Notice of a Proceeding Initiated Under Section
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Notice Given Under Subsection
+Warnings: none
 
 ### Section 10 - Objection
 
@@ -1515,7 +1515,7 @@ Detected topic: filing
 Main question tier: B
 
 Main question:
-What notice requirements are established by section 10 of Boundaries Confirmation Act?
+What objection and hearing process is established by section 10 of Boundaries Confirmation Act?
 
 Reference answer:
 Section 10 - Objection
@@ -1541,15 +1541,15 @@ if not satisfied by all the material filed in the proceeding, including the appl
 Rubric:
 
 1. [filing-record] [Tier A]
-   Question: What must person file or record regarding plan of survey?
+   Question: What must a person do when the deadline stipulated in the notice sent under subsection 9(1) or (2)?
    Answer: 10(1): A person who wishes to object to the confirmation of a boundary as shown on the plan of survey shall deliver to the Registrar General by personal service, registered mail or courier service before the deadline stipulated in the notice sent under subsection 9(1) or (2), a written statement setting out the reasons for and any grounds and arguments in relation to the objection.
 
 2. [filing-record] [Tier A]
-   Question: What must the Registrar General file or record regarding plan of survey?
+   Question: What must the Registrar General do?
    Answer: 10(2): If a written statement of objection is delivered before the deadline in accordance with subsection (1), the Registrar General shall hold a hearing to determine the validity of the objection and, if applicable, the validity of the applicant’s claim that the boundaries lie as shown on the plan of survey.
 
 3. [filing-record] [Tier A]
-   Question: What powers does the Registrar General have regarding plan of survey?
+   Question: What may the Registrar General do?
    Answer: 10(3): If no written statement of objection is delivered before the deadline in accordance with subsection (1), the Registrar General may (a) if satisfied by all the material filed in the proceeding, including the application if applicable, that the boundary or boundaries in question should be confirmed, confirm the location of the boundary or boundaries in question as shown on the plan of survey without holding a hearing, or (b) if not satisfied by all the material filed in the proceeding, including the application if applicable, that the boundary or boundaries in question should be confirmed, hold a hearing in accordance with this Act and the regulations.
 
 4. [filing-record] [Tier C]
@@ -1557,16 +1557,13 @@ Rubric:
    Answer: 10(4): Any applicant, any person who delivers a statement of objection under subsection (1) and such other persons as the Registrar General specifies are parties to a hearing held under this section.
 
 5. [filing-record] [Tier A]
-   Question: What must The Registrar General file or record regarding Objection?
-   Answer: 10(5): The Registrar General shall cause a notice of hearing to be given, in accordance with subsection (6), to the parties and to such other persons as the Registrar General specifies.
-
-6. [filing-record] [Tier A]
    Question: What notice rule applies to specify the date, time and place of the hearing, shall contain a description of the reasons?
    Answer: 10(6): A notice given under subsection (5) shall specify the date, time and place of the hearing, shall contain a description of the reasons for the making of the application or the initiating of the proceeding, as the case may be, shall set out any grounds and arguments in relation to it, shall describe the reasons and set out the grounds and arguments contained in any objections received and shall otherwise be given in accordance with the regulations.
 
 Suggested chunks:
 
-- 10 - Objection (many-subsections, estimated rubric items: 12)
+- 10 10(1)-10(4): registered mail or courier service before the deadline stipulated in the notice (many-subsections, estimated rubric items: 6; sources: section:10/subsection:1, section:10/subsection:2, section:10/subsection:3, section:10/subsection:4)
+- 10 10(5)-10(6): notice of hearing to be given, in accordance with subsection (6), to the par (many-subsections, estimated rubric items: 6; sources: section:10/subsection:5, section:10/subsection:6)
 
 Concepts:
 - Objection
@@ -1574,13 +1571,10 @@ Concepts:
 - Application if Applicable
 - Hearing Held Under This Section
 - Notice of Hearing to be Given
-- Notice Given Under Subsection
 - Registrar General Power: (a)
 
 Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What notice requirements are established by section 10 of Boundaries Confirmation Act?
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Hearing Held Under This Section
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Notice Given Under Subsection
 
 ### Section 11 - Hearing
 
@@ -1605,7 +1599,7 @@ Detected topic: power-duty
 Main question tier: B
 
 Main question:
-What are the application requirements under section 11 of Boundaries Confirmation Act?
+What hearing process is established by section 11 of Boundaries Confirmation Act?
 
 Reference answer:
 Section 11 - Hearing
@@ -1621,25 +1615,20 @@ Section 11 - Hearing
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does The Registrar General have regarding plan of survey?
+   Question: What may the Registrar General do?
    Answer: 11(1): The Registrar General, on the application of a party or by personal initiative, may issue a summons to witness to compel the attendance of witnesses and the production of any information, plan of survey or other material that the Registrar General considers relevant in determining the boundary or boundaries in question at a hearing under section 10.
 
 2. [power-duty] [Tier A]
-   Question: What powers does The Registrar General have regarding administer oaths and affirmations and may require evidence to be given under oath or affirmation?
-   Answer: 11(2): The Registrar General, at a hearing under section 10, may administer oaths and affirmations and may require evidence to be given under oath or affirmation.
-
-3. [power-duty] [Tier A]
-   Question: What powers does person have regarding plan of survey?
+   Question: What may a person do?
    Answer: 11(3): If a person to whom a summons to witness is issued under subsection (1) fails to attend or to produce any required information, plan of survey or other material or if a witness refuses to take an oath or affirmation or to answer questions in a proceeding, the Registrar General may initiate contempt proceedings in the Court of King’s Bench.
 
-4. [power-duty] [Tier A]
-   Question: What must the Registrar General do regarding be recorded, and a copy of the recording shall be provided to any party who requests?
+3. [power-duty] [Tier A]
+   Question: What must the Registrar General do when the Registrar General shall be recorded?
    Answer: 11(4): Oral evidence taken at a hearing before the Registrar General shall be recorded, and a copy of the recording shall be provided to any party who requests it, in accordance with the regulations, on payment of the prescribed fee.
 
 Concepts:
 - Hearing
 - Application of a Party or by Personal Initiative
-- Hearing Under Section
 - Hearing Before the Registrar General Shall be
 
 Warnings: none
@@ -1695,16 +1684,15 @@ by order refuse to confirm the location of any boundary or boundaries as shown o
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does the Registrar General have regarding plan of survey?
+   Question: What must the Registrar General do when conducting a hearing under section 10?
    Answer: 12(1): After conducting a hearing under section 10, the Registrar General may dispose of any objections that have been made in the manner the Registrar General considers appropriate and equitable in the circumstances and may (a) by order confirm the location of the boundary or boundaries in question as shown on the plan of survey, (b) if the Registrar General considers it proper to do so, by order cause the plan of survey to be amended or a new plan of survey to be made in the manner the Registrar General may direct and, if applicable, in accordance with section 11 of the Crown Lands and Forests Act, and confirm the location of the boundary or boundaries in question as shown on the amended or new plan of survey, or (c) by order refuse to confirm the location of any boundary or boundaries as shown on any plan of survey made under section 8 or otherwise furnished to the Registrar General.
 
 2. [power-duty] [Tier A]
-   Question: What must The Registrar General do regarding Order?
+   Question: What must the Registrar General do?
    Answer: 12(2): The Registrar General shall cause a copy of an order made under subsection (1) to be given to the parties to the proceeding and to such other persons as the Registrar General specifies.
 
 Concepts:
 - Order
-- Hearing Under Section
 
 Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 12(1): After conducting a hearing under section 10, the Registrar General may dispose of any objections that have been made in the manner the Registrar General considers appropriate and equitable in the circumstances and
@@ -1770,37 +1758,31 @@ Rubric:
    Answer: 13(2): An order of the Registrar General under section 12 is final and binding on, and there is no right of appeal for, a party who has agreed in writing to be bound by an order of the Registrar General.
 
 3. [power-duty] [Tier A]
-   Question: What powers does the Registrar General have regarding Appeal?
+   Question: What may the Registrar General do?
    Answer: 13(3): Subject to subsection (2), a party to a proceeding who is not satisfied by an order of the Registrar General under section 12 may appeal the order to the Court of King’s Bench in accordance with subsection (4) and with the regulations.
 
 4. [power-duty] [Tier A]
-   Question: What must the Registrar General do regarding Appeal?
+   Question: What must the Registrar General do when the date on which the Registrar General made the order?
    Answer: 13(4): Notice of an appeal under subsection (3) from an order of the Registrar General shall be filed by the appellant with the Court of King’s Bench, and a copy of the notice shall be served on the Registrar General and on the other parties to the proceeding within 30 days after the date on which the Registrar General made the order.
 
 5. [power-duty] [Tier A]
-   Question: What powers does the Registrar General have regarding plan of survey?
-   Answer: 13(5): On an appeal under subsection (3) the Court of King’s Bench may by order confirm the order of the Registrar General or direct that the plan of survey to which the appeal relates be amended or a new plan of survey be made in such manner as the Court may specify.
-
-6. [power-duty] [Tier A]
    Question: What does 13(6) provide regarding plan of survey?
    Answer: 13(6): If a plan of survey is amended or a new plan is made under subsection (5), the location of the boundary or boundaries in question as shown on the amended or the new plan shall be confirmed.
 
-7. [power-duty] [Tier C]
+6. [power-duty] [Tier C]
    Question: What does 13(7) provide regarding Appeal?
    Answer: 13(7): There is a right of appeal from a decision of the Court of King’s Bench to the Court of Appeal on any point of law raised on the hearing of the appeal, and the rules governing appeals to that Court from a decision of the Court of King’s Bench apply to appeals under this subsection.
 
 Suggested chunks:
 
-- 13 - Appeal (multiple-independent-topics, estimated rubric items: 11)
-- 13 - Appeal (many-subsections, estimated rubric items: 11)
+- 13 13(1)-13(4): appeal exists (multiple-independent-topics, many-subsections, estimated rubric items: 6; sources: section:13/subsection:1, section:13/subsection:2, section:13/subsection:3, section:13/subsection:4)
+- 13 13(5)-13(7): appeal under subsection (3) the Court of King’s Bench may by order confirm t (multiple-independent-topics, many-subsections, estimated rubric items: 6; sources: section:13/subsection:5, section:13/subsection:6, section:13/subsection:7)
 
 Concepts:
 - Appeal
 - Appeal Exists
 - Appeal for
 - Appeal the Order to the Court of King
-- Notice of an Appeal Under Subsection
-- Appeal Under Subsection
 - Appeal From a Decision of the Court of King
 - be Confirmed Requirement
 - Final and Binding
@@ -1808,7 +1790,6 @@ Concepts:
 
 Warnings:
 - [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 13(1) provide regarding Appeal? | What does 13(7) provide regarding Appeal?
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Notice of an Appeal Under Subsection
 
 ### Section 14 - Certification
 
@@ -1851,7 +1832,7 @@ Rubric:
 
 Suggested chunks:
 
-- 14 - Certification (multiple-independent-topics, estimated rubric items: 6)
+- 14 - Certification (multiple-independent-topics, estimated rubric items: 6; sources: section:14)
 
 Concepts:
 - Certification
@@ -1916,7 +1897,7 @@ the plan supersedes all previously filed or registered plans and descriptions or
 Rubric:
 
 1. [filing-record] [Tier A]
-   Question: What must The Registrar General file or record regarding plan of survey?
+   Question: What must the Registrar General do?
    Answer: 15(1): The Registrar General shall cause a plan of survey showing the location of a boundary or boundaries as confirmed and certified under this Act to be filed in accordance with the regulations and with the Registry Act or the Land Titles Act, as the case may be.
 
 2. [filing-record] [Tier A]
@@ -1925,15 +1906,12 @@ Rubric:
 
 Suggested chunks:
 
-- 15 - Filing of plan of survey (multiple-independent-topics, estimated rubric items: 10)
-- 15 - Filing of plan of survey (many-subsections, estimated rubric items: 10)
+- 15 - Filing of plan of survey (multiple-independent-topics, many-subsections, estimated rubric items: 10; sources: section:15)
 
 Concepts:
 - Filing of Plan of Survey
-- Filing of a Plan of Survey Under Subsection
 
-Warnings:
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Filing of a Plan of Survey Under Subsection
+Warnings: none
 
 ### Section 16 - Correction
 
@@ -2015,20 +1993,14 @@ Rubric:
 
 Suggested chunks:
 
-- 16 - Correction (multiple-independent-topics, estimated rubric items: 12)
-- 16 - Correction (many-subsections, estimated rubric items: 12)
+- 16 16(1)-16(4): receiving satisfactory evidence, order that a corrected plan of survey be made (multiple-independent-topics, many-subsections, estimated rubric items: 6; sources: section:16/subsection:1, section:16/subsection:2, section:16/subsection:3, section:16/subsection:4)
+- 16 16(5)-16(6): Correction (multiple-independent-topics, many-subsections, estimated rubric items: 6; sources: section:16/subsection:5, section:16/subsection:6)
 
 Concepts:
 - Correction
 - Notice to Interested Parties as the Registrar
-- Plan of Survey Made Under Subsection
-- Plan of Survey Filed Under Subsection
-- Plan of Survey is Filed Under Subsection
 
-Warnings:
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Plan of Survey Made Under Subsection
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Plan of Survey Filed Under Subsection
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Plan of Survey is Filed Under Subsection
+Warnings: none
 
 ### Section 17 - Removal of monument
 
@@ -2057,7 +2029,7 @@ Removal of monument
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does the Registrar General have regarding order the removal of a monument that conflicts with the location of a boundary confirmed under?
+   Question: What authority does the Registrar General have to order the removal of a monument that conflicts with the location of a boundary confirmed under this Act?
    Answer: 17: Removal of monument 17Subject to subsection 12(1) of the Crown Lands and Forests Act, the Registrar General may order the removal of a monument that conflicts with the location of a boundary confirmed under this Act.
 
 Concepts:
@@ -2163,11 +2135,11 @@ Section 19 - Reduction of fees
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does The Registrar General have regarding reduce the fees to the amount the Registrar General considers appropriate?
+   Question: What may the Registrar General do?
    Answer: 19(1): The Registrar General, if of the opinion that the fees prescribed under this Act are excessive having regard to all the circumstances, may reduce the fees to the amount the Registrar General considers appropriate.
 
 2. [power-duty] [Tier A]
-   Question: What powers does The Registrar General have regarding order that the difference between the amount paid and the amount prescribed as payable be recovered?
+   Question: What must the Registrar General do when reducing fees under subsection (1)?
    Answer: 19(2): The Registrar General, if reducing fees under subsection (1), may order that the difference between the amount paid and the amount prescribed as payable be recovered from the Fund.
 
 Concepts:
@@ -2204,12 +2176,12 @@ Section 20 - Costs, charges and expenses
 
 Rubric:
 
-1. [power-duty] [Tier A]
+1. [power-duty] [Tier B]
    Question: What does 20(1) provide regarding be the liability of and paid by the applicant or, if there are two or more?
    Answer: 20(1): Subject to subsection (2), all costs, charges or expenses of and incidental to an application under this Act, including costs of administration within Service New Brunswick, shall be the liability of and paid by the applicant or, if there are two or more applicants, shall be the joint and several liability of and shall be paid by those applicants.
 
 2. [power-duty] [Tier A]
-   Question: What powers does The Registrar General have regarding order that any or all costs, charges and expenses incurred or payable in relation to any?
+   Question: What must the Registrar General do when considering it to be appropriate in the circumstances?
    Answer: 20(2): The Registrar General, if considering it to be appropriate in the circumstances, may order that any or all costs, charges and expenses incurred or payable in relation to any proceeding under this Act, including a proceeding initiated by the Registrar General under section 8 and including costs of administration within Service New Brunswick, be paid in whole or in part by or to any party to the proceeding or be paid in whole or in part from the Fund.
 
 Concepts:
@@ -2342,12 +2314,12 @@ prescribing any thing required by this Act to be prescribed.
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does Lieutenant-Governor in Council have regarding plan of survey?
+   Question: What authority does the Lieutenant-Governor in Council have to make regulations (a) respecting the standards and procedures for surveys and plans of survey made for the purposes of this Act, including regulations delegating the establishment of those standards and procedures to a person, authority or association that is not an employee or agent of the Province?
    Answer: 21: Regulations 21The Lieutenant-Governor in Council may make regulations (a) respecting the standards and procedures for surveys and plans of survey made for the purposes of this Act, including regulations delegating the establishment of those standards and procedures to a person, authority or association that is not an employee or agent of the Province; (b) respecting the manner of making an application under section 6 and the information, plan of survey and other material to be submitted with the application; (c) respecting a proceeding initiated by the Registrar General under section 8; (d) requiring any information in connection with a proceeding under this Act to be verified by affidavit or declaration and respecting the content and form of the affidavit or declaration; (e) requiring the payment of fees and prescribing the amounts of fees under this Act and the regulations; (f) respecting the manner of making an objection to the location of a boundary or boundaries as shown on a plan of survey relating to a proceeding under this Act and the information, any plan of survey and any other material to be submitted with the objection; (g) respecting the giving of notice of a hearing under this Act; (h) respecting procedures relating to a hearing under this Act, including the calling of witnesses, the payment of witness fees and expenses, the manner of recording oral evidence at a hearing under this Act and the manner of providing copies of the recording; (i) respecting the manner of appeal to the Court of King’s Bench from an order of the Registrar General under this Act; (j) respecting the correction of plans of survey under section 16; (k) respecting the filing of plans of survey under this Act; (l) respecting costs, charges and expenses under this Act; (m) respecting the creation of, the sources of revenue of, the payment into, the administration of, the investment of the funds of, the auditing of, the payment out of and the termination of the Boundaries Confirmation Fund in accordance with this Act; (n) respecting forms and providing for their use; (o) prescribing any thing required by this Act to be prescribed.
 
 Suggested chunks:
 
-- 21 - Regulations (multiple-independent-topics, estimated rubric items: 2)
+- 21 - Regulations (multiple-independent-topics, estimated rubric items: 2; sources: section:21)
 
 Concepts:
 none
@@ -2638,9 +2610,7 @@ Rubric:
 
 Suggested chunks:
 
-- 1 - Definitions and interpretation (definitions, estimated rubric items: 5)
-- 1 - Definitions and interpretation (long-enumeration, estimated rubric items: 5)
-- 1 - Definitions and interpretation (multiple-independent-topics, estimated rubric items: 5)
+- 1 - Definitions and interpretation (definitions, long-enumeration, multiple-independent-topics, estimated rubric items: 5; sources: section:1)
 
 Concepts:
 - Advisory Committee
@@ -2740,7 +2710,7 @@ Section 3 - Establishment of advisory committees
 Rubric:
 
 1. [filing-record] [Tier A]
-   Question: What must council file or record regarding make a by-law establishing a planning advisory committee?
+   Question: What must the council do?
    Answer: 3(1): A council that is providing its own land use planning service shall make a by-law establishing a planning advisory committee.
 
 2. [filing-record] [Tier C]
@@ -2886,16 +2856,12 @@ Rubric:
    Answer: 5(1): An advisory committee shall consist of, (a) in the case of a city or town, at least five members, but no more than 15 members, or (b) in the case of a village or a rural community, at least three members, but no more than six members.
 
 2. [power-duty] [Tier A]
-   Question: What must council do regarding Membership of advisory committee?
+   Question: What must the council do?
    Answer: 5(2): Subject to this section, by resolution, a council referred to in section 3 (a) shall appoint members to serve on the advisory committee, and (b) may remove a member.
 
 3. [power-duty] [Tier A]
-   Question: What must person do regarding be a member of the council or an employee or agent of the local government, but?
+   Question: What must a person do?
    Answer: 5(3): A person appointed to an advisory committee may be a member of the council or an employee or agent of the local government, but the majority shall be other than members of the council and employees or agents of the local government.
-
-4. [power-duty] [Tier A]
-   Question: What must person do regarding Membership of advisory committee?
-   Answer: 5(4): To be a member of an advisory committee, a person shall be (a) eligible to vote under the Municipal Elections Act, and (b) a resident of the local government.
 
 Concepts:
 - Membership of Advisory Committee
@@ -2995,15 +2961,15 @@ Rubric:
    Answer: 6(2): The chair and vice-chair of an advisory committee shall be appointed for a term of one year and are eligible for re-election or re-designation.
 
 3. [power-duty] [Tier A]
-   Question: What must council do regarding designate members in the following manner so that as nearly as possible the term of office?
+   Question: What must the council do when appointing the first members of the advisory committee?
    Answer: 6(3): When appointing the first members of the advisory committee, a council shall designate members in the following manner so that as nearly as possible the term of office of one-third of the members expires each year: (a) members who hold office until the first day of January of the year following their appointment; (b) members who hold office until the first day of January of the second year following their appointment; and (c) members who hold office until the first day of January of the third year following their appointment.
 
 4. [power-duty] [Tier A]
-   Question: What must council do regarding fix, on appointing the additional members, their term of office so that as nearly as possible?
+   Question: What must the council do when the membership of an advisory committee is increased?
    Answer: 6(4): If the membership of an advisory committee is increased, a council shall fix, on appointing the additional members, their term of office so that as nearly as possible the term of office of one-third of the members expires on the first day of January in each year.
 
 5. [power-duty] [Tier A]
-   Question: What must council do regarding Terms of office?
+   Question: What must the council do when the membership of an advisory committee is decreased?
    Answer: 6(5): If the membership of an advisory committee is decreased, a council may remove the necessary number of members, but it shall do so in a manner so that as nearly as possible the term of office of one-third of the members expires on the first day of January in each year.
 
 6. [power-duty] [Tier C]
@@ -3011,7 +2977,7 @@ Rubric:
    Answer: 6(6): When a member of a council or an employee or agent of a local government is appointed to an advisory committee, (a) unless the council fails to appoint another person to replace the person, the member of the council or the employee or agent ceases to be a member of the advisory committee on ceasing to be a member of the council or employee or agent of the local government, and (b) if the council replaces the member of the council or the employee or agent under paragraph (a), the appointment is for the remainder of the term of the member replaced.
 
 7. [power-duty] [Tier A]
-   Question: What must the council do regarding appoint another person to succeed the member, and the person shall hold office for the remainder?
+   Question: What must the council do when a member of an advisory committee dies?
    Answer: 6(7): If a member of an advisory committee dies, resigns, becomes ineligible to be a member or is removed from office, the council may appoint another person to succeed the member, and the person shall hold office for the remainder of the term of the member the person succeeds.
 
 8. [power-duty] [Tier C]
@@ -3105,7 +3071,7 @@ Expenses of advisory committee
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must the council do regarding be paid by the council?
+   Question: What must the council do?
    Answer: 8: Expenses of advisory committee 8The expenses of an advisory committee that are approved by the council shall be paid by the council.
 
 Concepts:
@@ -3179,7 +3145,7 @@ exercise the powers and perform the duties in relation to community planning tha
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must The Lieutenant-Governor in Council do regarding appoint a planner who is an employee of the Department of Environment and Local Government as?
+   Question: What must the Lieutenant-Governor in Council do?
    Answer: 9(1): The Lieutenant-Governor in Council shall appoint a planner who is an employee of the Department of Environment and Local Government as the Provincial Planning Director, to whom the Civil Service Act shall apply.
 
 2. [power-duty] [Tier C]
@@ -3187,7 +3153,7 @@ Rubric:
    Answer: 9(2): In local governments that are providing their own land use planning service, the Director is the development officer for the purposes of (a) Repealed:
 
 3. [power-duty] [Tier A]
-   Question: What powers does the Minister have regarding Provincial Planning Director?
+   Question: What may the Minister do?
    Answer: 9(3): The Director may (a) delegate an administrative power conferred on the Director under this Act, (b) provide technical planning assistance for councils, advisory committees and regional service commissions, and (c) exercise the powers and perform the duties in relation to community planning that the Minister assigns to the Director.
 
 Concepts:
@@ -3260,7 +3226,7 @@ the Director is the development officer for the village or rural community, as t
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must council do regarding employ or engage those persons that it considers necessary for the purpose of performing services in?
+   Question: What must the council do?
    Answer: 10(1): Subject to this section, a council that is providing its own land use planning service (a) may employ or engage those persons that it considers necessary for the purpose of performing services in relation to community planning, and (b) shall appoint as the planning director, a planner who is an employee or who is engaged as a consultant. (c) Repealed:
 
 2. [power-duty] [Tier C]
@@ -3268,7 +3234,7 @@ Rubric:
    Answer: 10(2): The planning director appointed under paragraph (1)(b) is also the development officer for the local government.
 
 3. [power-duty] [Tier A]
-   Question: What powers does the council have regarding Local government planning director?
+   Question: What may the council do?
    Answer: 10(3): In the case of a village or rural community that is providing its own land use planning service, (a) the council may, with the approval of the Minister, appoint the Director as the development officer for the village or rural community, as the case may be, and (b) the Director is the development officer for the village or rural community, as the case may be, with respect to a subdivision regulation that is in effect in the village or rural community.
 
 Concepts:
@@ -3301,7 +3267,7 @@ Design review committee by-law
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must council do regarding Design review committee by-law?
+   Question: What must the council do?
    Answer: 11: Design review committee by-law 11A council may make a by-law to establish one or more committees, called a design review committee, which shall advise the local government on development within the local government.
 
 Concepts:
@@ -3398,7 +3364,7 @@ Statement of Public Interest
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does council have regarding Content of design review committee by-law?
+   Question: What must the council do when any?
    Answer: 12(1): A design review committee by-law may (a) provide for the membership of the design review committee, (b) provide for the appointment of the chair and other officers of the committee, (c) fix the terms of appointment and set out provisions respecting re-appointment, if any, (d) fix the remuneration, if any, to be paid to the chair of the committee, if the chair is not a council member, (e) determine the reimbursement of members of the committee for expenses incurred as members, (f) establish the duties and procedure of the committee, including a procedure by which the committee’s views are made known to the council, and (g) provide for the matters the committee may consider when reviewing the external appearance of structures for a development and matters relating to the site plan for the development.
 
 2. [power-duty] [Tier C]
@@ -3456,7 +3422,7 @@ establish policies and, if applicable, minimum standards to align planning polic
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must The Lieutenant-Governor in Council do regarding establish by regulation a statement of public interest in order to protect the public interest in?
+   Question: What must the Lieutenant-Governor in Council establish?
    Answer: 13(1): The Lieutenant-Governor in Council shall establish by regulation a statement of public interest in order to protect the public interest in the use and development of land.
 
 2. [power-duty] [Tier A]
@@ -3464,7 +3430,7 @@ Rubric:
    Answer: 13(2): A regulation under this section shall (a) identify the public interest and public priorities to guide planning decisions in the Province, and (b) establish policies and, if applicable, minimum standards to align planning policies and guide development of economically, environmentally, socially and culturally sustainable communities.
 
 3. [power-duty] [Tier A]
-   Question: What powers does the Minister have regarding consult with any person the Minister considers appropriate?
+   Question: What must the Minister do when establishing or amending a statement of public interest?
    Answer: 13(3): Before establishing or amending a statement of public interest, the Minister may consult with any person the Minister considers appropriate.
 
 Concepts:
@@ -3536,12 +3502,12 @@ Section 15 - Plans, by-laws and regulations to be consistent with statement of p
 
 Rubric:
 
-1. [power-duty] [Tier A]
+1. [power-duty] [Tier B]
    Question: What does 15(1) provide regarding be consistent with the statement of public interest?
    Answer: 15(1): A regional land use plan, municipal plan, rural plan, by-law or regulation under this Act or a building by-law under the Building Code Administration Act, or an amendment or addition to any of them, that is made or adopted after the date a statement of public interest comes into effect shall be consistent with the statement of public interest.
 
 2. [power-duty] [Tier A]
-   Question: What must the council do regarding be considered inconsistent with this Act and regulations under this Act and is of no effect?
+   Question: What must the council do when a statement of public interest comes into effect?
    Answer: 15(2): A regional land use plan, municipal plan, rural plan, by-law or regulation under this Act or a building by-law under the Building Code Administration Act, or an amendment or addition to any of them, that is made or adopted after a statement of public interest comes into effect, that is inconsistent with the statement of public interest, shall be considered inconsistent with this Act and regulations under this Act and is of no effect to the extent of the inconsistency, unless the council can demonstrate to the Minister a practical reason for being inconsistent.
 
 Concepts:
@@ -3634,11 +3600,11 @@ Section 17 - Review
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must The Minister do regarding ensure that a review of a statement of public interest is commenced within ten years after?
+   Question: What must the Minister do?
    Answer: 17(1): The Minister shall ensure that a review of a statement of public interest is commenced within ten years after it comes into effect for the purpose of examining and reporting on the plan’s effectiveness and to make recommendations on any potential amendments or for its repeal.
 
 2. [power-duty] [Tier A]
-   Question: What must The Minister do regarding Review?
+   Question: What must the Minister do when it commences?
    Answer: 17(2): The Minister shall ensure that a review under subsection (1) is concluded no later than 24 months after it commences.
 
 Concepts:
@@ -3676,11 +3642,11 @@ Section 18 - Regional land use plans
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does The Minister have regarding adopt regional land use plans for one or more regions or parts of regions?
+   Question: What authority does the Minister have to adopt regional land use plans for one or more regions or parts of regions?
    Answer: 18(1): The Minister may adopt regional land use plans for one or more regions or parts of regions.
 
 2. [power-duty] [Tier A]
-   Question: What powers does the Minister have regarding Regional land use plans?
+   Question: What may the Minister do?
    Answer: 18(2): A regional land use plan may be prepared by the Minister, a local government, a regional service commission or a combination of any of them.
 
 Concepts:
@@ -3747,7 +3713,7 @@ in consultation with any other local government or regional service commission a
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must the Minister do regarding Preparation and content of regional land use plan?
+   Question: What must the Minister do?
    Answer: 18.1(1): A regional land use plan shall be prepared or amended (a) under the direction of (i) the planning director as defined in the Regional Service Delivery Act; (ii) the planning director of a local government; or (iii) another planner engaged by the Minister, local government or regional service commission, as the case may be, and responsible to the planning director referred to in subparagraph (i) or (ii); and (b) in consultation with any other local government or regional service commission affected by the plan.
 
 2. [power-duty] [Tier C]
@@ -3859,11 +3825,11 @@ Section 21 - Adoption and approval of municipal plan
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must council do regarding make a by-law adopting a municipal plan, prepared in the manner set out in this Act?
+   Question: What must the council do when the incorporation of a municipality?
    Answer: 21(1): Within five years after the incorporation of a municipality, its council shall make a by-law adopting a municipal plan, prepared in the manner set out in this Act and the regulations, if no municipal plan by-law is already in force.
 
 2. [power-duty] [Tier A]
-   Question: What must The Minister do regarding Adoption and approval of municipal plan?
+   Question: What must the Minister do when it meets the requirements prescribed by this Act and the regulations?
    Answer: 21(2): The Minister shall assess the municipal plan and shall approve it if it meets the requirements prescribed by this Act and the regulations, if any.
 
 Concepts:
@@ -3935,7 +3901,7 @@ a courthouse.
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must the Minister do regarding consider the municipal plan adopted for the municipality?
+   Question: What must the Minister do when carrying out or authorizing a development in a municipality?
    Answer: 22(1): Before carrying out or authorizing a development in a municipality, the Minister of the Crown, Crown corporation or Crown agency responsible for the development shall consider the municipal plan adopted for the municipality.
 
 2. [power-duty] [Tier C]
@@ -3985,7 +3951,7 @@ Section 23 - Failure to adopt municipal plan
 Rubric:
 
 1. [notice] [Tier A]
-   Question: What powers does council have regarding do so and may exercise any of the powers of the council under this Act on?
+   Question: What may the council do?
    Answer: 23(1): If a council fails to make a by-law adopting a municipal plan or adopting an amendment to it when required to do so, the Minister may do so and may exercise any of the powers of the council under this Act on giving at least 30 days’ written notice to the municipality of the Minister’s intention to do so.
 
 2. [notice] [Tier C]
@@ -3993,7 +3959,7 @@ Rubric:
    Answer: 23(2): The costs of adopting a municipal plan under subsection (1) are chargeable to the municipality and become a debt due to the Crown.
 
 3. [notice] [Tier A]
-   Question: What powers does the Minister have regarding deduct the amount in arrears from any money owed by the Province to the municipality?
+   Question: What may the Minister do?
    Answer: 23(3): If a municipality is in arrears for a period in excess of 90 days with respect to any payment due under subsection (2), the Minister may deduct the amount in arrears from any money owed by the Province to the municipality.
 
 Concepts:
@@ -4277,11 +4243,11 @@ provide a copy of the revised budget to the Minister.
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must council do regarding prepare a municipal plan for the municipality for approval by the Minister?
+   Question: What must the council prepare?
    Answer: 24(1): A council shall prepare a municipal plan for the municipality for approval by the Minister.
 
 2. [power-duty] [Tier A]
-   Question: What must the council do regarding Preparation and content of municipal plan?
+   Question: What must the council do when the regional service commission prepares the plan?
    Answer: 24(2): A municipal plan shall be prepared or amended (a) under the direction of (i) the planning director or another planner engaged by the council and responsible to the planning director, or (ii) in the case of a municipality not providing its own land use planning service, the planning director as defined in the Regional Service Delivery Act, or another planner engaged by the regional service commission and responsible to the planning director, if the regional service commission prepares the plan, (b) on the basis of a written report of studies of the economy, finances, resources, population, land use, transportation facilities, municipal facilities and services, and any other matter related to the present or future economic, social or physical conditions of the municipality, and (c) in consultation with the Minister and any government department or person specified by the Director.
 
 3. [power-duty] [Tier C]
@@ -4292,17 +4258,22 @@ Rubric:
    Question: What does 24(3) provide regarding be delineated on a map or plan attached to and forming part of the municipal plan?
    Answer: 24(3): The zones into which the municipality is proposed to be divided by the zoning by-law shall be delineated on a map or plan attached to and forming part of the municipal plan.
 
-5. [power-duty] [Tier C]
+5. [power-duty] [Tier A]
+   Question: What must the council do?
+   Answer: 24(4): In preparing a municipal plan, a planner shall (a) ascertain the assumptions of policy of the council in relation to the proposed plan, (b) if the planner is engaged by a municipality that is not providing its own land use planning service, seek the advice and assistance of the regional service commission, and (c) have regard to (i) the results of the studies referred to in subsection (2), (ii) the regional land use plan, if any, and (iii) the resources likely to be available for carrying out the proposals referred to in the plan.
+
+6. [power-duty] [Tier C]
    Question: What does 24(5) provide regarding Preparation and content of municipal plan?
    Answer: 24(5): A municipal plan shall contain the following: (a) statements of policy with respect to (i) the development and use of land in the municipality, (ii) the conservation and improvement of the physical environment, (ii.1) climate change adaptation and mitigation, (iii) the control and abatement of all forms of pollution of the natural environment, (iv) the development of communication, utility and transportation systems, (v) the reservation and projected use of land for municipal purposes, and (vi) the provision of municipal services and facilities, including (A) sewage collection, treatment and disposal, (B) water supply and distribution, (C) solid waste disposal, (D) educational and cultural institutions, (E) recreational facilities, parks, playgrounds and other public open spaces, (F) fire and police facilities, (G) cemeteries and crematoria, (H) urban renewal, (I) housing, (J) preservation of buildings and sites of historical interest, and (K) facilities for the provision of health and social services, (vi.1) housing, including affordable housing and rental housing, (vi.2) Repealed:
 
-6. [power-duty] [Tier C]
+7. [power-duty] [Tier C]
    Question: What does 24(7) provide regarding Preparation and content of municipal plan?
    Answer: 24(7): Section 26 does not apply to a revision of a budget under subsection (6).
 
 Suggested chunks:
 
-- 24 - Preparation and content of municipal plan (long-enumeration, estimated rubric items: 8)
+- 24 24(1)-24(3): amended (a) under the direction of (i) the planning director or another plann (long-enumeration, estimated rubric items: 4; sources: section:24/subsection:1, section:24/subsection:2, section:24/subsection:2.1, section:24/subsection:3)
+- 24 24(4)-24(7): Preparation and content of municipal plan (long-enumeration, estimated rubric items: 4; sources: section:24/subsection:4, section:24/subsection:5, section:24/subsection:6, section:24/subsection:7)
 
 Concepts:
 - Preparation and Content of Municipal Plan
@@ -4393,7 +4364,7 @@ posting the notice on the municipality’s website for the period of time that t
 Rubric:
 
 1. [notice] [Tier A]
-   Question: What must council do regarding publish a notice at least 10 days, but no more than 14 days, before the day?
+   Question: What must the council do when complying with the requirements of section 111 with respect to a municipal plan?
    Answer: 25(1): Before complying with the requirements of section 111 with respect to a municipal plan, a council shall publish a notice at least 10 days, but no more than 14 days, before the day referred to in paragraph (b), stating (a) the intention of the council to adopt a municipal plan, (b) the time and place for a public presentation by the council of the proposed plan, and (c) that objections to the proposed plan may be made to the council within 30 days of the day of the public presentation.
 
 2. [notice] [Tier A]
@@ -4401,7 +4372,7 @@ Rubric:
    Answer: 25(2): A notice referred to in subsection (1) shall be given by one or more of the following means: (a) publishing the notice in a newspaper published or having general circulation in the municipality; (b) broadcasting the notice on a radio or television station that broadcasts in the municipality at least once a day for the period of time that the notice is required to be published; and (c) posting the notice on the municipality’s website for the period of time that the notice is required to be published.
 
 3. [notice] [Tier A]
-   Question: What must council do regarding Public notice of municipal plan?
+   Question: What must the council do?
    Answer: 25(3): A council shall retain a hard copy of the notice referred to in subsection (1) in the council offices for the period of time that the notice is required to be published.
 
 4. [notice] [Tier A]
@@ -4409,24 +4380,23 @@ Rubric:
    Answer: 25(5): If a municipality has given notice in a manner authorized by subsection (2), it may also post the notice on social media websites.
 
 5. [notice] [Tier A]
-   Question: What powers does person have regarding Public notice of municipal plan?
+   Question: What must a person do when a notice is given in a manner authorized by subsection (2)?
    Answer: 25(6): If a notice is given in a manner authorized by subsection (2), any person may submit to the council written objections to the proposed municipal plan within the period referred to in subsection (1).
 
 Suggested chunks:
 
-- 25 - Public notice of municipal plan (many-subsections, estimated rubric items: 12)
+- 25 25(1)-25(4): notice at least 10 days, but no more than 14 days, before the day referred t (many-subsections, estimated rubric items: 6; sources: section:25/subsection:1, section:25/subsection:2, section:25/subsection:3, section:25/subsection:4)
+- 25 25(5)-25(6): notice in a manner authorized by subsection (2), it may also post the notice (many-subsections, estimated rubric items: 6; sources: section:25/subsection:5, section:25/subsection:6)
 
 Concepts:
 - Public Notice of Municipal Plan
 - Notice at Least
-- Notice Referred to in Subsection
 - Office Hours
 - Notice in a Manner Authorized by Subsection
 - Notice is Given in a Manner Authorized by
 - be Published Requirement
 
 Warnings:
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Notice Referred to in Subsection
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Notice in a Manner Authorized by Subsection
 
 ### Section 26 - Validity and coming into force of municipal plan
@@ -4484,7 +4454,6 @@ Concepts:
 - Registration Office in Accordance With Paragraph
 
 Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What does section 26 of the Community Planning Act provide regarding validity and coming into force of municipal plan?
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Office in Accordance With Paragraph
 
 ### Section 27 - Effect of municipal plan
@@ -4588,7 +4557,7 @@ Rubric:
    Answer: 29(1): A municipal plan may provide for the preparation and adoption by by-law of a secondary municipal plan that applies, as part of the municipal plan, to a specific area or areas of a municipality.
 
 2. [power-duty] [Tier A]
-   Question: What powers does the council have regarding not, in the opinion of the council, be adequately addressed in the municipal plan alone?
+   Question: What may the council do?
    Answer: 29(2): The purpose of a secondary municipal plan is to address issues with respect to a particular part of the planning area that may not, in the opinion of the council, be adequately addressed in the municipal plan alone.
 
 3. [power-duty] [Tier C]
@@ -4696,15 +4665,15 @@ Section 32 - Review
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must The council do regarding ensure that a review of a municipal plan is commenced at least once every ten years?
+   Question: What must the council do?
    Answer: 32(1): The council of a municipality shall ensure that a review of a municipal plan is commenced at least once every ten years after the date the municipal plan is adopted for the purpose of examining and reporting on the plan’s effectiveness and to make recommendations on any potential amendments or for its repeal.
 
 2. [power-duty] [Tier A]
-   Question: What must The council do regarding Review?
+   Question: What must the council do when it commences?
    Answer: 32(2): The council of a municipality shall ensure that a review under subsection (1) is concluded no later than 36 months after it commences.
 
 3. [power-duty] [Tier A]
-   Question: What must The council do regarding provide a copy of the report prepared as a result of the review to the Minister?
+   Question: What must the council provide?
    Answer: 32(3): The council of a municipality shall provide a copy of the report prepared as a result of the review to the Minister as soon as circumstances permit.
 
 Concepts:
@@ -4780,11 +4749,11 @@ Section 33 - Adoption and approval of rural plans for villages
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must council do regarding make a by-law adopting a rural plan for the village, prepared in the manner set out?
+   Question: What must the council do when the incorporation of a village?
    Answer: 33(1): Within five years after the incorporation of a village, its council shall make a by-law adopting a rural plan for the village, prepared in the manner set out in this Act and the regulations, if no rural plan by-law for the village is already in force.
 
 2. [power-duty] [Tier A]
-   Question: What must The Minister do regarding assess the rural plan for the village and approve it if it meets the requirements prescribed?
+   Question: What must the Minister do when it meets the requirements prescribed by this Act and the regulations?
    Answer: 33(2): The Minister shall assess the rural plan for the village and approve it if it meets the requirements prescribed by this Act and the regulations, if any.
 
 Concepts:
@@ -4855,7 +4824,7 @@ a courthouse.
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must the Minister do regarding consider the rural plan adopted for the village?
+   Question: What must the Minister do when carrying out or authorizing a development in a village?
    Answer: 33.1(1): Before carrying out or authorizing a development in a village, the Minister of the Crown, Crown corporation or Crown agency responsible for the development shall consider the rural plan adopted for the village.
 
 2. [power-duty] [Tier C]
@@ -4906,7 +4875,7 @@ Section 34 - Failure to adopt rural plan for a village
 Rubric:
 
 1. [notice] [Tier A]
-   Question: What powers does council have regarding do so and may exercise any of the powers of the council under this Act on?
+   Question: What may the council do?
    Answer: 34(1): If a council of a village fails to make a by-law adopting a rural plan or adopting an amendment to it when required to do so, the Minister may do so and may exercise any of the powers of the council under this Act on giving at least 30 days’ written notice to the village of the Minister’s intention to do so.
 
 2. [notice] [Tier C]
@@ -4914,7 +4883,7 @@ Rubric:
    Answer: 34(2): The costs of adopting a rural plan under subsection (1) are chargeable to the village and become a debt due to the Crown.
 
 3. [notice] [Tier A]
-   Question: What powers does the Minister have regarding deduct the amount in arrears from any money owed by the Province to the village?
+   Question: What may the Minister do?
    Answer: 34(3): If a village is in arrears for a period in excess of 90 days with respect to any payment due under subsection (2), the Minister may deduct the amount in arrears from any money owed by the Province to the village.
 
 Concepts:
@@ -5061,11 +5030,11 @@ Repealed:
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must council do regarding prepare a rural plan for the village for approval by the Minister?
+   Question: What must the council prepare?
    Answer: 35(1): A council of a village shall prepare a rural plan for the village for approval by the Minister.
 
 2. [power-duty] [Tier A]
-   Question: What must the council do regarding Preparation and content of rural plan for a village?
+   Question: What must the council do when the regional service commission prepares the plan?
    Answer: 35(1.1): A rural plan for a village shall be prepared or amended (a) under the direction of (i) the planning director or another planner engaged by the council of the village and responsible to the planning director, or (ii) in the case of a village not providing its own land use planning service, the planning director as defined in the Regional Service Delivery Act, or another planner engaged by the regional service commission and responsible to the planning director, if the regional service commission prepares the plan, (b) on the basis of a written report of studies of the economy, finances, resources, population, land use, transportation facilities, public facilities and services, and any other matter related to the present or future economic, social or physical conditions of the village, and (c) in consultation with the Minister and any government department or person specified by the Director.
 
 3. [power-duty] [Tier C]
@@ -5127,7 +5096,7 @@ Rubric:
    Answer: 36(1): A rural plan for a village may provide for the preparation and adoption by by-law of a secondary rural plan that applies, as part of the rural plan for the village, to a specific area or areas of the village.
 
 2. [power-duty] [Tier A]
-   Question: What powers does the council have regarding not, in the opinion of the council, be adequately addressed in the rural plan alone?
+   Question: What may the council do?
    Answer: 36(2): The purpose of a secondary rural plan is to address issues with respect to a particular part of the planning area that may not, in the opinion of the council, be adequately addressed in the rural plan alone.
 
 3. [power-duty] [Tier C]
@@ -5237,7 +5206,7 @@ Rubric:
    Answer: 39(1): Despite any other provision in this Act, the council of a village shall not vote on adopting a rural plan until after the 14 days referred to in subsection (2) and, if written objections are submitted under subsection (2), the written objections are considered.
 
 2. [notice] [Tier A]
-   Question: What powers does person have regarding Public notice of rural plan?
+   Question: What must a person do when that day?
    Answer: 39(2): A person may send written objections in relation to objections raised on the day fixed under subsection 111(1) for consideration of objections to the person referred to in paragraph 111(4)(c) within 14 days after that day.
 
 3. [notice] [Tier A]
@@ -5246,7 +5215,7 @@ Rubric:
 
 Suggested chunks:
 
-- 39 - Public notice of rural plan (multiple-independent-topics, estimated rubric items: 4)
+- 39 - Public notice of rural plan (multiple-independent-topics, estimated rubric items: 4; sources: section:39)
 
 Concepts:
 - Public Notice of Rural Plan
@@ -5309,7 +5278,6 @@ Concepts:
 - Registration Office in Accordance With Paragraph
 
 Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What does section 40 of the Community Planning Act provide regarding validity and coming into force of rural plan for a village?
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Office in Accordance With Paragraph
 
 ### Section 41 - Effect of rural plan for a village
@@ -5413,15 +5381,15 @@ Section 43 - Review
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must The council do regarding ensure that a review of a rural plan is commenced at least once every ten years?
+   Question: What must the council do?
    Answer: 43(1): The council of a village shall ensure that a review of a rural plan is commenced at least once every ten years after the date the rural plan is adopted for the purpose of examining and reporting on its effectiveness and to make recommendations on any potential amendments or its repeal.
 
 2. [power-duty] [Tier A]
-   Question: What must The council do regarding Review?
+   Question: What must the council do when it commences?
    Answer: 43(2): The council of a village shall ensure that a review under subsection (1) is concluded no later than 36 months after it commences.
 
 3. [power-duty] [Tier A]
-   Question: What must The council do regarding provide a copy of the report prepared as a result of the review to the Minister?
+   Question: What must the council provide?
    Answer: 43(3): The council of a village shall provide a copy of the report prepared as a result of the review to the Minister as soon as circumstances permit.
 
 Concepts:
@@ -5571,19 +5539,19 @@ the powers in sections 55 and 56 with respect to certain proposed uses and varia
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must council do regarding make a by-law adopting a rural plan for the rural community, prepared in the manner set?
+   Question: What must the council do when the incorporation of a rural community?
    Answer: 44(1): Within five years after the incorporation of a rural community, its council shall make a by-law adopting a rural plan for the rural community, prepared in the manner set out in this Act and the regulations, if no rural plan for the rural community is already in force.
 
 2. [power-duty] [Tier A]
-   Question: What must The Minister do regarding Adoption and approval of rural plans for rural communities?
+   Question: What must the Minister do when it meets the requirements prescribed by this Act and the regulations?
    Answer: 44(2): The Minister shall assess the rural plan for the rural community and shall approve it if it meets the requirements prescribed by this Act and the regulations.
 
 3. [power-duty] [Tier A]
-   Question: What must council do regarding prepare a rural plan for the rural community for approval by the Minister?
+   Question: What must the council prepare?
    Answer: 44(2.1): A council of a rural community shall prepare a rural plan for the rural community for approval by the Minister.
 
 4. [power-duty] [Tier A]
-   Question: What must the council do regarding Adoption and approval of rural plans for rural communities?
+   Question: What must the council do when the regional service commission prepares the plan?
    Answer: 44(2.2): A rural plan for a rural community shall be prepared or amended (a) under the direction of (i) the planning director or another planner engaged by the council of the rural community and responsible to the planning director, or (ii) in the case of a rural community not providing its own land use planning service, the planning director as defined in the Regional Service Delivery Act, or another planner engaged by the regional service commission and responsible to the planning director, if the regional service commission prepares the plan, (b) on the basis of a written report of studies of the economy, finances, resources, population, land use, transportation facilities, public facilities and services, and any other matter related to the present or future economic, social or physical conditions of the rural community, and (c) in consultation with the Minister and any government department or person specified by the Director.
 
 5. [power-duty] [Tier C]
@@ -5603,7 +5571,7 @@ Rubric:
    Answer: 44(5): Repealed:
 
 9. [power-duty] [Tier A]
-   Question: What must person do regarding Adoption and approval of rural plans for rural communities?
+   Question: What must a person do?
    Answer: 44(6): With respect to zoning provisions in a rural plan under this section, (a) the powers and functions in paragraphs 53(2)(g) and (h) or 53(3)(c) with respect to particular uses of land may be vested in a regional service commission, (b) if a person applies to a rural community council to have an area of land re-zoned to permit the carrying out of a specific proposal, (i) the rural community council may act by resolution under section 59; (ii) the rural community council may enter into an agreement with the person respecting those matters set out in the resolution, and (iii) the provisions of section 59 with respect to a resolution or agreement apply with the necessary modifications to a resolution or agreement under this section, (c) despite subsection (3), if a rural plan under this section provides that a developer may pay money instead of providing off-street parking under paragraph 53(2)(k), the money shall be paid, despite the Financial Administration Act, to the regional service commission and the regional service commission shall deal with the money in accordance with the directions of the rural community council and section 57, (d) if a fee for amending the zoning provisions is provided for in the rural plan under this section, it shall be paid, despite the Financial Administration Act, to the regional service commission and credited to the cost of the delivery of the land use planning service under subsection 161(4) of the Local Governance Act, and (e) the powers in sections 55 and 56 with respect to certain proposed uses and variance shall be deemed to be vested in the relevant regional service commission.
 
 10. [power-duty] [Tier C]
@@ -5612,8 +5580,9 @@ Rubric:
 
 Suggested chunks:
 
-- 44 - Adoption and approval of rural plans for rural communities (many-subsections, estimated rubric items: 12)
-- 44 - Adoption and approval of rural plans for rural communities (long-enumeration, estimated rubric items: 12)
+- 44 44(1)-44(2.2): by-law adopting a rural plan for the rural community, prepared in the manner (many-subsections, long-enumeration, estimated rubric items: 6; sources: section:44/subsection:1, section:44/subsection:2, section:44/subsection:2.1, section:44/subsection:2.2)
+- 44 44(2.3)-44(5): regulations under this Act (many-subsections, long-enumeration, estimated rubric items: 6; sources: section:44/subsection:2.3, section:44/subsection:3, section:44/subsection:4, section:44/subsection:5)
+- 44 44(6)-44(7): street parking under paragraph 53(2)(k), the money shall be paid, despite th (many-subsections, long-enumeration, estimated rubric items: 6; sources: section:44/subsection:6, section:44/subsection:7)
 
 Concepts:
 - Adoption and Approval of Rural Plans for Rural Communities
@@ -5656,7 +5625,7 @@ Section 44.1 - Failure to adopt rural plan for a rural community
 Rubric:
 
 1. [notice] [Tier A]
-   Question: What powers does council have regarding do so and may exercise any of the powers of the council under this Act on?
+   Question: What may the council do?
    Answer: 44.1(1): If a council of a rural community fails to make a by-law adopting a rural plan or adopting an amendment to it when required to do so, the Minister may do so and may exercise any of the powers of the council under this Act on giving at least 30 days’ written notice to the rural community of the Minister’s intention to do so.
 
 2. [notice] [Tier C]
@@ -5664,7 +5633,7 @@ Rubric:
    Answer: 44.1(2): The costs of adopting a rural plan under subsection (1) are chargeable to the rural community and become a debt due to the Crown.
 
 3. [notice] [Tier A]
-   Question: What powers does the Minister have regarding deduct the amount in arrears from any money owed by the Province to the rural community?
+   Question: What may the Minister do?
    Answer: 44.1(3): If a rural community is in arrears for a period in excess of 90 days with respect to any payment due under subsection (2), the Minister may deduct the amount in arrears from any money owed by the Province to the rural community.
 
 Concepts:
@@ -5737,7 +5706,7 @@ a courthouse.
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must the Minister do regarding consider the rural plan adopted for the rural community?
+   Question: What must the Minister do when carrying out or authorizing a development in a rural community?
    Answer: 44.2(1): Before carrying out or authorizing a development in a rural community, the Minister of the Crown, Crown corporation or Crown agency responsible for the development shall consider the rural plan adopted for the rural community.
 
 2. [power-duty] [Tier C]
@@ -5808,7 +5777,6 @@ Concepts:
 - Registration Office in Accordance With Paragraph
 
 Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What does section 45 of the Community Planning Act provide regarding validity and coming into force of rural plan for a rural community?
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Office in Accordance With Paragraph
 
 ### Section 46 - Secondary rural plan
@@ -5847,7 +5815,7 @@ Rubric:
    Answer: 46(1): A rural plan for a rural community may provide for the preparation and adoption by by-law of a secondary rural plan that applies, as part of the rural plan, to a specific area or areas of a rural community.
 
 2. [power-duty] [Tier A]
-   Question: What powers does the council have regarding not, in the opinion of the council, be adequately addressed in the rural plan alone?
+   Question: What may the council do?
    Answer: 46(2): The purpose of a secondary rural plan is to address issues with respect to a particular part of the planning area, that may not, in the opinion of the council, be adequately addressed in the rural plan alone.
 
 3. [power-duty] [Tier C]
@@ -5994,15 +5962,15 @@ Section 50 - Review
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must council do regarding ensure that a review is commenced of a rural plan at least once every ten years?
+   Question: What must the council do?
    Answer: 50(1): The rural community council shall ensure that a review is commenced of a rural plan at least once every ten years after the date the rural plan is adopted for the purpose of examining and reporting on the plan’s effectiveness and to make recommendations on a potential amendment or for its repeal.
 
 2. [power-duty] [Tier A]
-   Question: What must council do regarding Review?
+   Question: What must the council do when it commences?
    Answer: 50(2): The rural community council shall ensure that a review under subsection (1) is concluded no later than 36 months after it commences.
 
 3. [power-duty] [Tier A]
-   Question: What must council do regarding provide a copy of the report prepared as a result of the review to the Minister?
+   Question: What must the council provide?
    Answer: 50(3): The rural community council shall provide a copy of the report prepared as a result of the review to the Minister as soon as circumstances permit.
 
 Concepts:
@@ -6065,11 +6033,11 @@ in consultation with any government department or person specified by the Direct
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must the Minister do regarding make a regulation respecting a rural plan for that rural district, prepared in the manner set?
+   Question: What must the Minister do when the date a rural district is established?
    Answer: 51(1): Within five years after the date a rural district is established, the Minister shall make a regulation respecting a rural plan for that rural district, prepared in the manner set out in this Act and the regulations, if no rural plan is already in force.
 
 2. [power-duty] [Tier A]
-   Question: What must person do regarding Ministerial regulations respecting rural plans for rural districts?
+   Question: What must a person do?
    Answer: 51(2): A rural plan for a rural district shall be prepared or amended (a) under the direction of the planning director as defined in the Regional Service Delivery Act, or another planner engaged by the regional service commission and responsible to the planning director, (b) on the basis of a written report of studies of the economy, finances, resources, population, land use, transportation facilities, public facilities and services, and any other matter related to the present or future economic, social or physical conditions of the rural district, and (c) in consultation with any government department or person specified by the Director.
 
 3. [power-duty] [Tier C]
@@ -6144,7 +6112,7 @@ a courthouse.
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must the Minister do regarding consider the rural plan adopted for the rural district?
+   Question: What must the Minister do when carrying out or authorizing a development in a rural district?
    Answer: 51.1(1): Before carrying out or authorizing a development in a rural district, the Minister of the Crown, Crown corporation or Crown agency responsible for the development shall consider the rural plan adopted for the rural district.
 
 2. [power-duty] [Tier C]
@@ -6342,7 +6310,7 @@ a map showing the zones referred to in paragraph (c).
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must the Minister do regarding Content of regulation?
+   Question: What must the Minister do?
    Answer: 52(1): In a regulation under this Division, the Minister (a) shall designate an area for the purpose of the application of the regulation, and (b) may provide for anything that a council is empowered to do by by-law under this Act.
 
 2. [power-duty] [Tier C]
@@ -6362,7 +6330,7 @@ Rubric:
    Answer: 52(6): Despite any provision in this Act, the Minister shall not make a regulation under this Division until after the 14 days referred to in subsection (7) and, if written objections are submitted under subsection (7), the written objections are considered.
 
 6. [power-duty] [Tier A]
-   Question: What powers does person have regarding send written objections in relation to objections raised on the day fixed for consideration of objections?
+   Question: What must a person do when that day?
    Answer: 52(7): A person may send written objections in relation to objections raised on the day fixed for consideration of objections to the Minister within 14 days after that day.
 
 7. [power-duty] [Tier A]
@@ -6395,9 +6363,10 @@ Rubric:
 
 Suggested chunks:
 
-- 52 - Content of regulation (many-subsections, estimated rubric items: 14)
-- 52 - Content of regulation (long-enumeration, estimated rubric items: 14)
-- 52 - Content of regulation (multiple-independent-topics, estimated rubric items: 14)
+- 52 52(1)-52(4): regulation under this Division, the Minister (a) shall designate an area for the (many-subsections, long-enumeration, multiple-independent-topics, estimated rubric items: 6; sources: section:52/subsection:1, section:52/subsection:2, section:52/subsection:3, section:52/subsection:4)
+- 52 52(5)-52(8): regulation under this Division may prescribe a fee for the amendment of zoning p (many-subsections, long-enumeration, multiple-independent-topics, estimated rubric items: 6; sources: section:52/subsection:5, section:52/subsection:6, section:52/subsection:7, section:52/subsection:8)
+- 52 52(9)-52(12): amendment of zoning provisions is prescribed in a regulation under this Divisio (many-subsections, long-enumeration, multiple-independent-topics, estimated rubric items: 6; sources: section:52/subsection:9, section:52/subsection:10, section:52/subsection:11, section:52/subsection:12)
+- 52 52(13)-52(14): Regulations Act does not apply to a regulation under this Division (many-subsections, long-enumeration, multiple-independent-topics, estimated rubric items: 6; sources: section:52/subsection:13, section:52/subsection:14)
 
 Concepts:
 - Content of Regulation
@@ -6446,11 +6415,11 @@ Section 52.1 - Review
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must The Minister do regarding ensure that a review of a rural plan for a rural district is commenced at least?
+   Question: What must the Minister do?
    Answer: 52.1(1): The Minister shall ensure that a review of a rural plan for a rural district is commenced at least once every ten years after the date the relevant regulation is made for the purpose of examining and reporting on the plan’s effectiveness and to make recommendations on any potential amendments to it or for its repeal.
 
 2. [power-duty] [Tier A]
-   Question: What must The Minister do regarding Review?
+   Question: What must the Minister do when it commences?
    Answer: 52.1(2): The Minister shall ensure that a review under subsection (1) is concluded no later than 36 months after it commences.
 
 Concepts:
@@ -6920,11 +6889,11 @@ any limitations, terms or conditions on the manner in which the delegate is to e
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must council do regarding Making of zoning by-law?
+   Question: What must the council do when consultation with the municipality?
    Answer: 53(1): On the adoption of a municipal plan, a council shall (a) immediately proceed to draft a zoning by-law to carry out the intent of the plan, and (b) make the zoning by-law within (i) one year, or (ii) a longer period or periods, not to exceed a total of two years, as the Minister, after consultation with the municipality, may decide.
 
 2. [power-duty] [Tier A]
-   Question: What must the council do regarding Making of zoning by-law?
+   Question: What must the council do when the regional service commission prepares the plan?
    Answer: 53(1.1): A zoning by-law shall be prepared or amended under the direction of (a) the planning director or another planner engaged by the council and responsible to the planning director, or (b) in the case of a municipality not providing its own land use planning service, the planning director as defined in the Regional Service Delivery Act, or another planner engaged by the regional service commission and responsible to the planning director, if the regional service commission prepares the plan.
 
 3. [power-duty] [Tier C]
@@ -6932,11 +6901,11 @@ Rubric:
    Answer: 53(1.2): The planning director or other planner referred to paragraph (1.1)(a) or (b), as the case may be, shall certify that the content of the zoning by-law complies with the provisions of this Act and the regulations under this Act.
 
 4. [power-duty] [Tier A]
-   Question: What must the Minister do regarding Making of zoning by-law?
+   Question: What must the Minister do?
    Answer: 53(1.3): A zoning by-law shall be prepared in consultation with the Minister and any government department or person specified by the Director.
 
 5. [power-duty] [Tier A]
-   Question: What must the council do regarding divide the municipality into zones, prescribe the purposes for which land, buildings and structures in a?
+   Question: What must the council do?
    Answer: 53(2): For greater certainty and without limiting subsection (1), a zoning by-law shall divide the municipality into zones, prescribe the purposes for which land, buildings and structures in a zone may be used and prohibit the use of land, buildings and structures for any other purpose, and may (a) with respect to a zone, regulate (i) the size and dimensions of lots and other parcels into which land may be subdivided, and the size and dimensions of land required for a particular class of use or size of building or structure, (ii) the density of population, (iii) the height, number of storeys, ground area, floor area and bulk of buildings and structures, (iv) the percentage of land that may be built on, and the depth, size or area of yards, courts, parking areas and open spaces, (v) the placement, location and arrangement of buildings and structures, including their setting back from the boundaries of streets and other public areas, and from rivers, streams or other bodies of water, (vi) the design, character and appearance of buildings and structures, (vii) the placement, height and maintenance of fences, walls, hedges, shrubs, trees and other objects, (viii) the types, dimensions and locations of means of access of lots to streets, (ix) the facilities to be provided and maintained for off-street parking and loading of vehicles, (x) the size of rooms and the means of lighting and ventilating buildings, (xi) the excavation of sand, gravel, clay, shale, limestone or other deposits for purposes of the sale or other commercial use of the material excavated, (xii) the altering of land levels for building or other purposes in so far as this may affect surface drainage, (xiii) the location, dimensions, standards of construction and purposes of advertising signs and billboards, (xiv) the preservation and planting of trees, (xv) the location of buildings and structures in relation to sources of public water supply, and (xvi) subject to standards established under an Act of the Parliament of Canada or the Legislature, standards of pollution control to which permitted uses must conform; (b) prohibit, unless a permit is obtained, (i) a change in the purpose for which land or a building or structure is used, (ii) the use of land, buildings and structures for the purpose of displaying advertising signs and billboards, or (iii) an excavation referred to in subparagraph (a)(xi), (c) prescribe a system of permits, their terms and conditions, the conditions under which they may be issued, suspended, reinstated, revoked and renewed, their form and the fees for the permits, (d) prohibit the erection of a building in respect of which, in the opinion of the council, satisfactory arrangements have not been made for the supply of electric power, water, sewerage, street or other services or facilities, (e) require the improvement, removal or demolition of a building or structure that, in the opinion of the council, is dilapidated, dangerous or unsightly, and empower the council to improve, remove or demolish the building or structure at the expense of the owner or to acquire the parcel of land on which the building or structure is situated, (f) prescribe standards with respect to the appearance of land in a zone and require landscaping and improvements in accordance with standards prescribed in the by-law, (g) designate specific uses of land, buildings or structures, otherwise permitted in a zone, as being subject to any special conditions or standards as may be stated in the by-law, (g.1) provide for inclusionary zoning, subject to and in accordance with the regulations, including authorizing the council to enter into agreements; (h) prohibit the erection of a building or structure on a site where it would otherwise be permitted under the by-law if, in the opinion of the advisory committee or regional service commission, the site is marshy, subject to flooding, excessively steep or otherwise unsuitable for a proposed purpose by virtue of its soil or topography, (i) empower the advisory committee or regional service commission, subject to the terms and conditions as it considers fit, (i) to authorize for a temporary period not exceeding one year a development otherwise prohibited by the by-law; (ii) to authorize, for an additional temporary period not exceeding one year, a development otherwise prohibited by the by-law if (A) the applicant holds an authorization under subparagraph (i) that is to expire or has expired, (B) an application with respect to the land has been made to amend the applicable zoning by-law or rural plan, and (C) the advisory committee or regional service commission has received a resolution from the council confirming that the council will consider the application referred to in clause (B); and (iii) to require the termination or removal of a development authorized under subparagraph (i) or (ii) at the end of the authorized period, (j) empower the advisory committee or regional service commission (i) to delegate its authority under paragraph (i) to the development officer, and (ii) to authorize a delegate under subparagraph (i) to further delegate their authority under paragraph (i) to a person, (k) provide that the council may, in its discretion, allow a developer to pay to the municipality a sum of money in lieu of providing the off-street parking required by the by-law, the amount payable to be determined according to a fixed amount per parking space as provided by the by-law, and payable on the terms and conditions the council determines, (l) provide that anyone who applies to the council for an amendment to the by-law shall pay a fee to the council and that the council may, if it decides to, return all or part of the fee to the applicant, (m) provide (i) procedures for applying for amendments to the by-law, (ii) conditions and standards under which changes in zones may be made, or (iii) that the council will not consider applications for amendments or re-submissions of applications for amendments, except at a time specified in the by-law, (n) prescribe types of development that are exempted from the provisions of section 108, and (o) prescribe standards and provisions with respect to the establishment of overlay zones.
 
 6. [power-duty] [Tier A]
@@ -6969,8 +6938,9 @@ Rubric:
 
 Suggested chunks:
 
-- 53 - Making of zoning by-law (many-subsections, estimated rubric items: 12)
-- 53 - Making of zoning by-law (long-enumeration, estimated rubric items: 12)
+- 53 53(1)-53(1.3): by-law to carry out the intent of the plan, and (b) make the zoning by-law w (many-subsections, long-enumeration, estimated rubric items: 6; sources: section:53/subsection:1, section:53/subsection:1.1, section:53/subsection:1.2, section:53/subsection:1.3)
+- 53 53(2)-53(5): by-law shall divide the municipality into zones, prescribe the purposes for (many-subsections, long-enumeration, estimated rubric items: 6; sources: section:53/subsection:2, section:53/subsection:3, section:53/subsection:4, section:53/subsection:5)
+- 53 53(6)-53(9): streets affected by a deferred widening by-law and any building line establis (many-subsections, long-enumeration, estimated rubric items: 6; sources: section:53/subsection:6, section:53/subsection:7, section:53/subsection:8, section:53/subsection:9)
 
 Concepts:
 - Making of Zoning By-law
@@ -7036,7 +7006,6 @@ Concepts:
 - Registration Office in Accordance With Paragraph
 
 Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What does section 54 of the Community Planning Act provide regarding validity and coming into force of zoning by-law?
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Office in Accordance With Paragraph
 
 ### Section 55 - Variances from zoning by-law
@@ -7098,16 +7067,12 @@ Rubric:
    Answer: 55(1): Subject to the terms and conditions it considers fit, the advisory committee or regional service commission may permit (a) a proposed use of land or a building that is otherwise not permitted under the zoning by-law if, in its opinion, the proposed use is sufficiently similar to or compatible with a use permitted in the by-law for the zone in which the land or building is situated, or (b) a reasonable variance from the requirements referred to in paragraph 53(2)(a) or (f) of a zoning by-law if it is of the opinion that the variance is desirable for the development of a parcel of land or a building or structure and is in keeping with the general intent of the by-law and any plan under this Act affecting the development.
 
 2. [power-duty] [Tier A]
-   Question: What powers does the development officer have regarding Variances from zoning by-law?
+   Question: What may the development officer do?
    Answer: 55(2): Subject to the terms and conditions that the development officer considers fit, a development officer may permit a reasonable variance from the requirements referred to in subparagraph 53(2)(a)(i), (iii), (iv), (v), (vi), (vii), (viii), (ix) or (xiii) or paragraph 53(2)(f), if the development officer is of the opinion that the variance is desirable for the development of a parcel of land or a building or structure and is in keeping with the general intent of the by-law and any plan under this Act affecting the development.
 
 3. [power-duty] [Tier A]
-   Question: What is development officer prohibited from doing?
+   Question: What is the development officer prohibited from doing?
    Answer: 55(3): If an advisory committee or a regional service commission has made a determination with respect to a request for a variance under paragraph (1)(b), a request with respect to the same variance shall not be made to a development officer.
-
-4. [power-duty] [Tier A]
-   Question: What powers does development officer have regarding Variances from zoning by-law?
-   Answer: 55(5): A development officer may delegate the power to permit a variance under subsection (2) to a person.
 
 Concepts:
 - Variances From Zoning By-law
@@ -7158,7 +7123,7 @@ giving the right to make representation to the advisory committee, regional serv
 Rubric:
 
 1. [notice] [Tier A]
-   Question: What powers does development officer have regarding give notice to owners of land in the neighbourhood of the land in respect of which?
+   Question: What authority does the development officer have to give notice to owners of land in the neighbourhood of the land in respect of which the request is received (a) describing the land, (b) describing the use proposed or variance requested, and (c) giving the right to make representation to the advisory committee, regional service commission or development officer in connection with the request within the time limit set out in the notice?
    Answer: 56: Notice of variance 56If requested to permit a proposed use or variance under section 55, the advisory committee, regional service commission or development officer may give notice to owners of land in the neighbourhood of the land in respect of which the request is received (a) describing the land, (b) describing the use proposed or variance requested, and (c) giving the right to make representation to the advisory committee, regional service commission or development officer in connection with the request within the time limit set out in the notice.
 
 Concepts:
@@ -7359,7 +7324,7 @@ take the necessary steps to have the re-zoning by-law repealed.
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What is person prohibited from doing?
+   Question: What is a person prohibited from doing?
    Answer: 59(1): Subject to this section, if a person applies to the council to have an area of land re-zoned to permit the carrying out of a specific proposal, the council may (a) by resolution, (i) set out the proposal, (ii) impose reasonable terms and conditions concerning (A) the uses of the land, buildings and structures, (B) the site layout and design, including parking areas, landscaping, and entry and exit ways, (C) the external design, appearance and spacing of buildings and structures, and (D) any other matters that it considers relevant to the situation, (iii) prescribe time limits within which a part of the proposal referred to in subparagraph (i) or terms and conditions imposed under subparagraph (ii) shall be carried out, and (iv) provide that on the re-zoning of the land, the land in the zone and any building or structure on the land shall not be developed or used except in accordance with the proposal set out, terms and conditions imposed and time limits prescribed in accordance with this paragraph; and (b) enter into an agreement with a person respecting matters contained in a resolution under paragraph (a), and any additional matters as the parties may agree, to assure that on the re-zoning of the land the land in the zone and any building or structure on the land is developed and used in accordance with the terms of the agreement.
 
 2. [power-duty] [Tier A]
@@ -7375,15 +7340,15 @@ Rubric:
    Answer: 59(4): When registered in the land registration office, a resolution or agreement under this section is binding on a subsequent owner of the land in respect of which the resolution or agreement is made until discharged by the municipality.
 
 5. [power-duty] [Tier A]
-   Question: What powers does the council have regarding cancel the resolution or agreement?
+   Question: What may the council do?
    Answer: 59(5): If land or a building or structure to which a resolution or an agreement under this section pertains is developed or used contrary to the provisions of the resolution or agreement, or the developer fails to meet a time limit prescribed in the resolution or agreement, the council may cancel the resolution or agreement.
 
 6. [power-duty] [Tier A]
-   Question: What must the council do regarding revert to the type of zone under which it fell before re-zoning on filing of a?
+   Question: What must the council do when the council cancels a resolution or agreement under subsection (5)?
    Answer: 59(6): If the council cancels a resolution or agreement under subsection (5), the land to which that resolution or agreement pertains shall revert to the type of zone under which it fell before re-zoning on filing of a notice of the cancellation in the land registration office.
 
 7. [power-duty] [Tier A]
-   Question: What must the council do regarding Re-zoning and amendments?
+   Question: What must the council do when filing a notice of the cancellation in the land registration office under subsection (6)?
    Answer: 59(7): After filing a notice of the cancellation in the land registration office under subsection (6), the council shall immediately (a) give notice of the cancellation, and the effect of the cancellation, in a newspaper circulated in the municipality or on the municipality’s website and in any other manner the Director determines, and (b) take the necessary steps to have the re-zoning by-law repealed.
 
 8. [power-duty] [Tier A]
@@ -7391,27 +7356,25 @@ Rubric:
    Answer: 59(8): Failure to publish a notice referred to in subsection (7) or to repeal the rezoning by-law shall not affect the reversion of the land to the type of zone under which it fell before re-zoning.
 
 9. [power-duty] [Tier A]
-   Question: What powers does person have regarding Re-zoning and amendments?
+   Question: What must a person do when entering into an agreement with a person under this section?
    Answer: 59(9): Before entering into an agreement with a person under this section, the council may require a person to deliver a performance bond, negotiable instrument or other security acceptable to the council assuring implementation of the agreement.
 
 Suggested chunks:
 
-- 59 - Re-zoning and amendments (many-subsections, estimated rubric items: 12)
-- 59 - Re-zoning and amendments (long-enumeration, estimated rubric items: 12)
-- 59 - Re-zoning and amendments (multiple-independent-topics, estimated rubric items: 12)
+- 59 59(1)-59(4): by-law and the resolution or agreement are filed in the land registration of (many-subsections, long-enumeration, multiple-independent-topics, estimated rubric items: 6; sources: section:59/subsection:1, section:59/subsection:2, section:59/subsection:3, section:59/subsection:4)
+- 59 59(5)-59(8): notice of the cancellation in the land registration office (many-subsections, long-enumeration, multiple-independent-topics, estimated rubric items: 6; sources: section:59/subsection:5, section:59/subsection:6, section:59/subsection:7, section:59/subsection:8)
+- 59 59(9): Re-zoning and amendments (many-subsections, long-enumeration, multiple-independent-topics, estimated rubric items: 6; sources: section:59/subsection:9)
 
 Concepts:
 - Re-zoning and Amendments
 - Registration Office
 - Notice of the Variation of the Resolution or
 - Filing a Notice of the Cancellation in the Land
-- Notice Referred to in Subsection
 - Council Power: Cancel the Resolution or Agreement
 
 Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 59(1): Subject to this section, if a person applies to the council to have an area of land re-zoned to permit the carrying out of a specific proposal, the council may (a) by resolution, (i) set out the proposal, (ii) imp
 - [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What prohibition applies under 59(2)? | What prohibition applies under 59(8)?
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Notice Referred to in Subsection
 
 ### Section 60 - Non-conforming use
 
@@ -7482,7 +7445,7 @@ Rubric:
    Answer: 60(1): The making of a zoning by-law or a regulation that amends or repeals an existing zoning by-law or regulation or the making of zoning provisions in a rural plan that amend or repeal existing zoning provisions (a) may cause uses then existing to become non-conforming, and (b) does not change the date on which a use became non-conforming.
 
 2. [power-duty] [Tier A]
-   Question: What is the council prohibited from doing?
+   Question: What must the council do when the use is discontinued for a period of ten consecutive months?
    Answer: 60(2): A non-conforming use may continue despite the zoning by-law or regulation or rural plan but (a) if the use is discontinued for a period of ten consecutive months, or a further period as the advisory committee or regional service commission, as the case may be, considers fit, it shall not be recommenced and any further use of the land, building or structure shall conform with the zoning by-law or regulation or rural plan, and (b) if a building or structure that contains a non-conforming use has, in the opinion of the advisory committee or regional service commission, as the case may be, been damaged to the extent of at least half of the whole building or structure, exclusive of the foundation, the building or structure shall not be repaired or restored or used except in conformity with the zoning by-law or regulation or rural plan, unless the advisory committee or regional service commission agrees otherwise, and, in the case of a by-law, the council may purchase or otherwise acquire the parcel of land on which the building or structure is situated.
 
 3. [power-duty] [Tier A]
@@ -7494,12 +7457,13 @@ Rubric:
    Answer: 60(4): With the consent of the advisory committee or regional service commission, as the case may be, a non-conforming use may be changed to a similar non-conforming use.
 
 5. [power-duty] [Tier A]
-   Question: What must person do regarding enlarge, add to or structurally alter a building containing a non-conforming use?
+   Question: What must a person do?
    Answer: 60(5): Except as required by an Act or regulation or a by-law, no person shall enlarge, add to or structurally alter a building containing a non-conforming use.
 
 Suggested chunks:
 
-- 60 - Non-conforming use (many-subsections, estimated rubric items: 12)
+- 60 60(1)-60(4): by-law or a regulation that amends or repeals an existing zoning by-law or r (many-subsections, estimated rubric items: 6; sources: section:60/subsection:1, section:60/subsection:2, section:60/subsection:3, section:60/subsection:4)
+- 60 60(5): regulation or a by-law, no person shall enlarge, add to or structurally alter a (many-subsections, estimated rubric items: 6; sources: section:60/subsection:5)
 
 Concepts:
 - Non-conforming use
@@ -7590,34 +7554,28 @@ an appeal referred to in paragraph (a) has been disposed of.
 Rubric:
 
 1. [notice] [Tier A]
-   Question: What must The council do regarding require that any land, building or structure containing a non-conforming use shall be maintained and kept?
+   Question: What must the council do?
    Answer: 61(1): The council may require that any land, building or structure containing a non-conforming use shall be maintained and kept in a condition appropriate to the area in which it is located, in accordance with standards prescribed by the council.
 
 2. [notice] [Tier A]
-   Question: What powers does the council have regarding give to the owner and to the occupier of the land, building or structure written notice?
+   Question: What must the council do when standards have been prescribed under subsection (1)?
    Answer: 61(2): If standards have been prescribed under subsection (1), the council may give to the owner and to the occupier of the land, building or structure written notice, indicating (a) the prescribed standards, (b) the consequences of failing to comply with the standards, and (c) the right of appeal under section 120.
 
 3. [notice] [Tier A]
-   Question: What powers does the council have regarding Standards to be met re non-conforming use?
+   Question: What may the council do?
    Answer: 61(3): If the standards prescribed under subsection (1) are not complied with, the council may (a) perform, at the expense of the owner or occupier, the work required to meet the standards, or (b) require the termination of the use.
 
 4. [notice] [Tier A]
-   Question: What must the council do regarding give written notice to the owner and to the occupier indicating the action intended to be?
+   Question: What must the council do when taking an action in accordance with subsection (3)?
    Answer: 61(4): At least ten days before taking an action in accordance with subsection (3), the council shall give written notice to the owner and to the occupier indicating the action intended to be taken and when the action will be taken.
-
-5. [notice] [Tier A]
-   Question: What must The council do regarding Standards to be met re non-conforming use?
-   Answer: 61(5): The council shall take no action under subsection (3) or (4) until (a) the time for appeal of the action under section 120 has expired and no appeal has been made, or (b) an appeal referred to in paragraph (a) has been disposed of.
 
 Concepts:
 - Standards to be met re Non-conforming use
 - Notice
 - Notice to the Owner and to the Occupier Indicating
-- Appeal of the Action Under Section
 - Right of Appeal
 
-Warnings:
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Appeal of the Action Under Section
+Warnings: none
 
 ### Section 61.1 - Province to consider zoning by-law
 
@@ -7703,11 +7661,11 @@ Repealed:
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must the Minister do regarding consider any zoning by-law made for the municipality?
+   Question: What must the Minister do when carrying out or authorizing a development in a municipality?
    Answer: 61.1(1): Before carrying out or authorizing a development in a municipality, the Minister of the Crown, Crown corporation or Crown agency responsible for the development shall consider any zoning by-law made for the municipality.
 
 2. [power-duty] [Tier A]
-   Question: What powers does Minister have regarding Province to consider zoning by-law?
+   Question: What must the Minister do when the development does not comply with the zoning by-law?
    Answer: 61.1(2): If the development does not comply with the zoning by-law, the responsible Minister, corporation or agency may make a request or application, as the case may be, under paragraph 53(2)(i) or section 55, 59 or 60.
 
 3. [power-duty] [Tier C]
@@ -7721,12 +7679,10 @@ Rubric:
 Concepts:
 - Province to Consider Zoning By-law
 - Application
-- Application Referred to in Subsection
 - Consider any Zoning By-law Made for the Municipality Requirement
 
 Warnings:
 - [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 61.1(3) provide regarding Province to consider zoning by-law? | What does 61.1(4) provide regarding Province to consider zoning by-law?
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Application Referred to in Subsection
 
 ### Section 62 - Building standards and permits
 
@@ -7826,7 +7782,7 @@ prohibits the placing, erecting, altering or repairing of anything on land betwe
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does council have regarding Altering of streets and establishing building lines?
+   Question: What must the council do when a council determines that land is required for the purposes of widening?
    Answer: 63(1): If a council determines that land is required for the purposes of widening, altering or diverting an existing street or of constructing a new street, the council may make a deferred widening by-law that (a) states its intention of acquiring land for the purposes of widening, altering or diverting an existing street or of constructing a new street, (b) sets out the proposed boundaries of the existing or new street, (c) establishes building lines for the widened, altered, diverted or new street, and (d) prohibits the placing, erecting, altering or repairing of anything on land between the street and a building line referred to in paragraph (c).
 
 2. [power-duty] [Tier C]
@@ -7956,11 +7912,11 @@ when registered in the land registration office, is binding on a subsequent owne
 Rubric:
 
 1. [filing-record] [Tier A]
-   Question: What must person file or record regarding Amendment and filing?
+   Question: What must a person do when a deferred widening by-law is filed in the land registration office?
    Answer: 65(1): When a deferred widening by-law is filed in the land registration office, no person shall place, erect, alter or repair anything on land on which a prohibition under paragraph 63(1)(d) is in effect, unless permitted under subsection (2).
 
 2. [filing-record] [Tier A]
-   Question: What powers does the council have regarding Amendment and filing?
+   Question: What may the council do?
    Answer: 65(2): Despite a provision of a deferred widening by-law, the council may, in respect of land on which a prohibition under paragraph 63(1)(d) is in effect, enter into an agreement with the owner of the land to permit (a) any repairs it considers fit, and (b) the placing, erecting or altering of a building or structure if the owner of the land consents to make the land available to the council in accordance with terms and conditions agreed on in writing.
 
 3. [filing-record] [Tier A]
@@ -7973,7 +7929,7 @@ Rubric:
 
 Suggested chunks:
 
-- 65 - Amendment and filing (multiple-independent-topics, estimated rubric items: 8)
+- 65 - Amendment and filing (multiple-independent-topics, estimated rubric items: 8; sources: section:65)
 
 Concepts:
 - Amendment and Filing
@@ -8009,7 +7965,7 @@ Section 66 - Acquisition of land
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does the council have regarding proceed to acquire any land it proposed to acquire under the by-law?
+   Question: What must the council do when the filing of a deferred widening by-law in the land registration office?
    Answer: 66(1): At any time after the filing of a deferred widening by-law in the land registration office, the council may proceed to acquire any land it proposed to acquire under the by-law.
 
 2. [power-duty] [Tier C]
@@ -8061,7 +8017,7 @@ Rubric:
    Answer: 67(1): Subject to subsection 66(2), a deferred widening by-law ceases to have effect at the expiration of five years from the day it was filed in the land registration office, except with respect to the payment for land acquired under the by-law.
 
 2. [filing-record] [Tier A]
-   Question: What powers does council have regarding extend the period of effectiveness of a deferred widening by-law by re-enacting or replacing the by-law?
+   Question: What may the council do?
    Answer: 67(2): Despite subsection (1), a council may extend the period of effectiveness of a deferred widening by-law by re-enacting or replacing the by-law. D Controlled Access Street By-laws
 
 Concepts:
@@ -8145,7 +8101,7 @@ be provided by the local government with an alternative access to another street
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does council have regarding Access to streets?
+   Question: What authority does the council have to make a controlled access street by-law that (a) declares all or a part of an existing or proposed publicly owned street to be a controlled access street, and (b) in respect to a street referred to in paragraph (a), but?
    Answer: 68(1): Subject to this section, a council may make a controlled access street by-law that (a) declares all or a part of an existing or proposed publicly owned street to be a controlled access street, and (b) in respect to a street referred to in paragraph (a), but subject to any exceptions set out in the by-law, (i) restricts access to the street, and (ii) prohibits a development on properties abutting on the street that, in the opinion of the advisory committee or regional service commission, would interfere in any way with the use of the street.
 
 2. [power-duty] [Tier C]
@@ -8153,7 +8109,7 @@ Rubric:
    Answer: 68(2): Subject to subsection (3), a property that would have no access to a street as the result of a controlled access street by-law shall (a) retain an access at a place approved by the advisory committee or regional service commission, or (b) be provided by the local government with an alternative access to another street at a place approved by the advisory committee or regional service commission.
 
 3. [power-duty] [Tier A]
-   Question: What must the council do regarding have the width the council determines?
+   Question: What must the council do?
    Answer: 68(3): An access referred to in subsection (2) shall have the width the council determines.
 
 4. [power-duty] [Tier C]
@@ -8278,7 +8234,7 @@ Rubric:
 
 Suggested chunks:
 
-- 70 - Definition of “development” (definitions, estimated rubric items: 0)
+- 70 - Definition of “development” (definitions, estimated rubric items: 1; sources: section:70)
 
 Concepts:
 - Definition of “development”
@@ -8321,7 +8277,7 @@ Section 71 - Designation of flood risk area
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does the Minister have regarding designate an area within the local government to be a flood risk area?
+   Question: What must the Minister do when a local government requests?
    Answer: 71(1): If a local government requests, the Minister may designate an area within the local government to be a flood risk area.
 
 2. [power-duty] [Tier C]
@@ -8332,7 +8288,7 @@ Rubric:
    Question: What does 71(3) provide regarding be deemed to be the boundary of the flood risk area?
    Answer: 71(3): In the event of a conflict between the actual elevation of an area shown at the time of the designation and the line delineating the flood risk area on the map, the actual elevation shown shall be deemed to be the boundary of the flood risk area.
 
-4. [power-duty] [Tier A]
+4. [power-duty] [Tier B]
    Question: What does 71(4) provide regarding be deemed to be outside a flood risk area by virtue of it having been filled?
    Answer: 71(4): Despite subsection (2) and (3), no parcel of land shall be deemed to be outside a flood risk area by virtue of it having been filled after the flood risk area is designated to an elevation in excess of that shown on the flood risk map referred to in subsection (2).
 
@@ -8446,7 +8402,7 @@ the necessary construction costs to provide the capacity.
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does the council have regarding Making and enforcement of flood risk area by-law?
+   Question: What must the council do when a flood risk area has been designated under section 71?
    Answer: 72(1): If a flood risk area has been designated under section 71, the council may make a flood risk area by-law to be effective within the flood risk area and to provide for (a) the maintenance of an adequate floodway for conveyance of flood waters, (b) the conservation of the flood-water storage capacity of an area, and (c) the protection of new development from the risk of flood damage.
 
 2. [power-duty] [Tier C]
@@ -8457,15 +8413,19 @@ Rubric:
    Question: What does 72(3) provide regarding Making and enforcement of flood risk area by-law?
    Answer: 72(3): A flood risk area by-law may (a) prohibit development that would obstruct or interfere with the normal floodway or free flow of flood waters during a flood period, and (b) require that all development in a flood risk area or in a portion of the area be carried out so as not to reduce the flood water storage capacity of the area, and prohibit development in any other manner.
 
-4. [power-duty] [Tier C]
+4. [power-duty] [Tier A]
+   Question: What may the council do?
+   Answer: 72(4): If a flood risk area by-law provides that all development within the flood risk area or a portion of the flood risk area be carried out so as not to reduce the flood water storage capacity of the area, the council may by resolution permit a development if the developer (a) establishes that the developer is unable to provide the additional storage capacity for flood water displaced by the development, and (b) has paid to the local government an amount of money sufficient to enable the local government to economically provide for equivalent flood water storage capacity, whether within or outside the flood risk area.
+
+5. [power-duty] [Tier C]
    Question: What does 72(5) provide regarding Making and enforcement of flood risk area by-law?
    Answer: 72(5): In no event shall the amount of money paid to the local government in accordance with subsection (4) exceed the sum of (a) the market value, at the time of the issuance of the permit for the proposed development, of land available to provide the equivalent flood water storage capacity referred to in subsection (4), and (b) the necessary construction costs to provide the capacity.
 
-5. [power-duty] [Tier C]
+6. [power-duty] [Tier C]
    Question: What does 72(6) provide regarding be deposited in a special interest bearing trust account and be expended by the local government?
    Answer: 72(6): Money received by a local government in accordance with subsection (4) shall be deposited in a special interest bearing trust account and be expended by the local government only for flood control purposes and for no other purpose.
 
-6. [power-duty] [Tier C]
+7. [power-duty] [Tier C]
    Question: What filing or record rule applies to Making and enforcement of flood risk area by-law?
    Answer: 72(7): No flood risk area by-law is valid unless the requirement of paragraph 112(1)(b) is complied with and comes into force when filed in the land registration office in accordance with that paragraph or on a date after the filing as the by-law provides.
 
@@ -8625,7 +8585,7 @@ paragraph 112(1)(b) is complied with.
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does council have regarding make a subdivision by-law to regulate the subdividing of land in the local government?
+   Question: What authority does the council have to make a subdivision by-law to regulate the subdividing of land in the local government?
    Answer: 74(1): Subject to this Division, a council may make a subdivision by-law to regulate the subdividing of land in the local government.
 
 2. [power-duty] [Tier C]
@@ -8633,7 +8593,7 @@ Rubric:
    Answer: 74(2): A by-law under subsection (1) shall be consistent with a local government’s municipal plan or rural plan under section 33 or 44, as the case may be, as well as any regional land use plan for the area.
 
 3. [power-duty] [Tier A]
-   Question: What must the council do regarding Making of subdivision by-law?
+   Question: What must the council do when the regional service commission prepares the plan?
    Answer: 74(2.1): A subdivision by-law shall be prepared or amended (a) under the direction of (i) the planning director or another planner engaged by the council and responsible to the planning director, or (ii) in the case of a local government not providing its own land use planning service, the planning director as defined in the Regional Service Delivery Act, or another planner engaged by the regional service commission and responsible to the planning director, if the regional service commission prepares the plan, and (b) in consultation with the Minister and any government department or person specified by the Director.
 
 4. [power-duty] [Tier C]
@@ -8887,11 +8847,11 @@ when registered in the land registration office, is binding on a subsequent owne
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What is the person prohibited from doing?
+   Question: What must a person do when entry is gained to the subdivision by means of an existing street or other access?
    Answer: 75(1): For greater certainty and without limiting subsection 74(1), a subdivision by-law may (a) prescribe forms for tentative plans and fees to be paid by persons seeking approval of tentative and subdivision plans, (b) prescribe standards for laying out public and future streets, lots, blocks, land for public purposes and other parcels of land in subdivisions, (c) provide that every lot, block and other parcel of land in a subdivision abuts (i) a street owned by the Crown or the local government, as the case may be, or (ii) an access, other than to a street referred to in subparagraph (i), approved by the advisory committee or regional service commission as being advisable for the development of land, (d) require as a condition of approval of a subdivision plan that, if entry is gained to the subdivision by means of an existing street or other access, whoever its owner may be, the person seeking approval of the plan shall (i) make provision to bring the existing access to the same standard as required for streets within the subdivision; or (ii) contribute to the cost of work referred to in subparagraph (i) to the extent required for streets within the subdivision under paragraph (i), provided the amount contributed per linear metre for the access does not exceed the cost to the person per linear metre for streets within the subdivision or, if the plan does not provide for the laying out of streets to be publicly owned, the average cost per linear metre for subdivision streets within the local government constructed during the preceding 12 months, (e) prescribe classes of subdivisions with respect to (i) facilities required under paragraph (i), (ii) lot sizes in relation to water and sewerage services, or (iii) land for public purposes, (f) require, as a condition of approval of the subdivision plan, with respect to a subdivision or class of subdivision, that land is to be set aside as land for public purposes and so indicated on the subdivision plan (i) in an amount indicated in the by-law not exceeding ten per cent of the area of the subdivision, exclusive of the land to be vested as public streets on the filing of the plan in the land registration office, and (ii) at a location approved in accordance with section 88, (g) provide that in the discretion of the council there is to be paid to the local government, in lieu of setting aside land under paragraph (f), the sums indicated in the by-law, not exceeding eight per cent of the market value of land in the subdivision at the time of submission for approval of the subdivision plan, exclusive of land indicated as streets intended to be publicly owned, (h) subject to any applicable set-back regulation, if no rural plan under section 33 or 44 or zoning by-law is in effect, regulate by classes of subdivisions the location of buildings and structures on lots established after the adoption of a provision under this paragraph, (i) require that a person proposing to subdivide land provides within the subdivision, or contribute to the cost of the subdivision to the extent required by the by-law, facilities, including streets, curbing, sidewalks, culverts, drainage ditches, water and sewer lines and others that the by-law for that class of subdivision requires, (j) provide that the development officer shall not approve a subdivision plan unless, in the opinion of the council, (i) the council will be able in the near future to provide the proposed subdivision with streets, water and sewer lines, light, recreational areas or other facilities required by the by-law for that class of subdivision, or the person proposing the subdivision has made satisfactory arrangements for providing the facilities, and (ii) the person proposing the subdivision has made satisfactory arrangements to enter into an agreement with the council to comply with the requirements of paragraph (i) and (A) deposit with the local government a sum sufficient to cover the cost with respect to facilities that the by-law requires the person to pay, or (B) deliver to the local government a performance bond acceptable to the council in an amount sufficient to cover the cost referred to in clause (A), (k) provide that the development officer shall not approve a subdivision plan if, in the development officer’s opinion and in the opinion of the advisory committee or regional service commission, (i) the land is not suited to the purpose for which it is intended or may not reasonably be expected to be used for that purpose within a reasonable time after the subdivision plan is approved, or (ii) the proposed manner of subdividing will prejudice the possibility of further subdividing the land or the convenient subdividing of adjoining land, (l) provide that names of streets in subdivisions are subject to the approval of the advisory committee or regional service commission, or (m) in respect of a part of the local government set out within limits defined by regulation under the Surveys Act, the design and standard of legal survey monuments to be used in laying out subdivisions.
 
 2. [power-duty] [Tier A]
-   Question: What powers does person have regarding subdivision plan?
+   Question: What may a person do?
    Answer: 75(2): If, in accordance with subparagraph (1)(f), land for public purposes is required to be set aside and so indicated on a subdivision plan, a person proposing to subdivide land may (a) at a location approved under section 88, set aside a greater amount of land for public purposes than is required by the subdivision by-law, and (b) if the amount of land for public purposes vested in a local government by a subdivision plan filed in the land registration office exceeds the amount required by the subdivision by-law when the plan was approved, credit the excess amount against any further requirement in respect of any land of which the land comprised in the filed subdivision plan formed a part.
 
 3. [power-duty] [Tier A]
@@ -8899,14 +8859,12 @@ Rubric:
    Answer: 75(3): If a by-law includes a fee to be paid for the approval of a tentative plan referred to in paragraph (1)(a), the by-law may include different fees for the approval of tentative plans for type 1 subdivisions and type 2 subdivisions.
 
 4. [power-duty] [Tier A]
-   Question: What is The council prohibited from doing?
+   Question: What must the council do when registered in the land registration office?
    Answer: 75(4): The council may enter into an agreement referred to in subparagraph (1)(j)(ii) with a person proposing to subdivide land and the agreement (a) shall not become effective until certified copies of the agreement are filed in the land registration office, and (b) when registered in the land registration office, is binding on a subsequent owner of the land in respect of which the agreement is made until discharged by the local government.
 
 Suggested chunks:
 
-- 75 - Content of subdivision by-law (long-enumeration, estimated rubric items: 12)
-- 75 - Content of subdivision by-law (multiple-independent-topics, estimated rubric items: 12)
-- 75 - Content of subdivision by-law (many-subsections, estimated rubric items: 12)
+- 75 - Content of subdivision by-law (long-enumeration, multiple-independent-topics, many-subsections, estimated rubric items: 12; sources: section:75)
 
 Concepts:
 - Content of Subdivision By-law
@@ -8956,7 +8914,7 @@ a majority of the members of council vote in favour of the sale.
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must the council do regarding be set aside by the council as land for public purposes, but the council may sell?
+   Question: What must the council do?
    Answer: 76(1): Land for public purposes vested in a local government under section 88 or 89 and land acquired under subsection (2) shall be set aside by the council as land for public purposes, but the council may sell the land if (a) the council receives the consent of the advisory committee or regional service commission for the sale or six weeks have elapsed from the date a request in writing was made for the consent, and (b) a majority of the members of council vote in favour of the sale.
 
 2. [power-duty] [Tier C]
@@ -9232,7 +9190,7 @@ it is approved by the development officer despite an objection being received un
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must the development officer do regarding subdivision plan?
+   Question: What must the development officer do when a subdivision by-law is in effect?
    Answer: 77(1): If a subdivision by-law is in effect, the development officer (a) is the receiver of tentative and subdivision plan submissions under the by-law, (b) subject to the terms and conditions that the development officer considers fit, may exempt a person from submitting a tentative plan in respect of a subdivision not involving the laying out of streets, the setting aside of land for public purposes or a variance, but shall in that case instruct the person with respect to the manner of subdividing the land, (c) may exempt a person from a scale or size requirement under subsection 81(1) or from a requirement prescribed by subsection 81(2), (d) if a subdivision plan seeks to subdivide only a part of a parcel of land, may exempt the subdivision plan from the requirement of showing all the boundaries of the parcel, (e) if a subdivision plan seeks to alter the boundaries of two or more adjoining parcels of land, may exempt the subdivision plan from the requirement of showing all the boundaries of the parcels, (f) may grant exemptions in accordance with section 80, (g) if a tentative plan received by the development officer involves the laying out of public or future streets or the setting aside of land for public purposes or, in the development officer’s opinion, may affect the future location of public streets, shall forward a copy of the plan to the council or the Minister of Transportation and Infrastructure and to the advisory committee or regional service commission, whichever is authorized under this Act to assent to the subdivision plan or make recommendations with respect to it, (h) if a tentative plan received by the development officer includes, in the opinion of the development officer, a utility or other easement, shall forward a copy of the plan to the following: (i) every local supplier of electric power in the area to which the subdivision plan would apply, (ii) every corporation operating as a telephone or telecommunications provider in the area to which the subdivision plan would apply, (iii) every corporation operating as a natural gas utility in the area to which the subdivision plan would apply, (iv) every company operating an oil or natural gas pipeline in the area to which the subdivision plan would apply, and (v) if any of the land is within 300 m of a railway line, the company operating the railway line, (i) if a tentative plan received by the development officer involves a request for variance, shall forward a copy of the plan and the request to the advisory committee or regional service commission, (j) within six weeks of receiving an application for approval of a tentative plan that complies with the requirements of section 81, shall (i) approve it subject to any terms and conditions the development officer considers necessary to assure compliance with the by-law, or (ii) reject it by notice in writing to the person submitting it, stating the features of the plan objected to, (k) shall approve a subdivision plan that (i) conforms with this Act and any municipal plan, rural plan, development scheme or a zoning, deferred widening or controlled access street by-law or regulation which affects development under section 108, or (ii) conforms to the aspects referred to in subparagraph (i), except for a variance permitted by the advisory committee or regional service commission, (l) shall examine each instrument presented to the development officer, and any plan attached to the instrument, that transfers an interest in land in the area affected by the by-law and, on the basis of any information that appears to the development officer to be sufficient, (i) shall, in the manner referred to in subsection (4), (A) approve it for registration in the land registration office, or (B) exempt it under section 80, (ii) shall refuse to approve it under clause (i)(A) if (A) the approval is prohibited by subsection 79(4), or (B) it transfers an interest in a parcel of land that, together with other parcels, comprises the minimum lot area required by by-law for a development on one of the parcels and that was so required by by-law, and comprised part of the lot area, at the time the development was undertaken, or (iii) may refuse to approve it under clause (i)(A), or to exempt it under section 80, if it (A) fails to refer or refers inaccurately to the municipal, rural community or territorial division within which the land is situated, or (B) fails to include relevant information mentioned in subsection 79(6) respecting filed subdivision plans, and (m) may, if the development officer is a planning director as defined in the Regional Service Delivery Act or a planning director appointed under this Act, delegate the powers vested in the development officer by this Act pertaining to the administration of a subdivision by-law.
 
 2. [power-duty] [Tier A]
@@ -9240,22 +9198,25 @@ Rubric:
    Answer: 77(2): A subdivision plan that involves the laying out of public or future streets, the setting aside of land for public purposes, a variance or, in the opinion of the development officer, a utility or other easement, shall not be approved under paragraph (1)(k) unless (a) in the case of the laying out of streets or the setting aside of land for public purposes, it has been assented to under section 87 or 88, (b) in the case of a variance, the variance is permitted by the advisory committee or regional service commission in writing, and (c) in the case of a utility or other easement, the easement appears on the plan and (i) the development officer has been advised by the agency concerned that it is satisfied with it, or a time limit of more than two weeks determined by the officer for receiving the advice has expired without objection being received, or (ii) it is approved by the development officer despite an objection being received under subparagraph (i).
 
 3. [power-duty] [Tier A]
-   Question: What powers does development officer have regarding Exemptions and variances?
+   Question: What authority does the development officer have to approve for registration an instrument presented to the development officer, and a plan attached to the instrument, that transfers an interest in land not affected by a subdivision by-law?
    Answer: 77(3): A development officer may approve for registration an instrument presented to the development officer, and a plan attached to the instrument, that transfers an interest in land not affected by a subdivision by-law.
 
 4. [power-duty] [Tier A]
-   Question: What must the development officer do regarding be signified by a certificate endorsed on the instrument, dated and signed by the development officer?
+   Question: What must the development officer do?
    Answer: 77(4): An approval or exemption referred to in subparagraph (1)(l)(i) or an approval referred to in subsection (3) shall be signified by a certificate endorsed on the instrument, dated and signed by the development officer, or by a person to whom the power is delegated in accordance with paragraph (1)(m), and an instrument purporting to be so certified shall be accepted by the registrar without further acknowledgement or proof of the certification.
 
 5. [power-duty] [Tier C]
    Question: What does 77(5) provide regarding Exemptions and variances?
    Answer: 77(5): If a development officer purports in good faith to certify an instrument in accordance with this section, the instrument is deemed to be properly certified.
 
+6. [power-duty] [Tier A]
+   Question: What may the development officer do?
+   Answer: 77(6): With respect to an instrument that transfers an interest in land in a town, village or rural community that is providing its own land use planning service, the Director may exercise the authority of a development officer under paragraph (1)(l), other than the authority contained in clause (1)(l)(i)(B).
+
 Suggested chunks:
 
-- 77 - Exemptions and variances (long-enumeration, estimated rubric items: 12)
-- 77 - Exemptions and variances (multiple-independent-topics, estimated rubric items: 12)
-- 77 - Exemptions and variances (many-subsections, estimated rubric items: 12)
+- 77 77(1)-77(4): by-law is in effect, the development officer (a) is the receiver of tentativ (long-enumeration, multiple-independent-topics, many-subsections, estimated rubric items: 6; sources: section:77/subsection:1, section:77/subsection:2, section:77/subsection:3, section:77/subsection:4)
+- 77 77(5)-77(6): Exemptions and variances (long-enumeration, multiple-independent-topics, many-subsections, estimated rubric items: 6; sources: section:77/subsection:5, section:77/subsection:6)
 
 Concepts:
 - Exemptions and Variances
@@ -9367,20 +9328,21 @@ Rubric:
    Answer: 78(1): An advisory committee or regional service commission may (a) subject to the terms and conditions it considers fit, permit a reasonable variance from the requirements of a subdivision by-law, if it is of the opinion that the variance is desirable for the development of land and is in keeping with the general intent of the by-law and any plan or scheme under this Act affecting the land, (b) require that a subdivision plan include any terms and conditions attached to the variance, or (c) withdraw any or all of the terms and conditions attached to the variance under paragraph (b), by resolution, effective on the filing of an approved amending subdivision plan in the land registration office.
 
 2. [power-duty] [Tier A]
-   Question: What powers does development officer have regarding subdivision plan?
+   Question: What may the development officer do?
    Answer: 78(2): A development officer may (a) subject to the terms and conditions that the development officer considers fit, permit a reasonable variance from the requirements of a subdivision by-law referred to in paragraph 75(1)(b) or (h), if the development officer is of the opinion that the variance is desirable for the development of land and is in keeping with the general intent of the by-law and any plan or scheme under this Act affecting the land, (b) require that a subdivision plan include any terms and conditions attached to the variance, or (c) withdraw any or all of the terms and conditions attached to the variance under paragraph (b), effective on the filing of an approved amending subdivision plan in the land registration office.
 
 3. [power-duty] [Tier A]
-   Question: What powers does development officer have regarding Approval of variances?
+   Question: What must the development officer do when requested to permit a variance under paragraph (1)(a) or (2)(a)?
    Answer: 78(3): If requested to permit a variance under paragraph (1)(a) or (2)(a), the advisory committee, regional service commission or development officer may give notice to owners of land in the neighborhood of the proposed subdivision in respect of which the variance is requested (a) describing the land comprised in the proposed subdivision, (b) describing the variance requested, and (c) giving the right to make representation to the advisory committee, regional service commission or development officer, as the case may be, with respect to the request within the time limit set out in the notice.
 
 4. [power-duty] [Tier A]
-   Question: What is development officer prohibited from doing?
+   Question: What is the development officer prohibited from doing?
    Answer: 78(4): If an advisory committee or a regional service commission has made a determination with respect to a request for a variance under subsection (1), a request with respect to the same variance shall not be made to a development officer.
 
 Suggested chunks:
 
-- 78 - Approval of variances (multiple-independent-topics, estimated rubric items: 8)
+- 78 78(1)-78(4): by-law, if it is of the opinion that the variance is desirable for the devel (multiple-independent-topics, estimated rubric items: 4; sources: section:78/subsection:1, section:78/subsection:2, section:78/subsection:3, section:78/subsection:4)
+- 78 78(5): Approval of variances (multiple-independent-topics, estimated rubric items: 6; sources: section:78/subsection:5)
 
 Concepts:
 - Approval of Variances
@@ -9464,7 +9426,7 @@ Detected topic: filing
 Main question tier: B
 
 Main question:
-What definitions are provided in section 79 of Community Planning Act?
+What subdivision-plan requirements are established by section 79 of Community Planning Act?
 
 Reference answer:
 Section 79 - Subdivision plan
@@ -9534,17 +9496,17 @@ Rubric:
    Answer: 79(1): The following definition applies in this section: “filed subdivision plan” means a plan of subdivision(plan de lotissement déposé) (a) approved by a development officer under this Act and filed in the land registration office, or (b) filed in the land registration office if there was no subdivision by-law or regulation under this Act applicable to the land referred to in the plan.
 
 2. [filing-record] [Tier A]
-   Question: What must person file or record regarding subdivision plan?
+   Question: What must a person do?
    Answer: 79(3): Subject to this section, no person shall subdivide land affected by a subdivision by-law or regulation under this Act by any means other than a filed subdivision plan, except to the extent that the subdivision is exempted under section 80.
 
 3. [filing-record] [Tier A]
-   Question: What is person prohibited from doing?
+   Question: What is a person prohibited from doing?
    Answer: 79(4): If a person subdivides land referred to in subsection (3) in violation of the provisions of that subsection, an instrument in respect of the land shall not be approved under clause 77(1)(l)(i)(A) until the violation has been rectified.
 
 Suggested chunks:
 
-- 79 - Subdivision plan (definitions, estimated rubric items: 12)
-- 79 - Subdivision plan (many-subsections, estimated rubric items: 12)
+- 79 79(1)-79(6): definition applies in this section: “filed subdivision plan” means a plan of sub (definitions, many-subsections, estimated rubric items: 6; sources: section:79/subsection:1, section:79/subsection:2, section:79/subsection:3, section:79/subsection:4, section:79/subsection:5, section:79/subsection:6)
+- 79 79(7): Subdivision plan (definitions, many-subsections, estimated rubric items: 6; sources: section:79/subsection:7)
 
 Concepts:
 - Filed Subdivision Plan
@@ -9552,8 +9514,7 @@ Concepts:
 - Registration Office
 - Registration Data
 
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What definitions are provided in section 79 of Community Planning Act?
+Warnings: none
 
 ### Section 80 - Exemptions for certain parcels or conveyances
 
@@ -9646,8 +9607,12 @@ is not in keeping with the general intent of this Act or a by-law under this Act
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does development officer have regarding Exemptions for certain parcels or conveyances?
+   Question: What must the development officer do when a subdivision by-law or regulation affecting the land was made under this Act?
    Answer: 80(1): Subject to paragraph 77(1)(l), a development officer may exempt from a subdivision by-law or the provisions of this Act respecting subdivisions the following: (a) a subdivision in which each parcel of land is not fewer than two hectares in area and in which a parcel that fronts on a publicly owned street has a rectangular width of at least 150 m at the minimum set-back established by a by-law or regulation under this Act affecting the land; (b) the conveyance of a part of a parcel of land that is distinct from other parts of that parcel by reason of separate possession, occupation or use and was so distinct immediately before a subdivision by-law or regulation affecting the land was made under this Act; (c) the conveyance of a part of a parcel of land that is distinct from the other parts of that parcel because a publicly owned street, a railway, a lake or a river separates it from the other parts; (d) a transaction that has the effect of granting the use of or an interest in land directly or by right of renewal for a period not exceeding ten years in total; (e) the conveyance of an easement or right-of-way; (f) a sale in accordance with a power in a mortgage made before a subdivision by-law or regulation affecting the land was made under this Act; (g) a conveyance in respect of a part of a parcel of land being acquired by the Crown for the purpose of a highway right-of-way, whether or not the part is intended to be used in its entirety for that purpose; and (h) any other thing in the circumstances prescribed by regulation.
+
+2. [power-duty] [Tier A]
+   Question: What authority does the development officer have to refuse to grant an exemption under subsection (1) if, in the development officer’s opinion and in the opinion of the advisory committee or regional service commission, the proposed exemption (a) is undesirable for the development of the land or the neighboring land, or (b) is not in keeping with the general intent of this Act or a by-law under this Act?
+   Answer: 80(2): A development officer may refuse to grant an exemption under subsection (1) if, in the development officer’s opinion and in the opinion of the advisory committee or regional service commission, the proposed exemption (a) is undesirable for the development of the land or the neighboring land, or (b) is not in keeping with the general intent of this Act or a by-law under this Act.
 
 Concepts:
 - Exemptions for Certain Parcels or Conveyances
@@ -9720,7 +9685,7 @@ Detected topic: power-duty
 Main question tier: B
 
 Main question:
-What are the application requirements under section 81 of Community Planning Act?
+What requirements are established by section 81 of Community Planning Act?
 
 Reference answer:
 Section 81 - Tentative subdivision plan
@@ -9780,15 +9745,15 @@ any further information required by the development officer to assure compliance
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must person do regarding subdivision plan?
+   Question: What must a person submit?
    Answer: 81(1): Subject to an exemption under paragraph 77(1)(b), a person seeking approval of a subdivision plan shall submit to the development officer a written application for approval of a tentative subdivision plan and as many copies of the tentative plan as the officer requires, drawn to the scale and size required for a subdivision plan.
 
 2. [power-duty] [Tier A]
-   Question: What must the development officer do regarding Tentative subdivision plan?
+   Question: What must the development officer do when applicable: (a) the proposed name of the proposed subdivision?
    Answer: 81(2): Subject to an exemption under paragraph 77(1)(c), a tentative plan shall be marked “Tentative Plan” and show the following, if applicable: (a) the proposed name of the proposed subdivision; (b) the boundaries of that part of the plan to be approved, marked by a black line of greater weight than all other lines on the diagram of the plan; (c) the locations, widths and names of existing streets on which the proposed subdivision abuts and the locations, widths and proposed names of the proposed streets in the subdivision; (d) the approximate dimensions and layouts of the proposed lots, blocks, land for public purposes and other parcels of land and the purposes for which they are to be used; (e) the nature, location and dimensions of any existing restrictive covenant, easement or right-of-way affecting the land proposed to be subdivided and of an easement intended to be granted within the proposed subdivision; (f) any natural and artificial features, including buildings, railways, highways, watercourses, drainage ditches, swamps and wooded areas within or adjacent to the land proposed to be subdivided; (g) the availability and nature of domestic water supplies; (h) the nature and porosity of the soil; (i) any contours or elevations necessary to determine the grade of the streets and the drainage of the land; (j) the services that are or will be provided by the local government to the land proposed to be subdivided; (k) if necessary to locate the proposed subdivision in relation to existing streets and prominent natural features, a small key plan acceptable to the development officer showing the location; (l) any plans for landscaping and tree planting; (m) the proposed location of every building; and (n) any further information required by the development officer to assure compliance with the subdivision by-law.
 
 3. [power-duty] [Tier A]
-   Question: What must development officer do regarding conduct a review to ensure that the plan or exemption, as the case may be, conforms?
+   Question: What must the development officer do when approving a tentative plan or granting an exemption from submitting a tentative plan?
    Answer: 81(3): Before approving a tentative plan or granting an exemption from submitting a tentative plan, a development officer shall conduct a review to ensure that the plan or exemption, as the case may be, conforms with all current standards and approval requirements.
 
 4. [power-duty] [Tier C]
@@ -9819,10 +9784,10 @@ Expiry of tentative subdivision plan
 82The approval of a tentative plan or an exemption from submitting a tentative plan is null and void at the expiration of one year from the day the approval or exemption was given and shall not be renewed except as regards a portion of the land in respect of which a subdivision plan corresponding to the tentative subdivision plan or the instructions of the development officer under paragraph 77(1)(b) has been approved by the officer.
 
 Detected topic: power-duty
-Main question tier: C
+Main question tier: B
 
 Main question:
-What does section 82 of the Community Planning Act provide regarding expiry of tentative subdivision plan?
+What requirements are established by section 82 of Community Planning Act?
 
 Reference answer:
 Section 82 - Expiry of tentative subdivision plan
@@ -10019,7 +9984,7 @@ Detected topic: power-duty
 Main question tier: B
 
 Main question:
-What are the application requirements under section 84 of Community Planning Act?
+What requirements are established by section 84 of Community Planning Act?
 
 Reference answer:
 Section 84 - Application for approval of subdivision plan
@@ -10143,32 +10108,37 @@ if the plan is signed by an agent under paragraph (c), a copy of a written autho
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does person have regarding subdivision plan?
+   Question: What authority does a person have to submit to the development officer a written application for approval of a subdivision plan for all or a part of the land included in the tentative plan, or in relation to which the exemption referred to in that subsection was granted, and accompanied by copies of the subdivision plan in the number and form determined by the development officer?
    Answer: 84(1): A person referred to in subsection 83(1) may submit to the development officer a written application for approval of a subdivision plan for all or a part of the land included in the tentative plan, or in relation to which the exemption referred to in that subsection was granted, and accompanied by copies of the subdivision plan in the number and form determined by the development officer.
 
 2. [power-duty] [Tier A]
-   Question: What must the development officer do regarding subdivision plan?
+   Question: What must the development officer do?
    Answer: 84(2): A subdivision plan referred to in subsection (1) shall be drawn (a) to a scale having a ratio of one to 1,000, except if, in the opinion of the development officer, a ratio of one to 500, one to 2,000 or one to 5,000 is more practical, (b) on one of the following sizes of material: (i) 21.5 cm × 35.5 cm, (ii) 35.5 cm × 43 cm, or (iii) 50 to 75 cm × 50 cm to 100 cm, and (c) in a manner that the space left on the face of the plan for the approval of the development officer, an assent of the Minister of Transportation and Infrastructure or a council and the particulars of filing in the land registration office is acceptable to the development officer with respect to adequacy and location.
 
 3. [power-duty] [Tier A]
+   Question: What must the development officer do when required by the development officer?
+   Answer: 84(3): A subdivision plan shall set out the following: (a) in the title block, (i) the name of the subdivision, (ii) if required by the development officer, the name of a street to which the subdivision has access, (iii) the local government or parish, and the county and province in which the land is located, and (iv) the scale and date of the survey; (b) the name of the owner of the land and the details of registration of the deed or deeds of the land; (c) the north point of the plan, indicated by an arrow oriented other than toward the lower edge of the plan or extension of the plan; (d) the distances from, and the relation to, existing survey monuments and markers; (e) the boundaries of that part of the plan to be approved marked by a black line of greater weight than all other lines on the diagram of the plan; (f) the area of land to be vested in the local government as streets, indicated by the names of the streets and, in smaller print immediately below each name, the word “public” and, if a portion only of the street shown on the plan is to be so indicated, the portion is to be denoted by a line drawn across and at right angles to the street at each terminus thereof identified by an arrow; (g) the area of land to be vested in the local government as future streets, indicated by the words “future street”; (h) the area of land to be conveyed as land for public purposes, indicated by the words “land for public purposes”; (i) the area of land with respect to which easements are to be granted, indicated by words describing the purpose of the easement; (j) subject to subsection (4), the boundaries of streets and other parcels of land by means of solid black lines; (k) the location, dimensions and names of streets abutting the subdivision; (l) the nature, location and dimensions of an existing restrictive covenant, easement or right-of-way; (m) any numbers and letters necessary to accurately identify each lot or other parcel of land and, if available, the civic number of the lot or parcel; (n) the location and description of legal survey monuments; (o) any applicable proposed street boundary or building line established by a deferred widening by-law; (p) a building line or set-back affecting the subdivision under paragraph 75(1)(h) or an agreement referred to in section 131; and (q) except in the case of a subdivision plan of land in a local government that indicates, to the satisfaction of the development officer, the location of the subdivision on the diagram of the plan, the location of the proposed subdivision in relation to existing streets or prominent natural features on a small key plan drawn to a scale having a ratio of not less than one to 20,000.
+
+4. [power-duty] [Tier A]
    Question: What does 84(4) provide regarding subdivision plan?
    Answer: 84(4): With respect to the boundaries of streets and other parcels of land set out on a subdivision plan, the plan shall show azimuths and distances and the radii, central angles and arcs of the boundaries for circular curves.
 
-4. [power-duty] [Tier A]
-   Question: What must person do regarding subdivision plan?
+5. [power-duty] [Tier A]
+   Question: What must a person do when the plan is signed by an agent under paragraph (c)?
    Answer: 84(5): A subdivision plan shall be (a) prepared especially for the subdivision, (b) marked “Subdivision Plan”, (c) signed by the owner of the land in the subdivision or a person who is an authorized agent of the owner, (d) certified as correct and sealed by a New Brunswick Land Surveyor, and (e) accompanied by (i) the proof of title the development officer considers advisable, and (ii) if the plan is signed by an agent under paragraph (c), a copy of a written authorization of the owner.
 
-5. [power-duty] [Tier A]
+6. [power-duty] [Tier A]
    Question: What filing or record rule applies to subdivision plan?
    Answer: 84(6): If any information required by subsection (5) is shown on the plan filed in the land registration office, the subdivision plan or a plan referred to in paragraph 90(1)(a) may indicate, in lieu of setting out the information, that the information appears on the plan that is filed, referring to the plan by its name, date and registration data.
 
-6. [power-duty] [Tier C]
+7. [power-duty] [Tier C]
    Question: What does 84(7) provide regarding Application for approval of subdivision plan?
    Answer: 84(7): Subject to any other Act or to a delegation under paragraph 75(1)(l), the naming of streets in subdivisions is subject to the approval of the council in consultation with the advisory committee or regional service commission.
 
 Suggested chunks:
 
-- 84 - Application for approval of subdivision plan (long-enumeration, estimated rubric items: 8)
+- 84 84(1)-84(4): subdivision plan for all or a part of the land included in the tentative plan, or in r (long-enumeration, estimated rubric items: 4; sources: section:84/subsection:1, section:84/subsection:2, section:84/subsection:3, section:84/subsection:4)
+- 84 84(5)-84(7): subdivision plan shall be (a) prepared especially for the subdivision, (b) marked “Sub (long-enumeration, estimated rubric items: 6; sources: section:84/subsection:5, section:84/subsection:6, section:84/subsection:7)
 
 Concepts:
 - Application for Approval of Subdivision Plan
@@ -10177,6 +10147,7 @@ Concepts:
 
 Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 84(2): A subdivision plan referred to in subsection (1) shall be drawn (a) to a scale having a ratio of one to 1,000, except if, in the opinion of the development officer, a ratio of one to 500, one to 2,000 or one to 5,
+- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 84(3): A subdivision plan shall set out the following: (a) in the title block, (i) the name of the subdivision, (ii) if required by the development officer, the name of a street to which the subdivision has access, (iii)
 
 ### Section 85 - Approval of subdivision plan
 
@@ -10198,7 +10169,7 @@ Detected topic: filing
 Main question tier: B
 
 Main question:
-What certification requirements are established by section 85 of Community Planning Act?
+What approval rules apply to a subdivision plan under section 85 of Community Planning Act?
 
 Reference answer:
 Section 85 - Approval of subdivision plan
@@ -10216,7 +10187,7 @@ Section 85 - Approval of subdivision plan
 Rubric:
 
 1. [filing-record] [Tier A]
-   Question: What must the development officer file or record regarding subdivision plan?
+   Question: What must the development officer do?
    Answer: 85(1): The approval of a subdivision plan by the development officer shall be signified on the face of the plan by a stamp or certificate of approval, dated and signed by the officer.
 
 2. [filing-record] [Tier A]
@@ -10228,8 +10199,7 @@ Concepts:
 - Certificate of Approval
 - Registration Office in Accordance With This act
 
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What certification requirements are established by section 85 of Community Planning Act?
+Warnings: none
 
 ### Section 86 - Filing of subdivision plan
 
@@ -10274,7 +10244,7 @@ Detected topic: filing
 Main question tier: B
 
 Main question:
-What filing or registration requirements are established by section 86 of Community Planning Act?
+What requirements are established by section 86 of Community Planning Act?
 
 Reference answer:
 Section 86 - Filing of subdivision plan
@@ -10310,7 +10280,7 @@ the person who presented the plan for filing.
 Rubric:
 
 1. [filing-record] [Tier A]
-   Question: What powers does the development officer have regarding subdivision plan?
+   Question: What may the development officer do?
    Answer: 86(1): Unless it bears the approval of the development officer, no subdivision plan in respect of which a subdivision by-law or regulation is in effect may be filed in the land registration office.
 
 2. [filing-record] [Tier A]
@@ -10318,20 +10288,21 @@ Rubric:
    Answer: 86(2): An approval of a subdivision plan by a development officer is only valid for a one-year period, unless the subdivision plan is filed in the land registration office before the expiration of the one-year period.
 
 3. [filing-record] [Tier A]
-   Question: What must person file or record regarding subdivision plan?
+   Question: What must a person do?
    Answer: 86(3): With respect to a subdivision, a person presenting a subdivision plan for filing in the land registration office shall deposit copies of the plan with the registrar, in the number and form determined by the registrar, and bearing the approval of the development officer.
 
 4. [filing-record] [Tier A]
-   Question: What must the development officer file or record regarding subdivision plan?
+   Question: What must the development officer do when a subdivision plan referred to in subsection (3) is filed in the land registration office?
    Answer: 86(4): When a subdivision plan referred to in subsection (3) is filed in the land registration office, the registrar shall endorse the registration data on the face of each copy of the plan presented and (a) retain a copy of the subdivision plan in the land registration office, (b) provide, in the manner the registrar considers appropriate, one or more copies to the following: (i) the development officer who approved the plan; (ii) the Director of Assessment for the Province or a person designated by the Director of Assessment; (iii) if the Minister of Transportation and Infrastructure or a council has assented to the plan, that Minister or the council, as the case may be; and (iv) the person who presented the plan for filing.
 
 5. [filing-record] [Tier A]
-   Question: What is The development officer prohibited from doing?
+   Question: What is the development officer prohibited from doing?
    Answer: 86(5): The development officer shall stamp each copy of a subdivision plan received under subsection (4) “For Official Use Only” and may use it for making copies for the advisory committee, regional service commission, council or their employees or agents, or for the development officer’s own purposes, but shall not use it for making copies for any other person.
 
 Suggested chunks:
 
-- 86 - Filing of subdivision plan (many-subsections, estimated rubric items: 10)
+- 86 86(1)-86(4): subdivision plan in respect of which a subdivision by-law or regulation is in effect m (many-subsections, estimated rubric items: 5; sources: section:86/subsection:1, section:86/subsection:2, section:86/subsection:3, section:86/subsection:4)
+- 86 86(5): subdivision plan received under subsection (4) “For Official Use Only” and may use it (many-subsections, estimated rubric items: 6; sources: section:86/subsection:5)
 
 Concepts:
 - Filing of Subdivision Plan
@@ -10427,7 +10398,7 @@ Detected topic: power-duty
 Main question tier: B
 
 Main question:
-What notice requirements are established by section 87 of Community Planning Act?
+What requirements are established by section 87 of Community Planning Act?
 
 Reference answer:
 Section 87 - Subdivision plan for roads and streets
@@ -10513,39 +10484,41 @@ Rubric:
    Answer: 87(1.1): If a subdivision plan of land provides for the laying out of public or future streets in an area of a municipality where the roads, streets or highways are under the control of the Minister of Transportation and Infrastructure and have not vested in the municipality under the provisions of section 32 of the Highway Act, approval of the plan by the development officer shall not be given until the plan has been assented to by that Minister.
 
 3. [power-duty] [Tier A]
-   Question: What must the Minister do regarding subdivision plan?
-   Answer: 87(3): The assent of the Minister of Transportation and Infrastructure under this section shall be signed by that Minister or a person designated by that Minister for that purpose and the assent shall be endorsed on the face of the subdivision plan.
+   Question: What must the Minister do when the installation of a water or sanitary sewer system?
+   Answer: 87(2): The assent of the Minister of Transportation and Infrastructure under this section shall not be given until, (a) the regional service commission or the advisory committee, as the case may be, has recommended the location of the streets referred to in subsection (1) or (1.1) to the Minister of Transportation and Infrastructure; (b) if the installation of a water or sanitary sewer system, or both, is proposed to provide a water or sanitary sewer service to lots in the subdivision, an agreement, as required by the Minister of Local Government, has been entered into with respect to the installation or operation of the system and (i) the system has been installed under the supervision of a person designated by the Minister, in accordance with the plan for the system as approved by all authorities required by an Act or regulation to approve the plan, or (ii) a bond, money or a certified cheque, in a form and amount satisfactory to the Minister, has been deposited with the Minister or at the Minister’s direction to guarantee the installation of the system in accordance with the plan mentioned in subparagraph (i) or the installation or operation of the system in accordance with an agreement with respect to the plan, (c) if streets are to be public, (i) the streets have been constructed under the supervision of a person designated by the Minister of Transportation and Infrastructure in accordance with standards approved by that Minister, or (ii) a bond satisfactory to the Minister of Transportation and Infrastructure has been deposited to guarantee the construction of the streets in accordance with standards approved by that Minister, and (d) if the requirements of paragraph (b) have been satisfied, the Minister of Local Government or a person designated by that Minister for that purpose so certifies on the face of the plan.
 
 4. [power-duty] [Tier A]
+   Question: What must the Minister do when registered in the land registration office?
+   Answer: 87(2.1): The Minister of Local Government or a person designated by that Minister may enter into an agreement referred to in paragraph (2)(b) with a person proposing to subdivide land and the agreement (a) shall not become effective until certified copies of the agreement are filed in the land registration office, and (b) when registered in the land registration office, is binding on a subsequent owner of the land in respect of which the agreement is made until discharged by the Minister.
+
+5. [power-duty] [Tier A]
+   Question: What must the Minister do?
+   Answer: 87(3): The assent of the Minister of Transportation and Infrastructure under this section shall be signed by that Minister or a person designated by that Minister for that purpose and the assent shall be endorsed on the face of the subdivision plan.
+
+6. [power-duty] [Tier A]
    Question: What does 87(4) provide regarding subdivision plan?
    Answer: 87(4): The filing of a separate document in the land registration office purporting to be an assent under this section shall be noted on the relevant subdivision plan by the registrar and, on filing, the land indicated on the subdivision plan as streets vests in the Crown in the manner set out in subsection (5).
 
-5. [power-duty] [Tier A]
+7. [power-duty] [Tier A]
    Question: What does 87(5) provide regarding subdivision plan?
    Answer: 87(5): Subject to subsection (8), if a subdivision plan has been assented to by the Minister of Transportation and Infrastructure and approved by the development officer, the land indicated on the plan as streets vests, on the filing of the plan in the land registration office, in the Crown in the following manner: (a) land indicated on the plan as a public street vests, free from any lien or encumbrance, as a highway under the Highway Act, and (b) land indicated on the plan as a future street vests, free from any lien or encumbrance, as property acquired for highway purposes under the Highway Act.
 
-6. [power-duty] [Tier A]
+8. [power-duty] [Tier A]
    Question: What does 87(6) provide regarding subdivision plan?
    Answer: 87(6): If a subdivision plan has been assented to by the Minister of Transportation and Infrastructure and approved by the development officer, the easements designated on the plan in accordance with the regulations vest the rights prescribed by regulation, on the filing of the plan in the land registration office, (a) in the Crown, or (b) in the public utility indicated on the face of the plan.
 
-7. [power-duty] [Tier C]
+9. [power-duty] [Tier C]
    Question: What does 87(7) provide regarding Subdivision plan for roads and streets?
    Answer: 87(7): For the purposes of paragraphs (6)(b) and 88(7)(b), “public utility” means a person owning, operating, managing or controlling an undertaking for the supply of electricity, gas or telephone service.
 
-8. [power-duty] [Tier A]
-   Question: What must the Minister do regarding file in the land registration office a document signed by the Minister stating that the Minister?
+10. [power-duty] [Tier A]
+   Question: What must the Minister file?
    Answer: 87(8): If the requirements of subparagraph (2)(b)(i) have been satisfied in respect of a water or sanitary sewer system, or both, and certified under paragraph (2)(d), (a) the Minister shall file in the land registration office a document signed by the Minister stating that the Minister accepts on behalf of the Crown the system as certified, and (b) on the filing of the document in the land registration office, the system as certified, together with the land on or within which the system was installed, as shown on the plan referred to in the document, vests in the Crown as represented by the Minister, free from any lien or encumbrance, whenever created, but this paragraph shall be deemed not to affect the administration and control of land that is vested in the Crown under subsection (5) as a highway or for highway purposes.
-
-9. [power-duty] [Tier A]
-   Question: What must the Minister do regarding Subdivision plan for roads and streets?
-   Answer: 87(9): A document referred to in subsection (8) shall be received and filed by the registrar without acknowledgement or proof of the signature of the Minister and, on filing in the land registration office, the registrar shall endorse on the plan referred to in the document that the document was filed.
 
 Suggested chunks:
 
-- 87 - Subdivision plan for roads and streets (definitions, estimated rubric items: 12)
-- 87 - Subdivision plan for roads and streets (many-subsections, estimated rubric items: 12)
-- 87 - Subdivision plan for roads and streets (long-enumeration, estimated rubric items: 12)
-- 87 - Subdivision plan for roads and streets (multiple-independent-topics, estimated rubric items: 12)
+- 87 87(1)-87(4): subdivision plan of land in a rural community that has not made a by-law under section (definitions, many-subsections, long-enumeration, multiple-independent-topics, estimated rubric items: 6; sources: section:87/subsection:1, section:87/subsection:1.1, section:87/subsection:2, section:87/subsection:2.1, section:87/subsection:3, section:87/subsection:4)
+- 87 87(5)-87(9): subdivision plan has been assented to by the Minister of Transportation and Infrastruc (definitions, many-subsections, long-enumeration, multiple-independent-topics, estimated rubric items: 6; sources: section:87/subsection:5, section:87/subsection:6, section:87/subsection:7, section:87/subsection:8, section:87/subsection:9)
 
 Concepts:
 - Public Utility
@@ -10557,6 +10530,7 @@ Concepts:
 - Filing in the Land Registration Office
 
 Warnings:
+- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 87(2): The assent of the Minister of Transportation and Infrastructure under this section shall not be given until, (a) the regional service commission or the advisory committee, as the case may be, has recommended the l
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 87(8): If the requirements of subparagraph (2)(b)(i) have been satisfied in respect of a water or sanitary sewer system, or both, and certified under paragraph (2)(d), (a) the Minister shall file in the land registration
 - [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 87(4) provide regarding subdivision plan? | What does 87(5) provide regarding subdivision plan? | What does 87(6) provide regarding subdivision plan?
 
@@ -10633,7 +10607,7 @@ Detected topic: power-duty
 Main question tier: B
 
 Main question:
-What are the application requirements under section 88 of Community Planning Act?
+What requirements are established by section 88 of Community Planning Act?
 
 Reference answer:
 Section 88 - Approval of subdivision plan for streets and land for public purposes
@@ -10706,7 +10680,7 @@ Rubric:
    Answer: 88(1.1): Subsection (1) does not apply to the laying out of public or future streets referred to in subsection 87(1.1).
 
 3. [power-duty] [Tier A]
-   Question: What is council prohibited from doing?
+   Question: What is the council prohibited from doing?
    Answer: 88(4): An assent under this section shall not be given until (a) subject to subsection (8), the advisory committee or regional service commission has recommended the location of the streets referred to in subsection (1) or (2) or the land for public purposes referred to in subsection (1) or (3), or both, as the case may be, or the recommendation has been rejected by a majority of the members of council, and (b) paragraph 75(1)(i) has been complied with.
 
 4. [power-duty] [Tier A]
@@ -10727,9 +10701,9 @@ Rubric:
 
 Suggested chunks:
 
-- 88 - Approval of subdivision plan for streets and land for public purposes (many-subsections, estimated rubric items: 9)
-- 88 - Approval of subdivision plan for streets and land for public purposes (long-enumeration, estimated rubric items: 9)
-- 88 - Approval of subdivision plan for streets and land for public purposes (multiple-independent-topics, estimated rubric items: 9)
+- 88 88(1)-88(3): subdivision plan of land in a municipality provides for the laying out of public or fu (many-subsections, long-enumeration, multiple-independent-topics, estimated rubric items: 5; sources: section:88/subsection:1, section:88/subsection:1.1, section:88/subsection:2, section:88/subsection:3)
+- 88 88(4)-88(7): streets referred to in subsection (1) or (2) or the land for public purposes (many-subsections, long-enumeration, multiple-independent-topics, estimated rubric items: 5; sources: section:88/subsection:4, section:88/subsection:5, section:88/subsection:6, section:88/subsection:7)
+- 88 88(8): streets under paragraph (4)(a), an advisory committee or regional service com (many-subsections, long-enumeration, multiple-independent-topics, estimated rubric items: 6; sources: section:88/subsection:8)
 
 Concepts:
 - Filing of the Plan in the Land Registration Office
@@ -10780,7 +10754,7 @@ Detected topic: filing
 Main question tier: B
 
 Main question:
-What filing or registration requirements are established by section 89 of Community Planning Act?
+What requirements are established by section 89 of Community Planning Act?
 
 Reference answer:
 Section 89 - Amendments to subdivision plan
@@ -10820,11 +10794,11 @@ Rubric:
    Answer: 89(1): A subdivision plan filed in the land registration office may be amended by a new subdivision plan, marked “Amending Subdivision Plan” and bearing the same name as the plan being amended, that indicates the manner in which the land affected by the amendment is proposed to be subdivided, and the new plan shall be dealt with in respect to approvals under this Act and filing in the land registration office in the same manner as other subdivision plans, except that an amending plan shall set out the date and registration data of the plan being amended.
 
 2. [filing-record] [Tier A]
-   Question: What must the surveyor file or record regarding subdivision plan?
+   Question: What must a surveyor do when an amending subdivision plan is filed in the land registration office?
    Answer: 89(2): If an amending subdivision plan is filed in the land registration office, the registrar shall endorse on the plan amended the fact of the amendment, the date and registration data of the amending plan and the name of the surveyor who certified the amending plan.
 
 3. [filing-record] [Tier A]
-   Question: What must the development officer file or record regarding subdivision plan?
+   Question: What must the development officer do?
    Answer: 89(4): If land indicated on a subdivision plan as being streets or land for a public purpose has vested in the Crown or a local government, but under an amending subdivision plan the land is to be used for other purposes, (a) the new use of the land shall be indicated on the amending subdivision plan, (b) if a street or part of a street is transferred, a copy of a certificate under section 33 the Highway Act to the effect that the street or part of the street is discontinued is provided to the development officer, and (c) a document transferring ownership of the land supporting the new use of the land and, if applicable, the certificate referred to in paragraph (b) shall be provided to the registrar.
 
 4. [filing-record] [Tier C]
@@ -10833,14 +10807,14 @@ Rubric:
 
 Suggested chunks:
 
-- 89 - Amendments to subdivision plan (many-subsections, estimated rubric items: 9)
+- 89 89(1)-89(4): subdivision plan filed in the land registration office may be amended by a new subdivi (many-subsections, estimated rubric items: 5; sources: section:89/subsection:1, section:89/subsection:2, section:89/subsection:3, section:89/subsection:4)
+- 89 89(5): Amendments to subdivision plan (many-subsections, estimated rubric items: 6; sources: section:89/subsection:5)
 
 Concepts:
 - Amendments to Subdivision Plan
 - Registration Office may be Amended by a new Subdivision
 - Registration Office
 - Filing of an Amending Subdivision Plan in the Land
-- Certificate Under Section
 - Filing
 - be Indicated on the Amending Subdivision Plan, (b) Requirement
 
@@ -10895,7 +10869,7 @@ Detected topic: power-duty
 Main question tier: B
 
 Main question:
-What certification requirements are established by section 90 of Community Planning Act?
+What requirements are established by section 90 of Community Planning Act?
 
 Reference answer:
 Section 90 - Subdivision plan by local government
@@ -10938,11 +10912,11 @@ Development Charge By-laws
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does the council have regarding Subdivision plan by local government?
+   Question: What may the council do?
    Answer: 90(1): If a purchase or other acquisition of land by a local government that has a subdivision by-law in force would subdivide land, the council may, in lieu of complying with a provision of this Act, (a) prepare a plan setting out, with the necessary modifications, relevant matters mentioned in subsection 84(3), and certified as to its correctness and sealed by a New Brunswick Land Surveyor, (b) provide a copy of the plan to the development officer, (c) file in the land registration office at least one hard copy of the plan after (i) ten days have elapsed since the date the plan was submitted to the development officer if no recommendation concerning the plan is made to the council by the development officer, (ii) the plan has been altered in accordance with recommendations referred to in subparagraph (i), or (iii) the council has, by resolution passed by a majority of the members of council, rejected the recommendations referred to in subparagraph (i), and (d) send to the development officer a copy of the plan endorsed by the registrar.
 
 2. [power-duty] [Tier A]
-   Question: What must the council do regarding subdivision plan?
+   Question: What must the council do?
    Answer: 90(2): If a plan referred to in subsection (1) has the effect of altering a subdivision plan filed in the land registration office, (a) the council shall on the plan refer to any altered subdivision plan of which it has knowledge, and (b) when it is filed in the land registration office, the registrar shall on each altered subdivision plan endorse the fact of the alteration, the name, date and registration data of the altering plan and the name of the surveyor who certified it. G Development Charge By-laws
 
 Concepts:
@@ -11095,11 +11069,11 @@ the collection of the charge for the purpose authorized in the by-law is specifi
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does council have regarding Making of development charge by-law?
+   Question: What authority does the council have to make a by-law that (a) provides for the imposition and payment of a development charge in respect of land that is to be developed or subdivided, and (b) authorizes an agreement to be entered into in respect of the payment of a charge?
    Answer: 91(1): For the purposes referred to in subsection (2), a council may make a by-law that (a) provides for the imposition and payment of a development charge in respect of land that is to be developed or subdivided, and (b) authorizes an agreement to be entered into in respect of the payment of a charge.
 
 2. [power-duty] [Tier A]
-   Question: What must the council do regarding Making of development charge by-law?
+   Question: What must the council do when the regional service commission prepares the plan?
    Answer: 91(1.1): A development charge by-law shall be prepared or amended (a) under the direction of (i) the planning director or another planner engaged by the council and responsible to the planning director, or (ii) in the case of a local government not providing its own land use planning service, the planning director as defined in the Regional Service Delivery Act, or another planner engaged by the regional service commission and responsible to the planning director, if the regional service commission prepares the plan, and (b) in consultation with the Minister and any government department or person specified by the Director.
 
 3. [power-duty] [Tier C]
@@ -11241,7 +11215,6 @@ Concepts:
 - Registration Office in Accordance With Paragraph
 
 Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What does section 93 of the Community Planning Act provide regarding validity and coming into force of development charge by-law?
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Office in Accordance With Paragraph
 
 ### Section 94 - Effect of development charge agreement
@@ -11309,13 +11282,12 @@ Rubric:
 
 Suggested chunks:
 
-- 94 - Effect of development charge agreement (multiple-independent-topics, estimated rubric items: 3)
+- 94 - Effect of development charge agreement (multiple-independent-topics, estimated rubric items: 3; sources: section:94)
 
 Concepts:
 - Effect of Development Charge Agreement
 
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What certification requirements are established by section 94 of Community Planning Act?
+Warnings: none
 
 ### Section 95 - Definition of “incentive or bonus zoning agreement”
 
@@ -11348,7 +11320,7 @@ Rubric:
 
 Suggested chunks:
 
-- 95 - Definition of “incentive or bonus zoning agreement” (definitions, estimated rubric items: 0)
+- 95 - Definition of “incentive or bonus zoning agreement” (definitions, estimated rubric items: 1; sources: section:95)
 
 Concepts:
 - Incentive or Bonus Zoning Agreement
@@ -11493,11 +11465,11 @@ when registered in the land registration office, is binding on a subsequent owne
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does council have regarding by by-law provide for an incentive or bonus zoning agreement respecting specific zones to be specified?
+   Question: What must the council do when a municipal plan or rural plan under section 33 or 44 is in effect?
    Answer: 96(1): If a municipal plan or rural plan under section 33 or 44 is in effect, a council may by by-law provide for an incentive or bonus zoning agreement respecting specific zones to be specified in the by-law.
 
 2. [power-duty] [Tier A]
-   Question: What must the council do regarding Incentive or bonus zoning agreements?
+   Question: What must the council do when the regional service commission prepares the plan?
    Answer: 96(1.1): An incentive or bonus zoning agreement by-law shall be prepared or amended under the direction of (a) the planning director or another planner engaged by the council and responsible to the planning director, or (b) in the case of a local government not providing its own land use planning service, the planning director as defined in the Regional Service Delivery Act, or another planner engaged by the regional service commission and responsible to the planning director, if the regional service commission prepares the plan.
 
 3. [power-duty] [Tier C]
@@ -11505,30 +11477,34 @@ Rubric:
    Answer: 96(1.2): The planning director or other planner referred to in subparagraph (1.1)(a) or (b), as the case may be, shall certify that the content of the incentive or bonus zoning agreement by-law complies with the provisions of this Act and the regulations under this Act.
 
 4. [power-duty] [Tier A]
-   Question: What powers does the council have regarding Incentive or bonus zoning agreements?
-   Answer: 96(3): An incentive or bonus zoning agreement may (a) include plans or maps, (b) provide for the discharge of any terms and conditions under the incentive or bonus zoning agreement, with or without the concurrence of the property owner, (c) provide that, on completion of the development or phases of the development, the incentive or bonus zoning agreement, or portions of it, may be discharged by the council, (d) provide that, if the development does not commence or is not completed within the time specified in the incentive or bonus zoning agreement, the incentive or bonus zoning agreement or portions of it may be discharged by the council without the concurrence of the property owner, (e) include any terms and conditions respecting incentive or bonus zoning and the external appearance of structures.
+   Question: What must the council do when approving an incentive or bonus zoning agreement?
+   Answer: 96(2): An incentive or bonus zoning agreement by-law shall (a) identify the developments that may be subject to an incentive or bonus zoning agreement, (b) identify the area or areas where the developments may be located, (c) set out the matters that the council may consider before approving an incentive or bonus zoning agreement, and (d) set out the method to be used to determine the contribution for incentive or bonus zoning.
 
 5. [power-duty] [Tier A]
-   Question: What is The council prohibited from doing?
+   Question: What may the council do?
+   Answer: 96(3): An incentive or bonus zoning agreement may (a) include plans or maps, (b) provide for the discharge of any terms and conditions under the incentive or bonus zoning agreement, with or without the concurrence of the property owner, (c) provide that, on completion of the development or phases of the development, the incentive or bonus zoning agreement, or portions of it, may be discharged by the council, (d) provide that, if the development does not commence or is not completed within the time specified in the incentive or bonus zoning agreement, the incentive or bonus zoning agreement or portions of it may be discharged by the council without the concurrence of the property owner, (e) include any terms and conditions respecting incentive or bonus zoning and the external appearance of structures.
+
+6. [power-duty] [Tier A]
+   Question: What must the council do when registered in the land registration office?
    Answer: 96(3.1): The council may enter into an agreement referred to in subsection (1) and the agreement (a) shall not become effective until certified copies of the agreement are filed in the land registration office, and (b) when registered in the land registration office, is binding on a subsequent owner of the land in respect of which the agreement is made until discharged by the local government.
 
-6. [power-duty] [Tier C]
+7. [power-duty] [Tier C]
    Question: What does 96(4) provide regarding Incentive or bonus zoning agreements?
    Answer: 96(4): For greater certainty, the making of an incentive or bonus zoning agreement by-law by a council does not require the council to enter into an incentive or bonus zoning agreement.
 
-7. [power-duty] [Tier A]
-   Question: What powers does the council have regarding provide that the council accept money in lieu of a contribution under this section?
+8. [power-duty] [Tier A]
+   Question: What authority does the council have to provide that the council accept money in lieu of a contribution under this section?
    Answer: 96(5): An incentive or bonus zoning agreement by-law may provide that the council accept money in lieu of a contribution under this section.
 
-8. [power-duty] [Tier C]
+9. [power-duty] [Tier C]
    Question: What does 96(6) provide regarding Incentive or bonus zoning agreements?
    Answer: 96(6): All money accepted by the council under this section in lieu of a contribution is to be paid into a special account, and the money in that account is to be expended for the purposes for which the money was accepted and for no other purpose.
 
 Suggested chunks:
 
-- 96 - Incentive or bonus zoning agreements (many-subsections, estimated rubric items: 12)
-- 96 - Incentive or bonus zoning agreements (long-enumeration, estimated rubric items: 12)
-- 96 - Incentive or bonus zoning agreements (multiple-independent-topics, estimated rubric items: 12)
+- 96 96(1)-96(2): by-law provide for an incentive or bonus zoning agreement respecting specifi (many-subsections, long-enumeration, multiple-independent-topics, estimated rubric items: 6; sources: section:96/subsection:1, section:96/subsection:1.1, section:96/subsection:1.2, section:96/subsection:2)
+- 96 96(3)-96(5): registered in the land registration office, is binding on a subsequent owner of (many-subsections, long-enumeration, multiple-independent-topics, estimated rubric items: 6; sources: section:96/subsection:3, section:96/subsection:3.1, section:96/subsection:4, section:96/subsection:5)
+- 96 96(6): Incentive or bonus zoning agreements (many-subsections, long-enumeration, multiple-independent-topics, estimated rubric items: 6; sources: section:96/subsection:6)
 
 Concepts:
 - Incentive or Bonus Zoning Agreements
@@ -11592,7 +11568,6 @@ Concepts:
 - Registration Office in Accordance With Paragraph
 
 Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What does section 97 of the Community Planning Act provide regarding validity and coming into force of incentive or bonus zoning agreement by-law?
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Office in Accordance With Paragraph
 
 ### Section 98 - Prohibition on breach of agreement
@@ -11627,7 +11602,7 @@ Local Government Agreement By-laws
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must person do regarding breach the terms of an incentive or bonus zoning agreement?
+   Question: What must a person do?
    Answer: 98: Prohibition on breach of agreement 98No person shall breach the terms of an incentive or bonus zoning agreement. I Local Government Agreement By-laws
 
 Concepts:
@@ -11710,7 +11685,7 @@ any other matters related to economic, physical, social or cultural development 
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does council have regarding make a by-law adopting a local government agreement entered into with one or more local governments?
+   Question: What authority does the council have to make a by-law adopting a local government agreement entered into with one or more local governments that provides for the following: (a) joint land use planning and development matters?
    Answer: 99(1): A council may make a by-law adopting a local government agreement entered into with one or more local governments that provides for the following: (a) joint land use planning and development matters; (b) mechanisms for resolving disputes between the local governments; (c) the specific services, infrastructure or facilities that are covered by the agreement; (d) the proportion of any funds that each affiliated local government is required to contribute to meet the expenses of constructing and operating the services, infrastructure or facilities that are covered by the agreement; (e) a process and procedure for amending and terminating the agreement; and (f) any other matters related to economic, physical, social or cultural development that the councils consider necessary.
 
 2. [power-duty] [Tier A]
@@ -11718,16 +11693,16 @@ Rubric:
    Answer: 99(2): If a local government agreement contains provisions that limit or control the development of land, the councils that are parties to the agreement shall amend their municipal plan, rural plan or zoning by-law, as the case may be, to reflect those provisions.
 
 3. [power-duty] [Tier A]
-   Question: What must the Minister do regarding file with the Minister a certified copy of the local government agreement and the by-law adopting?
+   Question: What must the Minister do when a local government agreement is entered into?
    Answer: 99(3): Within 30 days after a local government agreement is entered into, each local government that is party to the agreement shall file with the Minister a certified copy of the local government agreement and the by-law adopting it.
 
 4. [power-duty] [Tier A]
-   Question: What must the Minister do regarding file with the Minister a certified copy of the by-law amending or terminating the agreement?
+   Question: What must the Minister do when a local government agreement is amended or terminated?
    Answer: 99(4): Within 30 days after a local government agreement is amended or terminated, each local government that is party to the agreement shall file with the Minister a certified copy of the by-law amending or terminating the agreement.
 
 Suggested chunks:
 
-- 99 - Local government agreements (multiple-independent-topics, estimated rubric items: 5)
+- 99 - Local government agreements (multiple-independent-topics, estimated rubric items: 5; sources: section:99)
 
 Concepts:
 - Local Government Agreements
@@ -11829,7 +11804,7 @@ a project that is not inconsistent with the plan.
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does council have regarding Development scheme?
+   Question: What authority does the council have to make a by-law adopting a development scheme to carry out or amplify (a) a proposal suggested or outlined in the plan, or (b) a project that is not inconsistent with the plan?
    Answer: 101: Development scheme 101If a municipal plan or rural plan under section 33 or 44 is in effect, a council may make a by-law adopting a development scheme to carry out or amplify (a) a proposal suggested or outlined in the plan, or (b) a project that is not inconsistent with the plan.
 
 Concepts:
@@ -12008,7 +11983,7 @@ Rubric:
    Answer: 102(1): For greater certainty and without limiting section 101, a development scheme (a) shall (i) consist of written statements, maps, drawings and other descriptive matter, all under seal, signed by the clerk and indicating that they are a part of the scheme, as may be necessary to illustrate the scheme, (ii) delineate the land affected by the scheme, (iii) set out details of the development or redevelopment to be carried out in the scheme area, (iv) describe the manner in which the scheme is intended to be implemented, (v) indicate the amount of any land to be reserved in the scheme area, or if feasible the particular land to be reserved, and the manner in which the reservation is to be effected, and (vi) prescribe the manner in which land in the scheme area is to be subdivided; and (b) may, in relation to the scheme area, (i) prescribe (A) the manner in which existing buildings and structures may be altered or repaired where the developments would not otherwise be permitted by the scheme, and (B) developments for which no building permit is required under the Building Code Administration Act, (ii) provide for the acquisition, assembly, consolidation, sale or lease by the local government of the land, buildings or structures necessary to carry out the scheme, (iii) indicate land to be acquired as the site or location of streets, public buildings, schools, parks or recreation areas or other public services such as light, water or sewerage, (iv) provide for agreements with the owners of land referred to in subparagraph (iii) in order to permit the acquisition of the land for those purposes, (v) allocate areas of land available for residential, commercial, industrial, agricultural or other purpose at any particular time, and (vi) specify the order and timing for subdivision or development of a particular part of the area.
 
 2. [power-duty] [Tier A]
-   Question: What must the Minister do regarding make provision for any general matters the Minister may require?
+   Question: What must the Minister do?
    Answer: 102(2): A development scheme shall make provision for any general matters the Minister may require.
 
 3. [power-duty] [Tier C]
@@ -12016,11 +11991,11 @@ Rubric:
    Answer: 102(3): The provisions of sections 25 and 27 with respect to a municipal plan apply with the necessary modifications to a development scheme.
 
 4. [power-duty] [Tier A]
-   Question: What powers does council have regarding Preparation and content of development scheme?
+   Question: What must the council do when (a) in its opinion?
    Answer: 102(4): Despite a development scheme by-law, a council may authorize the constructing, altering or repairing of any land, building or structure if (a) in its opinion, the land, building or structure will conform to the scheme, or (b) the owner of the land, building or structure enters into an agreement with the council containing the terms and conditions that the council considers fit.
 
 5. [power-duty] [Tier A]
-   Question: What is council prohibited from doing?
+   Question: What must the council do when registered in the land registration office?
    Answer: 102(5): A council may enter into an agreement referred to in subparagraph (1)(b)(iv) or paragraph (4)(b), as the case may be, with an owner and the agreement (a) shall not become effective until certified copies of the agreement are filed in the land registration office, and (b) when registered in the land registration office, is binding on a subsequent owner of the land in respect of which the agreement is made until discharged by the local government.
 
 6. [power-duty] [Tier C]
@@ -12029,9 +12004,8 @@ Rubric:
 
 Suggested chunks:
 
-- 102 - Preparation and content of development scheme (long-enumeration, estimated rubric items: 12)
-- 102 - Preparation and content of development scheme (multiple-independent-topics, estimated rubric items: 12)
-- 102 - Preparation and content of development scheme (many-subsections, estimated rubric items: 12)
+- 102 102(1)-102(4): streets, public buildings, schools, parks or recreation areas or other public (long-enumeration, multiple-independent-topics, many-subsections, estimated rubric items: 6; sources: section:102/subsection:1, section:102/subsection:2, section:102/subsection:3, section:102/subsection:4)
+- 102 102(5)-102(6): registered in the land registration office, is binding on a subsequent owner of (long-enumeration, multiple-independent-topics, many-subsections, estimated rubric items: 6; sources: section:102/subsection:5, section:102/subsection:6)
 
 Concepts:
 - Preparation and Content of Development Scheme
@@ -12193,7 +12167,7 @@ Rubric:
    Answer: 105(1): Subject to this section, a local government may acquire by gift, purchase, expropriation or otherwise any land or interest in land required for the purpose of carrying out a proposal contained in a municipal plan, rural plan under section 33 or 44 or development scheme in effect in the local government.
 
 2. [power-duty] [Tier A]
-   Question: What powers does the council have regarding Acquisition of land by local government?
+   Question: What must the council do when allowed to be built on without restriction?
    Answer: 105(2): Land that may be acquired under subsection (1) or under subsection 66(1) includes (a) the remnants of parcels, portions of which are essential to a purpose referred to in those subsections, (b) any land that may be injuriously affected by carrying out a proposal referred to in those subsections, (c) any land that, if allowed to be built on without restriction, might become the site of buildings or structures that would prejudicially affect the full enjoyment of a building forming part of the proposed development or the architectural effect of the building, and (d) any land that the council considers could be conveniently subdivided or re-arranged and developed as part of the proposal.
 
 3. [power-duty] [Tier C]
@@ -12238,7 +12212,7 @@ Section 106 - Acquisition of land by Minister
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does the Minister have regarding Acquisition of land by Minister?
+   Question: What may the Minister do?
    Answer: 106(1): Subject to this section, the Minister may acquire by gift, purchase, expropriation or otherwise any land or interest in land required for the purpose of carrying out a proposal contained in a regional land use plan or rural plan under section 33, 34 or under a regulation under section 51 or in a regulation made in accordance with paragraph 125(1)(k).
 
 2. [power-duty] [Tier C]
@@ -12287,11 +12261,11 @@ Section 107 - Compensation
 Rubric:
 
 1. [notice] [Tier A]
-   Question: What is the Minister prohibited from doing?
+   Question: What must the Minister do when a regional land use plan?
    Answer: 107(1): Subject to subsection (2), if a regional land use plan, rural plan, municipal plan or development scheme indicates that certain land may be required by the Minister or a local government for a purpose described in it, compensation for the land on expropriation shall not include an amount in respect of an unauthorized development on the land after the date of the notice of intention to make, or to recommend the making of, the plan or scheme.
 
 2. [notice] [Tier A]
-   Question: What powers does person have regarding Compensation?
+   Question: What authority does a person have to order that compensation be paid in respect of a development referred to in the application, if the judge is satisfied that the development was undertaken in good faith without knowledge of a restriction imposed on the development by this Act or a plan or scheme under this Act?
    Answer: 107(2): On application by a person affected by subsection (1), a judge of The Court of King’s Bench of New Brunswick may order that compensation be paid in respect of a development referred to in the application, if the judge is satisfied that the development was undertaken in good faith without knowledge of a restriction imposed on the development by this Act or a plan or scheme under this Act.
 
 Concepts:
@@ -12474,38 +12448,33 @@ the duly authorized agent of the owner referred to in paragraph (a).
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must person do regarding undertake a development and no building permit shall be issued under the Building Code Administration Act?
+   Question: What must a person do?
    Answer: 108(0.1): Except as otherwise provided in this section, no person shall undertake a development and no building permit shall be issued under the Building Code Administration Act for a development, unless the development officer having jurisdiction grants an approval for the development.
 
 2. [power-duty] [Tier A]
-   Question: What must the development officer do regarding Approval for a development?
+   Question: What must the development officer do when granting an approval for a development?
    Answer: 108(1): Before granting an approval for a development, the development officer having jurisdiction shall ensure that the development, in relation to the land on which the development is located, (a) conforms with any regional land use plan in effect, (b) conforms with any municipal plan, rural plan or development scheme (i) in effect, (ii) in respect of which the adopting by-law has been the subject of a resolution under paragraph 111(1)(a), or (iii) in respect of which the council has given notice under paragraph 111(1)(b), (c) subject to paragraph (b), complies with any zoning or deferred widening or controlled access street by-law or regulation (i) in effect, (ii) in respect of which the council has passed a resolution under section 114, or (iii) in respect of which the council has given notice under paragraph 111(1)(b), (d) complies with any agreement entered into under paragraph 59(1)(b) or subsection 65(2), 75(4), 92(1), 96(3.1), 102(5) or 131(1), (e) complies with any regulation under paragraph 125(1)(j), (i) in effect, or (ii) in respect of which the Minister has given notice in accordance with paragraph 111(1)(b), and (f) complies with any other requirements prescribed by regulation.
 
 3. [power-duty] [Tier A]
    Question: What notice rule applies to Approval for a development?
    Answer: 108(2): The provisions of subparagraphs (1)(a)(ii), (iii) and (1)(b)(ii) cease to apply (a) in the case of a resolution under paragraph 111(1)(a), when the by-law becomes valid or when it fails to become valid because of the operation of subsection 111(6) or because the council does not meet the requirement of paragraph 112(1)(b) within a reasonable time, (b) in the case of a resolution under section 114, as provided in subsection (1) of that section, and (c) in the case of a notice, six months after the day the notice was published.
 
-4. [power-duty] [Tier A]
-   Question: What must the person do regarding be posted in a prominent place on the property in respect of which the approval is?
-   Answer: 108(3): A permit under this Act, the approval of a development or a poster or placard in lieu of the permit or approval shall be posted in a prominent place on the property in respect of which the approval is given or the permit issued by the person who obtained the approval or is named in the permit.
-
-5. [power-duty] [Tier C]
+4. [power-duty] [Tier C]
    Question: What does 108(4) provide regarding Approval for a development?
    Answer: 108(4): This section does not apply to types of development exempted under paragraph 53(2)(n) or by a regulation under this Act.
 
-6. [power-duty] [Tier A]
-   Question: What is development officer prohibited from doing?
+5. [power-duty] [Tier A]
+   Question: What is the development officer prohibited from doing?
    Answer: 108(5): If a development officer has reason to believe that land has been subdivided in violation of subsection 79(3), the development officer shall not approve a development in relation to the land unless the development officer is satisfied that the person applying for the approval is (a) the registered owner of an interest in the land to which the development relates, or (b) the duly authorized agent of the owner referred to in paragraph (a).
 
-7. [power-duty] [Tier A]
-   Question: What powers does development officer have regarding delegate the powers vested in the development officer by this section?
+6. [power-duty] [Tier A]
+   Question: What may the development officer do?
    Answer: 108(6): A development officer who is a planning director as defined in the Regional Service Delivery Act or who is a planning director appointed under this Act, may delegate the powers vested in the development officer by this section.
 
 Suggested chunks:
 
-- 108 - Approval for a development (long-enumeration, estimated rubric items: 12)
-- 108 - Approval for a development (multiple-independent-topics, estimated rubric items: 12)
-- 108 - Approval for a development (many-subsections, estimated rubric items: 12)
+- 108 108(0.1)-108(3): by-law has been the subject of a resolution under paragraph 111(1)(a), or (i (long-enumeration, multiple-independent-topics, many-subsections, estimated rubric items: 6; sources: section:108/subsection:0.1, section:108/subsection:1, section:108/subsection:2, section:108/subsection:3)
+- 108 108(4)-108(6): regulation under this Act (long-enumeration, multiple-independent-topics, many-subsections, estimated rubric items: 6; sources: section:108/subsection:4, section:108/subsection:5, section:108/subsection:6)
 
 Concepts:
 - Approval for a Development
@@ -12557,11 +12526,11 @@ Rubric:
    Answer: 109(2): If a proposed by-law would adopt a municipal plan, rural plan under section 33 or 44 or a development scheme, it shall be sufficient compliance with subsection (1) if, instead of the by-law being read in its entirety, only those parts of the document that comprise the proposed plan or scheme may be read in their entirety.
 
 3. [power-duty] [Tier A]
-   Question: What must the council do regarding vote in favour of a by-law in order to make the by-law, it shall be sufficient?
+   Question: What must the council do?
    Answer: 109(3): If a provision of this Act imposes a requirement that a majority of the members of the council must vote in favour of a by-law in order to make the by-law, it shall be sufficient compliance with the provision if a majority of the members of the council vote in favour of the by-law on third reading by title.
 
 4. [power-duty] [Tier A]
-   Question: What powers does the council have regarding vote once on a motion if a majority vote of the members of council is required?
+   Question: What must the council do when a majority vote of the members of council is required?
    Answer: 109(4): Despite any by-law, unless otherwise ineligible, the mayor or a presiding officer of the council may vote once on a motion if a majority vote of the members of council is required.
 
 Concepts:
@@ -12628,7 +12597,7 @@ if the by-law fails to give effect to the written views of the advisory committe
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must council do regarding Request for views of advisory committee?
+   Question: What must the council do when making a by-law under this Act?
    Answer: 110(1): Before making a by-law under this Act, a council shall request in writing the written views of the advisory committee or regional service commission on (a) a proposed by-law in respect of which the views have not been given previously, and (b) a change made in a proposed by-law after the advisory committee or regional service commission has given its views.
 
 2. [power-duty] [Tier C]
@@ -12636,7 +12605,7 @@ Rubric:
    Answer: 110(2): A by-law made under this Act by a council is not valid unless (a) the views mentioned in subsection (1) have been requested, and (b) if the by-law fails to give effect to the written views of the advisory committee or regional service commission, a majority of the members of council vote in favour of making the by-law.
 
 3. [power-duty] [Tier A]
-   Question: What must the council do regarding be deemed to have approved a proposed by-law if it fails to give the views requested?
+   Question: What must the council do?
    Answer: 110(3): The advisory committee or regional service commission shall be deemed to have approved a proposed by-law if it fails to give the views requested on the by-law under subsection (1) within 30 days of the request, or within a longer period as the council may decide.
 
 Concepts:
@@ -12788,7 +12757,7 @@ a notice of the proposed amendment is posted in a prominent place on the propert
 Rubric:
 
 1. [notice] [Tier A]
-   Question: What must council do regarding Public notice of by-law?
+   Question: What must the council do when the day fixed under paragraph (a)?
    Answer: 111(1): Subject to subsection (2), with respect to a by-law made under this Act, a council shall (a) by resolution, fix a time and place for the consideration of objections to the proposed by-law, and (b) subject to subsection (7), by giving notice by one or more of the following means: (i) publishing the notice on two separate occasions in a newspaper published or having general circulation in the local government in the form described in subsection (4) of its intention of considering the making of the by-law, the first of the notices to be published not less than 21 days and not more than 30 days before the day fixed under paragraph (a), and the second of the notices to be published not less than four days and not more than 11 days before that day, or (ii) posting the notice on the local government’s website in the form described in subsection (4) of its intention of considering the making of the by-law, to be published not less than 21 days before the day fixed under paragraph (a).
 
 2. [notice] [Tier C]
@@ -12800,22 +12769,22 @@ Rubric:
    Answer: 111(3): If a local government has given notice in a manner authorized by paragraph (1)(b), it may also post the notice on social media websites.
 
 4. [notice] [Tier A]
-   Question: What must the council do regarding set forth a description of the area affected by the by-law and refer to street names?
+   Question: What must the council do when feasible?
    Answer: 111(4): A notice under paragraph (1)(b) (a) shall set forth a description of the area affected by the by-law and refer to street names and civic numbers in the case of a zoning by-law or zoning provisions in a rural plan under section 33 or 44, if feasible, (b) shall state a place where and the hours during which the by-law may be inspected and the time and place set by the council for the consideration of written objections to the by-law, (c) shall indicate the person to whom written objections will be sent, and (d) may, in the case of an amendment or repeal, briefly state an explication or the reasons for the amendment or repeal.
 
 5. [notice] [Tier A]
-   Question: What must the council do regarding Public notice of by-law?
+   Question: What must the council do?
    Answer: 111(5): If a notice is given in a manner authorized by paragraph (1)(b) in respect of a proposed by-law, the council shall (a) make suitable provision for inspection of the by-law by the public at the time and place set out in the notice, and (b) before making the by-law, hear and consider written objections to it.
 
 6. [notice] [Tier A]
-   Question: What is The council prohibited from doing?
+   Question: What must the council do when the day that the notice was given or published under subsection (1)?
    Answer: 111(8): The council is not required to vote on the by-law on the day fixed under subsection (1) for the consideration of objections to it, but the by-law shall not become valid unless, within six months after the day that the notice was given or published under subsection (1), (a) the by-law is made, and (b) the by-law is submitted for the approval of the Minister, except for a zoning by-law, subdivision by-law, deferred widening by-law, controlled access street by-law or amendment to the zoning provisions in a rural plan under section 33 or 44.
 
 Suggested chunks:
 
-- 111 - Public notice of by-law (many-subsections, estimated rubric items: 12)
-- 111 - Public notice of by-law (long-enumeration, estimated rubric items: 12)
-- 111 - Public notice of by-law (multiple-independent-topics, estimated rubric items: 12)
+- 111 111(1)-111(4): by-law made under this Act, a council shall (a) by resolution, fix a time an (many-subsections, long-enumeration, multiple-independent-topics, estimated rubric items: 6; sources: section:111/subsection:1, section:111/subsection:2, section:111/subsection:3, section:111/subsection:4)
+- 111 111(5)-111(8): notice is given in a manner authorized by paragraph (1)(b) in respect of a p (many-subsections, long-enumeration, multiple-independent-topics, estimated rubric items: 6; sources: section:111/subsection:5, section:111/subsection:6, section:111/subsection:7, section:111/subsection:8)
+- 111 111(9): by-law or a rural plan under section 33 or 44 for the re-zoning of an area o (many-subsections, long-enumeration, multiple-independent-topics, estimated rubric items: 6; sources: section:111/subsection:9)
 
 Concepts:
 - Public Notice of By-law
@@ -12824,7 +12793,6 @@ Concepts:
 - Notice Under Paragraph
 - Notice is Given in a Manner Authorized by Paragraph
 - Notice is Given in a Manner Authorized Under
-- Notice was Given or Published Under Subsection
 - Notice Under Subparagraph
 
 Warnings:
@@ -12832,7 +12800,6 @@ Warnings:
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Notice in a Manner Authorized by Paragraph
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Notice is Given in a Manner Authorized by Paragraph
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Notice is Given in a Manner Authorized Under
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Notice was Given or Published Under Subsection
 
 ### Section 112 - Approval by Minister
 
@@ -12921,7 +12888,7 @@ a copy of any report on which a plan or scheme referred to in paragraph (a) is b
 Rubric:
 
 1. [filing-record] [Tier A]
-   Question: What must council file or record regarding Approval by Minister?
+   Question: What must the council do when required?
    Answer: 112(1): With respect to a by-law made under this Act and a municipal plan, rural plan under section 33 or 44 or development scheme made by a council, the council shall (a) subject to subsection (2), apply to the Minister for approval that the document complies with the requirements of this Act, (b) file in the land registration office a certified copy of the document that bears, if required, the approval of the Minister, (c) publish a notice in a newspaper circulated in the local government or on the local government’s website, stating (i) if the approval of the Minister is required, the Minister’s action with respect to the document, and (ii) information with respect to the filing of the document referred to in paragraph (b), and (d) if the approval of the Minister is required, provide a copy of the notice referred to in paragraph (c) to the Minister.
 
 2. [filing-record] [Tier C]
@@ -12929,22 +12896,19 @@ Rubric:
    Answer: 112(2): An application referred to in paragraph (1)(a) shall be accompanied by (a) two copies, certified by the clerk, of the municipal plan, rural plan under section 33 or 44 or development scheme adopted by the by-law, as the case may be, (b) a statutory declaration by the clerk of compliance with sections 110 and 111, and (c) a copy of any report on which a plan or scheme referred to in paragraph (a) is based.
 
 3. [filing-record] [Tier A]
-   Question: What is the council prohibited from doing?
+   Question: What must the council do when a municipal plan?
    Answer: 112(3): If a municipal plan, rural plan under section 33 or 44 or development scheme made by the council is approved by the Minister, the plan or scheme shall not be invalid by reason only of failure to comply with a requirement with respect to its content.
 
 Suggested chunks:
 
-- 112 - Approval by Minister (multiple-independent-topics, estimated rubric items: 6)
+- 112 - Approval by Minister (multiple-independent-topics, estimated rubric items: 6; sources: section:112)
 
 Concepts:
 - Approval by Minister
 - Registration Office a Certified Copy of the Document That
-- Application Referred to in Paragraph
 
 Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What are the application requirements under section 112 of Community Planning Act?
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 112(1): With respect to a by-law made under this Act and a municipal plan, rural plan under section 33 or 44 or development scheme made by a council, the council shall (a) subject to subsection (2), apply to the Minister
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Application Referred to in Paragraph
 
 ### Section 113 - Approval of an amendment to zoning by-law
 
@@ -12970,7 +12934,7 @@ Approval of an amendment to zoning by-law
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What is person prohibited from doing?
+   Question: What must a person do when the hearing required by section 111?
    Answer: 113: Approval of an amendment to zoning by-law 113If a written objection to a proposed by-law to amend a zoning by-law or zoning provisions in a rural plan under section 33 or 44 is signed by the owners of at least one-third of the area of the land within the area affected by the by-law and within 100 m of that area, but not including land owned by a person who made application for the amendment, and is presented to the council not fewer than two days before the hearing required by section 111, the by-law shall not become valid unless a majority of the members of the council vote in favour of making the by-law.
 
 Concepts:
@@ -13007,7 +12971,7 @@ Section 114 - Construction freeze
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does the council have regarding set out by resolution the proposed by-law or rural plan or the principles to be contained?
+   Question: What may the council do?
    Answer: 114(1): Subject to subsection (2), where the council fixes the time and place under paragraph 111(1)(a) for consideration of objections to a proposed zoning, deferred widening or controlled access street by-law or proposed zoning provisions in a rural plan under section 33 or 44, it may set out by resolution the proposed by-law or rural plan or the principles to be contained in it and prohibit a development in the area affected by the proposed by-law or rural plan until the by-law or rural plan becomes valid or fails to become valid because of the operation of subsection 111(8) or because the council does not meet the requirement of paragraph 112(1)(b) within a reasonable time.
 
 2. [power-duty] [Tier C]
@@ -13045,7 +13009,7 @@ Review of planning documents
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does the Minister have regarding Review of planning documents?
+   Question: What must the Minister do when the Minister considers a review necessary?
    Answer: 115: Review of planning documents 115Despite any other provision of this Act, the Minister may require a council to review a plan or development scheme adopted under this Act if the Minister considers a review necessary.
 
 Concepts:
@@ -13078,7 +13042,7 @@ Consultations by council
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does council have regarding submit a proposed by-law to the Director for the Director’s comments?
+   Question: What authority does the council have to submit a proposed by-law to the Director for the Director’s comments?
    Answer: 116: Consultations by council 116A council may submit a proposed by-law to the Director for the Director’s comments.
 
 Concepts:
@@ -13130,7 +13094,7 @@ makes an amendment to, or repeals, a municipal plan, rural plan under section 33
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does council have regarding Amendment or repeal of by-laws?
+   Question: What authority does the council have to make a by-law that (a) amends or repeals a by-law made under this Act, or (b) makes an amendment to, or repeals, a municipal plan, rural plan under section 33 or 44 or development scheme adopted by by-law under this Act?
    Answer: 117(1): Subject to this Act, a council may make a by-law that (a) amends or repeals a by-law made under this Act, or (b) makes an amendment to, or repeals, a municipal plan, rural plan under section 33 or 44 or development scheme adopted by by-law under this Act.
 
 2. [power-duty] [Tier C]
@@ -13366,7 +13330,7 @@ under paragraph (1)(d), 60 days from the date of the refusal referred to in that
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does person have regarding subdivision plan?
+   Question: What may a person do?
    Answer: 120(1): Subject to subsection (2), a person, including the Director, may appeal to the Board if the person alleges that (a) the terms and conditions imposed on or the prohibiting of the person’s development in accordance with paragraph 53(3)(c), the refusal to grant an approval for the person’s development under paragraph 108(1)(a), (b) or (c) or the refusal to grant the person a permit under this Act or the terms and conditions attached to a permit, (i) resulted from (A) the unreasonable use of powers referred to in paragraph 53(3)(c), or (B) the misapplication of this Act or a by-law or regulation under this Act, or (ii) would cause the person special or unreasonable hardship not subject to alleviation under section 55 or 78 or for which alleviation was unreasonably refused; (b) the approval of another person’s development or the granting of a permit under this Act to the person (i) resulted from the misapplication of this Act or a by-law or regulation under this Act, or (ii) would cause that person special or unreasonable hardship by reason of the effect of the proposed development on the person’s land, building or structure; (c) standards prescribed by a council under section 61, or the proposed action of a council under this Act, (i) are unnecessary for the protection of the best interests of the local government, or (ii) would cause the person unreasonable hardship; or (d) the refusal of the development officer to approve a tentative plan under paragraph 77(1)(j), a subdivision plan under paragraph 77(1)(k), an instrument for registration in the land registration office under paragraph 77(1)(l), or to exempt an instrument under section 80, resulted from the misapplication of this Act or a subdivision by-law under this Act.
 
 2. [power-duty] [Tier C]
@@ -13379,14 +13343,12 @@ Rubric:
 
 Suggested chunks:
 
-- 120 - Jurisdiction of Board (multiple-independent-topics, estimated rubric items: 3)
+- 120 - Jurisdiction of Board (multiple-independent-topics, estimated rubric items: 3; sources: section:120)
 
 Concepts:
 - Jurisdiction of Board
 - Appeal to the Board if the Person Alleges That
 - Hearing an Appeal
-- Appeal Under Subsection
-- Hear and Determine all Appeals Under Subsection (1) Requirement
 
 Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 120(1): Subject to subsection (2), a person, including the Director, may appeal to the Board if the person alleges that (a) the terms and conditions imposed on or the prohibiting of the person’s development in accordance
@@ -13538,15 +13500,15 @@ Rubric:
    Answer: 121(3): With respect to an appeal under paragraph 120(1)(c), the Board may affirm, revoke or vary the prescribed standards or proposed action.
 
 4. [power-duty] [Tier A]
-   Question: What powers does the development officer have regarding subdivision plan?
+   Question: What may the development officer do?
    Answer: 121(4): With respect to an appeal under paragraph 120(1)(d), the Board may (a) dismiss it, or (b) order the development officer to approve, subject to the terms and conditions as the Board considers necessary to ensure consistency with this Act or a by-law or regulation under this Act, the tentative or subdivision plan, or to approve the instrument for registration in the land registration office or to exempt it.
 
 5. [power-duty] [Tier A]
-   Question: What powers does the council have regarding have under this section, the Board may refer a matter back to the regional service commission?
+   Question: What may the council do?
    Answer: 121(5): In addition to any other authority that the Board may have under this section, the Board may refer a matter back to the regional service commission, the council, the advisory committee or the development officer that made the decision that is the subject of the appeal.
 
 6. [power-duty] [Tier A]
-   Question: What powers does the council have regarding Orders and decisions?
+   Question: What must the council do when the Board refers a matter back under subsection (5)?
    Answer: 121(6): If the Board refers a matter back under subsection (5), (a) the regional service commission, the council, the advisory committee or the development officer, as the case may be, may affirm, revoke or vary the decision that is the subject of the appeal, and (b) the Board may provide directions.
 
 7. [power-duty] [Tier C]
@@ -13567,19 +13529,18 @@ Rubric:
 
 Suggested chunks:
 
-- 121 - Orders and decisions (many-subsections, estimated rubric items: 12)
-- 121 - Orders and decisions (long-enumeration, estimated rubric items: 12)
+- 121 121(1)-121(4): appeal under paragraph 120(1)(a), the Board may (a) dismiss it, (b) allow it (many-subsections, long-enumeration, estimated rubric items: 6; sources: section:121/subsection:1, section:121/subsection:2, section:121/subsection:3, section:121/subsection:4)
+- 121 121(5)-121(8): appeal (many-subsections, long-enumeration, estimated rubric items: 6; sources: section:121/subsection:5, section:121/subsection:6, section:121/subsection:7, section:121/subsection:8)
+- 121 121(9)-121(10): appeal in a manner referred to in paragraph (1)(b) or (2)(b) or make an orde (many-subsections, long-enumeration, estimated rubric items: 6; sources: section:121/subsection:9, section:121/subsection:10)
 
 Concepts:
 - Orders and Decisions
 - Appeal Under Paragraph
 - Appeal
-- Appeal in a Manner Referred to in Paragraph
 - Hearing an Appeal is a Decision of the Board
 
 Warnings:
 - [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 121(1) provide regarding Orders and decisions? | What does 121(2) provide regarding Orders and decisions? | What does 121(7) provide regarding Orders and decisions? | What does 121(9) provide regarding Orders and decisions? | What does 121(10) provide regarding Orders and decisions?
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Appeal in a Manner Referred to in Paragraph
 
 ### Section 122 - Publication of decision
 
@@ -13605,7 +13566,7 @@ Publication of decision
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must Minister do regarding cause the decisions of the Board that the Minister considers to be of significance to be?
+   Question: What must the Minister do?
    Answer: 122: Publication of decision 122The Minister shall cause the decisions of the Board that the Minister considers to be of significance to be published annually.
 
 Concepts:
@@ -13655,19 +13616,19 @@ REGULATIONS
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does person have regarding Power of inspection?
+   Question: What may a person do?
    Answer: 123(1): The Board may authorize a person to make an inquiry relating to a matter pending before it under this Act and, for that purpose, to enter on and inspect any land, building or structure.
 
 2. [power-duty] [Tier A]
-   Question: What powers does the person have regarding apply for an entry warrant under the Entry Warrants Act?
+   Question: What must a person do when or after attempting to enter any land?
    Answer: 123(2): Before or after attempting to enter any land, building or structure for the purposes of making an inquiry under subsection (1), the person authorized by the Board may apply for an entry warrant under the Entry Warrants Act.
 
 3. [power-duty] [Tier A]
-   Question: What is The person prohibited from doing?
+   Question: What is a person prohibited from doing?
    Answer: 123(3): The person authorized by the Board shall not enter a private dwelling under subsection (1) unless the person has the consent of the owner or occupant or has obtained an entry warrant under the Entry Warrants Act.
 
 4. [power-duty] [Tier A]
-   Question: What must person do regarding Power of inspection?
+   Question: What must a person do when the hearing of an appeal and shall be received in evidence?
    Answer: 123(4): A report made in accordance with an inquiry under subsection (1) shall be made available to any person the Board considers appropriate at least three days before the hearing of an appeal and shall be received in evidence. 7 REGULATIONS
 
 Concepts:
@@ -13860,21 +13821,24 @@ if the regional land use plan is specific or general in its application.
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must The Lieutenant-Governor in Council do regarding Regulations – general?
+   Question: What must the Lieutenant-Governor in Council do when establishing a development charge?
    Answer: 124(1): The Lieutenant-Governor in Council may make regulations (a) respecting statements of public interest; (b) respecting regional land use plans; (b.1) for the purposes of paragraph 53(2)(g.1), prescribing (i) requirements to be met to authorize inclusionary zoning in municipal plans, rural plans for villages, rural plans for rural communities and zoning by-laws, (ii) the form and content of inclusionary zoning provisions, including provisions respecting the entering into of agreements, and (iii) exemptions from the application of inclusionary zoning provisions; (c) prescribing community planning and development services provided in rural districts for which a regional service commission may charge fees; (d) prescribing the amount of a fee for a service referred to in paragraph (c); (e) governing the maximum amount that a local government may establish or impose and collect as a development charge, either generally or specifically; (f) governing the principles and criteria that shall be applied by a local government when establishing a development charge; (g) designating types of easements and prescribing the rights which these designated types of easements vest in the Crown, a local government or a public utility and subsection 125(16) applies to the regulations; (h) for the purposes of paragraph 108(1)(f), prescribing requirements that a development must comply with before it can be approved; (i) governing what may be considered by a development officer to be adequate proof that a development is in conformity with a matter prescribed under paragraph (h); (j) establishing the procedure of the Board respecting appeals commenced under this Act; (k) defining words or expressions used in this Act but not defined; (l) respecting any other matter that may be necessary for the proper administration of this Act.
 
 2. [power-duty] [Tier A]
-   Question: What powers does the Minister have regarding Regulations – general?
+   Question: What must the Minister do when the regional land use plan is specific or general in its application?
    Answer: 124(2): Without limiting paragraph (1)(b), a regulation made under that paragraph may prescribe (a) the process, procedure or criteria for making or amending a regional land use plan, including by ministerial regulation; (b) the notice or consultation, or both, required for making or amending a regional land use plan, (c) the matters, including policies and objectives for the region, to be included in a regional land use plan, (d) any indicators to determine or to assist in determining whether an objective set out in the regional land use plan has been, is being or will be achieved or maintained, (e) any monitoring and reporting with respect to indicators and policies, including who will do the monitoring and when, and to whom the monitoring will be reported, (f) the making of different provision for different parts of a region, including specifying a period of time for application and providing for an exclusion from, exception to or exemption from its legal effect, (g) the role and function of the Minister, government departments and other persons in reviewing or assisting in the development of or amendments to regional land use plans, and (h) if the regional land use plan is specific or general in its application.
 
 3. [power-duty] [Tier A]
    Question: What does 124(3) provide regarding Regulations – general?
    Answer: 124(3): Despite the Financial Administration Act, if a fee is prescribed under paragraph (1)(d), the fee shall be paid to the regional service commission providing the prescribed service and shall be credited to the cost of the delivery of the land use planning service under subsection 161(4) of the Local Governance Act.
 
+4. [power-duty] [Tier A]
+   Question: What must the Lieutenant-Governor in Council do when making a regulation under paragraph (1)(j)?
+   Answer: 124(4): The Lieutenant-Governor in Council shall consult with the Board before making a regulation under paragraph (1)(j).
+
 Suggested chunks:
 
-- 124 - Regulations – general (long-enumeration, estimated rubric items: 12)
-- 124 - Regulations – general (many-subsections, estimated rubric items: 12)
+- 124 - Regulations – general (long-enumeration, many-subsections, estimated rubric items: 12; sources: section:124)
 
 Concepts:
 - Regulations – General
@@ -14294,58 +14258,75 @@ follow, with the necessary modifications, the procedure preliminary to the makin
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does the Lieutenant-Governor in Council have regarding Regulations re planning and development?
+   Question: What authority does the Lieutenant-Governor in Council have to make regulations (a) governing the setting back of buildings and structures from the boundaries of streets or classes of streets?
    Answer: 125(1): Subject to this section, the Lieutenant-Governor in Council may make regulations (a) governing the setting back of buildings and structures from the boundaries of streets or classes of streets; (b) prescribing the location, layout, equipment, standards and licensing of mobile home parks and approving standards of mobile home sites and prescribing the fees to be paid by operators of mobile home parks; (c) prescribing the location and dimensions of service stations, gas bars, car washes and automotive repair garages and approving standards of construction; (d) prescribing the location and dimensions, purposes and licensing of public advertising signs and billboards and approving standards of construction and establishing fees for the purposes of public advertising signs and billboards; (e) governing the excavation of sand, gravel, clay, shale, limestone or other deposits for purposes of the sale or other commercial use of the material excavated; (f) respecting the subdividing of land; (f.1) governing the location and dimensions of and residential density for lots; (f.2) governing wastewater disposal; (f.3) governing the location and construction of pool fences; (g) respecting the building, dimensions, locating or relocating, demolishing, altering, structurally altering, repairing or replacing, or a combination of the work, of buildings and structures, including, without limiting the generality of the foregoing, standards for the work and the prohibiting of the undertaking or continuing of the work in violation of the standards; (h) respecting development approvals, including, without limitation, (i) the process with respect to applications for approvals and with respect to granting, suspending, reinstating and revoking approvals, including forms, (ii) the terms and conditions on applications for approvals and on suspending, reinstating and revoking approvals, (iii) the terms and conditions on granting approvals, (iv) the fees for applications, approvals and for building inspection services, (v) the provision of information with respect to approvals to the Executive Director of Assessment under the Assessment Act and the use to be made of the information; (i) in a part of an area in which a regulation under paragraph (g) or (h) is in effect, prohibiting the issue of a wiring permit under the Electrical Installation and Inspection Act in respect of a development unless the applicant for the wiring permit delivers a copy of the approval for the development; (j) respecting land use and development policies, including, without limiting the generality of the foregoing, policies respecting settlement patterns, commercial and industrial siting, parking, loading zones, flood plains and planning for coastal zones; (k) in an area designated under subsection (3), governing anything, except a development scheme, or a combination of things that a council is empowered to do by by-law under this Act; (l) respecting anything otherwise authorized by this Act.
 
-2. [power-duty] [Tier A]
+2. [power-duty] [Tier B]
    Question: What does 125(2) provide regarding be paid, despite the Financial Administration Act, to the regional service commission and shall be credited?
    Answer: 125(2): If a fee is prescribed under paragraph (1)(h), the fee shall be paid, despite the Financial Administration Act, to the regional service commission and shall be credited to the cost of the delivery of the land use planning service under subsection 161(4) of the Local Governance Act.
 
-3. [power-duty] [Tier C]
+3. [power-duty] [Tier A]
+   Question: What may the Lieutenant-Governor in Council do?
+   Answer: 125(3): Subject to subsections (4) and (7), the Lieutenant-Governor in Council may (a) except in the case of a rural plan under section 51, designate an area or areas for the purpose of the application of a regulation under this section, thereby restricting, subject to paragraph (b), the application of the regulation accordingly, and (b) with respect to a subdivision regulation, provide that the regulation applies throughout the Province exclusive of those areas identified in the regulation as not being subject to the regulation.
+
+4. [power-duty] [Tier C]
    Question: What does 125(4) provide regarding Regulations re planning and development?
    Answer: 125(4): A regulation under this section (a) subject to paragraph (b), is not effective in a municipality; (b) if made under paragraph (1)(a) or (f), is effective in a village that is within an area in which it applies and (i) in the case of a regulation under paragraph (1)(a), no zoning by-law or zoning provisions in a rural plan under section 33 are in effect in the village, or (ii) in the case of a regulation under paragraph (1)(f), no subdivision by-law is in effect in the village; and (c) is not effective in a rural community that has a by-law in effect respecting the same matter as the regulation.
 
-4. [power-duty] [Tier C]
+5. [power-duty] [Tier C]
    Question: What does 125(5) provide regarding Regulations re planning and development?
    Answer: 125(5): Despite subsection (4), a regulation under paragraph (1)(j) is effective in a local government or local service district specified in the regulation.
 
-5. [power-duty] [Tier C]
+6. [power-duty] [Tier C]
    Question: What does 125(6) provide regarding Regulations re planning and development?
    Answer: 125(6): Despite any other provision in this Act, if there is an inconsistency between a regulation under paragraph (1)(j) and a regional land use plan, rural plan, municipal plan or by-law or regulation under this Act, except a regulation establishing a statement of public interest, the regulation under paragraph (1)(j) prevails.
 
-6. [power-duty] [Tier A]
+7. [power-duty] [Tier B]
    Question: What does 125(7) provide regarding be consistent with a rural plan, if any, in effect in the area?
    Answer: 125(7): With respect to a regulation made under this section applicable in an area designated under subsection (3) or paragraph 52(1)(a), the regulation shall be consistent with a rural plan, if any, in effect in the area.
 
-7. [power-duty] [Tier A]
-   Question: What must the development officer do regarding be deemed to be vested in the regional service commission?
+8. [power-duty] [Tier A]
+   Question: What must the development officer do when a regulation under this section is in effect?
    Answer: 125(8): If a regulation under this section is in effect, the planning director as defined in the Regional Services Delivery Act is the development officer and the powers vested in a regional service commission under paragraph (9)(a) or (e), (10)(b) or (11)(b) shall be deemed to be vested in the regional service commission.
 
-8. [power-duty] [Tier A]
-   Question: What must the Minister do regarding Regulations re planning and development?
+9. [power-duty] [Tier A]
+   Question: What must the Minister do when the power referred to in subparagraph 53(2)(i)(ii) is provided for in the regulation?
    Answer: 125(9): With respect to a zoning regulation or to zoning provisions in a rural plan under this section (a) the powers and functions referred to in paragraphs 53(2)(g), (g.1) and (h) or paragraph 53(3)(c), with respect to particular uses of land, may be vested in a regional service commission, (b) if the power referred to in subparagraph 53(2)(i)(ii) is provided for in the regulation, a letter from the Minister shall satisfy the requirement of clause 53(2)(i)(ii)(C), (c) the power referred to in paragraph 53(2)(j) may be vested in a regional service commission and, if it is, subsection 53(9) applies with the necessary modifications to the regulation, (d) if a fee referred to in paragraph 53(2)(l) is provided for in the regulation, it shall be paid into the Consolidated Fund, but may be returned in whole or in part on the advice of the Minister, (e) the powers referred to in sections 55 and 56 with respect to certain proposed uses and variances shall be deemed to be vested in the relevant regional service commission or development officer, as the case may be, and (f) if a person applies to the Minister to have an area of land re-zoned to permit the carrying out of a specific proposal, (i) the Minister, in relation to the application, may make an order or enter into an agreement with the person, and (ii) the provisions of section 59 with respect to a resolution or agreement under that section apply with the necessary modifications to an order or agreement made under this section.
 
-9. [power-duty] [Tier A]
-   Question: What powers does the Minister have regarding subdivision plan?
+10. [power-duty] [Tier A]
+   Question: What must the Minister do when consultation with the regional service commission?
    Answer: 125(10): A subdivision regulation under this section may (a) subject to subsections (12) and (13), provide for (i) the setting aside of land for public purposes at a location as may be approved by the Minister after consultation with the regional service commission, the indicating of the land on a subdivision plan and the vesting of the land in the Crown on the filing of the subdivision plan in the land registration office, and (ii) the paying, at the discretion of the Minister, of money in lieu of land mentioned in subparagraph (i), (b) vest in a regional service commission the power referred to in paragraph 75(1)(c) with respect to access, (c) vest in a regional service commission the power referred to in paragraph 75(1)(k) with respect to approval of a subdivision plan, (d) prescribe the fee to be paid for the approval of a tentative plan, including prescribing different fees for the approval of tentative plans for type 1 subdivisions and type 2 subdivisions, (e) provide that the naming of streets in subdivisions is subject to the approval of the regional service commission, and (f) add to the list of exemptions referred to in subsection 80(1) with respect to land in the area to which the regulation applies.
 
-10. [power-duty] [Tier A]
-   Question: What is the Minister prohibited from doing?
+11. [power-duty] [Tier A]
+   Question: What must the Minister do when a subdivision regulation under this section is in effect?
    Answer: 125(11): If a subdivision regulation under this section is in effect, (a) the provisions of section 77 with respect to a subdivision by-law apply with the necessary modifications to the regulation, except if a plan involves the setting aside of land for public purposes, in which case the plan shall not be approved unless (i) the location of the land has been recommended by the regional service commission, and (ii) the plan has been approved and signed by the Minister, (b) the powers mentioned in section 78 with respect to variance are vested in the regional service commission or development officer, as the case may be, and (c) sections 79 and 80 apply with the necessary modifications to the regulation.
 
-11. [power-duty] [Tier A]
+12. [power-duty] [Tier B]
    Question: What does 125(12) provide regarding be held undeveloped or developed for public purposes and may, if subsequently included within the boundaries?
    Answer: 125(12): Land vested in the Crown under this section shall be held undeveloped or developed for public purposes and may, if subsequently included within the boundaries of a local government, be conveyed to the local government and the land shall be subject to all provisions of this Act affecting land for public purposes vested in a local government under this Act.
 
-12. [power-duty] [Tier A]
+13. [power-duty] [Tier A]
+   Question: What must the Minister do?
+   Answer: 125(13): All money received by the Minister in lieu of land for public purposes or realized by the Minister on the sale of the land is to be paid into a special account, and the money in that account is to be expended by the Minister for acquiring or developing land for public purposes and for no other purpose, and (a) pending the expenditure the money shall be invested and the earnings derived from the investments paid into the special account, and (b) if a subdivision in respect of which money has been received is subsequently included within the boundaries of a local government, the portion of the money that remains unexpended, together with any increments that have accrued under paragraph (a), is to be paid to the local government of which the subdivision becomes a part, and is to be treated by the local government in the same manner as money received for a public purpose under a subdivision by-law.
+
+14. [power-duty] [Tier A]
+   Question: What must the Minister do when making a regulation under this section?
+   Answer: 125(14): Before making a regulation under this section, the Minister shall (a) if the regulation would have effect in a region, request the regional service commission to give its views on the regulation, (b) if the regulation is to be made under section 51 and would have effect in a rural district that has an advisory committee, request the advisory committee to give its views on the regulation, and (c) follow, with the necessary modifications, the procedure preliminary to the making of a by-law under section 111, except if the regulation is to be made under paragraph (1)(a), (b), (f) or (g).
+
+15. [power-duty] [Tier A]
+   Question: What is the Minister prohibited from doing?
+   Answer: 125(15): Despite paragraph (14)(c), with respect to a zoning regulation under subsection (1) or a rural plan under section 51, the provisions of section 111 shall not be read as requiring the Minister to make available for public consideration the proposed rural plan or amendment if the Minister makes available for public consideration a written summary of the proposed rural plan or amendment.
+
+16. [power-duty] [Tier A]
    Question: What prohibition applies under 125(16)?
    Answer: 125(16): The Director shall file a copy of each regulation made under this section in the land registration office for every county in which any land affected by the regulation is situated, but the filing shall not be a condition precedent to the coming into force of the regulation.
 
 Suggested chunks:
 
-- 125 - Regulations re planning and development (many-subsections, estimated rubric items: 16)
-- 125 - Regulations re planning and development (long-enumeration, estimated rubric items: 16)
-- 125 - Regulations re planning and development (multiple-independent-topics, estimated rubric items: 16)
+- 125 125(1)-125(4): Planning and development regulation powers (many-subsections, long-enumeration, multiple-independent-topics, estimated rubric items: 6; sources: section:125/subsection:1, section:125/subsection:2, section:125/subsection:3, section:125/subsection:4)
+- 125 125(5)-125(8): Local effect, notice and public hearing (many-subsections, long-enumeration, multiple-independent-topics, estimated rubric items: 6; sources: section:125/subsection:5, section:125/subsection:6, section:125/subsection:7, section:125/subsection:8)
+- 125 125(9)-125(12): Objections, amendments and land for public purposes (many-subsections, long-enumeration, multiple-independent-topics, estimated rubric items: 6; sources: section:125/subsection:9, section:125/subsection:10, section:125/subsection:11, section:125/subsection:12)
+- 125 125(13)-125(16): Payments, agreements and public-purpose proceeds (many-subsections, long-enumeration, multiple-independent-topics, estimated rubric items: 6; sources: section:125/subsection:13, section:125/subsection:14, section:125/subsection:15, section:125/subsection:16)
 
 Concepts:
 - Regulations re Planning and Development
@@ -14360,8 +14341,9 @@ Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 125(9): With respect to a zoning regulation or to zoning provisions in a rural plan under this section (a) the powers and functions referred to in paragraphs 53(2)(g), (g.1) and (h) or paragraph 53(3)(c), with respect to
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 125(10): A subdivision regulation under this section may (a) subject to subsections (12) and (13), provide for (i) the setting aside of land for public purposes at a location as may be approved by the Minister after cons
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 125(11): If a subdivision regulation under this section is in effect, (a) the provisions of section 77 with respect to a subdivision by-law apply with the necessary modifications to the regulation, except if a plan invol
+- [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 125(13): All money received by the Minister in lieu of land for public purposes or realized by the Minister on the sale of the land is to be paid into a special account, and the money in that account is to be expended by
 - [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 125(4) provide regarding Regulations re planning and development? | What does 125(5) provide regarding Regulations re planning and development? | What does 125(6) provide regarding Regulations re planning and development?
-- [WARNING] TOO_MANY_RUBRIC_ITEMS (generated.rubricItems): The section produced more than 10 rubric items. Text: 12
+- [WARNING] TOO_MANY_RUBRIC_ITEMS (generated.rubricItems): The section produced more than 10 rubric items. Text: 16
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Application of a Regulation Under This Section
 
 ### Section 126 - Administration
@@ -14390,7 +14372,7 @@ Section 126 - Administration
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does The Minister have regarding designate one or more persons to act on the Minister’s behalf?
+   Question: What may the Minister do?
    Answer: 126(1): The Minister is responsible for the administration of this Act and may designate one or more persons to act on the Minister’s behalf.
 
 2. [power-duty] [Tier A]
@@ -14427,7 +14409,7 @@ Review of this Act
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must the Minister do regarding undertake a comprehensive review of the operation of this Act and shall, within one year after?
+   Question: What must the Minister do when January 1?
    Answer: 126.1: Review of this Act 126.1Within seven years after January 1, 2023, the Minister shall undertake a comprehensive review of the operation of this Act and shall, within one year after the review is undertaken or within such further time as the Legislative Assembly allows, submit a report on the review to the Legislative Assembly.
 
 Concepts:
@@ -14491,10 +14473,10 @@ examining an instrument under paragraph 77(1)(l).
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does council have regarding Fees?
+   Question: What authority does the council have to make a by-law prescribing fees for the following community planning and development services provided by the local government or a regional service commission: (a) providing a zoning confirmation letter?
    Answer: 127(1): A council may make a by-law prescribing fees for the following community planning and development services provided by the local government or a regional service commission: (a) providing a zoning confirmation letter; (b) providing a letter confirming that a use of land, a building or a structure is in compliance with a community planning and development by-law; (c) processing and considering applications for an authorization in accordance with a by-law made under paragraph 53(2)(i); (d) processing and considering requests under section 55; and (e) examining an instrument under paragraph 77(1)(l).
 
-2. [power-duty] [Tier A]
+2. [power-duty] [Tier B]
    Question: What does 127(2) provide regarding be paid to the local government in the region?
    Answer: 127(2): If a fee is prescribed under subsection (1) and collected by a regional service commission, the fee shall be paid to the local government in the region.
 
@@ -14528,7 +14510,7 @@ Approvals for pipeline construction
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does development officer have regarding Approvals for pipeline construction?
+   Question: What may the development officer do?
    Answer: 128: Approvals for pipeline construction 128A development officer may grant approvals for pipeline construction for which the development officer is the approving authority under the Pipeline Act, 2005.
 
 Concepts:
@@ -14604,7 +14586,7 @@ Rubric:
    Question: What does 130(1) provide regarding Proof of a by-law?
    Answer: 130(1): A copy of a resolution of a council or of a by-law made under this Act certified by the clerk to have been compared with the original and to be a true copy is evidence in all courts of the passage and existence of the resolution or by-law, without proof of the official character or handwriting of the clerk.
 
-2. [power-duty] [Tier A]
+2. [power-duty] [Tier B]
    Question: What does 130(2) provide regarding be?
    Answer: 130(2): When a certified copy of a resolution or by-law states the date on which the resolution was adopted or the by-law made, it is evidence of the date of adoption or of making, as the case may be.
 
@@ -14686,7 +14668,7 @@ ENFORCEMENT
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does the council have regarding Agreement with developer?
+   Question: What may the council do?
    Answer: 131(1): If a developer proposes to establish conditions for a development that are additional to those required by a zoning by-law, zoning provisions in a rural plan or a subdivision by-law or regulation, or if terms and conditions are imposed under paragraph 44(6)(a) or (c), paragraph 53(3)(c), section 55, subsection 73(2), section 78 or paragraph 125(9)(a) or (e) or (11)(b), the following may enter into an agreement with the developer to ensure the performance of the conditions: (a) the council, if the development is within the local government; and (b) the Minister, if the development is not within the local government.
 
 2. [power-duty] [Tier C]
@@ -14694,7 +14676,7 @@ Rubric:
    Answer: 131(2): The provisions of subsection 102(5) with respect to an agreement apply with the necessary modifications to an agreement under this section.
 
 3. [power-duty] [Tier A]
-   Question: What powers does council have regarding Agreement with developer?
+   Question: What must the council do when a council or the Minister has entered into an agreement under subsection (1)?
    Answer: 131(3): If a council or the Minister has entered into an agreement under subsection (1), the council or Minister, as the case may be, may (a) on breach of the agreement and after giving 30 days’ notice in writing to the developer, enter the development and perform any of the covenants or conditions in respect of which the breach exists, or (b) at any time, discharge a covenant or condition of an agreement.
 
 4. [power-duty] [Tier A]
@@ -14703,7 +14685,7 @@ Rubric:
 
 Suggested chunks:
 
-- 131 - Agreement with developer (multiple-independent-topics, estimated rubric items: 7)
+- 131 - Agreement with developer (multiple-independent-topics, estimated rubric items: 7; sources: section:131)
 
 Concepts:
 - Agreement With Developer
@@ -14759,29 +14741,29 @@ Section 132 - Powers of Minister
 Rubric:
 
 1. [notice] [Tier A]
-   Question: What is The Minister prohibited from doing?
+   Question: What is the Minister prohibited from doing?
    Answer: 132(1): The Minister shall not exercise a power under this section except with the approval of the Lieutenant-Governor in Council.
 
 2. [notice] [Tier A]
-   Question: What powers does the Minister have regarding quash a by-law made under this Act if satisfied that it is in the public interest?
+   Question: What may the Minister do?
    Answer: 132(2): In addition to other powers vested in the Minister under this Act, the Minister may quash a by-law made under this Act if satisfied that it is in the public interest to do so on giving notice in The Royal Gazette and filing a copy of the notice in the land registration office.
 
 3. [notice] [Tier A]
-   Question: What powers does the Minister have regarding order the local government to do so?
+   Question: What authority does the Minister have to order the local government to do so?
    Answer: 132(3): If the Minister is satisfied that a local government is not conforming to a regional land use plan or is not conforming to or enforcing its municipal plan or a by-law made by it or its rural plan, the Minister may order the local government to do so.
 
 4. [notice] [Tier A]
-   Question: What powers does council have regarding Powers of Minister?
+   Question: What must the council do when a council fails to comply with an order of the Minister under this Act?
    Answer: 132(4): If a council fails to comply with an order of the Minister under this Act, the Minister may exercise all the powers conferred by this Act on the council on giving notice in The Royal Gazette and filing a copy of the notice in the land registration office.
 
 5. [notice] [Tier A]
-   Question: What powers does the Minister have regarding Powers of Minister?
+   Question: What must the Minister do when exercising powers under subsection (4) in relation to a local government?
    Answer: 132(5): If exercising powers under subsection (4) in relation to a local government, the Minister may appoint, if the local government is providing its own land use planning service, five persons to be the advisory committee for the local government, but the council may appoint four additional persons to act on the committee, and the committee may exercise all the powers it would have if it was otherwise established under this Act.
 
 Suggested chunks:
 
-- 132 - Powers of Minister (multiple-independent-topics, estimated rubric items: 12)
-- 132 - Powers of Minister (many-subsections, estimated rubric items: 12)
+- 132 132(1)-132(4): by-law made under this Act if satisfied that it is in the public interest to (multiple-independent-topics, many-subsections, estimated rubric items: 6; sources: section:132/subsection:1, section:132/subsection:2, section:132/subsection:3, section:132/subsection:4)
+- 132 132(5)-132(6): notice in The Royal Gazette and filing a copy of the notice in the registry (multiple-independent-topics, many-subsections, estimated rubric items: 6; sources: section:132/subsection:5, section:132/subsection:6)
 
 Concepts:
 - Powers of Minister
@@ -14789,8 +14771,7 @@ Concepts:
 - Minister Power: Order the Local Government to do so
 - Minister Power: Appoint
 
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What powers or authority are established by section 132 of Community Planning Act?
+Warnings: none
 
 ### Section 133 - Inspection of property
 
@@ -14831,19 +14812,19 @@ Section 133 - Inspection of property
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does development officer have regarding Inspection of property?
+   Question: What must the development officer do when the Director?
    Answer: 133(1): The Director, a development officer or the person authorized by the Minister or the council may, at all reasonable times, and with the consent of the owner or occupant, enter any land, building or premises for the purposes of inspection if the Director, the development officer or the person authorized by the Minister or the council has reasonable grounds to believe that a development or form of development on or in the land, building or premises violates a provision of this Act or the regulations or a by-law or an order made under this Act.
 
 2. [power-duty] [Tier A]
-   Question: What powers does the development officer have regarding apply for an entry warrant under the Entry Warrants Act?
+   Question: What must the development officer do when or after attempting to enter any land?
    Answer: 133(2): Before or after attempting to enter any land, building or premises for the purposes of making an inspection under subsection (1), the Director, the development officer or the person authorized by the Minister or the council may apply for an entry warrant under the Entry Warrants Act.
 
 3. [power-duty] [Tier A]
-   Question: What is development officer prohibited from doing?
+   Question: What is the development officer prohibited from doing?
    Answer: 133(3): The Director, a development officer or the person authorized by the Minister or the council shall not enter a private dwelling under subsection (1) unless the person has the consent of the owner or occupant or has obtained an entry warrant under the Entry Warrants Act.
 
 4. [power-duty] [Tier A]
-   Question: What powers does the development officer have regarding serve, or cause to be served, a written order under section 134 to the owner, operator?
+   Question: What must the development officer do when inspection?
    Answer: 133(4): If, after inspection, the Director, the development officer or the person authorized by the Minister or the council determines that the development or form of development violates a provision of this Act or the regulations or a by-law or an order made under this Act, that person may serve, or cause to be served, a written order under section 134 to the owner, operator or occupant of the land, building or premises on or in which the development or form of development is located.
 
 Concepts:
@@ -14944,11 +14925,11 @@ state that the action specified in the order is to be taken within the period st
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does the council have regarding Violation of Act?
+   Question: What must the council do when a development is undertaken in violation of this Act?
    Answer: 134(1): If a development is undertaken in violation of this Act, a by-law or regulation under this Act or terms and conditions imposed on the development, the Director or the council, as the case may be, or a development officer, building inspector or other person duly authorized by the Director or the council may order (a) cessation of the development, (b) alteration of the development in order to remove the violation, or (c) the doing of anything required to restore the land, building or structure to its condition immediately before the undertaking of the development.
 
 2. [power-duty] [Tier A]
-   Question: What must the person do regarding Violation of Act?
+   Question: What must a person do?
    Answer: 134(2): Subject to subsection (6), an order under subsection (1) shall (a) be in writing and signed by the person making it, (b) be served on the owner of the land, building or structure in respect of which the order is issued by personal delivery to the owner or by registered mail addressed to the owner at the last known address of the owner, (c) state the grounds for requiring the action specified in the order, and (d) state that the action specified in the order is to be taken within the period stated in the order, the period being, in cases referred to in paragraphs (1)(b) and (c), not fewer than 14 days and not more than two months from the day the order is served.
 
 3. [power-duty] [Tier C]
@@ -14956,25 +14937,21 @@ Rubric:
    Answer: 134(3): The owner of property who is ordered to take action under this section shall comply with the order at their own expense.
 
 4. [power-duty] [Tier A]
-   Question: What powers does council have regarding Violation of Act?
+   Question: What must the council do when an owner of property fails to comply with an order under this section?
    Answer: 134(4): If an owner of property fails to comply with an order under this section, the Director or council may cause the ordered action to be undertaken and may recover the costs of the order from the owner in an action in a court of competent jurisdiction.
 
 5. [power-duty] [Tier A]
-   Question: What must council do regarding constitute a lien on the property concerned until recovered from the owner?
+   Question: What must the council do?
    Answer: 134(5): The costs incurred by the Director or council under subsection (4) shall constitute a lien on the property concerned until recovered from the owner.
 
 6. [power-duty] [Tier A]
-   Question: What must the person do regarding also be served by personal delivery to the person in charge of carrying out the development?
-   Answer: 134(6): An order under this section requiring the cessation of a development may also be served by personal delivery to the person in charge of carrying out the development or by registered mail to the person at their last known address, and the person shall cease carrying out the development within the period stated in the order.
-
-7. [power-duty] [Tier A]
    Question: What filing or record rule applies to Violation of Act?
    Answer: 134(7): Service by registered mail of an order provided in subsections (2) and (6) is deemed to have been effected four days after the notice is deposited in the mail.
 
 Suggested chunks:
 
-- 134 - Violation of Act (multiple-independent-topics, estimated rubric items: 12)
-- 134 - Violation of Act (many-subsections, estimated rubric items: 12)
+- 134 134(1)-134(4): by-law or regulation under this Act or terms and conditions imposed on the d (multiple-independent-topics, many-subsections, estimated rubric items: 6; sources: section:134/subsection:1, section:134/subsection:2, section:134/subsection:3, section:134/subsection:4)
+- 134 134(5)-134(7): registered mail to the person at their last known address, and the person shall (multiple-independent-topics, many-subsections, estimated rubric items: 6; sources: section:134/subsection:5, section:134/subsection:6, section:134/subsection:7)
 
 Concepts:
 - Violation of act
@@ -15068,11 +15045,11 @@ make any other order as is required to enforce the provision in respect of which
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does the Minister have regarding Application for an order of the Court?
+   Question: What must the Minister do when a person?
    Answer: 135(1): A local government or the Minister or a person designated for that purpose by the council or the Minister may make an application to The Court of King’s Bench of New Brunswick or a judge of that court for any of the orders described in subsection (2), whether or not a penalty has been provided for or imposed under this Act for the violation, failure or obstruction, if a person, other than a local government, (a) violates or fails to comply with (i) a provision of this Act or a by-law or regulation under this Act, (ii) an order or demand made under this Act or a by-law or regulation under this Act, (iii) any terms and conditions imposed in accordance with paragraph 53(2)(i) or (3)(c), section 55, subsection 78(1), 102(4) or 121(1) or (2), or (iv) a decision of the Board; or (b) obstructs any person in the performance of his or her duty under this Act.
 
 2. [power-duty] [Tier A]
-   Question: What powers does person have regarding Application for an order of the Court?
+   Question: What may a person do?
    Answer: 135(2): In proceeding under this section, the judge may (a) make an order restraining the continuance or repetition of the violation, failure or obstruction, (b) make an order directing the removal or destruction of a building or structure or part of the building or structure in respect of which the violation or failure has taken place, and that on failure to comply with the order a person designated by the council or the Minister, as the case may be, may remove or destroy the building or structure or part of the building or structure at the expense of the owner, and (c) make any other order as is required to enforce the provision in respect of which the action was instituted and as to costs and the recovery of the expense of the removal or destruction as the judge deems fit.
 
 Concepts:
@@ -15135,7 +15112,7 @@ in the opinion of the Court, the application raises substantially the same matte
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does person have regarding Powers of the Court?
+   Question: What may a person do?
    Answer: 136(1): On application by a person directly affected by the operation or non-enforcement of a by-law, resolution or order made under this Act by a council, or by a resident of the local government, The Court of King’s Bench of New Brunswick or a judge of that court may by order (a) quash it in whole or in part for illegality, or (b) declare that it is in force and effect, in whole or in part.
 
 2. [power-duty] [Tier A]
@@ -15145,10 +15122,8 @@ Rubric:
 Concepts:
 - Powers of the Court
 - Application by a Person Directly Affected by the
-- Application Made Under Subsection
 
-Warnings:
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Application Made Under Subsection
+Warnings: none
 
 ### Section 137 - Prohibition
 
@@ -15212,7 +15187,7 @@ obstruct any person in the performance of the person’s duty under this Act.
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must person do regarding Prohibition?
+   Question: What must a person do?
    Answer: 137: Prohibition 137No person shall (a) violate or fail to comply with a provision of a by-law made under this Act, (b) violate or fail to comply with a provision of a regulation made under this Act, (c) violate or fail to comply with a term and condition imposed under paragraph 53(2)(i) or (3)(c), section 55, subsection 78(1), 102(4) or 121(1) or (2), (d) violate or fail to comply with an order or demand made under this Act or a by-law or regulation made under this Act, (e) violate or fail to comply with a decision of the Board, and (f) obstruct any person in the performance of the person’s duty under this Act.
 
 Concepts:
@@ -15291,7 +15266,8 @@ Rubric:
 
 Suggested chunks:
 
-- 138 - Offences and penalties (multiple-independent-topics, estimated rubric items: 5)
+- 138 138(1)-138(4): Offences and penalties (multiple-independent-topics, estimated rubric items: 3; sources: section:138/subsection:1, section:138/subsection:2, section:138/subsection:3, section:138/subsection:4)
+- 138 138(5): appeal is made to the Board with respect to an alleged offence, the time per (multiple-independent-topics, estimated rubric items: 5; sources: section:138/subsection:5)
 
 Concepts:
 - Offences and Penalties
@@ -15323,7 +15299,7 @@ Proceedings
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must the Minister do regarding Proceedings?
+   Question: What must the Minister do?
    Answer: 139: Proceedings 139Proceedings for an offence under this Act shall be commenced in the name of the Minister or the clerk of the local government or any other person who is designated for that purpose by the council.
 
 Concepts:
@@ -15397,7 +15373,7 @@ Rubric:
 
 Suggested chunks:
 
-- 141 - Definition of “former Act” (definitions, estimated rubric items: 0)
+- 141 - Definition of “former Act” (definitions, estimated rubric items: 1; sources: section:141)
 
 Concepts:
 - Former act
@@ -15428,7 +15404,7 @@ Municipal development plan under former Act
 
 Rubric:
 
-1. [power-duty] [Tier A]
+1. [power-duty] [Tier B]
    Question: What does 142 provide regarding be deemed to be a municipal plan made under this Act and is valid and continues?
    Answer: 142: Municipal development plan under former Act 142Despite any inconsistency with a provision of this Act, a municipal development plan made under the authority of the former Act that was in force immediately before the commencement of this section shall be deemed to be a municipal plan made under this Act and is valid and continues in force until amended or repealed, to the extent that it is not inconsistent with this Act or a statement of provincial interest.
 
@@ -15461,7 +15437,7 @@ Resolutions under former Act
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must council do regarding be deemed to have been made under this Act and is valid and continues in force?
+   Question: What must the council do when the commencement of this section?
    Answer: 143: Resolutions under former Act 143Despite any inconsistency with a provision of this Act, a resolution made by a council of a municipality or rural community or a regional service commission under the authority of the former Act that was in force immediately before the commencement of this section, shall be deemed to have been made under this Act and is valid and continues in force until amended or repealed.
 
 Concepts:
@@ -15492,7 +15468,7 @@ By-laws under former Act
 
 Rubric:
 
-1. [power-duty] [Tier A]
+1. [power-duty] [Tier B]
    Question: What does 144 provide regarding be deemed to have been made under this Act and is valid and continues in force?
    Answer: 144: By-laws under former Act 144 Despite any inconsistency with a provision of this Act, a by-law made under the authority of the former Act that was in force immediately before the commencement of this section shall be deemed to have been made under this Act and is valid and continues in force until amended or repealed, to the extent that it is not inconsistent with this Act or a statement of provincial interest.
 
@@ -15524,7 +15500,7 @@ Permits, approvals and orders continue
 
 Rubric:
 
-1. [power-duty] [Tier A]
+1. [power-duty] [Tier B]
    Question: What does 145 provide regarding be deemed to have been made under this Act and is valid and continues in force?
    Answer: 145: Permits, approvals and orders continue 145Despite any inconsistency with a provision of this Act, a permit, approval or order made or issued under the former Act that was in force immediately before the commencement of this section shall be deemed to have been made under this Act and is valid and continues in force until amended or repealed.
 
@@ -15690,7 +15666,7 @@ Rubric:
    Answer: 150: Payments under section 45 of former Act 150Despite any inconsistency with a provision of this Act, if payments are still due or owing under the provision of section 45 of the former Act immediately before the coming into force of this section with respect to the an amount equal to the initial cost of the facilities, or equal to the share of the cost required to be paid by a person, section 45 of the former Act is continued as if that Act was not repealed.
 
 Concepts:
-- Payments Under Section 45 of Former act
+none
 
 Warnings: none
 
@@ -15718,7 +15694,7 @@ Provincial Planning Director continues
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must the person do regarding be deemed to have been appointed the Provincial Planning Director under section 9 of this Act?
+   Question: What must a person do?
    Answer: 151: Provincial Planning Director continues 151Despite any inconsistency with a provision of this Act, the person appointed under section 4 of the former Act holding the office of Provincial Planning Director immediately before the commencement of this section shall be deemed to have been appointed the Provincial Planning Director under section 9 of this Act and continues in office until he or she resigns or is reappointed or replaced.
 
 Concepts:
@@ -15751,7 +15727,7 @@ Municipal planning directors, municipal planning officers, rural community plann
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must person do regarding be deemed to have been appointed as a planning director or planning officer, as the case?
+   Question: What must a person do?
    Answer: 152: Municipal planning directors, municipal planning officers, rural community planning directors and rural community planning officers continue 152Despite any inconsistency with a provision of this Act, a person who was appointed as a municipal planning director, municipal planning officer, rural community planning director or rural community planning officer under section 16 of the former Act and holding office immediately before the commencement of this section shall be deemed to have been appointed as a planning director or planning officer, as the case may be, under section 10 of this Act and continues in office until he or she resigns or is reappointed or replaced .
 
 Concepts:
@@ -15914,7 +15890,7 @@ a regulation referred to in paragraph (a) may be amended under the Community Pla
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does the Lieutenant-Governor in Council have regarding Regulations under the Community Planning Act?
+   Question: What must the Lieutenant-Governor in Council do when the commencement of this section as if that Act had not been repealed?
    Answer: 154: Regulations under the Community Planning Act 154Despite any inconsistency with any provision of this Act, (a) the following regulations made under the Community Planning Act, chapter C-12 of the Revised Statutes, 1973, including any amendments made to them under paragraph (b) are valid and continue in force until repealed by a regulation or regulations made by the Lieutenant-Governor in Council under this Act: (i) New Brunswick Regulation 80-159, (ii) New Brunswick Regulation 81-126, (iii) New Brunswick Regulation 84-45, (iv) New Brunswick Regulation 84-59, (v) New Brunswick Regulation 84-217, (vi) New Brunswick Regulation 84-292, (vii) New Brunswick Regulation 89-7, (viii) New Brunswick Regulation 93-165, (ix) New Brunswick Regulation 93-171, (x) New Brunswick Regulation 93-172, (xi) New Brunswick Regulation 94-68, (xii) New Brunswick Regulation 2002-45, (xiii) New Brunswick Regulation 2009-31, and (xiv) New Brunswick Regulation 2011-61; (b) a regulation referred to in paragraph (a) may be amended under the Community Planning Act, chapter C-12 of the Revised Statutes, 1973, on or after the commencement of this section as if that Act had not been repealed.
 
 Concepts:
@@ -16038,7 +16014,7 @@ Rubric:
 
 Suggested chunks:
 
-- 1 - Definitions (definitions, estimated rubric items: 2)
+- 1 - Definitions (definitions, estimated rubric items: 2; sources: section:1)
 
 Concepts:
 - Digitally Scanned Image
@@ -16228,11 +16204,11 @@ Section 4 - Appointment of registrars and deputy registrars
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does person have regarding Appointment of registrars and deputy registrars?
+   Question: What authority does a person have to appoint registrars of deeds for the several counties and may appoint the same person registrar of deeds for more than one county?
    Answer: 4(1): Service New Brunswick may appoint registrars of deeds for the several counties and may appoint the same person registrar of deeds for more than one county.
 
 2. [power-duty] [Tier A]
-   Question: What powers does person have regarding appoint one or more deputy registrars of deeds for any county, and may appoint the same?
+   Question: What authority does a person have to appoint one or more deputy registrars of deeds for any county, and may appoint the same person deputy registrar of deeds for more than one county?
    Answer: 4(2): Service New Brunswick may appoint one or more deputy registrars of deeds for any county, and may appoint the same person deputy registrar of deeds for more than one county.
 
 Concepts:
@@ -16356,7 +16332,7 @@ may recommend to Service New Brunswick the suspension or removal from office of 
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does The Lieutenant-Governor in Council have regarding appoint a registrar as Chief Registrar of Deeds for the Province?
+   Question: What authority does the Lieutenant-Governor in Council have to appoint a registrar as Chief Registrar of Deeds for the Province?
    Answer: 6(1): The Lieutenant-Governor in Council may appoint a registrar as Chief Registrar of Deeds for the Province.
 
 2. [power-duty] [Tier A]
@@ -16385,7 +16361,8 @@ Rubric:
 
 Suggested chunks:
 
-- 6 - Chief Registrar of Deeds (many-subsections, estimated rubric items: 9)
+- 6 6(1)-6(4): Chief Registrar of Deeds (many-subsections, estimated rubric items: 5; sources: section:6/subsection:1, section:6/subsection:2, section:6/subsection:3, section:6/subsection:4)
+- 6 6(4.1)-6(6): Chief Registrar of Deeds (many-subsections, estimated rubric items: 6; sources: section:6/subsection:4.1, section:6/subsection:5, section:6/subsection:6)
 
 Concepts:
 - Chief Registrar of Deeds
@@ -16571,14 +16548,10 @@ Section 10 - When registry office open
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must the Lieutenant-Governor in Council do regarding be kept open on all days except Saturdays, Sundays and holidays, from the hours of nine?
+   Question: What must the Lieutenant-Governor in Council do when afternoon?
    Answer: 10(1): Every registry office shall be kept open on all days except Saturdays, Sundays and holidays, from the hours of nine o’clock in the forenoon until five o’clock in the afternoon, unless otherwise prescribed by the Lieutenant-Governor in Council by regulation.
 
-2. [power-duty] [Tier A]
-   Question: What must the Lieutenant-Governor in Council do regarding be received for filing or registration except between the hours of 9 a?
-   Answer: 10(2): No instrument shall be received for filing or registration except between the hours of 9 a.m. and 4:30 p.m. in the afternoon, unless otherwise prescribed by the Lieutenant-Governor in Council by regulation.
-
-3. [power-duty] [Tier C]
+2. [power-duty] [Tier C]
    Question: What does 10(3) provide regarding When registry office open?
    Answer: 10(3): Notwithstanding any other Act, Boxing Day is a holiday for the purpose of this section.
 
@@ -16635,7 +16608,7 @@ carry on or transact within the office any business or occupation other than his
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must person do regarding Conflict of interests?
+   Question: What must a person do?
    Answer: 11(1): No registrar, deputy registrar, or clerk in the registry office shall (a) directly or indirectly act as the agent of any person investing money and taking securities on real estate within the county, or (b) advise for a fee or reward upon the title to land, or practise as a conveyancer, or (c) carry on or transact within the office any business or occupation other than his duties under this Act.
 
 2. [power-duty] [Tier C]
@@ -16687,14 +16660,13 @@ Rubric:
 
 Suggested chunks:
 
-- 12 - Duties of registrar (many-subsections, estimated rubric items: 11)
+- 12 - Duties of registrar (many-subsections, estimated rubric items: 11; sources: section:12)
 
 Concepts:
 - Duties of Registrar
 - Certificates of all Copies and Extracts Under his Hand
 
 Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What duties does section 12 of Registry Act impose about duties of registrar?
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 12(1): The registrar shall, when required and upon being tendered legal fees therefor in the manner hereinafter prescribed for so doing, allow searches to be made and furnish copies and abstracts of or concerning all ins
 
 ### Section 13 - Seal of registrar; production of documents
@@ -16725,7 +16697,7 @@ Seal of registrar; production of documents
 Rubric:
 
 1. [filing-record] [Tier A]
-   Question: What must person file or record regarding have a seal of office to be approved by Service New Brunswick or other person appointed?
+   Question: What must a person do when the original thereof was produced?
    Answer: 13: Seal of registrar; production of documents 13Every registrar shall have a seal of office to be approved by Service New Brunswick or other person appointed for that purpose, and on request shall furnish an exemplification or certified copy under his hand and seal of office of any instrument deposited, registered or filed in his office as registrar, which exemplification or certified copy shall, subject to the provisions of this Act or any Act relating thereto, be received as prima facie evidence of such instrument, and of the registration thereof, in every court in this Province, in the same manner and with the same effect as if the original thereof was produced; and no registrar or deputy shall be required to produce any document in his custody as registrar or deputy registrar unless ordered by a judge of The Court of King’s Bench of New Brunswick, which order shall be produced to the registrar or deputy registrar and accompany the summons to witness, if any, served upon him requiring the production.
 
 Concepts:
@@ -16834,8 +16806,8 @@ Rubric:
 
 Suggested chunks:
 
-- 13.1 - Powers regarding document maintenance and disposal (multiple-independent-topics, estimated rubric items: 10)
-- 13.1 - Powers regarding document maintenance and disposal (many-subsections, estimated rubric items: 10)
+- 13.1 13.1(1)-13.1(4): registered in the registry office for any county and any index, book or record u (multiple-independent-topics, many-subsections, estimated rubric items: 5; sources: section:13.1/subsection:1, section:13.1/subsection:2, section:13.1/subsection:3, section:13.1/subsection:4)
+- 13.1 13.1(5)-13.1(6): registered under that Act within 30 days after the lapse or discharge, or (b) an (multiple-independent-topics, many-subsections, estimated rubric items: 6; sources: section:13.1/subsection:5, section:13.1/subsection:6)
 
 Concepts:
 - Powers Regarding Document Maintenance and Disposal
@@ -16981,7 +16953,7 @@ Section 15 - Recopying or repairing of book
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must person do regarding order such book, record, plan or instrument to be recopied or repaired in such manner as?
+   Question: What must a person do when in any registry office any book?
    Answer: 15(1): When in any registry office any book, record, plan or instrument kept in paper form, from age or use, is becoming obliterated, unfit for further use or is in need of repair, the Chief Registrar of Deeds or other person authorized by Service New Brunswick thereunto may order such book, record, plan or instrument to be recopied or repaired in such manner as he thinks necessary, the copy to be, so far as the same can be deciphered by examination thereof, a true and complete copy of the original, and the registrar or his deputy shall insert or subscribe an affidavit or declaration to the effect that the original so copied is a true copy of the original of which it purports to be a copy; and the same shall be to all intents and purposes acknowledged and received as the original, and as prima facie evidence that the copy is a true copy of the original.
 
 2. [power-duty] [Tier C]
@@ -17131,7 +17103,7 @@ fix or settle upon a uniform device for the official seals of the registrars, an
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must person do regarding do any particular act, or amend or correct whatever he may find amiss?
+   Question: What must a person do when the office is kept duly open at and for the proper times?
    Answer: 17: Powers of Chief Registrar 17The Chief Registrar of Deeds or other person designated by Service New Brunswick may: (a) make a personal inspection of the building in which any registry office is kept, and of the books, deeds, titles, and instruments in any registry office; (b) examine and see that the proper books are provided; that they are in good order and condition; that the proper entries and registration are made therein in a proper manner, and in a due and proper form and order; that the indexes are properly kept; that all instruments are duly endorsed, certified and preserved; (c) ascertain if the office is kept duly open at and for the proper times, and that it is at all times duly attended by the registrar or his deputy; (d) inform the registrar how and in what manner he shall do any particular act, or amend or correct whatever he may find amiss; and in case he finds the work improperly done by a registrar he has power to order a new book or books to be prepared and completed by the registrar at the latter’s own expense; but the registrar is not bound to carry out instructions in reference to a matter involving a question of legal liability of the registrar to the public or to individuals for the non-performance, improper performance, omission or neglect of any duty or obligation; (e) report upon all vacancies by death or otherwise in the office of registrar or deputy registrar; (f) inspect all abstract and alphabetical indexes, and settle and certify the sums, if any chargeable therefor; (g) fix or settle upon a uniform device for the official seals of the registrars, and see that the registrars are supplied therewith.
 
 Concepts:
@@ -17164,7 +17136,7 @@ Replacement of registrar by temporary officer
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must person do regarding authorize a suitable person to take possession thereof, and while in possession such person may receive?
+   Question: What must a person do?
    Answer: 18: Replacement of registrar by temporary officer 18Whenever, by reason of death, dismissal, illness or other cause or incapacity, the office of registrar in any county becomes vacant, or is left temporarily without any duly authorized person to attend to the duties thereof, or if any registrar appears to the Chief Registrar of Deeds to be neglecting the duties of his office whereby the records, documents, books or instruments in the said office appear to the Chief Registrar of Deeds to be in jeopardy, or liable to be lost, taken away or injured, the Chief Registrar of Deeds shall authorize a suitable person to take possession thereof, and while in possession such person may receive and record all instruments offered for registry, entering the same and certifying thereto in his own name as acting registrar, and he shall continue so to act until order made to the contrary.
 
 Concepts:
@@ -17243,7 +17215,7 @@ Rubric:
    Answer: 19(3): No lease for a term not exceeding three years, where the actual possession goes along with the lease, need be registered, nor shall such lease be deemed fraudulent and void merely by reason of its not being registered; but this subsection does not extend or apply to any lease for a greater term than three years, nor to any lease where the actual possession does not go along with the lease.
 
 3. [filing-record] [Tier A]
-   Question: What must person file or record regarding Registration of instruments?
+   Question: What must a person do when registered within six months of the day of such sale?
    Answer: 19(4): Where a person in an official capacity executes a conveyance of an interest in lands sold at public auction, pursuant to law, the conveyance, if registered within six months of the day of such sale, shall, as against any subsequent purchaser or judgment creditor, be as valid as if registered at the time of sale.
 
 4. [filing-record] [Tier A]
@@ -17260,8 +17232,9 @@ Rubric:
 
 Suggested chunks:
 
-- 19 - Registration of instruments (many-subsections, estimated rubric items: 12)
-- 19 - Registration of instruments (long-enumeration, estimated rubric items: 12)
+- 19 19(1)-19(4): registered in the registry office for the county where the lands lie, and if not (many-subsections, long-enumeration, estimated rubric items: 6; sources: section:19/subsection:1, section:19/subsection:2, section:19/subsection:3, section:19/subsection:4)
+- 19 19(4.1)-19(7): registered within six months after the day of its execution, shall, as against a (many-subsections, long-enumeration, estimated rubric items: 6; sources: section:19/subsection:4.1, section:19/subsection:5, section:19/subsection:6, section:19/subsection:7)
+- 19 19(8)-19(9): Registration of instruments (many-subsections, long-enumeration, estimated rubric items: 6; sources: section:19/subsection:8, section:19/subsection:9)
 
 Concepts:
 - Registration of Instruments
@@ -17332,20 +17305,21 @@ Rubric:
    Answer: 19.01(2): A digitally scanned image of an instrument that is submitted to be filed or registered in accordance with subsection (1) (a) shall be in a format that has been approved by the Chief Registrar of Deeds as being equivalent, when printed, in form and content to its counterpart prescribed by regulation, and (b) shall be submitted using the technology put in place by Service New Brunswick.
 
 3. [filing-record] [Tier A]
-   Question: What must surveyor file or record regarding be, shall provide to the registrar evidence of his or her identity or authorization that is?
+   Question: What must a surveyor do?
    Answer: 19.01(3): When a digitally scanned image of an instrument is submitted to be filed or registered in accordance with subsection (1), the subscriber or the land surveyor, as the case may be, shall provide to the registrar evidence of his or her identity or authorization that is satisfactory to the registrar.
 
 4. [filing-record] [Tier A]
-   Question: What must person file or record regarding submit a digitally scanned image of an instrument?
+   Question: What must a person submit?
    Answer: 19.01(4): Subject to subsection (5), no person other than a subscriber shall submit a digitally scanned image of an instrument.
 
 5. [filing-record] [Tier A]
-   Question: What powers does surveyor have regarding plan of survey?
+   Question: What may a surveyor do?
    Answer: 19.01(5): A land surveyor who has entered into an agreement with Service New Brunswick may, in accordance with the agreement and this Act, submit a digitally scanned image of an instrument that is a plan of survey or a subdivision plan.
 
 Suggested chunks:
 
-- 19.01 - Instrument that may be submitted as a digitally scanned image (many-subsections, estimated rubric items: 12)
+- 19.01 19.01(1)-19.01(4): regulations, all instruments that may be submitted to be filed or registered unde (many-subsections, estimated rubric items: 6; sources: section:19.01/subsection:1, section:19.01/subsection:2, section:19.01/subsection:3, section:19.01/subsection:4)
+- 19.01 19.01(5): subdivision plan (many-subsections, estimated rubric items: 6; sources: section:19.01/subsection:5)
 
 Concepts:
 - Plan of Survey or a Subdivision Plan
@@ -17416,20 +17390,24 @@ the digitally scanned image of the instrument is an exact and complete scan of t
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What is surveyor prohibited from doing?
+   Question: What is a surveyor prohibited from doing?
    Answer: 19.02(1): A digitally scanned image of an instrument shall not be submitted by a subscriber or land surveyor for filing or registration unless the digitally scanned image has been authenticated in the manner established by Service New Brunswick.
 
 2. [power-duty] [Tier C]
    Question: What does 19.02(2) provide regarding Authentication of digitally scanned image?
    Answer: 19.02(2): Nothing in this section requires that the subscriber or land surveyor who authenticates a digitally scanned image of an instrument be the subscriber or land surveyor who submits the digitally scanned image for registration or filing.
 
-3. [power-duty] [Tier C]
+3. [power-duty] [Tier A]
+   Question: What must a surveyor do when required?
+   Answer: 19.02(3): A subscriber or a land surveyor shall not authenticate a digitally scanned image of an instrument unless (a) the subscriber or land surveyor has in his or her possession the instrument in paper format that, to the best of the subscriber’s or land surveyor’s knowledge and belief, has been duly executed and witnessed, if required, and (b) the digitally scanned image of the instrument is an exact and complete scan of the entire original instrument referred to in paragraph (a).
+
+4. [power-duty] [Tier C]
    Question: What does 19.02(4) provide regarding Authentication of digitally scanned image?
    Answer: 19.02(4): The authentication by a subscriber or land surveyor under subsection (3) is a certification by the subscriber or land surveyor that (a) the subscriber or land surveyor has in his or her possession the instrument in paper format that, to the best of the subscriber’s or land surveyor’s knowledge and belief, has been duly executed and witnessed, if required, and (b) the digitally scanned image of the instrument is an exact and complete scan of the entire original instrument referred to in paragraph (a).
 
 Suggested chunks:
 
-- 19.02 - Authentication of digitally scanned image (multiple-independent-topics, estimated rubric items: 4)
+- 19.02 - Authentication of digitally scanned image (multiple-independent-topics, estimated rubric items: 4; sources: section:19.02)
 
 Concepts:
 - Authentication of Digitally Scanned Image
@@ -17606,7 +17584,7 @@ for promptly giving notice to Service New Brunswick, in the manner determined un
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must surveyor do regarding Subscriber or land surveyor agreement?
+   Question: What must a surveyor do?
    Answer: 19.05(1): A member of the Law Society of New Brunswick or a land surveyor who wishes to submit a digitally scanned image of an instrument to a registry office shall enter into an agreement with Service New Brunswick for the purposes of (a) obtaining access to the technology put in place by Service New Brunswick for the authentication and submission of digitally scanned images of instruments and establishing the circumstances in which access privileges may be lost, (b) providing for the duties, obligations and liabilities of the subscriber or land surveyor relating to the authentication and submission of digitally scanned images of instruments, and (c) establishing an account with Service New Brunswick for electronic funds transfers.
 
 2. [power-duty] [Tier A]
@@ -17614,12 +17592,12 @@ Rubric:
    Answer: 19.05(2): Service New Brunswick shall not enter into an agreement under subsection (1) with a member of the Law Society of New Brunswick unless there is in place an agreement between the Law Society of New Brunswick and Service New Brunswick by which the Law Society of New Brunswick assumes responsibility (a) for certifying the eligibility of the member to practise law in the Province, and (b) if the eligibility of the member is lost, (i) for promptly revoking access to the technology put in place by Service New Brunswick, or (ii) for promptly giving notice to Service New Brunswick, in the manner determined under the agreement, in which case Service New Brunswick will revoke access to the technology put in place by Service New Brunswick.
 
 3. [power-duty] [Tier A]
-   Question: What is surveyor prohibited from doing?
+   Question: What must a surveyor do when the eligibility of the land surveyor is lost?
    Answer: 19.05(3): Service New Brunswick shall not enter into an agreement under subsection (1) with a land surveyor unless there is in place an agreement between the Association of New Brunswick Land Surveyors and Service New Brunswick by which the Association of New Brunswick Land Surveyors assumes responsibility (a) for certifying the eligibility of the land surveyor to practise land surveying in the Province, and (b) if the eligibility of the land surveyor is lost, (i) for promptly revoking access to the technology put in place by Service New Brunswick, or (ii) for promptly giving notice to Service New Brunswick, in the manner determined under the agreement, in which case Service New Brunswick will revoke access to the technology put in place by Service New Brunswick.
 
 Suggested chunks:
 
-- 19.05 - Subscriber or land surveyor agreement (multiple-independent-topics, estimated rubric items: 6)
+- 19.05 - Subscriber or land surveyor agreement (multiple-independent-topics, estimated rubric items: 6; sources: section:19.05)
 
 Concepts:
 - Subscriber or Land Surveyor Agreement
@@ -17693,7 +17671,7 @@ Contents of conveyance respecting intestacy
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must person do regarding state the name of the person from whom the interest has devolved, together with the date?
+   Question: What must a person do when known?
    Answer: 20: Contents of conveyance respecting intestacy 20Every instrument executed by a person who has acquired an interest in the land thereby affected by devise or operation of law upon intestacy shall state the name of the person from whom the interest has devolved, together with the date and place of decease of such person, if known.
 
 Concepts:
@@ -17759,7 +17737,7 @@ Enlargement of time for registration of will
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must the person do regarding be a sufficient registry within the meaning of this Act?
+   Question: What must a person do when limited?
    Answer: 22: Enlargement of time for registration of will 22Where the person interested in lands devised by a will, by reason of the contesting of such will or other cause, is unable without his fault to exhibit the same for registry within the time before limited, and a memorial of such contest or cause is entered in the registry office within the space of six months after the decease of the testator if he died within the Province, or within the space of one year after his decease if he died without the Province, the registry of such will within the space of six months after obtaining the will or probate thereof or the removal of such cause shall be a sufficient registry within the meaning of this Act; but if there is any concealment or suppression of a will, no purchaser for a valuable consideration shall be disturbed or defeated by the will, unless it is registered within three years after the testator’s death.
 
 Concepts:
@@ -17816,7 +17794,7 @@ Rubric:
 
 Suggested chunks:
 
-- 23 - Registration of will in extra-provincial court, registration of notarial will (many-subsections, estimated rubric items: 12)
+- 23 - Registration of will in extra-provincial court, registration of notarial will (many-subsections, estimated rubric items: 12; sources: section:23)
 
 Concepts:
 - Have the Same Effect as Requirement
@@ -17858,7 +17836,7 @@ Rubric:
 
 Suggested chunks:
 
-- 24 - Registration of will probated in British Dominion (multiple-independent-topics, estimated rubric items: 12)
+- 24 - Registration of will probated in British Dominion (multiple-independent-topics, estimated rubric items: 12; sources: section:24)
 
 Concepts:
 - Registration of Will Probated in British Dominion
@@ -17984,7 +17962,7 @@ Registration of foreign decree
 Rubric:
 
 1. [filing-record] [Tier A]
-   Question: What must person file or record regarding Registration of foreign decree?
+   Question: What must a person do when the authenticated or certified copy of such decree?
    Answer: 27: Registration of foreign decree 27The authenticated or certified copy of any decree, decretal or other order relating to or affecting any land in this Province made by a Court of Equity or Chancery or other Court of Record out of this Province, under any Act of the Imperial or Canadian Parliament or made by any Court within this Province under any Act of the Legislature, may be registered in the registry office for the county in which such lands are situate if the authenticated or certified copy of such decree, decretal or other order purports to be under the seal of the Court making the same or, if the Court has no seal, under the hand of the judge of such Court who certifies on the said copy that the Court whereof he is judge has no seal; and such seal, or the signature of such judge, shall be proved by affidavit or affirmation before an official or person authorized by section 47 to take proof or acknowledgements of the execution of a conveyance out of the Province.
 
 Concepts:
@@ -18017,7 +17995,7 @@ Registration of corporate documents
 Rubric:
 
 1. [filing-record] [Tier A]
-   Question: What must the person file or record regarding be registered in the registry office for any county, and when registered shall have the same?
+   Question: What must a person do when registered shall have the same effect?
    Answer: 28: Registration of corporate documents 28A copy of letters patent, supplementary letters patent or other document of incorporation, amalgamation or change of name, certified as a true copy by the person having custody of the records of the agency issuing the original thereof, may be registered in the registry office for any county, and when registered shall have the same effect, as if the original document had been registered therein.
 
 Concepts:
@@ -18099,7 +18077,7 @@ Section 30 - Proof of signature and notice
 Rubric:
 
 1. [filing-record] [Tier A]
-   Question: What must the person file or record regarding Proof of signature and notice?
+   Question: What must a person do when any such notice shall be registered?
    Answer: 30(1): Before any such notice shall be registered, the signature of the person authorized under the provisions of the mortgage, or by the Property Act, to give or publish such notice shall be acknowledged or proved before a person authorized to take proofs or acknowledgments of deeds under this Act; and the fact that such notice was given or published in accordance with the provisions of the mortgage, or of the Property Act, shall be proved by the oath of a competent witness or witnesses before some one of the officials aforesaid.
 
 2. [filing-record] [Tier A]
@@ -18111,12 +18089,12 @@ Rubric:
    Answer: 30(3): Where the execution of a notice is by a corporation, proof of the corporate seal and that the same was affixed by an officer of the corporation thereunto authorized by the board of directors or other lawful authority, and of the signature of such officer, shall in all cases be sufficient.
 
 4. [filing-record] [Tier A]
-   Question: What powers does the person have regarding Proof of signature and notice?
+   Question: What must a person do when the same official?
    Answer: 30(4): Proof of all the matters provided for in this section may be made before the same official, or proof of the signature of the person signing the notice may be made before one official, and proof of the giving or publishing of the notice may be made before another.
 
 Suggested chunks:
 
-- 30 - Proof of signature and notice (many-subsections, estimated rubric items: 12)
+- 30 - Proof of signature and notice (many-subsections, estimated rubric items: 12; sources: section:30)
 
 Concepts:
 - Proof of Signature and Notice
@@ -18165,8 +18143,7 @@ Rubric:
 
 Suggested chunks:
 
-- 31 - Duty of registrar respecting notice of sale (multiple-independent-topics, estimated rubric items: 9)
-- 31 - Duty of registrar respecting notice of sale (many-subsections, estimated rubric items: 9)
+- 31 - Duty of registrar respecting notice of sale (multiple-independent-topics, many-subsections, estimated rubric items: 9; sources: section:31)
 
 Concepts:
 - Duty of Registrar Respecting Notice of Sale
@@ -18201,12 +18178,12 @@ Filing of notice of sale
 Rubric:
 
 1. [filing-record] [Tier A]
-   Question: What must the person file or record regarding file the same in his office instead of registering the same at full length, and on?
+   Question: What must a person file?
    Answer: 32: Filing of notice of sale 32Notwithstanding the provisions contained in sections 29, 30 and 31, the registrar, at the request of the person offering such notice of sale, affidavits and other proof for registration, shall file the same in his office instead of registering the same at full length, and on such filing enter in the index the name of the person giving the notice, and the names of the persons to whom such notice was given, and enter a certificate upon such notice of the day, hour and minute of filing, and duly enter the same in the order of its receipt with other instruments for registry.
 
 Suggested chunks:
 
-- 32 - Filing of notice of sale (multiple-independent-topics, estimated rubric items: 6)
+- 32 - Filing of notice of sale (multiple-independent-topics, estimated rubric items: 6; sources: section:32)
 
 Concepts:
 - Filing of Notice of Sale
@@ -18248,10 +18225,8 @@ Rubric:
 Concepts:
 - Registering Lien or Certificate Under the Construction Remedies act
 - Certificate Under the Construction Remedies act is to be
-- Certificate Registered Under Subsection
 
-Warnings:
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Certificate Registered Under Subsection
+Warnings: none
 
 ### Section 34 - Effect of registration of conveyance
 
@@ -18311,7 +18286,7 @@ Registration of copy
 Rubric:
 
 1. [filing-record] [Tier A]
-   Question: What must person file or record regarding Registration of copy?
+   Question: What must a person do?
    Answer: 35: Registration of copy 35Where an instrument has been duly registered under the provisions of this Act, a copy thereof certified by the registrar according to this Act may be registered in any registry office upon deposit thereof without production of the original instrument, and without proof other than the production of such copy, and when so registered shall have the same effect as if the original had been registered in that office; if the acknowledgment or proof of execution of the original instrument was taken or made before a person having authority to take an acknowledgment or proof for registration in the registry office in which it is proposed to register such copy.
 
 Concepts:
@@ -18404,7 +18379,7 @@ Proof of execution
 
 Rubric:
 
-1. [power-duty] [Tier A]
+1. [power-duty] [Tier B]
    Question: What does 37 provide regarding be made either by oath or affidavit, or by affirmation or declaration when by the law?
    Answer: 37: Proof of execution 37When proof is made by a subscribing witness to the execution of any instrument, such proof may be made either by oath or affidavit, or by affirmation or declaration when by the law of the country where such proof is made an affirmation or declaration is allowed instead of an oath or affidavit, and the registrar may receive such instrument so proved without any other or further proof of the due execution, if it be stated in such proof that, by the law of the country where the same is made, proof by affirmation or declaration is allowed instead of by oath or affidavit.
 
@@ -18503,7 +18478,7 @@ Compellability of witness
 
 Rubric:
 
-1. [power-duty] [Tier A]
+1. [power-duty] [Tier B]
    Question: What does 40 provide regarding be an incompetent witness by this Act, shall be compellable, when necessary by order of a?
    Answer: 40: Compellability of witness 40Every subscribing witness, except such as may be an incompetent witness by this Act, shall be compellable, when necessary by order of a judge of The Court of King’s Bench of New Brunswick, to make affidavit or proof of the execution of any instrument for the purpose of registration under this Act.
 
@@ -18540,7 +18515,7 @@ Certificate of proof of instrument
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must person do regarding Certificate of proof of instrument?
+   Question: What must a person do when a judge of The Court of King’s Bench of New Brunswick?
    Answer: 41: Certificate of proof of instrument 41Where the witness to an instrument is dead, or has become insane, idiotic, imbecile or of unsound mind or understanding, and whether so found by inquisition or not, or where it is proved to the satisfaction of a judge of The Court of King’s Bench of New Brunswick that a witness to any instrument is without the Province and the place of abode or residence of such witness without the Province is unknown, any person who is or claims to be interested in the registration of the instrument may make proof viva voce or by affidavit, as the judge may require, before a judge of The Court of King’s Bench of New Brunswick, or a judge of any superior court of record in any other province of Canada, or any portion of the British Commonwealth of Nations, of the execution of such instrument, and upon a certificate endorsed upon such instrument and signed by such judge that the judge is satisfied, by the proof adduced, of the due execution of the instrument, the registrar shall register such instrument and certificate, if the certificate is sealed with the seal of the court to which the judge belongs.
 
 Concepts:
@@ -18573,7 +18548,7 @@ Proof of signature or seal
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does person have regarding Proof of signature or seal?
+   Question: What must a person do when whom such acknowledgment or affidavit is made?
    Answer: 42: Proof of signature or seal 42It is not necessary for the purpose of registration that there be any proof verifying the seal affixed to any acknowledgment, affidavit or other proof except where it may be otherwise required by this Act, nor is it necessary, except as otherwise required by this Act, to verify the signature or office of any person before whom such acknowledgment or affidavit is made, if the same purports to be sealed and certified by the proper officer as required.
 
 Concepts:
@@ -18829,7 +18804,7 @@ the handwriting of any such judge or Lord of Session being authenticated under t
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must the person do regarding Execution of instruments?
+   Question: What must a person do when the registry of any instrument?
    Answer: 44(1): Before the registry of any instrument, the execution of the same shall either be acknowledged by the person executing the same, or be proved by the oath of a subscribing witness in the manner following, except as herein otherwise provided, that is to say: (a) if the execution of an instrument is acknowledged in this Province, the acknowledgment may be taken before and by: (i) a judge of The Court of King’s Bench of New Brunswick; (ii) Repealed. (iii) a member or ex-member of the Executive Council; (iv) a registrar or deputy registrar of deeds, certified under the official seal of said registrar; (v) a notary public under the Notaries Public Act and residing in the Province, certified under his hand and official seal; (vi) Repealed. (b) if the execution of an instrument is acknowledged out of the Province, the acknowledgment may be taken before and by: (i) a notary public, certified under his hand and official seal; (ii) the mayor or chief magistrate of any city, borough, municipality or town corporate, certified under the common or corporate seal of such city, borough, municipality, or town corporate, or the seal of such mayor or chief magistrate; (iii) a judge of the Supreme Court of Judicature of Great Britain or Northern Ireland; (iv) a Canadian Minister, Ambassador, Consul, Vice-Consul, Consular Agent; (v) a Canadian Government Trade Commissioner or Assistant Canadian Government Trade Commissioner, exercising his functions outside of Canada; (vi) a judge or Lord of Session in Scotland; (vii) a judge of a court of supreme jurisdiction in any British dominion, colony, province or dependency; (viii) a British Minister, Ambassador, Charge d’Affaires, Consul, Vice-Consul, Acting Consul, Pro-Consul, or Consular Agent of His Majesty, exercising functions in any foreign place; (ix) the Governor of any State; the handwriting and certificate of any such Judge or Lord of Session being authenticated under the seal of a notary public, and the taking of any such acknowledgment before such Minister, Ambassador, Consul, Vice-Consul, Acting Consul, Pro-Consul, Consular Agent or Governor being certified respectively under his hand and seal of office; (c) if the execution of an instrument is proved in the Province such proof may be taken before and by any of the persons enumerated in paragraph (a) or before and by a Commissioner for taking affidavits to be read in the Supreme Court; (d) if the execution of an instrument is proved out of the Province such proof may be taken before and by: (i) a commissioner for taking affidavits and administering oaths under the Commissioners for taking Affidavits Act including the officials thereby authorized to take affidavits; (ii) a notary public, certified under his hand and official seal; (iii) the mayor or chief magistrate of any city, borough, municipality or town corporate, under the seal of such mayor or chief magistrate; (iv) a judge of the Supreme Court of Judicature of Great Britain or of Northern Ireland; (v) a judge or Lord of Session in Scotland; (vi) a judge of a court of supreme jurisdiction in any British dominion, colony, province or dependency; (vii) the Governor of any State; the handwriting of any such judge or Lord of Session being authenticated under the seal of a notary public.
 
 2. [power-duty] [Tier C]
@@ -18838,7 +18813,7 @@ Rubric:
 
 Suggested chunks:
 
-- 44 - Execution of instruments (long-enumeration, estimated rubric items: 6)
+- 44 - Execution of instruments (long-enumeration, estimated rubric items: 6; sources: section:44)
 
 Concepts:
 - Execution of Instruments
@@ -18966,7 +18941,7 @@ a conveyance pursuant to an order of a court or judge.
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must development officer do regarding Certificate of development officer?
+   Question: What must the development officer do?
    Answer: 46(1): No instrument that transfers an interest in land in an area to which a subdivision by-law or regulation applies shall be registered until it has been certified by a development officer pursuant to section 77 of the Community Planning Act.
 
 2. [power-duty] [Tier A]
@@ -18974,7 +18949,7 @@ Rubric:
    Answer: 46(2): A plan annexed to an instrument to which subsection (1) applies shall not be registered or filed until certified by the development officer who certified the instrument.
 
 3. [power-duty] [Tier A]
-   Question: What powers does the person have regarding subdivision plan?
+   Question: What may a person do?
    Answer: 46(3): Subsection (1) does not apply to the registration of (a) a lease or other instrument that transfers only an interest in part of a building or structure; (b) an instrument that transfers an interest in a parcel of land appearing on a filed subdivision plan, or a remnant of land comprised in such a plan, where the instrument refers to the plan by its name and registration data and, in the case of a parcel appearing on a filed subdivision plan, identifies the parcel by its identifying numbers or letters on the plan; (b.1) an instrument accompanied by an affidavit of a barrister and solicitor of The Court of King’s Bench of New Brunswick, in the form prescribed by regulation, deposing that the instrument does not subdivide land within the meaning of the Community Planning Act; (c) an instrument that contains a statement that the land transferred thereby is the same land as was transferred previously by a registered instrument bearing a certificate mentioned in subsection (1), and which statement refers to such previous instrument by its registration data; (d) an agreement for the sale and purchase of land; (e) an assignment of mortgage or certificate of discharge of mortgage wherein the person assigning or discharging the mortgage declares that he is assigning or discharging, as the case may be, the whole of his interest under the mortgage; (f) a judgment, decree or memorial of judgment or decree of any court; or (g) a conveyance pursuant to an order of a court or judge.
 
 4. [power-duty] [Tier C]
@@ -18983,8 +18958,7 @@ Rubric:
 
 Suggested chunks:
 
-- 46 - Certificate of development officer (multiple-independent-topics, estimated rubric items: 10)
-- 46 - Certificate of development officer (many-subsections, estimated rubric items: 10)
+- 46 - Certificate of development officer (multiple-independent-topics, many-subsections, estimated rubric items: 10; sources: section:46)
 
 Concepts:
 - Certificate of Development Officer
@@ -19018,7 +18992,7 @@ Persons before whom proof of execution made
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does person have regarding Persons before whom proof of execution made?
+   Question: What must a person do when whom proof of execution made 47Any affidavit?
    Answer: 47: Persons before whom proof of execution made 47Any affidavit, oath, declaration or affirmation made without the Province, proving the execution of any power of attorney, will or probate, copy or memorial thereof, for the purpose of registry in this Province, may be made before any person authorized by section 44 to take proof of conveyances without the Province.
 
 Concepts:
@@ -19087,11 +19061,11 @@ Section 49 - Certificate of cancellation of Crown grant
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must the Minister do regarding make a record of the cancellation of the grant on the records in his office relating?
+   Question: What must the Minister do?
    Answer: 49(1): Where a grant of land from the Crown is cancelled by or under authority of an Act of the Legislature, the Minister of Natural Resources shall make a record of the cancellation of the grant on the records in his office relating to the said grant, and, unless otherwise provided by an Act of the Legislature, the cancellation of the grant shall have no effect until a certificate, under the hand of the Minister of Natural Resources, stating that such grant has been cancelled, is registered in the registry office for the county in which such land is situate.
 
 2. [power-duty] [Tier A]
-   Question: What powers does the Minister have regarding be registered without proof of his signature or official position?
+   Question: What may the Minister do?
    Answer: 49(2): Such a certificate purporting to be signed by the Minister of Natural Resources may be registered without proof of his signature or official position.
 
 Concepts:
@@ -19192,11 +19166,11 @@ Rubric:
    Answer: 50(1): Except as otherwise provided by this Act or any other law of the Province, all instruments that may be registered under this Act shall be registered upon the production to the registrar of the original instrument, when but one is executed; or, when such instrument is in two or more original parts, upon the production of one such part.
 
 2. [filing-record] [Tier A]
-   Question: What must the person file or record regarding register one of such parts and endorse thereon the certificate and endorsement by this Act provided?
+   Question: What must a person do when it were the only original presented for registry and registered?
    Answer: 50(2): Where an instrument to be registered is in two or more original parts, and two or more of such original parts are produced together to the registrar at the time of registration, he shall register one of such parts and endorse thereon the certificate and endorsement by this Act provided to be endorsed upon the registry of such instrument, and he shall also, at the request of the person registering, and on being paid the fee for such certificate, make a like endorsement and certificate upon the other original part so presented; and any original so certified and endorsed may be received in evidence in any court in like manner, and with the same effect, as if it were the only original presented for registry and registered.
 
 3. [filing-record] [Tier A]
-   Question: What powers does person have regarding refuse to register the judgment or decree and require the person to present an abbreviated judgment?
+   Question: What authority does a person have to refuse to register the judgment or decree and require the person to present an abbreviated judgment or decree that (a) omits the provisions that do not affect an interest in or title to land or require the payment of money, and (b) is certified under the seal of the court that issued the judgment or decree?
    Answer: 50(3.1): If a person presents for registration a judgment or decree that affects an interest in or title to land or requires the payment of money, but also includes provisions that do not do so, the registrar may refuse to register the judgment or decree and require the person to present an abbreviated judgment or decree that (a) omits the provisions that do not affect an interest in or title to land or require the payment of money, and (b) is certified under the seal of the court that issued the judgment or decree.
 
 4. [filing-record] [Tier A]
@@ -19204,7 +19178,7 @@ Rubric:
    Answer: 50(4): Subject to subsection (6), no instrument tendered the registrar for registration, to which there is annexed any plan, shall be received by the registrar for registration unless there is delivered to the registrar to be filed by him, a copy of any and all plans annexed to such instrument, each of which copies shall be numbered in the order in which it is received, and a corresponding number marked Plan No. . . . . . . . . . . . . . . . .entered by the registrar on the page on which is registered the instrument, in which reference to any such plan is made.
 
 5. [filing-record] [Tier A]
-   Question: What must development officer file or record regarding file any plan for the subdivision of land to which a subdivision by-law or regulation applies?
+   Question: What must the development officer file?
    Answer: 50(5): Subject to subsection (8), the registrar shall file any plan for the subdivision of land to which a subdivision by-law or regulation applies, whether annexed to an instrument or not, if it bears the stamp or certificate or approval of (a) a development officer under the Community Planning Act, and (b) the Director of Surveys if the land is in an integrated survey area constituted under the Surveys Act.
 
 6. [filing-record] [Tier C]
@@ -19217,9 +19191,9 @@ Rubric:
 
 Suggested chunks:
 
-- 50 - Registration of original instrument, annexed plan, instrument conveying parcel (many-subsections, estimated rubric items: 12)
-- 50 - Registration of original instrument, annexed plan, instrument conveying parcel (long-enumeration, estimated rubric items: 12)
-- 50 - Registration of original instrument, annexed plan, instrument conveying parcel (multiple-independent-topics, estimated rubric items: 12)
+- 50 50(1)-50(3): registered under this Act shall be registered upon the production to the registr (many-subsections, long-enumeration, multiple-independent-topics, estimated rubric items: 6; sources: section:50/subsection:1, section:50/subsection:2, section:50/subsection:2.1, section:50/subsection:3)
+- 50 50(3.1)-50(6): refuse to register the judgment or decree and require the person to present (many-subsections, long-enumeration, multiple-independent-topics, estimated rubric items: 6; sources: section:50/subsection:3.1, section:50/subsection:4, section:50/subsection:5, section:50/subsection:6)
+- 50 50(7)-50(8): Registration of original instrument, annexed plan, instrument conveying parcel (many-subsections, long-enumeration, multiple-independent-topics, estimated rubric items: 6; sources: section:50/subsection:7, section:50/subsection:8)
 
 Concepts:
 - Registration of Original Instrument, Annexed Plan, Instrument Conveying Parcel
@@ -19273,7 +19247,7 @@ Rubric:
 
 Suggested chunks:
 
-- 51 - Certificate of registrar (multiple-independent-topics, estimated rubric items: 5)
+- 51 - Certificate of registrar (multiple-independent-topics, estimated rubric items: 5; sources: section:51)
 
 Concepts:
 - Certificate of Registrar
@@ -19475,7 +19449,7 @@ Certificate of satisfaction of judgment
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must the person do regarding be discharged or partially discharged by the person entitled to discharge the same, by certificate executed?
+   Question: What must a person do when registered?
    Answer: 57: Certificate of satisfaction of judgment 57A registered judgment or certificate or memorial of judgment may be discharged or partially discharged by the person entitled to discharge the same, by certificate executed and registered in the same manner as a certificate of discharge of mortgage, and such certificate, when registered, shall have the effect of releasing the land charged by the registration of the judgment, certificate or memorial, or such portion thereof as may be specially mentioned in such discharge.
 
 Concepts:
@@ -19541,12 +19515,12 @@ Registration of certificate of pending litigation
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What is person prohibited from doing?
+   Question: What is a person prohibited from doing?
    Answer: 59: Registration of certificate of pending litigation 59The instituting of an action or the taking of a proceeding, in which action or proceeding any title to, or interest in, land is brought in question, shall not be deemed notice of the action or proceeding to any person not being a party thereto until a certificate of pending litigation prescribed by the Rules of Court under the Judicature Act has been signed by the clerk of The Court of King’s Bench of New Brunswick in the judicial district wherein the action was instituted or the proceeding taken, and has been registered in the registry office for the county in which the land is situate.
 
 Suggested chunks:
 
-- 59 - Registration of certificate of pending litigation (multiple-independent-topics, estimated rubric items: 3)
+- 59 - Registration of certificate of pending litigation (multiple-independent-topics, estimated rubric items: 3; sources: section:59)
 
 Concepts:
 - Registration of Certificate of Pending Litigation
@@ -19651,14 +19625,13 @@ Orders of Provincial or Federal Cabinet
 Rubric:
 
 1. [filing-record] [Tier A]
-   Question: What powers does Council have regarding Orders of Provincial or Federal Cabinet?
+   Question: What may the council do?
    Answer: 62: Orders of Provincial or Federal Cabinet 62Orders of the Governor General in Council or the Lieutenant-Governor in Council may be registered in the registry office for the county in which any land to which the Order in Council relates is situate, upon the deposit of a copy of the order certified by the clerk or assistant or acting clerk of the Council.
 
 Concepts:
 - Orders of Provincial or Federal Cabinet
 
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What order-making rules are established by section 62 of Registry Act?
+Warnings: none
 
 ### Section 63 - Registration of bond to Crown
 
@@ -19724,8 +19697,7 @@ Rubric:
 Concepts:
 - Registration as Notice
 
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What filing or registration requirements are established by section 64 of Registry Act?
+Warnings: none
 
 ### Section 65 - Payment of fees
 
@@ -19937,11 +19909,11 @@ Section 67 - Regulations and amendments respecting Schedule of Fees
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does The Lieutenant-Governor in Council have regarding make regulations prescribing a Schedule of Fees under this Act?
+   Question: What authority does the Lieutenant-Governor in Council have to make regulations prescribing a Schedule of Fees under this Act?
    Answer: 67(1): The Lieutenant-Governor in Council may make regulations prescribing a Schedule of Fees under this Act.
 
 2. [power-duty] [Tier A]
-   Question: What powers does the Lieutenant-Governor in Council have regarding be added to, varied or amended by order of the Lieutenant-Governor in Council?
+   Question: What may the Lieutenant-Governor in Council do?
    Answer: 67(2): The fees prescribed in any other Act for purposes within the scope of this Act may be added to, varied or amended by order of the Lieutenant-Governor in Council.
 
 Concepts:
@@ -20007,7 +19979,7 @@ Statement of fees
 Rubric:
 
 1. [power-duty] [Tier C]
-   Question: What must the person do regarding Statement of fees?
+   Question: What does 69 provide regarding Statement of fees?
    Answer: 69: Statement of fees 69Every registrar shall, upon request of the person for whom service is performed, furnish a statement in detail of the fees charged by him in respect of any matter for which fees are payable under this Act.
 
 Concepts:
@@ -20194,11 +20166,11 @@ generally for the better carrying out of this Act.
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must The Lieutenant-Governor in Council do regarding Regulations?
+   Question: What must the Lieutenant-Governor in Council do?
    Answer: 71(1): The Lieutenant-Governor in Council may make regulations (a) respecting the books and records to be kept in the registry office; (b) respecting the reports and returns to be made by the registrar, and to whom they shall be made, and the time at which and the forms in which they shall be made; (b.1) respecting information which shall be included in an affidavit of transfer referred to in subsection 19(6); (b.2) providing for the method of calculating and ascertaining the true and actual consideration referred to in subsection 19(6); (b.3) prescribing instruments that are to be submitted in a format other than as a digitally scanned image and providing for restrictions or conditions that apply in respect of the instruments prescribed; (b.4) respecting the possession and retention of instruments and other documents in paper format by a subscriber or former subscriber, including the minimum period of time those instruments and documents are to be retained, and the inspection and copying of such instruments and documents by the Chief Registrar of Deeds; (b.5) respecting the submission of a digitally scanned image of an instrument; (b.6) respecting the registration or filing of a digitally scanned image of an instrument; (b.7) prescribing information that is to accompany the submission of a digitally scanned image of an instrument; (c) respecting the amount and form of surety to be furnished under this Act; (d) respecting the books of account to be kept by the registrar; (e) respecting the disposition to be made by the registrar of the sums coming into his hands by virtue of his office; (f) fixing the location of registry offices; (g) combining registry offices and providing the manner in which registry offices are to be combined; (h) prescribing the days and hours during which Registry Offices shall be open to the public; (i) prescribing the hours during which instruments shall be received for filing or registration; (j) prescribing forms required under this Act; and (k) generally for the better carrying out of this Act.
 
 2. [power-duty] [Tier A]
-   Question: What is The Lieutenant-Governor in Council prohibited from doing?
+   Question: What is the Lieutenant-Governor in Council prohibited from doing?
    Answer: 71(2): The Lieutenant-Governor in Council may make regulations respecting the form of any instrument which may be registered in a registry office, the size, type and colour of lettering used in any provision of the instrument and the colouring of the instrument and thereafter an instrument which does not comply with such regulations shall not be accepted for registration in a registry office.
 
 3. [power-duty] [Tier C]
@@ -20207,7 +20179,7 @@ Rubric:
 
 Suggested chunks:
 
-- 71 - Regulations (many-subsections, estimated rubric items: 11)
+- 71 - Regulations (many-subsections, estimated rubric items: 11; sources: section:71)
 
 Concepts:
 - Registration in a Registry Office
@@ -20325,10 +20297,10 @@ Rubric:
    Answer: 2(1): This Act applies to the registration of the title to (a) every parcel of land, including land owned by the Crown, unless the land is excepted from the operation of this Act by the Lieutenant-Governor in Council under subsection (2); and (b) such other parcels of land as are brought under the operation of this Act by the Lieutenant-Governor in Council under subsection (2) or by the Registrar General under section 14.
 
 2. [power-duty] [Tier A]
-   Question: What powers does The Lieutenant-Governor in Council have regarding except from the operation of this Act or bring under the operation of this Act such?
+   Question: What may the Lieutenant-Governor in Council do?
    Answer: 2(2): The Lieutenant-Governor in Council may except from the operation of this Act or bring under the operation of this Act such parcels of land, including land owned by the Crown, as he considers fit and in doing so may designate the land generally or specifically, by location or territory, by class or kind, in reference to the transfer, transferor or transferee, or in reference to the instruments in which a description or reference to the land is made.
 
-3. [power-duty] [Tier A]
+3. [power-duty] [Tier B]
    Question: What does 2(3) provide regarding be recorded under the Registry Act if this Act applies to the registration of the title?
    Answer: 2(3): Except as provided in subsection (4) or (5) or by regulation, no instrument shall be recorded under the Registry Act if this Act applies to the registration of the title to the land to which the instrument relates.
 
@@ -20337,11 +20309,11 @@ Rubric:
    Answer: 2(4): Notwithstanding subsection (3), where an application has been made to have the title to land registered under this Act, an instrument may be recorded under the Registry Act relating to that land at any time before notice with respect to the land has been recorded under the Registry Act pursuant to subsection 18(6) of this Act.
 
 5. [power-duty] [Tier A]
-   Question: What powers does the Registrar General have regarding Application?
+   Question: What may the Registrar General do?
    Answer: 2(5): Notwithstanding subsection (3), when the Registrar General is satisfied that the circumstances require that an instrument or document should be recorded under the Registry Act he may authorize it to be recorded under that Act by a certificate endorsed on or annexed to the instrument or document.
 
 6. [power-duty] [Tier A]
-   Question: What must The Registrar General do regarding Application?
+   Question: What must the Registrar General do when formal application had been made by the owner?
    Answer: 2(6): The Registrar General may include in any such certificate a condition that the owner of the land described in the instrument or document shall be deemed to have made application to bring the land under this Act, and the procedures for bringing that land under this Act shall be carried out as if formal application had been made by the owner.
 
 7. [power-duty] [Tier C]
@@ -20350,8 +20322,8 @@ Rubric:
 
 Suggested chunks:
 
-- 2 - Application (multiple-independent-topics, estimated rubric items: 10)
-- 2 - Application (many-subsections, estimated rubric items: 10)
+- 2 2(1)-2(4): regulation, no instrument shall be recorded under the Registry Act if this Act a (multiple-independent-topics, many-subsections, estimated rubric items: 5; sources: section:2/subsection:1, section:2/subsection:2, section:2/subsection:3, section:2/subsection:4)
+- 2 2(5)-2(7): certificate endorsed on or annexed to the instrument or document (multiple-independent-topics, many-subsections, estimated rubric items: 6; sources: section:2/subsection:5, section:2/subsection:6, section:2/subsection:7)
 
 Concepts:
 - Application
@@ -20648,9 +20620,7 @@ Rubric:
 
 Suggested chunks:
 
-- 3 - Definitions (definitions, estimated rubric items: 12)
-- 3 - Definitions (long-enumeration, estimated rubric items: 12)
-- 3 - Definitions (multiple-independent-topics, estimated rubric items: 12)
+- 3 - Definitions (definitions, long-enumeration, multiple-independent-topics, estimated rubric items: 12; sources: section:3)
 
 Concepts:
 - Approved Parcel Identifier
@@ -20750,11 +20720,11 @@ Section 5 - Appointment of Registrar General, registrar and deputies
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must The Lieutenant-Governor in Council do regarding Appointment of Registrar General, registrar and deputies?
+   Question: What must the Lieutenant-Governor in Council do?
    Answer: 5(1): The Lieutenant-Governor in Council may appoint a person to be Registrar General of Land Titles who shall perform such duties and exercise such powers as are assigned to him by this Act, the regulations and the Lieutenant-Governor in Council.
 
 2. [power-duty] [Tier A]
-   Question: What powers does The Lieutenant-Governor in Council have regarding Appointment of Registrar General, registrar and deputies?
+   Question: What authority does the Lieutenant-Governor in Council have to appoint a Deputy Registrar General of Land Titles who may perform any of the duties and exercise any of the powers of the Registrar General?
    Answer: 5(2): The Lieutenant-Governor in Council may appoint a Deputy Registrar General of Land Titles who may perform any of the duties and exercise any of the powers of the Registrar General.
 
 3. [power-duty] [Tier C]
@@ -20766,7 +20736,7 @@ Rubric:
    Answer: 5(4): Service New Brunswick may appoint a deputy registrar who may perform any of the duties and exercise any of the powers of a registrar.
 
 5. [power-duty] [Tier A]
-   Question: What must the Registrar General do regarding Appointment of Registrar General, registrar and deputies?
+   Question: What must the Registrar General do?
    Answer: 5(5): Except in the case of the Registrar General and Deputy Registrar General who shall be paid such remuneration as the Lieutenant-Governor in Council determines, the registrars and deputy registrars shall be paid such remuneration as Service New Brunswick determines, and all costs and fees received by the registrars and deputy registrars, including the Registrar General and Deputy Registrar General, shall be paid to Service New Brunswick.
 
 6. [power-duty] [Tier C]
@@ -20775,7 +20745,8 @@ Rubric:
 
 Suggested chunks:
 
-- 5 - Appointment of Registrar General, registrar and deputies (many-subsections, estimated rubric items: 11)
+- 5 5(1)-5(4): regulations and the Lieutenant-Governor in Council (many-subsections, estimated rubric items: 6; sources: section:5/subsection:1, section:5/subsection:2, section:5/subsection:3, section:5/subsection:4)
+- 5 5(5)-5(6): Appointment of Registrar General, registrar and deputies (many-subsections, estimated rubric items: 6; sources: section:5/subsection:5, section:5/subsection:6)
 
 Concepts:
 - Appointment of Registrar General, Registrar and Deputies
@@ -20808,7 +20779,7 @@ Service New Brunswick
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must person do regarding Service New Brunswick?
+   Question: What must a person do?
    Answer: 6: Service New Brunswick 6Service New Brunswick may designate any person to perform any of the duties or exercise any of the powers of the Registrar General and shall specify the duties to be performed or powers to be exercised by the person so designated.
 
 Concepts:
@@ -20843,7 +20814,7 @@ Seals of office
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must Registrar General do regarding have a seal of office in a form approved by Service New Brunswick?
+   Question: What must the Registrar General do?
    Answer: 7: Seals of office 7The Registrar General and each registrar shall have a seal of office in a form approved by Service New Brunswick.
 
 Concepts:
@@ -20934,7 +20905,7 @@ Rubric:
    Answer: 9(1.1): Notwithstanding subsection (1), a registrar shall not be required to permit the inspection or furnish under his seal copies of records that are contained in or accompany an application made under section 11.
 
 3. [power-duty] [Tier A]
-   Question: What must the Registrar General do regarding be admissible in evidence in any court as proof of the contents thereof if certified as?
+   Question: What must the Registrar General do?
    Answer: 9(2): All records and copies of records that are required or permitted by law to be kept or held by a registrar, the Registrar General or the Director of Surveys appointed under the Surveys Act and accurate reproductions of such records or copies thereof shall be admissible in evidence in any court as proof of the contents thereof if certified as correct by the proper officer without proof of the official character of the person or persons appearing to have signed the same, and without further proof thereof.
 
 4. [power-duty] [Tier C]
@@ -20943,17 +20914,14 @@ Rubric:
 
 Suggested chunks:
 
-- 9 - Records and copies of records (definitions, estimated rubric items: 5)
-- 9 - Records and copies of records (multiple-independent-topics, estimated rubric items: 5)
+- 9 - Records and copies of records (definitions, multiple-independent-topics, estimated rubric items: 5; sources: section:9)
 
 Concepts:
 - Records
 - Records and Copies of Records
 - Land Titles Office
-- Application Made Under Section
 
-Warnings:
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Application Made Under Section
+Warnings: none
 
 ### Section 10 - Documents signed, made or issued by officers
 
@@ -20984,14 +20952,13 @@ Documents signed, made or issued by officers
 Rubric:
 
 1. [notice] [Tier A]
-   Question: What must the Registrar General do regarding be presumed to be a document signed, made or issued by the Registrar General, his deputy?
+   Question: What must the Registrar General do?
    Answer: 10: Documents signed, made or issued by officers 10Every document purporting to be an order, direction, notice, certificate, requirement or decision of the Registrar General, his deputy or a person designated by Service New Brunswick to perform duties or exercise powers of the Registrar General, shall be presumed to be a document signed, made or issued by the Registrar General, his deputy or the person so designated without proof of the signature or the official character of the person appearing to have signed, made or issued the document.
 
 Concepts:
 - Documents Signed, Made or Issued by Officers
 
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What duties does section 10 of Land Titles Act impose about documents signed, made or issued by officers?
+Warnings: none
 
 ### Section 10.1 - Parcel identifiers and descriptions of land
 
@@ -21100,7 +21067,7 @@ Rubric:
    Answer: 10.1(1): The registrar may assign a parcel identifier to any parcel of land.
 
 2. [power-duty] [Tier A]
-   Question: What powers does person have regarding Parcel identifiers and descriptions of land?
+   Question: What must a person do when (a) the description of the parcel meets the prescribed standards?
    Answer: 10.1(2): The registrar may, on the application of any person, associate a description of a parcel of land with its parcel identifier if (a) the description of the parcel meets the prescribed standards, and (b) the application is accompanied by evidence satisfactory to the registrar that a transfer of the entirety of the parcel would not contravene the Community Planning Act.
 
 3. [power-duty] [Tier A]
@@ -21108,7 +21075,7 @@ Rubric:
    Answer: 10.1(3): The registrar may, on his or her initiative, associate a description of a parcel of land with its parcel identifier if (a) the description of the parcel meets the prescribed standards, and (b) the registrar is satisfied on the basis of instruments that have been filed or registered, or records maintained, under the Registry Act or this Act, that a transfer of the entirety of the parcel would not contravene the Community Planning Act.
 
 4. [power-duty] [Tier A]
-   Question: What powers does the Registrar General have regarding Parcel identifiers and descriptions of land?
+   Question: What may the Registrar General do?
    Answer: 10.1(4): Where a description of a parcel of land does not meet the prescribed standards, the Registrar General may direct the registrar to associate that description with the parcel identifier assigned to that parcel if the Registrar General is satisfied (a) that the land can be properly and adequately identified for the purposes of this Act by reference to that description, and (b) that a transfer of the entirety of the parcel would not contravene the Community Planning Act.
 
 5. [power-duty] [Tier A]
@@ -21327,7 +21294,7 @@ certify in the application that he or she has possession of the affidavit of the
 Rubric:
 
 1. [filing-record] [Tier A]
-   Question: What powers does person have regarding by himself or his duly authorized agent apply to the registrar of the district in which?
+   Question: What may a person do?
    Answer: 11(1): Any person claiming to be the owner of a parcel of land that is not registered land may by himself or his duly authorized agent apply to the registrar of the district in which the land is situated to have the title to the land registered under this Act.
 
 2. [filing-record] [Tier C]
@@ -21335,29 +21302,21 @@ Rubric:
    Answer: 11(2): An application shall be in the prescribed form, describe the parcel to which the application relates by its approved parcel identifier, and be accompanied by (a) the prescribed fee; (b) a certificate of title in the prescribed form certified by a member of the Law Society of New Brunswick authorized to practise law; (c) an affidavit of the applicant in the prescribed form; (d) Repealed:
 
 3. [filing-record] [Tier A]
-   Question: What must the Registrar General file or record regarding Application to register land?
+   Question: What must the Registrar General do?
    Answer: 11(3): Notwithstanding subsection (2), where an application under this section is submitted electronically by a subscriber, the subscriber shall (a) provide the certificate of title in an electronic format approved by the Registrar General, and (b) certify in the application that he or she has possession of the affidavit of the applicant or a copy of the affidavit in the prescribed form in paper format.
 
 4. [filing-record] [Tier C]
    Question: What prohibition applies under 11(4)?
    Answer: 11(4): A subscriber shall not submit an application in electronic format unless the subscriber has in his or her possession the affidavit of the applicant or a copy of the affidavit in the prescribed form in paper format.
 
-5. [filing-record] [Tier A]
-   Question: What must the Registrar General file or record regarding be made in such manner and at such time as is established by the Registrar General?
-   Answer: 11(5): Where an application is submitted electronically, payment of the prescribed fee shall be made in such manner and at such time as is established by the Registrar General.
-
-6. [filing-record] [Tier C]
+5. [filing-record] [Tier C]
    Question: What filing or record rule applies to retain the affidavit of the applicant or a copy of the affidavit for such minimum period?
    Answer: 11(6): A subscriber shall retain the affidavit of the applicant or a copy of the affidavit for such minimum period of time as is required by the regulations.
 
-7. [filing-record] [Tier A]
-   Question: What must The Registrar General file or record regarding at any time require a subscriber or a former subscriber to produce for inspection the affidavit?
-   Answer: 11(7): The Registrar General may at any time require a subscriber or a former subscriber to produce for inspection the affidavit of the applicant or a copy of the affidavit and any other related material, and the subscriber or former subscriber shall do so without delay.
-
 Suggested chunks:
 
-- 11 - Application to register land (multiple-independent-topics, estimated rubric items: 12)
-- 11 - Application to register land (many-subsections, estimated rubric items: 12)
+- 11 11(1)-11(4): registered land may by himself or his duly authorized agent apply to the registr (multiple-independent-topics, many-subsections, estimated rubric items: 6; sources: section:11/subsection:1, section:11/subsection:2, section:11/subsection:3, section:11/subsection:4)
+- 11 11(5)-11(7): regulations (multiple-independent-topics, many-subsections, estimated rubric items: 6; sources: section:11/subsection:5, section:11/subsection:6, section:11/subsection:7)
 
 Concepts:
 - Application to Register Land
@@ -21468,7 +21427,7 @@ Section 12 - Completion of application, order by Registrar General
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must the Registrar General do regarding forward the application to the Registrar General?
+   Question: What must the Registrar General do?
    Answer: 12(1): Where the registrar is satisfied that the application is complete, the registrar shall forward the application to the Registrar General.
 
 2. [power-duty] [Tier C]
@@ -21476,7 +21435,7 @@ Rubric:
    Answer: 12(2): Where the registrar is not satisfied that the application is complete, the registrar may reject the application and notify the applicant or the applicant’s agent of the rejection.
 
 3. [power-duty] [Tier A]
-   Question: What powers does the Registrar General have regarding Completion of application, order by Registrar General?
+   Question: What may the Registrar General do?
    Answer: 12(3): An applicant may, upon such terms as to the registrar or the Registrar General seem proper, withdraw his application as to the whole or any part of the land described therein at any time prior to the issue of the certificate of registered ownership.
 
 4. [power-duty] [Tier C]
@@ -21508,7 +21467,7 @@ Rubric:
    Answer: 12(9): When a title to land is registered subject to one or more interests pursuant to an order of the Registrar General under subsection (16), the registrar shall deal with the instruments evidencing the interests in the manner set out in section 18 in order of their priorities at the time of the registration and he shall not accept for registration any other instrument in respect of or affecting the same land until he has so dealt with the instruments.
 
 11. [power-duty] [Tier A]
-   Question: What must the Registrar General do regarding Completion of application, order by Registrar General?
+   Question: What filing or record rule applies to Completion of application, order by Registrar General?
    Answer: 12(10): When a title to land is registered subject to an interest pursuant to an order of the Registrar General under subsection (16) and the instrument evidencing the interest is registered in accordance with subsection 18(12) or in the manner prescribed, the instrument shall, notwithstanding anything in this Act relating to that type of instrument, continue to have the same force and effect as it would have if it were recorded under the Registry Act until the instrument lapses or is withdrawn or the registration is otherwise terminated by law.
 
 12. [power-duty] [Tier C]
@@ -21541,21 +21500,22 @@ Rubric:
 
 Suggested chunks:
 
-- 12 - Completion of application, order by Registrar General (many-subsections, estimated rubric items: 19)
-- 12 - Completion of application, order by Registrar General (multiple-independent-topics, estimated rubric items: 19)
+- 12 12(1)-12(4): certificate of registered ownership (many-subsections, multiple-independent-topics, estimated rubric items: 6; sources: section:12/subsection:1, section:12/subsection:2, section:12/subsection:3, section:12/subsection:4)
+- 12 12(5)-12(7.1): Completion of application, order by Registrar General (many-subsections, multiple-independent-topics, estimated rubric items: 6; sources: section:12/subsection:5, section:12/subsection:6, section:12/subsection:7, section:12/subsection:7.1)
+- 12 12(8)-12(11): registered subject to one or more interests pursuant to an order of the Registra (many-subsections, multiple-independent-topics, estimated rubric items: 6; sources: section:12/subsection:8, section:12/subsection:9, section:12/subsection:10, section:12/subsection:11)
+- 12 12(12)-12(15): Completion of application, order by Registrar General (many-subsections, multiple-independent-topics, estimated rubric items: 6; sources: section:12/subsection:12, section:12/subsection:13, section:12/subsection:14, section:12/subsection:15)
+- 12 12(16)-12(18): certificate of title provided under paragraph 11(2)(b), make an order directing t (many-subsections, multiple-independent-topics, estimated rubric items: 6; sources: section:12/subsection:16, section:12/subsection:17, section:12/subsection:18)
 
 Concepts:
 - Completion of Application, Order by Registrar General
 - Application is Complete
 - Registration and he Shall not Accept for Registration any
 - Registration is Otherwise Terminated by law
-- Application to the Registrar General Under Subsection
 - Forward the Application to the Registrar General Requirement
 
 Warnings:
 - [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 12(4) provide regarding Completion of application, order by Registrar General? | What does 12(5) provide regarding Completion of application, order by Registrar General? | What does 12(6) provide regarding Completion of application, order by Registrar General? | What does 12(7) provide regarding Completion of application, order by Registrar General? | What does 12(7.1) provide regarding Completion of application, order by Registrar General? | What does 12(8) provide regarding Completion of application, order by Registrar General? | What does 12(11) provide regarding Completion of application, order by Registrar General? | What does 12(12) provide regarding Completion of application, order by Registrar General? | What does 12(13) provide regarding Completion of application, order by Registrar General? | What does 12(14) provide regarding Completion of application, order by Registrar General? | What does 12(15) provide regarding Completion of application, order by Registrar General? | What does 12(18) provide regarding Completion of application, order by Registrar General?
 - [WARNING] TOO_MANY_RUBRIC_ITEMS (generated.rubricItems): The section produced more than 10 rubric items. Text: 18
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Application to the Registrar General Under Subsection
 
 ### Section 13 - Court order or enactment
 
@@ -21607,11 +21567,11 @@ shall make an order directing the registrar to register the title to the land.
 Rubric:
 
 1. [filing-record] [Tier A]
-   Question: What must person file or record regarding forward the documentation filed to the Registrar General?
+   Question: What must a person do?
    Answer: 13(1): Upon the filing with the registrar of documentation evidencing an order of a court or enactment of the Province whereby a person acquires title or confirmation of title to a parcel of unregistered land and upon payment of the prescribed fee, the registrar shall forward the documentation filed to the Registrar General.
 
 2. [filing-record] [Tier A]
-   Question: What must The Registrar General file or record regarding make an order directing the registrar to register the title to the land?
+   Question: What must the Registrar General do when applicable?
    Answer: 13(2): The Registrar General, upon being satisfied that (a) title to the land is acquired or confirmed; (b) the land can be properly identified; and (c) the Community Planning Act, if applicable, has been complied with, shall make an order directing the registrar to register the title to the land.
 
 Concepts:
@@ -21619,8 +21579,7 @@ Concepts:
 - Filing With the Registrar of Documentation
 - Forward the Documentation Filed to the Registrar General Requirement
 
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What order-making rules are established by section 13 of Land Titles Act?
+Warnings: none
 
 ### Section 14 - Order of Registrar General
 
@@ -21662,14 +21621,13 @@ he may make an order directing the registrar to register the title to the land.
 Rubric:
 
 1. [filing-record] [Tier A]
-   Question: What powers does Registrar General have regarding make an order directing the registrar to register the title to the land?
+   Question: What authority does the Registrar General have to make an order directing the registrar to register the title to the land?
    Answer: 14: Order of Registrar General 14Where the Registrar General is satisfied that any parcel of land should be brought under the operation of this Act and that title to such land should be registered without an application, and (a) he obtains such supporting information as he considers necessary together with the consent in writing of the owner thereof, and (b) the prescribed fee is paid, he may make an order directing the registrar to register the title to the land.
 
 Concepts:
 - Order of Registrar General
 
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What order-making rules are established by section 14 of Land Titles Act?
+Warnings: none
 
 ### Section 14.1 - Land under Condominium Property Act
 
@@ -21728,29 +21686,31 @@ the owners of the land consent to the registration.
 Rubric:
 
 1. [notice] [Tier A]
-   Question: What powers does the Registrar General have regarding Land under Condominium Property Act?
+   Question: What must the Registrar General do when any?
    Answer: 14.1(1): In relation to land governed by the Condominium Property Act, the Registrar General may, upon giving notice in prescribed form to each person who appears to have some right to or claim against the land in question or to be in possession of it, hold a hearing to determine what registration, if any, should be made in respect of the title to that land.
 
 2. [notice] [Tier A]
-   Question: What powers does the Registrar General have regarding make orders directing the registrar to register the title to the land?
+   Question: What authority does the Registrar General have to make orders directing the registrar to register the title to the land?
    Answer: 14.1(2): Where, following a hearing held under subsection (1), the Registrar General is satisfied as to the registration to be made in respect of the land in question, he may make orders directing the registrar to register the title to the land.
 
 3. [notice] [Tier A]
-   Question: What must person do regarding Land under Condominium Property Act?
+   Question: What must the Registrar General do when (a) he is satisfied as to the registration to be made in respect of the land?
+   Answer: 14.1(3): The Registrar General may dispense with a hearing for the purposes of subsections (1) and (2) and may issue orders directing the registrar to register the title to the land if (a) he is satisfied as to the registration to be made in respect of the land, and (b) the owners of the land consent to the registration.
+
+4. [notice] [Tier A]
+   Question: What must a person do?
    Answer: 14.1(4): Each order, or a true copy of each order, referred to in subsection (2) or (3) shall be given to the registrar and to each person who appears to have some right to or claim against the land to which that order relates, or to be in possession of it.
 
-4. [notice] [Tier C]
+5. [notice] [Tier C]
    Question: What notice rule applies to Land under Condominium Property Act?
    Answer: 14.1(5): For the purposes of subsection (1), the Registrar General has all the powers and privileges of a commissioner under the Inquiries Act and regulations thereunder.
 
 Concepts:
 - Land Under Condominium Property act
 - Notice in Prescribed Form to Each Person who
-- Hearing Held Under Subsection
 - Hearing for the Purposes of Subsections
 
-Warnings:
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Hearing Held Under Subsection
+Warnings: none
 
 ### Section 15 - Registration necessary to pass estate or interest
 
@@ -21788,14 +21748,10 @@ Section 15 - Registration necessary to pass estate or interest
 Rubric:
 
 1. [filing-record] [Tier A]
-   Question: What must the person file or record regarding Registration necessary to pass estate or interest?
+   Question: What filing or record rule applies to Registration necessary to pass estate or interest?
    Answer: 15(1): Except as against the person making the instrument, no instrument shall, until registered, pass any estate or interest in registered land or render the land liable as security for the payment of money.
 
-2. [filing-record] [Tier C]
-   Question: What filing or record rule applies to Registration necessary to pass estate or interest?
-   Answer: 15(2): Subsection (1) does not apply to an instrument creating a leasehold interest not exceeding three years where there is actual occupation of the land under the instrument.
-
-3. [filing-record] [Tier A]
+2. [filing-record] [Tier A]
    Question: What filing or record rule applies to be registered according to its tenor and intent and the registration thereupon creates, transfers, surrenders, charges?
    Answer: 15(3): Every instrument shall be registered according to its tenor and intent and the registration thereupon creates, transfers, surrenders, charges or discharges, as the case may be, the land, estate or interest therein described.
 
@@ -22004,15 +21960,15 @@ used to construct, alter, maintain, inspect or repair water mains or pipelines, 
 Rubric:
 
 1. [filing-record] [Tier A]
-   Question: What is person prohibited from doing?
+   Question: What must a person do when the title to land has been registered under this Act?
    Answer: 17(1): After the title to land has been registered under this Act, (a) no right, title or interest adverse to or in derogation of the title of the registered owner or his right to possession shall be acquired by the possession of another; and (b) no right to the access and use of light or any easement, right or profit à prendre shall be acquired in or in respect of the land by any person by prescription, and any such rights acquired by any person prior to the date on which the title was first registered under this Act shall not be enforceable as against a registered owner if the existence of the right is not shown in the title register.
 
 2. [filing-record] [Tier A]
-   Question: What powers does person have regarding apply to the court for relief?
+   Question: What may a person do?
    Answer: 17(2): Any person who, prior to the date on which the title to land was first registered under this Act, had the use and enjoyment of a right of way or right of access to property and such right of way or right of access is not registered against a parcel of registered land, may apply to the court for relief.
 
 3. [filing-record] [Tier A]
-   Question: What powers does person have regarding Effect of registration on subsequent interests?
+   Question: What must a person do when any?
    Answer: 17(3): The court upon consideration of an application pursuant to subsection (2) may grant relief and notwithstanding the generality thereof may (a) order that the title register be rectified to show the existence of a right of way or right of access; (b) determine the compensation, if any, that should be paid to any person; (c) order that any reasonable legal, survey and other costs actually incurred by a person involved in the application be damage suffered by reason of rectification of the title register; and (d) fix the costs in a lump sum or order that the costs be taxed in accordance with the Rules of Court.
 
 4. [filing-record] [Tier C]
@@ -22021,18 +21977,15 @@ Rubric:
 
 Suggested chunks:
 
-- 17 - Effect of registration on subsequent interests (long-enumeration, estimated rubric items: 12)
-- 17 - Effect of registration on subsequent interests (many-subsections, estimated rubric items: 12)
+- 17 - Effect of registration on subsequent interests (long-enumeration, many-subsections, estimated rubric items: 12; sources: section:17)
 
 Concepts:
 - Effect of Registration on Subsequent Interests
-- Application Pursuant to Subsection
 - be Acquired by the Possession of Another Requirement
 - be Registered has not Expired Requirement
 
 Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 17(4): Unless the contrary is expressly declared in the title register, all registered land is, by implication and without any special mention in the title register, subject to the following overriding incidents: (a) any
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Application Pursuant to Subsection
 
 ### Section 17.1 - Instruments to be submitted electronically
 
@@ -22133,11 +22086,11 @@ Rubric:
    Answer: 17.1(2): No instruments other than those designated under subsection (1) shall be submitted in an electronic format.
 
 3. [power-duty] [Tier A]
-   Question: What must the Registrar General do regarding be in an electronic format that has been approved by the Registrar General as being equivalent?
+   Question: What must the Registrar General do when printed?
    Answer: 17.1(3): An instrument designated under subsection (1) (a) shall be in an electronic format that has been approved by the Registrar General as being equivalent, when printed, in form and content to its counterpart prescribed by regulation, and (b) shall be submitted using the technology put in place by Service New Brunswick.
 
 4. [power-duty] [Tier A]
-   Question: What must person do regarding submit an electronic instrument?
+   Question: What must a person submit?
    Answer: 17.1(4): Subject to subsections (5) and (5.1), no person other than a subscriber shall submit an electronic instrument.
 
 5. [power-duty] [Tier C]
@@ -22145,20 +22098,21 @@ Rubric:
    Answer: 17.1(5): The owner of a mortgage who has entered into an agreement with Service New Brunswick may, in accordance with the agreement and the regulations, submit an electronic instrument that is an assignment of the mortgage or a discharge of the mortgage, if those instruments are designated under subsection (1).
 
 6. [power-duty] [Tier A]
-   Question: What powers does surveyor have regarding plan of survey?
+   Question: What authority does a surveyor have to submit?
    Answer: 17.1(5.1): A land surveyor who has entered into an agreement with Service New Brunswick may submit, in accordance with the agreement and this Act, an electronic instrument that is a digitally scanned image of a plan of survey or subdivision plan.
 
 7. [power-duty] [Tier A]
-   Question: What powers does the Registrar General have regarding Instruments to be submitted electronically?
+   Question: What may the Registrar General do?
    Answer: 17.1(6): An instrument designated under subsection (1) may be submitted in a paper format to a land titles office for filing or registration if (a) the instrument is submitted personally by an individual who is a registered owner of the land to which the instrument relates, (b) the instrument is submitted personally by an authorized officer or authorized employee of a corporation that is the registered owner of the land to which the instrument relates, (c) the submission has been authorized by the Registrar General, or (d) the instrument was executed before a date specified by regulation.
 
 8. [power-duty] [Tier A]
-   Question: What must person do regarding Instruments to be submitted electronically?
+   Question: What must a person provide?
    Answer: 17.1(7): A person who submits an instrument under paragraph (6)(a) or (b) shall provide to the registrar evidence of his or her identity or authorization that is satisfactory to the registrar.
 
 Suggested chunks:
 
-- 17.1 - Instruments to be submitted electronically (many-subsections, estimated rubric items: 11)
+- 17.1 17.1(1)-17.1(4): regulations, those instruments designated by regulation shall be submitted to a l (many-subsections, estimated rubric items: 6; sources: section:17.1/subsection:1, section:17.1/subsection:2, section:17.1/subsection:3, section:17.1/subsection:4)
+- 17.1 17.1(5)-17.1(7): regulations, submit an electronic instrument that is an assignment of the mortgag (many-subsections, estimated rubric items: 6; sources: section:17.1/subsection:5, section:17.1/subsection:5.1, section:17.1/subsection:6, section:17.1/subsection:7)
 
 Concepts:
 - Instruments to be Submitted Electronically
@@ -22219,16 +22173,16 @@ Rubric:
    Answer: 17.11(1): Except with respect to an instrument designated under subsection 17.1(1) that is required to be in electronic format, and except as otherwise provided in the regulations, an instrument that may be filed or registered under this Act may be filed or registered by submitting a digitally scanned image of the instrument.
 
 2. [filing-record] [Tier A]
-   Question: What must the Registrar General file or record regarding be in a format that has been approved by the Registrar General as being equivalent, when?
+   Question: What must the Registrar General do when printed?
    Answer: 17.11(2): A digitally scanned image of an instrument that is submitted to be filed or registered in accordance with subsection (1) (a) shall be in a format that has been approved by the Registrar General as being equivalent, when printed, in form and content to its counterpart prescribed by regulation, and (b) shall be submitted using the technology put in place by Service New Brunswick.
 
 3. [filing-record] [Tier A]
-   Question: What must surveyor file or record regarding be, shall provide to the registrar evidence of his or her identity or authorization that is?
+   Question: What must a surveyor do?
    Answer: 17.11(3): When a digitally scanned image of an instrument is submitted to be filed or registered in accordance with subsection (1), the subscriber or the land surveyor, as the case may be, shall provide to the registrar evidence of his or her identity or authorization that is satisfactory to the registrar.
 
 Suggested chunks:
 
-- 17.11 - Instruments that may be submitted as digitally scanned images (many-subsections, estimated rubric items: 12)
+- 17.11 - Instruments that may be submitted as digitally scanned images (many-subsections, estimated rubric items: 12; sources: section:17.11)
 
 Concepts:
 - Instruments That may be Submitted as Digitally Scanned Images
@@ -22363,25 +22317,29 @@ Rubric:
    Answer: 17.2(3): The authentication by a subscriber under subsection (2) is a certification by the subscriber that (a) the subscriber has in his or her possession an instrument that has been designated under subsection 17.1(1), in prescribed form and in paper format that, to the best of the subscriber’s knowledge and belief, has been duly executed and witnessed, and (b) the electronic instrument that is authenticated contains every material provision and particular contained in the instrument referred to in paragraph (a).
 
 4. [power-duty] [Tier A]
-   Question: What is surveyor prohibited from doing?
+   Question: What is a surveyor prohibited from doing?
    Answer: 17.2(4): An electronic instrument that is a digitally scanned image of an instrument shall not be submitted by a subscriber or a land surveyor for filing or registration unless the digitally scanned image of the instrument has been authenticated in the manner established by Service New Brunswick.
 
-5. [power-duty] [Tier C]
+5. [power-duty] [Tier A]
+   Question: What must a surveyor do when required?
+   Answer: 17.2(5): A subscriber or a land surveyor shall not authenticate an electronic instrument that is a digitally scanned image of an instrument unless (a) the subscriber or land surveyor has in his or her possession an instrument under subsection 17.11(1), in paper format, that, to the best of the subscriber’s or land surveyor’s knowledge and belief, has been duly executed and witnessed, if required, and (b) the electronic instrument that is a digitally scanned image of the instrument is an exact and complete scan of the entire original instrument referred to in paragraph (a).
+
+6. [power-duty] [Tier C]
    Question: What does 17.2(6) provide regarding Authentication of electronic instrument?
    Answer: 17.2(6): The authentication by a subscriber or land surveyor under subsection (5) is a certification by the subscriber or land surveyor that (a) the subscriber or land surveyor has in his or her possession an instrument under subsection 17.11(1), in paper format, that, to the best of the subscriber’s or land surveyor’s knowledge and belief, has been duly executed and witnessed, if required, and (b) the electronic instrument that is a digitally scanned image of the instrument is an exact and complete scan of the entire original instrument referred to in paragraph (a).
 
-6. [power-duty] [Tier C]
+7. [power-duty] [Tier C]
    Question: What does 17.2(7) provide regarding Authentication of electronic instrument?
    Answer: 17.2(7): When a subscriber authenticates an electronic instrument and the instrument referred to in paragraph (3)(a) has not been witnessed by the subscriber, the subscriber is entitled to rely on the certification of the person as to the due execution of that instrument or the sworn affidavit of the person who was a witness to the execution of the instrument as to the due execution of that instrument, unless the subscriber has reason to believe that (a) the person who certified as to the due execution of the instrument was not lawfully entitled to do so or the person who took the affidavit of the witness was not lawfully entitled to do so, or (b) the instrument was signed or witnessed by a person who is not the person who is purported to have signed or witnessed the instrument.
 
-7. [power-duty] [Tier C]
+8. [power-duty] [Tier C]
    Question: What does 17.2(8) provide regarding Authentication of electronic instrument?
    Answer: 17.2(8): Nothing in this section requires that the subscriber or land surveyor who authenticates an electronic instrument be the subscriber or land surveyor who submits the instrument for registration or filing.
 
 Suggested chunks:
 
-- 17.2 - Authentication of electronic instrument (long-enumeration, estimated rubric items: 8)
-- 17.2 - Authentication of electronic instrument (multiple-independent-topics, estimated rubric items: 8)
+- 17.2 17.2(1)-17.2(4): Authentication of electronic instrument (long-enumeration, multiple-independent-topics, estimated rubric items: 4; sources: section:17.2/subsection:1, section:17.2/subsection:2, section:17.2/subsection:3, section:17.2/subsection:4)
+- 17.2 17.2(5)-17.2(8): Authentication of electronic instrument (long-enumeration, multiple-independent-topics, estimated rubric items: 4; sources: section:17.2/subsection:5, section:17.2/subsection:6, section:17.2/subsection:7, section:17.2/subsection:8)
 
 Concepts:
 - Authentication of Electronic Instrument
@@ -22435,10 +22393,10 @@ the affidavit of marital status, if any, that accompanies the instrument referre
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must the Registrar General do regarding Proof of execution and marital status?
+   Question: What must the Registrar General do when authenticating an electronic instrument pursuant to section 17?
    Answer: 17.3(1): A subscriber, when authenticating an electronic instrument pursuant to section 17.2, shall provide the information required by the Registrar General in respect of (a) the affidavit of execution, certificate of execution or affidavit of corporate execution, or statutory declaration if the instrument is executed under a power of attorney, that accompanies the instrument referred to in paragraph 17.2(3)(a), and (b) the affidavit of marital status, if any, that accompanies the instrument referred to in paragraph 17.2(3)(a).
 
-2. [power-duty] [Tier A]
+2. [power-duty] [Tier B]
    Question: What does 17.3(2) provide regarding be, and the affidavit of marital status, if any?
    Answer: 17.3(2): The provision of the information under subsection (1) by a subscriber is a certification by the subscriber that the information provided is accurate and that the subscriber has in his or her possession, in prescribed form and in paper format, the affidavit of execution, certificate of execution or statutory declaration, as the case may be, and the affidavit of marital status, if any.
 
@@ -22575,7 +22533,7 @@ Section 17.7 - Production of evidence
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does The Registrar General have regarding Production of evidence?
+   Question: What may the Registrar General do?
    Answer: 17.7(1): The Registrar General may at any time require a subscriber or a former subscriber to produce for inspection any of the documents referred to in section 17.4.
 
 2. [power-duty] [Tier C]
@@ -22694,7 +22652,7 @@ for promptly giving notice to Service New Brunswick, in the manner determined un
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must surveyor do regarding Subscriber agreement?
+   Question: What must a surveyor do?
    Answer: 17.8(1): A member of the Law Society of New Brunswick or a land surveyor who wishes to submit electronic instruments to a land titles office shall enter into an agreement with Service New Brunswick for the purposes of (a) obtaining access to the technology put in place by Service New Brunswick for the authentication and submission of electronic instruments and establishing the circumstances in which access privileges may be lost, (b) providing for the duties, obligations and liabilities of the subscriber or land surveyor relating to the authentication and submission of electronic instruments, and (c) establishing an account with Service New Brunswick for electronic funds transfers.
 
 2. [power-duty] [Tier A]
@@ -22702,12 +22660,12 @@ Rubric:
    Answer: 17.8(2): Service New Brunswick shall not enter into an agreement under subsection (1) with a member of the Law Society of New Brunswick unless there is in place an agreement between the Law Society of New Brunswick and Service New Brunswick by which the Law Society of New Brunswick assumes responsibility (a) for certifying the eligibility of the member to practise law in the Province, and (b) if the eligibility of the member is lost, (i) for promptly revoking access to the technology put in place by Service New Brunswick, or (ii) for promptly giving notice to Service New Brunswick, in the manner determined under the agreement, in which case Service New Brunswick will revoke access to the technology put in place by Service New Brunswick.
 
 3. [power-duty] [Tier A]
-   Question: What is surveyor prohibited from doing?
+   Question: What must a surveyor do when the eligibility of the land surveyor is lost?
    Answer: 17.8(3): Service New Brunswick shall not enter into an agreement under subsection (1) with a land surveyor unless there is in place an agreement between the Association of New Brunswick Land Surveyors and Service New Brunswick by which the Association of New Brunswick Land Surveyors assumes responsibility (a) for certifying the eligibility of the land surveyor to practise land surveying in the Province, and (b) if the eligibility of the land surveyor is lost, (i) for promptly revoking access to the technology put in place by Service New Brunswick, or (ii) for promptly giving notice to Service New Brunswick, in the manner determined under the agreement, in which case Service New Brunswick will revoke access to the technology put in place by Service New Brunswick.
 
 Suggested chunks:
 
-- 17.8 - Subscriber agreement (multiple-independent-topics, estimated rubric items: 6)
+- 17.8 - Subscriber agreement (multiple-independent-topics, estimated rubric items: 6; sources: section:17.8)
 
 Concepts:
 - Subscriber Agreement
@@ -22861,7 +22819,7 @@ Rubric:
    Answer: 18(4): Notwithstanding anything in this or any other enactment, the registrar may refuse to file or register and may reject an instrument where the appropriate fee has not been paid therefor or where the instrument (a) does not relate to land situated in his district; (b) does not describe the land to which it relates by its approved parcel identifier, or is otherwise incomplete; (b.1) describes the land (i) by reference to a parcel identifier that has been marked as retired by the registrar, or (ii) by a description of the land in addition to a reference to its approved parcel identifier; (c) is not in proper form or fit for filing or registration; or (d) does not comply with the Community Planning Act, if applicable.
 
 5. [power-duty] [Tier A]
-   Question: What must person do regarding subdivision plan?
+   Question: What must a person do when any?
    Answer: 18(5): Where the registrar is required pursuant to the provisions of this Act to register the title to land or to register land or to register a person as the owner of land or to register an instrument severing or consolidating land or a transfer, the registrar shall (a) cancel the certificate of registered ownership, if any, as to that land; and (b) issue to the owner, surviving owner, personal representative, agent or trustee, as the case may be, a certificate of registered ownership for that land and, in the case of a subdivision, a certificate of registered ownership for each lot, block or parcel in the subdivision plan.
 
 6. [power-duty] [Tier A]
@@ -22877,7 +22835,7 @@ Rubric:
    Answer: 18(8): Repealed:
 
 9. [power-duty] [Tier A]
-   Question: What must the person do regarding enter in the instrument record a record of the rejection and a memorandum of the reasons?
+   Question: What must a person do?
    Answer: 18(9): Upon the rejection of an instrument, the registrar shall enter in the instrument record a record of the rejection and a memorandum of the reasons for such rejection, and shall notify the person who presented the instrument for registration.
 
 10. [power-duty] [Tier C]
@@ -22889,20 +22847,21 @@ Rubric:
    Answer: 18(11): Any instrument that is filed or registered under this Act may, subject to such terms and conditions as the registrar may impose, be amended by the filing or registration of an amending instrument in prescribed form.
 
 12. [power-duty] [Tier A]
-   Question: What must the Registrar General do regarding have the same effect as if registered as an instrument?
+   Question: What must the Registrar General do when so registered it shall have the same effect as if registered as an instrument?
    Answer: 18(12): Notwithstanding anything in this Act, where a document sufficient to pass an estate or interest in land under the Registry Act deals with land registered under this Act, the Registrar General may, in his absolute discretion, order the proper registrar to register it under this Act, and when so registered it shall have the same effect as if registered as an instrument.
 
 Suggested chunks:
 
-- 18 - Registration of instrument (many-subsections, estimated rubric items: 12)
-- 18 - Registration of instrument (long-enumeration, estimated rubric items: 12)
-- 18 - Registration of instrument (multiple-independent-topics, estimated rubric items: 12)
+- 18 18(1)-18(3): Receiving, examining and registering instruments (many-subsections, long-enumeration, multiple-independent-topics, estimated rubric items: 3; sources: section:18/subsection:1, section:18/subsection:2, section:18/subsection:3)
+- 18 18(4): Grounds for refusing or rejecting an instrument (many-subsections, long-enumeration, multiple-independent-topics, estimated rubric items: 1; sources: section:18/subsection:4)
+- 18 18(5)-18(7): Title-registration records and certificates (many-subsections, long-enumeration, multiple-independent-topics, estimated rubric items: 3; sources: section:18/subsection:5, section:18/subsection:6, section:18/subsection:7)
+- 18 18(9)-18(10): Rejection records and exceptions (many-subsections, long-enumeration, multiple-independent-topics, estimated rubric items: 2; sources: section:18/subsection:9, section:18/subsection:10)
+- 18 18(11)-18(12): Amendment and exceptional registration (many-subsections, long-enumeration, multiple-independent-topics, estimated rubric items: 2; sources: section:18/subsection:11, section:18/subsection:12)
 
 Concepts:
 - Registration of Instrument
 - Land Titles Office
 - Filing or Registration Shall be Entered in the
-- Registration Pursuant to Subsection
 - Certificate of Registered Ownership
 - Notice in Prescribed Form and Thereafter the Title
 - Registration
@@ -22915,7 +22874,6 @@ Warnings:
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 18(4): Notwithstanding anything in this or any other enactment, the registrar may refuse to file or register and may reject an instrument where the appropriate fee has not been paid therefor or where the instrument (a) d
 - [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 18(2) provide regarding Registration of instrument? | What does 18(8) provide regarding Registration of instrument?
 - [WARNING] TOO_MANY_RUBRIC_ITEMS (generated.rubricItems): The section produced more than 10 rubric items. Text: 12
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Registration Pursuant to Subsection
 
 ### Section 19 - Priority on registration
 
@@ -22960,7 +22918,7 @@ Rubric:
    Question: What does 19(2) provide regarding be deemed to have been cancelled and to confer no priority?
    Answer: 19(2): Registration numbers of rejected instruments shall be deemed to have been cancelled and to confer no priority.
 
-3. [power-duty] [Tier A]
+3. [power-duty] [Tier B]
    Question: What does 19(3) provide regarding be lost if the instrument or interest thereunder lapses or is withdrawn or the registration thereof?
    Answer: 19(3): Any priority of an instrument and interest or claim thereunder shall be lost if the instrument or interest thereunder lapses or is withdrawn or the registration thereof is otherwise terminated by law.
 
@@ -23237,12 +23195,8 @@ Rubric:
    Answer: 25(5): Notwithstanding subsection (4), the parties to a mortgage may agree to exclude from the mortgage any of the covenants and conditions prescribed by designating in the appropriate place in the mortgage the numbers corresponding to the numbers prescribed for those covenants and conditions.
 
 5. [filing-record] [Tier A]
-   Question: What powers does the Registrar General have regarding agree to include in the mortgage covenants and conditions in addition to those prescribed, hereinafter called?
+   Question: What may the Registrar General do?
    Answer: 25(6): The parties to a mortgage may agree to include in the mortgage covenants and conditions in addition to those prescribed, hereinafter called “optional mortgage covenants”, by designating in the appropriate place in the mortgage the numbers that have been assigned by the Registrar General to those optional mortgage covenants.
-
-6. [filing-record] [Tier C]
-   Question: What must The Registrar General file or record regarding Registration of mortgage?
-   Answer: 25(7): The Registrar General shall, upon the filing with him of an application in the prescribed form, assign a number to an optional mortgage covenant to which no number has previously been assigned.
 
 Concepts:
 - Registration of Mortgage
@@ -23374,7 +23328,7 @@ Rubric:
    Answer: 26.1(5): The parties to a debenture may agree to include in a debenture covenants and conditions, hereinafter called “optional debenture covenants”, in addition to those prescribed by New Brunswick Regulation
 
 6. [filing-record] [Tier C]
-   Question: What must The Registrar General file or record regarding Debentures?
+   Question: What filing or record rule applies to Debentures?
    Answer: 26.1(6): The Registrar General shall, upon the filing with him of an application in the prescribed form, assign a number to an optional debenture covenant to which no number has previously been assigned.
 
 7. [filing-record] [Tier A]
@@ -23387,7 +23341,8 @@ Rubric:
 
 Suggested chunks:
 
-- 26.1 - Debentures (many-subsections, estimated rubric items: 12)
+- 26.1 26.1(1)-26.1(4): Registered land may be mortgaged or charged by the registration of a debenture i (many-subsections, estimated rubric items: 6; sources: section:26.1/subsection:1, section:26.1/subsection:2, section:26.1/subsection:3, section:26.1/subsection:4)
+- 26.1 26.1(5)-26.1(8): Regulation 84-137, by designating in the appropriate place in the debenture the (many-subsections, estimated rubric items: 6; sources: section:26.1/subsection:5, section:26.1/subsection:6, section:26.1/subsection:7, section:26.1/subsection:8)
 
 Concepts:
 - Debentures
@@ -23494,20 +23449,17 @@ Rubric:
    Answer: 27(3): Notwithstanding subsection (2), the parties to a lease may agree to exclude from the lease any of the covenants and conditions prescribed by designating in the appropriate place in the lease the numbers corresponding to the numbers prescribed for those covenants and conditions.
 
 4. [filing-record] [Tier A]
-   Question: What powers does the Registrar General have regarding agree to include in the lease covenants and conditions in addition to those prescribed, hereinafter called?
+   Question: What may the Registrar General do?
    Answer: 27(4): The parties to a lease may agree to include in the lease covenants and conditions in addition to those prescribed, hereinafter called “optional lease covenants”, by designating in the appropriate place in the lease the numbers that have been assigned by the Registrar General to those optional lease covenants.
 
-5. [filing-record] [Tier C]
-   Question: What must The Registrar General file or record regarding Registration of lease?
-   Answer: 27(5): The Registrar General shall, upon the filing with him of an application in the prescribed form, assign a number to an optional lease covenant to which no number has been assigned.
-
-6. [filing-record] [Tier A]
+5. [filing-record] [Tier A]
    Question: What notice rule applies to be stipulated in the lease and in such case the words “and option” shall be added?
    Answer: 27(7): A right of the lessee to purchase the land or extend or renew the term of the lease may be stipulated in the lease and in such case the words “and option” shall be added immediately following the word “lease” in the heading of the lease or the notice of lease in prescribed form.
 
 Suggested chunks:
 
-- 27 - Registration of lease (many-subsections, estimated rubric items: 12)
+- 27 27(1)-27(4): registered land, except a lease for a period not exceeding three years where the (many-subsections, estimated rubric items: 6; sources: section:27/subsection:1, section:27/subsection:2, section:27/subsection:3, section:27/subsection:4)
+- 27 27(5)-27(7): registered or with respect to which notice of lease has been registered is not v (many-subsections, estimated rubric items: 6; sources: section:27/subsection:5, section:27/subsection:6, section:27/subsection:7)
 
 Concepts:
 - Registration of Lease
@@ -23563,12 +23515,12 @@ Rubric:
    Answer: 28(2): A lease that is subject to an encumbrance shall not be surrendered without the consent of the holder of the encumbrance.
 
 3. [filing-record] [Tier A]
-   Question: What must the person file or record regarding vest in the lessor or the person entitled to the land on the expiry or determination?
+   Question: What must a person do?
    Answer: 28(3): When a surrender of a lease has been registered the estate or interest of the lessee shall vest in the lessor or the person entitled to the land on the expiry or determination of the lease. ASSIGNMENTS OF MORTGAGES, LEASES AND DEBENTURES
 
 Suggested chunks:
 
-- 28 - Surrender of lease (multiple-independent-topics, estimated rubric items: 7)
+- 28 - Surrender of lease (multiple-independent-topics, estimated rubric items: 7; sources: section:28)
 
 Concepts:
 - Surrender of Lease
@@ -23626,7 +23578,7 @@ Rubric:
    Answer: 29(1): A registered mortgage, a registered lease and a registered debenture may be assigned by the registration of an assignment in prescribed form.
 
 2. [filing-record] [Tier A]
-   Question: What must the person file or record regarding be deemed to be the transferee of the interest and shall have all rights and powers?
+   Question: What must a person do?
    Answer: 29(2): In case of a charge by a mortgagee of his interest in a mortgage, the person in whose favour the charge is created shall be deemed to be the transferee of the interest and shall have all rights and powers as such, subject to the provisos and conditions expressed in the instrument creating the charge or implied therein by virtue thereof.
 
 3. [filing-record] [Tier C]
@@ -23691,21 +23643,24 @@ subject to the regulations, forward the caveat to the Registrar General who shal
 Rubric:
 
 1. [filing-record] [Tier A]
-   Question: What powers does person have regarding register a caveat in prescribed form against the land?
+   Question: What authority does a person have to register a caveat in prescribed form against the land?
    Answer: 30(1): Any person claiming to be interested in any registered land may register a caveat in prescribed form against the land.
 
 2. [filing-record] [Tier A]
-   Question: What must person file or record regarding Registration of caveat?
+   Question: What must a person do?
    Answer: 30(2): Upon the registration of a caveat, the registrar shall forthwith (a) give a notice of the caveat to the registered owner of the land and to any person having a registered estate or interest therein affected by the caveat; and (b) subject to the regulations, forward the caveat to the Registrar General who shall thereupon examine the caveat and inquire into the interest claimed thereunder.
 
 3. [filing-record] [Tier A]
-   Question: What must the Registrar General file or record regarding make an order directing the registrar, after the expiration of such time as the Registrar General?
+   Question: What must the Registrar General do when the expiration of such time as the Registrar General shall specify in the order?
    Answer: 30(3): Where in the opinion of the Registrar General a caveat forwarded to him pursuant to subsection (2) has been improperly registered in that the interest claimed thereunder is not an interest in land or should be registered in the form of an instrument that creates an interest or passes an estate in the land, he shall make an order directing the registrar, after the expiration of such time as the Registrar General shall specify in the order, unless an appeal is taken within that time, to withdraw the caveat from registration.
+
+4. [filing-record] [Tier A]
+   Question: What must a person do when it is sent to the registrar?
+   Answer: 30(4): A copy of the order referred to in subsection (3) shall, when it is sent to the registrar, be given to the registered owner of the land and to any person having a registered estate or interest affected by the caveat and to the caveator or his solicitor who filed the caveat.
 
 Suggested chunks:
 
-- 30 - Registration of caveat (multiple-independent-topics, estimated rubric items: 12)
-- 30 - Registration of caveat (many-subsections, estimated rubric items: 12)
+- 30 - Registration of caveat (multiple-independent-topics, many-subsections, estimated rubric items: 12; sources: section:30)
 
 Concepts:
 - Registration of Caveat
@@ -23782,14 +23737,13 @@ Application by owner
 Rubric:
 
 1. [filing-record] [Tier A]
-   Question: What powers does person have regarding Application by owner?
+   Question: What may a person do?
    Answer: 32: Application by owner 32Upon application by the owner, by a person claiming an interest in the land against which a caveat is registered or by the registrar, the court may require the caveator to show cause why the caveat should not be removed from registration, and the court may, upon proof that the caveator has been served and upon such evidence as it requires, make such order in respect of the caveat as it thinks fit.
 
 Concepts:
 - Application by Owner
 
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What are the application requirements under section 32 of Land Titles Act?
+Warnings: none
 
 ### Section 33 - Notice of request to withdraw caveat
 
@@ -23828,7 +23782,7 @@ Section 33 - Notice of request to withdraw caveat
 Rubric:
 
 1. [filing-record] [Tier A]
-   Question: What must person file or record regarding Notice of request to withdraw caveat?
+   Question: What notice rule applies to Notice of request to withdraw caveat?
    Answer: 33(1): The registrar shall, on receipt of a request to have the caveat withdrawn from registration, in writing made by the owner or person claiming an interest in land affected by a caveat, give a notice in prescribed form to the caveator of such a request.
 
 2. [filing-record] [Tier A]
@@ -23836,7 +23790,7 @@ Rubric:
    Answer: 33(2): A caveat ceases to be registered upon the expiration of thirty days from the giving of the notice pursuant to subsection (1), unless within that time the caveator files with the registrar a court order extending the period of registration of the caveat and in such case it shall remain in force for the period determined by the order.
 
 3. [filing-record] [Tier A]
-   Question: What powers does person have regarding Notice of request to withdraw caveat?
+   Question: What may a person do?
    Answer: 33(3): The caveator may apply to the court for an order referred to in subsection (2), and the court may, on such notice as it considers proper to the owner and any other person the court considers should be given notice, make such order.
 
 4. [filing-record] [Tier C]
@@ -23845,17 +23799,15 @@ Rubric:
 
 Suggested chunks:
 
-- 33 - Notice of request to withdraw caveat (many-subsections, estimated rubric items: 12)
+- 33 - Notice of request to withdraw caveat (many-subsections, estimated rubric items: 12; sources: section:33)
 
 Concepts:
 - Notice of Request to Withdraw Caveat
 - Registration
-- Notice Pursuant to Subsection
 - Registration of a Caveat
 
 Warnings:
 - [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What notice requirements are established by section 33 of Land Titles Act?
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Notice Pursuant to Subsection
 
 ### Section 34 - Instrument to withdraw caveat
 
@@ -23930,8 +23882,7 @@ Concepts:
 - Action for Damages, Restraining Order
 - Registration of a Caveat
 
-Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What order-making rules are established by section 35 of Land Titles Act?
+Warnings: none
 
 ### Section 36 - Registration of stop order to prohibit registration
 
@@ -23986,13 +23937,12 @@ Rubric:
    Answer: 36(3): A stop order, subject to subsection (4), remains in force until such date as is specified therein by the Registrar General.
 
 4. [filing-record] [Tier A]
-   Question: What powers does the Registrar General have regarding Registration of stop order to prohibit registration?
+   Question: What may the Registrar General do?
    Answer: 36(4): Where the Registrar General refuses upon request to withdraw a stop order from registration, upon application by the owner or a person claiming an interest in the land affected by the stop order, the court may require the Registrar General to show cause why the stop order should not be withdrawn from registration and the court may upon such evidence as it requires make such order as it thinks fit.
 
 Suggested chunks:
 
-- 36 - Registration of stop order to prohibit registration (multiple-independent-topics, estimated rubric items: 9)
-- 36 - Registration of stop order to prohibit registration (many-subsections, estimated rubric items: 9)
+- 36 - Registration of stop order to prohibit registration (multiple-independent-topics, many-subsections, estimated rubric items: 9; sources: section:36)
 
 Concepts:
 - Registration of Stop Order to Prohibit Registration
@@ -24046,7 +23996,7 @@ Rubric:
 
 Suggested chunks:
 
-- 37 - Registration of affidavit to prevent registration (many-subsections, estimated rubric items: 9)
+- 37 - Registration of affidavit to prevent registration (many-subsections, estimated rubric items: 9; sources: section:37)
 
 Concepts:
 - Registration of Affidavit to Prevent Registration
@@ -24099,7 +24049,7 @@ Rubric:
 
 Suggested chunks:
 
-- 38 - Registration of certificate of pending litigation (multiple-independent-topics, estimated rubric items: 3)
+- 38 - Registration of certificate of pending litigation (multiple-independent-topics, estimated rubric items: 3; sources: section:38)
 
 Concepts:
 - Registration of Certificate of Pending Litigation
@@ -24233,7 +24183,7 @@ Rubric:
    Answer: 40(2): The registration of a judgment does not have the effect of severing a joint tenancy.
 
 3. [filing-record] [Tier A]
-   Question: What is person prohibited from doing?
+   Question: What is a person prohibited from doing?
    Answer: 40(3): An application to register a judgment against registered land shall not be considered to be incomplete or in improper form only by reason that (a) the name of the judgment debtor is not in the exact form or spelled in the same manner as the name of the registered owner of the land against which the judgment is to be registered, (b) the land described therein is registered in the name of the judgment debtor and one or more additional persons, unless one or more of such additional persons have names similar to that of the judgment debtor, (c) the judgment debtor holds a leasehold or life interest in the land against which the judgment is to be registered, or (d) the judgment names as the judgment debtor (i) the estate of the registered owner, or (ii) a person acting in the capacity of personal representative of the registered owner.
 
 4. [filing-record] [Tier A]
@@ -24250,7 +24200,8 @@ Rubric:
 
 Suggested chunks:
 
-- 40 - Application to register memorial of judgment (many-subsections, estimated rubric items: 12)
+- 40 40(1)-40(4): registered land shall file an application in prescribed form with the registrar (many-subsections, estimated rubric items: 6; sources: section:40/subsection:1, section:40/subsection:2, section:40/subsection:3, section:40/subsection:4)
+- 40 40(5)-40(6): Application to register memorial of judgment (many-subsections, estimated rubric items: 6; sources: section:40/subsection:5, section:40/subsection:6)
 
 Concepts:
 - Application to Register Memorial of Judgment
@@ -24455,11 +24406,11 @@ is satisfied.
 Rubric:
 
 1. [filing-record] [Tier A]
-   Question: What powers does person have regarding Notice to judgment creditor, cessation of registration, extension of registration period, registration of assignment?
+   Question: What may a person do?
    Answer: 43(1): The registered owner or any person claiming an interest in the land against which a judgment is registered may, in writing, request the registrar to give to the judgment creditor a notice in prescribed form.
 
 2. [filing-record] [Tier A]
-   Question: What must person file or record regarding be accompanied by an affidavit of the owner or some person having knowledge of the facts?
+   Question: What must a person do?
    Answer: 43(2): A request under subsection (1) shall be accompanied by an affidavit of the owner or some person having knowledge of the facts to the effect that (a) the judgment debtor (i) is not the same person as the owner, or (ii) holds the land as trustee; or (b) the judgment debt (i) is not enforceable, or (ii) is satisfied.
 
 3. [filing-record] [Tier A]
@@ -24476,17 +24427,16 @@ Rubric:
 
 Suggested chunks:
 
-- 43 - Notice to judgment creditor, cessation of registration, extension of registration period, registration of assignment (many-subsections, estimated rubric items: 12)
+- 43 43(1)-43(4): registered owner or any person claiming an interest in the land against which a (many-subsections, estimated rubric items: 6; sources: section:43/subsection:1, section:43/subsection:2, section:43/subsection:3, section:43/subsection:4)
+- 43 43(5)-43(8): notice to the owner of the interest in the land against which the judgment i (many-subsections, estimated rubric items: 6; sources: section:43/subsection:5, section:43/subsection:6, section:43/subsection:7, section:43/subsection:8)
 
 Concepts:
 - Notice in Prescribed Form
 - Notice in Prescribed Form to the Judgment Creditor
-- Notice Pursuant to Subsection
 - Registration Period of a Judgment That has Been Extended
 - Registration of an Assignment of a Judgment
 
-Warnings:
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Notice Pursuant to Subsection
+Warnings: none
 
 ### Section 44 - Instrument withdrawing memorial of judgment
 
@@ -24553,7 +24503,7 @@ Rubric:
    Answer: 45(1): Any person who has sustained damage, or who has incurred costs or expenses, by reason of a judgment having been registered or having been allowed to remain registered, wrongfully or vexatiously or without reasonable cause, has a cause of action against the judgment creditor or his personal representative.
 
 2. [filing-record] [Tier A]
-   Question: What must person file or record regarding be deemed to have been registered wrongfully or vexatiously or without reasonable cause if the judgment?
+   Question: What must a person do?
    Answer: 45(2): For the purposes of this section, a judgment shall be deemed to have been registered wrongfully or vexatiously or without reasonable cause if the judgment creditor or his agent has not taken reasonable steps to ensure that the judgment debtor is the same person as the registered owner.
 
 Concepts:
@@ -24666,7 +24616,8 @@ Rubric:
 
 Suggested chunks:
 
-- 47 - Registration or filing of power of attorney (many-subsections, estimated rubric items: 10)
+- 47 47(1)-47(4): registered land by its approved parcel identifier may be registered as to that l (many-subsections, estimated rubric items: 5; sources: section:47/subsection:1, section:47/subsection:2, section:47/subsection:3, section:47/subsection:4)
+- 47 47(5)-47(6): Registration or filing of power of attorney (many-subsections, estimated rubric items: 6; sources: section:47/subsection:5, section:47/subsection:6)
 
 Concepts:
 - Registration or Filing of Power of Attorney
@@ -24798,16 +24749,12 @@ Section 48.1 - Conditions and covenants in a transfer
 Rubric:
 
 1. [filing-record] [Tier C]
-   Question: What must The Registrar General file or record regarding Conditions and covenants in a transfer?
+   Question: What filing or record rule applies to Conditions and covenants in a transfer?
    Answer: 48.1(1): The Registrar General shall, upon the filing with him of an application in the prescribed form, assign a number to a condition or covenant to which no number has previously been assigned.
 
 2. [filing-record] [Tier A]
-   Question: What powers does the Registrar General have regarding Conditions and covenants in a transfer?
+   Question: What may the Registrar General do?
    Answer: 48.1(2): The owner of registered land may designate in the appropriate place in a transfer the number that has been assigned by the Registrar General to a condition or covenant.
-
-3. [filing-record] [Tier C]
-   Question: What filing or record rule applies to Conditions and covenants in a transfer?
-   Answer: 48.1(3): Where a transfer containing a condition or covenant has been registered, it is not necessary to repeat the condition or covenant in any subsequent transfer.
 
 Concepts:
 - Conditions and Covenants in a Transfer
@@ -24913,7 +24860,7 @@ Rubric:
    Answer: 50(3): The owner may, in writing, request the registrar to give to the trustee a notice in prescribed form.
 
 4. [filing-record] [Tier A]
-   Question: What must person file or record regarding be accompanied by an affidavit of the owner or some person having knowledge of the facts?
+   Question: What must a person do?
    Answer: 50(4): A request under subsection (3) shall be accompanied by an affidavit of the owner or some person having knowledge of the facts to the effect that the bankrupt named in the receiving order or assignment is not the same person as the owner.
 
 5. [filing-record] [Tier A]
@@ -24921,12 +24868,13 @@ Rubric:
    Answer: 50(5): Upon receipt of a request under subsection (3), the registrar shall give a notice in prescribed form to the trustee and the receiving order or assignment shall cease to affect the land upon the expiration of thirty days from the giving of the notice unless within that time the trustee files with the registrar a court order confirming that the bankrupt is the owner.
 
 6. [filing-record] [Tier A]
-   Question: What must the person file or record regarding register as owner the person who would have been the registered owner if the receiving order?
+   Question: What must a person register?
    Answer: 50(6): When a receiving order or assignment ceases to affect the land the registrar shall register as owner the person who would have been the registered owner if the receiving order or assignment had not been registered.
 
 Suggested chunks:
 
-- 50 - Bankruptcy proceedings (many-subsections, estimated rubric items: 12)
+- 50 50(1)-50(4): receiving order or assignment, or a copy thereof, relating to title to register (many-subsections, estimated rubric items: 6; sources: section:50/subsection:1, section:50/subsection:2, section:50/subsection:3, section:50/subsection:4)
+- 50 50(5)-50(6): notice in prescribed form to the trustee and the receiving order or assignme (many-subsections, estimated rubric items: 6; sources: section:50/subsection:5, section:50/subsection:6)
 
 Concepts:
 - Bankruptcy Proceedings
@@ -24978,7 +24926,7 @@ Rubric:
    Answer: 51(1): Where registered land is sold for taxes pursuant to any enactment of the Province, the purchaser may register against the land a certificate of tax sale issued by the proper officer.
 
 2. [filing-record] [Tier A]
-   Question: What must the person file or record regarding forthwith file with the registrar a notice in writing stating that the land described therein has?
+   Question: What must a person do?
    Answer: 51(2): Where the land sold for taxes is redeemed within the time limited for redemption, the person who authorized the sale shall forthwith file with the registrar a notice in writing stating that the land described therein has been redeemed and the date of the redemption, and thereupon the registrar shall register the notice and cancel the registration of the certificate of tax sale.
 
 3. [filing-record] [Tier A]
@@ -24987,8 +24935,7 @@ Rubric:
 
 Suggested chunks:
 
-- 51 - Tax sale proceedings (multiple-independent-topics, estimated rubric items: 9)
-- 51 - Tax sale proceedings (many-subsections, estimated rubric items: 9)
+- 51 - Tax sale proceedings (multiple-independent-topics, many-subsections, estimated rubric items: 9; sources: section:51)
 
 Concepts:
 - tax Sale Proceedings
@@ -25089,13 +25036,12 @@ Rubric:
    Answer: 52(1): A person who claims to be entitled to be registered as the owner of any registered land or the owner of an estate or interest therein (a) pursuant to a judgment or order of the court; (b) pursuant to an enactment of Canada or the Province or an order-in-council; (c) through the purchase of the land by a person at a judicial sale from someone other than the registered owner; (d) under a mortgage that is in default; or (e) Repealed:
 
 2. [filing-record] [Tier A]
-   Question: What must the Registrar General file or record regarding make an order directing the registrar to register the claimant as the owner of the land?
+   Question: What must the Registrar General do?
    Answer: 52(2): Where a document forwarded to the Registrar General is (a) a judgment or order referred to in paragraph (1)(a), and the appeal period has expired, no notice of appeal has been given to the Registrar General and the Registrar General is satisfied that the land and owner are properly identified; or (b) a document referred to in paragraph (1)(b), (c), (d) or (f), and the Registrar General is satisfied that the claimant is by law entitled to be registered as the owner of land or the owner of an interest or estate therein, the Registrar General shall make an order directing the registrar to register the claimant as the owner of the land or as the owner of an estate or interest therein, as the case may be.
 
 Suggested chunks:
 
-- 52 - Registration of claimant as owner (multiple-independent-topics, estimated rubric items: 10)
-- 52 - Registration of claimant as owner (many-subsections, estimated rubric items: 10)
+- 52 - Registration of claimant as owner (multiple-independent-topics, many-subsections, estimated rubric items: 10; sources: section:52)
 
 Concepts:
 - Registration of Claimant as Owner
@@ -25178,16 +25124,17 @@ Rubric:
    Answer: 53(5): The registrar shall not register any instrument executed by the personal representative of a deceased registered owner, except a caveat, unless the instrument to be registered is accompanied by such other documents as are necessary to establish his right to execute such instrument.
 
 5. [filing-record] [Tier A]
-   Question: What is person prohibited from doing?
+   Question: What is a person prohibited from doing?
    Answer: 53(6): A person purchasing real property in good faith and for value from the personal representative of a deceased registered owner in a manner authorized by this Act is entitled to hold it freed and discharged from any debts or liabilities of the deceased owner and from all claims of the persons beneficially entitled thereto, but subject to such encumbrances, liens, estates or interests as are shown by the title register to have been registered against the land or in respect thereto and such purchaser shall not be bound to see to the application of the purchase money.
 
 6. [filing-record] [Tier A]
-   Question: What must the Registrar General file or record regarding be referred to the Registrar General and shall be registered only when the Registrar General has?
+   Question: What must the Registrar General do when the Registrar General has approved the application?
    Answer: 53(7): An application for registration under this section shall be referred to the Registrar General and shall be registered only when the Registrar General has approved the application.
 
 Suggested chunks:
 
-- 53 - Transmission on death (many-subsections, estimated rubric items: 12)
+- 53 53(1)-53(4): registered land dies, his title to the land shall, subject to this Act, be regis (many-subsections, estimated rubric items: 6; sources: section:53/subsection:1, section:53/subsection:2, section:53/subsection:3, section:53/subsection:4)
+- 53 53(5)-53(8): registered owner, except a caveat, unless the instrument to be registered is acc (many-subsections, estimated rubric items: 6; sources: section:53/subsection:5, section:53/subsection:6, section:53/subsection:7, section:53/subsection:8)
 
 Concepts:
 - Transmission on Death
@@ -25249,7 +25196,7 @@ Section 54 - Implied covenants in instruments
 Rubric:
 
 1. [filing-record] [Tier A]
-   Question: What must person file or record regarding Implied covenants in instruments?
+   Question: What must a person do?
    Answer: 54(1): In every registered instrument transferring or mortgaging registered land there shall be implied a covenant by the transferor or mortgagor that he will do such acts and execute such instruments as, in accordance with this Act, are necessary to give effect to all covenants, conditions and purposes expressly set forth in the instrument or by this Act declared to be implied or deemed to be contained therein against such person.
 
 2. [filing-record] [Tier C]
@@ -25265,12 +25212,13 @@ Rubric:
    Answer: 54(4): Every covenant, condition and power, declared to be implied or deemed to be contained in any instrument by this Act, shall, unless it is expressly negatived or modified in the instrument, have the same force and effect and be enforced in the same manner as if it had been set out at length in the instrument and, when a party to an instrument is bound by such a covenant, condition or power, such covenant, condition or power shall also bind his heirs, executors, administrators and assigns.
 
 5. [filing-record] [Tier A]
-   Question: What must person file or record regarding be construed to bind the persons jointly and severally unless expressly stated to the contrary?
+   Question: What must a person do when any instrument is executed by more than one person as one of the parties?
    Answer: 54(5): When any instrument is executed by more than one person as one of the parties, such covenants and conditions as are by this Act to be implied or deemed to be contained in instruments of a similar nature shall be construed to bind the persons jointly and severally unless expressly stated to the contrary.
 
 Suggested chunks:
 
-- 54 - Implied covenants in instruments (many-subsections, estimated rubric items: 11)
+- 54 54(1)-54(4): registered instrument transferring or mortgaging registered land there shall be (many-subsections, estimated rubric items: 6; sources: section:54/subsection:1, section:54/subsection:2, section:54/subsection:3, section:54/subsection:4)
+- 54 54(5)-54(6): Implied covenants in instruments (many-subsections, estimated rubric items: 6; sources: section:54/subsection:5, section:54/subsection:6)
 
 Concepts:
 - Implied Covenants in Instruments
@@ -25359,7 +25307,7 @@ Rubric:
    Answer: 55(1): Except for electronic instruments, every instrument that is to be registered under this Act shall be (a) signed by the parties required to sign it in the presence of one or more witnesses each of whom is at least sixteen years of age, or (b) in the case of a corporation, signed by the proper officer or officers of the corporation and sealed with the corporate seal, if the corporation has a corporate seal.
 
 2. [filing-record] [Tier A]
-   Question: What must the Registrar General file or record regarding Proof of execution?
+   Question: What must the Registrar General do when (a) the Registrar General?
    Answer: 55(3): An affidavit of execution and an affidavit of corporate execution shall be in prescribed form and shall be made before (a) the Registrar General, a registrar, a judge, a notary public or a commissioner of oaths in and for the Province, or any other person authorized pursuant to an enactment of the Province to administer an oath or affirmation, if made within the Province; or (b) a person authorized by any law of the Province to administer an oath or affirmation outside the Province for use within the Province, if made outside the Province.
 
 3. [filing-record] [Tier C]
@@ -25367,16 +25315,13 @@ Rubric:
    Answer: 55(4): A certificate of execution shall be in prescribed form and shall be signed by a notary public and sealed with his notarial seal.
 
 4. [filing-record] [Tier A]
-   Question: What powers does the Registrar General have regarding be prescribed?
+   Question: What may the Registrar General do?
    Answer: 55(5): The requirements of subsections (1) and (2) do not apply to a caveat, claim for lien under the Construction Remedies Act, judgment, order of the Registrar General, document issued by the Crown under an enactment of the Province, document issued pursuant to the Bankruptcy and Insolvency Act (Canada), affidavit under section 37 or such class of instruments as may be prescribed.
-
-5. [filing-record] [Tier A]
-   Question: What powers does the Registrar General have regarding Proof of execution?
-   Answer: 55(6): Notwithstanding subsections (1) and (2), the Registrar General, upon being satisfied of the due execution of the instrument, may direct the registrar to register it.
 
 Suggested chunks:
 
-- 55 - Proof of execution (many-subsections, estimated rubric items: 9)
+- 55 55(1)-55(4): registered under this Act shall be (a) signed by the parties required to sign it (many-subsections, estimated rubric items: 5; sources: section:55/subsection:1, section:55/subsection:2, section:55/subsection:3, section:55/subsection:4)
+- 55 55(5)-55(7): certificate of execution or an affidavit of corporate execution, subsections (1) (many-subsections, estimated rubric items: 6; sources: section:55/subsection:5, section:55/subsection:6, section:55/subsection:7)
 
 Concepts:
 - Proof of Execution
@@ -25424,7 +25369,7 @@ Rubric:
    Answer: 56(1): Every application, transfer, mortgage or lease and every instrument assigning or claiming an interest in or a right relating to or affecting the title to land or any interest therein presented to the registrar for registration or filing shall contain an address of the applicant, transferee, mortgagee, lessee, assignee or claimant, as the case may be.
 
 2. [power-duty] [Tier A]
-   Question: What powers does person have regarding notify the registrar in writing of a change of his name or address?
+   Question: What may a person do?
    Answer: 56(2): A person may notify the registrar in writing of a change of his name or address.
 
 3. [power-duty] [Tier A]
@@ -25434,7 +25379,6 @@ Rubric:
 Concepts:
 - Address for Service
 - Application
-- Notices and Documents Given Pursuant to This act
 
 Warnings: none
 
@@ -25468,11 +25412,11 @@ Section 57 - Method of service
 Rubric:
 
 1. [notice] [Tier A]
-   Question: What must the Registrar General do regarding Method of service?
+   Question: What must the Registrar General do when such personal service cannot be effected?
    Answer: 57(1): A notice required to be given by a registrar or the Registrar General to any person pursuant to subsection 14.1(1), subsection 30(2) or (4), subsection 33(1), subsection 36(2), section 42, subsection 43(3), subsection 50(1) or (5) or section 68 shall be given by any method recognized as personal service for the purposes of the Rules of Court or, if such personal service cannot be effected, in the manner directed by the Registrar General.
 
 2. [notice] [Tier A]
-   Question: What must person do regarding Method of service?
+   Question: What must a person do?
    Answer: 57(2): Unless otherwise provided by subsection (1), any notice or document required by this Act to be given to or by any person shall be given by any method recognized as personal service for the purposes of the Rules of Court or in the manner directed by the Registrar General.
 
 Concepts:
@@ -25512,7 +25456,7 @@ Rubric:
    Answer: 58(1): Where an instrument discloses that a party to the instrument takes registered land or an interest therein in trust, the registrar shall register it in the name of such party followed by the words “in trust”.
 
 2. [filing-record] [Tier A]
-   Question: What powers does the Registrar General have regarding Registered land in trust?
+   Question: What may the Registrar General do?
    Answer: 58(2): Where registered land or an interest or estate therein is registered in trust, no disposition affecting such land, interest or estate may be registered unless the Registrar General is satisfied that the disposition is in accordance with the terms of the trust.
 
 Concepts:
@@ -25678,12 +25622,12 @@ Rubric:
    Answer: 61(1): Notwithstanding any rule of law or equity to the contrary, a person contracting or dealing with or taking or proposing to take a transfer of or interest in registered land from the owner thereof is not, except in the case of fraud by such person, (a) bound to inquire into or ascertain the circumstances in or the consideration for which the owner or any previous owner of the land is or was registered or to see to the application of the purchase money or of any part thereof; or (b) affected by notice direct, implied or constructive, of any unregistered instrument or interest or claim affecting the land.
 
 2. [filing-record] [Tier A]
-   Question: What is person prohibited from doing?
+   Question: What is a person prohibited from doing?
    Answer: 61(2): Knowledge on the part of any such person that any unregistered instrument or interest or claim is in existence shall not of itself be imputed as fraud.
 
 Suggested chunks:
 
-- 61 - Unregistered instrument or interest (multiple-independent-topics, estimated rubric items: 6)
+- 61 - Unregistered instrument or interest (multiple-independent-topics, estimated rubric items: 6; sources: section:61)
 
 Concepts:
 - Unregistered Instrument or Interest
@@ -25762,7 +25706,7 @@ Section 63 - Certificate of registered ownership
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does person have regarding upon payment of the prescribed fee require the registrar to issue a certificate of registered ownership?
+   Question: What may a person do?
    Answer: 63(1): Any person may upon payment of the prescribed fee require the registrar to issue a certificate of registered ownership, in the prescribed form, in respect of any parcel of registered land.
 
 2. [power-duty] [Tier A]
@@ -25775,8 +25719,7 @@ Rubric:
 
 Suggested chunks:
 
-- 63 - Certificate of registered ownership (multiple-independent-topics, estimated rubric items: 9)
-- 63 - Certificate of registered ownership (many-subsections, estimated rubric items: 9)
+- 63 - Certificate of registered ownership (multiple-independent-topics, many-subsections, estimated rubric items: 9; sources: section:63)
 
 Concepts:
 - Certificate of Registered Ownership
@@ -25847,7 +25790,7 @@ Survivorship in joint tenancy
 Rubric:
 
 1. [filing-record] [Tier A]
-   Question: What must the Registrar General file or record regarding Survivorship in joint tenancy?
+   Question: What filing or record rule applies to Survivorship in joint tenancy?
    Answer: 65: Survivorship in joint tenancy 65Where two or more persons are registered owners as joint tenants of any land or interest therein and one of the owners dies, the registrar shall, upon the filing with him of an application in prescribed form accompanied by such other documents as are, in the opinion of the Registrar General, necessary, register the land or interest therein in the name of the survivor as owner.
 
 Concepts:
@@ -25897,12 +25840,12 @@ Rubric:
    Answer: 66(1): Upon the registration of three or more persons as owners of the same land or of the same interest, an entry may, with their consent, be made on the title register to the effect that, when the number of such owners is reduced below a certain specified number, no registered disposition of the land or interest shall be made except by order of the court.
 
 2. [filing-record] [Tier A]
-   Question: What must person file or record regarding Entry of “No Survivorship”?
+   Question: What must a person do when making an order referred to in subsections (1) and (2)?
    Answer: 66(3): Before making an order referred to in subsections (1) and (2), the judge shall, if considered requisite, cause notice of the application to be properly advertised, and in such a case appoint a period of time within which any person interested may show cause why the order should not be made, and thereupon the judge may order the transfer of the land to any new owner or owners, solely or jointly, with or in the place of any existing owner or owners, or make such order in the premises as seems just for the protection of the persons beneficially interested in the land or in the proceeds thereof.
 
 Suggested chunks:
 
-- 66 - Entry of “No Survivorship” (many-subsections, estimated rubric items: 9)
+- 66 - Entry of “No Survivorship” (many-subsections, estimated rubric items: 9; sources: section:66)
 
 Concepts:
 - Entry of “no Survivorship”
@@ -25959,7 +25902,7 @@ a person deprived of land by fraud, as against the person who through the fraud 
 Rubric:
 
 1. [filing-record] [Tier A]
-   Question: What must person file or record regarding Action of ejectment or recovery?
+   Question: What must a person do?
    Answer: 67: Action of ejectment or recovery 67No action of ejectment or other action for the recovery of registered land shall lie against the owner under this Act, except in the case of (a) a mortgagee, as against a mortgagor in default; (b) a lessor, as against a lessee in default; or (c) a person deprived of land by fraud, as against the person who through the fraud has been registered as owner, or as against a person deriving title otherwise than as a transferee bona fide for value from or through such owner through fraud.
 
 Concepts:
@@ -26024,7 +25967,7 @@ but in any case referred to in paragraph (a), (b), (c) or (d) the registrar shal
 Rubric:
 
 1. [filing-record] [Tier A]
-   Question: What must the Registrar General file or record regarding Cases where registrar may rectify?
+   Question: What must the Registrar General do when the land had not been registered under this Act?
    Answer: 68: Cases where registrar may rectify 68Subject to section 71 and to the approval of the Registrar General, the registrar may rectify the title register in any case and at any time with the consent of all persons interested, as well as in the following cases: (a) where the title register contains an error or an omission has been made therefrom; (b) where two or more persons are, by mistake, registered as owners of the same estate or interest or of the same encumbrance or charge; (c) where an estate or interest, charge or encumbrance has been registered in the name of a person who, if the land had not been registered under this Act, would not have been owner of the estate or interest, charge or encumbrance; (d) where upon survey of the registered land a dimension shown on a plan is found to be incorrect; but in any case referred to in paragraph (a), (b), (c) or (d) the registrar shall first give notice of his intention to rectify the title register to all persons appearing to be interested or affected by such rectification.
 
 Concepts:
@@ -26125,7 +26068,7 @@ where the court is satisfied that any registration, including a first registrati
 Rubric:
 
 1. [filing-record] [Tier A]
-   Question: What powers does person have regarding Court order respecting rectification?
+   Question: What authority does a person have to make an order directing the registrar to rectify the title register in the following cases: (a) where the court is satisfied that any person is entitled to any estate, right or interest in any registered land and as a consequence is of opinion that rectification of the title register is required?
    Answer: 70(1): Subject to section 71, the court may make an order directing the registrar to rectify the title register in the following cases: (a) where the court is satisfied that any person is entitled to any estate, right or interest in any registered land and as a consequence is of opinion that rectification of the title register is required; (b) where the applicant is aggrieved by any entry made in or by the omission of any entry from the title register or by any default in the making of an entry therein, and the court is satisfied that a rectification of the title register is required; (c) where the court is satisfied that any registration, including a first registration, or any entry in or memorandum on the title register or on an instrument has been obtained, made or omitted by fraud, wrongful act or mistake.
 
 2. [filing-record] [Tier C]
@@ -26137,7 +26080,6 @@ Concepts:
 - Application to the Court for an Order Directing the
 
 Warnings:
-- [WARNING] MAIN_QUESTION_TOPIC_MISMATCH (generated.mainQuestion): The main question topic does not match the section heading or detected topic. Text: What order-making rules are established by section 70 of Land Titles Act?
 - [WARNING] RUBRIC_ANSWER_TOO_LONG (generated.rubricItems.referenceAnswer): A rubric answer is long and appears to contain several independent subsection units. Text: 70(1): Subject to section 71, the court may make an order directing the registrar to rectify the title register in the following cases: (a) where the court is satisfied that any person is entitled to any estate, right or
 - [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Court Order Respecting Rectification
 
@@ -26185,7 +26127,7 @@ for any other reason, in any particular case it is considered that it would be u
 Rubric:
 
 1. [filing-record] [Tier A]
-   Question: What is the person prohibited from doing?
+   Question: What is a person prohibited from doing?
    Answer: 71: Rectification and registered owner in possession 71The title register shall not be rectified so as to affect detrimentally the title of the registered owner who is in possession unless (a) such owner had knowledge of the omission, fraud or mistake in consequence of which the rectification is sought, or caused such omission, fraud or mistake or substantially contributed to it by this act; (b) the immediate disposition to him was void, or the disposition to the person through whom he claims otherwise than for valuable consideration was void; or (c) for any other reason, in any particular case it is considered that it would be unjust not to rectify the register against him.
 
 Concepts:
@@ -26319,7 +26261,7 @@ Rubric:
 
 Suggested chunks:
 
-- 73 - Indemnification on rectification (multiple-independent-topics, estimated rubric items: 7)
+- 73 - Indemnification on rectification (multiple-independent-topics, estimated rubric items: 7; sources: section:73)
 
 Concepts:
 - Indemnification on Rectification
@@ -26357,7 +26299,7 @@ Section 74 - Award of indemnity
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does the Registrar General have regarding determine whether or not a right of indemnity has arisen under this Act, and where he?
+   Question: What may the Registrar General do?
    Answer: 74(1): Upon the application of a claimant, the Registrar General may determine whether or not a right of indemnity has arisen under this Act, and where he determines that such a right has arisen he may, with the approval of Service New Brunswick and with the consent of the claimant, award the claimant an amount as indemnity and may, whether or not he determines that such a right has arisen, award the claimant an amount for the reasonable expenses the claimant has incurred in making the application.
 
 2. [power-duty] [Tier C]
@@ -26367,7 +26309,6 @@ Rubric:
 Concepts:
 - Award of Indemnity
 - Application of a Claimant
-- Application Under Subsection
 
 Warnings: none
 
@@ -26395,7 +26336,7 @@ Payment
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must the person do regarding Payment?
+   Question: What must a person do?
    Answer: 75: Payment 75Where an amount has been awarded as an indemnity under any of the provisions of this Act, it shall be paid forthwith to the person being indemnified upon such person executing in favour of the Registrar General an assignment of any rights which such person would have been entitled to enforce against any person in relation to the matter in respect of which the indemnity has been paid.
 
 Concepts:
@@ -26427,7 +26368,7 @@ Recovery of payment from third parties
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does the Registrar General have regarding take proceedings to recover the amount so paid from any person who has caused or substantially?
+   Question: What may the Registrar General do?
    Answer: 76: Recovery of payment from third parties 76Where any money is paid by way of indemnity under this Act, the Registrar General may take proceedings to recover the amount so paid from any person who has caused or substantially contributed to the damage by his fraud or negligence, and to enforce any express or implied agreement or other right which the person who is indemnified would have been entitled to enforce in relation to the matter in respect of which the indemnity has been paid.
 
 Concepts:
@@ -26460,7 +26401,7 @@ Agreements with respect to liability
 Rubric:
 
 1. [power-duty] [Tier C]
-   Question: What powers does person have regarding Agreements with respect to liability?
+   Question: What may a person do?
    Answer: 76.01: Agreements with respect to liability 76.01Service New Brunswick may, for the purposes of section 76, enter into agreements with the Law Society of New Brunswick, or any or all of its members, or with any other person, with respect to liability under that section as a result of any indemnity paid by the Registrar General under this Act.
 
 Concepts:
@@ -26657,55 +26598,48 @@ Rubric:
    Answer: 79(1): In this section “decision” means decision, act, omission, refusal, determination, direction or order.
 
 2. [power-duty] [Tier A]
-   Question: What powers does person have regarding require the Registrar General or the registrar, as the case may be, to provide to him?
+   Question: What may a person do?
    Answer: 79(2): Any person who is dissatisfied with a decision of the Registrar General or a registrar may require the Registrar General or the registrar, as the case may be, to provide to him within a reasonable time written reasons for the decision.
 
 3. [power-duty] [Tier A]
-   Question: What powers does person have regarding make an application to the court stating the reason for the desired rectification or the grounds?
+   Question: What authority does a person have to make an application to the court stating the reason for the desired rectification or the grounds of dissatisfaction with the decision and the relief or remedy sought?
    Answer: 79(3): Any person who desires rectification of the title register under section 70 or who is dissatisfied with a decision of the Registrar General or a registrar may make an application to the court stating the reason for the desired rectification or the grounds of dissatisfaction with the decision and the relief or remedy sought.
 
 4. [power-duty] [Tier A]
-   Question: What must the Registrar General do regarding give to the Registrar General a notice of proposed application in prescribed form accompanied by a?
+   Question: What must the Registrar General do?
    Answer: 79(4): Before making an application to the court under this section the proposed applicant shall give to the Registrar General a notice of proposed application in prescribed form accompanied by a copy of the proposed application.
 
 5. [power-duty] [Tier A]
-   Question: What must the Registrar General do regarding forthwith give a copy of the notice to the registrar for the district in which any?
-   Answer: 79(5): Upon receipt of the notice referred to in subsection (4), the Registrar General shall forthwith give a copy of the notice to the registrar for the district in which any land affected by the proposed application is situated and the registrar shall upon receipt make a notation of the notice in the title register and after such receipt any dealing with the land affected by the proposed application is subject to such notice.
-
-6. [power-duty] [Tier A]
    Question: What prohibition applies under 79(6)?
    Answer: 79(6): An application to the court under this section shall not affect a disposition for valuable consideration made in good faith and registered before receipt of notice of the application by the registrar under subsection (5).
 
-7. [power-duty] [Tier A]
+6. [power-duty] [Tier A]
    Question: What notice rule applies to not be made after the expiration of thirty days from the giving of the notice under?
    Answer: 79(7): An application to the court under this section may not be made after the expiration of thirty days from the giving of the notice under subsection (4) or after such greater or lesser period as the court may order.
 
-8. [power-duty] [Tier C]
+7. [power-duty] [Tier C]
    Question: What does 79(8) provide regarding hear and consider any relevant evidence whether or not it would be admissible under the rules?
    Answer: 79(8): In hearing an application under this section the court may hear and consider any relevant evidence whether or not it would be admissible under the rules of evidence.
 
-9. [power-duty] [Tier C]
+8. [power-duty] [Tier C]
    Question: What does 79(9) provide regarding Application to court?
    Answer: 79(9): Subject to section 71, the court may make such order in respect of the application and as to costs as the circumstances of the case require.
 
 Suggested chunks:
 
-- 79 - Application to court (definitions, estimated rubric items: 12)
-- 79 - Application to court (many-subsections, estimated rubric items: 12)
-- 79 - Application to court (multiple-independent-topics, estimated rubric items: 12)
+- 79 79(1)-79(6): notice of proposed application in prescribed form accompanied by a copy of t (definitions, many-subsections, multiple-independent-topics, estimated rubric items: 6; sources: section:79/subsection:1, section:79/subsection:2, section:79/subsection:3, section:79/subsection:4, section:79/subsection:5, section:79/subsection:6)
+- 79 79(7)-79(9): notice under subsection (4) or after such greater or lesser period as the co (definitions, many-subsections, multiple-independent-topics, estimated rubric items: 6; sources: section:79/subsection:7, section:79/subsection:8, section:79/subsection:9)
 
 Concepts:
 - Decision
 - Application to Court
 - Application to the Court Stating the Reason for the
 - Application to the Court Under This Section the Proposed
-- Notice Referred to in Subsection
 - Application to the Court Under This Section Shall not
 - Hearing an Application Under This Section the Court
 
 Warnings:
 - [WARNING] DUPLICATE_RUBRIC_PROMPT (generated.rubricItems.prompt): Two or more rubric prompts are identical or near-identical after normalization. Text: What does 79(1) provide regarding Application to court? | What does 79(9) provide regarding Application to court?
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Notice Referred to in Subsection
 
 ### Section 80 - Fees
 
@@ -26784,7 +26718,7 @@ Rubric:
    Answer: 80(1): Before the registrar accepts for registration any instrument or other document or performs any other duty that he is requested to perform under this Act, he shall receive the prescribed fee therefor.
 
 2. [power-duty] [Tier A]
-   Question: What must the Registrar General do regarding Fees?
+   Question: What must the Registrar General do?
    Answer: 80(1.1): Payment of any fees or taxes in respect of the registration of an electronic instrument shall be made by electronic means in such manner and at such time as is established by the Registrar General.
 
 3. [power-duty] [Tier C]
@@ -26796,10 +26730,10 @@ Rubric:
    Answer: 80(3): Notwithstanding subsection (2), no assurance fees are payable in respect of transfers between ministers or departments of the Crown in right of Canada or the Province or between the Crown in right of Canada and the Crown in right of the Province or to any of them.
 
 5. [power-duty] [Tier A]
-   Question: What must person do regarding be ascertained by an affidavit of value in prescribed form of the applicant, transferor or transferee?
+   Question: What must a person do when any transfer of registered land is registered?
    Answer: 80(4): Before any transfer of registered land is registered, the value of the land shall be ascertained by an affidavit of value in prescribed form of the applicant, transferor or transferee or of such other person as the registrar believes to be acquainted with the value of the land and whose oath or affirmation the registrar is willing to accept, and such affidavit of value shall be filed with the registrar.
 
-6. [power-duty] [Tier A]
+6. [power-duty] [Tier B]
    Question: What does 80(4.1) provide regarding provide a declaration in electronic format of all the material facts that would have been contained?
    Answer: 80(4.1): Notwithstanding subsection (4), where a transfer is submitted in electronic format, the subscriber who submits the transfer shall provide a declaration in electronic format of all the material facts that would have been contained in an affidavit of value if the transfer had been submitted for registration in paper format.
 
@@ -26816,18 +26750,18 @@ Rubric:
    Answer: 80(7): Each registrar shall keep a correct account of all sums of money received by him under this Act and shall pay that money in such manner as may be determined by Service New Brunswick.
 
 10. [power-duty] [Tier A]
-   Question: What must person do regarding be paid out of any account or fund established for this purpose?
+   Question: What must a person do?
    Answer: 80(8): The indemnity, costs and expenses awarded to a person claiming indemnification pursuant to this Act shall be paid out of any account or fund established for this purpose.
 
-11. [power-duty] [Tier A]
+11. [power-duty] [Tier B]
    Question: What does 80(9) provide regarding be paid out of the Consolidated Fund?
    Answer: 80(9): If the account or fund established pursuant to subsection (8) is insufficient to make the payment required, or if no provision is made, then payments shall be paid out of the Consolidated Fund.
 
 Suggested chunks:
 
-- 80 - Fees (many-subsections, estimated rubric items: 12)
-- 80 - Fees (long-enumeration, estimated rubric items: 12)
-- 80 - Fees (multiple-independent-topics, estimated rubric items: 12)
+- 80 80(1)-80(3): receive the prescribed fee therefor (many-subsections, long-enumeration, multiple-independent-topics, estimated rubric items: 6; sources: section:80/subsection:1, section:80/subsection:1.1, section:80/subsection:2, section:80/subsection:3)
+- 80 80(4)-80(5): registered land is registered, the value of the land shall be ascertained by an (many-subsections, long-enumeration, multiple-independent-topics, estimated rubric items: 6; sources: section:80/subsection:4, section:80/subsection:4.1, section:80/subsection:4.2, section:80/subsection:5)
+- 80 80(6)-80(9): certificate of the value under the hand of an evaluator appointed by the registra (many-subsections, long-enumeration, multiple-independent-topics, estimated rubric items: 6; sources: section:80/subsection:6, section:80/subsection:7, section:80/subsection:8, section:80/subsection:9)
 
 Concepts:
 - Fees
@@ -26910,20 +26844,16 @@ REGULATIONS
 Rubric:
 
 1. [filing-record] [Tier A]
-   Question: What must person file or record regarding make available to any person, upon request, information registered with him concerning registered land?
+   Question: What must a person do?
    Answer: 82(1): The registrar shall make available to any person, upon request, information registered with him concerning registered land.
 
-2. [filing-record] [Tier A]
-   Question: What must person file or record regarding pay such fee as is prescribed?
-   Answer: 82(2): A person requesting information pursuant to subsection (1) shall pay such fee as is prescribed.
-
-3. [filing-record] [Tier C]
+2. [filing-record] [Tier C]
    Question: What filing or record rule applies to Request for registered information?
    Answer: 82(3): The registrar is not liable for any error or omission arising from information provided pursuant to subsection (1) unless such information is certified as prescribed. REGULATIONS
 
 Suggested chunks:
 
-- 82 - Request for registered information (multiple-independent-topics, estimated rubric items: 5)
+- 82 - Request for registered information (multiple-independent-topics, estimated rubric items: 5; sources: section:82)
 
 Concepts:
 - Request for Registered Information
@@ -27159,13 +27089,12 @@ in any case not provided for in this Act, prescribing such rules, procedures or 
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What is Lieutenant-Governor in Council prohibited from doing?
+   Question: What is the Lieutenant-Governor in Council prohibited from doing?
    Answer: 83: Regulations 83The Lieutenant-Governor in Council may make regulations (a) authorizing and prescribing fees to be paid to a registrar or the Registrar General; (b) respecting the collection, management, administration and payment of fees taken by or paid to a registrar or the Registrar General; (c) prescribing duties and powers of the Registrar General or a registrar and the manner in which they are to be carried out or exercised; (d) prescribing the form and content of instruments, notices and other documents referred to in or required by this Act; (d.1) designating instruments that are to be submitted in electronic format and providing for restrictions or conditions that apply in respect of the instruments designated; (d.2) specifying a date for the purposes of paragraph 17.1(6)(d); (d.3) respecting the possession and retention of instruments and other documents in paper format by a subscriber or land surveyor or former subscriber or land surveyor, including the minimum period of time those instruments and documents are to be retained, and the inspection and copying of such instruments and documents by the Registrar General; (d.31) designating instruments that may not be submitted as a digitally scanned image of an instrument and providing for restrictions or conditions that apply in respect of the instruments designated; (d.4) respecting the submission of electronic instruments, including the restrictions, conditions or circumstances under which the owner of a mortgage may submit an assignment of the mortgage or discharge of the mortgage in electronic format; (d.5) respecting the registration or filing of electronic instruments; (d.6) respecting the requirements that an owner of a mortgage must meet in order to obtain access to the technology put in place by Service New Brunswick for the submission of an assignment of the mortgage or discharge of the mortgage in electronic format; (d.7) respecting the retention of documents by the owner of a mortgage who submits an assignment of the mortgage or a discharge of the mortgage in electronic format for registration or filing; (d.8) prescribing information that is to accompany the submission of an electronic instrument; (e) prescribing the manner of service and defining what is sufficient service of any document or notice referred to in or required by this Act; (f) providing that any form or part thereof or any formal requirement shall not apply to any prescribed class of persons; (g) establishing the Province or any portion of the Province as a district, and altering the boundaries of any portion of the Province that is established as a district; (h) establishing and maintaining one or more land titles offices within a district; (i) providing that any land titles office may be combined with a registry of deeds office; (j) closing or relocating in whole or in part any land titles office and determining the disposition of the records of that office; (k) establishing such offices as are necessary for the administration of this Act; (k.1) prescribing standards for descriptions of parcels of land; (k.2) prescribing circumstances for the purposes of subsection 10.4(1); (l) prescribing the information respecting land that shall be stored and maintained in any office established by or under this Act; (m) prescribing the form, location and manner of maintenance of instrument records and title registers and providing for the destruction of instruments and other documents that have ceased to have any effect; (n) prescribing the business hours of any office established by or under this Act; (o) respecting the recording of an instrument under the Registry Act where this Act applies to the registration of title to the land to which the instrument relates; (p) prescribing the circumstances, evidence and documentation upon which the Registrar General or a registrar may without further investigation rely; (q) prescribing the powers of the Registrar General to determine the requirements, standards, content, form, method and manner of preparation of plans, sketches, diagrams and descriptions of land referred to or required by this Act; (r) requiring such documents and information to be presented to a registrar or the Registrar General as may be required; (s) prescribing the manner in which instruments recorded under the Registry Act may be entered upon a title register; (t) respecting the registration of grants from the Crown; (u) prescribing any other matter or thing that by this Act is to be prescribed; (v) in any case not provided for in this Act, prescribing such rules, procedures or methods as the Lieutenant-Governor in Council considers necessary for giving effect to and carrying out the intent and purposes of this Act.
 
 Suggested chunks:
 
-- 83 - Regulations (long-enumeration, estimated rubric items: 11)
-- 83 - Regulations (multiple-independent-topics, estimated rubric items: 11)
+- 83 - Regulations (long-enumeration, multiple-independent-topics, estimated rubric items: 11; sources: section:83)
 
 Concepts:
 - not Apply to any Prescribed Class of Persons Requirement
@@ -27257,7 +27186,7 @@ Rubric:
 
 Suggested chunks:
 
-- 84 - Transitional provisions (multiple-independent-topics, estimated rubric items: 12)
+- 84 - Transitional provisions (multiple-independent-topics, estimated rubric items: 12; sources: section:84)
 
 Concepts:
 - Transitional Provisions
@@ -27401,7 +27330,7 @@ Rubric:
 
 Suggested chunks:
 
-- 2 (definitions, estimated rubric items: 0)
+- 2 (definitions, estimated rubric items: 1; sources: section:2)
 
 Concepts:
 - Control Point
@@ -27482,7 +27411,7 @@ A surveyor working under section 7 of the Act shall conform to instructions issu
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must surveyor do regarding conform to instructions issued by the Director of Surveys?
+   Question: What must a surveyor do?
    Answer: 4: A surveyor working under section 7 of the Act shall conform to instructions issued by the Director of Surveys.
 
 Concepts:
@@ -27592,11 +27521,11 @@ evidence on which the survey is based.
 Rubric:
 
 1. [filing-record] [Tier A]
-   Question: What must surveyor file or record regarding plan of survey?
+   Question: What must a surveyor do?
    Answer: 6(1): When a surveyor requests approval of a plan of survey he shall also submit the following (a) the original field notes; (b) computation sheets; and (c) evidence on which the survey is based.
 
 2. [filing-record] [Tier A]
-   Question: What must the Director of Surveys file or record regarding plan of survey?
+   Question: What must the Director of Surveys file?
    Answer: 6(2): When an examination of the plan of survey is completed the Director of Surveys shall file copies of the documents mentioned in subsection (1) and return the originals to the surveyor.
 
 Concepts:
@@ -27624,7 +27553,7 @@ The Director of Surveys may issue instructions governing the standards of survey
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does The Director of Surveys have regarding issue instructions governing the standards of survey and content of subdivision plans?
+   Question: What may the Director of Surveys do?
    Answer: 7: The Director of Surveys may issue instructions governing the standards of survey and content of subdivision plans.
 
 Concepts:
@@ -27735,7 +27664,7 @@ Rubric:
 
 Suggested chunks:
 
-- 2 (definitions, estimated rubric items: 0)
+- 2 (definitions, estimated rubric items: 1; sources: section:2)
 
 Concepts:
 - act
@@ -27864,15 +27793,19 @@ Rubric:
    Answer: 3(1): An application to confirm the location of a boundary made under subsection 6(1) or (3) of the Act shall be in Form 1.
 
 2. [power-duty] [Tier A]
-   Question: What must the Registrar General do regarding plan of survey?
+   Question: What must the Registrar General do?
    Answer: 3(2): A plan of survey required under paragraph 7(1)(a) of the Act shall be current and shall conform in every respect to (a) the standards for the making of such a plan established by the Association of New Brunswick Land Surveyors and in effect at the time of making the application, and (b) any other requirements specified by the Registrar General.
 
 3. [power-duty] [Tier A]
-   Question: What must surveyor do regarding plan of survey?
+   Question: What must a surveyor do when reasonably available to the applicant?
    Answer: 3(3): In addition to the plan of survey referred to in subsection (2), an application to confirm the location of a boundary shall be accompanied by (a) the field notes and a surveyor’s report in conformity with subsection (4), prepared by the surveyor who signed the plan of survey, (b) copies of any other existing plans of survey on which the boundary in question is shown and, if reasonably available to the applicant, the field notes and surveyor’s reports relating to those plans of survey, (c) copies of all instruments registered in a registry office or a land titles office in the Province that relate to the location of the boundary in question and that are required by the Registrar General, (d) if requested by the Registrar General, an abstract of title in conformity with the directions of the Registrar General, (e) a list of the names and mailing addresses of all the current owners of an interest in the parcel in question and all the current owners of an interest in the other parcels sharing the boundary in question, including a description of the nature of the interest of each such owner, (f) any consent and waiver of notice obtained by the applicant and any agreement to be bound by an order of the Registrar General, and (g) any other information or documentation that would or could assist the Registrar General in dealing with the application or that is requested by the Registrar General.
 
 4. [power-duty] [Tier A]
-   Question: What powers does The Registrar General have regarding section 3?
+   Question: What must a surveyor do?
+   Answer: 3(4): A surveyor’s report referred to in paragraph (3)(a) shall contain (a) a description of the issue to be determined, (b) a description of the history of the boundary in question, (c) a description of the evidence used to establish the location of the boundary as shown on the plan of survey, and (d) an explanation of the reasons for accepting or rejecting the location of the boundary as shown on any other plans of survey, as indicated by any other documentary evidence or as indicated by any physical evidence of earlier boundary lines or boundary lines that have been accepted by adjoining landowners.
+
+5. [power-duty] [Tier A]
+   Question: What may the Registrar General do?
    Answer: 3(5): The Registrar General may waive any of the requirements of subsection (3), subject to such terms and conditions as the Registrar General considers appropriate.
 
 Concepts:
@@ -27914,7 +27847,7 @@ PROCEEDINGS
 Rubric:
 
 1. [notice] [Tier A]
-   Question: What must the Registrar General do regarding be on a form provided by the Registrar General?
+   Question: What must the Registrar General do?
    Answer: 4(1): A consent and waiver of notice provided to the Registrar General shall be on a form provided by the Registrar General.
 
 Concepts:
@@ -27990,7 +27923,7 @@ Section 6
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does The Registrar General have regarding introduce evidence at the hearing and may cross-examine witnesses?
+   Question: What may the Registrar General do?
    Answer: 6(1): The Registrar General and all other parties to a hearing may introduce evidence at the hearing and may cross-examine witnesses.
 
 2. [power-duty] [Tier C]
@@ -28002,15 +27935,11 @@ Rubric:
    Answer: 6(3): The onus of proof that the boundary of a parcel is in the location claimed by the applicant shall be upon the applicant.
 
 4. [power-duty] [Tier A]
-   Question: What must person do regarding plan of survey?
+   Question: What must a person do?
    Answer: 6(4): Subject to subsection (5), the applicant shall produce as a witness to give evidence in person at the hearing, each surveyor who signed a plan of survey prepared for the purpose of supporting the application and submitted with the application.
 
 5. [power-duty] [Tier A]
-   Question: What powers does The Registrar General have regarding section 6?
-   Answer: 6(5): The Registrar General may waive the requirements of subsection (4) at the request of the applicant if satisfied that it is unnecessary or impracticable for the surveyor to give evidence in person.
-
-6. [power-duty] [Tier A]
-   Question: What must the Registrar General do regarding be on a form provided by the Registrar General?
+   Question: What must the Registrar General do?
    Answer: 6(6): A summons to witness issued under the Act shall be on a form provided by the Registrar General.
 
 Concepts:
@@ -28045,7 +27974,7 @@ APPEALS
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does the Registrar General have regarding allow the evidence of any witness, prospective witness or other person to be given or provided?
+   Question: What must the Registrar General do when or during a hearing or other proceeding under the Act?
    Answer: 7: At any time before or during a hearing or other proceeding under the Act, the Registrar General may allow the evidence of any witness, prospective witness or other person to be given or provided by affidavit or solemn declaration or any fact or document to be proven by affidavit or solemn declaration, in accordance with the Evidence Act, unless a party requires the attendance of the deponent or declarant at a hearing for cross-examination. APPEALS
 
 Concepts:
@@ -28113,11 +28042,11 @@ FEES
 Rubric:
 
 1. [filing-record] [Tier A]
-   Question: What powers does The Registrar General have regarding plan of survey?
+   Question: What authority does the Registrar General have to certify a plan of survey to be filed under the Act in the manner the Registrar General considers appropriate?
    Answer: 9(1): The Registrar General may certify a plan of survey to be filed under the Act in the manner the Registrar General considers appropriate.
 
 2. [filing-record] [Tier A]
-   Question: What must the Registrar General file or record regarding plan of survey?
+   Question: What must the Registrar General do?
    Answer: 9(2): If a plan of survey or a corrected plan of survey filed under subsection 15(1) or 16(4) of the Act supersedes a plan of survey filed earlier, the Registrar General shall cause a notation to be made to that effect on the plan of survey filed earlier, giving particulars sufficient to identify the superseding plan. FEES
 
 Concepts:
@@ -28281,7 +28210,7 @@ Rubric:
 
 Suggested chunks:
 
-- 2 (definitions, estimated rubric items: 0)
+- 2 (definitions, estimated rubric items: 1; sources: section:2)
 
 Concepts:
 - lot
@@ -28484,7 +28413,7 @@ Rubric:
    Answer: 5(1): In a proposed subdivision, unless otherwise approved by the Minister of Transportation and Infrastructure, (a) every street shall have a width of twenty metres, (b) a cul-de-sac shall not exceed one hundred and eighty metres in length and shall terminate with a circular area having a radius of eighteen metres, and (c) no street shall have a gradient in excess of eight per cent.
 
 2. [power-duty] [Tier A]
-   Question: What must the person do regarding make provision to bring the existing access to the same standard as is required for streets?
+   Question: What must a person do?
    Answer: 5(2): Where entry will be gained to a proposed subdivision by means of an existing street or other access, by whomever owned, the person seeking approval of the plan of such subdivision shall make provision to bring the existing access to the same standard as is required for streets within the proposed subdivision.
 
 3. [power-duty] [Tier C]
@@ -28647,7 +28576,8 @@ Rubric:
 
 Suggested chunks:
 
-- 6 (many-subsections, estimated rubric items: 9)
+- 6 6(1)-6(4): lot, block and other parcel of land in a proposed subdivision shall abut (many-subsections, estimated rubric items: 5; sources: section:6/subsection:1, section:6/subsection:2, section:6/subsection:3, section:6/subsection:4)
+- 6 6(5)-6(7): lots (many-subsections, estimated rubric items: 6; sources: section:6/subsection:5, section:6/subsection:6, section:6/subsection:7)
 
 Concepts:
 none
@@ -28704,11 +28634,11 @@ the proposed manner of subdividing will prejudice the possibility of further sub
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does the development officer have regarding subdivision plan?
+   Question: What authority does the development officer have to approve a subdivision plan?
    Answer: 7(1): Subject to subsection (2), the development officer may approve a subdivision plan.
 
 2. [power-duty] [Tier A]
-   Question: What is The development officer prohibited from doing?
+   Question: What must the development officer do when the plan is approved?
    Answer: 7(2): The development officer shall not approve a subdivision plan if, in his opinion and in the opinion of the regional service commission, (a) the land is not reasonably suited or cannot be economically suited to the purpose for which it is intended or may not reasonably be expected to be used for that purpose within a reasonable time after the plan is approved, or (b) the proposed manner of subdividing will prejudice the possibility of further subdividing the land or the convenient subdividing of adjoining land.
 
 3. [power-duty] [Tier C]
@@ -28759,7 +28689,7 @@ for a type 2 subdivision, $500 plus $50 for each lot in the subdivision.
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must person do regarding section 7.1?
+   Question: What must a person do?
    Answer: 7.1(1): A person who applies to a development officer for approval of a tentative plan shall pay the following fee: (a) for a type 1 subdivision, $200 plus $25 for each lot in the subdivision; or (b) for a type 2 subdivision, $500 plus $50 for each lot in the subdivision.
 
 2. [power-duty] [Tier C]
@@ -28915,7 +28845,7 @@ with respect to a digitally scanned image of an instrument referred to in subsec
 
 Rubric:
 
-1. [power-duty] [Tier A]
+1. [power-duty] [Tier B]
    Question: What does 2(1) provide regarding be printed or typewritten on good quality white paper, 8?
    Answer: 2(1): Subject to this section, unless it is prepared in book form for deposit, an instrument shall be printed or typewritten on good quality white paper, 8.5 inches by 11 inches (22.6 cm by 27.94 cm) or 8.5 inches by 14 inches (22.6 cm by 35.6 cm), with a margin of not less than one inch (2.5 cm) on the top and left side of the page and, if printed on the reverse side thereof, a margin of not less than one inch (2.5 cm) on the top and right side of the page and shall be of sufficient clarity to permit photocopying or other reproduction.
 
@@ -28937,7 +28867,8 @@ Rubric:
 
 Suggested chunks:
 
-- 2 (many-subsections, estimated rubric items: 10)
+- 2 2(1)-2(4): registered under the Act by submitting a digitally scanned image of the instrume (many-subsections, estimated rubric items: 5; sources: section:2/subsection:1, section:2/subsection:2, section:2/subsection:3, section:2/subsection:4)
+- 2 2(5): refuse to file or register an instrument, (a) with respect to a digitally sc (many-subsections, estimated rubric items: 6; sources: section:2/subsection:5)
 
 Concepts:
 - Registration Under the Bankruptcy act
@@ -29073,7 +29004,7 @@ Rubric:
 
 Suggested chunks:
 
-- 2 (definitions, estimated rubric items: 0)
+- 2 (definitions, estimated rubric items: 1; sources: section:2)
 
 Concepts:
 - act
@@ -29196,11 +29127,11 @@ Rubric:
    Question: What filing or record rule applies to be recorded under the Registry Act on or after the coming into force of this section?
    Answer: 3(4): An instrument or document may be recorded under the Registry Act on or after the coming into force of this section, although the land to which the instrument or document relates is not excepted from the operation of the Act, if (a) the land is not registered land, and (b) the instrument or document does not have the effect of transferring title to the land or mortgaging the land.
 
-6. [power-duty] [Tier A]
+6. [power-duty] [Tier B]
    Question: What does 3(5) provide regarding be recorded under the Registry Act on or after the coming into force of this section?
    Answer: 3(5): An instrument or document transferring title to any parcel of unregistered land which is not excepted from the operation of the Act may be recorded under the Registry Act on or after the coming into force of this section, if (a) the transfer is by way of gift or without consideration, (a.1) Repealed: 2000-38 (a.2) the transfer is of title to a condominium unit, (b) the transfer results from the death of the owner, or (c) the transfer is made pursuant to a trust, whether from the trustee to the beneficiary or from one trustee to another.
 
-7. [power-duty] [Tier A]
+7. [power-duty] [Tier B]
    Question: What does 3(6) provide regarding be recorded under the Registry Act if the instrument or document has the effect of mortgaging?
    Answer: 3(6): An instrument or document that has the effect of mortgaging any parcel of unregistered land that is not excepted from the operation of the Act may be recorded under the Registry Act if the instrument or document has the effect of mortgaging a condominium unit.
 
@@ -29282,18 +29213,17 @@ THE REGISTRY ACT
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must person do regarding be proved by the affidavit of a person having knowledge of the facts, and such affidavit?
+   Question: What must a person do when provided?
    Answer: 4(1): The matters referred to in subsections 3(5) and (6) may be proved by the affidavit of a person having knowledge of the facts, and such affidavit, if provided, shall be endorsed on or annexed to the instrument or document and recorded under the Registry Act.
 
 2. [power-duty] [Tier A]
-   Question: What must REGISTRAR GENERAL do regarding be as follows: AUTHORIZED FOR RECORDING UNDER THE REGISTRY ACT | Parcel _______________ PID________ | |?
+   Question: What must the Registrar General do?
    Answer: 4(2): The certificate referred to in subsection 2(5) of the Act shall be as follows: AUTHORIZED FOR RECORDING UNDER THE REGISTRY ACT | Parcel _______________ PID________ | | | Dated________, 20______ | | | | | | | | ________ | | REGISTRAR GENERAL OF | | LAND TITLES
 
 Concepts:
-- Certificate Referred to in Subsection
+none
 
-Warnings:
-- [INFO] CONCEPT_FRAGMENT (generated.concepts.label): The concept label looks like an incomplete source-text fragment. Text: Certificate Referred to in Subsection
+Warnings: none
 
 ### Section 5
 
@@ -29373,7 +29303,7 @@ The Registrar General of Land Titles may from time to time issue directives to p
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What powers does The Registrar General have regarding section 6?
+   Question: What may the Registrar General do?
    Answer: 6: The Registrar General of Land Titles may from time to time issue directives to provide for the manner in which business is to be conducted in a land titles office.
 
 Concepts:
@@ -29462,7 +29392,7 @@ Section 9
 Rubric:
 
 1. [filing-record] [Tier A]
-   Question: What must the Registrar General file or record regarding register the Crown grant in the manner directed by the Registrar General?
+   Question: What must the Registrar General register?
    Answer: 9(1): When the registrar receives for registration a grant from the Crown of previously unregistered land, the registrar shall register the Crown grant in the manner directed by the Registrar General.
 
 2. [filing-record] [Tier A]
@@ -29612,7 +29542,7 @@ Rubric:
    Answer: 12(3): Unless the contrary is proved, any notice served by mail shall be deemed to be served (a) where the delivery is local, on the third day following the date it was mailed, or (b) where the delivery is not local, on the fifth day following the date it was mailed.
 
 4. [filing-record] [Tier A]
-   Question: What must the Registrar General file or record regarding direct an alternate method of service?
+   Question: What must the Registrar General do when any notice served by mail is returned undelivered?
    Answer: 12(4): If any notice served by mail is returned undelivered, the Registrar General shall direct an alternate method of service.
 
 5. [filing-record] [Tier C]
@@ -29621,7 +29551,8 @@ Rubric:
 
 Suggested chunks:
 
-- 12 (multiple-independent-topics, estimated rubric items: 8)
+- 12 12(1)-12(4): notice may be proved by affidavit (multiple-independent-topics, estimated rubric items: 4; sources: section:12/subsection:1, section:12/subsection:2, section:12/subsection:3, section:12/subsection:4)
+- 12 12(5): Section 12 (multiple-independent-topics, estimated rubric items: 6; sources: section:12/subsection:5)
 
 Concepts:
 - Notice may be Proved by Affidavit
@@ -29656,7 +29587,7 @@ Section 13
 Rubric:
 
 1. [filing-record] [Tier A]
-   Question: What must the Registrar General file or record regarding section 13?
+   Question: What must the Registrar General do?
    Answer: 13(1): Registered land shall be described and diagrammed in such manner as the Registrar General considers is best calculated to secure accuracy.
 
 2. [filing-record] [Tier C]
@@ -29689,7 +29620,7 @@ The registrar shall maintain an alphabetical list of owners of interests in regi
 Rubric:
 
 1. [filing-record] [Tier A]
-   Question: What must person file or record regarding maintain an alphabetical list of owners of interests in registered land containing the name of each?
+   Question: What must a person do?
    Answer: 14: The registrar shall maintain an alphabetical list of owners of interests in registered land containing the name of each owner and the approved parcel identifier of each registered parcel in which that person owns an interest.
 
 Concepts:
@@ -29718,12 +29649,12 @@ Any person upon payment of the prescribed fee may require the registrar to make 
 Rubric:
 
 1. [filing-record] [Tier A]
-   Question: What powers does person have regarding require the registrar to make a search of the alphabetical list of owners of interests in?
+   Question: What may a person do?
    Answer: 14.1: Any person upon payment of the prescribed fee may require the registrar to make a search of the alphabetical list of owners of interests in registered land and is entitled to receive a Certificate of Alphabetical List Search.
 
 Suggested chunks:
 
-- 14.1 (multiple-independent-topics, estimated rubric items: 2)
+- 14.1 (multiple-independent-topics, estimated rubric items: 2; sources: section:14.1)
 
 Concepts:
 none
@@ -29840,10 +29771,10 @@ Rubric:
    Answer: 17(1): All instruments presented for registration or filing may be in either or both of the official languages.
 
 2. [power-duty] [Tier A]
-   Question: What must the Registrar General do regarding be accompanied by a translation of that instrument into an official language, duly authenticated in a?
+   Question: What must the Registrar General do?
    Answer: 17(2): Any instrument presented for registration or filing in a language other than an official language shall be accompanied by a translation of that instrument into an official language, duly authenticated in a manner approved by the Registrar General; and in such case, effect shall be given to the version in the official language.
 
-3. [power-duty] [Tier A]
+3. [power-duty] [Tier B]
    Question: What does 17(3) provide regarding be given to the version in the official language?
    Answer: 17(3): When any instrument is presented for registration or filing in more than one language and only one of the languages used is an official language, effect shall be given to the version in the official language.
 
@@ -29915,7 +29846,7 @@ Section 18.1
 Rubric:
 
 1. [notice] [Tier A]
-   Question: What powers does person have regarding be served with a notice or document under the Land Titles Act, and includes the corresponding?
+   Question: What must a person do when not residing or carrying on business in the Province?
    Answer: 18.1(1): In this section, “civic address” means the civic address, as established under the Emergency 911 Act and regulations, where a person resides or carries on business in the Province or, if not residing or carrying on business in the Province, where the person may be served with a notice or document under the Land Titles Act, and includes the corresponding postal code for that address.
 
 2. [notice] [Tier C]
@@ -29923,12 +29854,12 @@ Rubric:
    Answer: 18.1(2): This section applies to an applicant, transferee, mortgagee, lessee, assignee and any other person who claims an interest in or a right relating to or affecting title to land or any interest therein.
 
 3. [notice] [Tier A]
-   Question: What must person do regarding be the civic address that is effective for that person after the instrument is registered?
+   Question: What must a person do when the instrument is registered?
    Answer: 18.1(3): In an instrument where an address for a person is required, the address provided shall be the civic address that is effective for that person after the instrument is registered.
 
 Suggested chunks:
 
-- 18.1 (definitions, estimated rubric items: 4)
+- 18.1 (definitions, estimated rubric items: 4; sources: section:18.1)
 
 Concepts:
 - Civic Address
@@ -30011,7 +29942,7 @@ Rubric:
    Question: What does 18.3(1) provide regarding section 18.3?
    Answer: 18.3(1): Where the spouse of a party to an instrument joins in the instrument and consents to the disposition for the purpose of complying with section 19 of the Marital Property Act, the spouse shall be identified in the instrument by the label “Spouse of _________________”, with the name of the spouse who is the party to the instrument inserted in the blank space.
 
-2. [power-duty] [Tier A]
+2. [power-duty] [Tier B]
    Question: What does 18.3(2) provide regarding section 18.3?
    Answer: 18.3(2): The label referred to in subsection (1) shall be inserted immediately after the label which identifies the spouse who is the party to the instrument.
 
@@ -30165,7 +30096,7 @@ If an application to register a judgment under section 40 of the Act relates to 
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must the Registrar General do regarding be an abbreviated judgment issued under the Rules of Court, unless otherwise ordered by the Registrar?
+   Question: What must the Registrar General do?
    Answer: 19.4: If an application to register a judgment under section 40 of the Act relates to a judgment that affects an interest in or title to land or requires the payment of money but also includes provisions that do not do so, the judgment annexed to the application under subsection 40(5) of the Act shall be an abbreviated judgment issued under the Rules of Court, unless otherwise ordered by the Registrar General.
 
 Concepts:
@@ -30272,7 +30203,7 @@ Rubric:
    Answer: 20(4): Parts of a form that are enclosed in parentheses are optional.
 
 6. [power-duty] [Tier A]
-   Question: What powers does person have regarding be modified as required to provide for execution by more than one person?
+   Question: What may a person do?
    Answer: 20(5): The forms set out in Schedule A may be modified as required to provide for execution by more than one person.
 
 7. [power-duty] [Tier C]
@@ -30309,7 +30240,10 @@ Rubric:
 
 Suggested chunks:
 
-- 20 (many-subsections, estimated rubric items: 14)
+- 20 20(1)-20(3.1): Section 20 (many-subsections, estimated rubric items: 6; sources: section:20/subsection:1, section:20/subsection:2, section:20/subsection:3, section:20/subsection:3.1)
+- 20 20(4)-20(7): Section 20 (many-subsections, estimated rubric items: 6; sources: section:20/subsection:4, section:20/subsection:5, section:20/subsection:6, section:20/subsection:7)
+- 20 20(8)-20(11): Regulation - Land Titles Act and as shown on the instrument by which that owner (many-subsections, estimated rubric items: 6; sources: section:20/subsection:8, section:20/subsection:9, section:20/subsection:10, section:20/subsection:11)
+- 20 20(12)-20(13): registered and unregistered encumbrances shall be indicated, (b) a leasehold int (many-subsections, estimated rubric items: 6; sources: section:20/subsection:12, section:20/subsection:13)
 
 Concepts:
 - Application to More Than one Parcel of Land
@@ -30354,7 +30288,7 @@ Section 20.1
 Rubric:
 
 1. [power-duty] [Tier A]
-   Question: What must Council do regarding be entered in the instrument record as “Crown, New Brunswick”, and, where the Crown is represented?
+   Question: What must the council do?
    Answer: 20.1(1): Where the Crown in right of the Province is identified as a party to an instrument, that party shall be entered in the instrument record as “Crown, New Brunswick”, and, where the Crown is represented in the instrument by a member of the Executive Council, that entry shall be followed by the designation of the member; for example, the Crown in right of the Province as represented by the Minister of Transportation and Infrastructure shall be entered in the instrument record as “Crown, New Brunswick, Transportation and Infrastructure”.
 
 2. [power-duty] [Tier C]
@@ -30426,7 +30360,7 @@ with respect to a digitally scanned image of an instrument referred to in subsec
 
 Rubric:
 
-1. [power-duty] [Tier A]
+1. [power-duty] [Tier B]
    Question: What does 21(1) provide regarding be printed or typewritten on good quality white paper, 8?
    Answer: 21(1): Subject to this section, unless prepared in book form for deposit, all instruments shall be printed or typewritten on good quality white paper, 8.5 inches by 11 inches (22.6 cm by 27.94 cm) or 8.5 inches by 14 inches (22.6 cm by 35.6 cm), with a margin of not less than one inch (2.5 cm) on the top and left side of the page and, if printed on the reverse thereof a margin of not less than one inch (2.5 cm) on the top and right side of the page, and shall be of sufficient clarity to permit photocopying or other reproduction.
 
@@ -30452,7 +30386,8 @@ Rubric:
 
 Suggested chunks:
 
-- 21 (many-subsections, estimated rubric items: 10)
+- 21 21(1)-21(3.1): registered under the Act by submitting a digitally scanned image of the instrume (many-subsections, estimated rubric items: 5; sources: section:21/subsection:1, section:21/subsection:2, section:21/subsection:3, section:21/subsection:3.1)
+- 21 21(3.2)-21(3.3): registered under the Act by submitting a digitally scanned image of the instrume (many-subsections, estimated rubric items: 6; sources: section:21/subsection:3.2, section:21/subsection:3.3)
 
 Concepts:
 - Registration Under the Bankruptcy act
@@ -30567,7 +30502,7 @@ For the purposes of paragraph 17.1(6)(d) of the Act, an instrument referred to i
 
 Rubric:
 
-1. [power-duty] [Tier A]
+1. [power-duty] [Tier B]
    Question: What does 21.21 provide regarding section 21.21?
    Answer: 21.21: For the purposes of paragraph 17.1(6)(d) of the Act, an instrument referred to in paragraph 21.1(d) or (e) may be submitted in paper format to a land titles office for filing or registration if it was executed before the date that is four months after the commencement of this section.
 
@@ -31521,7 +31456,7 @@ Rubric:
    Answer: 25(1): Subject to subsection (2) this Regulation comes into force on July 9, 1984.
 
 2. [power-duty] [Tier A]
-   Question: What is person prohibited from doing?
+   Question: What is a person prohibited from doing?
    Answer: 25(2): Subsections 3(1), (2) and (2.1) of this Regulation come into force on January 1, 1984. SCHEDULE A | | | Form 1 | APPLICATION FOR FIRST REGISTRATION OF TITLE | | | Form 2 | AFFIDAVIT OF APPLICANT | | | Form 3 | CERTIFICATE OF TITLE | | | Form 4.1 | CONSENT TO REGISTRATION (CONDOMINIUM) | | | Form 8.1 | NOTICE OF HEARING | | | Form 9 | ORDER FOR REGISTRATION OF TITLE | | | Form 10 | NOTICE OF REGISTRATION | | | Form 11 | AMENDMENT | | | Form 12 | POSTPONEMENT | | | Form 13 | TRANSFER | | | Form 13.2 | SHERIFF’S TRANSFER | | | Form 13.3 | TAX SALE TRANSFER | | | Form 14 | EASEMENT | | | Form 15 | MORTGAGE | | | Form 15.1 | COLLATERAL MORTGAGE | | | Form 16 | APPLICATION FOR OPTIONAL MORTGAGE COVENANT | | | Form 17 | (PARTIAL) DISCHARGE OF MORTGAGE | | | Form 18 | RELEASE OF COVENANTOR | | | Form 19 | LEASE (AND OPTION) | | | Form 20 | NOTICE OF LEASE (AND OPTION) | | | Form 21 | APPLICATION FOR OPTIONAL LEASE COVENANT | | | Form 22 | SURRENDER OF LEASE | | | Form 23 | ASSIGNMENT | | | Form 24 | CAVEAT | | | Form 25 | NOTICE OF CAVEAT | | | Form 26 | ORDER TO WITHDRAW CAVEAT | | | Form 27 | NOTICE TO CAVEATOR | | | Form 28 | WITHDRAWAL OF CAVEAT | | | Form 29 | APPLICATION FOR STOP ORDER | | | Form 30 | STOP ORDER | | | Form 31 | NOTICE OF STOP ORDER | | | Form 31.1 | WITHDRAWAL OF STOP ORDER | | | Form 32 | AFFIDAVIT TO PREVENT REGISTRATION | | | Form 32.1 | WITHDRAWAL OF AFFIDAVIT TO PREVENT REGISTRATION | | | Form 33 | CERTIFICATE OF PENDING LITIGATION | | | Form 34 | APPLICATION TO REGISTER JUDGMENT | | | Form 35 | NOTICE OF REGISTRATION OF JUDGMENT | | | Form 36 | NOTICE TO JUDGMENT CREDITOR | | | Form 36.1 | WITHDRAWAL OF JUDGMENT | | | Form 37 | STATUTORY DECLARATION OF ATTORNEY | | | Form 38 | NOTICE OF BANKRUPTCY | | | Form 39 | NOTICE TO TRUSTEE | | | | | Form 41 | APPLICATION FOR REGISTRATION OF TRANSMISSION | | | Form 43 | AFFIDAVIT OF EXECUTION | | | Form 43.1 | AFFIDAVIT OF EXECUTION | | | Form 44 | CERTIFICATE OF EXECUTION | | | Form 45 | AFFIDAVIT OF CORPORATE EXECUTION | | | Form 47 | CERTIFICATE OF REGISTERED OWNERSHIP | | | Form 48 | APPLICATION OF SURVIVOR | | | Form 48.1 | APPLICATION OF SURVIVORS | | | Form 49 | CONSENT TO RECTIFICATION OF TITLE REGISTER | | | Form 50 | NOTICE OF INTENTION TO RECTIFY TITLE REGISTER | | | Form 51 | RECALL OF DOCUMENT | | | Form 52 | NOTATION OF TITLE REGISTER RECTIFICATION | | | Form 53 | NOTICE OF PROPOSED APPLICATION TO COURT | | | Form 54 | AFFIDAVIT OF VALUE | | | Form 55 | AFFIDAVIT OF MARITAL STATUS | | | Form 56 | DEBENTURE | | | Form 57 | APPLICATION TO REGISTER DEBENTURE | | | Form 58 | (PARTIAL) DISCHARGE OF DEBENTURE | | | Form 59 | NOTICE OF CRYSTALLIZATION OF DEBENTURE | | | Form 61 | APPLICATION FOR OPTIONAL DEBENTURE COVENANT | | | Form 62 | APPLICATION FOR CONDITION OR COVENANT ON A TRANSFER Form 1 Form 2 Form 3 Form 4.1 Form 8.1 Form 9 Form 10 Form 11 Form 12 Form 13 Form 13.2 Form 13.3 Form 14 Form 15 Form 15.1 Form 16 Form 17 Form 18 Form 19 Form 20 Form 21 Form 22 Form 23 Form 24 Form 25 Form 26 Form 27 Form 28 Form 29 Form 30 Form 31 Form 31.1 Form 32 Form 32.1 Form 33 Form 34 Form 35 Form 36 Form 36.1 Form 37 Form 38 Form 39 Form 41 Form 43 Form 43.1 Form 44 Form 45 Form 47 Form 48 Form 48.1 Form 49 Form 50 Form 51 Form 52 Form 53 Form 54 Form 55 Form 56 Form 57 Form 58 Form 59 Form 61 Form 62 SCHEDULE B 1$84 fee per parcel for Form Application for first registration of title1 Amendment11 Postponement12 Transfer13 Sheriff’s transfer13.2 Tax sale transfer13.3 Crown grant- Easement14 Mortgage15 Collateral mortgage15.1 Discharge of mortgage17 Partial discharge of mortgage17 Release of covenantor18 Lease19 Lease and option19 Notice of lease20 Notice of lease and option20 Surrender of lease22 Assignment23 Caveat24 Withdrawal of caveat28 Application for stop order29 Affidavit to prevent registration32 Withdrawal of affidavit to prevent registration32.1 Certificate of pending litigation33 Survey plan- Subdivision plan- Application to register judgment34 Withdrawal of judgment36.1 Power of attorney- Notice of intention to expropriate- Expropriation order- Receiving order- Assignment in bankruptcy- Certificate of tax sale- Notice of redemption after tax sale- Court order - Application for registration of transmission41 Claim for lien- Debenture56 Discharge of debenture58 Partial discharge of debenture58 Notice of crystallization of debenture59 2No fee for Affidavit of applicant2 Certificate of title3 Consent to registration (condominium)4.1 Notice of hearing8.1 Order for registration of title9 Notice of registration (recorded under the Registry Act)10 Application for optional mortgage covenant16 Application for optional lease covenant21 Notice of caveat25 Order to withdraw caveat26 Notice to caveator27 Stop order30 Notice of stop order31 Withdrawal of stop order31.1 Notice of registration of judgment35 Notice to judgment creditor36 Statutory declaration of attorney37 Notice of bankruptcy38 Notice to trustee39 Affidavit of execution43 Affidavit of execution43.1 Certificate of execution44 Affidavit of corporate execution45 Certificate of registered ownership (issued on first application or as the result of the registration of an instrument)47 Application of survivor48 Application of survivors48.1 Consent to rectification of title register49 Notice of intention to rectify title register50 Recall of document51 Notation of title register rectification52 Notice of proposed application to court53 Affidavit of value54 Affidavit of marital status55 Application to register debenture57 Application for optional debenture covenant61 3Where an Application for First Registration of Title (Form 1) or an application to associate a description of a parcel of land with its parcel identifier is submitted on paper, an administration fee of $100 per parcel is payable, but this fee may be waived by the registrar where it is apparent that the application is submitted on paper because it is longer than the electronic submission form allowed. 4Certificate of alphabetical list search - a fee of $30 for each name searched. 5Certificate of registered ownership (requested) - a fee of $35 per parcel. 5.1Application for the consolidation of adjoining parcels of registered land - a fee of $100 per application. 6Assurance fee - a fee of $1 per parcel for an instrument to which section 1 applies, except for an Application for First Registration of Title (Form 1). 7In all other respects, the Schedule of Fees under the Registry Act applies, as far as is applicable. SCHEDULE C STATUTORY MORTGAGE COVENANTS 101.The mortgagor covenants with the mortgagee that the mortgagor shall pay to the mortgagee the principal sum and interest as hereinbefore set out and all other money payable hereunder; on all arrears of principal, interest and any other sums due to the mortgagee, interest shall be payable at the times and at the interest rate stated, before as well as after maturity, until paid. 102.The mortgagor covenants with the mortgagee that the mortgagor shall insure and keep insured during the continuance of this mortgage the buildings on the lands and premises during their erection and thereafter in the amount of not less than their full insurable value in dollars of lawful money of Canada against loss or damage by fire and any other insurable perils that may be deemed necessary by the mortgagee, all such insurance to be carried in a company or companies approved of by the mortgagee to whom the loss for all such policies shall be made payable; and that the mortgagor shall pay all premiums and sums of money necessary for such purposes as the same shall become due, and shall forthwith assign and deliver to the mortgagee the policy or policies of insurance with mortgage clause attached satisfactory to the mortgagee, all renewal receipts and renewals thereto appertaining, and shall deliver evidence of renewal to the mortgagee; and that the mortgagee may at his option effect such insurance on behalf of the mortgagor, and any amount paid therefor by the mortgagee shall be payable forthwith by the mortgagor to the mortgagee. 103.The mortgagor covenants with the mortgagee that forthwith on the happening of any loss or damage the mortgagor shall furnish all necessary proofs and do all necessary acts to enable the mortgagee to obtain payment of the insurance proceeds; and that such insurance proceeds received by the mortgagee may at the option of the mortgagee be applied to repair or rebuild the building, or to pay the principal sum, interest and other money payable hereunder, whether or not any amount is then due, in such manner as the mortgagee may determine, or to pay the mortgagor or any person appearing by the registered title to be the owner of the lands and premises, or partly in one way and partly in another; but any payment of insurance proceeds to the mortgagor shall not operate as a reduction of any money payable hereunder by the mortgagor to the mortgagee. 104.The mortgagor covenants with the mortgagee that the mortgagor shall pay all premiums pertaining to life insurance assigned to the mortgagee as collateral security as such premiums fall due; in the event of default the mortgagee may pay the premium and any amount so paid shall be payable forthwith by the mortgagor to the mortgagee. 105.The mortgagor covenants with the mortgagee that all erections, buildings, machinery, plant, and improvements whatsoever, including furnaces, boilers, water heaters and all plumbing, air conditioning, ventilating and heating equipment, electric light fixtures, window blinds, storm windows and storm doors, window screens and screen doors, and all apparatus and equipment appurtenant thereto, which are now or which shall hereafter be put upon the lands and premises, are or shall thereafter be deemed to be fixtures and a part of the lands, even though not attached otherwise than by their own weight. 106.The mortgagor covenants with the mortgagee that during the continuance of this mortgage, the mortgagor shall maintain the lands and premises and improvements of the lands and premises in good and sufficient order and repair to the satisfaction of the mortgagee, and that the mortgagor shall permit the mortgagee at all reasonable times to inspect the lands and premises, and in the event of any default by the mortgagor to maintain as aforesaid, the mortgagee in addition to any other remedies by these presents given and conferred may at such time or times as he may deem necessary and without the concurrence of any other person make such arrangements for repairing, finishing and putting in order any buildings or other improvements of the lands and premises, and for inspecting, taking care of, leasing, collecting the rents of, and managing generally the lands and premises as he may deem expedient, and all reasonable costs, charges and expenses including allowance for the time and services of the mortgagee or other person appointed for the above purposes shall be payable forthwith by the mortgagor to the mortgagee. 107.The mortgagor covenants with the mortgagee that the mortgagor will not make or permit to be made any demolition, alterations or additions to the lands and premises without the consent of the mortgagee, and will not use the lands and premises or permit them to be used, without the consent of the mortgagee, for a purpose other than that disclosed to the mortgagee in the application for this mortgage. 108.The mortgagor covenants with the mortgagee that the mortgagor shall pay all taxes, rates, levies and assessments upon the lands and premises during the continuance of this mortgage as and when the same become due and payable, and shall produce to the mortgagee receipts for such payments. 109.The mortgagor covenants with the mortgagee that the mortgagee may, at his option, require the mortgagor to make instalment payments to the mortgagee on account of taxes, rates, levies and assessments upon the lands and premises, such payments to be an estimate by the mortgagee of the sum required to accumulate a fund sufficient to pay such taxes, rates, levies and assessments when they become due; the mortgagee may apply any such payment against the principal sum, interest and other money payable hereunder. 110.The mortgagor covenants with the mortgagee that the mortgagor shall pay all fees, costs as between solicitor and client, charges and expenses which are incurred in making and maintaining this mortgage as a first charge on the lands and premises, or in negotiating or effecting a renewal of this mortgage, or in obtaining or retaining or realizing or attempting to realize upon any security collateral to this mortgage, or in advancing the money under this mortgage or in inspecting or revaluing the lands and premises, or in taking, recovering and keeping or attempting to procure possession of the lands and premises, or in any proceeding judicial or otherwise to protect or to realize this security, and any amounts so paid by the mortgagee shall be payable forthwith by the mortgagor to the mortgagee. 111.The mortgagor covenants with the mortgagee that, if this mortgage is a building mortgage, and if the mortgagor, after any part of the principal sum has been advanced, fails at any time for a period of thirty days to diligently carry on the work of construction of the building or buildings to be erected on the lands or premises, or without the consent in writing of the mortgagee departs in such construction from any plans and specifications thereof approved by the mortgagee or from the generally accepted standards of construction in the locality of the lands and premises, or permits any construction lien or other liens to be registered against the lands and premises for any period exceeding thirty days, the mortgagee at his option at any time thereafter through his servants, agents or contractors may enter on the lands and premises and have exclusive possession thereof and of all materials, plant, gear and equipment thereon free of interference from or by the mortgagor and proceed to complete the construction of the building or buildings either according to the said plans and specifications or according to other plans, specifications or design as the mortgagee in his absolute discretion shall elect, and all expenses of every nature incurred by the mortgagee in going into possession and in completing and equipping the building or buildings or in any way in connection therewith shall be payable by the mortgagor to the mortgagee. 112.The mortgagor covenants with the mortgagee that the mortgagee may pay any liens, taxes, rates, charges or encumbrances now or hereafter existing upon the lands and premises having or which the mortgagee may bona fide consider to have priority over this mortgage, and in that event the mortgagee shall have all the rights of and stand in the position of and be entitled to all the rights, equities and securities of the person so paid off; and any amounts so paid shall be payable forthwith by the mortgagor to the mortgagee; and the decision of the mortgagee as to the validity or amount of any advance or disbursement made under this mortgage or of any claim so paid off shall be final and binding on the mortgagor. 113.The mortgagor covenants with the mortgagee that neither the execution nor registration of this mortgage nor the advance of part of the principal sum shall bind the mortgagee to advance the principal sum or any unadvanced portion thereof; any advance shall be at the sole discretion of the mortgagee. 114.On default of any payment hereunder or on breach of any covenant, agreement or proviso herein contained or implied on the part of the mortgagor to be made, observed or performed; or if any waste be committed or suffered on the lands and premises or any act or thing be done by the mortgagor by which the value of the lands and premises shall, or in the opinion of the mortgagee may, be diminished; or if the mortgagor makes an assignment for the benefit of creditors or a proposal under the Bankruptcy Act, or has a bankruptcy petition filed against him; or if the mortgagor allows a creditor to enter judgment against him by reason of his financial inability to pay a debt or debts; then the whole of the principal sum, interest and all other money payable hereunder remaining unpaid shall at the option of the mortgagee become due and the mortgagee shall have quiet possession of the lands and premises; but in the event that the mortgagee waives his right to call in the whole of such money he shall not be debarred from asserting and exercising his right to call in the money upon the happening of any future default or breach. 115.On default of any payment hereunder or on breach of any covenant, agreement or proviso herein contained or implied on the part of the mortgagor to be made, observed or performed, in whole or in part, the power of sale and all other powers conferred on the mortgagee by virtue of the Property Act, R.S.N.B. 1973, c. P-19, are incorporated herein, as if the mortgage were made by deed. 116.A discharge of this mortgage shall be prepared by the mortgagee at the expense of the mortgagor, and the mortgagee shall have a reasonable time after receipt of payment in full within which to prepare and execute such discharge. 117.The mortgagee may, either with or without consideration, release any person from any liability under this mortgage or release part or all of the lands and premises or release any other security for the money payable hereunder, without being accountable for the value thereof or for any moneys except those actually received by the mortgagee and without releasing any other of the lands and premises where a part of the lands and premises are released. 118.This mortgage shall not operate by way of merger of any indebtedness of the mortgagor to the mortgagee or any contract or instrument by which the same may now or at any time hereafter be represented or evidenced, and no judgment obtained by the mortgagee shall operate by way of merger of this mortgage or in any way affect the security hereby created or the mortgagee’s right to interest. 119.The mortgagor covenants with the mortgagee that any sum owing or required by this mortgage to be paid by the mortgagor to the mortgagee shall be added to the principal sum and shall form a charge upon the lands and premises and shall bear interest at the rate herein stipulated until paid. SCHEDULE D STATUTORY LEASE COVENANTS 11.The lessee covenants with the lessor that the lessee shall for the duration of this lease pay to the lessor the rent hereby reserved on the days and in the manner herein set out without any deduction whatsoever. 12.The lessee covenants with the lessor that the lessee shall for the duration of this lease maintain the demised premises in good and sufficient order and repair to the satisfaction of the lessor, reasonable wear and tear and damage by fire, lightning, tempest and the like excepted. 13.The lessee covenants with the lessor that the lessee shall permit the lessor, his servants, agents and employees at all reasonable times for the duration of this lease to enter upon the demised premises for the purpose of inspecting the state of repair or making such repairs as the lessor may from time to time consider necessary. 14.The lessee covenants with the lessor that the lessee shall not, without the prior written consent of the lessor, place any building, erection, addition or improvement, other than trade fixtures, upon the demised premises, or alter the interior of the demised premises or any part thereof. 15.The lessee covenants with the lessor that the lessee shall use the demised premises only for the purpose or purposes agreed upon by the lessor and lessee. 16.The lessee covenants with the lessor that the lessee shall not, without the written consent of the lessor, which consent shall not be unreasonably withheld, assign, transfer, set over, sublet or otherwise by any act or deed cause or permit the demised premises or any part thereof to be assigned, transferred, sublet or set over unto any person or persons whomsoever. 17.The lessee covenants with the lessor that the lessee shall promptly comply with and conform to the requirements of every federal and provincial statute, rule, regulation and ordinance, and every local government by-law, rule, regulation, order and ordinance at any time or from time to time in force affecting the use or occupation of the demised premises or any part thereof by the lessee. 18.The lessee covenants with the lessor that the lessee shall upon the expiration or other sooner determination of this lease peaceably deliver to the lessor vacant possession of the demised premises in the condition in which the lessee is by this lease required to maintain the demised premises. 19.The lessee covenants with the lessor that the lessee shall permit the lessor, his servants, agents and employees at reasonable times and after reasonable notice to enter the demised premises for the purpose of showing it to prospective tenants and purchasers. 20.The lessee covenants with the lessor that the lessee shall pay as they become due all charges for public utilities including electricity, gas, water, telephone and all other services provided by any public utility in connection with the occupancy of the demised premises. 21.The lessee covenants with the lessor that the lessee shall not carry on or permit to be carried on upon the demised premises any activity which may cause an increase in premiums for insurance upon the building wherein the demised premises are situate, or which may render void or voidable any policy of insurance. 22.The lessee covenants with the lessor that the lessee shall pay for the duration of this lease all taxes, rates, levies and assessments charged against the demised premises in connection with the lessee’s use and occupation thereof. 23.The lessee covenants with the lessor that the lessee shall at his own expense take out and keep in force public liability and property damage insurance in the names of the lessor and the lessee for injury, death or property damage occurring in, or arising in connection with the operation of, the demised premises, with all inclusive coverage. 24.The lessee covenants with the lessor that the lessee shall pay to the lessor as additional rent in each year of the term hereby demised his proportion of (a) the total annual cost of operating and maintaining the common area including all costs of repairs, taxes, assessments, electricity, plumbing, water, air-conditioning, heat, insurance, police, supervision, cleaning, snow removal, muzak, elevators, parking and maintenance or any other services or equipment used in the common area and (b) all costs and expenses incurred by the lessor in insuring and heating the lessor’s building. 25.The lessee covenants with the lessor that the lessee shall conduct his business in and use the whole of the demised premises in a reputable manner; a business practice by the lessee whether through advertising, selling procedures or otherwise which in the opinion of the lessor may harm the business or reputation of the lessor or reflect unfavourably on the lessor or other tenants of premises in the building, or which may confuse, mislead or deceive the public, shall immediately be discontinued by the lessee at the request of the lessor. 26.In the event that the lessee is in default of payment of any amount required by this lease to be paid by him, the lessor may pay such amount on his behalf and recover that amount together with his reasonable expenses from the lessee as rent, with all remedies incidental thereto as if that amount and expenses were included in the rent hereby reserved. 27.In the event that the rights of the lessee under this lease are at any time seized or taken in execution or attachment by any creditor of the lessee, or the lessee makes an assignment for the benefit of creditors, becomes bankrupt or insolvent, or takes the benefit of any statute that may be in force for bankrupt or insolvent debtors, then the current month’s rent, including additional rent, and the next three month’s rent, including additional rent, immediately become due and payable and, in the manner prescribed by law, the lease and term shall, at the option of the lessor, become forfeited and void and the lessor may enter into and upon the demised premises, or any part thereof in the name of the whole, by force or otherwise as he may see fit, to have again, repossess and enjoy, as of its former estate, anything herein contained to the contrary notwithstanding. 28.The lessor covenants with the lessee that the lessee, paying the rent hereby reserved and performing the covenants on his part to be performed, shall and may peaceably possess and enjoy the demised premises for the duration of this lease without any interruption or disturbance from the lessor or any person lawfully claiming under him. 29.The lessor covenants with the lessee that the lessor shall effect fire and extended coverage insurance and insurance against all other risks required to be insured against by a mortgagee, if any, as well as boiler and pressure vessel insurance, on the whole of the building of which the demised premises forms a part in such amounts as the lessor and mortgagee shall from time to time deem to be required. 30.The lessor covenants with the lessee that the lessor shall pay all taxes and rates, including local improvement rates, local government, provincial, federal or otherwise, assessed against the demised premises or the lessor or lessee on account thereof, save and except any business taxes and taxes upon the personal property and income of the lessee. 31.The lessor may assign his rights under this lease as collateral security for a loan and in the event that such an assignment is given and executed by the lessor and notification thereof is given to the lessee by or on behalf of the lessor, it is expressly agreed between the lessor and the lessee that this lease shall not be cancelled or modified for any reason whatsoever without the consent in writing of the assignee. 32.The lessee may at or prior to the termination of this lease, take, remove and carry away from the demised premises all fixtures, fittings, plant, machinery, utensils, shelving, counters, safes or other articles placed in or on the premises in the nature of trade or tenants’ fixtures or other articles belonging to or brought upon the premises by the lessee, but the lessee shall in such removal do no damage to the premises or shall make good any damage which he may occasion thereto. 33.For the duration of this lease or any renewal thereof the lessee has an insurable interest in any alterations, additions and improvements that may be made by the lessee in and to the demised premises, and the lessee is entitled to insure such alterations, additions and improvements up to their full insurable value and to receive the proceeds of any insurance so placed by him. 34.If the demised premises are rendered partially unfit for the lessee by fire, lightning, tempest or other insurable casualty, the rent hereby reserved shall abate in part only in the proportion that the part of the demised premises rendered unfit for the lessee bears to the whole of the demised premises, or if the demised premises are rendered wholly unfit for the lessee, this lease shall be terminated and the rent hereby reserved and all other charges shall be apportioned and paid to the date of occurrence of the casualty. 35.The lessor shall have the right to make changes or additions to the pipes, conduits and ducts in the demised premises where necessary to serve adjoining premises but not in a way to interfere materially with the use and enjoyment of the demised premises and shall make good any damage to the demised premises so caused. 36.In the event that the lessee holds over beyond the duration of this lease or the renewal thereof with or without the consent of the lessor and without any further written agreement, the tenancy resulting shall be a monthly tenancy only, at a monthly rental equivalent to the amount paid per month during the last month of the term hereby granted or the renewal thereof and subject to termination at the election of the lessor or lessee upon one month’s notice in writing and subject also to the terms, conditions and covenants herein set out. 37.The lessee, his employees, customers, invitees and all others requiring communication with them, shall have the use in common with all others entitled thereto, of the common area. 38.The lessor shall not in any event whatsoever be liable or responsible in any way for any personal injury or death that may be suffered or sustained by the lessee or any employee of the lessee or any other person who may be upon the demised premises or for any loss of or damage or injury to any property belonging to the lessee or to his employees or to any other person while such property is on the demised premises, unless due to the negligence of the lessor, his employees, agents or licensees. 39.Subject to the lessor’s approval, which approval shall not be unreasonably withheld, the lessee may install in, upon or about the demised premises any signs or advertising material which shall remain the property of the lessee and which the lessee may remove regardless of the degree of affixation upon expiration or termination of this lease or any renewal thereof provided that the lessee shall make good any damage caused to the demised premises by such installation and removal. 40.In the case of any dispute between the lessor and the lessee during the continuance of this lease or any renewal thereof, as to any matter arising hereunder which it is agreed between the parties hereto shall be settled by arbitration, either party hereto shall be entitled to give to the other party notice of such dispute and demand arbitration thereof and, after giving notice and demand, each party shall at once appoint an arbitrator and such appointees shall jointly appoint a third; the decision of any two of the three arbitrators so appointed shall be final and binding upon the parties hereto who covenant one with the other that their disputes shall be so decided by arbitration alone and not by recourse to any court or action at law; if within a reasonable time the two arbitrators appointed by the parties hereto do not agree upon a third or if the party who has been notified of a dispute fails to appoint an arbitrator, then a third arbitrator or an arbitrator to represent the party in default may, upon petition of the party not in default, be appointed by a judge of The Court of King’s Bench of New Brunswick; the cost of arbitration shall be apportioned between the parties hereto as the arbitrators may decide. 41.Any condoning, excusing or overlooking by the lessor of any default, breach or non-observance by the lessee at any time or times in respect of any covenant, proviso or condition herein contained shall not operate as a waiver of the lessor’s rights hereunder in respect of any continuing or subsequent default, breach or non-observance, nor so as to defeat or affect in any way the rights of the lessor. 42.All policies of insurance placed by the lessee shall contain a waiver or waivers of subrogation against the lessor and the lessee waives, releases and discharges all rights, claims and demands whatsoever which the lessee might have or acquire against the lessor arising out of damage to or destruction of the building or any part thereof occasioned by any of the perils insured against by the lessee or which the lessee has agreed to insure against, whether or not such rights, claims and demands shall arise through the negligence or other fault of the lessor, his servants, agents or contractors.
 
 Concepts:

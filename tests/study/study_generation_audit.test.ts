@@ -151,6 +151,32 @@ describe('study generation audit', () => {
     expect(scoreStudyGenerationWarnings(warnings)).toBeLessThan(100);
   });
 
+  it('flags Tier A surface quality failures and suppresses heading-anchored topic false positives', () => {
+    const tierWarnings = collectStudyGenerationWarnings({
+      source: testSection({ heading: 'Authority' }),
+      detectedTopic: 'power-duty',
+      mainQuestion: 'What powers does The Minister have regarding adopt regional land use plans?',
+      mainQuestionTier: 'A',
+      referenceAnswer: 'Clean answer.',
+      rubricItems: [],
+      concepts: [],
+      extractedFacts: [],
+    });
+    expect(tierWarnings.map((entry) => entry.code)).toContain('TIER_A_SURFACE_QUALITY_FAILURE');
+
+    const headingAnchored = collectStudyGenerationWarnings({
+      source: testSection({ heading: 'Validity and coming into force of municipal plan' }),
+      detectedTopic: 'procedure',
+      mainQuestion: 'What does section 26 of the Community Planning Act provide regarding validity and coming into force of municipal plan?',
+      mainQuestionTier: 'C',
+      referenceAnswer: 'Clean answer.',
+      rubricItems: [],
+      concepts: [],
+      extractedFacts: [],
+    });
+    expect(headingAnchored.map((entry) => entry.code)).not.toContain('MAIN_QUESTION_TOPIC_MISMATCH');
+  });
+
   it('flags unsupported specialized main-question topics', () => {
     const warnings = collectStudyGenerationWarnings({
       source: testSection({ heading: 'Integrated survey area', text: '5 The Lieutenant-Governor in Council may constitute an integrated survey area.' }),
@@ -279,7 +305,7 @@ describe('study generation audit', () => {
 
     expect(findSection('doc-surveys-act', '2').generated.mainQuestion).toContain('establish and maintain the coordinate survey system');
     expect(findSection('doc-surveys-act', '5').generated.mainQuestion).toBe(
-      'What powers does the Lieutenant-Governor in Council have regarding integrated survey areas?',
+      'What authority does the Lieutenant-Governor in Council have to create or change integrated survey areas?',
     );
     expect(findSection('doc-surveys-act', '5').generated.mainQuestion).not.toMatch(/offences?|penalt/i);
     expect(findSection('doc-surveys-act', '6').generated.mainQuestion).toMatch(/filing, amendment and legal-effect/i);
@@ -290,6 +316,10 @@ describe('study generation audit', () => {
     expect(findSection('doc-registry-act', '16').generated.mainQuestion).toMatch(/registrar dies, resigns or is removed/i);
     expect(findSection('doc-community-planning-act', '83').generated.mainQuestion).toMatch(/laying out streets and lots/i);
     expect(findSection('doc-boundaries-confirmation-act', '16').generated.mainQuestion).toMatch(/corrected/i);
+    expect(findSection('doc-boundaries-confirmation-act', '8').generated.mainQuestion).toMatch(/Registrar General initiate/i);
+    expect(findSection('doc-boundaries-confirmation-act', '10').generated.mainQuestion).toMatch(/objection and hearing process/i);
+    expect(findSection('doc-community-planning-act', '79').generated.mainQuestion).toMatch(/subdivision-plan requirements/i);
+    expect(findSection('doc-community-planning-act', '85').generated.mainQuestion).toMatch(/approval rules apply to a subdivision plan/i);
 
     for (const [documentId, sectionLabel] of [
       ['doc-community-planning-act', '52'],
@@ -300,6 +330,15 @@ describe('study generation audit', () => {
     ]) {
       expect(findSection(documentId, sectionLabel).diagnostics.suggestedChunks?.length).toBeGreaterThan(0);
     }
+    const landTitles18Chunks = findSection('doc-land-titles-act', '18').diagnostics.suggestedChunks ?? [];
+    expect(landTitles18Chunks.map((chunk) => chunk.sourceKeys.join('|'))).toEqual([
+      'section:18/subsection:1|section:18/subsection:2|section:18/subsection:3',
+      'section:18/subsection:4',
+      'section:18/subsection:5|section:18/subsection:6|section:18/subsection:7',
+      'section:18/subsection:9|section:18/subsection:10',
+      'section:18/subsection:11|section:18/subsection:12',
+    ]);
+    expect(landTitles18Chunks.every((chunk) => chunk.reasons.length > 0 && chunk.estimatedRubricItems > 0)).toBe(true);
   });
 
   it('keeps section 14, 16 and 83 regression templates scoped to their source documents', () => {

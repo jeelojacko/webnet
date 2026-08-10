@@ -418,6 +418,21 @@ describe('structured rubric generation', () => {
     ).toBe('What regulation-making authority is established by section 83 of Land Titles Act?');
   });
 
+  it('normalizes generic legal-fact prompts and downgrades awkward Tier A surfaces', () => {
+    const rubric = generateStudyRubric({
+      document: legalDocument('doc-land-titles-act'),
+      selectedSources: [
+        testComponent({
+          label: '2',
+          heading: 'Appointment',
+          text: '2 The Minister may appoint a registrar. A person shall file a plan.',
+        }),
+      ],
+      unitType: 'section',
+    });
+    expect(rubric.map((item) => item.prompt).join('\n')).not.toMatch(/What must person|What powers does The|regarding appoint|regarding file/i);
+  });
+
   it('provides default templates for whole acts, cases and custom principles', () => {
     expect(getStudyRubricTemplate('whole-act').map((item) => item.category)).toContain('survey-relevance');
     expect(getStudyRubricTemplate('survey-law-case').map((item) => item.prompt)).toContain('What boundary issue was before the court?');
