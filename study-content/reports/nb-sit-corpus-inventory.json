@@ -1,8 +1,8 @@
 {
   "corpusId": "nb-sit-statute-corpus",
   "title": "New Brunswick SIT Statute Law Corpus",
-  "generatedAt": "2026-08-11T18:12:11.995Z",
-  "manifestHash": "9867d05d6691063bb7894dabb87e8e3785c1667d0eb8c4b41442b15c11a2e53b",
+  "generatedAt": "2026-08-11T18:29:34.479Z",
+  "manifestHash": "8a111a72d8926ab7f9407750390aba45aea540e4faabc6e62ea24cf65da227ec",
   "expectedActCount": 57,
   "actualRequiredActCount": 57,
   "requiredRegulationCount": 6,
@@ -11,9 +11,7 @@
   "duplicateTitles": [],
   "duplicateIds": [],
   "unresolvedParentActs": [],
-  "unknownCitations": [
-    "doc-new-brunswick-land-surveyors-bylaws"
-  ],
+  "unknownCitations": [],
   "pilotDocuments": [
     "doc-boundaries-confirmation-act",
     "doc-community-planning-act",
@@ -28,12 +26,6 @@
   ],
   "awaitingManualConfirmation": [],
   "findings": [
-    {
-      "severity": "WARNING",
-      "code": "unknown-citation",
-      "documentId": "doc-new-brunswick-land-surveyors-bylaws",
-      "message": "doc-new-brunswick-land-surveyors-bylaws has no citation in the SIT corpus manifest."
-    },
     {
       "severity": "INFO",
       "code": "legacy-replaced",

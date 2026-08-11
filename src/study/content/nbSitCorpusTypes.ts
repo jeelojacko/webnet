@@ -27,6 +27,7 @@ export type SitCorpusManifestDocument = {
   manualSource?: ManualScopeMapping;
   pdfSelector?: {
     language: 'en';
+    side?: 'left' | 'right';
     startPage?: number;
     endPage?: number;
     note?: string;

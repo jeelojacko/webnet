@@ -481,13 +481,17 @@
       },
       "pdfSelector": {
         "language": "en",
-        "note": "Bilingual side-by-side PDF. Extract English only; normalization must stop if English/French separation is not reliable."
+        "side": "left",
+        "startPage": 1,
+        "endPage": 23,
+        "note": "English text is in the left column of the bilingual side-by-side PDF."
       }
     },
     {
       "id": "doc-new-brunswick-land-surveyors-bylaws",
       "type": "regulation",
       "title": "Association of New Brunswick Land Surveyors Bylaws",
+      "citation": "ANBLS Bylaws",
       "sourceUrl": "https://www.anbls.nb.ca/pdf/ByLaws.pdf",
       "sourceType": "official-pdf",
       "sourceAuthority": "Association of New Brunswick Land Surveyors",
@@ -507,7 +511,10 @@
       },
       "pdfSelector": {
         "language": "en",
-        "note": "Bilingual PDF. Extract English only; normalization must stop if English/French separation is not reliable."
+        "side": "left",
+        "startPage": 4,
+        "endPage": 49,
+        "note": "English text is in the left column of the bilingual side-by-side PDF; pages 1-3 are cover/table-of-contents front matter."
       },
       "parentActId": "doc-new-brunswick-land-surveyors-act",
       "expectedEnablingAct": "New Brunswick Land Surveyors Act, 1986"

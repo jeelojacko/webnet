@@ -62,12 +62,13 @@ describe('NB SIT statute corpus manifest', () => {
         expect.objectContaining({
           id: 'doc-new-brunswick-land-surveyors-act',
           sourceUrl: 'https://www.anbls.nb.ca/pdf/ANBLSActQPrintChap91e.PDF',
-          pdfSelector: expect.objectContaining({ language: 'en' }),
+          pdfSelector: expect.objectContaining({ endPage: 23, language: 'en', side: 'left', startPage: 1 }),
         }),
         expect.objectContaining({
           id: 'doc-new-brunswick-land-surveyors-bylaws',
           sourceUrl: 'https://www.anbls.nb.ca/pdf/ByLaws.pdf',
-          pdfSelector: expect.objectContaining({ language: 'en' }),
+          citation: 'ANBLS Bylaws',
+          pdfSelector: expect.objectContaining({ endPage: 49, language: 'en', side: 'left', startPage: 4 }),
         }),
       ]),
     );

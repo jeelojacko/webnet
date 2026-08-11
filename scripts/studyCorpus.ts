@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { PDFParse } from 'pdf-parse';
+import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { buildNbLawContentPackage, validateNbLawContentPackage } from '../src/study/content/nbLawContentPackage';
 import { normalizeNbLawDocument, renderNbLawNormalizedMarkdown } from '../src/study/content/nbLawNormalize';
 import type { NbLawNormalizedDocument, NbLawRawFetchMetadata } from '../src/study/content/nbLawTypes';
@@ -278,7 +278,10 @@ const runNormalize = async (): Promise<void> => {
   const manifest = await loadManifest();
   await mkdir(NORMALIZED_DIR, { recursive: true });
   let failed = 0;
-  for (const document of getFetchableRequiredSitDocuments(manifest)) {
+  const onlyDocument = getArg('--document');
+  for (const document of getFetchableRequiredSitDocuments(manifest).filter(
+    (entry) => !onlyDocument || entry.id === onlyDocument,
+  )) {
     try {
       const metadata = await readJson<NbLawRawFetchMetadata>(path.join(RAW_DIR, `${document.id}.metadata.json`));
       const normalized =
@@ -303,42 +306,138 @@ const runNormalize = async (): Promise<void> => {
 };
 
 const normalizePdfWhitespace = (value: string): string =>
-  value
+  stripPdfPageChrome(value)
     .replace(/\r\n?/g, '\n')
     .replace(/[ \t\f\v]+/g, ' ')
     .replace(/ *\n */g, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 
+const stripPdfPageChrome = (value: string): string =>
+  value
+    .split(/\r\n?|\n/)
+    .filter((line) => {
+      const trimmed = line.trim();
+      if (!trimmed) return true;
+      if (/^_{5,}$/.test(trimmed)) return false;
+      if (/^Page\s+\d+\s+of\s+\d+/i.test(trimmed)) return false;
+      if (/^--\s*\d+\s+of\s+\d+\s*--$/i.test(trimmed)) return false;
+      if (/^The Association of New Brunswick Land Surveyors$/i.test(trimmed)) return false;
+      if (/^L[’']Association des arpenteurs/i.test(trimmed)) return false;
+      if (/^By\s*-\s*Laws$/i.test(trimmed)) return false;
+      return true;
+    })
+    .join('\n');
+
 const looksBilingualInterleaved = (text: string): boolean =>
-  /L[’']Association|RÈGLEMENTS|TABLE DES MATIÈRE|arpenteurs|géomètres|présente loi|Sa Majesté|Nouveau-Brunswick/i.test(
+  /RÈGLEMENTS|TABLE DES MATIÈRE|arpenteurs|géomètres|présente loi|Sa Majesté|Loi constituant|À CES CAUSES/i.test(
     text,
   );
 
 const extractPdfText = async (document: SitCorpusManifest['documents'][number]): Promise<string> => {
+  const selector = document.pdfSelector;
+  if (selector?.side) return extractPdfSideText(document, selector.side);
   const bytes = new Uint8Array(await readFile(path.join(RAW_DIR, `${document.id}.pdf`)));
-  const parser = new PDFParse({ data: bytes });
-  try {
-    const selector = document.pdfSelector;
-    const params =
-      selector?.startPage && selector?.endPage
-        ? { first: selector.startPage, last: selector.endPage, pageJoiner: '\n' }
-        : { pageJoiner: '\n' };
-    const result = await parser.getText(params);
-    return normalizePdfWhitespace(result.text);
-  } finally {
-    await parser.destroy();
+  const pdf = await pdfjs.getDocument({ data: bytes, disableWorker: true }).promise;
+  const startPage = selector?.startPage ?? 1;
+  const endPage = selector?.endPage ?? pdf.numPages;
+  const pages: string[] = [];
+  for (let pageNumber = startPage; pageNumber <= Math.min(endPage, pdf.numPages); pageNumber += 1) {
+    const page = await pdf.getPage(pageNumber);
+    const content = await page.getTextContent();
+    pages.push(content.items.map((item) => ('str' in item ? item.str : '')).join(' '));
   }
+  await pdf.destroy();
+  return normalizePdfWhitespace(pages.join('\n'));
+};
+
+type PdfTextItem = {
+  str: string;
+  x: number;
+  y: number;
+};
+
+const extractPdfSideText = async (
+  document: SitCorpusManifest['documents'][number],
+  side: 'left' | 'right',
+): Promise<string> => {
+  const selector = document.pdfSelector;
+  const bytes = new Uint8Array(await readFile(path.join(RAW_DIR, `${document.id}.pdf`)));
+  const pdf = await pdfjs.getDocument({ data: bytes, disableWorker: true }).promise;
+  const startPage = selector?.startPage ?? 1;
+  const endPage = selector?.endPage ?? pdf.numPages;
+  const pageTexts: string[] = [];
+  for (let pageNumber = startPage; pageNumber <= Math.min(endPage, pdf.numPages); pageNumber += 1) {
+    const page = await pdf.getPage(pageNumber);
+    const viewport = page.getViewport({ scale: 1 });
+    const content = await page.getTextContent();
+    const sideItems = content.items
+      .filter((item): item is typeof item & { str: string; transform: number[] } => 'str' in item)
+      .map((item) => ({ str: item.str.trim(), x: item.transform[4], y: item.transform[5] }))
+      .filter((item) => item.str && isItemOnSelectedPdfSide(item, viewport.width, side));
+    pageTexts.push(renderPdfItemsAsLines(sideItems));
+  }
+  await pdf.destroy();
+  return normalizePdfWhitespace(pageTexts.join('\n'));
+};
+
+const isItemOnSelectedPdfSide = (item: PdfTextItem, pageWidth: number, side: 'left' | 'right'): boolean => {
+  const midpoint = pageWidth / 2;
+  return side === 'left' ? item.x < midpoint : item.x >= midpoint;
+};
+
+const renderPdfItemsAsLines = (items: PdfTextItem[]): string => {
+  const rows = new Map<number, PdfTextItem[]>();
+  for (const item of items) {
+    const rowKey = Math.round(item.y * 2) / 2;
+    rows.set(rowKey, [...(rows.get(rowKey) ?? []), item]);
+  }
+  return [...rows.entries()]
+    .sort(([leftY], [rightY]) => rightY - leftY)
+    .map(([, rowItems]) =>
+      rowItems
+        .sort((left, right) => left.x - right.x)
+        .map((item) => item.str)
+        .join(' '),
+    )
+    .join('\n');
+};
+
+type PdfSectionStart = {
+  index: number;
+  label: string;
+  heading?: string;
+};
+
+const normalizePdfSectionLabel = (label: string): string => label.replace(/\s+/g, '');
+
+const repairPdfSectionStart = (start: PdfSectionStart): PdfSectionStart | undefined => {
+  const heading = start.heading?.trim();
+  if (!heading || /^[.)-]+$/.test(heading)) return undefined;
+  if (/^and\s+\d/i.test(heading)) return undefined;
+
+  const splitTrailingDigit = heading.match(/^([0-9])\s+(.+)$/);
+  if (splitTrailingDigit && /\.\d$/.test(start.label)) {
+    return {
+      ...start,
+      label: `${start.label}${splitTrailingDigit[1]}`,
+      heading: splitTrailingDigit[2].trim(),
+    };
+  }
+
+  return start;
 };
 
 const normalizePdfSections = (text: string): NbLawNormalizedDocument['sections'] => {
-  const starts = [...text.matchAll(/(?:^|\n)([0-9]+(?:\.[0-9]+)?)\s+([^\n]+)/g)]
+  const starts = [...text.matchAll(/(?:^|\n)([0-9]+(?:\s*\.\s*[0-9]+)*(?:\([0-9.]+\))?)\s+([^\n]+)/g)]
     .filter((match) => match.index !== undefined)
     .map((match) => ({
       index: match.index ?? 0,
-      label: match[1],
+      label: normalizePdfSectionLabel(match[1]),
       heading: match[2].length <= 80 ? match[2].trim() : undefined,
-    }));
+    }))
+    .map(repairPdfSectionStart)
+    .filter((start): start is PdfSectionStart => start !== undefined);
   return starts.map((start, index) => {
     const end = starts[index + 1]?.index ?? text.length;
     const sectionText = normalizePdfWhitespace(text.slice(start.index, end));

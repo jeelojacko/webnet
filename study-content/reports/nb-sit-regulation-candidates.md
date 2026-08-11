@@ -328,7 +328,7 @@ Other discovered regulations:
 ## New Brunswick Land Surveyors Act, 1986
 
 Required:
-- doc-new-brunswick-land-surveyors-bylaws
+- ANBLS Bylaws
 
 Other discovered regulations:
 - None discovered beyond required regulations.
