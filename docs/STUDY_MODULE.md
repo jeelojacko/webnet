@@ -353,8 +353,11 @@ The scheduled Study session rating path now uses a storage-level rated-attempt t
 - source acknowledgement from the document reader or unit editor only updates the unit source-review flags and source hashes; it does not write Study attempts or progress scheduling
 - manual practice is available from Library study-unit rows at `/study/unit/:id/practice`; it records a non-counted attempt with `schedulingApplied: false` and leaves the FSRS card, due date, and StudyPhase unchanged
 - surprise practice is available from the dashboard at `/study/surprise`; it selects an eligible non-source-review unit deterministically and records the same non-counted attempt shape with reason `surprise-practice`
+- dashboard scheduling cards now show Due Now, Overdue, Learning, New Available, and Source Review counts from the full Study unit set
+- Library study-unit rows show compact scheduling badges and support scheduling filters/sort for source review, due, overdue, new, learning, relearning, review, and due date
+- the Study unit editor includes a read-only Scheduling panel with state, due label, last reviewed, review count, lapse count, and advanced stability/difficulty fields
 
-Explicit counted-practice overrides, undo, and scheduling dashboard/library UI remain pending.
+Explicit counted-practice overrides, session completion summary, dev-only diagnostics, and undo remain pending.
 
 ## Phase 3 Queue Model
 

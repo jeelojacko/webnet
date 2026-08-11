@@ -130,6 +130,37 @@ describe('study phase 2E UI', () => {
     expect(document.body.textContent).not.toContain('Source review is required.');
   });
 
+  it('shows read-only scheduling information in the unit editor', async () => {
+    const data: StudyDataSnapshot = createSeedStudyData('2026-08-05T10:00:00.000Z');
+    data.progress[0] = {
+      ...data.progress[0],
+      scheduling: {
+        schemaVersion: 1,
+        algorithm: 'fsrs',
+        initialized: true,
+        configVersion: 1,
+        card: {
+          due: '2026-08-06T10:00:00.000Z',
+          stability: 2.25,
+          difficulty: 4.75,
+          elapsed_days: 1,
+          scheduled_days: 1,
+          learning_steps: 0,
+          reps: 3,
+          lapses: 1,
+          state: 'Review',
+          last_review: '2026-08-05T10:00:00.000Z',
+        },
+      },
+    };
+    await renderIntoRoot(<StudyUnitEditorPage data={data} unitId={data.units[0].id} onSave={vi.fn(async () => {})} onNavigate={vi.fn()} />, root);
+
+    expect(document.body.textContent).toContain('Scheduling');
+    expect(document.body.textContent).toContain('State: Review');
+    expect(document.body.textContent).toContain('Reviews: 3');
+    expect(document.body.textContent).toContain('Lapses: 1');
+  });
+
   it('renders guided mode with required rubric textboxes and no monolithic textbox', async () => {
     const data: StudyDataSnapshot = createSeedStudyData('2026-08-05T10:00:00.000Z');
     await renderIntoRoot(

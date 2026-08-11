@@ -9,6 +9,7 @@ import {
   type ReferenceAnswerOptions,
 } from '../studyDraftGeneration';
 import { normalizeConceptLabelKey } from '../studyConceptGeneration';
+import { summarizeStudyScheduling } from '../studySchedulingDisplay';
 import type {
   ImportedLegalComponent,
   StudyConcept,
@@ -89,6 +90,8 @@ const StudyUnitEditorPage = ({ data, unitId, onSave, onAcknowledgeSourceReview, 
   const initialRubrics = orderedRubrics(data.rubrics.filter((rubric) => rubric.unitId === unitId));
   const selectedKeys = new Set(unit?.sourceReferences?.map((reference) => `${reference.documentId}::${reference.sourceKey}`) ?? []);
   const sourceComponents = data.legalComponents.filter((component) => selectedKeys.has(sourceRecordKey(component)));
+  const progress = data.progress.find((entry) => entry.unitId === unitId);
+  const schedulingSummary = unit ? summarizeStudyScheduling({ unit, progress, now: new Date() }) : null;
   const legalDocument = unit?.documentIds[0] ? data.legalDocuments.find((document) => document.id === unit.documentIds[0]) : undefined;
   const studyDocument = unit?.documentIds[0] ? data.documents.find((document) => document.id === unit.documentIds[0]) : undefined;
   const returnTo =
@@ -388,6 +391,44 @@ const StudyUnitEditorPage = ({ data, unitId, onSave, onAcknowledgeSourceReview, 
               Regenerate reference answer
             </button>
           </div>
+        ) : null}
+        {schedulingSummary ? (
+          <section className="rounded border border-slate-800 bg-slate-950 p-3">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div className="text-xs uppercase tracking-wide text-slate-500">Scheduling</div>
+              <span className="rounded bg-slate-900 px-2 py-1 text-xs text-emerald-300">{schedulingSummary.label}</span>
+            </div>
+            <div className="grid gap-2 text-sm text-slate-300 sm:grid-cols-2">
+              <div>
+                <span className="text-slate-500">State: </span>
+                {schedulingSummary.stateLabel}
+              </div>
+              <div>
+                <span className="text-slate-500">Due: </span>
+                {schedulingSummary.dueLabel}
+              </div>
+              <div>
+                <span className="text-slate-500">Last reviewed: </span>
+                {schedulingSummary.lastReviewedLabel}
+              </div>
+              <div>
+                <span className="text-slate-500">Reviews: </span>
+                {schedulingSummary.reviews ?? 0}
+              </div>
+              <div>
+                <span className="text-slate-500">Lapses: </span>
+                {schedulingSummary.lapses ?? 0}
+              </div>
+            </div>
+            <details className="mt-3 text-xs text-slate-400">
+              <summary className="cursor-pointer text-slate-500">Advanced scheduling values</summary>
+              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                <div>Due ISO: {schedulingSummary.dueAt ?? 'not scheduled'}</div>
+                <div>Stability: {schedulingSummary.stability?.toFixed(3) ?? 'n/a'}</div>
+                <div>Difficulty: {schedulingSummary.difficulty?.toFixed(3) ?? 'n/a'}</div>
+              </div>
+            </details>
+          </section>
         ) : null}
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="grid gap-2 text-xs uppercase tracking-wide text-slate-500">

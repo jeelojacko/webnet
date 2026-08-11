@@ -6,6 +6,10 @@ import {
   type StudyLibrarySearchCategory,
   type StudyLibrarySearchResult,
 } from '../studyLibrarySearch';
+import {
+  summarizeStudySchedulingForData,
+  type StudySchedulingCategory,
+} from '../studySchedulingDisplay';
 import type { StudyDataSnapshot, StudyPhase, StudyUnit } from '../studyTypes';
 
 type StudyLibraryProps = {
@@ -21,12 +25,13 @@ type StudyLibraryProps = {
 };
 
 type LibraryTab = 'documents' | 'units';
-type UnitFilter = 'all' | 'source-linked' | 'custom' | 'needs-review';
+type UnitFilter = 'all' | 'source-linked' | 'custom' | 'needs-review' | StudySchedulingCategory;
 type UnitSort =
   | 'related-source'
   | 'unit-title'
   | 'priority'
   | 'phase'
+  | 'due'
   | 'last-modified'
   | 'attempt-count';
 
@@ -76,6 +81,19 @@ const searchCategoryOrder: StudyLibrarySearchCategory[] = [
   'custom-units',
 ];
 
+const schedulingFilterLabels: Array<{ value: UnitFilter; label: string }> = [
+  { value: 'all', label: 'All' },
+  { value: 'source-linked', label: 'Source linked' },
+  { value: 'custom', label: 'Custom' },
+  { value: 'source-review', label: 'Source Review' },
+  { value: 'due', label: 'Due' },
+  { value: 'overdue', label: 'Overdue' },
+  { value: 'new', label: 'New' },
+  { value: 'learning', label: 'Learning' },
+  { value: 'relearning', label: 'Relearning' },
+  { value: 'review', label: 'Review' },
+];
+
 const StudyLibrary = ({
   data,
   onSelectDocument,
@@ -122,6 +140,10 @@ const StudyLibrary = ({
     data.attempts.forEach((attempt) => map.set(attempt.unitId, (map.get(attempt.unitId) ?? 0) + 1));
     return map;
   }, [data.attempts]);
+  const schedulingByUnitId = useMemo(
+    () => summarizeStudySchedulingForData(data, new Date()),
+    [data],
+  );
   const searchIndex = useMemo(() => buildStudyLibrarySearchIndex(data), [data]);
   const searchResults = useMemo(
     () => searchStudyLibrary(searchIndex, debouncedSearchQuery),
@@ -178,7 +200,8 @@ const StudyLibrary = ({
         (unitFilter === 'source-linked' && unit.sourceMode !== 'custom') ||
         (unitFilter === 'custom' && unit.sourceMode === 'custom') ||
         (unitFilter === 'needs-review' &&
-          (unit.sourceReviewRequired || unit.sourceReferenceMissing));
+          (unit.sourceReviewRequired || unit.sourceReferenceMissing)) ||
+        schedulingByUnitId.get(unit.id)?.category === unitFilter;
       const phase = progressByUnitId.get(unit.id)?.phase ?? unit.phase ?? 'unread';
       return sourceMatch && (phaseFilter === 'all' || phase === phaseFilter);
     })
@@ -192,6 +215,14 @@ const StudyLibrary = ({
         const rightPhase = progressByUnitId.get(right.id)?.phase ?? right.phase ?? 'unread';
         return (
           phaseOrder[leftPhase] - phaseOrder[rightPhase] || left.title.localeCompare(right.title)
+        );
+      }
+      if (unitSort === 'due') {
+        const leftSummary = schedulingByUnitId.get(left.id);
+        const rightSummary = schedulingByUnitId.get(right.id);
+        return (
+          (leftSummary?.sortDueAt ?? '').localeCompare(rightSummary?.sortDueAt ?? '') ||
+          left.title.localeCompare(right.title)
         );
       }
       if (unitSort === 'last-modified') return right.updatedAt.localeCompare(left.updatedAt);
@@ -392,13 +423,13 @@ const StudyLibrary = ({
       ) : (
         <>
           <div className="flex flex-wrap gap-2">
-            {(['all', 'source-linked', 'custom', 'needs-review'] as const).map((value) => (
+            {schedulingFilterLabels.map(({ value, label }) => (
               <button
                 key={value}
                 onClick={() => setUnitFilter(value)}
                 className={`rounded px-3 py-1.5 text-xs ${unitFilter === value ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-300'}`}
               >
-                {value}
+                {label}
               </button>
             ))}
             {(
@@ -428,6 +459,7 @@ const StudyLibrary = ({
               <option value="unit-title">Unit title</option>
               <option value="priority">Priority</option>
               <option value="phase">Phase</option>
+              <option value="due">Due date</option>
               <option value="last-modified">Last modified</option>
               <option value="attempt-count">Attempt count</option>
             </select>
@@ -462,11 +494,19 @@ const StudyLibrary = ({
                                 ?.title ?? documentId,
                           )
                           .join(', ');
+                        const scheduling = schedulingByUnitId.get(unit.id);
                         return (
                           <div key={unit.id} className="p-4">
                             <div className="flex flex-wrap items-start justify-between gap-3">
                               <div>
-                                <h3 className="font-semibold text-slate-100">{unit.title}</h3>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <h3 className="font-semibold text-slate-100">{unit.title}</h3>
+                                  {scheduling ? (
+                                    <span className="rounded bg-slate-950 px-2 py-1 text-xs text-emerald-300">
+                                      {scheduling.label}
+                                    </span>
+                                  ) : null}
+                                </div>
                                 <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-500">
                                   <span>
                                     {unit.sourceMode === 'custom' ? 'custom' : 'source-linked'}
@@ -479,6 +519,9 @@ const StudyLibrary = ({
                                   <span>P{unit.priority}</span>
                                   <span>{unit.category || 'uncategorized'}</span>
                                   <span>{phaseLabels[phase]}</span>
+                                  {scheduling?.dueAt ? (
+                                    <span>due {scheduling.dueLabel}</span>
+                                  ) : null}
                                   <span>{conceptsByUnitId.get(unit.id) ?? 0} concepts</span>
                                   <span>{promptsByUnitId.get(unit.id) ?? 0} prompts</span>
                                   <span>

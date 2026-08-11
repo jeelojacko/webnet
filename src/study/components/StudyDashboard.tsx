@@ -1,3 +1,4 @@
+import { summarizeStudySchedulingForData } from '../studySchedulingDisplay';
 import type { StudyDataSnapshot, StudySessionItem } from '../studyTypes';
 
 type StudyDashboardProps = {
@@ -13,8 +14,6 @@ const Stat = ({ label, value }: { label: string; value: string | number }) => (
     <div className="mt-1 text-xs uppercase tracking-wide text-slate-500">{label}</div>
   </div>
 );
-
-const dueReviewReasons = new Set(['learning-due', 'relearning-due', 'review-due']);
 
 const sessionItemLabel = (item: StudySessionItem): string => {
   if (item.reason === 'source-review-required') return 'Source review required';
@@ -33,11 +32,19 @@ const StudyDashboard = ({
   onNavigate,
   onSurprisePractice,
 }: StudyDashboardProps) => {
-  const dueCount = sessionItems.filter((item) =>
-    item.reason ? dueReviewReasons.has(item.reason) : item.due,
+  const schedulingSummaries = Array.from(
+    summarizeStudySchedulingForData(data, new Date()).values(),
+  );
+  const dueCount = schedulingSummaries.filter((summary) => summary.category === 'due').length;
+  const overdueCount = schedulingSummaries.filter(
+    (summary) => summary.category === 'overdue',
   ).length;
-  const sourceReviewCount = sessionItems.filter(
-    (item) => item.reason === 'source-review-required',
+  const learningCount = schedulingSummaries.filter(
+    (summary) => summary.category === 'learning' || summary.category === 'relearning',
+  ).length;
+  const newCount = schedulingSummaries.filter((summary) => summary.category === 'new').length;
+  const sourceReviewCount = schedulingSummaries.filter(
+    (summary) => summary.category === 'source-review',
   ).length;
   const attemptCount = data.attempts.length;
   const phaseCounts = data.progress.reduce<Record<string, number>>((acc, entry) => {
@@ -67,10 +74,11 @@ const StudyDashboard = ({
           </button>
         </div>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <Stat label="Documents" value={data.documents.length} />
-        <Stat label="Study Units" value={data.units.length} />
-        <Stat label="Due Reviews" value={dueCount} />
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+        <Stat label="Due Now" value={dueCount} />
+        <Stat label="Overdue" value={overdueCount} />
+        <Stat label="Learning" value={learningCount} />
+        <Stat label="New Available" value={newCount} />
         <Stat label="Source Review" value={sourceReviewCount} />
         <Stat label="Attempts" value={attemptCount} />
       </div>
