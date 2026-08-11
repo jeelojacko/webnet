@@ -1,0 +1,236 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-public-records-act",
+  "officialTitle": "Public Records Act",
+  "officialCitation": "2011, c.213",
+  "officialCitationDisplay": "2011, c.213",
+  "officialCitationNormalized": "2011, c.213",
+  "documentType": "act",
+  "sourceUrl": "https://laws.gnb.ca/en/document/cs/2011,%20c.213",
+  "fetchDate": "2026-08-11T18:09:06.249Z",
+  "consolidatedTo": "June 16, 2023",
+  "contentHash": "a9638d92aa3b615c6a21dcf0e084019ef7025fbc76b5a48c2f44130e868406fb",
+  "tableOfContents": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "label": "1",
+      "heading": "Public records vest in Crown"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "label": "2",
+      "heading": "Action respecting wrongful withholding of public records"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "label": "3",
+      "heading": "Order respecting wrongful withholding of public records"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "label": "4",
+      "heading": "Discretion of judge"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "label": "5",
+      "heading": "Appeal"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "label": "6",
+      "heading": "Old public records vest in Crown"
+    }
+  ],
+  "components": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
+      "label": "1",
+      "heading": "Public records vest in Crown",
+      "text": "Public records vest in Crown\n\n1The books, papers and records kept by or in the custody of an officer of the Province or a local government in the carrying out of his or her duty as that officer are vested in the Crown.\nR.S.1973, c.P-24, s.1; 2005, c.7, s.68; 2017, c.20, s.149; 2023, c.17, s.222",
+      "subsections": [],
+      "contentHash": "d86330e47a38e546aac748eade917bfcf4b8518a6f4d15f99baaa8de38b7f5b0"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "label": "2",
+      "heading": "Action respecting wrongful withholding of public records",
+      "text": "Action respecting wrongful withholding of public records\n\n2If a person wrongfully takes or withholds possession of a document, book, paper or record, that person may be proceeded against for its recovery.\nR.S.1973, c.P-24, s.2",
+      "subsections": [],
+      "contentHash": "a2c2d0f9861ee661378359c59d5ff72d45885b898a222783c99388d86a0d8a6d"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
+      "label": "3",
+      "heading": "Order respecting wrongful withholding of public records",
+      "text": "Order respecting wrongful withholding of public records\n\n3On a summary application of the Attorney General, supported by affidavit, a judge of The Court of King’s Bench of New Brunswick may make an order requiring the person wrongfully withholding those books, papers or records to deliver them to the proper custodian, or to the person named in the order.\nR.S.1973, c.P-24, s.3; 1979, c.41, s.101; 1981, c.6, s.1; 2023, c.17, s.222",
+      "subsections": [],
+      "contentHash": "296ede608e5120c1c493101a740496ffd7b16b0e1ee43c0df2543908678c398b"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
+      "label": "4",
+      "heading": "Discretion of judge",
+      "text": "Discretion of judge\n\n4It shall be in the discretion of the judge to grant an order in the first instance or a summons to show cause, and costs shall be in the discretion of the judge.\nR.S.1973, c.P-24, s.4",
+      "subsections": [],
+      "contentHash": "1ef00e92d6f1e923a9b432e4df14fd2eb673e567b6da85fab763ac0ddf5787d4"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "componentType": "section",
+      "label": "5",
+      "heading": "Appeal",
+      "text": "Appeal\n\n5(1)An appeal lies to the Court of Appeal from an order made by a judge under this Act or from the refusal of a judge to make an order.\n\n5(2)In case of an appeal by a person against whom an order is made, proceedings on the order shall be stayed on the applicant filing with the Registrar of the Court of Appeal a bond to the Crown, or other security for costs, in the sum that a judge directs.\n\nR.S.1973, c.P-24, s.5; 1979, c.41, s.101; 1980, c.32, s.29; 2023, c.17, s.222",
+      "subsections": [
+        {
+          "id": "5-subsection-1",
+          "sourceKey": "section:5/subsection:1",
+          "label": "5(1)",
+          "text": "5(1)An appeal lies to the Court of Appeal from an order made by a judge under this Act or from the refusal of a judge to make an order.",
+          "contentHash": "24e7a3365df172d970f8f98859638b533069618ee7fb19730a95686fcef71ae5"
+        },
+        {
+          "id": "5-subsection-2",
+          "sourceKey": "section:5/subsection:2",
+          "label": "5(2)",
+          "text": "5(2)In case of an appeal by a person against whom an order is made, proceedings on the order shall be stayed on the applicant filing with the Registrar of the Court of Appeal a bond to the Crown, or other security for costs, in the sum that a judge directs.\n\nR.S.1973, c.P-24, s.5; 1979, c.41, s.101; 1980, c.32, s.29; 2023, c.17, s.222",
+          "contentHash": "c6aeb273a380da024087d6cdcbc4fc70eb953a5403983e74fbcb42dea0640ba3"
+        }
+      ],
+      "contentHash": "cba630126bd8e6eb9c1b920e4af601bf06dfa53f411f21973d97491522e8c230"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "componentType": "section",
+      "label": "6",
+      "heading": "Old public records vest in Crown",
+      "text": "Old public records vest in Crown\n\n6(1)All the papers, documents and record books of the Courts of Sessions, of the Inferior Courts of Common Pleas, all municipal records before the establishment of the present system of municipal councils, and other public documents or records that the Lieutenant-Governor in Council, after the enactment of this Act, may declare to be of historical interest and worthy of preservation are by this Act vested in the Crown in right of the Province.\n\n6(2)The Lieutenant-Governor in Council is empowered to take possession of the papers, documents and records referred to in subsection (1) and to take proper measures for their permanent preservation and for placing them where they will be available for investigation and to students of history.\n\nR.S.1973, c.P-24, s.6; 2023, c.17, s.222\n\nN.B. This Act was proclaimed and came into force September 1, 2011.\n\nN.B. This Act is consolidated to June 16, 2023.",
+      "subsections": [
+        {
+          "id": "6-subsection-1",
+          "sourceKey": "section:6/subsection:1",
+          "label": "6(1)",
+          "text": "6(1)All the papers, documents and record books of the Courts of Sessions, of the Inferior Courts of Common Pleas, all municipal records before the establishment of the present system of municipal councils, and other public documents or records that the Lieutenant-Governor in Council, after the enactment of this Act, may declare to be of historical interest and worthy of preservation are by this Act vested in the Crown in right of the Province.",
+          "contentHash": "29aaab630042d8b9e6c79437a055d2e06c7c4551384bdc3ac71ad1192f7bcf2b"
+        },
+        {
+          "id": "6-subsection-2",
+          "sourceKey": "section:6/subsection:2",
+          "label": "6(2)",
+          "text": "6(2)The Lieutenant-Governor in Council is empowered to take possession of the papers, documents and records referred to in subsection (1) and to take proper measures for their permanent preservation and for placing them where they will be available for investigation and to students of history.\n\nR.S.1973, c.P-24, s.6; 2023, c.17, s.222\n\nN.B. This Act was proclaimed and came into force September 1, 2011.\n\nN.B. This Act is consolidated to June 16, 2023.",
+          "contentHash": "71817f724405383ee6d90ca643b3c1eee4f0e98c57b5d034ee0f1181b20425e0"
+        }
+      ],
+      "contentHash": "acbbf7552dd32a83bd8de16ab07680c419f0e4d0b830165da1998365f59ac633"
+    }
+  ],
+  "sections": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
+      "label": "1",
+      "heading": "Public records vest in Crown",
+      "text": "Public records vest in Crown\n\n1The books, papers and records kept by or in the custody of an officer of the Province or a local government in the carrying out of his or her duty as that officer are vested in the Crown.\nR.S.1973, c.P-24, s.1; 2005, c.7, s.68; 2017, c.20, s.149; 2023, c.17, s.222",
+      "subsections": [],
+      "contentHash": "d86330e47a38e546aac748eade917bfcf4b8518a6f4d15f99baaa8de38b7f5b0"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "label": "2",
+      "heading": "Action respecting wrongful withholding of public records",
+      "text": "Action respecting wrongful withholding of public records\n\n2If a person wrongfully takes or withholds possession of a document, book, paper or record, that person may be proceeded against for its recovery.\nR.S.1973, c.P-24, s.2",
+      "subsections": [],
+      "contentHash": "a2c2d0f9861ee661378359c59d5ff72d45885b898a222783c99388d86a0d8a6d"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
+      "label": "3",
+      "heading": "Order respecting wrongful withholding of public records",
+      "text": "Order respecting wrongful withholding of public records\n\n3On a summary application of the Attorney General, supported by affidavit, a judge of The Court of King’s Bench of New Brunswick may make an order requiring the person wrongfully withholding those books, papers or records to deliver them to the proper custodian, or to the person named in the order.\nR.S.1973, c.P-24, s.3; 1979, c.41, s.101; 1981, c.6, s.1; 2023, c.17, s.222",
+      "subsections": [],
+      "contentHash": "296ede608e5120c1c493101a740496ffd7b16b0e1ee43c0df2543908678c398b"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
+      "label": "4",
+      "heading": "Discretion of judge",
+      "text": "Discretion of judge\n\n4It shall be in the discretion of the judge to grant an order in the first instance or a summons to show cause, and costs shall be in the discretion of the judge.\nR.S.1973, c.P-24, s.4",
+      "subsections": [],
+      "contentHash": "1ef00e92d6f1e923a9b432e4df14fd2eb673e567b6da85fab763ac0ddf5787d4"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "componentType": "section",
+      "label": "5",
+      "heading": "Appeal",
+      "text": "Appeal\n\n5(1)An appeal lies to the Court of Appeal from an order made by a judge under this Act or from the refusal of a judge to make an order.\n\n5(2)In case of an appeal by a person against whom an order is made, proceedings on the order shall be stayed on the applicant filing with the Registrar of the Court of Appeal a bond to the Crown, or other security for costs, in the sum that a judge directs.\n\nR.S.1973, c.P-24, s.5; 1979, c.41, s.101; 1980, c.32, s.29; 2023, c.17, s.222",
+      "subsections": [
+        {
+          "id": "5-subsection-1",
+          "sourceKey": "section:5/subsection:1",
+          "label": "5(1)",
+          "text": "5(1)An appeal lies to the Court of Appeal from an order made by a judge under this Act or from the refusal of a judge to make an order.",
+          "contentHash": "24e7a3365df172d970f8f98859638b533069618ee7fb19730a95686fcef71ae5"
+        },
+        {
+          "id": "5-subsection-2",
+          "sourceKey": "section:5/subsection:2",
+          "label": "5(2)",
+          "text": "5(2)In case of an appeal by a person against whom an order is made, proceedings on the order shall be stayed on the applicant filing with the Registrar of the Court of Appeal a bond to the Crown, or other security for costs, in the sum that a judge directs.\n\nR.S.1973, c.P-24, s.5; 1979, c.41, s.101; 1980, c.32, s.29; 2023, c.17, s.222",
+          "contentHash": "c6aeb273a380da024087d6cdcbc4fc70eb953a5403983e74fbcb42dea0640ba3"
+        }
+      ],
+      "contentHash": "cba630126bd8e6eb9c1b920e4af601bf06dfa53f411f21973d97491522e8c230"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "componentType": "section",
+      "label": "6",
+      "heading": "Old public records vest in Crown",
+      "text": "Old public records vest in Crown\n\n6(1)All the papers, documents and record books of the Courts of Sessions, of the Inferior Courts of Common Pleas, all municipal records before the establishment of the present system of municipal councils, and other public documents or records that the Lieutenant-Governor in Council, after the enactment of this Act, may declare to be of historical interest and worthy of preservation are by this Act vested in the Crown in right of the Province.\n\n6(2)The Lieutenant-Governor in Council is empowered to take possession of the papers, documents and records referred to in subsection (1) and to take proper measures for their permanent preservation and for placing them where they will be available for investigation and to students of history.\n\nR.S.1973, c.P-24, s.6; 2023, c.17, s.222\n\nN.B. This Act was proclaimed and came into force September 1, 2011.\n\nN.B. This Act is consolidated to June 16, 2023.",
+      "subsections": [
+        {
+          "id": "6-subsection-1",
+          "sourceKey": "section:6/subsection:1",
+          "label": "6(1)",
+          "text": "6(1)All the papers, documents and record books of the Courts of Sessions, of the Inferior Courts of Common Pleas, all municipal records before the establishment of the present system of municipal councils, and other public documents or records that the Lieutenant-Governor in Council, after the enactment of this Act, may declare to be of historical interest and worthy of preservation are by this Act vested in the Crown in right of the Province.",
+          "contentHash": "29aaab630042d8b9e6c79437a055d2e06c7c4551384bdc3ac71ad1192f7bcf2b"
+        },
+        {
+          "id": "6-subsection-2",
+          "sourceKey": "section:6/subsection:2",
+          "label": "6(2)",
+          "text": "6(2)The Lieutenant-Governor in Council is empowered to take possession of the papers, documents and records referred to in subsection (1) and to take proper measures for their permanent preservation and for placing them where they will be available for investigation and to students of history.\n\nR.S.1973, c.P-24, s.6; 2023, c.17, s.222\n\nN.B. This Act was proclaimed and came into force September 1, 2011.\n\nN.B. This Act is consolidated to June 16, 2023.",
+          "contentHash": "71817f724405383ee6d90ca643b3c1eee4f0e98c57b5d034ee0f1181b20425e0"
+        }
+      ],
+      "contentHash": "acbbf7552dd32a83bd8de16ab07680c419f0e4d0b830165da1998365f59ac633"
+    }
+  ],
+  "notes": []
+}

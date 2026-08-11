@@ -14,8 +14,9 @@ const manifest = manifestJson as SitCorpusManifest;
 describe('NB SIT statute corpus manifest', () => {
   it('represents the complete required SIT Act inventory and preserves pilot documents', () => {
     expect(manifest.corpusId).toBe('nb-sit-statute-corpus');
-    expect(getRequiredSitActs(manifest)).toHaveLength(57);
-    expect(getRequiredSitRegulations(manifest)).toHaveLength(5);
+    expect(manifest.manualScopeMappings).toHaveLength(57);
+    expect(getRequiredSitActs(manifest)).toHaveLength(55);
+    expect(getRequiredSitRegulations(manifest)).toHaveLength(6);
     expect(manifest.documents.filter((document) => document.existingPilot).map((document) => document.id).sort()).toEqual([
       'doc-boundaries-confirmation-act',
       'doc-community-planning-act',
@@ -32,29 +33,55 @@ describe('NB SIT statute corpus manifest', () => {
 
   it('keeps candidate/replacement assumptions out of the required package', () => {
     expect(manifest.documents.some((document) => document.id === 'doc-protected-natural-areas-act')).toBe(true);
-    expect(manifest.documents.some((document) => document.id === 'doc-ecological-reserves-act')).toBe(true);
+    expect(manifest.documents.some((document) => document.id === 'doc-ecological-reserves-act')).toBe(false);
     expect(
-      manifest.documents.find((document) => document.id === 'doc-ecological-reserves-act')?.sourceUrl,
-    ).toBe('');
+      manifest.manualScopeMappings?.find((mapping) => mapping.manualEntryId === 'manual-ecological-reserves-act'),
+    ).toMatchObject({
+      historicalCitation: 'E-1.1',
+      currentDocumentId: 'doc-protected-natural-areas-act',
+      duplicateSuccessorContent: false,
+      registrarConfirmationRequired: true,
+    });
   });
 
-  it('reports unresolved official-source gaps before large fetches', () => {
+  it('resolves historical source gaps through explicit successor mappings', () => {
     const report = buildSitCorpusInventoryReport(manifest, '2026-08-11T00:00:00.000Z');
     expect(report.expectedActCount).toBe(57);
     expect(report.actualRequiredActCount).toBe(57);
-    expect(report.missingSourceUrls.sort()).toEqual([
-      'doc-ecological-reserves-act',
-      'doc-health-act',
-      'doc-new-brunswick-land-surveyors-act',
-      'doc-official-languages-of-new-brunswick-act',
-      'doc-public-utilities-act',
-    ]);
-    expect(() => assertSitCorpusInventoryCanFetchRequired(report)).toThrow(/missing-source-url/);
+    expect(report.missingSourceUrls).toEqual([]);
+    expect(() => assertSitCorpusInventoryCanFetchRequired(report)).not.toThrow();
+    expect(report.findings.filter((finding) => finding.code === 'legacy-replaced')).toHaveLength(4);
   });
 
-  it('requires official laws.gnb.ca URLs where source URLs are known', () => {
+  it('requires approved official source URLs and PDF selectors', () => {
     const report = buildSitCorpusInventoryReport(manifest, '2026-08-11T00:00:00.000Z');
     expect(report.findings.filter((finding) => finding.code === 'non-official-source')).toEqual([]);
+    expect(report.findings.filter((finding) => finding.code === 'missing-pdf-selector')).toEqual([]);
+    expect(manifest.documents.filter((document) => document.sourceType === 'official-pdf')).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'doc-new-brunswick-land-surveyors-act',
+          sourceUrl: 'https://www.anbls.nb.ca/pdf/ANBLSActQPrintChap91e.PDF',
+          pdfSelector: expect.objectContaining({ language: 'en' }),
+        }),
+        expect.objectContaining({
+          id: 'doc-new-brunswick-land-surveyors-bylaws',
+          sourceUrl: 'https://www.anbls.nb.ca/pdf/ByLaws.pdf',
+          pdfSelector: expect.objectContaining({ language: 'en' }),
+        }),
+      ]),
+    );
+  });
+
+  it('allows two manual entries to map to one current legal document without duplicate legal documents', () => {
+    const publicHealthMappings = manifest.manualScopeMappings?.filter(
+      (mapping) => mapping.currentDocumentId === 'doc-public-health-act',
+    );
+    expect(publicHealthMappings?.map((mapping) => mapping.manualEntryId).sort()).toEqual([
+      'manual-health-act',
+      'manual-public-health-act',
+    ]);
+    expect(manifest.documents.filter((document) => document.id === 'doc-public-health-act')).toHaveLength(1);
   });
 
   it('computes deterministic manifest hashes from semantic content', () => {

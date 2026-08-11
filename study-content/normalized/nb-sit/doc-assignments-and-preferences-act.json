@@ -1,0 +1,1090 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-assignments-and-preferences-act",
+  "officialTitle": "Assignments And Preferences Act",
+  "officialCitation": "Chapter A-16",
+  "officialCitationDisplay": "Chapter A-16",
+  "officialCitationNormalized": "A-16",
+  "documentType": "act",
+  "sourceUrl": "https://laws.gnb.ca/en/document/cs/A-16",
+  "fetchDate": "2026-08-11T18:08:28.782Z",
+  "consolidatedTo": "September 1, 2011",
+  "contentHash": "b25ab8ff1b66aaccc46fb73ff0774e273a76be0ed50ce220ce8f065f39699a4e",
+  "tableOfContents": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "label": "1",
+      "heading": "Confession of judgment as preference"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "label": "2",
+      "heading": "Transfers of property as preference"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "label": "3",
+      "heading": "Valid assignments"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "label": "4",
+      "heading": "Repealed"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "label": "5",
+      "heading": "Repealed"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "label": "6",
+      "heading": "Repealed"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "label": "7",
+      "heading": "Repealed"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "label": "8",
+      "heading": "Repealed"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "label": "9",
+      "heading": "Repealed"
+    },
+    {
+      "id": "section-10",
+      "sourceKey": "section:10",
+      "label": "10",
+      "heading": "Repealed"
+    },
+    {
+      "id": "section-11",
+      "sourceKey": "section:11",
+      "label": "11",
+      "heading": "Repealed"
+    },
+    {
+      "id": "section-12",
+      "sourceKey": "section:12",
+      "label": "12",
+      "heading": "Repealed"
+    },
+    {
+      "id": "section-13",
+      "sourceKey": "section:13",
+      "label": "13",
+      "heading": "Repealed"
+    },
+    {
+      "id": "section-14",
+      "sourceKey": "section:14",
+      "label": "14",
+      "heading": "Repealed"
+    },
+    {
+      "id": "section-15",
+      "sourceKey": "section:15",
+      "label": "15",
+      "heading": "Repealed"
+    },
+    {
+      "id": "section-16",
+      "sourceKey": "section:16",
+      "label": "16",
+      "heading": "Repealed"
+    },
+    {
+      "id": "section-17",
+      "sourceKey": "section:17",
+      "label": "17",
+      "heading": "Repealed"
+    },
+    {
+      "id": "section-18",
+      "sourceKey": "section:18",
+      "label": "18",
+      "heading": "Repealed"
+    },
+    {
+      "id": "section-19",
+      "sourceKey": "section:19",
+      "label": "19",
+      "heading": "Repealed"
+    },
+    {
+      "id": "section-20",
+      "sourceKey": "section:20",
+      "label": "20",
+      "heading": "Repealed"
+    },
+    {
+      "id": "section-21",
+      "sourceKey": "section:21",
+      "label": "21",
+      "heading": "Repealed"
+    },
+    {
+      "id": "section-22",
+      "sourceKey": "section:22",
+      "label": "22",
+      "heading": "Repealed"
+    },
+    {
+      "id": "section-23",
+      "sourceKey": "section:23",
+      "label": "23",
+      "heading": "Repealed"
+    },
+    {
+      "id": "section-24",
+      "sourceKey": "section:24",
+      "label": "24",
+      "heading": "Repealed"
+    },
+    {
+      "id": "section-25",
+      "sourceKey": "section:25",
+      "label": "25",
+      "heading": "Repealed"
+    },
+    {
+      "id": "section-26",
+      "sourceKey": "section:26",
+      "label": "26",
+      "heading": "Repealed"
+    },
+    {
+      "id": "section-27",
+      "sourceKey": "section:27",
+      "label": "27",
+      "heading": "Repealed"
+    },
+    {
+      "id": "section-28",
+      "sourceKey": "section:28",
+      "label": "28",
+      "heading": "Repealed"
+    },
+    {
+      "id": "section-29",
+      "sourceKey": "section:29",
+      "label": "29",
+      "heading": "Repealed"
+    },
+    {
+      "id": "section-30",
+      "sourceKey": "section:30",
+      "label": "30",
+      "heading": "Repealed"
+    },
+    {
+      "id": "section-31",
+      "sourceKey": "section:31",
+      "label": "31",
+      "heading": "Repealed"
+    },
+    {
+      "id": "section-32",
+      "sourceKey": "section:32",
+      "label": "32",
+      "heading": "Repealed"
+    },
+    {
+      "id": "section-33",
+      "sourceKey": "section:33",
+      "label": "33",
+      "heading": "Repealed"
+    },
+    {
+      "id": "section-34",
+      "sourceKey": "section:34",
+      "label": "34",
+      "heading": "Effect of Bankruptcy Act"
+    }
+  ],
+  "components": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
+      "label": "1",
+      "heading": "Confession of judgment as preference",
+      "text": "Confession of judgment as preference\n\n1If a person, being at the time in insolvent circumstances or unable to pay his debts in full, or knowing himself to be on the eve of insolvency, voluntarily or by collusion with a creditor or creditors, gives a confession of judgment, cognovit actionem, or warrant of attorney to confess judgment, to defeat or delay his creditors wholly or in part, or with intent thereby to give one or more of his creditors a preference over his other creditors or over any one or more of such creditors, every such confession, cognovit actionem, or warrant of attorney to confess judgment, is void as against the creditors of the party giving the same, and is invalid and ineffectual to support any judgment or writ of execution.\nR.S., c.13, s.1",
+      "subsections": [],
+      "contentHash": "f2604a0910e04b9f54aa86948aa23f4310c6c8031f256620016f0890e25abb5f"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "label": "2",
+      "heading": "Transfers of property as preference",
+      "text": "Transfers of property as preference\n\n2(1)Subject to the provisions of section 3, every gift, conveyance, assignment or transfer, delivery over or payment of goods, chattels or effects, or of bills, bonds, notes or securities, or of shares, dividends, premiums or bonus in any bank, company or corporation, or of any other property, real or personal, made by a person at a time when he is in insolvent circumstances, or is unable to pay his debts in full, or knows that he is on the eve of insolvency, with intent to defeat, delay or prejudice his creditors, or any one or more of them, is void, as against a creditor injured, delayed or prejudiced.\n\nUnjust preferences\n\n2(2)Subject to the provisions of section 3, every gift, conveyance, assignment or transfer, delivery over, or payment of goods, chattels or effects, or of bills, bonds, notes or securities, or of shares, dividends, premiums or bonus in any bank, company or corporation, or of any other property, real or personal, made by a person at a time when he is in insolvent circumstances, or is unable to pay his debts in full, or knows that he is on the eve of insolvency, to or for a creditor with intent to give such creditor an unjust preference over the other creditors, or over any of them, is void, as against a creditor injured, delayed, prejudiced or postponed.\n\nPresumption of preference\n\n2(3)Subject to the provisions of section 3, if such transaction with or for a creditor has the effect of giving that creditor a preference over the other creditors of the debtor, or over any of them, it shall, with respect to any suit or proceeding that, within sixty days thereafter, is brought to impeach or set aside such transaction, be presumed to have been made with the intent aforesaid, and to be an unjust preference within the meaning hereof, whether the same is made voluntarily or under pressure.\n\nRepealed\n\n2(4)Repealed: 2005, c.13, s.1\n\nConveyance of property to surety as preference\n\n2(5)When a gift, conveyance, assignment or transfer, delivery over or payment of goods, chattels, or effects, or of bills, bonds, notes or securities, or of shares, dividends, premiums or bonus in any bank, company or corporation, or of any other property, real or personal, is made to or for any surety or indorser of any promissory note or bill of exchange, who would upon payment by him of the debt, promissory note, or bill of exchange, in respect of which such suretyship was entered into, or such indorsement given, become a creditor of the person giving the preference within the meaning of the aforegoing subsections, the transaction is void in cases where it would be void if given to or for a creditor.\n\nR.S., c.13, s.2; 2005, c.13, s.1",
+      "subsections": [
+        {
+          "id": "2-subsection-1",
+          "sourceKey": "section:2/subsection:1",
+          "label": "2(1)",
+          "text": "2(1)Subject to the provisions of section 3, every gift, conveyance, assignment or transfer, delivery over or payment of goods, chattels or effects, or of bills, bonds, notes or securities, or of shares, dividends, premiums or bonus in any bank, company or corporation, or of any other property, real or personal, made by a person at a time when he is in insolvent circumstances, or is unable to pay his debts in full, or knows that he is on the eve of insolvency, with intent to defeat, delay or prejudice his creditors, or any one or more of them, is void, as against a creditor injured, delayed or prejudiced.\n\nUnjust preferences",
+          "contentHash": "93b24a12528c1ba570110047eff77463f2dd684a054f15245e88db784de54a6a"
+        },
+        {
+          "id": "2-subsection-2",
+          "sourceKey": "section:2/subsection:2",
+          "label": "2(2)",
+          "text": "2(2)Subject to the provisions of section 3, every gift, conveyance, assignment or transfer, delivery over, or payment of goods, chattels or effects, or of bills, bonds, notes or securities, or of shares, dividends, premiums or bonus in any bank, company or corporation, or of any other property, real or personal, made by a person at a time when he is in insolvent circumstances, or is unable to pay his debts in full, or knows that he is on the eve of insolvency, to or for a creditor with intent to give such creditor an unjust preference over the other creditors, or over any of them, is void, as against a creditor injured, delayed, prejudiced or postponed.\n\nPresumption of preference",
+          "contentHash": "c124feeed55c1bac78e1da0db7e2164c2073abf35efb5edf2f0bfb070ca1c313"
+        },
+        {
+          "id": "2-subsection-3",
+          "sourceKey": "section:2/subsection:3",
+          "label": "2(3)",
+          "text": "2(3)Subject to the provisions of section 3, if such transaction with or for a creditor has the effect of giving that creditor a preference over the other creditors of the debtor, or over any of them, it shall, with respect to any suit or proceeding that, within sixty days thereafter, is brought to impeach or set aside such transaction, be presumed to have been made with the intent aforesaid, and to be an unjust preference within the meaning hereof, whether the same is made voluntarily or under pressure.\n\nRepealed",
+          "contentHash": "77b5b9b7d485dc065c3d44b993b0da9fb9c8cbed0c5c0e9a8feb4e86b2078e1d"
+        },
+        {
+          "id": "2-subsection-4",
+          "sourceKey": "section:2/subsection:4",
+          "label": "2(4)",
+          "text": "2(4)Repealed: 2005, c.13, s.1\n\nConveyance of property to surety as preference",
+          "contentHash": "dda8f1e49157a5fed4d7eaafe5134f791af19a389a1061f79a5115f74b36743d"
+        },
+        {
+          "id": "2-subsection-5",
+          "sourceKey": "section:2/subsection:5",
+          "label": "2(5)",
+          "text": "2(5)When a gift, conveyance, assignment or transfer, delivery over or payment of goods, chattels, or effects, or of bills, bonds, notes or securities, or of shares, dividends, premiums or bonus in any bank, company or corporation, or of any other property, real or personal, is made to or for any surety or indorser of any promissory note or bill of exchange, who would upon payment by him of the debt, promissory note, or bill of exchange, in respect of which such suretyship was entered into, or such indorsement given, become a creditor of the person giving the preference within the meaning of the aforegoing subsections, the transaction is void in cases where it would be void if given to or for a creditor.\n\nR.S., c.13, s.2; 2005, c.13, s.1",
+          "contentHash": "1a03e5197ff3cb49d385123f9bff34ad781e313f4c396c111f5636146ca437cb"
+        }
+      ],
+      "contentHash": "1d140f94da53fc6fa5dbd536a8a3ffeba1a724c857d28463c5da72d183c89de3"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
+      "label": "3",
+      "heading": "Valid assignments",
+      "text": "Valid assignments\n\n3(1)Nothing in section 2 applies to any assignment made under the Bankruptcy and Insolvency Act (Canada); nor to any bona fide sale or payment made in the ordinary course of trade or calling to innocent purchasers or parties, nor to any payment of money to a creditor, nor to any bona fide gift, conveyance, assignment, transfer, or delivery over of any goods, securities or property of any kind as above mentioned, that is made in consideration of any present actual bona fide payment in money, or by way of security for any present actual bona fide advance of money, or in consideration of any present actual bona fide sale and delivery of goods or other property; if the money paid, or the goods or other property sold or delivered, bear a fair and reasonable relative value to the consideration therefor.\n\nPayment to creditor for goods purchased from debtor void\n\n3(2)In case of a valid sale of goods, securities or property, and payment or transfer of the consideration, or part thereof, by the purchaser to a creditor of the vendor under circumstances that would render void such a payment or transfer by the debtor personally and directly, the payment or transfer, even though valid as respects the purchaser, is void as respects the creditor to whom the same is made.\n\nRepealed\n\n3(3)Repealed: 2005, c.13, s.2\n\nRepealed\n\n3(4)Repealed: 2005, c.13, s.2\n\nRestoration of security to creditor\n\n3(5)If a payment has been made that is void under this Act, and any valuable security was given up in consideration of the payment, the creditor is entitled to have the security restored or its value made good to him before or as a condition of the return of the payment.\n\nMatters to which Act inapplicable\n\n3(6)Nothing herein contained affects the Wage-earners Protection Act, or prevents a debtor providing for payment of wages due by him in accordance with provisions of that Act, nor does anything herein contained affect any payment of money to a creditor when that creditor, by reason of such payment, has lost or been deprived of, or has, in good faith, given up any valuable security that he held for the payment of the debt so paid, unless the valuable security is restored to the creditor, nor to the substitution in good faith of one security for another security for the same debt, so far as the debtor’s estate is not thereby lessened in value to the other creditors; nor does anything herein contained invalidate a security given to a creditor for a pre-existing debt, where on account of the giving of the security, an advance of money is made to the debtor by the creditor in the bona fide belief that the advance will enable the debtor to continue his trade or business and pay his debts in full.\n\nRepealed\n\n3(7)Repealed: 2005, c.13, s.2\n\nRepealed\n\n3(8)Repealed: 2005, c.13, s.2\n\nR.S., c.13, s.3; 1988, c.42, s.16; 2005, c.13, s.2",
+      "subsections": [
+        {
+          "id": "3-subsection-1",
+          "sourceKey": "section:3/subsection:1",
+          "label": "3(1)",
+          "text": "3(1)Nothing in section 2 applies to any assignment made under the Bankruptcy and Insolvency Act (Canada); nor to any bona fide sale or payment made in the ordinary course of trade or calling to innocent purchasers or parties, nor to any payment of money to a creditor, nor to any bona fide gift, conveyance, assignment, transfer, or delivery over of any goods, securities or property of any kind as above mentioned, that is made in consideration of any present actual bona fide payment in money, or by way of security for any present actual bona fide advance of money, or in consideration of any present actual bona fide sale and delivery of goods or other property; if the money paid, or the goods or other property sold or delivered, bear a fair and reasonable relative value to the consideration therefor.\n\nPayment to creditor for goods purchased from debtor void",
+          "contentHash": "e8df2e5364dce6fcdf33dbb46db88e7dd5178d60257874e48bf286967742ab45"
+        },
+        {
+          "id": "3-subsection-2",
+          "sourceKey": "section:3/subsection:2",
+          "label": "3(2)",
+          "text": "3(2)In case of a valid sale of goods, securities or property, and payment or transfer of the consideration, or part thereof, by the purchaser to a creditor of the vendor under circumstances that would render void such a payment or transfer by the debtor personally and directly, the payment or transfer, even though valid as respects the purchaser, is void as respects the creditor to whom the same is made.\n\nRepealed",
+          "contentHash": "c8b5ee8b99fc7b6d798e0b38bd313fae15ddc03c5f3c3ae2e8a9221f4f0141f0"
+        },
+        {
+          "id": "3-subsection-3",
+          "sourceKey": "section:3/subsection:3",
+          "label": "3(3)",
+          "text": "3(3)Repealed: 2005, c.13, s.2\n\nRepealed",
+          "contentHash": "21355e270da74958bc038c060f31c01b159523759a554d713efa2bc1c8c7f534"
+        },
+        {
+          "id": "3-subsection-4",
+          "sourceKey": "section:3/subsection:4",
+          "label": "3(4)",
+          "text": "3(4)Repealed: 2005, c.13, s.2\n\nRestoration of security to creditor",
+          "contentHash": "ab95247852904067f74c8a957a49b85b60b63544ac0713a85b4c1bd6fcd2448f"
+        },
+        {
+          "id": "3-subsection-5",
+          "sourceKey": "section:3/subsection:5",
+          "label": "3(5)",
+          "text": "3(5)If a payment has been made that is void under this Act, and any valuable security was given up in consideration of the payment, the creditor is entitled to have the security restored or its value made good to him before or as a condition of the return of the payment.\n\nMatters to which Act inapplicable",
+          "contentHash": "f4c4d7d822a17de76df3515f7e546cbeceff671c5314650ca7604ccaae2c0471"
+        },
+        {
+          "id": "3-subsection-6",
+          "sourceKey": "section:3/subsection:6",
+          "label": "3(6)",
+          "text": "3(6)Nothing herein contained affects the Wage-earners Protection Act, or prevents a debtor providing for payment of wages due by him in accordance with provisions of that Act, nor does anything herein contained affect any payment of money to a creditor when that creditor, by reason of such payment, has lost or been deprived of, or has, in good faith, given up any valuable security that he held for the payment of the debt so paid, unless the valuable security is restored to the creditor, nor to the substitution in good faith of one security for another security for the same debt, so far as the debtor’s estate is not thereby lessened in value to the other creditors; nor does anything herein contained invalidate a security given to a creditor for a pre-existing debt, where on account of the giving of the security, an advance of money is made to the debtor by the creditor in the bona fide belief that the advance will enable the debtor to continue his trade or business and pay his debts in full.\n\nRepealed",
+          "contentHash": "e15848901f13a86cba75f499bc40acf464b89c80115a9901dba884b5e518e230"
+        },
+        {
+          "id": "3-subsection-7",
+          "sourceKey": "section:3/subsection:7",
+          "label": "3(7)",
+          "text": "3(7)Repealed: 2005, c.13, s.2\n\nRepealed",
+          "contentHash": "9cf83b6e03ba5f564cf770d92f13a97f748ef11bf1b793355405c7b91ad3b04a"
+        },
+        {
+          "id": "3-subsection-8",
+          "sourceKey": "section:3/subsection:8",
+          "label": "3(8)",
+          "text": "3(8)Repealed: 2005, c.13, s.2\n\nR.S., c.13, s.3; 1988, c.42, s.16; 2005, c.13, s.2",
+          "contentHash": "6cd9d3d8eb6b90283524447177b06e5bca288aac9cf222323393970ba2f94b4e"
+        }
+      ],
+      "contentHash": "3fdeb0d7a26586817fc18f493b4e91be34e710061ebb856bf0903b3219e3ec2d"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
+      "label": "4",
+      "heading": "Repealed",
+      "text": "Repealed\n\n4Repealed: 2005, c.13, s.3\nR.S., c.13, s.4; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "b7f107f7b94f9ca4ec86c4987a8539cf2249fd6485df517ef190767b2c83645a"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "componentType": "section",
+      "label": "5",
+      "heading": "Repealed",
+      "text": "Repealed\n\n5Repealed: 2005, c.13, s.3\nR.S., c.13, s.5; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "e53015f4e6e44011cf74be63f005b91406c783681770285bfb72d0fd7ba75beb"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "componentType": "section",
+      "label": "6",
+      "heading": "Repealed",
+      "text": "Repealed\n\n6Repealed: 2005, c.13, s.3\nR.S., c.13, s.6; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "b721a136350f6730f3e4c5d7b879858aaf83738f912a3fecdf7d4fcfbc7cd161"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "componentType": "section",
+      "label": "7",
+      "heading": "Repealed",
+      "text": "Repealed\n\n7Repealed: 2005, c.13, s.3\nR.S., c.13, s.7; 1979, c.41, s.9; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "4be6216c9f21ef24fff18d0de831bc0ebf4630f3d7d620694306c5486ad97d27"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "componentType": "section",
+      "label": "8",
+      "heading": "Repealed",
+      "text": "Repealed\n\n8Repealed: 2005, c.13, s.3\nR.S., c.13, s.8; 1993, c.36, s.1; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "d820f0982d37effd35f5802a9c45debe5e4da81aae0b1fad03a7bb0f81d2b78c"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "componentType": "section",
+      "label": "9",
+      "heading": "Repealed",
+      "text": "Repealed\n\n9Repealed: 1993, c.36, s.1\nR.S., c.13, s.9; 1967, c.38, s.2; 1981, c.6, s.1; 1993, c.36, s.1",
+      "subsections": [],
+      "contentHash": "8ba3d417504a5c214e24a07e200e62694d89ca7bde6c83298df795cb4b8ab5d4"
+    },
+    {
+      "id": "section-10",
+      "sourceKey": "section:10",
+      "componentType": "section",
+      "label": "10",
+      "heading": "Repealed",
+      "text": "Repealed\n\n10Repealed: 2005, c.13, s.3\nR.S., c.13, s.10; 1979, c.41, s.9; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "20916557348bfabb625c01f84d8e774e0370a76de7663437fa68e3f97b88c6b4"
+    },
+    {
+      "id": "section-11",
+      "sourceKey": "section:11",
+      "componentType": "section",
+      "label": "11",
+      "heading": "Repealed",
+      "text": "Repealed\n\n11Repealed: 2005, c.13, s.3\nR.S., c.13, s.11; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "d00479c0f809f69f4e5d53afb1131159729452b11f7e51f5285962f6af43dc90"
+    },
+    {
+      "id": "section-12",
+      "sourceKey": "section:12",
+      "componentType": "section",
+      "label": "12",
+      "heading": "Repealed",
+      "text": "Repealed\n\n12Repealed: 2005, c.13, s.3\nR.S., c.13, s.12; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "2d681d1481a1a7e9610ace1ee11d3106b2911bad002232c2b8254e71be007f01"
+    },
+    {
+      "id": "section-13",
+      "sourceKey": "section:13",
+      "componentType": "section",
+      "label": "13",
+      "heading": "Repealed",
+      "text": "Repealed\n\n13Repealed: 2005, c.13, s.3\nR.S., c.13, s.13; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "68271b98b306aa62085e2da2f6bbab1e8f80afc4b5e39292a3c9313a214d58d2"
+    },
+    {
+      "id": "section-14",
+      "sourceKey": "section:14",
+      "componentType": "section",
+      "label": "14",
+      "heading": "Repealed",
+      "text": "Repealed\n\n14Repealed: 2005, c.13, s.3\nR.S., c.13, s.14; 1979, c.41, s.9; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "50fdfab1547d2bd877aded2d7231eac58e74ea9837ef6f3553ec2ed5fb64f4e0"
+    },
+    {
+      "id": "section-15",
+      "sourceKey": "section:15",
+      "componentType": "section",
+      "label": "15",
+      "heading": "Repealed",
+      "text": "Repealed\n\n15Repealed: 2005, c.13, s.3\nR.S., c.13, s.15; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "6fb768a3ac04572fdf5d90aab5473e85343c2b20be39b8f741b13216447b839c"
+    },
+    {
+      "id": "section-16",
+      "sourceKey": "section:16",
+      "componentType": "section",
+      "label": "16",
+      "heading": "Repealed",
+      "text": "Repealed\n\n16Repealed: 2005, c.13, s.3\nR.S., c.13, s.16; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "023c6ec15ebe25047b18a5313586431223f5301ab4f54d9baf618f7323e96ebf"
+    },
+    {
+      "id": "section-17",
+      "sourceKey": "section:17",
+      "componentType": "section",
+      "label": "17",
+      "heading": "Repealed",
+      "text": "Repealed\n\n17Repealed: 2005, c.13, s.3\nR.S., c.13, s.17; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "3fe964b7e4301f1c2025e7dfba159c3673e74fdf6f1add82eee009ff0944706f"
+    },
+    {
+      "id": "section-18",
+      "sourceKey": "section:18",
+      "componentType": "section",
+      "label": "18",
+      "heading": "Repealed",
+      "text": "Repealed\n\n18Repealed: 2005, c.13, s.3\nR.S., c.13, s.18; 1979, c.41, s.9; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "5ac9756bd648ebfc861d18c6e136c307c5045fd788106cba133f6dccbf20c3fe"
+    },
+    {
+      "id": "section-19",
+      "sourceKey": "section:19",
+      "componentType": "section",
+      "label": "19",
+      "heading": "Repealed",
+      "text": "Repealed\n\n19Repealed: 2005, c.13, s.3\nR.S., c.13, s.19; 1979, c.41, s.9; 1994, c.10, s.1; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "3ba2f398675d7a247d19c1cb9ec5ce924c6bb9a5c5da1ece90a683607ef33508"
+    },
+    {
+      "id": "section-20",
+      "sourceKey": "section:20",
+      "componentType": "section",
+      "label": "20",
+      "heading": "Repealed",
+      "text": "Repealed\n\n20Repealed: 2005, c.13, s.3\nR.S., c.13, s.20; 1979, c.41, s.9; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "eb570f921eb0538651c008237da7f60b8a911eacd5f381aa5d24d13ec83fe319"
+    },
+    {
+      "id": "section-21",
+      "sourceKey": "section:21",
+      "componentType": "section",
+      "label": "21",
+      "heading": "Repealed",
+      "text": "Repealed\n\n21Repealed: 2005, c.13, s.3\nR.S., c.13, s.21; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "0022cbef785f4f623067fe26fcfdb0be76f9ccd0427b2a0dd2947c6c42186e82"
+    },
+    {
+      "id": "section-22",
+      "sourceKey": "section:22",
+      "componentType": "section",
+      "label": "22",
+      "heading": "Repealed",
+      "text": "Repealed\n\n22Repealed: 2005, c.13, s.3\nR.S., c.13, s.22; 1979, c.41, s.9; 1983, c.7, s.2; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "603d3b8201ccc1a3805a002b644e49029cee113ef9ed99d9c0ada47af94ba478"
+    },
+    {
+      "id": "section-23",
+      "sourceKey": "section:23",
+      "componentType": "section",
+      "label": "23",
+      "heading": "Repealed",
+      "text": "Repealed\n\n23Repealed: 2005, c.13, s.3\nR.S., c.13, s.23; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "092c09e5fa1332faf602ad38386984e5aceb25b0bb24334709c50a1cef4bb627"
+    },
+    {
+      "id": "section-24",
+      "sourceKey": "section:24",
+      "componentType": "section",
+      "label": "24",
+      "heading": "Repealed",
+      "text": "Repealed\n\n24Repealed: 2005, c.13, s.3\nR.S., c.13, s.24; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "68c1aa0e9d0d90ae6129a4a7998d2506de4cd79df25265f56a7ce7c299eefb96"
+    },
+    {
+      "id": "section-25",
+      "sourceKey": "section:25",
+      "componentType": "section",
+      "label": "25",
+      "heading": "Repealed",
+      "text": "Repealed\n\n25Repealed: 2005, c.13, s.3\nR.S., c.13, s.25; 1973, c.74, s.4; 1979, c.41, s.9; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "916410771c8e4ca0598009438bd124a984f0b3d73f4fa448c11ed01f27e01167"
+    },
+    {
+      "id": "section-26",
+      "sourceKey": "section:26",
+      "componentType": "section",
+      "label": "26",
+      "heading": "Repealed",
+      "text": "Repealed\n\n26Repealed: 2005, c.13, s.3\nR.S., c.13, s.26; 1986, c.4, s.4; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "1edc169ebdcec61f84cc037bf8808b7c6d6bb4b8740b6251874b0de710662dbd"
+    },
+    {
+      "id": "section-27",
+      "sourceKey": "section:27",
+      "componentType": "section",
+      "label": "27",
+      "heading": "Repealed",
+      "text": "Repealed\n\n27Repealed: 2005, c.13, s.3\nR.S., c.13, s.27; 1977, c.M-11.1, s.2; 1986, c.4, s.4; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "e3eb70ddb58fc35956d8c2a4c893e8e1c17b29e946d18dd0051dfcee482738ff"
+    },
+    {
+      "id": "section-28",
+      "sourceKey": "section:28",
+      "componentType": "section",
+      "label": "28",
+      "heading": "Repealed",
+      "text": "Repealed\n\n28Repealed: 2005, c.13, s.3\nR.S., c.13, s.28; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "309a8c3c7fb4fcbaa55469b327e6f9b1e10d3a439e9fb1ce5a87f1333a280741"
+    },
+    {
+      "id": "section-29",
+      "sourceKey": "section:29",
+      "componentType": "section",
+      "label": "29",
+      "heading": "Repealed",
+      "text": "Repealed\n\n29Repealed: 2005, c.13, s.3\nR.S., c.13, s.29; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "274cbaceb6e77466511365b5be886e96486c5fa4fbc6d6b50ae576f0d2e76477"
+    },
+    {
+      "id": "section-30",
+      "sourceKey": "section:30",
+      "componentType": "section",
+      "label": "30",
+      "heading": "Repealed",
+      "text": "Repealed\n\n30Repealed: 2005, c.13, s.3\nR.S., c.13, s.30; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "d0dc420dc42e4e74626bab01dd0899872a28a2d703e23a3127263a9f5bd2b0c3"
+    },
+    {
+      "id": "section-31",
+      "sourceKey": "section:31",
+      "componentType": "section",
+      "label": "31",
+      "heading": "Repealed",
+      "text": "Repealed\n\n31Repealed: 2005, c.13, s.3\nR.S., c.13, s.31; 1979, c.41, s.9; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "6cda561d71aecbc8753b4b93ccf461a8004bfa348d713ad5c0c16b336e25305f"
+    },
+    {
+      "id": "section-32",
+      "sourceKey": "section:32",
+      "componentType": "section",
+      "label": "32",
+      "heading": "Repealed",
+      "text": "Repealed\n\n32Repealed: 2005, c.13, s.3\nR.S., c.13, s.32; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "64f1a8d8c481b34afdbe8684d54f24696e039e6269d45e8442c5a7fd160bacf2"
+    },
+    {
+      "id": "section-33",
+      "sourceKey": "section:33",
+      "componentType": "section",
+      "label": "33",
+      "heading": "Repealed",
+      "text": "Repealed\n\n33Repealed: 2005, c.13, s.3\nR.S., c.13, s.33; 1979, c.41, s.9; 1984, c.27, s.3; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "81b07d248660b60fdceff1dfe202dfb31d4a8cf96e780557b765bc2a7c0de525"
+    },
+    {
+      "id": "section-34",
+      "sourceKey": "section:34",
+      "componentType": "section",
+      "label": "34",
+      "heading": "Effect of Bankruptcy Act",
+      "text": "Effect of Bankruptcy Act\n\n34The provisions of this Act apply only in so far as they are not inconsistent with the Bankruptcy Act, chapter B-3 of the Revised Statutes of Canada, 1970.\nR.S., c.13, s.34\n\nN.B. This Act is consolidated to September 1, 2011.",
+      "subsections": [],
+      "contentHash": "f6321d2c4cf666b743f95e7ffd391fd5c4fe7bb94c107038ce7b74ea0148f890"
+    }
+  ],
+  "sections": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
+      "label": "1",
+      "heading": "Confession of judgment as preference",
+      "text": "Confession of judgment as preference\n\n1If a person, being at the time in insolvent circumstances or unable to pay his debts in full, or knowing himself to be on the eve of insolvency, voluntarily or by collusion with a creditor or creditors, gives a confession of judgment, cognovit actionem, or warrant of attorney to confess judgment, to defeat or delay his creditors wholly or in part, or with intent thereby to give one or more of his creditors a preference over his other creditors or over any one or more of such creditors, every such confession, cognovit actionem, or warrant of attorney to confess judgment, is void as against the creditors of the party giving the same, and is invalid and ineffectual to support any judgment or writ of execution.\nR.S., c.13, s.1",
+      "subsections": [],
+      "contentHash": "f2604a0910e04b9f54aa86948aa23f4310c6c8031f256620016f0890e25abb5f"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "label": "2",
+      "heading": "Transfers of property as preference",
+      "text": "Transfers of property as preference\n\n2(1)Subject to the provisions of section 3, every gift, conveyance, assignment or transfer, delivery over or payment of goods, chattels or effects, or of bills, bonds, notes or securities, or of shares, dividends, premiums or bonus in any bank, company or corporation, or of any other property, real or personal, made by a person at a time when he is in insolvent circumstances, or is unable to pay his debts in full, or knows that he is on the eve of insolvency, with intent to defeat, delay or prejudice his creditors, or any one or more of them, is void, as against a creditor injured, delayed or prejudiced.\n\nUnjust preferences\n\n2(2)Subject to the provisions of section 3, every gift, conveyance, assignment or transfer, delivery over, or payment of goods, chattels or effects, or of bills, bonds, notes or securities, or of shares, dividends, premiums or bonus in any bank, company or corporation, or of any other property, real or personal, made by a person at a time when he is in insolvent circumstances, or is unable to pay his debts in full, or knows that he is on the eve of insolvency, to or for a creditor with intent to give such creditor an unjust preference over the other creditors, or over any of them, is void, as against a creditor injured, delayed, prejudiced or postponed.\n\nPresumption of preference\n\n2(3)Subject to the provisions of section 3, if such transaction with or for a creditor has the effect of giving that creditor a preference over the other creditors of the debtor, or over any of them, it shall, with respect to any suit or proceeding that, within sixty days thereafter, is brought to impeach or set aside such transaction, be presumed to have been made with the intent aforesaid, and to be an unjust preference within the meaning hereof, whether the same is made voluntarily or under pressure.\n\nRepealed\n\n2(4)Repealed: 2005, c.13, s.1\n\nConveyance of property to surety as preference\n\n2(5)When a gift, conveyance, assignment or transfer, delivery over or payment of goods, chattels, or effects, or of bills, bonds, notes or securities, or of shares, dividends, premiums or bonus in any bank, company or corporation, or of any other property, real or personal, is made to or for any surety or indorser of any promissory note or bill of exchange, who would upon payment by him of the debt, promissory note, or bill of exchange, in respect of which such suretyship was entered into, or such indorsement given, become a creditor of the person giving the preference within the meaning of the aforegoing subsections, the transaction is void in cases where it would be void if given to or for a creditor.\n\nR.S., c.13, s.2; 2005, c.13, s.1",
+      "subsections": [
+        {
+          "id": "2-subsection-1",
+          "sourceKey": "section:2/subsection:1",
+          "label": "2(1)",
+          "text": "2(1)Subject to the provisions of section 3, every gift, conveyance, assignment or transfer, delivery over or payment of goods, chattels or effects, or of bills, bonds, notes or securities, or of shares, dividends, premiums or bonus in any bank, company or corporation, or of any other property, real or personal, made by a person at a time when he is in insolvent circumstances, or is unable to pay his debts in full, or knows that he is on the eve of insolvency, with intent to defeat, delay or prejudice his creditors, or any one or more of them, is void, as against a creditor injured, delayed or prejudiced.\n\nUnjust preferences",
+          "contentHash": "93b24a12528c1ba570110047eff77463f2dd684a054f15245e88db784de54a6a"
+        },
+        {
+          "id": "2-subsection-2",
+          "sourceKey": "section:2/subsection:2",
+          "label": "2(2)",
+          "text": "2(2)Subject to the provisions of section 3, every gift, conveyance, assignment or transfer, delivery over, or payment of goods, chattels or effects, or of bills, bonds, notes or securities, or of shares, dividends, premiums or bonus in any bank, company or corporation, or of any other property, real or personal, made by a person at a time when he is in insolvent circumstances, or is unable to pay his debts in full, or knows that he is on the eve of insolvency, to or for a creditor with intent to give such creditor an unjust preference over the other creditors, or over any of them, is void, as against a creditor injured, delayed, prejudiced or postponed.\n\nPresumption of preference",
+          "contentHash": "c124feeed55c1bac78e1da0db7e2164c2073abf35efb5edf2f0bfb070ca1c313"
+        },
+        {
+          "id": "2-subsection-3",
+          "sourceKey": "section:2/subsection:3",
+          "label": "2(3)",
+          "text": "2(3)Subject to the provisions of section 3, if such transaction with or for a creditor has the effect of giving that creditor a preference over the other creditors of the debtor, or over any of them, it shall, with respect to any suit or proceeding that, within sixty days thereafter, is brought to impeach or set aside such transaction, be presumed to have been made with the intent aforesaid, and to be an unjust preference within the meaning hereof, whether the same is made voluntarily or under pressure.\n\nRepealed",
+          "contentHash": "77b5b9b7d485dc065c3d44b993b0da9fb9c8cbed0c5c0e9a8feb4e86b2078e1d"
+        },
+        {
+          "id": "2-subsection-4",
+          "sourceKey": "section:2/subsection:4",
+          "label": "2(4)",
+          "text": "2(4)Repealed: 2005, c.13, s.1\n\nConveyance of property to surety as preference",
+          "contentHash": "dda8f1e49157a5fed4d7eaafe5134f791af19a389a1061f79a5115f74b36743d"
+        },
+        {
+          "id": "2-subsection-5",
+          "sourceKey": "section:2/subsection:5",
+          "label": "2(5)",
+          "text": "2(5)When a gift, conveyance, assignment or transfer, delivery over or payment of goods, chattels, or effects, or of bills, bonds, notes or securities, or of shares, dividends, premiums or bonus in any bank, company or corporation, or of any other property, real or personal, is made to or for any surety or indorser of any promissory note or bill of exchange, who would upon payment by him of the debt, promissory note, or bill of exchange, in respect of which such suretyship was entered into, or such indorsement given, become a creditor of the person giving the preference within the meaning of the aforegoing subsections, the transaction is void in cases where it would be void if given to or for a creditor.\n\nR.S., c.13, s.2; 2005, c.13, s.1",
+          "contentHash": "1a03e5197ff3cb49d385123f9bff34ad781e313f4c396c111f5636146ca437cb"
+        }
+      ],
+      "contentHash": "1d140f94da53fc6fa5dbd536a8a3ffeba1a724c857d28463c5da72d183c89de3"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
+      "label": "3",
+      "heading": "Valid assignments",
+      "text": "Valid assignments\n\n3(1)Nothing in section 2 applies to any assignment made under the Bankruptcy and Insolvency Act (Canada); nor to any bona fide sale or payment made in the ordinary course of trade or calling to innocent purchasers or parties, nor to any payment of money to a creditor, nor to any bona fide gift, conveyance, assignment, transfer, or delivery over of any goods, securities or property of any kind as above mentioned, that is made in consideration of any present actual bona fide payment in money, or by way of security for any present actual bona fide advance of money, or in consideration of any present actual bona fide sale and delivery of goods or other property; if the money paid, or the goods or other property sold or delivered, bear a fair and reasonable relative value to the consideration therefor.\n\nPayment to creditor for goods purchased from debtor void\n\n3(2)In case of a valid sale of goods, securities or property, and payment or transfer of the consideration, or part thereof, by the purchaser to a creditor of the vendor under circumstances that would render void such a payment or transfer by the debtor personally and directly, the payment or transfer, even though valid as respects the purchaser, is void as respects the creditor to whom the same is made.\n\nRepealed\n\n3(3)Repealed: 2005, c.13, s.2\n\nRepealed\n\n3(4)Repealed: 2005, c.13, s.2\n\nRestoration of security to creditor\n\n3(5)If a payment has been made that is void under this Act, and any valuable security was given up in consideration of the payment, the creditor is entitled to have the security restored or its value made good to him before or as a condition of the return of the payment.\n\nMatters to which Act inapplicable\n\n3(6)Nothing herein contained affects the Wage-earners Protection Act, or prevents a debtor providing for payment of wages due by him in accordance with provisions of that Act, nor does anything herein contained affect any payment of money to a creditor when that creditor, by reason of such payment, has lost or been deprived of, or has, in good faith, given up any valuable security that he held for the payment of the debt so paid, unless the valuable security is restored to the creditor, nor to the substitution in good faith of one security for another security for the same debt, so far as the debtor’s estate is not thereby lessened in value to the other creditors; nor does anything herein contained invalidate a security given to a creditor for a pre-existing debt, where on account of the giving of the security, an advance of money is made to the debtor by the creditor in the bona fide belief that the advance will enable the debtor to continue his trade or business and pay his debts in full.\n\nRepealed\n\n3(7)Repealed: 2005, c.13, s.2\n\nRepealed\n\n3(8)Repealed: 2005, c.13, s.2\n\nR.S., c.13, s.3; 1988, c.42, s.16; 2005, c.13, s.2",
+      "subsections": [
+        {
+          "id": "3-subsection-1",
+          "sourceKey": "section:3/subsection:1",
+          "label": "3(1)",
+          "text": "3(1)Nothing in section 2 applies to any assignment made under the Bankruptcy and Insolvency Act (Canada); nor to any bona fide sale or payment made in the ordinary course of trade or calling to innocent purchasers or parties, nor to any payment of money to a creditor, nor to any bona fide gift, conveyance, assignment, transfer, or delivery over of any goods, securities or property of any kind as above mentioned, that is made in consideration of any present actual bona fide payment in money, or by way of security for any present actual bona fide advance of money, or in consideration of any present actual bona fide sale and delivery of goods or other property; if the money paid, or the goods or other property sold or delivered, bear a fair and reasonable relative value to the consideration therefor.\n\nPayment to creditor for goods purchased from debtor void",
+          "contentHash": "e8df2e5364dce6fcdf33dbb46db88e7dd5178d60257874e48bf286967742ab45"
+        },
+        {
+          "id": "3-subsection-2",
+          "sourceKey": "section:3/subsection:2",
+          "label": "3(2)",
+          "text": "3(2)In case of a valid sale of goods, securities or property, and payment or transfer of the consideration, or part thereof, by the purchaser to a creditor of the vendor under circumstances that would render void such a payment or transfer by the debtor personally and directly, the payment or transfer, even though valid as respects the purchaser, is void as respects the creditor to whom the same is made.\n\nRepealed",
+          "contentHash": "c8b5ee8b99fc7b6d798e0b38bd313fae15ddc03c5f3c3ae2e8a9221f4f0141f0"
+        },
+        {
+          "id": "3-subsection-3",
+          "sourceKey": "section:3/subsection:3",
+          "label": "3(3)",
+          "text": "3(3)Repealed: 2005, c.13, s.2\n\nRepealed",
+          "contentHash": "21355e270da74958bc038c060f31c01b159523759a554d713efa2bc1c8c7f534"
+        },
+        {
+          "id": "3-subsection-4",
+          "sourceKey": "section:3/subsection:4",
+          "label": "3(4)",
+          "text": "3(4)Repealed: 2005, c.13, s.2\n\nRestoration of security to creditor",
+          "contentHash": "ab95247852904067f74c8a957a49b85b60b63544ac0713a85b4c1bd6fcd2448f"
+        },
+        {
+          "id": "3-subsection-5",
+          "sourceKey": "section:3/subsection:5",
+          "label": "3(5)",
+          "text": "3(5)If a payment has been made that is void under this Act, and any valuable security was given up in consideration of the payment, the creditor is entitled to have the security restored or its value made good to him before or as a condition of the return of the payment.\n\nMatters to which Act inapplicable",
+          "contentHash": "f4c4d7d822a17de76df3515f7e546cbeceff671c5314650ca7604ccaae2c0471"
+        },
+        {
+          "id": "3-subsection-6",
+          "sourceKey": "section:3/subsection:6",
+          "label": "3(6)",
+          "text": "3(6)Nothing herein contained affects the Wage-earners Protection Act, or prevents a debtor providing for payment of wages due by him in accordance with provisions of that Act, nor does anything herein contained affect any payment of money to a creditor when that creditor, by reason of such payment, has lost or been deprived of, or has, in good faith, given up any valuable security that he held for the payment of the debt so paid, unless the valuable security is restored to the creditor, nor to the substitution in good faith of one security for another security for the same debt, so far as the debtor’s estate is not thereby lessened in value to the other creditors; nor does anything herein contained invalidate a security given to a creditor for a pre-existing debt, where on account of the giving of the security, an advance of money is made to the debtor by the creditor in the bona fide belief that the advance will enable the debtor to continue his trade or business and pay his debts in full.\n\nRepealed",
+          "contentHash": "e15848901f13a86cba75f499bc40acf464b89c80115a9901dba884b5e518e230"
+        },
+        {
+          "id": "3-subsection-7",
+          "sourceKey": "section:3/subsection:7",
+          "label": "3(7)",
+          "text": "3(7)Repealed: 2005, c.13, s.2\n\nRepealed",
+          "contentHash": "9cf83b6e03ba5f564cf770d92f13a97f748ef11bf1b793355405c7b91ad3b04a"
+        },
+        {
+          "id": "3-subsection-8",
+          "sourceKey": "section:3/subsection:8",
+          "label": "3(8)",
+          "text": "3(8)Repealed: 2005, c.13, s.2\n\nR.S., c.13, s.3; 1988, c.42, s.16; 2005, c.13, s.2",
+          "contentHash": "6cd9d3d8eb6b90283524447177b06e5bca288aac9cf222323393970ba2f94b4e"
+        }
+      ],
+      "contentHash": "3fdeb0d7a26586817fc18f493b4e91be34e710061ebb856bf0903b3219e3ec2d"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
+      "label": "4",
+      "heading": "Repealed",
+      "text": "Repealed\n\n4Repealed: 2005, c.13, s.3\nR.S., c.13, s.4; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "b7f107f7b94f9ca4ec86c4987a8539cf2249fd6485df517ef190767b2c83645a"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "componentType": "section",
+      "label": "5",
+      "heading": "Repealed",
+      "text": "Repealed\n\n5Repealed: 2005, c.13, s.3\nR.S., c.13, s.5; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "e53015f4e6e44011cf74be63f005b91406c783681770285bfb72d0fd7ba75beb"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "componentType": "section",
+      "label": "6",
+      "heading": "Repealed",
+      "text": "Repealed\n\n6Repealed: 2005, c.13, s.3\nR.S., c.13, s.6; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "b721a136350f6730f3e4c5d7b879858aaf83738f912a3fecdf7d4fcfbc7cd161"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "componentType": "section",
+      "label": "7",
+      "heading": "Repealed",
+      "text": "Repealed\n\n7Repealed: 2005, c.13, s.3\nR.S., c.13, s.7; 1979, c.41, s.9; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "4be6216c9f21ef24fff18d0de831bc0ebf4630f3d7d620694306c5486ad97d27"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "componentType": "section",
+      "label": "8",
+      "heading": "Repealed",
+      "text": "Repealed\n\n8Repealed: 2005, c.13, s.3\nR.S., c.13, s.8; 1993, c.36, s.1; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "d820f0982d37effd35f5802a9c45debe5e4da81aae0b1fad03a7bb0f81d2b78c"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "componentType": "section",
+      "label": "9",
+      "heading": "Repealed",
+      "text": "Repealed\n\n9Repealed: 1993, c.36, s.1\nR.S., c.13, s.9; 1967, c.38, s.2; 1981, c.6, s.1; 1993, c.36, s.1",
+      "subsections": [],
+      "contentHash": "8ba3d417504a5c214e24a07e200e62694d89ca7bde6c83298df795cb4b8ab5d4"
+    },
+    {
+      "id": "section-10",
+      "sourceKey": "section:10",
+      "componentType": "section",
+      "label": "10",
+      "heading": "Repealed",
+      "text": "Repealed\n\n10Repealed: 2005, c.13, s.3\nR.S., c.13, s.10; 1979, c.41, s.9; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "20916557348bfabb625c01f84d8e774e0370a76de7663437fa68e3f97b88c6b4"
+    },
+    {
+      "id": "section-11",
+      "sourceKey": "section:11",
+      "componentType": "section",
+      "label": "11",
+      "heading": "Repealed",
+      "text": "Repealed\n\n11Repealed: 2005, c.13, s.3\nR.S., c.13, s.11; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "d00479c0f809f69f4e5d53afb1131159729452b11f7e51f5285962f6af43dc90"
+    },
+    {
+      "id": "section-12",
+      "sourceKey": "section:12",
+      "componentType": "section",
+      "label": "12",
+      "heading": "Repealed",
+      "text": "Repealed\n\n12Repealed: 2005, c.13, s.3\nR.S., c.13, s.12; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "2d681d1481a1a7e9610ace1ee11d3106b2911bad002232c2b8254e71be007f01"
+    },
+    {
+      "id": "section-13",
+      "sourceKey": "section:13",
+      "componentType": "section",
+      "label": "13",
+      "heading": "Repealed",
+      "text": "Repealed\n\n13Repealed: 2005, c.13, s.3\nR.S., c.13, s.13; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "68271b98b306aa62085e2da2f6bbab1e8f80afc4b5e39292a3c9313a214d58d2"
+    },
+    {
+      "id": "section-14",
+      "sourceKey": "section:14",
+      "componentType": "section",
+      "label": "14",
+      "heading": "Repealed",
+      "text": "Repealed\n\n14Repealed: 2005, c.13, s.3\nR.S., c.13, s.14; 1979, c.41, s.9; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "50fdfab1547d2bd877aded2d7231eac58e74ea9837ef6f3553ec2ed5fb64f4e0"
+    },
+    {
+      "id": "section-15",
+      "sourceKey": "section:15",
+      "componentType": "section",
+      "label": "15",
+      "heading": "Repealed",
+      "text": "Repealed\n\n15Repealed: 2005, c.13, s.3\nR.S., c.13, s.15; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "6fb768a3ac04572fdf5d90aab5473e85343c2b20be39b8f741b13216447b839c"
+    },
+    {
+      "id": "section-16",
+      "sourceKey": "section:16",
+      "componentType": "section",
+      "label": "16",
+      "heading": "Repealed",
+      "text": "Repealed\n\n16Repealed: 2005, c.13, s.3\nR.S., c.13, s.16; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "023c6ec15ebe25047b18a5313586431223f5301ab4f54d9baf618f7323e96ebf"
+    },
+    {
+      "id": "section-17",
+      "sourceKey": "section:17",
+      "componentType": "section",
+      "label": "17",
+      "heading": "Repealed",
+      "text": "Repealed\n\n17Repealed: 2005, c.13, s.3\nR.S., c.13, s.17; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "3fe964b7e4301f1c2025e7dfba159c3673e74fdf6f1add82eee009ff0944706f"
+    },
+    {
+      "id": "section-18",
+      "sourceKey": "section:18",
+      "componentType": "section",
+      "label": "18",
+      "heading": "Repealed",
+      "text": "Repealed\n\n18Repealed: 2005, c.13, s.3\nR.S., c.13, s.18; 1979, c.41, s.9; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "5ac9756bd648ebfc861d18c6e136c307c5045fd788106cba133f6dccbf20c3fe"
+    },
+    {
+      "id": "section-19",
+      "sourceKey": "section:19",
+      "componentType": "section",
+      "label": "19",
+      "heading": "Repealed",
+      "text": "Repealed\n\n19Repealed: 2005, c.13, s.3\nR.S., c.13, s.19; 1979, c.41, s.9; 1994, c.10, s.1; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "3ba2f398675d7a247d19c1cb9ec5ce924c6bb9a5c5da1ece90a683607ef33508"
+    },
+    {
+      "id": "section-20",
+      "sourceKey": "section:20",
+      "componentType": "section",
+      "label": "20",
+      "heading": "Repealed",
+      "text": "Repealed\n\n20Repealed: 2005, c.13, s.3\nR.S., c.13, s.20; 1979, c.41, s.9; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "eb570f921eb0538651c008237da7f60b8a911eacd5f381aa5d24d13ec83fe319"
+    },
+    {
+      "id": "section-21",
+      "sourceKey": "section:21",
+      "componentType": "section",
+      "label": "21",
+      "heading": "Repealed",
+      "text": "Repealed\n\n21Repealed: 2005, c.13, s.3\nR.S., c.13, s.21; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "0022cbef785f4f623067fe26fcfdb0be76f9ccd0427b2a0dd2947c6c42186e82"
+    },
+    {
+      "id": "section-22",
+      "sourceKey": "section:22",
+      "componentType": "section",
+      "label": "22",
+      "heading": "Repealed",
+      "text": "Repealed\n\n22Repealed: 2005, c.13, s.3\nR.S., c.13, s.22; 1979, c.41, s.9; 1983, c.7, s.2; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "603d3b8201ccc1a3805a002b644e49029cee113ef9ed99d9c0ada47af94ba478"
+    },
+    {
+      "id": "section-23",
+      "sourceKey": "section:23",
+      "componentType": "section",
+      "label": "23",
+      "heading": "Repealed",
+      "text": "Repealed\n\n23Repealed: 2005, c.13, s.3\nR.S., c.13, s.23; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "092c09e5fa1332faf602ad38386984e5aceb25b0bb24334709c50a1cef4bb627"
+    },
+    {
+      "id": "section-24",
+      "sourceKey": "section:24",
+      "componentType": "section",
+      "label": "24",
+      "heading": "Repealed",
+      "text": "Repealed\n\n24Repealed: 2005, c.13, s.3\nR.S., c.13, s.24; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "68c1aa0e9d0d90ae6129a4a7998d2506de4cd79df25265f56a7ce7c299eefb96"
+    },
+    {
+      "id": "section-25",
+      "sourceKey": "section:25",
+      "componentType": "section",
+      "label": "25",
+      "heading": "Repealed",
+      "text": "Repealed\n\n25Repealed: 2005, c.13, s.3\nR.S., c.13, s.25; 1973, c.74, s.4; 1979, c.41, s.9; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "916410771c8e4ca0598009438bd124a984f0b3d73f4fa448c11ed01f27e01167"
+    },
+    {
+      "id": "section-26",
+      "sourceKey": "section:26",
+      "componentType": "section",
+      "label": "26",
+      "heading": "Repealed",
+      "text": "Repealed\n\n26Repealed: 2005, c.13, s.3\nR.S., c.13, s.26; 1986, c.4, s.4; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "1edc169ebdcec61f84cc037bf8808b7c6d6bb4b8740b6251874b0de710662dbd"
+    },
+    {
+      "id": "section-27",
+      "sourceKey": "section:27",
+      "componentType": "section",
+      "label": "27",
+      "heading": "Repealed",
+      "text": "Repealed\n\n27Repealed: 2005, c.13, s.3\nR.S., c.13, s.27; 1977, c.M-11.1, s.2; 1986, c.4, s.4; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "e3eb70ddb58fc35956d8c2a4c893e8e1c17b29e946d18dd0051dfcee482738ff"
+    },
+    {
+      "id": "section-28",
+      "sourceKey": "section:28",
+      "componentType": "section",
+      "label": "28",
+      "heading": "Repealed",
+      "text": "Repealed\n\n28Repealed: 2005, c.13, s.3\nR.S., c.13, s.28; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "309a8c3c7fb4fcbaa55469b327e6f9b1e10d3a439e9fb1ce5a87f1333a280741"
+    },
+    {
+      "id": "section-29",
+      "sourceKey": "section:29",
+      "componentType": "section",
+      "label": "29",
+      "heading": "Repealed",
+      "text": "Repealed\n\n29Repealed: 2005, c.13, s.3\nR.S., c.13, s.29; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "274cbaceb6e77466511365b5be886e96486c5fa4fbc6d6b50ae576f0d2e76477"
+    },
+    {
+      "id": "section-30",
+      "sourceKey": "section:30",
+      "componentType": "section",
+      "label": "30",
+      "heading": "Repealed",
+      "text": "Repealed\n\n30Repealed: 2005, c.13, s.3\nR.S., c.13, s.30; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "d0dc420dc42e4e74626bab01dd0899872a28a2d703e23a3127263a9f5bd2b0c3"
+    },
+    {
+      "id": "section-31",
+      "sourceKey": "section:31",
+      "componentType": "section",
+      "label": "31",
+      "heading": "Repealed",
+      "text": "Repealed\n\n31Repealed: 2005, c.13, s.3\nR.S., c.13, s.31; 1979, c.41, s.9; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "6cda561d71aecbc8753b4b93ccf461a8004bfa348d713ad5c0c16b336e25305f"
+    },
+    {
+      "id": "section-32",
+      "sourceKey": "section:32",
+      "componentType": "section",
+      "label": "32",
+      "heading": "Repealed",
+      "text": "Repealed\n\n32Repealed: 2005, c.13, s.3\nR.S., c.13, s.32; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "64f1a8d8c481b34afdbe8684d54f24696e039e6269d45e8442c5a7fd160bacf2"
+    },
+    {
+      "id": "section-33",
+      "sourceKey": "section:33",
+      "componentType": "section",
+      "label": "33",
+      "heading": "Repealed",
+      "text": "Repealed\n\n33Repealed: 2005, c.13, s.3\nR.S., c.13, s.33; 1979, c.41, s.9; 1984, c.27, s.3; 2005, c.13, s.3",
+      "subsections": [],
+      "contentHash": "81b07d248660b60fdceff1dfe202dfb31d4a8cf96e780557b765bc2a7c0de525"
+    },
+    {
+      "id": "section-34",
+      "sourceKey": "section:34",
+      "componentType": "section",
+      "label": "34",
+      "heading": "Effect of Bankruptcy Act",
+      "text": "Effect of Bankruptcy Act\n\n34The provisions of this Act apply only in so far as they are not inconsistent with the Bankruptcy Act, chapter B-3 of the Revised Statutes of Canada, 1970.\nR.S., c.13, s.34\n\nN.B. This Act is consolidated to September 1, 2011.",
+      "subsections": [],
+      "contentHash": "f6321d2c4cf666b743f95e7ffd391fd5c4fe7bb94c107038ce7b74ea0148f890"
+    }
+  ],
+  "notes": []
+}

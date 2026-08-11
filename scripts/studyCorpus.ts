@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { PDFParse } from 'pdf-parse';
 import { buildNbLawContentPackage, validateNbLawContentPackage } from '../src/study/content/nbLawContentPackage';
 import { normalizeNbLawDocument, renderNbLawNormalizedMarkdown } from '../src/study/content/nbLawNormalize';
 import type { NbLawNormalizedDocument, NbLawRawFetchMetadata } from '../src/study/content/nbLawTypes';
@@ -51,9 +52,13 @@ const writeJson = async (filePath: string, value: unknown): Promise<void> => {
 };
 
 const sha256 = (text: string): string => createHash('sha256').update(text, 'utf8').digest('hex');
+const sha256Buffer = (data: Uint8Array): string => createHash('sha256').update(data).digest('hex');
 
 const canonicalizeLawsGnbHtmlForHash = (html: string): string =>
   html.replace(/Pd\d+e\d+/g, 'Pd{volatile-anchor}');
+
+const rawExtensionFor = (document: SitCorpusManifest['documents'][number]): 'html' | 'pdf' =>
+  document.sourceType === 'official-pdf' ? 'pdf' : 'html';
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -65,8 +70,8 @@ const renderInventoryMarkdown = (report: ReturnType<typeof buildSitCorpusInvento
     '',
     `Manifest hash: ${report.manifestHash}`,
     '',
-    `Expected Act count: ${report.expectedActCount}`,
-    `Actual required Act count: ${report.actualRequiredActCount}`,
+    `Expected SIT manual entries: ${report.expectedActCount}`,
+    `Actual SIT manual entries: ${report.actualRequiredActCount}`,
     `Required regulations: ${report.requiredRegulationCount}`,
     `Candidate regulations: ${report.candidateRegulationCount}`,
     `Missing source URLs: ${report.missingSourceUrls.length}`,
@@ -102,11 +107,48 @@ const runInventory = async ({ failOnError }: { failOnError: boolean }): Promise<
   }
   await writeJson(path.join(REPORT_DIR, 'nb-sit-corpus-inventory.json'), report);
   await writeFile(path.join(REPORT_DIR, 'nb-sit-corpus-inventory.md'), renderInventoryMarkdown(report), 'utf8');
-  console.log(`Required Acts: ${report.actualRequiredActCount} / ${report.expectedActCount}`);
+  await writeLegacySourcesReport(manifest);
+  console.log(`SIT manual entries: ${report.actualRequiredActCount} / ${report.expectedActCount}`);
+  console.log(`Unique source documents: ${manifest.documents.filter((document) => document.examScope === 'required').length}`);
   console.log(`Required Regulations: ${report.requiredRegulationCount}`);
   console.log(`Missing source URLs: ${report.missingSourceUrls.length}`);
   console.log(`Inventory errors: ${report.findings.filter((finding) => finding.severity === 'ERROR').length}`);
   if (failOnError) assertSitCorpusInventoryCanFetchRequired(report);
+};
+
+const writeLegacySourcesReport = async (manifest: SitCorpusManifest): Promise<void> => {
+  const documentsById = new Map(manifest.documents.map((document) => [document.id, document]));
+  const mappings = manifest.manualScopeMappings ?? [];
+  const legacyMappings = mappings.filter((mapping) => mapping.sourceStatus !== 'current');
+  const lines = [
+    '# NB SIT Legacy And Professional Sources',
+    '',
+    `SIT manual entries: ${mappings.length}`,
+    `Unique current legal source documents: ${manifest.documents.filter((document) => document.examScope === 'required').length}`,
+    `Legacy aliases: ${legacyMappings.filter((mapping) => mapping.sourceStatus === 'legacy-replaced').length}`,
+    `Professional/private Acts: ${legacyMappings.filter((mapping) => mapping.sourceStatus === 'private-or-professional-act').length}`,
+    '',
+  ];
+  for (const mapping of legacyMappings) {
+    const target = mapping.currentDocumentId ? documentsById.get(mapping.currentDocumentId) : undefined;
+    const duplicateTargetCount = mappings.filter((candidate) => candidate.currentDocumentId === mapping.currentDocumentId).length;
+    lines.push(
+      `## ${mapping.manualTitle}`,
+      '',
+      `Manual entry ID: ${mapping.manualEntryId}`,
+      `Historical citation: ${mapping.historicalCitation ?? ''}`,
+      `Source status: ${mapping.sourceStatus}`,
+      `Current/professional source: ${target ? `${target.id} - ${target.title}` : mapping.currentDocumentId ?? ''}`,
+      `Successor separately listed in manual: ${duplicateTargetCount > 1 ? 'yes' : 'no'}`,
+      `Temporarily study successor: ${mapping.temporarilyStudySuccessor ? 'yes' : 'no'}`,
+      `Duplicate successor content: ${mapping.duplicateSuccessorContent ? 'yes' : 'no'}`,
+      `Registrar confirmation required: ${mapping.registrarConfirmationRequired ? 'yes' : 'no'}`,
+      `Historical/professional text available: ${mapping.historicalTextAvailable ? 'yes' : 'no'}`,
+      mapping.notes ? `Notes: ${mapping.notes}` : '',
+      '',
+    );
+  }
+  await writeFile(path.join(REPORT_DIR, 'nb-sit-legacy-sources.md'), lines.join('\n'), 'utf8');
 };
 
 const fetchWithRetry = async (url: string): Promise<{ response: Response; attempts: number }> => {
@@ -146,7 +188,7 @@ const fetchDocument = async (
   const existing = await readExistingRawMetadata(document.id);
   if (!force && existing?.sourceUrl === document.sourceUrl) {
     try {
-      await stat(path.join(RAW_DIR, `${document.id}.html`));
+      await stat(path.join(RAW_DIR, `${document.id}.${rawExtensionFor(document)}`));
       return {
         documentId: document.id,
         sourceUrl: document.sourceUrl,
@@ -162,12 +204,16 @@ const fetchDocument = async (
   }
   try {
     const { response, attempts } = await fetchWithRetry(document.sourceUrl);
-    const html = await response.text();
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    if (/The document does not exist in the database\./i.test(html)) {
+    const rawBytes = new Uint8Array(await response.arrayBuffer());
+    const rawText = document.sourceType === 'official-pdf' ? undefined : new TextDecoder().decode(rawBytes);
+    if (rawText && /The document does not exist in the database\./i.test(rawText)) {
       throw new Error(`laws.gnb.ca returned a missing-document page for ${document.sourceUrl}`);
     }
-    const sourceHash = sha256(canonicalizeLawsGnbHtmlForHash(html));
+    const sourceHash =
+      document.sourceType === 'official-pdf'
+        ? sha256Buffer(rawBytes)
+        : sha256(canonicalizeLawsGnbHtmlForHash(rawText ?? ''));
     const metadata: NbLawRawFetchMetadata = {
       documentId: document.id,
       sourceUrl: document.sourceUrl,
@@ -176,7 +222,11 @@ const fetchDocument = async (
       contentHash: sourceHash,
     };
     await mkdir(RAW_DIR, { recursive: true });
-    await writeFile(path.join(RAW_DIR, `${document.id}.html`), html, 'utf8');
+    await writeFile(
+      path.join(RAW_DIR, `${document.id}.${rawExtensionFor(document)}`),
+      document.sourceType === 'official-pdf' ? rawBytes : rawText ?? '',
+      document.sourceType === 'official-pdf' ? undefined : 'utf8',
+    );
     await writeJson(path.join(RAW_DIR, `${document.id}.metadata.json`), metadata);
     return {
       documentId: document.id,
@@ -230,15 +280,17 @@ const runNormalize = async (): Promise<void> => {
   let failed = 0;
   for (const document of getFetchableRequiredSitDocuments(manifest)) {
     try {
-      const html = await readFile(path.join(RAW_DIR, `${document.id}.html`), 'utf8');
       const metadata = await readJson<NbLawRawFetchMetadata>(path.join(RAW_DIR, `${document.id}.metadata.json`));
-      const normalized = normalizeNbLawDocument({
-        entry: toNbLawManifestEntry(document),
-        html,
-        sourceUrl: metadata.sourceUrl || document.sourceUrl,
-        fetchDate: metadata.fetchedAt,
-        contentHash: metadata.contentHash,
-      });
+      const normalized =
+        document.sourceType === 'official-pdf'
+          ? await normalizeOfficialPdfDocument(document, metadata)
+          : normalizeNbLawDocument({
+              entry: toNbLawManifestEntry(document),
+              html: await readFile(path.join(RAW_DIR, `${document.id}.html`), 'utf8'),
+              sourceUrl: metadata.sourceUrl || document.sourceUrl,
+              fetchDate: metadata.fetchedAt,
+              contentHash: metadata.contentHash,
+            });
       await writeJson(path.join(NORMALIZED_DIR, `${document.id}.json`), normalized);
       await writeFile(path.join(NORMALIZED_DIR, `${document.id}.md`), renderNbLawNormalizedMarkdown(normalized), 'utf8');
       console.log(`normalized: ${document.id} (${normalized.components.length} components)`);
@@ -250,12 +302,123 @@ const runNormalize = async (): Promise<void> => {
   if (failed > 0) process.exitCode = 1;
 };
 
-const readNormalizedDocuments = async (manifest: SitCorpusManifest): Promise<NbLawNormalizedDocument[]> =>
-  Promise.all(
-    getFetchableRequiredSitDocuments(manifest).map((document) =>
-      readJson<NbLawNormalizedDocument>(path.join(NORMALIZED_DIR, `${document.id}.json`)),
-    ),
+const normalizePdfWhitespace = (value: string): string =>
+  value
+    .replace(/\r\n?/g, '\n')
+    .replace(/[ \t\f\v]+/g, ' ')
+    .replace(/ *\n */g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
+const looksBilingualInterleaved = (text: string): boolean =>
+  /L[’']Association|RÈGLEMENTS|TABLE DES MATIÈRE|arpenteurs|géomètres|présente loi|Sa Majesté|Nouveau-Brunswick/i.test(
+    text,
   );
+
+const extractPdfText = async (document: SitCorpusManifest['documents'][number]): Promise<string> => {
+  const bytes = new Uint8Array(await readFile(path.join(RAW_DIR, `${document.id}.pdf`)));
+  const parser = new PDFParse({ data: bytes });
+  try {
+    const selector = document.pdfSelector;
+    const params =
+      selector?.startPage && selector?.endPage
+        ? { first: selector.startPage, last: selector.endPage, pageJoiner: '\n' }
+        : { pageJoiner: '\n' };
+    const result = await parser.getText(params);
+    return normalizePdfWhitespace(result.text);
+  } finally {
+    await parser.destroy();
+  }
+};
+
+const normalizePdfSections = (text: string): NbLawNormalizedDocument['sections'] => {
+  const starts = [...text.matchAll(/(?:^|\n)([0-9]+(?:\.[0-9]+)?)\s+([^\n]+)/g)]
+    .filter((match) => match.index !== undefined)
+    .map((match) => ({
+      index: match.index ?? 0,
+      label: match[1],
+      heading: match[2].length <= 80 ? match[2].trim() : undefined,
+    }));
+  return starts.map((start, index) => {
+    const end = starts[index + 1]?.index ?? text.length;
+    const sectionText = normalizePdfWhitespace(text.slice(start.index, end));
+    const sourceKey = `section:${start.label}`;
+    const subsections = [...sectionText.matchAll(/\(([0-9]+(?:\.[0-9]+)?)\)/g)].map((match) => ({
+      id: `${start.label}-subsection-${match[1]}`,
+      sourceKey: `${sourceKey}/subsection:${match[1]}`,
+      label: `${start.label}(${match[1]})`,
+      text: sectionText,
+      contentHash: sha256(sectionText),
+    }));
+    return {
+      id: `section-${start.label.replace(/[^0-9a-z.]+/gi, '-')}`,
+      sourceKey,
+      componentType: 'section' as const,
+      label: start.label,
+      heading: start.heading,
+      text: sectionText,
+      subsections,
+      contentHash: sha256(sectionText),
+    };
+  });
+};
+
+const normalizeOfficialPdfDocument = async (
+  document: SitCorpusManifest['documents'][number],
+  metadata: NbLawRawFetchMetadata,
+): Promise<NbLawNormalizedDocument> => {
+  const text = await extractPdfText(document);
+  if (!text) {
+    throw new Error(`${document.id} PDF contains no embedded text; OCR is not allowed in Phase 4A.`);
+  }
+  if (document.pdfSelector?.language === 'en' && looksBilingualInterleaved(text)) {
+    throw new Error(
+      `${document.id} PDF text is bilingual/interleaved; add a reliable document-specific English-only pdfSelector before normalization.`,
+    );
+  }
+  const sections = normalizePdfSections(text);
+  if (sections.length === 0) {
+    throw new Error(`${document.id} PDF text did not yield section components.`);
+  }
+  return {
+    schemaVersion: 1,
+    id: document.id,
+    officialTitle: document.title,
+    officialCitation: document.citation,
+    officialCitationDisplay: document.citation,
+    officialCitationNormalized: document.citation,
+    documentType: document.type,
+    parentActId: document.parentActId,
+    enablingActs: document.parentActId ? [{ title: document.expectedEnablingAct ?? document.parentActId }] : undefined,
+    sourceUrl: metadata.sourceUrl || document.sourceUrl,
+    fetchDate: metadata.fetchedAt,
+    contentHash: metadata.contentHash,
+    tableOfContents: sections.map((section) => ({
+      id: section.id,
+      sourceKey: section.sourceKey,
+      label: section.label,
+      heading: section.heading,
+    })),
+    components: sections,
+    sections,
+    notes: [`Normalized from official PDF source: ${document.sourceAuthority ?? 'unknown authority'}.`],
+  };
+};
+
+const readNormalizedDocuments = async (
+  manifest: SitCorpusManifest,
+): Promise<{ documents: NbLawNormalizedDocument[]; missing: string[] }> => {
+  const documents: NbLawNormalizedDocument[] = [];
+  const missing: string[] = [];
+  for (const document of getFetchableRequiredSitDocuments(manifest)) {
+    try {
+      documents.push(await readJson<NbLawNormalizedDocument>(path.join(NORMALIZED_DIR, `${document.id}.json`)));
+    } catch {
+      missing.push(document.id);
+    }
+  }
+  return { documents, missing };
+};
 
 const componentHashMap = (documents: NbLawNormalizedDocument[]): Map<string, { document: NbLawNormalizedDocument; hash: string }> =>
   new Map(
@@ -335,7 +498,13 @@ const runBuild = async (): Promise<void> => {
   const manifest = await loadManifest();
   const inventory = buildSitCorpusInventoryReport(manifest);
   assertSitCorpusInventoryCanFetchRequired(inventory);
-  const documents = await readNormalizedDocuments(manifest);
+  const { documents, missing } = await readNormalizedDocuments(manifest);
+  if (missing.length > 0) {
+    await writeMissingNormalizedReport(manifest, missing);
+    console.error(`Missing normalized required documents: ${missing.join(', ')}`);
+    process.exitCode = 1;
+    return;
+  }
   const createdAt = new Date().toISOString();
   const contentPackage = buildNbLawContentPackage({
     id: `${NB_SIT_CORPUS_ID}-${createdAt.slice(0, 10)}`,
@@ -411,6 +580,38 @@ const writeIntegrityReports = async (
         `Warnings: ${document.warnings.length}`,
         '',
       ]) ?? []),
+    ].join('\n'),
+    'utf8',
+  );
+};
+
+const writeMissingNormalizedReport = async (manifest: SitCorpusManifest, missing: string[]): Promise<void> => {
+  const report = {
+    createdAt: new Date().toISOString(),
+    documents: [],
+    errors: missing.map((documentId) => `${documentId}: Required document was not normalized.`),
+    warnings: [],
+  };
+  await writeJson(path.join(REPORT_DIR, 'nb-sit-integrity-report.json'), report);
+  await writeFile(
+    path.join(REPORT_DIR, 'nb-sit-integrity-report.md'),
+    [
+      `# ${manifest.title} Integrity Report`,
+      '',
+      `Errors: ${missing.length}`,
+      '',
+      ...missing.map((documentId) => `- ERROR ${documentId}: Required document was not normalized.`),
+      '',
+    ].join('\n'),
+    'utf8',
+  );
+  await writeFile(
+    path.join(REPORT_DIR, 'nb-sit-source-review-queue.md'),
+    [
+      '# NB SIT Source Review Queue',
+      '',
+      ...missing.map((documentId) => `- ERROR ${documentId}: Required document was not normalized.`),
+      '',
     ].join('\n'),
     'utf8',
   );
@@ -596,7 +797,13 @@ const runValidate = async (): Promise<void> => {
     process.exitCode = 1;
     return;
   }
-  const documents = await readNormalizedDocuments(manifest);
+  const { documents, missing } = await readNormalizedDocuments(manifest);
+  if (missing.length > 0) {
+    await writeMissingNormalizedReport(manifest, missing);
+    console.error(`Missing normalized required documents: ${missing.join(', ')}`);
+    process.exitCode = 1;
+    return;
+  }
   const pack = buildNbLawContentPackage({
     id: `${NB_SIT_CORPUS_ID}-validation`,
     manifestId: manifest.corpusId,

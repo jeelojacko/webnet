@@ -1,0 +1,284 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-escheats-and-forfeitures-act",
+  "officialTitle": "Escheats and Forfeitures Act",
+  "officialCitation": "2014, c.107",
+  "officialCitationDisplay": "2014, c.107",
+  "officialCitationNormalized": "2014, c.107",
+  "documentType": "act",
+  "sourceUrl": "https://laws.gnb.ca/en/document/cs/2014,%20c.107",
+  "fetchDate": "2026-08-11T18:08:43.675Z",
+  "consolidatedTo": "December 20, 2019",
+  "contentHash": "91eb05f9c72aa625da7b3d7897fac9ef6f56bc8de124e93374c1ca06eb816a04",
+  "tableOfContents": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "label": "1",
+      "heading": "Possession of lands"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "label": "2",
+      "heading": "Grant of lands"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "label": "3",
+      "heading": "Relief from forfeiture"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "label": "4",
+      "heading": "Assignment of personal property"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "label": "5",
+      "heading": "Sale of personal property"
+    }
+  ],
+  "components": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
+      "label": "1",
+      "heading": "Possession of lands",
+      "text": "Possession of lands\n\n1(1)When any lands, tenements or hereditaments situated in this Province have become liable to be escheated to the Crown by reason of the person last seised of them or entitled to them having died intestate and without lawful heirs, or by reason of them having become forfeited for any cause, the Attorney General may cause possession of them to be taken in the name of the Crown, or in case possession is withheld the Attorney General may cause an action to be brought for the recovery of them, without any inquisition being first necessary.\n\n1(2)The proceedings in such an action may be in all respects similar to those in other actions for the recovery of land.\n\nR.S.1973, c.E-10, s.1, s.2; 1981, c.6, s.1",
+      "subsections": [
+        {
+          "id": "1-subsection-1",
+          "sourceKey": "section:1/subsection:1",
+          "label": "1(1)",
+          "text": "1(1)When any lands, tenements or hereditaments situated in this Province have become liable to be escheated to the Crown by reason of the person last seised of them or entitled to them having died intestate and without lawful heirs, or by reason of them having become forfeited for any cause, the Attorney General may cause possession of them to be taken in the name of the Crown, or in case possession is withheld the Attorney General may cause an action to be brought for the recovery of them, without any inquisition being first necessary.",
+          "contentHash": "ea00d16536137b23d6797a0a832e55e2b9919595519e962976cf70c247fce7e9"
+        },
+        {
+          "id": "1-subsection-2",
+          "sourceKey": "section:1/subsection:2",
+          "label": "1(2)",
+          "text": "1(2)The proceedings in such an action may be in all respects similar to those in other actions for the recovery of land.\n\nR.S.1973, c.E-10, s.1, s.2; 1981, c.6, s.1",
+          "contentHash": "14986f2242565b255b80878b81424097183917ef2389a915aa52585387e44bcf"
+        }
+      ],
+      "contentHash": "d3af81fd4920ee80e80f05f2ed934585debacadbcfd5acfda8345bce0d698623"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "label": "2",
+      "heading": "Grant of lands",
+      "text": "Grant of lands\n\n2(1)The Lieutenant-Governor in Council may make any grant of lands, tenements or hereditaments that have so escheated or become forfeited, or to which the Crown may hereafter become entitled by reason of any such escheat or forfeiture as mentioned in this Act, or of any portion of them, or of any interest in them, to any person for the purpose of transferring or restoring them to any person or persons having a moral claim to the property, or on the person to whom it had belonged, or of carrying into effect any disposition of it that the person may have contemplated, or of rewarding any person making discovery of the escheat or forfeiture, as to the Lieutenant-Governor in Council seems proper.\n\n2(2)Any such grant may be made without actual entry or inquisition being first necessary, and although the lands, tenements or hereditaments are not in the actual possession of the Crown, and even if some person may claim title to them adversely to the person whose estates they had been.\n\n2(3)If possession of the lands, tenements and hereditaments is withheld, the person to whom the grant is made is entitled to institute proceedings for the recovery of them.\n\nR.S.1973, c.E-10, s.3, s.4",
+      "subsections": [
+        {
+          "id": "2-subsection-1",
+          "sourceKey": "section:2/subsection:1",
+          "label": "2(1)",
+          "text": "2(1)The Lieutenant-Governor in Council may make any grant of lands, tenements or hereditaments that have so escheated or become forfeited, or to which the Crown may hereafter become entitled by reason of any such escheat or forfeiture as mentioned in this Act, or of any portion of them, or of any interest in them, to any person for the purpose of transferring or restoring them to any person or persons having a moral claim to the property, or on the person to whom it had belonged, or of carrying into effect any disposition of it that the person may have contemplated, or of rewarding any person making discovery of the escheat or forfeiture, as to the Lieutenant-Governor in Council seems proper.",
+          "contentHash": "7d13de0d14f70a1251f478a0eddb86f43d2b173c7a29b8ad188ebc5fe2a41cac"
+        },
+        {
+          "id": "2-subsection-2",
+          "sourceKey": "section:2/subsection:2",
+          "label": "2(2)",
+          "text": "2(2)Any such grant may be made without actual entry or inquisition being first necessary, and although the lands, tenements or hereditaments are not in the actual possession of the Crown, and even if some person may claim title to them adversely to the person whose estates they had been.",
+          "contentHash": "9003ffe75d15f0f58f7555109e94ea6532acc4565a2175d646e6726ef50929fa"
+        },
+        {
+          "id": "2-subsection-3",
+          "sourceKey": "section:2/subsection:3",
+          "label": "2(3)",
+          "text": "2(3)If possession of the lands, tenements and hereditaments is withheld, the person to whom the grant is made is entitled to institute proceedings for the recovery of them.\n\nR.S.1973, c.E-10, s.3, s.4",
+          "contentHash": "08fae24d0ed19c6829b10b531d77ef3031913ca126dfeb49bf144c694da5c170"
+        }
+      ],
+      "contentHash": "d3bc31e2bf54b7528467fd45823efc2cbcfa4be5ddffe60b4c41d32d9fe2cc2f"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
+      "label": "3",
+      "heading": "Relief from forfeiture",
+      "text": "Relief from forfeiture\n\n3(1)When a forfeiture takes place of any lands, tenements or hereditaments, or of any interest in them as mentioned above, the Lieutenant-Governor in Council may waive or release any right that the Crown has become entitled to, so as by the waiver or release to vest the property either absolutely or otherwise in the persons who would have been entitled to it but for the forfeiture.\n\n3(2)A waiver or release may be either for valuable consideration or otherwise, and may be on such terms and conditions as to the Lieutenant-Governor in Council seem fit.\n\nR.S.1973, c.E-10, s.5",
+      "subsections": [
+        {
+          "id": "3-subsection-1",
+          "sourceKey": "section:3/subsection:1",
+          "label": "3(1)",
+          "text": "3(1)When a forfeiture takes place of any lands, tenements or hereditaments, or of any interest in them as mentioned above, the Lieutenant-Governor in Council may waive or release any right that the Crown has become entitled to, so as by the waiver or release to vest the property either absolutely or otherwise in the persons who would have been entitled to it but for the forfeiture.",
+          "contentHash": "c9dd116caf5131279fc5eb48c028ffc527ec3727f3ef766b4adca9a5b4659539"
+        },
+        {
+          "id": "3-subsection-2",
+          "sourceKey": "section:3/subsection:2",
+          "label": "3(2)",
+          "text": "3(2)A waiver or release may be either for valuable consideration or otherwise, and may be on such terms and conditions as to the Lieutenant-Governor in Council seem fit.\n\nR.S.1973, c.E-10, s.5",
+          "contentHash": "d08afba584f546fbc9878eb74b14f6a6516a955e97c4dd73eea7d32dbf7e25e5"
+        }
+      ],
+      "contentHash": "0b76fc7c5ab522f610a14110d4ff574c31d2bb3c628f8252a8d24bb6304d23f3"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
+      "label": "4",
+      "heading": "Assignment of personal property",
+      "text": "Assignment of personal property\n\n4The Lieutenant-Governor in Council may make any assignment of personal property to which the Crown is entitled by reason of the person last entitled to it having died intestate or without leaving any kin or other persons entitled to succeed to it, or by reason of the personal property having become forfeited or liable to be forfeited to the Crown for any cause, or may make an assignment of any portion of such personal property for the purpose of transferring or restoring it to any person having a moral claim to it, or on the person to whom it had belonged, or for carrying into effect any disposition of it that the person may have contemplated, or of rewarding any person making discovery of the escheat or forfeiture, as to the Lieutenant-Governor in Council seems proper.\nR.S.1973, c.E-10, s.6",
+      "subsections": [],
+      "contentHash": "134e809776042d6251e173a78471c7c89cba9bbed9fe4dbe78e313601afd076d"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "componentType": "section",
+      "label": "5",
+      "heading": "Sale of personal property",
+      "text": "Sale of personal property\n\n5(1)When by any law in force in the Province personal property is forfeited to the Crown, the Minister of Finance and Treasury Board may sell the property, either by public auction or private sale.\n\n5(2)The proceeds of any such sale shall become part of the Consolidated Fund.\n\nR.S.1973, c.E-10, s.7; 2019, c.29, s.53\n\nN.B. This Act was proclaimed and came into force February 9, 2015.\n\nN.B. This Act is consolidated to December 20, 2019.",
+      "subsections": [
+        {
+          "id": "5-subsection-1",
+          "sourceKey": "section:5/subsection:1",
+          "label": "5(1)",
+          "text": "5(1)When by any law in force in the Province personal property is forfeited to the Crown, the Minister of Finance and Treasury Board may sell the property, either by public auction or private sale.",
+          "contentHash": "c34001ee184eb642ade0ff27e9e6c8499eb6876886971e99227a70b163f3e10c"
+        },
+        {
+          "id": "5-subsection-2",
+          "sourceKey": "section:5/subsection:2",
+          "label": "5(2)",
+          "text": "5(2)The proceeds of any such sale shall become part of the Consolidated Fund.\n\nR.S.1973, c.E-10, s.7; 2019, c.29, s.53\n\nN.B. This Act was proclaimed and came into force February 9, 2015.\n\nN.B. This Act is consolidated to December 20, 2019.",
+          "contentHash": "830718f24af93316a5d00ad65b84d1f31b17b2610e20f419c7724d4452ec9d2b"
+        }
+      ],
+      "contentHash": "b3c93772c2fa3a8a7b290df2823b64cf44b8f45e34cbf45746971d8d49c0443e"
+    }
+  ],
+  "sections": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
+      "label": "1",
+      "heading": "Possession of lands",
+      "text": "Possession of lands\n\n1(1)When any lands, tenements or hereditaments situated in this Province have become liable to be escheated to the Crown by reason of the person last seised of them or entitled to them having died intestate and without lawful heirs, or by reason of them having become forfeited for any cause, the Attorney General may cause possession of them to be taken in the name of the Crown, or in case possession is withheld the Attorney General may cause an action to be brought for the recovery of them, without any inquisition being first necessary.\n\n1(2)The proceedings in such an action may be in all respects similar to those in other actions for the recovery of land.\n\nR.S.1973, c.E-10, s.1, s.2; 1981, c.6, s.1",
+      "subsections": [
+        {
+          "id": "1-subsection-1",
+          "sourceKey": "section:1/subsection:1",
+          "label": "1(1)",
+          "text": "1(1)When any lands, tenements or hereditaments situated in this Province have become liable to be escheated to the Crown by reason of the person last seised of them or entitled to them having died intestate and without lawful heirs, or by reason of them having become forfeited for any cause, the Attorney General may cause possession of them to be taken in the name of the Crown, or in case possession is withheld the Attorney General may cause an action to be brought for the recovery of them, without any inquisition being first necessary.",
+          "contentHash": "ea00d16536137b23d6797a0a832e55e2b9919595519e962976cf70c247fce7e9"
+        },
+        {
+          "id": "1-subsection-2",
+          "sourceKey": "section:1/subsection:2",
+          "label": "1(2)",
+          "text": "1(2)The proceedings in such an action may be in all respects similar to those in other actions for the recovery of land.\n\nR.S.1973, c.E-10, s.1, s.2; 1981, c.6, s.1",
+          "contentHash": "14986f2242565b255b80878b81424097183917ef2389a915aa52585387e44bcf"
+        }
+      ],
+      "contentHash": "d3af81fd4920ee80e80f05f2ed934585debacadbcfd5acfda8345bce0d698623"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "label": "2",
+      "heading": "Grant of lands",
+      "text": "Grant of lands\n\n2(1)The Lieutenant-Governor in Council may make any grant of lands, tenements or hereditaments that have so escheated or become forfeited, or to which the Crown may hereafter become entitled by reason of any such escheat or forfeiture as mentioned in this Act, or of any portion of them, or of any interest in them, to any person for the purpose of transferring or restoring them to any person or persons having a moral claim to the property, or on the person to whom it had belonged, or of carrying into effect any disposition of it that the person may have contemplated, or of rewarding any person making discovery of the escheat or forfeiture, as to the Lieutenant-Governor in Council seems proper.\n\n2(2)Any such grant may be made without actual entry or inquisition being first necessary, and although the lands, tenements or hereditaments are not in the actual possession of the Crown, and even if some person may claim title to them adversely to the person whose estates they had been.\n\n2(3)If possession of the lands, tenements and hereditaments is withheld, the person to whom the grant is made is entitled to institute proceedings for the recovery of them.\n\nR.S.1973, c.E-10, s.3, s.4",
+      "subsections": [
+        {
+          "id": "2-subsection-1",
+          "sourceKey": "section:2/subsection:1",
+          "label": "2(1)",
+          "text": "2(1)The Lieutenant-Governor in Council may make any grant of lands, tenements or hereditaments that have so escheated or become forfeited, or to which the Crown may hereafter become entitled by reason of any such escheat or forfeiture as mentioned in this Act, or of any portion of them, or of any interest in them, to any person for the purpose of transferring or restoring them to any person or persons having a moral claim to the property, or on the person to whom it had belonged, or of carrying into effect any disposition of it that the person may have contemplated, or of rewarding any person making discovery of the escheat or forfeiture, as to the Lieutenant-Governor in Council seems proper.",
+          "contentHash": "7d13de0d14f70a1251f478a0eddb86f43d2b173c7a29b8ad188ebc5fe2a41cac"
+        },
+        {
+          "id": "2-subsection-2",
+          "sourceKey": "section:2/subsection:2",
+          "label": "2(2)",
+          "text": "2(2)Any such grant may be made without actual entry or inquisition being first necessary, and although the lands, tenements or hereditaments are not in the actual possession of the Crown, and even if some person may claim title to them adversely to the person whose estates they had been.",
+          "contentHash": "9003ffe75d15f0f58f7555109e94ea6532acc4565a2175d646e6726ef50929fa"
+        },
+        {
+          "id": "2-subsection-3",
+          "sourceKey": "section:2/subsection:3",
+          "label": "2(3)",
+          "text": "2(3)If possession of the lands, tenements and hereditaments is withheld, the person to whom the grant is made is entitled to institute proceedings for the recovery of them.\n\nR.S.1973, c.E-10, s.3, s.4",
+          "contentHash": "08fae24d0ed19c6829b10b531d77ef3031913ca126dfeb49bf144c694da5c170"
+        }
+      ],
+      "contentHash": "d3bc31e2bf54b7528467fd45823efc2cbcfa4be5ddffe60b4c41d32d9fe2cc2f"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
+      "label": "3",
+      "heading": "Relief from forfeiture",
+      "text": "Relief from forfeiture\n\n3(1)When a forfeiture takes place of any lands, tenements or hereditaments, or of any interest in them as mentioned above, the Lieutenant-Governor in Council may waive or release any right that the Crown has become entitled to, so as by the waiver or release to vest the property either absolutely or otherwise in the persons who would have been entitled to it but for the forfeiture.\n\n3(2)A waiver or release may be either for valuable consideration or otherwise, and may be on such terms and conditions as to the Lieutenant-Governor in Council seem fit.\n\nR.S.1973, c.E-10, s.5",
+      "subsections": [
+        {
+          "id": "3-subsection-1",
+          "sourceKey": "section:3/subsection:1",
+          "label": "3(1)",
+          "text": "3(1)When a forfeiture takes place of any lands, tenements or hereditaments, or of any interest in them as mentioned above, the Lieutenant-Governor in Council may waive or release any right that the Crown has become entitled to, so as by the waiver or release to vest the property either absolutely or otherwise in the persons who would have been entitled to it but for the forfeiture.",
+          "contentHash": "c9dd116caf5131279fc5eb48c028ffc527ec3727f3ef766b4adca9a5b4659539"
+        },
+        {
+          "id": "3-subsection-2",
+          "sourceKey": "section:3/subsection:2",
+          "label": "3(2)",
+          "text": "3(2)A waiver or release may be either for valuable consideration or otherwise, and may be on such terms and conditions as to the Lieutenant-Governor in Council seem fit.\n\nR.S.1973, c.E-10, s.5",
+          "contentHash": "d08afba584f546fbc9878eb74b14f6a6516a955e97c4dd73eea7d32dbf7e25e5"
+        }
+      ],
+      "contentHash": "0b76fc7c5ab522f610a14110d4ff574c31d2bb3c628f8252a8d24bb6304d23f3"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
+      "label": "4",
+      "heading": "Assignment of personal property",
+      "text": "Assignment of personal property\n\n4The Lieutenant-Governor in Council may make any assignment of personal property to which the Crown is entitled by reason of the person last entitled to it having died intestate or without leaving any kin or other persons entitled to succeed to it, or by reason of the personal property having become forfeited or liable to be forfeited to the Crown for any cause, or may make an assignment of any portion of such personal property for the purpose of transferring or restoring it to any person having a moral claim to it, or on the person to whom it had belonged, or for carrying into effect any disposition of it that the person may have contemplated, or of rewarding any person making discovery of the escheat or forfeiture, as to the Lieutenant-Governor in Council seems proper.\nR.S.1973, c.E-10, s.6",
+      "subsections": [],
+      "contentHash": "134e809776042d6251e173a78471c7c89cba9bbed9fe4dbe78e313601afd076d"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "componentType": "section",
+      "label": "5",
+      "heading": "Sale of personal property",
+      "text": "Sale of personal property\n\n5(1)When by any law in force in the Province personal property is forfeited to the Crown, the Minister of Finance and Treasury Board may sell the property, either by public auction or private sale.\n\n5(2)The proceeds of any such sale shall become part of the Consolidated Fund.\n\nR.S.1973, c.E-10, s.7; 2019, c.29, s.53\n\nN.B. This Act was proclaimed and came into force February 9, 2015.\n\nN.B. This Act is consolidated to December 20, 2019.",
+      "subsections": [
+        {
+          "id": "5-subsection-1",
+          "sourceKey": "section:5/subsection:1",
+          "label": "5(1)",
+          "text": "5(1)When by any law in force in the Province personal property is forfeited to the Crown, the Minister of Finance and Treasury Board may sell the property, either by public auction or private sale.",
+          "contentHash": "c34001ee184eb642ade0ff27e9e6c8499eb6876886971e99227a70b163f3e10c"
+        },
+        {
+          "id": "5-subsection-2",
+          "sourceKey": "section:5/subsection:2",
+          "label": "5(2)",
+          "text": "5(2)The proceeds of any such sale shall become part of the Consolidated Fund.\n\nR.S.1973, c.E-10, s.7; 2019, c.29, s.53\n\nN.B. This Act was proclaimed and came into force February 9, 2015.\n\nN.B. This Act is consolidated to December 20, 2019.",
+          "contentHash": "830718f24af93316a5d00ad65b84d1f31b17b2610e20f419c7724d4452ec9d2b"
+        }
+      ],
+      "contentHash": "b3c93772c2fa3a8a7b290df2823b64cf44b8f45e34cbf45746971d8d49c0443e"
+    }
+  ],
+  "notes": []
+}

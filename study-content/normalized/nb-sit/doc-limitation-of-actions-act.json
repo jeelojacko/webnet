@@ -1,0 +1,2370 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-limitation-of-actions-act",
+  "officialTitle": "Limitation of Actions Act",
+  "officialCitation": "Chapter L-8.5",
+  "officialCitationDisplay": "Chapter L-8.5",
+  "officialCitationNormalized": "L-8.5",
+  "documentType": "act",
+  "sourceUrl": "https://laws.gnb.ca/en/document/cs/L-8.5",
+  "fetchDate": "2026-08-11T18:08:50.045Z",
+  "consolidatedTo": "June 12, 2026",
+  "contentHash": "98b5c3a7aeb3582a51e08d51fc56449ca0e3e4c5446147bb289e02dece94f156",
+  "tableOfContents": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "label": "1",
+      "heading": "Definitions and interpretation"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "label": "2",
+      "heading": "Application"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "label": "3",
+      "heading": "This Act binds the Crown"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "label": "4",
+      "heading": "Conflict"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "label": "5",
+      "heading": "General limitation periods"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "label": "6",
+      "heading": "Continuous act or omission"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "label": "7",
+      "heading": "Application of Part 2"
+    },
+    {
+      "id": "section-7.1",
+      "sourceKey": "section:7.1",
+      "label": "7.1",
+      "heading": "Recovery of money – Crown claimants"
+    },
+    {
+      "id": "section-7.2",
+      "sourceKey": "section:7.2",
+      "label": "7.2",
+      "heading": "Transition – Crown claimants"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "label": "8",
+      "heading": "Judgments"
+    },
+    {
+      "id": "section-8.1",
+      "sourceKey": "section:8.1",
+      "label": "8.1",
+      "heading": "Recovery of land"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "label": "9",
+      "heading": "Recovery of personal property"
+    },
+    {
+      "id": "section-10",
+      "sourceKey": "section:10",
+      "label": "10",
+      "heading": "Conversion"
+    },
+    {
+      "id": "section-11",
+      "sourceKey": "section:11",
+      "label": "11",
+      "heading": "Demand loans"
+    },
+    {
+      "id": "section-12",
+      "sourceKey": "section:12",
+      "label": "12",
+      "heading": "Secured debt"
+    },
+    {
+      "id": "section-13",
+      "sourceKey": "section:13",
+      "label": "13",
+      "heading": "Statutory liens"
+    },
+    {
+      "id": "section-14",
+      "sourceKey": "section:14",
+      "label": "14",
+      "heading": "Contribution"
+    },
+    {
+      "id": "section-14.1",
+      "sourceKey": "section:14.1",
+      "label": "14.1",
+      "heading": "Trespass to the person, assault or battery"
+    },
+    {
+      "id": "section-15",
+      "sourceKey": "section:15",
+      "label": "15",
+      "heading": "Knowledge"
+    },
+    {
+      "id": "section-16",
+      "sourceKey": "section:16",
+      "label": "16",
+      "heading": "Wilful concealment"
+    },
+    {
+      "id": "section-17",
+      "sourceKey": "section:17",
+      "label": "17",
+      "heading": "Minors"
+    },
+    {
+      "id": "section-18",
+      "sourceKey": "section:18",
+      "label": "18",
+      "heading": "Incapacity"
+    },
+    {
+      "id": "section-19",
+      "sourceKey": "section:19",
+      "label": "19",
+      "heading": "Acknowledgment"
+    },
+    {
+      "id": "section-20",
+      "sourceKey": "section:20",
+      "label": "20",
+      "heading": "Part payments"
+    },
+    {
+      "id": "section-21",
+      "sourceKey": "section:21",
+      "label": "21",
+      "heading": "Claims added to proceedings"
+    },
+    {
+      "id": "section-22",
+      "sourceKey": "section:22",
+      "label": "22",
+      "heading": "Delay caused by defendant"
+    },
+    {
+      "id": "section-23",
+      "sourceKey": "section:23",
+      "label": "23",
+      "heading": "Non-judicial remedies"
+    },
+    {
+      "id": "section-24",
+      "sourceKey": "section:24",
+      "label": "24",
+      "heading": "Conflict of laws"
+    },
+    {
+      "id": "section-25",
+      "sourceKey": "section:25",
+      "label": "25",
+      "heading": "Rules of equity"
+    },
+    {
+      "id": "section-27",
+      "sourceKey": "section:27",
+      "label": "27",
+      "heading": "Repealed"
+    },
+    {
+      "id": "section-27.1",
+      "sourceKey": "section:27.1",
+      "label": "27.1",
+      "heading": "Repealed"
+    },
+    {
+      "id": "section-27.2",
+      "sourceKey": "section:27.2",
+      "label": "27.2",
+      "heading": "Repealed"
+    },
+    {
+      "id": "section-28",
+      "sourceKey": "section:28",
+      "label": "28",
+      "heading": "Arbitration Act"
+    },
+    {
+      "id": "section-29",
+      "sourceKey": "section:29",
+      "label": "29",
+      "heading": "Business Corporations Act"
+    },
+    {
+      "id": "section-30",
+      "sourceKey": "section:30",
+      "label": "30",
+      "heading": "Defamation Act"
+    },
+    {
+      "id": "section-31",
+      "sourceKey": "section:31",
+      "label": "31",
+      "heading": "Electricity Act"
+    },
+    {
+      "id": "section-32",
+      "sourceKey": "section:32",
+      "label": "32",
+      "heading": "Executors and Trustees Act"
+    },
+    {
+      "id": "section-33",
+      "sourceKey": "section:33",
+      "label": "33",
+      "heading": "Fatal Accidents Act"
+    },
+    {
+      "id": "section-34",
+      "sourceKey": "section:34",
+      "label": "34",
+      "heading": "Limitation of Actions Act"
+    },
+    {
+      "id": "section-35",
+      "sourceKey": "section:35",
+      "label": "35",
+      "heading": "Mental Health Act"
+    },
+    {
+      "id": "section-36",
+      "sourceKey": "section:36",
+      "label": "36",
+      "heading": "Midwifery Act"
+    },
+    {
+      "id": "section-37",
+      "sourceKey": "section:37",
+      "label": "37",
+      "heading": "Probate Court Act"
+    },
+    {
+      "id": "section-37.1",
+      "sourceKey": "section:37.1",
+      "label": "37.1",
+      "heading": "Proceedings Against the Crown Act"
+    },
+    {
+      "id": "section-38",
+      "sourceKey": "section:38",
+      "label": "38",
+      "heading": "Regional Health Authorities Act"
+    },
+    {
+      "id": "section-39",
+      "sourceKey": "section:39",
+      "label": "39",
+      "heading": "Survival of Actions Act"
+    },
+    {
+      "id": "section-40",
+      "sourceKey": "section:40",
+      "label": "40",
+      "heading": "Commencement"
+    }
+  ],
+  "components": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
+      "label": "1",
+      "heading": "Definitions and interpretation",
+      "text": "Definitions and interpretation\n\n1(1)The following definitions apply in this Act.\n\n“claim” means a claim to remedy the injury, loss or damage that occurred as a result of an act or omission.(réclamation)\n\n“claimant” means a person who has a claim, whether or not the claim has been brought.(réclamant)\n\n“defendant” means a person against whom a claimant has a claim, whether or not the claim has been brought.(défendeur)\n\n1(2)For the purposes of this Act, a claim is brought\n\n(a)\nwhen a proceeding in respect of the claim is commenced, or\n\n(b)\nif the claim is added to an existing proceeding by a new or an amended pleading that is not an originating process, when that pleading is filed.\n\n1(3)Any reference in this Act to a limitation period established by this Act does not include a reference to the period described in section 22.",
+      "subsections": [
+        {
+          "id": "1-subsection-1",
+          "sourceKey": "section:1/subsection:1",
+          "label": "1(1)",
+          "text": "1(1)The following definitions apply in this Act.\n\n“claim” means a claim to remedy the injury, loss or damage that occurred as a result of an act or omission.(réclamation)\n\n“claimant” means a person who has a claim, whether or not the claim has been brought.(réclamant)\n\n“defendant” means a person against whom a claimant has a claim, whether or not the claim has been brought.(défendeur)",
+          "contentHash": "2905562a10f0dacf7f7aa16b1f99d90ecf74e3623659e29caafcbb0ddbe85f36"
+        },
+        {
+          "id": "1-subsection-2",
+          "sourceKey": "section:1/subsection:2",
+          "label": "1(2)",
+          "text": "1(2)For the purposes of this Act, a claim is brought\n\n(a)\nwhen a proceeding in respect of the claim is commenced, or\n\n(b)\nif the claim is added to an existing proceeding by a new or an amended pleading that is not an originating process, when that pleading is filed.",
+          "contentHash": "41ebee37b5ff9874bcc168db4b738817e8700b0d0b693ef36b0e0bba6981a7f1"
+        },
+        {
+          "id": "1-subsection-3",
+          "sourceKey": "section:1/subsection:3",
+          "label": "1(3)",
+          "text": "1(3)Any reference in this Act to a limitation period established by this Act does not include a reference to the period described in section 22.",
+          "contentHash": "ddf3e15547c62fe8e2efd736a31fe70c546349ffa04447f5a8419ab354184e71"
+        }
+      ],
+      "contentHash": "9dc1ecad1766992407ce65638d7011380efe780471ee78c07c580fadc2ab832d"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "label": "2",
+      "heading": "Application",
+      "text": "Application\n\n2(1)This Act applies to any claim brought after the commencement of this Act, including a claim that is added to a proceeding commenced before the commencement of this Act.\n\n2(2)Repealed: 2011, c.17, s.1\n\n2011, c.17, s.1",
+      "subsections": [
+        {
+          "id": "2-subsection-1",
+          "sourceKey": "section:2/subsection:1",
+          "label": "2(1)",
+          "text": "2(1)This Act applies to any claim brought after the commencement of this Act, including a claim that is added to a proceeding commenced before the commencement of this Act.",
+          "contentHash": "85f8fea6f7aefe65005e626a05f213ad83a6279965624c8e7b0eb5319b31fd80"
+        },
+        {
+          "id": "2-subsection-2",
+          "sourceKey": "section:2/subsection:2",
+          "label": "2(2)",
+          "text": "2(2)Repealed: 2011, c.17, s.1\n\n2011, c.17, s.1",
+          "contentHash": "cebb936b7a64821b804b4af0dedc08052da2869d77f2ad1fc81427b67e1c39a5"
+        }
+      ],
+      "contentHash": "41823ebda888fff86baae208688975752942d2a957471eddbd3cec98e7364c65"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
+      "label": "3",
+      "heading": "This Act binds the Crown",
+      "text": "This Act binds the Crown\n\n3This Act binds the Crown.",
+      "subsections": [],
+      "contentHash": "5b2f068d2d967607d61a76ad84bd7f6e838e434a0b1db02d3577c3f25576317e"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
+      "label": "4",
+      "heading": "Conflict",
+      "text": "Conflict\n\n4(1)If there is a conflict between this Act and any other public Act of New Brunswick, that other Act prevails.\n\n4(2)If there is a conflict between this Act and any private Act of New Brunswick, this Act prevails.\n\n2\n\nGENERAL LIMITATION PERIODS",
+      "subsections": [
+        {
+          "id": "4-subsection-1",
+          "sourceKey": "section:4/subsection:1",
+          "label": "4(1)",
+          "text": "4(1)If there is a conflict between this Act and any other public Act of New Brunswick, that other Act prevails.",
+          "contentHash": "047189724c06d4fa273d4a538d9f378b52e9d726f9616aadcfacd6bbc4fe31ed"
+        },
+        {
+          "id": "4-subsection-2",
+          "sourceKey": "section:4/subsection:2",
+          "label": "4(2)",
+          "text": "4(2)If there is a conflict between this Act and any private Act of New Brunswick, this Act prevails.\n\n2\n\nGENERAL LIMITATION PERIODS",
+          "contentHash": "731f0b4c83aca1f8e96c81f429882a0ee1dcaaf7c2bd2dac184247a0c34314b5"
+        }
+      ],
+      "contentHash": "ca66b0213ef94f624a5c14b99fe1e635192fb5e2a8ce7bc457e020146e45f0d6"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "componentType": "section",
+      "label": "5",
+      "heading": "General limitation periods",
+      "text": "General limitation periods\n\n5(1)Unless otherwise provided in this Act, no claim shall be brought after the earlier of\n\n(a)\ntwo years from the day on which the claim is discovered, and\n\n(b)\nfifteen years from the day on which the act or omission on which the claim is based occurred.\n\n5(2)A claim is discovered on the day on which the claimant first knew or ought reasonably to have known\n\n(a)\nthat the injury, loss or damage had occurred,\n\n(b)\nthat the injury, loss or damage was caused by or contributed to by an act or omission, and\n\n(c)\nthat the act or omission was that of the defendant.",
+      "subsections": [
+        {
+          "id": "5-subsection-1",
+          "sourceKey": "section:5/subsection:1",
+          "label": "5(1)",
+          "text": "5(1)Unless otherwise provided in this Act, no claim shall be brought after the earlier of\n\n(a)\ntwo years from the day on which the claim is discovered, and\n\n(b)\nfifteen years from the day on which the act or omission on which the claim is based occurred.",
+          "contentHash": "c3145c62ebd3e383d9f7e1cda9183216e3fd0eb8b97bc34475709edc8031457c"
+        },
+        {
+          "id": "5-subsection-2",
+          "sourceKey": "section:5/subsection:2",
+          "label": "5(2)",
+          "text": "5(2)A claim is discovered on the day on which the claimant first knew or ought reasonably to have known\n\n(a)\nthat the injury, loss or damage had occurred,\n\n(b)\nthat the injury, loss or damage was caused by or contributed to by an act or omission, and\n\n(c)\nthat the act or omission was that of the defendant.",
+          "contentHash": "d24abcb752d53caab6388386020774b1570cd3c16e4c62e14b05452869363c2f"
+        }
+      ],
+      "contentHash": "9b140081464fd2ef262a35c693db282b3384c15693509363baad1cb2bc247dc7"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "componentType": "section",
+      "label": "6",
+      "heading": "Continuous act or omission",
+      "text": "Continuous act or omission\n\n6If a claim is based on a continuous act or omission, the act or omission is deemed for the purposes of calculating the limitation periods in section 5 to be a separate act or omission on each day it continues.\n\n3\n\nSPECIAL LIMITATION PERIODS",
+      "subsections": [],
+      "contentHash": "20177f9d2b13a2f6ecbae9b5f24d02976fd359d61450ec36d9c9880699fbc186"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "componentType": "section",
+      "label": "7",
+      "heading": "Application of Part 2",
+      "text": "Application of Part 2\n\n7Unless this Part provides otherwise, Part 2 does not apply to the claims referred to in this Part.",
+      "subsections": [],
+      "contentHash": "912ac3ab468597d3cde3d0872922e985dbd4fb4bc0ae8112fe98aef8bec7b1b0"
+    },
+    {
+      "id": "section-7.1",
+      "sourceKey": "section:7.1",
+      "componentType": "section",
+      "label": "7.1",
+      "heading": "Recovery of money – Crown claimants",
+      "text": "Recovery of money – Crown claimants\n2021, c.21, s.1\n\n7.1(1)Subject to subsection (2), Part 2 applies to a claim brought by the Crown for the recovery of money owing to it which includes claims brought by the Crown for recovery of damages in contract or in tort.\n\n7.1(2)No claim in subsection (1) shall be brought after the earlier of\n\n(a)\nsix years from the day on which the claim is discovered, and\n\n(b)\nfifteen years from the day on which the act or omission on which the claim is based occurred.\n\n2021, c.21, s.1",
+      "subsections": [
+        {
+          "id": "7.1-subsection-1",
+          "sourceKey": "section:7.1/subsection:1",
+          "label": "7.1(1)",
+          "text": "7.1(1)Subject to subsection (2), Part 2 applies to a claim brought by the Crown for the recovery of money owing to it which includes claims brought by the Crown for recovery of damages in contract or in tort.",
+          "contentHash": "6dfbc25a4b90e9e8e3f1062f9d6fc3f6493a07344fa310b921c869e9c84b4445"
+        },
+        {
+          "id": "7.1-subsection-2",
+          "sourceKey": "section:7.1/subsection:2",
+          "label": "7.1(2)",
+          "text": "7.1(2)No claim in subsection (1) shall be brought after the earlier of\n\n(a)\nsix years from the day on which the claim is discovered, and\n\n(b)\nfifteen years from the day on which the act or omission on which the claim is based occurred.\n\n2021, c.21, s.1",
+          "contentHash": "95d7bcda83f452d05d2ecebaa1fb272f1a1bdfaf9363a21f4d578df5d5c49bfa"
+        }
+      ],
+      "contentHash": "4f2ee3ce8188abe90d982de24b2f191263c9ce3ea08d5fe7ce41d7487e38d532"
+    },
+    {
+      "id": "section-7.2",
+      "sourceKey": "section:7.2",
+      "componentType": "section",
+      "label": "7.2",
+      "heading": "Transition – Crown claimants",
+      "text": "Transition – Crown claimants\n2021, c.21, s.1\n\n7.2(1)This section applies to claims brought by the Crown before or after the commencement of this section for the recovery of money owing to it that are based on acts or omissions that took place before the commencement of this section.\n\n7.2(2)If the limitation period in subsection 7.1(2) would, if not for this section, expire after the commencement of this section but before July 1, 2022, that limitation period expires on July 1, 2022.\n\n7.2(3)Despite subsection (2), a limitation period for the Crown to bring a claim for the recovery of money owing to it that was not expired immediately before the commencement of this section shall not expire until July 1, 2022, even if the limitation period in subsection 7.1(2) has expired for the claim.\n\n7.2(4)A limitation period that would, if not for subsection (2) or (3), expire between July 1, 2021, and the day the Act that enacted this section received Royal Assent, shall be deemed to have not expired and shall expire on July 1, 2022.\n\n2021, c.21, s.1",
+      "subsections": [
+        {
+          "id": "7.2-subsection-1",
+          "sourceKey": "section:7.2/subsection:1",
+          "label": "7.2(1)",
+          "text": "7.2(1)This section applies to claims brought by the Crown before or after the commencement of this section for the recovery of money owing to it that are based on acts or omissions that took place before the commencement of this section.",
+          "contentHash": "4b9ae1289c4bf17294958efaf63a06598a5c5a8d9e7197ceba94f38bebbfbfa8"
+        },
+        {
+          "id": "7.2-subsection-2",
+          "sourceKey": "section:7.2/subsection:2",
+          "label": "7.2(2)",
+          "text": "7.2(2)If the limitation period in subsection 7.1(2) would, if not for this section, expire after the commencement of this section but before July 1, 2022, that limitation period expires on July 1, 2022.",
+          "contentHash": "18c9869d095789f7f98ea0451e37626561a63a81c69b24e16776f234596007fd"
+        },
+        {
+          "id": "7.2-subsection-3",
+          "sourceKey": "section:7.2/subsection:3",
+          "label": "7.2(3)",
+          "text": "7.2(3)Despite subsection (2), a limitation period for the Crown to bring a claim for the recovery of money owing to it that was not expired immediately before the commencement of this section shall not expire until July 1, 2022, even if the limitation period in subsection 7.1(2) has expired for the claim.",
+          "contentHash": "abe3b3d99cf03e3c25a067fc7d0b0a6221b2fc835ea4d945597596e5dfe3a448"
+        },
+        {
+          "id": "7.2-subsection-4",
+          "sourceKey": "section:7.2/subsection:4",
+          "label": "7.2(4)",
+          "text": "7.2(4)A limitation period that would, if not for subsection (2) or (3), expire between July 1, 2021, and the day the Act that enacted this section received Royal Assent, shall be deemed to have not expired and shall expire on July 1, 2022.\n\n2021, c.21, s.1",
+          "contentHash": "9223e7f35ac1afaeb67289bff022994c6b8c8bde83ea4b370411792f3f18f6cb"
+        }
+      ],
+      "contentHash": "026bad9b9793b048216c5a4956f017a35c54e7fa8be9d0cabf8e2847d4374218"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "componentType": "section",
+      "label": "8",
+      "heading": "Judgments",
+      "text": "Judgments\n\n8No claim based on a judgment for the payment of money shall be brought after 15 years from the day of the judgment.",
+      "subsections": [],
+      "contentHash": "076838abec15438fafca3541bfc3ce2c0184db578aa5d8008b4b854283ed13d7"
+    },
+    {
+      "id": "section-8.1",
+      "sourceKey": "section:8.1",
+      "componentType": "section",
+      "label": "8.1",
+      "heading": "Recovery of land",
+      "text": "Recovery of land\n2011, c.17, s.2\n\n8.1(1)The following definitions apply in this section.\n\n“lease” includes a periodic tenancy and a tenancy at will.(bail)\n\n“predecessor” , with respect to a claimant or defendant, means a person from whom or through whom the claimant or defendant has obtained possession of, or derives the right of possession of, land.(prédécesseur)\n\n“present interest” means an estate or interest on which a future estate or interest is expectant.(intérêt actuel)\n\n8.1(2)Subject to subsections (3) and (4), a claim to recover possession of land shall not be brought after the defendant and any predecessors of the defendant have dispossessed the claimant and any predecessors of the claimant for a continuous period of\n\n(a)\nfifteen years, or\n\n(b)\nif the claimant is the Crown, 60 years.\n\n8.1(3)If a period of dispossession begins while land is subject to a present interest and continues after the present interest terminates, a claim to recover possession of the land shall not be brought after the later of\n\n(a)\nthe end of the period described in subsection (2), and\n\n(b)\nfive years after the present interest terminates.\n\n8.1(4)If a period of dispossession begins during a fixed term lease, a claim by the landlord to recover possession of the land shall not be brought after the later of\n\n(a)\nthe end of the period described in subsection (2), and\n\n(b)\nfive years after the fixed term ends.\n\n8.1(5)For the purposes of this section,\n\n(a)\nif rent is payable under a lease, a period of dispossession of a landlord by a tenant begins when the tenant ceases to pay rent;\n\n(b)\nwhen one or more joint tenants or tenants in common of land are in possession of more than their undivided share of the land for their own benefit or for that of a third party, the other joint tenants or tenants in common are dispossessed of the land.\n\n8.1(6)On the expiry of a limitation period under this section, the claimant’s right or title to the land is extinguished.\n\n2011, c.17, s.2",
+      "subsections": [
+        {
+          "id": "8.1-subsection-1",
+          "sourceKey": "section:8.1/subsection:1",
+          "label": "8.1(1)",
+          "text": "8.1(1)The following definitions apply in this section.\n\n“lease” includes a periodic tenancy and a tenancy at will.(bail)\n\n“predecessor” , with respect to a claimant or defendant, means a person from whom or through whom the claimant or defendant has obtained possession of, or derives the right of possession of, land.(prédécesseur)\n\n“present interest” means an estate or interest on which a future estate or interest is expectant.(intérêt actuel)",
+          "contentHash": "2359aedaacd766af320626323442e2a79e552f4abbdff3990a8602901e07823e"
+        },
+        {
+          "id": "8.1-subsection-2",
+          "sourceKey": "section:8.1/subsection:2",
+          "label": "8.1(2)",
+          "text": "8.1(2)Subject to subsections (3) and (4), a claim to recover possession of land shall not be brought after the defendant and any predecessors of the defendant have dispossessed the claimant and any predecessors of the claimant for a continuous period of\n\n(a)\nfifteen years, or\n\n(b)\nif the claimant is the Crown, 60 years.",
+          "contentHash": "c1d24454c1ab625e218020d9519c438255de22e1825be03831979287c60b86e8"
+        },
+        {
+          "id": "8.1-subsection-3",
+          "sourceKey": "section:8.1/subsection:3",
+          "label": "8.1(3)",
+          "text": "8.1(3)If a period of dispossession begins while land is subject to a present interest and continues after the present interest terminates, a claim to recover possession of the land shall not be brought after the later of\n\n(a)\nthe end of the period described in subsection (2), and\n\n(b)\nfive years after the present interest terminates.",
+          "contentHash": "707dd9f2b6fd8912bc18d9ebb699ae4e79be8dead10f846899d918e09c5ce6ad"
+        },
+        {
+          "id": "8.1-subsection-4",
+          "sourceKey": "section:8.1/subsection:4",
+          "label": "8.1(4)",
+          "text": "8.1(4)If a period of dispossession begins during a fixed term lease, a claim by the landlord to recover possession of the land shall not be brought after the later of\n\n(a)\nthe end of the period described in subsection (2), and\n\n(b)\nfive years after the fixed term ends.",
+          "contentHash": "94c474f107745f974cb37154e809fb879bc610707a127484bbc8c791f68925da"
+        },
+        {
+          "id": "8.1-subsection-5",
+          "sourceKey": "section:8.1/subsection:5",
+          "label": "8.1(5)",
+          "text": "8.1(5)For the purposes of this section,\n\n(a)\nif rent is payable under a lease, a period of dispossession of a landlord by a tenant begins when the tenant ceases to pay rent;\n\n(b)\nwhen one or more joint tenants or tenants in common of land are in possession of more than their undivided share of the land for their own benefit or for that of a third party, the other joint tenants or tenants in common are dispossessed of the land.",
+          "contentHash": "78a1bc27a805d1690d977f9ccea093c6dcbd495a362896a4161b8e0e7624ff06"
+        },
+        {
+          "id": "8.1-subsection-6",
+          "sourceKey": "section:8.1/subsection:6",
+          "label": "8.1(6)",
+          "text": "8.1(6)On the expiry of a limitation period under this section, the claimant’s right or title to the land is extinguished.\n\n2011, c.17, s.2",
+          "contentHash": "02024176786b707ab4a4155e1a589808ba60232c62fdee3a9fcfebbff437f627"
+        }
+      ],
+      "contentHash": "e4d92084b4e6e77802982bdc8503c5233f56c673f14f4841363cf1569277c99a"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "componentType": "section",
+      "label": "9",
+      "heading": "Recovery of personal property",
+      "text": "Recovery of personal property\n\n9(1)No claim to recover possession of personal property that has been converted shall be brought\n\n(a)\nif the defendant is a purchaser of the personal property for value acting in good faith, after 2 years from the day the purchaser purchased the personal property, and\n\n(b)\nin any other case, after the earlier of\n\n(i)\ntwo years from the day on which the claimant first knew or ought reasonably to have known the identity of the person who has possession of the personal property, and\n\n(ii)\nfifteen years from the day on which a conversion of the personal property first occurred.\n\n9(2)On the expiry of a limitation period under this section, the claimant’s title to the personal property is extinguished.",
+      "subsections": [
+        {
+          "id": "9-subsection-1",
+          "sourceKey": "section:9/subsection:1",
+          "label": "9(1)",
+          "text": "9(1)No claim to recover possession of personal property that has been converted shall be brought\n\n(a)\nif the defendant is a purchaser of the personal property for value acting in good faith, after 2 years from the day the purchaser purchased the personal property, and\n\n(b)\nin any other case, after the earlier of\n\n(i)\ntwo years from the day on which the claimant first knew or ought reasonably to have known the identity of the person who has possession of the personal property, and\n\n(ii)\nfifteen years from the day on which a conversion of the personal property first occurred.",
+          "contentHash": "82a96922c77e6864ad60082da5ce17914a376dc69f1cee42beb1a78f81e3cddc"
+        },
+        {
+          "id": "9-subsection-2",
+          "sourceKey": "section:9/subsection:2",
+          "label": "9(2)",
+          "text": "9(2)On the expiry of a limitation period under this section, the claimant’s title to the personal property is extinguished.",
+          "contentHash": "8ed4ac4e65fa358479f48d7060f6412b1b436343e0910e4c98ccb7f4d9526504"
+        }
+      ],
+      "contentHash": "53009ece4746e1dbe6b5e7bb33e3a1374d2584c423ee6dd618686ec7c0c43d51"
+    },
+    {
+      "id": "section-10",
+      "sourceKey": "section:10",
+      "componentType": "section",
+      "label": "10",
+      "heading": "Conversion",
+      "text": "Conversion\n\n10(1)Subject to subsection (2), Part 2 applies to a claim for damages for conversion.\n\n10(2)If there have been 2 or more conversions of the same personal property, a claim for damages for conversion shall not be brought against a defendant if, under section 9, a claim to recover the possession of the personal property from that defendant cannot be brought, or could not be brought if that defendant were still in possession of the property.",
+      "subsections": [
+        {
+          "id": "10-subsection-1",
+          "sourceKey": "section:10/subsection:1",
+          "label": "10(1)",
+          "text": "10(1)Subject to subsection (2), Part 2 applies to a claim for damages for conversion.",
+          "contentHash": "6216b5855102ebea285b2f4772dafb77122f5392f4d8a789f0b8e64b216c1188"
+        },
+        {
+          "id": "10-subsection-2",
+          "sourceKey": "section:10/subsection:2",
+          "label": "10(2)",
+          "text": "10(2)If there have been 2 or more conversions of the same personal property, a claim for damages for conversion shall not be brought against a defendant if, under section 9, a claim to recover the possession of the personal property from that defendant cannot be brought, or could not be brought if that defendant were still in possession of the property.",
+          "contentHash": "08e294301b702c19bd97c4599d1b740e54b3a25f08ad5de0533875ee5d8ae971"
+        }
+      ],
+      "contentHash": "308a481bb55b30c4de44f22fca837813cb312595dddab0144b36e0a26b84c875"
+    },
+    {
+      "id": "section-11",
+      "sourceKey": "section:11",
+      "componentType": "section",
+      "label": "11",
+      "heading": "Demand loans",
+      "text": "Demand loans\n\n11No claim that is based on a failure to repay a demand loan shall be brought after the earlier of\n\n(a)\ntwo years from the day default in repayment occurs after the demand for repayment is made, and\n\n(b)\nfifteen years from the day on which the lender is first entitled to make a demand for repayment of the loan.",
+      "subsections": [],
+      "contentHash": "eb4752508d2e409d33dbd0e2bd143baabef49d79d48f954781ca7ec17003a041"
+    },
+    {
+      "id": "section-12",
+      "sourceKey": "section:12",
+      "componentType": "section",
+      "label": "12",
+      "heading": "Secured debt",
+      "text": "Secured debt\n\n12(1)Subject to subsection (2), Part 2 applies to a claim for payment of a debt secured on real or personal property.\n\n12(2)No claim to recover the principal of a debt secured on real or personal property shall be brought after 15 years from the day the security is taken.\n\n12(3)A payment made in relation to a debt is a part payment for the purposes of section 20, and is presumed, in the absence of evidence to the contrary, to be a payment of both principal and interest.\n\n12(4)If a creditor takes possession of the property on which the debt is secured, the debtor shall not bring a claim to redeem the property after 15 years from the day the creditor takes possession of the property.",
+      "subsections": [
+        {
+          "id": "12-subsection-1",
+          "sourceKey": "section:12/subsection:1",
+          "label": "12(1)",
+          "text": "12(1)Subject to subsection (2), Part 2 applies to a claim for payment of a debt secured on real or personal property.",
+          "contentHash": "01cd9527f45875de9b9864a31b92f69c6c9994d94bff8baa018f51fa20202fe1"
+        },
+        {
+          "id": "12-subsection-2",
+          "sourceKey": "section:12/subsection:2",
+          "label": "12(2)",
+          "text": "12(2)No claim to recover the principal of a debt secured on real or personal property shall be brought after 15 years from the day the security is taken.",
+          "contentHash": "b300e07a10fa0696e3c57ac4bfc73200466f166e4b2199f0559ea4764db21d01"
+        },
+        {
+          "id": "12-subsection-3",
+          "sourceKey": "section:12/subsection:3",
+          "label": "12(3)",
+          "text": "12(3)A payment made in relation to a debt is a part payment for the purposes of section 20, and is presumed, in the absence of evidence to the contrary, to be a payment of both principal and interest.",
+          "contentHash": "1f5ae7b4cdae8f7c85182bab1999701a4898307b4708b58c3c2ff06a63682289"
+        },
+        {
+          "id": "12-subsection-4",
+          "sourceKey": "section:12/subsection:4",
+          "label": "12(4)",
+          "text": "12(4)If a creditor takes possession of the property on which the debt is secured, the debtor shall not bring a claim to redeem the property after 15 years from the day the creditor takes possession of the property.",
+          "contentHash": "34c1c16dd6aa22b65d2469e572f6abae2a7e9481b25bdf5aba55aec79497bae9"
+        }
+      ],
+      "contentHash": "eaa283651886e579da6e2e52188c61ffefebf74220dc3f84d5c237b719e5f6d4"
+    },
+    {
+      "id": "section-13",
+      "sourceKey": "section:13",
+      "componentType": "section",
+      "label": "13",
+      "heading": "Statutory liens",
+      "text": "Statutory liens\n\n13If a lien or charge is created by an Act in relation to an amount due under that Act, no claim shall be brought to recover the amount due after 15 years from the day on which the lien or charge arises.",
+      "subsections": [],
+      "contentHash": "cfc027c6c4661e5bf784fee46e12fe086b3b10018edebd952492514ecc1ddd69"
+    },
+    {
+      "id": "section-14",
+      "sourceKey": "section:14",
+      "componentType": "section",
+      "label": "14",
+      "heading": "Contribution",
+      "text": "Contribution\n\n14(1)Subject to subsection (2), no claim for contribution in respect of a payment that a claimant has made, or a liability that a claimant has incurred by virtue of a settlement or judgment, shall be brought against a person after the expiry of the earlier of\n\n(a)\nthe period of 2 years that begins on the day the claimant first knew or ought reasonably to have known that the person was liable to make the contribution, and\n\n(b)\nwhichever of the following periods expires last:\n\n(i)\nfifteen years from the day the act or omission that gave rise to the payment, settlement or judgment occurred, and\n\n(ii)\nfive years from the day of the payment, settlement or judgment.\n\n14(2)No claim for contribution under paragraph 2(c) of the Tortfeasors Act shall be brought against a person after the expiry of the earlier of\n\n(a)\nthe period of 2 years that begins on the day on which the claimant, having settled the original claim out of which the claim for contribution arises or having been served with the pleading by which that original claim was brought, first knew or ought reasonably to have known that the person was liable to make the contribution, and\n\n(b)\nthe period of 15 years from the day of the person’s act or omission in respect of which the claim for contribution is brought.",
+      "subsections": [
+        {
+          "id": "14-subsection-1",
+          "sourceKey": "section:14/subsection:1",
+          "label": "14(1)",
+          "text": "14(1)Subject to subsection (2), no claim for contribution in respect of a payment that a claimant has made, or a liability that a claimant has incurred by virtue of a settlement or judgment, shall be brought against a person after the expiry of the earlier of\n\n(a)\nthe period of 2 years that begins on the day the claimant first knew or ought reasonably to have known that the person was liable to make the contribution, and\n\n(b)\nwhichever of the following periods expires last:\n\n(i)\nfifteen years from the day the act or omission that gave rise to the payment, settlement or judgment occurred, and\n\n(ii)\nfive years from the day of the payment, settlement or judgment.",
+          "contentHash": "cc428b94849cb7ee8a72b46d39a3f45094577f044140f1a87dfaea97b2f2a52e"
+        },
+        {
+          "id": "14-subsection-2",
+          "sourceKey": "section:14/subsection:2",
+          "label": "14(2)",
+          "text": "14(2)No claim for contribution under paragraph 2(c) of the Tortfeasors Act shall be brought against a person after the expiry of the earlier of\n\n(a)\nthe period of 2 years that begins on the day on which the claimant, having settled the original claim out of which the claim for contribution arises or having been served with the pleading by which that original claim was brought, first knew or ought reasonably to have known that the person was liable to make the contribution, and\n\n(b)\nthe period of 15 years from the day of the person’s act or omission in respect of which the claim for contribution is brought.",
+          "contentHash": "a9a0f267789e406cccb2936f3164131f9a580935dccde6b72c48c6002ec693d0"
+        }
+      ],
+      "contentHash": "558d795d1ab3fc19540cdbb93a9a16101d4e70cf24561e108cc7cb7a02e69d00"
+    },
+    {
+      "id": "section-14.1",
+      "sourceKey": "section:14.1",
+      "componentType": "section",
+      "label": "14.1",
+      "heading": "Trespass to the person, assault or battery",
+      "text": "Trespass to the person, assault or battery\n\n14.1(1)There is no limitation period in respect of a claim for damages for trespass to the person, assault or battery if\n\n(a)\nthe act complained of is of a sexual nature, or\n\n(b)\nat the time of the act complained of, the claimant was in an intimate personal relationship, as defined in the Intimate Partner Violence Intervention Act, with the defendant or was financially, emotionally or physically dependent on the defendant.\n\n14.1(2)Subsection (1) applies to a claim for trespass to the person, assault or battery that occurred before or after the commencement of this section and regardless of the expiry of any previously applicable limitation period under this Act or a former version of this Act.\n\n14.1(3)Subsection (1) revives the right to file a claim of a claimant who prior to the commencement of this section had a proceeding dismissed solely on the grounds that a previously applicable limitation period under this Act or a former version of this Act had expired.\n\n14.1(4)This section does not apply in the case of a claim\n\n(a)\nthat has been settled and for which the settlement is legally binding, including a claim that formed part of a class action that has been settled, regardless of whether the claim was submitted as part of the class action, or\n\n(b)\nthat has been dismissed by a court and with respect to which no further appeal is possible, subject to subsection (3).\n\n2026, c.4, s.1\n\n4\n\nOPERATION OF LIMITATION PERIODS",
+      "subsections": [
+        {
+          "id": "14.1-subsection-1",
+          "sourceKey": "section:14.1/subsection:1",
+          "label": "14.1(1)",
+          "text": "14.1(1)There is no limitation period in respect of a claim for damages for trespass to the person, assault or battery if\n\n(a)\nthe act complained of is of a sexual nature, or\n\n(b)\nat the time of the act complained of, the claimant was in an intimate personal relationship, as defined in the Intimate Partner Violence Intervention Act, with the defendant or was financially, emotionally or physically dependent on the defendant.",
+          "contentHash": "abe65bb16814e884b4c34f59c54f20adf4c0b9b1360502924c774954c9d762af"
+        },
+        {
+          "id": "14.1-subsection-2",
+          "sourceKey": "section:14.1/subsection:2",
+          "label": "14.1(2)",
+          "text": "14.1(2)Subsection (1) applies to a claim for trespass to the person, assault or battery that occurred before or after the commencement of this section and regardless of the expiry of any previously applicable limitation period under this Act or a former version of this Act.",
+          "contentHash": "e8297464f3c0e0ac714e5c9e6b500b4ac3c441d46336967373a3aaed583ad948"
+        },
+        {
+          "id": "14.1-subsection-3",
+          "sourceKey": "section:14.1/subsection:3",
+          "label": "14.1(3)",
+          "text": "14.1(3)Subsection (1) revives the right to file a claim of a claimant who prior to the commencement of this section had a proceeding dismissed solely on the grounds that a previously applicable limitation period under this Act or a former version of this Act had expired.",
+          "contentHash": "3d8dc2b1ed4395d7db713d9ab06de5af9e0db367ce1f12513e32479ee7d98ca4"
+        },
+        {
+          "id": "14.1-subsection-4",
+          "sourceKey": "section:14.1/subsection:4",
+          "label": "14.1(4)",
+          "text": "14.1(4)This section does not apply in the case of a claim\n\n(a)\nthat has been settled and for which the settlement is legally binding, including a claim that formed part of a class action that has been settled, regardless of whether the claim was submitted as part of the class action, or\n\n(b)\nthat has been dismissed by a court and with respect to which no further appeal is possible, subject to subsection (3).\n\n2026, c.4, s.1\n\n4\n\nOPERATION OF LIMITATION PERIODS",
+          "contentHash": "9bc42c04412495972cb255119ca771a043b9ef1ff7215d24a936d10aea770df1"
+        }
+      ],
+      "contentHash": "10d1246b47e8e6751d94bac65716ed77889b1bfbc536bd6703466c4c45892b65"
+    },
+    {
+      "id": "section-15",
+      "sourceKey": "section:15",
+      "componentType": "section",
+      "label": "15",
+      "heading": "Knowledge",
+      "text": "Knowledge\n\n15(1)If, in respect of a claim brought by a principal, an agent has actual knowledge of the matters referred to in subsection 5(2), subparagraph 9(1)(b)(i), paragraph 14(1)(a) or (2)(a), subparagraph 16(b)(i) or section 22 and has a duty to communicate that knowledge to the principal, the principal shall be deemed to have knowledge of the matters on the earlier of\n\n(a)\nthe day on which the agent first knew those matters, and\n\n(b)\nthe day on which the principal first knew or ought reasonably to have known those matters.\n\n15(2)In respect of a claim brought by a claimant who is, in relation to the property to which the claim relates, a successor in right, title or interest to another person, the claimant shall be deemed to have knowledge of the matters referred to in subsection 5(2) or subparagraph 9(1)(b)(i) or 16(b)(i) on the earlier of\n\n(a)\nthe day on which the predecessor first knew or ought reasonably to have known those matters, if that day occurred before the predecessor transferred the property, and\n\n(b)\nthe day on which the claimant first knew or ought reasonably to have known those matters.",
+      "subsections": [
+        {
+          "id": "15-subsection-1",
+          "sourceKey": "section:15/subsection:1",
+          "label": "15(1)",
+          "text": "15(1)If, in respect of a claim brought by a principal, an agent has actual knowledge of the matters referred to in subsection 5(2), subparagraph 9(1)(b)(i), paragraph 14(1)(a) or (2)(a), subparagraph 16(b)(i) or section 22 and has a duty to communicate that knowledge to the principal, the principal shall be deemed to have knowledge of the matters on the earlier of\n\n(a)\nthe day on which the agent first knew those matters, and\n\n(b)\nthe day on which the principal first knew or ought reasonably to have known those matters.",
+          "contentHash": "acdfd48e002f24df8a26686ca7f9d44bcf369b008e1675bbbf7c02b6279f1e5e"
+        },
+        {
+          "id": "15-subsection-2",
+          "sourceKey": "section:15/subsection:2",
+          "label": "15(2)",
+          "text": "15(2)In respect of a claim brought by a claimant who is, in relation to the property to which the claim relates, a successor in right, title or interest to another person, the claimant shall be deemed to have knowledge of the matters referred to in subsection 5(2) or subparagraph 9(1)(b)(i) or 16(b)(i) on the earlier of\n\n(a)\nthe day on which the predecessor first knew or ought reasonably to have known those matters, if that day occurred before the predecessor transferred the property, and\n\n(b)\nthe day on which the claimant first knew or ought reasonably to have known those matters.",
+          "contentHash": "b7b1bd7daff9de2a3bb2a1e34bcda80ae4f03b427a734e87c8ea72f0e863e468"
+        }
+      ],
+      "contentHash": "441ab14566ae4575f0bc59fd2cb5ffff8fca45c0c81042fba8a82cbd128fc7b4"
+    },
+    {
+      "id": "section-16",
+      "sourceKey": "section:16",
+      "componentType": "section",
+      "label": "16",
+      "heading": "Wilful concealment",
+      "text": "Wilful concealment\n\n16If a defendant wilfully conceals from a claimant the existence of a claim, the following rules apply:\n\n(a)\nthe defendant cannot rely on the expiry of a limitation period referred to in paragraph 5(1)(b), subparagraph 9(1)(b)(ii) or paragraph 11(b), 14(1)(b) or 14(2)(b) as a defence to the claim, and\n\n(b)\nin the case of a claim referred to in section 8, subsection 8.1(2), (3) or (4), subsection 12(2) or (4) or section 13, the claim shall not be brought after the later of\n\n(i)\ntwo years from the day the claimant first knows or ought reasonably to know that the claim exists, and\n\n(ii)\nthe period described in section 8, subsection 8.1(2), (3) or (4), subsection 12(2) or (4) or section 13, as the case may be.\n\n2011, c.17, s.3",
+      "subsections": [],
+      "contentHash": "10b2e3068c8474d5b3c99ed191a38fe417cb13eddf7b7ec2d20348d261aeea49"
+    },
+    {
+      "id": "section-17",
+      "sourceKey": "section:17",
+      "componentType": "section",
+      "label": "17",
+      "heading": "Minors",
+      "text": "Minors\n\n17The operation of any limitation period established by this Act is suspended while the claimant is a minor.",
+      "subsections": [],
+      "contentHash": "bd5f1399e7ccc2500f67cc00e5c7746cfbe52dadf44cafe260ec3d3b39aa21aa"
+    },
+    {
+      "id": "section-18",
+      "sourceKey": "section:18",
+      "componentType": "section",
+      "label": "18",
+      "heading": "Incapacity",
+      "text": "Incapacity\n\n18(1)The operation of the limitation period in paragraph 5(1)(a), subparagraph 9(1)(b)(i) or paragraph 11(a), 14(1)(a) or 14(2)(a) is suspended during any period in which the claimant is incapable of bringing the claim because of his or her physical, mental or psychological condition.\n\n18(2)If the limitation period has less than one year to run when the suspension ends, the period is extended to the day that is one year after the day on which the suspension ends.",
+      "subsections": [
+        {
+          "id": "18-subsection-1",
+          "sourceKey": "section:18/subsection:1",
+          "label": "18(1)",
+          "text": "18(1)The operation of the limitation period in paragraph 5(1)(a), subparagraph 9(1)(b)(i) or paragraph 11(a), 14(1)(a) or 14(2)(a) is suspended during any period in which the claimant is incapable of bringing the claim because of his or her physical, mental or psychological condition.",
+          "contentHash": "8e6be558291ea092dd494c7e156b6418b5dea5ff216935d62dd0a57f269455f5"
+        },
+        {
+          "id": "18-subsection-2",
+          "sourceKey": "section:18/subsection:2",
+          "label": "18(2)",
+          "text": "18(2)If the limitation period has less than one year to run when the suspension ends, the period is extended to the day that is one year after the day on which the suspension ends.",
+          "contentHash": "1e9876488741665f246dcb3288b6fcf51314343f2fafd94294b90410d40fb074"
+        }
+      ],
+      "contentHash": "304628b204ad7e688d08992a9f29534a23af839fa4f5938a64fbbab83516fe67"
+    },
+    {
+      "id": "section-19",
+      "sourceKey": "section:19",
+      "componentType": "section",
+      "label": "19",
+      "heading": "Acknowledgment",
+      "text": "Acknowledgment\n\n19(1)If, before the expiry of the relevant limitation period established by this Act, a defendant gives an acknowledgment of the right, title, liability or obligation to which the claim relates, the operation of the limitation period begins again at the time of the acknowledgment.\n\n19(2)An acknowledgment\n\n(a)\nmust be in writing, and\n\n(b)\nmust be made by the defendant or the defendant’s agent to the claimant, the claimant’s agent or an official receiver or trustee acting under the Bankruptcy and Insolvency Act (Canada).\n\n19(3)An admission or statement made in correspondence relating to the resolution of a claim is not an acknowledgment for the purposes of this section if\n\n(a)\nthe correspondence indicates that the admission or statement is made without prejudice, or\n\n(b)\nthe correspondence reserves the defendant’s right to rely on the expiry of a limitation period as a defence to the claim.",
+      "subsections": [
+        {
+          "id": "19-subsection-1",
+          "sourceKey": "section:19/subsection:1",
+          "label": "19(1)",
+          "text": "19(1)If, before the expiry of the relevant limitation period established by this Act, a defendant gives an acknowledgment of the right, title, liability or obligation to which the claim relates, the operation of the limitation period begins again at the time of the acknowledgment.",
+          "contentHash": "efe652d9c86f21417f63ebecf6fb6fc5e087b300d3e76a39650274379029df82"
+        },
+        {
+          "id": "19-subsection-2",
+          "sourceKey": "section:19/subsection:2",
+          "label": "19(2)",
+          "text": "19(2)An acknowledgment\n\n(a)\nmust be in writing, and\n\n(b)\nmust be made by the defendant or the defendant’s agent to the claimant, the claimant’s agent or an official receiver or trustee acting under the Bankruptcy and Insolvency Act (Canada).",
+          "contentHash": "c938a8c38757eef180e7d54e60aae16119ca40a0fa2552448207917ab21c06bf"
+        },
+        {
+          "id": "19-subsection-3",
+          "sourceKey": "section:19/subsection:3",
+          "label": "19(3)",
+          "text": "19(3)An admission or statement made in correspondence relating to the resolution of a claim is not an acknowledgment for the purposes of this section if\n\n(a)\nthe correspondence indicates that the admission or statement is made without prejudice, or\n\n(b)\nthe correspondence reserves the defendant’s right to rely on the expiry of a limitation period as a defence to the claim.",
+          "contentHash": "339d075c0efe2deea1bb8084c6dc3e978f6f7cd9e9a5820d4663218c511f407f"
+        }
+      ],
+      "contentHash": "c7140975dadbee8d1af3b90da6d3879d5d35de2b6fa30900b2f9cd2dd2986385"
+    },
+    {
+      "id": "section-20",
+      "sourceKey": "section:20",
+      "componentType": "section",
+      "label": "20",
+      "heading": "Part payments",
+      "text": "Part payments\n\n20(1)If a defendant makes a part payment of a liquidated or unliquidated monetary obligation before the expiry of the relevant limitation period established by this Act, the operation of the limitation period begins again at the time of the part payment.\n\n20(2)A part payment must be made by the defendant or the defendant’s agent to the claimant, the claimant’s agent or an official receiver or trustee acting under the Bankruptcy and Insolvency Act (Canada).\n\n20(3)Subsection (1) does not apply if\n\n(a)\nthe payment is made as full payment, settlement or discharge of the monetary obligation of the defendant,\n\n(b)\nthe payment is made without prejudice or on the basis that the defendant does not accept liability for any amount beyond the amount paid, or\n\n(c)\nthe defendant reserves the right to rely on the expiry of a limitation period as a defence to the claim.\n\n5\n\nCLAIMS BROUGHT AFTER EXPIRY OF LIMITATION PERIOD",
+      "subsections": [
+        {
+          "id": "20-subsection-1",
+          "sourceKey": "section:20/subsection:1",
+          "label": "20(1)",
+          "text": "20(1)If a defendant makes a part payment of a liquidated or unliquidated monetary obligation before the expiry of the relevant limitation period established by this Act, the operation of the limitation period begins again at the time of the part payment.",
+          "contentHash": "3c201e1091f9e0db853602d84308a216d3245cffb6a31331f59132b785b753ec"
+        },
+        {
+          "id": "20-subsection-2",
+          "sourceKey": "section:20/subsection:2",
+          "label": "20(2)",
+          "text": "20(2)A part payment must be made by the defendant or the defendant’s agent to the claimant, the claimant’s agent or an official receiver or trustee acting under the Bankruptcy and Insolvency Act (Canada).",
+          "contentHash": "274c5078eb35eb5f899042f833afd076a60b6cf5e54d00e108cddf9009591948"
+        },
+        {
+          "id": "20-subsection-3",
+          "sourceKey": "section:20/subsection:3",
+          "label": "20(3)",
+          "text": "20(3)Subsection (1) does not apply if\n\n(a)\nthe payment is made as full payment, settlement or discharge of the monetary obligation of the defendant,\n\n(b)\nthe payment is made without prejudice or on the basis that the defendant does not accept liability for any amount beyond the amount paid, or\n\n(c)\nthe defendant reserves the right to rely on the expiry of a limitation period as a defence to the claim.\n\n5\n\nCLAIMS BROUGHT AFTER EXPIRY OF LIMITATION PERIOD",
+          "contentHash": "a6027762e8da2c911d348e0b54a88955b31ea4cf8fb0e7111b1db96ed820431e"
+        }
+      ],
+      "contentHash": "3ad12379511819944a8d01e6d021b35121ce772b212565dbdf472b8c6ecfeb87"
+    },
+    {
+      "id": "section-21",
+      "sourceKey": "section:21",
+      "componentType": "section",
+      "label": "21",
+      "heading": "Claims added to proceedings",
+      "text": "Claims added to proceedings\n\n21 Despite the expiry of the relevant limitation period established by this Act, a claim may be added, through a new or an amended pleading, to a proceeding previously commenced if the added claim is related to the conduct, transaction or events described in the original pleadings and the conditions set out in one of the following paragraphs are satisfied:\n\n(a)\nthe added claim is made by a party to the proceeding against another party to the proceeding and does not change the capacity in which either party sues or is sued;\n\n(b)\nthe added claim adds or substitutes a defendant or changes the capacity in which a defendant is sued, but the defendant has received, before or within 6 months after the expiry of the limitation period, sufficient knowledge of the added claim that the defendant will not be prejudiced in defending against the added claim on the merits;\n\n(c)\nthe added claim adds or substitutes a claimant or changes the capacity in which a claimant sues, but the defendant has received, before or within 6 months after the expiry of the limitation period, sufficient knowledge of the added claim that the defendant will not be prejudiced in defending against the added claim on the merits, and the addition of the claim is necessary or desirable to ensure the effective determination or enforcement of the claims asserted or intended to be asserted in the original pleadings.",
+      "subsections": [],
+      "contentHash": "03e9e8f7f52cae3842b5cf7ce85fffac9517f6c58ad3787043da1e78f80b841c"
+    },
+    {
+      "id": "section-22",
+      "sourceKey": "section:22",
+      "componentType": "section",
+      "label": "22",
+      "heading": "Delay caused by defendant",
+      "text": "Delay caused by defendant\n\n22If the relevant limitation period established by this Act has expired, but the actions taken or assurances given by the defendant or the defendant’s agent in relation to the resolution of the claim before the expiry of the limitation period caused the claimant to reasonably believe that the claim would be resolved by agreement and therefore to delay bringing the claim, the claimant may bring the claim within 6 months after the day on which the claimant first knows or ought reasonably to know that the belief was unfounded.\n\n6\n\nGENERAL",
+      "subsections": [],
+      "contentHash": "94039f19d001dbdea9e1d20352527fc5b4090f0c4d1b8b644b6d119d71a78430"
+    },
+    {
+      "id": "section-23",
+      "sourceKey": "section:23",
+      "componentType": "section",
+      "label": "23",
+      "heading": "Non-judicial remedies",
+      "text": "Non-judicial remedies\n\n23(1)In this section, “non-judicial remedy” means a remedy that a person is entitled, by law or by contract, to exercise in respect of a claim without court proceedings.\n\n23(2)If a claimant is prevented from bringing a claim as a result of the expiry of a limitation period established by this Act, the claimant is not entitled to enforce against the defendant any non-judicial remedy that the claimant would otherwise be entitled to enforce in relation to the claim.",
+      "subsections": [
+        {
+          "id": "23-subsection-1",
+          "sourceKey": "section:23/subsection:1",
+          "label": "23(1)",
+          "text": "23(1)In this section, “non-judicial remedy” means a remedy that a person is entitled, by law or by contract, to exercise in respect of a claim without court proceedings.",
+          "contentHash": "acc9d97288c4f93a31f206747abb0b91dcb78895708bf9559105b680fd905d6a"
+        },
+        {
+          "id": "23-subsection-2",
+          "sourceKey": "section:23/subsection:2",
+          "label": "23(2)",
+          "text": "23(2)If a claimant is prevented from bringing a claim as a result of the expiry of a limitation period established by this Act, the claimant is not entitled to enforce against the defendant any non-judicial remedy that the claimant would otherwise be entitled to enforce in relation to the claim.",
+          "contentHash": "841266ad378307ad901e6cc8976aa182da9617dcb63dc1faf46cb85ff5ba1d2b"
+        }
+      ],
+      "contentHash": "e48835f2ab8898802dc5b24d5c6c4263d07537cca4f1620eeb3f299b0c539f1c"
+    },
+    {
+      "id": "section-24",
+      "sourceKey": "section:24",
+      "componentType": "section",
+      "label": "24",
+      "heading": "Conflict of laws",
+      "text": "Conflict of laws\n\n24(1)Subject to subsection (2), this Act applies to any claim brought in New Brunswick, despite the fact that, in accordance with conflict of laws rules, the claim is to be adjudicated pursuant to the substantive law of another jurisdiction.\n\n24(2)If the limitations law of that other jurisdiction would prevent the claim from being brought in that jurisdiction, the claim shall not be brought in New Brunswick.",
+      "subsections": [
+        {
+          "id": "24-subsection-1",
+          "sourceKey": "section:24/subsection:1",
+          "label": "24(1)",
+          "text": "24(1)Subject to subsection (2), this Act applies to any claim brought in New Brunswick, despite the fact that, in accordance with conflict of laws rules, the claim is to be adjudicated pursuant to the substantive law of another jurisdiction.",
+          "contentHash": "fef081cc81f5c539a39513a9c0bbf2654ff2fd85a6aa4fdbffa7882df91df49a"
+        },
+        {
+          "id": "24-subsection-2",
+          "sourceKey": "section:24/subsection:2",
+          "label": "24(2)",
+          "text": "24(2)If the limitations law of that other jurisdiction would prevent the claim from being brought in that jurisdiction, the claim shall not be brought in New Brunswick.",
+          "contentHash": "6f1089fac96db78f9a7581e409129a860bf1c7b4fd5c95f2d68dade24f2f8c49"
+        }
+      ],
+      "contentHash": "5360dbf3b2cbcf22a832792bef958e36152de2de427c3b8ec20b819a5f96aec3"
+    },
+    {
+      "id": "section-25",
+      "sourceKey": "section:25",
+      "componentType": "section",
+      "label": "25",
+      "heading": "Rules of equity",
+      "text": "Rules of equity\n\n25Nothing in this Act derogates from any rule of equity under which a court may refuse to grant relief to a claimant in respect of a claim.\n\n7\n\nTRANSITION\n\nRepealed: 2021, c.21, s.2\n\n2021, c.21, s.2",
+      "subsections": [],
+      "contentHash": "e43bfdfab4c191f991fc9f5aa4a5fb29f18d530125fcd79a23dcd9252f0d07da"
+    },
+    {
+      "id": "section-27",
+      "sourceKey": "section:27",
+      "componentType": "section",
+      "label": "27",
+      "heading": "Repealed",
+      "text": "Repealed\n\n27Repealed: 2021, c.21, s.3\n2021, c.21, s.3",
+      "subsections": [],
+      "contentHash": "7b95af8c8f4a727e85eab00c7d247f20ca8a3c4e3ad879746c65ef3a5bcf2027"
+    },
+    {
+      "id": "section-27.1",
+      "sourceKey": "section:27.1",
+      "componentType": "section",
+      "label": "27.1",
+      "heading": "Repealed",
+      "text": "Repealed\n\n27.1Repealed: 2021, c.21, s.3\n2011, c.52, s.2; 2016, c.28, s.70; 2021, c.21, s.3",
+      "subsections": [],
+      "contentHash": "42684bf43d9011fa6a0a72638c5bdc5d7ea4d46972e23404f86f43ed9f7f27a9"
+    },
+    {
+      "id": "section-27.2",
+      "sourceKey": "section:27.2",
+      "componentType": "section",
+      "label": "27.2",
+      "heading": "Repealed",
+      "text": "Repealed\n\n27.2Repealed: 2021, c.21, s.3\n2021, c.21, s.3\n\n8\n\nCONSEQUENTIAL AMENDMENTS AND COMMENCEMENT",
+      "subsections": [],
+      "contentHash": "7714f7eb45913ca12f0b9f2dcdbe04e30db530bef627f4f651400bda328549ec"
+    },
+    {
+      "id": "section-28",
+      "sourceKey": "section:28",
+      "componentType": "section",
+      "label": "28",
+      "heading": "Arbitration Act",
+      "text": "Arbitration Act\n\n28Section 52 of the Arbitration Act, chapter A-10.1 of the Acts of New Brunswick, 1992, is amended\n\n(a)\nin subsection (1) by striking out “as if the arbitration were an action and a claim made in the arbitration were a cause of action” and substituting “as if the arbitration were a court proceeding”;\n\n(b)\nin subsection (2) by striking out “within which an action may be brought on a cause of action that was a claim in the arbitration” and substituting “within which a court proceeding may be brought in respect of a claim that was presented in the arbitration”.",
+      "subsections": [],
+      "contentHash": "76bdaf53f1fd1900434e09c823f85cd43040727c3ce881b6f1a337d91dbee279"
+    },
+    {
+      "id": "section-29",
+      "sourceKey": "section:29",
+      "componentType": "section",
+      "label": "29",
+      "heading": "Business Corporations Act",
+      "text": "Business Corporations Act\n\n29Subsection 83(6) of the Business Corporations Act, chapter B-9.1 of the Acts of New Brunswick, 1981, is repealed and the following is substituted:\n\n83(6)No action shall be brought under subsection (5) after 2 years from the day on which the plaintiff first knew or ought reasonably to have known that the conduct giving rise to the action took place.",
+      "subsections": [],
+      "contentHash": "8e55dd17b8f59041b158151a8ee299de7a3b77a5e5603d4bd5fcd3ea65fa88c2"
+    },
+    {
+      "id": "section-30",
+      "sourceKey": "section:30",
+      "componentType": "section",
+      "label": "30",
+      "heading": "Defamation Act",
+      "text": "Defamation Act\n\n30(1)Section 12 of the Defamation Act, chapter D-5 of the Revised Statutes, 1973, is amended by striking out “Sections 13 to 18” and substituting “Sections 15 to 18”.\n\n30(2)Section 13 of the Act is repealed.\n\n30(3)Section 14 of the Act is repealed.\n\n30(4)Section 18 of the Act is amended\n\n(a)\nin subsection (1) by striking out “sections 13, 14 and 17” and substituting “section 17”;\n\n(b)\nin subsection (3) by striking out “sections 13, 14 and 17” and substituting “section 17”.",
+      "subsections": [
+        {
+          "id": "30-subsection-1",
+          "sourceKey": "section:30/subsection:1",
+          "label": "30(1)",
+          "text": "30(1)Section 12 of the Defamation Act, chapter D-5 of the Revised Statutes, 1973, is amended by striking out “Sections 13 to 18” and substituting “Sections 15 to 18”.",
+          "contentHash": "416392b2ee217d221c4b9aeb8cebb03f971dd49245cd2b1f4bb9257fa2b03d0d"
+        },
+        {
+          "id": "30-subsection-2",
+          "sourceKey": "section:30/subsection:2",
+          "label": "30(2)",
+          "text": "30(2)Section 13 of the Act is repealed.",
+          "contentHash": "6fd34d154c6fa918d21e6a504f1783896c45778262cd8a8706e95982d7b3c676"
+        },
+        {
+          "id": "30-subsection-3",
+          "sourceKey": "section:30/subsection:3",
+          "label": "30(3)",
+          "text": "30(3)Section 14 of the Act is repealed.",
+          "contentHash": "baf8d9a3f6f56c1f98be6026a3f4c54f95218c65197a86c0c7496eabc5b64824"
+        },
+        {
+          "id": "30-subsection-4",
+          "sourceKey": "section:30/subsection:4",
+          "label": "30(4)",
+          "text": "30(4)Section 18 of the Act is amended\n\n(a)\nin subsection (1) by striking out “sections 13, 14 and 17” and substituting “section 17”;\n\n(b)\nin subsection (3) by striking out “sections 13, 14 and 17” and substituting “section 17”.",
+          "contentHash": "41211b86df43a1e3c1e41050bd07977f5fa63de55fc7b1e73ad78edb6fd935ae"
+        }
+      ],
+      "contentHash": "5e6405a4853fdc9fa980b488db5008e18c05b627fe6308a8f0e7a1df67cba5ee"
+    },
+    {
+      "id": "section-31",
+      "sourceKey": "section:31",
+      "componentType": "section",
+      "label": "31",
+      "heading": "Electricity Act",
+      "text": "Electricity Act\n\n31Section 31 of the Electricity Act, chapter E-4.6 of the Acts of New Brunswick, 2003, is amended\n\n(a)\nin subsection (1) by striking out “notwithstanding the Limitation of Actions Act or any other Act” and substituting “notwithstanding any other Act”;\n\n(b)\nin subsection (2) by striking out “notwithstanding the Limitation of Actions Act or any other Act” and substituting “notwithstanding any other Act”.",
+      "subsections": [],
+      "contentHash": "72a5e3fe409bbd77dba839dddabb1aadf0235d1b26362c886573d9454c008393"
+    },
+    {
+      "id": "section-32",
+      "sourceKey": "section:32",
+      "componentType": "section",
+      "label": "32",
+      "heading": "Executors and Trustees Act",
+      "text": "Executors and Trustees Act\n\n32(1)The heading “LIMITATION” preceding section 17 of the Executors and Trustees Act, chapter E-13 of the Revised Statutes, 1973, is repealed.\n\n32(2)Section 17 of the Act is repealed.",
+      "subsections": [
+        {
+          "id": "32-subsection-1",
+          "sourceKey": "section:32/subsection:1",
+          "label": "32(1)",
+          "text": "32(1)The heading “LIMITATION” preceding section 17 of the Executors and Trustees Act, chapter E-13 of the Revised Statutes, 1973, is repealed.",
+          "contentHash": "2048a6b33cc0902fbd11527afbceafd849ce354f46f9633ea1de8457c779ca0a"
+        },
+        {
+          "id": "32-subsection-2",
+          "sourceKey": "section:32/subsection:2",
+          "label": "32(2)",
+          "text": "32(2)Section 17 of the Act is repealed.",
+          "contentHash": "61460b68047a2a0af3ccf2d5d123f3e3753aec96a1be2d487602db92b04fc007"
+        }
+      ],
+      "contentHash": "886b312898de2c5caf93c311ef46b003bb0ffb1c830e2d799e4926d79383126c"
+    },
+    {
+      "id": "section-33",
+      "sourceKey": "section:33",
+      "componentType": "section",
+      "label": "33",
+      "heading": "Fatal Accidents Act",
+      "text": "Fatal Accidents Act\n\n33(1)Subsection 2(2) of the Fatal Accidents Act, chapter F-7 of the Revised Statutes, 1973, is amended by striking out “Subject to subsection (5)” and substituting “Subject to subsections (5) and 8(3.1)”.\n\n33(2)Subsection 5(4) of the Act is repealed and the following is substituted:\n\n5(4)No application shall be made under subsection (1) by a person barred from bringing an action under this Act because of the expiration of a period set out in paragraph 8(4)(a) or (b), but where such an application is made not earlier than 3 months before the expiration of that period, the judge may, if he or she thinks it just to do so, extend for a period not exceeding one month the time within which an action may be brought as provided in subsection 8(4).\n\n33(3)Section 8 of the Act is amended\n\n(a)\nin subsection (3) by striking out “lapse of time or”;\n\n(b)\nby adding after subsection (3) the following:\n\n8(3.1)If the deceased, at the time of his or her death, could not have brought an action against the tortfeasor by reason of lapse of time, a person who, if not for this subsection, would be entitled to bring an action under this Act is barred from doing so.\n\n(c)\nby repealing subsection (4) and substituting the following:\n\n8(4)Except where it is expressly declared in another Act that it operates notwithstanding this Act and subject to subsection 5(4), an action, including an action to which subsection 2(5) or (6) applies, shall not be brought under this Act after the earlier of\n\n(a)\ntwo years from the day on which the person bringing the action first knew or ought reasonably to have known that the wrongful act, neglect or default of the tortfeasor caused the death or contributed to the cause of death of the deceased, and\n\n(b)\nfive years from the day of the death of the deceased.",
+      "subsections": [
+        {
+          "id": "33-subsection-1",
+          "sourceKey": "section:33/subsection:1",
+          "label": "33(1)",
+          "text": "33(1)Subsection 2(2) of the Fatal Accidents Act, chapter F-7 of the Revised Statutes, 1973, is amended by striking out “Subject to subsection (5)” and substituting “Subject to subsections (5) and 8(3.1)”.",
+          "contentHash": "2df18a799261ddea26d6af0930e01ca0824f180a8236b168e1c4d7b857ae1e04"
+        },
+        {
+          "id": "33-subsection-2",
+          "sourceKey": "section:33/subsection:2",
+          "label": "33(2)",
+          "text": "33(2)Subsection 5(4) of the Act is repealed and the following is substituted:\n\n5(4)No application shall be made under subsection (1) by a person barred from bringing an action under this Act because of the expiration of a period set out in paragraph 8(4)(a) or (b), but where such an application is made not earlier than 3 months before the expiration of that period, the judge may, if he or she thinks it just to do so, extend for a period not exceeding one month the time within which an action may be brought as provided in subsection 8(4).",
+          "contentHash": "b3c7365ccf00bd0392032d861a986e2f1af4c8ba5e2bedb0f9617a6aa51fd04d"
+        },
+        {
+          "id": "33-subsection-3",
+          "sourceKey": "section:33/subsection:3",
+          "label": "33(3)",
+          "text": "33(3)Section 8 of the Act is amended\n\n(a)\nin subsection (3) by striking out “lapse of time or”;\n\n(b)\nby adding after subsection (3) the following:\n\n8(3.1)If the deceased, at the time of his or her death, could not have brought an action against the tortfeasor by reason of lapse of time, a person who, if not for this subsection, would be entitled to bring an action under this Act is barred from doing so.\n\n(c)\nby repealing subsection (4) and substituting the following:\n\n8(4)Except where it is expressly declared in another Act that it operates notwithstanding this Act and subject to subsection 5(4), an action, including an action to which subsection 2(5) or (6) applies, shall not be brought under this Act after the earlier of\n\n(a)\ntwo years from the day on which the person bringing the action first knew or ought reasonably to have known that the wrongful act, neglect or default of the tortfeasor caused the death or contributed to the cause of death of the deceased, and\n\n(b)\nfive years from the day of the death of the deceased.",
+          "contentHash": "76f9247eb98f4074a41f481105a4c7ea0e52d85ff1fb6daf900ead30967f0a0c"
+        }
+      ],
+      "contentHash": "2ef7c65a3866351ffd05716b205f1f4a79b8b0344d49112ce0b1aee4f3737f4c"
+    },
+    {
+      "id": "section-34",
+      "sourceKey": "section:34",
+      "componentType": "section",
+      "label": "34",
+      "heading": "Limitation of Actions Act",
+      "text": "Limitation of Actions Act\n\n34(1)The title of the Limitation of Actions Act, chapter L-8 of the Revised Statutes, 1973, is repealed and the following is substituted:\n\nReal Property Limitations Act\n\n34(2)Section 1 of the Act is amended\n\n(a)\nby repealing the definition “beyond seas”;\n\n(b)\nby repealing the definitions “mortgage”, “mortgagor” and “mortgagee”;\n\n(c)\nin the definition “proceedings” by striking out “entry, taking of possession, distress and sale proceedings under an order of a court or under a power of sale contained in a mortgage or conferred by statute;” and substituting “entry and taking of possession.”;\n\n(d)\nby repealing the definition “rent”;\n\n(e)\nby repealing the definition “rent charge”.\n\n34(3)Parts I and II of the Act are repealed.\n\n34(4)Subsection 33(2) of the Act is repealed.\n\n34(5)Parts IV, V and VI of the Act are repealed.\n\n34(6)Section 55 of the Act is repealed and the following is substituted:\n\nDefinition of “trustee”\n\n55In this Part, “trustee” includes an executor and a joint trustee.\n\n34(7)Section 56 of the Act is repealed.\n\n34(8)Section 57 of the Act is repealed.\n\n34(9)Section 58 of the Act is amended\n\n(a)\nby repealing subsection (2);\n\n(b)\nby repealing subsection (3).\n\n34(10)Section 60 of the Act is amended by striking out “any land, rent charge, or money charged on land, the right and title of such person to the land or rent charge or the recovery of the money out of the land shall be extinguished” and substituting “any land, the right and title of such person to the land shall be extinguished”.\n\n34(11)Section 61 of the Act is repealed.\n\n34(12)Section 62 of the Act is amended by striking out “Parts II, III and IV” and substituting “Part III”.\n\n34(13)Subsection 63(1) of the Act is amended by striking out “Parts II, III and IV” and substituting “Part III”.\n\n34(14)The heading “APPLICATION OF ACT” preceding section 64 of the Act is repealed.\n\n34(15)Section 64 of the Act is repealed.\n\n34(16)The heading “ACQUIESCENCE” preceding section 65 of the Act is repealed.\n\n34(17)Section 65 of the Act is repealed.",
+      "subsections": [
+        {
+          "id": "34-subsection-1",
+          "sourceKey": "section:34/subsection:1",
+          "label": "34(1)",
+          "text": "34(1)The title of the Limitation of Actions Act, chapter L-8 of the Revised Statutes, 1973, is repealed and the following is substituted:\n\nReal Property Limitations Act",
+          "contentHash": "ffd9706fb4d5773962018f10299ad8571a98f4131abb8ddbb6ac295c063caa8a"
+        },
+        {
+          "id": "34-subsection-2",
+          "sourceKey": "section:34/subsection:2",
+          "label": "34(2)",
+          "text": "34(2)Section 1 of the Act is amended\n\n(a)\nby repealing the definition “beyond seas”;\n\n(b)\nby repealing the definitions “mortgage”, “mortgagor” and “mortgagee”;\n\n(c)\nin the definition “proceedings” by striking out “entry, taking of possession, distress and sale proceedings under an order of a court or under a power of sale contained in a mortgage or conferred by statute;” and substituting “entry and taking of possession.”;\n\n(d)\nby repealing the definition “rent”;\n\n(e)\nby repealing the definition “rent charge”.",
+          "contentHash": "3af82effa1915d74ee2b57a35ef4ad3e8934e979a6ce13f7dc7c93d94083fc29"
+        },
+        {
+          "id": "34-subsection-3",
+          "sourceKey": "section:34/subsection:3",
+          "label": "34(3)",
+          "text": "34(3)Parts I and II of the Act are repealed.",
+          "contentHash": "cb0a35ddfffb9b7a0f1a8f8a1bbeb0667d0e168e585e78150a5170636dc3b32c"
+        },
+        {
+          "id": "34-subsection-4",
+          "sourceKey": "section:34/subsection:4",
+          "label": "34(4)",
+          "text": "34(4)Subsection 33(2) of the Act is repealed.",
+          "contentHash": "c0cafe4fabd18b1c860c8e92ec3d1c35d7566920c3afa33659ab04d0fae26270"
+        },
+        {
+          "id": "34-subsection-5",
+          "sourceKey": "section:34/subsection:5",
+          "label": "34(5)",
+          "text": "34(5)Parts IV, V and VI of the Act are repealed.",
+          "contentHash": "27fbdb73e77de10b3c242511915afbe07493592ea96da2d30cde3f435f6736ce"
+        },
+        {
+          "id": "34-subsection-6",
+          "sourceKey": "section:34/subsection:6",
+          "label": "34(6)",
+          "text": "34(6)Section 55 of the Act is repealed and the following is substituted:\n\nDefinition of “trustee”\n\n55In this Part, “trustee” includes an executor and a joint trustee.",
+          "contentHash": "89868561104bb0211356b5551057367f2223c8d365bcac3860984d0ba059461a"
+        },
+        {
+          "id": "34-subsection-7",
+          "sourceKey": "section:34/subsection:7",
+          "label": "34(7)",
+          "text": "34(7)Section 56 of the Act is repealed.",
+          "contentHash": "d364f5dde1594d764d33cb1e012eb24acb994ad3230d3c731b5426be6d8797af"
+        },
+        {
+          "id": "34-subsection-8",
+          "sourceKey": "section:34/subsection:8",
+          "label": "34(8)",
+          "text": "34(8)Section 57 of the Act is repealed.",
+          "contentHash": "16be6dbc817baae8141332a8a111d63daf4205daf881629634b7088f9cd46433"
+        },
+        {
+          "id": "34-subsection-9",
+          "sourceKey": "section:34/subsection:9",
+          "label": "34(9)",
+          "text": "34(9)Section 58 of the Act is amended\n\n(a)\nby repealing subsection (2);\n\n(b)\nby repealing subsection (3).",
+          "contentHash": "7053cdba9ff28050c2cdf3916ef8796c2d8cc349be6aae9ddb8fd4749b774259"
+        },
+        {
+          "id": "34-subsection-10",
+          "sourceKey": "section:34/subsection:10",
+          "label": "34(10)",
+          "text": "34(10)Section 60 of the Act is amended by striking out “any land, rent charge, or money charged on land, the right and title of such person to the land or rent charge or the recovery of the money out of the land shall be extinguished” and substituting “any land, the right and title of such person to the land shall be extinguished”.",
+          "contentHash": "db0e2dae9db2490c39332b6110601391eb5d3f60dc66151aa19759eab34c6317"
+        },
+        {
+          "id": "34-subsection-11",
+          "sourceKey": "section:34/subsection:11",
+          "label": "34(11)",
+          "text": "34(11)Section 61 of the Act is repealed.",
+          "contentHash": "60f64546c2ea2e2fd62d6adfba15919296d88414551037b7cde12a6abf714e58"
+        },
+        {
+          "id": "34-subsection-12",
+          "sourceKey": "section:34/subsection:12",
+          "label": "34(12)",
+          "text": "34(12)Section 62 of the Act is amended by striking out “Parts II, III and IV” and substituting “Part III”.",
+          "contentHash": "c818f16a3a33469a009a6ae7e0f6c08ddb524c54346920faa3857438bb47e43d"
+        },
+        {
+          "id": "34-subsection-13",
+          "sourceKey": "section:34/subsection:13",
+          "label": "34(13)",
+          "text": "34(13)Subsection 63(1) of the Act is amended by striking out “Parts II, III and IV” and substituting “Part III”.",
+          "contentHash": "adc529d7cdcbf486472d7824b5e0c731db6fa35f52c1bc941263aaf78a569e1f"
+        },
+        {
+          "id": "34-subsection-14",
+          "sourceKey": "section:34/subsection:14",
+          "label": "34(14)",
+          "text": "34(14)The heading “APPLICATION OF ACT” preceding section 64 of the Act is repealed.",
+          "contentHash": "b7f545be794ba410296ca196dcc634e7d09abb6cc69e884145ccc3b27b7a57de"
+        },
+        {
+          "id": "34-subsection-15",
+          "sourceKey": "section:34/subsection:15",
+          "label": "34(15)",
+          "text": "34(15)Section 64 of the Act is repealed.",
+          "contentHash": "b01cb0f5f0e4277ff52becfb0c4084f4d19d06f87099deb934df53316dbf7c89"
+        },
+        {
+          "id": "34-subsection-16",
+          "sourceKey": "section:34/subsection:16",
+          "label": "34(16)",
+          "text": "34(16)The heading “ACQUIESCENCE” preceding section 65 of the Act is repealed.",
+          "contentHash": "b84127b90aa399fc1b5f836f2cb4b8bcf551548a897872f019608d20a6d4b259"
+        },
+        {
+          "id": "34-subsection-17",
+          "sourceKey": "section:34/subsection:17",
+          "label": "34(17)",
+          "text": "34(17)Section 65 of the Act is repealed.",
+          "contentHash": "3762cd0bdfce036276a3419b571daea5208c2615bb3adae99d4b50517ae96abe"
+        }
+      ],
+      "contentHash": "26a719ad00e64c0602ed0319c2b99a9a84a79c611e858870a758bf039db578df"
+    },
+    {
+      "id": "section-35",
+      "sourceKey": "section:35",
+      "componentType": "section",
+      "label": "35",
+      "heading": "Mental Health Act",
+      "text": "Mental Health Act\n\n35Subsection 66(2) of the Mental Health Act, chapter M-10 of the Revised Statutes, 1973, is amended by striking out “All actions and prosecutions” and substituting “All prosecutions”.",
+      "subsections": [],
+      "contentHash": "80ff0763d15ac412f32f48a302cef7dacc73a91c118ded50e630769523a46226"
+    },
+    {
+      "id": "section-36",
+      "sourceKey": "section:36",
+      "componentType": "section",
+      "label": "36",
+      "heading": "Midwifery Act",
+      "text": "Midwifery Act\n\n36(1)The heading “Limitation of actions” preceding section 96 of the Midwifery Act, chapter M-11.5 of the Acts of New Brunswick, 2008, is repealed.\n\n36(2)Section 96 of the Act is repealed.",
+      "subsections": [
+        {
+          "id": "36-subsection-1",
+          "sourceKey": "section:36/subsection:1",
+          "label": "36(1)",
+          "text": "36(1)The heading “Limitation of actions” preceding section 96 of the Midwifery Act, chapter M-11.5 of the Acts of New Brunswick, 2008, is repealed.",
+          "contentHash": "ea1ae965c4885225fca71fd961df73919865a7bf97973a2f58a1cc502a4ed1af"
+        },
+        {
+          "id": "36-subsection-2",
+          "sourceKey": "section:36/subsection:2",
+          "label": "36(2)",
+          "text": "36(2)Section 96 of the Act is repealed.",
+          "contentHash": "b13c64737d25325010446a93de50b0bbd294dd2fab8d8e4ff1ded8037253fbd8"
+        }
+      ],
+      "contentHash": "143ed6011c46c8803dfeb55643e45da5e6334beea82f8c0cd176cab2a2e484fb"
+    },
+    {
+      "id": "section-37",
+      "sourceKey": "section:37",
+      "componentType": "section",
+      "label": "37",
+      "heading": "Probate Court Act",
+      "text": "Probate Court Act\n\n37Subsection 68(2) of the Probate Court Act, chapter P-17.1 of the Acts of New Brunswick, 1982, is repealed.",
+      "subsections": [],
+      "contentHash": "582d6bbcd241d9a67962a32b43f8ea04f3f47fd6ba0aad82a685c012db9b3fca"
+    },
+    {
+      "id": "section-37.1",
+      "sourceKey": "section:37.1",
+      "componentType": "section",
+      "label": "37.1",
+      "heading": "Proceedings Against the Crown Act",
+      "text": "Proceedings Against the Crown Act\n\n37.1Section 15 of the Proceedings Against the Crown Act, chapter P-18 of the Revised Statutes, 1973, is amended\n\n(a)\nby renumbering the section as subsection 15(1);\n\n(b)\nby adding after subsection (1) the following:\n\n15(2)If the notice is served before the expiry of the limitation period that applies to the action and the two-month period referred to in subsection (1) ends after the expiry of the limitation period, the limitation period is extended by seven days after the end of the two-month period.",
+      "subsections": [],
+      "contentHash": "6d01f80a5d272afd5804b0c569b32187d4bcf5cdc8888b006441932810c17c10"
+    },
+    {
+      "id": "section-38",
+      "sourceKey": "section:38",
+      "componentType": "section",
+      "label": "38",
+      "heading": "Regional Health Authorities Act",
+      "text": "Regional Health Authorities Act\n\n38(1)The heading “Limitations” preceding section 61 of the Regional Health Authorities Act, chapter R-5.05 of the Acts of New Brunswick, 2002, is repealed.\n\n38(2)Section 61 of the Act is repealed.",
+      "subsections": [
+        {
+          "id": "38-subsection-1",
+          "sourceKey": "section:38/subsection:1",
+          "label": "38(1)",
+          "text": "38(1)The heading “Limitations” preceding section 61 of the Regional Health Authorities Act, chapter R-5.05 of the Acts of New Brunswick, 2002, is repealed.",
+          "contentHash": "01fb5bc3cf9a59e24b544039121892dd6bffc8326dfc3ad351b8236462755b1a"
+        },
+        {
+          "id": "38-subsection-2",
+          "sourceKey": "section:38/subsection:2",
+          "label": "38(2)",
+          "text": "38(2)Section 61 of the Act is repealed.",
+          "contentHash": "79838fcf96d81ea7b5bf9ff067be084b9623b92c211cd685e76f62758bdde38d"
+        }
+      ],
+      "contentHash": "fd280dd3d70be8fde2adcba28c1ad607334b9a4143dd6f8bebf61b447ec43903"
+    },
+    {
+      "id": "section-39",
+      "sourceKey": "section:39",
+      "componentType": "section",
+      "label": "39",
+      "heading": "Survival of Actions Act",
+      "text": "Survival of Actions Act\n\n39Section 9 of the Survival of Actions Act, chapter S-18 of the Revised Statutes, 1973, is amended\n\n(a)\nin subsection (1) by striking out “Notwithstanding the Limitation of Actions Act or any other Act” and substituting “Notwithstanding any Act”;\n\n(b)\nby repealing subsection (2) and substituting the following:\n\n9(2)Subject to subsection (2.1), proceedings on a cause of action that survives under section 2 shall not be brought after 2 years from,\n\n(a)\nif the cause of action is discovered by the person in whom the cause of action was vested before death, the day of the death of the person, and\n\n(b)\nif the cause of action is discovered after the death of the person in whom the cause of action was vested before death, the day the cause of action is discovered by the person bringing the action.\n\n(c)\nby adding after subsection (2) the following:\n\n9(2.1)Proceedings on a cause of action that survives under section 2 shall not be brought after 5 years from the day of the death of the person in whom the cause of action was vested before death.\n\n(d)\nby repealing subsection (3) and substituting the following:\n\n9(3)Subject to subsection (3.1), proceedings on a cause of action that survives under section 3 or 4 shall not be brought after 2 years from the later of\n\n(a)\nthe day of the death of the person against whom the cause of action subsisted or was deemed to have been subsisting before death, and\n\n(b)\nthe day the cause of action is discovered by the person who has the cause of action.\n\n(e)\nby adding after subsection (3) the following:\n\n9(3.1)Proceedings on a cause of action that survives under section 3 or 4 shall not be brought after 5 years from the day of the death of the person against whom the cause of action subsisted or was deemed to have been subsisting before death.\n\n9(3.2)For the purposes of subsections (2) and (3), a cause of action is discovered by a person on the day on which that person first knew or ought reasonably to have known that the cause of action existed.",
+      "subsections": [],
+      "contentHash": "e8380f66983d926bc5f87357d6c20d1ead7a63723496da2fefd369097e8960a4"
+    },
+    {
+      "id": "section-40",
+      "sourceKey": "section:40",
+      "componentType": "section",
+      "label": "40",
+      "heading": "Commencement",
+      "text": "Commencement\n\n40This Act comes into force on a day to be fixed by proclamation.\n\nN.B. This Act was proclaimed and came into force May 1, 2010.\n\nN.B. This Act is consolidated to June 12, 2026.",
+      "subsections": [],
+      "contentHash": "f9c7b5c03e4261db8b54a81e608241cb333ef24b5467763605c5e98646ba2775"
+    }
+  ],
+  "sections": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
+      "label": "1",
+      "heading": "Definitions and interpretation",
+      "text": "Definitions and interpretation\n\n1(1)The following definitions apply in this Act.\n\n“claim” means a claim to remedy the injury, loss or damage that occurred as a result of an act or omission.(réclamation)\n\n“claimant” means a person who has a claim, whether or not the claim has been brought.(réclamant)\n\n“defendant” means a person against whom a claimant has a claim, whether or not the claim has been brought.(défendeur)\n\n1(2)For the purposes of this Act, a claim is brought\n\n(a)\nwhen a proceeding in respect of the claim is commenced, or\n\n(b)\nif the claim is added to an existing proceeding by a new or an amended pleading that is not an originating process, when that pleading is filed.\n\n1(3)Any reference in this Act to a limitation period established by this Act does not include a reference to the period described in section 22.",
+      "subsections": [
+        {
+          "id": "1-subsection-1",
+          "sourceKey": "section:1/subsection:1",
+          "label": "1(1)",
+          "text": "1(1)The following definitions apply in this Act.\n\n“claim” means a claim to remedy the injury, loss or damage that occurred as a result of an act or omission.(réclamation)\n\n“claimant” means a person who has a claim, whether or not the claim has been brought.(réclamant)\n\n“defendant” means a person against whom a claimant has a claim, whether or not the claim has been brought.(défendeur)",
+          "contentHash": "2905562a10f0dacf7f7aa16b1f99d90ecf74e3623659e29caafcbb0ddbe85f36"
+        },
+        {
+          "id": "1-subsection-2",
+          "sourceKey": "section:1/subsection:2",
+          "label": "1(2)",
+          "text": "1(2)For the purposes of this Act, a claim is brought\n\n(a)\nwhen a proceeding in respect of the claim is commenced, or\n\n(b)\nif the claim is added to an existing proceeding by a new or an amended pleading that is not an originating process, when that pleading is filed.",
+          "contentHash": "41ebee37b5ff9874bcc168db4b738817e8700b0d0b693ef36b0e0bba6981a7f1"
+        },
+        {
+          "id": "1-subsection-3",
+          "sourceKey": "section:1/subsection:3",
+          "label": "1(3)",
+          "text": "1(3)Any reference in this Act to a limitation period established by this Act does not include a reference to the period described in section 22.",
+          "contentHash": "ddf3e15547c62fe8e2efd736a31fe70c546349ffa04447f5a8419ab354184e71"
+        }
+      ],
+      "contentHash": "9dc1ecad1766992407ce65638d7011380efe780471ee78c07c580fadc2ab832d"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "label": "2",
+      "heading": "Application",
+      "text": "Application\n\n2(1)This Act applies to any claim brought after the commencement of this Act, including a claim that is added to a proceeding commenced before the commencement of this Act.\n\n2(2)Repealed: 2011, c.17, s.1\n\n2011, c.17, s.1",
+      "subsections": [
+        {
+          "id": "2-subsection-1",
+          "sourceKey": "section:2/subsection:1",
+          "label": "2(1)",
+          "text": "2(1)This Act applies to any claim brought after the commencement of this Act, including a claim that is added to a proceeding commenced before the commencement of this Act.",
+          "contentHash": "85f8fea6f7aefe65005e626a05f213ad83a6279965624c8e7b0eb5319b31fd80"
+        },
+        {
+          "id": "2-subsection-2",
+          "sourceKey": "section:2/subsection:2",
+          "label": "2(2)",
+          "text": "2(2)Repealed: 2011, c.17, s.1\n\n2011, c.17, s.1",
+          "contentHash": "cebb936b7a64821b804b4af0dedc08052da2869d77f2ad1fc81427b67e1c39a5"
+        }
+      ],
+      "contentHash": "41823ebda888fff86baae208688975752942d2a957471eddbd3cec98e7364c65"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
+      "label": "3",
+      "heading": "This Act binds the Crown",
+      "text": "This Act binds the Crown\n\n3This Act binds the Crown.",
+      "subsections": [],
+      "contentHash": "5b2f068d2d967607d61a76ad84bd7f6e838e434a0b1db02d3577c3f25576317e"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
+      "label": "4",
+      "heading": "Conflict",
+      "text": "Conflict\n\n4(1)If there is a conflict between this Act and any other public Act of New Brunswick, that other Act prevails.\n\n4(2)If there is a conflict between this Act and any private Act of New Brunswick, this Act prevails.\n\n2\n\nGENERAL LIMITATION PERIODS",
+      "subsections": [
+        {
+          "id": "4-subsection-1",
+          "sourceKey": "section:4/subsection:1",
+          "label": "4(1)",
+          "text": "4(1)If there is a conflict between this Act and any other public Act of New Brunswick, that other Act prevails.",
+          "contentHash": "047189724c06d4fa273d4a538d9f378b52e9d726f9616aadcfacd6bbc4fe31ed"
+        },
+        {
+          "id": "4-subsection-2",
+          "sourceKey": "section:4/subsection:2",
+          "label": "4(2)",
+          "text": "4(2)If there is a conflict between this Act and any private Act of New Brunswick, this Act prevails.\n\n2\n\nGENERAL LIMITATION PERIODS",
+          "contentHash": "731f0b4c83aca1f8e96c81f429882a0ee1dcaaf7c2bd2dac184247a0c34314b5"
+        }
+      ],
+      "contentHash": "ca66b0213ef94f624a5c14b99fe1e635192fb5e2a8ce7bc457e020146e45f0d6"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "componentType": "section",
+      "label": "5",
+      "heading": "General limitation periods",
+      "text": "General limitation periods\n\n5(1)Unless otherwise provided in this Act, no claim shall be brought after the earlier of\n\n(a)\ntwo years from the day on which the claim is discovered, and\n\n(b)\nfifteen years from the day on which the act or omission on which the claim is based occurred.\n\n5(2)A claim is discovered on the day on which the claimant first knew or ought reasonably to have known\n\n(a)\nthat the injury, loss or damage had occurred,\n\n(b)\nthat the injury, loss or damage was caused by or contributed to by an act or omission, and\n\n(c)\nthat the act or omission was that of the defendant.",
+      "subsections": [
+        {
+          "id": "5-subsection-1",
+          "sourceKey": "section:5/subsection:1",
+          "label": "5(1)",
+          "text": "5(1)Unless otherwise provided in this Act, no claim shall be brought after the earlier of\n\n(a)\ntwo years from the day on which the claim is discovered, and\n\n(b)\nfifteen years from the day on which the act or omission on which the claim is based occurred.",
+          "contentHash": "c3145c62ebd3e383d9f7e1cda9183216e3fd0eb8b97bc34475709edc8031457c"
+        },
+        {
+          "id": "5-subsection-2",
+          "sourceKey": "section:5/subsection:2",
+          "label": "5(2)",
+          "text": "5(2)A claim is discovered on the day on which the claimant first knew or ought reasonably to have known\n\n(a)\nthat the injury, loss or damage had occurred,\n\n(b)\nthat the injury, loss or damage was caused by or contributed to by an act or omission, and\n\n(c)\nthat the act or omission was that of the defendant.",
+          "contentHash": "d24abcb752d53caab6388386020774b1570cd3c16e4c62e14b05452869363c2f"
+        }
+      ],
+      "contentHash": "9b140081464fd2ef262a35c693db282b3384c15693509363baad1cb2bc247dc7"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "componentType": "section",
+      "label": "6",
+      "heading": "Continuous act or omission",
+      "text": "Continuous act or omission\n\n6If a claim is based on a continuous act or omission, the act or omission is deemed for the purposes of calculating the limitation periods in section 5 to be a separate act or omission on each day it continues.\n\n3\n\nSPECIAL LIMITATION PERIODS",
+      "subsections": [],
+      "contentHash": "20177f9d2b13a2f6ecbae9b5f24d02976fd359d61450ec36d9c9880699fbc186"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "componentType": "section",
+      "label": "7",
+      "heading": "Application of Part 2",
+      "text": "Application of Part 2\n\n7Unless this Part provides otherwise, Part 2 does not apply to the claims referred to in this Part.",
+      "subsections": [],
+      "contentHash": "912ac3ab468597d3cde3d0872922e985dbd4fb4bc0ae8112fe98aef8bec7b1b0"
+    },
+    {
+      "id": "section-7.1",
+      "sourceKey": "section:7.1",
+      "componentType": "section",
+      "label": "7.1",
+      "heading": "Recovery of money – Crown claimants",
+      "text": "Recovery of money – Crown claimants\n2021, c.21, s.1\n\n7.1(1)Subject to subsection (2), Part 2 applies to a claim brought by the Crown for the recovery of money owing to it which includes claims brought by the Crown for recovery of damages in contract or in tort.\n\n7.1(2)No claim in subsection (1) shall be brought after the earlier of\n\n(a)\nsix years from the day on which the claim is discovered, and\n\n(b)\nfifteen years from the day on which the act or omission on which the claim is based occurred.\n\n2021, c.21, s.1",
+      "subsections": [
+        {
+          "id": "7.1-subsection-1",
+          "sourceKey": "section:7.1/subsection:1",
+          "label": "7.1(1)",
+          "text": "7.1(1)Subject to subsection (2), Part 2 applies to a claim brought by the Crown for the recovery of money owing to it which includes claims brought by the Crown for recovery of damages in contract or in tort.",
+          "contentHash": "6dfbc25a4b90e9e8e3f1062f9d6fc3f6493a07344fa310b921c869e9c84b4445"
+        },
+        {
+          "id": "7.1-subsection-2",
+          "sourceKey": "section:7.1/subsection:2",
+          "label": "7.1(2)",
+          "text": "7.1(2)No claim in subsection (1) shall be brought after the earlier of\n\n(a)\nsix years from the day on which the claim is discovered, and\n\n(b)\nfifteen years from the day on which the act or omission on which the claim is based occurred.\n\n2021, c.21, s.1",
+          "contentHash": "95d7bcda83f452d05d2ecebaa1fb272f1a1bdfaf9363a21f4d578df5d5c49bfa"
+        }
+      ],
+      "contentHash": "4f2ee3ce8188abe90d982de24b2f191263c9ce3ea08d5fe7ce41d7487e38d532"
+    },
+    {
+      "id": "section-7.2",
+      "sourceKey": "section:7.2",
+      "componentType": "section",
+      "label": "7.2",
+      "heading": "Transition – Crown claimants",
+      "text": "Transition – Crown claimants\n2021, c.21, s.1\n\n7.2(1)This section applies to claims brought by the Crown before or after the commencement of this section for the recovery of money owing to it that are based on acts or omissions that took place before the commencement of this section.\n\n7.2(2)If the limitation period in subsection 7.1(2) would, if not for this section, expire after the commencement of this section but before July 1, 2022, that limitation period expires on July 1, 2022.\n\n7.2(3)Despite subsection (2), a limitation period for the Crown to bring a claim for the recovery of money owing to it that was not expired immediately before the commencement of this section shall not expire until July 1, 2022, even if the limitation period in subsection 7.1(2) has expired for the claim.\n\n7.2(4)A limitation period that would, if not for subsection (2) or (3), expire between July 1, 2021, and the day the Act that enacted this section received Royal Assent, shall be deemed to have not expired and shall expire on July 1, 2022.\n\n2021, c.21, s.1",
+      "subsections": [
+        {
+          "id": "7.2-subsection-1",
+          "sourceKey": "section:7.2/subsection:1",
+          "label": "7.2(1)",
+          "text": "7.2(1)This section applies to claims brought by the Crown before or after the commencement of this section for the recovery of money owing to it that are based on acts or omissions that took place before the commencement of this section.",
+          "contentHash": "4b9ae1289c4bf17294958efaf63a06598a5c5a8d9e7197ceba94f38bebbfbfa8"
+        },
+        {
+          "id": "7.2-subsection-2",
+          "sourceKey": "section:7.2/subsection:2",
+          "label": "7.2(2)",
+          "text": "7.2(2)If the limitation period in subsection 7.1(2) would, if not for this section, expire after the commencement of this section but before July 1, 2022, that limitation period expires on July 1, 2022.",
+          "contentHash": "18c9869d095789f7f98ea0451e37626561a63a81c69b24e16776f234596007fd"
+        },
+        {
+          "id": "7.2-subsection-3",
+          "sourceKey": "section:7.2/subsection:3",
+          "label": "7.2(3)",
+          "text": "7.2(3)Despite subsection (2), a limitation period for the Crown to bring a claim for the recovery of money owing to it that was not expired immediately before the commencement of this section shall not expire until July 1, 2022, even if the limitation period in subsection 7.1(2) has expired for the claim.",
+          "contentHash": "abe3b3d99cf03e3c25a067fc7d0b0a6221b2fc835ea4d945597596e5dfe3a448"
+        },
+        {
+          "id": "7.2-subsection-4",
+          "sourceKey": "section:7.2/subsection:4",
+          "label": "7.2(4)",
+          "text": "7.2(4)A limitation period that would, if not for subsection (2) or (3), expire between July 1, 2021, and the day the Act that enacted this section received Royal Assent, shall be deemed to have not expired and shall expire on July 1, 2022.\n\n2021, c.21, s.1",
+          "contentHash": "9223e7f35ac1afaeb67289bff022994c6b8c8bde83ea4b370411792f3f18f6cb"
+        }
+      ],
+      "contentHash": "026bad9b9793b048216c5a4956f017a35c54e7fa8be9d0cabf8e2847d4374218"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "componentType": "section",
+      "label": "8",
+      "heading": "Judgments",
+      "text": "Judgments\n\n8No claim based on a judgment for the payment of money shall be brought after 15 years from the day of the judgment.",
+      "subsections": [],
+      "contentHash": "076838abec15438fafca3541bfc3ce2c0184db578aa5d8008b4b854283ed13d7"
+    },
+    {
+      "id": "section-8.1",
+      "sourceKey": "section:8.1",
+      "componentType": "section",
+      "label": "8.1",
+      "heading": "Recovery of land",
+      "text": "Recovery of land\n2011, c.17, s.2\n\n8.1(1)The following definitions apply in this section.\n\n“lease” includes a periodic tenancy and a tenancy at will.(bail)\n\n“predecessor” , with respect to a claimant or defendant, means a person from whom or through whom the claimant or defendant has obtained possession of, or derives the right of possession of, land.(prédécesseur)\n\n“present interest” means an estate or interest on which a future estate or interest is expectant.(intérêt actuel)\n\n8.1(2)Subject to subsections (3) and (4), a claim to recover possession of land shall not be brought after the defendant and any predecessors of the defendant have dispossessed the claimant and any predecessors of the claimant for a continuous period of\n\n(a)\nfifteen years, or\n\n(b)\nif the claimant is the Crown, 60 years.\n\n8.1(3)If a period of dispossession begins while land is subject to a present interest and continues after the present interest terminates, a claim to recover possession of the land shall not be brought after the later of\n\n(a)\nthe end of the period described in subsection (2), and\n\n(b)\nfive years after the present interest terminates.\n\n8.1(4)If a period of dispossession begins during a fixed term lease, a claim by the landlord to recover possession of the land shall not be brought after the later of\n\n(a)\nthe end of the period described in subsection (2), and\n\n(b)\nfive years after the fixed term ends.\n\n8.1(5)For the purposes of this section,\n\n(a)\nif rent is payable under a lease, a period of dispossession of a landlord by a tenant begins when the tenant ceases to pay rent;\n\n(b)\nwhen one or more joint tenants or tenants in common of land are in possession of more than their undivided share of the land for their own benefit or for that of a third party, the other joint tenants or tenants in common are dispossessed of the land.\n\n8.1(6)On the expiry of a limitation period under this section, the claimant’s right or title to the land is extinguished.\n\n2011, c.17, s.2",
+      "subsections": [
+        {
+          "id": "8.1-subsection-1",
+          "sourceKey": "section:8.1/subsection:1",
+          "label": "8.1(1)",
+          "text": "8.1(1)The following definitions apply in this section.\n\n“lease” includes a periodic tenancy and a tenancy at will.(bail)\n\n“predecessor” , with respect to a claimant or defendant, means a person from whom or through whom the claimant or defendant has obtained possession of, or derives the right of possession of, land.(prédécesseur)\n\n“present interest” means an estate or interest on which a future estate or interest is expectant.(intérêt actuel)",
+          "contentHash": "2359aedaacd766af320626323442e2a79e552f4abbdff3990a8602901e07823e"
+        },
+        {
+          "id": "8.1-subsection-2",
+          "sourceKey": "section:8.1/subsection:2",
+          "label": "8.1(2)",
+          "text": "8.1(2)Subject to subsections (3) and (4), a claim to recover possession of land shall not be brought after the defendant and any predecessors of the defendant have dispossessed the claimant and any predecessors of the claimant for a continuous period of\n\n(a)\nfifteen years, or\n\n(b)\nif the claimant is the Crown, 60 years.",
+          "contentHash": "c1d24454c1ab625e218020d9519c438255de22e1825be03831979287c60b86e8"
+        },
+        {
+          "id": "8.1-subsection-3",
+          "sourceKey": "section:8.1/subsection:3",
+          "label": "8.1(3)",
+          "text": "8.1(3)If a period of dispossession begins while land is subject to a present interest and continues after the present interest terminates, a claim to recover possession of the land shall not be brought after the later of\n\n(a)\nthe end of the period described in subsection (2), and\n\n(b)\nfive years after the present interest terminates.",
+          "contentHash": "707dd9f2b6fd8912bc18d9ebb699ae4e79be8dead10f846899d918e09c5ce6ad"
+        },
+        {
+          "id": "8.1-subsection-4",
+          "sourceKey": "section:8.1/subsection:4",
+          "label": "8.1(4)",
+          "text": "8.1(4)If a period of dispossession begins during a fixed term lease, a claim by the landlord to recover possession of the land shall not be brought after the later of\n\n(a)\nthe end of the period described in subsection (2), and\n\n(b)\nfive years after the fixed term ends.",
+          "contentHash": "94c474f107745f974cb37154e809fb879bc610707a127484bbc8c791f68925da"
+        },
+        {
+          "id": "8.1-subsection-5",
+          "sourceKey": "section:8.1/subsection:5",
+          "label": "8.1(5)",
+          "text": "8.1(5)For the purposes of this section,\n\n(a)\nif rent is payable under a lease, a period of dispossession of a landlord by a tenant begins when the tenant ceases to pay rent;\n\n(b)\nwhen one or more joint tenants or tenants in common of land are in possession of more than their undivided share of the land for their own benefit or for that of a third party, the other joint tenants or tenants in common are dispossessed of the land.",
+          "contentHash": "78a1bc27a805d1690d977f9ccea093c6dcbd495a362896a4161b8e0e7624ff06"
+        },
+        {
+          "id": "8.1-subsection-6",
+          "sourceKey": "section:8.1/subsection:6",
+          "label": "8.1(6)",
+          "text": "8.1(6)On the expiry of a limitation period under this section, the claimant’s right or title to the land is extinguished.\n\n2011, c.17, s.2",
+          "contentHash": "02024176786b707ab4a4155e1a589808ba60232c62fdee3a9fcfebbff437f627"
+        }
+      ],
+      "contentHash": "e4d92084b4e6e77802982bdc8503c5233f56c673f14f4841363cf1569277c99a"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "componentType": "section",
+      "label": "9",
+      "heading": "Recovery of personal property",
+      "text": "Recovery of personal property\n\n9(1)No claim to recover possession of personal property that has been converted shall be brought\n\n(a)\nif the defendant is a purchaser of the personal property for value acting in good faith, after 2 years from the day the purchaser purchased the personal property, and\n\n(b)\nin any other case, after the earlier of\n\n(i)\ntwo years from the day on which the claimant first knew or ought reasonably to have known the identity of the person who has possession of the personal property, and\n\n(ii)\nfifteen years from the day on which a conversion of the personal property first occurred.\n\n9(2)On the expiry of a limitation period under this section, the claimant’s title to the personal property is extinguished.",
+      "subsections": [
+        {
+          "id": "9-subsection-1",
+          "sourceKey": "section:9/subsection:1",
+          "label": "9(1)",
+          "text": "9(1)No claim to recover possession of personal property that has been converted shall be brought\n\n(a)\nif the defendant is a purchaser of the personal property for value acting in good faith, after 2 years from the day the purchaser purchased the personal property, and\n\n(b)\nin any other case, after the earlier of\n\n(i)\ntwo years from the day on which the claimant first knew or ought reasonably to have known the identity of the person who has possession of the personal property, and\n\n(ii)\nfifteen years from the day on which a conversion of the personal property first occurred.",
+          "contentHash": "82a96922c77e6864ad60082da5ce17914a376dc69f1cee42beb1a78f81e3cddc"
+        },
+        {
+          "id": "9-subsection-2",
+          "sourceKey": "section:9/subsection:2",
+          "label": "9(2)",
+          "text": "9(2)On the expiry of a limitation period under this section, the claimant’s title to the personal property is extinguished.",
+          "contentHash": "8ed4ac4e65fa358479f48d7060f6412b1b436343e0910e4c98ccb7f4d9526504"
+        }
+      ],
+      "contentHash": "53009ece4746e1dbe6b5e7bb33e3a1374d2584c423ee6dd618686ec7c0c43d51"
+    },
+    {
+      "id": "section-10",
+      "sourceKey": "section:10",
+      "componentType": "section",
+      "label": "10",
+      "heading": "Conversion",
+      "text": "Conversion\n\n10(1)Subject to subsection (2), Part 2 applies to a claim for damages for conversion.\n\n10(2)If there have been 2 or more conversions of the same personal property, a claim for damages for conversion shall not be brought against a defendant if, under section 9, a claim to recover the possession of the personal property from that defendant cannot be brought, or could not be brought if that defendant were still in possession of the property.",
+      "subsections": [
+        {
+          "id": "10-subsection-1",
+          "sourceKey": "section:10/subsection:1",
+          "label": "10(1)",
+          "text": "10(1)Subject to subsection (2), Part 2 applies to a claim for damages for conversion.",
+          "contentHash": "6216b5855102ebea285b2f4772dafb77122f5392f4d8a789f0b8e64b216c1188"
+        },
+        {
+          "id": "10-subsection-2",
+          "sourceKey": "section:10/subsection:2",
+          "label": "10(2)",
+          "text": "10(2)If there have been 2 or more conversions of the same personal property, a claim for damages for conversion shall not be brought against a defendant if, under section 9, a claim to recover the possession of the personal property from that defendant cannot be brought, or could not be brought if that defendant were still in possession of the property.",
+          "contentHash": "08e294301b702c19bd97c4599d1b740e54b3a25f08ad5de0533875ee5d8ae971"
+        }
+      ],
+      "contentHash": "308a481bb55b30c4de44f22fca837813cb312595dddab0144b36e0a26b84c875"
+    },
+    {
+      "id": "section-11",
+      "sourceKey": "section:11",
+      "componentType": "section",
+      "label": "11",
+      "heading": "Demand loans",
+      "text": "Demand loans\n\n11No claim that is based on a failure to repay a demand loan shall be brought after the earlier of\n\n(a)\ntwo years from the day default in repayment occurs after the demand for repayment is made, and\n\n(b)\nfifteen years from the day on which the lender is first entitled to make a demand for repayment of the loan.",
+      "subsections": [],
+      "contentHash": "eb4752508d2e409d33dbd0e2bd143baabef49d79d48f954781ca7ec17003a041"
+    },
+    {
+      "id": "section-12",
+      "sourceKey": "section:12",
+      "componentType": "section",
+      "label": "12",
+      "heading": "Secured debt",
+      "text": "Secured debt\n\n12(1)Subject to subsection (2), Part 2 applies to a claim for payment of a debt secured on real or personal property.\n\n12(2)No claim to recover the principal of a debt secured on real or personal property shall be brought after 15 years from the day the security is taken.\n\n12(3)A payment made in relation to a debt is a part payment for the purposes of section 20, and is presumed, in the absence of evidence to the contrary, to be a payment of both principal and interest.\n\n12(4)If a creditor takes possession of the property on which the debt is secured, the debtor shall not bring a claim to redeem the property after 15 years from the day the creditor takes possession of the property.",
+      "subsections": [
+        {
+          "id": "12-subsection-1",
+          "sourceKey": "section:12/subsection:1",
+          "label": "12(1)",
+          "text": "12(1)Subject to subsection (2), Part 2 applies to a claim for payment of a debt secured on real or personal property.",
+          "contentHash": "01cd9527f45875de9b9864a31b92f69c6c9994d94bff8baa018f51fa20202fe1"
+        },
+        {
+          "id": "12-subsection-2",
+          "sourceKey": "section:12/subsection:2",
+          "label": "12(2)",
+          "text": "12(2)No claim to recover the principal of a debt secured on real or personal property shall be brought after 15 years from the day the security is taken.",
+          "contentHash": "b300e07a10fa0696e3c57ac4bfc73200466f166e4b2199f0559ea4764db21d01"
+        },
+        {
+          "id": "12-subsection-3",
+          "sourceKey": "section:12/subsection:3",
+          "label": "12(3)",
+          "text": "12(3)A payment made in relation to a debt is a part payment for the purposes of section 20, and is presumed, in the absence of evidence to the contrary, to be a payment of both principal and interest.",
+          "contentHash": "1f5ae7b4cdae8f7c85182bab1999701a4898307b4708b58c3c2ff06a63682289"
+        },
+        {
+          "id": "12-subsection-4",
+          "sourceKey": "section:12/subsection:4",
+          "label": "12(4)",
+          "text": "12(4)If a creditor takes possession of the property on which the debt is secured, the debtor shall not bring a claim to redeem the property after 15 years from the day the creditor takes possession of the property.",
+          "contentHash": "34c1c16dd6aa22b65d2469e572f6abae2a7e9481b25bdf5aba55aec79497bae9"
+        }
+      ],
+      "contentHash": "eaa283651886e579da6e2e52188c61ffefebf74220dc3f84d5c237b719e5f6d4"
+    },
+    {
+      "id": "section-13",
+      "sourceKey": "section:13",
+      "componentType": "section",
+      "label": "13",
+      "heading": "Statutory liens",
+      "text": "Statutory liens\n\n13If a lien or charge is created by an Act in relation to an amount due under that Act, no claim shall be brought to recover the amount due after 15 years from the day on which the lien or charge arises.",
+      "subsections": [],
+      "contentHash": "cfc027c6c4661e5bf784fee46e12fe086b3b10018edebd952492514ecc1ddd69"
+    },
+    {
+      "id": "section-14",
+      "sourceKey": "section:14",
+      "componentType": "section",
+      "label": "14",
+      "heading": "Contribution",
+      "text": "Contribution\n\n14(1)Subject to subsection (2), no claim for contribution in respect of a payment that a claimant has made, or a liability that a claimant has incurred by virtue of a settlement or judgment, shall be brought against a person after the expiry of the earlier of\n\n(a)\nthe period of 2 years that begins on the day the claimant first knew or ought reasonably to have known that the person was liable to make the contribution, and\n\n(b)\nwhichever of the following periods expires last:\n\n(i)\nfifteen years from the day the act or omission that gave rise to the payment, settlement or judgment occurred, and\n\n(ii)\nfive years from the day of the payment, settlement or judgment.\n\n14(2)No claim for contribution under paragraph 2(c) of the Tortfeasors Act shall be brought against a person after the expiry of the earlier of\n\n(a)\nthe period of 2 years that begins on the day on which the claimant, having settled the original claim out of which the claim for contribution arises or having been served with the pleading by which that original claim was brought, first knew or ought reasonably to have known that the person was liable to make the contribution, and\n\n(b)\nthe period of 15 years from the day of the person’s act or omission in respect of which the claim for contribution is brought.",
+      "subsections": [
+        {
+          "id": "14-subsection-1",
+          "sourceKey": "section:14/subsection:1",
+          "label": "14(1)",
+          "text": "14(1)Subject to subsection (2), no claim for contribution in respect of a payment that a claimant has made, or a liability that a claimant has incurred by virtue of a settlement or judgment, shall be brought against a person after the expiry of the earlier of\n\n(a)\nthe period of 2 years that begins on the day the claimant first knew or ought reasonably to have known that the person was liable to make the contribution, and\n\n(b)\nwhichever of the following periods expires last:\n\n(i)\nfifteen years from the day the act or omission that gave rise to the payment, settlement or judgment occurred, and\n\n(ii)\nfive years from the day of the payment, settlement or judgment.",
+          "contentHash": "cc428b94849cb7ee8a72b46d39a3f45094577f044140f1a87dfaea97b2f2a52e"
+        },
+        {
+          "id": "14-subsection-2",
+          "sourceKey": "section:14/subsection:2",
+          "label": "14(2)",
+          "text": "14(2)No claim for contribution under paragraph 2(c) of the Tortfeasors Act shall be brought against a person after the expiry of the earlier of\n\n(a)\nthe period of 2 years that begins on the day on which the claimant, having settled the original claim out of which the claim for contribution arises or having been served with the pleading by which that original claim was brought, first knew or ought reasonably to have known that the person was liable to make the contribution, and\n\n(b)\nthe period of 15 years from the day of the person’s act or omission in respect of which the claim for contribution is brought.",
+          "contentHash": "a9a0f267789e406cccb2936f3164131f9a580935dccde6b72c48c6002ec693d0"
+        }
+      ],
+      "contentHash": "558d795d1ab3fc19540cdbb93a9a16101d4e70cf24561e108cc7cb7a02e69d00"
+    },
+    {
+      "id": "section-14.1",
+      "sourceKey": "section:14.1",
+      "componentType": "section",
+      "label": "14.1",
+      "heading": "Trespass to the person, assault or battery",
+      "text": "Trespass to the person, assault or battery\n\n14.1(1)There is no limitation period in respect of a claim for damages for trespass to the person, assault or battery if\n\n(a)\nthe act complained of is of a sexual nature, or\n\n(b)\nat the time of the act complained of, the claimant was in an intimate personal relationship, as defined in the Intimate Partner Violence Intervention Act, with the defendant or was financially, emotionally or physically dependent on the defendant.\n\n14.1(2)Subsection (1) applies to a claim for trespass to the person, assault or battery that occurred before or after the commencement of this section and regardless of the expiry of any previously applicable limitation period under this Act or a former version of this Act.\n\n14.1(3)Subsection (1) revives the right to file a claim of a claimant who prior to the commencement of this section had a proceeding dismissed solely on the grounds that a previously applicable limitation period under this Act or a former version of this Act had expired.\n\n14.1(4)This section does not apply in the case of a claim\n\n(a)\nthat has been settled and for which the settlement is legally binding, including a claim that formed part of a class action that has been settled, regardless of whether the claim was submitted as part of the class action, or\n\n(b)\nthat has been dismissed by a court and with respect to which no further appeal is possible, subject to subsection (3).\n\n2026, c.4, s.1\n\n4\n\nOPERATION OF LIMITATION PERIODS",
+      "subsections": [
+        {
+          "id": "14.1-subsection-1",
+          "sourceKey": "section:14.1/subsection:1",
+          "label": "14.1(1)",
+          "text": "14.1(1)There is no limitation period in respect of a claim for damages for trespass to the person, assault or battery if\n\n(a)\nthe act complained of is of a sexual nature, or\n\n(b)\nat the time of the act complained of, the claimant was in an intimate personal relationship, as defined in the Intimate Partner Violence Intervention Act, with the defendant or was financially, emotionally or physically dependent on the defendant.",
+          "contentHash": "abe65bb16814e884b4c34f59c54f20adf4c0b9b1360502924c774954c9d762af"
+        },
+        {
+          "id": "14.1-subsection-2",
+          "sourceKey": "section:14.1/subsection:2",
+          "label": "14.1(2)",
+          "text": "14.1(2)Subsection (1) applies to a claim for trespass to the person, assault or battery that occurred before or after the commencement of this section and regardless of the expiry of any previously applicable limitation period under this Act or a former version of this Act.",
+          "contentHash": "e8297464f3c0e0ac714e5c9e6b500b4ac3c441d46336967373a3aaed583ad948"
+        },
+        {
+          "id": "14.1-subsection-3",
+          "sourceKey": "section:14.1/subsection:3",
+          "label": "14.1(3)",
+          "text": "14.1(3)Subsection (1) revives the right to file a claim of a claimant who prior to the commencement of this section had a proceeding dismissed solely on the grounds that a previously applicable limitation period under this Act or a former version of this Act had expired.",
+          "contentHash": "3d8dc2b1ed4395d7db713d9ab06de5af9e0db367ce1f12513e32479ee7d98ca4"
+        },
+        {
+          "id": "14.1-subsection-4",
+          "sourceKey": "section:14.1/subsection:4",
+          "label": "14.1(4)",
+          "text": "14.1(4)This section does not apply in the case of a claim\n\n(a)\nthat has been settled and for which the settlement is legally binding, including a claim that formed part of a class action that has been settled, regardless of whether the claim was submitted as part of the class action, or\n\n(b)\nthat has been dismissed by a court and with respect to which no further appeal is possible, subject to subsection (3).\n\n2026, c.4, s.1\n\n4\n\nOPERATION OF LIMITATION PERIODS",
+          "contentHash": "9bc42c04412495972cb255119ca771a043b9ef1ff7215d24a936d10aea770df1"
+        }
+      ],
+      "contentHash": "10d1246b47e8e6751d94bac65716ed77889b1bfbc536bd6703466c4c45892b65"
+    },
+    {
+      "id": "section-15",
+      "sourceKey": "section:15",
+      "componentType": "section",
+      "label": "15",
+      "heading": "Knowledge",
+      "text": "Knowledge\n\n15(1)If, in respect of a claim brought by a principal, an agent has actual knowledge of the matters referred to in subsection 5(2), subparagraph 9(1)(b)(i), paragraph 14(1)(a) or (2)(a), subparagraph 16(b)(i) or section 22 and has a duty to communicate that knowledge to the principal, the principal shall be deemed to have knowledge of the matters on the earlier of\n\n(a)\nthe day on which the agent first knew those matters, and\n\n(b)\nthe day on which the principal first knew or ought reasonably to have known those matters.\n\n15(2)In respect of a claim brought by a claimant who is, in relation to the property to which the claim relates, a successor in right, title or interest to another person, the claimant shall be deemed to have knowledge of the matters referred to in subsection 5(2) or subparagraph 9(1)(b)(i) or 16(b)(i) on the earlier of\n\n(a)\nthe day on which the predecessor first knew or ought reasonably to have known those matters, if that day occurred before the predecessor transferred the property, and\n\n(b)\nthe day on which the claimant first knew or ought reasonably to have known those matters.",
+      "subsections": [
+        {
+          "id": "15-subsection-1",
+          "sourceKey": "section:15/subsection:1",
+          "label": "15(1)",
+          "text": "15(1)If, in respect of a claim brought by a principal, an agent has actual knowledge of the matters referred to in subsection 5(2), subparagraph 9(1)(b)(i), paragraph 14(1)(a) or (2)(a), subparagraph 16(b)(i) or section 22 and has a duty to communicate that knowledge to the principal, the principal shall be deemed to have knowledge of the matters on the earlier of\n\n(a)\nthe day on which the agent first knew those matters, and\n\n(b)\nthe day on which the principal first knew or ought reasonably to have known those matters.",
+          "contentHash": "acdfd48e002f24df8a26686ca7f9d44bcf369b008e1675bbbf7c02b6279f1e5e"
+        },
+        {
+          "id": "15-subsection-2",
+          "sourceKey": "section:15/subsection:2",
+          "label": "15(2)",
+          "text": "15(2)In respect of a claim brought by a claimant who is, in relation to the property to which the claim relates, a successor in right, title or interest to another person, the claimant shall be deemed to have knowledge of the matters referred to in subsection 5(2) or subparagraph 9(1)(b)(i) or 16(b)(i) on the earlier of\n\n(a)\nthe day on which the predecessor first knew or ought reasonably to have known those matters, if that day occurred before the predecessor transferred the property, and\n\n(b)\nthe day on which the claimant first knew or ought reasonably to have known those matters.",
+          "contentHash": "b7b1bd7daff9de2a3bb2a1e34bcda80ae4f03b427a734e87c8ea72f0e863e468"
+        }
+      ],
+      "contentHash": "441ab14566ae4575f0bc59fd2cb5ffff8fca45c0c81042fba8a82cbd128fc7b4"
+    },
+    {
+      "id": "section-16",
+      "sourceKey": "section:16",
+      "componentType": "section",
+      "label": "16",
+      "heading": "Wilful concealment",
+      "text": "Wilful concealment\n\n16If a defendant wilfully conceals from a claimant the existence of a claim, the following rules apply:\n\n(a)\nthe defendant cannot rely on the expiry of a limitation period referred to in paragraph 5(1)(b), subparagraph 9(1)(b)(ii) or paragraph 11(b), 14(1)(b) or 14(2)(b) as a defence to the claim, and\n\n(b)\nin the case of a claim referred to in section 8, subsection 8.1(2), (3) or (4), subsection 12(2) or (4) or section 13, the claim shall not be brought after the later of\n\n(i)\ntwo years from the day the claimant first knows or ought reasonably to know that the claim exists, and\n\n(ii)\nthe period described in section 8, subsection 8.1(2), (3) or (4), subsection 12(2) or (4) or section 13, as the case may be.\n\n2011, c.17, s.3",
+      "subsections": [],
+      "contentHash": "10b2e3068c8474d5b3c99ed191a38fe417cb13eddf7b7ec2d20348d261aeea49"
+    },
+    {
+      "id": "section-17",
+      "sourceKey": "section:17",
+      "componentType": "section",
+      "label": "17",
+      "heading": "Minors",
+      "text": "Minors\n\n17The operation of any limitation period established by this Act is suspended while the claimant is a minor.",
+      "subsections": [],
+      "contentHash": "bd5f1399e7ccc2500f67cc00e5c7746cfbe52dadf44cafe260ec3d3b39aa21aa"
+    },
+    {
+      "id": "section-18",
+      "sourceKey": "section:18",
+      "componentType": "section",
+      "label": "18",
+      "heading": "Incapacity",
+      "text": "Incapacity\n\n18(1)The operation of the limitation period in paragraph 5(1)(a), subparagraph 9(1)(b)(i) or paragraph 11(a), 14(1)(a) or 14(2)(a) is suspended during any period in which the claimant is incapable of bringing the claim because of his or her physical, mental or psychological condition.\n\n18(2)If the limitation period has less than one year to run when the suspension ends, the period is extended to the day that is one year after the day on which the suspension ends.",
+      "subsections": [
+        {
+          "id": "18-subsection-1",
+          "sourceKey": "section:18/subsection:1",
+          "label": "18(1)",
+          "text": "18(1)The operation of the limitation period in paragraph 5(1)(a), subparagraph 9(1)(b)(i) or paragraph 11(a), 14(1)(a) or 14(2)(a) is suspended during any period in which the claimant is incapable of bringing the claim because of his or her physical, mental or psychological condition.",
+          "contentHash": "8e6be558291ea092dd494c7e156b6418b5dea5ff216935d62dd0a57f269455f5"
+        },
+        {
+          "id": "18-subsection-2",
+          "sourceKey": "section:18/subsection:2",
+          "label": "18(2)",
+          "text": "18(2)If the limitation period has less than one year to run when the suspension ends, the period is extended to the day that is one year after the day on which the suspension ends.",
+          "contentHash": "1e9876488741665f246dcb3288b6fcf51314343f2fafd94294b90410d40fb074"
+        }
+      ],
+      "contentHash": "304628b204ad7e688d08992a9f29534a23af839fa4f5938a64fbbab83516fe67"
+    },
+    {
+      "id": "section-19",
+      "sourceKey": "section:19",
+      "componentType": "section",
+      "label": "19",
+      "heading": "Acknowledgment",
+      "text": "Acknowledgment\n\n19(1)If, before the expiry of the relevant limitation period established by this Act, a defendant gives an acknowledgment of the right, title, liability or obligation to which the claim relates, the operation of the limitation period begins again at the time of the acknowledgment.\n\n19(2)An acknowledgment\n\n(a)\nmust be in writing, and\n\n(b)\nmust be made by the defendant or the defendant’s agent to the claimant, the claimant’s agent or an official receiver or trustee acting under the Bankruptcy and Insolvency Act (Canada).\n\n19(3)An admission or statement made in correspondence relating to the resolution of a claim is not an acknowledgment for the purposes of this section if\n\n(a)\nthe correspondence indicates that the admission or statement is made without prejudice, or\n\n(b)\nthe correspondence reserves the defendant’s right to rely on the expiry of a limitation period as a defence to the claim.",
+      "subsections": [
+        {
+          "id": "19-subsection-1",
+          "sourceKey": "section:19/subsection:1",
+          "label": "19(1)",
+          "text": "19(1)If, before the expiry of the relevant limitation period established by this Act, a defendant gives an acknowledgment of the right, title, liability or obligation to which the claim relates, the operation of the limitation period begins again at the time of the acknowledgment.",
+          "contentHash": "efe652d9c86f21417f63ebecf6fb6fc5e087b300d3e76a39650274379029df82"
+        },
+        {
+          "id": "19-subsection-2",
+          "sourceKey": "section:19/subsection:2",
+          "label": "19(2)",
+          "text": "19(2)An acknowledgment\n\n(a)\nmust be in writing, and\n\n(b)\nmust be made by the defendant or the defendant’s agent to the claimant, the claimant’s agent or an official receiver or trustee acting under the Bankruptcy and Insolvency Act (Canada).",
+          "contentHash": "c938a8c38757eef180e7d54e60aae16119ca40a0fa2552448207917ab21c06bf"
+        },
+        {
+          "id": "19-subsection-3",
+          "sourceKey": "section:19/subsection:3",
+          "label": "19(3)",
+          "text": "19(3)An admission or statement made in correspondence relating to the resolution of a claim is not an acknowledgment for the purposes of this section if\n\n(a)\nthe correspondence indicates that the admission or statement is made without prejudice, or\n\n(b)\nthe correspondence reserves the defendant’s right to rely on the expiry of a limitation period as a defence to the claim.",
+          "contentHash": "339d075c0efe2deea1bb8084c6dc3e978f6f7cd9e9a5820d4663218c511f407f"
+        }
+      ],
+      "contentHash": "c7140975dadbee8d1af3b90da6d3879d5d35de2b6fa30900b2f9cd2dd2986385"
+    },
+    {
+      "id": "section-20",
+      "sourceKey": "section:20",
+      "componentType": "section",
+      "label": "20",
+      "heading": "Part payments",
+      "text": "Part payments\n\n20(1)If a defendant makes a part payment of a liquidated or unliquidated monetary obligation before the expiry of the relevant limitation period established by this Act, the operation of the limitation period begins again at the time of the part payment.\n\n20(2)A part payment must be made by the defendant or the defendant’s agent to the claimant, the claimant’s agent or an official receiver or trustee acting under the Bankruptcy and Insolvency Act (Canada).\n\n20(3)Subsection (1) does not apply if\n\n(a)\nthe payment is made as full payment, settlement or discharge of the monetary obligation of the defendant,\n\n(b)\nthe payment is made without prejudice or on the basis that the defendant does not accept liability for any amount beyond the amount paid, or\n\n(c)\nthe defendant reserves the right to rely on the expiry of a limitation period as a defence to the claim.\n\n5\n\nCLAIMS BROUGHT AFTER EXPIRY OF LIMITATION PERIOD",
+      "subsections": [
+        {
+          "id": "20-subsection-1",
+          "sourceKey": "section:20/subsection:1",
+          "label": "20(1)",
+          "text": "20(1)If a defendant makes a part payment of a liquidated or unliquidated monetary obligation before the expiry of the relevant limitation period established by this Act, the operation of the limitation period begins again at the time of the part payment.",
+          "contentHash": "3c201e1091f9e0db853602d84308a216d3245cffb6a31331f59132b785b753ec"
+        },
+        {
+          "id": "20-subsection-2",
+          "sourceKey": "section:20/subsection:2",
+          "label": "20(2)",
+          "text": "20(2)A part payment must be made by the defendant or the defendant’s agent to the claimant, the claimant’s agent or an official receiver or trustee acting under the Bankruptcy and Insolvency Act (Canada).",
+          "contentHash": "274c5078eb35eb5f899042f833afd076a60b6cf5e54d00e108cddf9009591948"
+        },
+        {
+          "id": "20-subsection-3",
+          "sourceKey": "section:20/subsection:3",
+          "label": "20(3)",
+          "text": "20(3)Subsection (1) does not apply if\n\n(a)\nthe payment is made as full payment, settlement or discharge of the monetary obligation of the defendant,\n\n(b)\nthe payment is made without prejudice or on the basis that the defendant does not accept liability for any amount beyond the amount paid, or\n\n(c)\nthe defendant reserves the right to rely on the expiry of a limitation period as a defence to the claim.\n\n5\n\nCLAIMS BROUGHT AFTER EXPIRY OF LIMITATION PERIOD",
+          "contentHash": "a6027762e8da2c911d348e0b54a88955b31ea4cf8fb0e7111b1db96ed820431e"
+        }
+      ],
+      "contentHash": "3ad12379511819944a8d01e6d021b35121ce772b212565dbdf472b8c6ecfeb87"
+    },
+    {
+      "id": "section-21",
+      "sourceKey": "section:21",
+      "componentType": "section",
+      "label": "21",
+      "heading": "Claims added to proceedings",
+      "text": "Claims added to proceedings\n\n21 Despite the expiry of the relevant limitation period established by this Act, a claim may be added, through a new or an amended pleading, to a proceeding previously commenced if the added claim is related to the conduct, transaction or events described in the original pleadings and the conditions set out in one of the following paragraphs are satisfied:\n\n(a)\nthe added claim is made by a party to the proceeding against another party to the proceeding and does not change the capacity in which either party sues or is sued;\n\n(b)\nthe added claim adds or substitutes a defendant or changes the capacity in which a defendant is sued, but the defendant has received, before or within 6 months after the expiry of the limitation period, sufficient knowledge of the added claim that the defendant will not be prejudiced in defending against the added claim on the merits;\n\n(c)\nthe added claim adds or substitutes a claimant or changes the capacity in which a claimant sues, but the defendant has received, before or within 6 months after the expiry of the limitation period, sufficient knowledge of the added claim that the defendant will not be prejudiced in defending against the added claim on the merits, and the addition of the claim is necessary or desirable to ensure the effective determination or enforcement of the claims asserted or intended to be asserted in the original pleadings.",
+      "subsections": [],
+      "contentHash": "03e9e8f7f52cae3842b5cf7ce85fffac9517f6c58ad3787043da1e78f80b841c"
+    },
+    {
+      "id": "section-22",
+      "sourceKey": "section:22",
+      "componentType": "section",
+      "label": "22",
+      "heading": "Delay caused by defendant",
+      "text": "Delay caused by defendant\n\n22If the relevant limitation period established by this Act has expired, but the actions taken or assurances given by the defendant or the defendant’s agent in relation to the resolution of the claim before the expiry of the limitation period caused the claimant to reasonably believe that the claim would be resolved by agreement and therefore to delay bringing the claim, the claimant may bring the claim within 6 months after the day on which the claimant first knows or ought reasonably to know that the belief was unfounded.\n\n6\n\nGENERAL",
+      "subsections": [],
+      "contentHash": "94039f19d001dbdea9e1d20352527fc5b4090f0c4d1b8b644b6d119d71a78430"
+    },
+    {
+      "id": "section-23",
+      "sourceKey": "section:23",
+      "componentType": "section",
+      "label": "23",
+      "heading": "Non-judicial remedies",
+      "text": "Non-judicial remedies\n\n23(1)In this section, “non-judicial remedy” means a remedy that a person is entitled, by law or by contract, to exercise in respect of a claim without court proceedings.\n\n23(2)If a claimant is prevented from bringing a claim as a result of the expiry of a limitation period established by this Act, the claimant is not entitled to enforce against the defendant any non-judicial remedy that the claimant would otherwise be entitled to enforce in relation to the claim.",
+      "subsections": [
+        {
+          "id": "23-subsection-1",
+          "sourceKey": "section:23/subsection:1",
+          "label": "23(1)",
+          "text": "23(1)In this section, “non-judicial remedy” means a remedy that a person is entitled, by law or by contract, to exercise in respect of a claim without court proceedings.",
+          "contentHash": "acc9d97288c4f93a31f206747abb0b91dcb78895708bf9559105b680fd905d6a"
+        },
+        {
+          "id": "23-subsection-2",
+          "sourceKey": "section:23/subsection:2",
+          "label": "23(2)",
+          "text": "23(2)If a claimant is prevented from bringing a claim as a result of the expiry of a limitation period established by this Act, the claimant is not entitled to enforce against the defendant any non-judicial remedy that the claimant would otherwise be entitled to enforce in relation to the claim.",
+          "contentHash": "841266ad378307ad901e6cc8976aa182da9617dcb63dc1faf46cb85ff5ba1d2b"
+        }
+      ],
+      "contentHash": "e48835f2ab8898802dc5b24d5c6c4263d07537cca4f1620eeb3f299b0c539f1c"
+    },
+    {
+      "id": "section-24",
+      "sourceKey": "section:24",
+      "componentType": "section",
+      "label": "24",
+      "heading": "Conflict of laws",
+      "text": "Conflict of laws\n\n24(1)Subject to subsection (2), this Act applies to any claim brought in New Brunswick, despite the fact that, in accordance with conflict of laws rules, the claim is to be adjudicated pursuant to the substantive law of another jurisdiction.\n\n24(2)If the limitations law of that other jurisdiction would prevent the claim from being brought in that jurisdiction, the claim shall not be brought in New Brunswick.",
+      "subsections": [
+        {
+          "id": "24-subsection-1",
+          "sourceKey": "section:24/subsection:1",
+          "label": "24(1)",
+          "text": "24(1)Subject to subsection (2), this Act applies to any claim brought in New Brunswick, despite the fact that, in accordance with conflict of laws rules, the claim is to be adjudicated pursuant to the substantive law of another jurisdiction.",
+          "contentHash": "fef081cc81f5c539a39513a9c0bbf2654ff2fd85a6aa4fdbffa7882df91df49a"
+        },
+        {
+          "id": "24-subsection-2",
+          "sourceKey": "section:24/subsection:2",
+          "label": "24(2)",
+          "text": "24(2)If the limitations law of that other jurisdiction would prevent the claim from being brought in that jurisdiction, the claim shall not be brought in New Brunswick.",
+          "contentHash": "6f1089fac96db78f9a7581e409129a860bf1c7b4fd5c95f2d68dade24f2f8c49"
+        }
+      ],
+      "contentHash": "5360dbf3b2cbcf22a832792bef958e36152de2de427c3b8ec20b819a5f96aec3"
+    },
+    {
+      "id": "section-25",
+      "sourceKey": "section:25",
+      "componentType": "section",
+      "label": "25",
+      "heading": "Rules of equity",
+      "text": "Rules of equity\n\n25Nothing in this Act derogates from any rule of equity under which a court may refuse to grant relief to a claimant in respect of a claim.\n\n7\n\nTRANSITION\n\nRepealed: 2021, c.21, s.2\n\n2021, c.21, s.2",
+      "subsections": [],
+      "contentHash": "e43bfdfab4c191f991fc9f5aa4a5fb29f18d530125fcd79a23dcd9252f0d07da"
+    },
+    {
+      "id": "section-27",
+      "sourceKey": "section:27",
+      "componentType": "section",
+      "label": "27",
+      "heading": "Repealed",
+      "text": "Repealed\n\n27Repealed: 2021, c.21, s.3\n2021, c.21, s.3",
+      "subsections": [],
+      "contentHash": "7b95af8c8f4a727e85eab00c7d247f20ca8a3c4e3ad879746c65ef3a5bcf2027"
+    },
+    {
+      "id": "section-27.1",
+      "sourceKey": "section:27.1",
+      "componentType": "section",
+      "label": "27.1",
+      "heading": "Repealed",
+      "text": "Repealed\n\n27.1Repealed: 2021, c.21, s.3\n2011, c.52, s.2; 2016, c.28, s.70; 2021, c.21, s.3",
+      "subsections": [],
+      "contentHash": "42684bf43d9011fa6a0a72638c5bdc5d7ea4d46972e23404f86f43ed9f7f27a9"
+    },
+    {
+      "id": "section-27.2",
+      "sourceKey": "section:27.2",
+      "componentType": "section",
+      "label": "27.2",
+      "heading": "Repealed",
+      "text": "Repealed\n\n27.2Repealed: 2021, c.21, s.3\n2021, c.21, s.3\n\n8\n\nCONSEQUENTIAL AMENDMENTS AND COMMENCEMENT",
+      "subsections": [],
+      "contentHash": "7714f7eb45913ca12f0b9f2dcdbe04e30db530bef627f4f651400bda328549ec"
+    },
+    {
+      "id": "section-28",
+      "sourceKey": "section:28",
+      "componentType": "section",
+      "label": "28",
+      "heading": "Arbitration Act",
+      "text": "Arbitration Act\n\n28Section 52 of the Arbitration Act, chapter A-10.1 of the Acts of New Brunswick, 1992, is amended\n\n(a)\nin subsection (1) by striking out “as if the arbitration were an action and a claim made in the arbitration were a cause of action” and substituting “as if the arbitration were a court proceeding”;\n\n(b)\nin subsection (2) by striking out “within which an action may be brought on a cause of action that was a claim in the arbitration” and substituting “within which a court proceeding may be brought in respect of a claim that was presented in the arbitration”.",
+      "subsections": [],
+      "contentHash": "76bdaf53f1fd1900434e09c823f85cd43040727c3ce881b6f1a337d91dbee279"
+    },
+    {
+      "id": "section-29",
+      "sourceKey": "section:29",
+      "componentType": "section",
+      "label": "29",
+      "heading": "Business Corporations Act",
+      "text": "Business Corporations Act\n\n29Subsection 83(6) of the Business Corporations Act, chapter B-9.1 of the Acts of New Brunswick, 1981, is repealed and the following is substituted:\n\n83(6)No action shall be brought under subsection (5) after 2 years from the day on which the plaintiff first knew or ought reasonably to have known that the conduct giving rise to the action took place.",
+      "subsections": [],
+      "contentHash": "8e55dd17b8f59041b158151a8ee299de7a3b77a5e5603d4bd5fcd3ea65fa88c2"
+    },
+    {
+      "id": "section-30",
+      "sourceKey": "section:30",
+      "componentType": "section",
+      "label": "30",
+      "heading": "Defamation Act",
+      "text": "Defamation Act\n\n30(1)Section 12 of the Defamation Act, chapter D-5 of the Revised Statutes, 1973, is amended by striking out “Sections 13 to 18” and substituting “Sections 15 to 18”.\n\n30(2)Section 13 of the Act is repealed.\n\n30(3)Section 14 of the Act is repealed.\n\n30(4)Section 18 of the Act is amended\n\n(a)\nin subsection (1) by striking out “sections 13, 14 and 17” and substituting “section 17”;\n\n(b)\nin subsection (3) by striking out “sections 13, 14 and 17” and substituting “section 17”.",
+      "subsections": [
+        {
+          "id": "30-subsection-1",
+          "sourceKey": "section:30/subsection:1",
+          "label": "30(1)",
+          "text": "30(1)Section 12 of the Defamation Act, chapter D-5 of the Revised Statutes, 1973, is amended by striking out “Sections 13 to 18” and substituting “Sections 15 to 18”.",
+          "contentHash": "416392b2ee217d221c4b9aeb8cebb03f971dd49245cd2b1f4bb9257fa2b03d0d"
+        },
+        {
+          "id": "30-subsection-2",
+          "sourceKey": "section:30/subsection:2",
+          "label": "30(2)",
+          "text": "30(2)Section 13 of the Act is repealed.",
+          "contentHash": "6fd34d154c6fa918d21e6a504f1783896c45778262cd8a8706e95982d7b3c676"
+        },
+        {
+          "id": "30-subsection-3",
+          "sourceKey": "section:30/subsection:3",
+          "label": "30(3)",
+          "text": "30(3)Section 14 of the Act is repealed.",
+          "contentHash": "baf8d9a3f6f56c1f98be6026a3f4c54f95218c65197a86c0c7496eabc5b64824"
+        },
+        {
+          "id": "30-subsection-4",
+          "sourceKey": "section:30/subsection:4",
+          "label": "30(4)",
+          "text": "30(4)Section 18 of the Act is amended\n\n(a)\nin subsection (1) by striking out “sections 13, 14 and 17” and substituting “section 17”;\n\n(b)\nin subsection (3) by striking out “sections 13, 14 and 17” and substituting “section 17”.",
+          "contentHash": "41211b86df43a1e3c1e41050bd07977f5fa63de55fc7b1e73ad78edb6fd935ae"
+        }
+      ],
+      "contentHash": "5e6405a4853fdc9fa980b488db5008e18c05b627fe6308a8f0e7a1df67cba5ee"
+    },
+    {
+      "id": "section-31",
+      "sourceKey": "section:31",
+      "componentType": "section",
+      "label": "31",
+      "heading": "Electricity Act",
+      "text": "Electricity Act\n\n31Section 31 of the Electricity Act, chapter E-4.6 of the Acts of New Brunswick, 2003, is amended\n\n(a)\nin subsection (1) by striking out “notwithstanding the Limitation of Actions Act or any other Act” and substituting “notwithstanding any other Act”;\n\n(b)\nin subsection (2) by striking out “notwithstanding the Limitation of Actions Act or any other Act” and substituting “notwithstanding any other Act”.",
+      "subsections": [],
+      "contentHash": "72a5e3fe409bbd77dba839dddabb1aadf0235d1b26362c886573d9454c008393"
+    },
+    {
+      "id": "section-32",
+      "sourceKey": "section:32",
+      "componentType": "section",
+      "label": "32",
+      "heading": "Executors and Trustees Act",
+      "text": "Executors and Trustees Act\n\n32(1)The heading “LIMITATION” preceding section 17 of the Executors and Trustees Act, chapter E-13 of the Revised Statutes, 1973, is repealed.\n\n32(2)Section 17 of the Act is repealed.",
+      "subsections": [
+        {
+          "id": "32-subsection-1",
+          "sourceKey": "section:32/subsection:1",
+          "label": "32(1)",
+          "text": "32(1)The heading “LIMITATION” preceding section 17 of the Executors and Trustees Act, chapter E-13 of the Revised Statutes, 1973, is repealed.",
+          "contentHash": "2048a6b33cc0902fbd11527afbceafd849ce354f46f9633ea1de8457c779ca0a"
+        },
+        {
+          "id": "32-subsection-2",
+          "sourceKey": "section:32/subsection:2",
+          "label": "32(2)",
+          "text": "32(2)Section 17 of the Act is repealed.",
+          "contentHash": "61460b68047a2a0af3ccf2d5d123f3e3753aec96a1be2d487602db92b04fc007"
+        }
+      ],
+      "contentHash": "886b312898de2c5caf93c311ef46b003bb0ffb1c830e2d799e4926d79383126c"
+    },
+    {
+      "id": "section-33",
+      "sourceKey": "section:33",
+      "componentType": "section",
+      "label": "33",
+      "heading": "Fatal Accidents Act",
+      "text": "Fatal Accidents Act\n\n33(1)Subsection 2(2) of the Fatal Accidents Act, chapter F-7 of the Revised Statutes, 1973, is amended by striking out “Subject to subsection (5)” and substituting “Subject to subsections (5) and 8(3.1)”.\n\n33(2)Subsection 5(4) of the Act is repealed and the following is substituted:\n\n5(4)No application shall be made under subsection (1) by a person barred from bringing an action under this Act because of the expiration of a period set out in paragraph 8(4)(a) or (b), but where such an application is made not earlier than 3 months before the expiration of that period, the judge may, if he or she thinks it just to do so, extend for a period not exceeding one month the time within which an action may be brought as provided in subsection 8(4).\n\n33(3)Section 8 of the Act is amended\n\n(a)\nin subsection (3) by striking out “lapse of time or”;\n\n(b)\nby adding after subsection (3) the following:\n\n8(3.1)If the deceased, at the time of his or her death, could not have brought an action against the tortfeasor by reason of lapse of time, a person who, if not for this subsection, would be entitled to bring an action under this Act is barred from doing so.\n\n(c)\nby repealing subsection (4) and substituting the following:\n\n8(4)Except where it is expressly declared in another Act that it operates notwithstanding this Act and subject to subsection 5(4), an action, including an action to which subsection 2(5) or (6) applies, shall not be brought under this Act after the earlier of\n\n(a)\ntwo years from the day on which the person bringing the action first knew or ought reasonably to have known that the wrongful act, neglect or default of the tortfeasor caused the death or contributed to the cause of death of the deceased, and\n\n(b)\nfive years from the day of the death of the deceased.",
+      "subsections": [
+        {
+          "id": "33-subsection-1",
+          "sourceKey": "section:33/subsection:1",
+          "label": "33(1)",
+          "text": "33(1)Subsection 2(2) of the Fatal Accidents Act, chapter F-7 of the Revised Statutes, 1973, is amended by striking out “Subject to subsection (5)” and substituting “Subject to subsections (5) and 8(3.1)”.",
+          "contentHash": "2df18a799261ddea26d6af0930e01ca0824f180a8236b168e1c4d7b857ae1e04"
+        },
+        {
+          "id": "33-subsection-2",
+          "sourceKey": "section:33/subsection:2",
+          "label": "33(2)",
+          "text": "33(2)Subsection 5(4) of the Act is repealed and the following is substituted:\n\n5(4)No application shall be made under subsection (1) by a person barred from bringing an action under this Act because of the expiration of a period set out in paragraph 8(4)(a) or (b), but where such an application is made not earlier than 3 months before the expiration of that period, the judge may, if he or she thinks it just to do so, extend for a period not exceeding one month the time within which an action may be brought as provided in subsection 8(4).",
+          "contentHash": "b3c7365ccf00bd0392032d861a986e2f1af4c8ba5e2bedb0f9617a6aa51fd04d"
+        },
+        {
+          "id": "33-subsection-3",
+          "sourceKey": "section:33/subsection:3",
+          "label": "33(3)",
+          "text": "33(3)Section 8 of the Act is amended\n\n(a)\nin subsection (3) by striking out “lapse of time or”;\n\n(b)\nby adding after subsection (3) the following:\n\n8(3.1)If the deceased, at the time of his or her death, could not have brought an action against the tortfeasor by reason of lapse of time, a person who, if not for this subsection, would be entitled to bring an action under this Act is barred from doing so.\n\n(c)\nby repealing subsection (4) and substituting the following:\n\n8(4)Except where it is expressly declared in another Act that it operates notwithstanding this Act and subject to subsection 5(4), an action, including an action to which subsection 2(5) or (6) applies, shall not be brought under this Act after the earlier of\n\n(a)\ntwo years from the day on which the person bringing the action first knew or ought reasonably to have known that the wrongful act, neglect or default of the tortfeasor caused the death or contributed to the cause of death of the deceased, and\n\n(b)\nfive years from the day of the death of the deceased.",
+          "contentHash": "76f9247eb98f4074a41f481105a4c7ea0e52d85ff1fb6daf900ead30967f0a0c"
+        }
+      ],
+      "contentHash": "2ef7c65a3866351ffd05716b205f1f4a79b8b0344d49112ce0b1aee4f3737f4c"
+    },
+    {
+      "id": "section-34",
+      "sourceKey": "section:34",
+      "componentType": "section",
+      "label": "34",
+      "heading": "Limitation of Actions Act",
+      "text": "Limitation of Actions Act\n\n34(1)The title of the Limitation of Actions Act, chapter L-8 of the Revised Statutes, 1973, is repealed and the following is substituted:\n\nReal Property Limitations Act\n\n34(2)Section 1 of the Act is amended\n\n(a)\nby repealing the definition “beyond seas”;\n\n(b)\nby repealing the definitions “mortgage”, “mortgagor” and “mortgagee”;\n\n(c)\nin the definition “proceedings” by striking out “entry, taking of possession, distress and sale proceedings under an order of a court or under a power of sale contained in a mortgage or conferred by statute;” and substituting “entry and taking of possession.”;\n\n(d)\nby repealing the definition “rent”;\n\n(e)\nby repealing the definition “rent charge”.\n\n34(3)Parts I and II of the Act are repealed.\n\n34(4)Subsection 33(2) of the Act is repealed.\n\n34(5)Parts IV, V and VI of the Act are repealed.\n\n34(6)Section 55 of the Act is repealed and the following is substituted:\n\nDefinition of “trustee”\n\n55In this Part, “trustee” includes an executor and a joint trustee.\n\n34(7)Section 56 of the Act is repealed.\n\n34(8)Section 57 of the Act is repealed.\n\n34(9)Section 58 of the Act is amended\n\n(a)\nby repealing subsection (2);\n\n(b)\nby repealing subsection (3).\n\n34(10)Section 60 of the Act is amended by striking out “any land, rent charge, or money charged on land, the right and title of such person to the land or rent charge or the recovery of the money out of the land shall be extinguished” and substituting “any land, the right and title of such person to the land shall be extinguished”.\n\n34(11)Section 61 of the Act is repealed.\n\n34(12)Section 62 of the Act is amended by striking out “Parts II, III and IV” and substituting “Part III”.\n\n34(13)Subsection 63(1) of the Act is amended by striking out “Parts II, III and IV” and substituting “Part III”.\n\n34(14)The heading “APPLICATION OF ACT” preceding section 64 of the Act is repealed.\n\n34(15)Section 64 of the Act is repealed.\n\n34(16)The heading “ACQUIESCENCE” preceding section 65 of the Act is repealed.\n\n34(17)Section 65 of the Act is repealed.",
+      "subsections": [
+        {
+          "id": "34-subsection-1",
+          "sourceKey": "section:34/subsection:1",
+          "label": "34(1)",
+          "text": "34(1)The title of the Limitation of Actions Act, chapter L-8 of the Revised Statutes, 1973, is repealed and the following is substituted:\n\nReal Property Limitations Act",
+          "contentHash": "ffd9706fb4d5773962018f10299ad8571a98f4131abb8ddbb6ac295c063caa8a"
+        },
+        {
+          "id": "34-subsection-2",
+          "sourceKey": "section:34/subsection:2",
+          "label": "34(2)",
+          "text": "34(2)Section 1 of the Act is amended\n\n(a)\nby repealing the definition “beyond seas”;\n\n(b)\nby repealing the definitions “mortgage”, “mortgagor” and “mortgagee”;\n\n(c)\nin the definition “proceedings” by striking out “entry, taking of possession, distress and sale proceedings under an order of a court or under a power of sale contained in a mortgage or conferred by statute;” and substituting “entry and taking of possession.”;\n\n(d)\nby repealing the definition “rent”;\n\n(e)\nby repealing the definition “rent charge”.",
+          "contentHash": "3af82effa1915d74ee2b57a35ef4ad3e8934e979a6ce13f7dc7c93d94083fc29"
+        },
+        {
+          "id": "34-subsection-3",
+          "sourceKey": "section:34/subsection:3",
+          "label": "34(3)",
+          "text": "34(3)Parts I and II of the Act are repealed.",
+          "contentHash": "cb0a35ddfffb9b7a0f1a8f8a1bbeb0667d0e168e585e78150a5170636dc3b32c"
+        },
+        {
+          "id": "34-subsection-4",
+          "sourceKey": "section:34/subsection:4",
+          "label": "34(4)",
+          "text": "34(4)Subsection 33(2) of the Act is repealed.",
+          "contentHash": "c0cafe4fabd18b1c860c8e92ec3d1c35d7566920c3afa33659ab04d0fae26270"
+        },
+        {
+          "id": "34-subsection-5",
+          "sourceKey": "section:34/subsection:5",
+          "label": "34(5)",
+          "text": "34(5)Parts IV, V and VI of the Act are repealed.",
+          "contentHash": "27fbdb73e77de10b3c242511915afbe07493592ea96da2d30cde3f435f6736ce"
+        },
+        {
+          "id": "34-subsection-6",
+          "sourceKey": "section:34/subsection:6",
+          "label": "34(6)",
+          "text": "34(6)Section 55 of the Act is repealed and the following is substituted:\n\nDefinition of “trustee”\n\n55In this Part, “trustee” includes an executor and a joint trustee.",
+          "contentHash": "89868561104bb0211356b5551057367f2223c8d365bcac3860984d0ba059461a"
+        },
+        {
+          "id": "34-subsection-7",
+          "sourceKey": "section:34/subsection:7",
+          "label": "34(7)",
+          "text": "34(7)Section 56 of the Act is repealed.",
+          "contentHash": "d364f5dde1594d764d33cb1e012eb24acb994ad3230d3c731b5426be6d8797af"
+        },
+        {
+          "id": "34-subsection-8",
+          "sourceKey": "section:34/subsection:8",
+          "label": "34(8)",
+          "text": "34(8)Section 57 of the Act is repealed.",
+          "contentHash": "16be6dbc817baae8141332a8a111d63daf4205daf881629634b7088f9cd46433"
+        },
+        {
+          "id": "34-subsection-9",
+          "sourceKey": "section:34/subsection:9",
+          "label": "34(9)",
+          "text": "34(9)Section 58 of the Act is amended\n\n(a)\nby repealing subsection (2);\n\n(b)\nby repealing subsection (3).",
+          "contentHash": "7053cdba9ff28050c2cdf3916ef8796c2d8cc349be6aae9ddb8fd4749b774259"
+        },
+        {
+          "id": "34-subsection-10",
+          "sourceKey": "section:34/subsection:10",
+          "label": "34(10)",
+          "text": "34(10)Section 60 of the Act is amended by striking out “any land, rent charge, or money charged on land, the right and title of such person to the land or rent charge or the recovery of the money out of the land shall be extinguished” and substituting “any land, the right and title of such person to the land shall be extinguished”.",
+          "contentHash": "db0e2dae9db2490c39332b6110601391eb5d3f60dc66151aa19759eab34c6317"
+        },
+        {
+          "id": "34-subsection-11",
+          "sourceKey": "section:34/subsection:11",
+          "label": "34(11)",
+          "text": "34(11)Section 61 of the Act is repealed.",
+          "contentHash": "60f64546c2ea2e2fd62d6adfba15919296d88414551037b7cde12a6abf714e58"
+        },
+        {
+          "id": "34-subsection-12",
+          "sourceKey": "section:34/subsection:12",
+          "label": "34(12)",
+          "text": "34(12)Section 62 of the Act is amended by striking out “Parts II, III and IV” and substituting “Part III”.",
+          "contentHash": "c818f16a3a33469a009a6ae7e0f6c08ddb524c54346920faa3857438bb47e43d"
+        },
+        {
+          "id": "34-subsection-13",
+          "sourceKey": "section:34/subsection:13",
+          "label": "34(13)",
+          "text": "34(13)Subsection 63(1) of the Act is amended by striking out “Parts II, III and IV” and substituting “Part III”.",
+          "contentHash": "adc529d7cdcbf486472d7824b5e0c731db6fa35f52c1bc941263aaf78a569e1f"
+        },
+        {
+          "id": "34-subsection-14",
+          "sourceKey": "section:34/subsection:14",
+          "label": "34(14)",
+          "text": "34(14)The heading “APPLICATION OF ACT” preceding section 64 of the Act is repealed.",
+          "contentHash": "b7f545be794ba410296ca196dcc634e7d09abb6cc69e884145ccc3b27b7a57de"
+        },
+        {
+          "id": "34-subsection-15",
+          "sourceKey": "section:34/subsection:15",
+          "label": "34(15)",
+          "text": "34(15)Section 64 of the Act is repealed.",
+          "contentHash": "b01cb0f5f0e4277ff52becfb0c4084f4d19d06f87099deb934df53316dbf7c89"
+        },
+        {
+          "id": "34-subsection-16",
+          "sourceKey": "section:34/subsection:16",
+          "label": "34(16)",
+          "text": "34(16)The heading “ACQUIESCENCE” preceding section 65 of the Act is repealed.",
+          "contentHash": "b84127b90aa399fc1b5f836f2cb4b8bcf551548a897872f019608d20a6d4b259"
+        },
+        {
+          "id": "34-subsection-17",
+          "sourceKey": "section:34/subsection:17",
+          "label": "34(17)",
+          "text": "34(17)Section 65 of the Act is repealed.",
+          "contentHash": "3762cd0bdfce036276a3419b571daea5208c2615bb3adae99d4b50517ae96abe"
+        }
+      ],
+      "contentHash": "26a719ad00e64c0602ed0319c2b99a9a84a79c611e858870a758bf039db578df"
+    },
+    {
+      "id": "section-35",
+      "sourceKey": "section:35",
+      "componentType": "section",
+      "label": "35",
+      "heading": "Mental Health Act",
+      "text": "Mental Health Act\n\n35Subsection 66(2) of the Mental Health Act, chapter M-10 of the Revised Statutes, 1973, is amended by striking out “All actions and prosecutions” and substituting “All prosecutions”.",
+      "subsections": [],
+      "contentHash": "80ff0763d15ac412f32f48a302cef7dacc73a91c118ded50e630769523a46226"
+    },
+    {
+      "id": "section-36",
+      "sourceKey": "section:36",
+      "componentType": "section",
+      "label": "36",
+      "heading": "Midwifery Act",
+      "text": "Midwifery Act\n\n36(1)The heading “Limitation of actions” preceding section 96 of the Midwifery Act, chapter M-11.5 of the Acts of New Brunswick, 2008, is repealed.\n\n36(2)Section 96 of the Act is repealed.",
+      "subsections": [
+        {
+          "id": "36-subsection-1",
+          "sourceKey": "section:36/subsection:1",
+          "label": "36(1)",
+          "text": "36(1)The heading “Limitation of actions” preceding section 96 of the Midwifery Act, chapter M-11.5 of the Acts of New Brunswick, 2008, is repealed.",
+          "contentHash": "ea1ae965c4885225fca71fd961df73919865a7bf97973a2f58a1cc502a4ed1af"
+        },
+        {
+          "id": "36-subsection-2",
+          "sourceKey": "section:36/subsection:2",
+          "label": "36(2)",
+          "text": "36(2)Section 96 of the Act is repealed.",
+          "contentHash": "b13c64737d25325010446a93de50b0bbd294dd2fab8d8e4ff1ded8037253fbd8"
+        }
+      ],
+      "contentHash": "143ed6011c46c8803dfeb55643e45da5e6334beea82f8c0cd176cab2a2e484fb"
+    },
+    {
+      "id": "section-37",
+      "sourceKey": "section:37",
+      "componentType": "section",
+      "label": "37",
+      "heading": "Probate Court Act",
+      "text": "Probate Court Act\n\n37Subsection 68(2) of the Probate Court Act, chapter P-17.1 of the Acts of New Brunswick, 1982, is repealed.",
+      "subsections": [],
+      "contentHash": "582d6bbcd241d9a67962a32b43f8ea04f3f47fd6ba0aad82a685c012db9b3fca"
+    },
+    {
+      "id": "section-37.1",
+      "sourceKey": "section:37.1",
+      "componentType": "section",
+      "label": "37.1",
+      "heading": "Proceedings Against the Crown Act",
+      "text": "Proceedings Against the Crown Act\n\n37.1Section 15 of the Proceedings Against the Crown Act, chapter P-18 of the Revised Statutes, 1973, is amended\n\n(a)\nby renumbering the section as subsection 15(1);\n\n(b)\nby adding after subsection (1) the following:\n\n15(2)If the notice is served before the expiry of the limitation period that applies to the action and the two-month period referred to in subsection (1) ends after the expiry of the limitation period, the limitation period is extended by seven days after the end of the two-month period.",
+      "subsections": [],
+      "contentHash": "6d01f80a5d272afd5804b0c569b32187d4bcf5cdc8888b006441932810c17c10"
+    },
+    {
+      "id": "section-38",
+      "sourceKey": "section:38",
+      "componentType": "section",
+      "label": "38",
+      "heading": "Regional Health Authorities Act",
+      "text": "Regional Health Authorities Act\n\n38(1)The heading “Limitations” preceding section 61 of the Regional Health Authorities Act, chapter R-5.05 of the Acts of New Brunswick, 2002, is repealed.\n\n38(2)Section 61 of the Act is repealed.",
+      "subsections": [
+        {
+          "id": "38-subsection-1",
+          "sourceKey": "section:38/subsection:1",
+          "label": "38(1)",
+          "text": "38(1)The heading “Limitations” preceding section 61 of the Regional Health Authorities Act, chapter R-5.05 of the Acts of New Brunswick, 2002, is repealed.",
+          "contentHash": "01fb5bc3cf9a59e24b544039121892dd6bffc8326dfc3ad351b8236462755b1a"
+        },
+        {
+          "id": "38-subsection-2",
+          "sourceKey": "section:38/subsection:2",
+          "label": "38(2)",
+          "text": "38(2)Section 61 of the Act is repealed.",
+          "contentHash": "79838fcf96d81ea7b5bf9ff067be084b9623b92c211cd685e76f62758bdde38d"
+        }
+      ],
+      "contentHash": "fd280dd3d70be8fde2adcba28c1ad607334b9a4143dd6f8bebf61b447ec43903"
+    },
+    {
+      "id": "section-39",
+      "sourceKey": "section:39",
+      "componentType": "section",
+      "label": "39",
+      "heading": "Survival of Actions Act",
+      "text": "Survival of Actions Act\n\n39Section 9 of the Survival of Actions Act, chapter S-18 of the Revised Statutes, 1973, is amended\n\n(a)\nin subsection (1) by striking out “Notwithstanding the Limitation of Actions Act or any other Act” and substituting “Notwithstanding any Act”;\n\n(b)\nby repealing subsection (2) and substituting the following:\n\n9(2)Subject to subsection (2.1), proceedings on a cause of action that survives under section 2 shall not be brought after 2 years from,\n\n(a)\nif the cause of action is discovered by the person in whom the cause of action was vested before death, the day of the death of the person, and\n\n(b)\nif the cause of action is discovered after the death of the person in whom the cause of action was vested before death, the day the cause of action is discovered by the person bringing the action.\n\n(c)\nby adding after subsection (2) the following:\n\n9(2.1)Proceedings on a cause of action that survives under section 2 shall not be brought after 5 years from the day of the death of the person in whom the cause of action was vested before death.\n\n(d)\nby repealing subsection (3) and substituting the following:\n\n9(3)Subject to subsection (3.1), proceedings on a cause of action that survives under section 3 or 4 shall not be brought after 2 years from the later of\n\n(a)\nthe day of the death of the person against whom the cause of action subsisted or was deemed to have been subsisting before death, and\n\n(b)\nthe day the cause of action is discovered by the person who has the cause of action.\n\n(e)\nby adding after subsection (3) the following:\n\n9(3.1)Proceedings on a cause of action that survives under section 3 or 4 shall not be brought after 5 years from the day of the death of the person against whom the cause of action subsisted or was deemed to have been subsisting before death.\n\n9(3.2)For the purposes of subsections (2) and (3), a cause of action is discovered by a person on the day on which that person first knew or ought reasonably to have known that the cause of action existed.",
+      "subsections": [],
+      "contentHash": "e8380f66983d926bc5f87357d6c20d1ead7a63723496da2fefd369097e8960a4"
+    },
+    {
+      "id": "section-40",
+      "sourceKey": "section:40",
+      "componentType": "section",
+      "label": "40",
+      "heading": "Commencement",
+      "text": "Commencement\n\n40This Act comes into force on a day to be fixed by proclamation.\n\nN.B. This Act was proclaimed and came into force May 1, 2010.\n\nN.B. This Act is consolidated to June 12, 2026.",
+      "subsections": [],
+      "contentHash": "f9c7b5c03e4261db8b54a81e608241cb333ef24b5467763605c5e98646ba2775"
+    }
+  ],
+  "notes": []
+}

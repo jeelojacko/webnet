@@ -166,14 +166,6 @@ Required:
 Other discovered regulations:
 - None discovered beyond required regulations.
 
-## Ecological Reserves Act
-
-Required:
-- None recorded as required.
-
-Other discovered regulations:
-- None discovered beyond required regulations.
-
 ## Electronic Transactions Act
 
 Required:
@@ -253,14 +245,6 @@ Other discovered regulations:
 - 98-33 - Commercial Vehicle Weighing (https://laws.gnb.ca/en/document/cr/98-33)
 - 2010-55 - Highway Usage (https://laws.gnb.ca/en/document/cr/2010-55)
 
-## Health Act
-
-Required:
-- None recorded as required.
-
-Other discovered regulations:
-- None discovered beyond required regulations.
-
 ## Land Titles Act
 
 Required:
@@ -316,14 +300,6 @@ Other discovered regulations:
 - 97-145 - Reserve Fund (https://laws.gnb.ca/en/document/cr/97-145)
 - 2010-4 - Shared Generation Facility Agreement (https://laws.gnb.ca/en/document/cr/2010-4)
 
-## New Brunswick Land Surveyors Act, 1986
-
-Required:
-- None recorded as required.
-
-Other discovered regulations:
-- None discovered beyond required regulations.
-
 ## Occupational Health and Safety Act
 
 Required:
@@ -338,14 +314,6 @@ Other discovered regulations:
 - 2007-33 - Training and Designated Trades (https://laws.gnb.ca/en/document/cr/2007-33)
 - 2016-6 - Workplace Hazardous Materials Information System (https://laws.gnb.ca/en/document/cr/2016-6)
 
-## Official Languages of New Brunswick Act
-
-Required:
-- None recorded as required.
-
-Other discovered regulations:
-- None discovered beyond required regulations.
-
 ## Oil and Natural Gas Act
 
 Required:
@@ -357,6 +325,14 @@ Other discovered regulations:
 - 2001-66 - Licence to Search and Lease (https://laws.gnb.ca/en/document/cr/2001-66)
 - 2015-28 - Prohibition Against Hydraulic Fracturing (https://laws.gnb.ca/en/document/cr/2015-28)
 
+## New Brunswick Land Surveyors Act, 1986
+
+Required:
+- doc-new-brunswick-land-surveyors-bylaws
+
+Other discovered regulations:
+- None discovered beyond required regulations.
+
 ## Ownership of Minerals Act
 
 Required:
@@ -364,6 +340,17 @@ Required:
 
 Other discovered regulations:
 - None discovered beyond required regulations.
+
+## Official Languages Act
+
+Required:
+- None recorded as required.
+
+Other discovered regulations:
+- 85-165 - Documents (https://laws.gnb.ca/en/document/cr/85-165)
+- 86-2 - Interpreters (https://laws.gnb.ca/en/document/cr/86-2)
+- 2002-63 - Services and Communications (https://laws.gnb.ca/en/document/cr/2002-63)
+- 2015-67 - General (https://laws.gnb.ca/en/document/cr/2015-67)
 
 ## Parks Act
 
@@ -431,14 +418,6 @@ Required:
 Other discovered regulations:
 - None discovered beyond required regulations.
 
-## Public Utilities Act
-
-Required:
-- None recorded as required.
-
-Other discovered regulations:
-- None discovered beyond required regulations.
-
 ## Public Works Act
 
 Required:
@@ -463,6 +442,14 @@ Required:
 
 Other discovered regulations:
 - 83-106 - General (https://laws.gnb.ca/en/document/cr/83-106)
+
+## Energy and Utilities Board Act
+
+Required:
+- None recorded as required.
+
+Other discovered regulations:
+- 2007-4 - General (https://laws.gnb.ca/en/document/cr/2007-4)
 
 ## Registry Act
 

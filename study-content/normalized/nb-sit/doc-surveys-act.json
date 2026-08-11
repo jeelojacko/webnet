@@ -1,0 +1,727 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-surveys-act",
+  "officialTitle": "Surveys Act",
+  "officialCitation": "2011, c.226",
+  "officialCitationDisplay": "2011, c.226",
+  "officialCitationNormalized": "2011, c.226",
+  "documentType": "act",
+  "sourceUrl": "https://laws.gnb.ca/en/document/cs/2011,%20c.226",
+  "fetchDate": "2026-08-11T18:09:14.458Z",
+  "consolidatedTo": "October 1, 2015",
+  "contentHash": "72a472ac3b1f3e7857729bf87be2645538b54477ddbe38ce73e0d7e7b688ae13",
+  "tableOfContents": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "label": "1",
+      "heading": "Definitions"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "label": "2",
+      "heading": "Establishment of coordinate survey system"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "label": "3",
+      "heading": "Director of Surveys"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "label": "4",
+      "heading": "Duties of surveyor re coordinate survey system"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "label": "5",
+      "heading": "Integrated survey area"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "label": "6",
+      "heading": "Integrated survey area plan"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "label": "7",
+      "heading": "Duties of surveyor re integrated survey area"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "label": "8",
+      "heading": "Survey plan in integrated survey area"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "label": "9",
+      "heading": "Filing of values of coordinate monuments"
+    },
+    {
+      "id": "section-10",
+      "sourceKey": "section:10",
+      "label": "10",
+      "heading": "Survey plan filed between August 1, 1979, and December 31, 1979"
+    },
+    {
+      "id": "section-11",
+      "sourceKey": "section:11",
+      "label": "11",
+      "heading": "Survey plan filed within six months after April 1, 1999"
+    },
+    {
+      "id": "section-12",
+      "sourceKey": "section:12",
+      "label": "12",
+      "heading": "Lost legal monuments"
+    },
+    {
+      "id": "section-13",
+      "sourceKey": "section:13",
+      "label": "13",
+      "heading": "Authority re private property"
+    },
+    {
+      "id": "section-14",
+      "sourceKey": "section:14",
+      "label": "14",
+      "heading": "Offences and penalties"
+    },
+    {
+      "id": "section-14.1",
+      "sourceKey": "section:14.1",
+      "label": "14.1",
+      "heading": "Administration"
+    },
+    {
+      "id": "section-15",
+      "sourceKey": "section:15",
+      "label": "15",
+      "heading": "Regulations"
+    },
+    {
+      "id": "schedule-schedule-a",
+      "sourceKey": "schedule:schedule-a",
+      "label": "SCHEDULE A"
+    }
+  ],
+  "components": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
+      "label": "1",
+      "heading": "Definitions",
+      "text": "Definitions\n\n1The following definitions apply in this Act.\n“coordinate monument” means a brass, bronze or aluminum cap or plate established and maintained in accordance with section 3. (borne de coordonnées)\n\n“coordinate survey system” means a system established under section 2. (système d’arpentage par coordonnées)\n\n“corner” means a point in an intersection of boundaries of land. (coin)\n\n“legal monument” means a device planted by a surveyor. (borne cadastrale)\n\n“survey” means a survey to define the boundaries of land. (arpentage)\n\n“surveyor” means a New Brunswick Land Surveyor. (arpenteur)\n\nR.S.1973, c.S-17, s.1; 1989, c.N-5.01, s.40; 1998, c.12, s.20; 1999, c.4, s.1",
+      "subsections": [],
+      "contentHash": "f3b82b38d30386c0aa55836ecd90598326fc6f1f619efcdcf204cdecf5597735"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "label": "2",
+      "heading": "Establishment of coordinate survey system",
+      "text": "Establishment of coordinate survey system\n\n2Service New Brunswick shall establish and maintain a system of plane rectangular coordinates for locating points on the earth’s surface.\nR.S.1973, c.S-17, s.2; 1986, c.8, s.123; 1989, c.N-5.01, s.40; 1998, c.12, s.20; 1999, c.4, s.2",
+      "subsections": [],
+      "contentHash": "2457c38467a8913c9e74f929becb0fc96084f97ef2af1578c411112c4ae55c19"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
+      "label": "3",
+      "heading": "Director of Surveys",
+      "text": "Director of Surveys\n\n3(1)Service New Brunswick shall designate a surveyor as Director of Surveys.\n\n3(1.1)Service New Brunswick may designate one or more surveyors to perform any of the duties or exercise any of the powers of the Director of Surveys that are specified in the designation.\n\n3(1.2)Only a surveyor who is an employee of Service New Brunswick or an employee under the Civil Service Act is eligible to be designated under subsection (1.1).\n\n3(2)For the purposes of the coordinate survey system, the Director of Surveys shall establish and maintain coordinate monuments each being a brass, bronze or aluminum cap or plate suitably inscribed and\n\n(a)\nimbedded in a reinforced concrete post set in a concrete base, or\n\n(b)\nplaced as prescribed by the regulations.\n\nR.S.1973, c.S-17, s.3; 1989, c.N-5.01, s.40; 1998, c.12, s.20; 1999, c.4, s.3; 2013, c.9, s.1",
+      "subsections": [
+        {
+          "id": "3-subsection-1",
+          "sourceKey": "section:3/subsection:1",
+          "label": "3(1)",
+          "text": "3(1)Service New Brunswick shall designate a surveyor as Director of Surveys.",
+          "contentHash": "eb792837133020b5f3578ec8b356f1aeed4d8dc33c410b69a89dd754b43979ad"
+        },
+        {
+          "id": "3-subsection-1.1",
+          "sourceKey": "section:3/subsection:1.1",
+          "label": "3(1.1)",
+          "text": "3(1.1)Service New Brunswick may designate one or more surveyors to perform any of the duties or exercise any of the powers of the Director of Surveys that are specified in the designation.",
+          "contentHash": "240ee35521375ebeb64295d9f01fb21e1363e82c3fb68e03603e89c964cd743f"
+        },
+        {
+          "id": "3-subsection-1.2",
+          "sourceKey": "section:3/subsection:1.2",
+          "label": "3(1.2)",
+          "text": "3(1.2)Only a surveyor who is an employee of Service New Brunswick or an employee under the Civil Service Act is eligible to be designated under subsection (1.1).",
+          "contentHash": "b0513871a8582a33f5aaedaccf71c5527081c3dcebb0dc8f410197fff43144c5"
+        },
+        {
+          "id": "3-subsection-2",
+          "sourceKey": "section:3/subsection:2",
+          "label": "3(2)",
+          "text": "3(2)For the purposes of the coordinate survey system, the Director of Surveys shall establish and maintain coordinate monuments each being a brass, bronze or aluminum cap or plate suitably inscribed and\n\n(a)\nimbedded in a reinforced concrete post set in a concrete base, or\n\n(b)\nplaced as prescribed by the regulations.\n\nR.S.1973, c.S-17, s.3; 1989, c.N-5.01, s.40; 1998, c.12, s.20; 1999, c.4, s.3; 2013, c.9, s.1",
+          "contentHash": "fae1f83b2f57c6d68e84465b3bd83a9f82262ef192c7ef5c7319e8fd63c5f7e6"
+        }
+      ],
+      "contentHash": "8bbb06543a27c2aa59275c8fe4f06bc162b3e1f09c9581beea274142045dbebd"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
+      "label": "4",
+      "heading": "Duties of surveyor re coordinate survey system",
+      "text": "Duties of surveyor re coordinate survey system\n\n4(1)Under the coordinate survey system, a surveyor shall set out bearings of boundary lines in terms of grid azimuth and distances in metres.\n\n4(2)Subject to any requirement respecting further particulars, when a surveyor makes a report, note or plan of any survey under the coordinate survey system, he or she shall describe a parcel of land\n\n(a)\nby the legal monuments at the corners with their respective coordinates, or\n\n(b)\nby the corners in terms of coordinates.\n\nR.S.1973, c.S-17, s.4; 1979, c.69, s.1; 1999, c.4, s.4",
+      "subsections": [
+        {
+          "id": "4-subsection-1",
+          "sourceKey": "section:4/subsection:1",
+          "label": "4(1)",
+          "text": "4(1)Under the coordinate survey system, a surveyor shall set out bearings of boundary lines in terms of grid azimuth and distances in metres.",
+          "contentHash": "2bf1385017d94896b386289bb999c25969d2d6eb55b34889ab7e02439c32a96a"
+        },
+        {
+          "id": "4-subsection-2",
+          "sourceKey": "section:4/subsection:2",
+          "label": "4(2)",
+          "text": "4(2)Subject to any requirement respecting further particulars, when a surveyor makes a report, note or plan of any survey under the coordinate survey system, he or she shall describe a parcel of land\n\n(a)\nby the legal monuments at the corners with their respective coordinates, or\n\n(b)\nby the corners in terms of coordinates.\n\nR.S.1973, c.S-17, s.4; 1979, c.69, s.1; 1999, c.4, s.4",
+          "contentHash": "c513626ecca4ca912cbb04588826b430ae95babc9f11c51f0695d0847a8157be"
+        }
+      ],
+      "contentHash": "07dedb6d1b4b8c4851caaf8ddff94b3de4f73cbf8d863e401dfef4e330e61ab9"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "componentType": "section",
+      "label": "5",
+      "heading": "Integrated survey area",
+      "text": "Integrated survey area\n\n5The Lieutenant-Governor in Council\n\n(a)\nmay constitute any portion of the Province an integrated survey area and define the boundaries of it, and\n\n(b)\nmay extend, reduce, subdivide or annul any existing integrated survey area or merge it in whole or in part with any other.\n\nR.S.1973, c.S-17, s.5; 1999, c.4, s.5",
+      "subsections": [],
+      "contentHash": "2082b569c545ee743a22a1b0155f184818beb141932ed83cde87114c56709ad5"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "componentType": "section",
+      "label": "6",
+      "heading": "Integrated survey area plan",
+      "text": "Integrated survey area plan\n\n6(1)When an integrated survey area has been constituted, the Director of Surveys shall file in the registry office of the county where the lands are situated\n\n(a)\na plan of the area setting out\n\n(i)\nthe coordinate monuments established, and\n\n(ii)\nan authentication by the Director of Surveys, and\n\n(b)\na schedule setting out the respective values of the coordinate monuments.\n\n6(2)When a plan filed under subsection (1) is amended, the Director of Surveys\n\n(a)\nshall file in the registry office in which the plan was filed, an amended plan showing\n\n(i)\nany coordinate monuments not affected,\n\n(ii)\nany coordinate monuments destroyed,\n\n(iii)\nany additional coordinate monuments established, and\n\n(iv)\nan authentication by the Director of Surveys, and\n\n(b)\nshall file in that registry office a certificate showing any new or amended values of coordinate monuments shown on the plan,\n\n6(3)When filed under subsection (2), the amended plan becomes the official plan of the coordinate monuments and the amended values become the official values for the affected coordinate monuments.\n\nR.S.1973, c.S-17, s.6; 1999, c.4, s.6",
+      "subsections": [
+        {
+          "id": "6-subsection-1",
+          "sourceKey": "section:6/subsection:1",
+          "label": "6(1)",
+          "text": "6(1)When an integrated survey area has been constituted, the Director of Surveys shall file in the registry office of the county where the lands are situated\n\n(a)\na plan of the area setting out\n\n(i)\nthe coordinate monuments established, and\n\n(ii)\nan authentication by the Director of Surveys, and\n\n(b)\na schedule setting out the respective values of the coordinate monuments.",
+          "contentHash": "720737325db567e886a453310fed02fbba6da8022f82957b1e704c7d699ec274"
+        },
+        {
+          "id": "6-subsection-2",
+          "sourceKey": "section:6/subsection:2",
+          "label": "6(2)",
+          "text": "6(2)When a plan filed under subsection (1) is amended, the Director of Surveys\n\n(a)\nshall file in the registry office in which the plan was filed, an amended plan showing\n\n(i)\nany coordinate monuments not affected,\n\n(ii)\nany coordinate monuments destroyed,\n\n(iii)\nany additional coordinate monuments established, and\n\n(iv)\nan authentication by the Director of Surveys, and\n\n(b)\nshall file in that registry office a certificate showing any new or amended values of coordinate monuments shown on the plan,",
+          "contentHash": "056da1a9b8edcf8b60b761167fe784d7563854272c558ff258d1159623377bc2"
+        },
+        {
+          "id": "6-subsection-3",
+          "sourceKey": "section:6/subsection:3",
+          "label": "6(3)",
+          "text": "6(3)When filed under subsection (2), the amended plan becomes the official plan of the coordinate monuments and the amended values become the official values for the affected coordinate monuments.\n\nR.S.1973, c.S-17, s.6; 1999, c.4, s.6",
+          "contentHash": "3f5ccd653a2d9cb843b7b86b24c44367f692368bb918df3724ccfb51c21e93cc"
+        }
+      ],
+      "contentHash": "a8b53af5a53d266eba2c3dcb4b410331a5a0416dc978660da8864ec100fc0170"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "componentType": "section",
+      "label": "7",
+      "heading": "Duties of surveyor re integrated survey area",
+      "text": "Duties of surveyor re integrated survey area\n\n7When an integrated survey area has been constituted, every surveyor shall tie to the coordinate monuments all legal monuments established by the surveyor that pertain to\n\n(a)\nCrown Lands,\n\n(b)\nsubdivisions when a subdivision plan is required under the Community Planning Act, and\n\n(c)\nparcels of land which the owners request to be included.\n\nR.S.1973, c.S-17, s.7; 1999, c.4, s.7",
+      "subsections": [],
+      "contentHash": "c531232515fc3ad339006f799a722f29606ce596b1d69f22213b8aaf1c914fa8"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "componentType": "section",
+      "label": "8",
+      "heading": "Survey plan in integrated survey area",
+      "text": "Survey plan in integrated survey area\n\n8(1)When a surveyor prepares a subdivision or other plan under section 7, he or she shall not certify to the correctness of the plan unless it represents a survey carried out by the surveyor or under his or her personal supervision or direction, and the standard of survey employed is in accordance with the regulations.\n\n8(2)Unless a surveyor has certified to the correctness of a plan, the Director of Surveys shall not accept it.\n\n8(3)When the Director of Surveys accepts a plan, the acceptance does not constitute an adjudication on title.\n\n8(4)This section applies to only integrated survey areas as constituted under section 5.\n\nR.S.1973, c.S-17, s.8; 1999, c.4, s.8",
+      "subsections": [
+        {
+          "id": "8-subsection-1",
+          "sourceKey": "section:8/subsection:1",
+          "label": "8(1)",
+          "text": "8(1)When a surveyor prepares a subdivision or other plan under section 7, he or she shall not certify to the correctness of the plan unless it represents a survey carried out by the surveyor or under his or her personal supervision or direction, and the standard of survey employed is in accordance with the regulations.",
+          "contentHash": "41997bf951806d406c1f8af7e3fe498ff563212d910176a808a1f64d11024fe6"
+        },
+        {
+          "id": "8-subsection-2",
+          "sourceKey": "section:8/subsection:2",
+          "label": "8(2)",
+          "text": "8(2)Unless a surveyor has certified to the correctness of a plan, the Director of Surveys shall not accept it.",
+          "contentHash": "59fd54c1dccd826ba0250dfc32e4b56b80a000302335edae0f655813a43477dd"
+        },
+        {
+          "id": "8-subsection-3",
+          "sourceKey": "section:8/subsection:3",
+          "label": "8(3)",
+          "text": "8(3)When the Director of Surveys accepts a plan, the acceptance does not constitute an adjudication on title.",
+          "contentHash": "1aded5adc644dfa795a3af3473c415ac20cf77dcfb2baec7f8d53a34acd10456"
+        },
+        {
+          "id": "8-subsection-4",
+          "sourceKey": "section:8/subsection:4",
+          "label": "8(4)",
+          "text": "8(4)This section applies to only integrated survey areas as constituted under section 5.\n\nR.S.1973, c.S-17, s.8; 1999, c.4, s.8",
+          "contentHash": "ec1cca147450bbf86af87c039022ad71a6310c4fd86813c25818bf28c4c25bbe"
+        }
+      ],
+      "contentHash": "eca4d86b575021a4bc28b3971115496378f731c4ff0e55d4bd18ae52b6afcf0b"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "componentType": "section",
+      "label": "9",
+      "heading": "Filing of values of coordinate monuments",
+      "text": "Filing of values of coordinate monuments\n\n9The values of coordinate monuments shall be filed in the Office of and under the direction of the Director of Surveys and when so filed shall be deemed to be correct and the method of arriving at these values is set out in Schedule A.\nR.S.1973, c.S-17, s.9; 1979, c.69, s.2; 1983, c.89, s.1; 1999, c.4, s.9",
+      "subsections": [],
+      "contentHash": "8b03ca82447df1d90a692aecd482c6731bb657baa5aa608013b9525587203a94"
+    },
+    {
+      "id": "section-10",
+      "sourceKey": "section:10",
+      "componentType": "section",
+      "label": "10",
+      "heading": "Survey plan filed between August 1, 1979, and December 31, 1979",
+      "text": "Survey plan filed between August 1, 1979, and December 31, 1979\n\n10Despite subsection 4(1) and section 9, a subdivision or other plan of any survey under the coordinate survey system which was filed between August 1, 1979, and December 31, 1979, is not improperly filed by virtue of the fact that distances and coordinates are not expressed in metres.\n1981, c.74, s.1; 1983, c.89, s.2; 1999, c.4, s.10",
+      "subsections": [],
+      "contentHash": "e57b47a6ca938a4cd946bd23bba1611270739a2ed60d0e2db0e576a6a6ef70ac"
+    },
+    {
+      "id": "section-11",
+      "sourceKey": "section:11",
+      "componentType": "section",
+      "label": "11",
+      "heading": "Survey plan filed within six months after April 1, 1999",
+      "text": "Survey plan filed within six months after April 1, 1999\n\n11Despite section 9, a subdivision plan or any other plan of survey prepared under the ATS77 datum, as described in Schedule A as it read immediately before April 1, 1999, may be filed at any time within six months after April 1, 1999, and a subdivision plan or any other plan of survey that is so filed is not improperly filed by virtue of the fact it was prepared in that manner.\n1999, c.4, s.11",
+      "subsections": [],
+      "contentHash": "14c851aa6de71a47d1a46530c1f87b36716e870e71abacaaa3a4873719b3d016"
+    },
+    {
+      "id": "section-12",
+      "sourceKey": "section:12",
+      "componentType": "section",
+      "label": "12",
+      "heading": "Lost legal monuments",
+      "text": "Lost legal monuments\n\n12When legal monuments established under sections 7 and 8 are lost, the following are primary evidence of their position:\n\n(a)\ncoordinates of the parcel of land described; and\n\n(b)\ncoordinates derived from the plan for the legal monuments pertinent to the survey.\n\nR.S.1973, c.S-17, s.10; 1999, c.4, s.12",
+      "subsections": [],
+      "contentHash": "6ae8e12dc999ddc40e204091f85ad0b4d6c01f444f85c45449ddf46b0f7440da"
+    },
+    {
+      "id": "section-13",
+      "sourceKey": "section:13",
+      "componentType": "section",
+      "label": "13",
+      "heading": "Authority re private property",
+      "text": "Authority re private property\n\n13(1)The Director of Surveys\n\n(a)\nmay enter on private property for the purpose of this Act, and\n\n(b)\nmay establish and maintain coordinate monuments at the places that he or she sees fit on private property.\n\n13(2)A surveyor, a surveyor’s assistant or any person authorized by Service New Brunswick may enter on private property in the course of a survey for the purpose of tying to a coordinate monument.\n\n13(3)If no damage is done, no person has any right of action for trespass or damage resulting from the establishment, maintenance or use of the coordinate survey system as authorized by this Act.\n\nR.S.1973, c.S-17, s.11; 1986, c.8, s.123; 1989, c.N-5.01, s.40; 1998, c.12, s.20; 1999, c.4, s.13",
+      "subsections": [
+        {
+          "id": "13-subsection-1",
+          "sourceKey": "section:13/subsection:1",
+          "label": "13(1)",
+          "text": "13(1)The Director of Surveys\n\n(a)\nmay enter on private property for the purpose of this Act, and\n\n(b)\nmay establish and maintain coordinate monuments at the places that he or she sees fit on private property.",
+          "contentHash": "7b2e0c6294d61dde783229a2493ea45eb8dc0f0147523d80e2f6b3363f2dec48"
+        },
+        {
+          "id": "13-subsection-2",
+          "sourceKey": "section:13/subsection:2",
+          "label": "13(2)",
+          "text": "13(2)A surveyor, a surveyor’s assistant or any person authorized by Service New Brunswick may enter on private property in the course of a survey for the purpose of tying to a coordinate monument.",
+          "contentHash": "1573686262cf2122b3aa598e4633c86d8165dad51c2e7f4b8f165803105816cd"
+        },
+        {
+          "id": "13-subsection-3",
+          "sourceKey": "section:13/subsection:3",
+          "label": "13(3)",
+          "text": "13(3)If no damage is done, no person has any right of action for trespass or damage resulting from the establishment, maintenance or use of the coordinate survey system as authorized by this Act.\n\nR.S.1973, c.S-17, s.11; 1986, c.8, s.123; 1989, c.N-5.01, s.40; 1998, c.12, s.20; 1999, c.4, s.13",
+          "contentHash": "a9203ad962d425e38c355a30be85191555be1a2b77ff07f6e761ef9e2777a765"
+        }
+      ],
+      "contentHash": "2fa451853f57528a649d6c9fdb22819bf107c702cd3a6a28ea012961049f2419"
+    },
+    {
+      "id": "section-14",
+      "sourceKey": "section:14",
+      "componentType": "section",
+      "label": "14",
+      "heading": "Offences and penalties",
+      "text": "Offences and penalties\n\n14(1)A person who violates or fails to comply with any provision of the regulations commits an offence punishable under Part 2 of the Provincial Offences Procedure Act as a category B offence.\n\n14(2)A person who obstructs the Director of Surveys or any surveyor appointed by the Director of Surveys in the establishment or maintenance of coordinate monuments commits an offence punishable under Part 2 of the Provincial Offences Procedure Act as a category E offence.\n\n14(3)A person who obstructs the Director of Surveys, a surveyor, a surveyor’s assistant or any person authorized by Service New Brunswick in making a survey or tying to a coordinate monument under this Act commits an offence punishable under Part 2 of the Provincial Offences Procedure Act as a category E offence.\n\nR.S.1973, c.S-17, s.12, s.13, s.14; 1989, c.N-5.01, s.40; 1990, c.61, s.135; 1998, c.12, s.20; 1999, c.4, s.14, s.15",
+      "subsections": [
+        {
+          "id": "14-subsection-1",
+          "sourceKey": "section:14/subsection:1",
+          "label": "14(1)",
+          "text": "14(1)A person who violates or fails to comply with any provision of the regulations commits an offence punishable under Part 2 of the Provincial Offences Procedure Act as a category B offence.",
+          "contentHash": "8cb63562435b1ee342e50c595ad321ec8dbf64bcdeacd6cdb02c23963dd554ba"
+        },
+        {
+          "id": "14-subsection-2",
+          "sourceKey": "section:14/subsection:2",
+          "label": "14(2)",
+          "text": "14(2)A person who obstructs the Director of Surveys or any surveyor appointed by the Director of Surveys in the establishment or maintenance of coordinate monuments commits an offence punishable under Part 2 of the Provincial Offences Procedure Act as a category E offence.",
+          "contentHash": "b4cb4624725b319f2c3eb4f382afbee83441ad0a6799865220fa6d8f293b9650"
+        },
+        {
+          "id": "14-subsection-3",
+          "sourceKey": "section:14/subsection:3",
+          "label": "14(3)",
+          "text": "14(3)A person who obstructs the Director of Surveys, a surveyor, a surveyor’s assistant or any person authorized by Service New Brunswick in making a survey or tying to a coordinate monument under this Act commits an offence punishable under Part 2 of the Provincial Offences Procedure Act as a category E offence.\n\nR.S.1973, c.S-17, s.12, s.13, s.14; 1989, c.N-5.01, s.40; 1990, c.61, s.135; 1998, c.12, s.20; 1999, c.4, s.14, s.15",
+          "contentHash": "d7739910ca08d17683488f7531e16d86876dfedbda63c9b7c16052be09836837"
+        }
+      ],
+      "contentHash": "08010ad8474e141e69b2966eb9a18f5efc4d4f4eb9b5fe9af9f4ba3a25b1c34e"
+    },
+    {
+      "id": "section-14.1",
+      "sourceKey": "section:14.1",
+      "componentType": "section",
+      "label": "14.1",
+      "heading": "Administration",
+      "text": "Administration\n\n2015, c.44, s.111\n\n14.1Service New Brunswick is responsible for the administration of this Act.\n2015, c.44, s.111",
+      "subsections": [],
+      "contentHash": "dbb73b07795e668bf0afab057c76d27301316618a878e32e450eca1e086af82b"
+    },
+    {
+      "id": "section-15",
+      "sourceKey": "section:15",
+      "componentType": "section",
+      "label": "15",
+      "heading": "Regulations",
+      "text": "Regulations\n\n15The Lieutenant-Governor in Council may make regulations\n\n(a)\nrespecting coordinate monuments and legal monuments;\n\n(b)\nprescribing standards of survey;\n\n(c)\nrespecting the recording of surveys;\n\n(d)\nprescribing forms and the procedure for submitting reports, notes and plans of survey;\n\n(e)\nrespecting large scale mapping;\n\n(f)\nprescribing penalties for violation of the regulations;\n\n(g)\nfor the better administration of this Act.\n\nR.S.1973, c.S-17, s.16; 1999, c.4, s.17",
+      "subsections": [],
+      "contentHash": "8b4c7b33fbbb91aa2df696c41e5623c35297480b271b3b39e419a9108b08bcac"
+    },
+    {
+      "id": "schedule-schedule-a",
+      "sourceKey": "schedule:schedule-a",
+      "componentType": "schedule",
+      "label": "SCHEDULE A",
+      "text": "SCHEDULE A\n\nThe New Brunswick Plane Rectangular Coordinate Projection is a stereographic double projection of the NAD83 (CSRS) geocentric ellipsoid, on a secant plane. The North American Datum of 1983 has been redefined through the Canadian Spatial Reference System (CSRS). It is identified as NAD83 (CSRS). The dimensions of the NAD83 (CSRS) ellipsoid are as follows:\n\n| Semi-major axis (Equatorial Radius) =\n\n| 6,378,137.0 metres\n\n|\n\n| Semi-minor axis (Polar Semi-diameter) =\n\n| 6,356,752.3141 metres\n\nThe datum in New Brunswick is defined in terms of the values of the Canadian Base Network (CBN) stations determined from version 2.0 of the Canadian adjustment prepared by the Geodetic Survey Division of Natural Resources Canada. The values for the six New Brunswick CBN stations are listed as follows:\n\n| Holtville\n| 941001\n\n| Geodetic Latitude\n| 46°30′56.4624″\n\n| Geodetic Longitude\n| 66°28′57.6846″\n\n|\n|\n| Edmundston\n| 941002\n\n| Geodetic Latitude\n| 47°24′04.0613″\n\n| Geodetic Longitude\n| 68°21′50.2808″\n\n|\n|\n| Bathurst\n| 941003\n\n| Geodetic Latitude\n| 47°37′18.5644″\n\n| Geodetic Longitude\n| 65°47′02.8771″\n\n|\n|\n| Moncton\n| 941004\n\n| Geodetic Latitude\n| 46°07′55.0799″\n\n| Geodetic Longitude\n| 64°57′32.6874″\n\n|\n|\n| Saint John\n| 941005\n\n| Geodetic Latitude\n| 45°17′43.1518″\n\n| Geodetic Longitude\n| 66°06′42.2659″\n\n|\n|\n| Moore’s Mills\n| 941006\n\n| Geodetic Latitude\n| 45°18′29.2783″\n\n| Geodetic Longitude\n| 67°14′53.2404″\n\nThe true origin of the New Brunswick Plane Rectangular Coordinate System is a point at Latitude 46°30′ North and Longitude 66°30′ West as defined by the NAD83 (CSRS) ellipsoid. The Y axis, North Axis, is the Geodetic Meridian through the origin, and the X axis, East axis, is the straight line through the origin perpendicular to the Y axis. The scale factor at the origin is 0.999912 and the radius of the projection sphere is 6,379,222.285… metres.\n\nCoordinates are considered positive to the East and to the North. To avoid negative values, the origin has been given the following coordinates:\n\n| X = 2,500,000 metres\n| Y = 7,500,000 metres\n\nThe position of a point shall be defined by two expressions, each given in metres and decimals of a metre. The first expression, called the X coordinate minus 2,500,000 metres, shall indicate the perpendicular distance from the Y axis. When the distance is positive, the point is east of the origin; and when the distance is negative, the point is west of the origin. The second expression, called the Y coordinate minus 7,500,000 metres, shall indicate the perpendicular distance from X axis. When the distance is positive, the point is north of the origin; and when the distance is negative, the point is south of the origin.\n\nThe coordinates shall be made to depend on\n\n(a)\nthe values of the six New Brunswick Canadian Base Network stations set out in this schedule, or\n\n(b)\nthe values of the densification of the Canadian Base Network carried out by Service New Brunswick for the purpose of establishing the New Brunswick High Precision Network.\n\nR.S.1973, c.S-17, Schedule; 1979, c.69, s.3; 1983, c.89, s.3; 1999, c.4, s.18\n\nN.B. This Act was proclaimed and came into force September 1, 2011.\n\nN.B. This Act is consolidated to October 1, 2015.",
+      "contentHash": "8b115f7c48f18eaba1afb5156cf4e82a91782697e89738b6e1529c50acad92ef"
+    }
+  ],
+  "sections": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
+      "label": "1",
+      "heading": "Definitions",
+      "text": "Definitions\n\n1The following definitions apply in this Act.\n“coordinate monument” means a brass, bronze or aluminum cap or plate established and maintained in accordance with section 3. (borne de coordonnées)\n\n“coordinate survey system” means a system established under section 2. (système d’arpentage par coordonnées)\n\n“corner” means a point in an intersection of boundaries of land. (coin)\n\n“legal monument” means a device planted by a surveyor. (borne cadastrale)\n\n“survey” means a survey to define the boundaries of land. (arpentage)\n\n“surveyor” means a New Brunswick Land Surveyor. (arpenteur)\n\nR.S.1973, c.S-17, s.1; 1989, c.N-5.01, s.40; 1998, c.12, s.20; 1999, c.4, s.1",
+      "subsections": [],
+      "contentHash": "f3b82b38d30386c0aa55836ecd90598326fc6f1f619efcdcf204cdecf5597735"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "label": "2",
+      "heading": "Establishment of coordinate survey system",
+      "text": "Establishment of coordinate survey system\n\n2Service New Brunswick shall establish and maintain a system of plane rectangular coordinates for locating points on the earth’s surface.\nR.S.1973, c.S-17, s.2; 1986, c.8, s.123; 1989, c.N-5.01, s.40; 1998, c.12, s.20; 1999, c.4, s.2",
+      "subsections": [],
+      "contentHash": "2457c38467a8913c9e74f929becb0fc96084f97ef2af1578c411112c4ae55c19"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
+      "label": "3",
+      "heading": "Director of Surveys",
+      "text": "Director of Surveys\n\n3(1)Service New Brunswick shall designate a surveyor as Director of Surveys.\n\n3(1.1)Service New Brunswick may designate one or more surveyors to perform any of the duties or exercise any of the powers of the Director of Surveys that are specified in the designation.\n\n3(1.2)Only a surveyor who is an employee of Service New Brunswick or an employee under the Civil Service Act is eligible to be designated under subsection (1.1).\n\n3(2)For the purposes of the coordinate survey system, the Director of Surveys shall establish and maintain coordinate monuments each being a brass, bronze or aluminum cap or plate suitably inscribed and\n\n(a)\nimbedded in a reinforced concrete post set in a concrete base, or\n\n(b)\nplaced as prescribed by the regulations.\n\nR.S.1973, c.S-17, s.3; 1989, c.N-5.01, s.40; 1998, c.12, s.20; 1999, c.4, s.3; 2013, c.9, s.1",
+      "subsections": [
+        {
+          "id": "3-subsection-1",
+          "sourceKey": "section:3/subsection:1",
+          "label": "3(1)",
+          "text": "3(1)Service New Brunswick shall designate a surveyor as Director of Surveys.",
+          "contentHash": "eb792837133020b5f3578ec8b356f1aeed4d8dc33c410b69a89dd754b43979ad"
+        },
+        {
+          "id": "3-subsection-1.1",
+          "sourceKey": "section:3/subsection:1.1",
+          "label": "3(1.1)",
+          "text": "3(1.1)Service New Brunswick may designate one or more surveyors to perform any of the duties or exercise any of the powers of the Director of Surveys that are specified in the designation.",
+          "contentHash": "240ee35521375ebeb64295d9f01fb21e1363e82c3fb68e03603e89c964cd743f"
+        },
+        {
+          "id": "3-subsection-1.2",
+          "sourceKey": "section:3/subsection:1.2",
+          "label": "3(1.2)",
+          "text": "3(1.2)Only a surveyor who is an employee of Service New Brunswick or an employee under the Civil Service Act is eligible to be designated under subsection (1.1).",
+          "contentHash": "b0513871a8582a33f5aaedaccf71c5527081c3dcebb0dc8f410197fff43144c5"
+        },
+        {
+          "id": "3-subsection-2",
+          "sourceKey": "section:3/subsection:2",
+          "label": "3(2)",
+          "text": "3(2)For the purposes of the coordinate survey system, the Director of Surveys shall establish and maintain coordinate monuments each being a brass, bronze or aluminum cap or plate suitably inscribed and\n\n(a)\nimbedded in a reinforced concrete post set in a concrete base, or\n\n(b)\nplaced as prescribed by the regulations.\n\nR.S.1973, c.S-17, s.3; 1989, c.N-5.01, s.40; 1998, c.12, s.20; 1999, c.4, s.3; 2013, c.9, s.1",
+          "contentHash": "fae1f83b2f57c6d68e84465b3bd83a9f82262ef192c7ef5c7319e8fd63c5f7e6"
+        }
+      ],
+      "contentHash": "8bbb06543a27c2aa59275c8fe4f06bc162b3e1f09c9581beea274142045dbebd"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
+      "label": "4",
+      "heading": "Duties of surveyor re coordinate survey system",
+      "text": "Duties of surveyor re coordinate survey system\n\n4(1)Under the coordinate survey system, a surveyor shall set out bearings of boundary lines in terms of grid azimuth and distances in metres.\n\n4(2)Subject to any requirement respecting further particulars, when a surveyor makes a report, note or plan of any survey under the coordinate survey system, he or she shall describe a parcel of land\n\n(a)\nby the legal monuments at the corners with their respective coordinates, or\n\n(b)\nby the corners in terms of coordinates.\n\nR.S.1973, c.S-17, s.4; 1979, c.69, s.1; 1999, c.4, s.4",
+      "subsections": [
+        {
+          "id": "4-subsection-1",
+          "sourceKey": "section:4/subsection:1",
+          "label": "4(1)",
+          "text": "4(1)Under the coordinate survey system, a surveyor shall set out bearings of boundary lines in terms of grid azimuth and distances in metres.",
+          "contentHash": "2bf1385017d94896b386289bb999c25969d2d6eb55b34889ab7e02439c32a96a"
+        },
+        {
+          "id": "4-subsection-2",
+          "sourceKey": "section:4/subsection:2",
+          "label": "4(2)",
+          "text": "4(2)Subject to any requirement respecting further particulars, when a surveyor makes a report, note or plan of any survey under the coordinate survey system, he or she shall describe a parcel of land\n\n(a)\nby the legal monuments at the corners with their respective coordinates, or\n\n(b)\nby the corners in terms of coordinates.\n\nR.S.1973, c.S-17, s.4; 1979, c.69, s.1; 1999, c.4, s.4",
+          "contentHash": "c513626ecca4ca912cbb04588826b430ae95babc9f11c51f0695d0847a8157be"
+        }
+      ],
+      "contentHash": "07dedb6d1b4b8c4851caaf8ddff94b3de4f73cbf8d863e401dfef4e330e61ab9"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "componentType": "section",
+      "label": "5",
+      "heading": "Integrated survey area",
+      "text": "Integrated survey area\n\n5The Lieutenant-Governor in Council\n\n(a)\nmay constitute any portion of the Province an integrated survey area and define the boundaries of it, and\n\n(b)\nmay extend, reduce, subdivide or annul any existing integrated survey area or merge it in whole or in part with any other.\n\nR.S.1973, c.S-17, s.5; 1999, c.4, s.5",
+      "subsections": [],
+      "contentHash": "2082b569c545ee743a22a1b0155f184818beb141932ed83cde87114c56709ad5"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "componentType": "section",
+      "label": "6",
+      "heading": "Integrated survey area plan",
+      "text": "Integrated survey area plan\n\n6(1)When an integrated survey area has been constituted, the Director of Surveys shall file in the registry office of the county where the lands are situated\n\n(a)\na plan of the area setting out\n\n(i)\nthe coordinate monuments established, and\n\n(ii)\nan authentication by the Director of Surveys, and\n\n(b)\na schedule setting out the respective values of the coordinate monuments.\n\n6(2)When a plan filed under subsection (1) is amended, the Director of Surveys\n\n(a)\nshall file in the registry office in which the plan was filed, an amended plan showing\n\n(i)\nany coordinate monuments not affected,\n\n(ii)\nany coordinate monuments destroyed,\n\n(iii)\nany additional coordinate monuments established, and\n\n(iv)\nan authentication by the Director of Surveys, and\n\n(b)\nshall file in that registry office a certificate showing any new or amended values of coordinate monuments shown on the plan,\n\n6(3)When filed under subsection (2), the amended plan becomes the official plan of the coordinate monuments and the amended values become the official values for the affected coordinate monuments.\n\nR.S.1973, c.S-17, s.6; 1999, c.4, s.6",
+      "subsections": [
+        {
+          "id": "6-subsection-1",
+          "sourceKey": "section:6/subsection:1",
+          "label": "6(1)",
+          "text": "6(1)When an integrated survey area has been constituted, the Director of Surveys shall file in the registry office of the county where the lands are situated\n\n(a)\na plan of the area setting out\n\n(i)\nthe coordinate monuments established, and\n\n(ii)\nan authentication by the Director of Surveys, and\n\n(b)\na schedule setting out the respective values of the coordinate monuments.",
+          "contentHash": "720737325db567e886a453310fed02fbba6da8022f82957b1e704c7d699ec274"
+        },
+        {
+          "id": "6-subsection-2",
+          "sourceKey": "section:6/subsection:2",
+          "label": "6(2)",
+          "text": "6(2)When a plan filed under subsection (1) is amended, the Director of Surveys\n\n(a)\nshall file in the registry office in which the plan was filed, an amended plan showing\n\n(i)\nany coordinate monuments not affected,\n\n(ii)\nany coordinate monuments destroyed,\n\n(iii)\nany additional coordinate monuments established, and\n\n(iv)\nan authentication by the Director of Surveys, and\n\n(b)\nshall file in that registry office a certificate showing any new or amended values of coordinate monuments shown on the plan,",
+          "contentHash": "056da1a9b8edcf8b60b761167fe784d7563854272c558ff258d1159623377bc2"
+        },
+        {
+          "id": "6-subsection-3",
+          "sourceKey": "section:6/subsection:3",
+          "label": "6(3)",
+          "text": "6(3)When filed under subsection (2), the amended plan becomes the official plan of the coordinate monuments and the amended values become the official values for the affected coordinate monuments.\n\nR.S.1973, c.S-17, s.6; 1999, c.4, s.6",
+          "contentHash": "3f5ccd653a2d9cb843b7b86b24c44367f692368bb918df3724ccfb51c21e93cc"
+        }
+      ],
+      "contentHash": "a8b53af5a53d266eba2c3dcb4b410331a5a0416dc978660da8864ec100fc0170"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "componentType": "section",
+      "label": "7",
+      "heading": "Duties of surveyor re integrated survey area",
+      "text": "Duties of surveyor re integrated survey area\n\n7When an integrated survey area has been constituted, every surveyor shall tie to the coordinate monuments all legal monuments established by the surveyor that pertain to\n\n(a)\nCrown Lands,\n\n(b)\nsubdivisions when a subdivision plan is required under the Community Planning Act, and\n\n(c)\nparcels of land which the owners request to be included.\n\nR.S.1973, c.S-17, s.7; 1999, c.4, s.7",
+      "subsections": [],
+      "contentHash": "c531232515fc3ad339006f799a722f29606ce596b1d69f22213b8aaf1c914fa8"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "componentType": "section",
+      "label": "8",
+      "heading": "Survey plan in integrated survey area",
+      "text": "Survey plan in integrated survey area\n\n8(1)When a surveyor prepares a subdivision or other plan under section 7, he or she shall not certify to the correctness of the plan unless it represents a survey carried out by the surveyor or under his or her personal supervision or direction, and the standard of survey employed is in accordance with the regulations.\n\n8(2)Unless a surveyor has certified to the correctness of a plan, the Director of Surveys shall not accept it.\n\n8(3)When the Director of Surveys accepts a plan, the acceptance does not constitute an adjudication on title.\n\n8(4)This section applies to only integrated survey areas as constituted under section 5.\n\nR.S.1973, c.S-17, s.8; 1999, c.4, s.8",
+      "subsections": [
+        {
+          "id": "8-subsection-1",
+          "sourceKey": "section:8/subsection:1",
+          "label": "8(1)",
+          "text": "8(1)When a surveyor prepares a subdivision or other plan under section 7, he or she shall not certify to the correctness of the plan unless it represents a survey carried out by the surveyor or under his or her personal supervision or direction, and the standard of survey employed is in accordance with the regulations.",
+          "contentHash": "41997bf951806d406c1f8af7e3fe498ff563212d910176a808a1f64d11024fe6"
+        },
+        {
+          "id": "8-subsection-2",
+          "sourceKey": "section:8/subsection:2",
+          "label": "8(2)",
+          "text": "8(2)Unless a surveyor has certified to the correctness of a plan, the Director of Surveys shall not accept it.",
+          "contentHash": "59fd54c1dccd826ba0250dfc32e4b56b80a000302335edae0f655813a43477dd"
+        },
+        {
+          "id": "8-subsection-3",
+          "sourceKey": "section:8/subsection:3",
+          "label": "8(3)",
+          "text": "8(3)When the Director of Surveys accepts a plan, the acceptance does not constitute an adjudication on title.",
+          "contentHash": "1aded5adc644dfa795a3af3473c415ac20cf77dcfb2baec7f8d53a34acd10456"
+        },
+        {
+          "id": "8-subsection-4",
+          "sourceKey": "section:8/subsection:4",
+          "label": "8(4)",
+          "text": "8(4)This section applies to only integrated survey areas as constituted under section 5.\n\nR.S.1973, c.S-17, s.8; 1999, c.4, s.8",
+          "contentHash": "ec1cca147450bbf86af87c039022ad71a6310c4fd86813c25818bf28c4c25bbe"
+        }
+      ],
+      "contentHash": "eca4d86b575021a4bc28b3971115496378f731c4ff0e55d4bd18ae52b6afcf0b"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "componentType": "section",
+      "label": "9",
+      "heading": "Filing of values of coordinate monuments",
+      "text": "Filing of values of coordinate monuments\n\n9The values of coordinate monuments shall be filed in the Office of and under the direction of the Director of Surveys and when so filed shall be deemed to be correct and the method of arriving at these values is set out in Schedule A.\nR.S.1973, c.S-17, s.9; 1979, c.69, s.2; 1983, c.89, s.1; 1999, c.4, s.9",
+      "subsections": [],
+      "contentHash": "8b03ca82447df1d90a692aecd482c6731bb657baa5aa608013b9525587203a94"
+    },
+    {
+      "id": "section-10",
+      "sourceKey": "section:10",
+      "componentType": "section",
+      "label": "10",
+      "heading": "Survey plan filed between August 1, 1979, and December 31, 1979",
+      "text": "Survey plan filed between August 1, 1979, and December 31, 1979\n\n10Despite subsection 4(1) and section 9, a subdivision or other plan of any survey under the coordinate survey system which was filed between August 1, 1979, and December 31, 1979, is not improperly filed by virtue of the fact that distances and coordinates are not expressed in metres.\n1981, c.74, s.1; 1983, c.89, s.2; 1999, c.4, s.10",
+      "subsections": [],
+      "contentHash": "e57b47a6ca938a4cd946bd23bba1611270739a2ed60d0e2db0e576a6a6ef70ac"
+    },
+    {
+      "id": "section-11",
+      "sourceKey": "section:11",
+      "componentType": "section",
+      "label": "11",
+      "heading": "Survey plan filed within six months after April 1, 1999",
+      "text": "Survey plan filed within six months after April 1, 1999\n\n11Despite section 9, a subdivision plan or any other plan of survey prepared under the ATS77 datum, as described in Schedule A as it read immediately before April 1, 1999, may be filed at any time within six months after April 1, 1999, and a subdivision plan or any other plan of survey that is so filed is not improperly filed by virtue of the fact it was prepared in that manner.\n1999, c.4, s.11",
+      "subsections": [],
+      "contentHash": "14c851aa6de71a47d1a46530c1f87b36716e870e71abacaaa3a4873719b3d016"
+    },
+    {
+      "id": "section-12",
+      "sourceKey": "section:12",
+      "componentType": "section",
+      "label": "12",
+      "heading": "Lost legal monuments",
+      "text": "Lost legal monuments\n\n12When legal monuments established under sections 7 and 8 are lost, the following are primary evidence of their position:\n\n(a)\ncoordinates of the parcel of land described; and\n\n(b)\ncoordinates derived from the plan for the legal monuments pertinent to the survey.\n\nR.S.1973, c.S-17, s.10; 1999, c.4, s.12",
+      "subsections": [],
+      "contentHash": "6ae8e12dc999ddc40e204091f85ad0b4d6c01f444f85c45449ddf46b0f7440da"
+    },
+    {
+      "id": "section-13",
+      "sourceKey": "section:13",
+      "componentType": "section",
+      "label": "13",
+      "heading": "Authority re private property",
+      "text": "Authority re private property\n\n13(1)The Director of Surveys\n\n(a)\nmay enter on private property for the purpose of this Act, and\n\n(b)\nmay establish and maintain coordinate monuments at the places that he or she sees fit on private property.\n\n13(2)A surveyor, a surveyor’s assistant or any person authorized by Service New Brunswick may enter on private property in the course of a survey for the purpose of tying to a coordinate monument.\n\n13(3)If no damage is done, no person has any right of action for trespass or damage resulting from the establishment, maintenance or use of the coordinate survey system as authorized by this Act.\n\nR.S.1973, c.S-17, s.11; 1986, c.8, s.123; 1989, c.N-5.01, s.40; 1998, c.12, s.20; 1999, c.4, s.13",
+      "subsections": [
+        {
+          "id": "13-subsection-1",
+          "sourceKey": "section:13/subsection:1",
+          "label": "13(1)",
+          "text": "13(1)The Director of Surveys\n\n(a)\nmay enter on private property for the purpose of this Act, and\n\n(b)\nmay establish and maintain coordinate monuments at the places that he or she sees fit on private property.",
+          "contentHash": "7b2e0c6294d61dde783229a2493ea45eb8dc0f0147523d80e2f6b3363f2dec48"
+        },
+        {
+          "id": "13-subsection-2",
+          "sourceKey": "section:13/subsection:2",
+          "label": "13(2)",
+          "text": "13(2)A surveyor, a surveyor’s assistant or any person authorized by Service New Brunswick may enter on private property in the course of a survey for the purpose of tying to a coordinate monument.",
+          "contentHash": "1573686262cf2122b3aa598e4633c86d8165dad51c2e7f4b8f165803105816cd"
+        },
+        {
+          "id": "13-subsection-3",
+          "sourceKey": "section:13/subsection:3",
+          "label": "13(3)",
+          "text": "13(3)If no damage is done, no person has any right of action for trespass or damage resulting from the establishment, maintenance or use of the coordinate survey system as authorized by this Act.\n\nR.S.1973, c.S-17, s.11; 1986, c.8, s.123; 1989, c.N-5.01, s.40; 1998, c.12, s.20; 1999, c.4, s.13",
+          "contentHash": "a9203ad962d425e38c355a30be85191555be1a2b77ff07f6e761ef9e2777a765"
+        }
+      ],
+      "contentHash": "2fa451853f57528a649d6c9fdb22819bf107c702cd3a6a28ea012961049f2419"
+    },
+    {
+      "id": "section-14",
+      "sourceKey": "section:14",
+      "componentType": "section",
+      "label": "14",
+      "heading": "Offences and penalties",
+      "text": "Offences and penalties\n\n14(1)A person who violates or fails to comply with any provision of the regulations commits an offence punishable under Part 2 of the Provincial Offences Procedure Act as a category B offence.\n\n14(2)A person who obstructs the Director of Surveys or any surveyor appointed by the Director of Surveys in the establishment or maintenance of coordinate monuments commits an offence punishable under Part 2 of the Provincial Offences Procedure Act as a category E offence.\n\n14(3)A person who obstructs the Director of Surveys, a surveyor, a surveyor’s assistant or any person authorized by Service New Brunswick in making a survey or tying to a coordinate monument under this Act commits an offence punishable under Part 2 of the Provincial Offences Procedure Act as a category E offence.\n\nR.S.1973, c.S-17, s.12, s.13, s.14; 1989, c.N-5.01, s.40; 1990, c.61, s.135; 1998, c.12, s.20; 1999, c.4, s.14, s.15",
+      "subsections": [
+        {
+          "id": "14-subsection-1",
+          "sourceKey": "section:14/subsection:1",
+          "label": "14(1)",
+          "text": "14(1)A person who violates or fails to comply with any provision of the regulations commits an offence punishable under Part 2 of the Provincial Offences Procedure Act as a category B offence.",
+          "contentHash": "8cb63562435b1ee342e50c595ad321ec8dbf64bcdeacd6cdb02c23963dd554ba"
+        },
+        {
+          "id": "14-subsection-2",
+          "sourceKey": "section:14/subsection:2",
+          "label": "14(2)",
+          "text": "14(2)A person who obstructs the Director of Surveys or any surveyor appointed by the Director of Surveys in the establishment or maintenance of coordinate monuments commits an offence punishable under Part 2 of the Provincial Offences Procedure Act as a category E offence.",
+          "contentHash": "b4cb4624725b319f2c3eb4f382afbee83441ad0a6799865220fa6d8f293b9650"
+        },
+        {
+          "id": "14-subsection-3",
+          "sourceKey": "section:14/subsection:3",
+          "label": "14(3)",
+          "text": "14(3)A person who obstructs the Director of Surveys, a surveyor, a surveyor’s assistant or any person authorized by Service New Brunswick in making a survey or tying to a coordinate monument under this Act commits an offence punishable under Part 2 of the Provincial Offences Procedure Act as a category E offence.\n\nR.S.1973, c.S-17, s.12, s.13, s.14; 1989, c.N-5.01, s.40; 1990, c.61, s.135; 1998, c.12, s.20; 1999, c.4, s.14, s.15",
+          "contentHash": "d7739910ca08d17683488f7531e16d86876dfedbda63c9b7c16052be09836837"
+        }
+      ],
+      "contentHash": "08010ad8474e141e69b2966eb9a18f5efc4d4f4eb9b5fe9af9f4ba3a25b1c34e"
+    },
+    {
+      "id": "section-14.1",
+      "sourceKey": "section:14.1",
+      "componentType": "section",
+      "label": "14.1",
+      "heading": "Administration",
+      "text": "Administration\n\n2015, c.44, s.111\n\n14.1Service New Brunswick is responsible for the administration of this Act.\n2015, c.44, s.111",
+      "subsections": [],
+      "contentHash": "dbb73b07795e668bf0afab057c76d27301316618a878e32e450eca1e086af82b"
+    },
+    {
+      "id": "section-15",
+      "sourceKey": "section:15",
+      "componentType": "section",
+      "label": "15",
+      "heading": "Regulations",
+      "text": "Regulations\n\n15The Lieutenant-Governor in Council may make regulations\n\n(a)\nrespecting coordinate monuments and legal monuments;\n\n(b)\nprescribing standards of survey;\n\n(c)\nrespecting the recording of surveys;\n\n(d)\nprescribing forms and the procedure for submitting reports, notes and plans of survey;\n\n(e)\nrespecting large scale mapping;\n\n(f)\nprescribing penalties for violation of the regulations;\n\n(g)\nfor the better administration of this Act.\n\nR.S.1973, c.S-17, s.16; 1999, c.4, s.17",
+      "subsections": [],
+      "contentHash": "8b4c7b33fbbb91aa2df696c41e5623c35297480b271b3b39e419a9108b08bcac"
+    }
+  ],
+  "notes": []
+}

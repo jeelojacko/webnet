@@ -191,7 +191,7 @@ Phase 4A adds a full SIT statute-corpus ingestion foundation beside the pilot. T
 study-content/manifests/nb-sit-statute-corpus.json
 ```
 
-It represents the 57 Act entries from the supplied ANBLS Surveyor-in-Training manual inventory, keeps the ten pilot documents marked with `existingPilot`, and treats the five pilot regulations as required regulations. Candidate regulations are review artifacts only and are not imported into the required package unless explicitly approved.
+It represents the 57 Act entries from the supplied ANBLS Surveyor-in-Training manual inventory, keeps the ten pilot documents marked with `existingPilot`, and treats the five pilot regulations as required regulations. Manual entries are modeled separately from unique legal source documents so old manual entries can map to current successor legislation without duplicating source content or later StudyUnits.
 
 The commands are:
 
@@ -204,7 +204,7 @@ npm run study:corpus:build
 npm run study:corpus:refresh
 ```
 
-Current inventory intentionally blocks full fetch/build because five manual Act entries still need confirmed official `laws.gnb.ca` source URLs. See [STUDY_CONTENT_PIPELINE.md](STUDY_CONTENT_PIPELINE.md) for the command details, report paths, source-gap list, and Phase 4A/4B boundary.
+Current inventory no longer blocks on the four legacy successor mappings or the ANBLS Act URL. Fetch succeeds for current `laws.gnb.ca` sources plus the ANBLS Act and Bylaws PDFs. Normalize/build remain blocked until the bilingual ANBLS PDFs have reliable English-only extraction selectors. See [STUDY_CONTENT_PIPELINE.md](STUDY_CONTENT_PIPELINE.md) for command details, report paths, legacy mapping rules, and the Phase 4A/4B boundary.
 
 ## Official Package Import
 

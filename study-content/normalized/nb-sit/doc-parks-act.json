@@ -1,0 +1,1365 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-parks-act",
+  "officialTitle": "Parks Act",
+  "officialCitation": "2011, c.202",
+  "officialCitationDisplay": "2011, c.202",
+  "officialCitationNormalized": "2011, c.202",
+  "documentType": "act",
+  "sourceUrl": "https://laws.gnb.ca/en/document/cs/2011,%20c.202",
+  "fetchDate": "2026-08-11T18:09:00.894Z",
+  "consolidatedTo": "June 6, 2025",
+  "contentHash": "396ce2a545e000470739a3bc15854029529f0a38c98d0af328024feb54929fe6",
+  "tableOfContents": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "label": "1",
+      "heading": "Definitions"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "label": "2",
+      "heading": "Designation of recreational trail"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "label": "3",
+      "heading": "Purpose of provincial parks"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "label": "4",
+      "heading": "Continuation of provincial parks"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "label": "5",
+      "heading": "Powers of Minister in relation to provincial parks"
+    },
+    {
+      "id": "section-5.1",
+      "sourceKey": "section:5.1",
+      "label": "5.1",
+      "heading": "Powers of Minister in relation to fees and rental"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "label": "6",
+      "heading": "Acceptance of property by Minister"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "label": "7",
+      "heading": "References to the Minister of Natural Resources"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "label": "8",
+      "heading": "Provincial park deemed separate entity"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "label": "9",
+      "heading": "Provincial park deemed part of county where located"
+    },
+    {
+      "id": "section-10",
+      "sourceKey": "section:10",
+      "label": "10",
+      "heading": "Administration"
+    },
+    {
+      "id": "section-10.1",
+      "sourceKey": "section:10.1",
+      "label": "10.1",
+      "heading": "Resource management plans"
+    },
+    {
+      "id": "section-10.2",
+      "sourceKey": "section:10.2",
+      "label": "10.2",
+      "heading": "Review of Act"
+    },
+    {
+      "id": "section-11",
+      "sourceKey": "section:11",
+      "label": "11",
+      "heading": "Granting of lease, licence, privilege or concession"
+    },
+    {
+      "id": "section-12",
+      "sourceKey": "section:12",
+      "label": "12",
+      "heading": "Authorization to fix, impose, collect and retain fees or rental"
+    },
+    {
+      "id": "section-13",
+      "sourceKey": "section:13",
+      "label": "13",
+      "heading": "Limitation respecting use or occupancy"
+    },
+    {
+      "id": "section-14",
+      "sourceKey": "section:14",
+      "label": "14",
+      "heading": "Park wardens"
+    },
+    {
+      "id": "section-14.1",
+      "sourceKey": "section:14.1",
+      "label": "14.1",
+      "heading": "Security guards"
+    },
+    {
+      "id": "section-15",
+      "sourceKey": "section:15",
+      "label": "15",
+      "heading": "Items seized"
+    },
+    {
+      "id": "section-16",
+      "sourceKey": "section:16",
+      "label": "16",
+      "heading": "Offences and penalties"
+    },
+    {
+      "id": "section-17",
+      "sourceKey": "section:17",
+      "label": "17",
+      "heading": "Orders prohibiting entry to provincial park"
+    },
+    {
+      "id": "section-18",
+      "sourceKey": "section:18",
+      "label": "18",
+      "heading": "Evidentiary matters"
+    },
+    {
+      "id": "section-19",
+      "sourceKey": "section:19",
+      "label": "19",
+      "heading": "Action by Minister"
+    },
+    {
+      "id": "section-20",
+      "sourceKey": "section:20",
+      "label": "20",
+      "heading": "Opening or closing of roads by Minister"
+    },
+    {
+      "id": "section-21",
+      "sourceKey": "section:21",
+      "label": "21",
+      "heading": "Protection of flora"
+    },
+    {
+      "id": "section-22",
+      "sourceKey": "section:22",
+      "label": "22",
+      "heading": "Prospecting and mining"
+    },
+    {
+      "id": "section-23",
+      "sourceKey": "section:23",
+      "label": "23",
+      "heading": "Regulations"
+    },
+    {
+      "id": "schedule-schedule-a",
+      "sourceKey": "schedule:schedule-a",
+      "label": "SCHEDULE A"
+    }
+  ],
+  "components": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
+      "label": "1",
+      "heading": "Definitions",
+      "text": "Definitions\n\n1The following definitions apply in this Act.\n“boat” means a watercraft or other artificial contrivance used or capable of being used as a means of transportation on water, whether self-propelled or not. (bateau)\n\n“concession” means the right of any person granted by the Department to operate a provincial park or any building, installation, service or facility in a provincial park. (concession)\n\n“Department” means (ministère)\n\n(a)\nin relation to the provincial parks listed in Schedule A.1 of the General Regulation - Parks Act, the Department of Tourism, Heritage and Culture, or\n\n(b)\nin relation to all other provincial parks, the Department of Natural Resources.\n\n“domestic animal” means an animal that is kept under human control or by habit or training lives in association with humankind. (animal domestique)\n\n“firearm” means a device from which a shot, bullet or other missile can be discharged, and includes but is not limited to a rifle, shotgun, pellet gun, air gun, pistol, revolver, spring gun, crossbow or longbow. (arme à feu)\n\n“lease” means a contract for exclusive use or possession of lands, buildings, installations or facilities in a provincial park for a period of time. (bail)\n\n“local government” means a local government as defined in subsection 1(1) of the Local Governance Act.(gouvernement local)\n\n“Minister” means(ministre)\n\n(a)\nin relation to the provincial parks listed in Schedule A.1 of the General Regulation - Parks Act, the Minister of Tourism, Heritage and Culture, and includes any person designated by the Minister to act on the Minister’s behalf, or\n\n(b)\nin relation to all other provincial parks, the Minister of Natural Resources, and includes any person designated by the Minister to act on the Minister’s behalf.\n\n“park warden” means a person appointed or holding office under section 14. (gardien de parc)\n\n“provincial park” means(parc provincial)\n\n(a)\nan area of land established and maintained under this Act and the regulations as a cultural heritage park, a linear park, a natural environment park, a recreational park, a wilderness park or a park prescribed by regulation,\n\n(b)\nland administered under an agreement entered into under the authority of paragraph 5(1)(b), or\n\n(c)\na provincial park continued under section 4,\n\nand includes a recreational trail, or any portion of a recreational trail, designated by the Minister of Natural Resources under section 2 and any land acquired for the purpose of development as a provincial park.\n\n1982, c.P-2.1, s.1; 1986, c.8, s.95; 1992, c.2, s.47; 1999, c.18, s.1; 2000, c.26, s.233; 2001, c.41, s.14; 2004, c.20, s.46; 2007, c.1, s.1; 2012, c.39, s.106; 2012, c.52, s.39; 2014, c.51, s.1; 2016, c.37, s.133; 2017, c.20, s.128; 2019, c.29, s.196; 2024, c.28, s.43; 2025, c.24, s.21",
+      "subsections": [],
+      "contentHash": "40f998d71aec351e9024db75c1c3199a8ffbca8435f73d06bce1317ad534528b"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "label": "2",
+      "heading": "Designation of recreational trail",
+      "text": "Designation of recreational trail\n\n2(1)The Minister of Natural Resources may designate a recreational trail, or any portion of a recreational trail, for the purposes of the definition “provincial park” in section 1.\n\n2(2)The Regulations Act does not apply to a designation under subsection (1).\n\n2(3)A copy of a designation purporting to be made by the Minister of Natural Resources under subsection (1) is admissible in evidence without proof of the appointment, authority or signature of the Minister of Natural Resources, and is proof, in the absence of evidence to the contrary, of the making of the designation and of its contents for all purposes in any action, proceeding or prosecution.\n\n1999, c.18, s.2; 2004, c.20, s.46; 2016, c.37, s.133; 2019, c.29, s.196; 2024, c.28, s.43",
+      "subsections": [
+        {
+          "id": "2-subsection-1",
+          "sourceKey": "section:2/subsection:1",
+          "label": "2(1)",
+          "text": "2(1)The Minister of Natural Resources may designate a recreational trail, or any portion of a recreational trail, for the purposes of the definition “provincial park” in section 1.",
+          "contentHash": "5e7a7bd96bd68ef324b4830ed14177eba458559fb6366070f8c4d3c0887bf182"
+        },
+        {
+          "id": "2-subsection-2",
+          "sourceKey": "section:2/subsection:2",
+          "label": "2(2)",
+          "text": "2(2)The Regulations Act does not apply to a designation under subsection (1).",
+          "contentHash": "aa960fb7f7743a8b7e787fd572a2a95be52b9687beb39f88eed33a8345923a7d"
+        },
+        {
+          "id": "2-subsection-3",
+          "sourceKey": "section:2/subsection:3",
+          "label": "2(3)",
+          "text": "2(3)A copy of a designation purporting to be made by the Minister of Natural Resources under subsection (1) is admissible in evidence without proof of the appointment, authority or signature of the Minister of Natural Resources, and is proof, in the absence of evidence to the contrary, of the making of the designation and of its contents for all purposes in any action, proceeding or prosecution.\n\n1999, c.18, s.2; 2004, c.20, s.46; 2016, c.37, s.133; 2019, c.29, s.196; 2024, c.28, s.43",
+          "contentHash": "358bdb0504b6d7c1ee5f8fccef169f6871f302282a8ad60402d223801190ecfd"
+        }
+      ],
+      "contentHash": "215e1fc3928b911e0ff8e13fcae8b06647fe2ea36c6b1e65aaeaea0e7c30a4d0"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
+      "label": "3",
+      "heading": "Purpose of provincial parks",
+      "text": "Purpose of provincial parks\n\n3All provincial parks are dedicated to residents of the Province, visitors and future generations to\n\n(a)\npermanently protect ecosystems, biodiversity and the elements of natural and cultural heritage,\n\n(b)\nprovide opportunities for recreational and outdoor educational activities to promote a healthy lifestyle,\n\n(c)\nprovide opportunities to increase knowledge and appreciation of the natural and cultural heritage of the Province, and\n\n(d)\noffer a tourism product that enhances the Province’s image as a quality vacation destination.\n\n1982, c.P-2.1, s.2; 2014, c.51, s.2",
+      "subsections": [],
+      "contentHash": "00c8f9f36ecd8c3da48250ac4f31656aa1cab71750fdee939f6817fcd236b204"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
+      "label": "4",
+      "heading": "Continuation of provincial parks",
+      "text": "Continuation of provincial parks\n\n4Subject to section 5, a provincial park in existence immediately before August 31, 1982, is continued as a provincial park.\n1982, c.P-2.1, ss.3(1); 1999, c.18, s.3",
+      "subsections": [],
+      "contentHash": "b5de19e3f75f92de3e6314e4507cecfdd121ba6048da4c261920bdd90f78828a"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "componentType": "section",
+      "label": "5",
+      "heading": "Powers of Minister in relation to provincial parks",
+      "text": "Powers of Minister in relation to provincial parks\n\n5(1)The Lieutenant-Governor in Council may\n\n(a)\nauthorize the Minister to purchase or acquire any land, whether or not covered with water, for the purpose of development as a provincial park;\n\n(b)\ndespite any other Act, authorize the Minister to enter into an agreement with\n\n(i)\nanother Minister,\n\n(ii)\na Crown commission,\n\n(iii)\na Crown corporation,\n\n(iv)\na person,\n\n(v)\na local government, or\n\n(vi)\nan association;\n\nfor the administration as a provincial park of land belonging to or under the administration of the Crown in right of the Province, a Crown commission, a Crown corporation, a person, a local government or an association, and lands so administered shall be deemed to be set apart as a provincial park and come within this Act and the regulations;\n\n(c)\nauthorize the Minister to increase or decrease the area of a provincial park;\n\n(d)\ndelimit a provincial park;\n\n(e)\nterminate the status of a provincial park;\n\n(f)\nauthorize the Minister to dispose of buildings, installations or improvements, or all or any part of the land included in a provincial park, as the Minister considers fit; and\n\n(g)\nmay set aside as a park reserve any area of land held, acquired or set apart for the purpose of a provincial park.\n\n5(2)If, with respect to a provincial park, land to be set apart, purchased or acquired, added or withdrawn, delimited or disposed of has a real estate value of less than $15,000, the Minister may do those things that the Lieutenant-Governor in Council is authorized to do under subsection (1).\n\n1982, c.P-2.1, ss.3(2); 2005, c.7, s.58; 2007, c.1, s.2; 2017, c.20, s.128; 2023, c.17, s.185",
+      "subsections": [
+        {
+          "id": "5-subsection-1",
+          "sourceKey": "section:5/subsection:1",
+          "label": "5(1)",
+          "text": "5(1)The Lieutenant-Governor in Council may\n\n(a)\nauthorize the Minister to purchase or acquire any land, whether or not covered with water, for the purpose of development as a provincial park;\n\n(b)\ndespite any other Act, authorize the Minister to enter into an agreement with\n\n(i)\nanother Minister,\n\n(ii)\na Crown commission,\n\n(iii)\na Crown corporation,\n\n(iv)\na person,\n\n(v)\na local government, or\n\n(vi)\nan association;\n\nfor the administration as a provincial park of land belonging to or under the administration of the Crown in right of the Province, a Crown commission, a Crown corporation, a person, a local government or an association, and lands so administered shall be deemed to be set apart as a provincial park and come within this Act and the regulations;\n\n(c)\nauthorize the Minister to increase or decrease the area of a provincial park;\n\n(d)\ndelimit a provincial park;\n\n(e)\nterminate the status of a provincial park;\n\n(f)\nauthorize the Minister to dispose of buildings, installations or improvements, or all or any part of the land included in a provincial park, as the Minister considers fit; and\n\n(g)\nmay set aside as a park reserve any area of land held, acquired or set apart for the purpose of a provincial park.",
+          "contentHash": "5dcdb9f11f2b4ce91c9313baa9a63726015f4428346d08bd2d41eb368cea90f6"
+        },
+        {
+          "id": "5-subsection-2",
+          "sourceKey": "section:5/subsection:2",
+          "label": "5(2)",
+          "text": "5(2)If, with respect to a provincial park, land to be set apart, purchased or acquired, added or withdrawn, delimited or disposed of has a real estate value of less than $15,000, the Minister may do those things that the Lieutenant-Governor in Council is authorized to do under subsection (1).\n\n1982, c.P-2.1, ss.3(2); 2005, c.7, s.58; 2007, c.1, s.2; 2017, c.20, s.128; 2023, c.17, s.185",
+          "contentHash": "0972dc1a86dd0bd1df08563b397cfca720c5fb5b008f95c0391a13319fa54945"
+        }
+      ],
+      "contentHash": "e8ec775c44dbd12a7bd561ba0ea571db51cba1c055597d9df29094f9095be42b"
+    },
+    {
+      "id": "section-5.1",
+      "sourceKey": "section:5.1",
+      "componentType": "section",
+      "label": "5.1",
+      "heading": "Powers of Minister in relation to fees and rental",
+      "text": "Powers of Minister in relation to fees and rental\n2012, c.60, s.1\n\n5.1(1)Subject to subsection (4), the Minister may fix, impose and collect fees or rental payable for any service offered in or in respect of a provincial park or for any use of a building, installation or facility, or any part of a building, installation or facility, in a provincial park.\n\n5.1(2)Before fixing fees or rental under subsection (1), the Minister shall give notice to the public.\n\n5.1(3)The Minister is not required to obtain the approval of the Treasury Board before fixing fees or rental under subsection (1).\n\n5.1(4)The Minister shall not fix fees that may be prescribed under paragraph 23(2)(k).\n\n5.1(5)The Minister may waive, in whole or in part, fees or rental fixed under subsection (1)\n\n(a)\nin relation to a special event, when the Minister considers it appropriate to do so,\n\n(b)\nwhen the Minister, for the purpose of promoting the use of a provincial park or facilities in a provincial park, negotiates with any person a group rate in relation to that use, or\n\n(c)\nin any other circumstances, when the Minister considers it appropriate to do so.\n\n5.1(6)The Minister may refund, on a pro rata basis, the unused portion of a seasonal fee fixed under subsection (1).\n\n5.1(7)The Regulations Act does not apply to an instrument made under the authority of subsection (1).\n\n2012, c.60, s.1; 2016, c.37, s.133",
+      "subsections": [
+        {
+          "id": "5.1-subsection-1",
+          "sourceKey": "section:5.1/subsection:1",
+          "label": "5.1(1)",
+          "text": "5.1(1)Subject to subsection (4), the Minister may fix, impose and collect fees or rental payable for any service offered in or in respect of a provincial park or for any use of a building, installation or facility, or any part of a building, installation or facility, in a provincial park.",
+          "contentHash": "3c1afa72a7c2b570fe697632e9ccff59b726084c2cbcaa097dc62e524ab3790e"
+        },
+        {
+          "id": "5.1-subsection-2",
+          "sourceKey": "section:5.1/subsection:2",
+          "label": "5.1(2)",
+          "text": "5.1(2)Before fixing fees or rental under subsection (1), the Minister shall give notice to the public.",
+          "contentHash": "a531a12be3b8923f86b22a8053c61df2d8d34fe869feab565c4e26993ad32911"
+        },
+        {
+          "id": "5.1-subsection-3",
+          "sourceKey": "section:5.1/subsection:3",
+          "label": "5.1(3)",
+          "text": "5.1(3)The Minister is not required to obtain the approval of the Treasury Board before fixing fees or rental under subsection (1).",
+          "contentHash": "cd1736c4af9a824527cde5ed7b88595754c16f61cbfc2389051cfd3f3d755fdd"
+        },
+        {
+          "id": "5.1-subsection-4",
+          "sourceKey": "section:5.1/subsection:4",
+          "label": "5.1(4)",
+          "text": "5.1(4)The Minister shall not fix fees that may be prescribed under paragraph 23(2)(k).",
+          "contentHash": "d07bcfda595659c287c738a441d86998113e08e49a979f81f7e3b93411fe3499"
+        },
+        {
+          "id": "5.1-subsection-5",
+          "sourceKey": "section:5.1/subsection:5",
+          "label": "5.1(5)",
+          "text": "5.1(5)The Minister may waive, in whole or in part, fees or rental fixed under subsection (1)\n\n(a)\nin relation to a special event, when the Minister considers it appropriate to do so,\n\n(b)\nwhen the Minister, for the purpose of promoting the use of a provincial park or facilities in a provincial park, negotiates with any person a group rate in relation to that use, or\n\n(c)\nin any other circumstances, when the Minister considers it appropriate to do so.",
+          "contentHash": "efa2aa1c37ffa2001b405b4e2045addf24e49aabec0e7d55a133f1e96e0b4209"
+        },
+        {
+          "id": "5.1-subsection-6",
+          "sourceKey": "section:5.1/subsection:6",
+          "label": "5.1(6)",
+          "text": "5.1(6)The Minister may refund, on a pro rata basis, the unused portion of a seasonal fee fixed under subsection (1).",
+          "contentHash": "3965b3d67402c3d170c9a0441324583f72fd2c9d433ba34fdff61be0021e5768"
+        },
+        {
+          "id": "5.1-subsection-7",
+          "sourceKey": "section:5.1/subsection:7",
+          "label": "5.1(7)",
+          "text": "5.1(7)The Regulations Act does not apply to an instrument made under the authority of subsection (1).\n\n2012, c.60, s.1; 2016, c.37, s.133",
+          "contentHash": "2341d9f98b0ad54c953a3c6da8ffcd4c94da8815ac6bf0c6b5cd9f6bd3e90025"
+        }
+      ],
+      "contentHash": "851dc75e381fdad2887fb40fe216cdc3aa96f71725eece4d680e5252552e4d5f"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "componentType": "section",
+      "label": "6",
+      "heading": "Acceptance of property by Minister",
+      "text": "Acceptance of property by Minister\n\n6The Minister may receive from any person by grant, gift, devise or bequest real or personal property, or an interest in real or personal property, for the purpose of a provincial park.\n1982, c.P-2.1, s.4",
+      "subsections": [],
+      "contentHash": "262385e93b22dd815bbb8236bc408e631368079c8663392354d128f6f36abbdc"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "componentType": "section",
+      "label": "7",
+      "heading": "References to the Minister of Natural Resources",
+      "text": "References to the Minister of Natural Resources\n\n7A reference to the Minister of Natural Resources in a document executed by the Minister of Natural Resources before June 17, 1972, shall be deemed to be a reference to the Minister if the document provides for the establishment of or the operation of a provincial park.\n1982, c.P-2.1, s.5; 1986, c.8, s.95; 1999, c.18, s.4",
+      "subsections": [],
+      "contentHash": "1a0f33f9e29e905d67e4bb68eb1378278bbc74702fdb0109eae0b5d12d9c4a84"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "componentType": "section",
+      "label": "8",
+      "heading": "Provincial park deemed separate entity",
+      "text": "Provincial park deemed separate entity\n\n8For local government purposes, land set apart as a provincial park or added to a provincial park, so long as it remains part of the provincial park, shall be deemed to be separated from the local government of which it formed a part immediately before it became a provincial park or part of a provincial park.\n1982, c.P-2.1, s.6; 2005, c.7, s.58; 2017, c.20, s.128",
+      "subsections": [],
+      "contentHash": "19e75b1df984636e2d67d3ae6097461aae8556062ad5dec83ef1b2336a22c865"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "componentType": "section",
+      "label": "9",
+      "heading": "Provincial park deemed part of county where located",
+      "text": "Provincial park deemed part of county where located\n\n9For judicial purposes, land set apart as a provincial park or added to a provincial park shall continue to form part of the county of which it formed a part immediately before it became a provincial park or a part of a provincial park.\n1982, c.P-2.1, s.7",
+      "subsections": [],
+      "contentHash": "50a6d0fe7bbbc7792c01b2c3e8d54c5b09626702959b1deec849171ccc3cebf4"
+    },
+    {
+      "id": "section-10",
+      "sourceKey": "section:10",
+      "componentType": "section",
+      "label": "10",
+      "heading": "Administration",
+      "text": "Administration\n\n10(1)The Minister is responsible for the administration of this Act and the regulations.\n\n10(2)Without limiting the generality of subsection (1), in respect of a provincial park, the Minister may\n\n(a)\nconstruct and operate toilet, dressing room, picnic, camping, cooking, bathing, parking and other facilities for the convenience of the public;\n\n(b)\nconstruct and operate restaurants, refreshment booths, shops and other facilities for the convenience of the public;\n\n(c)\nconstruct and operate buildings, compounds, cages, pools and other facilities for the public display of fish and wildlife;\n\n(d)\nconstruct, renovate, restore, repair and improve any building, structure or site in order to preserve its historical significance;\n\n(e)\nmake an agreement with any person with respect to any matter coming within the purview of this subsection;\n\n(e.1)\ncreate an advisory committee including members of First Nations;\n\n(f)\nprescribe by erection, posting or other display of notices, the time or times of the day or year during which a provincial park or any part of a provincial park is open or closed for the use of the public;\n\n(g)\nconstruct and operate recreation facilities he or she considers necessary for the convenience or benefit of the public.\n\n1982, c.P-2.1, ss.8(1), ss.8(2); 2014, c.51, s.3",
+      "subsections": [
+        {
+          "id": "10-subsection-1",
+          "sourceKey": "section:10/subsection:1",
+          "label": "10(1)",
+          "text": "10(1)The Minister is responsible for the administration of this Act and the regulations.",
+          "contentHash": "add3d40b94089823cdcb75ac274a77be493afe91024f7acef031b6e6b0c0db92"
+        },
+        {
+          "id": "10-subsection-2",
+          "sourceKey": "section:10/subsection:2",
+          "label": "10(2)",
+          "text": "10(2)Without limiting the generality of subsection (1), in respect of a provincial park, the Minister may\n\n(a)\nconstruct and operate toilet, dressing room, picnic, camping, cooking, bathing, parking and other facilities for the convenience of the public;\n\n(b)\nconstruct and operate restaurants, refreshment booths, shops and other facilities for the convenience of the public;\n\n(c)\nconstruct and operate buildings, compounds, cages, pools and other facilities for the public display of fish and wildlife;\n\n(d)\nconstruct, renovate, restore, repair and improve any building, structure or site in order to preserve its historical significance;\n\n(e)\nmake an agreement with any person with respect to any matter coming within the purview of this subsection;\n\n(e.1)\ncreate an advisory committee including members of First Nations;\n\n(f)\nprescribe by erection, posting or other display of notices, the time or times of the day or year during which a provincial park or any part of a provincial park is open or closed for the use of the public;\n\n(g)\nconstruct and operate recreation facilities he or she considers necessary for the convenience or benefit of the public.\n\n1982, c.P-2.1, ss.8(1), ss.8(2); 2014, c.51, s.3",
+          "contentHash": "65d58da525c6fd5bbf422b5fa443c8d28dcf6bfff1fdc2c37ea2efa66f9a9578"
+        }
+      ],
+      "contentHash": "f7adaf4cad016f282aaac1f35f447c831348511eff1f7ef13f22c5a136058000"
+    },
+    {
+      "id": "section-10.1",
+      "sourceKey": "section:10.1",
+      "componentType": "section",
+      "label": "10.1",
+      "heading": "Resource management plans",
+      "text": "Resource management plans\n2014, c.51, s.4\n\n10.1(1)The Minister shall ensure that the Department prepares a resource management plan at least every ten years for each provincial park that includes the different zones, resource protection measures, the use and development of resources and any other information the Minister considers appropriate.\n\n10.1(2)Subsection (1) does not apply to a provincial park that is classified as a cultural heritage park under the General Regulation - Parks Act.\n\n2014, c.51, s.4",
+      "subsections": [
+        {
+          "id": "10.1-subsection-1",
+          "sourceKey": "section:10.1/subsection:1",
+          "label": "10.1(1)",
+          "text": "10.1(1)The Minister shall ensure that the Department prepares a resource management plan at least every ten years for each provincial park that includes the different zones, resource protection measures, the use and development of resources and any other information the Minister considers appropriate.",
+          "contentHash": "7e6dffff56ac2cb81c4e64a4da68b6b5aa40ca772679ba2c7abcbbf1d38b2cc9"
+        },
+        {
+          "id": "10.1-subsection-2",
+          "sourceKey": "section:10.1/subsection:2",
+          "label": "10.1(2)",
+          "text": "10.1(2)Subsection (1) does not apply to a provincial park that is classified as a cultural heritage park under the General Regulation - Parks Act.\n\n2014, c.51, s.4",
+          "contentHash": "e18e9dd258431b90c4d00a76115b57e30bde368640603e89ee7aa4f51d69bd4a"
+        }
+      ],
+      "contentHash": "22bc32288edc055ea03a467a2fac63717824bec57578408192ee05739bbdfb8f"
+    },
+    {
+      "id": "section-10.2",
+      "sourceKey": "section:10.2",
+      "componentType": "section",
+      "label": "10.2",
+      "heading": "Review of Act",
+      "text": "Review of Act\n\n2014, c.51, s.4\n\n10.2The Minister shall initiate a review of this Act, and the review shall be completed no later than December 31, 2024 and every ten years after that.\n2014, c.51, s.4",
+      "subsections": [],
+      "contentHash": "1f14f1ba8ec968f3d09040264455ad7b4e51c11a42bcea6791a0d6bb623579ec"
+    },
+    {
+      "id": "section-11",
+      "sourceKey": "section:11",
+      "componentType": "section",
+      "label": "11",
+      "heading": "Granting of lease, licence, privilege or concession",
+      "text": "Granting of lease, licence, privilege or concession\n\n11(1)The Minister, with the approval of the Lieutenant-Governor in Council, may grant a lease with respect to a provincial park, or any part of a provincial park, or any land, building, installation or facility in a provincial park, or any part of a provincial park.\n\n11(2)The Minister may grant a licence, privilege or concession with respect to a provincial park, or any part of a provincial park, or any land, building, installation, service or facility in a provincial park, or any part of a provincial park, but that licence, privilege or concession shall not extend beyond ten years except with the approval of the Lieutenant-Governor in Council.\n\n11(3)Despite subsection (2), the Minister, without the approval of the Lieutenant-Governor in Council, may grant an easement in perpetuity across a recreational trail that has been designated as a provincial park if the easement is for the purpose of accessing land adjacent to the trail or is for the purpose of the installation or maintenance of above or below ground utilities.\n\n1982, c.P-2.1, ss.8(3); 1999, c.18, s.5; 2007, c.1, s.3",
+      "subsections": [
+        {
+          "id": "11-subsection-1",
+          "sourceKey": "section:11/subsection:1",
+          "label": "11(1)",
+          "text": "11(1)The Minister, with the approval of the Lieutenant-Governor in Council, may grant a lease with respect to a provincial park, or any part of a provincial park, or any land, building, installation or facility in a provincial park, or any part of a provincial park.",
+          "contentHash": "64e9b97a29b2206e67975d896675805a5da54efdae8e0623107f6ae2ffccd78d"
+        },
+        {
+          "id": "11-subsection-2",
+          "sourceKey": "section:11/subsection:2",
+          "label": "11(2)",
+          "text": "11(2)The Minister may grant a licence, privilege or concession with respect to a provincial park, or any part of a provincial park, or any land, building, installation, service or facility in a provincial park, or any part of a provincial park, but that licence, privilege or concession shall not extend beyond ten years except with the approval of the Lieutenant-Governor in Council.",
+          "contentHash": "c88df940ce106985a4ef2ad3aa8775439ba5974184410480e7ec1affb07679a1"
+        },
+        {
+          "id": "11-subsection-3",
+          "sourceKey": "section:11/subsection:3",
+          "label": "11(3)",
+          "text": "11(3)Despite subsection (2), the Minister, without the approval of the Lieutenant-Governor in Council, may grant an easement in perpetuity across a recreational trail that has been designated as a provincial park if the easement is for the purpose of accessing land adjacent to the trail or is for the purpose of the installation or maintenance of above or below ground utilities.\n\n1982, c.P-2.1, ss.8(3); 1999, c.18, s.5; 2007, c.1, s.3",
+          "contentHash": "7a40febce1d5e096a737f427f1e24be0946eacd1dbdb6bbe840fa7141f614bc3"
+        }
+      ],
+      "contentHash": "5a083faa0d5c5712bc4b97aed00bf21e508e589c52e3b2f105b02e7844385a33"
+    },
+    {
+      "id": "section-12",
+      "sourceKey": "section:12",
+      "componentType": "section",
+      "label": "12",
+      "heading": "Authorization to fix, impose, collect and retain fees or rental",
+      "text": "Authorization to fix, impose, collect and retain fees or rental\n\n12(1)Despite any other provision of this Act or any other Act, or any regulation under this Act or any other Act, a person who has been granted a lease, licence, privilege or concession under section 11 to operate a provincial park or any part of a provincial park, may, subject to and in accordance with the terms and conditions of that lease, licence, privilege or concession,\n\n(a)\nfix, impose and collect fees or rental payable for a permit required or services offered by that person in respect of that provincial park, or that part of a provincial park, or for any use of land, buildings, installations or facilities in that provincial park, or that part of a provincial park; and\n\n(b)\nretain, for that person’s own purposes, the money obtained from the collection of those fees or rental.\n\n12(2)If a person is authorized under paragraph (1)(a) to fix, impose and collect fees or rental,\n\n(a)\nthe Lieutenant-Governor in Council shall not make regulations under paragraph 23(2)(k) or (n) in relation to those fees or rental, and\n\n(b)\nthe Minister shall not fix, impose or collect those fees or rental under subsection 5.1(1).\n\n12(3)The Regulations Act does not apply to an instrument made under the authority of paragraph (1)(a).\n\n1999, c.18, s.6; 2012, c.60, s.2",
+      "subsections": [
+        {
+          "id": "12-subsection-1",
+          "sourceKey": "section:12/subsection:1",
+          "label": "12(1)",
+          "text": "12(1)Despite any other provision of this Act or any other Act, or any regulation under this Act or any other Act, a person who has been granted a lease, licence, privilege or concession under section 11 to operate a provincial park or any part of a provincial park, may, subject to and in accordance with the terms and conditions of that lease, licence, privilege or concession,\n\n(a)\nfix, impose and collect fees or rental payable for a permit required or services offered by that person in respect of that provincial park, or that part of a provincial park, or for any use of land, buildings, installations or facilities in that provincial park, or that part of a provincial park; and\n\n(b)\nretain, for that person’s own purposes, the money obtained from the collection of those fees or rental.",
+          "contentHash": "2b1e0dec08b254f0e7377f70397cacf0ee10db12be564318f78eeacfa962a3ae"
+        },
+        {
+          "id": "12-subsection-2",
+          "sourceKey": "section:12/subsection:2",
+          "label": "12(2)",
+          "text": "12(2)If a person is authorized under paragraph (1)(a) to fix, impose and collect fees or rental,\n\n(a)\nthe Lieutenant-Governor in Council shall not make regulations under paragraph 23(2)(k) or (n) in relation to those fees or rental, and\n\n(b)\nthe Minister shall not fix, impose or collect those fees or rental under subsection 5.1(1).",
+          "contentHash": "8971aba11f7f3ae3b497c770d374daa8f71f4a9d932aef894541f392d0fdca42"
+        },
+        {
+          "id": "12-subsection-3",
+          "sourceKey": "section:12/subsection:3",
+          "label": "12(3)",
+          "text": "12(3)The Regulations Act does not apply to an instrument made under the authority of paragraph (1)(a).\n\n1999, c.18, s.6; 2012, c.60, s.2",
+          "contentHash": "cee635a5f1b014ab0b0472e30c3ce91a6be7bd1085ff8925c994335d5df19660"
+        }
+      ],
+      "contentHash": "537e47e444fe5358d7ef1ffa408933a8d0af1233266b605be181c602492119d1"
+    },
+    {
+      "id": "section-13",
+      "sourceKey": "section:13",
+      "componentType": "section",
+      "label": "13",
+      "heading": "Limitation respecting use or occupancy",
+      "text": "Limitation respecting use or occupancy\n\n13Except as provided under this Act and the regulations, no person shall use or occupy any land, building, installation or facility in a provincial park.\n1982, c.P-2.1, s.9",
+      "subsections": [],
+      "contentHash": "29deda722b252b21a35ff55ebeaaf0a357a4c446969f033d8ab8e3ed404b47fc"
+    },
+    {
+      "id": "section-14",
+      "sourceKey": "section:14",
+      "componentType": "section",
+      "label": "14",
+      "heading": "Park wardens",
+      "text": "Park wardens\n\n14(1)The Minister, or any person designated by the Minister in writing to act on the Minister’s behalf, may appoint any person to be a park warden.\n\n14(2)The following persons are park wardens by virtue of their office:\n\n(a)\na police officer as defined in the Police Act;\n\n(b)\na member of the Royal Canadian Mounted Police;\n\n(c)\nan off-road vehicle enforcement officer as defined in the Off-Road Vehicle Act; and\n\n(d)\na conservation officer appointed under the Fish and Wildlife Act.\n\n14(3)A park warden is charged with the maintenance and preservation of the public peace in a provincial park and has the powers, authority and immunities of a peace officer as defined in the Criminal Code (Canada).\n\n1982, c.P-2.1, s.10; 1987, c.N-5.2, s.24; 1988, c.67, s.7; 2014, c.51, s.5",
+      "subsections": [
+        {
+          "id": "14-subsection-1",
+          "sourceKey": "section:14/subsection:1",
+          "label": "14(1)",
+          "text": "14(1)The Minister, or any person designated by the Minister in writing to act on the Minister’s behalf, may appoint any person to be a park warden.",
+          "contentHash": "3aade206999491ce04de59302f11e7483942a558a69fbdfc0dde160f41cc555d"
+        },
+        {
+          "id": "14-subsection-2",
+          "sourceKey": "section:14/subsection:2",
+          "label": "14(2)",
+          "text": "14(2)The following persons are park wardens by virtue of their office:\n\n(a)\na police officer as defined in the Police Act;\n\n(b)\na member of the Royal Canadian Mounted Police;\n\n(c)\nan off-road vehicle enforcement officer as defined in the Off-Road Vehicle Act; and\n\n(d)\na conservation officer appointed under the Fish and Wildlife Act.",
+          "contentHash": "0148af77d3cde054b2c672db2ec530a750ec9682d0d011183bebfeeb4e99bff5"
+        },
+        {
+          "id": "14-subsection-3",
+          "sourceKey": "section:14/subsection:3",
+          "label": "14(3)",
+          "text": "14(3)A park warden is charged with the maintenance and preservation of the public peace in a provincial park and has the powers, authority and immunities of a peace officer as defined in the Criminal Code (Canada).\n\n1982, c.P-2.1, s.10; 1987, c.N-5.2, s.24; 1988, c.67, s.7; 2014, c.51, s.5",
+          "contentHash": "2ee644dbaf5e4e8b31d521fd2501f75a207fb946fe631b1a192978b70d2cc6cf"
+        }
+      ],
+      "contentHash": "2151d2076288a36f93c5b27c8872dacd1d4677f021d04b4ccd1e84bc697eb323"
+    },
+    {
+      "id": "section-14.1",
+      "sourceKey": "section:14.1",
+      "componentType": "section",
+      "label": "14.1",
+      "heading": "Security guards",
+      "text": "Security guards\n\n2014, c.51, s.6\n\n14.1The Minister may appoint any person as a security guard who shall administer the policies and procedures established by the Minister.\n2014, c.51, s.6",
+      "subsections": [],
+      "contentHash": "1acd9bf4a5a6b259d3b2c71bff61c6794d297c62b43c813ea260093dbfbe5145"
+    },
+    {
+      "id": "section-15",
+      "sourceKey": "section:15",
+      "componentType": "section",
+      "label": "15",
+      "heading": "Items seized",
+      "text": "Items seized\n\n15(1)Subject to subsection (2), anything seized by a park warden under the Provincial Offences Procedure Act may be detained for a period of six months following the time of seizure or, if proceedings are instituted within the two months following seizure, until the proceedings are concluded.\n\n15(2)Anything seized under the Provincial Offences Procedure Act\n\n(a)\non application, shall be released to its owner\n\n(i)\nafter the expiration of two months from the date of seizure, when no proceedings have been instituted, or\n\n(ii)\nafter a verdict of acquittal has been handed down, when proceedings have been instituted;\n\n(b)\nshall be returned to the owner on the Minister ordering its return, if it is not required for evidence in a court of law;\n\n(c)\nshall be disposed of in accordance with subsection (3) when a conviction is obtained against a person committing an offence under this Act; or\n\n(d)\nshall be deemed to be forfeited to the Crown if, after a period of six months from the date of seizure, no application has been made and no proceedings have been instituted, in which case the Minister may dispose of the item at public auction or in any manner and at the time that the Minister considers fit.\n\n15(3)When a judge convicts a person of an offence against this Act, the judge shall order anything seized under the Provincial Offences Procedure Act\n\n(a)\nto be returned to the owner as soon as practicable, or\n\n(b)\nto be forfeited to the Crown, in which case it shall be disposed of at public auction or in the manner and at the time that the Minister considers fit.\n\n1982, c.P-2.1, s.11; 1986, c.6, s.33; 1990, c.22, s.39",
+      "subsections": [
+        {
+          "id": "15-subsection-1",
+          "sourceKey": "section:15/subsection:1",
+          "label": "15(1)",
+          "text": "15(1)Subject to subsection (2), anything seized by a park warden under the Provincial Offences Procedure Act may be detained for a period of six months following the time of seizure or, if proceedings are instituted within the two months following seizure, until the proceedings are concluded.",
+          "contentHash": "0bb5a322c007a0c34a0ead93d98de52cb6867f0e059371ada316c0658b5820ae"
+        },
+        {
+          "id": "15-subsection-2",
+          "sourceKey": "section:15/subsection:2",
+          "label": "15(2)",
+          "text": "15(2)Anything seized under the Provincial Offences Procedure Act\n\n(a)\non application, shall be released to its owner\n\n(i)\nafter the expiration of two months from the date of seizure, when no proceedings have been instituted, or\n\n(ii)\nafter a verdict of acquittal has been handed down, when proceedings have been instituted;\n\n(b)\nshall be returned to the owner on the Minister ordering its return, if it is not required for evidence in a court of law;\n\n(c)\nshall be disposed of in accordance with subsection (3) when a conviction is obtained against a person committing an offence under this Act; or\n\n(d)\nshall be deemed to be forfeited to the Crown if, after a period of six months from the date of seizure, no application has been made and no proceedings have been instituted, in which case the Minister may dispose of the item at public auction or in any manner and at the time that the Minister considers fit.",
+          "contentHash": "62894755944e016b3a50b39d6ce8d250bcc041551f66f5bc90099043c472436d"
+        },
+        {
+          "id": "15-subsection-3",
+          "sourceKey": "section:15/subsection:3",
+          "label": "15(3)",
+          "text": "15(3)When a judge convicts a person of an offence against this Act, the judge shall order anything seized under the Provincial Offences Procedure Act\n\n(a)\nto be returned to the owner as soon as practicable, or\n\n(b)\nto be forfeited to the Crown, in which case it shall be disposed of at public auction or in the manner and at the time that the Minister considers fit.\n\n1982, c.P-2.1, s.11; 1986, c.6, s.33; 1990, c.22, s.39",
+          "contentHash": "c09e19fa5d9e682668c0506c8b2c7e3502179cd85e216072e0dc1b34aeab20c2"
+        }
+      ],
+      "contentHash": "5897ee2f467e342b069c154a60075ef4cec3a49d906449c8fbb6465bb24a74b8"
+    },
+    {
+      "id": "section-16",
+      "sourceKey": "section:16",
+      "componentType": "section",
+      "label": "16",
+      "heading": "Offences and penalties",
+      "text": "Offences and penalties\n\n16(1)A person who violates or fails to comply with any provision of the regulations commits an offence that is, subject to subsection (2), punishable under Part 2 of the Provincial Offences Procedure Act as a category B offence.\n\n16(2)A person who violates or fails to comply with a provision of the regulations in respect of which a category has been prescribed under paragraph 23(2)(r) commits an offence of the category prescribed by regulation.\n\n16(3)A person who violates or fails to comply with section 13 or subsection 17(2) commits an offence punishable under Part 2 of the Provincial Offences Procedure Act as a category E offence.\n\n1990, c.61, s.103",
+      "subsections": [
+        {
+          "id": "16-subsection-1",
+          "sourceKey": "section:16/subsection:1",
+          "label": "16(1)",
+          "text": "16(1)A person who violates or fails to comply with any provision of the regulations commits an offence that is, subject to subsection (2), punishable under Part 2 of the Provincial Offences Procedure Act as a category B offence.",
+          "contentHash": "88a2f0610fc0de5af388e5596ac32eeed2999d2d1dd53b7c90d0984c7a79cfe4"
+        },
+        {
+          "id": "16-subsection-2",
+          "sourceKey": "section:16/subsection:2",
+          "label": "16(2)",
+          "text": "16(2)A person who violates or fails to comply with a provision of the regulations in respect of which a category has been prescribed under paragraph 23(2)(r) commits an offence of the category prescribed by regulation.",
+          "contentHash": "27b82111dbe362d176545e4a91bd8210330fcf03196d3ab1e3fcfed5d43058a9"
+        },
+        {
+          "id": "16-subsection-3",
+          "sourceKey": "section:16/subsection:3",
+          "label": "16(3)",
+          "text": "16(3)A person who violates or fails to comply with section 13 or subsection 17(2) commits an offence punishable under Part 2 of the Provincial Offences Procedure Act as a category E offence.\n\n1990, c.61, s.103",
+          "contentHash": "d01fb8a7ed08118de676b25ad8534e895c8867b609a0145434bcc177ae42842f"
+        }
+      ],
+      "contentHash": "d42c6d3700ecefedfc8d8596d4aa1d6de9f3aad7a6a7982354c073394648a994"
+    },
+    {
+      "id": "section-17",
+      "sourceKey": "section:17",
+      "componentType": "section",
+      "label": "17",
+      "heading": "Orders prohibiting entry to provincial park",
+      "text": "Orders prohibiting entry to provincial park\n\n17(1)If the Minister, a park warden or a security guard has reasonable grounds for believing that a person has violated or is about to violate a provision of this Act or the regulations, or that the entry on or remaining in a provincial park by a person may be detrimental to the safety of other park users or their enjoyment of the park and its facilities, he or she, without notice or hearing, may issue an order in writing prohibiting that person from entering on or being in the provincial park specified in the order for a period specified in the order, not to exceed 12 months.\n\n17(2)A person having knowledge of an order made under subsection (1) shall observe that order and, in the event the person is in a provincial park when the order is made, shall without delay remove himself or herself from the provincial park.\n\n1982, c.P-2.1, ss.12(3), ss.12(4); 1999, c.18, s.7; 2014, c.51, s.7",
+      "subsections": [
+        {
+          "id": "17-subsection-1",
+          "sourceKey": "section:17/subsection:1",
+          "label": "17(1)",
+          "text": "17(1)If the Minister, a park warden or a security guard has reasonable grounds for believing that a person has violated or is about to violate a provision of this Act or the regulations, or that the entry on or remaining in a provincial park by a person may be detrimental to the safety of other park users or their enjoyment of the park and its facilities, he or she, without notice or hearing, may issue an order in writing prohibiting that person from entering on or being in the provincial park specified in the order for a period specified in the order, not to exceed 12 months.",
+          "contentHash": "41c61e238cb6afebb5655bd2a2d6e5481e9170564c23fe6a7430f99d32ffa1e0"
+        },
+        {
+          "id": "17-subsection-2",
+          "sourceKey": "section:17/subsection:2",
+          "label": "17(2)",
+          "text": "17(2)A person having knowledge of an order made under subsection (1) shall observe that order and, in the event the person is in a provincial park when the order is made, shall without delay remove himself or herself from the provincial park.\n\n1982, c.P-2.1, ss.12(3), ss.12(4); 1999, c.18, s.7; 2014, c.51, s.7",
+          "contentHash": "0555bc40836926fe9457a020475080b8d0ce12ae9e60ea376701cf3743c4d048"
+        }
+      ],
+      "contentHash": "341bc3233e2d450eab3fe6ccad880836fc493ee7a9a532b21c0680e38d5c1abe"
+    },
+    {
+      "id": "section-18",
+      "sourceKey": "section:18",
+      "componentType": "section",
+      "label": "18",
+      "heading": "Evidentiary matters",
+      "text": "Evidentiary matters\n\n18(1)The Minister, or any person designated by the Minister to act on the Minister’s behalf, is authorized to prepare a certified copy of a record, permit, letter or other document, the production of which is not regarded by the Minister as being contrary to public policy, and a document purporting to be signed by the Minister or the Minister’s designate shall be received as evidence of the contents of the document in any court in the Province without proof of the appointment, authority or signature of the Minister or the Minister’s designate.\n\n18(2)In a prosecution for contravening a provision of this Act or the regulations, without other or further proof,\n\n(a)\nthe existence of a sign is proof, in the absence of evidence to the contrary, that the sign was properly placed and maintained by the proper authorities; and\n\n(b)\nevidence that the sign was in existence both before and after the conduct in question is proof, in the absence of evidence to the contrary, that the sign was in existence at all material times.\n\n18(3)In a prosecution for contravening a provision of this Act or the regulations, if an act that the accused is proven to have done is alleged to have been done in a provincial park, the accused shall be deemed to have done the act in the provincial park in the absence of evidence to the contrary.\n\n1982, c.P-2.1, ss.12(5), ss.12(6), ss.12(7)",
+      "subsections": [
+        {
+          "id": "18-subsection-1",
+          "sourceKey": "section:18/subsection:1",
+          "label": "18(1)",
+          "text": "18(1)The Minister, or any person designated by the Minister to act on the Minister’s behalf, is authorized to prepare a certified copy of a record, permit, letter or other document, the production of which is not regarded by the Minister as being contrary to public policy, and a document purporting to be signed by the Minister or the Minister’s designate shall be received as evidence of the contents of the document in any court in the Province without proof of the appointment, authority or signature of the Minister or the Minister’s designate.",
+          "contentHash": "dc3dbd20e03498d967064bb15106447ab2e3e434ec11ee809833861c4e482b00"
+        },
+        {
+          "id": "18-subsection-2",
+          "sourceKey": "section:18/subsection:2",
+          "label": "18(2)",
+          "text": "18(2)In a prosecution for contravening a provision of this Act or the regulations, without other or further proof,\n\n(a)\nthe existence of a sign is proof, in the absence of evidence to the contrary, that the sign was properly placed and maintained by the proper authorities; and\n\n(b)\nevidence that the sign was in existence both before and after the conduct in question is proof, in the absence of evidence to the contrary, that the sign was in existence at all material times.",
+          "contentHash": "875c5713bb320c484c6eafc13577ed0465d426b12795d7865dfc692bb9392f8c"
+        },
+        {
+          "id": "18-subsection-3",
+          "sourceKey": "section:18/subsection:3",
+          "label": "18(3)",
+          "text": "18(3)In a prosecution for contravening a provision of this Act or the regulations, if an act that the accused is proven to have done is alleged to have been done in a provincial park, the accused shall be deemed to have done the act in the provincial park in the absence of evidence to the contrary.\n\n1982, c.P-2.1, ss.12(5), ss.12(6), ss.12(7)",
+          "contentHash": "35c07be513a092b5d5a4df9701144e58a4350ceedffd014b8ad0835aded96e47"
+        }
+      ],
+      "contentHash": "b445fff3e6b61a1b0a91bfe25e15c99901547115855f4fd6c0565e04bd344302"
+    },
+    {
+      "id": "section-19",
+      "sourceKey": "section:19",
+      "componentType": "section",
+      "label": "19",
+      "heading": "Action by Minister",
+      "text": "Action by Minister\n\n19When this Act or any regulation is contravened, in addition to any other remedy and to any penalty imposed, the contravention may be restrained by action at the instance of the Minister.\n1982, c.P-2.1, s.17",
+      "subsections": [],
+      "contentHash": "5a45965cab3482a271e523261a74c0f2c530a383c7495f183f54523b702c38f4"
+    },
+    {
+      "id": "section-20",
+      "sourceKey": "section:20",
+      "componentType": "section",
+      "label": "20",
+      "heading": "Opening or closing of roads by Minister",
+      "text": "Opening or closing of roads by Minister\n\n20The Minister may open for travel or close to travel any highway, road, trail or other area in a provincial park that is not under the administration and control of the Minister of Transportation and Infrastructure or the New Brunswick Highway Corporation.\n1982, c.P-2.1, s.13; 1995, c.N-5.11, s.45; 2010, c.31, s.101; 2014, c.51, s.8",
+      "subsections": [],
+      "contentHash": "2481fcb955631e42ce5915ec39db5404938f45d32e118252db4a40facf5e16cd"
+    },
+    {
+      "id": "section-21",
+      "sourceKey": "section:21",
+      "componentType": "section",
+      "label": "21",
+      "heading": "Protection of flora",
+      "text": "Protection of flora\n\n21The Lieutenant-Governor in Council may take measures the Lieutenant-Governor in Council considers proper for the protection of flora in a provincial park.\n1982, c.P-2.1, s.14",
+      "subsections": [],
+      "contentHash": "7235a089bd5911251c104a55fae4e6c24f7ce33bc265bc28d966f2ed1f7752f8"
+    },
+    {
+      "id": "section-22",
+      "sourceKey": "section:22",
+      "componentType": "section",
+      "label": "22",
+      "heading": "Prospecting and mining",
+      "text": "Prospecting and mining\n\n22(1)Despite any other Act, all provincial parks are reserved by the Crown from prospecting, staking, drilling, mining and quarrying.\n\n22(2)Despite subsection (1), the Department may operate a quarry in a provincial park to provide quarriable substances needed to construct and maintain roads, buildings, installations or other facilities in provincial parks.\n\n1982, c.P-2.1, s.15; 2014, c.51, s.9",
+      "subsections": [
+        {
+          "id": "22-subsection-1",
+          "sourceKey": "section:22/subsection:1",
+          "label": "22(1)",
+          "text": "22(1)Despite any other Act, all provincial parks are reserved by the Crown from prospecting, staking, drilling, mining and quarrying.",
+          "contentHash": "1c69a9c065ae1735a5a2484ad17a862d1853039b60d89799286cc09b2b5183eb"
+        },
+        {
+          "id": "22-subsection-2",
+          "sourceKey": "section:22/subsection:2",
+          "label": "22(2)",
+          "text": "22(2)Despite subsection (1), the Department may operate a quarry in a provincial park to provide quarriable substances needed to construct and maintain roads, buildings, installations or other facilities in provincial parks.\n\n1982, c.P-2.1, s.15; 2014, c.51, s.9",
+          "contentHash": "b9a7399b6ebf628bf04ef1a11ef87f692529c01ea442c2c113f7bc18b5fd242e"
+        }
+      ],
+      "contentHash": "c75a1df7769238da87d5f2c229fa3ec7502a4bc557e89ebe401f131966e04c8b"
+    },
+    {
+      "id": "section-23",
+      "sourceKey": "section:23",
+      "componentType": "section",
+      "label": "23",
+      "heading": "Regulations",
+      "text": "Regulations\n\n23(1)Despite the Fish and Wildlife Act and the regulations made under that Act, the Lieutenant-Governor in Council may make regulations\n\n(a)\nprohibiting or regulating hunting, fishing, trapping and snaring in a provincial park, and respecting the setting aside of areas for hunting, fishing, trapping or snaring in a provincial park;\n\n(a.1)\npermitting the seizure of wildlife in certain circumstances by a conservation officer or a person authorized by the Minister;\n\n(b)\nprohibiting or regulating the possession, discharge, use or conveyance of a firearm in a provincial park.\n\n23(2)The Lieutenant-Governor in Council may make regulations\n\n(a)\nfor the care, preservation, improvement, control and management of provincial parks;\n\n(a.1)\nclassifying provincial parks;\n\n(a.2)\nproviding for appointments to the advisory committee, including the size and composition of the committee and the term of office and qualifications of its members and establishing procedures and quorum of the committee;\n\n(a.3)\nfixing the remuneration of members of the advisory committee and setting the rate for reimbursement of expenses incurred by the members while exercising their powers or performing their duties;\n\n(b)\nRepealed: 2014, c.51, s.10\n\n(c)\nprohibiting or regulating the occupation of land in provincial parks;\n\n(d)\nregulating the use of lands in provincial parks;\n\n(e)\nprohibiting the erection of buildings or installations in provincial parks, or regulating the nature, cost, type of construction or location of buildings or installations that may be erected in provincial parks;\n\n(f)\nprohibiting or regulating the conduct of persons using any building, installation, equipment or facility in a provincial park;\n\n(g)\nprohibiting or regulating the erection, posting or other display of notices, signs, signboards and other advertising devices in provincial parks;\n\n(h)\nprohibiting or regulating the use, setting and extinguishment of fires in provincial parks;\n\n(h.1)\nprohibiting the possession or ignition of fireworks and authorizing the Minister, in the Minister’s discretion, to create an exception to the prohibition;\n\n(i)\nprohibiting or regulating pedestrian, vehicular, boat or air traffic in provincial parks;\n\n(j)\nproviding for the issuing of permits to persons to enter a provincial park, occupy a campsite in a provincial park, berth, moor, anchor, beach, launch or dock a boat in a provincial park, land an aircraft in a provincial park or otherwise use land in a provincial park;\n\n(k)\nprescribing the fees for a permit referred to in paragraph (j);\n\n(l)\nprohibiting or regulating trades, businesses, amusements, sports, occupations and other activities or undertakings in provincial parks;\n\n(m)\nprescribing the maximum periods of stay of persons, vehicles, boats, vessels or aircraft in a provincial park;\n\n(m.1)\nprescribing the period of time of occupancy at a campsite and authorizing the Minister, in the Minister’s discretion, to determine a different period;\n\n(n)\nproviding for the imposition and collection of fees for a permit referred to in paragraph (j);\n\n(o)\nprohibiting or regulating the cutting and removal of forest products;\n\n(p)\nprohibiting or regulating the use or keeping of domestic animals in provincial parks;\n\n(q)\nprohibiting or regulating any activity carried on within a prescribed shore area or waters contiguous to a provincial park, to the extent that the activity could be prohibited or regulated under this Act if carried on within the limits of the provincial park;\n\n(r)\nprescribing, in relation to offences under the regulations, categories of offences for the purposes of Part 2 of the Provincial Offences Procedure Act;\n\n(s)\nrespecting any other matter necessary or advisable to carry out effectively the intent and purpose of this Act.\n\n23(3)A regulation under subsection (1) or (2) may be made applicable to all provincial parks or to any provincial park or to any part of a provincial park.\n\n23(4)A fee prescribed by a regulation under subsection (2) may be waived by the Minister, in whole or in part,\n\n(a)\nin relation to a special event, when the Minister considers it appropriate to do so,\n\n(b)\nwhen the Minister, for the purpose of promoting the use of a provincial park or facilities in a provincial park, negotiates with any person a group rate in relation to that use, or\n\n(c)\nin any other circumstances, when the Minister considers it appropriate to do so.\n\n23(5)Repealed: 2014, c.51, s.10\n\n1982, c.P-2.1, s.16; 1990, c.61, s.103; 1991, c.10, s.1; 1991, c.43, s.31; 1999, c.18, s.8, s.9; 2004, c.12, s.51; 2012, c.60, s.3; 2014, c.51, s.10",
+      "subsections": [
+        {
+          "id": "23-subsection-1",
+          "sourceKey": "section:23/subsection:1",
+          "label": "23(1)",
+          "text": "23(1)Despite the Fish and Wildlife Act and the regulations made under that Act, the Lieutenant-Governor in Council may make regulations\n\n(a)\nprohibiting or regulating hunting, fishing, trapping and snaring in a provincial park, and respecting the setting aside of areas for hunting, fishing, trapping or snaring in a provincial park;\n\n(a.1)\npermitting the seizure of wildlife in certain circumstances by a conservation officer or a person authorized by the Minister;\n\n(b)\nprohibiting or regulating the possession, discharge, use or conveyance of a firearm in a provincial park.",
+          "contentHash": "653ec33c60f7160a5902c8a6781fb4901bc03390ce898fbccf50afafc7558d24"
+        },
+        {
+          "id": "23-subsection-2",
+          "sourceKey": "section:23/subsection:2",
+          "label": "23(2)",
+          "text": "23(2)The Lieutenant-Governor in Council may make regulations\n\n(a)\nfor the care, preservation, improvement, control and management of provincial parks;\n\n(a.1)\nclassifying provincial parks;\n\n(a.2)\nproviding for appointments to the advisory committee, including the size and composition of the committee and the term of office and qualifications of its members and establishing procedures and quorum of the committee;\n\n(a.3)\nfixing the remuneration of members of the advisory committee and setting the rate for reimbursement of expenses incurred by the members while exercising their powers or performing their duties;\n\n(b)\nRepealed: 2014, c.51, s.10\n\n(c)\nprohibiting or regulating the occupation of land in provincial parks;\n\n(d)\nregulating the use of lands in provincial parks;\n\n(e)\nprohibiting the erection of buildings or installations in provincial parks, or regulating the nature, cost, type of construction or location of buildings or installations that may be erected in provincial parks;\n\n(f)\nprohibiting or regulating the conduct of persons using any building, installation, equipment or facility in a provincial park;\n\n(g)\nprohibiting or regulating the erection, posting or other display of notices, signs, signboards and other advertising devices in provincial parks;\n\n(h)\nprohibiting or regulating the use, setting and extinguishment of fires in provincial parks;\n\n(h.1)\nprohibiting the possession or ignition of fireworks and authorizing the Minister, in the Minister’s discretion, to create an exception to the prohibition;\n\n(i)\nprohibiting or regulating pedestrian, vehicular, boat or air traffic in provincial parks;\n\n(j)\nproviding for the issuing of permits to persons to enter a provincial park, occupy a campsite in a provincial park, berth, moor, anchor, beach, launch or dock a boat in a provincial park, land an aircraft in a provincial park or otherwise use land in a provincial park;\n\n(k)\nprescribing the fees for a permit referred to in paragraph (j);\n\n(l)\nprohibiting or regulating trades, businesses, amusements, sports, occupations and other activities or undertakings in provincial parks;\n\n(m)\nprescribing the maximum periods of stay of persons, vehicles, boats, vessels or aircraft in a provincial park;\n\n(m.1)\nprescribing the period of time of occupancy at a campsite and authorizing the Minister, in the Minister’s discretion, to determine a different period;\n\n(n)\nproviding for the imposition and collection of fees for a permit referred to in paragraph (j);\n\n(o)\nprohibiting or regulating the cutting and removal of forest products;\n\n(p)\nprohibiting or regulating the use or keeping of domestic animals in provincial parks;\n\n(q)\nprohibiting or regulating any activity carried on within a prescribed shore area or waters contiguous to a provincial park, to the extent that the activity could be prohibited or regulated under this Act if carried on within the limits of the provincial park;\n\n(r)\nprescribing, in relation to offences under the regulations, categories of offences for the purposes of Part 2 of the Provincial Offences Procedure Act;\n\n(s)\nrespecting any other matter necessary or advisable to carry out effectively the intent and purpose of this Act.",
+          "contentHash": "cee81be5b7d9e176ac34e2d0d64adfdf8afe270ea53b6871f8e7912be87271b3"
+        },
+        {
+          "id": "23-subsection-3",
+          "sourceKey": "section:23/subsection:3",
+          "label": "23(3)",
+          "text": "23(3)A regulation under subsection (1) or (2) may be made applicable to all provincial parks or to any provincial park or to any part of a provincial park.",
+          "contentHash": "2a8b0e110651caf61c97f6f60016044d661d4a525f06cc59cc819f598760f81b"
+        },
+        {
+          "id": "23-subsection-4",
+          "sourceKey": "section:23/subsection:4",
+          "label": "23(4)",
+          "text": "23(4)A fee prescribed by a regulation under subsection (2) may be waived by the Minister, in whole or in part,\n\n(a)\nin relation to a special event, when the Minister considers it appropriate to do so,\n\n(b)\nwhen the Minister, for the purpose of promoting the use of a provincial park or facilities in a provincial park, negotiates with any person a group rate in relation to that use, or\n\n(c)\nin any other circumstances, when the Minister considers it appropriate to do so.",
+          "contentHash": "80c9f1a400a53e7f68f394eccfc935f8a3a547f9c7ac888ae52782efd1c793fa"
+        },
+        {
+          "id": "23-subsection-5",
+          "sourceKey": "section:23/subsection:5",
+          "label": "23(5)",
+          "text": "23(5)Repealed: 2014, c.51, s.10\n\n1982, c.P-2.1, s.16; 1990, c.61, s.103; 1991, c.10, s.1; 1991, c.43, s.31; 1999, c.18, s.8, s.9; 2004, c.12, s.51; 2012, c.60, s.3; 2014, c.51, s.10\n\nSCHEDULE A\n\nRepealed: 2014, c.51, s.11\n\n1999, c.18, s.10; 2000-7; 2003-91; 2004-35; 2007-77; 2008-115; 2012, c.60, s.4; 2014, c.51, s.11\n\nN.B. This Act was proclaimed and came into force September 1, 2011.\n\nN.B. This Act is consolidated to June 6, 2025.",
+          "contentHash": "7fa1f86e59e0aad810b7a06205ca6d05ebc0bc8fccd8b2f32767cf9a09135922"
+        }
+      ],
+      "contentHash": "4c051c8c3e941accc82eaf8de07afd45a5098cfa59d39eacf354c6f3b54c7e91"
+    },
+    {
+      "id": "schedule-schedule-a",
+      "sourceKey": "schedule:schedule-a",
+      "componentType": "schedule",
+      "label": "SCHEDULE A",
+      "text": "SCHEDULE A\n\nRepealed: 2014, c.51, s.11\n\n1999, c.18, s.10; 2000-7; 2003-91; 2004-35; 2007-77; 2008-115; 2012, c.60, s.4; 2014, c.51, s.11\n\nN.B. This Act was proclaimed and came into force September 1, 2011.\n\nN.B. This Act is consolidated to June 6, 2025.",
+      "contentHash": "74cdbfc8b2f63b317eba5b793aef70aa56892c522119ccb01cfa3ac7485d2b2a"
+    }
+  ],
+  "sections": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
+      "label": "1",
+      "heading": "Definitions",
+      "text": "Definitions\n\n1The following definitions apply in this Act.\n“boat” means a watercraft or other artificial contrivance used or capable of being used as a means of transportation on water, whether self-propelled or not. (bateau)\n\n“concession” means the right of any person granted by the Department to operate a provincial park or any building, installation, service or facility in a provincial park. (concession)\n\n“Department” means (ministère)\n\n(a)\nin relation to the provincial parks listed in Schedule A.1 of the General Regulation - Parks Act, the Department of Tourism, Heritage and Culture, or\n\n(b)\nin relation to all other provincial parks, the Department of Natural Resources.\n\n“domestic animal” means an animal that is kept under human control or by habit or training lives in association with humankind. (animal domestique)\n\n“firearm” means a device from which a shot, bullet or other missile can be discharged, and includes but is not limited to a rifle, shotgun, pellet gun, air gun, pistol, revolver, spring gun, crossbow or longbow. (arme à feu)\n\n“lease” means a contract for exclusive use or possession of lands, buildings, installations or facilities in a provincial park for a period of time. (bail)\n\n“local government” means a local government as defined in subsection 1(1) of the Local Governance Act.(gouvernement local)\n\n“Minister” means(ministre)\n\n(a)\nin relation to the provincial parks listed in Schedule A.1 of the General Regulation - Parks Act, the Minister of Tourism, Heritage and Culture, and includes any person designated by the Minister to act on the Minister’s behalf, or\n\n(b)\nin relation to all other provincial parks, the Minister of Natural Resources, and includes any person designated by the Minister to act on the Minister’s behalf.\n\n“park warden” means a person appointed or holding office under section 14. (gardien de parc)\n\n“provincial park” means(parc provincial)\n\n(a)\nan area of land established and maintained under this Act and the regulations as a cultural heritage park, a linear park, a natural environment park, a recreational park, a wilderness park or a park prescribed by regulation,\n\n(b)\nland administered under an agreement entered into under the authority of paragraph 5(1)(b), or\n\n(c)\na provincial park continued under section 4,\n\nand includes a recreational trail, or any portion of a recreational trail, designated by the Minister of Natural Resources under section 2 and any land acquired for the purpose of development as a provincial park.\n\n1982, c.P-2.1, s.1; 1986, c.8, s.95; 1992, c.2, s.47; 1999, c.18, s.1; 2000, c.26, s.233; 2001, c.41, s.14; 2004, c.20, s.46; 2007, c.1, s.1; 2012, c.39, s.106; 2012, c.52, s.39; 2014, c.51, s.1; 2016, c.37, s.133; 2017, c.20, s.128; 2019, c.29, s.196; 2024, c.28, s.43; 2025, c.24, s.21",
+      "subsections": [],
+      "contentHash": "40f998d71aec351e9024db75c1c3199a8ffbca8435f73d06bce1317ad534528b"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "label": "2",
+      "heading": "Designation of recreational trail",
+      "text": "Designation of recreational trail\n\n2(1)The Minister of Natural Resources may designate a recreational trail, or any portion of a recreational trail, for the purposes of the definition “provincial park” in section 1.\n\n2(2)The Regulations Act does not apply to a designation under subsection (1).\n\n2(3)A copy of a designation purporting to be made by the Minister of Natural Resources under subsection (1) is admissible in evidence without proof of the appointment, authority or signature of the Minister of Natural Resources, and is proof, in the absence of evidence to the contrary, of the making of the designation and of its contents for all purposes in any action, proceeding or prosecution.\n\n1999, c.18, s.2; 2004, c.20, s.46; 2016, c.37, s.133; 2019, c.29, s.196; 2024, c.28, s.43",
+      "subsections": [
+        {
+          "id": "2-subsection-1",
+          "sourceKey": "section:2/subsection:1",
+          "label": "2(1)",
+          "text": "2(1)The Minister of Natural Resources may designate a recreational trail, or any portion of a recreational trail, for the purposes of the definition “provincial park” in section 1.",
+          "contentHash": "5e7a7bd96bd68ef324b4830ed14177eba458559fb6366070f8c4d3c0887bf182"
+        },
+        {
+          "id": "2-subsection-2",
+          "sourceKey": "section:2/subsection:2",
+          "label": "2(2)",
+          "text": "2(2)The Regulations Act does not apply to a designation under subsection (1).",
+          "contentHash": "aa960fb7f7743a8b7e787fd572a2a95be52b9687beb39f88eed33a8345923a7d"
+        },
+        {
+          "id": "2-subsection-3",
+          "sourceKey": "section:2/subsection:3",
+          "label": "2(3)",
+          "text": "2(3)A copy of a designation purporting to be made by the Minister of Natural Resources under subsection (1) is admissible in evidence without proof of the appointment, authority or signature of the Minister of Natural Resources, and is proof, in the absence of evidence to the contrary, of the making of the designation and of its contents for all purposes in any action, proceeding or prosecution.\n\n1999, c.18, s.2; 2004, c.20, s.46; 2016, c.37, s.133; 2019, c.29, s.196; 2024, c.28, s.43",
+          "contentHash": "358bdb0504b6d7c1ee5f8fccef169f6871f302282a8ad60402d223801190ecfd"
+        }
+      ],
+      "contentHash": "215e1fc3928b911e0ff8e13fcae8b06647fe2ea36c6b1e65aaeaea0e7c30a4d0"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
+      "label": "3",
+      "heading": "Purpose of provincial parks",
+      "text": "Purpose of provincial parks\n\n3All provincial parks are dedicated to residents of the Province, visitors and future generations to\n\n(a)\npermanently protect ecosystems, biodiversity and the elements of natural and cultural heritage,\n\n(b)\nprovide opportunities for recreational and outdoor educational activities to promote a healthy lifestyle,\n\n(c)\nprovide opportunities to increase knowledge and appreciation of the natural and cultural heritage of the Province, and\n\n(d)\noffer a tourism product that enhances the Province’s image as a quality vacation destination.\n\n1982, c.P-2.1, s.2; 2014, c.51, s.2",
+      "subsections": [],
+      "contentHash": "00c8f9f36ecd8c3da48250ac4f31656aa1cab71750fdee939f6817fcd236b204"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
+      "label": "4",
+      "heading": "Continuation of provincial parks",
+      "text": "Continuation of provincial parks\n\n4Subject to section 5, a provincial park in existence immediately before August 31, 1982, is continued as a provincial park.\n1982, c.P-2.1, ss.3(1); 1999, c.18, s.3",
+      "subsections": [],
+      "contentHash": "b5de19e3f75f92de3e6314e4507cecfdd121ba6048da4c261920bdd90f78828a"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "componentType": "section",
+      "label": "5",
+      "heading": "Powers of Minister in relation to provincial parks",
+      "text": "Powers of Minister in relation to provincial parks\n\n5(1)The Lieutenant-Governor in Council may\n\n(a)\nauthorize the Minister to purchase or acquire any land, whether or not covered with water, for the purpose of development as a provincial park;\n\n(b)\ndespite any other Act, authorize the Minister to enter into an agreement with\n\n(i)\nanother Minister,\n\n(ii)\na Crown commission,\n\n(iii)\na Crown corporation,\n\n(iv)\na person,\n\n(v)\na local government, or\n\n(vi)\nan association;\n\nfor the administration as a provincial park of land belonging to or under the administration of the Crown in right of the Province, a Crown commission, a Crown corporation, a person, a local government or an association, and lands so administered shall be deemed to be set apart as a provincial park and come within this Act and the regulations;\n\n(c)\nauthorize the Minister to increase or decrease the area of a provincial park;\n\n(d)\ndelimit a provincial park;\n\n(e)\nterminate the status of a provincial park;\n\n(f)\nauthorize the Minister to dispose of buildings, installations or improvements, or all or any part of the land included in a provincial park, as the Minister considers fit; and\n\n(g)\nmay set aside as a park reserve any area of land held, acquired or set apart for the purpose of a provincial park.\n\n5(2)If, with respect to a provincial park, land to be set apart, purchased or acquired, added or withdrawn, delimited or disposed of has a real estate value of less than $15,000, the Minister may do those things that the Lieutenant-Governor in Council is authorized to do under subsection (1).\n\n1982, c.P-2.1, ss.3(2); 2005, c.7, s.58; 2007, c.1, s.2; 2017, c.20, s.128; 2023, c.17, s.185",
+      "subsections": [
+        {
+          "id": "5-subsection-1",
+          "sourceKey": "section:5/subsection:1",
+          "label": "5(1)",
+          "text": "5(1)The Lieutenant-Governor in Council may\n\n(a)\nauthorize the Minister to purchase or acquire any land, whether or not covered with water, for the purpose of development as a provincial park;\n\n(b)\ndespite any other Act, authorize the Minister to enter into an agreement with\n\n(i)\nanother Minister,\n\n(ii)\na Crown commission,\n\n(iii)\na Crown corporation,\n\n(iv)\na person,\n\n(v)\na local government, or\n\n(vi)\nan association;\n\nfor the administration as a provincial park of land belonging to or under the administration of the Crown in right of the Province, a Crown commission, a Crown corporation, a person, a local government or an association, and lands so administered shall be deemed to be set apart as a provincial park and come within this Act and the regulations;\n\n(c)\nauthorize the Minister to increase or decrease the area of a provincial park;\n\n(d)\ndelimit a provincial park;\n\n(e)\nterminate the status of a provincial park;\n\n(f)\nauthorize the Minister to dispose of buildings, installations or improvements, or all or any part of the land included in a provincial park, as the Minister considers fit; and\n\n(g)\nmay set aside as a park reserve any area of land held, acquired or set apart for the purpose of a provincial park.",
+          "contentHash": "5dcdb9f11f2b4ce91c9313baa9a63726015f4428346d08bd2d41eb368cea90f6"
+        },
+        {
+          "id": "5-subsection-2",
+          "sourceKey": "section:5/subsection:2",
+          "label": "5(2)",
+          "text": "5(2)If, with respect to a provincial park, land to be set apart, purchased or acquired, added or withdrawn, delimited or disposed of has a real estate value of less than $15,000, the Minister may do those things that the Lieutenant-Governor in Council is authorized to do under subsection (1).\n\n1982, c.P-2.1, ss.3(2); 2005, c.7, s.58; 2007, c.1, s.2; 2017, c.20, s.128; 2023, c.17, s.185",
+          "contentHash": "0972dc1a86dd0bd1df08563b397cfca720c5fb5b008f95c0391a13319fa54945"
+        }
+      ],
+      "contentHash": "e8ec775c44dbd12a7bd561ba0ea571db51cba1c055597d9df29094f9095be42b"
+    },
+    {
+      "id": "section-5.1",
+      "sourceKey": "section:5.1",
+      "componentType": "section",
+      "label": "5.1",
+      "heading": "Powers of Minister in relation to fees and rental",
+      "text": "Powers of Minister in relation to fees and rental\n2012, c.60, s.1\n\n5.1(1)Subject to subsection (4), the Minister may fix, impose and collect fees or rental payable for any service offered in or in respect of a provincial park or for any use of a building, installation or facility, or any part of a building, installation or facility, in a provincial park.\n\n5.1(2)Before fixing fees or rental under subsection (1), the Minister shall give notice to the public.\n\n5.1(3)The Minister is not required to obtain the approval of the Treasury Board before fixing fees or rental under subsection (1).\n\n5.1(4)The Minister shall not fix fees that may be prescribed under paragraph 23(2)(k).\n\n5.1(5)The Minister may waive, in whole or in part, fees or rental fixed under subsection (1)\n\n(a)\nin relation to a special event, when the Minister considers it appropriate to do so,\n\n(b)\nwhen the Minister, for the purpose of promoting the use of a provincial park or facilities in a provincial park, negotiates with any person a group rate in relation to that use, or\n\n(c)\nin any other circumstances, when the Minister considers it appropriate to do so.\n\n5.1(6)The Minister may refund, on a pro rata basis, the unused portion of a seasonal fee fixed under subsection (1).\n\n5.1(7)The Regulations Act does not apply to an instrument made under the authority of subsection (1).\n\n2012, c.60, s.1; 2016, c.37, s.133",
+      "subsections": [
+        {
+          "id": "5.1-subsection-1",
+          "sourceKey": "section:5.1/subsection:1",
+          "label": "5.1(1)",
+          "text": "5.1(1)Subject to subsection (4), the Minister may fix, impose and collect fees or rental payable for any service offered in or in respect of a provincial park or for any use of a building, installation or facility, or any part of a building, installation or facility, in a provincial park.",
+          "contentHash": "3c1afa72a7c2b570fe697632e9ccff59b726084c2cbcaa097dc62e524ab3790e"
+        },
+        {
+          "id": "5.1-subsection-2",
+          "sourceKey": "section:5.1/subsection:2",
+          "label": "5.1(2)",
+          "text": "5.1(2)Before fixing fees or rental under subsection (1), the Minister shall give notice to the public.",
+          "contentHash": "a531a12be3b8923f86b22a8053c61df2d8d34fe869feab565c4e26993ad32911"
+        },
+        {
+          "id": "5.1-subsection-3",
+          "sourceKey": "section:5.1/subsection:3",
+          "label": "5.1(3)",
+          "text": "5.1(3)The Minister is not required to obtain the approval of the Treasury Board before fixing fees or rental under subsection (1).",
+          "contentHash": "cd1736c4af9a824527cde5ed7b88595754c16f61cbfc2389051cfd3f3d755fdd"
+        },
+        {
+          "id": "5.1-subsection-4",
+          "sourceKey": "section:5.1/subsection:4",
+          "label": "5.1(4)",
+          "text": "5.1(4)The Minister shall not fix fees that may be prescribed under paragraph 23(2)(k).",
+          "contentHash": "d07bcfda595659c287c738a441d86998113e08e49a979f81f7e3b93411fe3499"
+        },
+        {
+          "id": "5.1-subsection-5",
+          "sourceKey": "section:5.1/subsection:5",
+          "label": "5.1(5)",
+          "text": "5.1(5)The Minister may waive, in whole or in part, fees or rental fixed under subsection (1)\n\n(a)\nin relation to a special event, when the Minister considers it appropriate to do so,\n\n(b)\nwhen the Minister, for the purpose of promoting the use of a provincial park or facilities in a provincial park, negotiates with any person a group rate in relation to that use, or\n\n(c)\nin any other circumstances, when the Minister considers it appropriate to do so.",
+          "contentHash": "efa2aa1c37ffa2001b405b4e2045addf24e49aabec0e7d55a133f1e96e0b4209"
+        },
+        {
+          "id": "5.1-subsection-6",
+          "sourceKey": "section:5.1/subsection:6",
+          "label": "5.1(6)",
+          "text": "5.1(6)The Minister may refund, on a pro rata basis, the unused portion of a seasonal fee fixed under subsection (1).",
+          "contentHash": "3965b3d67402c3d170c9a0441324583f72fd2c9d433ba34fdff61be0021e5768"
+        },
+        {
+          "id": "5.1-subsection-7",
+          "sourceKey": "section:5.1/subsection:7",
+          "label": "5.1(7)",
+          "text": "5.1(7)The Regulations Act does not apply to an instrument made under the authority of subsection (1).\n\n2012, c.60, s.1; 2016, c.37, s.133",
+          "contentHash": "2341d9f98b0ad54c953a3c6da8ffcd4c94da8815ac6bf0c6b5cd9f6bd3e90025"
+        }
+      ],
+      "contentHash": "851dc75e381fdad2887fb40fe216cdc3aa96f71725eece4d680e5252552e4d5f"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "componentType": "section",
+      "label": "6",
+      "heading": "Acceptance of property by Minister",
+      "text": "Acceptance of property by Minister\n\n6The Minister may receive from any person by grant, gift, devise or bequest real or personal property, or an interest in real or personal property, for the purpose of a provincial park.\n1982, c.P-2.1, s.4",
+      "subsections": [],
+      "contentHash": "262385e93b22dd815bbb8236bc408e631368079c8663392354d128f6f36abbdc"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "componentType": "section",
+      "label": "7",
+      "heading": "References to the Minister of Natural Resources",
+      "text": "References to the Minister of Natural Resources\n\n7A reference to the Minister of Natural Resources in a document executed by the Minister of Natural Resources before June 17, 1972, shall be deemed to be a reference to the Minister if the document provides for the establishment of or the operation of a provincial park.\n1982, c.P-2.1, s.5; 1986, c.8, s.95; 1999, c.18, s.4",
+      "subsections": [],
+      "contentHash": "1a0f33f9e29e905d67e4bb68eb1378278bbc74702fdb0109eae0b5d12d9c4a84"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "componentType": "section",
+      "label": "8",
+      "heading": "Provincial park deemed separate entity",
+      "text": "Provincial park deemed separate entity\n\n8For local government purposes, land set apart as a provincial park or added to a provincial park, so long as it remains part of the provincial park, shall be deemed to be separated from the local government of which it formed a part immediately before it became a provincial park or part of a provincial park.\n1982, c.P-2.1, s.6; 2005, c.7, s.58; 2017, c.20, s.128",
+      "subsections": [],
+      "contentHash": "19e75b1df984636e2d67d3ae6097461aae8556062ad5dec83ef1b2336a22c865"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "componentType": "section",
+      "label": "9",
+      "heading": "Provincial park deemed part of county where located",
+      "text": "Provincial park deemed part of county where located\n\n9For judicial purposes, land set apart as a provincial park or added to a provincial park shall continue to form part of the county of which it formed a part immediately before it became a provincial park or a part of a provincial park.\n1982, c.P-2.1, s.7",
+      "subsections": [],
+      "contentHash": "50a6d0fe7bbbc7792c01b2c3e8d54c5b09626702959b1deec849171ccc3cebf4"
+    },
+    {
+      "id": "section-10",
+      "sourceKey": "section:10",
+      "componentType": "section",
+      "label": "10",
+      "heading": "Administration",
+      "text": "Administration\n\n10(1)The Minister is responsible for the administration of this Act and the regulations.\n\n10(2)Without limiting the generality of subsection (1), in respect of a provincial park, the Minister may\n\n(a)\nconstruct and operate toilet, dressing room, picnic, camping, cooking, bathing, parking and other facilities for the convenience of the public;\n\n(b)\nconstruct and operate restaurants, refreshment booths, shops and other facilities for the convenience of the public;\n\n(c)\nconstruct and operate buildings, compounds, cages, pools and other facilities for the public display of fish and wildlife;\n\n(d)\nconstruct, renovate, restore, repair and improve any building, structure or site in order to preserve its historical significance;\n\n(e)\nmake an agreement with any person with respect to any matter coming within the purview of this subsection;\n\n(e.1)\ncreate an advisory committee including members of First Nations;\n\n(f)\nprescribe by erection, posting or other display of notices, the time or times of the day or year during which a provincial park or any part of a provincial park is open or closed for the use of the public;\n\n(g)\nconstruct and operate recreation facilities he or she considers necessary for the convenience or benefit of the public.\n\n1982, c.P-2.1, ss.8(1), ss.8(2); 2014, c.51, s.3",
+      "subsections": [
+        {
+          "id": "10-subsection-1",
+          "sourceKey": "section:10/subsection:1",
+          "label": "10(1)",
+          "text": "10(1)The Minister is responsible for the administration of this Act and the regulations.",
+          "contentHash": "add3d40b94089823cdcb75ac274a77be493afe91024f7acef031b6e6b0c0db92"
+        },
+        {
+          "id": "10-subsection-2",
+          "sourceKey": "section:10/subsection:2",
+          "label": "10(2)",
+          "text": "10(2)Without limiting the generality of subsection (1), in respect of a provincial park, the Minister may\n\n(a)\nconstruct and operate toilet, dressing room, picnic, camping, cooking, bathing, parking and other facilities for the convenience of the public;\n\n(b)\nconstruct and operate restaurants, refreshment booths, shops and other facilities for the convenience of the public;\n\n(c)\nconstruct and operate buildings, compounds, cages, pools and other facilities for the public display of fish and wildlife;\n\n(d)\nconstruct, renovate, restore, repair and improve any building, structure or site in order to preserve its historical significance;\n\n(e)\nmake an agreement with any person with respect to any matter coming within the purview of this subsection;\n\n(e.1)\ncreate an advisory committee including members of First Nations;\n\n(f)\nprescribe by erection, posting or other display of notices, the time or times of the day or year during which a provincial park or any part of a provincial park is open or closed for the use of the public;\n\n(g)\nconstruct and operate recreation facilities he or she considers necessary for the convenience or benefit of the public.\n\n1982, c.P-2.1, ss.8(1), ss.8(2); 2014, c.51, s.3",
+          "contentHash": "65d58da525c6fd5bbf422b5fa443c8d28dcf6bfff1fdc2c37ea2efa66f9a9578"
+        }
+      ],
+      "contentHash": "f7adaf4cad016f282aaac1f35f447c831348511eff1f7ef13f22c5a136058000"
+    },
+    {
+      "id": "section-10.1",
+      "sourceKey": "section:10.1",
+      "componentType": "section",
+      "label": "10.1",
+      "heading": "Resource management plans",
+      "text": "Resource management plans\n2014, c.51, s.4\n\n10.1(1)The Minister shall ensure that the Department prepares a resource management plan at least every ten years for each provincial park that includes the different zones, resource protection measures, the use and development of resources and any other information the Minister considers appropriate.\n\n10.1(2)Subsection (1) does not apply to a provincial park that is classified as a cultural heritage park under the General Regulation - Parks Act.\n\n2014, c.51, s.4",
+      "subsections": [
+        {
+          "id": "10.1-subsection-1",
+          "sourceKey": "section:10.1/subsection:1",
+          "label": "10.1(1)",
+          "text": "10.1(1)The Minister shall ensure that the Department prepares a resource management plan at least every ten years for each provincial park that includes the different zones, resource protection measures, the use and development of resources and any other information the Minister considers appropriate.",
+          "contentHash": "7e6dffff56ac2cb81c4e64a4da68b6b5aa40ca772679ba2c7abcbbf1d38b2cc9"
+        },
+        {
+          "id": "10.1-subsection-2",
+          "sourceKey": "section:10.1/subsection:2",
+          "label": "10.1(2)",
+          "text": "10.1(2)Subsection (1) does not apply to a provincial park that is classified as a cultural heritage park under the General Regulation - Parks Act.\n\n2014, c.51, s.4",
+          "contentHash": "e18e9dd258431b90c4d00a76115b57e30bde368640603e89ee7aa4f51d69bd4a"
+        }
+      ],
+      "contentHash": "22bc32288edc055ea03a467a2fac63717824bec57578408192ee05739bbdfb8f"
+    },
+    {
+      "id": "section-10.2",
+      "sourceKey": "section:10.2",
+      "componentType": "section",
+      "label": "10.2",
+      "heading": "Review of Act",
+      "text": "Review of Act\n\n2014, c.51, s.4\n\n10.2The Minister shall initiate a review of this Act, and the review shall be completed no later than December 31, 2024 and every ten years after that.\n2014, c.51, s.4",
+      "subsections": [],
+      "contentHash": "1f14f1ba8ec968f3d09040264455ad7b4e51c11a42bcea6791a0d6bb623579ec"
+    },
+    {
+      "id": "section-11",
+      "sourceKey": "section:11",
+      "componentType": "section",
+      "label": "11",
+      "heading": "Granting of lease, licence, privilege or concession",
+      "text": "Granting of lease, licence, privilege or concession\n\n11(1)The Minister, with the approval of the Lieutenant-Governor in Council, may grant a lease with respect to a provincial park, or any part of a provincial park, or any land, building, installation or facility in a provincial park, or any part of a provincial park.\n\n11(2)The Minister may grant a licence, privilege or concession with respect to a provincial park, or any part of a provincial park, or any land, building, installation, service or facility in a provincial park, or any part of a provincial park, but that licence, privilege or concession shall not extend beyond ten years except with the approval of the Lieutenant-Governor in Council.\n\n11(3)Despite subsection (2), the Minister, without the approval of the Lieutenant-Governor in Council, may grant an easement in perpetuity across a recreational trail that has been designated as a provincial park if the easement is for the purpose of accessing land adjacent to the trail or is for the purpose of the installation or maintenance of above or below ground utilities.\n\n1982, c.P-2.1, ss.8(3); 1999, c.18, s.5; 2007, c.1, s.3",
+      "subsections": [
+        {
+          "id": "11-subsection-1",
+          "sourceKey": "section:11/subsection:1",
+          "label": "11(1)",
+          "text": "11(1)The Minister, with the approval of the Lieutenant-Governor in Council, may grant a lease with respect to a provincial park, or any part of a provincial park, or any land, building, installation or facility in a provincial park, or any part of a provincial park.",
+          "contentHash": "64e9b97a29b2206e67975d896675805a5da54efdae8e0623107f6ae2ffccd78d"
+        },
+        {
+          "id": "11-subsection-2",
+          "sourceKey": "section:11/subsection:2",
+          "label": "11(2)",
+          "text": "11(2)The Minister may grant a licence, privilege or concession with respect to a provincial park, or any part of a provincial park, or any land, building, installation, service or facility in a provincial park, or any part of a provincial park, but that licence, privilege or concession shall not extend beyond ten years except with the approval of the Lieutenant-Governor in Council.",
+          "contentHash": "c88df940ce106985a4ef2ad3aa8775439ba5974184410480e7ec1affb07679a1"
+        },
+        {
+          "id": "11-subsection-3",
+          "sourceKey": "section:11/subsection:3",
+          "label": "11(3)",
+          "text": "11(3)Despite subsection (2), the Minister, without the approval of the Lieutenant-Governor in Council, may grant an easement in perpetuity across a recreational trail that has been designated as a provincial park if the easement is for the purpose of accessing land adjacent to the trail or is for the purpose of the installation or maintenance of above or below ground utilities.\n\n1982, c.P-2.1, ss.8(3); 1999, c.18, s.5; 2007, c.1, s.3",
+          "contentHash": "7a40febce1d5e096a737f427f1e24be0946eacd1dbdb6bbe840fa7141f614bc3"
+        }
+      ],
+      "contentHash": "5a083faa0d5c5712bc4b97aed00bf21e508e589c52e3b2f105b02e7844385a33"
+    },
+    {
+      "id": "section-12",
+      "sourceKey": "section:12",
+      "componentType": "section",
+      "label": "12",
+      "heading": "Authorization to fix, impose, collect and retain fees or rental",
+      "text": "Authorization to fix, impose, collect and retain fees or rental\n\n12(1)Despite any other provision of this Act or any other Act, or any regulation under this Act or any other Act, a person who has been granted a lease, licence, privilege or concession under section 11 to operate a provincial park or any part of a provincial park, may, subject to and in accordance with the terms and conditions of that lease, licence, privilege or concession,\n\n(a)\nfix, impose and collect fees or rental payable for a permit required or services offered by that person in respect of that provincial park, or that part of a provincial park, or for any use of land, buildings, installations or facilities in that provincial park, or that part of a provincial park; and\n\n(b)\nretain, for that person’s own purposes, the money obtained from the collection of those fees or rental.\n\n12(2)If a person is authorized under paragraph (1)(a) to fix, impose and collect fees or rental,\n\n(a)\nthe Lieutenant-Governor in Council shall not make regulations under paragraph 23(2)(k) or (n) in relation to those fees or rental, and\n\n(b)\nthe Minister shall not fix, impose or collect those fees or rental under subsection 5.1(1).\n\n12(3)The Regulations Act does not apply to an instrument made under the authority of paragraph (1)(a).\n\n1999, c.18, s.6; 2012, c.60, s.2",
+      "subsections": [
+        {
+          "id": "12-subsection-1",
+          "sourceKey": "section:12/subsection:1",
+          "label": "12(1)",
+          "text": "12(1)Despite any other provision of this Act or any other Act, or any regulation under this Act or any other Act, a person who has been granted a lease, licence, privilege or concession under section 11 to operate a provincial park or any part of a provincial park, may, subject to and in accordance with the terms and conditions of that lease, licence, privilege or concession,\n\n(a)\nfix, impose and collect fees or rental payable for a permit required or services offered by that person in respect of that provincial park, or that part of a provincial park, or for any use of land, buildings, installations or facilities in that provincial park, or that part of a provincial park; and\n\n(b)\nretain, for that person’s own purposes, the money obtained from the collection of those fees or rental.",
+          "contentHash": "2b1e0dec08b254f0e7377f70397cacf0ee10db12be564318f78eeacfa962a3ae"
+        },
+        {
+          "id": "12-subsection-2",
+          "sourceKey": "section:12/subsection:2",
+          "label": "12(2)",
+          "text": "12(2)If a person is authorized under paragraph (1)(a) to fix, impose and collect fees or rental,\n\n(a)\nthe Lieutenant-Governor in Council shall not make regulations under paragraph 23(2)(k) or (n) in relation to those fees or rental, and\n\n(b)\nthe Minister shall not fix, impose or collect those fees or rental under subsection 5.1(1).",
+          "contentHash": "8971aba11f7f3ae3b497c770d374daa8f71f4a9d932aef894541f392d0fdca42"
+        },
+        {
+          "id": "12-subsection-3",
+          "sourceKey": "section:12/subsection:3",
+          "label": "12(3)",
+          "text": "12(3)The Regulations Act does not apply to an instrument made under the authority of paragraph (1)(a).\n\n1999, c.18, s.6; 2012, c.60, s.2",
+          "contentHash": "cee635a5f1b014ab0b0472e30c3ce91a6be7bd1085ff8925c994335d5df19660"
+        }
+      ],
+      "contentHash": "537e47e444fe5358d7ef1ffa408933a8d0af1233266b605be181c602492119d1"
+    },
+    {
+      "id": "section-13",
+      "sourceKey": "section:13",
+      "componentType": "section",
+      "label": "13",
+      "heading": "Limitation respecting use or occupancy",
+      "text": "Limitation respecting use or occupancy\n\n13Except as provided under this Act and the regulations, no person shall use or occupy any land, building, installation or facility in a provincial park.\n1982, c.P-2.1, s.9",
+      "subsections": [],
+      "contentHash": "29deda722b252b21a35ff55ebeaaf0a357a4c446969f033d8ab8e3ed404b47fc"
+    },
+    {
+      "id": "section-14",
+      "sourceKey": "section:14",
+      "componentType": "section",
+      "label": "14",
+      "heading": "Park wardens",
+      "text": "Park wardens\n\n14(1)The Minister, or any person designated by the Minister in writing to act on the Minister’s behalf, may appoint any person to be a park warden.\n\n14(2)The following persons are park wardens by virtue of their office:\n\n(a)\na police officer as defined in the Police Act;\n\n(b)\na member of the Royal Canadian Mounted Police;\n\n(c)\nan off-road vehicle enforcement officer as defined in the Off-Road Vehicle Act; and\n\n(d)\na conservation officer appointed under the Fish and Wildlife Act.\n\n14(3)A park warden is charged with the maintenance and preservation of the public peace in a provincial park and has the powers, authority and immunities of a peace officer as defined in the Criminal Code (Canada).\n\n1982, c.P-2.1, s.10; 1987, c.N-5.2, s.24; 1988, c.67, s.7; 2014, c.51, s.5",
+      "subsections": [
+        {
+          "id": "14-subsection-1",
+          "sourceKey": "section:14/subsection:1",
+          "label": "14(1)",
+          "text": "14(1)The Minister, or any person designated by the Minister in writing to act on the Minister’s behalf, may appoint any person to be a park warden.",
+          "contentHash": "3aade206999491ce04de59302f11e7483942a558a69fbdfc0dde160f41cc555d"
+        },
+        {
+          "id": "14-subsection-2",
+          "sourceKey": "section:14/subsection:2",
+          "label": "14(2)",
+          "text": "14(2)The following persons are park wardens by virtue of their office:\n\n(a)\na police officer as defined in the Police Act;\n\n(b)\na member of the Royal Canadian Mounted Police;\n\n(c)\nan off-road vehicle enforcement officer as defined in the Off-Road Vehicle Act; and\n\n(d)\na conservation officer appointed under the Fish and Wildlife Act.",
+          "contentHash": "0148af77d3cde054b2c672db2ec530a750ec9682d0d011183bebfeeb4e99bff5"
+        },
+        {
+          "id": "14-subsection-3",
+          "sourceKey": "section:14/subsection:3",
+          "label": "14(3)",
+          "text": "14(3)A park warden is charged with the maintenance and preservation of the public peace in a provincial park and has the powers, authority and immunities of a peace officer as defined in the Criminal Code (Canada).\n\n1982, c.P-2.1, s.10; 1987, c.N-5.2, s.24; 1988, c.67, s.7; 2014, c.51, s.5",
+          "contentHash": "2ee644dbaf5e4e8b31d521fd2501f75a207fb946fe631b1a192978b70d2cc6cf"
+        }
+      ],
+      "contentHash": "2151d2076288a36f93c5b27c8872dacd1d4677f021d04b4ccd1e84bc697eb323"
+    },
+    {
+      "id": "section-14.1",
+      "sourceKey": "section:14.1",
+      "componentType": "section",
+      "label": "14.1",
+      "heading": "Security guards",
+      "text": "Security guards\n\n2014, c.51, s.6\n\n14.1The Minister may appoint any person as a security guard who shall administer the policies and procedures established by the Minister.\n2014, c.51, s.6",
+      "subsections": [],
+      "contentHash": "1acd9bf4a5a6b259d3b2c71bff61c6794d297c62b43c813ea260093dbfbe5145"
+    },
+    {
+      "id": "section-15",
+      "sourceKey": "section:15",
+      "componentType": "section",
+      "label": "15",
+      "heading": "Items seized",
+      "text": "Items seized\n\n15(1)Subject to subsection (2), anything seized by a park warden under the Provincial Offences Procedure Act may be detained for a period of six months following the time of seizure or, if proceedings are instituted within the two months following seizure, until the proceedings are concluded.\n\n15(2)Anything seized under the Provincial Offences Procedure Act\n\n(a)\non application, shall be released to its owner\n\n(i)\nafter the expiration of two months from the date of seizure, when no proceedings have been instituted, or\n\n(ii)\nafter a verdict of acquittal has been handed down, when proceedings have been instituted;\n\n(b)\nshall be returned to the owner on the Minister ordering its return, if it is not required for evidence in a court of law;\n\n(c)\nshall be disposed of in accordance with subsection (3) when a conviction is obtained against a person committing an offence under this Act; or\n\n(d)\nshall be deemed to be forfeited to the Crown if, after a period of six months from the date of seizure, no application has been made and no proceedings have been instituted, in which case the Minister may dispose of the item at public auction or in any manner and at the time that the Minister considers fit.\n\n15(3)When a judge convicts a person of an offence against this Act, the judge shall order anything seized under the Provincial Offences Procedure Act\n\n(a)\nto be returned to the owner as soon as practicable, or\n\n(b)\nto be forfeited to the Crown, in which case it shall be disposed of at public auction or in the manner and at the time that the Minister considers fit.\n\n1982, c.P-2.1, s.11; 1986, c.6, s.33; 1990, c.22, s.39",
+      "subsections": [
+        {
+          "id": "15-subsection-1",
+          "sourceKey": "section:15/subsection:1",
+          "label": "15(1)",
+          "text": "15(1)Subject to subsection (2), anything seized by a park warden under the Provincial Offences Procedure Act may be detained for a period of six months following the time of seizure or, if proceedings are instituted within the two months following seizure, until the proceedings are concluded.",
+          "contentHash": "0bb5a322c007a0c34a0ead93d98de52cb6867f0e059371ada316c0658b5820ae"
+        },
+        {
+          "id": "15-subsection-2",
+          "sourceKey": "section:15/subsection:2",
+          "label": "15(2)",
+          "text": "15(2)Anything seized under the Provincial Offences Procedure Act\n\n(a)\non application, shall be released to its owner\n\n(i)\nafter the expiration of two months from the date of seizure, when no proceedings have been instituted, or\n\n(ii)\nafter a verdict of acquittal has been handed down, when proceedings have been instituted;\n\n(b)\nshall be returned to the owner on the Minister ordering its return, if it is not required for evidence in a court of law;\n\n(c)\nshall be disposed of in accordance with subsection (3) when a conviction is obtained against a person committing an offence under this Act; or\n\n(d)\nshall be deemed to be forfeited to the Crown if, after a period of six months from the date of seizure, no application has been made and no proceedings have been instituted, in which case the Minister may dispose of the item at public auction or in any manner and at the time that the Minister considers fit.",
+          "contentHash": "62894755944e016b3a50b39d6ce8d250bcc041551f66f5bc90099043c472436d"
+        },
+        {
+          "id": "15-subsection-3",
+          "sourceKey": "section:15/subsection:3",
+          "label": "15(3)",
+          "text": "15(3)When a judge convicts a person of an offence against this Act, the judge shall order anything seized under the Provincial Offences Procedure Act\n\n(a)\nto be returned to the owner as soon as practicable, or\n\n(b)\nto be forfeited to the Crown, in which case it shall be disposed of at public auction or in the manner and at the time that the Minister considers fit.\n\n1982, c.P-2.1, s.11; 1986, c.6, s.33; 1990, c.22, s.39",
+          "contentHash": "c09e19fa5d9e682668c0506c8b2c7e3502179cd85e216072e0dc1b34aeab20c2"
+        }
+      ],
+      "contentHash": "5897ee2f467e342b069c154a60075ef4cec3a49d906449c8fbb6465bb24a74b8"
+    },
+    {
+      "id": "section-16",
+      "sourceKey": "section:16",
+      "componentType": "section",
+      "label": "16",
+      "heading": "Offences and penalties",
+      "text": "Offences and penalties\n\n16(1)A person who violates or fails to comply with any provision of the regulations commits an offence that is, subject to subsection (2), punishable under Part 2 of the Provincial Offences Procedure Act as a category B offence.\n\n16(2)A person who violates or fails to comply with a provision of the regulations in respect of which a category has been prescribed under paragraph 23(2)(r) commits an offence of the category prescribed by regulation.\n\n16(3)A person who violates or fails to comply with section 13 or subsection 17(2) commits an offence punishable under Part 2 of the Provincial Offences Procedure Act as a category E offence.\n\n1990, c.61, s.103",
+      "subsections": [
+        {
+          "id": "16-subsection-1",
+          "sourceKey": "section:16/subsection:1",
+          "label": "16(1)",
+          "text": "16(1)A person who violates or fails to comply with any provision of the regulations commits an offence that is, subject to subsection (2), punishable under Part 2 of the Provincial Offences Procedure Act as a category B offence.",
+          "contentHash": "88a2f0610fc0de5af388e5596ac32eeed2999d2d1dd53b7c90d0984c7a79cfe4"
+        },
+        {
+          "id": "16-subsection-2",
+          "sourceKey": "section:16/subsection:2",
+          "label": "16(2)",
+          "text": "16(2)A person who violates or fails to comply with a provision of the regulations in respect of which a category has been prescribed under paragraph 23(2)(r) commits an offence of the category prescribed by regulation.",
+          "contentHash": "27b82111dbe362d176545e4a91bd8210330fcf03196d3ab1e3fcfed5d43058a9"
+        },
+        {
+          "id": "16-subsection-3",
+          "sourceKey": "section:16/subsection:3",
+          "label": "16(3)",
+          "text": "16(3)A person who violates or fails to comply with section 13 or subsection 17(2) commits an offence punishable under Part 2 of the Provincial Offences Procedure Act as a category E offence.\n\n1990, c.61, s.103",
+          "contentHash": "d01fb8a7ed08118de676b25ad8534e895c8867b609a0145434bcc177ae42842f"
+        }
+      ],
+      "contentHash": "d42c6d3700ecefedfc8d8596d4aa1d6de9f3aad7a6a7982354c073394648a994"
+    },
+    {
+      "id": "section-17",
+      "sourceKey": "section:17",
+      "componentType": "section",
+      "label": "17",
+      "heading": "Orders prohibiting entry to provincial park",
+      "text": "Orders prohibiting entry to provincial park\n\n17(1)If the Minister, a park warden or a security guard has reasonable grounds for believing that a person has violated or is about to violate a provision of this Act or the regulations, or that the entry on or remaining in a provincial park by a person may be detrimental to the safety of other park users or their enjoyment of the park and its facilities, he or she, without notice or hearing, may issue an order in writing prohibiting that person from entering on or being in the provincial park specified in the order for a period specified in the order, not to exceed 12 months.\n\n17(2)A person having knowledge of an order made under subsection (1) shall observe that order and, in the event the person is in a provincial park when the order is made, shall without delay remove himself or herself from the provincial park.\n\n1982, c.P-2.1, ss.12(3), ss.12(4); 1999, c.18, s.7; 2014, c.51, s.7",
+      "subsections": [
+        {
+          "id": "17-subsection-1",
+          "sourceKey": "section:17/subsection:1",
+          "label": "17(1)",
+          "text": "17(1)If the Minister, a park warden or a security guard has reasonable grounds for believing that a person has violated or is about to violate a provision of this Act or the regulations, or that the entry on or remaining in a provincial park by a person may be detrimental to the safety of other park users or their enjoyment of the park and its facilities, he or she, without notice or hearing, may issue an order in writing prohibiting that person from entering on or being in the provincial park specified in the order for a period specified in the order, not to exceed 12 months.",
+          "contentHash": "41c61e238cb6afebb5655bd2a2d6e5481e9170564c23fe6a7430f99d32ffa1e0"
+        },
+        {
+          "id": "17-subsection-2",
+          "sourceKey": "section:17/subsection:2",
+          "label": "17(2)",
+          "text": "17(2)A person having knowledge of an order made under subsection (1) shall observe that order and, in the event the person is in a provincial park when the order is made, shall without delay remove himself or herself from the provincial park.\n\n1982, c.P-2.1, ss.12(3), ss.12(4); 1999, c.18, s.7; 2014, c.51, s.7",
+          "contentHash": "0555bc40836926fe9457a020475080b8d0ce12ae9e60ea376701cf3743c4d048"
+        }
+      ],
+      "contentHash": "341bc3233e2d450eab3fe6ccad880836fc493ee7a9a532b21c0680e38d5c1abe"
+    },
+    {
+      "id": "section-18",
+      "sourceKey": "section:18",
+      "componentType": "section",
+      "label": "18",
+      "heading": "Evidentiary matters",
+      "text": "Evidentiary matters\n\n18(1)The Minister, or any person designated by the Minister to act on the Minister’s behalf, is authorized to prepare a certified copy of a record, permit, letter or other document, the production of which is not regarded by the Minister as being contrary to public policy, and a document purporting to be signed by the Minister or the Minister’s designate shall be received as evidence of the contents of the document in any court in the Province without proof of the appointment, authority or signature of the Minister or the Minister’s designate.\n\n18(2)In a prosecution for contravening a provision of this Act or the regulations, without other or further proof,\n\n(a)\nthe existence of a sign is proof, in the absence of evidence to the contrary, that the sign was properly placed and maintained by the proper authorities; and\n\n(b)\nevidence that the sign was in existence both before and after the conduct in question is proof, in the absence of evidence to the contrary, that the sign was in existence at all material times.\n\n18(3)In a prosecution for contravening a provision of this Act or the regulations, if an act that the accused is proven to have done is alleged to have been done in a provincial park, the accused shall be deemed to have done the act in the provincial park in the absence of evidence to the contrary.\n\n1982, c.P-2.1, ss.12(5), ss.12(6), ss.12(7)",
+      "subsections": [
+        {
+          "id": "18-subsection-1",
+          "sourceKey": "section:18/subsection:1",
+          "label": "18(1)",
+          "text": "18(1)The Minister, or any person designated by the Minister to act on the Minister’s behalf, is authorized to prepare a certified copy of a record, permit, letter or other document, the production of which is not regarded by the Minister as being contrary to public policy, and a document purporting to be signed by the Minister or the Minister’s designate shall be received as evidence of the contents of the document in any court in the Province without proof of the appointment, authority or signature of the Minister or the Minister’s designate.",
+          "contentHash": "dc3dbd20e03498d967064bb15106447ab2e3e434ec11ee809833861c4e482b00"
+        },
+        {
+          "id": "18-subsection-2",
+          "sourceKey": "section:18/subsection:2",
+          "label": "18(2)",
+          "text": "18(2)In a prosecution for contravening a provision of this Act or the regulations, without other or further proof,\n\n(a)\nthe existence of a sign is proof, in the absence of evidence to the contrary, that the sign was properly placed and maintained by the proper authorities; and\n\n(b)\nevidence that the sign was in existence both before and after the conduct in question is proof, in the absence of evidence to the contrary, that the sign was in existence at all material times.",
+          "contentHash": "875c5713bb320c484c6eafc13577ed0465d426b12795d7865dfc692bb9392f8c"
+        },
+        {
+          "id": "18-subsection-3",
+          "sourceKey": "section:18/subsection:3",
+          "label": "18(3)",
+          "text": "18(3)In a prosecution for contravening a provision of this Act or the regulations, if an act that the accused is proven to have done is alleged to have been done in a provincial park, the accused shall be deemed to have done the act in the provincial park in the absence of evidence to the contrary.\n\n1982, c.P-2.1, ss.12(5), ss.12(6), ss.12(7)",
+          "contentHash": "35c07be513a092b5d5a4df9701144e58a4350ceedffd014b8ad0835aded96e47"
+        }
+      ],
+      "contentHash": "b445fff3e6b61a1b0a91bfe25e15c99901547115855f4fd6c0565e04bd344302"
+    },
+    {
+      "id": "section-19",
+      "sourceKey": "section:19",
+      "componentType": "section",
+      "label": "19",
+      "heading": "Action by Minister",
+      "text": "Action by Minister\n\n19When this Act or any regulation is contravened, in addition to any other remedy and to any penalty imposed, the contravention may be restrained by action at the instance of the Minister.\n1982, c.P-2.1, s.17",
+      "subsections": [],
+      "contentHash": "5a45965cab3482a271e523261a74c0f2c530a383c7495f183f54523b702c38f4"
+    },
+    {
+      "id": "section-20",
+      "sourceKey": "section:20",
+      "componentType": "section",
+      "label": "20",
+      "heading": "Opening or closing of roads by Minister",
+      "text": "Opening or closing of roads by Minister\n\n20The Minister may open for travel or close to travel any highway, road, trail or other area in a provincial park that is not under the administration and control of the Minister of Transportation and Infrastructure or the New Brunswick Highway Corporation.\n1982, c.P-2.1, s.13; 1995, c.N-5.11, s.45; 2010, c.31, s.101; 2014, c.51, s.8",
+      "subsections": [],
+      "contentHash": "2481fcb955631e42ce5915ec39db5404938f45d32e118252db4a40facf5e16cd"
+    },
+    {
+      "id": "section-21",
+      "sourceKey": "section:21",
+      "componentType": "section",
+      "label": "21",
+      "heading": "Protection of flora",
+      "text": "Protection of flora\n\n21The Lieutenant-Governor in Council may take measures the Lieutenant-Governor in Council considers proper for the protection of flora in a provincial park.\n1982, c.P-2.1, s.14",
+      "subsections": [],
+      "contentHash": "7235a089bd5911251c104a55fae4e6c24f7ce33bc265bc28d966f2ed1f7752f8"
+    },
+    {
+      "id": "section-22",
+      "sourceKey": "section:22",
+      "componentType": "section",
+      "label": "22",
+      "heading": "Prospecting and mining",
+      "text": "Prospecting and mining\n\n22(1)Despite any other Act, all provincial parks are reserved by the Crown from prospecting, staking, drilling, mining and quarrying.\n\n22(2)Despite subsection (1), the Department may operate a quarry in a provincial park to provide quarriable substances needed to construct and maintain roads, buildings, installations or other facilities in provincial parks.\n\n1982, c.P-2.1, s.15; 2014, c.51, s.9",
+      "subsections": [
+        {
+          "id": "22-subsection-1",
+          "sourceKey": "section:22/subsection:1",
+          "label": "22(1)",
+          "text": "22(1)Despite any other Act, all provincial parks are reserved by the Crown from prospecting, staking, drilling, mining and quarrying.",
+          "contentHash": "1c69a9c065ae1735a5a2484ad17a862d1853039b60d89799286cc09b2b5183eb"
+        },
+        {
+          "id": "22-subsection-2",
+          "sourceKey": "section:22/subsection:2",
+          "label": "22(2)",
+          "text": "22(2)Despite subsection (1), the Department may operate a quarry in a provincial park to provide quarriable substances needed to construct and maintain roads, buildings, installations or other facilities in provincial parks.\n\n1982, c.P-2.1, s.15; 2014, c.51, s.9",
+          "contentHash": "b9a7399b6ebf628bf04ef1a11ef87f692529c01ea442c2c113f7bc18b5fd242e"
+        }
+      ],
+      "contentHash": "c75a1df7769238da87d5f2c229fa3ec7502a4bc557e89ebe401f131966e04c8b"
+    },
+    {
+      "id": "section-23",
+      "sourceKey": "section:23",
+      "componentType": "section",
+      "label": "23",
+      "heading": "Regulations",
+      "text": "Regulations\n\n23(1)Despite the Fish and Wildlife Act and the regulations made under that Act, the Lieutenant-Governor in Council may make regulations\n\n(a)\nprohibiting or regulating hunting, fishing, trapping and snaring in a provincial park, and respecting the setting aside of areas for hunting, fishing, trapping or snaring in a provincial park;\n\n(a.1)\npermitting the seizure of wildlife in certain circumstances by a conservation officer or a person authorized by the Minister;\n\n(b)\nprohibiting or regulating the possession, discharge, use or conveyance of a firearm in a provincial park.\n\n23(2)The Lieutenant-Governor in Council may make regulations\n\n(a)\nfor the care, preservation, improvement, control and management of provincial parks;\n\n(a.1)\nclassifying provincial parks;\n\n(a.2)\nproviding for appointments to the advisory committee, including the size and composition of the committee and the term of office and qualifications of its members and establishing procedures and quorum of the committee;\n\n(a.3)\nfixing the remuneration of members of the advisory committee and setting the rate for reimbursement of expenses incurred by the members while exercising their powers or performing their duties;\n\n(b)\nRepealed: 2014, c.51, s.10\n\n(c)\nprohibiting or regulating the occupation of land in provincial parks;\n\n(d)\nregulating the use of lands in provincial parks;\n\n(e)\nprohibiting the erection of buildings or installations in provincial parks, or regulating the nature, cost, type of construction or location of buildings or installations that may be erected in provincial parks;\n\n(f)\nprohibiting or regulating the conduct of persons using any building, installation, equipment or facility in a provincial park;\n\n(g)\nprohibiting or regulating the erection, posting or other display of notices, signs, signboards and other advertising devices in provincial parks;\n\n(h)\nprohibiting or regulating the use, setting and extinguishment of fires in provincial parks;\n\n(h.1)\nprohibiting the possession or ignition of fireworks and authorizing the Minister, in the Minister’s discretion, to create an exception to the prohibition;\n\n(i)\nprohibiting or regulating pedestrian, vehicular, boat or air traffic in provincial parks;\n\n(j)\nproviding for the issuing of permits to persons to enter a provincial park, occupy a campsite in a provincial park, berth, moor, anchor, beach, launch or dock a boat in a provincial park, land an aircraft in a provincial park or otherwise use land in a provincial park;\n\n(k)\nprescribing the fees for a permit referred to in paragraph (j);\n\n(l)\nprohibiting or regulating trades, businesses, amusements, sports, occupations and other activities or undertakings in provincial parks;\n\n(m)\nprescribing the maximum periods of stay of persons, vehicles, boats, vessels or aircraft in a provincial park;\n\n(m.1)\nprescribing the period of time of occupancy at a campsite and authorizing the Minister, in the Minister’s discretion, to determine a different period;\n\n(n)\nproviding for the imposition and collection of fees for a permit referred to in paragraph (j);\n\n(o)\nprohibiting or regulating the cutting and removal of forest products;\n\n(p)\nprohibiting or regulating the use or keeping of domestic animals in provincial parks;\n\n(q)\nprohibiting or regulating any activity carried on within a prescribed shore area or waters contiguous to a provincial park, to the extent that the activity could be prohibited or regulated under this Act if carried on within the limits of the provincial park;\n\n(r)\nprescribing, in relation to offences under the regulations, categories of offences for the purposes of Part 2 of the Provincial Offences Procedure Act;\n\n(s)\nrespecting any other matter necessary or advisable to carry out effectively the intent and purpose of this Act.\n\n23(3)A regulation under subsection (1) or (2) may be made applicable to all provincial parks or to any provincial park or to any part of a provincial park.\n\n23(4)A fee prescribed by a regulation under subsection (2) may be waived by the Minister, in whole or in part,\n\n(a)\nin relation to a special event, when the Minister considers it appropriate to do so,\n\n(b)\nwhen the Minister, for the purpose of promoting the use of a provincial park or facilities in a provincial park, negotiates with any person a group rate in relation to that use, or\n\n(c)\nin any other circumstances, when the Minister considers it appropriate to do so.\n\n23(5)Repealed: 2014, c.51, s.10\n\n1982, c.P-2.1, s.16; 1990, c.61, s.103; 1991, c.10, s.1; 1991, c.43, s.31; 1999, c.18, s.8, s.9; 2004, c.12, s.51; 2012, c.60, s.3; 2014, c.51, s.10",
+      "subsections": [
+        {
+          "id": "23-subsection-1",
+          "sourceKey": "section:23/subsection:1",
+          "label": "23(1)",
+          "text": "23(1)Despite the Fish and Wildlife Act and the regulations made under that Act, the Lieutenant-Governor in Council may make regulations\n\n(a)\nprohibiting or regulating hunting, fishing, trapping and snaring in a provincial park, and respecting the setting aside of areas for hunting, fishing, trapping or snaring in a provincial park;\n\n(a.1)\npermitting the seizure of wildlife in certain circumstances by a conservation officer or a person authorized by the Minister;\n\n(b)\nprohibiting or regulating the possession, discharge, use or conveyance of a firearm in a provincial park.",
+          "contentHash": "653ec33c60f7160a5902c8a6781fb4901bc03390ce898fbccf50afafc7558d24"
+        },
+        {
+          "id": "23-subsection-2",
+          "sourceKey": "section:23/subsection:2",
+          "label": "23(2)",
+          "text": "23(2)The Lieutenant-Governor in Council may make regulations\n\n(a)\nfor the care, preservation, improvement, control and management of provincial parks;\n\n(a.1)\nclassifying provincial parks;\n\n(a.2)\nproviding for appointments to the advisory committee, including the size and composition of the committee and the term of office and qualifications of its members and establishing procedures and quorum of the committee;\n\n(a.3)\nfixing the remuneration of members of the advisory committee and setting the rate for reimbursement of expenses incurred by the members while exercising their powers or performing their duties;\n\n(b)\nRepealed: 2014, c.51, s.10\n\n(c)\nprohibiting or regulating the occupation of land in provincial parks;\n\n(d)\nregulating the use of lands in provincial parks;\n\n(e)\nprohibiting the erection of buildings or installations in provincial parks, or regulating the nature, cost, type of construction or location of buildings or installations that may be erected in provincial parks;\n\n(f)\nprohibiting or regulating the conduct of persons using any building, installation, equipment or facility in a provincial park;\n\n(g)\nprohibiting or regulating the erection, posting or other display of notices, signs, signboards and other advertising devices in provincial parks;\n\n(h)\nprohibiting or regulating the use, setting and extinguishment of fires in provincial parks;\n\n(h.1)\nprohibiting the possession or ignition of fireworks and authorizing the Minister, in the Minister’s discretion, to create an exception to the prohibition;\n\n(i)\nprohibiting or regulating pedestrian, vehicular, boat or air traffic in provincial parks;\n\n(j)\nproviding for the issuing of permits to persons to enter a provincial park, occupy a campsite in a provincial park, berth, moor, anchor, beach, launch or dock a boat in a provincial park, land an aircraft in a provincial park or otherwise use land in a provincial park;\n\n(k)\nprescribing the fees for a permit referred to in paragraph (j);\n\n(l)\nprohibiting or regulating trades, businesses, amusements, sports, occupations and other activities or undertakings in provincial parks;\n\n(m)\nprescribing the maximum periods of stay of persons, vehicles, boats, vessels or aircraft in a provincial park;\n\n(m.1)\nprescribing the period of time of occupancy at a campsite and authorizing the Minister, in the Minister’s discretion, to determine a different period;\n\n(n)\nproviding for the imposition and collection of fees for a permit referred to in paragraph (j);\n\n(o)\nprohibiting or regulating the cutting and removal of forest products;\n\n(p)\nprohibiting or regulating the use or keeping of domestic animals in provincial parks;\n\n(q)\nprohibiting or regulating any activity carried on within a prescribed shore area or waters contiguous to a provincial park, to the extent that the activity could be prohibited or regulated under this Act if carried on within the limits of the provincial park;\n\n(r)\nprescribing, in relation to offences under the regulations, categories of offences for the purposes of Part 2 of the Provincial Offences Procedure Act;\n\n(s)\nrespecting any other matter necessary or advisable to carry out effectively the intent and purpose of this Act.",
+          "contentHash": "cee81be5b7d9e176ac34e2d0d64adfdf8afe270ea53b6871f8e7912be87271b3"
+        },
+        {
+          "id": "23-subsection-3",
+          "sourceKey": "section:23/subsection:3",
+          "label": "23(3)",
+          "text": "23(3)A regulation under subsection (1) or (2) may be made applicable to all provincial parks or to any provincial park or to any part of a provincial park.",
+          "contentHash": "2a8b0e110651caf61c97f6f60016044d661d4a525f06cc59cc819f598760f81b"
+        },
+        {
+          "id": "23-subsection-4",
+          "sourceKey": "section:23/subsection:4",
+          "label": "23(4)",
+          "text": "23(4)A fee prescribed by a regulation under subsection (2) may be waived by the Minister, in whole or in part,\n\n(a)\nin relation to a special event, when the Minister considers it appropriate to do so,\n\n(b)\nwhen the Minister, for the purpose of promoting the use of a provincial park or facilities in a provincial park, negotiates with any person a group rate in relation to that use, or\n\n(c)\nin any other circumstances, when the Minister considers it appropriate to do so.",
+          "contentHash": "80c9f1a400a53e7f68f394eccfc935f8a3a547f9c7ac888ae52782efd1c793fa"
+        },
+        {
+          "id": "23-subsection-5",
+          "sourceKey": "section:23/subsection:5",
+          "label": "23(5)",
+          "text": "23(5)Repealed: 2014, c.51, s.10\n\n1982, c.P-2.1, s.16; 1990, c.61, s.103; 1991, c.10, s.1; 1991, c.43, s.31; 1999, c.18, s.8, s.9; 2004, c.12, s.51; 2012, c.60, s.3; 2014, c.51, s.10\n\nSCHEDULE A\n\nRepealed: 2014, c.51, s.11\n\n1999, c.18, s.10; 2000-7; 2003-91; 2004-35; 2007-77; 2008-115; 2012, c.60, s.4; 2014, c.51, s.11\n\nN.B. This Act was proclaimed and came into force September 1, 2011.\n\nN.B. This Act is consolidated to June 6, 2025.",
+          "contentHash": "7fa1f86e59e0aad810b7a06205ca6d05ebc0bc8fccd8b2f32767cf9a09135922"
+        }
+      ],
+      "contentHash": "4c051c8c3e941accc82eaf8de07afd45a5098cfa59d39eacf354c6f3b54c7e91"
+    }
+  ],
+  "notes": []
+}

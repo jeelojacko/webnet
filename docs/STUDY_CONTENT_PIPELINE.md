@@ -10,17 +10,16 @@ study-content/manifests/nb-sit-statute-corpus.json
 
 The exam-scope authority is the ANBLS Surveyor-in-Training manual inventory supplied for the B-5.2 Statute Law of New Brunswick examination. The legal-text authority is the official Government of New Brunswick `laws.gnb.ca` source only. The pipeline must not substitute successor or related legislation when the manual names a repealed or unresolved Act.
 
-The manifest records all 57 required manual Act entries and preserves the ten pilot documents. The five existing pilot regulations remain the only required regulations until more are explicitly approved. Other regulations discovered under required Acts are candidates for review and are not silently imported into the required Study corpus.
+The manifest records all 57 required manual Act entries and preserves the ten pilot documents. Manual entries are now distinct from unique current legal source documents because several old SIT manual entries name repealed legislation. Legacy entries may map to a current successor without duplicating successor content.
 
-Current manifest source gaps are deliberate inventory blockers:
+The current successor mappings are:
 
-- `doc-ecological-reserves-act`
-- `doc-health-act`
-- `doc-new-brunswick-land-surveyors-act`
-- `doc-official-languages-of-new-brunswick-act`
-- `doc-public-utilities-act`
+- `Ecological Reserves Act & Regulations` -> `Protected Natural Areas Act`
+- `Health Act & Regulations` -> `Public Health Act`
+- `Official Languages of New Brunswick Act & Regulations` -> `Official Languages Act`
+- `Public Utilities Act` -> `Energy and Utilities Board Act`
 
-These entries remain required by exam scope but have no confirmed official `laws.gnb.ca` source URL in the manifest. Corpus fetch/build commands fail early until those sources are confirmed.
+The `New Brunswick Land Surveyors Act, 1986 and Bylaws` manual entry is split into two ANBLS-hosted professional-body PDF sources: the 1986 Act PDF and the Bylaws PDF. These PDFs are fetched and hashed as raw official/professional sources. Normalization is intentionally blocked until a reliable English-only extraction selector is added, because the embedded text is bilingual and interleaved. OCR is not used.
 
 ## Commands
 
@@ -87,6 +86,14 @@ study-content/reports/nb-sit-source-review-queue.md
 ```
 
 Component hashes are deterministic SHA-256 hashes of normalized component text. Corpus metadata also records manifest hash, corpus content hash, fetch pipeline version, normalizer version, and package schema version. Generated timestamps are report/package metadata and are excluded from component hashes.
+
+PDF raw hashes are SHA-256 hashes of the PDF bytes. The Node-only corpus pipeline uses `pdf-parse` for embedded PDF text extraction; this dependency is isolated to development-side source ingestion and is not used by normal browser Study runtime.
+
+Legacy-source reporting is written to:
+
+```text
+study-content/reports/nb-sit-legacy-sources.md
+```
 
 ## Import Boundary
 

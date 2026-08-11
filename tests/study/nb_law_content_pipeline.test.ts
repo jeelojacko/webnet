@@ -198,4 +198,21 @@ describe('NB law content package', () => {
       'Enabling Act mismatch',
     );
   });
+
+  it('allows approved ANBLS PDF source URLs in official packages', async () => {
+    const [document] = await Promise.all([normalizeFixture('doc-surveys-act')]);
+    const contentPackage = buildNbLawContentPackage({
+      id: 'nb-law-pdf-source-test',
+      manifestId: pilotManifest.id,
+      createdAt: '2026-08-05T00:00:00.000Z',
+      documents: [
+        {
+          ...document,
+          id: 'doc-new-brunswick-land-surveyors-act',
+          sourceUrl: 'https://www.anbls.nb.ca/pdf/ANBLSActQPrintChap91e.PDF',
+        },
+      ],
+    });
+    expect(validateNbLawContentPackage(contentPackage).errors).toEqual([]);
+  });
 });

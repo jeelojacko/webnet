@@ -168,8 +168,11 @@ export const validateNbLawContentPackage = (
   for (const document of contentPackage.documents) {
     if (document.schemaVersion !== 1) errors.push(`${document.id} document schemaVersion must be 1.`);
     if (!document.officialTitle.trim()) errors.push(`${document.id} officialTitle is required.`);
-    if (!document.sourceUrl.startsWith('https://laws.gnb.ca/')) {
-      errors.push(`${document.id} sourceUrl must use laws.gnb.ca.`);
+    if (
+      !document.sourceUrl.startsWith('https://laws.gnb.ca/') &&
+      !document.sourceUrl.startsWith('https://www.anbls.nb.ca/')
+    ) {
+      errors.push(`${document.id} sourceUrl must use laws.gnb.ca or an approved ANBLS PDF source.`);
     }
     if (document.components.length === 0) errors.push(`${document.id} must include at least one legal component.`);
     if (contentPackage.sourceHashes[document.id] !== document.contentHash) {

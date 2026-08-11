@@ -1,0 +1,1508 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-archives-act",
+  "officialTitle": "Archives Act",
+  "officialCitation": "Chapter A-11.1",
+  "officialCitationDisplay": "Chapter A-11.1",
+  "officialCitationNormalized": "A-11.1",
+  "documentType": "act",
+  "sourceUrl": "https://laws.gnb.ca/en/document/cs/A-11.1",
+  "fetchDate": "2026-08-11T18:08:26.884Z",
+  "consolidatedTo": "June 16, 2023",
+  "contentHash": "195deb0314ffc6aacb0ac312ce8f7975fbc52cac25949a01e536fc0a4ba5db6a",
+  "tableOfContents": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "label": "1",
+      "heading": "Definitions"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "label": "2",
+      "heading": "Administration"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "label": "3",
+      "heading": "Archives"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "label": "4",
+      "heading": "Provincial Archivist"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "label": "5",
+      "heading": "Duties of Provincial Archivist"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "label": "6",
+      "heading": "Public Records Committee"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "label": "7",
+      "heading": "Documents in records schedule"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "label": "8",
+      "heading": "Destruction or removal of public records"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "label": "9",
+      "heading": "Wrongful withholding of public records"
+    },
+    {
+      "id": "section-10",
+      "sourceKey": "section:10",
+      "label": "10",
+      "heading": "Public inspection of public records"
+    },
+    {
+      "id": "section-10.1",
+      "sourceKey": "section:10.1",
+      "label": "10.1",
+      "heading": "Request to inspect public records, application to review"
+    },
+    {
+      "id": "section-10.2",
+      "sourceKey": "section:10.2",
+      "label": "10.2",
+      "heading": "Review by Committee"
+    },
+    {
+      "id": "section-10.3",
+      "sourceKey": "section:10.3",
+      "label": "10.3",
+      "heading": "Referral to Court or Ombud"
+    },
+    {
+      "id": "section-10.4",
+      "sourceKey": "section:10.4",
+      "label": "10.4",
+      "heading": "Review by Court"
+    },
+    {
+      "id": "section-10.5",
+      "sourceKey": "section:10.5",
+      "label": "10.5",
+      "heading": "Review by Ombud"
+    },
+    {
+      "id": "section-10.6",
+      "sourceKey": "section:10.6",
+      "label": "10.6",
+      "heading": "Recommendation of Ombud"
+    },
+    {
+      "id": "section-10.7",
+      "sourceKey": "section:10.7",
+      "label": "10.7",
+      "heading": "Appeal from Committee’s decision"
+    },
+    {
+      "id": "section-10.8",
+      "sourceKey": "section:10.8",
+      "label": "10.8",
+      "heading": "Award of costs"
+    },
+    {
+      "id": "section-10.9",
+      "sourceKey": "section:10.9",
+      "label": "10.9",
+      "heading": "Where request to inspect public record granted"
+    },
+    {
+      "id": "section-11",
+      "sourceKey": "section:11",
+      "label": "11",
+      "heading": "Certified copies of public records"
+    },
+    {
+      "id": "section-12",
+      "sourceKey": "section:12",
+      "label": "12",
+      "heading": "Offences and penalties"
+    },
+    {
+      "id": "section-13",
+      "sourceKey": "section:13",
+      "label": "13",
+      "heading": "Regulations"
+    },
+    {
+      "id": "section-14",
+      "sourceKey": "section:14",
+      "label": "14",
+      "heading": "Repeal"
+    },
+    {
+      "id": "section-15",
+      "sourceKey": "section:15",
+      "label": "15",
+      "heading": "Commencement"
+    }
+  ],
+  "components": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
+      "label": "1",
+      "heading": "Definitions",
+      "text": "Definitions\n\n1In this Act\n“Committee” means the Public Records Committee constituted under section 6;(Comité)\n\n“community board” Repealed: 2019, c.12, s.1\n\n“department” includes(ministère)\n\n(a)\nthe departments as defined under the Financial Administration Act,\n\n(a.1)\na public body as defined in the Right to Information and Protection of Privacy Act, excluding the following public bodies:\n\n(i)\nThe University of New Brunswick;\n\n(ii)\nUniversité de Moncton;\n\n(iii)\nSt. Thomas University;\n\n(iv)\nMount Allison University;\n\n(b)\nany board, commission, task force, crown corporation or other agency of the Province,\n\n(c)\nthe office of the Clerk of the Legislative Assembly, and\n\n(d)\nany court established by the Province;\n\n“District Education Council” means a District Education Council established under section 36.1 of the Education Act;(conseil d’éducation de district)\n\n“hospital corporation” Repealed: 2002, c.1, s.2\n\n“identifiable individual” means an individual who can be identified by the contents of information because the information(particulier identifiable)\n\n(a)\nincludes the individual’s name,\n\n(b)\nmakes the individual’s identity obvious, or\n\n(c)\nis likely in the circumstances to be combined with other information that includes the individual’s name or makes the individual’s identity obvious;\n\n“Minister” means the Minister of Finance and Treasury Board; (Ministre)\n\n“Parent School Support Committee” means a Parent School Support Committee established under section 32 of the Education Act;(comité parental d’appui à l’école)\n\n“personal information” means information about an identifiable individual;(renseignement personnel)\n\n“public records” means the books, papers and records vested in the Crown under the Public Records Act, and includes records(documents publics)\n\n(a)\nprepared or received by any department pursuant to an Act of the Legislature or in connection with the transaction of public business,\n\n(b)\npreserved or appropriate for preservation by a department,\n\n(c)\ncontaining information on the organization, functions, procedures, policies or activities of a department, or other information of past, present or potential value to the Province,\n\nbut does not include\n\n(d)\nlibrary or museum objects made or acquired and preserved solely for reference or exhibition purposes,\n\n(e)\nextra copies of records created only for convenience of reference,\n\n(f)\nworking papers, or\n\n(g)\nstocks of publications or printed documents;\n\n“records” means(documents)\n\n(a)\ncorrespondence, memoranda, forms and other papers and books;\n\n(b)\nmaps, plans and charts;\n\n(c)\nphotographs, prints and drawings;\n\n(d)\nmotion picture films, microfilms and video tapes;\n\n(e)\nsound recordings, magnetic tapes, computer cards and other machine readable records; and\n\n(f)\nall other documentary materials regardless of physical form or characteristics;\n\n“records schedule” means a timetable that describes the lifespan of a record from the time of its creation through active and dormant stages to its final disposition either as waste or as a record of legal or historical value to be permanently preserved;(tableau de conservation de documents)\n\n“regional health authority” means a regional health authority as defined in the Regional Health Authorities Act.(régie régionale de la santé)\n\n“school board” Repealed: 2019, c.12, s.1\n\n1983, c.30, s.3; 1986, c.8, s.10; 1986, c.11, s.1; 1992, c.2, s.6; 1995, c.51, s.7; 1998, c.P-19.1, s.8; 2002, c.1, s.2; 2009, c.R-10.6, s.87; 2010, c.31, s.20; 2012, c.39, s.14; 2015, c.44, s.85; 2016, c.37, s.16; 2019, c.12, s.1; 2019, c.29, s.8; 2023, c.17, s.9",
+      "subsections": [],
+      "contentHash": "935480e7946d2118fd982b2042fa066dbb41e5d8acab68335b9758415c8b915f"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "label": "2",
+      "heading": "Administration",
+      "text": "Administration\n\n2The Minister is responsible for the administration of this Act.\n2015, c.44, s.85",
+      "subsections": [],
+      "contentHash": "4e19048a68a59053d9ce45245b68e9e9fb5c248f2bf59839eb6cd5dcb0eb927f"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
+      "label": "3",
+      "heading": "Archives",
+      "text": "Archives\n\n3The Archives are to consist of all the records in the care, custody and control of the Provincial Archivist at the coming into force of this Act, all records that under this or any other Act are placed in the care, custody and control of the Provincial Archivist and books, papers and records vested in the Crown under the Public Records Act.\n2023, c.17, s.9",
+      "subsections": [],
+      "contentHash": "55b622b71077e28bca5ac6b10f11290ccbca06059355ccf14e8af71a3657ff01"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
+      "label": "4",
+      "heading": "Provincial Archivist",
+      "text": "Provincial Archivist\n\n4There shall be a Provincial Archivist appointed in accordance with the Civil Service Act.",
+      "subsections": [],
+      "contentHash": "bb716116e04f77f098a56d76e7a70cdb8051737d3e25649616f973e1c77a01d5"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "componentType": "section",
+      "label": "5",
+      "heading": "Duties of Provincial Archivist",
+      "text": "Duties of Provincial Archivist\n\n5(1)The duties of the Provincial Archivist are\n\n(a)\nto have the care, custody and control of the Archives;\n\n(b)\nto prepare records schedules governing the retention, destruction and transfer of public records to the Archives;\n\n(c)\nto provide economical storage facilities for public records and to encourage the use of such facilities;\n\n(d)\nto encourage the use by departments and local governments of modern records storage and classification systems in order to ensure that important policies and programs are documented and that public records are protected against deterioration, loss and destruction;\n\n(e)\nto discover, collect and preserve records having any bearing upon the history of New Brunswick;\n\n(f)\nto copy and publish copies of records relating to the history of New Brunswick;\n\n(g)\nto classify, index and catalogue all records in his custody; and\n\n(h)\nto perform such other duties as are prescribed by the Lieutenant-Governor in Council.\n\n5(2)The Provincial Archivist may acquire by gift, bequest, loan or purchase and place in the Archives for preservation records having any bearing upon the history of New Brunswick upon such terms and conditions as are stated by the person giving, bequeathing, lending or selling the records.\n\n1982, c.3, s.3; 2005, c.7, s.2; 2017, c.20, s.4",
+      "subsections": [
+        {
+          "id": "5-subsection-1",
+          "sourceKey": "section:5/subsection:1",
+          "label": "5(1)",
+          "text": "5(1)The duties of the Provincial Archivist are\n\n(a)\nto have the care, custody and control of the Archives;\n\n(b)\nto prepare records schedules governing the retention, destruction and transfer of public records to the Archives;\n\n(c)\nto provide economical storage facilities for public records and to encourage the use of such facilities;\n\n(d)\nto encourage the use by departments and local governments of modern records storage and classification systems in order to ensure that important policies and programs are documented and that public records are protected against deterioration, loss and destruction;\n\n(e)\nto discover, collect and preserve records having any bearing upon the history of New Brunswick;\n\n(f)\nto copy and publish copies of records relating to the history of New Brunswick;\n\n(g)\nto classify, index and catalogue all records in his custody; and\n\n(h)\nto perform such other duties as are prescribed by the Lieutenant-Governor in Council.",
+          "contentHash": "acf8d9e72add2e18064f410b6ea29fd7c80ac9bdf5b877cc0470aff6a6e13f6a"
+        },
+        {
+          "id": "5-subsection-2",
+          "sourceKey": "section:5/subsection:2",
+          "label": "5(2)",
+          "text": "5(2)The Provincial Archivist may acquire by gift, bequest, loan or purchase and place in the Archives for preservation records having any bearing upon the history of New Brunswick upon such terms and conditions as are stated by the person giving, bequeathing, lending or selling the records.\n\n1982, c.3, s.3; 2005, c.7, s.2; 2017, c.20, s.4",
+          "contentHash": "9d9a55df3e42a6685c2faa5b75c1f769a0c0ae34da3fee88d58649c063604b92"
+        }
+      ],
+      "contentHash": "bb20067afe7e4e19e904351cec1e631c1bb96e200fadfd2cdc3b523b074b11e1"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "componentType": "section",
+      "label": "6",
+      "heading": "Public Records Committee",
+      "text": "Public Records Committee\n\n6(1)There is hereby established a committee to be known as the Public Records Committee consisting of\n\n(a)\nthe Provincial Archivist who shall be Chairman,\n\n(b)\nthe Deputy Minister of Justice and Public Safety, or a person designated by him to act on his behalf,\n\n(c)\nthe Comptroller or a person designated by him to act on his behalf,\n\n(d)\nthe Secretary to Treasury Board or a person designated by him to act on his behalf, and\n\n(e)\nsuch other persons as are appointed by the Lieutenant-Governor in Council.\n\n6(2)The Committee shall meet from time to time to advise the Provincial Archivist on matters relating to the retention and disposal of public records.\n\n1984, c.44, s.11; 2006, c.16, s.12; 2012, c.39, s.14; 2016, c.37, s.16; 2019, c.2, s.17; 2020, c.25, s.8",
+      "subsections": [
+        {
+          "id": "6-subsection-1",
+          "sourceKey": "section:6/subsection:1",
+          "label": "6(1)",
+          "text": "6(1)There is hereby established a committee to be known as the Public Records Committee consisting of\n\n(a)\nthe Provincial Archivist who shall be Chairman,\n\n(b)\nthe Deputy Minister of Justice and Public Safety, or a person designated by him to act on his behalf,\n\n(c)\nthe Comptroller or a person designated by him to act on his behalf,\n\n(d)\nthe Secretary to Treasury Board or a person designated by him to act on his behalf, and\n\n(e)\nsuch other persons as are appointed by the Lieutenant-Governor in Council.",
+          "contentHash": "4b3f08a1601e4ea6a97c64e46f8233628d7415ded7652a166ebe3565ca89cd66"
+        },
+        {
+          "id": "6-subsection-2",
+          "sourceKey": "section:6/subsection:2",
+          "label": "6(2)",
+          "text": "6(2)The Committee shall meet from time to time to advise the Provincial Archivist on matters relating to the retention and disposal of public records.\n\n1984, c.44, s.11; 2006, c.16, s.12; 2012, c.39, s.14; 2016, c.37, s.16; 2019, c.2, s.17; 2020, c.25, s.8",
+          "contentHash": "70fc263d1063aa5a1596eab01a968052fe2ed3ec63882a52fc66994036329b0d"
+        }
+      ],
+      "contentHash": "4f779f08b6bbc9b06ab265b4e254743feebe7642b977a4cf45a005983d0bbe4a"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "componentType": "section",
+      "label": "7",
+      "heading": "Documents in records schedule",
+      "text": "Documents in records schedule\n\n7(1)Public records referred to in a records schedule approved by the Provincial Archivist shall be disposed of in accordance with that records schedule.\n\n7(2)Where any dispute arises between the Provincial Archivist and a department concerning the establishment or implementation of a records schedule, the Provincial Archivist may submit the matter to the Committee and after an investigation the Committee shall make recommendations to the Lieutenant-Governor in Council with respect to that dispute.\n\n7(3)The Lieutenant-Governor in Council, by order in council, may make directions with respect to the dispute.",
+      "subsections": [
+        {
+          "id": "7-subsection-1",
+          "sourceKey": "section:7/subsection:1",
+          "label": "7(1)",
+          "text": "7(1)Public records referred to in a records schedule approved by the Provincial Archivist shall be disposed of in accordance with that records schedule.",
+          "contentHash": "2fd2ef79d16f5e904368108a0e4f16a1b6dcf590e9d3b8f127a3dffd01f2848f"
+        },
+        {
+          "id": "7-subsection-2",
+          "sourceKey": "section:7/subsection:2",
+          "label": "7(2)",
+          "text": "7(2)Where any dispute arises between the Provincial Archivist and a department concerning the establishment or implementation of a records schedule, the Provincial Archivist may submit the matter to the Committee and after an investigation the Committee shall make recommendations to the Lieutenant-Governor in Council with respect to that dispute.",
+          "contentHash": "fb2b0637d624e0bd610f66c4cb738d45e7f9fe43332b0ed3771a155116116cb3"
+        },
+        {
+          "id": "7-subsection-3",
+          "sourceKey": "section:7/subsection:3",
+          "label": "7(3)",
+          "text": "7(3)The Lieutenant-Governor in Council, by order in council, may make directions with respect to the dispute.",
+          "contentHash": "416e86156281970a3d84c626ef444ed42cd04ee9e06a00baf6809965bc45492a"
+        }
+      ],
+      "contentHash": "a87d4b92ba309904d88e331c0a7eb264cb9daeebb07285b54a5025662ecadf5d"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "componentType": "section",
+      "label": "8",
+      "heading": "Destruction or removal of public records",
+      "text": "Destruction or removal of public records\n\n8Public records shall not be destroyed or removed from the ownership or control of the Province unless such destruction or removal is authorized under this Act.",
+      "subsections": [],
+      "contentHash": "61c72f1d71ae6a0c3640cd950f49236df5efc8d8d968cb8112ac4b18567fc79a"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "componentType": "section",
+      "label": "9",
+      "heading": "Wrongful withholding of public records",
+      "text": "Wrongful withholding of public records\n\n9(1)Upon a summary application of the Minister, supported by affidavit, a Judge of The Court of King’s Bench of New Brunswick may make an order requiring the person wrongfully withholding public records to deliver them to the proper custodian or to such person as is named in the order.\n\n9(2)The Judge may grant an order in the first instance or issue a summons to show cause, and costs shall be in the discretion of the Judge.\n\n1979, c.41, s.5; 1982, c.3, s.3; 2023, c.17, s.9",
+      "subsections": [
+        {
+          "id": "9-subsection-1",
+          "sourceKey": "section:9/subsection:1",
+          "label": "9(1)",
+          "text": "9(1)Upon a summary application of the Minister, supported by affidavit, a Judge of The Court of King’s Bench of New Brunswick may make an order requiring the person wrongfully withholding public records to deliver them to the proper custodian or to such person as is named in the order.",
+          "contentHash": "0066ebe4aa3ce9b8b8c02d50abafec55e7f9b09628e7a965679d9a60f2dc3ef3"
+        },
+        {
+          "id": "9-subsection-2",
+          "sourceKey": "section:9/subsection:2",
+          "label": "9(2)",
+          "text": "9(2)The Judge may grant an order in the first instance or issue a summons to show cause, and costs shall be in the discretion of the Judge.\n\n1979, c.41, s.5; 1982, c.3, s.3; 2023, c.17, s.9",
+          "contentHash": "4f36c367ecaa0ece4195cea6042447753a13df296bbe0e711ec9ab1c7cb3a10c"
+        }
+      ],
+      "contentHash": "f61ed60b7c2be0a6503f87c50c6697c6d0d3651348f9fa0c5706491f95791c54"
+    },
+    {
+      "id": "section-10",
+      "sourceKey": "section:10",
+      "componentType": "section",
+      "label": "10",
+      "heading": "Public inspection of public records",
+      "text": "Public inspection of public records\n\n10(1)Subject to subsections (2) and (3), all public records transferred to the Archives and in the possession, care, custody and control of the Provincial Archivist are available for public inspection.\n\n10(2)Subsection (1) does not apply to public records that, for the purpose of temporary storage, have been placed in storage facilities provided by the Provincial Archivist.\n\n10(3)Subject to subsections (3.1), (4), (6), (7) and (8), public records are unavailable for public inspection under this Act where the inspection\n\n(a)\nwould disclose information the confidentiality of which is protected by law;\n\n(b)\nwould reveal personal information concerning another person;\n\n(b.1)\nwould reveal personal information concerning the applicant that\n\n(i)\nwas provided by another person in confidence, or is confidential in nature, or\n\n(ii)\ncould reasonably be expected to threaten the safety or mental or physical health of the applicant or another person;\n\n(c)\nwould cause financial loss or gain to a person or department, or would jeopardize negotiations leading to an agreement or contract;\n\n(d)\nwould reveal financial, commercial, technical or scientific information\n\n(i)\ngiven by an individual or a corporation that is a going concern in connection with financial assistance applied for or given under the authority of a statute or regulation of the Province, or\n\n(ii)\ngiven in or pursuant to an agreement entered into under the authority of a statute or regulation, if the information relates to the internal management or operations of a corporation that is a going concern;\n\n(e)\nwould violate the confidentiality of information obtained from another government;\n\n(f)\nwould be detrimental to the proper custody, control or supervision of persons under sentence;\n\n(g)\nwould disclose legal opinions or advice provided to a person or department by a law officer of the Crown, or privileged communications as between solicitor and client in a matter of department business;\n\n(g.1)\nwould disclose information respecting the access to or security of particular buildings, other structures or systems, including computer or communication systems, or would disclose information respecting the access to or security of methods employed to protect such buildings, other structures or systems;\n\n(g.2)\nwould disclose the subject or substance\n\n(i)\nof minutes of the meetings of a District Education Council, of a Parent School Support Committee, of the board of trustees of a regional health authority or of a committee of any such board, that were not open to the public,\n\n(ii)\nof briefings to members of such a council, board or committee respecting matters that were, are or are proposed to be brought before such a meeting, or\n\n(iii)\nof discussions, consultations or deliberations among members of such a council, board or committee respecting such a meeting;\n\n(g.3)\nwould disclose advice, opinions, proposals, recommendations, analyses or policy options provided, given or made to or for a District Education Council, a Parent School Support Committee, the board of directors of a regional health authority or a committee of any such board for the purposes of the council, board or committee in exercising its powers and performing its duties and functions;\n\n(h)\nRepealed: 1995, c.51, s.7\n\n(h.1)\nwould disclose opinions or recommendations for a Minister or the Executive Council;\n\n(i)\nwould disclose the substance of proposed legislation or regulations;\n\n(j)\nwould reveal information gathered by police, including the Royal Canadian Mounted Police, in the course of investigating any illegal activity or suspected illegal activity, or the source of such information;\n\n(k)\nwould disclose any information reported to the Attorney General or his agent with respect to any illegal activity or suspected illegal activity, or the source of such information; or\n\n(l)\nwould impede an investigation, inquiry or the administration of justice.\n\n10(3.1)Paragraphs (3)(g.1) to (g.3) and (h.1) do not apply to public records that were in the care, custody and control of the Provincial Archivist and were available for public inspection before those paragraphs came into force.\n\n10(4)Public records referred to in paragraph (3)(b) are available for public inspection after\n\n(a)\none hundred years following the date of birth of the person to whom the personal information relates,\n\n(b)\nthe person to whom the personal information relates consents in writing to the inspection, or\n\n(c)\nthe Committee or a judge of The Court of King’s Bench of New Brunswick has granted a request for inspection for research or statistical purposes.\n\n10(4.1)Despite paragraph (4)(a), if the public records referred to in paragraph (3)(b) would reveal personal health information, as defined in the Personal Health Information Privacy and Access Act, concerning another person, the records are available for public inspection after 50 years following the date of death of the person to whom the personal health information relates.\n\n10(5)Where uncertainty exists regarding a date of birth referred to in paragraph (4)(a) or a date of death referred to in subsection (4.1), the determination of the date by the Provincial Archivist is final.\n\n10(6)Public records referred to in paragraph (3)(e) are available for public inspection if the government from which the information was obtained\n\n(a)\nconsents in writing to the inspection, or\n\n(b)\nmakes the information public.\n\n10(7)Public records referred to in paragraph (3)(g) are available for public inspection after fifty years following the date of their creation.\n\n10(8)Public records referred to in paragraph (3)(h.1) are available for public inspection after twenty years following the date of their creation.\n\n10(9)Notwithstanding subsections (3) to (8) and sections 10.1 to 10.9, an authorized representative of the department from which a public record has been transferred, may inspect the public record for any purpose not inconsistent with the purpose for which the public record was obtained or created by the department.\n\n10(10)Subsection (3) does not apply to a public record\n\n(a)\nthat is available for public inspection at a location other than the Archives, or\n\n(b)\nthat was available for public inspection before it was transferred to the Archives.\n\n10(11)Notwithstanding subsection 10.9(8), the onus shall be on a person requesting to inspect a public record to satisfy the Provincial Archivist that the public record is one referred to in subsection (10).\n\n1986, c.11, s.2; 1995, c.51, s.7; 1998, c.P-19.1, s.8; 2002, c.1, s.2; 2017, c.30, s.3; 2019, c.12, s.1; 2023, c.17, s.9",
+      "subsections": [
+        {
+          "id": "10-subsection-1",
+          "sourceKey": "section:10/subsection:1",
+          "label": "10(1)",
+          "text": "10(1)Subject to subsections (2) and (3), all public records transferred to the Archives and in the possession, care, custody and control of the Provincial Archivist are available for public inspection.",
+          "contentHash": "20776d5a9e41babbe17ab91fbaad493af846a1eaa685e64806b01261125f4065"
+        },
+        {
+          "id": "10-subsection-2",
+          "sourceKey": "section:10/subsection:2",
+          "label": "10(2)",
+          "text": "10(2)Subsection (1) does not apply to public records that, for the purpose of temporary storage, have been placed in storage facilities provided by the Provincial Archivist.",
+          "contentHash": "901aa6c030ff3e9ac68b49a2bc0019f4a21aec4f3c5bb1a980855028562a0750"
+        },
+        {
+          "id": "10-subsection-3",
+          "sourceKey": "section:10/subsection:3",
+          "label": "10(3)",
+          "text": "10(3)Subject to subsections (3.1), (4), (6), (7) and (8), public records are unavailable for public inspection under this Act where the inspection\n\n(a)\nwould disclose information the confidentiality of which is protected by law;\n\n(b)\nwould reveal personal information concerning another person;\n\n(b.1)\nwould reveal personal information concerning the applicant that\n\n(i)\nwas provided by another person in confidence, or is confidential in nature, or\n\n(ii)\ncould reasonably be expected to threaten the safety or mental or physical health of the applicant or another person;\n\n(c)\nwould cause financial loss or gain to a person or department, or would jeopardize negotiations leading to an agreement or contract;\n\n(d)\nwould reveal financial, commercial, technical or scientific information\n\n(i)\ngiven by an individual or a corporation that is a going concern in connection with financial assistance applied for or given under the authority of a statute or regulation of the Province, or\n\n(ii)\ngiven in or pursuant to an agreement entered into under the authority of a statute or regulation, if the information relates to the internal management or operations of a corporation that is a going concern;\n\n(e)\nwould violate the confidentiality of information obtained from another government;\n\n(f)\nwould be detrimental to the proper custody, control or supervision of persons under sentence;\n\n(g)\nwould disclose legal opinions or advice provided to a person or department by a law officer of the Crown, or privileged communications as between solicitor and client in a matter of department business;\n\n(g.1)\nwould disclose information respecting the access to or security of particular buildings, other structures or systems, including computer or communication systems, or would disclose information respecting the access to or security of methods employed to protect such buildings, other structures or systems;\n\n(g.2)\nwould disclose the subject or substance\n\n(i)\nof minutes of the meetings of a District Education Council, of a Parent School Support Committee, of the board of trustees of a regional health authority or of a committee of any such board, that were not open to the public,\n\n(ii)\nof briefings to members of such a council, board or committee respecting matters that were, are or are proposed to be brought before such a meeting, or\n\n(iii)\nof discussions, consultations or deliberations among members of such a council, board or committee respecting such a meeting;\n\n(g.3)\nwould disclose advice, opinions, proposals, recommendations, analyses or policy options provided, given or made to or for a District Education Council, a Parent School Support Committee, the board of directors of a regional health authority or a committee of any such board for the purposes of the council, board or committee in exercising its powers and performing its duties and functions;\n\n(h)\nRepealed: 1995, c.51, s.7\n\n(h.1)\nwould disclose opinions or recommendations for a Minister or the Executive Council;\n\n(i)\nwould disclose the substance of proposed legislation or regulations;\n\n(j)\nwould reveal information gathered by police, including the Royal Canadian Mounted Police, in the course of investigating any illegal activity or suspected illegal activity, or the source of such information;\n\n(k)\nwould disclose any information reported to the Attorney General or his agent with respect to any illegal activity or suspected illegal activity, or the source of such information; or\n\n(l)\nwould impede an investigation, inquiry or the administration of justice.",
+          "contentHash": "1821ee43394a14c00272ef1bc3e19d3501b933d28ae4e60372f8e45086904fe7"
+        },
+        {
+          "id": "10-subsection-3.1",
+          "sourceKey": "section:10/subsection:3.1",
+          "label": "10(3.1)",
+          "text": "10(3.1)Paragraphs (3)(g.1) to (g.3) and (h.1) do not apply to public records that were in the care, custody and control of the Provincial Archivist and were available for public inspection before those paragraphs came into force.",
+          "contentHash": "567671bc2426bb3115e90e076eb38ec2548c380fe2be3956283ec023f4cd921a"
+        },
+        {
+          "id": "10-subsection-4",
+          "sourceKey": "section:10/subsection:4",
+          "label": "10(4)",
+          "text": "10(4)Public records referred to in paragraph (3)(b) are available for public inspection after\n\n(a)\none hundred years following the date of birth of the person to whom the personal information relates,\n\n(b)\nthe person to whom the personal information relates consents in writing to the inspection, or\n\n(c)\nthe Committee or a judge of The Court of King’s Bench of New Brunswick has granted a request for inspection for research or statistical purposes.",
+          "contentHash": "db663313643fdb557f000e50e2e68e1b6e8a683dbe49af96269f6137ea2c8bc4"
+        },
+        {
+          "id": "10-subsection-4.1",
+          "sourceKey": "section:10/subsection:4.1",
+          "label": "10(4.1)",
+          "text": "10(4.1)Despite paragraph (4)(a), if the public records referred to in paragraph (3)(b) would reveal personal health information, as defined in the Personal Health Information Privacy and Access Act, concerning another person, the records are available for public inspection after 50 years following the date of death of the person to whom the personal health information relates.",
+          "contentHash": "fa9311a9f811417b2294dfdae19acb533c1468c2edd6c50445649c7cc43c0ac0"
+        },
+        {
+          "id": "10-subsection-5",
+          "sourceKey": "section:10/subsection:5",
+          "label": "10(5)",
+          "text": "10(5)Where uncertainty exists regarding a date of birth referred to in paragraph (4)(a) or a date of death referred to in subsection (4.1), the determination of the date by the Provincial Archivist is final.",
+          "contentHash": "8eff23fab7dcbe1cc0e6073409d67b9306a27c429ae322546b62122ad5902d8d"
+        },
+        {
+          "id": "10-subsection-6",
+          "sourceKey": "section:10/subsection:6",
+          "label": "10(6)",
+          "text": "10(6)Public records referred to in paragraph (3)(e) are available for public inspection if the government from which the information was obtained\n\n(a)\nconsents in writing to the inspection, or\n\n(b)\nmakes the information public.",
+          "contentHash": "cf6f51068df6d330c0aba9640089c30971ff382e87d3afe0b4688e730c527d31"
+        },
+        {
+          "id": "10-subsection-7",
+          "sourceKey": "section:10/subsection:7",
+          "label": "10(7)",
+          "text": "10(7)Public records referred to in paragraph (3)(g) are available for public inspection after fifty years following the date of their creation.",
+          "contentHash": "95420baf1dc35258e8430f524ac9432410057b2239c5b4691a73e31002ad6b5b"
+        },
+        {
+          "id": "10-subsection-8",
+          "sourceKey": "section:10/subsection:8",
+          "label": "10(8)",
+          "text": "10(8)Public records referred to in paragraph (3)(h.1) are available for public inspection after twenty years following the date of their creation.",
+          "contentHash": "c9e39b420e8a94bf14923b11263bee2e713f72f9cde9e6f5c60ff407c67f4a92"
+        },
+        {
+          "id": "10-subsection-9",
+          "sourceKey": "section:10/subsection:9",
+          "label": "10(9)",
+          "text": "10(9)Notwithstanding subsections (3) to (8) and sections 10.1 to 10.9, an authorized representative of the department from which a public record has been transferred, may inspect the public record for any purpose not inconsistent with the purpose for which the public record was obtained or created by the department.",
+          "contentHash": "b58cd35522382a0598ee6c31518e0b63cbf1d2b7fb8fce5d21b87f06f3c9ab3d"
+        },
+        {
+          "id": "10-subsection-10",
+          "sourceKey": "section:10/subsection:10",
+          "label": "10(10)",
+          "text": "10(10)Subsection (3) does not apply to a public record\n\n(a)\nthat is available for public inspection at a location other than the Archives, or\n\n(b)\nthat was available for public inspection before it was transferred to the Archives.",
+          "contentHash": "639f5868c333178b356ef7da1e7649a80a1b0f321a48ecd438abafe32ffd2633"
+        },
+        {
+          "id": "10-subsection-11",
+          "sourceKey": "section:10/subsection:11",
+          "label": "10(11)",
+          "text": "10(11)Notwithstanding subsection 10.9(8), the onus shall be on a person requesting to inspect a public record to satisfy the Provincial Archivist that the public record is one referred to in subsection (10).\n\n1986, c.11, s.2; 1995, c.51, s.7; 1998, c.P-19.1, s.8; 2002, c.1, s.2; 2017, c.30, s.3; 2019, c.12, s.1; 2023, c.17, s.9",
+          "contentHash": "91c56907391134993e906d2a1e23da3ab194be072e45ef9ff1900c52b48881a8"
+        }
+      ],
+      "contentHash": "bddd40b4e8ef465f4ae71411954d36a661d6fe8fe8d8252fc3f7bea1c81ea83a"
+    },
+    {
+      "id": "section-10.1",
+      "sourceKey": "section:10.1",
+      "componentType": "section",
+      "label": "10.1",
+      "heading": "Request to inspect public records, application to review",
+      "text": "Request to inspect public records, application to review\n\n10.1(1)A person wishing to inspect a public record referred to in subsection 10(3) shall submit on a form provided by the Provincial Archivist a request to inspect the public record.\n\n10.1(2)Where in the opinion of the Provincial Archivist a portion of a public record is unavailable for public inspection and that portion is severable, the Provincial Archivist shall delete the unavailable portion and shall grant the request with respect to the available portion.\n\n10.1(3)The Provincial Archivist shall reply to a request made under subsection (1) within thirty days after the submission of the request, indicating whether or not all or part of the public record is available for public inspection.\n\n10.1(4)Where the Provincial Archivist denies a request with respect to all or part of a public record, he shall reply in writing to the person making the request, indicating the provisions of this Act under which all or part of the public record is rendered unavailable for public inspection.\n\n10.1(5)Any person who\n\n(a)\nfor the purpose of doing legitimate research or statistical work, wishes to inspect a public record containing personal information concerning another person, and has first submitted a request which has been denied in whole or in part under subsection (4),\n\n(b)\nbelieves that all or part of the public record is available for public inspection, and has first submitted a request which has been denied in whole or in part under subsection (4), or\n\n(c)\nhas not received a reply to a request within the time prescribed in subsection (3),\n\nmay submit to the Committee on a form provided by the Provincial Archivist an application for review by the Committee.\n\n10.1(6)An application for review submitted under paragraph (5)(a) shall include\n\n(a)\na request to inspect the public record, specifying the information requested,\n\n(b)\na copy of the reply of the Provincial Archivist under subsection (4),\n\n(c)\na summary describing the qualifications of the applicant, the nature of the research being done or the statistics being compiled, and the intent of the work,\n\n(d)\nthe reasons why the purpose of the work cannot reasonably be accomplished without inspection of the public record, and\n\n(e)\ncredentials verifying the identity of the applicant and the information given under paragraphs (c) and (d).\n\n10.1(7)An application for review submitted under paragraph (5)(b) shall include\n\n(a)\na request to inspect the public record, specifying the information requested,\n\n(b)\na copy of the reply of the Provincial Archivist under subsection (4), and\n\n(c)\nthe reason why the applicant believes that all or part of the public record is available for public inspection.\n\n10.1(8)An application for review submitted under paragraph (5)(c) shall include\n\n(a)\na request to inspect the public record, specifying the information requested, and\n\n(b)\nthe date of the submission of the applicant’s request to the Provincial Archivist.\n\n1986, c.11, s.3",
+      "subsections": [
+        {
+          "id": "10.1-subsection-1",
+          "sourceKey": "section:10.1/subsection:1",
+          "label": "10.1(1)",
+          "text": "10.1(1)A person wishing to inspect a public record referred to in subsection 10(3) shall submit on a form provided by the Provincial Archivist a request to inspect the public record.",
+          "contentHash": "4728c3b9039b73c93fd58b8e5cc261b6ef66682425d3b87f28512351a5715f76"
+        },
+        {
+          "id": "10.1-subsection-2",
+          "sourceKey": "section:10.1/subsection:2",
+          "label": "10.1(2)",
+          "text": "10.1(2)Where in the opinion of the Provincial Archivist a portion of a public record is unavailable for public inspection and that portion is severable, the Provincial Archivist shall delete the unavailable portion and shall grant the request with respect to the available portion.",
+          "contentHash": "679d9c9cddb62d5df669ed0786c3f15e0dc275375a1767a035bf3ac49cca5fab"
+        },
+        {
+          "id": "10.1-subsection-3",
+          "sourceKey": "section:10.1/subsection:3",
+          "label": "10.1(3)",
+          "text": "10.1(3)The Provincial Archivist shall reply to a request made under subsection (1) within thirty days after the submission of the request, indicating whether or not all or part of the public record is available for public inspection.",
+          "contentHash": "5a6e1001805ebd2186a7176a730efd22d5cbccaa4ca61df799ee0b07cba4463b"
+        },
+        {
+          "id": "10.1-subsection-4",
+          "sourceKey": "section:10.1/subsection:4",
+          "label": "10.1(4)",
+          "text": "10.1(4)Where the Provincial Archivist denies a request with respect to all or part of a public record, he shall reply in writing to the person making the request, indicating the provisions of this Act under which all or part of the public record is rendered unavailable for public inspection.",
+          "contentHash": "e5b8a02683b1949ae073c8693829cf07ed5972fb2bb9d43a2ac2db7f24179ea0"
+        },
+        {
+          "id": "10.1-subsection-5",
+          "sourceKey": "section:10.1/subsection:5",
+          "label": "10.1(5)",
+          "text": "10.1(5)Any person who\n\n(a)\nfor the purpose of doing legitimate research or statistical work, wishes to inspect a public record containing personal information concerning another person, and has first submitted a request which has been denied in whole or in part under subsection (4),\n\n(b)\nbelieves that all or part of the public record is available for public inspection, and has first submitted a request which has been denied in whole or in part under subsection (4), or\n\n(c)\nhas not received a reply to a request within the time prescribed in subsection (3),\n\nmay submit to the Committee on a form provided by the Provincial Archivist an application for review by the Committee.",
+          "contentHash": "54425ec5c822ece31836903d9730ca69e382e21440b5cc33e4cc7e16822b04d3"
+        },
+        {
+          "id": "10.1-subsection-6",
+          "sourceKey": "section:10.1/subsection:6",
+          "label": "10.1(6)",
+          "text": "10.1(6)An application for review submitted under paragraph (5)(a) shall include\n\n(a)\na request to inspect the public record, specifying the information requested,\n\n(b)\na copy of the reply of the Provincial Archivist under subsection (4),\n\n(c)\na summary describing the qualifications of the applicant, the nature of the research being done or the statistics being compiled, and the intent of the work,\n\n(d)\nthe reasons why the purpose of the work cannot reasonably be accomplished without inspection of the public record, and\n\n(e)\ncredentials verifying the identity of the applicant and the information given under paragraphs (c) and (d).",
+          "contentHash": "ac70d40c6de68c00801bc177c8542dae86a25fa8f1f65f6376f5661915ebb51c"
+        },
+        {
+          "id": "10.1-subsection-7",
+          "sourceKey": "section:10.1/subsection:7",
+          "label": "10.1(7)",
+          "text": "10.1(7)An application for review submitted under paragraph (5)(b) shall include\n\n(a)\na request to inspect the public record, specifying the information requested,\n\n(b)\na copy of the reply of the Provincial Archivist under subsection (4), and\n\n(c)\nthe reason why the applicant believes that all or part of the public record is available for public inspection.",
+          "contentHash": "1f46a1d3bf5703e4a30be5bb10b3cbd8c8964f05732edbe93d5e225b10745561"
+        },
+        {
+          "id": "10.1-subsection-8",
+          "sourceKey": "section:10.1/subsection:8",
+          "label": "10.1(8)",
+          "text": "10.1(8)An application for review submitted under paragraph (5)(c) shall include\n\n(a)\na request to inspect the public record, specifying the information requested, and\n\n(b)\nthe date of the submission of the applicant’s request to the Provincial Archivist.\n\n1986, c.11, s.3",
+          "contentHash": "b91f85ece3513f130105566cdc059221c03043236087e9ee2eb94ec2c4b82df5"
+        }
+      ],
+      "contentHash": "1445174258020c6909849482cd83c53e2fe8838ef6a897f585d58faa6c8e05de"
+    },
+    {
+      "id": "section-10.2",
+      "sourceKey": "section:10.2",
+      "componentType": "section",
+      "label": "10.2",
+      "heading": "Review by Committee",
+      "text": "Review by Committee\n\n10.2(1)Within thirty days after the submission of an application for review, the Committee shall meet to consider the application and shall advise the applicant in writing of its decision.\n\n10.2(2)Neither the Provincial Archivist nor any representative of the department from which the public record being requested was transferred shall be present during any portion of a meeting by the Committee in which an application for review is considered.\n\n10.2(3)Notwithstanding subsection (2), the Provincial Archivist may appear before the committee considering an application for review under paragraph 10.1(5)(c) in order to explain why he has not replied to a request to inspect a public record.\n\n10.2(4)The Committee may inspect the public record in question while considering an application for review.\n\n10.2(5)A decision of the majority of the members of the Committee considering an application for review is final.\n\n10.2(6)The Committee shall grant a request made under paragraph 10.1(5)(a) or (c) to inspect a public record where it is satisfied\n\n(a)\nthat the public record is available for public inspection, or\n\n(b)\nthat the applicant intends to do legitimate research or statistical work, and that the purpose of the work cannot reasonably be accomplished without inspection of the public record.\n\n10.2(7)In granting under paragraph (6)(b) a request to inspect a public record the Committee may, at its discretion, grant the request with respect to a portion of the public record.\n\n10.2(8)Where the Committee denies a request to inspect a public record in whole or in part, it shall set out in its written decision the reasons for the denial and shall provide the applicant with the forms prescribed by regulation for a referral of the matter to a judge of The Court of King’s Bench of New Brunswick or to the Ombud under this Act.\n\n10.2(9)The Committee shall grant a request to inspect a public record made under paragraph 10.1(5)(b) where it is satisfied that the public record is available for public inspection.\n\n10.2(10)Where in the opinion of the Committee a portion of a public record is unavailable for public inspection and that portion is severable, the Committee shall delete the unavailable portion and shall grant the request with respect to the available portion.\n\n1986, c.11, s.3; 2017, c.1, s.4; 2023, c.17, s.9",
+      "subsections": [
+        {
+          "id": "10.2-subsection-1",
+          "sourceKey": "section:10.2/subsection:1",
+          "label": "10.2(1)",
+          "text": "10.2(1)Within thirty days after the submission of an application for review, the Committee shall meet to consider the application and shall advise the applicant in writing of its decision.",
+          "contentHash": "0defff8fc9db9e19c1a97e3fc7157ff9a505aef472f327b1dd6f274409e0e654"
+        },
+        {
+          "id": "10.2-subsection-2",
+          "sourceKey": "section:10.2/subsection:2",
+          "label": "10.2(2)",
+          "text": "10.2(2)Neither the Provincial Archivist nor any representative of the department from which the public record being requested was transferred shall be present during any portion of a meeting by the Committee in which an application for review is considered.",
+          "contentHash": "9063a8e3ab78bf0f405cc0740470cad16cd603f8dab4718e216136901c793faf"
+        },
+        {
+          "id": "10.2-subsection-3",
+          "sourceKey": "section:10.2/subsection:3",
+          "label": "10.2(3)",
+          "text": "10.2(3)Notwithstanding subsection (2), the Provincial Archivist may appear before the committee considering an application for review under paragraph 10.1(5)(c) in order to explain why he has not replied to a request to inspect a public record.",
+          "contentHash": "f724ad8fb1450acd41a3c697e9f99d38586b4c281155935c036c9b2347d86ce1"
+        },
+        {
+          "id": "10.2-subsection-4",
+          "sourceKey": "section:10.2/subsection:4",
+          "label": "10.2(4)",
+          "text": "10.2(4)The Committee may inspect the public record in question while considering an application for review.",
+          "contentHash": "2adc5d721c7aa66d937f8a74ddaab981a77faa85470ead09e83d26845e973016"
+        },
+        {
+          "id": "10.2-subsection-5",
+          "sourceKey": "section:10.2/subsection:5",
+          "label": "10.2(5)",
+          "text": "10.2(5)A decision of the majority of the members of the Committee considering an application for review is final.",
+          "contentHash": "2ca11f5ce47b5ddf3f0a198c7c97178c37ff5493fa1b805a2ba2fb297e2069e7"
+        },
+        {
+          "id": "10.2-subsection-6",
+          "sourceKey": "section:10.2/subsection:6",
+          "label": "10.2(6)",
+          "text": "10.2(6)The Committee shall grant a request made under paragraph 10.1(5)(a) or (c) to inspect a public record where it is satisfied\n\n(a)\nthat the public record is available for public inspection, or\n\n(b)\nthat the applicant intends to do legitimate research or statistical work, and that the purpose of the work cannot reasonably be accomplished without inspection of the public record.",
+          "contentHash": "22db5a53d0e50675274fb3a46b11ae01d1747807747d0757c92a84fc59bf508a"
+        },
+        {
+          "id": "10.2-subsection-7",
+          "sourceKey": "section:10.2/subsection:7",
+          "label": "10.2(7)",
+          "text": "10.2(7)In granting under paragraph (6)(b) a request to inspect a public record the Committee may, at its discretion, grant the request with respect to a portion of the public record.",
+          "contentHash": "b189eb0e16f1a5cabda0364bbd5880e9000a88951e720d722beceafe0836d296"
+        },
+        {
+          "id": "10.2-subsection-8",
+          "sourceKey": "section:10.2/subsection:8",
+          "label": "10.2(8)",
+          "text": "10.2(8)Where the Committee denies a request to inspect a public record in whole or in part, it shall set out in its written decision the reasons for the denial and shall provide the applicant with the forms prescribed by regulation for a referral of the matter to a judge of The Court of King’s Bench of New Brunswick or to the Ombud under this Act.",
+          "contentHash": "668bfea5f50787a88d800a4eae3f800ec75c1aab98de119bc83b8952863666cc"
+        },
+        {
+          "id": "10.2-subsection-9",
+          "sourceKey": "section:10.2/subsection:9",
+          "label": "10.2(9)",
+          "text": "10.2(9)The Committee shall grant a request to inspect a public record made under paragraph 10.1(5)(b) where it is satisfied that the public record is available for public inspection.",
+          "contentHash": "35b34b01f0ccc65bf7a3fc29b5f2ec2e68ec1edaa4d9a9729d1984f9652bca51"
+        },
+        {
+          "id": "10.2-subsection-10",
+          "sourceKey": "section:10.2/subsection:10",
+          "label": "10.2(10)",
+          "text": "10.2(10)Where in the opinion of the Committee a portion of a public record is unavailable for public inspection and that portion is severable, the Committee shall delete the unavailable portion and shall grant the request with respect to the available portion.\n\n1986, c.11, s.3; 2017, c.1, s.4; 2023, c.17, s.9",
+          "contentHash": "777b84c816bec6401806243289b64bdab7bcfc91a24e5eb7ec6dac72ae29e2aa"
+        }
+      ],
+      "contentHash": "87d42da3f0a4f35a1e6d1d7f6ddef03fe2fe9bb2c610be21575276e3abcc1283"
+    },
+    {
+      "id": "section-10.3",
+      "sourceKey": "section:10.3",
+      "componentType": "section",
+      "label": "10.3",
+      "heading": "Referral to Court or Ombud",
+      "text": "Referral to Court or Ombud\n\n10.3(1)Where an applicant is not satisfied with the decision of the Committee or where the Committee fails to reply to a request within the prescribed time, the applicant may in the form and manner prescribed by regulation either\n\n(a)\nrefer the matter to a judge of The Court of King’s Bench of New Brunswick, or\n\n(b)\nrefer the matter to the Ombud.\n\n10.3(2)Where the applicant refers the matter to a judge of The Court of King’s Bench of New Brunswick under subsection (1)\n\n(a)\nthe applicant may not thereafter refer the matter to the Ombud under paragraph (1)(b) or under the Ombud Act, and\n\n(b)\nthe Ombud, in such a case, may not act under the authority of this Act or the Ombud Act with respect to that matter.\n\n10.3(3)Where the applicant refers the matter to the Ombud under subsection (1), the applicant may not, subject to subsection 10.7(1), refer the matter to a judge of The Court of King’s Bench of New Brunswick.\n\n10.3(4)The Ombud and The Court of King’s Bench of New Brunswick judge may, with respect to any matter referred to them, inspect the public record that is the subject matter of the referral in order to determine the referral, but such inspection shall be made in camera without the presence of any person.\n\n1986, c.11, s.3; 2017, c.1, s.4; 2019, c.12, s.1; 2023, c.17, s.9",
+      "subsections": [
+        {
+          "id": "10.3-subsection-1",
+          "sourceKey": "section:10.3/subsection:1",
+          "label": "10.3(1)",
+          "text": "10.3(1)Where an applicant is not satisfied with the decision of the Committee or where the Committee fails to reply to a request within the prescribed time, the applicant may in the form and manner prescribed by regulation either\n\n(a)\nrefer the matter to a judge of The Court of King’s Bench of New Brunswick, or\n\n(b)\nrefer the matter to the Ombud.",
+          "contentHash": "bb99cac7196f8d032621cf60430b33767c3890aa87429d5cf7468e34c9ebbb85"
+        },
+        {
+          "id": "10.3-subsection-2",
+          "sourceKey": "section:10.3/subsection:2",
+          "label": "10.3(2)",
+          "text": "10.3(2)Where the applicant refers the matter to a judge of The Court of King’s Bench of New Brunswick under subsection (1)\n\n(a)\nthe applicant may not thereafter refer the matter to the Ombud under paragraph (1)(b) or under the Ombud Act, and\n\n(b)\nthe Ombud, in such a case, may not act under the authority of this Act or the Ombud Act with respect to that matter.",
+          "contentHash": "16b1f3eeeb18531cdebc698dfe96f77916d907d8f6de206e78b45f02d4b1e7d9"
+        },
+        {
+          "id": "10.3-subsection-3",
+          "sourceKey": "section:10.3/subsection:3",
+          "label": "10.3(3)",
+          "text": "10.3(3)Where the applicant refers the matter to the Ombud under subsection (1), the applicant may not, subject to subsection 10.7(1), refer the matter to a judge of The Court of King’s Bench of New Brunswick.",
+          "contentHash": "250de6e9aff710954a76e31476a320264817b198c4a8551ba78fa24b1923e073"
+        },
+        {
+          "id": "10.3-subsection-4",
+          "sourceKey": "section:10.3/subsection:4",
+          "label": "10.3(4)",
+          "text": "10.3(4)The Ombud and The Court of King’s Bench of New Brunswick judge may, with respect to any matter referred to them, inspect the public record that is the subject matter of the referral in order to determine the referral, but such inspection shall be made in camera without the presence of any person.\n\n1986, c.11, s.3; 2017, c.1, s.4; 2019, c.12, s.1; 2023, c.17, s.9",
+          "contentHash": "805d7a75e5301a727773b32d82c86113ebcf3c5b11ff51fbf2175ffd45d3476b"
+        }
+      ],
+      "contentHash": "8cf6066a31df8e2772f3121fcf1db4b863c112d2d1b8fdc440480acac2536835"
+    },
+    {
+      "id": "section-10.4",
+      "sourceKey": "section:10.4",
+      "componentType": "section",
+      "label": "10.4",
+      "heading": "Review by Court",
+      "text": "Review by Court\n\n10.4(1)The Court of King’s Bench of New Brunswick judge shall upon the applicant’s request hold a hearing, and\n\n(a)\nin the case where the Committee denied the applicant’s request in whole or in part, may order the Committee to grant the request in whole or in part;\n\n(b)\nin the case where the Committee failed to reply to a request, shall order that the Committee\n\n(i)\ngrant the request, or\n\n(ii)\ndeny the request;\n\n(c)\nmay make any other order that is appropriate.\n\n10.4(2)A copy of the decision of The Court of King’s Bench of New Brunswick judge shall be sent to the applicant and to the Committee.\n\n10.4(3)No appeal lies from the decision of The Court of King’s Bench of New Brunswick judge under subsection (1).\n\n1986, c.11, s.3; 2023, c.17, s.9",
+      "subsections": [
+        {
+          "id": "10.4-subsection-1",
+          "sourceKey": "section:10.4/subsection:1",
+          "label": "10.4(1)",
+          "text": "10.4(1)The Court of King’s Bench of New Brunswick judge shall upon the applicant’s request hold a hearing, and\n\n(a)\nin the case where the Committee denied the applicant’s request in whole or in part, may order the Committee to grant the request in whole or in part;\n\n(b)\nin the case where the Committee failed to reply to a request, shall order that the Committee\n\n(i)\ngrant the request, or\n\n(ii)\ndeny the request;\n\n(c)\nmay make any other order that is appropriate.",
+          "contentHash": "efb14c382d0b51a2d3e7d44a97f7ccbf0d9f96122d9aee11c3657d2ed1be2894"
+        },
+        {
+          "id": "10.4-subsection-2",
+          "sourceKey": "section:10.4/subsection:2",
+          "label": "10.4(2)",
+          "text": "10.4(2)A copy of the decision of The Court of King’s Bench of New Brunswick judge shall be sent to the applicant and to the Committee.",
+          "contentHash": "0f565c2b6f99e0d6018513935de987e68d918a6ee9f68882a5c35eda4897c4ef"
+        },
+        {
+          "id": "10.4-subsection-3",
+          "sourceKey": "section:10.4/subsection:3",
+          "label": "10.4(3)",
+          "text": "10.4(3)No appeal lies from the decision of The Court of King’s Bench of New Brunswick judge under subsection (1).\n\n1986, c.11, s.3; 2023, c.17, s.9",
+          "contentHash": "8c191378d3dfd321a2e4e36da0b4fbf4e0ecfacd3cc7408a24213a30996c3690"
+        }
+      ],
+      "contentHash": "826c0b4f440727aeca7c754f96c1a437f5fa17978c06a715cc23eccb39f8c8c3"
+    },
+    {
+      "id": "section-10.5",
+      "sourceKey": "section:10.5",
+      "componentType": "section",
+      "label": "10.5",
+      "heading": "Review by Ombud",
+      "text": "Review by Ombud\n\n10.5The Ombud shall in accordance with this Act and the power, authority, privileges, rights and duties vested in the Ombud under the Ombud Act review the matter referred to him or her within 30 days of having received the referral.\n1986, c.11, s.3; 2017, c.1, s.4",
+      "subsections": [],
+      "contentHash": "42bbc5b331f1ddb8b667ff70115696b29a7c204f494a2283827c8625879dd710"
+    },
+    {
+      "id": "section-10.6",
+      "sourceKey": "section:10.6",
+      "componentType": "section",
+      "label": "10.6",
+      "heading": "Recommendation of Ombud",
+      "text": "Recommendation of Ombud\n\n10.6(1)Upon having reviewed the matter referred to him, the Ombud shall forthwith, in writing, advise the Committee of his recommendation and shall forward a copy of such recommendation to the person making the referral.\n\n10.6(2)The Ombud may in such recommendation\n\n(a)\nrecommend that the Committee grant the request in whole or in part;\n\n(b)\nin the case where the Committee failed to reply to a request, recommend that the Committee\n\n(i)\ngrant the request in whole or in part, or\n\n(ii)\ndeny the request.\n\n10.6(3)The Committee, upon reviewing the recommendation of the Ombud, shall carry out the recommendations of the Ombud or make such other decision as it thinks fit and upon making its decision, shall notify, in writing, the person making the referral and shall forward to the Ombud a copy of its decision.\n\n1986, c.11, s.3; 2017, c.1, s.4",
+      "subsections": [
+        {
+          "id": "10.6-subsection-1",
+          "sourceKey": "section:10.6/subsection:1",
+          "label": "10.6(1)",
+          "text": "10.6(1)Upon having reviewed the matter referred to him, the Ombud shall forthwith, in writing, advise the Committee of his recommendation and shall forward a copy of such recommendation to the person making the referral.",
+          "contentHash": "c6af0f9a5c2b3c8087848a429a8ba2563138c698d6615fb21ac9ed1a55a2dedc"
+        },
+        {
+          "id": "10.6-subsection-2",
+          "sourceKey": "section:10.6/subsection:2",
+          "label": "10.6(2)",
+          "text": "10.6(2)The Ombud may in such recommendation\n\n(a)\nrecommend that the Committee grant the request in whole or in part;\n\n(b)\nin the case where the Committee failed to reply to a request, recommend that the Committee\n\n(i)\ngrant the request in whole or in part, or\n\n(ii)\ndeny the request.",
+          "contentHash": "6bed467d3e22d85af62e4c443a718a42303b2b65a49ae1a75ff4e7b7e3d8002e"
+        },
+        {
+          "id": "10.6-subsection-3",
+          "sourceKey": "section:10.6/subsection:3",
+          "label": "10.6(3)",
+          "text": "10.6(3)The Committee, upon reviewing the recommendation of the Ombud, shall carry out the recommendations of the Ombud or make such other decision as it thinks fit and upon making its decision, shall notify, in writing, the person making the referral and shall forward to the Ombud a copy of its decision.\n\n1986, c.11, s.3; 2017, c.1, s.4",
+          "contentHash": "3af4a136288a8d0da00e74904ec3f00c1b32f01e8130493b47e7140457b75afd"
+        }
+      ],
+      "contentHash": "bf443a5fc183ab3ec0c232fdcdb4e18898adf966314e36b43045d4aa1da24e96"
+    },
+    {
+      "id": "section-10.7",
+      "sourceKey": "section:10.7",
+      "componentType": "section",
+      "label": "10.7",
+      "heading": "Appeal from Committee’s decision",
+      "text": "Appeal from Committee’s decision\n\n10.7(1)Where the person making the referral is not satisfied with the decision of the Committee under subsection 10.6(3), that person may appeal the matter to a judge of The Court of King’s Bench of New Brunswick.\n\n10.7(2)Subsection 10.3(4) and section 10.4 apply with the necessary modifications to an appeal made under subsection (1).\n\n1986, c.11, s.3; 2023, c.17, s.9",
+      "subsections": [
+        {
+          "id": "10.7-subsection-1",
+          "sourceKey": "section:10.7/subsection:1",
+          "label": "10.7(1)",
+          "text": "10.7(1)Where the person making the referral is not satisfied with the decision of the Committee under subsection 10.6(3), that person may appeal the matter to a judge of The Court of King’s Bench of New Brunswick.",
+          "contentHash": "fe67388338a770eb326eb142049271db69326907f2e4bd7601642e0d72f068ca"
+        },
+        {
+          "id": "10.7-subsection-2",
+          "sourceKey": "section:10.7/subsection:2",
+          "label": "10.7(2)",
+          "text": "10.7(2)Subsection 10.3(4) and section 10.4 apply with the necessary modifications to an appeal made under subsection (1).\n\n1986, c.11, s.3; 2023, c.17, s.9",
+          "contentHash": "4b450fdd97d32edb34a4e945181197e8964942188e0b0f844cc1c0c99dfdef76"
+        }
+      ],
+      "contentHash": "cad0b5c5af9257c509a631901d45e560e49dfa9f427dbce253aa562cf18cdbbc"
+    },
+    {
+      "id": "section-10.8",
+      "sourceKey": "section:10.8",
+      "componentType": "section",
+      "label": "10.8",
+      "heading": "Award of costs",
+      "text": "Award of costs\n\n10.8Where a matter is referred or appealed to a judge of The Court of King’s Bench of New Brunswick, the judge shall award costs in favour of the applicant\n\n(a)\nwhere the applicant is successful, or\n\n(b)\nwhere the applicant is not successful, if the judge considers it to be in the public interest.\n\n1986, c.11, s.3; 2023, c.17, s.9",
+      "subsections": [],
+      "contentHash": "b98716e7333eb9dd1e77a38a13c4b1c54558168f8293eff97edf8ece6e55f8a3"
+    },
+    {
+      "id": "section-10.9",
+      "sourceKey": "section:10.9",
+      "componentType": "section",
+      "label": "10.9",
+      "heading": "Where request to inspect public record granted",
+      "text": "Where request to inspect public record granted\n\n10.9(1)Where a request to inspect a public record is granted in whole or in part by the Provincial Archivist, the Committee or a judge of The Court of King’s Bench of New Brunswick, the Provincial Archivist shall, upon payment of the fee prescribed by regulation, allow the public record or the portion of the public record to be inspected, and to be reproduced in whole or in part.\n\n10.9(2)Where a request to inspect a public record is granted, the public record shall only be provided in the language or languages in which it is made.\n\n10.9(3)A person whose request to inspect personal information concerning another person in a public record has been granted in whole or in part for the purpose of doing legitimate research or statistical work shall not inspect that information until he has completed and returned to the Provincial Archivist an undertaking in the form prescribed by regulation.\n\n10.9(4)Any person who breaches an undertaking commits an offence punishable under Part II of the Provincial Offences Procedure Act as a category F offence.\n\n10.9(5)A person whose request to inspect personal information concerning another person in a public record has been granted in whole or in part for the purpose of doing legitimate research or statistical work shall permit the Provincial Archivist upon the Provincial Archivist’s request to review any research notes and drafts of planned publications that contain information derived from the personal information inspected.\n\n10.9(6)A person whose request to inspect personal information concerning another person in a public record has been granted in whole or in part for the purpose of doing legitimate research or statistical work may be refused access to a public record at any time by the Provincial Archivist if he is satisfied that that person has breached an undertaking.\n\n10.9(7)Sections 10.3, 10.4, 10.5, 10.6, 10.7 and 10.8 and subsection (8) apply with the necessary modifications to a refusal of access by the Provincial Archivist under subsection (6).\n\n10.9(8)In any proceeding under this Act other than an application for review made under subsection 10.1(5), the onus shall be on the Provincial Archivist to show that there is no right to the information that is the subject of the proceeding.\n\n1986, c.11, s.3; 2008, c.11, s.3; 2023, c.17, s.9",
+      "subsections": [
+        {
+          "id": "10.9-subsection-1",
+          "sourceKey": "section:10.9/subsection:1",
+          "label": "10.9(1)",
+          "text": "10.9(1)Where a request to inspect a public record is granted in whole or in part by the Provincial Archivist, the Committee or a judge of The Court of King’s Bench of New Brunswick, the Provincial Archivist shall, upon payment of the fee prescribed by regulation, allow the public record or the portion of the public record to be inspected, and to be reproduced in whole or in part.",
+          "contentHash": "bc891f09780036126ca5c67346e1108bc82a005366e905685218ba9587164045"
+        },
+        {
+          "id": "10.9-subsection-2",
+          "sourceKey": "section:10.9/subsection:2",
+          "label": "10.9(2)",
+          "text": "10.9(2)Where a request to inspect a public record is granted, the public record shall only be provided in the language or languages in which it is made.",
+          "contentHash": "fcc1d478de4e596d05e5c2f099652300b9adc400b501c06315e34fe75fd94078"
+        },
+        {
+          "id": "10.9-subsection-3",
+          "sourceKey": "section:10.9/subsection:3",
+          "label": "10.9(3)",
+          "text": "10.9(3)A person whose request to inspect personal information concerning another person in a public record has been granted in whole or in part for the purpose of doing legitimate research or statistical work shall not inspect that information until he has completed and returned to the Provincial Archivist an undertaking in the form prescribed by regulation.",
+          "contentHash": "a31fe72358b9645c49d1657bf77f8d61c2bf5ca712c54db2284b9d7e034967c4"
+        },
+        {
+          "id": "10.9-subsection-4",
+          "sourceKey": "section:10.9/subsection:4",
+          "label": "10.9(4)",
+          "text": "10.9(4)Any person who breaches an undertaking commits an offence punishable under Part II of the Provincial Offences Procedure Act as a category F offence.",
+          "contentHash": "49030cb765f68de19e256888ab18c865f0df2bf953736616ba8878ef53d28be9"
+        },
+        {
+          "id": "10.9-subsection-5",
+          "sourceKey": "section:10.9/subsection:5",
+          "label": "10.9(5)",
+          "text": "10.9(5)A person whose request to inspect personal information concerning another person in a public record has been granted in whole or in part for the purpose of doing legitimate research or statistical work shall permit the Provincial Archivist upon the Provincial Archivist’s request to review any research notes and drafts of planned publications that contain information derived from the personal information inspected.",
+          "contentHash": "9638f7ae4c49e6c457a8ce298d06bc7ed478f660baf21f3a471eea1f0a2baad7"
+        },
+        {
+          "id": "10.9-subsection-6",
+          "sourceKey": "section:10.9/subsection:6",
+          "label": "10.9(6)",
+          "text": "10.9(6)A person whose request to inspect personal information concerning another person in a public record has been granted in whole or in part for the purpose of doing legitimate research or statistical work may be refused access to a public record at any time by the Provincial Archivist if he is satisfied that that person has breached an undertaking.",
+          "contentHash": "63cf7aa8fc4b345ddf99ea014d1784cccd44aefaeeee2db6c9ed1eb6785d3726"
+        },
+        {
+          "id": "10.9-subsection-7",
+          "sourceKey": "section:10.9/subsection:7",
+          "label": "10.9(7)",
+          "text": "10.9(7)Sections 10.3, 10.4, 10.5, 10.6, 10.7 and 10.8 and subsection (8) apply with the necessary modifications to a refusal of access by the Provincial Archivist under subsection (6).",
+          "contentHash": "e328fd68735b0cabb7dd1ede6720aaf83ae1220b200a9a5f9b77c61107d98c47"
+        },
+        {
+          "id": "10.9-subsection-8",
+          "sourceKey": "section:10.9/subsection:8",
+          "label": "10.9(8)",
+          "text": "10.9(8)In any proceeding under this Act other than an application for review made under subsection 10.1(5), the onus shall be on the Provincial Archivist to show that there is no right to the information that is the subject of the proceeding.\n\n1986, c.11, s.3; 2008, c.11, s.3; 2023, c.17, s.9",
+          "contentHash": "64c8087c2524d2269c31543e657f6b3fae49be838da8db4279e5263a7163bcc4"
+        }
+      ],
+      "contentHash": "bc934204248e34926900227856b896854b0b842ee183d43b5c8bc9e68979e6f0"
+    },
+    {
+      "id": "section-11",
+      "sourceKey": "section:11",
+      "componentType": "section",
+      "label": "11",
+      "heading": "Certified copies of public records",
+      "text": "Certified copies of public records\n\n11The signature of the Provincial Archivist certifying a copy of a public record to be a true copy is proof of the fact that the Provincial Archivist has in his lawful possession the original public record or a duplication, photocopy, microfilm or other reproduction of that public record, and any copy so signed and certified is and shall be deemed to be equivalent to the original record.\n1986, c.11, s.4",
+      "subsections": [],
+      "contentHash": "4188f82d84bc4cae0fd2964f994216646db8b5967b1618cce6a886e8866d458f"
+    },
+    {
+      "id": "section-12",
+      "sourceKey": "section:12",
+      "componentType": "section",
+      "label": "12",
+      "heading": "Offences and penalties",
+      "text": "Offences and penalties\n\n12A person who unlawfully damages, mutilates or destroys any public record or removes or withholds from the possession of the Archives or a department any public record commits an offence punishable under Part II of the Provincial Offences Procedure Act as a category F offence.\n1986, c.11, s.5; 1990, c.61, s.10",
+      "subsections": [],
+      "contentHash": "c69d7d22c776c1b66044b7299528da7108485de5c8ce74c1505962f65b4dc675"
+    },
+    {
+      "id": "section-13",
+      "sourceKey": "section:13",
+      "componentType": "section",
+      "label": "13",
+      "heading": "Regulations",
+      "text": "Regulations\n\n13The Lieutenant-Governor in Council may make regulations\n\n(a)\nprescribing additional duties of the Provincial Archivist;\n\n(b)\nprescribing a tariff of charges to be made for the use of the facilities and services of the Archives;\n\n(b.1)\nprescribing the form and manner of applications, referrals and appeals under this Act;\n\n(b.2)\nprescribing forms;\n\n(b.3)\nprescribing exceptions to public records that are unavailable for public inspection under subsection 10(3);\n\n(c)\nrespecting the transfer of public records to the Archives;\n\n(d)\nprescribing the hours and days during which the Archives shall be open to the public; and\n\n(e)\ngenerally for the better administration of this Act.\n\n1986, c.11, s.6; 1995, c.51, s.7",
+      "subsections": [],
+      "contentHash": "39cffa3068043d6426a3c38a4b2597071eaa68be15dd590b09a3705b84f2e7fa"
+    },
+    {
+      "id": "section-14",
+      "sourceKey": "section:14",
+      "componentType": "section",
+      "label": "14",
+      "heading": "Repeal",
+      "text": "Repeal\n\n14The Archives Act, chapter A-11 of the Revised Statutes, 1973, is repealed.",
+      "subsections": [],
+      "contentHash": "3983781f6a4557cdace22eb0214c086247b23241490fb99ac7ee5666e6a2ff12"
+    },
+    {
+      "id": "section-15",
+      "sourceKey": "section:15",
+      "componentType": "section",
+      "label": "15",
+      "heading": "Commencement",
+      "text": "Commencement\n\n15This Act or any provision thereof comes into force on a day to be fixed by proclamation.\n\nN.B. This Act was proclaimed and came into force June 29, 1977.\n\nN.B. This Act is consolidated to June 16, 2023.",
+      "subsections": [],
+      "contentHash": "4f08cec2854d0943c7f9f178e7a229f7ab63f7e67a28de031eac21b9091dd3f1"
+    }
+  ],
+  "sections": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
+      "label": "1",
+      "heading": "Definitions",
+      "text": "Definitions\n\n1In this Act\n“Committee” means the Public Records Committee constituted under section 6;(Comité)\n\n“community board” Repealed: 2019, c.12, s.1\n\n“department” includes(ministère)\n\n(a)\nthe departments as defined under the Financial Administration Act,\n\n(a.1)\na public body as defined in the Right to Information and Protection of Privacy Act, excluding the following public bodies:\n\n(i)\nThe University of New Brunswick;\n\n(ii)\nUniversité de Moncton;\n\n(iii)\nSt. Thomas University;\n\n(iv)\nMount Allison University;\n\n(b)\nany board, commission, task force, crown corporation or other agency of the Province,\n\n(c)\nthe office of the Clerk of the Legislative Assembly, and\n\n(d)\nany court established by the Province;\n\n“District Education Council” means a District Education Council established under section 36.1 of the Education Act;(conseil d’éducation de district)\n\n“hospital corporation” Repealed: 2002, c.1, s.2\n\n“identifiable individual” means an individual who can be identified by the contents of information because the information(particulier identifiable)\n\n(a)\nincludes the individual’s name,\n\n(b)\nmakes the individual’s identity obvious, or\n\n(c)\nis likely in the circumstances to be combined with other information that includes the individual’s name or makes the individual’s identity obvious;\n\n“Minister” means the Minister of Finance and Treasury Board; (Ministre)\n\n“Parent School Support Committee” means a Parent School Support Committee established under section 32 of the Education Act;(comité parental d’appui à l’école)\n\n“personal information” means information about an identifiable individual;(renseignement personnel)\n\n“public records” means the books, papers and records vested in the Crown under the Public Records Act, and includes records(documents publics)\n\n(a)\nprepared or received by any department pursuant to an Act of the Legislature or in connection with the transaction of public business,\n\n(b)\npreserved or appropriate for preservation by a department,\n\n(c)\ncontaining information on the organization, functions, procedures, policies or activities of a department, or other information of past, present or potential value to the Province,\n\nbut does not include\n\n(d)\nlibrary or museum objects made or acquired and preserved solely for reference or exhibition purposes,\n\n(e)\nextra copies of records created only for convenience of reference,\n\n(f)\nworking papers, or\n\n(g)\nstocks of publications or printed documents;\n\n“records” means(documents)\n\n(a)\ncorrespondence, memoranda, forms and other papers and books;\n\n(b)\nmaps, plans and charts;\n\n(c)\nphotographs, prints and drawings;\n\n(d)\nmotion picture films, microfilms and video tapes;\n\n(e)\nsound recordings, magnetic tapes, computer cards and other machine readable records; and\n\n(f)\nall other documentary materials regardless of physical form or characteristics;\n\n“records schedule” means a timetable that describes the lifespan of a record from the time of its creation through active and dormant stages to its final disposition either as waste or as a record of legal or historical value to be permanently preserved;(tableau de conservation de documents)\n\n“regional health authority” means a regional health authority as defined in the Regional Health Authorities Act.(régie régionale de la santé)\n\n“school board” Repealed: 2019, c.12, s.1\n\n1983, c.30, s.3; 1986, c.8, s.10; 1986, c.11, s.1; 1992, c.2, s.6; 1995, c.51, s.7; 1998, c.P-19.1, s.8; 2002, c.1, s.2; 2009, c.R-10.6, s.87; 2010, c.31, s.20; 2012, c.39, s.14; 2015, c.44, s.85; 2016, c.37, s.16; 2019, c.12, s.1; 2019, c.29, s.8; 2023, c.17, s.9",
+      "subsections": [],
+      "contentHash": "935480e7946d2118fd982b2042fa066dbb41e5d8acab68335b9758415c8b915f"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "label": "2",
+      "heading": "Administration",
+      "text": "Administration\n\n2The Minister is responsible for the administration of this Act.\n2015, c.44, s.85",
+      "subsections": [],
+      "contentHash": "4e19048a68a59053d9ce45245b68e9e9fb5c248f2bf59839eb6cd5dcb0eb927f"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
+      "label": "3",
+      "heading": "Archives",
+      "text": "Archives\n\n3The Archives are to consist of all the records in the care, custody and control of the Provincial Archivist at the coming into force of this Act, all records that under this or any other Act are placed in the care, custody and control of the Provincial Archivist and books, papers and records vested in the Crown under the Public Records Act.\n2023, c.17, s.9",
+      "subsections": [],
+      "contentHash": "55b622b71077e28bca5ac6b10f11290ccbca06059355ccf14e8af71a3657ff01"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
+      "label": "4",
+      "heading": "Provincial Archivist",
+      "text": "Provincial Archivist\n\n4There shall be a Provincial Archivist appointed in accordance with the Civil Service Act.",
+      "subsections": [],
+      "contentHash": "bb716116e04f77f098a56d76e7a70cdb8051737d3e25649616f973e1c77a01d5"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "componentType": "section",
+      "label": "5",
+      "heading": "Duties of Provincial Archivist",
+      "text": "Duties of Provincial Archivist\n\n5(1)The duties of the Provincial Archivist are\n\n(a)\nto have the care, custody and control of the Archives;\n\n(b)\nto prepare records schedules governing the retention, destruction and transfer of public records to the Archives;\n\n(c)\nto provide economical storage facilities for public records and to encourage the use of such facilities;\n\n(d)\nto encourage the use by departments and local governments of modern records storage and classification systems in order to ensure that important policies and programs are documented and that public records are protected against deterioration, loss and destruction;\n\n(e)\nto discover, collect and preserve records having any bearing upon the history of New Brunswick;\n\n(f)\nto copy and publish copies of records relating to the history of New Brunswick;\n\n(g)\nto classify, index and catalogue all records in his custody; and\n\n(h)\nto perform such other duties as are prescribed by the Lieutenant-Governor in Council.\n\n5(2)The Provincial Archivist may acquire by gift, bequest, loan or purchase and place in the Archives for preservation records having any bearing upon the history of New Brunswick upon such terms and conditions as are stated by the person giving, bequeathing, lending or selling the records.\n\n1982, c.3, s.3; 2005, c.7, s.2; 2017, c.20, s.4",
+      "subsections": [
+        {
+          "id": "5-subsection-1",
+          "sourceKey": "section:5/subsection:1",
+          "label": "5(1)",
+          "text": "5(1)The duties of the Provincial Archivist are\n\n(a)\nto have the care, custody and control of the Archives;\n\n(b)\nto prepare records schedules governing the retention, destruction and transfer of public records to the Archives;\n\n(c)\nto provide economical storage facilities for public records and to encourage the use of such facilities;\n\n(d)\nto encourage the use by departments and local governments of modern records storage and classification systems in order to ensure that important policies and programs are documented and that public records are protected against deterioration, loss and destruction;\n\n(e)\nto discover, collect and preserve records having any bearing upon the history of New Brunswick;\n\n(f)\nto copy and publish copies of records relating to the history of New Brunswick;\n\n(g)\nto classify, index and catalogue all records in his custody; and\n\n(h)\nto perform such other duties as are prescribed by the Lieutenant-Governor in Council.",
+          "contentHash": "acf8d9e72add2e18064f410b6ea29fd7c80ac9bdf5b877cc0470aff6a6e13f6a"
+        },
+        {
+          "id": "5-subsection-2",
+          "sourceKey": "section:5/subsection:2",
+          "label": "5(2)",
+          "text": "5(2)The Provincial Archivist may acquire by gift, bequest, loan or purchase and place in the Archives for preservation records having any bearing upon the history of New Brunswick upon such terms and conditions as are stated by the person giving, bequeathing, lending or selling the records.\n\n1982, c.3, s.3; 2005, c.7, s.2; 2017, c.20, s.4",
+          "contentHash": "9d9a55df3e42a6685c2faa5b75c1f769a0c0ae34da3fee88d58649c063604b92"
+        }
+      ],
+      "contentHash": "bb20067afe7e4e19e904351cec1e631c1bb96e200fadfd2cdc3b523b074b11e1"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "componentType": "section",
+      "label": "6",
+      "heading": "Public Records Committee",
+      "text": "Public Records Committee\n\n6(1)There is hereby established a committee to be known as the Public Records Committee consisting of\n\n(a)\nthe Provincial Archivist who shall be Chairman,\n\n(b)\nthe Deputy Minister of Justice and Public Safety, or a person designated by him to act on his behalf,\n\n(c)\nthe Comptroller or a person designated by him to act on his behalf,\n\n(d)\nthe Secretary to Treasury Board or a person designated by him to act on his behalf, and\n\n(e)\nsuch other persons as are appointed by the Lieutenant-Governor in Council.\n\n6(2)The Committee shall meet from time to time to advise the Provincial Archivist on matters relating to the retention and disposal of public records.\n\n1984, c.44, s.11; 2006, c.16, s.12; 2012, c.39, s.14; 2016, c.37, s.16; 2019, c.2, s.17; 2020, c.25, s.8",
+      "subsections": [
+        {
+          "id": "6-subsection-1",
+          "sourceKey": "section:6/subsection:1",
+          "label": "6(1)",
+          "text": "6(1)There is hereby established a committee to be known as the Public Records Committee consisting of\n\n(a)\nthe Provincial Archivist who shall be Chairman,\n\n(b)\nthe Deputy Minister of Justice and Public Safety, or a person designated by him to act on his behalf,\n\n(c)\nthe Comptroller or a person designated by him to act on his behalf,\n\n(d)\nthe Secretary to Treasury Board or a person designated by him to act on his behalf, and\n\n(e)\nsuch other persons as are appointed by the Lieutenant-Governor in Council.",
+          "contentHash": "4b3f08a1601e4ea6a97c64e46f8233628d7415ded7652a166ebe3565ca89cd66"
+        },
+        {
+          "id": "6-subsection-2",
+          "sourceKey": "section:6/subsection:2",
+          "label": "6(2)",
+          "text": "6(2)The Committee shall meet from time to time to advise the Provincial Archivist on matters relating to the retention and disposal of public records.\n\n1984, c.44, s.11; 2006, c.16, s.12; 2012, c.39, s.14; 2016, c.37, s.16; 2019, c.2, s.17; 2020, c.25, s.8",
+          "contentHash": "70fc263d1063aa5a1596eab01a968052fe2ed3ec63882a52fc66994036329b0d"
+        }
+      ],
+      "contentHash": "4f779f08b6bbc9b06ab265b4e254743feebe7642b977a4cf45a005983d0bbe4a"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "componentType": "section",
+      "label": "7",
+      "heading": "Documents in records schedule",
+      "text": "Documents in records schedule\n\n7(1)Public records referred to in a records schedule approved by the Provincial Archivist shall be disposed of in accordance with that records schedule.\n\n7(2)Where any dispute arises between the Provincial Archivist and a department concerning the establishment or implementation of a records schedule, the Provincial Archivist may submit the matter to the Committee and after an investigation the Committee shall make recommendations to the Lieutenant-Governor in Council with respect to that dispute.\n\n7(3)The Lieutenant-Governor in Council, by order in council, may make directions with respect to the dispute.",
+      "subsections": [
+        {
+          "id": "7-subsection-1",
+          "sourceKey": "section:7/subsection:1",
+          "label": "7(1)",
+          "text": "7(1)Public records referred to in a records schedule approved by the Provincial Archivist shall be disposed of in accordance with that records schedule.",
+          "contentHash": "2fd2ef79d16f5e904368108a0e4f16a1b6dcf590e9d3b8f127a3dffd01f2848f"
+        },
+        {
+          "id": "7-subsection-2",
+          "sourceKey": "section:7/subsection:2",
+          "label": "7(2)",
+          "text": "7(2)Where any dispute arises between the Provincial Archivist and a department concerning the establishment or implementation of a records schedule, the Provincial Archivist may submit the matter to the Committee and after an investigation the Committee shall make recommendations to the Lieutenant-Governor in Council with respect to that dispute.",
+          "contentHash": "fb2b0637d624e0bd610f66c4cb738d45e7f9fe43332b0ed3771a155116116cb3"
+        },
+        {
+          "id": "7-subsection-3",
+          "sourceKey": "section:7/subsection:3",
+          "label": "7(3)",
+          "text": "7(3)The Lieutenant-Governor in Council, by order in council, may make directions with respect to the dispute.",
+          "contentHash": "416e86156281970a3d84c626ef444ed42cd04ee9e06a00baf6809965bc45492a"
+        }
+      ],
+      "contentHash": "a87d4b92ba309904d88e331c0a7eb264cb9daeebb07285b54a5025662ecadf5d"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "componentType": "section",
+      "label": "8",
+      "heading": "Destruction or removal of public records",
+      "text": "Destruction or removal of public records\n\n8Public records shall not be destroyed or removed from the ownership or control of the Province unless such destruction or removal is authorized under this Act.",
+      "subsections": [],
+      "contentHash": "61c72f1d71ae6a0c3640cd950f49236df5efc8d8d968cb8112ac4b18567fc79a"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "componentType": "section",
+      "label": "9",
+      "heading": "Wrongful withholding of public records",
+      "text": "Wrongful withholding of public records\n\n9(1)Upon a summary application of the Minister, supported by affidavit, a Judge of The Court of King’s Bench of New Brunswick may make an order requiring the person wrongfully withholding public records to deliver them to the proper custodian or to such person as is named in the order.\n\n9(2)The Judge may grant an order in the first instance or issue a summons to show cause, and costs shall be in the discretion of the Judge.\n\n1979, c.41, s.5; 1982, c.3, s.3; 2023, c.17, s.9",
+      "subsections": [
+        {
+          "id": "9-subsection-1",
+          "sourceKey": "section:9/subsection:1",
+          "label": "9(1)",
+          "text": "9(1)Upon a summary application of the Minister, supported by affidavit, a Judge of The Court of King’s Bench of New Brunswick may make an order requiring the person wrongfully withholding public records to deliver them to the proper custodian or to such person as is named in the order.",
+          "contentHash": "0066ebe4aa3ce9b8b8c02d50abafec55e7f9b09628e7a965679d9a60f2dc3ef3"
+        },
+        {
+          "id": "9-subsection-2",
+          "sourceKey": "section:9/subsection:2",
+          "label": "9(2)",
+          "text": "9(2)The Judge may grant an order in the first instance or issue a summons to show cause, and costs shall be in the discretion of the Judge.\n\n1979, c.41, s.5; 1982, c.3, s.3; 2023, c.17, s.9",
+          "contentHash": "4f36c367ecaa0ece4195cea6042447753a13df296bbe0e711ec9ab1c7cb3a10c"
+        }
+      ],
+      "contentHash": "f61ed60b7c2be0a6503f87c50c6697c6d0d3651348f9fa0c5706491f95791c54"
+    },
+    {
+      "id": "section-10",
+      "sourceKey": "section:10",
+      "componentType": "section",
+      "label": "10",
+      "heading": "Public inspection of public records",
+      "text": "Public inspection of public records\n\n10(1)Subject to subsections (2) and (3), all public records transferred to the Archives and in the possession, care, custody and control of the Provincial Archivist are available for public inspection.\n\n10(2)Subsection (1) does not apply to public records that, for the purpose of temporary storage, have been placed in storage facilities provided by the Provincial Archivist.\n\n10(3)Subject to subsections (3.1), (4), (6), (7) and (8), public records are unavailable for public inspection under this Act where the inspection\n\n(a)\nwould disclose information the confidentiality of which is protected by law;\n\n(b)\nwould reveal personal information concerning another person;\n\n(b.1)\nwould reveal personal information concerning the applicant that\n\n(i)\nwas provided by another person in confidence, or is confidential in nature, or\n\n(ii)\ncould reasonably be expected to threaten the safety or mental or physical health of the applicant or another person;\n\n(c)\nwould cause financial loss or gain to a person or department, or would jeopardize negotiations leading to an agreement or contract;\n\n(d)\nwould reveal financial, commercial, technical or scientific information\n\n(i)\ngiven by an individual or a corporation that is a going concern in connection with financial assistance applied for or given under the authority of a statute or regulation of the Province, or\n\n(ii)\ngiven in or pursuant to an agreement entered into under the authority of a statute or regulation, if the information relates to the internal management or operations of a corporation that is a going concern;\n\n(e)\nwould violate the confidentiality of information obtained from another government;\n\n(f)\nwould be detrimental to the proper custody, control or supervision of persons under sentence;\n\n(g)\nwould disclose legal opinions or advice provided to a person or department by a law officer of the Crown, or privileged communications as between solicitor and client in a matter of department business;\n\n(g.1)\nwould disclose information respecting the access to or security of particular buildings, other structures or systems, including computer or communication systems, or would disclose information respecting the access to or security of methods employed to protect such buildings, other structures or systems;\n\n(g.2)\nwould disclose the subject or substance\n\n(i)\nof minutes of the meetings of a District Education Council, of a Parent School Support Committee, of the board of trustees of a regional health authority or of a committee of any such board, that were not open to the public,\n\n(ii)\nof briefings to members of such a council, board or committee respecting matters that were, are or are proposed to be brought before such a meeting, or\n\n(iii)\nof discussions, consultations or deliberations among members of such a council, board or committee respecting such a meeting;\n\n(g.3)\nwould disclose advice, opinions, proposals, recommendations, analyses or policy options provided, given or made to or for a District Education Council, a Parent School Support Committee, the board of directors of a regional health authority or a committee of any such board for the purposes of the council, board or committee in exercising its powers and performing its duties and functions;\n\n(h)\nRepealed: 1995, c.51, s.7\n\n(h.1)\nwould disclose opinions or recommendations for a Minister or the Executive Council;\n\n(i)\nwould disclose the substance of proposed legislation or regulations;\n\n(j)\nwould reveal information gathered by police, including the Royal Canadian Mounted Police, in the course of investigating any illegal activity or suspected illegal activity, or the source of such information;\n\n(k)\nwould disclose any information reported to the Attorney General or his agent with respect to any illegal activity or suspected illegal activity, or the source of such information; or\n\n(l)\nwould impede an investigation, inquiry or the administration of justice.\n\n10(3.1)Paragraphs (3)(g.1) to (g.3) and (h.1) do not apply to public records that were in the care, custody and control of the Provincial Archivist and were available for public inspection before those paragraphs came into force.\n\n10(4)Public records referred to in paragraph (3)(b) are available for public inspection after\n\n(a)\none hundred years following the date of birth of the person to whom the personal information relates,\n\n(b)\nthe person to whom the personal information relates consents in writing to the inspection, or\n\n(c)\nthe Committee or a judge of The Court of King’s Bench of New Brunswick has granted a request for inspection for research or statistical purposes.\n\n10(4.1)Despite paragraph (4)(a), if the public records referred to in paragraph (3)(b) would reveal personal health information, as defined in the Personal Health Information Privacy and Access Act, concerning another person, the records are available for public inspection after 50 years following the date of death of the person to whom the personal health information relates.\n\n10(5)Where uncertainty exists regarding a date of birth referred to in paragraph (4)(a) or a date of death referred to in subsection (4.1), the determination of the date by the Provincial Archivist is final.\n\n10(6)Public records referred to in paragraph (3)(e) are available for public inspection if the government from which the information was obtained\n\n(a)\nconsents in writing to the inspection, or\n\n(b)\nmakes the information public.\n\n10(7)Public records referred to in paragraph (3)(g) are available for public inspection after fifty years following the date of their creation.\n\n10(8)Public records referred to in paragraph (3)(h.1) are available for public inspection after twenty years following the date of their creation.\n\n10(9)Notwithstanding subsections (3) to (8) and sections 10.1 to 10.9, an authorized representative of the department from which a public record has been transferred, may inspect the public record for any purpose not inconsistent with the purpose for which the public record was obtained or created by the department.\n\n10(10)Subsection (3) does not apply to a public record\n\n(a)\nthat is available for public inspection at a location other than the Archives, or\n\n(b)\nthat was available for public inspection before it was transferred to the Archives.\n\n10(11)Notwithstanding subsection 10.9(8), the onus shall be on a person requesting to inspect a public record to satisfy the Provincial Archivist that the public record is one referred to in subsection (10).\n\n1986, c.11, s.2; 1995, c.51, s.7; 1998, c.P-19.1, s.8; 2002, c.1, s.2; 2017, c.30, s.3; 2019, c.12, s.1; 2023, c.17, s.9",
+      "subsections": [
+        {
+          "id": "10-subsection-1",
+          "sourceKey": "section:10/subsection:1",
+          "label": "10(1)",
+          "text": "10(1)Subject to subsections (2) and (3), all public records transferred to the Archives and in the possession, care, custody and control of the Provincial Archivist are available for public inspection.",
+          "contentHash": "20776d5a9e41babbe17ab91fbaad493af846a1eaa685e64806b01261125f4065"
+        },
+        {
+          "id": "10-subsection-2",
+          "sourceKey": "section:10/subsection:2",
+          "label": "10(2)",
+          "text": "10(2)Subsection (1) does not apply to public records that, for the purpose of temporary storage, have been placed in storage facilities provided by the Provincial Archivist.",
+          "contentHash": "901aa6c030ff3e9ac68b49a2bc0019f4a21aec4f3c5bb1a980855028562a0750"
+        },
+        {
+          "id": "10-subsection-3",
+          "sourceKey": "section:10/subsection:3",
+          "label": "10(3)",
+          "text": "10(3)Subject to subsections (3.1), (4), (6), (7) and (8), public records are unavailable for public inspection under this Act where the inspection\n\n(a)\nwould disclose information the confidentiality of which is protected by law;\n\n(b)\nwould reveal personal information concerning another person;\n\n(b.1)\nwould reveal personal information concerning the applicant that\n\n(i)\nwas provided by another person in confidence, or is confidential in nature, or\n\n(ii)\ncould reasonably be expected to threaten the safety or mental or physical health of the applicant or another person;\n\n(c)\nwould cause financial loss or gain to a person or department, or would jeopardize negotiations leading to an agreement or contract;\n\n(d)\nwould reveal financial, commercial, technical or scientific information\n\n(i)\ngiven by an individual or a corporation that is a going concern in connection with financial assistance applied for or given under the authority of a statute or regulation of the Province, or\n\n(ii)\ngiven in or pursuant to an agreement entered into under the authority of a statute or regulation, if the information relates to the internal management or operations of a corporation that is a going concern;\n\n(e)\nwould violate the confidentiality of information obtained from another government;\n\n(f)\nwould be detrimental to the proper custody, control or supervision of persons under sentence;\n\n(g)\nwould disclose legal opinions or advice provided to a person or department by a law officer of the Crown, or privileged communications as between solicitor and client in a matter of department business;\n\n(g.1)\nwould disclose information respecting the access to or security of particular buildings, other structures or systems, including computer or communication systems, or would disclose information respecting the access to or security of methods employed to protect such buildings, other structures or systems;\n\n(g.2)\nwould disclose the subject or substance\n\n(i)\nof minutes of the meetings of a District Education Council, of a Parent School Support Committee, of the board of trustees of a regional health authority or of a committee of any such board, that were not open to the public,\n\n(ii)\nof briefings to members of such a council, board or committee respecting matters that were, are or are proposed to be brought before such a meeting, or\n\n(iii)\nof discussions, consultations or deliberations among members of such a council, board or committee respecting such a meeting;\n\n(g.3)\nwould disclose advice, opinions, proposals, recommendations, analyses or policy options provided, given or made to or for a District Education Council, a Parent School Support Committee, the board of directors of a regional health authority or a committee of any such board for the purposes of the council, board or committee in exercising its powers and performing its duties and functions;\n\n(h)\nRepealed: 1995, c.51, s.7\n\n(h.1)\nwould disclose opinions or recommendations for a Minister or the Executive Council;\n\n(i)\nwould disclose the substance of proposed legislation or regulations;\n\n(j)\nwould reveal information gathered by police, including the Royal Canadian Mounted Police, in the course of investigating any illegal activity or suspected illegal activity, or the source of such information;\n\n(k)\nwould disclose any information reported to the Attorney General or his agent with respect to any illegal activity or suspected illegal activity, or the source of such information; or\n\n(l)\nwould impede an investigation, inquiry or the administration of justice.",
+          "contentHash": "1821ee43394a14c00272ef1bc3e19d3501b933d28ae4e60372f8e45086904fe7"
+        },
+        {
+          "id": "10-subsection-3.1",
+          "sourceKey": "section:10/subsection:3.1",
+          "label": "10(3.1)",
+          "text": "10(3.1)Paragraphs (3)(g.1) to (g.3) and (h.1) do not apply to public records that were in the care, custody and control of the Provincial Archivist and were available for public inspection before those paragraphs came into force.",
+          "contentHash": "567671bc2426bb3115e90e076eb38ec2548c380fe2be3956283ec023f4cd921a"
+        },
+        {
+          "id": "10-subsection-4",
+          "sourceKey": "section:10/subsection:4",
+          "label": "10(4)",
+          "text": "10(4)Public records referred to in paragraph (3)(b) are available for public inspection after\n\n(a)\none hundred years following the date of birth of the person to whom the personal information relates,\n\n(b)\nthe person to whom the personal information relates consents in writing to the inspection, or\n\n(c)\nthe Committee or a judge of The Court of King’s Bench of New Brunswick has granted a request for inspection for research or statistical purposes.",
+          "contentHash": "db663313643fdb557f000e50e2e68e1b6e8a683dbe49af96269f6137ea2c8bc4"
+        },
+        {
+          "id": "10-subsection-4.1",
+          "sourceKey": "section:10/subsection:4.1",
+          "label": "10(4.1)",
+          "text": "10(4.1)Despite paragraph (4)(a), if the public records referred to in paragraph (3)(b) would reveal personal health information, as defined in the Personal Health Information Privacy and Access Act, concerning another person, the records are available for public inspection after 50 years following the date of death of the person to whom the personal health information relates.",
+          "contentHash": "fa9311a9f811417b2294dfdae19acb533c1468c2edd6c50445649c7cc43c0ac0"
+        },
+        {
+          "id": "10-subsection-5",
+          "sourceKey": "section:10/subsection:5",
+          "label": "10(5)",
+          "text": "10(5)Where uncertainty exists regarding a date of birth referred to in paragraph (4)(a) or a date of death referred to in subsection (4.1), the determination of the date by the Provincial Archivist is final.",
+          "contentHash": "8eff23fab7dcbe1cc0e6073409d67b9306a27c429ae322546b62122ad5902d8d"
+        },
+        {
+          "id": "10-subsection-6",
+          "sourceKey": "section:10/subsection:6",
+          "label": "10(6)",
+          "text": "10(6)Public records referred to in paragraph (3)(e) are available for public inspection if the government from which the information was obtained\n\n(a)\nconsents in writing to the inspection, or\n\n(b)\nmakes the information public.",
+          "contentHash": "cf6f51068df6d330c0aba9640089c30971ff382e87d3afe0b4688e730c527d31"
+        },
+        {
+          "id": "10-subsection-7",
+          "sourceKey": "section:10/subsection:7",
+          "label": "10(7)",
+          "text": "10(7)Public records referred to in paragraph (3)(g) are available for public inspection after fifty years following the date of their creation.",
+          "contentHash": "95420baf1dc35258e8430f524ac9432410057b2239c5b4691a73e31002ad6b5b"
+        },
+        {
+          "id": "10-subsection-8",
+          "sourceKey": "section:10/subsection:8",
+          "label": "10(8)",
+          "text": "10(8)Public records referred to in paragraph (3)(h.1) are available for public inspection after twenty years following the date of their creation.",
+          "contentHash": "c9e39b420e8a94bf14923b11263bee2e713f72f9cde9e6f5c60ff407c67f4a92"
+        },
+        {
+          "id": "10-subsection-9",
+          "sourceKey": "section:10/subsection:9",
+          "label": "10(9)",
+          "text": "10(9)Notwithstanding subsections (3) to (8) and sections 10.1 to 10.9, an authorized representative of the department from which a public record has been transferred, may inspect the public record for any purpose not inconsistent with the purpose for which the public record was obtained or created by the department.",
+          "contentHash": "b58cd35522382a0598ee6c31518e0b63cbf1d2b7fb8fce5d21b87f06f3c9ab3d"
+        },
+        {
+          "id": "10-subsection-10",
+          "sourceKey": "section:10/subsection:10",
+          "label": "10(10)",
+          "text": "10(10)Subsection (3) does not apply to a public record\n\n(a)\nthat is available for public inspection at a location other than the Archives, or\n\n(b)\nthat was available for public inspection before it was transferred to the Archives.",
+          "contentHash": "639f5868c333178b356ef7da1e7649a80a1b0f321a48ecd438abafe32ffd2633"
+        },
+        {
+          "id": "10-subsection-11",
+          "sourceKey": "section:10/subsection:11",
+          "label": "10(11)",
+          "text": "10(11)Notwithstanding subsection 10.9(8), the onus shall be on a person requesting to inspect a public record to satisfy the Provincial Archivist that the public record is one referred to in subsection (10).\n\n1986, c.11, s.2; 1995, c.51, s.7; 1998, c.P-19.1, s.8; 2002, c.1, s.2; 2017, c.30, s.3; 2019, c.12, s.1; 2023, c.17, s.9",
+          "contentHash": "91c56907391134993e906d2a1e23da3ab194be072e45ef9ff1900c52b48881a8"
+        }
+      ],
+      "contentHash": "bddd40b4e8ef465f4ae71411954d36a661d6fe8fe8d8252fc3f7bea1c81ea83a"
+    },
+    {
+      "id": "section-10.1",
+      "sourceKey": "section:10.1",
+      "componentType": "section",
+      "label": "10.1",
+      "heading": "Request to inspect public records, application to review",
+      "text": "Request to inspect public records, application to review\n\n10.1(1)A person wishing to inspect a public record referred to in subsection 10(3) shall submit on a form provided by the Provincial Archivist a request to inspect the public record.\n\n10.1(2)Where in the opinion of the Provincial Archivist a portion of a public record is unavailable for public inspection and that portion is severable, the Provincial Archivist shall delete the unavailable portion and shall grant the request with respect to the available portion.\n\n10.1(3)The Provincial Archivist shall reply to a request made under subsection (1) within thirty days after the submission of the request, indicating whether or not all or part of the public record is available for public inspection.\n\n10.1(4)Where the Provincial Archivist denies a request with respect to all or part of a public record, he shall reply in writing to the person making the request, indicating the provisions of this Act under which all or part of the public record is rendered unavailable for public inspection.\n\n10.1(5)Any person who\n\n(a)\nfor the purpose of doing legitimate research or statistical work, wishes to inspect a public record containing personal information concerning another person, and has first submitted a request which has been denied in whole or in part under subsection (4),\n\n(b)\nbelieves that all or part of the public record is available for public inspection, and has first submitted a request which has been denied in whole or in part under subsection (4), or\n\n(c)\nhas not received a reply to a request within the time prescribed in subsection (3),\n\nmay submit to the Committee on a form provided by the Provincial Archivist an application for review by the Committee.\n\n10.1(6)An application for review submitted under paragraph (5)(a) shall include\n\n(a)\na request to inspect the public record, specifying the information requested,\n\n(b)\na copy of the reply of the Provincial Archivist under subsection (4),\n\n(c)\na summary describing the qualifications of the applicant, the nature of the research being done or the statistics being compiled, and the intent of the work,\n\n(d)\nthe reasons why the purpose of the work cannot reasonably be accomplished without inspection of the public record, and\n\n(e)\ncredentials verifying the identity of the applicant and the information given under paragraphs (c) and (d).\n\n10.1(7)An application for review submitted under paragraph (5)(b) shall include\n\n(a)\na request to inspect the public record, specifying the information requested,\n\n(b)\na copy of the reply of the Provincial Archivist under subsection (4), and\n\n(c)\nthe reason why the applicant believes that all or part of the public record is available for public inspection.\n\n10.1(8)An application for review submitted under paragraph (5)(c) shall include\n\n(a)\na request to inspect the public record, specifying the information requested, and\n\n(b)\nthe date of the submission of the applicant’s request to the Provincial Archivist.\n\n1986, c.11, s.3",
+      "subsections": [
+        {
+          "id": "10.1-subsection-1",
+          "sourceKey": "section:10.1/subsection:1",
+          "label": "10.1(1)",
+          "text": "10.1(1)A person wishing to inspect a public record referred to in subsection 10(3) shall submit on a form provided by the Provincial Archivist a request to inspect the public record.",
+          "contentHash": "4728c3b9039b73c93fd58b8e5cc261b6ef66682425d3b87f28512351a5715f76"
+        },
+        {
+          "id": "10.1-subsection-2",
+          "sourceKey": "section:10.1/subsection:2",
+          "label": "10.1(2)",
+          "text": "10.1(2)Where in the opinion of the Provincial Archivist a portion of a public record is unavailable for public inspection and that portion is severable, the Provincial Archivist shall delete the unavailable portion and shall grant the request with respect to the available portion.",
+          "contentHash": "679d9c9cddb62d5df669ed0786c3f15e0dc275375a1767a035bf3ac49cca5fab"
+        },
+        {
+          "id": "10.1-subsection-3",
+          "sourceKey": "section:10.1/subsection:3",
+          "label": "10.1(3)",
+          "text": "10.1(3)The Provincial Archivist shall reply to a request made under subsection (1) within thirty days after the submission of the request, indicating whether or not all or part of the public record is available for public inspection.",
+          "contentHash": "5a6e1001805ebd2186a7176a730efd22d5cbccaa4ca61df799ee0b07cba4463b"
+        },
+        {
+          "id": "10.1-subsection-4",
+          "sourceKey": "section:10.1/subsection:4",
+          "label": "10.1(4)",
+          "text": "10.1(4)Where the Provincial Archivist denies a request with respect to all or part of a public record, he shall reply in writing to the person making the request, indicating the provisions of this Act under which all or part of the public record is rendered unavailable for public inspection.",
+          "contentHash": "e5b8a02683b1949ae073c8693829cf07ed5972fb2bb9d43a2ac2db7f24179ea0"
+        },
+        {
+          "id": "10.1-subsection-5",
+          "sourceKey": "section:10.1/subsection:5",
+          "label": "10.1(5)",
+          "text": "10.1(5)Any person who\n\n(a)\nfor the purpose of doing legitimate research or statistical work, wishes to inspect a public record containing personal information concerning another person, and has first submitted a request which has been denied in whole or in part under subsection (4),\n\n(b)\nbelieves that all or part of the public record is available for public inspection, and has first submitted a request which has been denied in whole or in part under subsection (4), or\n\n(c)\nhas not received a reply to a request within the time prescribed in subsection (3),\n\nmay submit to the Committee on a form provided by the Provincial Archivist an application for review by the Committee.",
+          "contentHash": "54425ec5c822ece31836903d9730ca69e382e21440b5cc33e4cc7e16822b04d3"
+        },
+        {
+          "id": "10.1-subsection-6",
+          "sourceKey": "section:10.1/subsection:6",
+          "label": "10.1(6)",
+          "text": "10.1(6)An application for review submitted under paragraph (5)(a) shall include\n\n(a)\na request to inspect the public record, specifying the information requested,\n\n(b)\na copy of the reply of the Provincial Archivist under subsection (4),\n\n(c)\na summary describing the qualifications of the applicant, the nature of the research being done or the statistics being compiled, and the intent of the work,\n\n(d)\nthe reasons why the purpose of the work cannot reasonably be accomplished without inspection of the public record, and\n\n(e)\ncredentials verifying the identity of the applicant and the information given under paragraphs (c) and (d).",
+          "contentHash": "ac70d40c6de68c00801bc177c8542dae86a25fa8f1f65f6376f5661915ebb51c"
+        },
+        {
+          "id": "10.1-subsection-7",
+          "sourceKey": "section:10.1/subsection:7",
+          "label": "10.1(7)",
+          "text": "10.1(7)An application for review submitted under paragraph (5)(b) shall include\n\n(a)\na request to inspect the public record, specifying the information requested,\n\n(b)\na copy of the reply of the Provincial Archivist under subsection (4), and\n\n(c)\nthe reason why the applicant believes that all or part of the public record is available for public inspection.",
+          "contentHash": "1f46a1d3bf5703e4a30be5bb10b3cbd8c8964f05732edbe93d5e225b10745561"
+        },
+        {
+          "id": "10.1-subsection-8",
+          "sourceKey": "section:10.1/subsection:8",
+          "label": "10.1(8)",
+          "text": "10.1(8)An application for review submitted under paragraph (5)(c) shall include\n\n(a)\na request to inspect the public record, specifying the information requested, and\n\n(b)\nthe date of the submission of the applicant’s request to the Provincial Archivist.\n\n1986, c.11, s.3",
+          "contentHash": "b91f85ece3513f130105566cdc059221c03043236087e9ee2eb94ec2c4b82df5"
+        }
+      ],
+      "contentHash": "1445174258020c6909849482cd83c53e2fe8838ef6a897f585d58faa6c8e05de"
+    },
+    {
+      "id": "section-10.2",
+      "sourceKey": "section:10.2",
+      "componentType": "section",
+      "label": "10.2",
+      "heading": "Review by Committee",
+      "text": "Review by Committee\n\n10.2(1)Within thirty days after the submission of an application for review, the Committee shall meet to consider the application and shall advise the applicant in writing of its decision.\n\n10.2(2)Neither the Provincial Archivist nor any representative of the department from which the public record being requested was transferred shall be present during any portion of a meeting by the Committee in which an application for review is considered.\n\n10.2(3)Notwithstanding subsection (2), the Provincial Archivist may appear before the committee considering an application for review under paragraph 10.1(5)(c) in order to explain why he has not replied to a request to inspect a public record.\n\n10.2(4)The Committee may inspect the public record in question while considering an application for review.\n\n10.2(5)A decision of the majority of the members of the Committee considering an application for review is final.\n\n10.2(6)The Committee shall grant a request made under paragraph 10.1(5)(a) or (c) to inspect a public record where it is satisfied\n\n(a)\nthat the public record is available for public inspection, or\n\n(b)\nthat the applicant intends to do legitimate research or statistical work, and that the purpose of the work cannot reasonably be accomplished without inspection of the public record.\n\n10.2(7)In granting under paragraph (6)(b) a request to inspect a public record the Committee may, at its discretion, grant the request with respect to a portion of the public record.\n\n10.2(8)Where the Committee denies a request to inspect a public record in whole or in part, it shall set out in its written decision the reasons for the denial and shall provide the applicant with the forms prescribed by regulation for a referral of the matter to a judge of The Court of King’s Bench of New Brunswick or to the Ombud under this Act.\n\n10.2(9)The Committee shall grant a request to inspect a public record made under paragraph 10.1(5)(b) where it is satisfied that the public record is available for public inspection.\n\n10.2(10)Where in the opinion of the Committee a portion of a public record is unavailable for public inspection and that portion is severable, the Committee shall delete the unavailable portion and shall grant the request with respect to the available portion.\n\n1986, c.11, s.3; 2017, c.1, s.4; 2023, c.17, s.9",
+      "subsections": [
+        {
+          "id": "10.2-subsection-1",
+          "sourceKey": "section:10.2/subsection:1",
+          "label": "10.2(1)",
+          "text": "10.2(1)Within thirty days after the submission of an application for review, the Committee shall meet to consider the application and shall advise the applicant in writing of its decision.",
+          "contentHash": "0defff8fc9db9e19c1a97e3fc7157ff9a505aef472f327b1dd6f274409e0e654"
+        },
+        {
+          "id": "10.2-subsection-2",
+          "sourceKey": "section:10.2/subsection:2",
+          "label": "10.2(2)",
+          "text": "10.2(2)Neither the Provincial Archivist nor any representative of the department from which the public record being requested was transferred shall be present during any portion of a meeting by the Committee in which an application for review is considered.",
+          "contentHash": "9063a8e3ab78bf0f405cc0740470cad16cd603f8dab4718e216136901c793faf"
+        },
+        {
+          "id": "10.2-subsection-3",
+          "sourceKey": "section:10.2/subsection:3",
+          "label": "10.2(3)",
+          "text": "10.2(3)Notwithstanding subsection (2), the Provincial Archivist may appear before the committee considering an application for review under paragraph 10.1(5)(c) in order to explain why he has not replied to a request to inspect a public record.",
+          "contentHash": "f724ad8fb1450acd41a3c697e9f99d38586b4c281155935c036c9b2347d86ce1"
+        },
+        {
+          "id": "10.2-subsection-4",
+          "sourceKey": "section:10.2/subsection:4",
+          "label": "10.2(4)",
+          "text": "10.2(4)The Committee may inspect the public record in question while considering an application for review.",
+          "contentHash": "2adc5d721c7aa66d937f8a74ddaab981a77faa85470ead09e83d26845e973016"
+        },
+        {
+          "id": "10.2-subsection-5",
+          "sourceKey": "section:10.2/subsection:5",
+          "label": "10.2(5)",
+          "text": "10.2(5)A decision of the majority of the members of the Committee considering an application for review is final.",
+          "contentHash": "2ca11f5ce47b5ddf3f0a198c7c97178c37ff5493fa1b805a2ba2fb297e2069e7"
+        },
+        {
+          "id": "10.2-subsection-6",
+          "sourceKey": "section:10.2/subsection:6",
+          "label": "10.2(6)",
+          "text": "10.2(6)The Committee shall grant a request made under paragraph 10.1(5)(a) or (c) to inspect a public record where it is satisfied\n\n(a)\nthat the public record is available for public inspection, or\n\n(b)\nthat the applicant intends to do legitimate research or statistical work, and that the purpose of the work cannot reasonably be accomplished without inspection of the public record.",
+          "contentHash": "22db5a53d0e50675274fb3a46b11ae01d1747807747d0757c92a84fc59bf508a"
+        },
+        {
+          "id": "10.2-subsection-7",
+          "sourceKey": "section:10.2/subsection:7",
+          "label": "10.2(7)",
+          "text": "10.2(7)In granting under paragraph (6)(b) a request to inspect a public record the Committee may, at its discretion, grant the request with respect to a portion of the public record.",
+          "contentHash": "b189eb0e16f1a5cabda0364bbd5880e9000a88951e720d722beceafe0836d296"
+        },
+        {
+          "id": "10.2-subsection-8",
+          "sourceKey": "section:10.2/subsection:8",
+          "label": "10.2(8)",
+          "text": "10.2(8)Where the Committee denies a request to inspect a public record in whole or in part, it shall set out in its written decision the reasons for the denial and shall provide the applicant with the forms prescribed by regulation for a referral of the matter to a judge of The Court of King’s Bench of New Brunswick or to the Ombud under this Act.",
+          "contentHash": "668bfea5f50787a88d800a4eae3f800ec75c1aab98de119bc83b8952863666cc"
+        },
+        {
+          "id": "10.2-subsection-9",
+          "sourceKey": "section:10.2/subsection:9",
+          "label": "10.2(9)",
+          "text": "10.2(9)The Committee shall grant a request to inspect a public record made under paragraph 10.1(5)(b) where it is satisfied that the public record is available for public inspection.",
+          "contentHash": "35b34b01f0ccc65bf7a3fc29b5f2ec2e68ec1edaa4d9a9729d1984f9652bca51"
+        },
+        {
+          "id": "10.2-subsection-10",
+          "sourceKey": "section:10.2/subsection:10",
+          "label": "10.2(10)",
+          "text": "10.2(10)Where in the opinion of the Committee a portion of a public record is unavailable for public inspection and that portion is severable, the Committee shall delete the unavailable portion and shall grant the request with respect to the available portion.\n\n1986, c.11, s.3; 2017, c.1, s.4; 2023, c.17, s.9",
+          "contentHash": "777b84c816bec6401806243289b64bdab7bcfc91a24e5eb7ec6dac72ae29e2aa"
+        }
+      ],
+      "contentHash": "87d42da3f0a4f35a1e6d1d7f6ddef03fe2fe9bb2c610be21575276e3abcc1283"
+    },
+    {
+      "id": "section-10.3",
+      "sourceKey": "section:10.3",
+      "componentType": "section",
+      "label": "10.3",
+      "heading": "Referral to Court or Ombud",
+      "text": "Referral to Court or Ombud\n\n10.3(1)Where an applicant is not satisfied with the decision of the Committee or where the Committee fails to reply to a request within the prescribed time, the applicant may in the form and manner prescribed by regulation either\n\n(a)\nrefer the matter to a judge of The Court of King’s Bench of New Brunswick, or\n\n(b)\nrefer the matter to the Ombud.\n\n10.3(2)Where the applicant refers the matter to a judge of The Court of King’s Bench of New Brunswick under subsection (1)\n\n(a)\nthe applicant may not thereafter refer the matter to the Ombud under paragraph (1)(b) or under the Ombud Act, and\n\n(b)\nthe Ombud, in such a case, may not act under the authority of this Act or the Ombud Act with respect to that matter.\n\n10.3(3)Where the applicant refers the matter to the Ombud under subsection (1), the applicant may not, subject to subsection 10.7(1), refer the matter to a judge of The Court of King’s Bench of New Brunswick.\n\n10.3(4)The Ombud and The Court of King’s Bench of New Brunswick judge may, with respect to any matter referred to them, inspect the public record that is the subject matter of the referral in order to determine the referral, but such inspection shall be made in camera without the presence of any person.\n\n1986, c.11, s.3; 2017, c.1, s.4; 2019, c.12, s.1; 2023, c.17, s.9",
+      "subsections": [
+        {
+          "id": "10.3-subsection-1",
+          "sourceKey": "section:10.3/subsection:1",
+          "label": "10.3(1)",
+          "text": "10.3(1)Where an applicant is not satisfied with the decision of the Committee or where the Committee fails to reply to a request within the prescribed time, the applicant may in the form and manner prescribed by regulation either\n\n(a)\nrefer the matter to a judge of The Court of King’s Bench of New Brunswick, or\n\n(b)\nrefer the matter to the Ombud.",
+          "contentHash": "bb99cac7196f8d032621cf60430b33767c3890aa87429d5cf7468e34c9ebbb85"
+        },
+        {
+          "id": "10.3-subsection-2",
+          "sourceKey": "section:10.3/subsection:2",
+          "label": "10.3(2)",
+          "text": "10.3(2)Where the applicant refers the matter to a judge of The Court of King’s Bench of New Brunswick under subsection (1)\n\n(a)\nthe applicant may not thereafter refer the matter to the Ombud under paragraph (1)(b) or under the Ombud Act, and\n\n(b)\nthe Ombud, in such a case, may not act under the authority of this Act or the Ombud Act with respect to that matter.",
+          "contentHash": "16b1f3eeeb18531cdebc698dfe96f77916d907d8f6de206e78b45f02d4b1e7d9"
+        },
+        {
+          "id": "10.3-subsection-3",
+          "sourceKey": "section:10.3/subsection:3",
+          "label": "10.3(3)",
+          "text": "10.3(3)Where the applicant refers the matter to the Ombud under subsection (1), the applicant may not, subject to subsection 10.7(1), refer the matter to a judge of The Court of King’s Bench of New Brunswick.",
+          "contentHash": "250de6e9aff710954a76e31476a320264817b198c4a8551ba78fa24b1923e073"
+        },
+        {
+          "id": "10.3-subsection-4",
+          "sourceKey": "section:10.3/subsection:4",
+          "label": "10.3(4)",
+          "text": "10.3(4)The Ombud and The Court of King’s Bench of New Brunswick judge may, with respect to any matter referred to them, inspect the public record that is the subject matter of the referral in order to determine the referral, but such inspection shall be made in camera without the presence of any person.\n\n1986, c.11, s.3; 2017, c.1, s.4; 2019, c.12, s.1; 2023, c.17, s.9",
+          "contentHash": "805d7a75e5301a727773b32d82c86113ebcf3c5b11ff51fbf2175ffd45d3476b"
+        }
+      ],
+      "contentHash": "8cf6066a31df8e2772f3121fcf1db4b863c112d2d1b8fdc440480acac2536835"
+    },
+    {
+      "id": "section-10.4",
+      "sourceKey": "section:10.4",
+      "componentType": "section",
+      "label": "10.4",
+      "heading": "Review by Court",
+      "text": "Review by Court\n\n10.4(1)The Court of King’s Bench of New Brunswick judge shall upon the applicant’s request hold a hearing, and\n\n(a)\nin the case where the Committee denied the applicant’s request in whole or in part, may order the Committee to grant the request in whole or in part;\n\n(b)\nin the case where the Committee failed to reply to a request, shall order that the Committee\n\n(i)\ngrant the request, or\n\n(ii)\ndeny the request;\n\n(c)\nmay make any other order that is appropriate.\n\n10.4(2)A copy of the decision of The Court of King’s Bench of New Brunswick judge shall be sent to the applicant and to the Committee.\n\n10.4(3)No appeal lies from the decision of The Court of King’s Bench of New Brunswick judge under subsection (1).\n\n1986, c.11, s.3; 2023, c.17, s.9",
+      "subsections": [
+        {
+          "id": "10.4-subsection-1",
+          "sourceKey": "section:10.4/subsection:1",
+          "label": "10.4(1)",
+          "text": "10.4(1)The Court of King’s Bench of New Brunswick judge shall upon the applicant’s request hold a hearing, and\n\n(a)\nin the case where the Committee denied the applicant’s request in whole or in part, may order the Committee to grant the request in whole or in part;\n\n(b)\nin the case where the Committee failed to reply to a request, shall order that the Committee\n\n(i)\ngrant the request, or\n\n(ii)\ndeny the request;\n\n(c)\nmay make any other order that is appropriate.",
+          "contentHash": "efb14c382d0b51a2d3e7d44a97f7ccbf0d9f96122d9aee11c3657d2ed1be2894"
+        },
+        {
+          "id": "10.4-subsection-2",
+          "sourceKey": "section:10.4/subsection:2",
+          "label": "10.4(2)",
+          "text": "10.4(2)A copy of the decision of The Court of King’s Bench of New Brunswick judge shall be sent to the applicant and to the Committee.",
+          "contentHash": "0f565c2b6f99e0d6018513935de987e68d918a6ee9f68882a5c35eda4897c4ef"
+        },
+        {
+          "id": "10.4-subsection-3",
+          "sourceKey": "section:10.4/subsection:3",
+          "label": "10.4(3)",
+          "text": "10.4(3)No appeal lies from the decision of The Court of King’s Bench of New Brunswick judge under subsection (1).\n\n1986, c.11, s.3; 2023, c.17, s.9",
+          "contentHash": "8c191378d3dfd321a2e4e36da0b4fbf4e0ecfacd3cc7408a24213a30996c3690"
+        }
+      ],
+      "contentHash": "826c0b4f440727aeca7c754f96c1a437f5fa17978c06a715cc23eccb39f8c8c3"
+    },
+    {
+      "id": "section-10.5",
+      "sourceKey": "section:10.5",
+      "componentType": "section",
+      "label": "10.5",
+      "heading": "Review by Ombud",
+      "text": "Review by Ombud\n\n10.5The Ombud shall in accordance with this Act and the power, authority, privileges, rights and duties vested in the Ombud under the Ombud Act review the matter referred to him or her within 30 days of having received the referral.\n1986, c.11, s.3; 2017, c.1, s.4",
+      "subsections": [],
+      "contentHash": "42bbc5b331f1ddb8b667ff70115696b29a7c204f494a2283827c8625879dd710"
+    },
+    {
+      "id": "section-10.6",
+      "sourceKey": "section:10.6",
+      "componentType": "section",
+      "label": "10.6",
+      "heading": "Recommendation of Ombud",
+      "text": "Recommendation of Ombud\n\n10.6(1)Upon having reviewed the matter referred to him, the Ombud shall forthwith, in writing, advise the Committee of his recommendation and shall forward a copy of such recommendation to the person making the referral.\n\n10.6(2)The Ombud may in such recommendation\n\n(a)\nrecommend that the Committee grant the request in whole or in part;\n\n(b)\nin the case where the Committee failed to reply to a request, recommend that the Committee\n\n(i)\ngrant the request in whole or in part, or\n\n(ii)\ndeny the request.\n\n10.6(3)The Committee, upon reviewing the recommendation of the Ombud, shall carry out the recommendations of the Ombud or make such other decision as it thinks fit and upon making its decision, shall notify, in writing, the person making the referral and shall forward to the Ombud a copy of its decision.\n\n1986, c.11, s.3; 2017, c.1, s.4",
+      "subsections": [
+        {
+          "id": "10.6-subsection-1",
+          "sourceKey": "section:10.6/subsection:1",
+          "label": "10.6(1)",
+          "text": "10.6(1)Upon having reviewed the matter referred to him, the Ombud shall forthwith, in writing, advise the Committee of his recommendation and shall forward a copy of such recommendation to the person making the referral.",
+          "contentHash": "c6af0f9a5c2b3c8087848a429a8ba2563138c698d6615fb21ac9ed1a55a2dedc"
+        },
+        {
+          "id": "10.6-subsection-2",
+          "sourceKey": "section:10.6/subsection:2",
+          "label": "10.6(2)",
+          "text": "10.6(2)The Ombud may in such recommendation\n\n(a)\nrecommend that the Committee grant the request in whole or in part;\n\n(b)\nin the case where the Committee failed to reply to a request, recommend that the Committee\n\n(i)\ngrant the request in whole or in part, or\n\n(ii)\ndeny the request.",
+          "contentHash": "6bed467d3e22d85af62e4c443a718a42303b2b65a49ae1a75ff4e7b7e3d8002e"
+        },
+        {
+          "id": "10.6-subsection-3",
+          "sourceKey": "section:10.6/subsection:3",
+          "label": "10.6(3)",
+          "text": "10.6(3)The Committee, upon reviewing the recommendation of the Ombud, shall carry out the recommendations of the Ombud or make such other decision as it thinks fit and upon making its decision, shall notify, in writing, the person making the referral and shall forward to the Ombud a copy of its decision.\n\n1986, c.11, s.3; 2017, c.1, s.4",
+          "contentHash": "3af4a136288a8d0da00e74904ec3f00c1b32f01e8130493b47e7140457b75afd"
+        }
+      ],
+      "contentHash": "bf443a5fc183ab3ec0c232fdcdb4e18898adf966314e36b43045d4aa1da24e96"
+    },
+    {
+      "id": "section-10.7",
+      "sourceKey": "section:10.7",
+      "componentType": "section",
+      "label": "10.7",
+      "heading": "Appeal from Committee’s decision",
+      "text": "Appeal from Committee’s decision\n\n10.7(1)Where the person making the referral is not satisfied with the decision of the Committee under subsection 10.6(3), that person may appeal the matter to a judge of The Court of King’s Bench of New Brunswick.\n\n10.7(2)Subsection 10.3(4) and section 10.4 apply with the necessary modifications to an appeal made under subsection (1).\n\n1986, c.11, s.3; 2023, c.17, s.9",
+      "subsections": [
+        {
+          "id": "10.7-subsection-1",
+          "sourceKey": "section:10.7/subsection:1",
+          "label": "10.7(1)",
+          "text": "10.7(1)Where the person making the referral is not satisfied with the decision of the Committee under subsection 10.6(3), that person may appeal the matter to a judge of The Court of King’s Bench of New Brunswick.",
+          "contentHash": "fe67388338a770eb326eb142049271db69326907f2e4bd7601642e0d72f068ca"
+        },
+        {
+          "id": "10.7-subsection-2",
+          "sourceKey": "section:10.7/subsection:2",
+          "label": "10.7(2)",
+          "text": "10.7(2)Subsection 10.3(4) and section 10.4 apply with the necessary modifications to an appeal made under subsection (1).\n\n1986, c.11, s.3; 2023, c.17, s.9",
+          "contentHash": "4b450fdd97d32edb34a4e945181197e8964942188e0b0f844cc1c0c99dfdef76"
+        }
+      ],
+      "contentHash": "cad0b5c5af9257c509a631901d45e560e49dfa9f427dbce253aa562cf18cdbbc"
+    },
+    {
+      "id": "section-10.8",
+      "sourceKey": "section:10.8",
+      "componentType": "section",
+      "label": "10.8",
+      "heading": "Award of costs",
+      "text": "Award of costs\n\n10.8Where a matter is referred or appealed to a judge of The Court of King’s Bench of New Brunswick, the judge shall award costs in favour of the applicant\n\n(a)\nwhere the applicant is successful, or\n\n(b)\nwhere the applicant is not successful, if the judge considers it to be in the public interest.\n\n1986, c.11, s.3; 2023, c.17, s.9",
+      "subsections": [],
+      "contentHash": "b98716e7333eb9dd1e77a38a13c4b1c54558168f8293eff97edf8ece6e55f8a3"
+    },
+    {
+      "id": "section-10.9",
+      "sourceKey": "section:10.9",
+      "componentType": "section",
+      "label": "10.9",
+      "heading": "Where request to inspect public record granted",
+      "text": "Where request to inspect public record granted\n\n10.9(1)Where a request to inspect a public record is granted in whole or in part by the Provincial Archivist, the Committee or a judge of The Court of King’s Bench of New Brunswick, the Provincial Archivist shall, upon payment of the fee prescribed by regulation, allow the public record or the portion of the public record to be inspected, and to be reproduced in whole or in part.\n\n10.9(2)Where a request to inspect a public record is granted, the public record shall only be provided in the language or languages in which it is made.\n\n10.9(3)A person whose request to inspect personal information concerning another person in a public record has been granted in whole or in part for the purpose of doing legitimate research or statistical work shall not inspect that information until he has completed and returned to the Provincial Archivist an undertaking in the form prescribed by regulation.\n\n10.9(4)Any person who breaches an undertaking commits an offence punishable under Part II of the Provincial Offences Procedure Act as a category F offence.\n\n10.9(5)A person whose request to inspect personal information concerning another person in a public record has been granted in whole or in part for the purpose of doing legitimate research or statistical work shall permit the Provincial Archivist upon the Provincial Archivist’s request to review any research notes and drafts of planned publications that contain information derived from the personal information inspected.\n\n10.9(6)A person whose request to inspect personal information concerning another person in a public record has been granted in whole or in part for the purpose of doing legitimate research or statistical work may be refused access to a public record at any time by the Provincial Archivist if he is satisfied that that person has breached an undertaking.\n\n10.9(7)Sections 10.3, 10.4, 10.5, 10.6, 10.7 and 10.8 and subsection (8) apply with the necessary modifications to a refusal of access by the Provincial Archivist under subsection (6).\n\n10.9(8)In any proceeding under this Act other than an application for review made under subsection 10.1(5), the onus shall be on the Provincial Archivist to show that there is no right to the information that is the subject of the proceeding.\n\n1986, c.11, s.3; 2008, c.11, s.3; 2023, c.17, s.9",
+      "subsections": [
+        {
+          "id": "10.9-subsection-1",
+          "sourceKey": "section:10.9/subsection:1",
+          "label": "10.9(1)",
+          "text": "10.9(1)Where a request to inspect a public record is granted in whole or in part by the Provincial Archivist, the Committee or a judge of The Court of King’s Bench of New Brunswick, the Provincial Archivist shall, upon payment of the fee prescribed by regulation, allow the public record or the portion of the public record to be inspected, and to be reproduced in whole or in part.",
+          "contentHash": "bc891f09780036126ca5c67346e1108bc82a005366e905685218ba9587164045"
+        },
+        {
+          "id": "10.9-subsection-2",
+          "sourceKey": "section:10.9/subsection:2",
+          "label": "10.9(2)",
+          "text": "10.9(2)Where a request to inspect a public record is granted, the public record shall only be provided in the language or languages in which it is made.",
+          "contentHash": "fcc1d478de4e596d05e5c2f099652300b9adc400b501c06315e34fe75fd94078"
+        },
+        {
+          "id": "10.9-subsection-3",
+          "sourceKey": "section:10.9/subsection:3",
+          "label": "10.9(3)",
+          "text": "10.9(3)A person whose request to inspect personal information concerning another person in a public record has been granted in whole or in part for the purpose of doing legitimate research or statistical work shall not inspect that information until he has completed and returned to the Provincial Archivist an undertaking in the form prescribed by regulation.",
+          "contentHash": "a31fe72358b9645c49d1657bf77f8d61c2bf5ca712c54db2284b9d7e034967c4"
+        },
+        {
+          "id": "10.9-subsection-4",
+          "sourceKey": "section:10.9/subsection:4",
+          "label": "10.9(4)",
+          "text": "10.9(4)Any person who breaches an undertaking commits an offence punishable under Part II of the Provincial Offences Procedure Act as a category F offence.",
+          "contentHash": "49030cb765f68de19e256888ab18c865f0df2bf953736616ba8878ef53d28be9"
+        },
+        {
+          "id": "10.9-subsection-5",
+          "sourceKey": "section:10.9/subsection:5",
+          "label": "10.9(5)",
+          "text": "10.9(5)A person whose request to inspect personal information concerning another person in a public record has been granted in whole or in part for the purpose of doing legitimate research or statistical work shall permit the Provincial Archivist upon the Provincial Archivist’s request to review any research notes and drafts of planned publications that contain information derived from the personal information inspected.",
+          "contentHash": "9638f7ae4c49e6c457a8ce298d06bc7ed478f660baf21f3a471eea1f0a2baad7"
+        },
+        {
+          "id": "10.9-subsection-6",
+          "sourceKey": "section:10.9/subsection:6",
+          "label": "10.9(6)",
+          "text": "10.9(6)A person whose request to inspect personal information concerning another person in a public record has been granted in whole or in part for the purpose of doing legitimate research or statistical work may be refused access to a public record at any time by the Provincial Archivist if he is satisfied that that person has breached an undertaking.",
+          "contentHash": "63cf7aa8fc4b345ddf99ea014d1784cccd44aefaeeee2db6c9ed1eb6785d3726"
+        },
+        {
+          "id": "10.9-subsection-7",
+          "sourceKey": "section:10.9/subsection:7",
+          "label": "10.9(7)",
+          "text": "10.9(7)Sections 10.3, 10.4, 10.5, 10.6, 10.7 and 10.8 and subsection (8) apply with the necessary modifications to a refusal of access by the Provincial Archivist under subsection (6).",
+          "contentHash": "e328fd68735b0cabb7dd1ede6720aaf83ae1220b200a9a5f9b77c61107d98c47"
+        },
+        {
+          "id": "10.9-subsection-8",
+          "sourceKey": "section:10.9/subsection:8",
+          "label": "10.9(8)",
+          "text": "10.9(8)In any proceeding under this Act other than an application for review made under subsection 10.1(5), the onus shall be on the Provincial Archivist to show that there is no right to the information that is the subject of the proceeding.\n\n1986, c.11, s.3; 2008, c.11, s.3; 2023, c.17, s.9",
+          "contentHash": "64c8087c2524d2269c31543e657f6b3fae49be838da8db4279e5263a7163bcc4"
+        }
+      ],
+      "contentHash": "bc934204248e34926900227856b896854b0b842ee183d43b5c8bc9e68979e6f0"
+    },
+    {
+      "id": "section-11",
+      "sourceKey": "section:11",
+      "componentType": "section",
+      "label": "11",
+      "heading": "Certified copies of public records",
+      "text": "Certified copies of public records\n\n11The signature of the Provincial Archivist certifying a copy of a public record to be a true copy is proof of the fact that the Provincial Archivist has in his lawful possession the original public record or a duplication, photocopy, microfilm or other reproduction of that public record, and any copy so signed and certified is and shall be deemed to be equivalent to the original record.\n1986, c.11, s.4",
+      "subsections": [],
+      "contentHash": "4188f82d84bc4cae0fd2964f994216646db8b5967b1618cce6a886e8866d458f"
+    },
+    {
+      "id": "section-12",
+      "sourceKey": "section:12",
+      "componentType": "section",
+      "label": "12",
+      "heading": "Offences and penalties",
+      "text": "Offences and penalties\n\n12A person who unlawfully damages, mutilates or destroys any public record or removes or withholds from the possession of the Archives or a department any public record commits an offence punishable under Part II of the Provincial Offences Procedure Act as a category F offence.\n1986, c.11, s.5; 1990, c.61, s.10",
+      "subsections": [],
+      "contentHash": "c69d7d22c776c1b66044b7299528da7108485de5c8ce74c1505962f65b4dc675"
+    },
+    {
+      "id": "section-13",
+      "sourceKey": "section:13",
+      "componentType": "section",
+      "label": "13",
+      "heading": "Regulations",
+      "text": "Regulations\n\n13The Lieutenant-Governor in Council may make regulations\n\n(a)\nprescribing additional duties of the Provincial Archivist;\n\n(b)\nprescribing a tariff of charges to be made for the use of the facilities and services of the Archives;\n\n(b.1)\nprescribing the form and manner of applications, referrals and appeals under this Act;\n\n(b.2)\nprescribing forms;\n\n(b.3)\nprescribing exceptions to public records that are unavailable for public inspection under subsection 10(3);\n\n(c)\nrespecting the transfer of public records to the Archives;\n\n(d)\nprescribing the hours and days during which the Archives shall be open to the public; and\n\n(e)\ngenerally for the better administration of this Act.\n\n1986, c.11, s.6; 1995, c.51, s.7",
+      "subsections": [],
+      "contentHash": "39cffa3068043d6426a3c38a4b2597071eaa68be15dd590b09a3705b84f2e7fa"
+    },
+    {
+      "id": "section-14",
+      "sourceKey": "section:14",
+      "componentType": "section",
+      "label": "14",
+      "heading": "Repeal",
+      "text": "Repeal\n\n14The Archives Act, chapter A-11 of the Revised Statutes, 1973, is repealed.",
+      "subsections": [],
+      "contentHash": "3983781f6a4557cdace22eb0214c086247b23241490fb99ac7ee5666e6a2ff12"
+    },
+    {
+      "id": "section-15",
+      "sourceKey": "section:15",
+      "componentType": "section",
+      "label": "15",
+      "heading": "Commencement",
+      "text": "Commencement\n\n15This Act or any provision thereof comes into force on a day to be fixed by proclamation.\n\nN.B. This Act was proclaimed and came into force June 29, 1977.\n\nN.B. This Act is consolidated to June 16, 2023.",
+      "subsections": [],
+      "contentHash": "4f08cec2854d0943c7f9f178e7a229f7ab63f7e67a28de031eac21b9091dd3f1"
+    }
+  ],
+  "notes": []
+}

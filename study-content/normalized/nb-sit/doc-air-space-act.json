@@ -1,0 +1,328 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-air-space-act",
+  "officialTitle": "Air Space Act",
+  "officialCitation": "2011, c.109",
+  "officialCitationDisplay": "2011, c.109",
+  "officialCitationNormalized": "2011, c.109",
+  "documentType": "act",
+  "sourceUrl": "https://laws.gnb.ca/en/document/cs/2011,%20c.109",
+  "fetchDate": "2026-08-11T18:08:24.706Z",
+  "consolidatedTo": "January 1, 2018",
+  "contentHash": "ebccbad71855abbaf3984a6d5d969e49ea85476d3eb645629dd1fdf4af05c1e5",
+  "tableOfContents": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "label": "1",
+      "heading": "Definitions"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "label": "2",
+      "heading": "Air space as land"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "label": "3",
+      "heading": "Creation of air space parcel"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "label": "4",
+      "heading": "Requirements of air space plan"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "label": "5",
+      "heading": "Filing of air space plan"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "label": "6",
+      "heading": "Conveyance of air space parcel"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "label": "7",
+      "heading": "Assessment and taxation"
+    },
+    {
+      "id": "section-7.1",
+      "sourceKey": "section:7.1",
+      "label": "7.1",
+      "heading": "Administration"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "label": "8",
+      "heading": "Regulations"
+    }
+  ],
+  "components": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
+      "label": "1",
+      "heading": "Definitions",
+      "text": "Definitions\n\n1The following definitions apply in this Act.\n“air space parcel” means a volumetric parcel of air space, whether or not occupied in whole or in part by a building or other structure, created under section 3. (parcelle d’espace aérien)\n\n“air space plan” means a plan that complies with the requirements of sections 4 and 5. (plan d’espace aérien)\n\n“development officer” means a development officer under the Community Planning Act. (agent d’aménagement)\n\n“Director of Surveys” means the Director of Surveys under the Surveys Act. (directeur de l’arpentage)\n\n“geodetic elevation” Repealed: 2017, c.49, s.1\n\n“orthometric height” means the elevation of a point above the geoid that is(altitude orthométrique)\n\n(a)\nbased on the Canadian Geodetic Vertical Datum of 2013 (CGVD2013), and\n\n(b)\nderived from a benchmark approved by the Director of Surveys.\n\n“registry office” means the registry office established under the Registry Act for the county in which the land affected is situated and “registrar” means the registrar of deeds of that county. (bureau de l’enregistrement) et (conservateur)\n\n“surveyor” means a land surveyor registered under the New Brunswick Land Surveyors Act, 1986. (arpenteur)\n\n1982, c.A-7.01, s.1; 1983, c.11, s.1; 2017, c.49, s.1",
+      "subsections": [],
+      "contentHash": "5f9585abd1ac1277d26e39597e410c9e3142f88a8b3e5dc49d47fde2bfabf554"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "label": "2",
+      "heading": "Air space as land",
+      "text": "Air space as land\n\n2Air space constitutes land and may be dealt with as land.\n1982, c.A-7.01, s.2",
+      "subsections": [],
+      "contentHash": "d7c3af912c26e8a5028939cf5c2d2724fd3d1f9f77f400a3cd19c067d2520ecf"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
+      "label": "3",
+      "heading": "Creation of air space parcel",
+      "text": "Creation of air space parcel\n\n3The owner of a freehold or leasehold estate may, by filing an air space plan in the registry office, create one or more air space parcels separated by surfaces.\n1982, c.A-7.01, ss.4(1)",
+      "subsections": [],
+      "contentHash": "891e333da9696af83bba448b8ebec47fa34684a74f09560b98c34da523a07fca"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
+      "label": "4",
+      "heading": "Requirements of air space plan",
+      "text": "Requirements of air space plan\n\n4An air space plan shall\n\n(a)\nidentify the parcel of land of which the air space parcel is part and shall indicate that the plan is a subdivision of the whole or part of that parcel of land,\n\n(b)\nhave its side boundary limits consist of vertical or inclined surfaces conforming to or lying within the boundaries of the parcel of land referred to in paragraph (a),\n\n(c)\nhave as its upper and lower limit a horizontal or inclined plane or arc of a circle, or combination of them,\n\n(d)\nhave noted on it the orthometric height of one corner of the ground surface of the parcel of land referred to in paragraph (a) and the orthometric height of every corner or angle of the air space parcel, and\n\n(e)\ninclude\n\n(i)\na plot to scale of the parcel of land referred to in paragraph (a), and\n\n(ii)\na three-dimensional paraline drawing of the air space parcel contained between the planes or arcs, and, if the surfaces of the air space parcel are both horizontal and vertical the plan shall so state, otherwise all boundaries of the air space parcel shall be fully dimensioned for length and direction.\n\n1982, c.A-7.01, ss.6(1); 2017, c.49, s.1",
+      "subsections": [],
+      "contentHash": "c7325e814744b403054d0712856510ca820111a4a733c76be05dd0cd8affd741"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "componentType": "section",
+      "label": "5",
+      "heading": "Filing of air space plan",
+      "text": "Filing of air space plan\n\n5(1)An air space plan shall not be accepted by the registrar for filing unless\n\n(a)\nit bears the certificate and seal of a surveyor certifying its correctness and compliance with section 4,\n\n(b)\nit has been approved by a development officer as complying with paragraph 4(a), and\n\n(c)\nit has been approved by the Director of Surveys.\n\n5(2)If the land of which an air space parcel is part is affected by a subdivision by-law or subdivision regulation under the Community Planning Act, an air space plan in relation to the air space parcel shall not be accepted by the registrar for filing unless a development officer has certified that the requirements of subsection 79(3) or paragraph 125(11)(c) of the Community Planning Act have been met.\n\n1982, c.A-7.01, s.5, ss.6(2); 1983, c.11, s.2; 2017, c.20, s.3",
+      "subsections": [
+        {
+          "id": "5-subsection-1",
+          "sourceKey": "section:5/subsection:1",
+          "label": "5(1)",
+          "text": "5(1)An air space plan shall not be accepted by the registrar for filing unless\n\n(a)\nit bears the certificate and seal of a surveyor certifying its correctness and compliance with section 4,\n\n(b)\nit has been approved by a development officer as complying with paragraph 4(a), and\n\n(c)\nit has been approved by the Director of Surveys.",
+          "contentHash": "7ec97f18c6098c307eb5cec53f68052c2ba3a647fef04e4960a453b0898e70d2"
+        },
+        {
+          "id": "5-subsection-2",
+          "sourceKey": "section:5/subsection:2",
+          "label": "5(2)",
+          "text": "5(2)If the land of which an air space parcel is part is affected by a subdivision by-law or subdivision regulation under the Community Planning Act, an air space plan in relation to the air space parcel shall not be accepted by the registrar for filing unless a development officer has certified that the requirements of subsection 79(3) or paragraph 125(11)(c) of the Community Planning Act have been met.\n\n1982, c.A-7.01, s.5, ss.6(2); 1983, c.11, s.2; 2017, c.20, s.3",
+          "contentHash": "1215f96320dc5076cb00f8fb90376a1a39bd91a2333d8972ddb8d58f8ebae06f"
+        }
+      ],
+      "contentHash": "6f4438a8218c8abccc1d6ac3fb7168c214fc002f4078c80e84445191823c7839"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "componentType": "section",
+      "label": "6",
+      "heading": "Conveyance of air space parcel",
+      "text": "Conveyance of air space parcel\n\n6(1)An air space parcel shall devolve and may be conveyed or otherwise dealt with in the same manner and form as other land.\n\n6(2)A conveyance of an air space parcel does not convey an easement of any kind, or imply a covenant restrictive of use or a covenant to convey another portion of the transferor’s land.\n\n6(3)Unless expressly conveyed, the title to the air space above the upper limits and below the lower limits of an air space parcel remains in the transferor.\n\n1982, c.A-7.01, s.3, ss.4(2)",
+      "subsections": [
+        {
+          "id": "6-subsection-1",
+          "sourceKey": "section:6/subsection:1",
+          "label": "6(1)",
+          "text": "6(1)An air space parcel shall devolve and may be conveyed or otherwise dealt with in the same manner and form as other land.",
+          "contentHash": "5086502e5db02ca3878bc1c1849f34c910272193b4527e75603f65d56ae5ec0c"
+        },
+        {
+          "id": "6-subsection-2",
+          "sourceKey": "section:6/subsection:2",
+          "label": "6(2)",
+          "text": "6(2)A conveyance of an air space parcel does not convey an easement of any kind, or imply a covenant restrictive of use or a covenant to convey another portion of the transferor’s land.",
+          "contentHash": "1a3b554e60daaeef0b954e7938f5619b2524ddcca0b5b488d77f02b3fdd2c171"
+        },
+        {
+          "id": "6-subsection-3",
+          "sourceKey": "section:6/subsection:3",
+          "label": "6(3)",
+          "text": "6(3)Unless expressly conveyed, the title to the air space above the upper limits and below the lower limits of an air space parcel remains in the transferor.\n\n1982, c.A-7.01, s.3, ss.4(2)",
+          "contentHash": "cc07a443ab9904f9d142a4587e58da095f537602b466a2e68af70cbb194ee017"
+        }
+      ],
+      "contentHash": "3141aa38a5119fecc8c43036ec26e49c95bb69353aad6df8c65742a9406ffb84"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "componentType": "section",
+      "label": "7",
+      "heading": "Assessment and taxation",
+      "text": "Assessment and taxation\n\n7An air space parcel, if separately owned, constitutes real property for the purposes of assessment and taxation.\n1982, c.A-7.01, s.7",
+      "subsections": [],
+      "contentHash": "92b8dc1840d7b37a849a5667beeb665744451c35222d69ce552dd5df42a66141"
+    },
+    {
+      "id": "section-7.1",
+      "sourceKey": "section:7.1",
+      "componentType": "section",
+      "label": "7.1",
+      "heading": "Administration",
+      "text": "Administration\n\n2015, c.44, s.84\n\n7.1Service New Brunswick is responsible for the administration of this Act.\n2015, c.44, s.84",
+      "subsections": [],
+      "contentHash": "0e0509c881f7f3fc8b001fd1cc68080fa6546e86ab6ed5724b5eb5d222ed29af"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "componentType": "section",
+      "label": "8",
+      "heading": "Regulations",
+      "text": "Regulations\n\n8The Director of Surveys may make regulations respecting the standards of survey and the content of an air space plan.\n1982, c.A-7.01, s.8; 1983, c.11, s.3\n\nN.B. This Act was proclaimed and came into force September 1, 2011.\n\nN.B. This Act is consolidated to January 1, 2018.",
+      "subsections": [],
+      "contentHash": "1a529c9a704a997dcc5ca8f3bcf3845cec19f7f976759ceda10d1d25a857273a"
+    }
+  ],
+  "sections": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
+      "label": "1",
+      "heading": "Definitions",
+      "text": "Definitions\n\n1The following definitions apply in this Act.\n“air space parcel” means a volumetric parcel of air space, whether or not occupied in whole or in part by a building or other structure, created under section 3. (parcelle d’espace aérien)\n\n“air space plan” means a plan that complies with the requirements of sections 4 and 5. (plan d’espace aérien)\n\n“development officer” means a development officer under the Community Planning Act. (agent d’aménagement)\n\n“Director of Surveys” means the Director of Surveys under the Surveys Act. (directeur de l’arpentage)\n\n“geodetic elevation” Repealed: 2017, c.49, s.1\n\n“orthometric height” means the elevation of a point above the geoid that is(altitude orthométrique)\n\n(a)\nbased on the Canadian Geodetic Vertical Datum of 2013 (CGVD2013), and\n\n(b)\nderived from a benchmark approved by the Director of Surveys.\n\n“registry office” means the registry office established under the Registry Act for the county in which the land affected is situated and “registrar” means the registrar of deeds of that county. (bureau de l’enregistrement) et (conservateur)\n\n“surveyor” means a land surveyor registered under the New Brunswick Land Surveyors Act, 1986. (arpenteur)\n\n1982, c.A-7.01, s.1; 1983, c.11, s.1; 2017, c.49, s.1",
+      "subsections": [],
+      "contentHash": "5f9585abd1ac1277d26e39597e410c9e3142f88a8b3e5dc49d47fde2bfabf554"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "label": "2",
+      "heading": "Air space as land",
+      "text": "Air space as land\n\n2Air space constitutes land and may be dealt with as land.\n1982, c.A-7.01, s.2",
+      "subsections": [],
+      "contentHash": "d7c3af912c26e8a5028939cf5c2d2724fd3d1f9f77f400a3cd19c067d2520ecf"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
+      "label": "3",
+      "heading": "Creation of air space parcel",
+      "text": "Creation of air space parcel\n\n3The owner of a freehold or leasehold estate may, by filing an air space plan in the registry office, create one or more air space parcels separated by surfaces.\n1982, c.A-7.01, ss.4(1)",
+      "subsections": [],
+      "contentHash": "891e333da9696af83bba448b8ebec47fa34684a74f09560b98c34da523a07fca"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
+      "label": "4",
+      "heading": "Requirements of air space plan",
+      "text": "Requirements of air space plan\n\n4An air space plan shall\n\n(a)\nidentify the parcel of land of which the air space parcel is part and shall indicate that the plan is a subdivision of the whole or part of that parcel of land,\n\n(b)\nhave its side boundary limits consist of vertical or inclined surfaces conforming to or lying within the boundaries of the parcel of land referred to in paragraph (a),\n\n(c)\nhave as its upper and lower limit a horizontal or inclined plane or arc of a circle, or combination of them,\n\n(d)\nhave noted on it the orthometric height of one corner of the ground surface of the parcel of land referred to in paragraph (a) and the orthometric height of every corner or angle of the air space parcel, and\n\n(e)\ninclude\n\n(i)\na plot to scale of the parcel of land referred to in paragraph (a), and\n\n(ii)\na three-dimensional paraline drawing of the air space parcel contained between the planes or arcs, and, if the surfaces of the air space parcel are both horizontal and vertical the plan shall so state, otherwise all boundaries of the air space parcel shall be fully dimensioned for length and direction.\n\n1982, c.A-7.01, ss.6(1); 2017, c.49, s.1",
+      "subsections": [],
+      "contentHash": "c7325e814744b403054d0712856510ca820111a4a733c76be05dd0cd8affd741"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "componentType": "section",
+      "label": "5",
+      "heading": "Filing of air space plan",
+      "text": "Filing of air space plan\n\n5(1)An air space plan shall not be accepted by the registrar for filing unless\n\n(a)\nit bears the certificate and seal of a surveyor certifying its correctness and compliance with section 4,\n\n(b)\nit has been approved by a development officer as complying with paragraph 4(a), and\n\n(c)\nit has been approved by the Director of Surveys.\n\n5(2)If the land of which an air space parcel is part is affected by a subdivision by-law or subdivision regulation under the Community Planning Act, an air space plan in relation to the air space parcel shall not be accepted by the registrar for filing unless a development officer has certified that the requirements of subsection 79(3) or paragraph 125(11)(c) of the Community Planning Act have been met.\n\n1982, c.A-7.01, s.5, ss.6(2); 1983, c.11, s.2; 2017, c.20, s.3",
+      "subsections": [
+        {
+          "id": "5-subsection-1",
+          "sourceKey": "section:5/subsection:1",
+          "label": "5(1)",
+          "text": "5(1)An air space plan shall not be accepted by the registrar for filing unless\n\n(a)\nit bears the certificate and seal of a surveyor certifying its correctness and compliance with section 4,\n\n(b)\nit has been approved by a development officer as complying with paragraph 4(a), and\n\n(c)\nit has been approved by the Director of Surveys.",
+          "contentHash": "7ec97f18c6098c307eb5cec53f68052c2ba3a647fef04e4960a453b0898e70d2"
+        },
+        {
+          "id": "5-subsection-2",
+          "sourceKey": "section:5/subsection:2",
+          "label": "5(2)",
+          "text": "5(2)If the land of which an air space parcel is part is affected by a subdivision by-law or subdivision regulation under the Community Planning Act, an air space plan in relation to the air space parcel shall not be accepted by the registrar for filing unless a development officer has certified that the requirements of subsection 79(3) or paragraph 125(11)(c) of the Community Planning Act have been met.\n\n1982, c.A-7.01, s.5, ss.6(2); 1983, c.11, s.2; 2017, c.20, s.3",
+          "contentHash": "1215f96320dc5076cb00f8fb90376a1a39bd91a2333d8972ddb8d58f8ebae06f"
+        }
+      ],
+      "contentHash": "6f4438a8218c8abccc1d6ac3fb7168c214fc002f4078c80e84445191823c7839"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "componentType": "section",
+      "label": "6",
+      "heading": "Conveyance of air space parcel",
+      "text": "Conveyance of air space parcel\n\n6(1)An air space parcel shall devolve and may be conveyed or otherwise dealt with in the same manner and form as other land.\n\n6(2)A conveyance of an air space parcel does not convey an easement of any kind, or imply a covenant restrictive of use or a covenant to convey another portion of the transferor’s land.\n\n6(3)Unless expressly conveyed, the title to the air space above the upper limits and below the lower limits of an air space parcel remains in the transferor.\n\n1982, c.A-7.01, s.3, ss.4(2)",
+      "subsections": [
+        {
+          "id": "6-subsection-1",
+          "sourceKey": "section:6/subsection:1",
+          "label": "6(1)",
+          "text": "6(1)An air space parcel shall devolve and may be conveyed or otherwise dealt with in the same manner and form as other land.",
+          "contentHash": "5086502e5db02ca3878bc1c1849f34c910272193b4527e75603f65d56ae5ec0c"
+        },
+        {
+          "id": "6-subsection-2",
+          "sourceKey": "section:6/subsection:2",
+          "label": "6(2)",
+          "text": "6(2)A conveyance of an air space parcel does not convey an easement of any kind, or imply a covenant restrictive of use or a covenant to convey another portion of the transferor’s land.",
+          "contentHash": "1a3b554e60daaeef0b954e7938f5619b2524ddcca0b5b488d77f02b3fdd2c171"
+        },
+        {
+          "id": "6-subsection-3",
+          "sourceKey": "section:6/subsection:3",
+          "label": "6(3)",
+          "text": "6(3)Unless expressly conveyed, the title to the air space above the upper limits and below the lower limits of an air space parcel remains in the transferor.\n\n1982, c.A-7.01, s.3, ss.4(2)",
+          "contentHash": "cc07a443ab9904f9d142a4587e58da095f537602b466a2e68af70cbb194ee017"
+        }
+      ],
+      "contentHash": "3141aa38a5119fecc8c43036ec26e49c95bb69353aad6df8c65742a9406ffb84"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "componentType": "section",
+      "label": "7",
+      "heading": "Assessment and taxation",
+      "text": "Assessment and taxation\n\n7An air space parcel, if separately owned, constitutes real property for the purposes of assessment and taxation.\n1982, c.A-7.01, s.7",
+      "subsections": [],
+      "contentHash": "92b8dc1840d7b37a849a5667beeb665744451c35222d69ce552dd5df42a66141"
+    },
+    {
+      "id": "section-7.1",
+      "sourceKey": "section:7.1",
+      "componentType": "section",
+      "label": "7.1",
+      "heading": "Administration",
+      "text": "Administration\n\n2015, c.44, s.84\n\n7.1Service New Brunswick is responsible for the administration of this Act.\n2015, c.44, s.84",
+      "subsections": [],
+      "contentHash": "0e0509c881f7f3fc8b001fd1cc68080fa6546e86ab6ed5724b5eb5d222ed29af"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "componentType": "section",
+      "label": "8",
+      "heading": "Regulations",
+      "text": "Regulations\n\n8The Director of Surveys may make regulations respecting the standards of survey and the content of an air space plan.\n1982, c.A-7.01, s.8; 1983, c.11, s.3\n\nN.B. This Act was proclaimed and came into force September 1, 2011.\n\nN.B. This Act is consolidated to January 1, 2018.",
+      "subsections": [],
+      "contentHash": "1a529c9a704a997dcc5ca8f3bcf3845cec19f7f976759ceda10d1d25a857273a"
+    }
+  ],
+  "notes": []
+}

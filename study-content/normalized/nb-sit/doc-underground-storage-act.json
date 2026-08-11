@@ -1,0 +1,1105 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-underground-storage-act",
+  "officialTitle": "Underground Storage Act",
+  "officialCitation": "Chapter U-1.1",
+  "officialCitationDisplay": "Chapter U-1.1",
+  "officialCitationNormalized": "U-1.1",
+  "documentType": "act",
+  "sourceUrl": "https://laws.gnb.ca/en/document/cs/U-1.1",
+  "fetchDate": "2026-08-11T18:09:17.202Z",
+  "consolidatedTo": "December 13, 2024",
+  "contentHash": "b1cc8e4bdae672b4a08ec04e35a161855f6e216c5f09ed89c301c847a927df6a",
+  "tableOfContents": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "label": "1",
+      "heading": "Definitions"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "label": "2",
+      "heading": "Application of Act"
+    },
+    {
+      "id": "section-2.1",
+      "sourceKey": "section:2.1",
+      "label": "2.1",
+      "heading": "Declaration"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "label": "3",
+      "heading": "Administration"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "label": "4",
+      "heading": "Description of land area"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "label": "5",
+      "heading": "Summons to witness, confidentiality of information"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "label": "6",
+      "heading": "Necessity of underground storage exploration licence"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "label": "7",
+      "heading": "Underground storage exploration licence – application"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "label": "8",
+      "heading": "Underground storage exploration licence – term, duties"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "label": "9",
+      "heading": "Evaluation of underground storage potential"
+    },
+    {
+      "id": "section-10",
+      "sourceKey": "section:10",
+      "label": "10",
+      "heading": "Entry and use of private lands"
+    },
+    {
+      "id": "section-11",
+      "sourceKey": "section:11",
+      "label": "11",
+      "heading": "Storage lease – application"
+    },
+    {
+      "id": "section-12",
+      "sourceKey": "section:12",
+      "label": "12",
+      "heading": "Storage lease – term, conditions"
+    },
+    {
+      "id": "section-12.1",
+      "sourceKey": "section:12.1",
+      "label": "12.1",
+      "heading": "Oil and natural gas lease"
+    },
+    {
+      "id": "section-13",
+      "sourceKey": "section:13",
+      "label": "13",
+      "heading": "Construction permit – application, term, conditions"
+    },
+    {
+      "id": "section-14",
+      "sourceKey": "section:14",
+      "label": "14",
+      "heading": "Construction permit – duties"
+    },
+    {
+      "id": "section-15",
+      "sourceKey": "section:15",
+      "label": "15",
+      "heading": "Transference of licence, lease or permit"
+    },
+    {
+      "id": "section-16",
+      "sourceKey": "section:16",
+      "label": "16",
+      "heading": "Revocation of licence, lease or permit"
+    },
+    {
+      "id": "section-17",
+      "sourceKey": "section:17",
+      "label": "17",
+      "heading": "Security"
+    },
+    {
+      "id": "section-18",
+      "sourceKey": "section:18",
+      "label": "18",
+      "heading": "Forfeiture of security"
+    },
+    {
+      "id": "section-19",
+      "sourceKey": "section:19",
+      "label": "19",
+      "heading": "Return or maintenance of security"
+    },
+    {
+      "id": "section-20",
+      "sourceKey": "section:20",
+      "label": "20",
+      "heading": "Reports and returns, entry and inspection"
+    },
+    {
+      "id": "section-21",
+      "sourceKey": "section:21",
+      "label": "21",
+      "heading": "Special conditions and orders"
+    },
+    {
+      "id": "section-22",
+      "sourceKey": "section:22",
+      "label": "22",
+      "heading": "Regulations"
+    },
+    {
+      "id": "section-23",
+      "sourceKey": "section:23",
+      "label": "23"
+    }
+  ],
+  "components": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
+      "label": "1",
+      "heading": "Definitions",
+      "text": "Definitions\n\n1In this Act\n“construction permit” means a valid and subsisting permit issued under section 13;(permis de construire)\n\n“fluids” means compressed air, any gas or liquid or such other matter, as is designated by regulation, including, without limiting the foregoing, oil and natural gas as defined by the Oil and Natural Gas Act, but does not include nuclear wastes in any form;(substances fluides)\n\n“Minister” means the Minister of Natural Resources and includes any person designated by the Minister to act on the Minister’s behalf;(Ministre)\n\n“Minister of Finance” Repealed: 2019, c.29, s.156\n\n“Minister of Finance and Treasury Board” includes any person designated by the Minister to act on the Minister’s behalf;(ministre des Finances et du Conseil du Trésor)\n\n“storage lease” means a valid and subsisting lease granted under section 12.(bail de stockage)\n\n“storage licence” Repealed: 1999, c.G-2.11, s.105\n\n“underground storage exploration licence” means a valid and subsisting licence granted under section 7;(autorisation de recherche de stockage souterrain)\n\n“underground storage facility” means a naturally occurring underground cavity or system of cavities or pores, or an underground space created by some external means, that may be used for the storage of fluids but does not include fabricated containers that may be used for storage purposes.(réservoir de stockage souterrain)\n\n1986, c.8, s.127; 1999, c.G-2.11, s.105; 2004, c.20, s.64; 2012, c.52, s.48; 2016, c.37, s.192; 2019, c.29, s.156; 2019, c.29, s.215; 2024, c.28, s.62",
+      "subsections": [],
+      "contentHash": "75c6d3ed3b0c8c413f1468580ca8bbba162e6a6df84710184b36d22150f889d1"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "label": "2",
+      "heading": "Application of Act",
+      "text": "Application of Act\n\n2This Act applies to the exploration for and the construction and operation of underground storage facilities for fluids.",
+      "subsections": [],
+      "contentHash": "5e69c9570beebe83d1520a47e27412f9619843915c3a35144f268ec844db10db"
+    },
+    {
+      "id": "section-2.1",
+      "sourceKey": "section:2.1",
+      "componentType": "section",
+      "label": "2.1",
+      "heading": "Declaration",
+      "text": "Declaration\n\n2.1(1)Every site in the Province suitable for constructing or operating an underground storage facility is hereby declared to be, and to have been at all times prior hereto, property separate from the soil and vested in the Crown in the right of the Province.\n\n2.1(2)No compensation is payable to any person or local government as a result of the declaration in subsection 2.1(1).\n\n1999, c.G-2.11, s.105; 2005, c.7, s.87; 2017, c.20, s.176",
+      "subsections": [
+        {
+          "id": "2.1-subsection-1",
+          "sourceKey": "section:2.1/subsection:1",
+          "label": "2.1(1)",
+          "text": "2.1(1)Every site in the Province suitable for constructing or operating an underground storage facility is hereby declared to be, and to have been at all times prior hereto, property separate from the soil and vested in the Crown in the right of the Province.",
+          "contentHash": "f8b599a074c6fbe6cff3daf57a4b6dd33a91ebc6ce2adc5351a691da3a348e81"
+        },
+        {
+          "id": "2.1-subsection-2",
+          "sourceKey": "section:2.1/subsection:2",
+          "label": "2.1(2)",
+          "text": "2.1(2)No compensation is payable to any person or local government as a result of the declaration in subsection 2.1(1).\n\n1999, c.G-2.11, s.105; 2005, c.7, s.87; 2017, c.20, s.176",
+          "contentHash": "d67a5ec84de2c6629a52fba5e7648eb5aac298ce877d3e0ab01bedd27dfed1bd"
+        }
+      ],
+      "contentHash": "0314c363bfa4a2ddb96db578a124bce5f06d49c6b56dce9e109164c27fa8d30a"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
+      "label": "3",
+      "heading": "Administration",
+      "text": "Administration\n\n3The Minister is in charge of the administration and control of this Act and may designate a person to act on his behalf.",
+      "subsections": [],
+      "contentHash": "25f6f25458c01215bbeceaf24352ceb5d5f41d0ab82d0a6c5b9ff0ca22e3b8b5"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
+      "label": "4",
+      "heading": "Description of land area",
+      "text": "Description of land area\n\n4Any land area which is the subject of any application for a permit, lease or licence provided for by this Act shall be described by reference to the standard oil and natural gas survey system established under the Oil and Natural Gas Act.\n1999, c.G-2.11, s.105",
+      "subsections": [],
+      "contentHash": "08b844d7ba72d530798835cc7683e58a2e6955f9ec3ee720a27c355d1f7a2587"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "componentType": "section",
+      "label": "5",
+      "heading": "Summons to witness, confidentiality of information",
+      "text": "Summons to witness, confidentiality of information\n\n5(1)A summons to witness shall not issue out of any court requiring the attendance of the Minister or any employee of the Province in his official capacity under this Act, nor shall any document in his official custody or possession be produced without an order of the court or a judge thereof.\n\n5(2)An employee of the Province responsible for the administration and enforcement of this Act shall not disclose any information obtained by him in his official capacity that the Minister certifies is not in the public interest to be divulged.\n\n5(3)If subsection (2) is inconsistent with or in conflict with a provision of the Right to Information and Protection of Privacy Act, subsection (2) prevails.\n\n1986, c.4, s.55; 2013, c.34, s.37",
+      "subsections": [
+        {
+          "id": "5-subsection-1",
+          "sourceKey": "section:5/subsection:1",
+          "label": "5(1)",
+          "text": "5(1)A summons to witness shall not issue out of any court requiring the attendance of the Minister or any employee of the Province in his official capacity under this Act, nor shall any document in his official custody or possession be produced without an order of the court or a judge thereof.",
+          "contentHash": "cf389973eee9725d2931a2139251dc05c33b497d762b0d700aca0970ddff327b"
+        },
+        {
+          "id": "5-subsection-2",
+          "sourceKey": "section:5/subsection:2",
+          "label": "5(2)",
+          "text": "5(2)An employee of the Province responsible for the administration and enforcement of this Act shall not disclose any information obtained by him in his official capacity that the Minister certifies is not in the public interest to be divulged.",
+          "contentHash": "11c54ef3a7ea8bbf7a49d9d3200dd67360d8f5030861a1f825ccd970500725f5"
+        },
+        {
+          "id": "5-subsection-3",
+          "sourceKey": "section:5/subsection:3",
+          "label": "5(3)",
+          "text": "5(3)If subsection (2) is inconsistent with or in conflict with a provision of the Right to Information and Protection of Privacy Act, subsection (2) prevails.\n\n1986, c.4, s.55; 2013, c.34, s.37",
+          "contentHash": "55df759f1ac9c9f4516c2e6914281a9e0386ba2ea9f627448a4ee34166f77b2d"
+        }
+      ],
+      "contentHash": "cb18593ecd008eda733a658eacc770b3d5813d947be894999b5ec679c7fee6a3"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "componentType": "section",
+      "label": "6",
+      "heading": "Necessity of underground storage exploration licence",
+      "text": "Necessity of underground storage exploration licence\n\n6No person shall undertake or cause to be undertaken, by any means whatsoever, exploration for the purpose of evaluating underground storage potential for fluids unless he is the holder of an underground storage exploration licence.",
+      "subsections": [],
+      "contentHash": "4be065cf1c63c4fb32f3169c0ad1aadedba486254e77de5cdadf3d47b830fdec"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "componentType": "section",
+      "label": "7",
+      "heading": "Underground storage exploration licence – application",
+      "text": "Underground storage exploration licence – application\n\n7(1)An application for an underground storage exploration licence shall be made in writing to the Minister and shall contain the information prescribed by regulation.\n\n7(2)Upon payment of the fee and rentals prescribed by regulation, the Minister may grant an underground storage exploration licence for the area specified in the licence subject to the terms and conditions of this Act and the regulations and to any special conditions he may prescribe.\n\n7(3)No underground storage exploration licence shall be granted until the applicant has deposited with the Minister of Finance and Treasury Board security in the amount prescribed by regulation.\n\n2019, c.29, s.156",
+      "subsections": [
+        {
+          "id": "7-subsection-1",
+          "sourceKey": "section:7/subsection:1",
+          "label": "7(1)",
+          "text": "7(1)An application for an underground storage exploration licence shall be made in writing to the Minister and shall contain the information prescribed by regulation.",
+          "contentHash": "d86d5a451d68af2b656e549741236a82e3f90c68764f6881b9dfe08cf61d3a26"
+        },
+        {
+          "id": "7-subsection-2",
+          "sourceKey": "section:7/subsection:2",
+          "label": "7(2)",
+          "text": "7(2)Upon payment of the fee and rentals prescribed by regulation, the Minister may grant an underground storage exploration licence for the area specified in the licence subject to the terms and conditions of this Act and the regulations and to any special conditions he may prescribe.",
+          "contentHash": "1aaa97424bcfe858805290094927eb8582df3a50a9fa728830f90867d34cb812"
+        },
+        {
+          "id": "7-subsection-3",
+          "sourceKey": "section:7/subsection:3",
+          "label": "7(3)",
+          "text": "7(3)No underground storage exploration licence shall be granted until the applicant has deposited with the Minister of Finance and Treasury Board security in the amount prescribed by regulation.\n\n2019, c.29, s.156",
+          "contentHash": "224ff41d5cb05815cfcc536a2bcefb59674bd4a5dfc4896f10dac6d27c892ae8"
+        }
+      ],
+      "contentHash": "11f94e32a8ca991ba64c9cd2fc0f3bb7115aa0b75bf872cd3e09bc65937612ec"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "componentType": "section",
+      "label": "8",
+      "heading": "Underground storage exploration licence – term, duties",
+      "text": "Underground storage exploration licence – term, duties\n\n8(1)An underground storage exploration licence shall be for a non-renewable term of three years and shall confer upon the holder the exclusive rights to explore in the area specified on the licence for the purpose of evaluating underground storage potential for fluids.\n\n8(2)The holder of an underground storage exploration licence shall perform exploration work in the area specified on the licence to the extent and value prescribed by regulations.\n\n8(3)Within one month prior to the end of each year of the term of the underground storage exploration licence, the person holding the licence shall satisfy the Minister that he has complied with subsection (2).\n\n8(4)The Minister may revoke an underground exploration licence if he considers that it is in the public interest or if the holder of the licence fails to comply with subsection (2) or (3).",
+      "subsections": [
+        {
+          "id": "8-subsection-1",
+          "sourceKey": "section:8/subsection:1",
+          "label": "8(1)",
+          "text": "8(1)An underground storage exploration licence shall be for a non-renewable term of three years and shall confer upon the holder the exclusive rights to explore in the area specified on the licence for the purpose of evaluating underground storage potential for fluids.",
+          "contentHash": "685bd574981a6550d92ed87662abb5b03f65d62d210e6b48070569a6bf60e76b"
+        },
+        {
+          "id": "8-subsection-2",
+          "sourceKey": "section:8/subsection:2",
+          "label": "8(2)",
+          "text": "8(2)The holder of an underground storage exploration licence shall perform exploration work in the area specified on the licence to the extent and value prescribed by regulations.",
+          "contentHash": "21ed7c6ab93311f7805c3971d537c6149c743d1b9e1a2e02118cf629ee247c98"
+        },
+        {
+          "id": "8-subsection-3",
+          "sourceKey": "section:8/subsection:3",
+          "label": "8(3)",
+          "text": "8(3)Within one month prior to the end of each year of the term of the underground storage exploration licence, the person holding the licence shall satisfy the Minister that he has complied with subsection (2).",
+          "contentHash": "13861a23dc425083639218963a5dd06b2ca93dbb2acb78a0d2a8e420ee31c36f"
+        },
+        {
+          "id": "8-subsection-4",
+          "sourceKey": "section:8/subsection:4",
+          "label": "8(4)",
+          "text": "8(4)The Minister may revoke an underground exploration licence if he considers that it is in the public interest or if the holder of the licence fails to comply with subsection (2) or (3).",
+          "contentHash": "527e1c6013b5482487966735280be8d7cc73730903c066dc59f45f7f603afca2"
+        }
+      ],
+      "contentHash": "2011ad7765089150ce966a0a29cf2d9ae859d3d337e81810079223d081dcc702"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "componentType": "section",
+      "label": "9",
+      "heading": "Evaluation of underground storage potential",
+      "text": "Evaluation of underground storage potential\n\n9(1)Subject to this Act, the holder of an underground storage exploration licence may enter upon and explore Crown lands for the purpose of evaluating underground storage potential for fluids.\n\n9(2)No person holding an underground storage exploration licence shall enter on and use or cause entry on and use of, any lands other than Crown lands for the purpose of exploring, in any manner whatsoever, to evaluate underground storage potential for fluids, or for the doing of any other act thereon, unless he has obtained the right to enter and use that land either\n\n(a)\nby agreement with the owner, tenant or occupant of such lands entitled to grant consent, or\n\n(b)\nby obtaining a special order from the Minister permitting such entry and use.\n\n9(3)A person who enters upon Crown land for the purpose of exploring to evaluate underground storage potential for fluids is liable to pay compensation to the Crown in right of the Province for any loss or damage caused by reason of the entry or operations carried out, or both, in an amount to be determined by agreement, or failing agreement, by The Court of King’s Bench of New Brunswick or any judge thereof acting under Part II of the Expropriation Act, on application by either party, which amount, if any, shall upon determination, be paid to the Minister of Finance and Treasury Board.\n\n9(4)A person who enters on any land other than Crown lands for the purpose of exploring to evaluate underground storage potential for fluids is liable to pay any person having an interest in the land or in chattels on the land compensation for any loss or damage to the land or chattels caused by reason of the entry, occupation or operation; and if the parties cannot agree as to the amount of compensation, the amount shall be determined by The Court of King’s Bench of New Brunswick or any judge of that Court acting under Part 2 of the Expropriation Act on application by either of the parties.\n\n9(5)A person performing exploration operations under this Act shall not interfere with the operations of any licensee or lessee under the Oil and Natural Gas Act, the Bituminous Shale Act or the Quarriable Substances Act, any holder of a mining or mineral claim or mining lease under the Mining Act, any holder of a mining licence or mining lease continued under the Mining Act, or any holder of a mining right granted under the Ownership of Minerals Act or section 25 of the Mining Act or any predecessor of that section for the location upon which the operations are conducted.\n\n1985, c.M-14.1, s.138; 1985, c.4, s.69; 1987, c.6, s.116; 2019, c.12, s.36; 2019, c.29, s.156; 2023, c.17, s.274",
+      "subsections": [
+        {
+          "id": "9-subsection-1",
+          "sourceKey": "section:9/subsection:1",
+          "label": "9(1)",
+          "text": "9(1)Subject to this Act, the holder of an underground storage exploration licence may enter upon and explore Crown lands for the purpose of evaluating underground storage potential for fluids.",
+          "contentHash": "817c391f64df6e35b8c54af534a66be894c72147b02ed61ac3f7123bdaf1b1f0"
+        },
+        {
+          "id": "9-subsection-2",
+          "sourceKey": "section:9/subsection:2",
+          "label": "9(2)",
+          "text": "9(2)No person holding an underground storage exploration licence shall enter on and use or cause entry on and use of, any lands other than Crown lands for the purpose of exploring, in any manner whatsoever, to evaluate underground storage potential for fluids, or for the doing of any other act thereon, unless he has obtained the right to enter and use that land either\n\n(a)\nby agreement with the owner, tenant or occupant of such lands entitled to grant consent, or\n\n(b)\nby obtaining a special order from the Minister permitting such entry and use.",
+          "contentHash": "219e907d90caa2e585c7bcdd5755c8a6681a12a1db04751cc94b85184e76e5ea"
+        },
+        {
+          "id": "9-subsection-3",
+          "sourceKey": "section:9/subsection:3",
+          "label": "9(3)",
+          "text": "9(3)A person who enters upon Crown land for the purpose of exploring to evaluate underground storage potential for fluids is liable to pay compensation to the Crown in right of the Province for any loss or damage caused by reason of the entry or operations carried out, or both, in an amount to be determined by agreement, or failing agreement, by The Court of King’s Bench of New Brunswick or any judge thereof acting under Part II of the Expropriation Act, on application by either party, which amount, if any, shall upon determination, be paid to the Minister of Finance and Treasury Board.",
+          "contentHash": "f9fccdc8ef6bef60d49139eeefdcd6cc36b69963ea283c7bfbe9f996f607efef"
+        },
+        {
+          "id": "9-subsection-4",
+          "sourceKey": "section:9/subsection:4",
+          "label": "9(4)",
+          "text": "9(4)A person who enters on any land other than Crown lands for the purpose of exploring to evaluate underground storage potential for fluids is liable to pay any person having an interest in the land or in chattels on the land compensation for any loss or damage to the land or chattels caused by reason of the entry, occupation or operation; and if the parties cannot agree as to the amount of compensation, the amount shall be determined by The Court of King’s Bench of New Brunswick or any judge of that Court acting under Part 2 of the Expropriation Act on application by either of the parties.",
+          "contentHash": "ab279532aef5c8cbdff5d987dd21184d9c8b4d654379d03baa6fdde19e09bda8"
+        },
+        {
+          "id": "9-subsection-5",
+          "sourceKey": "section:9/subsection:5",
+          "label": "9(5)",
+          "text": "9(5)A person performing exploration operations under this Act shall not interfere with the operations of any licensee or lessee under the Oil and Natural Gas Act, the Bituminous Shale Act or the Quarriable Substances Act, any holder of a mining or mineral claim or mining lease under the Mining Act, any holder of a mining licence or mining lease continued under the Mining Act, or any holder of a mining right granted under the Ownership of Minerals Act or section 25 of the Mining Act or any predecessor of that section for the location upon which the operations are conducted.\n\n1985, c.M-14.1, s.138; 1985, c.4, s.69; 1987, c.6, s.116; 2019, c.12, s.36; 2019, c.29, s.156; 2023, c.17, s.274",
+          "contentHash": "c4f18bd5a7cff651da2cfbab4ea3bb57833dabf5f5dd535628f1109fcdc50993"
+        }
+      ],
+      "contentHash": "e5050c50fa7cc022198a40d516e19e4a6086a1bd08d5aeab3c1aa72be05ed165"
+    },
+    {
+      "id": "section-10",
+      "sourceKey": "section:10",
+      "componentType": "section",
+      "label": "10",
+      "heading": "Entry and use of private lands",
+      "text": "Entry and use of private lands\n\n10All terms and conditions applying to a special order to enter and use private land issued by the Minister under the Oil and Natural Gas Act apply, with any necessary modifications, to the special order referred to in section 9.\n2019, c.12, s.36",
+      "subsections": [],
+      "contentHash": "7b174fad1cd24f8e22fcacec7fc7848a8c3fe5c5fb699cac3de60c40d1dcff3f"
+    },
+    {
+      "id": "section-11",
+      "sourceKey": "section:11",
+      "componentType": "section",
+      "label": "11",
+      "heading": "Storage lease – application",
+      "text": "Storage lease – application\n\n11(1)A holder of an underground storage exploration licence who, at any time during the term of that licence, determines that a storage area may exist in the area specified in his licence may apply in writing to the Minister at any time up to sixty days prior to the termination of such licence, for a storage lease in respect of that storage area.\n\n11(2)The application shall contain a description of the proposed storage area and all information and material upon which the applicant relies and any other information the Minister may require.\n\n1999, c.G-2.11, s.105",
+      "subsections": [
+        {
+          "id": "11-subsection-1",
+          "sourceKey": "section:11/subsection:1",
+          "label": "11(1)",
+          "text": "11(1)A holder of an underground storage exploration licence who, at any time during the term of that licence, determines that a storage area may exist in the area specified in his licence may apply in writing to the Minister at any time up to sixty days prior to the termination of such licence, for a storage lease in respect of that storage area.",
+          "contentHash": "169ce1caef56136f5c14ba574e50e5b6227d5bc7db8903f3aac9dc5129096585"
+        },
+        {
+          "id": "11-subsection-2",
+          "sourceKey": "section:11/subsection:2",
+          "label": "11(2)",
+          "text": "11(2)The application shall contain a description of the proposed storage area and all information and material upon which the applicant relies and any other information the Minister may require.\n\n1999, c.G-2.11, s.105",
+          "contentHash": "5c59edd73b8955302de69156c5cb78260fb0da7eb7badfce95d941a877286429"
+        }
+      ],
+      "contentHash": "edf941d155964e1ea6961ab068acf97248237dcfb9adce42ac5c6e4761541624"
+    },
+    {
+      "id": "section-12",
+      "sourceKey": "section:12",
+      "componentType": "section",
+      "label": "12",
+      "heading": "Storage lease – term, conditions",
+      "text": "Storage lease – term, conditions\n\n12(1)If in the opinion of the Minister viable potential for underground storage of fluids exists in the area for which an application has been made under section 11 and if such applicant has demonstrated to the satisfaction of the Minister a bona fide desire to construct and operate underground storage facilities for fluids, the Minister may grant a storage lease in respect of the area described in the application therefor, or any part thereof, which he considers proper.\n\n12(2)A storage lease granted under subsection (1) shall be for an initial term of ten years with a right of renewal for consecutive ten-year periods where the holder of such lease has applied in writing therefor at least six months prior to the expiration of the then existing term.\n\n12(3)No storage lease shall be granted or renewed by the Minister until the applicant therefor has paid the fee and has deposited the security as prescribed by regulation, and for an application in respect of private land, proper agreement for the period of such lease, or renewal thereof, with the owner and any tenant or occupant has been executed in writing.\n\n12(4)Every storage lease and each renewal thereof shall be subject to the terms and conditions prescribed by regulation and to any special conditions imposed thereon by the Minister and in addition in respect of Crown lands, to pay such rentals as are prescribed by regulation.\n\n1999, c.G-2.11, s.105",
+      "subsections": [
+        {
+          "id": "12-subsection-1",
+          "sourceKey": "section:12/subsection:1",
+          "label": "12(1)",
+          "text": "12(1)If in the opinion of the Minister viable potential for underground storage of fluids exists in the area for which an application has been made under section 11 and if such applicant has demonstrated to the satisfaction of the Minister a bona fide desire to construct and operate underground storage facilities for fluids, the Minister may grant a storage lease in respect of the area described in the application therefor, or any part thereof, which he considers proper.",
+          "contentHash": "43886eeb807b2575f31f4eafbb403f93a12de33a0e85bd1b3da1437a769392f3"
+        },
+        {
+          "id": "12-subsection-2",
+          "sourceKey": "section:12/subsection:2",
+          "label": "12(2)",
+          "text": "12(2)A storage lease granted under subsection (1) shall be for an initial term of ten years with a right of renewal for consecutive ten-year periods where the holder of such lease has applied in writing therefor at least six months prior to the expiration of the then existing term.",
+          "contentHash": "a2c192aa868701f87b089dc3c694f4b200e42c823095339c885a4ca2a9cc1caa"
+        },
+        {
+          "id": "12-subsection-3",
+          "sourceKey": "section:12/subsection:3",
+          "label": "12(3)",
+          "text": "12(3)No storage lease shall be granted or renewed by the Minister until the applicant therefor has paid the fee and has deposited the security as prescribed by regulation, and for an application in respect of private land, proper agreement for the period of such lease, or renewal thereof, with the owner and any tenant or occupant has been executed in writing.",
+          "contentHash": "14c9778428c132030b9862106dcf343d4034e2f5493099bf90d6d961dae65bb8"
+        },
+        {
+          "id": "12-subsection-4",
+          "sourceKey": "section:12/subsection:4",
+          "label": "12(4)",
+          "text": "12(4)Every storage lease and each renewal thereof shall be subject to the terms and conditions prescribed by regulation and to any special conditions imposed thereon by the Minister and in addition in respect of Crown lands, to pay such rentals as are prescribed by regulation.\n\n1999, c.G-2.11, s.105",
+          "contentHash": "a54706635efef67fa32336864c41e691ca68613e2bcb0786df5b2bd3d797982d"
+        }
+      ],
+      "contentHash": "05286c4bb978499ce3fc5ca061539c2bd7115bbc5fafb184c9fc59f7b3c5a489"
+    },
+    {
+      "id": "section-12.1",
+      "sourceKey": "section:12.1",
+      "componentType": "section",
+      "label": "12.1",
+      "heading": "Oil and natural gas lease",
+      "text": "Oil and natural gas lease\n\n12.1A person who holds a valid and subsisting oil and natural gas lease issued under the Oil and Natural Gas Act is entitled to receive a storage lease for the formation in respect of which it holds the oil and natural gas lease, provided that it complies with the provisions of this Act in all other respects.\n1999, c.G-2.11, s.105",
+      "subsections": [],
+      "contentHash": "39e4d670a1aee86a487d7afa31d5b3ef53f41a10228f81800112a2a6ebbed934"
+    },
+    {
+      "id": "section-13",
+      "sourceKey": "section:13",
+      "componentType": "section",
+      "label": "13",
+      "heading": "Construction permit – application, term, conditions",
+      "text": "Construction permit – application, term, conditions\n\n13(1)No person shall undertake, or cause to be undertaken, by any means whatsoever, any operations for the purpose of constructing underground storage facilities for fluids within an area that is the subject of a storage lease unless he is the holder of a construction permit.\n\n13(2)The holder of a storage lease shall, within one year of obtaining such lease, make an application in writing to the Minister for a permit authorizing construction of underground storage facilities for fluids within the area specified by such lease and shall submit therewith a proposed plan for such construction and subsequent operation thereof.\n\n13(3)The application under subsection (2) shall be accompanied by the fee and security deposit as prescribed by regulation and by any special information, financial, technical or otherwise, as the Minister may require to evaluate the proposed construction and operational plans.\n\n13(4)Based upon consideration of the plans submitted and any alterations thereof, the Minister may issue a construction permit to the person applying.\n\n13(5)A construction permit shall be for a term of three years, renewable for a maximum of two one-year periods at the discretion of the Minister and shall be subject to the terms and conditions prescribed by regulation and to any special conditions imposed by the Minister thereon.\n\n1999, c.G-2.11, s.105; 2019, c.12, s.36",
+      "subsections": [
+        {
+          "id": "13-subsection-1",
+          "sourceKey": "section:13/subsection:1",
+          "label": "13(1)",
+          "text": "13(1)No person shall undertake, or cause to be undertaken, by any means whatsoever, any operations for the purpose of constructing underground storage facilities for fluids within an area that is the subject of a storage lease unless he is the holder of a construction permit.",
+          "contentHash": "820f3f569fca1bad84733e13a1b66b4451c313f73073f2793588aba9832c0841"
+        },
+        {
+          "id": "13-subsection-2",
+          "sourceKey": "section:13/subsection:2",
+          "label": "13(2)",
+          "text": "13(2)The holder of a storage lease shall, within one year of obtaining such lease, make an application in writing to the Minister for a permit authorizing construction of underground storage facilities for fluids within the area specified by such lease and shall submit therewith a proposed plan for such construction and subsequent operation thereof.",
+          "contentHash": "310c38d4a0821e5a77f38027b5ec73add4cfb3ba2222e2ecf103fb5bb11e944c"
+        },
+        {
+          "id": "13-subsection-3",
+          "sourceKey": "section:13/subsection:3",
+          "label": "13(3)",
+          "text": "13(3)The application under subsection (2) shall be accompanied by the fee and security deposit as prescribed by regulation and by any special information, financial, technical or otherwise, as the Minister may require to evaluate the proposed construction and operational plans.",
+          "contentHash": "71cf88b3032526b59ea78f60de057f800389acbcc30680adf9ce1f5db4ffe97e"
+        },
+        {
+          "id": "13-subsection-4",
+          "sourceKey": "section:13/subsection:4",
+          "label": "13(4)",
+          "text": "13(4)Based upon consideration of the plans submitted and any alterations thereof, the Minister may issue a construction permit to the person applying.",
+          "contentHash": "974ce1d721063da477831a1f94aacade067358212cdbccc23cf1a4a9fc61c983"
+        },
+        {
+          "id": "13-subsection-5",
+          "sourceKey": "section:13/subsection:5",
+          "label": "13(5)",
+          "text": "13(5)A construction permit shall be for a term of three years, renewable for a maximum of two one-year periods at the discretion of the Minister and shall be subject to the terms and conditions prescribed by regulation and to any special conditions imposed by the Minister thereon.\n\n1999, c.G-2.11, s.105; 2019, c.12, s.36",
+          "contentHash": "de71b2be12d7fc76977a04b3961b17a5af8dce84696a31ccb97b7993d8807788"
+        }
+      ],
+      "contentHash": "a3d9c41924d9615964ebbac89e931e2c2abaa9bcb0f9e0212d416f05bb3b06ab"
+    },
+    {
+      "id": "section-14",
+      "sourceKey": "section:14",
+      "componentType": "section",
+      "label": "14",
+      "heading": "Construction permit – duties",
+      "text": "Construction permit – duties\n\n14The holder of a construction permit shall perform the work requirements to the extent and value prescribed by regulation.",
+      "subsections": [],
+      "contentHash": "1e5a58315e4b82d01a64d665ede76ffeefcb83a5612a6e95d7b3b94e13ec5771"
+    },
+    {
+      "id": "section-15",
+      "sourceKey": "section:15",
+      "componentType": "section",
+      "label": "15",
+      "heading": "Transference of licence, lease or permit",
+      "text": "Transference of licence, lease or permit\n\n15No underground storage exploration licence, storage lease or construction permit shall be surrendered, assigned, sublet or otherwise transferred or abandoned without the prior written consent of the Minister upon any special conditions he may prescribe.\n1999, c.G-2.11, s.105",
+      "subsections": [],
+      "contentHash": "c4840eb8d88ec2d04dc077294d605c381f87398d93026c32059b9534cd2fae42"
+    },
+    {
+      "id": "section-16",
+      "sourceKey": "section:16",
+      "componentType": "section",
+      "label": "16",
+      "heading": "Revocation of licence, lease or permit",
+      "text": "Revocation of licence, lease or permit\n\n16If any person fails to comply with any of the requirements, terms and conditions contained in this Act, the regulations or any special conditions imposed in accordance with this Act, the Minister may forthwith revoke any licence, lease or permit issued or granted to that person under this Act.\n1999, c.G-2.11, s.105",
+      "subsections": [],
+      "contentHash": "165e7c8a0feafdb4219d6e59c6f7489e4bcab08c75ef4e48e58ec450e80295ed"
+    },
+    {
+      "id": "section-17",
+      "sourceKey": "section:17",
+      "componentType": "section",
+      "label": "17",
+      "heading": "Security",
+      "text": "Security\n\n17Any security required under this Act shall be made payable to the Minister of Finance and Treasury Board, shall be in the amount specified by the regulations and shall be in one of the forms specified in the Oil and Natural Gas Act.\n2019, c.29, s.156",
+      "subsections": [],
+      "contentHash": "065b80ef5e86b429b2a442747457451cb0877403e1b17cd5e5afb9c946b8baff"
+    },
+    {
+      "id": "section-18",
+      "sourceKey": "section:18",
+      "componentType": "section",
+      "label": "18",
+      "heading": "Forfeiture of security",
+      "text": "Forfeiture of security\n\n18In the event of failure to comply with this Act, the regulations or any special conditions or in the event of damage caused by operations or activities authorized by this Act, the Minister may declare forfeit any security provided under this Act by the person responsible for such failure or damage and may expend the sums so declared to rectify the effects of such failure or to compensate for or rectify such damage.",
+      "subsections": [],
+      "contentHash": "0256d85f782534f90ff07d56bec25552f1c182fc155f9d9d6cb2896cc823ebad"
+    },
+    {
+      "id": "section-19",
+      "sourceKey": "section:19",
+      "componentType": "section",
+      "label": "19",
+      "heading": "Return or maintenance of security",
+      "text": "Return or maintenance of security\n\n19Subject to section 18, any security furnished under this Act is returnable to the person who deposited the said security, or, at his option, may be maintained on deposit for other activities authorized by this Act or any other Act administered by the Minister.",
+      "subsections": [],
+      "contentHash": "5504b5399b1197f712e1b1566e9be84d43bd5e7066969f9dde470c943c60b83a"
+    },
+    {
+      "id": "section-20",
+      "sourceKey": "section:20",
+      "componentType": "section",
+      "label": "20",
+      "heading": "Reports and returns, entry and inspection",
+      "text": "Reports and returns, entry and inspection\n\n20(1)Each holder of a storage lease, construction permit or underground storage exploration licence shall make such reports and returns as the Minister may require.\n\n20(2)Persons authorized by the Minister to enforce the provisions of this Act and the regulations, at any reasonable time and upon the presentation of an identification card issued by the Minister may\n\n(a)\nenter upon and inspect any place at which underground storage exploration or construction of underground storage facilities, or the operation of such facilities, is, or may be, carried out;\n\n(b)\ninspect all books, documents, records, plants and equipment pertaining to such place; and\n\n(c)\ntake samples or carry out any tests or examinations desired;\n\nand each holder of a storage lease, construction permit or underground storage exploration licence shall permit and facilitate such access and inspection.\n\n1999, c.G-2.11, s.105",
+      "subsections": [
+        {
+          "id": "20-subsection-1",
+          "sourceKey": "section:20/subsection:1",
+          "label": "20(1)",
+          "text": "20(1)Each holder of a storage lease, construction permit or underground storage exploration licence shall make such reports and returns as the Minister may require.",
+          "contentHash": "8feb73a66ad08e29af2540978e3c93348c00facd3fb9b59d324cfd2bca417951"
+        },
+        {
+          "id": "20-subsection-2",
+          "sourceKey": "section:20/subsection:2",
+          "label": "20(2)",
+          "text": "20(2)Persons authorized by the Minister to enforce the provisions of this Act and the regulations, at any reasonable time and upon the presentation of an identification card issued by the Minister may\n\n(a)\nenter upon and inspect any place at which underground storage exploration or construction of underground storage facilities, or the operation of such facilities, is, or may be, carried out;\n\n(b)\ninspect all books, documents, records, plants and equipment pertaining to such place; and\n\n(c)\ntake samples or carry out any tests or examinations desired;\n\nand each holder of a storage lease, construction permit or underground storage exploration licence shall permit and facilitate such access and inspection.\n\n1999, c.G-2.11, s.105",
+          "contentHash": "c298a9070d65fad025b3caf982f5af34c33b6b444b37ee5da6d175b7bc9c3971"
+        }
+      ],
+      "contentHash": "ecb4ce1420f11742231394821080e9a804a011ea089730d55c5e48a79d1ce131"
+    },
+    {
+      "id": "section-21",
+      "sourceKey": "section:21",
+      "componentType": "section",
+      "label": "21",
+      "heading": "Special conditions and orders",
+      "text": "Special conditions and orders\n\n21In addition to powers contained elsewhere in this Act, the Minister may\n\n(a)\nprescribe special conditions for the issuance, renewal or transfer of an underground storage exploration licence, storage leases or construction permit; and\n\n(b)\nmake a special order permitting, subject to section 9, entry upon private lands for the purpose of exploration to evaluate underground storage potential for fluids.\n\n1999, c.G-2.11, s.105",
+      "subsections": [],
+      "contentHash": "98b1d2e7a30478bbddca228cd5b1638989a0cf2c07ca847f8264fc7f9591ea78"
+    },
+    {
+      "id": "section-22",
+      "sourceKey": "section:22",
+      "componentType": "section",
+      "label": "22",
+      "heading": "Regulations",
+      "text": "Regulations\n\n22The Lieutenant-Governor in Council may make regulations:\n\n(a)\nprescribing the amount of any fee, rental or security required by this Act;\n\n(b)\ndesignating matter for the purposes of the definition “fluid”;\n\n(b.1)\nprescribing information that must be contained in an application for an underground storage exploration licence;\n\n(c)\nrespecting the terms and conditions and prescribing the form of all underground storage exploration licences, storage leases or construction permits;\n\n(d)\nrespecting the work requirements required of the holder of an underground storage exploration licence and construction permit; and\n\n(e)\ngoverning generally all matters considered advisable and convenient for the purpose of carrying into effect the provisions of this Act.\n\n1999, c.G-2.11, s.105; 2019, c.12, s.36",
+      "subsections": [],
+      "contentHash": "cd086670168199357c2598e2b61b900a764bb131599ac238730d1fa51c27bdd9"
+    },
+    {
+      "id": "section-23",
+      "sourceKey": "section:23",
+      "componentType": "section",
+      "label": "23",
+      "text": "23This Act or any provision thereof comes into force on a day to be fixed by proclamation.\n\nN.B. This Act was proclaimed and came into force July 24, 1978.\n\nN.B. This Act is consolidated to December 13, 2024.",
+      "subsections": [],
+      "contentHash": "7209cc55668d1f42e85a005cedd51408d223e954180d9de8bed214076270f27c"
+    }
+  ],
+  "sections": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
+      "label": "1",
+      "heading": "Definitions",
+      "text": "Definitions\n\n1In this Act\n“construction permit” means a valid and subsisting permit issued under section 13;(permis de construire)\n\n“fluids” means compressed air, any gas or liquid or such other matter, as is designated by regulation, including, without limiting the foregoing, oil and natural gas as defined by the Oil and Natural Gas Act, but does not include nuclear wastes in any form;(substances fluides)\n\n“Minister” means the Minister of Natural Resources and includes any person designated by the Minister to act on the Minister’s behalf;(Ministre)\n\n“Minister of Finance” Repealed: 2019, c.29, s.156\n\n“Minister of Finance and Treasury Board” includes any person designated by the Minister to act on the Minister’s behalf;(ministre des Finances et du Conseil du Trésor)\n\n“storage lease” means a valid and subsisting lease granted under section 12.(bail de stockage)\n\n“storage licence” Repealed: 1999, c.G-2.11, s.105\n\n“underground storage exploration licence” means a valid and subsisting licence granted under section 7;(autorisation de recherche de stockage souterrain)\n\n“underground storage facility” means a naturally occurring underground cavity or system of cavities or pores, or an underground space created by some external means, that may be used for the storage of fluids but does not include fabricated containers that may be used for storage purposes.(réservoir de stockage souterrain)\n\n1986, c.8, s.127; 1999, c.G-2.11, s.105; 2004, c.20, s.64; 2012, c.52, s.48; 2016, c.37, s.192; 2019, c.29, s.156; 2019, c.29, s.215; 2024, c.28, s.62",
+      "subsections": [],
+      "contentHash": "75c6d3ed3b0c8c413f1468580ca8bbba162e6a6df84710184b36d22150f889d1"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "label": "2",
+      "heading": "Application of Act",
+      "text": "Application of Act\n\n2This Act applies to the exploration for and the construction and operation of underground storage facilities for fluids.",
+      "subsections": [],
+      "contentHash": "5e69c9570beebe83d1520a47e27412f9619843915c3a35144f268ec844db10db"
+    },
+    {
+      "id": "section-2.1",
+      "sourceKey": "section:2.1",
+      "componentType": "section",
+      "label": "2.1",
+      "heading": "Declaration",
+      "text": "Declaration\n\n2.1(1)Every site in the Province suitable for constructing or operating an underground storage facility is hereby declared to be, and to have been at all times prior hereto, property separate from the soil and vested in the Crown in the right of the Province.\n\n2.1(2)No compensation is payable to any person or local government as a result of the declaration in subsection 2.1(1).\n\n1999, c.G-2.11, s.105; 2005, c.7, s.87; 2017, c.20, s.176",
+      "subsections": [
+        {
+          "id": "2.1-subsection-1",
+          "sourceKey": "section:2.1/subsection:1",
+          "label": "2.1(1)",
+          "text": "2.1(1)Every site in the Province suitable for constructing or operating an underground storage facility is hereby declared to be, and to have been at all times prior hereto, property separate from the soil and vested in the Crown in the right of the Province.",
+          "contentHash": "f8b599a074c6fbe6cff3daf57a4b6dd33a91ebc6ce2adc5351a691da3a348e81"
+        },
+        {
+          "id": "2.1-subsection-2",
+          "sourceKey": "section:2.1/subsection:2",
+          "label": "2.1(2)",
+          "text": "2.1(2)No compensation is payable to any person or local government as a result of the declaration in subsection 2.1(1).\n\n1999, c.G-2.11, s.105; 2005, c.7, s.87; 2017, c.20, s.176",
+          "contentHash": "d67a5ec84de2c6629a52fba5e7648eb5aac298ce877d3e0ab01bedd27dfed1bd"
+        }
+      ],
+      "contentHash": "0314c363bfa4a2ddb96db578a124bce5f06d49c6b56dce9e109164c27fa8d30a"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
+      "label": "3",
+      "heading": "Administration",
+      "text": "Administration\n\n3The Minister is in charge of the administration and control of this Act and may designate a person to act on his behalf.",
+      "subsections": [],
+      "contentHash": "25f6f25458c01215bbeceaf24352ceb5d5f41d0ab82d0a6c5b9ff0ca22e3b8b5"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
+      "label": "4",
+      "heading": "Description of land area",
+      "text": "Description of land area\n\n4Any land area which is the subject of any application for a permit, lease or licence provided for by this Act shall be described by reference to the standard oil and natural gas survey system established under the Oil and Natural Gas Act.\n1999, c.G-2.11, s.105",
+      "subsections": [],
+      "contentHash": "08b844d7ba72d530798835cc7683e58a2e6955f9ec3ee720a27c355d1f7a2587"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "componentType": "section",
+      "label": "5",
+      "heading": "Summons to witness, confidentiality of information",
+      "text": "Summons to witness, confidentiality of information\n\n5(1)A summons to witness shall not issue out of any court requiring the attendance of the Minister or any employee of the Province in his official capacity under this Act, nor shall any document in his official custody or possession be produced without an order of the court or a judge thereof.\n\n5(2)An employee of the Province responsible for the administration and enforcement of this Act shall not disclose any information obtained by him in his official capacity that the Minister certifies is not in the public interest to be divulged.\n\n5(3)If subsection (2) is inconsistent with or in conflict with a provision of the Right to Information and Protection of Privacy Act, subsection (2) prevails.\n\n1986, c.4, s.55; 2013, c.34, s.37",
+      "subsections": [
+        {
+          "id": "5-subsection-1",
+          "sourceKey": "section:5/subsection:1",
+          "label": "5(1)",
+          "text": "5(1)A summons to witness shall not issue out of any court requiring the attendance of the Minister or any employee of the Province in his official capacity under this Act, nor shall any document in his official custody or possession be produced without an order of the court or a judge thereof.",
+          "contentHash": "cf389973eee9725d2931a2139251dc05c33b497d762b0d700aca0970ddff327b"
+        },
+        {
+          "id": "5-subsection-2",
+          "sourceKey": "section:5/subsection:2",
+          "label": "5(2)",
+          "text": "5(2)An employee of the Province responsible for the administration and enforcement of this Act shall not disclose any information obtained by him in his official capacity that the Minister certifies is not in the public interest to be divulged.",
+          "contentHash": "11c54ef3a7ea8bbf7a49d9d3200dd67360d8f5030861a1f825ccd970500725f5"
+        },
+        {
+          "id": "5-subsection-3",
+          "sourceKey": "section:5/subsection:3",
+          "label": "5(3)",
+          "text": "5(3)If subsection (2) is inconsistent with or in conflict with a provision of the Right to Information and Protection of Privacy Act, subsection (2) prevails.\n\n1986, c.4, s.55; 2013, c.34, s.37",
+          "contentHash": "55df759f1ac9c9f4516c2e6914281a9e0386ba2ea9f627448a4ee34166f77b2d"
+        }
+      ],
+      "contentHash": "cb18593ecd008eda733a658eacc770b3d5813d947be894999b5ec679c7fee6a3"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "componentType": "section",
+      "label": "6",
+      "heading": "Necessity of underground storage exploration licence",
+      "text": "Necessity of underground storage exploration licence\n\n6No person shall undertake or cause to be undertaken, by any means whatsoever, exploration for the purpose of evaluating underground storage potential for fluids unless he is the holder of an underground storage exploration licence.",
+      "subsections": [],
+      "contentHash": "4be065cf1c63c4fb32f3169c0ad1aadedba486254e77de5cdadf3d47b830fdec"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "componentType": "section",
+      "label": "7",
+      "heading": "Underground storage exploration licence – application",
+      "text": "Underground storage exploration licence – application\n\n7(1)An application for an underground storage exploration licence shall be made in writing to the Minister and shall contain the information prescribed by regulation.\n\n7(2)Upon payment of the fee and rentals prescribed by regulation, the Minister may grant an underground storage exploration licence for the area specified in the licence subject to the terms and conditions of this Act and the regulations and to any special conditions he may prescribe.\n\n7(3)No underground storage exploration licence shall be granted until the applicant has deposited with the Minister of Finance and Treasury Board security in the amount prescribed by regulation.\n\n2019, c.29, s.156",
+      "subsections": [
+        {
+          "id": "7-subsection-1",
+          "sourceKey": "section:7/subsection:1",
+          "label": "7(1)",
+          "text": "7(1)An application for an underground storage exploration licence shall be made in writing to the Minister and shall contain the information prescribed by regulation.",
+          "contentHash": "d86d5a451d68af2b656e549741236a82e3f90c68764f6881b9dfe08cf61d3a26"
+        },
+        {
+          "id": "7-subsection-2",
+          "sourceKey": "section:7/subsection:2",
+          "label": "7(2)",
+          "text": "7(2)Upon payment of the fee and rentals prescribed by regulation, the Minister may grant an underground storage exploration licence for the area specified in the licence subject to the terms and conditions of this Act and the regulations and to any special conditions he may prescribe.",
+          "contentHash": "1aaa97424bcfe858805290094927eb8582df3a50a9fa728830f90867d34cb812"
+        },
+        {
+          "id": "7-subsection-3",
+          "sourceKey": "section:7/subsection:3",
+          "label": "7(3)",
+          "text": "7(3)No underground storage exploration licence shall be granted until the applicant has deposited with the Minister of Finance and Treasury Board security in the amount prescribed by regulation.\n\n2019, c.29, s.156",
+          "contentHash": "224ff41d5cb05815cfcc536a2bcefb59674bd4a5dfc4896f10dac6d27c892ae8"
+        }
+      ],
+      "contentHash": "11f94e32a8ca991ba64c9cd2fc0f3bb7115aa0b75bf872cd3e09bc65937612ec"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "componentType": "section",
+      "label": "8",
+      "heading": "Underground storage exploration licence – term, duties",
+      "text": "Underground storage exploration licence – term, duties\n\n8(1)An underground storage exploration licence shall be for a non-renewable term of three years and shall confer upon the holder the exclusive rights to explore in the area specified on the licence for the purpose of evaluating underground storage potential for fluids.\n\n8(2)The holder of an underground storage exploration licence shall perform exploration work in the area specified on the licence to the extent and value prescribed by regulations.\n\n8(3)Within one month prior to the end of each year of the term of the underground storage exploration licence, the person holding the licence shall satisfy the Minister that he has complied with subsection (2).\n\n8(4)The Minister may revoke an underground exploration licence if he considers that it is in the public interest or if the holder of the licence fails to comply with subsection (2) or (3).",
+      "subsections": [
+        {
+          "id": "8-subsection-1",
+          "sourceKey": "section:8/subsection:1",
+          "label": "8(1)",
+          "text": "8(1)An underground storage exploration licence shall be for a non-renewable term of three years and shall confer upon the holder the exclusive rights to explore in the area specified on the licence for the purpose of evaluating underground storage potential for fluids.",
+          "contentHash": "685bd574981a6550d92ed87662abb5b03f65d62d210e6b48070569a6bf60e76b"
+        },
+        {
+          "id": "8-subsection-2",
+          "sourceKey": "section:8/subsection:2",
+          "label": "8(2)",
+          "text": "8(2)The holder of an underground storage exploration licence shall perform exploration work in the area specified on the licence to the extent and value prescribed by regulations.",
+          "contentHash": "21ed7c6ab93311f7805c3971d537c6149c743d1b9e1a2e02118cf629ee247c98"
+        },
+        {
+          "id": "8-subsection-3",
+          "sourceKey": "section:8/subsection:3",
+          "label": "8(3)",
+          "text": "8(3)Within one month prior to the end of each year of the term of the underground storage exploration licence, the person holding the licence shall satisfy the Minister that he has complied with subsection (2).",
+          "contentHash": "13861a23dc425083639218963a5dd06b2ca93dbb2acb78a0d2a8e420ee31c36f"
+        },
+        {
+          "id": "8-subsection-4",
+          "sourceKey": "section:8/subsection:4",
+          "label": "8(4)",
+          "text": "8(4)The Minister may revoke an underground exploration licence if he considers that it is in the public interest or if the holder of the licence fails to comply with subsection (2) or (3).",
+          "contentHash": "527e1c6013b5482487966735280be8d7cc73730903c066dc59f45f7f603afca2"
+        }
+      ],
+      "contentHash": "2011ad7765089150ce966a0a29cf2d9ae859d3d337e81810079223d081dcc702"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "componentType": "section",
+      "label": "9",
+      "heading": "Evaluation of underground storage potential",
+      "text": "Evaluation of underground storage potential\n\n9(1)Subject to this Act, the holder of an underground storage exploration licence may enter upon and explore Crown lands for the purpose of evaluating underground storage potential for fluids.\n\n9(2)No person holding an underground storage exploration licence shall enter on and use or cause entry on and use of, any lands other than Crown lands for the purpose of exploring, in any manner whatsoever, to evaluate underground storage potential for fluids, or for the doing of any other act thereon, unless he has obtained the right to enter and use that land either\n\n(a)\nby agreement with the owner, tenant or occupant of such lands entitled to grant consent, or\n\n(b)\nby obtaining a special order from the Minister permitting such entry and use.\n\n9(3)A person who enters upon Crown land for the purpose of exploring to evaluate underground storage potential for fluids is liable to pay compensation to the Crown in right of the Province for any loss or damage caused by reason of the entry or operations carried out, or both, in an amount to be determined by agreement, or failing agreement, by The Court of King’s Bench of New Brunswick or any judge thereof acting under Part II of the Expropriation Act, on application by either party, which amount, if any, shall upon determination, be paid to the Minister of Finance and Treasury Board.\n\n9(4)A person who enters on any land other than Crown lands for the purpose of exploring to evaluate underground storage potential for fluids is liable to pay any person having an interest in the land or in chattels on the land compensation for any loss or damage to the land or chattels caused by reason of the entry, occupation or operation; and if the parties cannot agree as to the amount of compensation, the amount shall be determined by The Court of King’s Bench of New Brunswick or any judge of that Court acting under Part 2 of the Expropriation Act on application by either of the parties.\n\n9(5)A person performing exploration operations under this Act shall not interfere with the operations of any licensee or lessee under the Oil and Natural Gas Act, the Bituminous Shale Act or the Quarriable Substances Act, any holder of a mining or mineral claim or mining lease under the Mining Act, any holder of a mining licence or mining lease continued under the Mining Act, or any holder of a mining right granted under the Ownership of Minerals Act or section 25 of the Mining Act or any predecessor of that section for the location upon which the operations are conducted.\n\n1985, c.M-14.1, s.138; 1985, c.4, s.69; 1987, c.6, s.116; 2019, c.12, s.36; 2019, c.29, s.156; 2023, c.17, s.274",
+      "subsections": [
+        {
+          "id": "9-subsection-1",
+          "sourceKey": "section:9/subsection:1",
+          "label": "9(1)",
+          "text": "9(1)Subject to this Act, the holder of an underground storage exploration licence may enter upon and explore Crown lands for the purpose of evaluating underground storage potential for fluids.",
+          "contentHash": "817c391f64df6e35b8c54af534a66be894c72147b02ed61ac3f7123bdaf1b1f0"
+        },
+        {
+          "id": "9-subsection-2",
+          "sourceKey": "section:9/subsection:2",
+          "label": "9(2)",
+          "text": "9(2)No person holding an underground storage exploration licence shall enter on and use or cause entry on and use of, any lands other than Crown lands for the purpose of exploring, in any manner whatsoever, to evaluate underground storage potential for fluids, or for the doing of any other act thereon, unless he has obtained the right to enter and use that land either\n\n(a)\nby agreement with the owner, tenant or occupant of such lands entitled to grant consent, or\n\n(b)\nby obtaining a special order from the Minister permitting such entry and use.",
+          "contentHash": "219e907d90caa2e585c7bcdd5755c8a6681a12a1db04751cc94b85184e76e5ea"
+        },
+        {
+          "id": "9-subsection-3",
+          "sourceKey": "section:9/subsection:3",
+          "label": "9(3)",
+          "text": "9(3)A person who enters upon Crown land for the purpose of exploring to evaluate underground storage potential for fluids is liable to pay compensation to the Crown in right of the Province for any loss or damage caused by reason of the entry or operations carried out, or both, in an amount to be determined by agreement, or failing agreement, by The Court of King’s Bench of New Brunswick or any judge thereof acting under Part II of the Expropriation Act, on application by either party, which amount, if any, shall upon determination, be paid to the Minister of Finance and Treasury Board.",
+          "contentHash": "f9fccdc8ef6bef60d49139eeefdcd6cc36b69963ea283c7bfbe9f996f607efef"
+        },
+        {
+          "id": "9-subsection-4",
+          "sourceKey": "section:9/subsection:4",
+          "label": "9(4)",
+          "text": "9(4)A person who enters on any land other than Crown lands for the purpose of exploring to evaluate underground storage potential for fluids is liable to pay any person having an interest in the land or in chattels on the land compensation for any loss or damage to the land or chattels caused by reason of the entry, occupation or operation; and if the parties cannot agree as to the amount of compensation, the amount shall be determined by The Court of King’s Bench of New Brunswick or any judge of that Court acting under Part 2 of the Expropriation Act on application by either of the parties.",
+          "contentHash": "ab279532aef5c8cbdff5d987dd21184d9c8b4d654379d03baa6fdde19e09bda8"
+        },
+        {
+          "id": "9-subsection-5",
+          "sourceKey": "section:9/subsection:5",
+          "label": "9(5)",
+          "text": "9(5)A person performing exploration operations under this Act shall not interfere with the operations of any licensee or lessee under the Oil and Natural Gas Act, the Bituminous Shale Act or the Quarriable Substances Act, any holder of a mining or mineral claim or mining lease under the Mining Act, any holder of a mining licence or mining lease continued under the Mining Act, or any holder of a mining right granted under the Ownership of Minerals Act or section 25 of the Mining Act or any predecessor of that section for the location upon which the operations are conducted.\n\n1985, c.M-14.1, s.138; 1985, c.4, s.69; 1987, c.6, s.116; 2019, c.12, s.36; 2019, c.29, s.156; 2023, c.17, s.274",
+          "contentHash": "c4f18bd5a7cff651da2cfbab4ea3bb57833dabf5f5dd535628f1109fcdc50993"
+        }
+      ],
+      "contentHash": "e5050c50fa7cc022198a40d516e19e4a6086a1bd08d5aeab3c1aa72be05ed165"
+    },
+    {
+      "id": "section-10",
+      "sourceKey": "section:10",
+      "componentType": "section",
+      "label": "10",
+      "heading": "Entry and use of private lands",
+      "text": "Entry and use of private lands\n\n10All terms and conditions applying to a special order to enter and use private land issued by the Minister under the Oil and Natural Gas Act apply, with any necessary modifications, to the special order referred to in section 9.\n2019, c.12, s.36",
+      "subsections": [],
+      "contentHash": "7b174fad1cd24f8e22fcacec7fc7848a8c3fe5c5fb699cac3de60c40d1dcff3f"
+    },
+    {
+      "id": "section-11",
+      "sourceKey": "section:11",
+      "componentType": "section",
+      "label": "11",
+      "heading": "Storage lease – application",
+      "text": "Storage lease – application\n\n11(1)A holder of an underground storage exploration licence who, at any time during the term of that licence, determines that a storage area may exist in the area specified in his licence may apply in writing to the Minister at any time up to sixty days prior to the termination of such licence, for a storage lease in respect of that storage area.\n\n11(2)The application shall contain a description of the proposed storage area and all information and material upon which the applicant relies and any other information the Minister may require.\n\n1999, c.G-2.11, s.105",
+      "subsections": [
+        {
+          "id": "11-subsection-1",
+          "sourceKey": "section:11/subsection:1",
+          "label": "11(1)",
+          "text": "11(1)A holder of an underground storage exploration licence who, at any time during the term of that licence, determines that a storage area may exist in the area specified in his licence may apply in writing to the Minister at any time up to sixty days prior to the termination of such licence, for a storage lease in respect of that storage area.",
+          "contentHash": "169ce1caef56136f5c14ba574e50e5b6227d5bc7db8903f3aac9dc5129096585"
+        },
+        {
+          "id": "11-subsection-2",
+          "sourceKey": "section:11/subsection:2",
+          "label": "11(2)",
+          "text": "11(2)The application shall contain a description of the proposed storage area and all information and material upon which the applicant relies and any other information the Minister may require.\n\n1999, c.G-2.11, s.105",
+          "contentHash": "5c59edd73b8955302de69156c5cb78260fb0da7eb7badfce95d941a877286429"
+        }
+      ],
+      "contentHash": "edf941d155964e1ea6961ab068acf97248237dcfb9adce42ac5c6e4761541624"
+    },
+    {
+      "id": "section-12",
+      "sourceKey": "section:12",
+      "componentType": "section",
+      "label": "12",
+      "heading": "Storage lease – term, conditions",
+      "text": "Storage lease – term, conditions\n\n12(1)If in the opinion of the Minister viable potential for underground storage of fluids exists in the area for which an application has been made under section 11 and if such applicant has demonstrated to the satisfaction of the Minister a bona fide desire to construct and operate underground storage facilities for fluids, the Minister may grant a storage lease in respect of the area described in the application therefor, or any part thereof, which he considers proper.\n\n12(2)A storage lease granted under subsection (1) shall be for an initial term of ten years with a right of renewal for consecutive ten-year periods where the holder of such lease has applied in writing therefor at least six months prior to the expiration of the then existing term.\n\n12(3)No storage lease shall be granted or renewed by the Minister until the applicant therefor has paid the fee and has deposited the security as prescribed by regulation, and for an application in respect of private land, proper agreement for the period of such lease, or renewal thereof, with the owner and any tenant or occupant has been executed in writing.\n\n12(4)Every storage lease and each renewal thereof shall be subject to the terms and conditions prescribed by regulation and to any special conditions imposed thereon by the Minister and in addition in respect of Crown lands, to pay such rentals as are prescribed by regulation.\n\n1999, c.G-2.11, s.105",
+      "subsections": [
+        {
+          "id": "12-subsection-1",
+          "sourceKey": "section:12/subsection:1",
+          "label": "12(1)",
+          "text": "12(1)If in the opinion of the Minister viable potential for underground storage of fluids exists in the area for which an application has been made under section 11 and if such applicant has demonstrated to the satisfaction of the Minister a bona fide desire to construct and operate underground storage facilities for fluids, the Minister may grant a storage lease in respect of the area described in the application therefor, or any part thereof, which he considers proper.",
+          "contentHash": "43886eeb807b2575f31f4eafbb403f93a12de33a0e85bd1b3da1437a769392f3"
+        },
+        {
+          "id": "12-subsection-2",
+          "sourceKey": "section:12/subsection:2",
+          "label": "12(2)",
+          "text": "12(2)A storage lease granted under subsection (1) shall be for an initial term of ten years with a right of renewal for consecutive ten-year periods where the holder of such lease has applied in writing therefor at least six months prior to the expiration of the then existing term.",
+          "contentHash": "a2c192aa868701f87b089dc3c694f4b200e42c823095339c885a4ca2a9cc1caa"
+        },
+        {
+          "id": "12-subsection-3",
+          "sourceKey": "section:12/subsection:3",
+          "label": "12(3)",
+          "text": "12(3)No storage lease shall be granted or renewed by the Minister until the applicant therefor has paid the fee and has deposited the security as prescribed by regulation, and for an application in respect of private land, proper agreement for the period of such lease, or renewal thereof, with the owner and any tenant or occupant has been executed in writing.",
+          "contentHash": "14c9778428c132030b9862106dcf343d4034e2f5493099bf90d6d961dae65bb8"
+        },
+        {
+          "id": "12-subsection-4",
+          "sourceKey": "section:12/subsection:4",
+          "label": "12(4)",
+          "text": "12(4)Every storage lease and each renewal thereof shall be subject to the terms and conditions prescribed by regulation and to any special conditions imposed thereon by the Minister and in addition in respect of Crown lands, to pay such rentals as are prescribed by regulation.\n\n1999, c.G-2.11, s.105",
+          "contentHash": "a54706635efef67fa32336864c41e691ca68613e2bcb0786df5b2bd3d797982d"
+        }
+      ],
+      "contentHash": "05286c4bb978499ce3fc5ca061539c2bd7115bbc5fafb184c9fc59f7b3c5a489"
+    },
+    {
+      "id": "section-12.1",
+      "sourceKey": "section:12.1",
+      "componentType": "section",
+      "label": "12.1",
+      "heading": "Oil and natural gas lease",
+      "text": "Oil and natural gas lease\n\n12.1A person who holds a valid and subsisting oil and natural gas lease issued under the Oil and Natural Gas Act is entitled to receive a storage lease for the formation in respect of which it holds the oil and natural gas lease, provided that it complies with the provisions of this Act in all other respects.\n1999, c.G-2.11, s.105",
+      "subsections": [],
+      "contentHash": "39e4d670a1aee86a487d7afa31d5b3ef53f41a10228f81800112a2a6ebbed934"
+    },
+    {
+      "id": "section-13",
+      "sourceKey": "section:13",
+      "componentType": "section",
+      "label": "13",
+      "heading": "Construction permit – application, term, conditions",
+      "text": "Construction permit – application, term, conditions\n\n13(1)No person shall undertake, or cause to be undertaken, by any means whatsoever, any operations for the purpose of constructing underground storage facilities for fluids within an area that is the subject of a storage lease unless he is the holder of a construction permit.\n\n13(2)The holder of a storage lease shall, within one year of obtaining such lease, make an application in writing to the Minister for a permit authorizing construction of underground storage facilities for fluids within the area specified by such lease and shall submit therewith a proposed plan for such construction and subsequent operation thereof.\n\n13(3)The application under subsection (2) shall be accompanied by the fee and security deposit as prescribed by regulation and by any special information, financial, technical or otherwise, as the Minister may require to evaluate the proposed construction and operational plans.\n\n13(4)Based upon consideration of the plans submitted and any alterations thereof, the Minister may issue a construction permit to the person applying.\n\n13(5)A construction permit shall be for a term of three years, renewable for a maximum of two one-year periods at the discretion of the Minister and shall be subject to the terms and conditions prescribed by regulation and to any special conditions imposed by the Minister thereon.\n\n1999, c.G-2.11, s.105; 2019, c.12, s.36",
+      "subsections": [
+        {
+          "id": "13-subsection-1",
+          "sourceKey": "section:13/subsection:1",
+          "label": "13(1)",
+          "text": "13(1)No person shall undertake, or cause to be undertaken, by any means whatsoever, any operations for the purpose of constructing underground storage facilities for fluids within an area that is the subject of a storage lease unless he is the holder of a construction permit.",
+          "contentHash": "820f3f569fca1bad84733e13a1b66b4451c313f73073f2793588aba9832c0841"
+        },
+        {
+          "id": "13-subsection-2",
+          "sourceKey": "section:13/subsection:2",
+          "label": "13(2)",
+          "text": "13(2)The holder of a storage lease shall, within one year of obtaining such lease, make an application in writing to the Minister for a permit authorizing construction of underground storage facilities for fluids within the area specified by such lease and shall submit therewith a proposed plan for such construction and subsequent operation thereof.",
+          "contentHash": "310c38d4a0821e5a77f38027b5ec73add4cfb3ba2222e2ecf103fb5bb11e944c"
+        },
+        {
+          "id": "13-subsection-3",
+          "sourceKey": "section:13/subsection:3",
+          "label": "13(3)",
+          "text": "13(3)The application under subsection (2) shall be accompanied by the fee and security deposit as prescribed by regulation and by any special information, financial, technical or otherwise, as the Minister may require to evaluate the proposed construction and operational plans.",
+          "contentHash": "71cf88b3032526b59ea78f60de057f800389acbcc30680adf9ce1f5db4ffe97e"
+        },
+        {
+          "id": "13-subsection-4",
+          "sourceKey": "section:13/subsection:4",
+          "label": "13(4)",
+          "text": "13(4)Based upon consideration of the plans submitted and any alterations thereof, the Minister may issue a construction permit to the person applying.",
+          "contentHash": "974ce1d721063da477831a1f94aacade067358212cdbccc23cf1a4a9fc61c983"
+        },
+        {
+          "id": "13-subsection-5",
+          "sourceKey": "section:13/subsection:5",
+          "label": "13(5)",
+          "text": "13(5)A construction permit shall be for a term of three years, renewable for a maximum of two one-year periods at the discretion of the Minister and shall be subject to the terms and conditions prescribed by regulation and to any special conditions imposed by the Minister thereon.\n\n1999, c.G-2.11, s.105; 2019, c.12, s.36",
+          "contentHash": "de71b2be12d7fc76977a04b3961b17a5af8dce84696a31ccb97b7993d8807788"
+        }
+      ],
+      "contentHash": "a3d9c41924d9615964ebbac89e931e2c2abaa9bcb0f9e0212d416f05bb3b06ab"
+    },
+    {
+      "id": "section-14",
+      "sourceKey": "section:14",
+      "componentType": "section",
+      "label": "14",
+      "heading": "Construction permit – duties",
+      "text": "Construction permit – duties\n\n14The holder of a construction permit shall perform the work requirements to the extent and value prescribed by regulation.",
+      "subsections": [],
+      "contentHash": "1e5a58315e4b82d01a64d665ede76ffeefcb83a5612a6e95d7b3b94e13ec5771"
+    },
+    {
+      "id": "section-15",
+      "sourceKey": "section:15",
+      "componentType": "section",
+      "label": "15",
+      "heading": "Transference of licence, lease or permit",
+      "text": "Transference of licence, lease or permit\n\n15No underground storage exploration licence, storage lease or construction permit shall be surrendered, assigned, sublet or otherwise transferred or abandoned without the prior written consent of the Minister upon any special conditions he may prescribe.\n1999, c.G-2.11, s.105",
+      "subsections": [],
+      "contentHash": "c4840eb8d88ec2d04dc077294d605c381f87398d93026c32059b9534cd2fae42"
+    },
+    {
+      "id": "section-16",
+      "sourceKey": "section:16",
+      "componentType": "section",
+      "label": "16",
+      "heading": "Revocation of licence, lease or permit",
+      "text": "Revocation of licence, lease or permit\n\n16If any person fails to comply with any of the requirements, terms and conditions contained in this Act, the regulations or any special conditions imposed in accordance with this Act, the Minister may forthwith revoke any licence, lease or permit issued or granted to that person under this Act.\n1999, c.G-2.11, s.105",
+      "subsections": [],
+      "contentHash": "165e7c8a0feafdb4219d6e59c6f7489e4bcab08c75ef4e48e58ec450e80295ed"
+    },
+    {
+      "id": "section-17",
+      "sourceKey": "section:17",
+      "componentType": "section",
+      "label": "17",
+      "heading": "Security",
+      "text": "Security\n\n17Any security required under this Act shall be made payable to the Minister of Finance and Treasury Board, shall be in the amount specified by the regulations and shall be in one of the forms specified in the Oil and Natural Gas Act.\n2019, c.29, s.156",
+      "subsections": [],
+      "contentHash": "065b80ef5e86b429b2a442747457451cb0877403e1b17cd5e5afb9c946b8baff"
+    },
+    {
+      "id": "section-18",
+      "sourceKey": "section:18",
+      "componentType": "section",
+      "label": "18",
+      "heading": "Forfeiture of security",
+      "text": "Forfeiture of security\n\n18In the event of failure to comply with this Act, the regulations or any special conditions or in the event of damage caused by operations or activities authorized by this Act, the Minister may declare forfeit any security provided under this Act by the person responsible for such failure or damage and may expend the sums so declared to rectify the effects of such failure or to compensate for or rectify such damage.",
+      "subsections": [],
+      "contentHash": "0256d85f782534f90ff07d56bec25552f1c182fc155f9d9d6cb2896cc823ebad"
+    },
+    {
+      "id": "section-19",
+      "sourceKey": "section:19",
+      "componentType": "section",
+      "label": "19",
+      "heading": "Return or maintenance of security",
+      "text": "Return or maintenance of security\n\n19Subject to section 18, any security furnished under this Act is returnable to the person who deposited the said security, or, at his option, may be maintained on deposit for other activities authorized by this Act or any other Act administered by the Minister.",
+      "subsections": [],
+      "contentHash": "5504b5399b1197f712e1b1566e9be84d43bd5e7066969f9dde470c943c60b83a"
+    },
+    {
+      "id": "section-20",
+      "sourceKey": "section:20",
+      "componentType": "section",
+      "label": "20",
+      "heading": "Reports and returns, entry and inspection",
+      "text": "Reports and returns, entry and inspection\n\n20(1)Each holder of a storage lease, construction permit or underground storage exploration licence shall make such reports and returns as the Minister may require.\n\n20(2)Persons authorized by the Minister to enforce the provisions of this Act and the regulations, at any reasonable time and upon the presentation of an identification card issued by the Minister may\n\n(a)\nenter upon and inspect any place at which underground storage exploration or construction of underground storage facilities, or the operation of such facilities, is, or may be, carried out;\n\n(b)\ninspect all books, documents, records, plants and equipment pertaining to such place; and\n\n(c)\ntake samples or carry out any tests or examinations desired;\n\nand each holder of a storage lease, construction permit or underground storage exploration licence shall permit and facilitate such access and inspection.\n\n1999, c.G-2.11, s.105",
+      "subsections": [
+        {
+          "id": "20-subsection-1",
+          "sourceKey": "section:20/subsection:1",
+          "label": "20(1)",
+          "text": "20(1)Each holder of a storage lease, construction permit or underground storage exploration licence shall make such reports and returns as the Minister may require.",
+          "contentHash": "8feb73a66ad08e29af2540978e3c93348c00facd3fb9b59d324cfd2bca417951"
+        },
+        {
+          "id": "20-subsection-2",
+          "sourceKey": "section:20/subsection:2",
+          "label": "20(2)",
+          "text": "20(2)Persons authorized by the Minister to enforce the provisions of this Act and the regulations, at any reasonable time and upon the presentation of an identification card issued by the Minister may\n\n(a)\nenter upon and inspect any place at which underground storage exploration or construction of underground storage facilities, or the operation of such facilities, is, or may be, carried out;\n\n(b)\ninspect all books, documents, records, plants and equipment pertaining to such place; and\n\n(c)\ntake samples or carry out any tests or examinations desired;\n\nand each holder of a storage lease, construction permit or underground storage exploration licence shall permit and facilitate such access and inspection.\n\n1999, c.G-2.11, s.105",
+          "contentHash": "c298a9070d65fad025b3caf982f5af34c33b6b444b37ee5da6d175b7bc9c3971"
+        }
+      ],
+      "contentHash": "ecb4ce1420f11742231394821080e9a804a011ea089730d55c5e48a79d1ce131"
+    },
+    {
+      "id": "section-21",
+      "sourceKey": "section:21",
+      "componentType": "section",
+      "label": "21",
+      "heading": "Special conditions and orders",
+      "text": "Special conditions and orders\n\n21In addition to powers contained elsewhere in this Act, the Minister may\n\n(a)\nprescribe special conditions for the issuance, renewal or transfer of an underground storage exploration licence, storage leases or construction permit; and\n\n(b)\nmake a special order permitting, subject to section 9, entry upon private lands for the purpose of exploration to evaluate underground storage potential for fluids.\n\n1999, c.G-2.11, s.105",
+      "subsections": [],
+      "contentHash": "98b1d2e7a30478bbddca228cd5b1638989a0cf2c07ca847f8264fc7f9591ea78"
+    },
+    {
+      "id": "section-22",
+      "sourceKey": "section:22",
+      "componentType": "section",
+      "label": "22",
+      "heading": "Regulations",
+      "text": "Regulations\n\n22The Lieutenant-Governor in Council may make regulations:\n\n(a)\nprescribing the amount of any fee, rental or security required by this Act;\n\n(b)\ndesignating matter for the purposes of the definition “fluid”;\n\n(b.1)\nprescribing information that must be contained in an application for an underground storage exploration licence;\n\n(c)\nrespecting the terms and conditions and prescribing the form of all underground storage exploration licences, storage leases or construction permits;\n\n(d)\nrespecting the work requirements required of the holder of an underground storage exploration licence and construction permit; and\n\n(e)\ngoverning generally all matters considered advisable and convenient for the purpose of carrying into effect the provisions of this Act.\n\n1999, c.G-2.11, s.105; 2019, c.12, s.36",
+      "subsections": [],
+      "contentHash": "cd086670168199357c2598e2b61b900a764bb131599ac238730d1fa51c27bdd9"
+    },
+    {
+      "id": "section-23",
+      "sourceKey": "section:23",
+      "componentType": "section",
+      "label": "23",
+      "text": "23This Act or any provision thereof comes into force on a day to be fixed by proclamation.\n\nN.B. This Act was proclaimed and came into force July 24, 1978.\n\nN.B. This Act is consolidated to December 13, 2024.",
+      "subsections": [],
+      "contentHash": "7209cc55668d1f42e85a005cedd51408d223e954180d9de8bed214076270f27c"
+    }
+  ],
+  "notes": []
+}

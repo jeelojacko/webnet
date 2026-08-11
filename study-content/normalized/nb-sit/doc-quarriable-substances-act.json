@@ -1,0 +1,2074 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-quarriable-substances-act",
+  "officialTitle": "Quarriable Substances Act",
+  "officialCitation": "Chapter Q-1.1",
+  "officialCitationDisplay": "Chapter Q-1.1",
+  "officialCitationNormalized": "Q-1.1",
+  "documentType": "act",
+  "sourceUrl": "https://laws.gnb.ca/en/document/cs/Q-1.1",
+  "fetchDate": "2026-08-11T18:09:08.167Z",
+  "consolidatedTo": "June 6, 2025",
+  "contentHash": "31b06a5436990d86b8254e286dabf0970a50688a7516153160d0ca37fd2361fd",
+  "tableOfContents": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "label": "1",
+      "heading": "Definitions, application of other Acts"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "label": "2",
+      "heading": "Application"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "label": "3",
+      "heading": "Ownership"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "label": "4",
+      "heading": "Designation of shore area"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "label": "5",
+      "heading": "Quarry Permit"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "label": "6",
+      "heading": "Expiration"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "label": "7",
+      "heading": "Quarry Lease"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "label": "8",
+      "heading": "Peat Exploration licence"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "label": "9",
+      "heading": "Peat lease"
+    },
+    {
+      "id": "section-10",
+      "sourceKey": "section:10",
+      "label": "10",
+      "heading": "Written authorization"
+    },
+    {
+      "id": "section-11",
+      "sourceKey": "section:11",
+      "label": "11",
+      "heading": "Repealed"
+    },
+    {
+      "id": "section-12",
+      "sourceKey": "section:12",
+      "label": "12",
+      "heading": "Granting of other rights"
+    },
+    {
+      "id": "section-13",
+      "sourceKey": "section:13",
+      "label": "13",
+      "heading": "Term of and renewal of quarry lease and peat lease"
+    },
+    {
+      "id": "section-14",
+      "sourceKey": "section:14",
+      "label": "14",
+      "heading": "Written approval required"
+    },
+    {
+      "id": "section-15",
+      "sourceKey": "section:15",
+      "label": "15",
+      "heading": "Signature and fee"
+    },
+    {
+      "id": "section-16",
+      "sourceKey": "section:16",
+      "label": "16",
+      "heading": "Cancellation, expiration or surrender"
+    },
+    {
+      "id": "section-17",
+      "sourceKey": "section:17",
+      "label": "17",
+      "heading": "Obligations of lessee"
+    },
+    {
+      "id": "section-18",
+      "sourceKey": "section:18",
+      "label": "18",
+      "heading": "Liability of lessee"
+    },
+    {
+      "id": "section-19",
+      "sourceKey": "section:19",
+      "label": "19",
+      "heading": "Reduction, subdivision, amalgamation of peat or quarry lease"
+    },
+    {
+      "id": "section-20",
+      "sourceKey": "section:20",
+      "label": "20",
+      "heading": "Stock piles"
+    },
+    {
+      "id": "section-21",
+      "sourceKey": "section:21",
+      "label": "21",
+      "heading": "Authorization to remove quarriable substances"
+    },
+    {
+      "id": "section-22",
+      "sourceKey": "section:22",
+      "label": "22",
+      "heading": "Liability"
+    },
+    {
+      "id": "section-23",
+      "sourceKey": "section:23",
+      "label": "23",
+      "heading": "Rent"
+    },
+    {
+      "id": "section-24",
+      "sourceKey": "section:24",
+      "label": "24",
+      "heading": "Royalties"
+    },
+    {
+      "id": "section-25",
+      "sourceKey": "section:25",
+      "label": "25",
+      "heading": "Interest"
+    },
+    {
+      "id": "section-26",
+      "sourceKey": "section:26",
+      "label": "26",
+      "heading": "Execution and filing of lease"
+    },
+    {
+      "id": "section-27",
+      "sourceKey": "section:27",
+      "label": "27",
+      "heading": "Duplicates"
+    },
+    {
+      "id": "section-28",
+      "sourceKey": "section:28",
+      "label": "28",
+      "heading": "Reports and records"
+    },
+    {
+      "id": "section-29",
+      "sourceKey": "section:29",
+      "label": "29",
+      "heading": "Confidentiality"
+    },
+    {
+      "id": "section-30",
+      "sourceKey": "section:30",
+      "label": "30",
+      "heading": "Inspections"
+    },
+    {
+      "id": "section-31",
+      "sourceKey": "section:31",
+      "label": "31",
+      "heading": "Production of documents"
+    },
+    {
+      "id": "section-32",
+      "sourceKey": "section:32",
+      "label": "32",
+      "heading": "Arrest, search and seizure"
+    },
+    {
+      "id": "section-33",
+      "sourceKey": "section:33",
+      "label": "33",
+      "heading": "Additional powers of search"
+    },
+    {
+      "id": "section-34",
+      "sourceKey": "section:34",
+      "label": "34",
+      "heading": "Repossession and forfeiture of things seized"
+    },
+    {
+      "id": "section-35",
+      "sourceKey": "section:35",
+      "label": "35",
+      "heading": "Offence to take or remove quarriable substance"
+    },
+    {
+      "id": "section-36",
+      "sourceKey": "section:36",
+      "label": "36",
+      "heading": "Offence to carry on production without a permit"
+    },
+    {
+      "id": "section-37",
+      "sourceKey": "section:37",
+      "label": "37",
+      "heading": "Violation of offences set out in Schedule A"
+    },
+    {
+      "id": "section-38",
+      "sourceKey": "section:38",
+      "label": "38",
+      "heading": "Administration"
+    },
+    {
+      "id": "section-39",
+      "sourceKey": "section:39",
+      "label": "39",
+      "heading": "Regulations"
+    },
+    {
+      "id": "section-40",
+      "sourceKey": "section:40",
+      "label": "40",
+      "heading": "Repeal"
+    },
+    {
+      "id": "section-41",
+      "sourceKey": "section:41",
+      "label": "41",
+      "heading": "Transitional"
+    },
+    {
+      "id": "section-41.1",
+      "sourceKey": "section:41.1",
+      "label": "41.1"
+    },
+    {
+      "id": "section-42",
+      "sourceKey": "section:42",
+      "label": "42",
+      "heading": "Consequential"
+    },
+    {
+      "id": "section-43",
+      "sourceKey": "section:43",
+      "label": "43",
+      "heading": "Commencement"
+    },
+    {
+      "id": "schedule-schedule-a",
+      "sourceKey": "schedule:schedule-a",
+      "label": "SCHEDULE A"
+    }
+  ],
+  "components": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
+      "label": "1",
+      "heading": "Definitions, application of other Acts",
+      "text": "Definitions, application of other Acts\n\n1(1)In this Act\n\n“conservation officer” means a conservation officer appointed under subsection 5.1(1) of the Crown Lands and Forests Act;(agent de conservation)\n\n“Crown” means the Crown in right of the Province;(Couronne)\n\n“Crown Lands” means all or any part of the lands vested in the Crown that are under the administration and control of the Minister and includes any water upon or under the surface of such lands;(terres de la Couronne)\n\n“forest service officer” Repealed: 2013, c.39, s.19\n\n“lease area” means the Crown Lands covered by a quarry lease or a peat lease;(superficie assujettie au bail)\n\n“lessee” means a holder of a quarry lease or a peat lease granted under this Act;(concessionnaire)\n\n“Minister” means the Minister of Natural Resources and includes any person designated by the Minister to act on the Minister’s behalf;(Ministre)\n\n“peat” means an organic matter of geologic origin, excluding lignite or other coal, that has a minimum organic content of seventy-five per cent on a dry weight basis;(tourbe)\n\n“peat exploration licence” means an exploration licence granted under section 8 of this Act;(license d’exploration de tourbière)\n\n“peat lease” means a lease granted under section 9 of this Act;(bail d’exploitation de tourbière)\n\n“pre-existing quarry site” means a site located on Crown Lands in respect of which a quarry permit or a quarry lease has been issued;(site de carrière pré-existante)\n\n“quarriable substance” means ordinary stone, building or construction stone, sand, gravel, peat, clay and soil;(substance de carrière)\n\n“quarry” means a pit or excavation in the ground created by the removal or taking of a quarriable substance from it and includes the works, machinery, plant, buildings and premises located below and above ground used in connection with the quarry;(carrière)\n\n“quarry lease” means a lease granted under section 7 of this Act;(bail d’exploitation de carrière)\n\n“quarry permit” means a permit issued under section 5 of this Act;(permis d’exploitation de carrière)\n\n“shore” means the lands lying between the ordinary high water mark and the ordinary low water mark of a pond, lake, river or body of water;(rive)\n\n“shore area” means that portion of land lying within three hundred metres above and three hundred metres below the ordinary high water mark of any pond, lake, river or body of water and includes any bed, bank, beach, shore, dune, bar, flat or mud flat lying in that portion of land;(zone riveraine)\n\n“written authorization” means a written authorization issued by the Minister under section 10.(autorisation écrite)\n\n1(2)Nothing in this Act or the regulations exempts a person acting under this Act or the regulations from the application of the Clean Environment Act, the Clean Water Act, the Crown Lands and Forests Act, the Forest Fires Act, the Fire Prevention Act or the Mining Act.\n\n1992, c.62, s.1; 2004, c.14, s.1; 2004, c.20, s.56; 2012, c.52, s.45; 2013, c.39, s.19; 2016, c.37, s.164; 2019, c.29, s.207; 2023, c.17, s.225; 2024, c.28, s.53\n\nAPPLICATION",
+      "subsections": [
+        {
+          "id": "1-subsection-1",
+          "sourceKey": "section:1/subsection:1",
+          "label": "1(1)",
+          "text": "1(1)In this Act\n\n“conservation officer” means a conservation officer appointed under subsection 5.1(1) of the Crown Lands and Forests Act;(agent de conservation)\n\n“Crown” means the Crown in right of the Province;(Couronne)\n\n“Crown Lands” means all or any part of the lands vested in the Crown that are under the administration and control of the Minister and includes any water upon or under the surface of such lands;(terres de la Couronne)\n\n“forest service officer” Repealed: 2013, c.39, s.19\n\n“lease area” means the Crown Lands covered by a quarry lease or a peat lease;(superficie assujettie au bail)\n\n“lessee” means a holder of a quarry lease or a peat lease granted under this Act;(concessionnaire)\n\n“Minister” means the Minister of Natural Resources and includes any person designated by the Minister to act on the Minister’s behalf;(Ministre)\n\n“peat” means an organic matter of geologic origin, excluding lignite or other coal, that has a minimum organic content of seventy-five per cent on a dry weight basis;(tourbe)\n\n“peat exploration licence” means an exploration licence granted under section 8 of this Act;(license d’exploration de tourbière)\n\n“peat lease” means a lease granted under section 9 of this Act;(bail d’exploitation de tourbière)\n\n“pre-existing quarry site” means a site located on Crown Lands in respect of which a quarry permit or a quarry lease has been issued;(site de carrière pré-existante)\n\n“quarriable substance” means ordinary stone, building or construction stone, sand, gravel, peat, clay and soil;(substance de carrière)\n\n“quarry” means a pit or excavation in the ground created by the removal or taking of a quarriable substance from it and includes the works, machinery, plant, buildings and premises located below and above ground used in connection with the quarry;(carrière)\n\n“quarry lease” means a lease granted under section 7 of this Act;(bail d’exploitation de carrière)\n\n“quarry permit” means a permit issued under section 5 of this Act;(permis d’exploitation de carrière)\n\n“shore” means the lands lying between the ordinary high water mark and the ordinary low water mark of a pond, lake, river or body of water;(rive)\n\n“shore area” means that portion of land lying within three hundred metres above and three hundred metres below the ordinary high water mark of any pond, lake, river or body of water and includes any bed, bank, beach, shore, dune, bar, flat or mud flat lying in that portion of land;(zone riveraine)\n\n“written authorization” means a written authorization issued by the Minister under section 10.(autorisation écrite)",
+          "contentHash": "6fd56bb4db347b4a3da4da4e623697420482979ca8e6a1959e4098ca8543f9a4"
+        },
+        {
+          "id": "1-subsection-2",
+          "sourceKey": "section:1/subsection:2",
+          "label": "1(2)",
+          "text": "1(2)Nothing in this Act or the regulations exempts a person acting under this Act or the regulations from the application of the Clean Environment Act, the Clean Water Act, the Crown Lands and Forests Act, the Forest Fires Act, the Fire Prevention Act or the Mining Act.\n\n1992, c.62, s.1; 2004, c.14, s.1; 2004, c.20, s.56; 2012, c.52, s.45; 2013, c.39, s.19; 2016, c.37, s.164; 2019, c.29, s.207; 2023, c.17, s.225; 2024, c.28, s.53\n\nAPPLICATION",
+          "contentHash": "58d2f50ba1497c054223db71868c8edd5d315d2a9d0a2d5725b62e84ba7e5cd6"
+        }
+      ],
+      "contentHash": "4244c79b39ce78cdbd8d0f5cc19bea086b26d6ba77582396e7d3dc0991b4e61b"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "label": "2",
+      "heading": "Application",
+      "text": "Application\n\n2(1)This Act applies to all Crown Lands and any shore area designated under section 4.\n\n2(2)The Crown is bound by this Act.\n\nOWNERSHIP",
+      "subsections": [
+        {
+          "id": "2-subsection-1",
+          "sourceKey": "section:2/subsection:1",
+          "label": "2(1)",
+          "text": "2(1)This Act applies to all Crown Lands and any shore area designated under section 4.",
+          "contentHash": "4e145b0c5db2c15d48f8c27b55c6af63cbc698fa4e3f20ca0f2624ed31e85ba0"
+        },
+        {
+          "id": "2-subsection-2",
+          "sourceKey": "section:2/subsection:2",
+          "label": "2(2)",
+          "text": "2(2)The Crown is bound by this Act.\n\nOWNERSHIP",
+          "contentHash": "e400b897e2884a2da04c7f29d3e2c660904fc87d355205364acf78aa4cdd9d86"
+        }
+      ],
+      "contentHash": "be11026bd6fc2223ce7819bea232a75d7f594c932b4d914315ba0614bfb05283"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
+      "label": "3",
+      "heading": "Ownership",
+      "text": "Ownership\n\n3(1)Quarriable substances are vested in the owner of the land in or on which they lie.\n\n3(2)Subsection (1) does not affect any rights in law or equity that have been or are granted by the person in whom the quarriable substance is vested.\n\nDESIGNATION OF SHORE AREA",
+      "subsections": [
+        {
+          "id": "3-subsection-1",
+          "sourceKey": "section:3/subsection:1",
+          "label": "3(1)",
+          "text": "3(1)Quarriable substances are vested in the owner of the land in or on which they lie.",
+          "contentHash": "4c3c32e423dfdf61fee1f5bf49e7c66d21c03715f2c9d266cd9e54f2ea723940"
+        },
+        {
+          "id": "3-subsection-2",
+          "sourceKey": "section:3/subsection:2",
+          "label": "3(2)",
+          "text": "3(2)Subsection (1) does not affect any rights in law or equity that have been or are granted by the person in whom the quarriable substance is vested.\n\nDESIGNATION OF SHORE AREA",
+          "contentHash": "8fcb27192b8ed14348eb290933f1c789cb036607ffd41d737dcc50999535de25"
+        }
+      ],
+      "contentHash": "772d18c592c3c2f52c9a7632af43e2f0b8a16e53ee65ea621eaa17a09d3b1a0c"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
+      "label": "4",
+      "heading": "Designation of shore area",
+      "text": "Designation of shore area\n\n4(1)The Lieutenant-Governor in Council may, by regulation, designate a shore area lying outside Crown Lands to be subject to this Act.\n\n4(2)No person shall remove or take a quarriable substance from a shore area designated under subsection (1) unless the person has been issued a quarry permit.\n\nQUARRY PERMIT",
+      "subsections": [
+        {
+          "id": "4-subsection-1",
+          "sourceKey": "section:4/subsection:1",
+          "label": "4(1)",
+          "text": "4(1)The Lieutenant-Governor in Council may, by regulation, designate a shore area lying outside Crown Lands to be subject to this Act.",
+          "contentHash": "b9ac8596d49f37ed8ef0144ffbdde704fc0862eaf86d7dfab85f6cd73684c7ad"
+        },
+        {
+          "id": "4-subsection-2",
+          "sourceKey": "section:4/subsection:2",
+          "label": "4(2)",
+          "text": "4(2)No person shall remove or take a quarriable substance from a shore area designated under subsection (1) unless the person has been issued a quarry permit.\n\nQUARRY PERMIT",
+          "contentHash": "4aa6e5c055e6b8a3d38b8dc65142f701184745b83ff738f9554523094687e9c3"
+        }
+      ],
+      "contentHash": "34aa0d377ca906d8020661285177e23d6c338a34c4ee0fa04922ca82b100a973"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "componentType": "section",
+      "label": "5",
+      "heading": "Quarry Permit",
+      "text": "Quarry Permit\n\n5(1)Where a person applies in accordance with the regulations for a quarry permit, the Minister may issue a quarry permit authorizing that person to take or remove a quarriable substance from Crown Lands.\n\n5(2)Where a person applies in accordance with the regulations for a quarry permit in relation to a shore area designated under section 4, the Minister may issue a quarry permit authorizing that person to take or remove a quarriable substance from within the designated area.\n\n5(3)A quarry permit issued under subsection (1) or (2) is, in addition to the terms and conditions prescribed by regulation, subject to the terms and conditions prescribed by the Minister.",
+      "subsections": [
+        {
+          "id": "5-subsection-1",
+          "sourceKey": "section:5/subsection:1",
+          "label": "5(1)",
+          "text": "5(1)Where a person applies in accordance with the regulations for a quarry permit, the Minister may issue a quarry permit authorizing that person to take or remove a quarriable substance from Crown Lands.",
+          "contentHash": "9cd6ad60f8fc0a746966f2bcf4008592b65bf1ec0a4bb1ba3c9eee7bfabae667"
+        },
+        {
+          "id": "5-subsection-2",
+          "sourceKey": "section:5/subsection:2",
+          "label": "5(2)",
+          "text": "5(2)Where a person applies in accordance with the regulations for a quarry permit in relation to a shore area designated under section 4, the Minister may issue a quarry permit authorizing that person to take or remove a quarriable substance from within the designated area.",
+          "contentHash": "fc2f2a38e678adbd9cebd7985c9192b51602e25aebb9a4e5a1be247733e9a188"
+        },
+        {
+          "id": "5-subsection-3",
+          "sourceKey": "section:5/subsection:3",
+          "label": "5(3)",
+          "text": "5(3)A quarry permit issued under subsection (1) or (2) is, in addition to the terms and conditions prescribed by regulation, subject to the terms and conditions prescribed by the Minister.",
+          "contentHash": "bc032dae1cb900bedbea0f1712df4c63372e81778980b02230466ad57835f993"
+        }
+      ],
+      "contentHash": "edf9a732e93c8d32a08dac513e1efb55fa38bcafce9f17033525a9fcaf6ed5a4"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "componentType": "section",
+      "label": "6",
+      "heading": "Expiration",
+      "text": "Expiration\n\n6A quarry permit is valid for the time specified in the permit but in no case shall it exceed the thirty-first day of December of the year for which it is issued.\n\nQUARRY LEASE",
+      "subsections": [],
+      "contentHash": "7f0ca74979ba4ef2d9ea00f835ec90ac47278b6b1a52cdbb7b4815c1160969bd"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "componentType": "section",
+      "label": "7",
+      "heading": "Quarry Lease",
+      "text": "Quarry Lease\n\n7Where a person applies in accordance with the regulations for a quarry lease, the Minister may grant a quarry lease authorizing that person to take or remove a quarriable substance, except peat, from Crown Lands if\n\n(a)\nthe applicant has provided to the Minister\n\n(i)\nsecurity, in accordance with the regulations, with respect to the reclamation of the Crown Lands during and on discontinuance of quarrying,\n\n(ii)\nthe application fee, as prescribed by regulation,\n\n(iii)\nthe rent set by regulation for the first year of the quarry lease, and\n\n(iv)\nsuch information as the Minister may require in accordance with the regulations, and\n\n(b)\nthe boundaries of the Crown Lands to be covered by the quarry lease have been surveyed in accordance with the regulations.\n\n2004, c.14, s.2\n\nPEAT EXPLORATION LICENCE",
+      "subsections": [],
+      "contentHash": "242e5ce2027d713cb9492d038d106e0769afe0c17f526d928576af62edd4002d"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "componentType": "section",
+      "label": "8",
+      "heading": "Peat Exploration licence",
+      "text": "Peat Exploration licence\n\n8(1)The Minister may grant a peat exploration licence that authorizes a person to conduct field tests necessary to determine if the quality and volume of peat in the area covered by the licence is suitable for the intended use.\n\n8(1.1)With respect to the granting of a peat exploration licence for an area that equals or exceeds the area prescribed by regulation, the Minister shall call for tenders in the manner provided by regulation.\n\n8(1.2)With respect to the granting of a peat exploration licence for an area smaller than the area referred to in subsection (1.1), the Minister may\n\n(a)\ncall for tenders in the manner provided by regulation, or\n\n(b)\naccept applications made in accordance with the regulations for such licence.\n\n8(2)The peat exploration licence granted under this section gives the holder the exclusive right to conduct field tests for peat in the area covered by the licence.\n\n8(3)A peat exploration licence is valid for two years from the date the licence was granted.\n\n8(4)Where the holder of a peat exploration licence applies in accordance with the regulations for an extension of the term of the peat exploration licence, the Minister may extend the term of that peat exploration licence if the field tests have been conducted to the satisfaction of the Minister and the required annual work expenditure has been expended in accordance with the regulations but in no case shall the term of a peat exploration licence be extended more than twice.\n\n8(5)Notwithstanding subsection (4), if the required annual work expenditure has not been expended, the holder of a peat exploration licence shall remit to the Minister\n\n(a)\nthe amount that should have been expended, or\n\n(b)\nthe difference between the amount expended and the amount that should have been expended.\n\n1992, c.62, s.2; 2004, c.14, s.3; 2019, c.15, s.1\n\nPEAT LEASE",
+      "subsections": [
+        {
+          "id": "8-subsection-1",
+          "sourceKey": "section:8/subsection:1",
+          "label": "8(1)",
+          "text": "8(1)The Minister may grant a peat exploration licence that authorizes a person to conduct field tests necessary to determine if the quality and volume of peat in the area covered by the licence is suitable for the intended use.",
+          "contentHash": "7c8bcb5832560012e4765bf839cba174c0acf71970ab5dfa4ae6cd580182b655"
+        },
+        {
+          "id": "8-subsection-1.1",
+          "sourceKey": "section:8/subsection:1.1",
+          "label": "8(1.1)",
+          "text": "8(1.1)With respect to the granting of a peat exploration licence for an area that equals or exceeds the area prescribed by regulation, the Minister shall call for tenders in the manner provided by regulation.",
+          "contentHash": "d64093d53bcccdcb28f0690c4cf74e8273b92220fa4ffa3eb517274f681d76bd"
+        },
+        {
+          "id": "8-subsection-1.2",
+          "sourceKey": "section:8/subsection:1.2",
+          "label": "8(1.2)",
+          "text": "8(1.2)With respect to the granting of a peat exploration licence for an area smaller than the area referred to in subsection (1.1), the Minister may\n\n(a)\ncall for tenders in the manner provided by regulation, or\n\n(b)\naccept applications made in accordance with the regulations for such licence.",
+          "contentHash": "57abf69f3416d122c262b343e6bf837cb66ff897196a653d260d4c18ee5eee1e"
+        },
+        {
+          "id": "8-subsection-2",
+          "sourceKey": "section:8/subsection:2",
+          "label": "8(2)",
+          "text": "8(2)The peat exploration licence granted under this section gives the holder the exclusive right to conduct field tests for peat in the area covered by the licence.",
+          "contentHash": "a3acade93b320a2dfb6e96fbe81ec56ad5e9e9622bb4e05eea1a2d582e5f597e"
+        },
+        {
+          "id": "8-subsection-3",
+          "sourceKey": "section:8/subsection:3",
+          "label": "8(3)",
+          "text": "8(3)A peat exploration licence is valid for two years from the date the licence was granted.",
+          "contentHash": "9658812bc71c9b3cbeffc2ddf6a09aa6894d8beb48081ba58c912f79a061d2da"
+        },
+        {
+          "id": "8-subsection-4",
+          "sourceKey": "section:8/subsection:4",
+          "label": "8(4)",
+          "text": "8(4)Where the holder of a peat exploration licence applies in accordance with the regulations for an extension of the term of the peat exploration licence, the Minister may extend the term of that peat exploration licence if the field tests have been conducted to the satisfaction of the Minister and the required annual work expenditure has been expended in accordance with the regulations but in no case shall the term of a peat exploration licence be extended more than twice.",
+          "contentHash": "03e62a40dc2408c8cbd87a74e7e5363a2f14f8024e01755a32ed29e3f462df06"
+        },
+        {
+          "id": "8-subsection-5",
+          "sourceKey": "section:8/subsection:5",
+          "label": "8(5)",
+          "text": "8(5)Notwithstanding subsection (4), if the required annual work expenditure has not been expended, the holder of a peat exploration licence shall remit to the Minister\n\n(a)\nthe amount that should have been expended, or\n\n(b)\nthe difference between the amount expended and the amount that should have been expended.\n\n1992, c.62, s.2; 2004, c.14, s.3; 2019, c.15, s.1\n\nPEAT LEASE",
+          "contentHash": "8abd412868718580bb2e471cf223938e0d5e6eb57a5baa82046811669b85eaea"
+        }
+      ],
+      "contentHash": "a915c0216352648f46ade44e3bad8eea7aa7be66957e9d12ab55697bf09a20bd"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "componentType": "section",
+      "label": "9",
+      "heading": "Peat lease",
+      "text": "Peat lease\n\n9(1)A holder of a peat exploration licence may apply in accordance with the regulations to the Minister and be granted a peat lease which authorizes the taking or removal of peat from Crown Lands if\n\n(a)\nthe Minister approves the applicant’s feasibility study report, which report shall include\n\n(i)\na summary of exploration work performed with results and analyses, with an up-to-date summary of total exploration expenses,\n\n(ii)\na development plan,\n\n(iii)\na drainage plan, and\n\n(iv)\na reclamation plan,\n\n(b)\nthe applicant has provided to the Minister\n\n(i)\nthe application fee, as prescribed by regulation,\n\n(ii)\nthe rent set by regulation for the first year of the peat lease, and\n\n(iii)\nsuch information as the Minister may require in accordance with the regulations and any other information the Minister considers necessary in order to evaluate an application for a peat lease, and\n\n(c)\nthe boundaries of the Crown Lands to be covered by the peat lease have been surveyed in accordance with the regulations.\n\n9(2)Upon the commencement of a peat lease, the peat exploration licence in respect of which the application for the lease was made is replaced by the peat lease.\n\n9(3)The holder of a peat lease shall provide to the Minister security with respect to the reclamation of the Crown Lands during and on discontinuance of quarrying within the period of time specified by the Minister and in an amount determined by the Minister having regard to the factors, if any, prescribed by regulation.\n\n9(4)The holder of a peat lease who has not submitted a reclamation plan to the Minister before the commencement of this provision shall submit to the Minister a reclamation plan for his or her approval within the period of time specified by the Minister.\n\n9(5)The Minister may at any time review any reclamation plan and may require the holder of the peat lease to revise the reclamation plan and, upon the Minister’s request, the holder shall submit the revised reclamation plan to the Minister for his or her approval within the period of time specified by the Minister.\n\n9(6)Where the Minister approves a reclamation plan under subsection (4) or (5), the Minister may require further security with respect to the reclamation of the Crown Lands from a holder of a peat lease during and on discontinuance of quarrying and, upon the Minister’s request, the holder of the peat lease shall provide to the Minister the further security within the period of time specified by the Minister and in an amount determined by the Minister having regard to the factors, if any, prescribed by regulation.\n\n2004, c.14, s.4\n\nWRITTEN AUTHORIZATIONS",
+      "subsections": [
+        {
+          "id": "9-subsection-1",
+          "sourceKey": "section:9/subsection:1",
+          "label": "9(1)",
+          "text": "9(1)A holder of a peat exploration licence may apply in accordance with the regulations to the Minister and be granted a peat lease which authorizes the taking or removal of peat from Crown Lands if\n\n(a)\nthe Minister approves the applicant’s feasibility study report, which report shall include\n\n(i)\na summary of exploration work performed with results and analyses, with an up-to-date summary of total exploration expenses,\n\n(ii)\na development plan,\n\n(iii)\na drainage plan, and\n\n(iv)\na reclamation plan,\n\n(b)\nthe applicant has provided to the Minister\n\n(i)\nthe application fee, as prescribed by regulation,\n\n(ii)\nthe rent set by regulation for the first year of the peat lease, and\n\n(iii)\nsuch information as the Minister may require in accordance with the regulations and any other information the Minister considers necessary in order to evaluate an application for a peat lease, and\n\n(c)\nthe boundaries of the Crown Lands to be covered by the peat lease have been surveyed in accordance with the regulations.",
+          "contentHash": "e98a2fd534979e1006b63fce85bba26a146bf951076754c6b477a70d7645253e"
+        },
+        {
+          "id": "9-subsection-2",
+          "sourceKey": "section:9/subsection:2",
+          "label": "9(2)",
+          "text": "9(2)Upon the commencement of a peat lease, the peat exploration licence in respect of which the application for the lease was made is replaced by the peat lease.",
+          "contentHash": "2fe463a7abc699a6b0311c421b5303f90e97b7aaab79de470aac7e3d8506eda9"
+        },
+        {
+          "id": "9-subsection-3",
+          "sourceKey": "section:9/subsection:3",
+          "label": "9(3)",
+          "text": "9(3)The holder of a peat lease shall provide to the Minister security with respect to the reclamation of the Crown Lands during and on discontinuance of quarrying within the period of time specified by the Minister and in an amount determined by the Minister having regard to the factors, if any, prescribed by regulation.",
+          "contentHash": "1363e4f5c45aa077134e75d4244fc4b44e9f12c42fcc62c9abcc2861fb7e99e7"
+        },
+        {
+          "id": "9-subsection-4",
+          "sourceKey": "section:9/subsection:4",
+          "label": "9(4)",
+          "text": "9(4)The holder of a peat lease who has not submitted a reclamation plan to the Minister before the commencement of this provision shall submit to the Minister a reclamation plan for his or her approval within the period of time specified by the Minister.",
+          "contentHash": "6d6c823232af4ab2b603ebb72c2b5f08dbaf804e51aaa5b7cc2e37e6b169c63f"
+        },
+        {
+          "id": "9-subsection-5",
+          "sourceKey": "section:9/subsection:5",
+          "label": "9(5)",
+          "text": "9(5)The Minister may at any time review any reclamation plan and may require the holder of the peat lease to revise the reclamation plan and, upon the Minister’s request, the holder shall submit the revised reclamation plan to the Minister for his or her approval within the period of time specified by the Minister.",
+          "contentHash": "23d959af41478c17860498008cff546f5ba0388ef61393a5a53dd558030086c4"
+        },
+        {
+          "id": "9-subsection-6",
+          "sourceKey": "section:9/subsection:6",
+          "label": "9(6)",
+          "text": "9(6)Where the Minister approves a reclamation plan under subsection (4) or (5), the Minister may require further security with respect to the reclamation of the Crown Lands from a holder of a peat lease during and on discontinuance of quarrying and, upon the Minister’s request, the holder of the peat lease shall provide to the Minister the further security within the period of time specified by the Minister and in an amount determined by the Minister having regard to the factors, if any, prescribed by regulation.\n\n2004, c.14, s.4\n\nWRITTEN AUTHORIZATIONS",
+          "contentHash": "16676766fe90a88dd30ec3bfd0ca1ee822fa3037ed12d63a75e14778a858a6cf"
+        }
+      ],
+      "contentHash": "e02d43782c6492823cb363a9511c19f3670a25c651812956771983e7674b21e0"
+    },
+    {
+      "id": "section-10",
+      "sourceKey": "section:10",
+      "componentType": "section",
+      "label": "10",
+      "heading": "Written authorization",
+      "text": "Written authorization\n\n10The Minister may, in writing, authorize a person, subject to the terms and conditions prescribed by the Minister in the written authorization, to take or remove a quarriable substance from a pre-existing quarry site on Crown Lands in an amount not in excess of the amount prescribed by regulation.\n1992, c.62, s.3\n\nOPTIONS\n\nRepealed: 2004, c.14, s.5\n\n2004, c.14, s.5",
+      "subsections": [],
+      "contentHash": "22686bbc26fda595ece2f4ca4ff1f980f8e0d4cdc8a1a6418a75bf5248818451"
+    },
+    {
+      "id": "section-11",
+      "sourceKey": "section:11",
+      "componentType": "section",
+      "label": "11",
+      "heading": "Repealed",
+      "text": "Repealed\n\n11Repealed: 2004, c.14, s.6\n2004, c.14, s.6\n\nGRANTING OF OTHER RIGHTS",
+      "subsections": [],
+      "contentHash": "98de4bf4245c923336e4a4b17ed86ee6a4e842b3ec326a6ba2de16b089ad45f4"
+    },
+    {
+      "id": "section-12",
+      "sourceKey": "section:12",
+      "componentType": "section",
+      "label": "12",
+      "heading": "Granting of other rights",
+      "text": "Granting of other rights\n\n12(1)The issuing of a quarry permit or written authorization or the granting of a peat exploration licence, quarry lease or peat lease under this Act does not prevent or in any way limit the right of the Crown to grant prospecting, mining, timber or fishing rights over Crown Lands covered in the quarry permit, peat exploration licence, written authorization, quarry lease or peat lease.\n\n12(2)The Minister, in issuing a quarry permit or written authorization or in granting a peat exploration licence, quarry lease or peat lease, shall have regard to any existing rights or privileges affecting the Crown Lands to be made subject to the quarry permit, peat exploration licence, written authorization, quarry lease or peat lease.\n\n2004, c.14, s.7\n\nTERM OF AND RENEWAL OF\nQUARRY LEASE AND PEAT LEASE",
+      "subsections": [
+        {
+          "id": "12-subsection-1",
+          "sourceKey": "section:12/subsection:1",
+          "label": "12(1)",
+          "text": "12(1)The issuing of a quarry permit or written authorization or the granting of a peat exploration licence, quarry lease or peat lease under this Act does not prevent or in any way limit the right of the Crown to grant prospecting, mining, timber or fishing rights over Crown Lands covered in the quarry permit, peat exploration licence, written authorization, quarry lease or peat lease.",
+          "contentHash": "1eafe2cfc4450fe397f1ba432c61d7656756b144cbac4e6e82f0c5485c897ea1"
+        },
+        {
+          "id": "12-subsection-2",
+          "sourceKey": "section:12/subsection:2",
+          "label": "12(2)",
+          "text": "12(2)The Minister, in issuing a quarry permit or written authorization or in granting a peat exploration licence, quarry lease or peat lease, shall have regard to any existing rights or privileges affecting the Crown Lands to be made subject to the quarry permit, peat exploration licence, written authorization, quarry lease or peat lease.\n\n2004, c.14, s.7\n\nTERM OF AND RENEWAL OF\nQUARRY LEASE AND PEAT LEASE",
+          "contentHash": "adf0a5ada10f3bb8cc2fcbf0264cfad1342487ce4e385a242e1b00f228fd55df"
+        }
+      ],
+      "contentHash": "9059155cfc6664b6f0fa7c07177c4a3d1a2d66515c82a360b7a0aef764fe1feb"
+    },
+    {
+      "id": "section-13",
+      "sourceKey": "section:13",
+      "componentType": "section",
+      "label": "13",
+      "heading": "Term of and renewal of quarry lease and peat lease",
+      "text": "Term of and renewal of quarry lease and peat lease\n\n13(1)Subject to subsection (2), a quarry lease or peat lease shall be for a term not exceeding ten years.\n\n13(2)Where a lessee applies in accordance with the regulations for a renewal of the quarry lease or peat lease, the Minister may renew that lease for a term equal to the original term or such lesser term as the Minister considers advisable in the circumstances.\n\n13(3)A quarry lease and peat lease granted under this Act is, in addition to the terms and conditions prescribed by regulation, subject to such terms and conditions as the Minister prescribes.\n\n13(4)The Minister may, subject to the terms and conditions prescribed by regulation, delete or add terms and conditions to a quarry lease or peat lease renewed under this section.\n\n13(5)The Minister, as a condition of renewal of a quarry lease or peat lease, may require the lessee to furnish proof satisfactory to the Minister that the lessee has complied with the terms and conditions of the lease and this Act and the regulations.\n\nTRANSFER",
+      "subsections": [
+        {
+          "id": "13-subsection-1",
+          "sourceKey": "section:13/subsection:1",
+          "label": "13(1)",
+          "text": "13(1)Subject to subsection (2), a quarry lease or peat lease shall be for a term not exceeding ten years.",
+          "contentHash": "835b961e0b57f49d48df04aca7dcc588a17b512baf302e6a56c0f62a43ee7240"
+        },
+        {
+          "id": "13-subsection-2",
+          "sourceKey": "section:13/subsection:2",
+          "label": "13(2)",
+          "text": "13(2)Where a lessee applies in accordance with the regulations for a renewal of the quarry lease or peat lease, the Minister may renew that lease for a term equal to the original term or such lesser term as the Minister considers advisable in the circumstances.",
+          "contentHash": "d0dbcb5cdd6f70ae88876195cbf006ddb7a06cd04f6bb087c7f270c7508f8008"
+        },
+        {
+          "id": "13-subsection-3",
+          "sourceKey": "section:13/subsection:3",
+          "label": "13(3)",
+          "text": "13(3)A quarry lease and peat lease granted under this Act is, in addition to the terms and conditions prescribed by regulation, subject to such terms and conditions as the Minister prescribes.",
+          "contentHash": "d208cbdaea2ccc20a84c81c05f015b6b623cdfc0b9283369fb29b052349565f1"
+        },
+        {
+          "id": "13-subsection-4",
+          "sourceKey": "section:13/subsection:4",
+          "label": "13(4)",
+          "text": "13(4)The Minister may, subject to the terms and conditions prescribed by regulation, delete or add terms and conditions to a quarry lease or peat lease renewed under this section.",
+          "contentHash": "4ccc993f29511a3db95d8f024cf03aecaad7c395027085cbc8c9456db0d7bf67"
+        },
+        {
+          "id": "13-subsection-5",
+          "sourceKey": "section:13/subsection:5",
+          "label": "13(5)",
+          "text": "13(5)The Minister, as a condition of renewal of a quarry lease or peat lease, may require the lessee to furnish proof satisfactory to the Minister that the lessee has complied with the terms and conditions of the lease and this Act and the regulations.\n\nTRANSFER",
+          "contentHash": "197f1b0bf05a7c0f6a1e052e68ea17af8efc463cc2a4b2c7f901957dc23be86d"
+        }
+      ],
+      "contentHash": "f18506c57677e78d1d2e9e164cc9efefad77f613ad72690d77a87f26ba37eb4d"
+    },
+    {
+      "id": "section-14",
+      "sourceKey": "section:14",
+      "componentType": "section",
+      "label": "14",
+      "heading": "Written approval required",
+      "text": "Written approval required\n\n14A quarry lease or peat lease is not transferable without the prior written approval of the Minister.",
+      "subsections": [],
+      "contentHash": "b0cef72db735ec0d5d1af3e16127d616ebfc7942097acc7b9c4231ef16b6aa5e"
+    },
+    {
+      "id": "section-15",
+      "sourceKey": "section:15",
+      "componentType": "section",
+      "label": "15",
+      "heading": "Signature and fee",
+      "text": "Signature and fee\n\n15A transfer of a quarry lease or peat lease or of any interest in a quarry lease or peat lease shall be\n\n(a)\nsigned by the transferor or by the agent of the transferor authorized by instrument in writing, and\n\n(b)\naccompanied by the fee prescribed by regulation.\n\nCANCELLATION, EXPIRATION OR\nSURRENDER",
+      "subsections": [],
+      "contentHash": "af64022fb0f84dbd8ae19ce624b31a6243e950cda7c1930a94ed646b2ddd55f4"
+    },
+    {
+      "id": "section-16",
+      "sourceKey": "section:16",
+      "componentType": "section",
+      "label": "16",
+      "heading": "Cancellation, expiration or surrender",
+      "text": "Cancellation, expiration or surrender\n\n16(1)Where the Minister has reasonable grounds to believe that a person holding a quarry lease has not complied with the terms and conditions of a quarry lease or this Act or the regulations, the Minister may cancel the quarry lease.\n\n16(2)Where a quarry lease is cancelled under this section, the holder of the quarry lease shall not take or remove any quarriable substance from the lease area.\n\n16(3)The Minister shall give notice in writing of cancellation of a quarry lease under this section\n\n(a)\nby serving the written notice of cancellation on the holder of the quarry lease, or\n\n(b)\nby sending written notice of cancellation by registered mail to the holder of the quarry lease.\n\n16(4)Where notice of the cancellation of a quarry lease is given under paragraph (3)(b), the cancellation takes effect upon the expiration of the fifth day following the date of mailing of the notice.\n\n16(5)The Minister, in lieu of cancelling a quarry lease, may suspend the rights given by the quarry lease for such period of time as the Minister considers necessary and the holder of that quarry lease shall not take or remove any quarriable substance from the area covered by that quarry lease during the period of suspension.\n\n16(6)Notwithstanding any provisions contained in a quarry lease to the contrary, the Minister may cancel or suspend the rights granted by a quarry lease and this section applies with the necessary modifications to that cancellation or suspension and to the lessee.\n\n16(7)This section applies with the necessary modifications to the cancellation of a quarry permit, peat exploration licence or peat lease and to the holder of a quarry permit, peat exploration licence and peat lease.",
+      "subsections": [
+        {
+          "id": "16-subsection-1",
+          "sourceKey": "section:16/subsection:1",
+          "label": "16(1)",
+          "text": "16(1)Where the Minister has reasonable grounds to believe that a person holding a quarry lease has not complied with the terms and conditions of a quarry lease or this Act or the regulations, the Minister may cancel the quarry lease.",
+          "contentHash": "a9406d16f0499f5d691df91525c90e3b74407b92d493283d3eceac1fda6f2424"
+        },
+        {
+          "id": "16-subsection-2",
+          "sourceKey": "section:16/subsection:2",
+          "label": "16(2)",
+          "text": "16(2)Where a quarry lease is cancelled under this section, the holder of the quarry lease shall not take or remove any quarriable substance from the lease area.",
+          "contentHash": "1a7d62adca7a4d43cd9fd7453857c3567bfca5809a5c628c656810339d9a2de7"
+        },
+        {
+          "id": "16-subsection-3",
+          "sourceKey": "section:16/subsection:3",
+          "label": "16(3)",
+          "text": "16(3)The Minister shall give notice in writing of cancellation of a quarry lease under this section\n\n(a)\nby serving the written notice of cancellation on the holder of the quarry lease, or\n\n(b)\nby sending written notice of cancellation by registered mail to the holder of the quarry lease.",
+          "contentHash": "32805061c0185a1b9cda2f045942535681da929c8d373ba07247dfdde4bca6d3"
+        },
+        {
+          "id": "16-subsection-4",
+          "sourceKey": "section:16/subsection:4",
+          "label": "16(4)",
+          "text": "16(4)Where notice of the cancellation of a quarry lease is given under paragraph (3)(b), the cancellation takes effect upon the expiration of the fifth day following the date of mailing of the notice.",
+          "contentHash": "3fc10c2bbd2558b5b1dff06e521eeb23bcd4c9ed7b3a2355265d5c7ec2905fbc"
+        },
+        {
+          "id": "16-subsection-5",
+          "sourceKey": "section:16/subsection:5",
+          "label": "16(5)",
+          "text": "16(5)The Minister, in lieu of cancelling a quarry lease, may suspend the rights given by the quarry lease for such period of time as the Minister considers necessary and the holder of that quarry lease shall not take or remove any quarriable substance from the area covered by that quarry lease during the period of suspension.",
+          "contentHash": "e9f3885365513c5323a6c87efe01908804a1dbe206e0cabf9ecc39188edc8a24"
+        },
+        {
+          "id": "16-subsection-6",
+          "sourceKey": "section:16/subsection:6",
+          "label": "16(6)",
+          "text": "16(6)Notwithstanding any provisions contained in a quarry lease to the contrary, the Minister may cancel or suspend the rights granted by a quarry lease and this section applies with the necessary modifications to that cancellation or suspension and to the lessee.",
+          "contentHash": "45ecb162dacad1209582496cf2fb66c2046fcf0460f4f50484d1b69bb2c75f45"
+        },
+        {
+          "id": "16-subsection-7",
+          "sourceKey": "section:16/subsection:7",
+          "label": "16(7)",
+          "text": "16(7)This section applies with the necessary modifications to the cancellation of a quarry permit, peat exploration licence or peat lease and to the holder of a quarry permit, peat exploration licence and peat lease.",
+          "contentHash": "49e12fb77dfa167edb3ac243fefade8e27422f7ed7adb59980897c824a2caf13"
+        }
+      ],
+      "contentHash": "3a490527d6e3a4cb0748d144a9ebfbccfb23ed7d0dfd55b5f46b3fe2babf1548"
+    },
+    {
+      "id": "section-17",
+      "sourceKey": "section:17",
+      "componentType": "section",
+      "label": "17",
+      "heading": "Obligations of lessee",
+      "text": "Obligations of lessee\n\n17Where a quarry lease or peat lease has expired or has been suspended, surrendered or cancelled, the lessee shall, within sixty days\n\n(a)\nremove plant, product and equipment from the leased area, and\n\n(b)\nensure that the lease area has been reclaimed in a manner satisfactory to the Minister.\n\n2004, c.14, s.8",
+      "subsections": [],
+      "contentHash": "725facdf14f37718ee10e8d56d76e5ec09e3fd83cc28b195020bfbc2461a942c"
+    },
+    {
+      "id": "section-18",
+      "sourceKey": "section:18",
+      "componentType": "section",
+      "label": "18",
+      "heading": "Liability of lessee",
+      "text": "Liability of lessee\n\n18Where a quarry lease or peat lease expires or is suspended, surrendered or cancelled, the person who held the lease continues to be liable for\n\n(a)\nany money owing with respect to royalties or rents, including interest on any amounts due and payable, or\n\n(b)\nthe reclamation of the land, and for any other obligation,\n\nfor which the person was liable under this Act or the regulations immediately before the expiry, suspension, surrender or cancellation.\n\n2004, c.14, s.9\n\nREDUCTION, SUBDIVISION,\nAMALGAMATION OF PEAT OR\nQUARRY LEASES",
+      "subsections": [],
+      "contentHash": "c277111bcbc26a327ac55324713b50421f81f6726b78c629e6ddf6a73c551fdb"
+    },
+    {
+      "id": "section-19",
+      "sourceKey": "section:19",
+      "componentType": "section",
+      "label": "19",
+      "heading": "Reduction, subdivision, amalgamation of peat or quarry lease",
+      "text": "Reduction, subdivision, amalgamation of peat or quarry lease\n\n19Upon application and upon good cause being shown, the Minister may authorize the reduction, subdivision, amalgamation or enlargement of land covered by a quarry lease or peat lease under such terms and conditions as the Minister may determine and upon payment of the fee prescribed by regulation.\n\nSTOCK PILES",
+      "subsections": [],
+      "contentHash": "5af9ca223c2f6e17b69a21d9d42502e4075eadf9d90ac5e86fd12b1960bdf733"
+    },
+    {
+      "id": "section-20",
+      "sourceKey": "section:20",
+      "componentType": "section",
+      "label": "20",
+      "heading": "Stock piles",
+      "text": "Stock piles\n\n20A quarriable substance that has been extracted or stockpiled but not taken or removed from Crown Lands before the expiration, surrender or cancellation of a quarry permit, quarry lease, peat lease or written authorization remains vested in the Crown.\n\nAUTHORIZATION TO REMOVE\nQUARRIABLE SUBSTANCE",
+      "subsections": [],
+      "contentHash": "39a58835eca71673ce3d0d136f8c5fa8804eb215b728f2a169a6ca5b78ad52bc"
+    },
+    {
+      "id": "section-21",
+      "sourceKey": "section:21",
+      "componentType": "section",
+      "label": "21",
+      "heading": "Authorization to remove quarriable substances",
+      "text": "Authorization to remove quarriable substances\n\n21The Minister may, without payment of compensation, authorize the Crown or any Crown agency to remove a quarriable substance from an area covered by a quarry permit, quarry lease, peat exploration licence, peat lease or written authorization for use of the Crown or that Crown agency.\n\nLIABILITY",
+      "subsections": [],
+      "contentHash": "bac33c4aa1ac4598ff7b96a797004dea4843b3f3ab8c37c058719b904c5df435"
+    },
+    {
+      "id": "section-22",
+      "sourceKey": "section:22",
+      "componentType": "section",
+      "label": "22",
+      "heading": "Liability",
+      "text": "Liability\n\n22A lessee is liable for actual damage to or interference with the use and enjoyment of property caused by the lessee or anyone acting on behalf of the lessee in or on the lease area.\n\nRENT AND ROYALTIES",
+      "subsections": [],
+      "contentHash": "9053cb4299223a7c7acfea0c162bd273aff86874b0deccf41ddb95e71173836d"
+    },
+    {
+      "id": "section-23",
+      "sourceKey": "section:23",
+      "componentType": "section",
+      "label": "23",
+      "heading": "Rent",
+      "text": "Rent\n\n23Every lessee shall pay rent, at the rate set by regulation, annually on or before the anniversary of the date of the commencement of the first term of the lease for the ensuing year.",
+      "subsections": [],
+      "contentHash": "dfbd7c20d7a2fe961a401f33c9e3f1b00578446d0cd4b61bdf702bbda6eadae2"
+    },
+    {
+      "id": "section-24",
+      "sourceKey": "section:24",
+      "componentType": "section",
+      "label": "24",
+      "heading": "Royalties",
+      "text": "Royalties\n\n24(1)A person who takes or removes a quarriable substance from Crown Lands shall pay to the Crown such royalties as are prescribed by regulation.\n\n24(2)Royalties are due and payable semi-annually on or before the twentieth day of January and the twentieth day of July in each year.",
+      "subsections": [
+        {
+          "id": "24-subsection-1",
+          "sourceKey": "section:24/subsection:1",
+          "label": "24(1)",
+          "text": "24(1)A person who takes or removes a quarriable substance from Crown Lands shall pay to the Crown such royalties as are prescribed by regulation.",
+          "contentHash": "c02c3a4e98f84a08c1c82caab1b44f86054d61b3572ad80ca4559d1f55d5ce88"
+        },
+        {
+          "id": "24-subsection-2",
+          "sourceKey": "section:24/subsection:2",
+          "label": "24(2)",
+          "text": "24(2)Royalties are due and payable semi-annually on or before the twentieth day of January and the twentieth day of July in each year.",
+          "contentHash": "0db110322222bacb8379309782c7ce37200447e4ed21e17d46a5ba4ac4127b2c"
+        }
+      ],
+      "contentHash": "7ac4ae124f249989d436e4639a3c1f0a8f51bbbb4a396e75c92fc63a8a9c3040"
+    },
+    {
+      "id": "section-25",
+      "sourceKey": "section:25",
+      "componentType": "section",
+      "label": "25",
+      "heading": "Interest",
+      "text": "Interest\n\n25Where any amount remains unpaid and due by a person in respect to this Act or the regulations, interest as prescribed by regulation shall be added to the amount due and payable.\n\nFORM AND RECORDING OF\nQUARRY LEASE AND PEAT LEASE",
+      "subsections": [],
+      "contentHash": "98d0279ea2c7fb808417db0ce0a81db1dcd075d64252986437cfc1976bcc2c1b"
+    },
+    {
+      "id": "section-26",
+      "sourceKey": "section:26",
+      "componentType": "section",
+      "label": "26",
+      "heading": "Execution and filing of lease",
+      "text": "Execution and filing of lease\n\n26Every quarry lease or peat lease granted under this Act shall be executed by the Minister under the Minister’s hand and seal of office and by the lessee under the lessee’s hand and seal or that of the lessee’s duly authorized attorney or agent and, where a quarry lease or peat lease is executed by an attorney or agent, the instrument conferring such power shall be filed in the Fredericton office of the Minister before the counterpart of the quarry lease or peat lease is delivered to the lessee.",
+      "subsections": [],
+      "contentHash": "7a75b371b98a6797604aca1aeac8c18425970c4647a0dc35fd8c87d70966b460"
+    },
+    {
+      "id": "section-27",
+      "sourceKey": "section:27",
+      "componentType": "section",
+      "label": "27",
+      "heading": "Duplicates",
+      "text": "Duplicates\n\n27A quarry lease or peat lease, shall be executed in duplicate; and one duplicate, to be known as the counterpart, shall be delivered to the lessee and the other shall be filed and recorded in the Fredericton office of the Minister.\n\nREPORTS AND RECORDS",
+      "subsections": [],
+      "contentHash": "dcc6fe4ca1e74eec2c639e7d5162e4b729220220e2134c71106884d31bef0fce"
+    },
+    {
+      "id": "section-28",
+      "sourceKey": "section:28",
+      "componentType": "section",
+      "label": "28",
+      "heading": "Reports and records",
+      "text": "Reports and records\n\n28(1)The holder of a quarry permit, quarry lease or peat lease shall\n\n(a)\nkeep a detailed record of the quarry operations,\n\n(b)\nkeep detailed accounts of quarry operations, and\n\n(c)\nretain copies of all documents relating to the sale and shipment made of quarriable substances.\n\n28(2)The holder of a quarry permit, quarry lease or peat lease shall keep available for inspection in the Province by the Minister all accounts, records and documents relating to the quarry operation.\n\n28(3)The holder of a quarry permit, quarry lease or a peat lease on or before the twentieth day of January and the twentieth day of July in each year shall forward to the Minister a return setting forth the quantity of each type of quarriable substance taken or removed under the authority of the quarry permit, quarry lease or peat lease during the preceding six-month period and such other information as required by regulation.\n\n28(4)Within fifteen days of the expiration, cancellation or surrender of a quarry permit, quarry lease or peat lease, as the case may be, the holder shall comply with subsection (3) so as to provide a return covering the period subsequent to the last return made under subsection (3).\n\nCONFIDENTIALITY",
+      "subsections": [
+        {
+          "id": "28-subsection-1",
+          "sourceKey": "section:28/subsection:1",
+          "label": "28(1)",
+          "text": "28(1)The holder of a quarry permit, quarry lease or peat lease shall\n\n(a)\nkeep a detailed record of the quarry operations,\n\n(b)\nkeep detailed accounts of quarry operations, and\n\n(c)\nretain copies of all documents relating to the sale and shipment made of quarriable substances.",
+          "contentHash": "cfa946b06f7d1e2a84edd847a22be77c75f7e1892702c3c0710d759c1412b751"
+        },
+        {
+          "id": "28-subsection-2",
+          "sourceKey": "section:28/subsection:2",
+          "label": "28(2)",
+          "text": "28(2)The holder of a quarry permit, quarry lease or peat lease shall keep available for inspection in the Province by the Minister all accounts, records and documents relating to the quarry operation.",
+          "contentHash": "8d23380ee0543a42f39ad5fddcd0af103ab3258c7b8f5bc0b961c7dd0f12c294"
+        },
+        {
+          "id": "28-subsection-3",
+          "sourceKey": "section:28/subsection:3",
+          "label": "28(3)",
+          "text": "28(3)The holder of a quarry permit, quarry lease or a peat lease on or before the twentieth day of January and the twentieth day of July in each year shall forward to the Minister a return setting forth the quantity of each type of quarriable substance taken or removed under the authority of the quarry permit, quarry lease or peat lease during the preceding six-month period and such other information as required by regulation.",
+          "contentHash": "5eefdf7e11247190af4ee260c0b38259541987676c20570b3c0b1048f2a57ae6"
+        },
+        {
+          "id": "28-subsection-4",
+          "sourceKey": "section:28/subsection:4",
+          "label": "28(4)",
+          "text": "28(4)Within fifteen days of the expiration, cancellation or surrender of a quarry permit, quarry lease or peat lease, as the case may be, the holder shall comply with subsection (3) so as to provide a return covering the period subsequent to the last return made under subsection (3).\n\nCONFIDENTIALITY",
+          "contentHash": "9275a3d1eb94b964744d489281a5ac9ba99dbaba536b28a502a5510de95aea3a"
+        }
+      ],
+      "contentHash": "db783c435e10b4611b63b53f62b6e28301924fd522059ccac350da6d80653f6d"
+    },
+    {
+      "id": "section-29",
+      "sourceKey": "section:29",
+      "componentType": "section",
+      "label": "29",
+      "heading": "Confidentiality",
+      "text": "Confidentiality\n\n29Financial, commercial, technical and scientific information obtained by the Minister, a person employed or appointed under this Act or by a person whose duties include the administration and enforcement of this Act and the regulations that relates to a particular licensee, permittee or lessee who is a going concern is confidential.\n\nINSPECTIONS",
+      "subsections": [],
+      "contentHash": "4294d4b416b8a50132e3f785ca5f41b4089c4198edb9183571010be25972a254"
+    },
+    {
+      "id": "section-30",
+      "sourceKey": "section:30",
+      "componentType": "section",
+      "label": "30",
+      "heading": "Inspections",
+      "text": "Inspections\n\n30The Minister may, at any reasonable time, for the purpose of administering this Act and the regulations,\n\n(a)\nenter upon the land covered by a quarry permit, quarry lease, peat exploration licence or peat lease and into a quarry operation for the purpose of making inspections and inquiries,\n\n(b)\ninspect the land covered by a quarry permit, quarry lease, peat exploration licence or peat lease and any related quarry operations and make inquiries in relation to the inspection,\n\n(c)\ntake samples and carry out tests or examinations in relation to quarriable substances,\n\n(d)\nrequire the production of all accounts, records and documents pertaining to a quarry permit, quarry lease, peat exploration licence or peat lease for inspection or for the purpose of obtaining copies of accounts, records and documents relating to a quarry permit, quarry lease, peat exploration licence or peat lease, and\n\n(e)\nenter upon private land and travel along private roads without being liable for trespass in the absence of actual damage or subject to tolls.",
+      "subsections": [],
+      "contentHash": "c70def70874d50503461c8f249164a3a9e0c5e9621be7ee9e2acca6566f4a9e3"
+    },
+    {
+      "id": "section-31",
+      "sourceKey": "section:31",
+      "componentType": "section",
+      "label": "31",
+      "heading": "Production of documents",
+      "text": "Production of documents\n\n31A lessee, quarry permittee or peat exploration licensee shall immediately on demand by the Minister produce the accounts, records and documents required for production under paragraph 30(1)(d).\n\nARREST, SEARCH AND SEIZURE",
+      "subsections": [],
+      "contentHash": "4e1ddbc3035de361a5634ab21c677963557401fca65e79240c1af6cc23a3ae2c"
+    },
+    {
+      "id": "section-32",
+      "sourceKey": "section:32",
+      "componentType": "section",
+      "label": "32",
+      "heading": "Arrest, search and seizure",
+      "text": "Arrest, search and seizure\n\n32Every conservation officer in carrying out his or duties under this Act and the regulations is a person employed for the preservation and maintenance of the public peace and has and may exercise all the powers, authorities and immunities of a peace officer as defined in the Criminal Code, (Canada).\n2013, c.39, s.19",
+      "subsections": [],
+      "contentHash": "3eb07a1e276ab2340036ffec533429f571b1b8336ca86e42b4e1ce9d64bac207"
+    },
+    {
+      "id": "section-33",
+      "sourceKey": "section:33",
+      "componentType": "section",
+      "label": "33",
+      "heading": "Additional powers of search",
+      "text": "Additional powers of search\n\n33A conservation officer has, in addition to the powers of search given under the Provincial Offences Procedure Act, the power to search without warrant any Crown Lands in or on which he or she has reasonable and probable grounds to believe there is anything that may provide evidence of the commission of an offence under this Act or the regulations.\n2013, c.39, s.19",
+      "subsections": [],
+      "contentHash": "6018a5c3428245386fdc35330c3b1ddd2fe0eecdee2bd030427e35c949748f4c"
+    },
+    {
+      "id": "section-34",
+      "sourceKey": "section:34",
+      "componentType": "section",
+      "label": "34",
+      "heading": "Repossession and forfeiture of things seized",
+      "text": "Repossession and forfeiture of things seized\n\n34(1)Where a conservation officer in the course of conducting a lawful search in respect of an offence under this Act or the regulations seizes a quarriable substance or other property belonging to the Crown or any equipment or vehicle that will afford evidence of the commission of the offence, he or she shall\n\n(a)\nwithout delay, report the particulars of the seizure to the Minister, and\n\n(b)\nwhere he or she has knowledge of the person who was in actual or apparent possession of the quarriable substance or other property at the time of the seizure, give notice to that person of the seizure, either by personal service or by registered mail.\n\n34(2)Where any equipment or vehicle referred to in subsection (1) has been seized, any person with a property interest therein may re-acquire possession of it upon deposit with the Minister, or at the Minister’s direction, of a bond or other security satisfactory to the Minister pending the outcome of any prosecution that may be instituted under this section and that is related to the use of the equipment or vehicle.\n\n34(3)Where a person is convicted of an offence, any equipment or vehicle seized under subsection (1) may be the subject of an order of forfeiture to the Crown made by the Minister, to the extent any interest in the property is held by the person convicted; and upon notice to any other person having an interest in the property seized, the Minister may declare such interest to be forfeited to the Crown if the Minister is satisfied on reasonable grounds that the person had knowledge of the use to which the property was being put.\n\n34(4)Where equipment or a vehicle seized under subsection (1) has been released by the Minister upon deposit of a bond or other security, the Minister may, in lieu of an order referred to in subsection (3), order the bond or other security, in whole or in part, to be forfeited to the Crown.\n\n34(5)Where\n\n(a)\na prosecution has not been instituted within six months of the events giving rise to the seizure of equipment or a vehicle under subsection (1), or\n\n(b)\na charge has been dismissed, notice of appeal has not been given and the time for such notice has expired,\n\nthe Minister shall release any equipment or vehicle seized under subsection (1) in the Minister’s possession to the owner and return any bond or other security deposited with the Minister or at the Minister’s direction to the person who deposited it.\n\n34(6)In a prosecution with respect to an offence under this section, where it is established by the Crown that the land on which the accused was on, or upon which an act was proved to have been done by the accused is shown on the records and plans on file in the office of the Minister as Crown Lands, the accused shall, in the absence of evidence to the contrary, be deemed to have been on, or to have done the act proved to have been done by the Minister upon, Crown Lands.\n\n2004, c.14, s.10; 2012, c.52, s.45; 2013, c.39, s.19; 2016, c.37, s.164\n\nOFFENCES AND PENALTIES",
+      "subsections": [
+        {
+          "id": "34-subsection-1",
+          "sourceKey": "section:34/subsection:1",
+          "label": "34(1)",
+          "text": "34(1)Where a conservation officer in the course of conducting a lawful search in respect of an offence under this Act or the regulations seizes a quarriable substance or other property belonging to the Crown or any equipment or vehicle that will afford evidence of the commission of the offence, he or she shall\n\n(a)\nwithout delay, report the particulars of the seizure to the Minister, and\n\n(b)\nwhere he or she has knowledge of the person who was in actual or apparent possession of the quarriable substance or other property at the time of the seizure, give notice to that person of the seizure, either by personal service or by registered mail.",
+          "contentHash": "789a664dce3044c9822a89cfb8fa54c82feab4ad97a4ffade248e905a111f7f3"
+        },
+        {
+          "id": "34-subsection-2",
+          "sourceKey": "section:34/subsection:2",
+          "label": "34(2)",
+          "text": "34(2)Where any equipment or vehicle referred to in subsection (1) has been seized, any person with a property interest therein may re-acquire possession of it upon deposit with the Minister, or at the Minister’s direction, of a bond or other security satisfactory to the Minister pending the outcome of any prosecution that may be instituted under this section and that is related to the use of the equipment or vehicle.",
+          "contentHash": "02004e86131327e0c020a35d60c31c5808163b01b3fa43362aaa5e162c55a61f"
+        },
+        {
+          "id": "34-subsection-3",
+          "sourceKey": "section:34/subsection:3",
+          "label": "34(3)",
+          "text": "34(3)Where a person is convicted of an offence, any equipment or vehicle seized under subsection (1) may be the subject of an order of forfeiture to the Crown made by the Minister, to the extent any interest in the property is held by the person convicted; and upon notice to any other person having an interest in the property seized, the Minister may declare such interest to be forfeited to the Crown if the Minister is satisfied on reasonable grounds that the person had knowledge of the use to which the property was being put.",
+          "contentHash": "54e0cab5cd9db7f9f959befd779a0704eb915e78a72bded40cf2bf7dae92b47a"
+        },
+        {
+          "id": "34-subsection-4",
+          "sourceKey": "section:34/subsection:4",
+          "label": "34(4)",
+          "text": "34(4)Where equipment or a vehicle seized under subsection (1) has been released by the Minister upon deposit of a bond or other security, the Minister may, in lieu of an order referred to in subsection (3), order the bond or other security, in whole or in part, to be forfeited to the Crown.",
+          "contentHash": "32b1f0529aadc5ac1671888fc4b9c6b834b931dec8ac88d7f611a005d4d2b0aa"
+        },
+        {
+          "id": "34-subsection-5",
+          "sourceKey": "section:34/subsection:5",
+          "label": "34(5)",
+          "text": "34(5)Where\n\n(a)\na prosecution has not been instituted within six months of the events giving rise to the seizure of equipment or a vehicle under subsection (1), or\n\n(b)\na charge has been dismissed, notice of appeal has not been given and the time for such notice has expired,\n\nthe Minister shall release any equipment or vehicle seized under subsection (1) in the Minister’s possession to the owner and return any bond or other security deposited with the Minister or at the Minister’s direction to the person who deposited it.",
+          "contentHash": "f27b4741a5d03962da06e93e2f057603eca2da86d4e20e0f84f794b43179e8b3"
+        },
+        {
+          "id": "34-subsection-6",
+          "sourceKey": "section:34/subsection:6",
+          "label": "34(6)",
+          "text": "34(6)In a prosecution with respect to an offence under this section, where it is established by the Crown that the land on which the accused was on, or upon which an act was proved to have been done by the accused is shown on the records and plans on file in the office of the Minister as Crown Lands, the accused shall, in the absence of evidence to the contrary, be deemed to have been on, or to have done the act proved to have been done by the Minister upon, Crown Lands.\n\n2004, c.14, s.10; 2012, c.52, s.45; 2013, c.39, s.19; 2016, c.37, s.164\n\nOFFENCES AND PENALTIES",
+          "contentHash": "af7951fa5dcc5de502f28bf9075f12aa61d1d6e0327b66ea1213e4287d7790d7"
+        }
+      ],
+      "contentHash": "b23fbe39fbf07e28092db0ba5443b3ba99f8a05d67adec9c4ed0bf98b1bc4646"
+    },
+    {
+      "id": "section-35",
+      "sourceKey": "section:35",
+      "componentType": "section",
+      "label": "35",
+      "heading": "Offence to take or remove quarriable substance",
+      "text": "Offence to take or remove quarriable substance\n\n35No person shall take or remove or cause to be taken or removed more than one-half cubic metre of a quarriable substance from Crown Lands except in accordance with this Act.",
+      "subsections": [],
+      "contentHash": "78e313dd0a89ed691fa788bb6a3fd7d2ec397e52bf0abd349a9a13a8ca6a726c"
+    },
+    {
+      "id": "section-36",
+      "sourceKey": "section:36",
+      "componentType": "section",
+      "label": "36",
+      "heading": "Offence to carry on production without a permit",
+      "text": "Offence to carry on production without a permit\n\n36No person shall carry on production or cause production to be carried on for any quarriable substance on Crown Lands unless the person is the holder of a quarry permit, quarry lease, peat lease or written authorization.",
+      "subsections": [],
+      "contentHash": "bea9823da8fede76e9365f34c695a78009aefbb7008760bac77651908df910b6"
+    },
+    {
+      "id": "section-37",
+      "sourceKey": "section:37",
+      "componentType": "section",
+      "label": "37",
+      "heading": "Violation of offences set out in Schedule A",
+      "text": "Violation of offences set out in Schedule A\n\n37(1)A person who violates or fails to comply with any provision of the regulations commits an offence.\n\n37(2)A person who violates or fails to comply with a provision of this Act that is listed in Column I of Schedule A commits an offence.\n\n37(3)For the purposes of Part II of the Provincial Offences Procedure Act, each offence listed in Column I of Schedule A is punishable as an offence of the category listed beside it in Column II of Schedule A.\n\n37(4)Where an offence under this Act continues for more than one day,\n\n(a)\nthe minimum fine that may be imposed is the minimum fine set by the Provincial Offences Procedure Act multiplied by the number of days during which the offence continues, and\n\n(b)\nthe maximum fine that may be imposed is the maximum fine set by the Provincial Offences Procedure Act multiplied by the number of days during which the offence continues.\n\nADMINISTRATION",
+      "subsections": [
+        {
+          "id": "37-subsection-1",
+          "sourceKey": "section:37/subsection:1",
+          "label": "37(1)",
+          "text": "37(1)A person who violates or fails to comply with any provision of the regulations commits an offence.",
+          "contentHash": "a76cb83aa7db260060a477392bb58019b24eb50ff82106ab062ddb9e7e21e4dc"
+        },
+        {
+          "id": "37-subsection-2",
+          "sourceKey": "section:37/subsection:2",
+          "label": "37(2)",
+          "text": "37(2)A person who violates or fails to comply with a provision of this Act that is listed in Column I of Schedule A commits an offence.",
+          "contentHash": "a7069538055571397532c64b33925688ffa7130ddeb98bcb6bd84a8165940c48"
+        },
+        {
+          "id": "37-subsection-3",
+          "sourceKey": "section:37/subsection:3",
+          "label": "37(3)",
+          "text": "37(3)For the purposes of Part II of the Provincial Offences Procedure Act, each offence listed in Column I of Schedule A is punishable as an offence of the category listed beside it in Column II of Schedule A.",
+          "contentHash": "8b14c2f1d05a3e0f80818a2d14c3dc100485bc040eabdc51a40570c276f7b07c"
+        },
+        {
+          "id": "37-subsection-4",
+          "sourceKey": "section:37/subsection:4",
+          "label": "37(4)",
+          "text": "37(4)Where an offence under this Act continues for more than one day,\n\n(a)\nthe minimum fine that may be imposed is the minimum fine set by the Provincial Offences Procedure Act multiplied by the number of days during which the offence continues, and\n\n(b)\nthe maximum fine that may be imposed is the maximum fine set by the Provincial Offences Procedure Act multiplied by the number of days during which the offence continues.\n\nADMINISTRATION",
+          "contentHash": "d73ca7bbef660282e7275f6984601d60ac15e57657f7560f1a56edea6bddcf5c"
+        }
+      ],
+      "contentHash": "dfddb68824245ffe543119895456c0198a6fceb5f2dc5140f58f47df93e9ad7f"
+    },
+    {
+      "id": "section-38",
+      "sourceKey": "section:38",
+      "componentType": "section",
+      "label": "38",
+      "heading": "Administration",
+      "text": "Administration\n\n38The Minister shall administer this Act and may designate persons to act on the Minister’s behalf.\n\nREGULATIONS",
+      "subsections": [],
+      "contentHash": "f878c279c19301483975338631cf35cfd8a3da06020be81d1b703b9d99a387a9"
+    },
+    {
+      "id": "section-39",
+      "sourceKey": "section:39",
+      "componentType": "section",
+      "label": "39",
+      "heading": "Regulations",
+      "text": "Regulations\n\n39(1)The Lieutenant-Governor in Council may make regulations\n\n(a)\nrespecting applications for quarry permits, quarry leases, peat exploration licences and peat leases;\n\n(a.01)\nrespecting the granting of a peat exploration licence;\n\n(a.02)\nrespecting calls for tenders referred to in section 8;\n\n(a.03)\nprescribing the area of Crown Lands referred to in section 8;\n\n(a.1)\nrespecting terms and conditions of quarry leases, peat exploration licences and peat leases;\n\n(a.2)\nrespecting the information required by the Minister when granting quarry leases, peat exploration licences or peat leases;\n\n(a.3)\nRepealed: 2004, c.14, s.11\n\n(a.4)\nrespecting the information required by the Minister under subsection 28(3);\n\n(a.5)\nrespecting annual work expenditures;\n\n(b)\nrespecting terms and conditions under which quarriable substances may be taken or removed from Crown Lands or lands designated under section 4;\n\n(c)\nrespecting the surveying of an area to be made subject to a quarry lease or a peat lease;\n\n(d)\nrespecting the security to be given under this Act and the procedures for the deposit, substitution, renewal and return of the security;\n\n(d.1)\nprescribing the factors that are to be taken into consideration by the Minister when requiring an amount of security referred to in section 9;\n\n(e)\nconcerning the manner in which a quarrying operation is carried on;\n\n(f)\nprescribing the amount of quarriable substance that can be taken or removed from Crown Lands under a written authorization;\n\n(g)\nrespecting maintenance of boundary lines;\n\n(h)\nrespecting conditions for opening, closing, reopening and abandoning operations;\n\n(i)\nrespecting things and work to be done with respect to the reclamation of Crown Lands before quarrying commences, during quarrying and after quarrying is discontinued;\n\n(j)\nrespecting returns, reports, plans, maps and statements to be submitted by the holder of a quarry permit, quarry lease or peat lease in relation to work, operations, production and expenditures;\n\n(k)\nrespecting the renewal of a quarry lease and a peat lease;\n\n(l)\nrespecting royalties and rents payable under this Act;\n\n(m)\nrespecting feasibility study reports;\n\n(n)\ngenerally respecting fees payable under this Act and the regulations and prescribing those fees required to be prescribed;\n\n(o)\ngenerally respecting forms to be used for the purposes of this Act and the regulations and prescribing those forms required to be prescribed;\n\n(p)\nexempting the Department of Natural Resources of the Government of the Province and any person acting on its behalf from this Act;\n\n(q)\nprescribing interest rates for any amount unpaid and due under this Act;\n\n(r)\nrespecting the designation of shore areas;\n\n(s)\nfor the better administration of this Act.\n\n39(2)The Lieutenant-Governor in Council may declare that a regulation or any provision of a regulation made under subsection (1) is not applicable with respect to a specified quarry permit, peat lease or quarry lease for any period or periods of time.\n\n39(3)Regulations made under paragraph (1)(l) may be retroactive in their operation to July 1, 2002, or any date after July 1, 2002.\n\n1992, c.62, s.4; 2004, c.14, s.11; 2004, c.20, s.56; 2016, c.37, s.164; 2019, c.29, s.207; 2025, c.24, s.29\n\nREPEAL, TRANSITIONAL AND\nCOMMENCEMENT",
+      "subsections": [
+        {
+          "id": "39-subsection-1",
+          "sourceKey": "section:39/subsection:1",
+          "label": "39(1)",
+          "text": "39(1)The Lieutenant-Governor in Council may make regulations\n\n(a)\nrespecting applications for quarry permits, quarry leases, peat exploration licences and peat leases;\n\n(a.01)\nrespecting the granting of a peat exploration licence;\n\n(a.02)\nrespecting calls for tenders referred to in section 8;\n\n(a.03)\nprescribing the area of Crown Lands referred to in section 8;\n\n(a.1)\nrespecting terms and conditions of quarry leases, peat exploration licences and peat leases;\n\n(a.2)\nrespecting the information required by the Minister when granting quarry leases, peat exploration licences or peat leases;\n\n(a.3)\nRepealed: 2004, c.14, s.11\n\n(a.4)\nrespecting the information required by the Minister under subsection 28(3);\n\n(a.5)\nrespecting annual work expenditures;\n\n(b)\nrespecting terms and conditions under which quarriable substances may be taken or removed from Crown Lands or lands designated under section 4;\n\n(c)\nrespecting the surveying of an area to be made subject to a quarry lease or a peat lease;\n\n(d)\nrespecting the security to be given under this Act and the procedures for the deposit, substitution, renewal and return of the security;\n\n(d.1)\nprescribing the factors that are to be taken into consideration by the Minister when requiring an amount of security referred to in section 9;\n\n(e)\nconcerning the manner in which a quarrying operation is carried on;\n\n(f)\nprescribing the amount of quarriable substance that can be taken or removed from Crown Lands under a written authorization;\n\n(g)\nrespecting maintenance of boundary lines;\n\n(h)\nrespecting conditions for opening, closing, reopening and abandoning operations;\n\n(i)\nrespecting things and work to be done with respect to the reclamation of Crown Lands before quarrying commences, during quarrying and after quarrying is discontinued;\n\n(j)\nrespecting returns, reports, plans, maps and statements to be submitted by the holder of a quarry permit, quarry lease or peat lease in relation to work, operations, production and expenditures;\n\n(k)\nrespecting the renewal of a quarry lease and a peat lease;\n\n(l)\nrespecting royalties and rents payable under this Act;\n\n(m)\nrespecting feasibility study reports;\n\n(n)\ngenerally respecting fees payable under this Act and the regulations and prescribing those fees required to be prescribed;\n\n(o)\ngenerally respecting forms to be used for the purposes of this Act and the regulations and prescribing those forms required to be prescribed;\n\n(p)\nexempting the Department of Natural Resources of the Government of the Province and any person acting on its behalf from this Act;\n\n(q)\nprescribing interest rates for any amount unpaid and due under this Act;\n\n(r)\nrespecting the designation of shore areas;\n\n(s)\nfor the better administration of this Act.",
+          "contentHash": "ac48c9cdb65d2f7171b952f5d63fa82341d2bb6ceaf437a88ab2105fe2425796"
+        },
+        {
+          "id": "39-subsection-2",
+          "sourceKey": "section:39/subsection:2",
+          "label": "39(2)",
+          "text": "39(2)The Lieutenant-Governor in Council may declare that a regulation or any provision of a regulation made under subsection (1) is not applicable with respect to a specified quarry permit, peat lease or quarry lease for any period or periods of time.",
+          "contentHash": "d7630ed930251b4532d4adb2ca31307deba41b3c051c2a6385e31444be4b1a07"
+        },
+        {
+          "id": "39-subsection-3",
+          "sourceKey": "section:39/subsection:3",
+          "label": "39(3)",
+          "text": "39(3)Regulations made under paragraph (1)(l) may be retroactive in their operation to July 1, 2002, or any date after July 1, 2002.\n\n1992, c.62, s.4; 2004, c.14, s.11; 2004, c.20, s.56; 2016, c.37, s.164; 2019, c.29, s.207; 2025, c.24, s.29\n\nREPEAL, TRANSITIONAL AND\nCOMMENCEMENT",
+          "contentHash": "3a981cd63e4b4250a818a0839a18048e2734b72f566310a462e3580ffeaee35c"
+        }
+      ],
+      "contentHash": "c9488097e4ac0563afacf27dbc45bab7b42fe232444768620a497dd4d88488d5"
+    },
+    {
+      "id": "section-40",
+      "sourceKey": "section:40",
+      "componentType": "section",
+      "label": "40",
+      "heading": "Repeal",
+      "text": "Repeal\n\n40The Quarriable Substances Act, chapter Q-1 of the Revised Statutes, 1973, is repealed.",
+      "subsections": [],
+      "contentHash": "2adf5ff31ac16e59e1ba75f869267785e1b623b5aec1827dccd80cbccce09b69"
+    },
+    {
+      "id": "section-41",
+      "sourceKey": "section:41",
+      "componentType": "section",
+      "label": "41",
+      "heading": "Transitional",
+      "text": "Transitional\n\n41(1)In this section\n\n“previous Act” means the Quarriable Substances Act, chapter Q-1 of the Revised Statutes, 1973, and the regulations made under that Act.(ancienne loi)\n\n41(2)Notwithstanding section 40, a quarry permit and an exploration licence issued under the previous Act that is in effect immediately before the commencement of this Act shall continue in full force and effect until their termination in accordance with the terms and conditions under which they were issued.\n\n41(3)A quarry lease granted under the previous Act that authorized the taking or removal of a quarriable substance except peat and that is in effect immediately before the commencement of this Act shall be deemed to be a quarry lease issued under this Act and all the provisions of this Act and the regulations with respect to quarry leases and holders of quarry leases apply to the quarry lease and the holder of the quarry lease.\n\n41(4)A quarry lease granted under the previous Act that authorized the taking or removal of peat and that is in effect immediately before the commencement of this Act shall be deemed to be a peat lease issued under this Act and all the provisions of this Act and the regulations with respect to peat leases and holders of peat leases apply to the peat lease and the holder of the peat lease.\n\n41(5)A lease deemed to be a quarry lease or a peat lease under subsection (3) or (4) shall, in respect of the term during which it is to be in force, continue in force until its termination date as set out in the lease except that if the termination date is set to occur ten years after the commencement of this Act, the quarry lease or peat lease shall terminate ten years after the commencement of this Act.",
+      "subsections": [
+        {
+          "id": "41-subsection-1",
+          "sourceKey": "section:41/subsection:1",
+          "label": "41(1)",
+          "text": "41(1)In this section\n\n“previous Act” means the Quarriable Substances Act, chapter Q-1 of the Revised Statutes, 1973, and the regulations made under that Act.(ancienne loi)",
+          "contentHash": "834037b4d46006403c86a4d06d4f941162a3591ad244acbcb54eb3df548951f7"
+        },
+        {
+          "id": "41-subsection-2",
+          "sourceKey": "section:41/subsection:2",
+          "label": "41(2)",
+          "text": "41(2)Notwithstanding section 40, a quarry permit and an exploration licence issued under the previous Act that is in effect immediately before the commencement of this Act shall continue in full force and effect until their termination in accordance with the terms and conditions under which they were issued.",
+          "contentHash": "611544ce958512bbc21b5a2f488e87bf71b1e18c05d86077963b9881283a3f36"
+        },
+        {
+          "id": "41-subsection-3",
+          "sourceKey": "section:41/subsection:3",
+          "label": "41(3)",
+          "text": "41(3)A quarry lease granted under the previous Act that authorized the taking or removal of a quarriable substance except peat and that is in effect immediately before the commencement of this Act shall be deemed to be a quarry lease issued under this Act and all the provisions of this Act and the regulations with respect to quarry leases and holders of quarry leases apply to the quarry lease and the holder of the quarry lease.",
+          "contentHash": "9af9fbb9403e5b70fd4c4e8012d664fc3c1ea22e354f68055e0de57044384ddc"
+        },
+        {
+          "id": "41-subsection-4",
+          "sourceKey": "section:41/subsection:4",
+          "label": "41(4)",
+          "text": "41(4)A quarry lease granted under the previous Act that authorized the taking or removal of peat and that is in effect immediately before the commencement of this Act shall be deemed to be a peat lease issued under this Act and all the provisions of this Act and the regulations with respect to peat leases and holders of peat leases apply to the peat lease and the holder of the peat lease.",
+          "contentHash": "ee9bd026d2c5e0585f91e49707ad533ba3c941b3b1db25c742a289b86f05daa6"
+        },
+        {
+          "id": "41-subsection-5",
+          "sourceKey": "section:41/subsection:5",
+          "label": "41(5)",
+          "text": "41(5)A lease deemed to be a quarry lease or a peat lease under subsection (3) or (4) shall, in respect of the term during which it is to be in force, continue in force until its termination date as set out in the lease except that if the termination date is set to occur ten years after the commencement of this Act, the quarry lease or peat lease shall terminate ten years after the commencement of this Act.",
+          "contentHash": "3ad0c42c00240b6b2e77efabac5ec991b59bfcd0329b979abe468d839182ea75"
+        }
+      ],
+      "contentHash": "ba38c6c6c48969c71c2b3b3adb236aa9a3441a3c7f6dbbb54e00f138732dc080"
+    },
+    {
+      "id": "section-41.1",
+      "sourceKey": "section:41.1",
+      "componentType": "section",
+      "label": "41.1",
+      "text": "41.1Notwithstanding the repeal of section 11, subsection 11(3) as it existed immediately before its repeal continues to apply to an agreement made under that section.\n2004, c.14, s.12\n\nCONSEQUENTIAL",
+      "subsections": [],
+      "contentHash": "771c90e8a2c387468a0127121323e3dc853314f46fd89291e36966a8dd4c215e"
+    },
+    {
+      "id": "section-42",
+      "sourceKey": "section:42",
+      "componentType": "section",
+      "label": "42",
+      "heading": "Consequential",
+      "text": "Consequential\n\n42Paragraph 137(c) of the Provincial Offences Procedure Act, chapter P-22.1 of the Acts of New Brunswick, 1987, is amended\n\n(a)\nby striking out “and” at the end of subparagraph (i);\n\n(b)\nby adding after subparagraph (ii) the following:\n\n(iii)\nsection 33 of the Quarriable Substances Act,",
+      "subsections": [],
+      "contentHash": "294c24901706a3580e1f2bf9b81c3a2f833df49e421bbf06923acdb6ef534e3c"
+    },
+    {
+      "id": "section-43",
+      "sourceKey": "section:43",
+      "componentType": "section",
+      "label": "43",
+      "heading": "Commencement",
+      "text": "Commencement\n\n43This Act or any provision of it comes into force on a day or days to be fixed by proclamation.",
+      "subsections": [],
+      "contentHash": "1c4011581785bc32f8b0caaf113a9aba68fb775dd915b1a8a937ff2f137a7f66"
+    },
+    {
+      "id": "schedule-schedule-a",
+      "sourceKey": "schedule:schedule-a",
+      "componentType": "schedule",
+      "label": "SCHEDULE A",
+      "text": "SCHEDULE A\n\n| Column I\nSection\n| Column II\nCategory of Offence\n\n| | | | |\n| | 4(2)..............\n| F\n\n| | 16(2)..............\n| C\n\n| | 16(5)..............\n| C\n\n| | 17(a)..............\n| F\n\n| | 17(b) ..............\n| C\n\n| | 28(1)(a) ..............\n| C\n\n| | 28(1)(b)..............\n| C\n\n| | 28(1)(c)..............\n| C\n\n| | 28(2)..............\n| C\n\n| | 28(3)..............\n| C\n\n| | 28(4)..............\n| C\n\n| | 31..............\n| C\n\n| | 35..............\n| E\n\n| | 36..............\n| C\n\n| | 37(1)..............\n| B\n\nN.B. This Act was proclaimed and came into force April 1, 1993.\n\nN.B. This Act is consolidated to June 6, 2025.",
+      "contentHash": "34031fc68e940cf56a77740cd407604100dd4d66f2af39099da88d440dfcfb9a"
+    }
+  ],
+  "sections": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
+      "label": "1",
+      "heading": "Definitions, application of other Acts",
+      "text": "Definitions, application of other Acts\n\n1(1)In this Act\n\n“conservation officer” means a conservation officer appointed under subsection 5.1(1) of the Crown Lands and Forests Act;(agent de conservation)\n\n“Crown” means the Crown in right of the Province;(Couronne)\n\n“Crown Lands” means all or any part of the lands vested in the Crown that are under the administration and control of the Minister and includes any water upon or under the surface of such lands;(terres de la Couronne)\n\n“forest service officer” Repealed: 2013, c.39, s.19\n\n“lease area” means the Crown Lands covered by a quarry lease or a peat lease;(superficie assujettie au bail)\n\n“lessee” means a holder of a quarry lease or a peat lease granted under this Act;(concessionnaire)\n\n“Minister” means the Minister of Natural Resources and includes any person designated by the Minister to act on the Minister’s behalf;(Ministre)\n\n“peat” means an organic matter of geologic origin, excluding lignite or other coal, that has a minimum organic content of seventy-five per cent on a dry weight basis;(tourbe)\n\n“peat exploration licence” means an exploration licence granted under section 8 of this Act;(license d’exploration de tourbière)\n\n“peat lease” means a lease granted under section 9 of this Act;(bail d’exploitation de tourbière)\n\n“pre-existing quarry site” means a site located on Crown Lands in respect of which a quarry permit or a quarry lease has been issued;(site de carrière pré-existante)\n\n“quarriable substance” means ordinary stone, building or construction stone, sand, gravel, peat, clay and soil;(substance de carrière)\n\n“quarry” means a pit or excavation in the ground created by the removal or taking of a quarriable substance from it and includes the works, machinery, plant, buildings and premises located below and above ground used in connection with the quarry;(carrière)\n\n“quarry lease” means a lease granted under section 7 of this Act;(bail d’exploitation de carrière)\n\n“quarry permit” means a permit issued under section 5 of this Act;(permis d’exploitation de carrière)\n\n“shore” means the lands lying between the ordinary high water mark and the ordinary low water mark of a pond, lake, river or body of water;(rive)\n\n“shore area” means that portion of land lying within three hundred metres above and three hundred metres below the ordinary high water mark of any pond, lake, river or body of water and includes any bed, bank, beach, shore, dune, bar, flat or mud flat lying in that portion of land;(zone riveraine)\n\n“written authorization” means a written authorization issued by the Minister under section 10.(autorisation écrite)\n\n1(2)Nothing in this Act or the regulations exempts a person acting under this Act or the regulations from the application of the Clean Environment Act, the Clean Water Act, the Crown Lands and Forests Act, the Forest Fires Act, the Fire Prevention Act or the Mining Act.\n\n1992, c.62, s.1; 2004, c.14, s.1; 2004, c.20, s.56; 2012, c.52, s.45; 2013, c.39, s.19; 2016, c.37, s.164; 2019, c.29, s.207; 2023, c.17, s.225; 2024, c.28, s.53\n\nAPPLICATION",
+      "subsections": [
+        {
+          "id": "1-subsection-1",
+          "sourceKey": "section:1/subsection:1",
+          "label": "1(1)",
+          "text": "1(1)In this Act\n\n“conservation officer” means a conservation officer appointed under subsection 5.1(1) of the Crown Lands and Forests Act;(agent de conservation)\n\n“Crown” means the Crown in right of the Province;(Couronne)\n\n“Crown Lands” means all or any part of the lands vested in the Crown that are under the administration and control of the Minister and includes any water upon or under the surface of such lands;(terres de la Couronne)\n\n“forest service officer” Repealed: 2013, c.39, s.19\n\n“lease area” means the Crown Lands covered by a quarry lease or a peat lease;(superficie assujettie au bail)\n\n“lessee” means a holder of a quarry lease or a peat lease granted under this Act;(concessionnaire)\n\n“Minister” means the Minister of Natural Resources and includes any person designated by the Minister to act on the Minister’s behalf;(Ministre)\n\n“peat” means an organic matter of geologic origin, excluding lignite or other coal, that has a minimum organic content of seventy-five per cent on a dry weight basis;(tourbe)\n\n“peat exploration licence” means an exploration licence granted under section 8 of this Act;(license d’exploration de tourbière)\n\n“peat lease” means a lease granted under section 9 of this Act;(bail d’exploitation de tourbière)\n\n“pre-existing quarry site” means a site located on Crown Lands in respect of which a quarry permit or a quarry lease has been issued;(site de carrière pré-existante)\n\n“quarriable substance” means ordinary stone, building or construction stone, sand, gravel, peat, clay and soil;(substance de carrière)\n\n“quarry” means a pit or excavation in the ground created by the removal or taking of a quarriable substance from it and includes the works, machinery, plant, buildings and premises located below and above ground used in connection with the quarry;(carrière)\n\n“quarry lease” means a lease granted under section 7 of this Act;(bail d’exploitation de carrière)\n\n“quarry permit” means a permit issued under section 5 of this Act;(permis d’exploitation de carrière)\n\n“shore” means the lands lying between the ordinary high water mark and the ordinary low water mark of a pond, lake, river or body of water;(rive)\n\n“shore area” means that portion of land lying within three hundred metres above and three hundred metres below the ordinary high water mark of any pond, lake, river or body of water and includes any bed, bank, beach, shore, dune, bar, flat or mud flat lying in that portion of land;(zone riveraine)\n\n“written authorization” means a written authorization issued by the Minister under section 10.(autorisation écrite)",
+          "contentHash": "6fd56bb4db347b4a3da4da4e623697420482979ca8e6a1959e4098ca8543f9a4"
+        },
+        {
+          "id": "1-subsection-2",
+          "sourceKey": "section:1/subsection:2",
+          "label": "1(2)",
+          "text": "1(2)Nothing in this Act or the regulations exempts a person acting under this Act or the regulations from the application of the Clean Environment Act, the Clean Water Act, the Crown Lands and Forests Act, the Forest Fires Act, the Fire Prevention Act or the Mining Act.\n\n1992, c.62, s.1; 2004, c.14, s.1; 2004, c.20, s.56; 2012, c.52, s.45; 2013, c.39, s.19; 2016, c.37, s.164; 2019, c.29, s.207; 2023, c.17, s.225; 2024, c.28, s.53\n\nAPPLICATION",
+          "contentHash": "58d2f50ba1497c054223db71868c8edd5d315d2a9d0a2d5725b62e84ba7e5cd6"
+        }
+      ],
+      "contentHash": "4244c79b39ce78cdbd8d0f5cc19bea086b26d6ba77582396e7d3dc0991b4e61b"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "label": "2",
+      "heading": "Application",
+      "text": "Application\n\n2(1)This Act applies to all Crown Lands and any shore area designated under section 4.\n\n2(2)The Crown is bound by this Act.\n\nOWNERSHIP",
+      "subsections": [
+        {
+          "id": "2-subsection-1",
+          "sourceKey": "section:2/subsection:1",
+          "label": "2(1)",
+          "text": "2(1)This Act applies to all Crown Lands and any shore area designated under section 4.",
+          "contentHash": "4e145b0c5db2c15d48f8c27b55c6af63cbc698fa4e3f20ca0f2624ed31e85ba0"
+        },
+        {
+          "id": "2-subsection-2",
+          "sourceKey": "section:2/subsection:2",
+          "label": "2(2)",
+          "text": "2(2)The Crown is bound by this Act.\n\nOWNERSHIP",
+          "contentHash": "e400b897e2884a2da04c7f29d3e2c660904fc87d355205364acf78aa4cdd9d86"
+        }
+      ],
+      "contentHash": "be11026bd6fc2223ce7819bea232a75d7f594c932b4d914315ba0614bfb05283"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
+      "label": "3",
+      "heading": "Ownership",
+      "text": "Ownership\n\n3(1)Quarriable substances are vested in the owner of the land in or on which they lie.\n\n3(2)Subsection (1) does not affect any rights in law or equity that have been or are granted by the person in whom the quarriable substance is vested.\n\nDESIGNATION OF SHORE AREA",
+      "subsections": [
+        {
+          "id": "3-subsection-1",
+          "sourceKey": "section:3/subsection:1",
+          "label": "3(1)",
+          "text": "3(1)Quarriable substances are vested in the owner of the land in or on which they lie.",
+          "contentHash": "4c3c32e423dfdf61fee1f5bf49e7c66d21c03715f2c9d266cd9e54f2ea723940"
+        },
+        {
+          "id": "3-subsection-2",
+          "sourceKey": "section:3/subsection:2",
+          "label": "3(2)",
+          "text": "3(2)Subsection (1) does not affect any rights in law or equity that have been or are granted by the person in whom the quarriable substance is vested.\n\nDESIGNATION OF SHORE AREA",
+          "contentHash": "8fcb27192b8ed14348eb290933f1c789cb036607ffd41d737dcc50999535de25"
+        }
+      ],
+      "contentHash": "772d18c592c3c2f52c9a7632af43e2f0b8a16e53ee65ea621eaa17a09d3b1a0c"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
+      "label": "4",
+      "heading": "Designation of shore area",
+      "text": "Designation of shore area\n\n4(1)The Lieutenant-Governor in Council may, by regulation, designate a shore area lying outside Crown Lands to be subject to this Act.\n\n4(2)No person shall remove or take a quarriable substance from a shore area designated under subsection (1) unless the person has been issued a quarry permit.\n\nQUARRY PERMIT",
+      "subsections": [
+        {
+          "id": "4-subsection-1",
+          "sourceKey": "section:4/subsection:1",
+          "label": "4(1)",
+          "text": "4(1)The Lieutenant-Governor in Council may, by regulation, designate a shore area lying outside Crown Lands to be subject to this Act.",
+          "contentHash": "b9ac8596d49f37ed8ef0144ffbdde704fc0862eaf86d7dfab85f6cd73684c7ad"
+        },
+        {
+          "id": "4-subsection-2",
+          "sourceKey": "section:4/subsection:2",
+          "label": "4(2)",
+          "text": "4(2)No person shall remove or take a quarriable substance from a shore area designated under subsection (1) unless the person has been issued a quarry permit.\n\nQUARRY PERMIT",
+          "contentHash": "4aa6e5c055e6b8a3d38b8dc65142f701184745b83ff738f9554523094687e9c3"
+        }
+      ],
+      "contentHash": "34aa0d377ca906d8020661285177e23d6c338a34c4ee0fa04922ca82b100a973"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "componentType": "section",
+      "label": "5",
+      "heading": "Quarry Permit",
+      "text": "Quarry Permit\n\n5(1)Where a person applies in accordance with the regulations for a quarry permit, the Minister may issue a quarry permit authorizing that person to take or remove a quarriable substance from Crown Lands.\n\n5(2)Where a person applies in accordance with the regulations for a quarry permit in relation to a shore area designated under section 4, the Minister may issue a quarry permit authorizing that person to take or remove a quarriable substance from within the designated area.\n\n5(3)A quarry permit issued under subsection (1) or (2) is, in addition to the terms and conditions prescribed by regulation, subject to the terms and conditions prescribed by the Minister.",
+      "subsections": [
+        {
+          "id": "5-subsection-1",
+          "sourceKey": "section:5/subsection:1",
+          "label": "5(1)",
+          "text": "5(1)Where a person applies in accordance with the regulations for a quarry permit, the Minister may issue a quarry permit authorizing that person to take or remove a quarriable substance from Crown Lands.",
+          "contentHash": "9cd6ad60f8fc0a746966f2bcf4008592b65bf1ec0a4bb1ba3c9eee7bfabae667"
+        },
+        {
+          "id": "5-subsection-2",
+          "sourceKey": "section:5/subsection:2",
+          "label": "5(2)",
+          "text": "5(2)Where a person applies in accordance with the regulations for a quarry permit in relation to a shore area designated under section 4, the Minister may issue a quarry permit authorizing that person to take or remove a quarriable substance from within the designated area.",
+          "contentHash": "fc2f2a38e678adbd9cebd7985c9192b51602e25aebb9a4e5a1be247733e9a188"
+        },
+        {
+          "id": "5-subsection-3",
+          "sourceKey": "section:5/subsection:3",
+          "label": "5(3)",
+          "text": "5(3)A quarry permit issued under subsection (1) or (2) is, in addition to the terms and conditions prescribed by regulation, subject to the terms and conditions prescribed by the Minister.",
+          "contentHash": "bc032dae1cb900bedbea0f1712df4c63372e81778980b02230466ad57835f993"
+        }
+      ],
+      "contentHash": "edf9a732e93c8d32a08dac513e1efb55fa38bcafce9f17033525a9fcaf6ed5a4"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "componentType": "section",
+      "label": "6",
+      "heading": "Expiration",
+      "text": "Expiration\n\n6A quarry permit is valid for the time specified in the permit but in no case shall it exceed the thirty-first day of December of the year for which it is issued.\n\nQUARRY LEASE",
+      "subsections": [],
+      "contentHash": "7f0ca74979ba4ef2d9ea00f835ec90ac47278b6b1a52cdbb7b4815c1160969bd"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "componentType": "section",
+      "label": "7",
+      "heading": "Quarry Lease",
+      "text": "Quarry Lease\n\n7Where a person applies in accordance with the regulations for a quarry lease, the Minister may grant a quarry lease authorizing that person to take or remove a quarriable substance, except peat, from Crown Lands if\n\n(a)\nthe applicant has provided to the Minister\n\n(i)\nsecurity, in accordance with the regulations, with respect to the reclamation of the Crown Lands during and on discontinuance of quarrying,\n\n(ii)\nthe application fee, as prescribed by regulation,\n\n(iii)\nthe rent set by regulation for the first year of the quarry lease, and\n\n(iv)\nsuch information as the Minister may require in accordance with the regulations, and\n\n(b)\nthe boundaries of the Crown Lands to be covered by the quarry lease have been surveyed in accordance with the regulations.\n\n2004, c.14, s.2\n\nPEAT EXPLORATION LICENCE",
+      "subsections": [],
+      "contentHash": "242e5ce2027d713cb9492d038d106e0769afe0c17f526d928576af62edd4002d"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "componentType": "section",
+      "label": "8",
+      "heading": "Peat Exploration licence",
+      "text": "Peat Exploration licence\n\n8(1)The Minister may grant a peat exploration licence that authorizes a person to conduct field tests necessary to determine if the quality and volume of peat in the area covered by the licence is suitable for the intended use.\n\n8(1.1)With respect to the granting of a peat exploration licence for an area that equals or exceeds the area prescribed by regulation, the Minister shall call for tenders in the manner provided by regulation.\n\n8(1.2)With respect to the granting of a peat exploration licence for an area smaller than the area referred to in subsection (1.1), the Minister may\n\n(a)\ncall for tenders in the manner provided by regulation, or\n\n(b)\naccept applications made in accordance with the regulations for such licence.\n\n8(2)The peat exploration licence granted under this section gives the holder the exclusive right to conduct field tests for peat in the area covered by the licence.\n\n8(3)A peat exploration licence is valid for two years from the date the licence was granted.\n\n8(4)Where the holder of a peat exploration licence applies in accordance with the regulations for an extension of the term of the peat exploration licence, the Minister may extend the term of that peat exploration licence if the field tests have been conducted to the satisfaction of the Minister and the required annual work expenditure has been expended in accordance with the regulations but in no case shall the term of a peat exploration licence be extended more than twice.\n\n8(5)Notwithstanding subsection (4), if the required annual work expenditure has not been expended, the holder of a peat exploration licence shall remit to the Minister\n\n(a)\nthe amount that should have been expended, or\n\n(b)\nthe difference between the amount expended and the amount that should have been expended.\n\n1992, c.62, s.2; 2004, c.14, s.3; 2019, c.15, s.1\n\nPEAT LEASE",
+      "subsections": [
+        {
+          "id": "8-subsection-1",
+          "sourceKey": "section:8/subsection:1",
+          "label": "8(1)",
+          "text": "8(1)The Minister may grant a peat exploration licence that authorizes a person to conduct field tests necessary to determine if the quality and volume of peat in the area covered by the licence is suitable for the intended use.",
+          "contentHash": "7c8bcb5832560012e4765bf839cba174c0acf71970ab5dfa4ae6cd580182b655"
+        },
+        {
+          "id": "8-subsection-1.1",
+          "sourceKey": "section:8/subsection:1.1",
+          "label": "8(1.1)",
+          "text": "8(1.1)With respect to the granting of a peat exploration licence for an area that equals or exceeds the area prescribed by regulation, the Minister shall call for tenders in the manner provided by regulation.",
+          "contentHash": "d64093d53bcccdcb28f0690c4cf74e8273b92220fa4ffa3eb517274f681d76bd"
+        },
+        {
+          "id": "8-subsection-1.2",
+          "sourceKey": "section:8/subsection:1.2",
+          "label": "8(1.2)",
+          "text": "8(1.2)With respect to the granting of a peat exploration licence for an area smaller than the area referred to in subsection (1.1), the Minister may\n\n(a)\ncall for tenders in the manner provided by regulation, or\n\n(b)\naccept applications made in accordance with the regulations for such licence.",
+          "contentHash": "57abf69f3416d122c262b343e6bf837cb66ff897196a653d260d4c18ee5eee1e"
+        },
+        {
+          "id": "8-subsection-2",
+          "sourceKey": "section:8/subsection:2",
+          "label": "8(2)",
+          "text": "8(2)The peat exploration licence granted under this section gives the holder the exclusive right to conduct field tests for peat in the area covered by the licence.",
+          "contentHash": "a3acade93b320a2dfb6e96fbe81ec56ad5e9e9622bb4e05eea1a2d582e5f597e"
+        },
+        {
+          "id": "8-subsection-3",
+          "sourceKey": "section:8/subsection:3",
+          "label": "8(3)",
+          "text": "8(3)A peat exploration licence is valid for two years from the date the licence was granted.",
+          "contentHash": "9658812bc71c9b3cbeffc2ddf6a09aa6894d8beb48081ba58c912f79a061d2da"
+        },
+        {
+          "id": "8-subsection-4",
+          "sourceKey": "section:8/subsection:4",
+          "label": "8(4)",
+          "text": "8(4)Where the holder of a peat exploration licence applies in accordance with the regulations for an extension of the term of the peat exploration licence, the Minister may extend the term of that peat exploration licence if the field tests have been conducted to the satisfaction of the Minister and the required annual work expenditure has been expended in accordance with the regulations but in no case shall the term of a peat exploration licence be extended more than twice.",
+          "contentHash": "03e62a40dc2408c8cbd87a74e7e5363a2f14f8024e01755a32ed29e3f462df06"
+        },
+        {
+          "id": "8-subsection-5",
+          "sourceKey": "section:8/subsection:5",
+          "label": "8(5)",
+          "text": "8(5)Notwithstanding subsection (4), if the required annual work expenditure has not been expended, the holder of a peat exploration licence shall remit to the Minister\n\n(a)\nthe amount that should have been expended, or\n\n(b)\nthe difference between the amount expended and the amount that should have been expended.\n\n1992, c.62, s.2; 2004, c.14, s.3; 2019, c.15, s.1\n\nPEAT LEASE",
+          "contentHash": "8abd412868718580bb2e471cf223938e0d5e6eb57a5baa82046811669b85eaea"
+        }
+      ],
+      "contentHash": "a915c0216352648f46ade44e3bad8eea7aa7be66957e9d12ab55697bf09a20bd"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "componentType": "section",
+      "label": "9",
+      "heading": "Peat lease",
+      "text": "Peat lease\n\n9(1)A holder of a peat exploration licence may apply in accordance with the regulations to the Minister and be granted a peat lease which authorizes the taking or removal of peat from Crown Lands if\n\n(a)\nthe Minister approves the applicant’s feasibility study report, which report shall include\n\n(i)\na summary of exploration work performed with results and analyses, with an up-to-date summary of total exploration expenses,\n\n(ii)\na development plan,\n\n(iii)\na drainage plan, and\n\n(iv)\na reclamation plan,\n\n(b)\nthe applicant has provided to the Minister\n\n(i)\nthe application fee, as prescribed by regulation,\n\n(ii)\nthe rent set by regulation for the first year of the peat lease, and\n\n(iii)\nsuch information as the Minister may require in accordance with the regulations and any other information the Minister considers necessary in order to evaluate an application for a peat lease, and\n\n(c)\nthe boundaries of the Crown Lands to be covered by the peat lease have been surveyed in accordance with the regulations.\n\n9(2)Upon the commencement of a peat lease, the peat exploration licence in respect of which the application for the lease was made is replaced by the peat lease.\n\n9(3)The holder of a peat lease shall provide to the Minister security with respect to the reclamation of the Crown Lands during and on discontinuance of quarrying within the period of time specified by the Minister and in an amount determined by the Minister having regard to the factors, if any, prescribed by regulation.\n\n9(4)The holder of a peat lease who has not submitted a reclamation plan to the Minister before the commencement of this provision shall submit to the Minister a reclamation plan for his or her approval within the period of time specified by the Minister.\n\n9(5)The Minister may at any time review any reclamation plan and may require the holder of the peat lease to revise the reclamation plan and, upon the Minister’s request, the holder shall submit the revised reclamation plan to the Minister for his or her approval within the period of time specified by the Minister.\n\n9(6)Where the Minister approves a reclamation plan under subsection (4) or (5), the Minister may require further security with respect to the reclamation of the Crown Lands from a holder of a peat lease during and on discontinuance of quarrying and, upon the Minister’s request, the holder of the peat lease shall provide to the Minister the further security within the period of time specified by the Minister and in an amount determined by the Minister having regard to the factors, if any, prescribed by regulation.\n\n2004, c.14, s.4\n\nWRITTEN AUTHORIZATIONS",
+      "subsections": [
+        {
+          "id": "9-subsection-1",
+          "sourceKey": "section:9/subsection:1",
+          "label": "9(1)",
+          "text": "9(1)A holder of a peat exploration licence may apply in accordance with the regulations to the Minister and be granted a peat lease which authorizes the taking or removal of peat from Crown Lands if\n\n(a)\nthe Minister approves the applicant’s feasibility study report, which report shall include\n\n(i)\na summary of exploration work performed with results and analyses, with an up-to-date summary of total exploration expenses,\n\n(ii)\na development plan,\n\n(iii)\na drainage plan, and\n\n(iv)\na reclamation plan,\n\n(b)\nthe applicant has provided to the Minister\n\n(i)\nthe application fee, as prescribed by regulation,\n\n(ii)\nthe rent set by regulation for the first year of the peat lease, and\n\n(iii)\nsuch information as the Minister may require in accordance with the regulations and any other information the Minister considers necessary in order to evaluate an application for a peat lease, and\n\n(c)\nthe boundaries of the Crown Lands to be covered by the peat lease have been surveyed in accordance with the regulations.",
+          "contentHash": "e98a2fd534979e1006b63fce85bba26a146bf951076754c6b477a70d7645253e"
+        },
+        {
+          "id": "9-subsection-2",
+          "sourceKey": "section:9/subsection:2",
+          "label": "9(2)",
+          "text": "9(2)Upon the commencement of a peat lease, the peat exploration licence in respect of which the application for the lease was made is replaced by the peat lease.",
+          "contentHash": "2fe463a7abc699a6b0311c421b5303f90e97b7aaab79de470aac7e3d8506eda9"
+        },
+        {
+          "id": "9-subsection-3",
+          "sourceKey": "section:9/subsection:3",
+          "label": "9(3)",
+          "text": "9(3)The holder of a peat lease shall provide to the Minister security with respect to the reclamation of the Crown Lands during and on discontinuance of quarrying within the period of time specified by the Minister and in an amount determined by the Minister having regard to the factors, if any, prescribed by regulation.",
+          "contentHash": "1363e4f5c45aa077134e75d4244fc4b44e9f12c42fcc62c9abcc2861fb7e99e7"
+        },
+        {
+          "id": "9-subsection-4",
+          "sourceKey": "section:9/subsection:4",
+          "label": "9(4)",
+          "text": "9(4)The holder of a peat lease who has not submitted a reclamation plan to the Minister before the commencement of this provision shall submit to the Minister a reclamation plan for his or her approval within the period of time specified by the Minister.",
+          "contentHash": "6d6c823232af4ab2b603ebb72c2b5f08dbaf804e51aaa5b7cc2e37e6b169c63f"
+        },
+        {
+          "id": "9-subsection-5",
+          "sourceKey": "section:9/subsection:5",
+          "label": "9(5)",
+          "text": "9(5)The Minister may at any time review any reclamation plan and may require the holder of the peat lease to revise the reclamation plan and, upon the Minister’s request, the holder shall submit the revised reclamation plan to the Minister for his or her approval within the period of time specified by the Minister.",
+          "contentHash": "23d959af41478c17860498008cff546f5ba0388ef61393a5a53dd558030086c4"
+        },
+        {
+          "id": "9-subsection-6",
+          "sourceKey": "section:9/subsection:6",
+          "label": "9(6)",
+          "text": "9(6)Where the Minister approves a reclamation plan under subsection (4) or (5), the Minister may require further security with respect to the reclamation of the Crown Lands from a holder of a peat lease during and on discontinuance of quarrying and, upon the Minister’s request, the holder of the peat lease shall provide to the Minister the further security within the period of time specified by the Minister and in an amount determined by the Minister having regard to the factors, if any, prescribed by regulation.\n\n2004, c.14, s.4\n\nWRITTEN AUTHORIZATIONS",
+          "contentHash": "16676766fe90a88dd30ec3bfd0ca1ee822fa3037ed12d63a75e14778a858a6cf"
+        }
+      ],
+      "contentHash": "e02d43782c6492823cb363a9511c19f3670a25c651812956771983e7674b21e0"
+    },
+    {
+      "id": "section-10",
+      "sourceKey": "section:10",
+      "componentType": "section",
+      "label": "10",
+      "heading": "Written authorization",
+      "text": "Written authorization\n\n10The Minister may, in writing, authorize a person, subject to the terms and conditions prescribed by the Minister in the written authorization, to take or remove a quarriable substance from a pre-existing quarry site on Crown Lands in an amount not in excess of the amount prescribed by regulation.\n1992, c.62, s.3\n\nOPTIONS\n\nRepealed: 2004, c.14, s.5\n\n2004, c.14, s.5",
+      "subsections": [],
+      "contentHash": "22686bbc26fda595ece2f4ca4ff1f980f8e0d4cdc8a1a6418a75bf5248818451"
+    },
+    {
+      "id": "section-11",
+      "sourceKey": "section:11",
+      "componentType": "section",
+      "label": "11",
+      "heading": "Repealed",
+      "text": "Repealed\n\n11Repealed: 2004, c.14, s.6\n2004, c.14, s.6\n\nGRANTING OF OTHER RIGHTS",
+      "subsections": [],
+      "contentHash": "98de4bf4245c923336e4a4b17ed86ee6a4e842b3ec326a6ba2de16b089ad45f4"
+    },
+    {
+      "id": "section-12",
+      "sourceKey": "section:12",
+      "componentType": "section",
+      "label": "12",
+      "heading": "Granting of other rights",
+      "text": "Granting of other rights\n\n12(1)The issuing of a quarry permit or written authorization or the granting of a peat exploration licence, quarry lease or peat lease under this Act does not prevent or in any way limit the right of the Crown to grant prospecting, mining, timber or fishing rights over Crown Lands covered in the quarry permit, peat exploration licence, written authorization, quarry lease or peat lease.\n\n12(2)The Minister, in issuing a quarry permit or written authorization or in granting a peat exploration licence, quarry lease or peat lease, shall have regard to any existing rights or privileges affecting the Crown Lands to be made subject to the quarry permit, peat exploration licence, written authorization, quarry lease or peat lease.\n\n2004, c.14, s.7\n\nTERM OF AND RENEWAL OF\nQUARRY LEASE AND PEAT LEASE",
+      "subsections": [
+        {
+          "id": "12-subsection-1",
+          "sourceKey": "section:12/subsection:1",
+          "label": "12(1)",
+          "text": "12(1)The issuing of a quarry permit or written authorization or the granting of a peat exploration licence, quarry lease or peat lease under this Act does not prevent or in any way limit the right of the Crown to grant prospecting, mining, timber or fishing rights over Crown Lands covered in the quarry permit, peat exploration licence, written authorization, quarry lease or peat lease.",
+          "contentHash": "1eafe2cfc4450fe397f1ba432c61d7656756b144cbac4e6e82f0c5485c897ea1"
+        },
+        {
+          "id": "12-subsection-2",
+          "sourceKey": "section:12/subsection:2",
+          "label": "12(2)",
+          "text": "12(2)The Minister, in issuing a quarry permit or written authorization or in granting a peat exploration licence, quarry lease or peat lease, shall have regard to any existing rights or privileges affecting the Crown Lands to be made subject to the quarry permit, peat exploration licence, written authorization, quarry lease or peat lease.\n\n2004, c.14, s.7\n\nTERM OF AND RENEWAL OF\nQUARRY LEASE AND PEAT LEASE",
+          "contentHash": "adf0a5ada10f3bb8cc2fcbf0264cfad1342487ce4e385a242e1b00f228fd55df"
+        }
+      ],
+      "contentHash": "9059155cfc6664b6f0fa7c07177c4a3d1a2d66515c82a360b7a0aef764fe1feb"
+    },
+    {
+      "id": "section-13",
+      "sourceKey": "section:13",
+      "componentType": "section",
+      "label": "13",
+      "heading": "Term of and renewal of quarry lease and peat lease",
+      "text": "Term of and renewal of quarry lease and peat lease\n\n13(1)Subject to subsection (2), a quarry lease or peat lease shall be for a term not exceeding ten years.\n\n13(2)Where a lessee applies in accordance with the regulations for a renewal of the quarry lease or peat lease, the Minister may renew that lease for a term equal to the original term or such lesser term as the Minister considers advisable in the circumstances.\n\n13(3)A quarry lease and peat lease granted under this Act is, in addition to the terms and conditions prescribed by regulation, subject to such terms and conditions as the Minister prescribes.\n\n13(4)The Minister may, subject to the terms and conditions prescribed by regulation, delete or add terms and conditions to a quarry lease or peat lease renewed under this section.\n\n13(5)The Minister, as a condition of renewal of a quarry lease or peat lease, may require the lessee to furnish proof satisfactory to the Minister that the lessee has complied with the terms and conditions of the lease and this Act and the regulations.\n\nTRANSFER",
+      "subsections": [
+        {
+          "id": "13-subsection-1",
+          "sourceKey": "section:13/subsection:1",
+          "label": "13(1)",
+          "text": "13(1)Subject to subsection (2), a quarry lease or peat lease shall be for a term not exceeding ten years.",
+          "contentHash": "835b961e0b57f49d48df04aca7dcc588a17b512baf302e6a56c0f62a43ee7240"
+        },
+        {
+          "id": "13-subsection-2",
+          "sourceKey": "section:13/subsection:2",
+          "label": "13(2)",
+          "text": "13(2)Where a lessee applies in accordance with the regulations for a renewal of the quarry lease or peat lease, the Minister may renew that lease for a term equal to the original term or such lesser term as the Minister considers advisable in the circumstances.",
+          "contentHash": "d0dbcb5cdd6f70ae88876195cbf006ddb7a06cd04f6bb087c7f270c7508f8008"
+        },
+        {
+          "id": "13-subsection-3",
+          "sourceKey": "section:13/subsection:3",
+          "label": "13(3)",
+          "text": "13(3)A quarry lease and peat lease granted under this Act is, in addition to the terms and conditions prescribed by regulation, subject to such terms and conditions as the Minister prescribes.",
+          "contentHash": "d208cbdaea2ccc20a84c81c05f015b6b623cdfc0b9283369fb29b052349565f1"
+        },
+        {
+          "id": "13-subsection-4",
+          "sourceKey": "section:13/subsection:4",
+          "label": "13(4)",
+          "text": "13(4)The Minister may, subject to the terms and conditions prescribed by regulation, delete or add terms and conditions to a quarry lease or peat lease renewed under this section.",
+          "contentHash": "4ccc993f29511a3db95d8f024cf03aecaad7c395027085cbc8c9456db0d7bf67"
+        },
+        {
+          "id": "13-subsection-5",
+          "sourceKey": "section:13/subsection:5",
+          "label": "13(5)",
+          "text": "13(5)The Minister, as a condition of renewal of a quarry lease or peat lease, may require the lessee to furnish proof satisfactory to the Minister that the lessee has complied with the terms and conditions of the lease and this Act and the regulations.\n\nTRANSFER",
+          "contentHash": "197f1b0bf05a7c0f6a1e052e68ea17af8efc463cc2a4b2c7f901957dc23be86d"
+        }
+      ],
+      "contentHash": "f18506c57677e78d1d2e9e164cc9efefad77f613ad72690d77a87f26ba37eb4d"
+    },
+    {
+      "id": "section-14",
+      "sourceKey": "section:14",
+      "componentType": "section",
+      "label": "14",
+      "heading": "Written approval required",
+      "text": "Written approval required\n\n14A quarry lease or peat lease is not transferable without the prior written approval of the Minister.",
+      "subsections": [],
+      "contentHash": "b0cef72db735ec0d5d1af3e16127d616ebfc7942097acc7b9c4231ef16b6aa5e"
+    },
+    {
+      "id": "section-15",
+      "sourceKey": "section:15",
+      "componentType": "section",
+      "label": "15",
+      "heading": "Signature and fee",
+      "text": "Signature and fee\n\n15A transfer of a quarry lease or peat lease or of any interest in a quarry lease or peat lease shall be\n\n(a)\nsigned by the transferor or by the agent of the transferor authorized by instrument in writing, and\n\n(b)\naccompanied by the fee prescribed by regulation.\n\nCANCELLATION, EXPIRATION OR\nSURRENDER",
+      "subsections": [],
+      "contentHash": "af64022fb0f84dbd8ae19ce624b31a6243e950cda7c1930a94ed646b2ddd55f4"
+    },
+    {
+      "id": "section-16",
+      "sourceKey": "section:16",
+      "componentType": "section",
+      "label": "16",
+      "heading": "Cancellation, expiration or surrender",
+      "text": "Cancellation, expiration or surrender\n\n16(1)Where the Minister has reasonable grounds to believe that a person holding a quarry lease has not complied with the terms and conditions of a quarry lease or this Act or the regulations, the Minister may cancel the quarry lease.\n\n16(2)Where a quarry lease is cancelled under this section, the holder of the quarry lease shall not take or remove any quarriable substance from the lease area.\n\n16(3)The Minister shall give notice in writing of cancellation of a quarry lease under this section\n\n(a)\nby serving the written notice of cancellation on the holder of the quarry lease, or\n\n(b)\nby sending written notice of cancellation by registered mail to the holder of the quarry lease.\n\n16(4)Where notice of the cancellation of a quarry lease is given under paragraph (3)(b), the cancellation takes effect upon the expiration of the fifth day following the date of mailing of the notice.\n\n16(5)The Minister, in lieu of cancelling a quarry lease, may suspend the rights given by the quarry lease for such period of time as the Minister considers necessary and the holder of that quarry lease shall not take or remove any quarriable substance from the area covered by that quarry lease during the period of suspension.\n\n16(6)Notwithstanding any provisions contained in a quarry lease to the contrary, the Minister may cancel or suspend the rights granted by a quarry lease and this section applies with the necessary modifications to that cancellation or suspension and to the lessee.\n\n16(7)This section applies with the necessary modifications to the cancellation of a quarry permit, peat exploration licence or peat lease and to the holder of a quarry permit, peat exploration licence and peat lease.",
+      "subsections": [
+        {
+          "id": "16-subsection-1",
+          "sourceKey": "section:16/subsection:1",
+          "label": "16(1)",
+          "text": "16(1)Where the Minister has reasonable grounds to believe that a person holding a quarry lease has not complied with the terms and conditions of a quarry lease or this Act or the regulations, the Minister may cancel the quarry lease.",
+          "contentHash": "a9406d16f0499f5d691df91525c90e3b74407b92d493283d3eceac1fda6f2424"
+        },
+        {
+          "id": "16-subsection-2",
+          "sourceKey": "section:16/subsection:2",
+          "label": "16(2)",
+          "text": "16(2)Where a quarry lease is cancelled under this section, the holder of the quarry lease shall not take or remove any quarriable substance from the lease area.",
+          "contentHash": "1a7d62adca7a4d43cd9fd7453857c3567bfca5809a5c628c656810339d9a2de7"
+        },
+        {
+          "id": "16-subsection-3",
+          "sourceKey": "section:16/subsection:3",
+          "label": "16(3)",
+          "text": "16(3)The Minister shall give notice in writing of cancellation of a quarry lease under this section\n\n(a)\nby serving the written notice of cancellation on the holder of the quarry lease, or\n\n(b)\nby sending written notice of cancellation by registered mail to the holder of the quarry lease.",
+          "contentHash": "32805061c0185a1b9cda2f045942535681da929c8d373ba07247dfdde4bca6d3"
+        },
+        {
+          "id": "16-subsection-4",
+          "sourceKey": "section:16/subsection:4",
+          "label": "16(4)",
+          "text": "16(4)Where notice of the cancellation of a quarry lease is given under paragraph (3)(b), the cancellation takes effect upon the expiration of the fifth day following the date of mailing of the notice.",
+          "contentHash": "3fc10c2bbd2558b5b1dff06e521eeb23bcd4c9ed7b3a2355265d5c7ec2905fbc"
+        },
+        {
+          "id": "16-subsection-5",
+          "sourceKey": "section:16/subsection:5",
+          "label": "16(5)",
+          "text": "16(5)The Minister, in lieu of cancelling a quarry lease, may suspend the rights given by the quarry lease for such period of time as the Minister considers necessary and the holder of that quarry lease shall not take or remove any quarriable substance from the area covered by that quarry lease during the period of suspension.",
+          "contentHash": "e9f3885365513c5323a6c87efe01908804a1dbe206e0cabf9ecc39188edc8a24"
+        },
+        {
+          "id": "16-subsection-6",
+          "sourceKey": "section:16/subsection:6",
+          "label": "16(6)",
+          "text": "16(6)Notwithstanding any provisions contained in a quarry lease to the contrary, the Minister may cancel or suspend the rights granted by a quarry lease and this section applies with the necessary modifications to that cancellation or suspension and to the lessee.",
+          "contentHash": "45ecb162dacad1209582496cf2fb66c2046fcf0460f4f50484d1b69bb2c75f45"
+        },
+        {
+          "id": "16-subsection-7",
+          "sourceKey": "section:16/subsection:7",
+          "label": "16(7)",
+          "text": "16(7)This section applies with the necessary modifications to the cancellation of a quarry permit, peat exploration licence or peat lease and to the holder of a quarry permit, peat exploration licence and peat lease.",
+          "contentHash": "49e12fb77dfa167edb3ac243fefade8e27422f7ed7adb59980897c824a2caf13"
+        }
+      ],
+      "contentHash": "3a490527d6e3a4cb0748d144a9ebfbccfb23ed7d0dfd55b5f46b3fe2babf1548"
+    },
+    {
+      "id": "section-17",
+      "sourceKey": "section:17",
+      "componentType": "section",
+      "label": "17",
+      "heading": "Obligations of lessee",
+      "text": "Obligations of lessee\n\n17Where a quarry lease or peat lease has expired or has been suspended, surrendered or cancelled, the lessee shall, within sixty days\n\n(a)\nremove plant, product and equipment from the leased area, and\n\n(b)\nensure that the lease area has been reclaimed in a manner satisfactory to the Minister.\n\n2004, c.14, s.8",
+      "subsections": [],
+      "contentHash": "725facdf14f37718ee10e8d56d76e5ec09e3fd83cc28b195020bfbc2461a942c"
+    },
+    {
+      "id": "section-18",
+      "sourceKey": "section:18",
+      "componentType": "section",
+      "label": "18",
+      "heading": "Liability of lessee",
+      "text": "Liability of lessee\n\n18Where a quarry lease or peat lease expires or is suspended, surrendered or cancelled, the person who held the lease continues to be liable for\n\n(a)\nany money owing with respect to royalties or rents, including interest on any amounts due and payable, or\n\n(b)\nthe reclamation of the land, and for any other obligation,\n\nfor which the person was liable under this Act or the regulations immediately before the expiry, suspension, surrender or cancellation.\n\n2004, c.14, s.9\n\nREDUCTION, SUBDIVISION,\nAMALGAMATION OF PEAT OR\nQUARRY LEASES",
+      "subsections": [],
+      "contentHash": "c277111bcbc26a327ac55324713b50421f81f6726b78c629e6ddf6a73c551fdb"
+    },
+    {
+      "id": "section-19",
+      "sourceKey": "section:19",
+      "componentType": "section",
+      "label": "19",
+      "heading": "Reduction, subdivision, amalgamation of peat or quarry lease",
+      "text": "Reduction, subdivision, amalgamation of peat or quarry lease\n\n19Upon application and upon good cause being shown, the Minister may authorize the reduction, subdivision, amalgamation or enlargement of land covered by a quarry lease or peat lease under such terms and conditions as the Minister may determine and upon payment of the fee prescribed by regulation.\n\nSTOCK PILES",
+      "subsections": [],
+      "contentHash": "5af9ca223c2f6e17b69a21d9d42502e4075eadf9d90ac5e86fd12b1960bdf733"
+    },
+    {
+      "id": "section-20",
+      "sourceKey": "section:20",
+      "componentType": "section",
+      "label": "20",
+      "heading": "Stock piles",
+      "text": "Stock piles\n\n20A quarriable substance that has been extracted or stockpiled but not taken or removed from Crown Lands before the expiration, surrender or cancellation of a quarry permit, quarry lease, peat lease or written authorization remains vested in the Crown.\n\nAUTHORIZATION TO REMOVE\nQUARRIABLE SUBSTANCE",
+      "subsections": [],
+      "contentHash": "39a58835eca71673ce3d0d136f8c5fa8804eb215b728f2a169a6ca5b78ad52bc"
+    },
+    {
+      "id": "section-21",
+      "sourceKey": "section:21",
+      "componentType": "section",
+      "label": "21",
+      "heading": "Authorization to remove quarriable substances",
+      "text": "Authorization to remove quarriable substances\n\n21The Minister may, without payment of compensation, authorize the Crown or any Crown agency to remove a quarriable substance from an area covered by a quarry permit, quarry lease, peat exploration licence, peat lease or written authorization for use of the Crown or that Crown agency.\n\nLIABILITY",
+      "subsections": [],
+      "contentHash": "bac33c4aa1ac4598ff7b96a797004dea4843b3f3ab8c37c058719b904c5df435"
+    },
+    {
+      "id": "section-22",
+      "sourceKey": "section:22",
+      "componentType": "section",
+      "label": "22",
+      "heading": "Liability",
+      "text": "Liability\n\n22A lessee is liable for actual damage to or interference with the use and enjoyment of property caused by the lessee or anyone acting on behalf of the lessee in or on the lease area.\n\nRENT AND ROYALTIES",
+      "subsections": [],
+      "contentHash": "9053cb4299223a7c7acfea0c162bd273aff86874b0deccf41ddb95e71173836d"
+    },
+    {
+      "id": "section-23",
+      "sourceKey": "section:23",
+      "componentType": "section",
+      "label": "23",
+      "heading": "Rent",
+      "text": "Rent\n\n23Every lessee shall pay rent, at the rate set by regulation, annually on or before the anniversary of the date of the commencement of the first term of the lease for the ensuing year.",
+      "subsections": [],
+      "contentHash": "dfbd7c20d7a2fe961a401f33c9e3f1b00578446d0cd4b61bdf702bbda6eadae2"
+    },
+    {
+      "id": "section-24",
+      "sourceKey": "section:24",
+      "componentType": "section",
+      "label": "24",
+      "heading": "Royalties",
+      "text": "Royalties\n\n24(1)A person who takes or removes a quarriable substance from Crown Lands shall pay to the Crown such royalties as are prescribed by regulation.\n\n24(2)Royalties are due and payable semi-annually on or before the twentieth day of January and the twentieth day of July in each year.",
+      "subsections": [
+        {
+          "id": "24-subsection-1",
+          "sourceKey": "section:24/subsection:1",
+          "label": "24(1)",
+          "text": "24(1)A person who takes or removes a quarriable substance from Crown Lands shall pay to the Crown such royalties as are prescribed by regulation.",
+          "contentHash": "c02c3a4e98f84a08c1c82caab1b44f86054d61b3572ad80ca4559d1f55d5ce88"
+        },
+        {
+          "id": "24-subsection-2",
+          "sourceKey": "section:24/subsection:2",
+          "label": "24(2)",
+          "text": "24(2)Royalties are due and payable semi-annually on or before the twentieth day of January and the twentieth day of July in each year.",
+          "contentHash": "0db110322222bacb8379309782c7ce37200447e4ed21e17d46a5ba4ac4127b2c"
+        }
+      ],
+      "contentHash": "7ac4ae124f249989d436e4639a3c1f0a8f51bbbb4a396e75c92fc63a8a9c3040"
+    },
+    {
+      "id": "section-25",
+      "sourceKey": "section:25",
+      "componentType": "section",
+      "label": "25",
+      "heading": "Interest",
+      "text": "Interest\n\n25Where any amount remains unpaid and due by a person in respect to this Act or the regulations, interest as prescribed by regulation shall be added to the amount due and payable.\n\nFORM AND RECORDING OF\nQUARRY LEASE AND PEAT LEASE",
+      "subsections": [],
+      "contentHash": "98d0279ea2c7fb808417db0ce0a81db1dcd075d64252986437cfc1976bcc2c1b"
+    },
+    {
+      "id": "section-26",
+      "sourceKey": "section:26",
+      "componentType": "section",
+      "label": "26",
+      "heading": "Execution and filing of lease",
+      "text": "Execution and filing of lease\n\n26Every quarry lease or peat lease granted under this Act shall be executed by the Minister under the Minister’s hand and seal of office and by the lessee under the lessee’s hand and seal or that of the lessee’s duly authorized attorney or agent and, where a quarry lease or peat lease is executed by an attorney or agent, the instrument conferring such power shall be filed in the Fredericton office of the Minister before the counterpart of the quarry lease or peat lease is delivered to the lessee.",
+      "subsections": [],
+      "contentHash": "7a75b371b98a6797604aca1aeac8c18425970c4647a0dc35fd8c87d70966b460"
+    },
+    {
+      "id": "section-27",
+      "sourceKey": "section:27",
+      "componentType": "section",
+      "label": "27",
+      "heading": "Duplicates",
+      "text": "Duplicates\n\n27A quarry lease or peat lease, shall be executed in duplicate; and one duplicate, to be known as the counterpart, shall be delivered to the lessee and the other shall be filed and recorded in the Fredericton office of the Minister.\n\nREPORTS AND RECORDS",
+      "subsections": [],
+      "contentHash": "dcc6fe4ca1e74eec2c639e7d5162e4b729220220e2134c71106884d31bef0fce"
+    },
+    {
+      "id": "section-28",
+      "sourceKey": "section:28",
+      "componentType": "section",
+      "label": "28",
+      "heading": "Reports and records",
+      "text": "Reports and records\n\n28(1)The holder of a quarry permit, quarry lease or peat lease shall\n\n(a)\nkeep a detailed record of the quarry operations,\n\n(b)\nkeep detailed accounts of quarry operations, and\n\n(c)\nretain copies of all documents relating to the sale and shipment made of quarriable substances.\n\n28(2)The holder of a quarry permit, quarry lease or peat lease shall keep available for inspection in the Province by the Minister all accounts, records and documents relating to the quarry operation.\n\n28(3)The holder of a quarry permit, quarry lease or a peat lease on or before the twentieth day of January and the twentieth day of July in each year shall forward to the Minister a return setting forth the quantity of each type of quarriable substance taken or removed under the authority of the quarry permit, quarry lease or peat lease during the preceding six-month period and such other information as required by regulation.\n\n28(4)Within fifteen days of the expiration, cancellation or surrender of a quarry permit, quarry lease or peat lease, as the case may be, the holder shall comply with subsection (3) so as to provide a return covering the period subsequent to the last return made under subsection (3).\n\nCONFIDENTIALITY",
+      "subsections": [
+        {
+          "id": "28-subsection-1",
+          "sourceKey": "section:28/subsection:1",
+          "label": "28(1)",
+          "text": "28(1)The holder of a quarry permit, quarry lease or peat lease shall\n\n(a)\nkeep a detailed record of the quarry operations,\n\n(b)\nkeep detailed accounts of quarry operations, and\n\n(c)\nretain copies of all documents relating to the sale and shipment made of quarriable substances.",
+          "contentHash": "cfa946b06f7d1e2a84edd847a22be77c75f7e1892702c3c0710d759c1412b751"
+        },
+        {
+          "id": "28-subsection-2",
+          "sourceKey": "section:28/subsection:2",
+          "label": "28(2)",
+          "text": "28(2)The holder of a quarry permit, quarry lease or peat lease shall keep available for inspection in the Province by the Minister all accounts, records and documents relating to the quarry operation.",
+          "contentHash": "8d23380ee0543a42f39ad5fddcd0af103ab3258c7b8f5bc0b961c7dd0f12c294"
+        },
+        {
+          "id": "28-subsection-3",
+          "sourceKey": "section:28/subsection:3",
+          "label": "28(3)",
+          "text": "28(3)The holder of a quarry permit, quarry lease or a peat lease on or before the twentieth day of January and the twentieth day of July in each year shall forward to the Minister a return setting forth the quantity of each type of quarriable substance taken or removed under the authority of the quarry permit, quarry lease or peat lease during the preceding six-month period and such other information as required by regulation.",
+          "contentHash": "5eefdf7e11247190af4ee260c0b38259541987676c20570b3c0b1048f2a57ae6"
+        },
+        {
+          "id": "28-subsection-4",
+          "sourceKey": "section:28/subsection:4",
+          "label": "28(4)",
+          "text": "28(4)Within fifteen days of the expiration, cancellation or surrender of a quarry permit, quarry lease or peat lease, as the case may be, the holder shall comply with subsection (3) so as to provide a return covering the period subsequent to the last return made under subsection (3).\n\nCONFIDENTIALITY",
+          "contentHash": "9275a3d1eb94b964744d489281a5ac9ba99dbaba536b28a502a5510de95aea3a"
+        }
+      ],
+      "contentHash": "db783c435e10b4611b63b53f62b6e28301924fd522059ccac350da6d80653f6d"
+    },
+    {
+      "id": "section-29",
+      "sourceKey": "section:29",
+      "componentType": "section",
+      "label": "29",
+      "heading": "Confidentiality",
+      "text": "Confidentiality\n\n29Financial, commercial, technical and scientific information obtained by the Minister, a person employed or appointed under this Act or by a person whose duties include the administration and enforcement of this Act and the regulations that relates to a particular licensee, permittee or lessee who is a going concern is confidential.\n\nINSPECTIONS",
+      "subsections": [],
+      "contentHash": "4294d4b416b8a50132e3f785ca5f41b4089c4198edb9183571010be25972a254"
+    },
+    {
+      "id": "section-30",
+      "sourceKey": "section:30",
+      "componentType": "section",
+      "label": "30",
+      "heading": "Inspections",
+      "text": "Inspections\n\n30The Minister may, at any reasonable time, for the purpose of administering this Act and the regulations,\n\n(a)\nenter upon the land covered by a quarry permit, quarry lease, peat exploration licence or peat lease and into a quarry operation for the purpose of making inspections and inquiries,\n\n(b)\ninspect the land covered by a quarry permit, quarry lease, peat exploration licence or peat lease and any related quarry operations and make inquiries in relation to the inspection,\n\n(c)\ntake samples and carry out tests or examinations in relation to quarriable substances,\n\n(d)\nrequire the production of all accounts, records and documents pertaining to a quarry permit, quarry lease, peat exploration licence or peat lease for inspection or for the purpose of obtaining copies of accounts, records and documents relating to a quarry permit, quarry lease, peat exploration licence or peat lease, and\n\n(e)\nenter upon private land and travel along private roads without being liable for trespass in the absence of actual damage or subject to tolls.",
+      "subsections": [],
+      "contentHash": "c70def70874d50503461c8f249164a3a9e0c5e9621be7ee9e2acca6566f4a9e3"
+    },
+    {
+      "id": "section-31",
+      "sourceKey": "section:31",
+      "componentType": "section",
+      "label": "31",
+      "heading": "Production of documents",
+      "text": "Production of documents\n\n31A lessee, quarry permittee or peat exploration licensee shall immediately on demand by the Minister produce the accounts, records and documents required for production under paragraph 30(1)(d).\n\nARREST, SEARCH AND SEIZURE",
+      "subsections": [],
+      "contentHash": "4e1ddbc3035de361a5634ab21c677963557401fca65e79240c1af6cc23a3ae2c"
+    },
+    {
+      "id": "section-32",
+      "sourceKey": "section:32",
+      "componentType": "section",
+      "label": "32",
+      "heading": "Arrest, search and seizure",
+      "text": "Arrest, search and seizure\n\n32Every conservation officer in carrying out his or duties under this Act and the regulations is a person employed for the preservation and maintenance of the public peace and has and may exercise all the powers, authorities and immunities of a peace officer as defined in the Criminal Code, (Canada).\n2013, c.39, s.19",
+      "subsections": [],
+      "contentHash": "3eb07a1e276ab2340036ffec533429f571b1b8336ca86e42b4e1ce9d64bac207"
+    },
+    {
+      "id": "section-33",
+      "sourceKey": "section:33",
+      "componentType": "section",
+      "label": "33",
+      "heading": "Additional powers of search",
+      "text": "Additional powers of search\n\n33A conservation officer has, in addition to the powers of search given under the Provincial Offences Procedure Act, the power to search without warrant any Crown Lands in or on which he or she has reasonable and probable grounds to believe there is anything that may provide evidence of the commission of an offence under this Act or the regulations.\n2013, c.39, s.19",
+      "subsections": [],
+      "contentHash": "6018a5c3428245386fdc35330c3b1ddd2fe0eecdee2bd030427e35c949748f4c"
+    },
+    {
+      "id": "section-34",
+      "sourceKey": "section:34",
+      "componentType": "section",
+      "label": "34",
+      "heading": "Repossession and forfeiture of things seized",
+      "text": "Repossession and forfeiture of things seized\n\n34(1)Where a conservation officer in the course of conducting a lawful search in respect of an offence under this Act or the regulations seizes a quarriable substance or other property belonging to the Crown or any equipment or vehicle that will afford evidence of the commission of the offence, he or she shall\n\n(a)\nwithout delay, report the particulars of the seizure to the Minister, and\n\n(b)\nwhere he or she has knowledge of the person who was in actual or apparent possession of the quarriable substance or other property at the time of the seizure, give notice to that person of the seizure, either by personal service or by registered mail.\n\n34(2)Where any equipment or vehicle referred to in subsection (1) has been seized, any person with a property interest therein may re-acquire possession of it upon deposit with the Minister, or at the Minister’s direction, of a bond or other security satisfactory to the Minister pending the outcome of any prosecution that may be instituted under this section and that is related to the use of the equipment or vehicle.\n\n34(3)Where a person is convicted of an offence, any equipment or vehicle seized under subsection (1) may be the subject of an order of forfeiture to the Crown made by the Minister, to the extent any interest in the property is held by the person convicted; and upon notice to any other person having an interest in the property seized, the Minister may declare such interest to be forfeited to the Crown if the Minister is satisfied on reasonable grounds that the person had knowledge of the use to which the property was being put.\n\n34(4)Where equipment or a vehicle seized under subsection (1) has been released by the Minister upon deposit of a bond or other security, the Minister may, in lieu of an order referred to in subsection (3), order the bond or other security, in whole or in part, to be forfeited to the Crown.\n\n34(5)Where\n\n(a)\na prosecution has not been instituted within six months of the events giving rise to the seizure of equipment or a vehicle under subsection (1), or\n\n(b)\na charge has been dismissed, notice of appeal has not been given and the time for such notice has expired,\n\nthe Minister shall release any equipment or vehicle seized under subsection (1) in the Minister’s possession to the owner and return any bond or other security deposited with the Minister or at the Minister’s direction to the person who deposited it.\n\n34(6)In a prosecution with respect to an offence under this section, where it is established by the Crown that the land on which the accused was on, or upon which an act was proved to have been done by the accused is shown on the records and plans on file in the office of the Minister as Crown Lands, the accused shall, in the absence of evidence to the contrary, be deemed to have been on, or to have done the act proved to have been done by the Minister upon, Crown Lands.\n\n2004, c.14, s.10; 2012, c.52, s.45; 2013, c.39, s.19; 2016, c.37, s.164\n\nOFFENCES AND PENALTIES",
+      "subsections": [
+        {
+          "id": "34-subsection-1",
+          "sourceKey": "section:34/subsection:1",
+          "label": "34(1)",
+          "text": "34(1)Where a conservation officer in the course of conducting a lawful search in respect of an offence under this Act or the regulations seizes a quarriable substance or other property belonging to the Crown or any equipment or vehicle that will afford evidence of the commission of the offence, he or she shall\n\n(a)\nwithout delay, report the particulars of the seizure to the Minister, and\n\n(b)\nwhere he or she has knowledge of the person who was in actual or apparent possession of the quarriable substance or other property at the time of the seizure, give notice to that person of the seizure, either by personal service or by registered mail.",
+          "contentHash": "789a664dce3044c9822a89cfb8fa54c82feab4ad97a4ffade248e905a111f7f3"
+        },
+        {
+          "id": "34-subsection-2",
+          "sourceKey": "section:34/subsection:2",
+          "label": "34(2)",
+          "text": "34(2)Where any equipment or vehicle referred to in subsection (1) has been seized, any person with a property interest therein may re-acquire possession of it upon deposit with the Minister, or at the Minister’s direction, of a bond or other security satisfactory to the Minister pending the outcome of any prosecution that may be instituted under this section and that is related to the use of the equipment or vehicle.",
+          "contentHash": "02004e86131327e0c020a35d60c31c5808163b01b3fa43362aaa5e162c55a61f"
+        },
+        {
+          "id": "34-subsection-3",
+          "sourceKey": "section:34/subsection:3",
+          "label": "34(3)",
+          "text": "34(3)Where a person is convicted of an offence, any equipment or vehicle seized under subsection (1) may be the subject of an order of forfeiture to the Crown made by the Minister, to the extent any interest in the property is held by the person convicted; and upon notice to any other person having an interest in the property seized, the Minister may declare such interest to be forfeited to the Crown if the Minister is satisfied on reasonable grounds that the person had knowledge of the use to which the property was being put.",
+          "contentHash": "54e0cab5cd9db7f9f959befd779a0704eb915e78a72bded40cf2bf7dae92b47a"
+        },
+        {
+          "id": "34-subsection-4",
+          "sourceKey": "section:34/subsection:4",
+          "label": "34(4)",
+          "text": "34(4)Where equipment or a vehicle seized under subsection (1) has been released by the Minister upon deposit of a bond or other security, the Minister may, in lieu of an order referred to in subsection (3), order the bond or other security, in whole or in part, to be forfeited to the Crown.",
+          "contentHash": "32b1f0529aadc5ac1671888fc4b9c6b834b931dec8ac88d7f611a005d4d2b0aa"
+        },
+        {
+          "id": "34-subsection-5",
+          "sourceKey": "section:34/subsection:5",
+          "label": "34(5)",
+          "text": "34(5)Where\n\n(a)\na prosecution has not been instituted within six months of the events giving rise to the seizure of equipment or a vehicle under subsection (1), or\n\n(b)\na charge has been dismissed, notice of appeal has not been given and the time for such notice has expired,\n\nthe Minister shall release any equipment or vehicle seized under subsection (1) in the Minister’s possession to the owner and return any bond or other security deposited with the Minister or at the Minister’s direction to the person who deposited it.",
+          "contentHash": "f27b4741a5d03962da06e93e2f057603eca2da86d4e20e0f84f794b43179e8b3"
+        },
+        {
+          "id": "34-subsection-6",
+          "sourceKey": "section:34/subsection:6",
+          "label": "34(6)",
+          "text": "34(6)In a prosecution with respect to an offence under this section, where it is established by the Crown that the land on which the accused was on, or upon which an act was proved to have been done by the accused is shown on the records and plans on file in the office of the Minister as Crown Lands, the accused shall, in the absence of evidence to the contrary, be deemed to have been on, or to have done the act proved to have been done by the Minister upon, Crown Lands.\n\n2004, c.14, s.10; 2012, c.52, s.45; 2013, c.39, s.19; 2016, c.37, s.164\n\nOFFENCES AND PENALTIES",
+          "contentHash": "af7951fa5dcc5de502f28bf9075f12aa61d1d6e0327b66ea1213e4287d7790d7"
+        }
+      ],
+      "contentHash": "b23fbe39fbf07e28092db0ba5443b3ba99f8a05d67adec9c4ed0bf98b1bc4646"
+    },
+    {
+      "id": "section-35",
+      "sourceKey": "section:35",
+      "componentType": "section",
+      "label": "35",
+      "heading": "Offence to take or remove quarriable substance",
+      "text": "Offence to take or remove quarriable substance\n\n35No person shall take or remove or cause to be taken or removed more than one-half cubic metre of a quarriable substance from Crown Lands except in accordance with this Act.",
+      "subsections": [],
+      "contentHash": "78e313dd0a89ed691fa788bb6a3fd7d2ec397e52bf0abd349a9a13a8ca6a726c"
+    },
+    {
+      "id": "section-36",
+      "sourceKey": "section:36",
+      "componentType": "section",
+      "label": "36",
+      "heading": "Offence to carry on production without a permit",
+      "text": "Offence to carry on production without a permit\n\n36No person shall carry on production or cause production to be carried on for any quarriable substance on Crown Lands unless the person is the holder of a quarry permit, quarry lease, peat lease or written authorization.",
+      "subsections": [],
+      "contentHash": "bea9823da8fede76e9365f34c695a78009aefbb7008760bac77651908df910b6"
+    },
+    {
+      "id": "section-37",
+      "sourceKey": "section:37",
+      "componentType": "section",
+      "label": "37",
+      "heading": "Violation of offences set out in Schedule A",
+      "text": "Violation of offences set out in Schedule A\n\n37(1)A person who violates or fails to comply with any provision of the regulations commits an offence.\n\n37(2)A person who violates or fails to comply with a provision of this Act that is listed in Column I of Schedule A commits an offence.\n\n37(3)For the purposes of Part II of the Provincial Offences Procedure Act, each offence listed in Column I of Schedule A is punishable as an offence of the category listed beside it in Column II of Schedule A.\n\n37(4)Where an offence under this Act continues for more than one day,\n\n(a)\nthe minimum fine that may be imposed is the minimum fine set by the Provincial Offences Procedure Act multiplied by the number of days during which the offence continues, and\n\n(b)\nthe maximum fine that may be imposed is the maximum fine set by the Provincial Offences Procedure Act multiplied by the number of days during which the offence continues.\n\nADMINISTRATION",
+      "subsections": [
+        {
+          "id": "37-subsection-1",
+          "sourceKey": "section:37/subsection:1",
+          "label": "37(1)",
+          "text": "37(1)A person who violates or fails to comply with any provision of the regulations commits an offence.",
+          "contentHash": "a76cb83aa7db260060a477392bb58019b24eb50ff82106ab062ddb9e7e21e4dc"
+        },
+        {
+          "id": "37-subsection-2",
+          "sourceKey": "section:37/subsection:2",
+          "label": "37(2)",
+          "text": "37(2)A person who violates or fails to comply with a provision of this Act that is listed in Column I of Schedule A commits an offence.",
+          "contentHash": "a7069538055571397532c64b33925688ffa7130ddeb98bcb6bd84a8165940c48"
+        },
+        {
+          "id": "37-subsection-3",
+          "sourceKey": "section:37/subsection:3",
+          "label": "37(3)",
+          "text": "37(3)For the purposes of Part II of the Provincial Offences Procedure Act, each offence listed in Column I of Schedule A is punishable as an offence of the category listed beside it in Column II of Schedule A.",
+          "contentHash": "8b14c2f1d05a3e0f80818a2d14c3dc100485bc040eabdc51a40570c276f7b07c"
+        },
+        {
+          "id": "37-subsection-4",
+          "sourceKey": "section:37/subsection:4",
+          "label": "37(4)",
+          "text": "37(4)Where an offence under this Act continues for more than one day,\n\n(a)\nthe minimum fine that may be imposed is the minimum fine set by the Provincial Offences Procedure Act multiplied by the number of days during which the offence continues, and\n\n(b)\nthe maximum fine that may be imposed is the maximum fine set by the Provincial Offences Procedure Act multiplied by the number of days during which the offence continues.\n\nADMINISTRATION",
+          "contentHash": "d73ca7bbef660282e7275f6984601d60ac15e57657f7560f1a56edea6bddcf5c"
+        }
+      ],
+      "contentHash": "dfddb68824245ffe543119895456c0198a6fceb5f2dc5140f58f47df93e9ad7f"
+    },
+    {
+      "id": "section-38",
+      "sourceKey": "section:38",
+      "componentType": "section",
+      "label": "38",
+      "heading": "Administration",
+      "text": "Administration\n\n38The Minister shall administer this Act and may designate persons to act on the Minister’s behalf.\n\nREGULATIONS",
+      "subsections": [],
+      "contentHash": "f878c279c19301483975338631cf35cfd8a3da06020be81d1b703b9d99a387a9"
+    },
+    {
+      "id": "section-39",
+      "sourceKey": "section:39",
+      "componentType": "section",
+      "label": "39",
+      "heading": "Regulations",
+      "text": "Regulations\n\n39(1)The Lieutenant-Governor in Council may make regulations\n\n(a)\nrespecting applications for quarry permits, quarry leases, peat exploration licences and peat leases;\n\n(a.01)\nrespecting the granting of a peat exploration licence;\n\n(a.02)\nrespecting calls for tenders referred to in section 8;\n\n(a.03)\nprescribing the area of Crown Lands referred to in section 8;\n\n(a.1)\nrespecting terms and conditions of quarry leases, peat exploration licences and peat leases;\n\n(a.2)\nrespecting the information required by the Minister when granting quarry leases, peat exploration licences or peat leases;\n\n(a.3)\nRepealed: 2004, c.14, s.11\n\n(a.4)\nrespecting the information required by the Minister under subsection 28(3);\n\n(a.5)\nrespecting annual work expenditures;\n\n(b)\nrespecting terms and conditions under which quarriable substances may be taken or removed from Crown Lands or lands designated under section 4;\n\n(c)\nrespecting the surveying of an area to be made subject to a quarry lease or a peat lease;\n\n(d)\nrespecting the security to be given under this Act and the procedures for the deposit, substitution, renewal and return of the security;\n\n(d.1)\nprescribing the factors that are to be taken into consideration by the Minister when requiring an amount of security referred to in section 9;\n\n(e)\nconcerning the manner in which a quarrying operation is carried on;\n\n(f)\nprescribing the amount of quarriable substance that can be taken or removed from Crown Lands under a written authorization;\n\n(g)\nrespecting maintenance of boundary lines;\n\n(h)\nrespecting conditions for opening, closing, reopening and abandoning operations;\n\n(i)\nrespecting things and work to be done with respect to the reclamation of Crown Lands before quarrying commences, during quarrying and after quarrying is discontinued;\n\n(j)\nrespecting returns, reports, plans, maps and statements to be submitted by the holder of a quarry permit, quarry lease or peat lease in relation to work, operations, production and expenditures;\n\n(k)\nrespecting the renewal of a quarry lease and a peat lease;\n\n(l)\nrespecting royalties and rents payable under this Act;\n\n(m)\nrespecting feasibility study reports;\n\n(n)\ngenerally respecting fees payable under this Act and the regulations and prescribing those fees required to be prescribed;\n\n(o)\ngenerally respecting forms to be used for the purposes of this Act and the regulations and prescribing those forms required to be prescribed;\n\n(p)\nexempting the Department of Natural Resources of the Government of the Province and any person acting on its behalf from this Act;\n\n(q)\nprescribing interest rates for any amount unpaid and due under this Act;\n\n(r)\nrespecting the designation of shore areas;\n\n(s)\nfor the better administration of this Act.\n\n39(2)The Lieutenant-Governor in Council may declare that a regulation or any provision of a regulation made under subsection (1) is not applicable with respect to a specified quarry permit, peat lease or quarry lease for any period or periods of time.\n\n39(3)Regulations made under paragraph (1)(l) may be retroactive in their operation to July 1, 2002, or any date after July 1, 2002.\n\n1992, c.62, s.4; 2004, c.14, s.11; 2004, c.20, s.56; 2016, c.37, s.164; 2019, c.29, s.207; 2025, c.24, s.29\n\nREPEAL, TRANSITIONAL AND\nCOMMENCEMENT",
+      "subsections": [
+        {
+          "id": "39-subsection-1",
+          "sourceKey": "section:39/subsection:1",
+          "label": "39(1)",
+          "text": "39(1)The Lieutenant-Governor in Council may make regulations\n\n(a)\nrespecting applications for quarry permits, quarry leases, peat exploration licences and peat leases;\n\n(a.01)\nrespecting the granting of a peat exploration licence;\n\n(a.02)\nrespecting calls for tenders referred to in section 8;\n\n(a.03)\nprescribing the area of Crown Lands referred to in section 8;\n\n(a.1)\nrespecting terms and conditions of quarry leases, peat exploration licences and peat leases;\n\n(a.2)\nrespecting the information required by the Minister when granting quarry leases, peat exploration licences or peat leases;\n\n(a.3)\nRepealed: 2004, c.14, s.11\n\n(a.4)\nrespecting the information required by the Minister under subsection 28(3);\n\n(a.5)\nrespecting annual work expenditures;\n\n(b)\nrespecting terms and conditions under which quarriable substances may be taken or removed from Crown Lands or lands designated under section 4;\n\n(c)\nrespecting the surveying of an area to be made subject to a quarry lease or a peat lease;\n\n(d)\nrespecting the security to be given under this Act and the procedures for the deposit, substitution, renewal and return of the security;\n\n(d.1)\nprescribing the factors that are to be taken into consideration by the Minister when requiring an amount of security referred to in section 9;\n\n(e)\nconcerning the manner in which a quarrying operation is carried on;\n\n(f)\nprescribing the amount of quarriable substance that can be taken or removed from Crown Lands under a written authorization;\n\n(g)\nrespecting maintenance of boundary lines;\n\n(h)\nrespecting conditions for opening, closing, reopening and abandoning operations;\n\n(i)\nrespecting things and work to be done with respect to the reclamation of Crown Lands before quarrying commences, during quarrying and after quarrying is discontinued;\n\n(j)\nrespecting returns, reports, plans, maps and statements to be submitted by the holder of a quarry permit, quarry lease or peat lease in relation to work, operations, production and expenditures;\n\n(k)\nrespecting the renewal of a quarry lease and a peat lease;\n\n(l)\nrespecting royalties and rents payable under this Act;\n\n(m)\nrespecting feasibility study reports;\n\n(n)\ngenerally respecting fees payable under this Act and the regulations and prescribing those fees required to be prescribed;\n\n(o)\ngenerally respecting forms to be used for the purposes of this Act and the regulations and prescribing those forms required to be prescribed;\n\n(p)\nexempting the Department of Natural Resources of the Government of the Province and any person acting on its behalf from this Act;\n\n(q)\nprescribing interest rates for any amount unpaid and due under this Act;\n\n(r)\nrespecting the designation of shore areas;\n\n(s)\nfor the better administration of this Act.",
+          "contentHash": "ac48c9cdb65d2f7171b952f5d63fa82341d2bb6ceaf437a88ab2105fe2425796"
+        },
+        {
+          "id": "39-subsection-2",
+          "sourceKey": "section:39/subsection:2",
+          "label": "39(2)",
+          "text": "39(2)The Lieutenant-Governor in Council may declare that a regulation or any provision of a regulation made under subsection (1) is not applicable with respect to a specified quarry permit, peat lease or quarry lease for any period or periods of time.",
+          "contentHash": "d7630ed930251b4532d4adb2ca31307deba41b3c051c2a6385e31444be4b1a07"
+        },
+        {
+          "id": "39-subsection-3",
+          "sourceKey": "section:39/subsection:3",
+          "label": "39(3)",
+          "text": "39(3)Regulations made under paragraph (1)(l) may be retroactive in their operation to July 1, 2002, or any date after July 1, 2002.\n\n1992, c.62, s.4; 2004, c.14, s.11; 2004, c.20, s.56; 2016, c.37, s.164; 2019, c.29, s.207; 2025, c.24, s.29\n\nREPEAL, TRANSITIONAL AND\nCOMMENCEMENT",
+          "contentHash": "3a981cd63e4b4250a818a0839a18048e2734b72f566310a462e3580ffeaee35c"
+        }
+      ],
+      "contentHash": "c9488097e4ac0563afacf27dbc45bab7b42fe232444768620a497dd4d88488d5"
+    },
+    {
+      "id": "section-40",
+      "sourceKey": "section:40",
+      "componentType": "section",
+      "label": "40",
+      "heading": "Repeal",
+      "text": "Repeal\n\n40The Quarriable Substances Act, chapter Q-1 of the Revised Statutes, 1973, is repealed.",
+      "subsections": [],
+      "contentHash": "2adf5ff31ac16e59e1ba75f869267785e1b623b5aec1827dccd80cbccce09b69"
+    },
+    {
+      "id": "section-41",
+      "sourceKey": "section:41",
+      "componentType": "section",
+      "label": "41",
+      "heading": "Transitional",
+      "text": "Transitional\n\n41(1)In this section\n\n“previous Act” means the Quarriable Substances Act, chapter Q-1 of the Revised Statutes, 1973, and the regulations made under that Act.(ancienne loi)\n\n41(2)Notwithstanding section 40, a quarry permit and an exploration licence issued under the previous Act that is in effect immediately before the commencement of this Act shall continue in full force and effect until their termination in accordance with the terms and conditions under which they were issued.\n\n41(3)A quarry lease granted under the previous Act that authorized the taking or removal of a quarriable substance except peat and that is in effect immediately before the commencement of this Act shall be deemed to be a quarry lease issued under this Act and all the provisions of this Act and the regulations with respect to quarry leases and holders of quarry leases apply to the quarry lease and the holder of the quarry lease.\n\n41(4)A quarry lease granted under the previous Act that authorized the taking or removal of peat and that is in effect immediately before the commencement of this Act shall be deemed to be a peat lease issued under this Act and all the provisions of this Act and the regulations with respect to peat leases and holders of peat leases apply to the peat lease and the holder of the peat lease.\n\n41(5)A lease deemed to be a quarry lease or a peat lease under subsection (3) or (4) shall, in respect of the term during which it is to be in force, continue in force until its termination date as set out in the lease except that if the termination date is set to occur ten years after the commencement of this Act, the quarry lease or peat lease shall terminate ten years after the commencement of this Act.",
+      "subsections": [
+        {
+          "id": "41-subsection-1",
+          "sourceKey": "section:41/subsection:1",
+          "label": "41(1)",
+          "text": "41(1)In this section\n\n“previous Act” means the Quarriable Substances Act, chapter Q-1 of the Revised Statutes, 1973, and the regulations made under that Act.(ancienne loi)",
+          "contentHash": "834037b4d46006403c86a4d06d4f941162a3591ad244acbcb54eb3df548951f7"
+        },
+        {
+          "id": "41-subsection-2",
+          "sourceKey": "section:41/subsection:2",
+          "label": "41(2)",
+          "text": "41(2)Notwithstanding section 40, a quarry permit and an exploration licence issued under the previous Act that is in effect immediately before the commencement of this Act shall continue in full force and effect until their termination in accordance with the terms and conditions under which they were issued.",
+          "contentHash": "611544ce958512bbc21b5a2f488e87bf71b1e18c05d86077963b9881283a3f36"
+        },
+        {
+          "id": "41-subsection-3",
+          "sourceKey": "section:41/subsection:3",
+          "label": "41(3)",
+          "text": "41(3)A quarry lease granted under the previous Act that authorized the taking or removal of a quarriable substance except peat and that is in effect immediately before the commencement of this Act shall be deemed to be a quarry lease issued under this Act and all the provisions of this Act and the regulations with respect to quarry leases and holders of quarry leases apply to the quarry lease and the holder of the quarry lease.",
+          "contentHash": "9af9fbb9403e5b70fd4c4e8012d664fc3c1ea22e354f68055e0de57044384ddc"
+        },
+        {
+          "id": "41-subsection-4",
+          "sourceKey": "section:41/subsection:4",
+          "label": "41(4)",
+          "text": "41(4)A quarry lease granted under the previous Act that authorized the taking or removal of peat and that is in effect immediately before the commencement of this Act shall be deemed to be a peat lease issued under this Act and all the provisions of this Act and the regulations with respect to peat leases and holders of peat leases apply to the peat lease and the holder of the peat lease.",
+          "contentHash": "ee9bd026d2c5e0585f91e49707ad533ba3c941b3b1db25c742a289b86f05daa6"
+        },
+        {
+          "id": "41-subsection-5",
+          "sourceKey": "section:41/subsection:5",
+          "label": "41(5)",
+          "text": "41(5)A lease deemed to be a quarry lease or a peat lease under subsection (3) or (4) shall, in respect of the term during which it is to be in force, continue in force until its termination date as set out in the lease except that if the termination date is set to occur ten years after the commencement of this Act, the quarry lease or peat lease shall terminate ten years after the commencement of this Act.",
+          "contentHash": "3ad0c42c00240b6b2e77efabac5ec991b59bfcd0329b979abe468d839182ea75"
+        }
+      ],
+      "contentHash": "ba38c6c6c48969c71c2b3b3adb236aa9a3441a3c7f6dbbb54e00f138732dc080"
+    },
+    {
+      "id": "section-41.1",
+      "sourceKey": "section:41.1",
+      "componentType": "section",
+      "label": "41.1",
+      "text": "41.1Notwithstanding the repeal of section 11, subsection 11(3) as it existed immediately before its repeal continues to apply to an agreement made under that section.\n2004, c.14, s.12\n\nCONSEQUENTIAL",
+      "subsections": [],
+      "contentHash": "771c90e8a2c387468a0127121323e3dc853314f46fd89291e36966a8dd4c215e"
+    },
+    {
+      "id": "section-42",
+      "sourceKey": "section:42",
+      "componentType": "section",
+      "label": "42",
+      "heading": "Consequential",
+      "text": "Consequential\n\n42Paragraph 137(c) of the Provincial Offences Procedure Act, chapter P-22.1 of the Acts of New Brunswick, 1987, is amended\n\n(a)\nby striking out “and” at the end of subparagraph (i);\n\n(b)\nby adding after subparagraph (ii) the following:\n\n(iii)\nsection 33 of the Quarriable Substances Act,",
+      "subsections": [],
+      "contentHash": "294c24901706a3580e1f2bf9b81c3a2f833df49e421bbf06923acdb6ef534e3c"
+    },
+    {
+      "id": "section-43",
+      "sourceKey": "section:43",
+      "componentType": "section",
+      "label": "43",
+      "heading": "Commencement",
+      "text": "Commencement\n\n43This Act or any provision of it comes into force on a day or days to be fixed by proclamation.",
+      "subsections": [],
+      "contentHash": "1c4011581785bc32f8b0caaf113a9aba68fb775dd915b1a8a937ff2f137a7f66"
+    }
+  ],
+  "notes": []
+}

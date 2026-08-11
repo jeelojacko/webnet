@@ -1,0 +1,966 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-agricultural-land-protection-and-development-act",
+  "officialTitle": "Agricultural Land Protection\nand Development Act",
+  "officialCitation": "Chapter A-5.11",
+  "officialCitationDisplay": "Chapter A-5.11",
+  "officialCitationNormalized": "A-5.11",
+  "documentType": "act",
+  "sourceUrl": "https://laws.gnb.ca/en/document/cs/A-5.11",
+  "fetchDate": "2026-08-11T18:08:23.766Z",
+  "consolidatedTo": "December 13, 2023",
+  "contentHash": "b4ef7b1251880153175b903cb22caff877f233c73529ae868042092121134796",
+  "tableOfContents": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "label": "1",
+      "heading": "Definitions"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "label": "2",
+      "heading": "Application for letters of incorporation"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "label": "3",
+      "heading": "Certificate constituting letters of incorporation"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "label": "4",
+      "heading": "Objects and purposes of an agricultural land owners association"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "label": "5",
+      "heading": "Powers of an agricultural land owners association"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "label": "6",
+      "heading": "By-laws"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "label": "7",
+      "heading": "Advisory functions of agricultural land owners association"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "label": "8",
+      "heading": "Registration of agricultural land"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "label": "9",
+      "heading": "Application for registration of agricultural land"
+    },
+    {
+      "id": "section-10",
+      "sourceKey": "section:10",
+      "label": "10",
+      "heading": "Registered agricultural land"
+    },
+    {
+      "id": "section-11",
+      "sourceKey": "section:11",
+      "label": "11",
+      "heading": "Recommendation by the Minister"
+    },
+    {
+      "id": "section-12",
+      "sourceKey": "section:12",
+      "label": "12",
+      "heading": "Construction of ditches and drains"
+    },
+    {
+      "id": "section-13",
+      "sourceKey": "section:13",
+      "label": "13",
+      "heading": "Respecting minors, mentally incompetent persons and non-residents"
+    },
+    {
+      "id": "section-14",
+      "sourceKey": "section:14",
+      "label": "14",
+      "heading": "Prohibition respecting placing of impediments in drain"
+    },
+    {
+      "id": "section-15",
+      "sourceKey": "section:15",
+      "label": "15",
+      "heading": "Maintenance and repair of ditches and drains"
+    },
+    {
+      "id": "section-16",
+      "sourceKey": "section:16",
+      "label": "16",
+      "heading": "Application for review of amount of damages"
+    },
+    {
+      "id": "section-17",
+      "sourceKey": "section:17",
+      "label": "17",
+      "heading": "Costs respecting construction or repair by Province"
+    },
+    {
+      "id": "section-18",
+      "sourceKey": "section:18",
+      "label": "18",
+      "heading": "Offences"
+    },
+    {
+      "id": "section-19",
+      "sourceKey": "section:19",
+      "label": "19",
+      "heading": "Administration"
+    },
+    {
+      "id": "section-20",
+      "sourceKey": "section:20",
+      "label": "20",
+      "heading": "Regulations"
+    },
+    {
+      "id": "section-21",
+      "sourceKey": "section:21",
+      "label": "21",
+      "heading": "Consequential amendments"
+    },
+    {
+      "id": "section-22",
+      "sourceKey": "section:22",
+      "label": "22",
+      "heading": "Repealed"
+    },
+    {
+      "id": "section-23",
+      "sourceKey": "section:23",
+      "label": "23",
+      "heading": "Repeal"
+    },
+    {
+      "id": "section-24",
+      "sourceKey": "section:24",
+      "label": "24",
+      "heading": "Repeal"
+    },
+    {
+      "id": "section-25",
+      "sourceKey": "section:25",
+      "label": "25",
+      "heading": "Commencement"
+    }
+  ],
+  "components": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
+      "label": "1",
+      "heading": "Definitions",
+      "text": "Definitions\n\n1In this Act\n“agricultural land” means (terre agricole)\n\n(a)\nland being used in an agricultural operation, or\n\n(b)\nland that is not being used in an agricultural operation but that meets the criteria set by regulation as land suitable for use in an agricultural operation;\n\n“agricultural land owners association” means an agricultural land owners association incorporated under section 3; (association de propriétaires de terres agricoles)\n\n“agricultural operation” means an agricultural operation that is carried on for gain or reward or in the hope or expectation of gain or reward, and includes(opération agricole)\n\n(a)\nthe clearing, draining, irrigating or cultivation of land,\n\n(b)\nthe raising of livestock, including poultry,\n\n(c)\nthe raising of fur-bearing animals,\n\n(d)\nthe raising of bees,\n\n(e)\nthe production of agricultural field crops,\n\n(f)\nthe production of fruit and vegetables and other specialty horticultural crops,\n\n(g)\nthe production of eggs and milk,\n\n(h)\nthe operation of agricultural machinery and equipment, including irrigation pumps,\n\n(i)\nthe preparation of a farm product for distribution from the farm gate, including cleaning, grading and packaging,\n\n(j)\nthe on-farm processing of farm products for the purpose of preparing farm products for wholesale or retail consumption,\n\n(k)\nthe storage, use or disposal of organic wastes for farm purposes,\n\n(l)\nthe operation of pick-your-own farms, roadside stands, farm produce stands and farm tourist operations as part of a farm operation,\n\n(m)\nthe application of fertilizers, conditioners, insecticides, pesticides, fungicides and herbicides, including ground and aerial spraying, for agricultural purposes, or\n\n(n)\nany other agricultural activity or process prescribed by regulation\n\nthat is carried on for gain or reward or in the hope or expectation of gain or reward;\n\n“drain” means a channel, open ditch, tile drain, grassed waterway or conservation structure to remove surface or subsurface water;(drain)\n\n“land use control law” means a regional land use plan, rural plan, municipal plan, zoning by-law or zoning regulation adopted or made under the Community Planning Act; (législation réglementant l’usage des terres)\n\n“local government” means a local government as defined in subsection 1(1) of the Local Governance Act or the Minister of Local Government, representing unincorporated areas of the Province; (gouvernement local)\n\n“Minister” means the Minister of Agriculture, Aquaculture and Fisheries and includes persons designated to act on behalf of the Minister;(Ministre)\n\n“registered agricultural land” means agricultural land that is registered by the Minister under section 8;(terre agricole inscrite)\n\n“rural community” Repealed: 2017, c.20, s.2\n\n“rural community council” Repealed: 2017, c.20, s.2\n\n1998, c.41, s.5; 1999, c.A-5.3, s.25; 2000, c.26, s.13; 2005, c.7, s.1; 2006, c.16, s.7; 2007, c.10, s.9; 2010, c.31, s.11; 2012, c.39, s.10; 2017, c.20, s.2; 2017, c.63, s.11; 2019, c.2, s.11; 2020, c.25, s.6; 2021, c.44, s.30; 2023, c.40, s.5",
+      "subsections": [],
+      "contentHash": "a7d3540bd8ad27a90720842ba164682463d50c875ea4bf5d1b377413dc346c53"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "label": "2",
+      "heading": "Application for letters of incorporation",
+      "text": "Application for letters of incorporation\n\n2(1)An agricultural land owners association may be formed for the purposes of this Act and the regulations.\n\n2(2)Letters of incorporation forming an agricultural land owners association may be issued upon application made in accordance with the regulations.",
+      "subsections": [
+        {
+          "id": "2-subsection-1",
+          "sourceKey": "section:2/subsection:1",
+          "label": "2(1)",
+          "text": "2(1)An agricultural land owners association may be formed for the purposes of this Act and the regulations.",
+          "contentHash": "121e7fd5f83544c7b9367666cfd0bc4071afef98ef19ad76cf62c5c4725664f4"
+        },
+        {
+          "id": "2-subsection-2",
+          "sourceKey": "section:2/subsection:2",
+          "label": "2(2)",
+          "text": "2(2)Letters of incorporation forming an agricultural land owners association may be issued upon application made in accordance with the regulations.",
+          "contentHash": "74a09e06dcd8ff3f84efcecbd22b378be26be11616a4e9c43460e9f5962abe08"
+        }
+      ],
+      "contentHash": "dde952ae18b5c8ef91bd4a952ec89380077bab7140017d163f53c36f2e31384c"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
+      "label": "3",
+      "heading": "Certificate constituting letters of incorporation",
+      "text": "Certificate constituting letters of incorporation\n\n3(1)Where the application under subsection 2(2) is approved in accordance with the regulations, the Minister shall register the application for letters of incorporation.\n\n3(2)On registration of the application for letters of incorporation, the Minister shall issue a certificate to the effect that the agricultural land owners association is incorporated under this Act and the regulations.\n\n3(3)A certificate issued by the Minister under subsection (2) to an agricultural land owners association shall constitute the letters of incorporation of that agricultural land owners association and shall be conclusive evidence that all the requirements of this Act and the regulations respecting incorporation have been complied with and that the agricultural land owners association is incorporated under this Act and the regulations.",
+      "subsections": [
+        {
+          "id": "3-subsection-1",
+          "sourceKey": "section:3/subsection:1",
+          "label": "3(1)",
+          "text": "3(1)Where the application under subsection 2(2) is approved in accordance with the regulations, the Minister shall register the application for letters of incorporation.",
+          "contentHash": "9facab7e2ad8df653e7fc9e85ec5accea05e350fa99ec23a0ef3181b3141f43c"
+        },
+        {
+          "id": "3-subsection-2",
+          "sourceKey": "section:3/subsection:2",
+          "label": "3(2)",
+          "text": "3(2)On registration of the application for letters of incorporation, the Minister shall issue a certificate to the effect that the agricultural land owners association is incorporated under this Act and the regulations.",
+          "contentHash": "2373bcbb8e610c71322d5eb6ae0b141bc709e6789affdecfbe69d94ab442e0e4"
+        },
+        {
+          "id": "3-subsection-3",
+          "sourceKey": "section:3/subsection:3",
+          "label": "3(3)",
+          "text": "3(3)A certificate issued by the Minister under subsection (2) to an agricultural land owners association shall constitute the letters of incorporation of that agricultural land owners association and shall be conclusive evidence that all the requirements of this Act and the regulations respecting incorporation have been complied with and that the agricultural land owners association is incorporated under this Act and the regulations.",
+          "contentHash": "e518b0460d060565fac29c46fcfaf885852f3769aee13b4a152f168bb5181167"
+        }
+      ],
+      "contentHash": "38887847cf580fb9c46203220983f2e4eb11de461aac93a43e06715d0091f8ba"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
+      "label": "4",
+      "heading": "Objects and purposes of an agricultural land owners association",
+      "text": "Objects and purposes of an agricultural land owners association\n\n4The objects and purposes of an agricultural land owners association are\n\n(a)\nto promote and facilitate the stewardship, protection and improvement of agricultural land,\n\n(b)\nto facilitate the provision and distribution of water sources and supply systems for irrigation for agricultural land and to manage the construction, operation and maintenance of water supply and distribution,\n\n(c)\nto facilitate and provide for the drainage of agricultural land, and\n\n(d)\nto carry out such other activities or duties as may be authorized or required under this Act or as the Lieutenant-Governor in Council may direct.",
+      "subsections": [],
+      "contentHash": "db462cb5428b94f402507d65ccea7f7723dd7ee48163301c0ecba7f4c0f543d8"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "componentType": "section",
+      "label": "5",
+      "heading": "Powers of an agricultural land owners association",
+      "text": "Powers of an agricultural land owners association\n\n5In respect of its objects and purposes, an agricultural land owners association has the capacity and, subject to this Act, the rights, powers and privileges of a natural person.",
+      "subsections": [],
+      "contentHash": "ffb54bc5793935c5d1ec05ca934c86ed62b41255bfdc38953b7591e225ac49c4"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "componentType": "section",
+      "label": "6",
+      "heading": "By-laws",
+      "text": "By-laws\n\n6(1)An agricultural land owners association may make by-laws for the control and management of the business and affairs of the agricultural land owners association.\n\n6(2)The Regulations Act does not apply to a by-law made under subsection (1).",
+      "subsections": [
+        {
+          "id": "6-subsection-1",
+          "sourceKey": "section:6/subsection:1",
+          "label": "6(1)",
+          "text": "6(1)An agricultural land owners association may make by-laws for the control and management of the business and affairs of the agricultural land owners association.",
+          "contentHash": "350be7a798445401d5afb43b5c09616af056864079bbfdafc465999e4bfcf624"
+        },
+        {
+          "id": "6-subsection-2",
+          "sourceKey": "section:6/subsection:2",
+          "label": "6(2)",
+          "text": "6(2)The Regulations Act does not apply to a by-law made under subsection (1).",
+          "contentHash": "9a48367eb82b24df58ae1d109ec6726dee577d2c2145c19d00a54508e4828a37"
+        }
+      ],
+      "contentHash": "94532c743e971b13774ddf778529ecf4ef333097439b4cba19e13b278b3de533"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "componentType": "section",
+      "label": "7",
+      "heading": "Advisory functions of agricultural land owners association",
+      "text": "Advisory functions of agricultural land owners association\n\n7An agricultural land owners association may\n\n(a)\nadvise a local government on the installation of facilities or services on or near registered agricultural land,\n\n(b)\nadvise the Minister and local government on acceptable management practices for agricultural operations,\n\n(c)\nadvise local government on matters relating to land use laws as they relate to agricultural land, and\n\n(d)\nadvise the Minister on matters relating to this Act.\n\n2017, c.20, s.2",
+      "subsections": [],
+      "contentHash": "a9fa14f349ed8bd7c450ba26efb42e781d9ce929addbabac3194d3ad0c953327"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "componentType": "section",
+      "label": "8",
+      "heading": "Registration of agricultural land",
+      "text": "Registration of agricultural land\n\n8The Minister shall, in accordance with the regulations,\n\n(a)\nestablish and maintain a registry of agricultural lands,\n\n(b)\nregister agricultural lands and remove agricultural lands from the registry.\n\n(c)\nRepealed: 2017, c.20, s.2\n\n1998, c.12, s.8; 2017, c.20, s.2",
+      "subsections": [],
+      "contentHash": "8dc656ad9df5cecedb4c4927417c5a499b35922abd6d4ad374323d8e22f4b194"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "componentType": "section",
+      "label": "9",
+      "heading": "Application for registration of agricultural land",
+      "text": "Application for registration of agricultural land\n\n9A person may, in accordance with the regulations, make application to register agricultural land owned by the person.",
+      "subsections": [],
+      "contentHash": "873938b44213a196160757888643fc4962d5f20d6e77422877dd65fc099e7b43"
+    },
+    {
+      "id": "section-10",
+      "sourceKey": "section:10",
+      "componentType": "section",
+      "label": "10",
+      "heading": "Registered agricultural land",
+      "text": "Registered agricultural land\n\nRepealed: 2017, c.20, s.2\n\n2017, c.20, s.2\n\n10Repealed: 2017, c.20, s.2\n1998, c.41, s.5; 2000, c.26, s.13; 2005, c.7, s.1; 2006, c.16, s.7; 2012, c.39, s.10; 2017, c.20, s.2",
+      "subsections": [],
+      "contentHash": "822edeedcf3e0277e1e74216db2ba69394adbea5ec042f1a10803e02ea1a258e"
+    },
+    {
+      "id": "section-11",
+      "sourceKey": "section:11",
+      "componentType": "section",
+      "label": "11",
+      "heading": "Recommendation by the Minister",
+      "text": "Recommendation by the Minister\n\n11The Minister may recommend to the Minister of Local Government or a local government that agricultural land that is not registered under section 8 but that is, in the opinion of the Minister, suitable as agricultural land be considered for inclusion in the appropriate land use control law.\n1998, c.41, s.5; 2000, c.26, s.13; 2006, c.16, s.7; 2012, c.39, s.10; 2017, c.20, s.2; 2020, c.25, s.6; 2023, c.40, s.5",
+      "subsections": [],
+      "contentHash": "3759a633b24bd6aec9c3d5af1f03e2912b6a82874797fc8514e40f686973773f"
+    },
+    {
+      "id": "section-12",
+      "sourceKey": "section:12",
+      "componentType": "section",
+      "label": "12",
+      "heading": "Construction of ditches and drains",
+      "text": "Construction of ditches and drains\n\n12(1)Where it is necessary for the proper drainage of agricultural land to run a ditch or drain through the property of an adjacent owner, the owner of the agricultural land or an agricultural land owners association may apply to the Minister for permission to construct the ditch or drain.\n\n12(2)Where an applicant requesting permission to construct a ditch or drain deposits with the Minister an amount of money that is, in the opinion of the Minister, sufficient to cover all damages to be caused to adjacent lands together with the expense of any investigation made by the Minister in relation to the application, the Minister may grant the applicant permission to construct the ditch or drain and shall pay out the sum so deposited to the persons entitled to the payment.\n\n12(3)The Minister may for the purposes of subsection (1) or (2) do any or all of the following:\n\n(a)\ninvestigate the need for the ditch or drain;\n\n(b)\nestimate the cost of the ditch or drain;\n\n(c)\ndetermine the damage that will be done to any property;\n\n(d)\nestimate the value of the ditch or drain to the land to be benefited;\n\n(e)\nattempt to seek an agreement among the interested parties to construct the ditch or drain;\n\n(f)\nconstruct the ditch or drain whether or not the Minister obtains an agreement;\n\n(g)\nassess each owner of the benefited land for the cost of construction.",
+      "subsections": [
+        {
+          "id": "12-subsection-1",
+          "sourceKey": "section:12/subsection:1",
+          "label": "12(1)",
+          "text": "12(1)Where it is necessary for the proper drainage of agricultural land to run a ditch or drain through the property of an adjacent owner, the owner of the agricultural land or an agricultural land owners association may apply to the Minister for permission to construct the ditch or drain.",
+          "contentHash": "9b1cb8831fa9902a950b093510bbfc509f62f50c2bcec41c23d80015ec391c27"
+        },
+        {
+          "id": "12-subsection-2",
+          "sourceKey": "section:12/subsection:2",
+          "label": "12(2)",
+          "text": "12(2)Where an applicant requesting permission to construct a ditch or drain deposits with the Minister an amount of money that is, in the opinion of the Minister, sufficient to cover all damages to be caused to adjacent lands together with the expense of any investigation made by the Minister in relation to the application, the Minister may grant the applicant permission to construct the ditch or drain and shall pay out the sum so deposited to the persons entitled to the payment.",
+          "contentHash": "f3e0aa69e88ac85f84e98f831e478a316eedc4867400989402bcc4c1a8b3e078"
+        },
+        {
+          "id": "12-subsection-3",
+          "sourceKey": "section:12/subsection:3",
+          "label": "12(3)",
+          "text": "12(3)The Minister may for the purposes of subsection (1) or (2) do any or all of the following:\n\n(a)\ninvestigate the need for the ditch or drain;\n\n(b)\nestimate the cost of the ditch or drain;\n\n(c)\ndetermine the damage that will be done to any property;\n\n(d)\nestimate the value of the ditch or drain to the land to be benefited;\n\n(e)\nattempt to seek an agreement among the interested parties to construct the ditch or drain;\n\n(f)\nconstruct the ditch or drain whether or not the Minister obtains an agreement;\n\n(g)\nassess each owner of the benefited land for the cost of construction.",
+          "contentHash": "9643f37fb0ca434b724e6da640719f7263b4092750d75c6670eaba384ee9fb62"
+        }
+      ],
+      "contentHash": "fbaf2ab684c86d8a88de2ee2f66e6a6654f986d4eb22e8340223b7c9c52c0da7"
+    },
+    {
+      "id": "section-13",
+      "sourceKey": "section:13",
+      "componentType": "section",
+      "label": "13",
+      "heading": "Respecting minors, mentally incompetent persons and non-residents",
+      "text": "Respecting minors, mentally incompetent persons and non-residents\n\n13If the person entitled to land through which any ditch or drain is proposed to be constructed is a minor, a mentally incompetent person or a non-resident of the Province, a judge of The Court of King’s Bench of New Brunswick may, on the application of the person desiring the construction of the ditch or drain, make an order for the service of the person or the protection of the person’s interests as the judge may deem fair and reasonable.\n2023, c.17, s.4",
+      "subsections": [],
+      "contentHash": "c4feec11fe69886e0b3c0f8d73a60d9eca62baa21a1744a2453023a2ee4394d7"
+    },
+    {
+      "id": "section-14",
+      "sourceKey": "section:14",
+      "componentType": "section",
+      "label": "14",
+      "heading": "Prohibition respecting placing of impediments in drain",
+      "text": "Prohibition respecting placing of impediments in drain\n\n14Where a ditch or drain has been constructed to serve the property of two or more adjacent owners and was jointly paid for by these owners, either under the terms of this Act, the Drainage of Farm Lands Act or by mutual consent, the owners of land traversed by the ditch or drain shall not place any impediment in that ditch or drain that will interfere with the passage of water without first obtaining the consent of all owners served by that ditch or drain.",
+      "subsections": [],
+      "contentHash": "1ee8506fa546753a3d74c99556500534ad38c669ad518db0acb81782e8643aed"
+    },
+    {
+      "id": "section-15",
+      "sourceKey": "section:15",
+      "componentType": "section",
+      "label": "15",
+      "heading": "Maintenance and repair of ditches and drains",
+      "text": "Maintenance and repair of ditches and drains\n\n15(1)Where a ditch or drain on agricultural land has been constructed to serve the property of two or more adjacent owners and was paid for by the Province or was jointly paid for by the owners, either under the terms of this Act, the Drainage of Farm Lands Act or by mutual consent, the owners shall be jointly responsible for the maintenance and repair of that ditch or drain.\n\n15(2)Whenever it appears to an agricultural land owners association or one or more owners of agricultural land serviced by any ditch or drain that the repair of the ditch or drain is needed and the repair cannot be carried out and financed by mutual consent of all parties, an agricultural land owners association or the owner or owners of the agricultural land may apply to the Minister for permission to carry out the repair work.\n\n15(3)Where an applicant or applicants for repair deposits with the Minister an amount of money that is, in the opinion of the Minister, sufficient to cover all damages to be caused to adjacent lands together with the expense of any investigation made by the Minister in relation to the application, the Minister may grant the applicant permission to repair the ditch or drain and shall pay out the sum so deposited to the persons entitled to the payment.\n\n15(4)The Minister may for the purposes of subsection (2) or (3) do any or all of the following:\n\n(a)\ninvestigate the need for the repair;\n\n(b)\nestimate the cost of the repair;\n\n(c)\ndetermine the damage that will be done to any property;\n\n(d)\nattempt to seek an agreement among the interested parties to effect the repair of the ditch or drain;\n\n(e)\ncarry out the repair of the ditch or drain whether or not the Minister obtains an agreement;\n\n(f)\nassess each owner of the benefited land for the cost of such repair.",
+      "subsections": [
+        {
+          "id": "15-subsection-1",
+          "sourceKey": "section:15/subsection:1",
+          "label": "15(1)",
+          "text": "15(1)Where a ditch or drain on agricultural land has been constructed to serve the property of two or more adjacent owners and was paid for by the Province or was jointly paid for by the owners, either under the terms of this Act, the Drainage of Farm Lands Act or by mutual consent, the owners shall be jointly responsible for the maintenance and repair of that ditch or drain.",
+          "contentHash": "953231cb4d2a1e71c0af6f57a11b4c5205c37a8da88fba8c7d2394d69bc86506"
+        },
+        {
+          "id": "15-subsection-2",
+          "sourceKey": "section:15/subsection:2",
+          "label": "15(2)",
+          "text": "15(2)Whenever it appears to an agricultural land owners association or one or more owners of agricultural land serviced by any ditch or drain that the repair of the ditch or drain is needed and the repair cannot be carried out and financed by mutual consent of all parties, an agricultural land owners association or the owner or owners of the agricultural land may apply to the Minister for permission to carry out the repair work.",
+          "contentHash": "0474aa250aaaff58412927fb19b7734d1850a2a6ed94671bb1231cb34ea9d240"
+        },
+        {
+          "id": "15-subsection-3",
+          "sourceKey": "section:15/subsection:3",
+          "label": "15(3)",
+          "text": "15(3)Where an applicant or applicants for repair deposits with the Minister an amount of money that is, in the opinion of the Minister, sufficient to cover all damages to be caused to adjacent lands together with the expense of any investigation made by the Minister in relation to the application, the Minister may grant the applicant permission to repair the ditch or drain and shall pay out the sum so deposited to the persons entitled to the payment.",
+          "contentHash": "2cfb051b0308098c663a1a6d8715b89ddab4096e810d6590660a9a7cedf07d59"
+        },
+        {
+          "id": "15-subsection-4",
+          "sourceKey": "section:15/subsection:4",
+          "label": "15(4)",
+          "text": "15(4)The Minister may for the purposes of subsection (2) or (3) do any or all of the following:\n\n(a)\ninvestigate the need for the repair;\n\n(b)\nestimate the cost of the repair;\n\n(c)\ndetermine the damage that will be done to any property;\n\n(d)\nattempt to seek an agreement among the interested parties to effect the repair of the ditch or drain;\n\n(e)\ncarry out the repair of the ditch or drain whether or not the Minister obtains an agreement;\n\n(f)\nassess each owner of the benefited land for the cost of such repair.",
+          "contentHash": "177f706e923d18f06912f577da5d33a50a6587691da1c38ca98f54e340495937"
+        }
+      ],
+      "contentHash": "186110e4474edcbc29b4884dc9f0f7c41186b2a51bf82a25a05cfed2e0cf1c72"
+    },
+    {
+      "id": "section-16",
+      "sourceKey": "section:16",
+      "componentType": "section",
+      "label": "16",
+      "heading": "Application for review of amount of damages",
+      "text": "Application for review of amount of damages\n\n16Where a person is not satisfied with the amount for damage as determined by the Minister under section 12 or 15, the person may refer the matter to The Court of King’s Bench of New Brunswick or any judge thereof acting under Part II of the Expropriation Act.\n2023, c.17, s.4",
+      "subsections": [],
+      "contentHash": "e4778d3cc0ffc7d39b2a4d4a56560b732b2a961495dd3cfee6f0bc227853c8fc"
+    },
+    {
+      "id": "section-17",
+      "sourceKey": "section:17",
+      "componentType": "section",
+      "label": "17",
+      "heading": "Costs respecting construction or repair by Province",
+      "text": "Costs respecting construction or repair by Province\n\n17(1)The cost of the construction or repair of any ditch or drain incurred by the Minister under section 12 or 15 shall constitute a debt due to the Crown in right of the Province from the person or persons assessed for the cost by the Minister under section 12 or 15 and may be recovered by action in the name of the Crown in any court of competent jurisdiction.\n\n17(2)The court may make an order as to the costs of such action in favour of or against the Crown.\n\n2023, c.17, s.4",
+      "subsections": [
+        {
+          "id": "17-subsection-1",
+          "sourceKey": "section:17/subsection:1",
+          "label": "17(1)",
+          "text": "17(1)The cost of the construction or repair of any ditch or drain incurred by the Minister under section 12 or 15 shall constitute a debt due to the Crown in right of the Province from the person or persons assessed for the cost by the Minister under section 12 or 15 and may be recovered by action in the name of the Crown in any court of competent jurisdiction.",
+          "contentHash": "f5e47543fda93adbfba90c83293983d68a4994035513652f6fe8f4390b21f919"
+        },
+        {
+          "id": "17-subsection-2",
+          "sourceKey": "section:17/subsection:2",
+          "label": "17(2)",
+          "text": "17(2)The court may make an order as to the costs of such action in favour of or against the Crown.\n\n2023, c.17, s.4",
+          "contentHash": "5131776ed1472d63f4a31b73731e15366ea8d0609f9dea6009bcc402ebdfe046"
+        }
+      ],
+      "contentHash": "f0143886d2d36fbf2f02b5a05fc752fd01d0f6dbdcaa54509bc226cc211ed2cf"
+    },
+    {
+      "id": "section-18",
+      "sourceKey": "section:18",
+      "componentType": "section",
+      "label": "18",
+      "heading": "Offences",
+      "text": "Offences\n\n18(1)A person who violates or fails to comply with any provision of the regulations commits an offence that is, subject to subsection (2), punishable under Part II of the Provincial Offences Procedure Act as a category B offence.\n\n18(2)A person who violates or fails to comply with a provision of the regulations in respect of which a category has been prescribed under paragraph 20(l) commits an offence of the category prescribed by regulation.",
+      "subsections": [
+        {
+          "id": "18-subsection-1",
+          "sourceKey": "section:18/subsection:1",
+          "label": "18(1)",
+          "text": "18(1)A person who violates or fails to comply with any provision of the regulations commits an offence that is, subject to subsection (2), punishable under Part II of the Provincial Offences Procedure Act as a category B offence.",
+          "contentHash": "cab6af2c77008f4d58a0ace8f40fce656105ff8e59f384853c70b8c1a115d72c"
+        },
+        {
+          "id": "18-subsection-2",
+          "sourceKey": "section:18/subsection:2",
+          "label": "18(2)",
+          "text": "18(2)A person who violates or fails to comply with a provision of the regulations in respect of which a category has been prescribed under paragraph 20(l) commits an offence of the category prescribed by regulation.",
+          "contentHash": "73d677b091aec66ada316a24843822bb21c1fc194a7e26c545384b0816a9dd77"
+        }
+      ],
+      "contentHash": "de7c0e96f203656ed38779180a03424a892c22961f3f912c73af87cf14ee14a5"
+    },
+    {
+      "id": "section-19",
+      "sourceKey": "section:19",
+      "componentType": "section",
+      "label": "19",
+      "heading": "Administration",
+      "text": "Administration\n\n19(1)The Minister is responsible for the administration of this Act and the regulations.\n\n19(2)The Minister may designate persons to act on the Minister’s behalf for the purposes of this Act and the regulations.",
+      "subsections": [
+        {
+          "id": "19-subsection-1",
+          "sourceKey": "section:19/subsection:1",
+          "label": "19(1)",
+          "text": "19(1)The Minister is responsible for the administration of this Act and the regulations.",
+          "contentHash": "df645f2a10ed42d2a9c12755cd0659589cbaa09b811ce84e3f762436956c77e6"
+        },
+        {
+          "id": "19-subsection-2",
+          "sourceKey": "section:19/subsection:2",
+          "label": "19(2)",
+          "text": "19(2)The Minister may designate persons to act on the Minister’s behalf for the purposes of this Act and the regulations.",
+          "contentHash": "6897c76c16990c9dff8e18971d0501ea0fa285549fe11a50e4288f11aad8a28a"
+        }
+      ],
+      "contentHash": "33dead15169b105487b89710560c0263de0bc0917d3c6cd1cf9ac1718c3017c2"
+    },
+    {
+      "id": "section-20",
+      "sourceKey": "section:20",
+      "componentType": "section",
+      "label": "20",
+      "heading": "Regulations",
+      "text": "Regulations\n\n20The Lieutenant-Governor in Council may make regulations\n\n(a)\nrespecting the criteria for determining whether land that is not in use in an agricultural operation is suitable for use in an agricultural operation;\n\n(a.1)\nprescribing an agricultural activity or process for the purposes of the definition “agricultural operation”;\n\n(b)\nrespecting the application for and registry of letters of incorporation and the issuance of letters of incorporation to an agricultural land owners association;\n\n(c)\nrespecting the revoking of letters patent of an agricultural land owners association;\n\n(d)\nrespecting the eligibility requirements for membership in an agricultural land owners association;\n\n(e)\nrespecting the establishment and maintenance of a registry of agricultural land;\n\n(f)\nrespecting the registration, including the application for registration, of agricultural land and the removal of agricultural land from the registry;\n\n(g)\nrespecting the registration of a notice referred to in paragraph 8(c);\n\n(h)\nrespecting the storage, handling and application of manure, including liquid manure;\n\n(i)\nrespecting the disposal of agricultural wastes;\n\n(j)\nrespecting the manufacture of artificial topsoil;\n\n(k)\nrespecting the construction and maintenance of drains on agricultural land;\n\n(l)\nprescribing, in relation to offences under the regulations, categories of offences for the purposes of Part II of the Provincial Offences Procedure Act;\n\n(m)\nrespecting appeals, including the designation of an appeal body, the grounds for appealing a decision and the grounds on which an appeal may be dismissed;\n\n(n)\ndefining any word or expression used in this Act but not defined in this Act.\n\n1999, c.A-5.3, s.25; 2016, c.28, s.2",
+      "subsections": [],
+      "contentHash": "a2d66492661995392c1b351ce95a05f76b49fe84741461a2eeb120ea4afc3943"
+    },
+    {
+      "id": "section-21",
+      "sourceKey": "section:21",
+      "componentType": "section",
+      "label": "21",
+      "heading": "Consequential amendments",
+      "text": "Consequential amendments\n\nRepealed: 2017, c.20, s.2\n\n2017, c.20, s.2\n\n21Repealed: 2017, c.20, s.2\n2017, c.20, s.2",
+      "subsections": [],
+      "contentHash": "118da4728918c8ea629209e78441212d0726e020d24a669fc90dc39cdb4c539e"
+    },
+    {
+      "id": "section-22",
+      "sourceKey": "section:22",
+      "componentType": "section",
+      "label": "22",
+      "heading": "Repealed",
+      "text": "Repealed\n\n22Repealed: 2017, c.20, s.2\n2017, c.20, s.2",
+      "subsections": [],
+      "contentHash": "8ea651fb52d80cb8a0d1b177dd97c5eb4217e7d7f85f263309725ab418e3bec6"
+    },
+    {
+      "id": "section-23",
+      "sourceKey": "section:23",
+      "componentType": "section",
+      "label": "23",
+      "heading": "Repeal",
+      "text": "Repeal\n\n23The Agricultural Rehabilitation and Development Act, chapter A-6 of the Revised Statutes, 1973, is repealed.",
+      "subsections": [],
+      "contentHash": "2a64477342b9a615cced7799cf0847e37a81b1a222a7ba436d257eeb670a7b4b"
+    },
+    {
+      "id": "section-24",
+      "sourceKey": "section:24",
+      "componentType": "section",
+      "label": "24",
+      "heading": "Repeal",
+      "text": "Repeal\n\n24The Drainage of Farm Lands Act, chapter D-14 of the Revised Statutes, 1973, is repealed.",
+      "subsections": [],
+      "contentHash": "fa0520c256702044acd168e29f13af7177e32f754eafd44e9076128467666da3"
+    },
+    {
+      "id": "section-25",
+      "sourceKey": "section:25",
+      "componentType": "section",
+      "label": "25",
+      "heading": "Commencement",
+      "text": "Commencement\n\n25This Act or any provision of it comes into force on a day or days to be fixed by proclamation.\n\nN.B. This Act, except paragraph 8(c), sections 10, 21 and 22, was proclaimed and came into force July 1, 1997.\n\nN.B. This Act is consolidated to December 13, 2023.",
+      "subsections": [],
+      "contentHash": "6ea62c2593f9c56a654d864c529308c4e40c7bb11b0c190b802be45493e62618"
+    }
+  ],
+  "sections": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
+      "label": "1",
+      "heading": "Definitions",
+      "text": "Definitions\n\n1In this Act\n“agricultural land” means (terre agricole)\n\n(a)\nland being used in an agricultural operation, or\n\n(b)\nland that is not being used in an agricultural operation but that meets the criteria set by regulation as land suitable for use in an agricultural operation;\n\n“agricultural land owners association” means an agricultural land owners association incorporated under section 3; (association de propriétaires de terres agricoles)\n\n“agricultural operation” means an agricultural operation that is carried on for gain or reward or in the hope or expectation of gain or reward, and includes(opération agricole)\n\n(a)\nthe clearing, draining, irrigating or cultivation of land,\n\n(b)\nthe raising of livestock, including poultry,\n\n(c)\nthe raising of fur-bearing animals,\n\n(d)\nthe raising of bees,\n\n(e)\nthe production of agricultural field crops,\n\n(f)\nthe production of fruit and vegetables and other specialty horticultural crops,\n\n(g)\nthe production of eggs and milk,\n\n(h)\nthe operation of agricultural machinery and equipment, including irrigation pumps,\n\n(i)\nthe preparation of a farm product for distribution from the farm gate, including cleaning, grading and packaging,\n\n(j)\nthe on-farm processing of farm products for the purpose of preparing farm products for wholesale or retail consumption,\n\n(k)\nthe storage, use or disposal of organic wastes for farm purposes,\n\n(l)\nthe operation of pick-your-own farms, roadside stands, farm produce stands and farm tourist operations as part of a farm operation,\n\n(m)\nthe application of fertilizers, conditioners, insecticides, pesticides, fungicides and herbicides, including ground and aerial spraying, for agricultural purposes, or\n\n(n)\nany other agricultural activity or process prescribed by regulation\n\nthat is carried on for gain or reward or in the hope or expectation of gain or reward;\n\n“drain” means a channel, open ditch, tile drain, grassed waterway or conservation structure to remove surface or subsurface water;(drain)\n\n“land use control law” means a regional land use plan, rural plan, municipal plan, zoning by-law or zoning regulation adopted or made under the Community Planning Act; (législation réglementant l’usage des terres)\n\n“local government” means a local government as defined in subsection 1(1) of the Local Governance Act or the Minister of Local Government, representing unincorporated areas of the Province; (gouvernement local)\n\n“Minister” means the Minister of Agriculture, Aquaculture and Fisheries and includes persons designated to act on behalf of the Minister;(Ministre)\n\n“registered agricultural land” means agricultural land that is registered by the Minister under section 8;(terre agricole inscrite)\n\n“rural community” Repealed: 2017, c.20, s.2\n\n“rural community council” Repealed: 2017, c.20, s.2\n\n1998, c.41, s.5; 1999, c.A-5.3, s.25; 2000, c.26, s.13; 2005, c.7, s.1; 2006, c.16, s.7; 2007, c.10, s.9; 2010, c.31, s.11; 2012, c.39, s.10; 2017, c.20, s.2; 2017, c.63, s.11; 2019, c.2, s.11; 2020, c.25, s.6; 2021, c.44, s.30; 2023, c.40, s.5",
+      "subsections": [],
+      "contentHash": "a7d3540bd8ad27a90720842ba164682463d50c875ea4bf5d1b377413dc346c53"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "label": "2",
+      "heading": "Application for letters of incorporation",
+      "text": "Application for letters of incorporation\n\n2(1)An agricultural land owners association may be formed for the purposes of this Act and the regulations.\n\n2(2)Letters of incorporation forming an agricultural land owners association may be issued upon application made in accordance with the regulations.",
+      "subsections": [
+        {
+          "id": "2-subsection-1",
+          "sourceKey": "section:2/subsection:1",
+          "label": "2(1)",
+          "text": "2(1)An agricultural land owners association may be formed for the purposes of this Act and the regulations.",
+          "contentHash": "121e7fd5f83544c7b9367666cfd0bc4071afef98ef19ad76cf62c5c4725664f4"
+        },
+        {
+          "id": "2-subsection-2",
+          "sourceKey": "section:2/subsection:2",
+          "label": "2(2)",
+          "text": "2(2)Letters of incorporation forming an agricultural land owners association may be issued upon application made in accordance with the regulations.",
+          "contentHash": "74a09e06dcd8ff3f84efcecbd22b378be26be11616a4e9c43460e9f5962abe08"
+        }
+      ],
+      "contentHash": "dde952ae18b5c8ef91bd4a952ec89380077bab7140017d163f53c36f2e31384c"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
+      "label": "3",
+      "heading": "Certificate constituting letters of incorporation",
+      "text": "Certificate constituting letters of incorporation\n\n3(1)Where the application under subsection 2(2) is approved in accordance with the regulations, the Minister shall register the application for letters of incorporation.\n\n3(2)On registration of the application for letters of incorporation, the Minister shall issue a certificate to the effect that the agricultural land owners association is incorporated under this Act and the regulations.\n\n3(3)A certificate issued by the Minister under subsection (2) to an agricultural land owners association shall constitute the letters of incorporation of that agricultural land owners association and shall be conclusive evidence that all the requirements of this Act and the regulations respecting incorporation have been complied with and that the agricultural land owners association is incorporated under this Act and the regulations.",
+      "subsections": [
+        {
+          "id": "3-subsection-1",
+          "sourceKey": "section:3/subsection:1",
+          "label": "3(1)",
+          "text": "3(1)Where the application under subsection 2(2) is approved in accordance with the regulations, the Minister shall register the application for letters of incorporation.",
+          "contentHash": "9facab7e2ad8df653e7fc9e85ec5accea05e350fa99ec23a0ef3181b3141f43c"
+        },
+        {
+          "id": "3-subsection-2",
+          "sourceKey": "section:3/subsection:2",
+          "label": "3(2)",
+          "text": "3(2)On registration of the application for letters of incorporation, the Minister shall issue a certificate to the effect that the agricultural land owners association is incorporated under this Act and the regulations.",
+          "contentHash": "2373bcbb8e610c71322d5eb6ae0b141bc709e6789affdecfbe69d94ab442e0e4"
+        },
+        {
+          "id": "3-subsection-3",
+          "sourceKey": "section:3/subsection:3",
+          "label": "3(3)",
+          "text": "3(3)A certificate issued by the Minister under subsection (2) to an agricultural land owners association shall constitute the letters of incorporation of that agricultural land owners association and shall be conclusive evidence that all the requirements of this Act and the regulations respecting incorporation have been complied with and that the agricultural land owners association is incorporated under this Act and the regulations.",
+          "contentHash": "e518b0460d060565fac29c46fcfaf885852f3769aee13b4a152f168bb5181167"
+        }
+      ],
+      "contentHash": "38887847cf580fb9c46203220983f2e4eb11de461aac93a43e06715d0091f8ba"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
+      "label": "4",
+      "heading": "Objects and purposes of an agricultural land owners association",
+      "text": "Objects and purposes of an agricultural land owners association\n\n4The objects and purposes of an agricultural land owners association are\n\n(a)\nto promote and facilitate the stewardship, protection and improvement of agricultural land,\n\n(b)\nto facilitate the provision and distribution of water sources and supply systems for irrigation for agricultural land and to manage the construction, operation and maintenance of water supply and distribution,\n\n(c)\nto facilitate and provide for the drainage of agricultural land, and\n\n(d)\nto carry out such other activities or duties as may be authorized or required under this Act or as the Lieutenant-Governor in Council may direct.",
+      "subsections": [],
+      "contentHash": "db462cb5428b94f402507d65ccea7f7723dd7ee48163301c0ecba7f4c0f543d8"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "componentType": "section",
+      "label": "5",
+      "heading": "Powers of an agricultural land owners association",
+      "text": "Powers of an agricultural land owners association\n\n5In respect of its objects and purposes, an agricultural land owners association has the capacity and, subject to this Act, the rights, powers and privileges of a natural person.",
+      "subsections": [],
+      "contentHash": "ffb54bc5793935c5d1ec05ca934c86ed62b41255bfdc38953b7591e225ac49c4"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "componentType": "section",
+      "label": "6",
+      "heading": "By-laws",
+      "text": "By-laws\n\n6(1)An agricultural land owners association may make by-laws for the control and management of the business and affairs of the agricultural land owners association.\n\n6(2)The Regulations Act does not apply to a by-law made under subsection (1).",
+      "subsections": [
+        {
+          "id": "6-subsection-1",
+          "sourceKey": "section:6/subsection:1",
+          "label": "6(1)",
+          "text": "6(1)An agricultural land owners association may make by-laws for the control and management of the business and affairs of the agricultural land owners association.",
+          "contentHash": "350be7a798445401d5afb43b5c09616af056864079bbfdafc465999e4bfcf624"
+        },
+        {
+          "id": "6-subsection-2",
+          "sourceKey": "section:6/subsection:2",
+          "label": "6(2)",
+          "text": "6(2)The Regulations Act does not apply to a by-law made under subsection (1).",
+          "contentHash": "9a48367eb82b24df58ae1d109ec6726dee577d2c2145c19d00a54508e4828a37"
+        }
+      ],
+      "contentHash": "94532c743e971b13774ddf778529ecf4ef333097439b4cba19e13b278b3de533"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "componentType": "section",
+      "label": "7",
+      "heading": "Advisory functions of agricultural land owners association",
+      "text": "Advisory functions of agricultural land owners association\n\n7An agricultural land owners association may\n\n(a)\nadvise a local government on the installation of facilities or services on or near registered agricultural land,\n\n(b)\nadvise the Minister and local government on acceptable management practices for agricultural operations,\n\n(c)\nadvise local government on matters relating to land use laws as they relate to agricultural land, and\n\n(d)\nadvise the Minister on matters relating to this Act.\n\n2017, c.20, s.2",
+      "subsections": [],
+      "contentHash": "a9fa14f349ed8bd7c450ba26efb42e781d9ce929addbabac3194d3ad0c953327"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "componentType": "section",
+      "label": "8",
+      "heading": "Registration of agricultural land",
+      "text": "Registration of agricultural land\n\n8The Minister shall, in accordance with the regulations,\n\n(a)\nestablish and maintain a registry of agricultural lands,\n\n(b)\nregister agricultural lands and remove agricultural lands from the registry.\n\n(c)\nRepealed: 2017, c.20, s.2\n\n1998, c.12, s.8; 2017, c.20, s.2",
+      "subsections": [],
+      "contentHash": "8dc656ad9df5cecedb4c4927417c5a499b35922abd6d4ad374323d8e22f4b194"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "componentType": "section",
+      "label": "9",
+      "heading": "Application for registration of agricultural land",
+      "text": "Application for registration of agricultural land\n\n9A person may, in accordance with the regulations, make application to register agricultural land owned by the person.",
+      "subsections": [],
+      "contentHash": "873938b44213a196160757888643fc4962d5f20d6e77422877dd65fc099e7b43"
+    },
+    {
+      "id": "section-10",
+      "sourceKey": "section:10",
+      "componentType": "section",
+      "label": "10",
+      "heading": "Registered agricultural land",
+      "text": "Registered agricultural land\n\nRepealed: 2017, c.20, s.2\n\n2017, c.20, s.2\n\n10Repealed: 2017, c.20, s.2\n1998, c.41, s.5; 2000, c.26, s.13; 2005, c.7, s.1; 2006, c.16, s.7; 2012, c.39, s.10; 2017, c.20, s.2",
+      "subsections": [],
+      "contentHash": "822edeedcf3e0277e1e74216db2ba69394adbea5ec042f1a10803e02ea1a258e"
+    },
+    {
+      "id": "section-11",
+      "sourceKey": "section:11",
+      "componentType": "section",
+      "label": "11",
+      "heading": "Recommendation by the Minister",
+      "text": "Recommendation by the Minister\n\n11The Minister may recommend to the Minister of Local Government or a local government that agricultural land that is not registered under section 8 but that is, in the opinion of the Minister, suitable as agricultural land be considered for inclusion in the appropriate land use control law.\n1998, c.41, s.5; 2000, c.26, s.13; 2006, c.16, s.7; 2012, c.39, s.10; 2017, c.20, s.2; 2020, c.25, s.6; 2023, c.40, s.5",
+      "subsections": [],
+      "contentHash": "3759a633b24bd6aec9c3d5af1f03e2912b6a82874797fc8514e40f686973773f"
+    },
+    {
+      "id": "section-12",
+      "sourceKey": "section:12",
+      "componentType": "section",
+      "label": "12",
+      "heading": "Construction of ditches and drains",
+      "text": "Construction of ditches and drains\n\n12(1)Where it is necessary for the proper drainage of agricultural land to run a ditch or drain through the property of an adjacent owner, the owner of the agricultural land or an agricultural land owners association may apply to the Minister for permission to construct the ditch or drain.\n\n12(2)Where an applicant requesting permission to construct a ditch or drain deposits with the Minister an amount of money that is, in the opinion of the Minister, sufficient to cover all damages to be caused to adjacent lands together with the expense of any investigation made by the Minister in relation to the application, the Minister may grant the applicant permission to construct the ditch or drain and shall pay out the sum so deposited to the persons entitled to the payment.\n\n12(3)The Minister may for the purposes of subsection (1) or (2) do any or all of the following:\n\n(a)\ninvestigate the need for the ditch or drain;\n\n(b)\nestimate the cost of the ditch or drain;\n\n(c)\ndetermine the damage that will be done to any property;\n\n(d)\nestimate the value of the ditch or drain to the land to be benefited;\n\n(e)\nattempt to seek an agreement among the interested parties to construct the ditch or drain;\n\n(f)\nconstruct the ditch or drain whether or not the Minister obtains an agreement;\n\n(g)\nassess each owner of the benefited land for the cost of construction.",
+      "subsections": [
+        {
+          "id": "12-subsection-1",
+          "sourceKey": "section:12/subsection:1",
+          "label": "12(1)",
+          "text": "12(1)Where it is necessary for the proper drainage of agricultural land to run a ditch or drain through the property of an adjacent owner, the owner of the agricultural land or an agricultural land owners association may apply to the Minister for permission to construct the ditch or drain.",
+          "contentHash": "9b1cb8831fa9902a950b093510bbfc509f62f50c2bcec41c23d80015ec391c27"
+        },
+        {
+          "id": "12-subsection-2",
+          "sourceKey": "section:12/subsection:2",
+          "label": "12(2)",
+          "text": "12(2)Where an applicant requesting permission to construct a ditch or drain deposits with the Minister an amount of money that is, in the opinion of the Minister, sufficient to cover all damages to be caused to adjacent lands together with the expense of any investigation made by the Minister in relation to the application, the Minister may grant the applicant permission to construct the ditch or drain and shall pay out the sum so deposited to the persons entitled to the payment.",
+          "contentHash": "f3e0aa69e88ac85f84e98f831e478a316eedc4867400989402bcc4c1a8b3e078"
+        },
+        {
+          "id": "12-subsection-3",
+          "sourceKey": "section:12/subsection:3",
+          "label": "12(3)",
+          "text": "12(3)The Minister may for the purposes of subsection (1) or (2) do any or all of the following:\n\n(a)\ninvestigate the need for the ditch or drain;\n\n(b)\nestimate the cost of the ditch or drain;\n\n(c)\ndetermine the damage that will be done to any property;\n\n(d)\nestimate the value of the ditch or drain to the land to be benefited;\n\n(e)\nattempt to seek an agreement among the interested parties to construct the ditch or drain;\n\n(f)\nconstruct the ditch or drain whether or not the Minister obtains an agreement;\n\n(g)\nassess each owner of the benefited land for the cost of construction.",
+          "contentHash": "9643f37fb0ca434b724e6da640719f7263b4092750d75c6670eaba384ee9fb62"
+        }
+      ],
+      "contentHash": "fbaf2ab684c86d8a88de2ee2f66e6a6654f986d4eb22e8340223b7c9c52c0da7"
+    },
+    {
+      "id": "section-13",
+      "sourceKey": "section:13",
+      "componentType": "section",
+      "label": "13",
+      "heading": "Respecting minors, mentally incompetent persons and non-residents",
+      "text": "Respecting minors, mentally incompetent persons and non-residents\n\n13If the person entitled to land through which any ditch or drain is proposed to be constructed is a minor, a mentally incompetent person or a non-resident of the Province, a judge of The Court of King’s Bench of New Brunswick may, on the application of the person desiring the construction of the ditch or drain, make an order for the service of the person or the protection of the person’s interests as the judge may deem fair and reasonable.\n2023, c.17, s.4",
+      "subsections": [],
+      "contentHash": "c4feec11fe69886e0b3c0f8d73a60d9eca62baa21a1744a2453023a2ee4394d7"
+    },
+    {
+      "id": "section-14",
+      "sourceKey": "section:14",
+      "componentType": "section",
+      "label": "14",
+      "heading": "Prohibition respecting placing of impediments in drain",
+      "text": "Prohibition respecting placing of impediments in drain\n\n14Where a ditch or drain has been constructed to serve the property of two or more adjacent owners and was jointly paid for by these owners, either under the terms of this Act, the Drainage of Farm Lands Act or by mutual consent, the owners of land traversed by the ditch or drain shall not place any impediment in that ditch or drain that will interfere with the passage of water without first obtaining the consent of all owners served by that ditch or drain.",
+      "subsections": [],
+      "contentHash": "1ee8506fa546753a3d74c99556500534ad38c669ad518db0acb81782e8643aed"
+    },
+    {
+      "id": "section-15",
+      "sourceKey": "section:15",
+      "componentType": "section",
+      "label": "15",
+      "heading": "Maintenance and repair of ditches and drains",
+      "text": "Maintenance and repair of ditches and drains\n\n15(1)Where a ditch or drain on agricultural land has been constructed to serve the property of two or more adjacent owners and was paid for by the Province or was jointly paid for by the owners, either under the terms of this Act, the Drainage of Farm Lands Act or by mutual consent, the owners shall be jointly responsible for the maintenance and repair of that ditch or drain.\n\n15(2)Whenever it appears to an agricultural land owners association or one or more owners of agricultural land serviced by any ditch or drain that the repair of the ditch or drain is needed and the repair cannot be carried out and financed by mutual consent of all parties, an agricultural land owners association or the owner or owners of the agricultural land may apply to the Minister for permission to carry out the repair work.\n\n15(3)Where an applicant or applicants for repair deposits with the Minister an amount of money that is, in the opinion of the Minister, sufficient to cover all damages to be caused to adjacent lands together with the expense of any investigation made by the Minister in relation to the application, the Minister may grant the applicant permission to repair the ditch or drain and shall pay out the sum so deposited to the persons entitled to the payment.\n\n15(4)The Minister may for the purposes of subsection (2) or (3) do any or all of the following:\n\n(a)\ninvestigate the need for the repair;\n\n(b)\nestimate the cost of the repair;\n\n(c)\ndetermine the damage that will be done to any property;\n\n(d)\nattempt to seek an agreement among the interested parties to effect the repair of the ditch or drain;\n\n(e)\ncarry out the repair of the ditch or drain whether or not the Minister obtains an agreement;\n\n(f)\nassess each owner of the benefited land for the cost of such repair.",
+      "subsections": [
+        {
+          "id": "15-subsection-1",
+          "sourceKey": "section:15/subsection:1",
+          "label": "15(1)",
+          "text": "15(1)Where a ditch or drain on agricultural land has been constructed to serve the property of two or more adjacent owners and was paid for by the Province or was jointly paid for by the owners, either under the terms of this Act, the Drainage of Farm Lands Act or by mutual consent, the owners shall be jointly responsible for the maintenance and repair of that ditch or drain.",
+          "contentHash": "953231cb4d2a1e71c0af6f57a11b4c5205c37a8da88fba8c7d2394d69bc86506"
+        },
+        {
+          "id": "15-subsection-2",
+          "sourceKey": "section:15/subsection:2",
+          "label": "15(2)",
+          "text": "15(2)Whenever it appears to an agricultural land owners association or one or more owners of agricultural land serviced by any ditch or drain that the repair of the ditch or drain is needed and the repair cannot be carried out and financed by mutual consent of all parties, an agricultural land owners association or the owner or owners of the agricultural land may apply to the Minister for permission to carry out the repair work.",
+          "contentHash": "0474aa250aaaff58412927fb19b7734d1850a2a6ed94671bb1231cb34ea9d240"
+        },
+        {
+          "id": "15-subsection-3",
+          "sourceKey": "section:15/subsection:3",
+          "label": "15(3)",
+          "text": "15(3)Where an applicant or applicants for repair deposits with the Minister an amount of money that is, in the opinion of the Minister, sufficient to cover all damages to be caused to adjacent lands together with the expense of any investigation made by the Minister in relation to the application, the Minister may grant the applicant permission to repair the ditch or drain and shall pay out the sum so deposited to the persons entitled to the payment.",
+          "contentHash": "2cfb051b0308098c663a1a6d8715b89ddab4096e810d6590660a9a7cedf07d59"
+        },
+        {
+          "id": "15-subsection-4",
+          "sourceKey": "section:15/subsection:4",
+          "label": "15(4)",
+          "text": "15(4)The Minister may for the purposes of subsection (2) or (3) do any or all of the following:\n\n(a)\ninvestigate the need for the repair;\n\n(b)\nestimate the cost of the repair;\n\n(c)\ndetermine the damage that will be done to any property;\n\n(d)\nattempt to seek an agreement among the interested parties to effect the repair of the ditch or drain;\n\n(e)\ncarry out the repair of the ditch or drain whether or not the Minister obtains an agreement;\n\n(f)\nassess each owner of the benefited land for the cost of such repair.",
+          "contentHash": "177f706e923d18f06912f577da5d33a50a6587691da1c38ca98f54e340495937"
+        }
+      ],
+      "contentHash": "186110e4474edcbc29b4884dc9f0f7c41186b2a51bf82a25a05cfed2e0cf1c72"
+    },
+    {
+      "id": "section-16",
+      "sourceKey": "section:16",
+      "componentType": "section",
+      "label": "16",
+      "heading": "Application for review of amount of damages",
+      "text": "Application for review of amount of damages\n\n16Where a person is not satisfied with the amount for damage as determined by the Minister under section 12 or 15, the person may refer the matter to The Court of King’s Bench of New Brunswick or any judge thereof acting under Part II of the Expropriation Act.\n2023, c.17, s.4",
+      "subsections": [],
+      "contentHash": "e4778d3cc0ffc7d39b2a4d4a56560b732b2a961495dd3cfee6f0bc227853c8fc"
+    },
+    {
+      "id": "section-17",
+      "sourceKey": "section:17",
+      "componentType": "section",
+      "label": "17",
+      "heading": "Costs respecting construction or repair by Province",
+      "text": "Costs respecting construction or repair by Province\n\n17(1)The cost of the construction or repair of any ditch or drain incurred by the Minister under section 12 or 15 shall constitute a debt due to the Crown in right of the Province from the person or persons assessed for the cost by the Minister under section 12 or 15 and may be recovered by action in the name of the Crown in any court of competent jurisdiction.\n\n17(2)The court may make an order as to the costs of such action in favour of or against the Crown.\n\n2023, c.17, s.4",
+      "subsections": [
+        {
+          "id": "17-subsection-1",
+          "sourceKey": "section:17/subsection:1",
+          "label": "17(1)",
+          "text": "17(1)The cost of the construction or repair of any ditch or drain incurred by the Minister under section 12 or 15 shall constitute a debt due to the Crown in right of the Province from the person or persons assessed for the cost by the Minister under section 12 or 15 and may be recovered by action in the name of the Crown in any court of competent jurisdiction.",
+          "contentHash": "f5e47543fda93adbfba90c83293983d68a4994035513652f6fe8f4390b21f919"
+        },
+        {
+          "id": "17-subsection-2",
+          "sourceKey": "section:17/subsection:2",
+          "label": "17(2)",
+          "text": "17(2)The court may make an order as to the costs of such action in favour of or against the Crown.\n\n2023, c.17, s.4",
+          "contentHash": "5131776ed1472d63f4a31b73731e15366ea8d0609f9dea6009bcc402ebdfe046"
+        }
+      ],
+      "contentHash": "f0143886d2d36fbf2f02b5a05fc752fd01d0f6dbdcaa54509bc226cc211ed2cf"
+    },
+    {
+      "id": "section-18",
+      "sourceKey": "section:18",
+      "componentType": "section",
+      "label": "18",
+      "heading": "Offences",
+      "text": "Offences\n\n18(1)A person who violates or fails to comply with any provision of the regulations commits an offence that is, subject to subsection (2), punishable under Part II of the Provincial Offences Procedure Act as a category B offence.\n\n18(2)A person who violates or fails to comply with a provision of the regulations in respect of which a category has been prescribed under paragraph 20(l) commits an offence of the category prescribed by regulation.",
+      "subsections": [
+        {
+          "id": "18-subsection-1",
+          "sourceKey": "section:18/subsection:1",
+          "label": "18(1)",
+          "text": "18(1)A person who violates or fails to comply with any provision of the regulations commits an offence that is, subject to subsection (2), punishable under Part II of the Provincial Offences Procedure Act as a category B offence.",
+          "contentHash": "cab6af2c77008f4d58a0ace8f40fce656105ff8e59f384853c70b8c1a115d72c"
+        },
+        {
+          "id": "18-subsection-2",
+          "sourceKey": "section:18/subsection:2",
+          "label": "18(2)",
+          "text": "18(2)A person who violates or fails to comply with a provision of the regulations in respect of which a category has been prescribed under paragraph 20(l) commits an offence of the category prescribed by regulation.",
+          "contentHash": "73d677b091aec66ada316a24843822bb21c1fc194a7e26c545384b0816a9dd77"
+        }
+      ],
+      "contentHash": "de7c0e96f203656ed38779180a03424a892c22961f3f912c73af87cf14ee14a5"
+    },
+    {
+      "id": "section-19",
+      "sourceKey": "section:19",
+      "componentType": "section",
+      "label": "19",
+      "heading": "Administration",
+      "text": "Administration\n\n19(1)The Minister is responsible for the administration of this Act and the regulations.\n\n19(2)The Minister may designate persons to act on the Minister’s behalf for the purposes of this Act and the regulations.",
+      "subsections": [
+        {
+          "id": "19-subsection-1",
+          "sourceKey": "section:19/subsection:1",
+          "label": "19(1)",
+          "text": "19(1)The Minister is responsible for the administration of this Act and the regulations.",
+          "contentHash": "df645f2a10ed42d2a9c12755cd0659589cbaa09b811ce84e3f762436956c77e6"
+        },
+        {
+          "id": "19-subsection-2",
+          "sourceKey": "section:19/subsection:2",
+          "label": "19(2)",
+          "text": "19(2)The Minister may designate persons to act on the Minister’s behalf for the purposes of this Act and the regulations.",
+          "contentHash": "6897c76c16990c9dff8e18971d0501ea0fa285549fe11a50e4288f11aad8a28a"
+        }
+      ],
+      "contentHash": "33dead15169b105487b89710560c0263de0bc0917d3c6cd1cf9ac1718c3017c2"
+    },
+    {
+      "id": "section-20",
+      "sourceKey": "section:20",
+      "componentType": "section",
+      "label": "20",
+      "heading": "Regulations",
+      "text": "Regulations\n\n20The Lieutenant-Governor in Council may make regulations\n\n(a)\nrespecting the criteria for determining whether land that is not in use in an agricultural operation is suitable for use in an agricultural operation;\n\n(a.1)\nprescribing an agricultural activity or process for the purposes of the definition “agricultural operation”;\n\n(b)\nrespecting the application for and registry of letters of incorporation and the issuance of letters of incorporation to an agricultural land owners association;\n\n(c)\nrespecting the revoking of letters patent of an agricultural land owners association;\n\n(d)\nrespecting the eligibility requirements for membership in an agricultural land owners association;\n\n(e)\nrespecting the establishment and maintenance of a registry of agricultural land;\n\n(f)\nrespecting the registration, including the application for registration, of agricultural land and the removal of agricultural land from the registry;\n\n(g)\nrespecting the registration of a notice referred to in paragraph 8(c);\n\n(h)\nrespecting the storage, handling and application of manure, including liquid manure;\n\n(i)\nrespecting the disposal of agricultural wastes;\n\n(j)\nrespecting the manufacture of artificial topsoil;\n\n(k)\nrespecting the construction and maintenance of drains on agricultural land;\n\n(l)\nprescribing, in relation to offences under the regulations, categories of offences for the purposes of Part II of the Provincial Offences Procedure Act;\n\n(m)\nrespecting appeals, including the designation of an appeal body, the grounds for appealing a decision and the grounds on which an appeal may be dismissed;\n\n(n)\ndefining any word or expression used in this Act but not defined in this Act.\n\n1999, c.A-5.3, s.25; 2016, c.28, s.2",
+      "subsections": [],
+      "contentHash": "a2d66492661995392c1b351ce95a05f76b49fe84741461a2eeb120ea4afc3943"
+    },
+    {
+      "id": "section-21",
+      "sourceKey": "section:21",
+      "componentType": "section",
+      "label": "21",
+      "heading": "Consequential amendments",
+      "text": "Consequential amendments\n\nRepealed: 2017, c.20, s.2\n\n2017, c.20, s.2\n\n21Repealed: 2017, c.20, s.2\n2017, c.20, s.2",
+      "subsections": [],
+      "contentHash": "118da4728918c8ea629209e78441212d0726e020d24a669fc90dc39cdb4c539e"
+    },
+    {
+      "id": "section-22",
+      "sourceKey": "section:22",
+      "componentType": "section",
+      "label": "22",
+      "heading": "Repealed",
+      "text": "Repealed\n\n22Repealed: 2017, c.20, s.2\n2017, c.20, s.2",
+      "subsections": [],
+      "contentHash": "8ea651fb52d80cb8a0d1b177dd97c5eb4217e7d7f85f263309725ab418e3bec6"
+    },
+    {
+      "id": "section-23",
+      "sourceKey": "section:23",
+      "componentType": "section",
+      "label": "23",
+      "heading": "Repeal",
+      "text": "Repeal\n\n23The Agricultural Rehabilitation and Development Act, chapter A-6 of the Revised Statutes, 1973, is repealed.",
+      "subsections": [],
+      "contentHash": "2a64477342b9a615cced7799cf0847e37a81b1a222a7ba436d257eeb670a7b4b"
+    },
+    {
+      "id": "section-24",
+      "sourceKey": "section:24",
+      "componentType": "section",
+      "label": "24",
+      "heading": "Repeal",
+      "text": "Repeal\n\n24The Drainage of Farm Lands Act, chapter D-14 of the Revised Statutes, 1973, is repealed.",
+      "subsections": [],
+      "contentHash": "fa0520c256702044acd168e29f13af7177e32f754eafd44e9076128467666da3"
+    },
+    {
+      "id": "section-25",
+      "sourceKey": "section:25",
+      "componentType": "section",
+      "label": "25",
+      "heading": "Commencement",
+      "text": "Commencement\n\n25This Act or any provision of it comes into force on a day or days to be fixed by proclamation.\n\nN.B. This Act, except paragraph 8(c), sections 10, 21 and 22, was proclaimed and came into force July 1, 1997.\n\nN.B. This Act is consolidated to December 13, 2023.",
+      "subsections": [],
+      "contentHash": "6ea62c2593f9c56a654d864c529308c4e40c7bb11b0c190b802be45493e62618"
+    }
+  ],
+  "notes": []
+}

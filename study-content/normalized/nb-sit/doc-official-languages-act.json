@@ -1,0 +1,2579 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-official-languages-act",
+  "officialTitle": "Official Languages Act",
+  "officialCitation": "Chapter O-0.5",
+  "officialCitationDisplay": "Chapter O-0.5",
+  "officialCitationNormalized": "O-0.5",
+  "documentType": "act",
+  "sourceUrl": "https://laws.gnb.ca/en/document/cs/O-0.5",
+  "fetchDate": "2026-08-11T18:08:59.851Z",
+  "consolidatedTo": "June 16, 2023",
+  "contentHash": "b12c1455c9cab3913a8b9c69739732879c1303548319eca966333216b13db56f",
+  "tableOfContents": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "label": "1",
+      "heading": "Definitions"
+    },
+    {
+      "id": "section-1.1",
+      "sourceKey": "section:1.1",
+      "label": "1.1",
+      "heading": "Purpose"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "label": "2",
+      "heading": "Minister responsible"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "label": "3",
+      "heading": "Act prevails, exception"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "label": "4",
+      "heading": "Distinct institutions"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "label": "5",
+      "heading": "Authority of Legislature"
+    },
+    {
+      "id": "section-5.01",
+      "sourceKey": "section:5.01",
+      "label": "5.01",
+      "heading": "Secretariat of Official Languages"
+    },
+    {
+      "id": "section-5.1",
+      "sourceKey": "section:5.1",
+      "label": "5.1",
+      "heading": "Implementation plan"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "label": "6",
+      "heading": "Language of the Legislature"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "label": "7",
+      "heading": "Interpretation of proceedings of the Legislative Assembly"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "label": "8",
+      "heading": "Records and journals of the Legislative Assembly"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "label": "9",
+      "heading": "Language of legislation"
+    },
+    {
+      "id": "section-10",
+      "sourceKey": "section:10",
+      "label": "10",
+      "heading": "Equal authority of both language versions"
+    },
+    {
+      "id": "section-11",
+      "sourceKey": "section:11",
+      "label": "11",
+      "heading": "Introduction of bills"
+    },
+    {
+      "id": "section-12",
+      "sourceKey": "section:12",
+      "label": "12",
+      "heading": "Acts of the Legislature"
+    },
+    {
+      "id": "section-13",
+      "sourceKey": "section:13",
+      "label": "13",
+      "heading": "Required publication in The Royal Gazette"
+    },
+    {
+      "id": "section-14",
+      "sourceKey": "section:14",
+      "label": "14",
+      "heading": "Official documents"
+    },
+    {
+      "id": "section-15",
+      "sourceKey": "section:15",
+      "label": "15",
+      "heading": "Documents published under an Act of the Province"
+    },
+    {
+      "id": "section-16",
+      "sourceKey": "section:16",
+      "label": "16",
+      "heading": "Language of the courts"
+    },
+    {
+      "id": "section-17",
+      "sourceKey": "section:17",
+      "label": "17",
+      "heading": "Right to use language of choice"
+    },
+    {
+      "id": "section-18",
+      "sourceKey": "section:18",
+      "label": "18",
+      "heading": "Person not to be disadvantaged by choice"
+    },
+    {
+      "id": "section-19",
+      "sourceKey": "section:19",
+      "label": "19",
+      "heading": "Obligation placed on the court to understand language chosen"
+    },
+    {
+      "id": "section-20",
+      "sourceKey": "section:20",
+      "label": "20",
+      "heading": "Accused’s right to be heard in the language of choice"
+    },
+    {
+      "id": "section-21",
+      "sourceKey": "section:21",
+      "label": "21",
+      "heading": "Rights of the witness"
+    },
+    {
+      "id": "section-22",
+      "sourceKey": "section:22",
+      "label": "22",
+      "heading": "Obligation on the Crown to use language of the parties"
+    },
+    {
+      "id": "section-23",
+      "sourceKey": "section:23",
+      "label": "23",
+      "heading": "Disagreement between parties as to language of use"
+    },
+    {
+      "id": "section-24",
+      "sourceKey": "section:24",
+      "label": "24",
+      "heading": "Publication of decisions"
+    },
+    {
+      "id": "section-25",
+      "sourceKey": "section:25",
+      "label": "25",
+      "heading": "Publication of Court of Appeal decisions"
+    },
+    {
+      "id": "section-26",
+      "sourceKey": "section:26",
+      "label": "26",
+      "heading": "Rendering of a judgment"
+    },
+    {
+      "id": "section-27",
+      "sourceKey": "section:27",
+      "label": "27",
+      "heading": "Communications with government and its institutions"
+    },
+    {
+      "id": "section-28",
+      "sourceKey": "section:28",
+      "label": "28",
+      "heading": "Obligations of institutions"
+    },
+    {
+      "id": "section-28.1",
+      "sourceKey": "section:28.1",
+      "label": "28.1"
+    },
+    {
+      "id": "section-29",
+      "sourceKey": "section:29",
+      "label": "29",
+      "heading": "Posting of signs and publications intended for the public"
+    },
+    {
+      "id": "section-30",
+      "sourceKey": "section:30",
+      "label": "30",
+      "heading": "Services provided by third parties"
+    },
+    {
+      "id": "section-31",
+      "sourceKey": "section:31",
+      "label": "31",
+      "heading": "Services provided by a peace officer"
+    },
+    {
+      "id": "section-32",
+      "sourceKey": "section:32",
+      "label": "32",
+      "heading": "Application of section 31"
+    },
+    {
+      "id": "section-33",
+      "sourceKey": "section:33",
+      "label": "33",
+      "heading": "Health services"
+    },
+    {
+      "id": "section-34",
+      "sourceKey": "section:34",
+      "label": "34",
+      "heading": "Effect of section 33"
+    },
+    {
+      "id": "section-35",
+      "sourceKey": "section:35",
+      "label": "35",
+      "heading": "By-laws, minutes of council"
+    },
+    {
+      "id": "section-36",
+      "sourceKey": "section:36",
+      "label": "36",
+      "heading": "Communications and services"
+    },
+    {
+      "id": "section-37",
+      "sourceKey": "section:37",
+      "label": "37",
+      "heading": "Opting-in by municipalities"
+    },
+    {
+      "id": "section-38",
+      "sourceKey": "section:38",
+      "label": "38",
+      "heading": "Effect of opting-in"
+    },
+    {
+      "id": "section-39",
+      "sourceKey": "section:39",
+      "label": "39",
+      "heading": "Regional Service Commissions"
+    },
+    {
+      "id": "section-40",
+      "sourceKey": "section:40",
+      "label": "40",
+      "heading": "Cities and Municipalities"
+    },
+    {
+      "id": "section-41",
+      "sourceKey": "section:41",
+      "label": "41",
+      "heading": "Communications and services"
+    },
+    {
+      "id": "section-41.1",
+      "sourceKey": "section:41.1",
+      "label": "41.1",
+      "heading": "Professional associations"
+    },
+    {
+      "id": "section-42",
+      "sourceKey": "section:42",
+      "label": "42",
+      "heading": "Review of Act"
+    },
+    {
+      "id": "section-43",
+      "sourceKey": "section:43",
+      "label": "43",
+      "heading": "Mandate and responsibilities of Commissioner"
+    },
+    {
+      "id": "section-43.01",
+      "sourceKey": "section:43.01",
+      "label": "43.01",
+      "heading": "Delegation of authority"
+    },
+    {
+      "id": "section-43.1",
+      "sourceKey": "section:43.1",
+      "label": "43.1",
+      "heading": "Protection from reprisal"
+    },
+    {
+      "id": "section-43.2",
+      "sourceKey": "section:43.2",
+      "label": "43.2",
+      "heading": "Immunity"
+    },
+    {
+      "id": "section-44",
+      "sourceKey": "section:44",
+      "label": "44",
+      "heading": "Appointment of Official Translators"
+    },
+    {
+      "id": "section-45",
+      "sourceKey": "section:45",
+      "label": "45",
+      "heading": "Regulation-making authority"
+    },
+    {
+      "id": "section-46",
+      "sourceKey": "section:46",
+      "label": "46",
+      "heading": "Repeal"
+    },
+    {
+      "id": "section-47",
+      "sourceKey": "section:47",
+      "label": "47",
+      "heading": "Commencement"
+    }
+  ],
+  "components": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
+      "label": "1",
+      "heading": "Definitions",
+      "text": "Definitions\n\n1In this Act\n“city” means a city within the meaning of subsection 22(2) of the Local Governance Act; (cité)\n\n“communication” and “communicate” mean any form of communication whether spoken, written or electronic; (communication) et (communiquer)\n\n“court” means any court or administrative tribunal in the Province (tribunaux)\n\n“Crown corporation” means a corporation that is accountable, through a Minister, to the Legislative Assembly for the conduct of its affairs, and includes a parent Crown corporation or a wholly-owned subsidiary; (sociétés de la Couronne)\n\n“department” means a department as defined in section 1 of the Financial Administration Act; (ministère)\n\n“institution” means an institution of the Legislative Assembly or the Government of New Brunswick, the courts, any board, commission or council, or other body or office, established to perform a governmental function by or pursuant to an Act of the Legislature or by or under the authority of the Lieutenant-Governor in Council, a department of the Government of New Brunswick, a Crown corporation established by or pursuant to an Act of the Legislature or any other body that is specified by an Act of the Legislature to be an agent of the Crown in right of the Province or to be subject to the direction of the Lieutenant-Governor in Council or a minister of the Crown; (institution)\n\n“linguistic community” means either of the English linguistic community or the French linguistic community of New Brunswick within the meaning of section 16.1 of the Canadian Charter of Rights and Freedoms; (communauté linguistique)\n\n“municipality” means a municipality within the meaning of subsection 1(1) of the Local Governance Act; (municipalité)\n\n“official languages” means the official languages of New Brunswick within the meaning of subsection 16(2) of the Canadian Charter of Rights and Freedoms; (langues officielles)\n\n“peace officer” means a peace officer as defined under section 1 of the Provincial Offences Procedure Act who serves the public, whether on behalf of the Province, a municipality or under a contract for the delivery of policing services with the Province or its institutions and includes a police officer as defined under that Act; (agent de la paix)\n\n“publication” and “published” mean all forms of publication, whether paper or electronic;(publication) et (publier)\n\n“public service” means those portions or divisions of the Public Service specified in the First Schedule of the Public Service Labour Relations Act that are prescribed by regulation.(services publics)\n\n2011, c.20, s.11; 2013, c.38, s.1; 2017, c.20, s.123; 2023, c.17, s.179\n\nPURPOSE\n\n2013, c.38, s.1",
+      "subsections": [],
+      "contentHash": "0fe084e32ad5a926233ede6457d604294b9db46b9e991e1b736ef3631cc0f2e9"
+    },
+    {
+      "id": "section-1.1",
+      "sourceKey": "section:1.1",
+      "componentType": "section",
+      "label": "1.1",
+      "heading": "Purpose",
+      "text": "Purpose\n\n1.1The purpose of this Act is the following:\n\n(a)\nto ensure respect for English and French as the official languages of New Brunswick;\n\n(b)\nto ensure that English and French have equality of status and equal rights and privileges as to their use in all institutions of the Province; and\n\n(c)\nto set out the powers and duties of the institutions of the Province with respect to the two official languages.\n\n2013, c.38, s.1\n\nINTERPRETATION",
+      "subsections": [],
+      "contentHash": "1de253134376a3e522e4413111c9c058c17fd9b1f99d60598f898c55f73d7352"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "label": "2",
+      "heading": "Minister responsible",
+      "text": "Minister responsible\n\n2The Premier is responsible for the administration of this Act.",
+      "subsections": [],
+      "contentHash": "d7df0e57c941ef76fd2f2477bfda24c0a04f5aea7c65a9101dd4e891506190d9"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
+      "label": "3",
+      "heading": "Act prevails, exception",
+      "text": "Act prevails, exception\n\n3(1)No act, or regulation under it, other than this Act, shall be interpreted so as to repeal, limit or contravene a provision of this Act and, in case of conflict, this Act prevails.\n\n3(2)Subsection (1) does not apply to the Education Act or any other act, legislative provision or measure which promotes the equality of the two linguistic communities or establishes distinct educational institutions or distinct cultural institutions.",
+      "subsections": [
+        {
+          "id": "3-subsection-1",
+          "sourceKey": "section:3/subsection:1",
+          "label": "3(1)",
+          "text": "3(1)No act, or regulation under it, other than this Act, shall be interpreted so as to repeal, limit or contravene a provision of this Act and, in case of conflict, this Act prevails.",
+          "contentHash": "84a8a3d1221c9df62cf2557820b57b7b8dcbb55c94fd37997ca0a160ae2cc687"
+        },
+        {
+          "id": "3-subsection-2",
+          "sourceKey": "section:3/subsection:2",
+          "label": "3(2)",
+          "text": "3(2)Subsection (1) does not apply to the Education Act or any other act, legislative provision or measure which promotes the equality of the two linguistic communities or establishes distinct educational institutions or distinct cultural institutions.",
+          "contentHash": "b8d68926cdce586453d7849ecae7c0fc97d0dcf4408183ccb5573ae2a406a408"
+        }
+      ],
+      "contentHash": "efa2aa12ed9ff210a4253b37c093d5900f0b925a8ff1789ff9f6358934a305d9"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
+      "label": "4",
+      "heading": "Distinct institutions",
+      "text": "Distinct institutions\n\n4Distinct educational institutions and distinct cultural institutions and, without limiting the generality of the foregoing, the school system in New Brunswick including the English and French sections of the Department of Education and Early Childhood Development including schools and their committees, councils and boards, community centres and universities and, where applicable, community colleges are not included in the definition of “institution” in section 1.\n2010, c.31, s.100",
+      "subsections": [],
+      "contentHash": "0712a16863412f66ec418c5d876139accbcf05daf8c1ec42c747a4a6d1628537"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "componentType": "section",
+      "label": "5",
+      "heading": "Authority of Legislature",
+      "text": "Authority of Legislature\n\n5Nothing in this Act limits the authority of the Legislature or the Government to advance the equality of status and use of English and French.\n\nSECRETARIAT OF OFFICIAL LANGUAGES\n\n2023, c.10, s.1",
+      "subsections": [],
+      "contentHash": "60ac44ac21da1646bc519b9e15259ed399a2b9455134408af330e8dd54c6196c"
+    },
+    {
+      "id": "section-5.01",
+      "sourceKey": "section:5.01",
+      "componentType": "section",
+      "label": "5.01",
+      "heading": "Secretariat of Official Languages",
+      "text": "Secretariat of Official Languages\n\n2023, c.10, s.1\n\n5.01There is established a secretariat within the Department of Intergovernmental Affairs called the Secretariat of Official Languages that shall\n\n(a)\nassist in developing and review, monitor and evaluate the implementation plan referred to in section 5.1,\n\n(b)\nprepare the report referred to in subsection 5.1(5),\n\n(c)\nevaluate this Act on a continuous basis and make recommendations for amendments,\n\n(d)\nadvise institutions on measures to be taken to comply with this Act and meet the needs of the two linguistic communities,\n\n(e)\nprovide support to employees of institutions and the public service to ensure compliance with language policies of the Province,\n\n(f)\nundertake public outreach initiatives, including regular consultation with stakeholders from both linguistic communities, to promote respect, understanding and communication between the two linguistic communities, and\n\n(g)\nperform any other duties assigned to it by the Premier.\n\n2023, c.10, s.1\n\nIMPLEMENTATION PLAN\n\n2013, c.38, s.1",
+      "subsections": [],
+      "contentHash": "ac1ad7577a0e45e0b26f436bc09ba151d798dbd8ca6b6921025eae36544e082f"
+    },
+    {
+      "id": "section-5.1",
+      "sourceKey": "section:5.1",
+      "componentType": "section",
+      "label": "5.1",
+      "heading": "Implementation plan",
+      "text": "Implementation plan\n\n5.1(1)The Province shall prepare a plan setting out how it will meet its obligations under this Act, and the plan shall include the following:\n\n(a)\ngoals and objectives with respect to its obligations under this Act;\n\n(b)\nmeasures to ensure the equality of status of the two linguistic communities;\n\n(c)\nmeasures to ensure the equality of use of the English and French language in the public service;\n\n(d)\nmeasures to ensure that language of work is considered when identifying work groups within the public service and when developing language profiles for positions in the public service;\n\n(e)\nmeasures to improve the bilingual capacity of senior management in the public service;\n\n(f)\nmeasures to provide for the review and the improvement, when necessary, of the public signage policies of the Province, which policies shall include consideration of the two linguistic communities and of the linguistic composition of a region; and\n\n(g)\nperformance measures for evaluating the effectiveness of the measures implemented under the plan and time frames within which they must be implemented.\n\n5.1(2)The Premier is responsible for ensuring central government coordination and oversight of the implementation of the plan prepared under subsection (1).\n\n5.1(3)Each portion of the public service shall prepare an action plan setting out how it will meet the goals and objectives included in the plan prepared under subsection (1) and how it will implement the measures included in that plan.\n\n5.1(4)As soon as practicable after the end of each fiscal year, each portion of the public service shall submit a report to the Premier with respect to the activities under its action plan.\n\n5.1(5)As soon as practicable after the end of each fiscal year and after receiving the reports under subsection (4), the Premier shall submit a report to the Legislative Assembly with respect to the activities under the plan prepared under subsection (1).\n\n2013, c.38, s.1\n\nPROCEEDINGS OF THE LEGISLATIVE ASSEMBLY",
+      "subsections": [
+        {
+          "id": "5.1-subsection-1",
+          "sourceKey": "section:5.1/subsection:1",
+          "label": "5.1(1)",
+          "text": "5.1(1)The Province shall prepare a plan setting out how it will meet its obligations under this Act, and the plan shall include the following:\n\n(a)\ngoals and objectives with respect to its obligations under this Act;\n\n(b)\nmeasures to ensure the equality of status of the two linguistic communities;\n\n(c)\nmeasures to ensure the equality of use of the English and French language in the public service;\n\n(d)\nmeasures to ensure that language of work is considered when identifying work groups within the public service and when developing language profiles for positions in the public service;\n\n(e)\nmeasures to improve the bilingual capacity of senior management in the public service;\n\n(f)\nmeasures to provide for the review and the improvement, when necessary, of the public signage policies of the Province, which policies shall include consideration of the two linguistic communities and of the linguistic composition of a region; and\n\n(g)\nperformance measures for evaluating the effectiveness of the measures implemented under the plan and time frames within which they must be implemented.",
+          "contentHash": "0f2e7a0c0f783c5210ca1949734165ff727abf18e9341a9dbf04000e82c880f8"
+        },
+        {
+          "id": "5.1-subsection-2",
+          "sourceKey": "section:5.1/subsection:2",
+          "label": "5.1(2)",
+          "text": "5.1(2)The Premier is responsible for ensuring central government coordination and oversight of the implementation of the plan prepared under subsection (1).",
+          "contentHash": "74166932eee17ab3fae8310e705ae97a073d91c86df82b195a244aa3fc4972bb"
+        },
+        {
+          "id": "5.1-subsection-3",
+          "sourceKey": "section:5.1/subsection:3",
+          "label": "5.1(3)",
+          "text": "5.1(3)Each portion of the public service shall prepare an action plan setting out how it will meet the goals and objectives included in the plan prepared under subsection (1) and how it will implement the measures included in that plan.",
+          "contentHash": "f357ec1296ecbf99aea01fa24be22d2734f074c2c2dfdfd3526ed8c9aad7fd98"
+        },
+        {
+          "id": "5.1-subsection-4",
+          "sourceKey": "section:5.1/subsection:4",
+          "label": "5.1(4)",
+          "text": "5.1(4)As soon as practicable after the end of each fiscal year, each portion of the public service shall submit a report to the Premier with respect to the activities under its action plan.",
+          "contentHash": "1dedb7f2b61a9fec165cf666cb4611d803255e15f11f86d35702b1395792b380"
+        },
+        {
+          "id": "5.1-subsection-5",
+          "sourceKey": "section:5.1/subsection:5",
+          "label": "5.1(5)",
+          "text": "5.1(5)As soon as practicable after the end of each fiscal year and after receiving the reports under subsection (4), the Premier shall submit a report to the Legislative Assembly with respect to the activities under the plan prepared under subsection (1).\n\n2013, c.38, s.1\n\nPROCEEDINGS OF THE LEGISLATIVE ASSEMBLY",
+          "contentHash": "e29730cc1065f50252a821db011938fa8fd624764c72d710162325a53beca02c"
+        }
+      ],
+      "contentHash": "3780ee330229d5611f7d1a7472e6d194b1e839568c51499ca7b02f2d97428b3f"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "componentType": "section",
+      "label": "6",
+      "heading": "Language of the Legislature",
+      "text": "Language of the Legislature\n\n6English and French are the official languages of the Legislature and everyone has the right to use either language in any debate and other proceeding of the Legislative Assembly or its committees.",
+      "subsections": [],
+      "contentHash": "9cc86a90c2c2cc2316f8aef5250cee2051c95257644fca52751d880ba92f55af"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "componentType": "section",
+      "label": "7",
+      "heading": "Interpretation of proceedings of the Legislative Assembly",
+      "text": "Interpretation of proceedings of the Legislative Assembly\n\n7Simultaneous interpretation of the debates and other proceedings of the Legislative Assembly shall be made available by the Legislature.",
+      "subsections": [],
+      "contentHash": "8150cd9c1be147db23f80f9e778aa33d8c9aaec34bc167ee3d5cfc4113f75480"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "componentType": "section",
+      "label": "8",
+      "heading": "Records and journals of the Legislative Assembly",
+      "text": "Records and journals of the Legislative Assembly\n\n8The records, journals and reports of the Legislative Assembly and its committees shall be printed and published in English and French and both language versions are equally authoritative.\n\nLEGISLATIVE AND OTHER INSTRUMENTS",
+      "subsections": [],
+      "contentHash": "23e131761ec32c25d04de610abc62882b0c3f79ff82a2d55aa38e132e0e16fd7"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "componentType": "section",
+      "label": "9",
+      "heading": "Language of legislation",
+      "text": "Language of legislation\n\n9English and French are the official languages of legislation.",
+      "subsections": [],
+      "contentHash": "71b325c37bf7eb41bad0736d5433c8b99968b002d1693ef2b9b7c5d1c482c04d"
+    },
+    {
+      "id": "section-10",
+      "sourceKey": "section:10",
+      "componentType": "section",
+      "label": "10",
+      "heading": "Equal authority of both language versions",
+      "text": "Equal authority of both language versions\n\n10The English and French versions of legislation are equally authoritative.",
+      "subsections": [],
+      "contentHash": "d6f4d6fd675fccadbfe323cd12717292ffcfce26bdf8168c11e6727a08b8dc75"
+    },
+    {
+      "id": "section-11",
+      "sourceKey": "section:11",
+      "componentType": "section",
+      "label": "11",
+      "heading": "Introduction of bills",
+      "text": "Introduction of bills\n\n11Bills shall be simultaneously introduced in both official languages before the Legislative Assembly and shall be simultaneously adopted and assented to in both official languages.",
+      "subsections": [],
+      "contentHash": "79e5cbf2ed8e55cc36d3a9046ebf6e1f9769a2a0381a93bb04973cbd8e44cb8a"
+    },
+    {
+      "id": "section-12",
+      "sourceKey": "section:12",
+      "componentType": "section",
+      "label": "12",
+      "heading": "Acts of the Legislature",
+      "text": "Acts of the Legislature\n\n12The Acts of the Legislature shall be co-drafted, printed and published in both official languages.\n2013, c.38, s.1",
+      "subsections": [],
+      "contentHash": "f25f4e4354a86b68c6b94f64f9d550c7bc643d0f4d81b0e21522b3d74c9c5043"
+    },
+    {
+      "id": "section-13",
+      "sourceKey": "section:13",
+      "componentType": "section",
+      "label": "13",
+      "heading": "Required publication in The Royal Gazette",
+      "text": "Required publication in The Royal Gazette\n\n13Rules, orders, Orders-in-Council and proclamations required to be published in The Royal Gazette shall be printed and published in both official languages.",
+      "subsections": [],
+      "contentHash": "cad97c14f121d4d13741c160df7b7350438dc09f45d2a0f4a9f50964e0e47d06"
+    },
+    {
+      "id": "section-14",
+      "sourceKey": "section:14",
+      "componentType": "section",
+      "label": "14",
+      "heading": "Official documents",
+      "text": "Official documents\n\n14Notices, advertisements and other announcements of an official nature, whether required to be published in The Royal Gazette or not, shall be printed and published in both official languages.",
+      "subsections": [],
+      "contentHash": "4c71cb2cb688fc94c0514458e0030a4c352ad930106b42a9321ba439ffcc595a"
+    },
+    {
+      "id": "section-15",
+      "sourceKey": "section:15",
+      "componentType": "section",
+      "label": "15",
+      "heading": "Documents published under an Act of the Province",
+      "text": "Documents published under an Act of the Province\n\n15Notices, announcements and other documents required to be published under this Act or any other Act by the Province or its institutions shall be printed and published in both official languages.\n\nTHE ADMINISTRATION OF JUSTICE",
+      "subsections": [],
+      "contentHash": "51e7567e68dce6908358bcd1ed1c3eabcfaac4d88073254a275d73c7e5297836"
+    },
+    {
+      "id": "section-16",
+      "sourceKey": "section:16",
+      "componentType": "section",
+      "label": "16",
+      "heading": "Language of the courts",
+      "text": "Language of the courts\n\n16English and French are the official languages of the courts.",
+      "subsections": [],
+      "contentHash": "c3f86d8f54b7df80c332b603476d7a5bf0867442abb8586dd98a0dab0ab4fde2"
+    },
+    {
+      "id": "section-17",
+      "sourceKey": "section:17",
+      "componentType": "section",
+      "label": "17",
+      "heading": "Right to use language of choice",
+      "text": "Right to use language of choice\n\n17Every person has the right to use the official language of his or her choice in any matter before the courts, including all proceedings, or in any pleading or process issuing from a court.",
+      "subsections": [],
+      "contentHash": "50e43640294320bbfd7021807869273c2177fca6bd3392ff5d77df898508d474"
+    },
+    {
+      "id": "section-18",
+      "sourceKey": "section:18",
+      "componentType": "section",
+      "label": "18",
+      "heading": "Person not to be disadvantaged by choice",
+      "text": "Person not to be disadvantaged by choice\n\n18No person shall be placed at a disadvantage by reason of the choice made under section 17.",
+      "subsections": [],
+      "contentHash": "648d355f3b140c68d38f594792c69fab3447dcccbf4713b2245721c525f6c6ce"
+    },
+    {
+      "id": "section-19",
+      "sourceKey": "section:19",
+      "componentType": "section",
+      "label": "19",
+      "heading": "Obligation placed on the court to understand language chosen",
+      "text": "Obligation placed on the court to understand language chosen\n\n19(1)A court before which a matter is pending must understand, without the assistance of an interpreter or any process of simultaneous translation or consecutive interpretation, the official language chosen under section 17 by a party to the matter.\n\n19(2)A court before which a matter is pending must understand both official languages, without the assistance of an interpreter or any process of simultaneous translation or consecutive interpretation, if both English and French are the languages chosen by the parties to the proceedings.",
+      "subsections": [
+        {
+          "id": "19-subsection-1",
+          "sourceKey": "section:19/subsection:1",
+          "label": "19(1)",
+          "text": "19(1)A court before which a matter is pending must understand, without the assistance of an interpreter or any process of simultaneous translation or consecutive interpretation, the official language chosen under section 17 by a party to the matter.",
+          "contentHash": "4e2841f3ce749fdfcb990790787eedca8e052c0fe93925e39f71a8e286b5cc50"
+        },
+        {
+          "id": "19-subsection-2",
+          "sourceKey": "section:19/subsection:2",
+          "label": "19(2)",
+          "text": "19(2)A court before which a matter is pending must understand both official languages, without the assistance of an interpreter or any process of simultaneous translation or consecutive interpretation, if both English and French are the languages chosen by the parties to the proceedings.",
+          "contentHash": "6a4bc0808a8efbc60efdb466f44b7aea7f8114816cb151d8dc0ef1131550c6f6"
+        }
+      ],
+      "contentHash": "592e911082ed12394fdcd8bf44a7f36615ebf2e8581fd6687cd15bdf8c164460"
+    },
+    {
+      "id": "section-20",
+      "sourceKey": "section:20",
+      "componentType": "section",
+      "label": "20",
+      "heading": "Accused’s right to be heard in the language of choice",
+      "text": "Accused’s right to be heard in the language of choice\n\n20(1)A person who is alleged to have committed an offence under an Act or a regulation of the Province or under a municipal by-law has the right to have the proceedings conducted in the language of his or her choice and shall be informed of that right by the presiding judge before entering a plea.\n\n20(2)A person who is alleged to have committed an offence within the meaning of subsection (1), has the right to be understood by the court, without the assistance of an interpreter or any process of simultaneous translation or consecutive interpretation, in the official language chosen by the person.",
+      "subsections": [
+        {
+          "id": "20-subsection-1",
+          "sourceKey": "section:20/subsection:1",
+          "label": "20(1)",
+          "text": "20(1)A person who is alleged to have committed an offence under an Act or a regulation of the Province or under a municipal by-law has the right to have the proceedings conducted in the language of his or her choice and shall be informed of that right by the presiding judge before entering a plea.",
+          "contentHash": "ab28caf3459c104d066ae5739aaee7558cf5f0d6788d6d7b46c12c53540bbf1b"
+        },
+        {
+          "id": "20-subsection-2",
+          "sourceKey": "section:20/subsection:2",
+          "label": "20(2)",
+          "text": "20(2)A person who is alleged to have committed an offence within the meaning of subsection (1), has the right to be understood by the court, without the assistance of an interpreter or any process of simultaneous translation or consecutive interpretation, in the official language chosen by the person.",
+          "contentHash": "30fcec7913572db95fa5ec89894b72b9ba881eb24e312c9cebf23b7d57992638"
+        }
+      ],
+      "contentHash": "4813492a022c3b01385c5e213a0e3bdada46e2eaeed70ede004db9db82d1673e"
+    },
+    {
+      "id": "section-21",
+      "sourceKey": "section:21",
+      "componentType": "section",
+      "label": "21",
+      "heading": "Rights of the witness",
+      "text": "Rights of the witness\n\n21Every court has the duty to ensure that any witness appearing before it can be heard in the official language of his or her choice and upon the request of one of the parties or the witness, the court has the duty to ensure that services of simultaneous translation or consecutive interpretation are available to the person who made the request.",
+      "subsections": [],
+      "contentHash": "cb618a376b8f3ae2914b5c93b12942bacb7ff60df30c46863d5c1ec537db3ebd"
+    },
+    {
+      "id": "section-22",
+      "sourceKey": "section:22",
+      "componentType": "section",
+      "label": "22",
+      "heading": "Obligation on the Crown to use language of the parties",
+      "text": "Obligation on the Crown to use language of the parties\n\n2023, c.17, s.179\n\n22Where the Crown in right of the Province or an institution is a party to civil proceedings before a court, the Crown or the institution concerned shall use, in any oral or written pleadings or any process issuing from a court, the official language chosen by the other party.\n2023, c.17, s.179",
+      "subsections": [],
+      "contentHash": "6a6dd999810ca78310bbc9ca3b277ddb74b303a6f923a38460b1d8fae4df1e8e"
+    },
+    {
+      "id": "section-23",
+      "sourceKey": "section:23",
+      "componentType": "section",
+      "label": "23",
+      "heading": "Disagreement between parties as to language of use",
+      "text": "Disagreement between parties as to language of use\n\n23Where the parties to civil proceedings, other than the Crown in right of the Province or an institution, do not choose or fail to agree on the official language to be used in the proceedings, the Crown or the institution concerned shall use such official language as is reasonable, having regard to the circumstances.\n2023, c.17, s.179",
+      "subsections": [],
+      "contentHash": "ebd81ca82f4263837eaea25bbef97df413c498553b0261e35dae1915296f9331"
+    },
+    {
+      "id": "section-24",
+      "sourceKey": "section:24",
+      "componentType": "section",
+      "label": "24",
+      "heading": "Publication of decisions",
+      "text": "Publication of decisions\n\n24(1)Any final decision, order or judgment of any court, including any reasons given therefor and summaries, shall be published in both official languages where\n\n(a)\nit determines a question of law of interest or importance to the general public, or\n\n(b)\nthe proceedings leading to its issuance were conducted in whole or in part in both official languages.\n\n24(2)Where a final decision, order or judgment is required to be published under subsection (1), but it is determined that to do so would result in a delay or injustice or hardship to a party to the proceedings, the decision, order or judgment, including any reasons given, shall be published in the first instance in one official language and, thereafter, at the earliest possible time, in the other official language.",
+      "subsections": [
+        {
+          "id": "24-subsection-1",
+          "sourceKey": "section:24/subsection:1",
+          "label": "24(1)",
+          "text": "24(1)Any final decision, order or judgment of any court, including any reasons given therefor and summaries, shall be published in both official languages where\n\n(a)\nit determines a question of law of interest or importance to the general public, or\n\n(b)\nthe proceedings leading to its issuance were conducted in whole or in part in both official languages.",
+          "contentHash": "57fb9d403d37705b80bca5a9cc3efc9dfd233c6fc23d38004524bfbeb64eea7d"
+        },
+        {
+          "id": "24-subsection-2",
+          "sourceKey": "section:24/subsection:2",
+          "label": "24(2)",
+          "text": "24(2)Where a final decision, order or judgment is required to be published under subsection (1), but it is determined that to do so would result in a delay or injustice or hardship to a party to the proceedings, the decision, order or judgment, including any reasons given, shall be published in the first instance in one official language and, thereafter, at the earliest possible time, in the other official language.",
+          "contentHash": "fdcbf8f6e0082eb34e9965fccb9785b5b140da2a16c16b5886a0e341fd97f074"
+        }
+      ],
+      "contentHash": "af663e4de1a6bdee2b14530179b73c98e092de2df49c27d74c1626b7c86dad79"
+    },
+    {
+      "id": "section-25",
+      "sourceKey": "section:25",
+      "componentType": "section",
+      "label": "25",
+      "heading": "Publication of Court of Appeal decisions",
+      "text": "Publication of Court of Appeal decisions\n\n25All decisions of the Court of Appeal are deemed to fall within the scope of section 24.",
+      "subsections": [],
+      "contentHash": "883462fde7cbc93f3b21d1182f801123a5e31d33c252243629ae74c99a8d5af5"
+    },
+    {
+      "id": "section-26",
+      "sourceKey": "section:26",
+      "componentType": "section",
+      "label": "26",
+      "heading": "Rendering of a judgment",
+      "text": "Rendering of a judgment\n\n26Sections 24 and 25 shall not be construed so as to prevent the pronouncement of a judgment, including the reasons in support of the judgment, in either official language and in such a case, the judgment is not invalid by reason only that it was pronounced in one official language.\n\nCOMMUNICATION WITH THE PUBLIC",
+      "subsections": [],
+      "contentHash": "4989e590fda6228668456f4934a9e6e4cbc9926cf2547debc61ddc12ffa8d409"
+    },
+    {
+      "id": "section-27",
+      "sourceKey": "section:27",
+      "componentType": "section",
+      "label": "27",
+      "heading": "Communications with government and its institutions",
+      "text": "Communications with government and its institutions\n\n27Members of the public have the right to communicate with any institution and to receive its services in the official language of their choice.",
+      "subsections": [],
+      "contentHash": "fa00f292d650dd89148cbfda6c11661fb493750e4d3b162e00780144a0b89027"
+    },
+    {
+      "id": "section-28",
+      "sourceKey": "section:28",
+      "componentType": "section",
+      "label": "28",
+      "heading": "Obligations of institutions",
+      "text": "Obligations of institutions\n\n28An institution shall ensure that members of the public are able to communicate with and to receive its services in the official language of their choice.",
+      "subsections": [],
+      "contentHash": "934b42cc46ce643275186c8fd4deee718d0698f73a79163b39689896b4446b06"
+    },
+    {
+      "id": "section-28.1",
+      "sourceKey": "section:28.1",
+      "componentType": "section",
+      "label": "28.1",
+      "text": "28.1An institution shall ensure that appropriate measures are taken to make it known to members of the public that its services are available in the official language of their choice.",
+      "subsections": [],
+      "contentHash": "3be221ce8be882bcca6ed6f44f5f1b2c1bb451d3d08a42beca4bbc73a7308d1e"
+    },
+    {
+      "id": "section-29",
+      "sourceKey": "section:29",
+      "componentType": "section",
+      "label": "29",
+      "heading": "Posting of signs and publications intended for the public",
+      "text": "Posting of signs and publications intended for the public\n\n29Institutions shall publish all postings, publications and documents intended for the general public in both official languages.",
+      "subsections": [],
+      "contentHash": "47733ebaa4702b847bf09af80587d998729d6234ba65d9329cee2fa93dfdbb32"
+    },
+    {
+      "id": "section-30",
+      "sourceKey": "section:30",
+      "componentType": "section",
+      "label": "30",
+      "heading": "Services provided by third parties",
+      "text": "Services provided by third parties\n\n30When the Province or an institution engages a third party to provide a service on its behalf, the Province or the institution, as the case may be, is responsible for ensuring that its obligations under sections 27 to 29 are met by the third party.\n2013, c.38, s.1\n\nPOLICING SERVICES",
+      "subsections": [],
+      "contentHash": "0ee7d7f54c102ef2796ab68546dda18c4d0749471da88013902cecb671860f22"
+    },
+    {
+      "id": "section-31",
+      "sourceKey": "section:31",
+      "componentType": "section",
+      "label": "31",
+      "heading": "Services provided by a peace officer",
+      "text": "Services provided by a peace officer\n\n31(1)Members of the public have the right, when communicating with a peace officer, to receive service in the official language of their choice and must be informed of that right.\n\n31(2)If a peace officer is unable to provide service in the language chosen under subsection (1), the peace officer shall take whatever measures are necessary, within a reasonable time, to ensure compliance with the choice made under subsection (1).\n\n31(3)A police force or agency, as the case may be, shall ensure the availability of the means necessary to respond to the choice made by a member of the public under subsection (1) and to support the obligation placed on a peace officer under subsection (2).\n\n31(4)When determining if a peace officer has taken the measures necessary under subsection (2) within a reasonable time, a court shall consider the efforts made by the police force or agency to fulfil its obligations under subsection (3).\n\n2013, c.38, s.1",
+      "subsections": [
+        {
+          "id": "31-subsection-1",
+          "sourceKey": "section:31/subsection:1",
+          "label": "31(1)",
+          "text": "31(1)Members of the public have the right, when communicating with a peace officer, to receive service in the official language of their choice and must be informed of that right.",
+          "contentHash": "9216d8ca7c501fbd514b5e12630fe5b96bd53ac804e2e6b913290b7c4792345a"
+        },
+        {
+          "id": "31-subsection-2",
+          "sourceKey": "section:31/subsection:2",
+          "label": "31(2)",
+          "text": "31(2)If a peace officer is unable to provide service in the language chosen under subsection (1), the peace officer shall take whatever measures are necessary, within a reasonable time, to ensure compliance with the choice made under subsection (1).",
+          "contentHash": "3845bb320c1da3dbfbc7d22294fc321b0eb0f2fa23d647e0a1e41f22b4d13b01"
+        },
+        {
+          "id": "31-subsection-3",
+          "sourceKey": "section:31/subsection:3",
+          "label": "31(3)",
+          "text": "31(3)A police force or agency, as the case may be, shall ensure the availability of the means necessary to respond to the choice made by a member of the public under subsection (1) and to support the obligation placed on a peace officer under subsection (2).",
+          "contentHash": "e9303f5835c87957d4658e18409b45de5c02d7ece52251641c494f672826c25f"
+        },
+        {
+          "id": "31-subsection-4",
+          "sourceKey": "section:31/subsection:4",
+          "label": "31(4)",
+          "text": "31(4)When determining if a peace officer has taken the measures necessary under subsection (2) within a reasonable time, a court shall consider the efforts made by the police force or agency to fulfil its obligations under subsection (3).\n\n2013, c.38, s.1",
+          "contentHash": "e95448684cd9806228ef194d8a7e1d11a8a648bea1e1683da425913e19de14a5"
+        }
+      ],
+      "contentHash": "668aaa8cc86f7a36bbba5ece5f1bb7208e41bfa64be97fcb54658b3c36a145d9"
+    },
+    {
+      "id": "section-32",
+      "sourceKey": "section:32",
+      "componentType": "section",
+      "label": "32",
+      "heading": "Application of section 31",
+      "text": "Application of section 31\n\n32Section 31 does not limit the obligations placed on peace officers under any other Act or law to deliver services to the public in both official languages.\n\nHEALTH SERVICES",
+      "subsections": [],
+      "contentHash": "af4fb97be32f5132f1fe5c719b48544d192a7439b9409a1eb52a4d652e78725f"
+    },
+    {
+      "id": "section-33",
+      "sourceKey": "section:33",
+      "componentType": "section",
+      "label": "33",
+      "heading": "Health services",
+      "text": "Health services\n\n33(1)For the purposes of the provision of health services in the Province and notwithstanding the definition of “institution” in section 1, an institution in sections 27 and 28 refers to the network of health establishments, facilities and programs under the jurisdiction of the Department of Health or the regional health authorities under the Regional Health Authorities Act.\n\n33(2)When establishing a provincial health plan under the Regional Health Authorities Act, the Minister of Health shall\n\n(a)\nensure that the principles upon which the provision of health services are to be based include the delivery of health services in both official languages in the Province, and\n\n(b)\nconsider the language of daily operations under section 34.\n\n2006, c.16, s.128",
+      "subsections": [
+        {
+          "id": "33-subsection-1",
+          "sourceKey": "section:33/subsection:1",
+          "label": "33(1)",
+          "text": "33(1)For the purposes of the provision of health services in the Province and notwithstanding the definition of “institution” in section 1, an institution in sections 27 and 28 refers to the network of health establishments, facilities and programs under the jurisdiction of the Department of Health or the regional health authorities under the Regional Health Authorities Act.",
+          "contentHash": "03652522a368361cc29d4c638e681af2b11233c2141cfdc8aa1e0515cf232cff"
+        },
+        {
+          "id": "33-subsection-2",
+          "sourceKey": "section:33/subsection:2",
+          "label": "33(2)",
+          "text": "33(2)When establishing a provincial health plan under the Regional Health Authorities Act, the Minister of Health shall\n\n(a)\nensure that the principles upon which the provision of health services are to be based include the delivery of health services in both official languages in the Province, and\n\n(b)\nconsider the language of daily operations under section 34.\n\n2006, c.16, s.128",
+          "contentHash": "059e5bcacb2fe355e1c308194f19cb2e94f5214d88dec997c4377e35ab62b94f"
+        }
+      ],
+      "contentHash": "8f98cedfd7ff74d768ce217f3c122bc5d37698ba51d88d9669ed927304f42a3b"
+    },
+    {
+      "id": "section-34",
+      "sourceKey": "section:34",
+      "componentType": "section",
+      "label": "34",
+      "heading": "Effect of section 33",
+      "text": "Effect of section 33\n\n34Subject to the obligation to serve members of the public in the official language of their choice, section 33 does not limit the use of one official language in the daily operations of a hospital or other facility as defined in the Regional Health Authorities Act.\n\nMUNICIPALITIES",
+      "subsections": [],
+      "contentHash": "350c46cb56933ebd743b83ccc82790fb221ded67edd741fb5e35bd14f72c6c9f"
+    },
+    {
+      "id": "section-35",
+      "sourceKey": "section:35",
+      "componentType": "section",
+      "label": "35",
+      "heading": "By-laws, minutes of council",
+      "text": "By-laws, minutes of council\n\n35(1)A municipality whose official language minority population represents at least 20% of its total population is required to adopt and publish its by-laws in both official languages.\n\n35(2)A city is required to adopt and publish its by-laws in both official languages irrespective of the percentage required under subsection (1).\n\n35(3)A municipality or city to which subsection (1) or (2) applies that adopts a new by-law or amends an existing by-law after December 31, 2002, shall do so in both official languages.\n\n35(4)Except in the case of a by-law referred to in subsection (3), a municipality or city to which subsection (1) or (2) applies, other than Moncton, shall adopt and publish its by-laws in both official languages on or before December 31, 2005.\n\n35(5)Subsection (3) applies, with the necessary modifications, to the minutes of council proceedings.",
+      "subsections": [
+        {
+          "id": "35-subsection-1",
+          "sourceKey": "section:35/subsection:1",
+          "label": "35(1)",
+          "text": "35(1)A municipality whose official language minority population represents at least 20% of its total population is required to adopt and publish its by-laws in both official languages.",
+          "contentHash": "9f703eca19f94df48e4b13268fe8ac3532bc3c6684912920e65284b53d79bd62"
+        },
+        {
+          "id": "35-subsection-2",
+          "sourceKey": "section:35/subsection:2",
+          "label": "35(2)",
+          "text": "35(2)A city is required to adopt and publish its by-laws in both official languages irrespective of the percentage required under subsection (1).",
+          "contentHash": "a85344b34f7c35b5a07a18ca16304b48ce79ff826c0399576b193cdba092d355"
+        },
+        {
+          "id": "35-subsection-3",
+          "sourceKey": "section:35/subsection:3",
+          "label": "35(3)",
+          "text": "35(3)A municipality or city to which subsection (1) or (2) applies that adopts a new by-law or amends an existing by-law after December 31, 2002, shall do so in both official languages.",
+          "contentHash": "b0c03030eea832c2ef3704d710722d5c64541bf6f95dabc0e9fdbd8b00aaf288"
+        },
+        {
+          "id": "35-subsection-4",
+          "sourceKey": "section:35/subsection:4",
+          "label": "35(4)",
+          "text": "35(4)Except in the case of a by-law referred to in subsection (3), a municipality or city to which subsection (1) or (2) applies, other than Moncton, shall adopt and publish its by-laws in both official languages on or before December 31, 2005.",
+          "contentHash": "9d8b84a923e522c9d5c387a50e0e17c1b7f7481725d4fea19a234303bcc65e15"
+        },
+        {
+          "id": "35-subsection-5",
+          "sourceKey": "section:35/subsection:5",
+          "label": "35(5)",
+          "text": "35(5)Subsection (3) applies, with the necessary modifications, to the minutes of council proceedings.",
+          "contentHash": "72030bc8e2ff6a60ee13fe455a4f69884be8468fd5441d3cb181ea916a3d1742"
+        }
+      ],
+      "contentHash": "f23ccd84371f9084606f20d8faf59c5e66d202b58bc3f205f40b73d2ca309f17"
+    },
+    {
+      "id": "section-36",
+      "sourceKey": "section:36",
+      "componentType": "section",
+      "label": "36",
+      "heading": "Communications and services",
+      "text": "Communications and services\n\n36A municipality or city to which subsection 35(1), (2) or section 37 applies shall offer the services and communications prescribed by regulation in both official languages.",
+      "subsections": [],
+      "contentHash": "4ee1971cde66ba97b3fbae38dadd4c338e29977f1d5531a0e9b93f0d004b3f9c"
+    },
+    {
+      "id": "section-37",
+      "sourceKey": "section:37",
+      "componentType": "section",
+      "label": "37",
+      "heading": "Opting-in by municipalities",
+      "text": "Opting-in by municipalities\n\n37A municipality may, by by-law of its municipal council, declare itself bound by the provisions of this Act and nothing in this Act shall be interpreted so as to limit the authority of municipalities to promote the equality of status and use of English and French.",
+      "subsections": [],
+      "contentHash": "af23cea24d878731e8dd652336b31b4473eb9940ab54151aede04b8c57aa8532"
+    },
+    {
+      "id": "section-38",
+      "sourceKey": "section:38",
+      "componentType": "section",
+      "label": "38",
+      "heading": "Effect of opting-in",
+      "text": "Effect of opting-in\n\n38The provisions of subsections 35(3), (4) and (5) apply, with the necessary modifications, to a municipality under section 37.\n\nREGIONAL SERVICE COMMISSIONS\n\n2012, c.44, s.15",
+      "subsections": [],
+      "contentHash": "375c2eed22d595f661801eeef9df157b6fb7f0c66a2bf898f499cef9f9105a98"
+    },
+    {
+      "id": "section-39",
+      "sourceKey": "section:39",
+      "componentType": "section",
+      "label": "39",
+      "heading": "Regional Service Commissions",
+      "text": "Regional Service Commissions\n\n39A regional service commission covering a geographical area with an official language minority population of at least 20% of the total population is subject to the obligations imposed by section 41.\n2012, c.44, s.15",
+      "subsections": [],
+      "contentHash": "a40976bce204a548a8ff63d9ef054c3917d7247ef62c5bc0602d427cd0ca3abe"
+    },
+    {
+      "id": "section-40",
+      "sourceKey": "section:40",
+      "componentType": "section",
+      "label": "40",
+      "heading": "Cities and Municipalities",
+      "text": "Cities and Municipalities\n\n40Where the geographical area of a regional service commission includes a municipality or a city to which subsection 35(1) or (2) applies, the regional service commission is subject to the obligations imposed by section 41 irrespective of the percentage required under section 39.\n2012, c.44, s.15",
+      "subsections": [],
+      "contentHash": "05a9262ab21695376fa90fe867e2a5f9bfc10fed8906a2cf2be9b85aec034827"
+    },
+    {
+      "id": "section-41",
+      "sourceKey": "section:41",
+      "componentType": "section",
+      "label": "41",
+      "heading": "Communications and services",
+      "text": "Communications and services\n\n41A regional service commission to which section 39 or 40 apply shall offer the services and communications prescribed by regulation in both official languages.\n2012, c.44, s.15\n\nPROFESSIONAL ASSOCIATIONS\n\n2013, c.38, s.1",
+      "subsections": [],
+      "contentHash": "be66139a2a054679e76cee6f3b571bcf778695e6db90efc607ac83a0ea269c10"
+    },
+    {
+      "id": "section-41.1",
+      "sourceKey": "section:41.1",
+      "componentType": "section",
+      "label": "41.1",
+      "heading": "Professional associations",
+      "text": "Professional associations\n\n41.1(1)In this section, “professional association” means an organization of persons that, by an Act of the Legislature, has the power to admit persons to or suspend or expel persons from the practice of a profession or occupation or impose requirements on persons with respect to the practice of a profession or occupation.\n\n41.1(2)When a professional association exercises a power referred to in subsection (1), the professional association\n\n(a)\nshall provide services and communications related to the exercise of that power in both official languages, and\n\n(b)\nwith respect to its power to impose requirements, shall ensure that a person is able to fulfil those requirements in the official language of his or her choice.\n\n41.1(3)No person shall be placed at a disadvantage by reason of exercising his or her right to choose an official language in which to fulfil requirements imposed by a professional association.\n\n41.1(4)A professional association shall offer its services and communications to members of the public in both official languages.\n\n2013, c.38, s.1; 2015, c.39, s.1\n\nREVIEW OF ACT\n\n2023, c.10, s.1",
+      "subsections": [
+        {
+          "id": "41.1-subsection-1",
+          "sourceKey": "section:41.1/subsection:1",
+          "label": "41.1(1)",
+          "text": "41.1(1)In this section, “professional association” means an organization of persons that, by an Act of the Legislature, has the power to admit persons to or suspend or expel persons from the practice of a profession or occupation or impose requirements on persons with respect to the practice of a profession or occupation.",
+          "contentHash": "e567c5e6b5212eb9642c9f5d0721afc5bbc2efd3e759f90b0f45f9144e820d1e"
+        },
+        {
+          "id": "41.1-subsection-2",
+          "sourceKey": "section:41.1/subsection:2",
+          "label": "41.1(2)",
+          "text": "41.1(2)When a professional association exercises a power referred to in subsection (1), the professional association\n\n(a)\nshall provide services and communications related to the exercise of that power in both official languages, and\n\n(b)\nwith respect to its power to impose requirements, shall ensure that a person is able to fulfil those requirements in the official language of his or her choice.",
+          "contentHash": "6972f1d9278d3e869ad44f2f909ee9e40b447a01d870d1a1d807aa8d27eefd79"
+        },
+        {
+          "id": "41.1-subsection-3",
+          "sourceKey": "section:41.1/subsection:3",
+          "label": "41.1(3)",
+          "text": "41.1(3)No person shall be placed at a disadvantage by reason of exercising his or her right to choose an official language in which to fulfil requirements imposed by a professional association.",
+          "contentHash": "2ead2bff03eb964ec1fa0326dbbf15d7b62a4c8387625ef983631229d1796662"
+        },
+        {
+          "id": "41.1-subsection-4",
+          "sourceKey": "section:41.1/subsection:4",
+          "label": "41.1(4)",
+          "text": "41.1(4)A professional association shall offer its services and communications to members of the public in both official languages.\n\n2013, c.38, s.1; 2015, c.39, s.1\n\nREVIEW OF ACT\n\n2023, c.10, s.1",
+          "contentHash": "060d4f6ca0c6149d20f03e0778104f2bb0ae6dbbf83210fa190db309f939b87a"
+        }
+      ],
+      "contentHash": "945b9cddfd03a5624badd44fb6f6bb87793f8828ed34108963b9719eeb48955c"
+    },
+    {
+      "id": "section-42",
+      "sourceKey": "section:42",
+      "componentType": "section",
+      "label": "42",
+      "heading": "Review of Act",
+      "text": "Review of Act\n\n42(1)The Premier shall initiate a review of this Act, and the review shall be completed no later than December 31, 2031.\n\n42(2)A review under subsection (1) shall be in the form and manner prescribed by regulation.\n\n2013, c.38, s.1; 2023, c.10, s.1\n\nCOMMISSIONER OF OFFICIAL LANGUAGES",
+      "subsections": [
+        {
+          "id": "42-subsection-1",
+          "sourceKey": "section:42/subsection:1",
+          "label": "42(1)",
+          "text": "42(1)The Premier shall initiate a review of this Act, and the review shall be completed no later than December 31, 2031.",
+          "contentHash": "a9851417955e2d37d9edf6722a439a5813d1dfd81eb1486b9886d5a34bb0e1ef"
+        },
+        {
+          "id": "42-subsection-2",
+          "sourceKey": "section:42/subsection:2",
+          "label": "42(2)",
+          "text": "42(2)A review under subsection (1) shall be in the form and manner prescribed by regulation.\n\n2013, c.38, s.1; 2023, c.10, s.1\n\nCOMMISSIONER OF OFFICIAL LANGUAGES",
+          "contentHash": "3d00845d885c5bdd26991e59d4091502574d9739205ed61b2ff2572b5b0a4f30"
+        }
+      ],
+      "contentHash": "c20b3780a4903b709ce7f4921ade979dba034d343a4585514516626659886319"
+    },
+    {
+      "id": "section-43",
+      "sourceKey": "section:43",
+      "componentType": "section",
+      "label": "43",
+      "heading": "Mandate and responsibilities of Commissioner",
+      "text": "Mandate and responsibilities of Commissioner\n\n43(1)There shall be an Office of the Commissioner of Official Languages for New Brunswick, as well as a Commissioner of Official Languages for New Brunswick.\n\n43(2)Subject to subsections (2.1) to (2.4), the Commissioner shall be appointed by the Lieutenant-Governor in Council on the recommendation of the Legislative Assembly, shall rank as and have all the powers of a deputy head of a department, shall engage exclusively in the duties of the office of the Commissioner and shall not hold any other office under the Crown or engage in any other employment.\n\n43(2.1)Before an appointment is made under subsection (2), a selection committee shall be established for the purpose of identifying persons as potential candidates to be appointed Commissioner.\n\n43(2.2)The selection committee shall be composed of\n\n(a)\nthe Clerk of the Executive Council or a person designated by the Clerk of the Executive Council,\n\n(b)\nthe Clerk of the Legislative Assembly or a person designated by the Clerk of the Legislative Assembly,\n\n(c)\na member of the judiciary, and\n\n(d)\na member of the university community.\n\n43(2.3)The selection committee shall develop a roster of qualified candidates and submit a list of names of qualified candidates to the Lieutenant-Governor in Council.\n\n43(2.4)The Premier shall consult with the leader of the opposition and the leaders of the other political parties having representation in the Legislative Assembly during the most recent sitting with respect to one or more qualified candidates from the selection committee’s list of qualified candidates.\n\n43(2.5)The Commissioner is an officer of the Legislative Assembly.\n\n43(3)Subject to subsection (4), the Commissioner shall hold office for a term of seven years and is not eligible for reappointment.\n\n43(4)The Lieutenant-Governor in Council may extend the term of the Commissioner for a period of not more than 12 months.\n\n43(4.1)The Commissioner may resign from office by notice in writing addressed to the Speaker of the Legislative Assembly or, if there is no Speaker or the Speaker is absent from the Province, to the Clerk of the Legislative Assembly.\n\n43(4.2)The Speaker or the Clerk, as the case may be, shall immediately inform the Lieutenant-Governor in Council of the Commissioner’s resignation.\n\n43(4.3)The Commissioner shall hold office during good behaviour and may only be removed by the Lieutenant-Governor in Council for incapacity, neglect of duty or misconduct upon an address in which 2/3 of the members of the Legislative Assembly concur.\n\n43(4.4)The Lieutenant-Governor in Council, upon an address in which a majority of the members of the Legislative Assembly voting concur, may suspend the Commissioner, with or without pay, pending an investigation that may lead to removal under subsection (4.3).\n\n43(4.5)If the Legislature is not in session, a judge of The Court of King’s Bench of New Brunswick may, on an application by the Lieutenant-Governor in Council, suspend the Commissioner, with or without pay, for incapacity, neglect of duty or misconduct.\n\n43(5)If the Lieutenant-Governor in Council makes an application under subsection (4.5), the practice and procedure of The Court of King’s Bench of New Brunswick respecting applications applies.\n\n43(5.1)If a judge of The Court of King’s Bench of New Brunswick suspends the Commissioner under subsection (4.5), the judge shall do the following:\n\n(a)\nappoint an acting Commissioner to hold office until the suspension has been dealt with by the Legislative Assembly; and\n\n(b)\ntable a report on the suspension with the Legislative Assembly within ten days after the commencement of the next session of the Legislature.\n\n43(5.2)No suspension under subsection (4.5) shall continue beyond the end of the next session of the Legislature.\n\n43(5.3)If the Commissioner has been suspended under subsection (4.4), the Lieutenant-Governor in Council may appoint an acting Commissioner to hold office until the suspension has elapsed.\n\n43(5.4)An acting Commissioner, while in office, has the powers and duties of the Commissioner and shall be paid such salary or other remuneration and expenses as the Lieutenant-Governor in Council may fix.\n\n43(5.5) The Lieutenant-Governor in Council may appoint an acting Commissioner for a term of up to one year if\n\n(a)\nthe office of Commissioner becomes vacant during a sitting of the Legislative Assembly, but the Legislative Assembly does not make a recommendation under subsection (2) before the end of the sitting, or\n\n(b)\nthe office of Commissioner becomes vacant while the Legislative Assembly is not sitting.\n\n43(5.6)The appointment of an acting Commissioner comes to an end when a new Commissioner is appointed under subsection (2).\n\n43(5.7)If the Commissioner is unable to act because of illness, the Lieutenant-Governor in Council may appoint an acting Commissioner, whose appointment comes to an end when the Commissioner is again able to act or when the office becomes vacant.\n\n43(5.8)An appointment under subsection (5.1), (5.3), (5.5) or (5.7) shall not impede a person’s subsequent appointment under subsection (2).\n\n43(5.9)The Premier shall consult with the leader of the opposition before an appointment is made under subsection (5.3), (5.5) or (5.7).\n\n43(6)Notwithstanding the Civil Service Act, the Commissioner may appoint such persons to positions in the Office of the Commissioner as he or she considers necessary to enable the fulfillment of the Commissioner’s responsibilities under this Act.\n\n43(6.1)The Commissioner shall be paid an annual salary as determined by the Lieutenant-Governor in Council within the deputy head pay plan, and is entitled to receive benefits similar to those received by deputy heads.\n\n43(7)The pension plan converted to a shared risk plan in accordance with An Act Respecting Public Service Pensions applies to the Commissioner and the employees of the Office of the Commissioner.\n\n43(8)The Commissioner may contract for such professional services, for limited periods of time or in respect of particular matters, as he or she considers necessary to enable the fulfillment of the Commissioner’s responsibilities under this Act.\n\n43(9)In accordance with the authority provided to the Commissioner under this Act, it is the role of the Commissioner to investigate, report on and make recommendations with regard to compliance with this Act and to promote the advancement of both official languages in the Province.\n\n43(10)In order to fulfill the role under subsection (9), the Commissioner shall conduct and carry out investigations either pursuant to any complaint made to the Commissioner or on his or her own initiative and shall, as provided in this Act, report and make recommendations with respect to such investigations.\n\n43(10.1)Despite subsection (10), when the Commissioner considers it appropriate, the Commissioner may attempt to resolve a complaint without conducting an investigation.\n\n43(11)The Commissioner may refuse to investigate or cease to investigate any complaint if, in the opinion of the Commissioner,\n\n(a)\nthe subject-matter of the complaint is trivial,\n\n(b)\nthe complaint is frivolous or vexatious or is not made in good faith, or\n\n(c)\nthe subject-matter of the complaint does not involve a contravention or failure to comply with this Act or, for any other reason, does not come within the authority of the Commissioner under this Act.\n\n43(12)If the Commissioner refuses to investigate or ceases to investigate any complaint, the Commissioner shall inform the complainant and provide reasons for the decision to do so.\n\n43(13)Before commencing an investigation under this Act, the Commissioner shall inform the deputy head or other administrative head of the institution concerned of his or her intention to carry out the investigation.\n\n43(14)Subject to this Act, the Commissioner may determine the procedure to be followed in carrying out an investigation under this Act.\n\n43(15)For the purposes of this Act, the Commissioner is a commissioner under the Inquiries Act.\n\n43(16)After carrying out an investigation pursuant to a complaint under this Act, the Commissioner shall communicate the results of the investigation and any recommendations, including any opinion and the reasons for the recommendations, to the Premier, the deputy head or other administrative head of the institution concerned and the complainant.\n\n43(17)After carrying out an investigation on his or her own initiative, the Commissioner shall communicate the results of the investigation and any recommendations, including any opinion and the reasons for the recommendations, to the Premier and the deputy head or other administrative head of the institution concerned.\n\n43(17.1)When the Premier, a deputy head or an administrative head receives the results of an investigation from the Commissioner under subsection (16) or (17), he or she shall acknowledge in writing receipt of the results and of any recommendations made by the Commissioner.\n\n43(17.2)After carrying out an investigation under subsection (10), if the Commissioner considers it to be in the public interest, the Commissioner may publish a report on the results of his or her investigation and on any recommendations made as a result of the investigation.\n\n43(18)If a complainant is not satisfied with the conclusions of the Commissioner received under subsection (16) or with the resolution of the complaint, the complainant may apply to The Court of King’s Bench of New Brunswick for a remedy.\n\n43(19)The judge of a court referred to in subsection (18) may grant such remedy as he or she considers appropriate and just in the circumstances.\n\n43(20)This section does not affect any other right of action that a person may have.\n\n43(21)As soon as is reasonably practicable after the end of each year, the Commissioner shall submit to the Legislative Assembly a report, prepared by the Commissioner, with respect to the activities of the Office of the Commissioner in the preceding year that includes the following information:\n\n(a)\nthe nature of the complaints that were received;\n\n(b)\nthe types of complaints that were received;\n\n(c)\nwhether an investigation that was carried out was pursuant to a complaint that was made or on the initiative of the Commissioner; and\n\n(d)\nthe number of instances a particular complaint was made by the same complainant.\n\n2013, c.1, s.6; 2013, c.38, s.1; 2013, c.44, s.34; 2016, c.1, s.1; 2023, c.10, s.1; 2023, c.17, s.179",
+      "subsections": [
+        {
+          "id": "43-subsection-1",
+          "sourceKey": "section:43/subsection:1",
+          "label": "43(1)",
+          "text": "43(1)There shall be an Office of the Commissioner of Official Languages for New Brunswick, as well as a Commissioner of Official Languages for New Brunswick.",
+          "contentHash": "103d41e50996458c1202c3608b3a5fcb05fa1e4c72f80db2c2c4362759f44fc6"
+        },
+        {
+          "id": "43-subsection-2",
+          "sourceKey": "section:43/subsection:2",
+          "label": "43(2)",
+          "text": "43(2)Subject to subsections (2.1) to (2.4), the Commissioner shall be appointed by the Lieutenant-Governor in Council on the recommendation of the Legislative Assembly, shall rank as and have all the powers of a deputy head of a department, shall engage exclusively in the duties of the office of the Commissioner and shall not hold any other office under the Crown or engage in any other employment.",
+          "contentHash": "f1d36d931d220c32b368dfd241c01c59219c0a6d71e5df8f0b46a80fbdfc0833"
+        },
+        {
+          "id": "43-subsection-2.1",
+          "sourceKey": "section:43/subsection:2.1",
+          "label": "43(2.1)",
+          "text": "43(2.1)Before an appointment is made under subsection (2), a selection committee shall be established for the purpose of identifying persons as potential candidates to be appointed Commissioner.",
+          "contentHash": "625b79c7302c81db6fb39e4b339e270ef774b90c153930c627c6d075e41429a5"
+        },
+        {
+          "id": "43-subsection-2.2",
+          "sourceKey": "section:43/subsection:2.2",
+          "label": "43(2.2)",
+          "text": "43(2.2)The selection committee shall be composed of\n\n(a)\nthe Clerk of the Executive Council or a person designated by the Clerk of the Executive Council,\n\n(b)\nthe Clerk of the Legislative Assembly or a person designated by the Clerk of the Legislative Assembly,\n\n(c)\na member of the judiciary, and\n\n(d)\na member of the university community.",
+          "contentHash": "39591b1b21c1cad8821ed53eece08204b5392e797a849ef50afed604c171b5cc"
+        },
+        {
+          "id": "43-subsection-2.3",
+          "sourceKey": "section:43/subsection:2.3",
+          "label": "43(2.3)",
+          "text": "43(2.3)The selection committee shall develop a roster of qualified candidates and submit a list of names of qualified candidates to the Lieutenant-Governor in Council.",
+          "contentHash": "1af7502b922e6485670c4e90a0b918560b14fd97bee18f026be2ed53235e98b0"
+        },
+        {
+          "id": "43-subsection-2.4",
+          "sourceKey": "section:43/subsection:2.4",
+          "label": "43(2.4)",
+          "text": "43(2.4)The Premier shall consult with the leader of the opposition and the leaders of the other political parties having representation in the Legislative Assembly during the most recent sitting with respect to one or more qualified candidates from the selection committee’s list of qualified candidates.",
+          "contentHash": "33d8425475e16779f959ff58593c08dcd4edcffebdf8a69978ac6bec32ddfdb8"
+        },
+        {
+          "id": "43-subsection-2.5",
+          "sourceKey": "section:43/subsection:2.5",
+          "label": "43(2.5)",
+          "text": "43(2.5)The Commissioner is an officer of the Legislative Assembly.",
+          "contentHash": "8d525cdae1a5d37f5cc00bd8b3a9b783d37d0f7bbe38707987e694b422d049d4"
+        },
+        {
+          "id": "43-subsection-3",
+          "sourceKey": "section:43/subsection:3",
+          "label": "43(3)",
+          "text": "43(3)Subject to subsection (4), the Commissioner shall hold office for a term of seven years and is not eligible for reappointment.",
+          "contentHash": "7d753098aaf7c13e3c26387a128c7bc611186cc79b9740239c07d0873354bd82"
+        },
+        {
+          "id": "43-subsection-4",
+          "sourceKey": "section:43/subsection:4",
+          "label": "43(4)",
+          "text": "43(4)The Lieutenant-Governor in Council may extend the term of the Commissioner for a period of not more than 12 months.",
+          "contentHash": "0c972dbd9469978a43462a7b196b7c1fa3ae0da21070c9af16167d0e872cd60b"
+        },
+        {
+          "id": "43-subsection-4.1",
+          "sourceKey": "section:43/subsection:4.1",
+          "label": "43(4.1)",
+          "text": "43(4.1)The Commissioner may resign from office by notice in writing addressed to the Speaker of the Legislative Assembly or, if there is no Speaker or the Speaker is absent from the Province, to the Clerk of the Legislative Assembly.",
+          "contentHash": "c07f921073a1cd7b875066809f0bef7b1ca63ca7dcb2a08783b8390a169e77e7"
+        },
+        {
+          "id": "43-subsection-4.2",
+          "sourceKey": "section:43/subsection:4.2",
+          "label": "43(4.2)",
+          "text": "43(4.2)The Speaker or the Clerk, as the case may be, shall immediately inform the Lieutenant-Governor in Council of the Commissioner’s resignation.",
+          "contentHash": "4c04e1fc8bc8bfde61135ef2ad65291412b51d6b0418903abc089743f88de7e7"
+        },
+        {
+          "id": "43-subsection-4.3",
+          "sourceKey": "section:43/subsection:4.3",
+          "label": "43(4.3)",
+          "text": "43(4.3)The Commissioner shall hold office during good behaviour and may only be removed by the Lieutenant-Governor in Council for incapacity, neglect of duty or misconduct upon an address in which 2/3 of the members of the Legislative Assembly concur.",
+          "contentHash": "435a9cc94dac46cd20005c8ffc52cc3f608b341b5c5b1540f3a11a90a4611fdd"
+        },
+        {
+          "id": "43-subsection-4.4",
+          "sourceKey": "section:43/subsection:4.4",
+          "label": "43(4.4)",
+          "text": "43(4.4)The Lieutenant-Governor in Council, upon an address in which a majority of the members of the Legislative Assembly voting concur, may suspend the Commissioner, with or without pay, pending an investigation that may lead to removal under subsection (4.3).",
+          "contentHash": "358b7597bc3187dd9b034ffe227db827657ea909271177a4435b572bf825c18a"
+        },
+        {
+          "id": "43-subsection-4.5",
+          "sourceKey": "section:43/subsection:4.5",
+          "label": "43(4.5)",
+          "text": "43(4.5)If the Legislature is not in session, a judge of The Court of King’s Bench of New Brunswick may, on an application by the Lieutenant-Governor in Council, suspend the Commissioner, with or without pay, for incapacity, neglect of duty or misconduct.",
+          "contentHash": "81c50d666bf49d7081d174a9908600c73bb41d9b89cdeab2c4111a26a8b0fd3e"
+        },
+        {
+          "id": "43-subsection-5",
+          "sourceKey": "section:43/subsection:5",
+          "label": "43(5)",
+          "text": "43(5)If the Lieutenant-Governor in Council makes an application under subsection (4.5), the practice and procedure of The Court of King’s Bench of New Brunswick respecting applications applies.",
+          "contentHash": "48bfd55eda9095499b213f81e1d700d4d22c9562da74fdba6e0442eaf0165771"
+        },
+        {
+          "id": "43-subsection-5.1",
+          "sourceKey": "section:43/subsection:5.1",
+          "label": "43(5.1)",
+          "text": "43(5.1)If a judge of The Court of King’s Bench of New Brunswick suspends the Commissioner under subsection (4.5), the judge shall do the following:\n\n(a)\nappoint an acting Commissioner to hold office until the suspension has been dealt with by the Legislative Assembly; and\n\n(b)\ntable a report on the suspension with the Legislative Assembly within ten days after the commencement of the next session of the Legislature.",
+          "contentHash": "f021681b7ebe408c5a1ef5c027aca3f45fb289e9bfe2e9e33137c976be5abfe1"
+        },
+        {
+          "id": "43-subsection-5.2",
+          "sourceKey": "section:43/subsection:5.2",
+          "label": "43(5.2)",
+          "text": "43(5.2)No suspension under subsection (4.5) shall continue beyond the end of the next session of the Legislature.",
+          "contentHash": "2b09a66f2b6aed1c9712f1a8fcc978d471fbbecaf3dcd119d61431455887a646"
+        },
+        {
+          "id": "43-subsection-5.3",
+          "sourceKey": "section:43/subsection:5.3",
+          "label": "43(5.3)",
+          "text": "43(5.3)If the Commissioner has been suspended under subsection (4.4), the Lieutenant-Governor in Council may appoint an acting Commissioner to hold office until the suspension has elapsed.",
+          "contentHash": "7f1aff7005e850e0e9cb3385e4ae101dfde0a58671d33e21a11e5b41423873c7"
+        },
+        {
+          "id": "43-subsection-5.4",
+          "sourceKey": "section:43/subsection:5.4",
+          "label": "43(5.4)",
+          "text": "43(5.4)An acting Commissioner, while in office, has the powers and duties of the Commissioner and shall be paid such salary or other remuneration and expenses as the Lieutenant-Governor in Council may fix.",
+          "contentHash": "972a6c643bea8c993fa933956f8517dc698a1e8e32f2e48392c0ae5914dbbd31"
+        },
+        {
+          "id": "43-subsection-5.5",
+          "sourceKey": "section:43/subsection:5.5",
+          "label": "43(5.5)",
+          "text": "43(5.5) The Lieutenant-Governor in Council may appoint an acting Commissioner for a term of up to one year if\n\n(a)\nthe office of Commissioner becomes vacant during a sitting of the Legislative Assembly, but the Legislative Assembly does not make a recommendation under subsection (2) before the end of the sitting, or\n\n(b)\nthe office of Commissioner becomes vacant while the Legislative Assembly is not sitting.",
+          "contentHash": "1692b3d7656f69d937610b8979331da688b246a114364f5bec692ad85d103ac5"
+        },
+        {
+          "id": "43-subsection-5.6",
+          "sourceKey": "section:43/subsection:5.6",
+          "label": "43(5.6)",
+          "text": "43(5.6)The appointment of an acting Commissioner comes to an end when a new Commissioner is appointed under subsection (2).",
+          "contentHash": "f602be287f62b1840adc33d5b3d1783ed20d2f2635b00d17cb098de3655fd096"
+        },
+        {
+          "id": "43-subsection-5.7",
+          "sourceKey": "section:43/subsection:5.7",
+          "label": "43(5.7)",
+          "text": "43(5.7)If the Commissioner is unable to act because of illness, the Lieutenant-Governor in Council may appoint an acting Commissioner, whose appointment comes to an end when the Commissioner is again able to act or when the office becomes vacant.",
+          "contentHash": "a5ef48166eb42a8d49900c458b290a0f63874c1af13d65f4209149ce2a56bffe"
+        },
+        {
+          "id": "43-subsection-5.8",
+          "sourceKey": "section:43/subsection:5.8",
+          "label": "43(5.8)",
+          "text": "43(5.8)An appointment under subsection (5.1), (5.3), (5.5) or (5.7) shall not impede a person’s subsequent appointment under subsection (2).",
+          "contentHash": "2e35e9f7f62d55924fb163c17b983e65b157ec2d785ff8d05920bab41bb47a72"
+        },
+        {
+          "id": "43-subsection-5.9",
+          "sourceKey": "section:43/subsection:5.9",
+          "label": "43(5.9)",
+          "text": "43(5.9)The Premier shall consult with the leader of the opposition before an appointment is made under subsection (5.3), (5.5) or (5.7).",
+          "contentHash": "28adfe4a0a887f58335df744273f729abf1951d7d650049548db540f2224ab21"
+        },
+        {
+          "id": "43-subsection-6",
+          "sourceKey": "section:43/subsection:6",
+          "label": "43(6)",
+          "text": "43(6)Notwithstanding the Civil Service Act, the Commissioner may appoint such persons to positions in the Office of the Commissioner as he or she considers necessary to enable the fulfillment of the Commissioner’s responsibilities under this Act.",
+          "contentHash": "d7942425681d93aced24cb55b7d8f6441479cd11a9616a804846e80116c8d7f0"
+        },
+        {
+          "id": "43-subsection-6.1",
+          "sourceKey": "section:43/subsection:6.1",
+          "label": "43(6.1)",
+          "text": "43(6.1)The Commissioner shall be paid an annual salary as determined by the Lieutenant-Governor in Council within the deputy head pay plan, and is entitled to receive benefits similar to those received by deputy heads.",
+          "contentHash": "9292ccde31b513ee95a4fafe66c5e80fe8f53b56419bd64f0352b983a4de19d9"
+        },
+        {
+          "id": "43-subsection-7",
+          "sourceKey": "section:43/subsection:7",
+          "label": "43(7)",
+          "text": "43(7)The pension plan converted to a shared risk plan in accordance with An Act Respecting Public Service Pensions applies to the Commissioner and the employees of the Office of the Commissioner.",
+          "contentHash": "bcec0d9eea80d07c50242a99d77813af8e4988728ca216b4ae75850990ac1e36"
+        },
+        {
+          "id": "43-subsection-8",
+          "sourceKey": "section:43/subsection:8",
+          "label": "43(8)",
+          "text": "43(8)The Commissioner may contract for such professional services, for limited periods of time or in respect of particular matters, as he or she considers necessary to enable the fulfillment of the Commissioner’s responsibilities under this Act.",
+          "contentHash": "370b3e60a68b486ccf5905afd9f4bd815eb600682c3d3b27a2a5a044581d6dd9"
+        },
+        {
+          "id": "43-subsection-9",
+          "sourceKey": "section:43/subsection:9",
+          "label": "43(9)",
+          "text": "43(9)In accordance with the authority provided to the Commissioner under this Act, it is the role of the Commissioner to investigate, report on and make recommendations with regard to compliance with this Act and to promote the advancement of both official languages in the Province.",
+          "contentHash": "90a2d7be42020b44a1063bef8f44ef50040bbdeada24a44064bc3566d1869eee"
+        },
+        {
+          "id": "43-subsection-10",
+          "sourceKey": "section:43/subsection:10",
+          "label": "43(10)",
+          "text": "43(10)In order to fulfill the role under subsection (9), the Commissioner shall conduct and carry out investigations either pursuant to any complaint made to the Commissioner or on his or her own initiative and shall, as provided in this Act, report and make recommendations with respect to such investigations.",
+          "contentHash": "2b6493a11e83c9e461f91d1e2deba6898abcf85088ad1645a1c3c5bf2e1d0e63"
+        },
+        {
+          "id": "43-subsection-10.1",
+          "sourceKey": "section:43/subsection:10.1",
+          "label": "43(10.1)",
+          "text": "43(10.1)Despite subsection (10), when the Commissioner considers it appropriate, the Commissioner may attempt to resolve a complaint without conducting an investigation.",
+          "contentHash": "e178783990fdc79a294c16d14fa1f575e674caa6ed82e0dcedd05eb9a382007f"
+        },
+        {
+          "id": "43-subsection-11",
+          "sourceKey": "section:43/subsection:11",
+          "label": "43(11)",
+          "text": "43(11)The Commissioner may refuse to investigate or cease to investigate any complaint if, in the opinion of the Commissioner,\n\n(a)\nthe subject-matter of the complaint is trivial,\n\n(b)\nthe complaint is frivolous or vexatious or is not made in good faith, or\n\n(c)\nthe subject-matter of the complaint does not involve a contravention or failure to comply with this Act or, for any other reason, does not come within the authority of the Commissioner under this Act.",
+          "contentHash": "f85165f402c73b5597fb2d5691bd06e99a4e9a6aefc536c578cc782832c7d811"
+        },
+        {
+          "id": "43-subsection-12",
+          "sourceKey": "section:43/subsection:12",
+          "label": "43(12)",
+          "text": "43(12)If the Commissioner refuses to investigate or ceases to investigate any complaint, the Commissioner shall inform the complainant and provide reasons for the decision to do so.",
+          "contentHash": "2fd5b18930ad64d48d667e509273b64c67e319edf5bed1072f21f1de6ba3bb01"
+        },
+        {
+          "id": "43-subsection-13",
+          "sourceKey": "section:43/subsection:13",
+          "label": "43(13)",
+          "text": "43(13)Before commencing an investigation under this Act, the Commissioner shall inform the deputy head or other administrative head of the institution concerned of his or her intention to carry out the investigation.",
+          "contentHash": "b6b7583dc4263e1064951726ef5afc4edfae42f68abc16099b6b1804e884e4b0"
+        },
+        {
+          "id": "43-subsection-14",
+          "sourceKey": "section:43/subsection:14",
+          "label": "43(14)",
+          "text": "43(14)Subject to this Act, the Commissioner may determine the procedure to be followed in carrying out an investigation under this Act.",
+          "contentHash": "2bb1d625ca2b31428e48a13c15192db5b9b2f209427237015d1f9eb6c2c62fd9"
+        },
+        {
+          "id": "43-subsection-15",
+          "sourceKey": "section:43/subsection:15",
+          "label": "43(15)",
+          "text": "43(15)For the purposes of this Act, the Commissioner is a commissioner under the Inquiries Act.",
+          "contentHash": "4bac769a029f73a18c02e6faf9a2793d9840dd7395a260c8ab28daa64968c848"
+        },
+        {
+          "id": "43-subsection-16",
+          "sourceKey": "section:43/subsection:16",
+          "label": "43(16)",
+          "text": "43(16)After carrying out an investigation pursuant to a complaint under this Act, the Commissioner shall communicate the results of the investigation and any recommendations, including any opinion and the reasons for the recommendations, to the Premier, the deputy head or other administrative head of the institution concerned and the complainant.",
+          "contentHash": "2144852a48d45ef95b2e565a3675f23643f1cc7a271124509b66d4dddad57361"
+        },
+        {
+          "id": "43-subsection-17",
+          "sourceKey": "section:43/subsection:17",
+          "label": "43(17)",
+          "text": "43(17)After carrying out an investigation on his or her own initiative, the Commissioner shall communicate the results of the investigation and any recommendations, including any opinion and the reasons for the recommendations, to the Premier and the deputy head or other administrative head of the institution concerned.",
+          "contentHash": "a80a1ff9f5433381b1837a305c3588cd263070d8e96d39ba4f4c46680e479c60"
+        },
+        {
+          "id": "43-subsection-17.1",
+          "sourceKey": "section:43/subsection:17.1",
+          "label": "43(17.1)",
+          "text": "43(17.1)When the Premier, a deputy head or an administrative head receives the results of an investigation from the Commissioner under subsection (16) or (17), he or she shall acknowledge in writing receipt of the results and of any recommendations made by the Commissioner.",
+          "contentHash": "9e750d72c74cf38a6724686f2e7026ba31e5fe026799b1625c73f0fd4511502f"
+        },
+        {
+          "id": "43-subsection-17.2",
+          "sourceKey": "section:43/subsection:17.2",
+          "label": "43(17.2)",
+          "text": "43(17.2)After carrying out an investigation under subsection (10), if the Commissioner considers it to be in the public interest, the Commissioner may publish a report on the results of his or her investigation and on any recommendations made as a result of the investigation.",
+          "contentHash": "644dc1dfe3faf64a090799f2258d2c7f132987551fdb64945326e0822bc6e96e"
+        },
+        {
+          "id": "43-subsection-18",
+          "sourceKey": "section:43/subsection:18",
+          "label": "43(18)",
+          "text": "43(18)If a complainant is not satisfied with the conclusions of the Commissioner received under subsection (16) or with the resolution of the complaint, the complainant may apply to The Court of King’s Bench of New Brunswick for a remedy.",
+          "contentHash": "f3545c2d86f65ccbd58deb27bb98a26e0a200d3b44dcb656108f42877bf7a272"
+        },
+        {
+          "id": "43-subsection-19",
+          "sourceKey": "section:43/subsection:19",
+          "label": "43(19)",
+          "text": "43(19)The judge of a court referred to in subsection (18) may grant such remedy as he or she considers appropriate and just in the circumstances.",
+          "contentHash": "7689d7ce34f7addab5c870a4f324d8eb9e75bc2c5d19c145dbd34a6770994f34"
+        },
+        {
+          "id": "43-subsection-20",
+          "sourceKey": "section:43/subsection:20",
+          "label": "43(20)",
+          "text": "43(20)This section does not affect any other right of action that a person may have.",
+          "contentHash": "56788fdb7c8c1fbea044d69969d79dc384ec28aa59e33b5c92e1dddcc9af746e"
+        },
+        {
+          "id": "43-subsection-21",
+          "sourceKey": "section:43/subsection:21",
+          "label": "43(21)",
+          "text": "43(21)As soon as is reasonably practicable after the end of each year, the Commissioner shall submit to the Legislative Assembly a report, prepared by the Commissioner, with respect to the activities of the Office of the Commissioner in the preceding year that includes the following information:\n\n(a)\nthe nature of the complaints that were received;\n\n(b)\nthe types of complaints that were received;\n\n(c)\nwhether an investigation that was carried out was pursuant to a complaint that was made or on the initiative of the Commissioner; and\n\n(d)\nthe number of instances a particular complaint was made by the same complainant.\n\n2013, c.1, s.6; 2013, c.38, s.1; 2013, c.44, s.34; 2016, c.1, s.1; 2023, c.10, s.1; 2023, c.17, s.179",
+          "contentHash": "c1f69e3fa00255889d3af90117476ed2bfeecf01ac6d2c68b9b58b093174d9cb"
+        }
+      ],
+      "contentHash": "988e246146771d9b3933753b64a21b52630dc9f720970863f04de63b55b9a619"
+    },
+    {
+      "id": "section-43.01",
+      "sourceKey": "section:43.01",
+      "componentType": "section",
+      "label": "43.01",
+      "heading": "Delegation of authority",
+      "text": "Delegation of authority\n2023, c.10, s.1\n\n43.01(1)The Commissioner may delegate in writing to any person any power of the Commissioner under this Act, except the power of delegation and the power to prepare a report under this Act.\n\n43.01(2)Despite subsection (1), if the Commissioner is in a conflict of interest with respect to a matter referred to the Commissioner, the Commissioner may delegate in writing to any person any power with respect to that matter, including the power to prepare a report but excluding the power of delegation.\n\n43.01(3)A person purporting to exercise the power of the Commissioner by virtue of a delegation under subsection (1) or (2) shall produce evidence of their authority to exercise that power when required to do so.\n\n2023, c.10, s.1\n\nPROTECTION FROM REPRISAL\n\n2013, c.38, s.1",
+      "subsections": [
+        {
+          "id": "43.01-subsection-1",
+          "sourceKey": "section:43.01/subsection:1",
+          "label": "43.01(1)",
+          "text": "43.01(1)The Commissioner may delegate in writing to any person any power of the Commissioner under this Act, except the power of delegation and the power to prepare a report under this Act.",
+          "contentHash": "4df6620ebc91d48b0292f319e9090c34093f643111acabf65ca70913e715c3d3"
+        },
+        {
+          "id": "43.01-subsection-2",
+          "sourceKey": "section:43.01/subsection:2",
+          "label": "43.01(2)",
+          "text": "43.01(2)Despite subsection (1), if the Commissioner is in a conflict of interest with respect to a matter referred to the Commissioner, the Commissioner may delegate in writing to any person any power with respect to that matter, including the power to prepare a report but excluding the power of delegation.",
+          "contentHash": "abfd3cc33cb88d500282ea1afd7842a5898806d8e9c808dd21839f1c07aa7918"
+        },
+        {
+          "id": "43.01-subsection-3",
+          "sourceKey": "section:43.01/subsection:3",
+          "label": "43.01(3)",
+          "text": "43.01(3)A person purporting to exercise the power of the Commissioner by virtue of a delegation under subsection (1) or (2) shall produce evidence of their authority to exercise that power when required to do so.\n\n2023, c.10, s.1\n\nPROTECTION FROM REPRISAL\n\n2013, c.38, s.1",
+          "contentHash": "469e2bdecdc1950aebb3b7725b72f3c715cca9f8a1885d4465c5950e95cafda6"
+        }
+      ],
+      "contentHash": "b0915653dd79ad12032f39bf218d2d3ba4ee34960cffddde924d1a216d8428d7"
+    },
+    {
+      "id": "section-43.1",
+      "sourceKey": "section:43.1",
+      "componentType": "section",
+      "label": "43.1",
+      "heading": "Protection from reprisal",
+      "text": "Protection from reprisal\n\n43.1No person shall take a reprisal against a person or direct that one be taken against a person because the person has made a complaint in good faith to the Commissioner or cooperated in an investigation under this Act.\n2013, c.38, s.1\n\nIMMUNITY\n\n2013, c.38, s.1",
+      "subsections": [],
+      "contentHash": "9fbd9470f05a3e339977084a1b6ff4f984b82fb2f3cfb883c61bd007bdfc79e1"
+    },
+    {
+      "id": "section-43.2",
+      "sourceKey": "section:43.2",
+      "componentType": "section",
+      "label": "43.2",
+      "heading": "Immunity",
+      "text": "Immunity\n\n43.2No proceedings lie against the Commissioner or against a person holding an office or appointment in the Office of the Commissioner for anything he or she may do, report or say in the course of the exercise or intended exercise of his or her functions under this Act regardless of whether that function was within his or her jurisdiction, unless it is shown the person acted in bad faith.\n2013, c.38, s.1\n\nAPPOINTMENT OF OFFICIAL TRANSLATORS",
+      "subsections": [],
+      "contentHash": "3156224f69c0090fca20ede03c416cf56830400718d8a7ee7dfa27d26ddf7cd5"
+    },
+    {
+      "id": "section-44",
+      "sourceKey": "section:44",
+      "componentType": "section",
+      "label": "44",
+      "heading": "Appointment of Official Translators",
+      "text": "Appointment of Official Translators\n\n44The Lieutenant-Governor in Council may appoint such Official Translators as are necessary to enable a court to discharge the duties conferred on it by this Act.\n\nREGULATION-MAKING AUTHORITY",
+      "subsections": [],
+      "contentHash": "c0412d55a72c81d0a2651ce5d9c6e3554684cdba5748d64052bd43284c9ec940"
+    },
+    {
+      "id": "section-45",
+      "sourceKey": "section:45",
+      "componentType": "section",
+      "label": "45",
+      "heading": "Regulation-making authority",
+      "text": "Regulation-making authority\n\n45The Lieutenant-Governor in Council may make regulations\n\n(a)\nprescribing circumstances not otherwise provided for under this Act in which institutions have the duty to ensure that any member of the public can communicate with and obtain available services from the institutions in either official language;\n\n(a.1)\nprescribing portions or divisions of the Public Service for the purposes of the definition “public service” in section 1;\n\n(a.2)\nestablishing public signage policies for the Province;\n\n(b)\nrespecting the procedure, as it concerns official languages, before any court, including\n\n(i)\nthe giving of notice as is necessary to enable the court to discharge the duty conferred upon it by section 21, and\n\n(ii)\nthe swearing or affirming of interpreters;\n\n(c)\nrespecting services and communications to be provided under sections 36 and 41 and the manner in which they are to be provided;\n\n(d)\nidentifying measures required to foster effective communications with and services from institutions in both official languages;\n\n(e)\nrespecting the form and manner of a review under section 42;\n\n(e.1)\nproviding for a remedy for violating section 43.1 or establishing a procedure for enforcing the prohibition in section 43.1, including prescribing a violation of that section to be an offence and prescribing a penalty with respect to the offence;\n\n(f)\nrespecting the functions of persons appointed under section 44 and the status and admissibility into evidence of translations prepared by them;\n\n(g)\nestablishing any other measure necessary for the better administration of this Act.\n\n2013, c.38, s.1\n\nREPEAL",
+      "subsections": [],
+      "contentHash": "48be5367ccff0e438cbeae3582337a4ed163a47aa304193a290f3673c9d523c8"
+    },
+    {
+      "id": "section-46",
+      "sourceKey": "section:46",
+      "componentType": "section",
+      "label": "46",
+      "heading": "Repeal",
+      "text": "Repeal\n\n46The Official Languages of New Brunswick Act, chapter O-1 of the Revised Statutes, 1973, is repealed.\n\nCOMMENCEMENT",
+      "subsections": [],
+      "contentHash": "737f0b441c319785c432c8207a2f8f9f448541bd1808a5e80ee66f7714d26c31"
+    },
+    {
+      "id": "section-47",
+      "sourceKey": "section:47",
+      "componentType": "section",
+      "label": "47",
+      "heading": "Commencement",
+      "text": "Commencement\n\n47(1)This Act, except for section 43, comes into force on August 5, 2002.\n\n47(2)Section 43 comes into force on April 1, 2003.\n\nN.B. This Act is consolidated to June 16, 2023.",
+      "subsections": [
+        {
+          "id": "47-subsection-1",
+          "sourceKey": "section:47/subsection:1",
+          "label": "47(1)",
+          "text": "47(1)This Act, except for section 43, comes into force on August 5, 2002.",
+          "contentHash": "a33518a5901fb5123d5414a3d9abf2ae9bbdc167e67660b4a9dd6fffd107a870"
+        },
+        {
+          "id": "47-subsection-2",
+          "sourceKey": "section:47/subsection:2",
+          "label": "47(2)",
+          "text": "47(2)Section 43 comes into force on April 1, 2003.\n\nN.B. This Act is consolidated to June 16, 2023.",
+          "contentHash": "8bcb727b185508c9025abab466d914a6e7b9734538786d17a4e3355b2754e4c3"
+        }
+      ],
+      "contentHash": "40a8f55b554ff2676fb3e21d4fd511f95d9890b1f9a08b56144ed1e5a8e539b6"
+    }
+  ],
+  "sections": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
+      "label": "1",
+      "heading": "Definitions",
+      "text": "Definitions\n\n1In this Act\n“city” means a city within the meaning of subsection 22(2) of the Local Governance Act; (cité)\n\n“communication” and “communicate” mean any form of communication whether spoken, written or electronic; (communication) et (communiquer)\n\n“court” means any court or administrative tribunal in the Province (tribunaux)\n\n“Crown corporation” means a corporation that is accountable, through a Minister, to the Legislative Assembly for the conduct of its affairs, and includes a parent Crown corporation or a wholly-owned subsidiary; (sociétés de la Couronne)\n\n“department” means a department as defined in section 1 of the Financial Administration Act; (ministère)\n\n“institution” means an institution of the Legislative Assembly or the Government of New Brunswick, the courts, any board, commission or council, or other body or office, established to perform a governmental function by or pursuant to an Act of the Legislature or by or under the authority of the Lieutenant-Governor in Council, a department of the Government of New Brunswick, a Crown corporation established by or pursuant to an Act of the Legislature or any other body that is specified by an Act of the Legislature to be an agent of the Crown in right of the Province or to be subject to the direction of the Lieutenant-Governor in Council or a minister of the Crown; (institution)\n\n“linguistic community” means either of the English linguistic community or the French linguistic community of New Brunswick within the meaning of section 16.1 of the Canadian Charter of Rights and Freedoms; (communauté linguistique)\n\n“municipality” means a municipality within the meaning of subsection 1(1) of the Local Governance Act; (municipalité)\n\n“official languages” means the official languages of New Brunswick within the meaning of subsection 16(2) of the Canadian Charter of Rights and Freedoms; (langues officielles)\n\n“peace officer” means a peace officer as defined under section 1 of the Provincial Offences Procedure Act who serves the public, whether on behalf of the Province, a municipality or under a contract for the delivery of policing services with the Province or its institutions and includes a police officer as defined under that Act; (agent de la paix)\n\n“publication” and “published” mean all forms of publication, whether paper or electronic;(publication) et (publier)\n\n“public service” means those portions or divisions of the Public Service specified in the First Schedule of the Public Service Labour Relations Act that are prescribed by regulation.(services publics)\n\n2011, c.20, s.11; 2013, c.38, s.1; 2017, c.20, s.123; 2023, c.17, s.179\n\nPURPOSE\n\n2013, c.38, s.1",
+      "subsections": [],
+      "contentHash": "0fe084e32ad5a926233ede6457d604294b9db46b9e991e1b736ef3631cc0f2e9"
+    },
+    {
+      "id": "section-1.1",
+      "sourceKey": "section:1.1",
+      "componentType": "section",
+      "label": "1.1",
+      "heading": "Purpose",
+      "text": "Purpose\n\n1.1The purpose of this Act is the following:\n\n(a)\nto ensure respect for English and French as the official languages of New Brunswick;\n\n(b)\nto ensure that English and French have equality of status and equal rights and privileges as to their use in all institutions of the Province; and\n\n(c)\nto set out the powers and duties of the institutions of the Province with respect to the two official languages.\n\n2013, c.38, s.1\n\nINTERPRETATION",
+      "subsections": [],
+      "contentHash": "1de253134376a3e522e4413111c9c058c17fd9b1f99d60598f898c55f73d7352"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "label": "2",
+      "heading": "Minister responsible",
+      "text": "Minister responsible\n\n2The Premier is responsible for the administration of this Act.",
+      "subsections": [],
+      "contentHash": "d7df0e57c941ef76fd2f2477bfda24c0a04f5aea7c65a9101dd4e891506190d9"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
+      "label": "3",
+      "heading": "Act prevails, exception",
+      "text": "Act prevails, exception\n\n3(1)No act, or regulation under it, other than this Act, shall be interpreted so as to repeal, limit or contravene a provision of this Act and, in case of conflict, this Act prevails.\n\n3(2)Subsection (1) does not apply to the Education Act or any other act, legislative provision or measure which promotes the equality of the two linguistic communities or establishes distinct educational institutions or distinct cultural institutions.",
+      "subsections": [
+        {
+          "id": "3-subsection-1",
+          "sourceKey": "section:3/subsection:1",
+          "label": "3(1)",
+          "text": "3(1)No act, or regulation under it, other than this Act, shall be interpreted so as to repeal, limit or contravene a provision of this Act and, in case of conflict, this Act prevails.",
+          "contentHash": "84a8a3d1221c9df62cf2557820b57b7b8dcbb55c94fd37997ca0a160ae2cc687"
+        },
+        {
+          "id": "3-subsection-2",
+          "sourceKey": "section:3/subsection:2",
+          "label": "3(2)",
+          "text": "3(2)Subsection (1) does not apply to the Education Act or any other act, legislative provision or measure which promotes the equality of the two linguistic communities or establishes distinct educational institutions or distinct cultural institutions.",
+          "contentHash": "b8d68926cdce586453d7849ecae7c0fc97d0dcf4408183ccb5573ae2a406a408"
+        }
+      ],
+      "contentHash": "efa2aa12ed9ff210a4253b37c093d5900f0b925a8ff1789ff9f6358934a305d9"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
+      "label": "4",
+      "heading": "Distinct institutions",
+      "text": "Distinct institutions\n\n4Distinct educational institutions and distinct cultural institutions and, without limiting the generality of the foregoing, the school system in New Brunswick including the English and French sections of the Department of Education and Early Childhood Development including schools and their committees, councils and boards, community centres and universities and, where applicable, community colleges are not included in the definition of “institution” in section 1.\n2010, c.31, s.100",
+      "subsections": [],
+      "contentHash": "0712a16863412f66ec418c5d876139accbcf05daf8c1ec42c747a4a6d1628537"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "componentType": "section",
+      "label": "5",
+      "heading": "Authority of Legislature",
+      "text": "Authority of Legislature\n\n5Nothing in this Act limits the authority of the Legislature or the Government to advance the equality of status and use of English and French.\n\nSECRETARIAT OF OFFICIAL LANGUAGES\n\n2023, c.10, s.1",
+      "subsections": [],
+      "contentHash": "60ac44ac21da1646bc519b9e15259ed399a2b9455134408af330e8dd54c6196c"
+    },
+    {
+      "id": "section-5.01",
+      "sourceKey": "section:5.01",
+      "componentType": "section",
+      "label": "5.01",
+      "heading": "Secretariat of Official Languages",
+      "text": "Secretariat of Official Languages\n\n2023, c.10, s.1\n\n5.01There is established a secretariat within the Department of Intergovernmental Affairs called the Secretariat of Official Languages that shall\n\n(a)\nassist in developing and review, monitor and evaluate the implementation plan referred to in section 5.1,\n\n(b)\nprepare the report referred to in subsection 5.1(5),\n\n(c)\nevaluate this Act on a continuous basis and make recommendations for amendments,\n\n(d)\nadvise institutions on measures to be taken to comply with this Act and meet the needs of the two linguistic communities,\n\n(e)\nprovide support to employees of institutions and the public service to ensure compliance with language policies of the Province,\n\n(f)\nundertake public outreach initiatives, including regular consultation with stakeholders from both linguistic communities, to promote respect, understanding and communication between the two linguistic communities, and\n\n(g)\nperform any other duties assigned to it by the Premier.\n\n2023, c.10, s.1\n\nIMPLEMENTATION PLAN\n\n2013, c.38, s.1",
+      "subsections": [],
+      "contentHash": "ac1ad7577a0e45e0b26f436bc09ba151d798dbd8ca6b6921025eae36544e082f"
+    },
+    {
+      "id": "section-5.1",
+      "sourceKey": "section:5.1",
+      "componentType": "section",
+      "label": "5.1",
+      "heading": "Implementation plan",
+      "text": "Implementation plan\n\n5.1(1)The Province shall prepare a plan setting out how it will meet its obligations under this Act, and the plan shall include the following:\n\n(a)\ngoals and objectives with respect to its obligations under this Act;\n\n(b)\nmeasures to ensure the equality of status of the two linguistic communities;\n\n(c)\nmeasures to ensure the equality of use of the English and French language in the public service;\n\n(d)\nmeasures to ensure that language of work is considered when identifying work groups within the public service and when developing language profiles for positions in the public service;\n\n(e)\nmeasures to improve the bilingual capacity of senior management in the public service;\n\n(f)\nmeasures to provide for the review and the improvement, when necessary, of the public signage policies of the Province, which policies shall include consideration of the two linguistic communities and of the linguistic composition of a region; and\n\n(g)\nperformance measures for evaluating the effectiveness of the measures implemented under the plan and time frames within which they must be implemented.\n\n5.1(2)The Premier is responsible for ensuring central government coordination and oversight of the implementation of the plan prepared under subsection (1).\n\n5.1(3)Each portion of the public service shall prepare an action plan setting out how it will meet the goals and objectives included in the plan prepared under subsection (1) and how it will implement the measures included in that plan.\n\n5.1(4)As soon as practicable after the end of each fiscal year, each portion of the public service shall submit a report to the Premier with respect to the activities under its action plan.\n\n5.1(5)As soon as practicable after the end of each fiscal year and after receiving the reports under subsection (4), the Premier shall submit a report to the Legislative Assembly with respect to the activities under the plan prepared under subsection (1).\n\n2013, c.38, s.1\n\nPROCEEDINGS OF THE LEGISLATIVE ASSEMBLY",
+      "subsections": [
+        {
+          "id": "5.1-subsection-1",
+          "sourceKey": "section:5.1/subsection:1",
+          "label": "5.1(1)",
+          "text": "5.1(1)The Province shall prepare a plan setting out how it will meet its obligations under this Act, and the plan shall include the following:\n\n(a)\ngoals and objectives with respect to its obligations under this Act;\n\n(b)\nmeasures to ensure the equality of status of the two linguistic communities;\n\n(c)\nmeasures to ensure the equality of use of the English and French language in the public service;\n\n(d)\nmeasures to ensure that language of work is considered when identifying work groups within the public service and when developing language profiles for positions in the public service;\n\n(e)\nmeasures to improve the bilingual capacity of senior management in the public service;\n\n(f)\nmeasures to provide for the review and the improvement, when necessary, of the public signage policies of the Province, which policies shall include consideration of the two linguistic communities and of the linguistic composition of a region; and\n\n(g)\nperformance measures for evaluating the effectiveness of the measures implemented under the plan and time frames within which they must be implemented.",
+          "contentHash": "0f2e7a0c0f783c5210ca1949734165ff727abf18e9341a9dbf04000e82c880f8"
+        },
+        {
+          "id": "5.1-subsection-2",
+          "sourceKey": "section:5.1/subsection:2",
+          "label": "5.1(2)",
+          "text": "5.1(2)The Premier is responsible for ensuring central government coordination and oversight of the implementation of the plan prepared under subsection (1).",
+          "contentHash": "74166932eee17ab3fae8310e705ae97a073d91c86df82b195a244aa3fc4972bb"
+        },
+        {
+          "id": "5.1-subsection-3",
+          "sourceKey": "section:5.1/subsection:3",
+          "label": "5.1(3)",
+          "text": "5.1(3)Each portion of the public service shall prepare an action plan setting out how it will meet the goals and objectives included in the plan prepared under subsection (1) and how it will implement the measures included in that plan.",
+          "contentHash": "f357ec1296ecbf99aea01fa24be22d2734f074c2c2dfdfd3526ed8c9aad7fd98"
+        },
+        {
+          "id": "5.1-subsection-4",
+          "sourceKey": "section:5.1/subsection:4",
+          "label": "5.1(4)",
+          "text": "5.1(4)As soon as practicable after the end of each fiscal year, each portion of the public service shall submit a report to the Premier with respect to the activities under its action plan.",
+          "contentHash": "1dedb7f2b61a9fec165cf666cb4611d803255e15f11f86d35702b1395792b380"
+        },
+        {
+          "id": "5.1-subsection-5",
+          "sourceKey": "section:5.1/subsection:5",
+          "label": "5.1(5)",
+          "text": "5.1(5)As soon as practicable after the end of each fiscal year and after receiving the reports under subsection (4), the Premier shall submit a report to the Legislative Assembly with respect to the activities under the plan prepared under subsection (1).\n\n2013, c.38, s.1\n\nPROCEEDINGS OF THE LEGISLATIVE ASSEMBLY",
+          "contentHash": "e29730cc1065f50252a821db011938fa8fd624764c72d710162325a53beca02c"
+        }
+      ],
+      "contentHash": "3780ee330229d5611f7d1a7472e6d194b1e839568c51499ca7b02f2d97428b3f"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "componentType": "section",
+      "label": "6",
+      "heading": "Language of the Legislature",
+      "text": "Language of the Legislature\n\n6English and French are the official languages of the Legislature and everyone has the right to use either language in any debate and other proceeding of the Legislative Assembly or its committees.",
+      "subsections": [],
+      "contentHash": "9cc86a90c2c2cc2316f8aef5250cee2051c95257644fca52751d880ba92f55af"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "componentType": "section",
+      "label": "7",
+      "heading": "Interpretation of proceedings of the Legislative Assembly",
+      "text": "Interpretation of proceedings of the Legislative Assembly\n\n7Simultaneous interpretation of the debates and other proceedings of the Legislative Assembly shall be made available by the Legislature.",
+      "subsections": [],
+      "contentHash": "8150cd9c1be147db23f80f9e778aa33d8c9aaec34bc167ee3d5cfc4113f75480"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "componentType": "section",
+      "label": "8",
+      "heading": "Records and journals of the Legislative Assembly",
+      "text": "Records and journals of the Legislative Assembly\n\n8The records, journals and reports of the Legislative Assembly and its committees shall be printed and published in English and French and both language versions are equally authoritative.\n\nLEGISLATIVE AND OTHER INSTRUMENTS",
+      "subsections": [],
+      "contentHash": "23e131761ec32c25d04de610abc62882b0c3f79ff82a2d55aa38e132e0e16fd7"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "componentType": "section",
+      "label": "9",
+      "heading": "Language of legislation",
+      "text": "Language of legislation\n\n9English and French are the official languages of legislation.",
+      "subsections": [],
+      "contentHash": "71b325c37bf7eb41bad0736d5433c8b99968b002d1693ef2b9b7c5d1c482c04d"
+    },
+    {
+      "id": "section-10",
+      "sourceKey": "section:10",
+      "componentType": "section",
+      "label": "10",
+      "heading": "Equal authority of both language versions",
+      "text": "Equal authority of both language versions\n\n10The English and French versions of legislation are equally authoritative.",
+      "subsections": [],
+      "contentHash": "d6f4d6fd675fccadbfe323cd12717292ffcfce26bdf8168c11e6727a08b8dc75"
+    },
+    {
+      "id": "section-11",
+      "sourceKey": "section:11",
+      "componentType": "section",
+      "label": "11",
+      "heading": "Introduction of bills",
+      "text": "Introduction of bills\n\n11Bills shall be simultaneously introduced in both official languages before the Legislative Assembly and shall be simultaneously adopted and assented to in both official languages.",
+      "subsections": [],
+      "contentHash": "79e5cbf2ed8e55cc36d3a9046ebf6e1f9769a2a0381a93bb04973cbd8e44cb8a"
+    },
+    {
+      "id": "section-12",
+      "sourceKey": "section:12",
+      "componentType": "section",
+      "label": "12",
+      "heading": "Acts of the Legislature",
+      "text": "Acts of the Legislature\n\n12The Acts of the Legislature shall be co-drafted, printed and published in both official languages.\n2013, c.38, s.1",
+      "subsections": [],
+      "contentHash": "f25f4e4354a86b68c6b94f64f9d550c7bc643d0f4d81b0e21522b3d74c9c5043"
+    },
+    {
+      "id": "section-13",
+      "sourceKey": "section:13",
+      "componentType": "section",
+      "label": "13",
+      "heading": "Required publication in The Royal Gazette",
+      "text": "Required publication in The Royal Gazette\n\n13Rules, orders, Orders-in-Council and proclamations required to be published in The Royal Gazette shall be printed and published in both official languages.",
+      "subsections": [],
+      "contentHash": "cad97c14f121d4d13741c160df7b7350438dc09f45d2a0f4a9f50964e0e47d06"
+    },
+    {
+      "id": "section-14",
+      "sourceKey": "section:14",
+      "componentType": "section",
+      "label": "14",
+      "heading": "Official documents",
+      "text": "Official documents\n\n14Notices, advertisements and other announcements of an official nature, whether required to be published in The Royal Gazette or not, shall be printed and published in both official languages.",
+      "subsections": [],
+      "contentHash": "4c71cb2cb688fc94c0514458e0030a4c352ad930106b42a9321ba439ffcc595a"
+    },
+    {
+      "id": "section-15",
+      "sourceKey": "section:15",
+      "componentType": "section",
+      "label": "15",
+      "heading": "Documents published under an Act of the Province",
+      "text": "Documents published under an Act of the Province\n\n15Notices, announcements and other documents required to be published under this Act or any other Act by the Province or its institutions shall be printed and published in both official languages.\n\nTHE ADMINISTRATION OF JUSTICE",
+      "subsections": [],
+      "contentHash": "51e7567e68dce6908358bcd1ed1c3eabcfaac4d88073254a275d73c7e5297836"
+    },
+    {
+      "id": "section-16",
+      "sourceKey": "section:16",
+      "componentType": "section",
+      "label": "16",
+      "heading": "Language of the courts",
+      "text": "Language of the courts\n\n16English and French are the official languages of the courts.",
+      "subsections": [],
+      "contentHash": "c3f86d8f54b7df80c332b603476d7a5bf0867442abb8586dd98a0dab0ab4fde2"
+    },
+    {
+      "id": "section-17",
+      "sourceKey": "section:17",
+      "componentType": "section",
+      "label": "17",
+      "heading": "Right to use language of choice",
+      "text": "Right to use language of choice\n\n17Every person has the right to use the official language of his or her choice in any matter before the courts, including all proceedings, or in any pleading or process issuing from a court.",
+      "subsections": [],
+      "contentHash": "50e43640294320bbfd7021807869273c2177fca6bd3392ff5d77df898508d474"
+    },
+    {
+      "id": "section-18",
+      "sourceKey": "section:18",
+      "componentType": "section",
+      "label": "18",
+      "heading": "Person not to be disadvantaged by choice",
+      "text": "Person not to be disadvantaged by choice\n\n18No person shall be placed at a disadvantage by reason of the choice made under section 17.",
+      "subsections": [],
+      "contentHash": "648d355f3b140c68d38f594792c69fab3447dcccbf4713b2245721c525f6c6ce"
+    },
+    {
+      "id": "section-19",
+      "sourceKey": "section:19",
+      "componentType": "section",
+      "label": "19",
+      "heading": "Obligation placed on the court to understand language chosen",
+      "text": "Obligation placed on the court to understand language chosen\n\n19(1)A court before which a matter is pending must understand, without the assistance of an interpreter or any process of simultaneous translation or consecutive interpretation, the official language chosen under section 17 by a party to the matter.\n\n19(2)A court before which a matter is pending must understand both official languages, without the assistance of an interpreter or any process of simultaneous translation or consecutive interpretation, if both English and French are the languages chosen by the parties to the proceedings.",
+      "subsections": [
+        {
+          "id": "19-subsection-1",
+          "sourceKey": "section:19/subsection:1",
+          "label": "19(1)",
+          "text": "19(1)A court before which a matter is pending must understand, without the assistance of an interpreter or any process of simultaneous translation or consecutive interpretation, the official language chosen under section 17 by a party to the matter.",
+          "contentHash": "4e2841f3ce749fdfcb990790787eedca8e052c0fe93925e39f71a8e286b5cc50"
+        },
+        {
+          "id": "19-subsection-2",
+          "sourceKey": "section:19/subsection:2",
+          "label": "19(2)",
+          "text": "19(2)A court before which a matter is pending must understand both official languages, without the assistance of an interpreter or any process of simultaneous translation or consecutive interpretation, if both English and French are the languages chosen by the parties to the proceedings.",
+          "contentHash": "6a4bc0808a8efbc60efdb466f44b7aea7f8114816cb151d8dc0ef1131550c6f6"
+        }
+      ],
+      "contentHash": "592e911082ed12394fdcd8bf44a7f36615ebf2e8581fd6687cd15bdf8c164460"
+    },
+    {
+      "id": "section-20",
+      "sourceKey": "section:20",
+      "componentType": "section",
+      "label": "20",
+      "heading": "Accused’s right to be heard in the language of choice",
+      "text": "Accused’s right to be heard in the language of choice\n\n20(1)A person who is alleged to have committed an offence under an Act or a regulation of the Province or under a municipal by-law has the right to have the proceedings conducted in the language of his or her choice and shall be informed of that right by the presiding judge before entering a plea.\n\n20(2)A person who is alleged to have committed an offence within the meaning of subsection (1), has the right to be understood by the court, without the assistance of an interpreter or any process of simultaneous translation or consecutive interpretation, in the official language chosen by the person.",
+      "subsections": [
+        {
+          "id": "20-subsection-1",
+          "sourceKey": "section:20/subsection:1",
+          "label": "20(1)",
+          "text": "20(1)A person who is alleged to have committed an offence under an Act or a regulation of the Province or under a municipal by-law has the right to have the proceedings conducted in the language of his or her choice and shall be informed of that right by the presiding judge before entering a plea.",
+          "contentHash": "ab28caf3459c104d066ae5739aaee7558cf5f0d6788d6d7b46c12c53540bbf1b"
+        },
+        {
+          "id": "20-subsection-2",
+          "sourceKey": "section:20/subsection:2",
+          "label": "20(2)",
+          "text": "20(2)A person who is alleged to have committed an offence within the meaning of subsection (1), has the right to be understood by the court, without the assistance of an interpreter or any process of simultaneous translation or consecutive interpretation, in the official language chosen by the person.",
+          "contentHash": "30fcec7913572db95fa5ec89894b72b9ba881eb24e312c9cebf23b7d57992638"
+        }
+      ],
+      "contentHash": "4813492a022c3b01385c5e213a0e3bdada46e2eaeed70ede004db9db82d1673e"
+    },
+    {
+      "id": "section-21",
+      "sourceKey": "section:21",
+      "componentType": "section",
+      "label": "21",
+      "heading": "Rights of the witness",
+      "text": "Rights of the witness\n\n21Every court has the duty to ensure that any witness appearing before it can be heard in the official language of his or her choice and upon the request of one of the parties or the witness, the court has the duty to ensure that services of simultaneous translation or consecutive interpretation are available to the person who made the request.",
+      "subsections": [],
+      "contentHash": "cb618a376b8f3ae2914b5c93b12942bacb7ff60df30c46863d5c1ec537db3ebd"
+    },
+    {
+      "id": "section-22",
+      "sourceKey": "section:22",
+      "componentType": "section",
+      "label": "22",
+      "heading": "Obligation on the Crown to use language of the parties",
+      "text": "Obligation on the Crown to use language of the parties\n\n2023, c.17, s.179\n\n22Where the Crown in right of the Province or an institution is a party to civil proceedings before a court, the Crown or the institution concerned shall use, in any oral or written pleadings or any process issuing from a court, the official language chosen by the other party.\n2023, c.17, s.179",
+      "subsections": [],
+      "contentHash": "6a6dd999810ca78310bbc9ca3b277ddb74b303a6f923a38460b1d8fae4df1e8e"
+    },
+    {
+      "id": "section-23",
+      "sourceKey": "section:23",
+      "componentType": "section",
+      "label": "23",
+      "heading": "Disagreement between parties as to language of use",
+      "text": "Disagreement between parties as to language of use\n\n23Where the parties to civil proceedings, other than the Crown in right of the Province or an institution, do not choose or fail to agree on the official language to be used in the proceedings, the Crown or the institution concerned shall use such official language as is reasonable, having regard to the circumstances.\n2023, c.17, s.179",
+      "subsections": [],
+      "contentHash": "ebd81ca82f4263837eaea25bbef97df413c498553b0261e35dae1915296f9331"
+    },
+    {
+      "id": "section-24",
+      "sourceKey": "section:24",
+      "componentType": "section",
+      "label": "24",
+      "heading": "Publication of decisions",
+      "text": "Publication of decisions\n\n24(1)Any final decision, order or judgment of any court, including any reasons given therefor and summaries, shall be published in both official languages where\n\n(a)\nit determines a question of law of interest or importance to the general public, or\n\n(b)\nthe proceedings leading to its issuance were conducted in whole or in part in both official languages.\n\n24(2)Where a final decision, order or judgment is required to be published under subsection (1), but it is determined that to do so would result in a delay or injustice or hardship to a party to the proceedings, the decision, order or judgment, including any reasons given, shall be published in the first instance in one official language and, thereafter, at the earliest possible time, in the other official language.",
+      "subsections": [
+        {
+          "id": "24-subsection-1",
+          "sourceKey": "section:24/subsection:1",
+          "label": "24(1)",
+          "text": "24(1)Any final decision, order or judgment of any court, including any reasons given therefor and summaries, shall be published in both official languages where\n\n(a)\nit determines a question of law of interest or importance to the general public, or\n\n(b)\nthe proceedings leading to its issuance were conducted in whole or in part in both official languages.",
+          "contentHash": "57fb9d403d37705b80bca5a9cc3efc9dfd233c6fc23d38004524bfbeb64eea7d"
+        },
+        {
+          "id": "24-subsection-2",
+          "sourceKey": "section:24/subsection:2",
+          "label": "24(2)",
+          "text": "24(2)Where a final decision, order or judgment is required to be published under subsection (1), but it is determined that to do so would result in a delay or injustice or hardship to a party to the proceedings, the decision, order or judgment, including any reasons given, shall be published in the first instance in one official language and, thereafter, at the earliest possible time, in the other official language.",
+          "contentHash": "fdcbf8f6e0082eb34e9965fccb9785b5b140da2a16c16b5886a0e341fd97f074"
+        }
+      ],
+      "contentHash": "af663e4de1a6bdee2b14530179b73c98e092de2df49c27d74c1626b7c86dad79"
+    },
+    {
+      "id": "section-25",
+      "sourceKey": "section:25",
+      "componentType": "section",
+      "label": "25",
+      "heading": "Publication of Court of Appeal decisions",
+      "text": "Publication of Court of Appeal decisions\n\n25All decisions of the Court of Appeal are deemed to fall within the scope of section 24.",
+      "subsections": [],
+      "contentHash": "883462fde7cbc93f3b21d1182f801123a5e31d33c252243629ae74c99a8d5af5"
+    },
+    {
+      "id": "section-26",
+      "sourceKey": "section:26",
+      "componentType": "section",
+      "label": "26",
+      "heading": "Rendering of a judgment",
+      "text": "Rendering of a judgment\n\n26Sections 24 and 25 shall not be construed so as to prevent the pronouncement of a judgment, including the reasons in support of the judgment, in either official language and in such a case, the judgment is not invalid by reason only that it was pronounced in one official language.\n\nCOMMUNICATION WITH THE PUBLIC",
+      "subsections": [],
+      "contentHash": "4989e590fda6228668456f4934a9e6e4cbc9926cf2547debc61ddc12ffa8d409"
+    },
+    {
+      "id": "section-27",
+      "sourceKey": "section:27",
+      "componentType": "section",
+      "label": "27",
+      "heading": "Communications with government and its institutions",
+      "text": "Communications with government and its institutions\n\n27Members of the public have the right to communicate with any institution and to receive its services in the official language of their choice.",
+      "subsections": [],
+      "contentHash": "fa00f292d650dd89148cbfda6c11661fb493750e4d3b162e00780144a0b89027"
+    },
+    {
+      "id": "section-28",
+      "sourceKey": "section:28",
+      "componentType": "section",
+      "label": "28",
+      "heading": "Obligations of institutions",
+      "text": "Obligations of institutions\n\n28An institution shall ensure that members of the public are able to communicate with and to receive its services in the official language of their choice.",
+      "subsections": [],
+      "contentHash": "934b42cc46ce643275186c8fd4deee718d0698f73a79163b39689896b4446b06"
+    },
+    {
+      "id": "section-28.1",
+      "sourceKey": "section:28.1",
+      "componentType": "section",
+      "label": "28.1",
+      "text": "28.1An institution shall ensure that appropriate measures are taken to make it known to members of the public that its services are available in the official language of their choice.",
+      "subsections": [],
+      "contentHash": "3be221ce8be882bcca6ed6f44f5f1b2c1bb451d3d08a42beca4bbc73a7308d1e"
+    },
+    {
+      "id": "section-29",
+      "sourceKey": "section:29",
+      "componentType": "section",
+      "label": "29",
+      "heading": "Posting of signs and publications intended for the public",
+      "text": "Posting of signs and publications intended for the public\n\n29Institutions shall publish all postings, publications and documents intended for the general public in both official languages.",
+      "subsections": [],
+      "contentHash": "47733ebaa4702b847bf09af80587d998729d6234ba65d9329cee2fa93dfdbb32"
+    },
+    {
+      "id": "section-30",
+      "sourceKey": "section:30",
+      "componentType": "section",
+      "label": "30",
+      "heading": "Services provided by third parties",
+      "text": "Services provided by third parties\n\n30When the Province or an institution engages a third party to provide a service on its behalf, the Province or the institution, as the case may be, is responsible for ensuring that its obligations under sections 27 to 29 are met by the third party.\n2013, c.38, s.1\n\nPOLICING SERVICES",
+      "subsections": [],
+      "contentHash": "0ee7d7f54c102ef2796ab68546dda18c4d0749471da88013902cecb671860f22"
+    },
+    {
+      "id": "section-31",
+      "sourceKey": "section:31",
+      "componentType": "section",
+      "label": "31",
+      "heading": "Services provided by a peace officer",
+      "text": "Services provided by a peace officer\n\n31(1)Members of the public have the right, when communicating with a peace officer, to receive service in the official language of their choice and must be informed of that right.\n\n31(2)If a peace officer is unable to provide service in the language chosen under subsection (1), the peace officer shall take whatever measures are necessary, within a reasonable time, to ensure compliance with the choice made under subsection (1).\n\n31(3)A police force or agency, as the case may be, shall ensure the availability of the means necessary to respond to the choice made by a member of the public under subsection (1) and to support the obligation placed on a peace officer under subsection (2).\n\n31(4)When determining if a peace officer has taken the measures necessary under subsection (2) within a reasonable time, a court shall consider the efforts made by the police force or agency to fulfil its obligations under subsection (3).\n\n2013, c.38, s.1",
+      "subsections": [
+        {
+          "id": "31-subsection-1",
+          "sourceKey": "section:31/subsection:1",
+          "label": "31(1)",
+          "text": "31(1)Members of the public have the right, when communicating with a peace officer, to receive service in the official language of their choice and must be informed of that right.",
+          "contentHash": "9216d8ca7c501fbd514b5e12630fe5b96bd53ac804e2e6b913290b7c4792345a"
+        },
+        {
+          "id": "31-subsection-2",
+          "sourceKey": "section:31/subsection:2",
+          "label": "31(2)",
+          "text": "31(2)If a peace officer is unable to provide service in the language chosen under subsection (1), the peace officer shall take whatever measures are necessary, within a reasonable time, to ensure compliance with the choice made under subsection (1).",
+          "contentHash": "3845bb320c1da3dbfbc7d22294fc321b0eb0f2fa23d647e0a1e41f22b4d13b01"
+        },
+        {
+          "id": "31-subsection-3",
+          "sourceKey": "section:31/subsection:3",
+          "label": "31(3)",
+          "text": "31(3)A police force or agency, as the case may be, shall ensure the availability of the means necessary to respond to the choice made by a member of the public under subsection (1) and to support the obligation placed on a peace officer under subsection (2).",
+          "contentHash": "e9303f5835c87957d4658e18409b45de5c02d7ece52251641c494f672826c25f"
+        },
+        {
+          "id": "31-subsection-4",
+          "sourceKey": "section:31/subsection:4",
+          "label": "31(4)",
+          "text": "31(4)When determining if a peace officer has taken the measures necessary under subsection (2) within a reasonable time, a court shall consider the efforts made by the police force or agency to fulfil its obligations under subsection (3).\n\n2013, c.38, s.1",
+          "contentHash": "e95448684cd9806228ef194d8a7e1d11a8a648bea1e1683da425913e19de14a5"
+        }
+      ],
+      "contentHash": "668aaa8cc86f7a36bbba5ece5f1bb7208e41bfa64be97fcb54658b3c36a145d9"
+    },
+    {
+      "id": "section-32",
+      "sourceKey": "section:32",
+      "componentType": "section",
+      "label": "32",
+      "heading": "Application of section 31",
+      "text": "Application of section 31\n\n32Section 31 does not limit the obligations placed on peace officers under any other Act or law to deliver services to the public in both official languages.\n\nHEALTH SERVICES",
+      "subsections": [],
+      "contentHash": "af4fb97be32f5132f1fe5c719b48544d192a7439b9409a1eb52a4d652e78725f"
+    },
+    {
+      "id": "section-33",
+      "sourceKey": "section:33",
+      "componentType": "section",
+      "label": "33",
+      "heading": "Health services",
+      "text": "Health services\n\n33(1)For the purposes of the provision of health services in the Province and notwithstanding the definition of “institution” in section 1, an institution in sections 27 and 28 refers to the network of health establishments, facilities and programs under the jurisdiction of the Department of Health or the regional health authorities under the Regional Health Authorities Act.\n\n33(2)When establishing a provincial health plan under the Regional Health Authorities Act, the Minister of Health shall\n\n(a)\nensure that the principles upon which the provision of health services are to be based include the delivery of health services in both official languages in the Province, and\n\n(b)\nconsider the language of daily operations under section 34.\n\n2006, c.16, s.128",
+      "subsections": [
+        {
+          "id": "33-subsection-1",
+          "sourceKey": "section:33/subsection:1",
+          "label": "33(1)",
+          "text": "33(1)For the purposes of the provision of health services in the Province and notwithstanding the definition of “institution” in section 1, an institution in sections 27 and 28 refers to the network of health establishments, facilities and programs under the jurisdiction of the Department of Health or the regional health authorities under the Regional Health Authorities Act.",
+          "contentHash": "03652522a368361cc29d4c638e681af2b11233c2141cfdc8aa1e0515cf232cff"
+        },
+        {
+          "id": "33-subsection-2",
+          "sourceKey": "section:33/subsection:2",
+          "label": "33(2)",
+          "text": "33(2)When establishing a provincial health plan under the Regional Health Authorities Act, the Minister of Health shall\n\n(a)\nensure that the principles upon which the provision of health services are to be based include the delivery of health services in both official languages in the Province, and\n\n(b)\nconsider the language of daily operations under section 34.\n\n2006, c.16, s.128",
+          "contentHash": "059e5bcacb2fe355e1c308194f19cb2e94f5214d88dec997c4377e35ab62b94f"
+        }
+      ],
+      "contentHash": "8f98cedfd7ff74d768ce217f3c122bc5d37698ba51d88d9669ed927304f42a3b"
+    },
+    {
+      "id": "section-34",
+      "sourceKey": "section:34",
+      "componentType": "section",
+      "label": "34",
+      "heading": "Effect of section 33",
+      "text": "Effect of section 33\n\n34Subject to the obligation to serve members of the public in the official language of their choice, section 33 does not limit the use of one official language in the daily operations of a hospital or other facility as defined in the Regional Health Authorities Act.\n\nMUNICIPALITIES",
+      "subsections": [],
+      "contentHash": "350c46cb56933ebd743b83ccc82790fb221ded67edd741fb5e35bd14f72c6c9f"
+    },
+    {
+      "id": "section-35",
+      "sourceKey": "section:35",
+      "componentType": "section",
+      "label": "35",
+      "heading": "By-laws, minutes of council",
+      "text": "By-laws, minutes of council\n\n35(1)A municipality whose official language minority population represents at least 20% of its total population is required to adopt and publish its by-laws in both official languages.\n\n35(2)A city is required to adopt and publish its by-laws in both official languages irrespective of the percentage required under subsection (1).\n\n35(3)A municipality or city to which subsection (1) or (2) applies that adopts a new by-law or amends an existing by-law after December 31, 2002, shall do so in both official languages.\n\n35(4)Except in the case of a by-law referred to in subsection (3), a municipality or city to which subsection (1) or (2) applies, other than Moncton, shall adopt and publish its by-laws in both official languages on or before December 31, 2005.\n\n35(5)Subsection (3) applies, with the necessary modifications, to the minutes of council proceedings.",
+      "subsections": [
+        {
+          "id": "35-subsection-1",
+          "sourceKey": "section:35/subsection:1",
+          "label": "35(1)",
+          "text": "35(1)A municipality whose official language minority population represents at least 20% of its total population is required to adopt and publish its by-laws in both official languages.",
+          "contentHash": "9f703eca19f94df48e4b13268fe8ac3532bc3c6684912920e65284b53d79bd62"
+        },
+        {
+          "id": "35-subsection-2",
+          "sourceKey": "section:35/subsection:2",
+          "label": "35(2)",
+          "text": "35(2)A city is required to adopt and publish its by-laws in both official languages irrespective of the percentage required under subsection (1).",
+          "contentHash": "a85344b34f7c35b5a07a18ca16304b48ce79ff826c0399576b193cdba092d355"
+        },
+        {
+          "id": "35-subsection-3",
+          "sourceKey": "section:35/subsection:3",
+          "label": "35(3)",
+          "text": "35(3)A municipality or city to which subsection (1) or (2) applies that adopts a new by-law or amends an existing by-law after December 31, 2002, shall do so in both official languages.",
+          "contentHash": "b0c03030eea832c2ef3704d710722d5c64541bf6f95dabc0e9fdbd8b00aaf288"
+        },
+        {
+          "id": "35-subsection-4",
+          "sourceKey": "section:35/subsection:4",
+          "label": "35(4)",
+          "text": "35(4)Except in the case of a by-law referred to in subsection (3), a municipality or city to which subsection (1) or (2) applies, other than Moncton, shall adopt and publish its by-laws in both official languages on or before December 31, 2005.",
+          "contentHash": "9d8b84a923e522c9d5c387a50e0e17c1b7f7481725d4fea19a234303bcc65e15"
+        },
+        {
+          "id": "35-subsection-5",
+          "sourceKey": "section:35/subsection:5",
+          "label": "35(5)",
+          "text": "35(5)Subsection (3) applies, with the necessary modifications, to the minutes of council proceedings.",
+          "contentHash": "72030bc8e2ff6a60ee13fe455a4f69884be8468fd5441d3cb181ea916a3d1742"
+        }
+      ],
+      "contentHash": "f23ccd84371f9084606f20d8faf59c5e66d202b58bc3f205f40b73d2ca309f17"
+    },
+    {
+      "id": "section-36",
+      "sourceKey": "section:36",
+      "componentType": "section",
+      "label": "36",
+      "heading": "Communications and services",
+      "text": "Communications and services\n\n36A municipality or city to which subsection 35(1), (2) or section 37 applies shall offer the services and communications prescribed by regulation in both official languages.",
+      "subsections": [],
+      "contentHash": "4ee1971cde66ba97b3fbae38dadd4c338e29977f1d5531a0e9b93f0d004b3f9c"
+    },
+    {
+      "id": "section-37",
+      "sourceKey": "section:37",
+      "componentType": "section",
+      "label": "37",
+      "heading": "Opting-in by municipalities",
+      "text": "Opting-in by municipalities\n\n37A municipality may, by by-law of its municipal council, declare itself bound by the provisions of this Act and nothing in this Act shall be interpreted so as to limit the authority of municipalities to promote the equality of status and use of English and French.",
+      "subsections": [],
+      "contentHash": "af23cea24d878731e8dd652336b31b4473eb9940ab54151aede04b8c57aa8532"
+    },
+    {
+      "id": "section-38",
+      "sourceKey": "section:38",
+      "componentType": "section",
+      "label": "38",
+      "heading": "Effect of opting-in",
+      "text": "Effect of opting-in\n\n38The provisions of subsections 35(3), (4) and (5) apply, with the necessary modifications, to a municipality under section 37.\n\nREGIONAL SERVICE COMMISSIONS\n\n2012, c.44, s.15",
+      "subsections": [],
+      "contentHash": "375c2eed22d595f661801eeef9df157b6fb7f0c66a2bf898f499cef9f9105a98"
+    },
+    {
+      "id": "section-39",
+      "sourceKey": "section:39",
+      "componentType": "section",
+      "label": "39",
+      "heading": "Regional Service Commissions",
+      "text": "Regional Service Commissions\n\n39A regional service commission covering a geographical area with an official language minority population of at least 20% of the total population is subject to the obligations imposed by section 41.\n2012, c.44, s.15",
+      "subsections": [],
+      "contentHash": "a40976bce204a548a8ff63d9ef054c3917d7247ef62c5bc0602d427cd0ca3abe"
+    },
+    {
+      "id": "section-40",
+      "sourceKey": "section:40",
+      "componentType": "section",
+      "label": "40",
+      "heading": "Cities and Municipalities",
+      "text": "Cities and Municipalities\n\n40Where the geographical area of a regional service commission includes a municipality or a city to which subsection 35(1) or (2) applies, the regional service commission is subject to the obligations imposed by section 41 irrespective of the percentage required under section 39.\n2012, c.44, s.15",
+      "subsections": [],
+      "contentHash": "05a9262ab21695376fa90fe867e2a5f9bfc10fed8906a2cf2be9b85aec034827"
+    },
+    {
+      "id": "section-41",
+      "sourceKey": "section:41",
+      "componentType": "section",
+      "label": "41",
+      "heading": "Communications and services",
+      "text": "Communications and services\n\n41A regional service commission to which section 39 or 40 apply shall offer the services and communications prescribed by regulation in both official languages.\n2012, c.44, s.15\n\nPROFESSIONAL ASSOCIATIONS\n\n2013, c.38, s.1",
+      "subsections": [],
+      "contentHash": "be66139a2a054679e76cee6f3b571bcf778695e6db90efc607ac83a0ea269c10"
+    },
+    {
+      "id": "section-41.1",
+      "sourceKey": "section:41.1",
+      "componentType": "section",
+      "label": "41.1",
+      "heading": "Professional associations",
+      "text": "Professional associations\n\n41.1(1)In this section, “professional association” means an organization of persons that, by an Act of the Legislature, has the power to admit persons to or suspend or expel persons from the practice of a profession or occupation or impose requirements on persons with respect to the practice of a profession or occupation.\n\n41.1(2)When a professional association exercises a power referred to in subsection (1), the professional association\n\n(a)\nshall provide services and communications related to the exercise of that power in both official languages, and\n\n(b)\nwith respect to its power to impose requirements, shall ensure that a person is able to fulfil those requirements in the official language of his or her choice.\n\n41.1(3)No person shall be placed at a disadvantage by reason of exercising his or her right to choose an official language in which to fulfil requirements imposed by a professional association.\n\n41.1(4)A professional association shall offer its services and communications to members of the public in both official languages.\n\n2013, c.38, s.1; 2015, c.39, s.1\n\nREVIEW OF ACT\n\n2023, c.10, s.1",
+      "subsections": [
+        {
+          "id": "41.1-subsection-1",
+          "sourceKey": "section:41.1/subsection:1",
+          "label": "41.1(1)",
+          "text": "41.1(1)In this section, “professional association” means an organization of persons that, by an Act of the Legislature, has the power to admit persons to or suspend or expel persons from the practice of a profession or occupation or impose requirements on persons with respect to the practice of a profession or occupation.",
+          "contentHash": "e567c5e6b5212eb9642c9f5d0721afc5bbc2efd3e759f90b0f45f9144e820d1e"
+        },
+        {
+          "id": "41.1-subsection-2",
+          "sourceKey": "section:41.1/subsection:2",
+          "label": "41.1(2)",
+          "text": "41.1(2)When a professional association exercises a power referred to in subsection (1), the professional association\n\n(a)\nshall provide services and communications related to the exercise of that power in both official languages, and\n\n(b)\nwith respect to its power to impose requirements, shall ensure that a person is able to fulfil those requirements in the official language of his or her choice.",
+          "contentHash": "6972f1d9278d3e869ad44f2f909ee9e40b447a01d870d1a1d807aa8d27eefd79"
+        },
+        {
+          "id": "41.1-subsection-3",
+          "sourceKey": "section:41.1/subsection:3",
+          "label": "41.1(3)",
+          "text": "41.1(3)No person shall be placed at a disadvantage by reason of exercising his or her right to choose an official language in which to fulfil requirements imposed by a professional association.",
+          "contentHash": "2ead2bff03eb964ec1fa0326dbbf15d7b62a4c8387625ef983631229d1796662"
+        },
+        {
+          "id": "41.1-subsection-4",
+          "sourceKey": "section:41.1/subsection:4",
+          "label": "41.1(4)",
+          "text": "41.1(4)A professional association shall offer its services and communications to members of the public in both official languages.\n\n2013, c.38, s.1; 2015, c.39, s.1\n\nREVIEW OF ACT\n\n2023, c.10, s.1",
+          "contentHash": "060d4f6ca0c6149d20f03e0778104f2bb0ae6dbbf83210fa190db309f939b87a"
+        }
+      ],
+      "contentHash": "945b9cddfd03a5624badd44fb6f6bb87793f8828ed34108963b9719eeb48955c"
+    },
+    {
+      "id": "section-42",
+      "sourceKey": "section:42",
+      "componentType": "section",
+      "label": "42",
+      "heading": "Review of Act",
+      "text": "Review of Act\n\n42(1)The Premier shall initiate a review of this Act, and the review shall be completed no later than December 31, 2031.\n\n42(2)A review under subsection (1) shall be in the form and manner prescribed by regulation.\n\n2013, c.38, s.1; 2023, c.10, s.1\n\nCOMMISSIONER OF OFFICIAL LANGUAGES",
+      "subsections": [
+        {
+          "id": "42-subsection-1",
+          "sourceKey": "section:42/subsection:1",
+          "label": "42(1)",
+          "text": "42(1)The Premier shall initiate a review of this Act, and the review shall be completed no later than December 31, 2031.",
+          "contentHash": "a9851417955e2d37d9edf6722a439a5813d1dfd81eb1486b9886d5a34bb0e1ef"
+        },
+        {
+          "id": "42-subsection-2",
+          "sourceKey": "section:42/subsection:2",
+          "label": "42(2)",
+          "text": "42(2)A review under subsection (1) shall be in the form and manner prescribed by regulation.\n\n2013, c.38, s.1; 2023, c.10, s.1\n\nCOMMISSIONER OF OFFICIAL LANGUAGES",
+          "contentHash": "3d00845d885c5bdd26991e59d4091502574d9739205ed61b2ff2572b5b0a4f30"
+        }
+      ],
+      "contentHash": "c20b3780a4903b709ce7f4921ade979dba034d343a4585514516626659886319"
+    },
+    {
+      "id": "section-43",
+      "sourceKey": "section:43",
+      "componentType": "section",
+      "label": "43",
+      "heading": "Mandate and responsibilities of Commissioner",
+      "text": "Mandate and responsibilities of Commissioner\n\n43(1)There shall be an Office of the Commissioner of Official Languages for New Brunswick, as well as a Commissioner of Official Languages for New Brunswick.\n\n43(2)Subject to subsections (2.1) to (2.4), the Commissioner shall be appointed by the Lieutenant-Governor in Council on the recommendation of the Legislative Assembly, shall rank as and have all the powers of a deputy head of a department, shall engage exclusively in the duties of the office of the Commissioner and shall not hold any other office under the Crown or engage in any other employment.\n\n43(2.1)Before an appointment is made under subsection (2), a selection committee shall be established for the purpose of identifying persons as potential candidates to be appointed Commissioner.\n\n43(2.2)The selection committee shall be composed of\n\n(a)\nthe Clerk of the Executive Council or a person designated by the Clerk of the Executive Council,\n\n(b)\nthe Clerk of the Legislative Assembly or a person designated by the Clerk of the Legislative Assembly,\n\n(c)\na member of the judiciary, and\n\n(d)\na member of the university community.\n\n43(2.3)The selection committee shall develop a roster of qualified candidates and submit a list of names of qualified candidates to the Lieutenant-Governor in Council.\n\n43(2.4)The Premier shall consult with the leader of the opposition and the leaders of the other political parties having representation in the Legislative Assembly during the most recent sitting with respect to one or more qualified candidates from the selection committee’s list of qualified candidates.\n\n43(2.5)The Commissioner is an officer of the Legislative Assembly.\n\n43(3)Subject to subsection (4), the Commissioner shall hold office for a term of seven years and is not eligible for reappointment.\n\n43(4)The Lieutenant-Governor in Council may extend the term of the Commissioner for a period of not more than 12 months.\n\n43(4.1)The Commissioner may resign from office by notice in writing addressed to the Speaker of the Legislative Assembly or, if there is no Speaker or the Speaker is absent from the Province, to the Clerk of the Legislative Assembly.\n\n43(4.2)The Speaker or the Clerk, as the case may be, shall immediately inform the Lieutenant-Governor in Council of the Commissioner’s resignation.\n\n43(4.3)The Commissioner shall hold office during good behaviour and may only be removed by the Lieutenant-Governor in Council for incapacity, neglect of duty or misconduct upon an address in which 2/3 of the members of the Legislative Assembly concur.\n\n43(4.4)The Lieutenant-Governor in Council, upon an address in which a majority of the members of the Legislative Assembly voting concur, may suspend the Commissioner, with or without pay, pending an investigation that may lead to removal under subsection (4.3).\n\n43(4.5)If the Legislature is not in session, a judge of The Court of King’s Bench of New Brunswick may, on an application by the Lieutenant-Governor in Council, suspend the Commissioner, with or without pay, for incapacity, neglect of duty or misconduct.\n\n43(5)If the Lieutenant-Governor in Council makes an application under subsection (4.5), the practice and procedure of The Court of King’s Bench of New Brunswick respecting applications applies.\n\n43(5.1)If a judge of The Court of King’s Bench of New Brunswick suspends the Commissioner under subsection (4.5), the judge shall do the following:\n\n(a)\nappoint an acting Commissioner to hold office until the suspension has been dealt with by the Legislative Assembly; and\n\n(b)\ntable a report on the suspension with the Legislative Assembly within ten days after the commencement of the next session of the Legislature.\n\n43(5.2)No suspension under subsection (4.5) shall continue beyond the end of the next session of the Legislature.\n\n43(5.3)If the Commissioner has been suspended under subsection (4.4), the Lieutenant-Governor in Council may appoint an acting Commissioner to hold office until the suspension has elapsed.\n\n43(5.4)An acting Commissioner, while in office, has the powers and duties of the Commissioner and shall be paid such salary or other remuneration and expenses as the Lieutenant-Governor in Council may fix.\n\n43(5.5) The Lieutenant-Governor in Council may appoint an acting Commissioner for a term of up to one year if\n\n(a)\nthe office of Commissioner becomes vacant during a sitting of the Legislative Assembly, but the Legislative Assembly does not make a recommendation under subsection (2) before the end of the sitting, or\n\n(b)\nthe office of Commissioner becomes vacant while the Legislative Assembly is not sitting.\n\n43(5.6)The appointment of an acting Commissioner comes to an end when a new Commissioner is appointed under subsection (2).\n\n43(5.7)If the Commissioner is unable to act because of illness, the Lieutenant-Governor in Council may appoint an acting Commissioner, whose appointment comes to an end when the Commissioner is again able to act or when the office becomes vacant.\n\n43(5.8)An appointment under subsection (5.1), (5.3), (5.5) or (5.7) shall not impede a person’s subsequent appointment under subsection (2).\n\n43(5.9)The Premier shall consult with the leader of the opposition before an appointment is made under subsection (5.3), (5.5) or (5.7).\n\n43(6)Notwithstanding the Civil Service Act, the Commissioner may appoint such persons to positions in the Office of the Commissioner as he or she considers necessary to enable the fulfillment of the Commissioner’s responsibilities under this Act.\n\n43(6.1)The Commissioner shall be paid an annual salary as determined by the Lieutenant-Governor in Council within the deputy head pay plan, and is entitled to receive benefits similar to those received by deputy heads.\n\n43(7)The pension plan converted to a shared risk plan in accordance with An Act Respecting Public Service Pensions applies to the Commissioner and the employees of the Office of the Commissioner.\n\n43(8)The Commissioner may contract for such professional services, for limited periods of time or in respect of particular matters, as he or she considers necessary to enable the fulfillment of the Commissioner’s responsibilities under this Act.\n\n43(9)In accordance with the authority provided to the Commissioner under this Act, it is the role of the Commissioner to investigate, report on and make recommendations with regard to compliance with this Act and to promote the advancement of both official languages in the Province.\n\n43(10)In order to fulfill the role under subsection (9), the Commissioner shall conduct and carry out investigations either pursuant to any complaint made to the Commissioner or on his or her own initiative and shall, as provided in this Act, report and make recommendations with respect to such investigations.\n\n43(10.1)Despite subsection (10), when the Commissioner considers it appropriate, the Commissioner may attempt to resolve a complaint without conducting an investigation.\n\n43(11)The Commissioner may refuse to investigate or cease to investigate any complaint if, in the opinion of the Commissioner,\n\n(a)\nthe subject-matter of the complaint is trivial,\n\n(b)\nthe complaint is frivolous or vexatious or is not made in good faith, or\n\n(c)\nthe subject-matter of the complaint does not involve a contravention or failure to comply with this Act or, for any other reason, does not come within the authority of the Commissioner under this Act.\n\n43(12)If the Commissioner refuses to investigate or ceases to investigate any complaint, the Commissioner shall inform the complainant and provide reasons for the decision to do so.\n\n43(13)Before commencing an investigation under this Act, the Commissioner shall inform the deputy head or other administrative head of the institution concerned of his or her intention to carry out the investigation.\n\n43(14)Subject to this Act, the Commissioner may determine the procedure to be followed in carrying out an investigation under this Act.\n\n43(15)For the purposes of this Act, the Commissioner is a commissioner under the Inquiries Act.\n\n43(16)After carrying out an investigation pursuant to a complaint under this Act, the Commissioner shall communicate the results of the investigation and any recommendations, including any opinion and the reasons for the recommendations, to the Premier, the deputy head or other administrative head of the institution concerned and the complainant.\n\n43(17)After carrying out an investigation on his or her own initiative, the Commissioner shall communicate the results of the investigation and any recommendations, including any opinion and the reasons for the recommendations, to the Premier and the deputy head or other administrative head of the institution concerned.\n\n43(17.1)When the Premier, a deputy head or an administrative head receives the results of an investigation from the Commissioner under subsection (16) or (17), he or she shall acknowledge in writing receipt of the results and of any recommendations made by the Commissioner.\n\n43(17.2)After carrying out an investigation under subsection (10), if the Commissioner considers it to be in the public interest, the Commissioner may publish a report on the results of his or her investigation and on any recommendations made as a result of the investigation.\n\n43(18)If a complainant is not satisfied with the conclusions of the Commissioner received under subsection (16) or with the resolution of the complaint, the complainant may apply to The Court of King’s Bench of New Brunswick for a remedy.\n\n43(19)The judge of a court referred to in subsection (18) may grant such remedy as he or she considers appropriate and just in the circumstances.\n\n43(20)This section does not affect any other right of action that a person may have.\n\n43(21)As soon as is reasonably practicable after the end of each year, the Commissioner shall submit to the Legislative Assembly a report, prepared by the Commissioner, with respect to the activities of the Office of the Commissioner in the preceding year that includes the following information:\n\n(a)\nthe nature of the complaints that were received;\n\n(b)\nthe types of complaints that were received;\n\n(c)\nwhether an investigation that was carried out was pursuant to a complaint that was made or on the initiative of the Commissioner; and\n\n(d)\nthe number of instances a particular complaint was made by the same complainant.\n\n2013, c.1, s.6; 2013, c.38, s.1; 2013, c.44, s.34; 2016, c.1, s.1; 2023, c.10, s.1; 2023, c.17, s.179",
+      "subsections": [
+        {
+          "id": "43-subsection-1",
+          "sourceKey": "section:43/subsection:1",
+          "label": "43(1)",
+          "text": "43(1)There shall be an Office of the Commissioner of Official Languages for New Brunswick, as well as a Commissioner of Official Languages for New Brunswick.",
+          "contentHash": "103d41e50996458c1202c3608b3a5fcb05fa1e4c72f80db2c2c4362759f44fc6"
+        },
+        {
+          "id": "43-subsection-2",
+          "sourceKey": "section:43/subsection:2",
+          "label": "43(2)",
+          "text": "43(2)Subject to subsections (2.1) to (2.4), the Commissioner shall be appointed by the Lieutenant-Governor in Council on the recommendation of the Legislative Assembly, shall rank as and have all the powers of a deputy head of a department, shall engage exclusively in the duties of the office of the Commissioner and shall not hold any other office under the Crown or engage in any other employment.",
+          "contentHash": "f1d36d931d220c32b368dfd241c01c59219c0a6d71e5df8f0b46a80fbdfc0833"
+        },
+        {
+          "id": "43-subsection-2.1",
+          "sourceKey": "section:43/subsection:2.1",
+          "label": "43(2.1)",
+          "text": "43(2.1)Before an appointment is made under subsection (2), a selection committee shall be established for the purpose of identifying persons as potential candidates to be appointed Commissioner.",
+          "contentHash": "625b79c7302c81db6fb39e4b339e270ef774b90c153930c627c6d075e41429a5"
+        },
+        {
+          "id": "43-subsection-2.2",
+          "sourceKey": "section:43/subsection:2.2",
+          "label": "43(2.2)",
+          "text": "43(2.2)The selection committee shall be composed of\n\n(a)\nthe Clerk of the Executive Council or a person designated by the Clerk of the Executive Council,\n\n(b)\nthe Clerk of the Legislative Assembly or a person designated by the Clerk of the Legislative Assembly,\n\n(c)\na member of the judiciary, and\n\n(d)\na member of the university community.",
+          "contentHash": "39591b1b21c1cad8821ed53eece08204b5392e797a849ef50afed604c171b5cc"
+        },
+        {
+          "id": "43-subsection-2.3",
+          "sourceKey": "section:43/subsection:2.3",
+          "label": "43(2.3)",
+          "text": "43(2.3)The selection committee shall develop a roster of qualified candidates and submit a list of names of qualified candidates to the Lieutenant-Governor in Council.",
+          "contentHash": "1af7502b922e6485670c4e90a0b918560b14fd97bee18f026be2ed53235e98b0"
+        },
+        {
+          "id": "43-subsection-2.4",
+          "sourceKey": "section:43/subsection:2.4",
+          "label": "43(2.4)",
+          "text": "43(2.4)The Premier shall consult with the leader of the opposition and the leaders of the other political parties having representation in the Legislative Assembly during the most recent sitting with respect to one or more qualified candidates from the selection committee’s list of qualified candidates.",
+          "contentHash": "33d8425475e16779f959ff58593c08dcd4edcffebdf8a69978ac6bec32ddfdb8"
+        },
+        {
+          "id": "43-subsection-2.5",
+          "sourceKey": "section:43/subsection:2.5",
+          "label": "43(2.5)",
+          "text": "43(2.5)The Commissioner is an officer of the Legislative Assembly.",
+          "contentHash": "8d525cdae1a5d37f5cc00bd8b3a9b783d37d0f7bbe38707987e694b422d049d4"
+        },
+        {
+          "id": "43-subsection-3",
+          "sourceKey": "section:43/subsection:3",
+          "label": "43(3)",
+          "text": "43(3)Subject to subsection (4), the Commissioner shall hold office for a term of seven years and is not eligible for reappointment.",
+          "contentHash": "7d753098aaf7c13e3c26387a128c7bc611186cc79b9740239c07d0873354bd82"
+        },
+        {
+          "id": "43-subsection-4",
+          "sourceKey": "section:43/subsection:4",
+          "label": "43(4)",
+          "text": "43(4)The Lieutenant-Governor in Council may extend the term of the Commissioner for a period of not more than 12 months.",
+          "contentHash": "0c972dbd9469978a43462a7b196b7c1fa3ae0da21070c9af16167d0e872cd60b"
+        },
+        {
+          "id": "43-subsection-4.1",
+          "sourceKey": "section:43/subsection:4.1",
+          "label": "43(4.1)",
+          "text": "43(4.1)The Commissioner may resign from office by notice in writing addressed to the Speaker of the Legislative Assembly or, if there is no Speaker or the Speaker is absent from the Province, to the Clerk of the Legislative Assembly.",
+          "contentHash": "c07f921073a1cd7b875066809f0bef7b1ca63ca7dcb2a08783b8390a169e77e7"
+        },
+        {
+          "id": "43-subsection-4.2",
+          "sourceKey": "section:43/subsection:4.2",
+          "label": "43(4.2)",
+          "text": "43(4.2)The Speaker or the Clerk, as the case may be, shall immediately inform the Lieutenant-Governor in Council of the Commissioner’s resignation.",
+          "contentHash": "4c04e1fc8bc8bfde61135ef2ad65291412b51d6b0418903abc089743f88de7e7"
+        },
+        {
+          "id": "43-subsection-4.3",
+          "sourceKey": "section:43/subsection:4.3",
+          "label": "43(4.3)",
+          "text": "43(4.3)The Commissioner shall hold office during good behaviour and may only be removed by the Lieutenant-Governor in Council for incapacity, neglect of duty or misconduct upon an address in which 2/3 of the members of the Legislative Assembly concur.",
+          "contentHash": "435a9cc94dac46cd20005c8ffc52cc3f608b341b5c5b1540f3a11a90a4611fdd"
+        },
+        {
+          "id": "43-subsection-4.4",
+          "sourceKey": "section:43/subsection:4.4",
+          "label": "43(4.4)",
+          "text": "43(4.4)The Lieutenant-Governor in Council, upon an address in which a majority of the members of the Legislative Assembly voting concur, may suspend the Commissioner, with or without pay, pending an investigation that may lead to removal under subsection (4.3).",
+          "contentHash": "358b7597bc3187dd9b034ffe227db827657ea909271177a4435b572bf825c18a"
+        },
+        {
+          "id": "43-subsection-4.5",
+          "sourceKey": "section:43/subsection:4.5",
+          "label": "43(4.5)",
+          "text": "43(4.5)If the Legislature is not in session, a judge of The Court of King’s Bench of New Brunswick may, on an application by the Lieutenant-Governor in Council, suspend the Commissioner, with or without pay, for incapacity, neglect of duty or misconduct.",
+          "contentHash": "81c50d666bf49d7081d174a9908600c73bb41d9b89cdeab2c4111a26a8b0fd3e"
+        },
+        {
+          "id": "43-subsection-5",
+          "sourceKey": "section:43/subsection:5",
+          "label": "43(5)",
+          "text": "43(5)If the Lieutenant-Governor in Council makes an application under subsection (4.5), the practice and procedure of The Court of King’s Bench of New Brunswick respecting applications applies.",
+          "contentHash": "48bfd55eda9095499b213f81e1d700d4d22c9562da74fdba6e0442eaf0165771"
+        },
+        {
+          "id": "43-subsection-5.1",
+          "sourceKey": "section:43/subsection:5.1",
+          "label": "43(5.1)",
+          "text": "43(5.1)If a judge of The Court of King’s Bench of New Brunswick suspends the Commissioner under subsection (4.5), the judge shall do the following:\n\n(a)\nappoint an acting Commissioner to hold office until the suspension has been dealt with by the Legislative Assembly; and\n\n(b)\ntable a report on the suspension with the Legislative Assembly within ten days after the commencement of the next session of the Legislature.",
+          "contentHash": "f021681b7ebe408c5a1ef5c027aca3f45fb289e9bfe2e9e33137c976be5abfe1"
+        },
+        {
+          "id": "43-subsection-5.2",
+          "sourceKey": "section:43/subsection:5.2",
+          "label": "43(5.2)",
+          "text": "43(5.2)No suspension under subsection (4.5) shall continue beyond the end of the next session of the Legislature.",
+          "contentHash": "2b09a66f2b6aed1c9712f1a8fcc978d471fbbecaf3dcd119d61431455887a646"
+        },
+        {
+          "id": "43-subsection-5.3",
+          "sourceKey": "section:43/subsection:5.3",
+          "label": "43(5.3)",
+          "text": "43(5.3)If the Commissioner has been suspended under subsection (4.4), the Lieutenant-Governor in Council may appoint an acting Commissioner to hold office until the suspension has elapsed.",
+          "contentHash": "7f1aff7005e850e0e9cb3385e4ae101dfde0a58671d33e21a11e5b41423873c7"
+        },
+        {
+          "id": "43-subsection-5.4",
+          "sourceKey": "section:43/subsection:5.4",
+          "label": "43(5.4)",
+          "text": "43(5.4)An acting Commissioner, while in office, has the powers and duties of the Commissioner and shall be paid such salary or other remuneration and expenses as the Lieutenant-Governor in Council may fix.",
+          "contentHash": "972a6c643bea8c993fa933956f8517dc698a1e8e32f2e48392c0ae5914dbbd31"
+        },
+        {
+          "id": "43-subsection-5.5",
+          "sourceKey": "section:43/subsection:5.5",
+          "label": "43(5.5)",
+          "text": "43(5.5) The Lieutenant-Governor in Council may appoint an acting Commissioner for a term of up to one year if\n\n(a)\nthe office of Commissioner becomes vacant during a sitting of the Legislative Assembly, but the Legislative Assembly does not make a recommendation under subsection (2) before the end of the sitting, or\n\n(b)\nthe office of Commissioner becomes vacant while the Legislative Assembly is not sitting.",
+          "contentHash": "1692b3d7656f69d937610b8979331da688b246a114364f5bec692ad85d103ac5"
+        },
+        {
+          "id": "43-subsection-5.6",
+          "sourceKey": "section:43/subsection:5.6",
+          "label": "43(5.6)",
+          "text": "43(5.6)The appointment of an acting Commissioner comes to an end when a new Commissioner is appointed under subsection (2).",
+          "contentHash": "f602be287f62b1840adc33d5b3d1783ed20d2f2635b00d17cb098de3655fd096"
+        },
+        {
+          "id": "43-subsection-5.7",
+          "sourceKey": "section:43/subsection:5.7",
+          "label": "43(5.7)",
+          "text": "43(5.7)If the Commissioner is unable to act because of illness, the Lieutenant-Governor in Council may appoint an acting Commissioner, whose appointment comes to an end when the Commissioner is again able to act or when the office becomes vacant.",
+          "contentHash": "a5ef48166eb42a8d49900c458b290a0f63874c1af13d65f4209149ce2a56bffe"
+        },
+        {
+          "id": "43-subsection-5.8",
+          "sourceKey": "section:43/subsection:5.8",
+          "label": "43(5.8)",
+          "text": "43(5.8)An appointment under subsection (5.1), (5.3), (5.5) or (5.7) shall not impede a person’s subsequent appointment under subsection (2).",
+          "contentHash": "2e35e9f7f62d55924fb163c17b983e65b157ec2d785ff8d05920bab41bb47a72"
+        },
+        {
+          "id": "43-subsection-5.9",
+          "sourceKey": "section:43/subsection:5.9",
+          "label": "43(5.9)",
+          "text": "43(5.9)The Premier shall consult with the leader of the opposition before an appointment is made under subsection (5.3), (5.5) or (5.7).",
+          "contentHash": "28adfe4a0a887f58335df744273f729abf1951d7d650049548db540f2224ab21"
+        },
+        {
+          "id": "43-subsection-6",
+          "sourceKey": "section:43/subsection:6",
+          "label": "43(6)",
+          "text": "43(6)Notwithstanding the Civil Service Act, the Commissioner may appoint such persons to positions in the Office of the Commissioner as he or she considers necessary to enable the fulfillment of the Commissioner’s responsibilities under this Act.",
+          "contentHash": "d7942425681d93aced24cb55b7d8f6441479cd11a9616a804846e80116c8d7f0"
+        },
+        {
+          "id": "43-subsection-6.1",
+          "sourceKey": "section:43/subsection:6.1",
+          "label": "43(6.1)",
+          "text": "43(6.1)The Commissioner shall be paid an annual salary as determined by the Lieutenant-Governor in Council within the deputy head pay plan, and is entitled to receive benefits similar to those received by deputy heads.",
+          "contentHash": "9292ccde31b513ee95a4fafe66c5e80fe8f53b56419bd64f0352b983a4de19d9"
+        },
+        {
+          "id": "43-subsection-7",
+          "sourceKey": "section:43/subsection:7",
+          "label": "43(7)",
+          "text": "43(7)The pension plan converted to a shared risk plan in accordance with An Act Respecting Public Service Pensions applies to the Commissioner and the employees of the Office of the Commissioner.",
+          "contentHash": "bcec0d9eea80d07c50242a99d77813af8e4988728ca216b4ae75850990ac1e36"
+        },
+        {
+          "id": "43-subsection-8",
+          "sourceKey": "section:43/subsection:8",
+          "label": "43(8)",
+          "text": "43(8)The Commissioner may contract for such professional services, for limited periods of time or in respect of particular matters, as he or she considers necessary to enable the fulfillment of the Commissioner’s responsibilities under this Act.",
+          "contentHash": "370b3e60a68b486ccf5905afd9f4bd815eb600682c3d3b27a2a5a044581d6dd9"
+        },
+        {
+          "id": "43-subsection-9",
+          "sourceKey": "section:43/subsection:9",
+          "label": "43(9)",
+          "text": "43(9)In accordance with the authority provided to the Commissioner under this Act, it is the role of the Commissioner to investigate, report on and make recommendations with regard to compliance with this Act and to promote the advancement of both official languages in the Province.",
+          "contentHash": "90a2d7be42020b44a1063bef8f44ef50040bbdeada24a44064bc3566d1869eee"
+        },
+        {
+          "id": "43-subsection-10",
+          "sourceKey": "section:43/subsection:10",
+          "label": "43(10)",
+          "text": "43(10)In order to fulfill the role under subsection (9), the Commissioner shall conduct and carry out investigations either pursuant to any complaint made to the Commissioner or on his or her own initiative and shall, as provided in this Act, report and make recommendations with respect to such investigations.",
+          "contentHash": "2b6493a11e83c9e461f91d1e2deba6898abcf85088ad1645a1c3c5bf2e1d0e63"
+        },
+        {
+          "id": "43-subsection-10.1",
+          "sourceKey": "section:43/subsection:10.1",
+          "label": "43(10.1)",
+          "text": "43(10.1)Despite subsection (10), when the Commissioner considers it appropriate, the Commissioner may attempt to resolve a complaint without conducting an investigation.",
+          "contentHash": "e178783990fdc79a294c16d14fa1f575e674caa6ed82e0dcedd05eb9a382007f"
+        },
+        {
+          "id": "43-subsection-11",
+          "sourceKey": "section:43/subsection:11",
+          "label": "43(11)",
+          "text": "43(11)The Commissioner may refuse to investigate or cease to investigate any complaint if, in the opinion of the Commissioner,\n\n(a)\nthe subject-matter of the complaint is trivial,\n\n(b)\nthe complaint is frivolous or vexatious or is not made in good faith, or\n\n(c)\nthe subject-matter of the complaint does not involve a contravention or failure to comply with this Act or, for any other reason, does not come within the authority of the Commissioner under this Act.",
+          "contentHash": "f85165f402c73b5597fb2d5691bd06e99a4e9a6aefc536c578cc782832c7d811"
+        },
+        {
+          "id": "43-subsection-12",
+          "sourceKey": "section:43/subsection:12",
+          "label": "43(12)",
+          "text": "43(12)If the Commissioner refuses to investigate or ceases to investigate any complaint, the Commissioner shall inform the complainant and provide reasons for the decision to do so.",
+          "contentHash": "2fd5b18930ad64d48d667e509273b64c67e319edf5bed1072f21f1de6ba3bb01"
+        },
+        {
+          "id": "43-subsection-13",
+          "sourceKey": "section:43/subsection:13",
+          "label": "43(13)",
+          "text": "43(13)Before commencing an investigation under this Act, the Commissioner shall inform the deputy head or other administrative head of the institution concerned of his or her intention to carry out the investigation.",
+          "contentHash": "b6b7583dc4263e1064951726ef5afc4edfae42f68abc16099b6b1804e884e4b0"
+        },
+        {
+          "id": "43-subsection-14",
+          "sourceKey": "section:43/subsection:14",
+          "label": "43(14)",
+          "text": "43(14)Subject to this Act, the Commissioner may determine the procedure to be followed in carrying out an investigation under this Act.",
+          "contentHash": "2bb1d625ca2b31428e48a13c15192db5b9b2f209427237015d1f9eb6c2c62fd9"
+        },
+        {
+          "id": "43-subsection-15",
+          "sourceKey": "section:43/subsection:15",
+          "label": "43(15)",
+          "text": "43(15)For the purposes of this Act, the Commissioner is a commissioner under the Inquiries Act.",
+          "contentHash": "4bac769a029f73a18c02e6faf9a2793d9840dd7395a260c8ab28daa64968c848"
+        },
+        {
+          "id": "43-subsection-16",
+          "sourceKey": "section:43/subsection:16",
+          "label": "43(16)",
+          "text": "43(16)After carrying out an investigation pursuant to a complaint under this Act, the Commissioner shall communicate the results of the investigation and any recommendations, including any opinion and the reasons for the recommendations, to the Premier, the deputy head or other administrative head of the institution concerned and the complainant.",
+          "contentHash": "2144852a48d45ef95b2e565a3675f23643f1cc7a271124509b66d4dddad57361"
+        },
+        {
+          "id": "43-subsection-17",
+          "sourceKey": "section:43/subsection:17",
+          "label": "43(17)",
+          "text": "43(17)After carrying out an investigation on his or her own initiative, the Commissioner shall communicate the results of the investigation and any recommendations, including any opinion and the reasons for the recommendations, to the Premier and the deputy head or other administrative head of the institution concerned.",
+          "contentHash": "a80a1ff9f5433381b1837a305c3588cd263070d8e96d39ba4f4c46680e479c60"
+        },
+        {
+          "id": "43-subsection-17.1",
+          "sourceKey": "section:43/subsection:17.1",
+          "label": "43(17.1)",
+          "text": "43(17.1)When the Premier, a deputy head or an administrative head receives the results of an investigation from the Commissioner under subsection (16) or (17), he or she shall acknowledge in writing receipt of the results and of any recommendations made by the Commissioner.",
+          "contentHash": "9e750d72c74cf38a6724686f2e7026ba31e5fe026799b1625c73f0fd4511502f"
+        },
+        {
+          "id": "43-subsection-17.2",
+          "sourceKey": "section:43/subsection:17.2",
+          "label": "43(17.2)",
+          "text": "43(17.2)After carrying out an investigation under subsection (10), if the Commissioner considers it to be in the public interest, the Commissioner may publish a report on the results of his or her investigation and on any recommendations made as a result of the investigation.",
+          "contentHash": "644dc1dfe3faf64a090799f2258d2c7f132987551fdb64945326e0822bc6e96e"
+        },
+        {
+          "id": "43-subsection-18",
+          "sourceKey": "section:43/subsection:18",
+          "label": "43(18)",
+          "text": "43(18)If a complainant is not satisfied with the conclusions of the Commissioner received under subsection (16) or with the resolution of the complaint, the complainant may apply to The Court of King’s Bench of New Brunswick for a remedy.",
+          "contentHash": "f3545c2d86f65ccbd58deb27bb98a26e0a200d3b44dcb656108f42877bf7a272"
+        },
+        {
+          "id": "43-subsection-19",
+          "sourceKey": "section:43/subsection:19",
+          "label": "43(19)",
+          "text": "43(19)The judge of a court referred to in subsection (18) may grant such remedy as he or she considers appropriate and just in the circumstances.",
+          "contentHash": "7689d7ce34f7addab5c870a4f324d8eb9e75bc2c5d19c145dbd34a6770994f34"
+        },
+        {
+          "id": "43-subsection-20",
+          "sourceKey": "section:43/subsection:20",
+          "label": "43(20)",
+          "text": "43(20)This section does not affect any other right of action that a person may have.",
+          "contentHash": "56788fdb7c8c1fbea044d69969d79dc384ec28aa59e33b5c92e1dddcc9af746e"
+        },
+        {
+          "id": "43-subsection-21",
+          "sourceKey": "section:43/subsection:21",
+          "label": "43(21)",
+          "text": "43(21)As soon as is reasonably practicable after the end of each year, the Commissioner shall submit to the Legislative Assembly a report, prepared by the Commissioner, with respect to the activities of the Office of the Commissioner in the preceding year that includes the following information:\n\n(a)\nthe nature of the complaints that were received;\n\n(b)\nthe types of complaints that were received;\n\n(c)\nwhether an investigation that was carried out was pursuant to a complaint that was made or on the initiative of the Commissioner; and\n\n(d)\nthe number of instances a particular complaint was made by the same complainant.\n\n2013, c.1, s.6; 2013, c.38, s.1; 2013, c.44, s.34; 2016, c.1, s.1; 2023, c.10, s.1; 2023, c.17, s.179",
+          "contentHash": "c1f69e3fa00255889d3af90117476ed2bfeecf01ac6d2c68b9b58b093174d9cb"
+        }
+      ],
+      "contentHash": "988e246146771d9b3933753b64a21b52630dc9f720970863f04de63b55b9a619"
+    },
+    {
+      "id": "section-43.01",
+      "sourceKey": "section:43.01",
+      "componentType": "section",
+      "label": "43.01",
+      "heading": "Delegation of authority",
+      "text": "Delegation of authority\n2023, c.10, s.1\n\n43.01(1)The Commissioner may delegate in writing to any person any power of the Commissioner under this Act, except the power of delegation and the power to prepare a report under this Act.\n\n43.01(2)Despite subsection (1), if the Commissioner is in a conflict of interest with respect to a matter referred to the Commissioner, the Commissioner may delegate in writing to any person any power with respect to that matter, including the power to prepare a report but excluding the power of delegation.\n\n43.01(3)A person purporting to exercise the power of the Commissioner by virtue of a delegation under subsection (1) or (2) shall produce evidence of their authority to exercise that power when required to do so.\n\n2023, c.10, s.1\n\nPROTECTION FROM REPRISAL\n\n2013, c.38, s.1",
+      "subsections": [
+        {
+          "id": "43.01-subsection-1",
+          "sourceKey": "section:43.01/subsection:1",
+          "label": "43.01(1)",
+          "text": "43.01(1)The Commissioner may delegate in writing to any person any power of the Commissioner under this Act, except the power of delegation and the power to prepare a report under this Act.",
+          "contentHash": "4df6620ebc91d48b0292f319e9090c34093f643111acabf65ca70913e715c3d3"
+        },
+        {
+          "id": "43.01-subsection-2",
+          "sourceKey": "section:43.01/subsection:2",
+          "label": "43.01(2)",
+          "text": "43.01(2)Despite subsection (1), if the Commissioner is in a conflict of interest with respect to a matter referred to the Commissioner, the Commissioner may delegate in writing to any person any power with respect to that matter, including the power to prepare a report but excluding the power of delegation.",
+          "contentHash": "abfd3cc33cb88d500282ea1afd7842a5898806d8e9c808dd21839f1c07aa7918"
+        },
+        {
+          "id": "43.01-subsection-3",
+          "sourceKey": "section:43.01/subsection:3",
+          "label": "43.01(3)",
+          "text": "43.01(3)A person purporting to exercise the power of the Commissioner by virtue of a delegation under subsection (1) or (2) shall produce evidence of their authority to exercise that power when required to do so.\n\n2023, c.10, s.1\n\nPROTECTION FROM REPRISAL\n\n2013, c.38, s.1",
+          "contentHash": "469e2bdecdc1950aebb3b7725b72f3c715cca9f8a1885d4465c5950e95cafda6"
+        }
+      ],
+      "contentHash": "b0915653dd79ad12032f39bf218d2d3ba4ee34960cffddde924d1a216d8428d7"
+    },
+    {
+      "id": "section-43.1",
+      "sourceKey": "section:43.1",
+      "componentType": "section",
+      "label": "43.1",
+      "heading": "Protection from reprisal",
+      "text": "Protection from reprisal\n\n43.1No person shall take a reprisal against a person or direct that one be taken against a person because the person has made a complaint in good faith to the Commissioner or cooperated in an investigation under this Act.\n2013, c.38, s.1\n\nIMMUNITY\n\n2013, c.38, s.1",
+      "subsections": [],
+      "contentHash": "9fbd9470f05a3e339977084a1b6ff4f984b82fb2f3cfb883c61bd007bdfc79e1"
+    },
+    {
+      "id": "section-43.2",
+      "sourceKey": "section:43.2",
+      "componentType": "section",
+      "label": "43.2",
+      "heading": "Immunity",
+      "text": "Immunity\n\n43.2No proceedings lie against the Commissioner or against a person holding an office or appointment in the Office of the Commissioner for anything he or she may do, report or say in the course of the exercise or intended exercise of his or her functions under this Act regardless of whether that function was within his or her jurisdiction, unless it is shown the person acted in bad faith.\n2013, c.38, s.1\n\nAPPOINTMENT OF OFFICIAL TRANSLATORS",
+      "subsections": [],
+      "contentHash": "3156224f69c0090fca20ede03c416cf56830400718d8a7ee7dfa27d26ddf7cd5"
+    },
+    {
+      "id": "section-44",
+      "sourceKey": "section:44",
+      "componentType": "section",
+      "label": "44",
+      "heading": "Appointment of Official Translators",
+      "text": "Appointment of Official Translators\n\n44The Lieutenant-Governor in Council may appoint such Official Translators as are necessary to enable a court to discharge the duties conferred on it by this Act.\n\nREGULATION-MAKING AUTHORITY",
+      "subsections": [],
+      "contentHash": "c0412d55a72c81d0a2651ce5d9c6e3554684cdba5748d64052bd43284c9ec940"
+    },
+    {
+      "id": "section-45",
+      "sourceKey": "section:45",
+      "componentType": "section",
+      "label": "45",
+      "heading": "Regulation-making authority",
+      "text": "Regulation-making authority\n\n45The Lieutenant-Governor in Council may make regulations\n\n(a)\nprescribing circumstances not otherwise provided for under this Act in which institutions have the duty to ensure that any member of the public can communicate with and obtain available services from the institutions in either official language;\n\n(a.1)\nprescribing portions or divisions of the Public Service for the purposes of the definition “public service” in section 1;\n\n(a.2)\nestablishing public signage policies for the Province;\n\n(b)\nrespecting the procedure, as it concerns official languages, before any court, including\n\n(i)\nthe giving of notice as is necessary to enable the court to discharge the duty conferred upon it by section 21, and\n\n(ii)\nthe swearing or affirming of interpreters;\n\n(c)\nrespecting services and communications to be provided under sections 36 and 41 and the manner in which they are to be provided;\n\n(d)\nidentifying measures required to foster effective communications with and services from institutions in both official languages;\n\n(e)\nrespecting the form and manner of a review under section 42;\n\n(e.1)\nproviding for a remedy for violating section 43.1 or establishing a procedure for enforcing the prohibition in section 43.1, including prescribing a violation of that section to be an offence and prescribing a penalty with respect to the offence;\n\n(f)\nrespecting the functions of persons appointed under section 44 and the status and admissibility into evidence of translations prepared by them;\n\n(g)\nestablishing any other measure necessary for the better administration of this Act.\n\n2013, c.38, s.1\n\nREPEAL",
+      "subsections": [],
+      "contentHash": "48be5367ccff0e438cbeae3582337a4ed163a47aa304193a290f3673c9d523c8"
+    },
+    {
+      "id": "section-46",
+      "sourceKey": "section:46",
+      "componentType": "section",
+      "label": "46",
+      "heading": "Repeal",
+      "text": "Repeal\n\n46The Official Languages of New Brunswick Act, chapter O-1 of the Revised Statutes, 1973, is repealed.\n\nCOMMENCEMENT",
+      "subsections": [],
+      "contentHash": "737f0b441c319785c432c8207a2f8f9f448541bd1808a5e80ee66f7714d26c31"
+    },
+    {
+      "id": "section-47",
+      "sourceKey": "section:47",
+      "componentType": "section",
+      "label": "47",
+      "heading": "Commencement",
+      "text": "Commencement\n\n47(1)This Act, except for section 43, comes into force on August 5, 2002.\n\n47(2)Section 43 comes into force on April 1, 2003.\n\nN.B. This Act is consolidated to June 16, 2023.",
+      "subsections": [
+        {
+          "id": "47-subsection-1",
+          "sourceKey": "section:47/subsection:1",
+          "label": "47(1)",
+          "text": "47(1)This Act, except for section 43, comes into force on August 5, 2002.",
+          "contentHash": "a33518a5901fb5123d5414a3d9abf2ae9bbdc167e67660b4a9dd6fffd107a870"
+        },
+        {
+          "id": "47-subsection-2",
+          "sourceKey": "section:47/subsection:2",
+          "label": "47(2)",
+          "text": "47(2)Section 43 comes into force on April 1, 2003.\n\nN.B. This Act is consolidated to June 16, 2023.",
+          "contentHash": "8bcb727b185508c9025abab466d914a6e7b9734538786d17a4e3355b2754e4c3"
+        }
+      ],
+      "contentHash": "40a8f55b554ff2676fb3e21d4fd511f95d9890b1f9a08b56144ed1e5a8e539b6"
+    }
+  ],
+  "notes": []
+}

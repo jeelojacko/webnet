@@ -1,0 +1,1911 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-public-works-act",
+  "officialTitle": "Public Works Act",
+  "officialCitation": "2016, c.108",
+  "officialCitationDisplay": "2016, c.108",
+  "officialCitationNormalized": "2016, c.108",
+  "documentType": "act",
+  "sourceUrl": "https://laws.gnb.ca/en/document/cs/2016,%20c.108",
+  "fetchDate": "2026-08-11T18:09:07.298Z",
+  "consolidatedTo": "December 13, 2024",
+  "contentHash": "793d56bf79c3321763d5feb67e4f245caa046eedd67e3d382937058cf635d868",
+  "tableOfContents": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "label": "1",
+      "heading": "Definitions"
+    },
+    {
+      "id": "section-1.1",
+      "sourceKey": "section:1.1",
+      "label": "1.1",
+      "heading": "Designated public works with approval"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "label": "2",
+      "heading": "Delegation of powers"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "label": "3",
+      "heading": "Lands and buildings designated as public works"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "label": "4",
+      "heading": "Contracts made in name of Crown in right of the Province"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "label": "5",
+      "heading": "Application of Employment Standards Act"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "label": "6",
+      "heading": "Action instituted in name of Minister"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "label": "7",
+      "heading": "Action by Attorney General"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "label": "8",
+      "heading": "Annual report"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "label": "9",
+      "heading": "Powers of Minister respecting land"
+    },
+    {
+      "id": "section-10",
+      "sourceKey": "section:10",
+      "label": "10",
+      "heading": "Power of Minister to enter buildings and on lands designated as public works"
+    },
+    {
+      "id": "section-11",
+      "sourceKey": "section:11",
+      "label": "11",
+      "heading": "Power of Minister to make contract"
+    },
+    {
+      "id": "section-12",
+      "sourceKey": "section:12",
+      "label": "12",
+      "heading": "Notice of intention to designate"
+    },
+    {
+      "id": "section-13",
+      "sourceKey": "section:13",
+      "label": "13",
+      "heading": "Service of notice"
+    },
+    {
+      "id": "section-14",
+      "sourceKey": "section:14",
+      "label": "14",
+      "heading": "Exemption from the Community Planning Act"
+    },
+    {
+      "id": "section-15",
+      "sourceKey": "section:15",
+      "label": "15",
+      "heading": "Permits, licences and approvals"
+    },
+    {
+      "id": "section-16",
+      "sourceKey": "section:16",
+      "label": "16",
+      "heading": "Compensation for damages"
+    },
+    {
+      "id": "section-17",
+      "sourceKey": "section:17",
+      "label": "17",
+      "heading": "Arbitration"
+    },
+    {
+      "id": "section-18",
+      "sourceKey": "section:18",
+      "label": "18",
+      "heading": "The Court of King’s Bench may extend time limit"
+    },
+    {
+      "id": "section-19",
+      "sourceKey": "section:19",
+      "label": "19",
+      "heading": "Application of Arbitration Act"
+    },
+    {
+      "id": "section-20",
+      "sourceKey": "section:20",
+      "label": "20",
+      "heading": "Exclusive jurisdiction of arbitral tribunal"
+    },
+    {
+      "id": "section-21",
+      "sourceKey": "section:21",
+      "label": "21",
+      "heading": "Appointment of arbitral tribunal"
+    },
+    {
+      "id": "section-22",
+      "sourceKey": "section:22",
+      "label": "22",
+      "heading": "Fees and expenses of arbitral tribunal"
+    },
+    {
+      "id": "section-23",
+      "sourceKey": "section:23",
+      "label": "23",
+      "heading": "Decision of arbitral tribunal"
+    },
+    {
+      "id": "section-24",
+      "sourceKey": "section:24",
+      "label": "24",
+      "heading": "Arbitral tribunal may extend the time for making a decision"
+    },
+    {
+      "id": "section-25",
+      "sourceKey": "section:25",
+      "label": "25",
+      "heading": "Vesting of property; sale or lease of public work"
+    },
+    {
+      "id": "section-26",
+      "sourceKey": "section:26",
+      "label": "26",
+      "heading": "Sale or disposal of public works without Lieutenant-Governor in Council approval"
+    },
+    {
+      "id": "section-27",
+      "sourceKey": "section:27",
+      "label": "27",
+      "heading": "Transfer of land, buildings and other structures from other ministers"
+    },
+    {
+      "id": "section-28",
+      "sourceKey": "section:28",
+      "label": "28",
+      "heading": "Transfer of public works to other ministers or the New Brunswick Housing Corporation"
+    },
+    {
+      "id": "section-29",
+      "sourceKey": "section:29",
+      "label": "29",
+      "heading": "Sale of public works to non-profit organizations or other governments"
+    },
+    {
+      "id": "section-30",
+      "sourceKey": "section:30",
+      "label": "30",
+      "heading": "Sale of public works other than under sections 28 and 29"
+    },
+    {
+      "id": "section-30.1",
+      "sourceKey": "section:30.1",
+      "label": "30.1",
+      "heading": "Vacant land"
+    },
+    {
+      "id": "section-31",
+      "sourceKey": "section:31",
+      "label": "31",
+      "heading": "Report of sale of a public work under section 26 or 30.1"
+    },
+    {
+      "id": "section-32",
+      "sourceKey": "section:32",
+      "label": "32",
+      "heading": "Land Management Fund"
+    },
+    {
+      "id": "section-33",
+      "sourceKey": "section:33",
+      "label": "33",
+      "heading": "Public works development area"
+    },
+    {
+      "id": "section-34",
+      "sourceKey": "section:34",
+      "label": "34",
+      "heading": "Administration"
+    },
+    {
+      "id": "section-35",
+      "sourceKey": "section:35",
+      "label": "35",
+      "heading": "Regulations"
+    },
+    {
+      "id": "schedule-schedule-a",
+      "sourceKey": "schedule:schedule-a",
+      "label": "SCHEDULE A"
+    }
+  ],
+  "components": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
+      "label": "1",
+      "heading": "Definitions",
+      "text": "Definitions\n\n1The following definitions apply in this Act.\n“arbitral tribunal” means a sole arbitrator or a panel of three arbitrators. (tribunal d’arbitrage)\n\n“land” includes an estate, term, easement, right or interest in, to, over or affecting land.(bien-fonds)\n\n“Minister” means the Minister of Transportation and Infrastructure and includes a person designated by the Minister to act on the Minister’s behalf.(ministre)\n\n“owner” includes a mortgagee, lessee, tenant, occupant, person entitled to a limited estate or interest, and a guardian, executor, administrator or trustee in whom land or an interest in land is vested.(propriétaire)\n\n“project” means (projet)\n\n(a)\nthe modifications to the Petitcodiac River Causeway to restore the passage of fish and a work related to the modifications to the Petitcodiac River Causeway to restore the passage of fish, or\n\n(b)\nthe decommissioning of the Eel River Dam to restore the passage of fish and a work related to the decommissioning of the Eel River Dam to restore the passage of fish.\n\n“public work” means all lands, buildings and other structures(ouvrage public)\n\n(a)\nbelonging to the Crown in right of the Province except\n\n(i)\nthe lands, buildings or other structures that are under the administration of a minister, other than the Minister, or under the administration of another agent of the Crown in right of the Province by another Act,\n\n(ii)\nhighways,\n\n(iii)\nferry wharves or bridges, and\n\n(iv)\nCrown lands, buildings or other structures under the administration of the Minister of Natural Resources,\n\n(b)\nthat are designated as public works by the Minister for the purposes of a project, and\n\n(c)\nthat, despite subparagraph (a)(i), are designated as public works by the Minister under section 1.1.\n\n“work” includes the construction, extension, enlargement, alteration, repair, maintenance and improvement of lands, buildings and other structures.(travaux)\n\nR.S.1973, c.P-28, s.1; 1974, c.43(Supp.), s.1; 1986, c.8, s.108; 1991, c.59, s.59; 2003, c.E-4.6, s.176; 2004, c.20, s.55; 2009, c.1, s.1; 2009, c.2, s.1; 2010, c.31, s.116; 2013, c.11, s.1; 2016 c.37, s.163; 2019, c.29, s.206; 2022, c.44, s.1; 2024, c.28, s.52",
+      "subsections": [],
+      "contentHash": "0a26689087afe4ce614008b534aa4f1973974eff873536130ad3e503f6435aff"
+    },
+    {
+      "id": "section-1.1",
+      "sourceKey": "section:1.1",
+      "componentType": "section",
+      "label": "1.1",
+      "heading": "Designated public works with approval",
+      "text": "Designated public works with approval\n\n2022, c.44, s.2\n\n1.1For the purposes of paragraph (c) of the definition “public work”, the Minister may designate lands, buildings or other structures as public works in the following circumstances:\n\n(a)\nthe effective date of transfer of the land, building or other structure has been established; and\n\n(b)\nthe approval of the Lieutenant-Governor in Council has been obtained.\n\n2022, c.44, s.2",
+      "subsections": [],
+      "contentHash": "051d475d1f67dfc401641ae23f1dfcf024883c53eb366c5608b4311b85e09ae6"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "label": "2",
+      "heading": "Delegation of powers",
+      "text": "Delegation of powers\n\n2The Minister may delegate to an officer under his or her supervision, any administrative power conferred on the Minister by this Act.\nR.S.1973, c.P-28, ss.2(2)",
+      "subsections": [],
+      "contentHash": "0bd97fbc962d6d5baf78175406fa26d6cfecff3f5be68b1481964a57aad561b7"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
+      "label": "3",
+      "heading": "Lands and buildings designated as public works",
+      "text": "Lands and buildings designated as public works\n\n3(1)Sections 25, 26 and 30.1 do not apply to lands and buildings that are, for the purposes of a project, designated as public works by the Minister.\n\n3(2)Despite section 3 of the Marshland Infrastructure Maintenance Act, the Minister has sole responsibility for the construction, reconstruction, recondition, repair, maintenance, conduct and operation of dykes, aboiteaux, breakwaters, canals, ditches, drains, roads and other structures, excavations and facilities for the reclamation, development, improvement or protection of marshland on lands that are, for the purposes of a project, designated as public works by the Minister.\n\n2009, c.1, s.2; 2017, c.25, s.1",
+      "subsections": [
+        {
+          "id": "3-subsection-1",
+          "sourceKey": "section:3/subsection:1",
+          "label": "3(1)",
+          "text": "3(1)Sections 25, 26 and 30.1 do not apply to lands and buildings that are, for the purposes of a project, designated as public works by the Minister.",
+          "contentHash": "68286d58592d76f77930b7945186792595a6a66aa482a695a13fd4daa9972a4b"
+        },
+        {
+          "id": "3-subsection-2",
+          "sourceKey": "section:3/subsection:2",
+          "label": "3(2)",
+          "text": "3(2)Despite section 3 of the Marshland Infrastructure Maintenance Act, the Minister has sole responsibility for the construction, reconstruction, recondition, repair, maintenance, conduct and operation of dykes, aboiteaux, breakwaters, canals, ditches, drains, roads and other structures, excavations and facilities for the reclamation, development, improvement or protection of marshland on lands that are, for the purposes of a project, designated as public works by the Minister.\n\n2009, c.1, s.2; 2017, c.25, s.1",
+          "contentHash": "f45c794a4d8a1b54338af16d93132c0e69e7242708c61fd3de6b4476217d1080"
+        }
+      ],
+      "contentHash": "f20646bb4492de34a8456b02b8c2247431406255e2992f4bfbc7816cbfaadbe6"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
+      "label": "4",
+      "heading": "Contracts made in name of Crown in right of the Province",
+      "text": "Contracts made in name of Crown in right of the Province\n\n4All contracts made by the Minister shall be made in the name of the Crown in right of the Province.\nR.S.1973, c.P-28, s.3",
+      "subsections": [],
+      "contentHash": "2fb7bbf39ec857c765ca307189835dedfd20c3092ff2617325af20d1cd42120e"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "componentType": "section",
+      "label": "5",
+      "heading": "Application of Employment Standards Act",
+      "text": "Application of Employment Standards Act\n\n5Every contract made by the Minister where labour is to be performed shall contain minimum wage provisions as set out in the applicable minimum wage regulation under the Employment Standards Act.\nR.S.1973, c.P-28, s.4; 1987, c.6, s.93",
+      "subsections": [],
+      "contentHash": "71da26863a1146c8a966741faccc44085a663f5a0f1a532f3cf6078edc04a452"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "componentType": "section",
+      "label": "6",
+      "heading": "Action instituted in name of Minister",
+      "text": "Action instituted in name of Minister\n\n6An action or other proceeding for the enforcement of a contract made by the Minister or for the recovery of damages to a public work or to any land, building or other structure leased under section 11 or for the enforcement of a right in respect of a public work or any land, building or other structure leased under section 11 may be instituted in the name of the Minister.\nR.S.1973, c.P-28, s.5; 2013, c.11, s.3",
+      "subsections": [],
+      "contentHash": "34a78beb2cad85cbec6ef47a8fd81768e77b950bd38b9b3c065265820f7f11f8"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "componentType": "section",
+      "label": "7",
+      "heading": "Action by Attorney General",
+      "text": "Action by Attorney General\n\n7Nothing in section 6 impairs the right of the Crown to institute or maintain an action, suit or proceeding by the Attorney General or otherwise to prevent a trespass or injury or for a breach of contract or to recover damages therefore.\nR.S.1973, c.P-28, s.6; 1981, c.6, s.1",
+      "subsections": [],
+      "contentHash": "7d7a3f22da83307fb3bf8ef963387f6b4034c23e38906fac32bd24123a543ee7"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "componentType": "section",
+      "label": "8",
+      "heading": "Annual report",
+      "text": "Annual report\n\n8The Minister shall make annually a detailed report to the Lieutenant-Governor in Council respecting the expenditure of public money on public works and on lands, buildings and other structures leased under section 11, and that report shall be laid before the Legislative Assembly.\nR.S.1973, c.P-28, s.7; 2013, c.11, s.4",
+      "subsections": [],
+      "contentHash": "35aa4cf75d1d47d581b0230c225c6c6f346cfd904cb5c4b1a7bee8d04ae7ed6e"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "componentType": "section",
+      "label": "9",
+      "heading": "Powers of Minister respecting land",
+      "text": "Powers of Minister respecting land\n\n9The Minister, by himself or herself or by his or her architects, engineers, agents and workers, may\n\n(a)\nenter on any land, survey and take levels of that land and make borings or sink trial pits as he or she deems necessary for any purpose relative to a public work,\n\n(b)\ntake possession of any land, waters or watercourse that in the Minister’s opinion is necessary to carry out work on a public work, or for obtaining access to that public work,\n\n(c)\nenter on any land, including any Crown lands, whether leased or not and deposit on that land any material required for a public work or for the purpose of removing or carrying away any material, and may remove from that land any material used to carry out work on a public work and for those purposes may make and use temporary roads to and from that land as the Minister considers necessary,\n\n(d)\nenter on any land for the purpose of making drains in which to carry off water from a public work and of keeping those drains in repair, and\n\n(e)\nalter the course of a watercourse and road and change the level of the watercourse and road.\n\nR.S.1973, c.P-28, s.8; 2009, c.2, s.3",
+      "subsections": [],
+      "contentHash": "80ea74cdf506d14dca7df1fc2de47fc618c75efc9ed8d942aa111447f04cbdf7"
+    },
+    {
+      "id": "section-10",
+      "sourceKey": "section:10",
+      "componentType": "section",
+      "label": "10",
+      "heading": "Power of Minister to enter buildings and on lands designated as public works",
+      "text": "Power of Minister to enter buildings and on lands designated as public works\n\n10The Minister may enter, by himself or herself or by his or her architects, engineers, agents and workers, a building or other structure or enter on any land that is, for the purposes of a project, designated as a public work by the Minister in order to carry out work on that public work.\n2009, c.2, s.4; 2013, c.11, s.5",
+      "subsections": [],
+      "contentHash": "3df9da6cf8a9b948eba2ecef10aae9fc9cc0dc74cfbd672aad96c36296d6d02a"
+    },
+    {
+      "id": "section-11",
+      "sourceKey": "section:11",
+      "componentType": "section",
+      "label": "11",
+      "heading": "Power of Minister to make contract",
+      "text": "Power of Minister to make contract\n\n11The Minister may contract for the purchase or lease of land, buildings and other structures required for a public work or for the use and purposes of government.\nR.S.1973, c.P-28, s.9; 2013, c.11, s.6",
+      "subsections": [],
+      "contentHash": "395757d4c3d571c64bb834826962a8113d229460e7376bbde9fbfbc11e48a787"
+    },
+    {
+      "id": "section-12",
+      "sourceKey": "section:12",
+      "componentType": "section",
+      "label": "12",
+      "heading": "Notice of intention to designate",
+      "text": "Notice of intention to designate\n\n12Before the Minister designates any land, building or other structure as a public work for the purposes of a project, the Minister shall serve notice in writing of the intention to designate on the owner of the land, building or other structure.\n2009, c.2, s.5; 2013, c.11, s.7",
+      "subsections": [],
+      "contentHash": "b10bb12bd6dafcb365a1a39ad864a2618cd19d75aa2d9eb28e86f7b7fc6efe34"
+    },
+    {
+      "id": "section-13",
+      "sourceKey": "section:13",
+      "componentType": "section",
+      "label": "13",
+      "heading": "Service of notice",
+      "text": "Service of notice\n\n13(1)A notice under section 12 shall be sufficiently served if it is mailed by registered mail to the latest known address of the owner.\n\n13(2)Service by registered mail shall be deemed to be effected 30 days after the date of mailing.\n\n2009, c.2, s.5",
+      "subsections": [
+        {
+          "id": "13-subsection-1",
+          "sourceKey": "section:13/subsection:1",
+          "label": "13(1)",
+          "text": "13(1)A notice under section 12 shall be sufficiently served if it is mailed by registered mail to the latest known address of the owner.",
+          "contentHash": "8dc95487d8365a24fd2a52d815396ac81e09653ccd44f5a97408089b58f03d0a"
+        },
+        {
+          "id": "13-subsection-2",
+          "sourceKey": "section:13/subsection:2",
+          "label": "13(2)",
+          "text": "13(2)Service by registered mail shall be deemed to be effected 30 days after the date of mailing.\n\n2009, c.2, s.5",
+          "contentHash": "2c85d9cf1ba6ff92f4e0afc2b6e288175b358d3fa8c73515e70a819e467c6685"
+        }
+      ],
+      "contentHash": "d2052ed20048c28ffabe14a7acc20e6945dd5ea29fe2db7b0a28a42b31e327c4"
+    },
+    {
+      "id": "section-14",
+      "sourceKey": "section:14",
+      "componentType": "section",
+      "label": "14",
+      "heading": "Exemption from the Community Planning Act",
+      "text": "Exemption from the Community Planning Act\n\n14With respect to lands, buildings and other structures that are, for the purposes of a project, designated as public works by the Minister, the Minister is exempt from compliance with\n\n(a)\nthe Community Planning Act,\n\n(b)\na by-law enacted under the Community Planning Act,\n\n(c)\na regulation, order or demand made under the Community Planning Act,\n\n(d)\na term or condition made or imposed under the Community Planning Act, and\n\n(e)\na decision of the Assessment and Planning Appeal Board made under the Community Planning Act.\n\n2009, c.2, s.5; 2013, c.11, s.8",
+      "subsections": [],
+      "contentHash": "81031716ca7f8470888507c7cde07e9db0032462e9e2b159df005799d465d924"
+    },
+    {
+      "id": "section-15",
+      "sourceKey": "section:15",
+      "componentType": "section",
+      "label": "15",
+      "heading": "Permits, licences and approvals",
+      "text": "Permits, licences and approvals\n\n15(1)Despite any other Act, the Minister may apply for a permit, licence or approval that he or she considers necessary to carry out work on the lands, buildings and other structures that are, for the purposes of a project, designated as public works by the Minister.\n\n15(2)The ministers of the Crown responsible for the issuance of the permits, licences and approvals referred to in subsection (1) may issue those permits, licences and approvals to the Minister, even if the Minister is unable to meet the requirements or comply with the terms and conditions for their issuance.\n\n2009, c.2, s.5; 2013, c.11, s.9",
+      "subsections": [
+        {
+          "id": "15-subsection-1",
+          "sourceKey": "section:15/subsection:1",
+          "label": "15(1)",
+          "text": "15(1)Despite any other Act, the Minister may apply for a permit, licence or approval that he or she considers necessary to carry out work on the lands, buildings and other structures that are, for the purposes of a project, designated as public works by the Minister.",
+          "contentHash": "1404c9d93ea0f2973bb64b438a949a280a3b1611b139a2bd08ededcca44d1f4e"
+        },
+        {
+          "id": "15-subsection-2",
+          "sourceKey": "section:15/subsection:2",
+          "label": "15(2)",
+          "text": "15(2)The ministers of the Crown responsible for the issuance of the permits, licences and approvals referred to in subsection (1) may issue those permits, licences and approvals to the Minister, even if the Minister is unable to meet the requirements or comply with the terms and conditions for their issuance.\n\n2009, c.2, s.5; 2013, c.11, s.9",
+          "contentHash": "a75445faa500a9286f8d9a9ec523cbee71697034b5fc6817b4f36c88946f0454"
+        }
+      ],
+      "contentHash": "b5e906fd0db2c89e771cfa4ca3a2dc56e48bd861a63fa619efef8ba7921ea1b0"
+    },
+    {
+      "id": "section-16",
+      "sourceKey": "section:16",
+      "componentType": "section",
+      "label": "16",
+      "heading": "Compensation for damages",
+      "text": "Compensation for damages\n\n16(1)The Minister shall compensate a person for damages suffered by virtue of anything done under this Act.\n\n16(2)A person claiming to be entitled to compensation shall deliver to the Minister a written claim setting forth full particulars of the claim and of his or her right and title to the compensation.\n\nR.S.1973, c.P-28, s.10",
+      "subsections": [
+        {
+          "id": "16-subsection-1",
+          "sourceKey": "section:16/subsection:1",
+          "label": "16(1)",
+          "text": "16(1)The Minister shall compensate a person for damages suffered by virtue of anything done under this Act.",
+          "contentHash": "9c1bc5c61d5565b8951a30564cd928ce8d9889618c90b8bd37a9aab64ace8530"
+        },
+        {
+          "id": "16-subsection-2",
+          "sourceKey": "section:16/subsection:2",
+          "label": "16(2)",
+          "text": "16(2)A person claiming to be entitled to compensation shall deliver to the Minister a written claim setting forth full particulars of the claim and of his or her right and title to the compensation.\n\nR.S.1973, c.P-28, s.10",
+          "contentHash": "85c0bc2e093f560dec654d10ecacc360c8f50a67d15e8f3819412398516606cb"
+        }
+      ],
+      "contentHash": "34dfabd70ded7252b6e364aed4b3bc94bb0c76df9403cd06d176bad734dbf077"
+    },
+    {
+      "id": "section-17",
+      "sourceKey": "section:17",
+      "componentType": "section",
+      "label": "17",
+      "heading": "Arbitration",
+      "text": "Arbitration\n\n17(1)If the Minister does not agree with the compensation claimed under subsection 16(2), the Minister shall offer, within 120 days after receiving the claim for compensation in writing, the amount that the Minister considers to be reasonable compensation and, at the same time, give notice to the person claiming compensation that, if the amount of the offer is not accepted within 120 days after the date the person receives the offer, the matter of compensation will be submitted to arbitration.\n\n17(2)If the person claiming compensation does not accept the offer of the Minister within 120 days after receiving the offer, the Minister shall submit the matter of compensation to arbitration and the Minister and the person claiming compensation shall be deemed to have entered into a written arbitration agreement.\n\nR.S.1973, c.P-28, s.11; 2009, c.2, s.6; 2014, c.35, s.1",
+      "subsections": [
+        {
+          "id": "17-subsection-1",
+          "sourceKey": "section:17/subsection:1",
+          "label": "17(1)",
+          "text": "17(1)If the Minister does not agree with the compensation claimed under subsection 16(2), the Minister shall offer, within 120 days after receiving the claim for compensation in writing, the amount that the Minister considers to be reasonable compensation and, at the same time, give notice to the person claiming compensation that, if the amount of the offer is not accepted within 120 days after the date the person receives the offer, the matter of compensation will be submitted to arbitration.",
+          "contentHash": "bfdc7e421fb75bf7bfb6fe0c3ec9bba2389f881a86a36e2aa9f5cc515ad5ce3f"
+        },
+        {
+          "id": "17-subsection-2",
+          "sourceKey": "section:17/subsection:2",
+          "label": "17(2)",
+          "text": "17(2)If the person claiming compensation does not accept the offer of the Minister within 120 days after receiving the offer, the Minister shall submit the matter of compensation to arbitration and the Minister and the person claiming compensation shall be deemed to have entered into a written arbitration agreement.\n\nR.S.1973, c.P-28, s.11; 2009, c.2, s.6; 2014, c.35, s.1",
+          "contentHash": "03f8d2360a0c05e6e0802acfd5fe2b829f1ad9526c89dd231cece4427c597312"
+        }
+      ],
+      "contentHash": "663780a198f6c95e66fecf26d92c8a2c3c580bc4286bd9ecf97a9fdbb342411a"
+    },
+    {
+      "id": "section-18",
+      "sourceKey": "section:18",
+      "componentType": "section",
+      "label": "18",
+      "heading": "The Court of King’s Bench may extend time limit",
+      "text": "The Court of King’s Bench may extend time limit\n\n2023, c.17, s.224\n\n18On an application by the Minister or a person claiming compensation, The Court of King’s Bench of New Brunswick may extend a time limit under subsection 17(1) or (2), either before or after the expiration of the time limit.\n2014, c.35, s.2; 2023, c.17, s.224",
+      "subsections": [],
+      "contentHash": "102a3a2e5a2199043276a58efdde259ed5a54113d5ac68e2c27d3cc8a065d64f"
+    },
+    {
+      "id": "section-19",
+      "sourceKey": "section:19",
+      "componentType": "section",
+      "label": "19",
+      "heading": "Application of Arbitration Act",
+      "text": "Application of Arbitration Act\n\n19The Arbitration Act applies to an arbitration under this Act but, if there is a conflict between a provision of this Act and a provision of the Arbitration Act, the provision of this Act prevails.\n2009, c.2, s.7",
+      "subsections": [],
+      "contentHash": "d3d24c446d39ebfadabacaeaeb118bd993e4d68c2c8ecc53b1ed99c0a080a346"
+    },
+    {
+      "id": "section-20",
+      "sourceKey": "section:20",
+      "componentType": "section",
+      "label": "20",
+      "heading": "Exclusive jurisdiction of arbitral tribunal",
+      "text": "Exclusive jurisdiction of arbitral tribunal\n\n20(1)An arbitral tribunal has exclusive jurisdiction to hear and determine all matters of compensation under this Act and no court shall intervene in the matter of compensation, except for the following purposes:\n\n(a)\nto assist the arbitration process;\n\n(b)\nto prevent unfair or unequal treatment of a party to an arbitration agreement; and\n\n(c)\nto enforce awards.\n\n20(2)No person shall apply for compensation under Part 2 of the Expropriation Act or any other Act for damages suffered by virtue of anything done under this Act.\n\n2009, c.2, s.7",
+      "subsections": [
+        {
+          "id": "20-subsection-1",
+          "sourceKey": "section:20/subsection:1",
+          "label": "20(1)",
+          "text": "20(1)An arbitral tribunal has exclusive jurisdiction to hear and determine all matters of compensation under this Act and no court shall intervene in the matter of compensation, except for the following purposes:\n\n(a)\nto assist the arbitration process;\n\n(b)\nto prevent unfair or unequal treatment of a party to an arbitration agreement; and\n\n(c)\nto enforce awards.",
+          "contentHash": "8af7e53aa06ca8e780bed6f328407801da0800b1614802d66006f312393624cc"
+        },
+        {
+          "id": "20-subsection-2",
+          "sourceKey": "section:20/subsection:2",
+          "label": "20(2)",
+          "text": "20(2)No person shall apply for compensation under Part 2 of the Expropriation Act or any other Act for damages suffered by virtue of anything done under this Act.\n\n2009, c.2, s.7",
+          "contentHash": "660193df4313a616fe6bf68ddcb4485e630b5b7d4742ba7a65ac9c0428429307"
+        }
+      ],
+      "contentHash": "4318b4bdb637a785a2afb2ac26444efc1bc1f520c5323945f0b916332f0f84b7"
+    },
+    {
+      "id": "section-21",
+      "sourceKey": "section:21",
+      "componentType": "section",
+      "label": "21",
+      "heading": "Appointment of arbitral tribunal",
+      "text": "Appointment of arbitral tribunal\n\n21(1)Within ten days after the date on which the Minister submits a matter to arbitration, the Minister and the person claiming compensation shall appoint a sole arbitrator.\n\n21(2)If the Minister and the person claiming compensation are unable to agree on the appointment of a sole arbitrator within ten days after the date on which the Minister submits the matter to arbitration, an arbitral tribunal consisting of three arbitrators shall be appointed as follows:\n\n(a)\none by the Minister;\n\n(b)\none by the person claiming compensation; and\n\n(c)\none by the arbitrators appointed under paragraphs (a) and (b) who shall act as chair of the arbitral tribunal.\n\n21(3)The Minister and the person claiming compensation shall each appoint an arbitrator within ten days after the expiration of the time period referred to in subsection (2).\n\n21(4)If the Minister or the person claiming compensation fails to appoint an arbitrator within ten days after the expiration of the time period referred to in subsection (2), The Court of King’s Bench of New Brunswick shall appoint an arbitrator on behalf of the Minister or the person, as the case may be.\n\n21(5)If the arbitrators appointed under paragraphs (2)(a) and (b) are unable to agree on the appointment of the chair within 20 days after the appointment of the second arbitrator, The Court of King’s Bench of New Brunswick shall appoint the chair on their behalf.\n\n2009, c.2, s.7; 2023, c.17, s.224",
+      "subsections": [
+        {
+          "id": "21-subsection-1",
+          "sourceKey": "section:21/subsection:1",
+          "label": "21(1)",
+          "text": "21(1)Within ten days after the date on which the Minister submits a matter to arbitration, the Minister and the person claiming compensation shall appoint a sole arbitrator.",
+          "contentHash": "f2b067952532841a8998911f8332f64327d2756f881454e8aced93904fe6bac5"
+        },
+        {
+          "id": "21-subsection-2",
+          "sourceKey": "section:21/subsection:2",
+          "label": "21(2)",
+          "text": "21(2)If the Minister and the person claiming compensation are unable to agree on the appointment of a sole arbitrator within ten days after the date on which the Minister submits the matter to arbitration, an arbitral tribunal consisting of three arbitrators shall be appointed as follows:\n\n(a)\none by the Minister;\n\n(b)\none by the person claiming compensation; and\n\n(c)\none by the arbitrators appointed under paragraphs (a) and (b) who shall act as chair of the arbitral tribunal.",
+          "contentHash": "907a98c56d5d05fdffdce228bcb081f9ac62c34298280b85991931d716fb33e2"
+        },
+        {
+          "id": "21-subsection-3",
+          "sourceKey": "section:21/subsection:3",
+          "label": "21(3)",
+          "text": "21(3)The Minister and the person claiming compensation shall each appoint an arbitrator within ten days after the expiration of the time period referred to in subsection (2).",
+          "contentHash": "c5b094b280e37342d75e3e58fe1b105a9342e7efb357357b2cfe44b8a190e387"
+        },
+        {
+          "id": "21-subsection-4",
+          "sourceKey": "section:21/subsection:4",
+          "label": "21(4)",
+          "text": "21(4)If the Minister or the person claiming compensation fails to appoint an arbitrator within ten days after the expiration of the time period referred to in subsection (2), The Court of King’s Bench of New Brunswick shall appoint an arbitrator on behalf of the Minister or the person, as the case may be.",
+          "contentHash": "e157973a5e77424630905382192be01095d5fa4537ba123ad7e05069da66c85a"
+        },
+        {
+          "id": "21-subsection-5",
+          "sourceKey": "section:21/subsection:5",
+          "label": "21(5)",
+          "text": "21(5)If the arbitrators appointed under paragraphs (2)(a) and (b) are unable to agree on the appointment of the chair within 20 days after the appointment of the second arbitrator, The Court of King’s Bench of New Brunswick shall appoint the chair on their behalf.\n\n2009, c.2, s.7; 2023, c.17, s.224",
+          "contentHash": "7bbe82736916317ec73ad79b89583ab1464e11b2fcd1632765539f8b2121b3b9"
+        }
+      ],
+      "contentHash": "ae8e44ef5ed0a428e029fa3e8fcd7d5208f49593f9253b4ae8977a3cc19186bd"
+    },
+    {
+      "id": "section-22",
+      "sourceKey": "section:22",
+      "componentType": "section",
+      "label": "22",
+      "heading": "Fees and expenses of arbitral tribunal",
+      "text": "Fees and expenses of arbitral tribunal\n\n22(1)If an arbitral tribunal consists of a sole arbitrator, the Minister is responsible for the fees and expenses of the arbitral tribunal and any other expenses related to the arbitration.\n\n22(2)If an arbitral tribunal consists of three arbitrators,\n\n(a)\nthe Minister is responsible for\n\n(i)\nthe fees and expenses of the chair,\n\n(ii)\nthe fees and expenses of the arbitrator appointed by the Minister, and\n\n(iii)\nany other expenses related to the arbitration, and\n\n(b)\nthe person claiming compensation is responsible for the fees and expenses of the arbitrator appointed by that person.\n\n2009, c.2, s.7",
+      "subsections": [
+        {
+          "id": "22-subsection-1",
+          "sourceKey": "section:22/subsection:1",
+          "label": "22(1)",
+          "text": "22(1)If an arbitral tribunal consists of a sole arbitrator, the Minister is responsible for the fees and expenses of the arbitral tribunal and any other expenses related to the arbitration.",
+          "contentHash": "11ca0d71a107c175983ecd3ef6774bef41f933ab5d268b2c6ed256acd631a046"
+        },
+        {
+          "id": "22-subsection-2",
+          "sourceKey": "section:22/subsection:2",
+          "label": "22(2)",
+          "text": "22(2)If an arbitral tribunal consists of three arbitrators,\n\n(a)\nthe Minister is responsible for\n\n(i)\nthe fees and expenses of the chair,\n\n(ii)\nthe fees and expenses of the arbitrator appointed by the Minister, and\n\n(iii)\nany other expenses related to the arbitration, and\n\n(b)\nthe person claiming compensation is responsible for the fees and expenses of the arbitrator appointed by that person.\n\n2009, c.2, s.7",
+          "contentHash": "b562427f6d5566fc2cce84b0e3d43dffd087ab6433c13744686081e4e955ff57"
+        }
+      ],
+      "contentHash": "200b28f0d2e89e3124e91852d8793e1f0b38a0e908a2b0ff3f407046ebfce596"
+    },
+    {
+      "id": "section-23",
+      "sourceKey": "section:23",
+      "componentType": "section",
+      "label": "23",
+      "heading": "Decision of arbitral tribunal",
+      "text": "Decision of arbitral tribunal\n\n23Within one year after the date on which the Minister submits a matter of compensation to arbitration, the arbitral tribunal shall make a decision on the matter of compensation.\n2009, c.2, s.7",
+      "subsections": [],
+      "contentHash": "39e5cbad092269cbd4fd52eacc3cd3ad18f46e4dafca96195f4564b1379c1317"
+    },
+    {
+      "id": "section-24",
+      "sourceKey": "section:24",
+      "componentType": "section",
+      "label": "24",
+      "heading": "Arbitral tribunal may extend the time for making a decision",
+      "text": "Arbitral tribunal may extend the time for making a decision\n\n24Before the expiration of the time for making a decision referred to in section 23, an arbitral tribunal may extend the time for making a decision by giving notice of the extension with reasons to the Minister and to the person claiming compensation.\n2014, c.35, s.3",
+      "subsections": [],
+      "contentHash": "e6f3f3940528cae7625257860eb29ac22fe40040674cf16b0cdf85ce8cba25dc"
+    },
+    {
+      "id": "section-25",
+      "sourceKey": "section:25",
+      "componentType": "section",
+      "label": "25",
+      "heading": "Vesting of property; sale or lease of public work",
+      "text": "Vesting of property; sale or lease of public work\n\n25All public works shall be vested in the Crown in right of the Province and, despite section 55 of the Financial Administration Act and any other Act, when a public work is not required, the Minister, with the approval of the Lieutenant-Governor in Council, may enter into an agreement for the sale or lease of the public work and may convey the public work by a deed of conveyance, lease or other instrument under the Great Seal of the Province and under the hand of the Minister, and the proceeds of the sale or leasing shall be accounted for as public money or on the direction of the Lieutenant-Governor in Council, deposited to the credit of the Land Management Fund.\nR.S.1973, c.P-28, s.12; 1992, c.73, s.1; 2013, c.11, s.10",
+      "subsections": [],
+      "contentHash": "9505fdc7134941630ee711e7b514c7971d692fd40f04756e7964a6e2d2f09c39"
+    },
+    {
+      "id": "section-26",
+      "sourceKey": "section:26",
+      "componentType": "section",
+      "label": "26",
+      "heading": "Sale or disposal of public works without Lieutenant-Governor in Council approval",
+      "text": "Sale or disposal of public works without Lieutenant-Governor in Council approval\n\n26(1)Despite section 25 of this Act and section 55 of the Financial Administration Act and any other Act, the Minister, without the approval of the Lieutenant-Governor in Council, may sell or otherwise dispose of a public work that is no longer required by the Minister if the public work has an appraised value not exceeding $150,000.\n\n26(2)The appraised value of a public work shall be determined by a member of the New Brunswick Association of Real Estate Appraisers/Association des évaluateurs immobiliers du Nouveau-Brunswick holding the designation of Canadian Residential Appraiser (CRA) or Accredited Appraiser Canadian Institute (AACI), as applicable.\n\n26(3)If a sale of a public work is made in the circumstances set out in this section, the proceeds of the sale shall be accounted for as public money or, on the direction of the Minister, be deposited to the credit of the Land Management Fund.\n\n2001, c.14, s.4; 2013, c.11, s.11; 2022, c.44, s.3",
+      "subsections": [
+        {
+          "id": "26-subsection-1",
+          "sourceKey": "section:26/subsection:1",
+          "label": "26(1)",
+          "text": "26(1)Despite section 25 of this Act and section 55 of the Financial Administration Act and any other Act, the Minister, without the approval of the Lieutenant-Governor in Council, may sell or otherwise dispose of a public work that is no longer required by the Minister if the public work has an appraised value not exceeding $150,000.",
+          "contentHash": "85a808b5c70403d9be6b3c6fd69b6d17548e66e6812884e1a84a039d6058bc72"
+        },
+        {
+          "id": "26-subsection-2",
+          "sourceKey": "section:26/subsection:2",
+          "label": "26(2)",
+          "text": "26(2)The appraised value of a public work shall be determined by a member of the New Brunswick Association of Real Estate Appraisers/Association des évaluateurs immobiliers du Nouveau-Brunswick holding the designation of Canadian Residential Appraiser (CRA) or Accredited Appraiser Canadian Institute (AACI), as applicable.",
+          "contentHash": "bee823c1534b1bc0bc5d6225939ace96a62474c32f7fe12ee25c9b2d1397eab2"
+        },
+        {
+          "id": "26-subsection-3",
+          "sourceKey": "section:26/subsection:3",
+          "label": "26(3)",
+          "text": "26(3)If a sale of a public work is made in the circumstances set out in this section, the proceeds of the sale shall be accounted for as public money or, on the direction of the Minister, be deposited to the credit of the Land Management Fund.\n\n2001, c.14, s.4; 2013, c.11, s.11; 2022, c.44, s.3",
+          "contentHash": "be896995bc1129f58cf0ef2e14fe2b17c60da5a40dd09b75897f6f03df915dc4"
+        }
+      ],
+      "contentHash": "ddc769956941ff46ccc4f8638422599b37a7622325fd8d87c901b92526065dc3"
+    },
+    {
+      "id": "section-27",
+      "sourceKey": "section:27",
+      "componentType": "section",
+      "label": "27",
+      "heading": "Transfer of land, buildings and other structures from other ministers",
+      "text": "Transfer of land, buildings and other structures from other ministers\n\n27(1)Despite section 55 of the Financial Administration Act, if any land, building or other structure belonging to the Crown in right of the Province that is under the administration of a minister of the Crown, other than the Minister, is no longer required, that other minister shall transfer the land, building or other structure to the Minister.\n\n27(2)On transfer to the Minister, any land, building or other structure referred to in subsection (1) is a public work.\n\n2013, c.11, s.12",
+      "subsections": [
+        {
+          "id": "27-subsection-1",
+          "sourceKey": "section:27/subsection:1",
+          "label": "27(1)",
+          "text": "27(1)Despite section 55 of the Financial Administration Act, if any land, building or other structure belonging to the Crown in right of the Province that is under the administration of a minister of the Crown, other than the Minister, is no longer required, that other minister shall transfer the land, building or other structure to the Minister.",
+          "contentHash": "82866cf0de1cd00d1fd6df468e1c294ab7f393af27ccfedc9643c3cf221d7fbb"
+        },
+        {
+          "id": "27-subsection-2",
+          "sourceKey": "section:27/subsection:2",
+          "label": "27(2)",
+          "text": "27(2)On transfer to the Minister, any land, building or other structure referred to in subsection (1) is a public work.\n\n2013, c.11, s.12",
+          "contentHash": "9d5ebd445fefb0bf91dcabeda9dc3866265d40ef8cc06da4c9b0a90ab34d8b08"
+        }
+      ],
+      "contentHash": "3b2d113518a13779985b9cd3bc21e0d35ab5413dbb0d5430175eb95633695c22"
+    },
+    {
+      "id": "section-28",
+      "sourceKey": "section:28",
+      "componentType": "section",
+      "label": "28",
+      "heading": "Transfer of public works to other ministers or the New Brunswick Housing Corporation",
+      "text": "Transfer of public works to other ministers or the New Brunswick Housing Corporation\n\n2023, c.25, s.8\n\n28Despite section 25 of this Act and section 55 of the Financial Administration Act and any other Act, the Minister shall distribute lists of public works that are no longer required to other ministers of the Crown and to the New Brunswick Housing Corporation and may transfer a public work to another minister of the Crown or to the New Brunswick Housing Corporation by transfer at book value plus the cost of transportation and any other costs incidental to the transfer.\n2013, c.11, s.12; 2023, c.25, s.8",
+      "subsections": [],
+      "contentHash": "b135e798d3c2df2c3757d9bf76bfaa23a35e167912eebb5881ac379fd8a48b7b"
+    },
+    {
+      "id": "section-29",
+      "sourceKey": "section:29",
+      "componentType": "section",
+      "label": "29",
+      "heading": "Sale of public works to non-profit organizations or other governments",
+      "text": "Sale of public works to non-profit organizations or other governments\n\n29 Subject to section 25 of this Act and despite section 55 of the Financial Administration Act, the Minister may sell a public work that is not transferred under section 28 for any amount up to the cost, appraised or book value of the public work to a charitable, religious or non-profit organization, a local government, a government of another province or territory, the Government of Canada or a corporation or agency in which the Province has a majority interest.\n2013, c.11, s.12; 2014, c.35, s.4; 2017, c.20, s.150",
+      "subsections": [],
+      "contentHash": "c151febe6ae120370e88b8f7552e03a8a67df83b42891a9e30eab391e1582132"
+    },
+    {
+      "id": "section-30",
+      "sourceKey": "section:30",
+      "componentType": "section",
+      "label": "30",
+      "heading": "Sale of public works other than under sections 28 and 29",
+      "text": "Sale of public works other than under sections 28 and 29\n\n30(1)Subject to subsections (3) and (4), the Minister shall sell a public work that is not transferred under section 28 or sold under section 29\n\n(a)\nby advertised public auction conducted at a location in the Province,\n\n(b)\nby advertised public tender,\n\n(c)\nby a request for proposals, or\n\n(d)\nthrough the Surplus Property – Open to Offers link under the Surplus Property for Sale section on the Department of Transportation and Infrastructure website.\n\n30(2)Subsection (1) does not apply to the sale of a public work under that subsection if the Treasury Board determines that a sale is impractical or that a public benefit is likely to result from the sale of the public work by another method.\n\n30(3)If the Minister determines that the only value in a public work is salvage value, the Minister shall sell the public work by sealed offer solicited from more than one source.\n\n30(4)If the Minister determines that a public work has no value, the Minister may dispose of it at the local sanitary landfill site, but if the public work may be hazardous to the health of the public, disposal shall be made in the manner required by the Minister of Environment and Climate Change.\n\n30(5)The Minister shall maintain adequate records of each transaction relating to the sale or disposal of a public work under this Act, including, if applicable,\n\n(a)\nthe name of the buyer or recipient,\n\n(b)\na description of the public work, including its serial number, if applicable, and\n\n(c)\nthe location and date of sale or disposal.\n\n2013, c.11, s.12; 2014, c.35, s.5; 2016 c.37, s.163; 2020, c.25, s.96; 2022, c.44, s.4",
+      "subsections": [
+        {
+          "id": "30-subsection-1",
+          "sourceKey": "section:30/subsection:1",
+          "label": "30(1)",
+          "text": "30(1)Subject to subsections (3) and (4), the Minister shall sell a public work that is not transferred under section 28 or sold under section 29\n\n(a)\nby advertised public auction conducted at a location in the Province,\n\n(b)\nby advertised public tender,\n\n(c)\nby a request for proposals, or\n\n(d)\nthrough the Surplus Property – Open to Offers link under the Surplus Property for Sale section on the Department of Transportation and Infrastructure website.",
+          "contentHash": "585272780625fcf6c86c6f8956508e66a208b41c6e47f7bf2d344f3f4797ac42"
+        },
+        {
+          "id": "30-subsection-2",
+          "sourceKey": "section:30/subsection:2",
+          "label": "30(2)",
+          "text": "30(2)Subsection (1) does not apply to the sale of a public work under that subsection if the Treasury Board determines that a sale is impractical or that a public benefit is likely to result from the sale of the public work by another method.",
+          "contentHash": "74537ab613a31664169a8cebecc9587ddbf853030272a9b1d58bac1761695483"
+        },
+        {
+          "id": "30-subsection-3",
+          "sourceKey": "section:30/subsection:3",
+          "label": "30(3)",
+          "text": "30(3)If the Minister determines that the only value in a public work is salvage value, the Minister shall sell the public work by sealed offer solicited from more than one source.",
+          "contentHash": "63e7fc3ff7dead5819673e94224796dad88e299d9c501d09ce6c149d0328cc72"
+        },
+        {
+          "id": "30-subsection-4",
+          "sourceKey": "section:30/subsection:4",
+          "label": "30(4)",
+          "text": "30(4)If the Minister determines that a public work has no value, the Minister may dispose of it at the local sanitary landfill site, but if the public work may be hazardous to the health of the public, disposal shall be made in the manner required by the Minister of Environment and Climate Change.",
+          "contentHash": "ac209c6d511dce76b0ff722c19e3f0aedeac919bc98c8b9842207c7f2eba7521"
+        },
+        {
+          "id": "30-subsection-5",
+          "sourceKey": "section:30/subsection:5",
+          "label": "30(5)",
+          "text": "30(5)The Minister shall maintain adequate records of each transaction relating to the sale or disposal of a public work under this Act, including, if applicable,\n\n(a)\nthe name of the buyer or recipient,\n\n(b)\na description of the public work, including its serial number, if applicable, and\n\n(c)\nthe location and date of sale or disposal.\n\n2013, c.11, s.12; 2014, c.35, s.5; 2016 c.37, s.163; 2020, c.25, s.96; 2022, c.44, s.4",
+          "contentHash": "04f233b76b962a2839302860b73fe716f662779347667d5229297cc0539f7b54"
+        }
+      ],
+      "contentHash": "a591aa75c2f095bfbf34e82791ca1d03addd4b99fd57a2ea6a497f9b9a92e6bc"
+    },
+    {
+      "id": "section-30.1",
+      "sourceKey": "section:30.1",
+      "componentType": "section",
+      "label": "30.1",
+      "heading": "Vacant land",
+      "text": "Vacant land\n2017, c.25, s.2\n\n30.1(1)Despite sections 25 and 26 of this Act and section 55 of the Financial Administration Act and any other Act, the Minister, without the approval of the Lieutenant-Governor in Council, may sell or otherwise dispose of any vacant land that is transferred or has been transferred, whether before, on or after the commencement of this section, to the Minister under section 27 if\n\n(a)\nproceedings to sell the land were held under the Real Property Tax Act but the land was not sold, and\n\n(b)\nthe amount of the taxes and penalties on the land that were due and unpaid under the Real Property Tax Act on the date that the proceedings to sell the land were held under that Act does not exceed $10,000.\n\n30.1(1.1)The Minister may sell or otherwise dispose of vacant land referred to in subsection (1) through the Surplus Property – Open to Offers link under the Surplus Property for Sale section on the Department of Transportation and Infrastructure website.\n\n30.1(2)Unless otherwise directed by the Minister, sections 28 and 29 and subsection 30(1) do not apply to vacant land referred to in subsection (1).\n\n30.1(3)With the approval of the Minister, vacant land referred to in subsection (1) may be appraised in accordance with subsection 26(2).\n\n30.1(4)The proceeds of the sale of vacant land under this section shall be deposited to the credit of the Land Management Fund.\n\n30.1(5)Subsections (1) to (4) apply with the necessary modifications to any vacant land that was transferred to the Minister under section 12.011 of the Public Works Act, chapter P-28 of the Revised Statutes, 1973, before the commencement of this section.\n\n2017, c.25, s.2; 2022, c.44, s.5",
+      "subsections": [
+        {
+          "id": "30.1-subsection-1",
+          "sourceKey": "section:30.1/subsection:1",
+          "label": "30.1(1)",
+          "text": "30.1(1)Despite sections 25 and 26 of this Act and section 55 of the Financial Administration Act and any other Act, the Minister, without the approval of the Lieutenant-Governor in Council, may sell or otherwise dispose of any vacant land that is transferred or has been transferred, whether before, on or after the commencement of this section, to the Minister under section 27 if\n\n(a)\nproceedings to sell the land were held under the Real Property Tax Act but the land was not sold, and\n\n(b)\nthe amount of the taxes and penalties on the land that were due and unpaid under the Real Property Tax Act on the date that the proceedings to sell the land were held under that Act does not exceed $10,000.",
+          "contentHash": "d331596791468948eb70482eeed7969ff607357cbe1ee568f99e2867828a07e1"
+        },
+        {
+          "id": "30.1-subsection-1.1",
+          "sourceKey": "section:30.1/subsection:1.1",
+          "label": "30.1(1.1)",
+          "text": "30.1(1.1)The Minister may sell or otherwise dispose of vacant land referred to in subsection (1) through the Surplus Property – Open to Offers link under the Surplus Property for Sale section on the Department of Transportation and Infrastructure website.",
+          "contentHash": "59ddc16afdc59fcba5157c49b1864f3a34d91edf4f73acc50ca8ae30715f59da"
+        },
+        {
+          "id": "30.1-subsection-2",
+          "sourceKey": "section:30.1/subsection:2",
+          "label": "30.1(2)",
+          "text": "30.1(2)Unless otherwise directed by the Minister, sections 28 and 29 and subsection 30(1) do not apply to vacant land referred to in subsection (1).",
+          "contentHash": "8b1c639e92cec9601193bf2358d39ff0927e126c218158fd695a034948997519"
+        },
+        {
+          "id": "30.1-subsection-3",
+          "sourceKey": "section:30.1/subsection:3",
+          "label": "30.1(3)",
+          "text": "30.1(3)With the approval of the Minister, vacant land referred to in subsection (1) may be appraised in accordance with subsection 26(2).",
+          "contentHash": "e7dd9e7e4b05b5601c07bf66f0aa5e1bbed10211f392c840a9ab4becdef54671"
+        },
+        {
+          "id": "30.1-subsection-4",
+          "sourceKey": "section:30.1/subsection:4",
+          "label": "30.1(4)",
+          "text": "30.1(4)The proceeds of the sale of vacant land under this section shall be deposited to the credit of the Land Management Fund.",
+          "contentHash": "ab27813909502865cbba949ec94f067a1586bf6477b4f67b4d3c55cd5061b817"
+        },
+        {
+          "id": "30.1-subsection-5",
+          "sourceKey": "section:30.1/subsection:5",
+          "label": "30.1(5)",
+          "text": "30.1(5)Subsections (1) to (4) apply with the necessary modifications to any vacant land that was transferred to the Minister under section 12.011 of the Public Works Act, chapter P-28 of the Revised Statutes, 1973, before the commencement of this section.\n\n2017, c.25, s.2; 2022, c.44, s.5",
+          "contentHash": "a6d4f17d6bc98934b7b4c3120196cfffe2f0a1ec85ab4bde3ef39d6a9a1efc87"
+        }
+      ],
+      "contentHash": "85d2f18590215e517a5476f0a10962972e6f25feba7851cc63919590300e6bc6"
+    },
+    {
+      "id": "section-31",
+      "sourceKey": "section:31",
+      "componentType": "section",
+      "label": "31",
+      "heading": "Report of sale of a public work under section 26 or 30.1",
+      "text": "Report of sale of a public work under section 26 or 30.1\n2017, c.25, s.3\n\n31(1)If the Minister sells public works under section 26 or 30.1, the Minister shall provide to Executive Council a report on all such sales occurring in the fiscal year in the form approved by Executive Council within six months after the end of each fiscal year.\n\n31(2)A report under subsection (1) shall be published in the Royal Gazette within one month after the report is accepted by Executive Council.\n\n2001, c.14, s.4; 2017, c.25, s.4; 2022, c.44, s.6",
+      "subsections": [
+        {
+          "id": "31-subsection-1",
+          "sourceKey": "section:31/subsection:1",
+          "label": "31(1)",
+          "text": "31(1)If the Minister sells public works under section 26 or 30.1, the Minister shall provide to Executive Council a report on all such sales occurring in the fiscal year in the form approved by Executive Council within six months after the end of each fiscal year.",
+          "contentHash": "485248c6fbf983fcdb1c5265706ecd0efa5a17cacd2ea3ed0b05dbb322071858"
+        },
+        {
+          "id": "31-subsection-2",
+          "sourceKey": "section:31/subsection:2",
+          "label": "31(2)",
+          "text": "31(2)A report under subsection (1) shall be published in the Royal Gazette within one month after the report is accepted by Executive Council.\n\n2001, c.14, s.4; 2017, c.25, s.4; 2022, c.44, s.6",
+          "contentHash": "70f84b40af09b0472e42b82571bdc7a65c6b1eaef48c0c61fb406ad47b532461"
+        }
+      ],
+      "contentHash": "2362a45c00eaa4983b301d97b70a209d1c8561dbdc4891e7914679db98903878"
+    },
+    {
+      "id": "section-32",
+      "sourceKey": "section:32",
+      "componentType": "section",
+      "label": "32",
+      "heading": "Land Management Fund",
+      "text": "Land Management Fund\n\n32(1)There is established a fund to be known as the Land Management Fund.\n\n32(2)The Minister shall be the custodian of the Land Management Fund and the Land Management Fund shall be held in trust by the Minister.\n\n32(3)The Land Management Fund shall be held for the purposes of this section in a separate account in the Consolidated Fund.\n\n32(4)The purposes for the Land Management Fund are\n\n(a)\nwith the approval of the Lieutenant-Governor in Council, to acquire land and lands and buildings and other structures,\n\n(b)\nto maintain properties that have been designated by the Minister for management under the Fund, and\n\n(c)\nto develop and maintain a land inventory system.\n\n32(5)Payments for the purposes of subsection (4) shall be a charge on and payable out of the Land Management Fund.\n\n32(6)The following are payable out of the Land Management Fund:\n\n(a)\ncosts associated with acquiring and selling land and lands and buildings and other structures; and\n\n(b)\nexpenses prescribed by regulation relating to the administration of the Land Management Fund.\n\n32(7)The Minister may, with money from the Fund and with the approval of the Lieutenant-Governor in Council, contract for the purchase of land and lands and buildings and other structures.\n\n32(8)Land and lands and buildings and other structures acquired under this section are public works that shall be vested in the Crown in right of the Province under the general administration, management, direction and control of the Minister.\n\n1992, c.73, s.2; 2009, c.2, s.8; 2013, c.11, s.13",
+      "subsections": [
+        {
+          "id": "32-subsection-1",
+          "sourceKey": "section:32/subsection:1",
+          "label": "32(1)",
+          "text": "32(1)There is established a fund to be known as the Land Management Fund.",
+          "contentHash": "d4b2bc633b8856420a8bca78feaf94d58198bfd509b7cf34c2d767d0b21fc712"
+        },
+        {
+          "id": "32-subsection-2",
+          "sourceKey": "section:32/subsection:2",
+          "label": "32(2)",
+          "text": "32(2)The Minister shall be the custodian of the Land Management Fund and the Land Management Fund shall be held in trust by the Minister.",
+          "contentHash": "24b185c97085aca63732bd8c6e448391f424b59588799654bd7d6dd245f814e9"
+        },
+        {
+          "id": "32-subsection-3",
+          "sourceKey": "section:32/subsection:3",
+          "label": "32(3)",
+          "text": "32(3)The Land Management Fund shall be held for the purposes of this section in a separate account in the Consolidated Fund.",
+          "contentHash": "085868da7e2d6fa671a417bd9a1c0fafc5126e9fa8305f670a82f77462de6298"
+        },
+        {
+          "id": "32-subsection-4",
+          "sourceKey": "section:32/subsection:4",
+          "label": "32(4)",
+          "text": "32(4)The purposes for the Land Management Fund are\n\n(a)\nwith the approval of the Lieutenant-Governor in Council, to acquire land and lands and buildings and other structures,\n\n(b)\nto maintain properties that have been designated by the Minister for management under the Fund, and\n\n(c)\nto develop and maintain a land inventory system.",
+          "contentHash": "0ca6ad01c3fbd0b9f59927911d6c6b9c47c3368281f133fda5190e8d4f44169f"
+        },
+        {
+          "id": "32-subsection-5",
+          "sourceKey": "section:32/subsection:5",
+          "label": "32(5)",
+          "text": "32(5)Payments for the purposes of subsection (4) shall be a charge on and payable out of the Land Management Fund.",
+          "contentHash": "cb33e9178dbac93e852c848f07366859411004fa37a72e5954db9aee481615d7"
+        },
+        {
+          "id": "32-subsection-6",
+          "sourceKey": "section:32/subsection:6",
+          "label": "32(6)",
+          "text": "32(6)The following are payable out of the Land Management Fund:\n\n(a)\ncosts associated with acquiring and selling land and lands and buildings and other structures; and\n\n(b)\nexpenses prescribed by regulation relating to the administration of the Land Management Fund.",
+          "contentHash": "d03f54b92e7bf1b7077a21e877b1fbc9773da066dc1f64b173efcc16f2e7dc5d"
+        },
+        {
+          "id": "32-subsection-7",
+          "sourceKey": "section:32/subsection:7",
+          "label": "32(7)",
+          "text": "32(7)The Minister may, with money from the Fund and with the approval of the Lieutenant-Governor in Council, contract for the purchase of land and lands and buildings and other structures.",
+          "contentHash": "3693e06047cf53204dbb51bb6af4a0f920f1019312204927e7883882c6cc0d1f"
+        },
+        {
+          "id": "32-subsection-8",
+          "sourceKey": "section:32/subsection:8",
+          "label": "32(8)",
+          "text": "32(8)Land and lands and buildings and other structures acquired under this section are public works that shall be vested in the Crown in right of the Province under the general administration, management, direction and control of the Minister.\n\n1992, c.73, s.2; 2009, c.2, s.8; 2013, c.11, s.13",
+          "contentHash": "21a4cc61e8e8b12213fc2a1e55fab913dd80112b3cefc6af5fd96810587cef63"
+        }
+      ],
+      "contentHash": "73eacdc8c7c0316ce6b3d8b90b0f687a9754cf972e841f43b12d854bac4fd395"
+    },
+    {
+      "id": "section-33",
+      "sourceKey": "section:33",
+      "componentType": "section",
+      "label": "33",
+      "heading": "Public works development area",
+      "text": "Public works development area\n\n33(1)The area described in Schedule A is declared to be a public works development area.\n\n33(2)A sale of land within a public works development area is void, unless it complies with subsections (3) to (7).\n\n33(3)An owner who intends to sell land within a public works development area shall offer for sale the land to the Minister, in writing, and the offer for sale shall contain full particulars of the proposed sale.\n\n33(4)Within 90 days of the receipt of an offer under subsection (3) the Minister\n\n(a)\nmay enter into an Agreement of Sale with the owner respecting the land, or\n\n(b)\nshall indicate to the owner in writing that the Minister does not wish to purchase the land.\n\n33(5)The Minister and the owner may by agreement extend the 90-day period referred to in subsection (4).\n\n33(6)If the Minister does not act in accordance with subsection (4) by the end of the 90-day period specified in that subsection or as extended under subsection (5), or if the Minister indicates to the owner that the Minister does not intend to purchase the land, the owner may sell the land to any purchaser within a period of not more than two years after the date of the offer to the Minister under subsection (3).\n\n33(7)After the two-year period referred to in subsection (6), the owner shall not sell or offer for sale the land until he or she has offered the land for sale to the Minister in accordance with subsection (3).\n\n33(8)Nothing in this section shall diminish or detract from the right of the Minister to expropriate land at any time according to the Expropriation Act or to dispose of land according to section 25 of this Act.\n\n33(9)Subject to subsection (11), if land within a public works development area is expropriated, the owner shall be compensated for that land as though the land were not in a public works development area.\n\n33(10)Unless the Minister gives his or her written consent to the owner of land in a public works development area, if there is involved a cost in excess of $5,000 in any year to the land, the owner shall not\n\n(a)\nconstruct any building or improvement on the land,\n\n(b)\nmake any addition or alteration to a building on the land, or\n\n(c)\nrenovate any building or improvement on the land.\n\n33(11)Nothing in subsection (10) prohibits an owner from making ordinary repairs to his or her buildings.\n\n33(12)If an owner contravenes subsection (10), nothing shall be allowed to the owner for any increase in value resulting from the contravention.\n\n33(13)The Minister shall cause to be registered in the proper registry office a notice to the persons who appear from the records of that registry office to be the owners of the lands in a public works development area at the time the lands became affected by this section, that the lands are so affected.\n\n33(14)Where lands formerly within a public works development area are no longer within that area, the Minister shall cause to be registered in the proper registry office a notice to all persons appearing on the records of that registry office to be the owners of those lands that those lands are no longer within the public works development area.\n\nR.S.1973, c.P-28, s.13; 1983, c.72, s.1",
+      "subsections": [
+        {
+          "id": "33-subsection-1",
+          "sourceKey": "section:33/subsection:1",
+          "label": "33(1)",
+          "text": "33(1)The area described in Schedule A is declared to be a public works development area.",
+          "contentHash": "363306b8d603befc23106157d01c6dead9231126f0b2106ea85b14a0b225afcc"
+        },
+        {
+          "id": "33-subsection-2",
+          "sourceKey": "section:33/subsection:2",
+          "label": "33(2)",
+          "text": "33(2)A sale of land within a public works development area is void, unless it complies with subsections (3) to (7).",
+          "contentHash": "d3984fe468683929688640061945919390504e067a469b8aedfd1d899399ebae"
+        },
+        {
+          "id": "33-subsection-3",
+          "sourceKey": "section:33/subsection:3",
+          "label": "33(3)",
+          "text": "33(3)An owner who intends to sell land within a public works development area shall offer for sale the land to the Minister, in writing, and the offer for sale shall contain full particulars of the proposed sale.",
+          "contentHash": "4b5298c680e6dc81e0519ae0e2c1c8a74ff601e07204627682c7e07834cdf8b1"
+        },
+        {
+          "id": "33-subsection-4",
+          "sourceKey": "section:33/subsection:4",
+          "label": "33(4)",
+          "text": "33(4)Within 90 days of the receipt of an offer under subsection (3) the Minister\n\n(a)\nmay enter into an Agreement of Sale with the owner respecting the land, or\n\n(b)\nshall indicate to the owner in writing that the Minister does not wish to purchase the land.",
+          "contentHash": "129a7ff2b31f545024c0400492442f02bc8bf310d0027e6074948886a01f78c7"
+        },
+        {
+          "id": "33-subsection-5",
+          "sourceKey": "section:33/subsection:5",
+          "label": "33(5)",
+          "text": "33(5)The Minister and the owner may by agreement extend the 90-day period referred to in subsection (4).",
+          "contentHash": "2b2d393bb3c1868fcb9a3e9a294d8e6dd6334e715c3cc5885a0d6d58c0952639"
+        },
+        {
+          "id": "33-subsection-6",
+          "sourceKey": "section:33/subsection:6",
+          "label": "33(6)",
+          "text": "33(6)If the Minister does not act in accordance with subsection (4) by the end of the 90-day period specified in that subsection or as extended under subsection (5), or if the Minister indicates to the owner that the Minister does not intend to purchase the land, the owner may sell the land to any purchaser within a period of not more than two years after the date of the offer to the Minister under subsection (3).",
+          "contentHash": "e95fb2ef22703d5561d7fc76208e086e8d1de0d0aa1f0c1dadf22df9668f755e"
+        },
+        {
+          "id": "33-subsection-7",
+          "sourceKey": "section:33/subsection:7",
+          "label": "33(7)",
+          "text": "33(7)After the two-year period referred to in subsection (6), the owner shall not sell or offer for sale the land until he or she has offered the land for sale to the Minister in accordance with subsection (3).",
+          "contentHash": "b3de8671330bf591e57a871a0f35de0240203ad3b1b017c69e0ab082a06c67c9"
+        },
+        {
+          "id": "33-subsection-8",
+          "sourceKey": "section:33/subsection:8",
+          "label": "33(8)",
+          "text": "33(8)Nothing in this section shall diminish or detract from the right of the Minister to expropriate land at any time according to the Expropriation Act or to dispose of land according to section 25 of this Act.",
+          "contentHash": "aed76b7b32bed12a5eee3891b63d9a32c8077f41e13b99a864926136c50ac56b"
+        },
+        {
+          "id": "33-subsection-9",
+          "sourceKey": "section:33/subsection:9",
+          "label": "33(9)",
+          "text": "33(9)Subject to subsection (11), if land within a public works development area is expropriated, the owner shall be compensated for that land as though the land were not in a public works development area.",
+          "contentHash": "459ee5109c8bfd987c0e0c44607856adc6c418cfab91f3113734dcc4e01662b4"
+        },
+        {
+          "id": "33-subsection-10",
+          "sourceKey": "section:33/subsection:10",
+          "label": "33(10)",
+          "text": "33(10)Unless the Minister gives his or her written consent to the owner of land in a public works development area, if there is involved a cost in excess of $5,000 in any year to the land, the owner shall not\n\n(a)\nconstruct any building or improvement on the land,\n\n(b)\nmake any addition or alteration to a building on the land, or\n\n(c)\nrenovate any building or improvement on the land.",
+          "contentHash": "bbf6828c1dfe89e5bc3a3288d5bcb5389192abaa2fa06af9ac26f78c0955d866"
+        },
+        {
+          "id": "33-subsection-11",
+          "sourceKey": "section:33/subsection:11",
+          "label": "33(11)",
+          "text": "33(11)Nothing in subsection (10) prohibits an owner from making ordinary repairs to his or her buildings.",
+          "contentHash": "85fbb386d7c057ec7f77b40821a58025df6b27bfaf394cc0a97de1846bbca50b"
+        },
+        {
+          "id": "33-subsection-12",
+          "sourceKey": "section:33/subsection:12",
+          "label": "33(12)",
+          "text": "33(12)If an owner contravenes subsection (10), nothing shall be allowed to the owner for any increase in value resulting from the contravention.",
+          "contentHash": "543de7f03e198e71f9f00016436c5bf5d627512e9e344fb643744c59ec10d1b6"
+        },
+        {
+          "id": "33-subsection-13",
+          "sourceKey": "section:33/subsection:13",
+          "label": "33(13)",
+          "text": "33(13)The Minister shall cause to be registered in the proper registry office a notice to the persons who appear from the records of that registry office to be the owners of the lands in a public works development area at the time the lands became affected by this section, that the lands are so affected.",
+          "contentHash": "db4bf1f57e73aedc44989cfc8281028a043f484f5dff38630c2d44dec5117672"
+        },
+        {
+          "id": "33-subsection-14",
+          "sourceKey": "section:33/subsection:14",
+          "label": "33(14)",
+          "text": "33(14)Where lands formerly within a public works development area are no longer within that area, the Minister shall cause to be registered in the proper registry office a notice to all persons appearing on the records of that registry office to be the owners of those lands that those lands are no longer within the public works development area.\n\nR.S.1973, c.P-28, s.13; 1983, c.72, s.1",
+          "contentHash": "63b8267c7521ae1ae3131b57f204944e24648a6bcbac51cb2f8ca6ea3c15d378"
+        }
+      ],
+      "contentHash": "580d40e57d42ca0b81e45c3f43435fa22c7bc5a88674f961719e2dbd3f86d067"
+    },
+    {
+      "id": "section-34",
+      "sourceKey": "section:34",
+      "componentType": "section",
+      "label": "34",
+      "heading": "Administration",
+      "text": "Administration\n\n34(1)The Minister is responsible for and has the general administration, management, direction and control of\n\n(a)\npublic works,\n\n(b)\nthe work carried out on public works,\n\n(c)\nall money allotted for the acquisition of public works and the work carried out on public works,\n\n(d)\nlands, buildings and other structures leased under section 11,\n\n(e)\nthe work carried out on land, buildings and other structures leased under section 11, and\n\n(f)\nall money allotted for the leasing of land, buildings and other structures under section 11.\n\n34(2)Subsection (1) does not apply to paragraph (c) of the definition “public work” in section 1 if the public work is under the administration of the Minister of Education and Early Childhood Development.\n\nR.S.1973, c.P-28, ss.2(1); 2009, c.2, s.2; 2013, c.11, s.2; 2022, c.44, s.7",
+      "subsections": [
+        {
+          "id": "34-subsection-1",
+          "sourceKey": "section:34/subsection:1",
+          "label": "34(1)",
+          "text": "34(1)The Minister is responsible for and has the general administration, management, direction and control of\n\n(a)\npublic works,\n\n(b)\nthe work carried out on public works,\n\n(c)\nall money allotted for the acquisition of public works and the work carried out on public works,\n\n(d)\nlands, buildings and other structures leased under section 11,\n\n(e)\nthe work carried out on land, buildings and other structures leased under section 11, and\n\n(f)\nall money allotted for the leasing of land, buildings and other structures under section 11.",
+          "contentHash": "016348e3fd5b93afa2b15c22da2938fdb4345bc40d8284c92739c80feb64a8c4"
+        },
+        {
+          "id": "34-subsection-2",
+          "sourceKey": "section:34/subsection:2",
+          "label": "34(2)",
+          "text": "34(2)Subsection (1) does not apply to paragraph (c) of the definition “public work” in section 1 if the public work is under the administration of the Minister of Education and Early Childhood Development.\n\nR.S.1973, c.P-28, ss.2(1); 2009, c.2, s.2; 2013, c.11, s.2; 2022, c.44, s.7",
+          "contentHash": "d7b600605c4c6f8588c3e179699ff471f46c40832827f13806561838dba8c328"
+        }
+      ],
+      "contentHash": "d1cb87148d7a971a1268e7704783a17dd9650c33478191d808210a0d6ce46c78"
+    },
+    {
+      "id": "section-35",
+      "sourceKey": "section:35",
+      "componentType": "section",
+      "label": "35",
+      "heading": "Regulations",
+      "text": "Regulations\n\n35(1)The Lieutenant-Governor in Council may make regulations\n\n(a)\nprescribing expenses relating to the administration of the Land Management Fund that are payable out of the Land Management Fund;\n\n(b)\nauthorizing the Minister to designate lands, buildings and other structures as public works for the purposes of a project, including lands, buildings and other structures referred to in paragraphs (a) to (d) of the definition “public work” in section 1;\n\n(c)\nauthorizing the Minister to revoke a designation made under paragraph (b);\n\n(d)\nexempting the lands, buildings and other structures referred to in paragraph (b), or any portion of them, from the application of the Mechanics’ Lien Act, chapter M-6 of the Revised Statutes, 1973.\n\n35(2)A regulation made under paragraph (1)(b), (c) or (d) respecting the modifications to the Petitcodiac River Causeway to restore the passage of fish and any work related to the modifications to the Petitcodiac River Causeway to restore the passage of fish may be made retroactive to any date, including a date before November 29, 2001.\n\n1992, c.73, s.2; 2009, c.1, s.3; 2013, c.11, s.14; 2020, c.29, s.113",
+      "subsections": [
+        {
+          "id": "35-subsection-1",
+          "sourceKey": "section:35/subsection:1",
+          "label": "35(1)",
+          "text": "35(1)The Lieutenant-Governor in Council may make regulations\n\n(a)\nprescribing expenses relating to the administration of the Land Management Fund that are payable out of the Land Management Fund;\n\n(b)\nauthorizing the Minister to designate lands, buildings and other structures as public works for the purposes of a project, including lands, buildings and other structures referred to in paragraphs (a) to (d) of the definition “public work” in section 1;\n\n(c)\nauthorizing the Minister to revoke a designation made under paragraph (b);\n\n(d)\nexempting the lands, buildings and other structures referred to in paragraph (b), or any portion of them, from the application of the Mechanics’ Lien Act, chapter M-6 of the Revised Statutes, 1973.",
+          "contentHash": "6bb5919e2d21967cae1da8f8e530790e4031d74e39a40852ed7548f191fc484c"
+        },
+        {
+          "id": "35-subsection-2",
+          "sourceKey": "section:35/subsection:2",
+          "label": "35(2)",
+          "text": "35(2)A regulation made under paragraph (1)(b), (c) or (d) respecting the modifications to the Petitcodiac River Causeway to restore the passage of fish and any work related to the modifications to the Petitcodiac River Causeway to restore the passage of fish may be made retroactive to any date, including a date before November 29, 2001.\n\n1992, c.73, s.2; 2009, c.1, s.3; 2013, c.11, s.14; 2020, c.29, s.113\n\nSCHEDULE A\n\nThe portion of the City of Fredericton bounded as follows:\n\nCOMMENCING at the point of intersection of the prolongation Northeasterly of the centre line of Regent Street with the bank or shore of the Saint John River; thence Southwesterly along the said centre line to the centre line of Queen Street; then Southeasterly along the centre line of Queen Street to the intersection thereof with the prolongation Northeasterly of the centre line of Camperdown Lane; thence Southwesterly along the said prolongation of and the centre line of Camperdown Lane to the intersection thereof with the centre line of King Street; then Northwesterly along the centre line of King Street to the centre line of Regent Street; thence Southwesterly along the centre line of Regent Street to the centre line of George Street; thence Southeasterly along the centre line of George Street to the intersection thereof with the centre line of St. John Street; thence Northeasterly along the centre line of St. John Street 193 feet to the prolongation of the rear lot lines of properties fronting on George Street; thence Southeasterly along these rear lot lines 282 feet to the Northwesterly sideline of lot #5, 750 Brunswick Street, owned by Luke Morrison; thence Southwesterly 50 feet along said sideline to the rear of lot #5; thence Southeasterly along said rear lot line 54 feet; thence Northeasterly 55 feet along the Southeasterly sideline of lot #5 to the original mid block line 165 feet from both George and Brunswick Streets; thence Southeasterly 132 feet along the mid block line, being the rear line of lots fronting on Brunswick Street, to the rear line of lot #2, 171 Church Street, owned by C. W. Vail, 133 feet distant from Church Street; thence Northeasterly along the rear lot lines of properties fronting on Church Street 198 feet or to the centre line of Brunswick Street; thence Northwesterly 3 feet along the centre line of Brunswick to the prolongation of rear lot line of properties fronting on Church Street; thence Northeasterly along said rear lot lines, some 136 feet distant from Church Street, 396 feet to the centre line of King Street; thence Southeasterly along the centre of King Street to the centre of Church Street; thence Northeasterly along the centre line of Church Street and the prolongation thereof to the bank or shore of the Saint John River; thence Northwesterly along the said bank or shore of the Saint John River to the place of beginning.\n\nR.S.1973, c.P-28, Schedule A\n\nN.B. This Act was proclaimed and came into force February 9, 2017.\n\nN.B. This Act is consolidated to December 13, 2024.",
+          "contentHash": "b564b6b9972c7a94d5de3addf2089abf66b88e4e709304a5f871a1065c4db5a8"
+        }
+      ],
+      "contentHash": "af099f9fd85fe04da4a8496d012fe4be3c1e04395abc576fe3d51247090b2726"
+    },
+    {
+      "id": "schedule-schedule-a",
+      "sourceKey": "schedule:schedule-a",
+      "componentType": "schedule",
+      "label": "SCHEDULE A",
+      "text": "SCHEDULE A\n\nThe portion of the City of Fredericton bounded as follows:\n\nCOMMENCING at the point of intersection of the prolongation Northeasterly of the centre line of Regent Street with the bank or shore of the Saint John River; thence Southwesterly along the said centre line to the centre line of Queen Street; then Southeasterly along the centre line of Queen Street to the intersection thereof with the prolongation Northeasterly of the centre line of Camperdown Lane; thence Southwesterly along the said prolongation of and the centre line of Camperdown Lane to the intersection thereof with the centre line of King Street; then Northwesterly along the centre line of King Street to the centre line of Regent Street; thence Southwesterly along the centre line of Regent Street to the centre line of George Street; thence Southeasterly along the centre line of George Street to the intersection thereof with the centre line of St. John Street; thence Northeasterly along the centre line of St. John Street 193 feet to the prolongation of the rear lot lines of properties fronting on George Street; thence Southeasterly along these rear lot lines 282 feet to the Northwesterly sideline of lot #5, 750 Brunswick Street, owned by Luke Morrison; thence Southwesterly 50 feet along said sideline to the rear of lot #5; thence Southeasterly along said rear lot line 54 feet; thence Northeasterly 55 feet along the Southeasterly sideline of lot #5 to the original mid block line 165 feet from both George and Brunswick Streets; thence Southeasterly 132 feet along the mid block line, being the rear line of lots fronting on Brunswick Street, to the rear line of lot #2, 171 Church Street, owned by C. W. Vail, 133 feet distant from Church Street; thence Northeasterly along the rear lot lines of properties fronting on Church Street 198 feet or to the centre line of Brunswick Street; thence Northwesterly 3 feet along the centre line of Brunswick to the prolongation of rear lot line of properties fronting on Church Street; thence Northeasterly along said rear lot lines, some 136 feet distant from Church Street, 396 feet to the centre line of King Street; thence Southeasterly along the centre of King Street to the centre of Church Street; thence Northeasterly along the centre line of Church Street and the prolongation thereof to the bank or shore of the Saint John River; thence Northwesterly along the said bank or shore of the Saint John River to the place of beginning.\n\nR.S.1973, c.P-28, Schedule A\n\nN.B. This Act was proclaimed and came into force February 9, 2017.\n\nN.B. This Act is consolidated to December 13, 2024.",
+      "contentHash": "98592cefd2c55d506d4479bc920b03e5c138be059c408f6c142b3c0dfa492674"
+    }
+  ],
+  "sections": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
+      "label": "1",
+      "heading": "Definitions",
+      "text": "Definitions\n\n1The following definitions apply in this Act.\n“arbitral tribunal” means a sole arbitrator or a panel of three arbitrators. (tribunal d’arbitrage)\n\n“land” includes an estate, term, easement, right or interest in, to, over or affecting land.(bien-fonds)\n\n“Minister” means the Minister of Transportation and Infrastructure and includes a person designated by the Minister to act on the Minister’s behalf.(ministre)\n\n“owner” includes a mortgagee, lessee, tenant, occupant, person entitled to a limited estate or interest, and a guardian, executor, administrator or trustee in whom land or an interest in land is vested.(propriétaire)\n\n“project” means (projet)\n\n(a)\nthe modifications to the Petitcodiac River Causeway to restore the passage of fish and a work related to the modifications to the Petitcodiac River Causeway to restore the passage of fish, or\n\n(b)\nthe decommissioning of the Eel River Dam to restore the passage of fish and a work related to the decommissioning of the Eel River Dam to restore the passage of fish.\n\n“public work” means all lands, buildings and other structures(ouvrage public)\n\n(a)\nbelonging to the Crown in right of the Province except\n\n(i)\nthe lands, buildings or other structures that are under the administration of a minister, other than the Minister, or under the administration of another agent of the Crown in right of the Province by another Act,\n\n(ii)\nhighways,\n\n(iii)\nferry wharves or bridges, and\n\n(iv)\nCrown lands, buildings or other structures under the administration of the Minister of Natural Resources,\n\n(b)\nthat are designated as public works by the Minister for the purposes of a project, and\n\n(c)\nthat, despite subparagraph (a)(i), are designated as public works by the Minister under section 1.1.\n\n“work” includes the construction, extension, enlargement, alteration, repair, maintenance and improvement of lands, buildings and other structures.(travaux)\n\nR.S.1973, c.P-28, s.1; 1974, c.43(Supp.), s.1; 1986, c.8, s.108; 1991, c.59, s.59; 2003, c.E-4.6, s.176; 2004, c.20, s.55; 2009, c.1, s.1; 2009, c.2, s.1; 2010, c.31, s.116; 2013, c.11, s.1; 2016 c.37, s.163; 2019, c.29, s.206; 2022, c.44, s.1; 2024, c.28, s.52",
+      "subsections": [],
+      "contentHash": "0a26689087afe4ce614008b534aa4f1973974eff873536130ad3e503f6435aff"
+    },
+    {
+      "id": "section-1.1",
+      "sourceKey": "section:1.1",
+      "componentType": "section",
+      "label": "1.1",
+      "heading": "Designated public works with approval",
+      "text": "Designated public works with approval\n\n2022, c.44, s.2\n\n1.1For the purposes of paragraph (c) of the definition “public work”, the Minister may designate lands, buildings or other structures as public works in the following circumstances:\n\n(a)\nthe effective date of transfer of the land, building or other structure has been established; and\n\n(b)\nthe approval of the Lieutenant-Governor in Council has been obtained.\n\n2022, c.44, s.2",
+      "subsections": [],
+      "contentHash": "051d475d1f67dfc401641ae23f1dfcf024883c53eb366c5608b4311b85e09ae6"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "label": "2",
+      "heading": "Delegation of powers",
+      "text": "Delegation of powers\n\n2The Minister may delegate to an officer under his or her supervision, any administrative power conferred on the Minister by this Act.\nR.S.1973, c.P-28, ss.2(2)",
+      "subsections": [],
+      "contentHash": "0bd97fbc962d6d5baf78175406fa26d6cfecff3f5be68b1481964a57aad561b7"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
+      "label": "3",
+      "heading": "Lands and buildings designated as public works",
+      "text": "Lands and buildings designated as public works\n\n3(1)Sections 25, 26 and 30.1 do not apply to lands and buildings that are, for the purposes of a project, designated as public works by the Minister.\n\n3(2)Despite section 3 of the Marshland Infrastructure Maintenance Act, the Minister has sole responsibility for the construction, reconstruction, recondition, repair, maintenance, conduct and operation of dykes, aboiteaux, breakwaters, canals, ditches, drains, roads and other structures, excavations and facilities for the reclamation, development, improvement or protection of marshland on lands that are, for the purposes of a project, designated as public works by the Minister.\n\n2009, c.1, s.2; 2017, c.25, s.1",
+      "subsections": [
+        {
+          "id": "3-subsection-1",
+          "sourceKey": "section:3/subsection:1",
+          "label": "3(1)",
+          "text": "3(1)Sections 25, 26 and 30.1 do not apply to lands and buildings that are, for the purposes of a project, designated as public works by the Minister.",
+          "contentHash": "68286d58592d76f77930b7945186792595a6a66aa482a695a13fd4daa9972a4b"
+        },
+        {
+          "id": "3-subsection-2",
+          "sourceKey": "section:3/subsection:2",
+          "label": "3(2)",
+          "text": "3(2)Despite section 3 of the Marshland Infrastructure Maintenance Act, the Minister has sole responsibility for the construction, reconstruction, recondition, repair, maintenance, conduct and operation of dykes, aboiteaux, breakwaters, canals, ditches, drains, roads and other structures, excavations and facilities for the reclamation, development, improvement or protection of marshland on lands that are, for the purposes of a project, designated as public works by the Minister.\n\n2009, c.1, s.2; 2017, c.25, s.1",
+          "contentHash": "f45c794a4d8a1b54338af16d93132c0e69e7242708c61fd3de6b4476217d1080"
+        }
+      ],
+      "contentHash": "f20646bb4492de34a8456b02b8c2247431406255e2992f4bfbc7816cbfaadbe6"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
+      "label": "4",
+      "heading": "Contracts made in name of Crown in right of the Province",
+      "text": "Contracts made in name of Crown in right of the Province\n\n4All contracts made by the Minister shall be made in the name of the Crown in right of the Province.\nR.S.1973, c.P-28, s.3",
+      "subsections": [],
+      "contentHash": "2fb7bbf39ec857c765ca307189835dedfd20c3092ff2617325af20d1cd42120e"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "componentType": "section",
+      "label": "5",
+      "heading": "Application of Employment Standards Act",
+      "text": "Application of Employment Standards Act\n\n5Every contract made by the Minister where labour is to be performed shall contain minimum wage provisions as set out in the applicable minimum wage regulation under the Employment Standards Act.\nR.S.1973, c.P-28, s.4; 1987, c.6, s.93",
+      "subsections": [],
+      "contentHash": "71da26863a1146c8a966741faccc44085a663f5a0f1a532f3cf6078edc04a452"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "componentType": "section",
+      "label": "6",
+      "heading": "Action instituted in name of Minister",
+      "text": "Action instituted in name of Minister\n\n6An action or other proceeding for the enforcement of a contract made by the Minister or for the recovery of damages to a public work or to any land, building or other structure leased under section 11 or for the enforcement of a right in respect of a public work or any land, building or other structure leased under section 11 may be instituted in the name of the Minister.\nR.S.1973, c.P-28, s.5; 2013, c.11, s.3",
+      "subsections": [],
+      "contentHash": "34a78beb2cad85cbec6ef47a8fd81768e77b950bd38b9b3c065265820f7f11f8"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "componentType": "section",
+      "label": "7",
+      "heading": "Action by Attorney General",
+      "text": "Action by Attorney General\n\n7Nothing in section 6 impairs the right of the Crown to institute or maintain an action, suit or proceeding by the Attorney General or otherwise to prevent a trespass or injury or for a breach of contract or to recover damages therefore.\nR.S.1973, c.P-28, s.6; 1981, c.6, s.1",
+      "subsections": [],
+      "contentHash": "7d7a3f22da83307fb3bf8ef963387f6b4034c23e38906fac32bd24123a543ee7"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "componentType": "section",
+      "label": "8",
+      "heading": "Annual report",
+      "text": "Annual report\n\n8The Minister shall make annually a detailed report to the Lieutenant-Governor in Council respecting the expenditure of public money on public works and on lands, buildings and other structures leased under section 11, and that report shall be laid before the Legislative Assembly.\nR.S.1973, c.P-28, s.7; 2013, c.11, s.4",
+      "subsections": [],
+      "contentHash": "35aa4cf75d1d47d581b0230c225c6c6f346cfd904cb5c4b1a7bee8d04ae7ed6e"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "componentType": "section",
+      "label": "9",
+      "heading": "Powers of Minister respecting land",
+      "text": "Powers of Minister respecting land\n\n9The Minister, by himself or herself or by his or her architects, engineers, agents and workers, may\n\n(a)\nenter on any land, survey and take levels of that land and make borings or sink trial pits as he or she deems necessary for any purpose relative to a public work,\n\n(b)\ntake possession of any land, waters or watercourse that in the Minister’s opinion is necessary to carry out work on a public work, or for obtaining access to that public work,\n\n(c)\nenter on any land, including any Crown lands, whether leased or not and deposit on that land any material required for a public work or for the purpose of removing or carrying away any material, and may remove from that land any material used to carry out work on a public work and for those purposes may make and use temporary roads to and from that land as the Minister considers necessary,\n\n(d)\nenter on any land for the purpose of making drains in which to carry off water from a public work and of keeping those drains in repair, and\n\n(e)\nalter the course of a watercourse and road and change the level of the watercourse and road.\n\nR.S.1973, c.P-28, s.8; 2009, c.2, s.3",
+      "subsections": [],
+      "contentHash": "80ea74cdf506d14dca7df1fc2de47fc618c75efc9ed8d942aa111447f04cbdf7"
+    },
+    {
+      "id": "section-10",
+      "sourceKey": "section:10",
+      "componentType": "section",
+      "label": "10",
+      "heading": "Power of Minister to enter buildings and on lands designated as public works",
+      "text": "Power of Minister to enter buildings and on lands designated as public works\n\n10The Minister may enter, by himself or herself or by his or her architects, engineers, agents and workers, a building or other structure or enter on any land that is, for the purposes of a project, designated as a public work by the Minister in order to carry out work on that public work.\n2009, c.2, s.4; 2013, c.11, s.5",
+      "subsections": [],
+      "contentHash": "3df9da6cf8a9b948eba2ecef10aae9fc9cc0dc74cfbd672aad96c36296d6d02a"
+    },
+    {
+      "id": "section-11",
+      "sourceKey": "section:11",
+      "componentType": "section",
+      "label": "11",
+      "heading": "Power of Minister to make contract",
+      "text": "Power of Minister to make contract\n\n11The Minister may contract for the purchase or lease of land, buildings and other structures required for a public work or for the use and purposes of government.\nR.S.1973, c.P-28, s.9; 2013, c.11, s.6",
+      "subsections": [],
+      "contentHash": "395757d4c3d571c64bb834826962a8113d229460e7376bbde9fbfbc11e48a787"
+    },
+    {
+      "id": "section-12",
+      "sourceKey": "section:12",
+      "componentType": "section",
+      "label": "12",
+      "heading": "Notice of intention to designate",
+      "text": "Notice of intention to designate\n\n12Before the Minister designates any land, building or other structure as a public work for the purposes of a project, the Minister shall serve notice in writing of the intention to designate on the owner of the land, building or other structure.\n2009, c.2, s.5; 2013, c.11, s.7",
+      "subsections": [],
+      "contentHash": "b10bb12bd6dafcb365a1a39ad864a2618cd19d75aa2d9eb28e86f7b7fc6efe34"
+    },
+    {
+      "id": "section-13",
+      "sourceKey": "section:13",
+      "componentType": "section",
+      "label": "13",
+      "heading": "Service of notice",
+      "text": "Service of notice\n\n13(1)A notice under section 12 shall be sufficiently served if it is mailed by registered mail to the latest known address of the owner.\n\n13(2)Service by registered mail shall be deemed to be effected 30 days after the date of mailing.\n\n2009, c.2, s.5",
+      "subsections": [
+        {
+          "id": "13-subsection-1",
+          "sourceKey": "section:13/subsection:1",
+          "label": "13(1)",
+          "text": "13(1)A notice under section 12 shall be sufficiently served if it is mailed by registered mail to the latest known address of the owner.",
+          "contentHash": "8dc95487d8365a24fd2a52d815396ac81e09653ccd44f5a97408089b58f03d0a"
+        },
+        {
+          "id": "13-subsection-2",
+          "sourceKey": "section:13/subsection:2",
+          "label": "13(2)",
+          "text": "13(2)Service by registered mail shall be deemed to be effected 30 days after the date of mailing.\n\n2009, c.2, s.5",
+          "contentHash": "2c85d9cf1ba6ff92f4e0afc2b6e288175b358d3fa8c73515e70a819e467c6685"
+        }
+      ],
+      "contentHash": "d2052ed20048c28ffabe14a7acc20e6945dd5ea29fe2db7b0a28a42b31e327c4"
+    },
+    {
+      "id": "section-14",
+      "sourceKey": "section:14",
+      "componentType": "section",
+      "label": "14",
+      "heading": "Exemption from the Community Planning Act",
+      "text": "Exemption from the Community Planning Act\n\n14With respect to lands, buildings and other structures that are, for the purposes of a project, designated as public works by the Minister, the Minister is exempt from compliance with\n\n(a)\nthe Community Planning Act,\n\n(b)\na by-law enacted under the Community Planning Act,\n\n(c)\na regulation, order or demand made under the Community Planning Act,\n\n(d)\na term or condition made or imposed under the Community Planning Act, and\n\n(e)\na decision of the Assessment and Planning Appeal Board made under the Community Planning Act.\n\n2009, c.2, s.5; 2013, c.11, s.8",
+      "subsections": [],
+      "contentHash": "81031716ca7f8470888507c7cde07e9db0032462e9e2b159df005799d465d924"
+    },
+    {
+      "id": "section-15",
+      "sourceKey": "section:15",
+      "componentType": "section",
+      "label": "15",
+      "heading": "Permits, licences and approvals",
+      "text": "Permits, licences and approvals\n\n15(1)Despite any other Act, the Minister may apply for a permit, licence or approval that he or she considers necessary to carry out work on the lands, buildings and other structures that are, for the purposes of a project, designated as public works by the Minister.\n\n15(2)The ministers of the Crown responsible for the issuance of the permits, licences and approvals referred to in subsection (1) may issue those permits, licences and approvals to the Minister, even if the Minister is unable to meet the requirements or comply with the terms and conditions for their issuance.\n\n2009, c.2, s.5; 2013, c.11, s.9",
+      "subsections": [
+        {
+          "id": "15-subsection-1",
+          "sourceKey": "section:15/subsection:1",
+          "label": "15(1)",
+          "text": "15(1)Despite any other Act, the Minister may apply for a permit, licence or approval that he or she considers necessary to carry out work on the lands, buildings and other structures that are, for the purposes of a project, designated as public works by the Minister.",
+          "contentHash": "1404c9d93ea0f2973bb64b438a949a280a3b1611b139a2bd08ededcca44d1f4e"
+        },
+        {
+          "id": "15-subsection-2",
+          "sourceKey": "section:15/subsection:2",
+          "label": "15(2)",
+          "text": "15(2)The ministers of the Crown responsible for the issuance of the permits, licences and approvals referred to in subsection (1) may issue those permits, licences and approvals to the Minister, even if the Minister is unable to meet the requirements or comply with the terms and conditions for their issuance.\n\n2009, c.2, s.5; 2013, c.11, s.9",
+          "contentHash": "a75445faa500a9286f8d9a9ec523cbee71697034b5fc6817b4f36c88946f0454"
+        }
+      ],
+      "contentHash": "b5e906fd0db2c89e771cfa4ca3a2dc56e48bd861a63fa619efef8ba7921ea1b0"
+    },
+    {
+      "id": "section-16",
+      "sourceKey": "section:16",
+      "componentType": "section",
+      "label": "16",
+      "heading": "Compensation for damages",
+      "text": "Compensation for damages\n\n16(1)The Minister shall compensate a person for damages suffered by virtue of anything done under this Act.\n\n16(2)A person claiming to be entitled to compensation shall deliver to the Minister a written claim setting forth full particulars of the claim and of his or her right and title to the compensation.\n\nR.S.1973, c.P-28, s.10",
+      "subsections": [
+        {
+          "id": "16-subsection-1",
+          "sourceKey": "section:16/subsection:1",
+          "label": "16(1)",
+          "text": "16(1)The Minister shall compensate a person for damages suffered by virtue of anything done under this Act.",
+          "contentHash": "9c1bc5c61d5565b8951a30564cd928ce8d9889618c90b8bd37a9aab64ace8530"
+        },
+        {
+          "id": "16-subsection-2",
+          "sourceKey": "section:16/subsection:2",
+          "label": "16(2)",
+          "text": "16(2)A person claiming to be entitled to compensation shall deliver to the Minister a written claim setting forth full particulars of the claim and of his or her right and title to the compensation.\n\nR.S.1973, c.P-28, s.10",
+          "contentHash": "85c0bc2e093f560dec654d10ecacc360c8f50a67d15e8f3819412398516606cb"
+        }
+      ],
+      "contentHash": "34dfabd70ded7252b6e364aed4b3bc94bb0c76df9403cd06d176bad734dbf077"
+    },
+    {
+      "id": "section-17",
+      "sourceKey": "section:17",
+      "componentType": "section",
+      "label": "17",
+      "heading": "Arbitration",
+      "text": "Arbitration\n\n17(1)If the Minister does not agree with the compensation claimed under subsection 16(2), the Minister shall offer, within 120 days after receiving the claim for compensation in writing, the amount that the Minister considers to be reasonable compensation and, at the same time, give notice to the person claiming compensation that, if the amount of the offer is not accepted within 120 days after the date the person receives the offer, the matter of compensation will be submitted to arbitration.\n\n17(2)If the person claiming compensation does not accept the offer of the Minister within 120 days after receiving the offer, the Minister shall submit the matter of compensation to arbitration and the Minister and the person claiming compensation shall be deemed to have entered into a written arbitration agreement.\n\nR.S.1973, c.P-28, s.11; 2009, c.2, s.6; 2014, c.35, s.1",
+      "subsections": [
+        {
+          "id": "17-subsection-1",
+          "sourceKey": "section:17/subsection:1",
+          "label": "17(1)",
+          "text": "17(1)If the Minister does not agree with the compensation claimed under subsection 16(2), the Minister shall offer, within 120 days after receiving the claim for compensation in writing, the amount that the Minister considers to be reasonable compensation and, at the same time, give notice to the person claiming compensation that, if the amount of the offer is not accepted within 120 days after the date the person receives the offer, the matter of compensation will be submitted to arbitration.",
+          "contentHash": "bfdc7e421fb75bf7bfb6fe0c3ec9bba2389f881a86a36e2aa9f5cc515ad5ce3f"
+        },
+        {
+          "id": "17-subsection-2",
+          "sourceKey": "section:17/subsection:2",
+          "label": "17(2)",
+          "text": "17(2)If the person claiming compensation does not accept the offer of the Minister within 120 days after receiving the offer, the Minister shall submit the matter of compensation to arbitration and the Minister and the person claiming compensation shall be deemed to have entered into a written arbitration agreement.\n\nR.S.1973, c.P-28, s.11; 2009, c.2, s.6; 2014, c.35, s.1",
+          "contentHash": "03f8d2360a0c05e6e0802acfd5fe2b829f1ad9526c89dd231cece4427c597312"
+        }
+      ],
+      "contentHash": "663780a198f6c95e66fecf26d92c8a2c3c580bc4286bd9ecf97a9fdbb342411a"
+    },
+    {
+      "id": "section-18",
+      "sourceKey": "section:18",
+      "componentType": "section",
+      "label": "18",
+      "heading": "The Court of King’s Bench may extend time limit",
+      "text": "The Court of King’s Bench may extend time limit\n\n2023, c.17, s.224\n\n18On an application by the Minister or a person claiming compensation, The Court of King’s Bench of New Brunswick may extend a time limit under subsection 17(1) or (2), either before or after the expiration of the time limit.\n2014, c.35, s.2; 2023, c.17, s.224",
+      "subsections": [],
+      "contentHash": "102a3a2e5a2199043276a58efdde259ed5a54113d5ac68e2c27d3cc8a065d64f"
+    },
+    {
+      "id": "section-19",
+      "sourceKey": "section:19",
+      "componentType": "section",
+      "label": "19",
+      "heading": "Application of Arbitration Act",
+      "text": "Application of Arbitration Act\n\n19The Arbitration Act applies to an arbitration under this Act but, if there is a conflict between a provision of this Act and a provision of the Arbitration Act, the provision of this Act prevails.\n2009, c.2, s.7",
+      "subsections": [],
+      "contentHash": "d3d24c446d39ebfadabacaeaeb118bd993e4d68c2c8ecc53b1ed99c0a080a346"
+    },
+    {
+      "id": "section-20",
+      "sourceKey": "section:20",
+      "componentType": "section",
+      "label": "20",
+      "heading": "Exclusive jurisdiction of arbitral tribunal",
+      "text": "Exclusive jurisdiction of arbitral tribunal\n\n20(1)An arbitral tribunal has exclusive jurisdiction to hear and determine all matters of compensation under this Act and no court shall intervene in the matter of compensation, except for the following purposes:\n\n(a)\nto assist the arbitration process;\n\n(b)\nto prevent unfair or unequal treatment of a party to an arbitration agreement; and\n\n(c)\nto enforce awards.\n\n20(2)No person shall apply for compensation under Part 2 of the Expropriation Act or any other Act for damages suffered by virtue of anything done under this Act.\n\n2009, c.2, s.7",
+      "subsections": [
+        {
+          "id": "20-subsection-1",
+          "sourceKey": "section:20/subsection:1",
+          "label": "20(1)",
+          "text": "20(1)An arbitral tribunal has exclusive jurisdiction to hear and determine all matters of compensation under this Act and no court shall intervene in the matter of compensation, except for the following purposes:\n\n(a)\nto assist the arbitration process;\n\n(b)\nto prevent unfair or unequal treatment of a party to an arbitration agreement; and\n\n(c)\nto enforce awards.",
+          "contentHash": "8af7e53aa06ca8e780bed6f328407801da0800b1614802d66006f312393624cc"
+        },
+        {
+          "id": "20-subsection-2",
+          "sourceKey": "section:20/subsection:2",
+          "label": "20(2)",
+          "text": "20(2)No person shall apply for compensation under Part 2 of the Expropriation Act or any other Act for damages suffered by virtue of anything done under this Act.\n\n2009, c.2, s.7",
+          "contentHash": "660193df4313a616fe6bf68ddcb4485e630b5b7d4742ba7a65ac9c0428429307"
+        }
+      ],
+      "contentHash": "4318b4bdb637a785a2afb2ac26444efc1bc1f520c5323945f0b916332f0f84b7"
+    },
+    {
+      "id": "section-21",
+      "sourceKey": "section:21",
+      "componentType": "section",
+      "label": "21",
+      "heading": "Appointment of arbitral tribunal",
+      "text": "Appointment of arbitral tribunal\n\n21(1)Within ten days after the date on which the Minister submits a matter to arbitration, the Minister and the person claiming compensation shall appoint a sole arbitrator.\n\n21(2)If the Minister and the person claiming compensation are unable to agree on the appointment of a sole arbitrator within ten days after the date on which the Minister submits the matter to arbitration, an arbitral tribunal consisting of three arbitrators shall be appointed as follows:\n\n(a)\none by the Minister;\n\n(b)\none by the person claiming compensation; and\n\n(c)\none by the arbitrators appointed under paragraphs (a) and (b) who shall act as chair of the arbitral tribunal.\n\n21(3)The Minister and the person claiming compensation shall each appoint an arbitrator within ten days after the expiration of the time period referred to in subsection (2).\n\n21(4)If the Minister or the person claiming compensation fails to appoint an arbitrator within ten days after the expiration of the time period referred to in subsection (2), The Court of King’s Bench of New Brunswick shall appoint an arbitrator on behalf of the Minister or the person, as the case may be.\n\n21(5)If the arbitrators appointed under paragraphs (2)(a) and (b) are unable to agree on the appointment of the chair within 20 days after the appointment of the second arbitrator, The Court of King’s Bench of New Brunswick shall appoint the chair on their behalf.\n\n2009, c.2, s.7; 2023, c.17, s.224",
+      "subsections": [
+        {
+          "id": "21-subsection-1",
+          "sourceKey": "section:21/subsection:1",
+          "label": "21(1)",
+          "text": "21(1)Within ten days after the date on which the Minister submits a matter to arbitration, the Minister and the person claiming compensation shall appoint a sole arbitrator.",
+          "contentHash": "f2b067952532841a8998911f8332f64327d2756f881454e8aced93904fe6bac5"
+        },
+        {
+          "id": "21-subsection-2",
+          "sourceKey": "section:21/subsection:2",
+          "label": "21(2)",
+          "text": "21(2)If the Minister and the person claiming compensation are unable to agree on the appointment of a sole arbitrator within ten days after the date on which the Minister submits the matter to arbitration, an arbitral tribunal consisting of three arbitrators shall be appointed as follows:\n\n(a)\none by the Minister;\n\n(b)\none by the person claiming compensation; and\n\n(c)\none by the arbitrators appointed under paragraphs (a) and (b) who shall act as chair of the arbitral tribunal.",
+          "contentHash": "907a98c56d5d05fdffdce228bcb081f9ac62c34298280b85991931d716fb33e2"
+        },
+        {
+          "id": "21-subsection-3",
+          "sourceKey": "section:21/subsection:3",
+          "label": "21(3)",
+          "text": "21(3)The Minister and the person claiming compensation shall each appoint an arbitrator within ten days after the expiration of the time period referred to in subsection (2).",
+          "contentHash": "c5b094b280e37342d75e3e58fe1b105a9342e7efb357357b2cfe44b8a190e387"
+        },
+        {
+          "id": "21-subsection-4",
+          "sourceKey": "section:21/subsection:4",
+          "label": "21(4)",
+          "text": "21(4)If the Minister or the person claiming compensation fails to appoint an arbitrator within ten days after the expiration of the time period referred to in subsection (2), The Court of King’s Bench of New Brunswick shall appoint an arbitrator on behalf of the Minister or the person, as the case may be.",
+          "contentHash": "e157973a5e77424630905382192be01095d5fa4537ba123ad7e05069da66c85a"
+        },
+        {
+          "id": "21-subsection-5",
+          "sourceKey": "section:21/subsection:5",
+          "label": "21(5)",
+          "text": "21(5)If the arbitrators appointed under paragraphs (2)(a) and (b) are unable to agree on the appointment of the chair within 20 days after the appointment of the second arbitrator, The Court of King’s Bench of New Brunswick shall appoint the chair on their behalf.\n\n2009, c.2, s.7; 2023, c.17, s.224",
+          "contentHash": "7bbe82736916317ec73ad79b89583ab1464e11b2fcd1632765539f8b2121b3b9"
+        }
+      ],
+      "contentHash": "ae8e44ef5ed0a428e029fa3e8fcd7d5208f49593f9253b4ae8977a3cc19186bd"
+    },
+    {
+      "id": "section-22",
+      "sourceKey": "section:22",
+      "componentType": "section",
+      "label": "22",
+      "heading": "Fees and expenses of arbitral tribunal",
+      "text": "Fees and expenses of arbitral tribunal\n\n22(1)If an arbitral tribunal consists of a sole arbitrator, the Minister is responsible for the fees and expenses of the arbitral tribunal and any other expenses related to the arbitration.\n\n22(2)If an arbitral tribunal consists of three arbitrators,\n\n(a)\nthe Minister is responsible for\n\n(i)\nthe fees and expenses of the chair,\n\n(ii)\nthe fees and expenses of the arbitrator appointed by the Minister, and\n\n(iii)\nany other expenses related to the arbitration, and\n\n(b)\nthe person claiming compensation is responsible for the fees and expenses of the arbitrator appointed by that person.\n\n2009, c.2, s.7",
+      "subsections": [
+        {
+          "id": "22-subsection-1",
+          "sourceKey": "section:22/subsection:1",
+          "label": "22(1)",
+          "text": "22(1)If an arbitral tribunal consists of a sole arbitrator, the Minister is responsible for the fees and expenses of the arbitral tribunal and any other expenses related to the arbitration.",
+          "contentHash": "11ca0d71a107c175983ecd3ef6774bef41f933ab5d268b2c6ed256acd631a046"
+        },
+        {
+          "id": "22-subsection-2",
+          "sourceKey": "section:22/subsection:2",
+          "label": "22(2)",
+          "text": "22(2)If an arbitral tribunal consists of three arbitrators,\n\n(a)\nthe Minister is responsible for\n\n(i)\nthe fees and expenses of the chair,\n\n(ii)\nthe fees and expenses of the arbitrator appointed by the Minister, and\n\n(iii)\nany other expenses related to the arbitration, and\n\n(b)\nthe person claiming compensation is responsible for the fees and expenses of the arbitrator appointed by that person.\n\n2009, c.2, s.7",
+          "contentHash": "b562427f6d5566fc2cce84b0e3d43dffd087ab6433c13744686081e4e955ff57"
+        }
+      ],
+      "contentHash": "200b28f0d2e89e3124e91852d8793e1f0b38a0e908a2b0ff3f407046ebfce596"
+    },
+    {
+      "id": "section-23",
+      "sourceKey": "section:23",
+      "componentType": "section",
+      "label": "23",
+      "heading": "Decision of arbitral tribunal",
+      "text": "Decision of arbitral tribunal\n\n23Within one year after the date on which the Minister submits a matter of compensation to arbitration, the arbitral tribunal shall make a decision on the matter of compensation.\n2009, c.2, s.7",
+      "subsections": [],
+      "contentHash": "39e5cbad092269cbd4fd52eacc3cd3ad18f46e4dafca96195f4564b1379c1317"
+    },
+    {
+      "id": "section-24",
+      "sourceKey": "section:24",
+      "componentType": "section",
+      "label": "24",
+      "heading": "Arbitral tribunal may extend the time for making a decision",
+      "text": "Arbitral tribunal may extend the time for making a decision\n\n24Before the expiration of the time for making a decision referred to in section 23, an arbitral tribunal may extend the time for making a decision by giving notice of the extension with reasons to the Minister and to the person claiming compensation.\n2014, c.35, s.3",
+      "subsections": [],
+      "contentHash": "e6f3f3940528cae7625257860eb29ac22fe40040674cf16b0cdf85ce8cba25dc"
+    },
+    {
+      "id": "section-25",
+      "sourceKey": "section:25",
+      "componentType": "section",
+      "label": "25",
+      "heading": "Vesting of property; sale or lease of public work",
+      "text": "Vesting of property; sale or lease of public work\n\n25All public works shall be vested in the Crown in right of the Province and, despite section 55 of the Financial Administration Act and any other Act, when a public work is not required, the Minister, with the approval of the Lieutenant-Governor in Council, may enter into an agreement for the sale or lease of the public work and may convey the public work by a deed of conveyance, lease or other instrument under the Great Seal of the Province and under the hand of the Minister, and the proceeds of the sale or leasing shall be accounted for as public money or on the direction of the Lieutenant-Governor in Council, deposited to the credit of the Land Management Fund.\nR.S.1973, c.P-28, s.12; 1992, c.73, s.1; 2013, c.11, s.10",
+      "subsections": [],
+      "contentHash": "9505fdc7134941630ee711e7b514c7971d692fd40f04756e7964a6e2d2f09c39"
+    },
+    {
+      "id": "section-26",
+      "sourceKey": "section:26",
+      "componentType": "section",
+      "label": "26",
+      "heading": "Sale or disposal of public works without Lieutenant-Governor in Council approval",
+      "text": "Sale or disposal of public works without Lieutenant-Governor in Council approval\n\n26(1)Despite section 25 of this Act and section 55 of the Financial Administration Act and any other Act, the Minister, without the approval of the Lieutenant-Governor in Council, may sell or otherwise dispose of a public work that is no longer required by the Minister if the public work has an appraised value not exceeding $150,000.\n\n26(2)The appraised value of a public work shall be determined by a member of the New Brunswick Association of Real Estate Appraisers/Association des évaluateurs immobiliers du Nouveau-Brunswick holding the designation of Canadian Residential Appraiser (CRA) or Accredited Appraiser Canadian Institute (AACI), as applicable.\n\n26(3)If a sale of a public work is made in the circumstances set out in this section, the proceeds of the sale shall be accounted for as public money or, on the direction of the Minister, be deposited to the credit of the Land Management Fund.\n\n2001, c.14, s.4; 2013, c.11, s.11; 2022, c.44, s.3",
+      "subsections": [
+        {
+          "id": "26-subsection-1",
+          "sourceKey": "section:26/subsection:1",
+          "label": "26(1)",
+          "text": "26(1)Despite section 25 of this Act and section 55 of the Financial Administration Act and any other Act, the Minister, without the approval of the Lieutenant-Governor in Council, may sell or otherwise dispose of a public work that is no longer required by the Minister if the public work has an appraised value not exceeding $150,000.",
+          "contentHash": "85a808b5c70403d9be6b3c6fd69b6d17548e66e6812884e1a84a039d6058bc72"
+        },
+        {
+          "id": "26-subsection-2",
+          "sourceKey": "section:26/subsection:2",
+          "label": "26(2)",
+          "text": "26(2)The appraised value of a public work shall be determined by a member of the New Brunswick Association of Real Estate Appraisers/Association des évaluateurs immobiliers du Nouveau-Brunswick holding the designation of Canadian Residential Appraiser (CRA) or Accredited Appraiser Canadian Institute (AACI), as applicable.",
+          "contentHash": "bee823c1534b1bc0bc5d6225939ace96a62474c32f7fe12ee25c9b2d1397eab2"
+        },
+        {
+          "id": "26-subsection-3",
+          "sourceKey": "section:26/subsection:3",
+          "label": "26(3)",
+          "text": "26(3)If a sale of a public work is made in the circumstances set out in this section, the proceeds of the sale shall be accounted for as public money or, on the direction of the Minister, be deposited to the credit of the Land Management Fund.\n\n2001, c.14, s.4; 2013, c.11, s.11; 2022, c.44, s.3",
+          "contentHash": "be896995bc1129f58cf0ef2e14fe2b17c60da5a40dd09b75897f6f03df915dc4"
+        }
+      ],
+      "contentHash": "ddc769956941ff46ccc4f8638422599b37a7622325fd8d87c901b92526065dc3"
+    },
+    {
+      "id": "section-27",
+      "sourceKey": "section:27",
+      "componentType": "section",
+      "label": "27",
+      "heading": "Transfer of land, buildings and other structures from other ministers",
+      "text": "Transfer of land, buildings and other structures from other ministers\n\n27(1)Despite section 55 of the Financial Administration Act, if any land, building or other structure belonging to the Crown in right of the Province that is under the administration of a minister of the Crown, other than the Minister, is no longer required, that other minister shall transfer the land, building or other structure to the Minister.\n\n27(2)On transfer to the Minister, any land, building or other structure referred to in subsection (1) is a public work.\n\n2013, c.11, s.12",
+      "subsections": [
+        {
+          "id": "27-subsection-1",
+          "sourceKey": "section:27/subsection:1",
+          "label": "27(1)",
+          "text": "27(1)Despite section 55 of the Financial Administration Act, if any land, building or other structure belonging to the Crown in right of the Province that is under the administration of a minister of the Crown, other than the Minister, is no longer required, that other minister shall transfer the land, building or other structure to the Minister.",
+          "contentHash": "82866cf0de1cd00d1fd6df468e1c294ab7f393af27ccfedc9643c3cf221d7fbb"
+        },
+        {
+          "id": "27-subsection-2",
+          "sourceKey": "section:27/subsection:2",
+          "label": "27(2)",
+          "text": "27(2)On transfer to the Minister, any land, building or other structure referred to in subsection (1) is a public work.\n\n2013, c.11, s.12",
+          "contentHash": "9d5ebd445fefb0bf91dcabeda9dc3866265d40ef8cc06da4c9b0a90ab34d8b08"
+        }
+      ],
+      "contentHash": "3b2d113518a13779985b9cd3bc21e0d35ab5413dbb0d5430175eb95633695c22"
+    },
+    {
+      "id": "section-28",
+      "sourceKey": "section:28",
+      "componentType": "section",
+      "label": "28",
+      "heading": "Transfer of public works to other ministers or the New Brunswick Housing Corporation",
+      "text": "Transfer of public works to other ministers or the New Brunswick Housing Corporation\n\n2023, c.25, s.8\n\n28Despite section 25 of this Act and section 55 of the Financial Administration Act and any other Act, the Minister shall distribute lists of public works that are no longer required to other ministers of the Crown and to the New Brunswick Housing Corporation and may transfer a public work to another minister of the Crown or to the New Brunswick Housing Corporation by transfer at book value plus the cost of transportation and any other costs incidental to the transfer.\n2013, c.11, s.12; 2023, c.25, s.8",
+      "subsections": [],
+      "contentHash": "b135e798d3c2df2c3757d9bf76bfaa23a35e167912eebb5881ac379fd8a48b7b"
+    },
+    {
+      "id": "section-29",
+      "sourceKey": "section:29",
+      "componentType": "section",
+      "label": "29",
+      "heading": "Sale of public works to non-profit organizations or other governments",
+      "text": "Sale of public works to non-profit organizations or other governments\n\n29 Subject to section 25 of this Act and despite section 55 of the Financial Administration Act, the Minister may sell a public work that is not transferred under section 28 for any amount up to the cost, appraised or book value of the public work to a charitable, religious or non-profit organization, a local government, a government of another province or territory, the Government of Canada or a corporation or agency in which the Province has a majority interest.\n2013, c.11, s.12; 2014, c.35, s.4; 2017, c.20, s.150",
+      "subsections": [],
+      "contentHash": "c151febe6ae120370e88b8f7552e03a8a67df83b42891a9e30eab391e1582132"
+    },
+    {
+      "id": "section-30",
+      "sourceKey": "section:30",
+      "componentType": "section",
+      "label": "30",
+      "heading": "Sale of public works other than under sections 28 and 29",
+      "text": "Sale of public works other than under sections 28 and 29\n\n30(1)Subject to subsections (3) and (4), the Minister shall sell a public work that is not transferred under section 28 or sold under section 29\n\n(a)\nby advertised public auction conducted at a location in the Province,\n\n(b)\nby advertised public tender,\n\n(c)\nby a request for proposals, or\n\n(d)\nthrough the Surplus Property – Open to Offers link under the Surplus Property for Sale section on the Department of Transportation and Infrastructure website.\n\n30(2)Subsection (1) does not apply to the sale of a public work under that subsection if the Treasury Board determines that a sale is impractical or that a public benefit is likely to result from the sale of the public work by another method.\n\n30(3)If the Minister determines that the only value in a public work is salvage value, the Minister shall sell the public work by sealed offer solicited from more than one source.\n\n30(4)If the Minister determines that a public work has no value, the Minister may dispose of it at the local sanitary landfill site, but if the public work may be hazardous to the health of the public, disposal shall be made in the manner required by the Minister of Environment and Climate Change.\n\n30(5)The Minister shall maintain adequate records of each transaction relating to the sale or disposal of a public work under this Act, including, if applicable,\n\n(a)\nthe name of the buyer or recipient,\n\n(b)\na description of the public work, including its serial number, if applicable, and\n\n(c)\nthe location and date of sale or disposal.\n\n2013, c.11, s.12; 2014, c.35, s.5; 2016 c.37, s.163; 2020, c.25, s.96; 2022, c.44, s.4",
+      "subsections": [
+        {
+          "id": "30-subsection-1",
+          "sourceKey": "section:30/subsection:1",
+          "label": "30(1)",
+          "text": "30(1)Subject to subsections (3) and (4), the Minister shall sell a public work that is not transferred under section 28 or sold under section 29\n\n(a)\nby advertised public auction conducted at a location in the Province,\n\n(b)\nby advertised public tender,\n\n(c)\nby a request for proposals, or\n\n(d)\nthrough the Surplus Property – Open to Offers link under the Surplus Property for Sale section on the Department of Transportation and Infrastructure website.",
+          "contentHash": "585272780625fcf6c86c6f8956508e66a208b41c6e47f7bf2d344f3f4797ac42"
+        },
+        {
+          "id": "30-subsection-2",
+          "sourceKey": "section:30/subsection:2",
+          "label": "30(2)",
+          "text": "30(2)Subsection (1) does not apply to the sale of a public work under that subsection if the Treasury Board determines that a sale is impractical or that a public benefit is likely to result from the sale of the public work by another method.",
+          "contentHash": "74537ab613a31664169a8cebecc9587ddbf853030272a9b1d58bac1761695483"
+        },
+        {
+          "id": "30-subsection-3",
+          "sourceKey": "section:30/subsection:3",
+          "label": "30(3)",
+          "text": "30(3)If the Minister determines that the only value in a public work is salvage value, the Minister shall sell the public work by sealed offer solicited from more than one source.",
+          "contentHash": "63e7fc3ff7dead5819673e94224796dad88e299d9c501d09ce6c149d0328cc72"
+        },
+        {
+          "id": "30-subsection-4",
+          "sourceKey": "section:30/subsection:4",
+          "label": "30(4)",
+          "text": "30(4)If the Minister determines that a public work has no value, the Minister may dispose of it at the local sanitary landfill site, but if the public work may be hazardous to the health of the public, disposal shall be made in the manner required by the Minister of Environment and Climate Change.",
+          "contentHash": "ac209c6d511dce76b0ff722c19e3f0aedeac919bc98c8b9842207c7f2eba7521"
+        },
+        {
+          "id": "30-subsection-5",
+          "sourceKey": "section:30/subsection:5",
+          "label": "30(5)",
+          "text": "30(5)The Minister shall maintain adequate records of each transaction relating to the sale or disposal of a public work under this Act, including, if applicable,\n\n(a)\nthe name of the buyer or recipient,\n\n(b)\na description of the public work, including its serial number, if applicable, and\n\n(c)\nthe location and date of sale or disposal.\n\n2013, c.11, s.12; 2014, c.35, s.5; 2016 c.37, s.163; 2020, c.25, s.96; 2022, c.44, s.4",
+          "contentHash": "04f233b76b962a2839302860b73fe716f662779347667d5229297cc0539f7b54"
+        }
+      ],
+      "contentHash": "a591aa75c2f095bfbf34e82791ca1d03addd4b99fd57a2ea6a497f9b9a92e6bc"
+    },
+    {
+      "id": "section-30.1",
+      "sourceKey": "section:30.1",
+      "componentType": "section",
+      "label": "30.1",
+      "heading": "Vacant land",
+      "text": "Vacant land\n2017, c.25, s.2\n\n30.1(1)Despite sections 25 and 26 of this Act and section 55 of the Financial Administration Act and any other Act, the Minister, without the approval of the Lieutenant-Governor in Council, may sell or otherwise dispose of any vacant land that is transferred or has been transferred, whether before, on or after the commencement of this section, to the Minister under section 27 if\n\n(a)\nproceedings to sell the land were held under the Real Property Tax Act but the land was not sold, and\n\n(b)\nthe amount of the taxes and penalties on the land that were due and unpaid under the Real Property Tax Act on the date that the proceedings to sell the land were held under that Act does not exceed $10,000.\n\n30.1(1.1)The Minister may sell or otherwise dispose of vacant land referred to in subsection (1) through the Surplus Property – Open to Offers link under the Surplus Property for Sale section on the Department of Transportation and Infrastructure website.\n\n30.1(2)Unless otherwise directed by the Minister, sections 28 and 29 and subsection 30(1) do not apply to vacant land referred to in subsection (1).\n\n30.1(3)With the approval of the Minister, vacant land referred to in subsection (1) may be appraised in accordance with subsection 26(2).\n\n30.1(4)The proceeds of the sale of vacant land under this section shall be deposited to the credit of the Land Management Fund.\n\n30.1(5)Subsections (1) to (4) apply with the necessary modifications to any vacant land that was transferred to the Minister under section 12.011 of the Public Works Act, chapter P-28 of the Revised Statutes, 1973, before the commencement of this section.\n\n2017, c.25, s.2; 2022, c.44, s.5",
+      "subsections": [
+        {
+          "id": "30.1-subsection-1",
+          "sourceKey": "section:30.1/subsection:1",
+          "label": "30.1(1)",
+          "text": "30.1(1)Despite sections 25 and 26 of this Act and section 55 of the Financial Administration Act and any other Act, the Minister, without the approval of the Lieutenant-Governor in Council, may sell or otherwise dispose of any vacant land that is transferred or has been transferred, whether before, on or after the commencement of this section, to the Minister under section 27 if\n\n(a)\nproceedings to sell the land were held under the Real Property Tax Act but the land was not sold, and\n\n(b)\nthe amount of the taxes and penalties on the land that were due and unpaid under the Real Property Tax Act on the date that the proceedings to sell the land were held under that Act does not exceed $10,000.",
+          "contentHash": "d331596791468948eb70482eeed7969ff607357cbe1ee568f99e2867828a07e1"
+        },
+        {
+          "id": "30.1-subsection-1.1",
+          "sourceKey": "section:30.1/subsection:1.1",
+          "label": "30.1(1.1)",
+          "text": "30.1(1.1)The Minister may sell or otherwise dispose of vacant land referred to in subsection (1) through the Surplus Property – Open to Offers link under the Surplus Property for Sale section on the Department of Transportation and Infrastructure website.",
+          "contentHash": "59ddc16afdc59fcba5157c49b1864f3a34d91edf4f73acc50ca8ae30715f59da"
+        },
+        {
+          "id": "30.1-subsection-2",
+          "sourceKey": "section:30.1/subsection:2",
+          "label": "30.1(2)",
+          "text": "30.1(2)Unless otherwise directed by the Minister, sections 28 and 29 and subsection 30(1) do not apply to vacant land referred to in subsection (1).",
+          "contentHash": "8b1c639e92cec9601193bf2358d39ff0927e126c218158fd695a034948997519"
+        },
+        {
+          "id": "30.1-subsection-3",
+          "sourceKey": "section:30.1/subsection:3",
+          "label": "30.1(3)",
+          "text": "30.1(3)With the approval of the Minister, vacant land referred to in subsection (1) may be appraised in accordance with subsection 26(2).",
+          "contentHash": "e7dd9e7e4b05b5601c07bf66f0aa5e1bbed10211f392c840a9ab4becdef54671"
+        },
+        {
+          "id": "30.1-subsection-4",
+          "sourceKey": "section:30.1/subsection:4",
+          "label": "30.1(4)",
+          "text": "30.1(4)The proceeds of the sale of vacant land under this section shall be deposited to the credit of the Land Management Fund.",
+          "contentHash": "ab27813909502865cbba949ec94f067a1586bf6477b4f67b4d3c55cd5061b817"
+        },
+        {
+          "id": "30.1-subsection-5",
+          "sourceKey": "section:30.1/subsection:5",
+          "label": "30.1(5)",
+          "text": "30.1(5)Subsections (1) to (4) apply with the necessary modifications to any vacant land that was transferred to the Minister under section 12.011 of the Public Works Act, chapter P-28 of the Revised Statutes, 1973, before the commencement of this section.\n\n2017, c.25, s.2; 2022, c.44, s.5",
+          "contentHash": "a6d4f17d6bc98934b7b4c3120196cfffe2f0a1ec85ab4bde3ef39d6a9a1efc87"
+        }
+      ],
+      "contentHash": "85d2f18590215e517a5476f0a10962972e6f25feba7851cc63919590300e6bc6"
+    },
+    {
+      "id": "section-31",
+      "sourceKey": "section:31",
+      "componentType": "section",
+      "label": "31",
+      "heading": "Report of sale of a public work under section 26 or 30.1",
+      "text": "Report of sale of a public work under section 26 or 30.1\n2017, c.25, s.3\n\n31(1)If the Minister sells public works under section 26 or 30.1, the Minister shall provide to Executive Council a report on all such sales occurring in the fiscal year in the form approved by Executive Council within six months after the end of each fiscal year.\n\n31(2)A report under subsection (1) shall be published in the Royal Gazette within one month after the report is accepted by Executive Council.\n\n2001, c.14, s.4; 2017, c.25, s.4; 2022, c.44, s.6",
+      "subsections": [
+        {
+          "id": "31-subsection-1",
+          "sourceKey": "section:31/subsection:1",
+          "label": "31(1)",
+          "text": "31(1)If the Minister sells public works under section 26 or 30.1, the Minister shall provide to Executive Council a report on all such sales occurring in the fiscal year in the form approved by Executive Council within six months after the end of each fiscal year.",
+          "contentHash": "485248c6fbf983fcdb1c5265706ecd0efa5a17cacd2ea3ed0b05dbb322071858"
+        },
+        {
+          "id": "31-subsection-2",
+          "sourceKey": "section:31/subsection:2",
+          "label": "31(2)",
+          "text": "31(2)A report under subsection (1) shall be published in the Royal Gazette within one month after the report is accepted by Executive Council.\n\n2001, c.14, s.4; 2017, c.25, s.4; 2022, c.44, s.6",
+          "contentHash": "70f84b40af09b0472e42b82571bdc7a65c6b1eaef48c0c61fb406ad47b532461"
+        }
+      ],
+      "contentHash": "2362a45c00eaa4983b301d97b70a209d1c8561dbdc4891e7914679db98903878"
+    },
+    {
+      "id": "section-32",
+      "sourceKey": "section:32",
+      "componentType": "section",
+      "label": "32",
+      "heading": "Land Management Fund",
+      "text": "Land Management Fund\n\n32(1)There is established a fund to be known as the Land Management Fund.\n\n32(2)The Minister shall be the custodian of the Land Management Fund and the Land Management Fund shall be held in trust by the Minister.\n\n32(3)The Land Management Fund shall be held for the purposes of this section in a separate account in the Consolidated Fund.\n\n32(4)The purposes for the Land Management Fund are\n\n(a)\nwith the approval of the Lieutenant-Governor in Council, to acquire land and lands and buildings and other structures,\n\n(b)\nto maintain properties that have been designated by the Minister for management under the Fund, and\n\n(c)\nto develop and maintain a land inventory system.\n\n32(5)Payments for the purposes of subsection (4) shall be a charge on and payable out of the Land Management Fund.\n\n32(6)The following are payable out of the Land Management Fund:\n\n(a)\ncosts associated with acquiring and selling land and lands and buildings and other structures; and\n\n(b)\nexpenses prescribed by regulation relating to the administration of the Land Management Fund.\n\n32(7)The Minister may, with money from the Fund and with the approval of the Lieutenant-Governor in Council, contract for the purchase of land and lands and buildings and other structures.\n\n32(8)Land and lands and buildings and other structures acquired under this section are public works that shall be vested in the Crown in right of the Province under the general administration, management, direction and control of the Minister.\n\n1992, c.73, s.2; 2009, c.2, s.8; 2013, c.11, s.13",
+      "subsections": [
+        {
+          "id": "32-subsection-1",
+          "sourceKey": "section:32/subsection:1",
+          "label": "32(1)",
+          "text": "32(1)There is established a fund to be known as the Land Management Fund.",
+          "contentHash": "d4b2bc633b8856420a8bca78feaf94d58198bfd509b7cf34c2d767d0b21fc712"
+        },
+        {
+          "id": "32-subsection-2",
+          "sourceKey": "section:32/subsection:2",
+          "label": "32(2)",
+          "text": "32(2)The Minister shall be the custodian of the Land Management Fund and the Land Management Fund shall be held in trust by the Minister.",
+          "contentHash": "24b185c97085aca63732bd8c6e448391f424b59588799654bd7d6dd245f814e9"
+        },
+        {
+          "id": "32-subsection-3",
+          "sourceKey": "section:32/subsection:3",
+          "label": "32(3)",
+          "text": "32(3)The Land Management Fund shall be held for the purposes of this section in a separate account in the Consolidated Fund.",
+          "contentHash": "085868da7e2d6fa671a417bd9a1c0fafc5126e9fa8305f670a82f77462de6298"
+        },
+        {
+          "id": "32-subsection-4",
+          "sourceKey": "section:32/subsection:4",
+          "label": "32(4)",
+          "text": "32(4)The purposes for the Land Management Fund are\n\n(a)\nwith the approval of the Lieutenant-Governor in Council, to acquire land and lands and buildings and other structures,\n\n(b)\nto maintain properties that have been designated by the Minister for management under the Fund, and\n\n(c)\nto develop and maintain a land inventory system.",
+          "contentHash": "0ca6ad01c3fbd0b9f59927911d6c6b9c47c3368281f133fda5190e8d4f44169f"
+        },
+        {
+          "id": "32-subsection-5",
+          "sourceKey": "section:32/subsection:5",
+          "label": "32(5)",
+          "text": "32(5)Payments for the purposes of subsection (4) shall be a charge on and payable out of the Land Management Fund.",
+          "contentHash": "cb33e9178dbac93e852c848f07366859411004fa37a72e5954db9aee481615d7"
+        },
+        {
+          "id": "32-subsection-6",
+          "sourceKey": "section:32/subsection:6",
+          "label": "32(6)",
+          "text": "32(6)The following are payable out of the Land Management Fund:\n\n(a)\ncosts associated with acquiring and selling land and lands and buildings and other structures; and\n\n(b)\nexpenses prescribed by regulation relating to the administration of the Land Management Fund.",
+          "contentHash": "d03f54b92e7bf1b7077a21e877b1fbc9773da066dc1f64b173efcc16f2e7dc5d"
+        },
+        {
+          "id": "32-subsection-7",
+          "sourceKey": "section:32/subsection:7",
+          "label": "32(7)",
+          "text": "32(7)The Minister may, with money from the Fund and with the approval of the Lieutenant-Governor in Council, contract for the purchase of land and lands and buildings and other structures.",
+          "contentHash": "3693e06047cf53204dbb51bb6af4a0f920f1019312204927e7883882c6cc0d1f"
+        },
+        {
+          "id": "32-subsection-8",
+          "sourceKey": "section:32/subsection:8",
+          "label": "32(8)",
+          "text": "32(8)Land and lands and buildings and other structures acquired under this section are public works that shall be vested in the Crown in right of the Province under the general administration, management, direction and control of the Minister.\n\n1992, c.73, s.2; 2009, c.2, s.8; 2013, c.11, s.13",
+          "contentHash": "21a4cc61e8e8b12213fc2a1e55fab913dd80112b3cefc6af5fd96810587cef63"
+        }
+      ],
+      "contentHash": "73eacdc8c7c0316ce6b3d8b90b0f687a9754cf972e841f43b12d854bac4fd395"
+    },
+    {
+      "id": "section-33",
+      "sourceKey": "section:33",
+      "componentType": "section",
+      "label": "33",
+      "heading": "Public works development area",
+      "text": "Public works development area\n\n33(1)The area described in Schedule A is declared to be a public works development area.\n\n33(2)A sale of land within a public works development area is void, unless it complies with subsections (3) to (7).\n\n33(3)An owner who intends to sell land within a public works development area shall offer for sale the land to the Minister, in writing, and the offer for sale shall contain full particulars of the proposed sale.\n\n33(4)Within 90 days of the receipt of an offer under subsection (3) the Minister\n\n(a)\nmay enter into an Agreement of Sale with the owner respecting the land, or\n\n(b)\nshall indicate to the owner in writing that the Minister does not wish to purchase the land.\n\n33(5)The Minister and the owner may by agreement extend the 90-day period referred to in subsection (4).\n\n33(6)If the Minister does not act in accordance with subsection (4) by the end of the 90-day period specified in that subsection or as extended under subsection (5), or if the Minister indicates to the owner that the Minister does not intend to purchase the land, the owner may sell the land to any purchaser within a period of not more than two years after the date of the offer to the Minister under subsection (3).\n\n33(7)After the two-year period referred to in subsection (6), the owner shall not sell or offer for sale the land until he or she has offered the land for sale to the Minister in accordance with subsection (3).\n\n33(8)Nothing in this section shall diminish or detract from the right of the Minister to expropriate land at any time according to the Expropriation Act or to dispose of land according to section 25 of this Act.\n\n33(9)Subject to subsection (11), if land within a public works development area is expropriated, the owner shall be compensated for that land as though the land were not in a public works development area.\n\n33(10)Unless the Minister gives his or her written consent to the owner of land in a public works development area, if there is involved a cost in excess of $5,000 in any year to the land, the owner shall not\n\n(a)\nconstruct any building or improvement on the land,\n\n(b)\nmake any addition or alteration to a building on the land, or\n\n(c)\nrenovate any building or improvement on the land.\n\n33(11)Nothing in subsection (10) prohibits an owner from making ordinary repairs to his or her buildings.\n\n33(12)If an owner contravenes subsection (10), nothing shall be allowed to the owner for any increase in value resulting from the contravention.\n\n33(13)The Minister shall cause to be registered in the proper registry office a notice to the persons who appear from the records of that registry office to be the owners of the lands in a public works development area at the time the lands became affected by this section, that the lands are so affected.\n\n33(14)Where lands formerly within a public works development area are no longer within that area, the Minister shall cause to be registered in the proper registry office a notice to all persons appearing on the records of that registry office to be the owners of those lands that those lands are no longer within the public works development area.\n\nR.S.1973, c.P-28, s.13; 1983, c.72, s.1",
+      "subsections": [
+        {
+          "id": "33-subsection-1",
+          "sourceKey": "section:33/subsection:1",
+          "label": "33(1)",
+          "text": "33(1)The area described in Schedule A is declared to be a public works development area.",
+          "contentHash": "363306b8d603befc23106157d01c6dead9231126f0b2106ea85b14a0b225afcc"
+        },
+        {
+          "id": "33-subsection-2",
+          "sourceKey": "section:33/subsection:2",
+          "label": "33(2)",
+          "text": "33(2)A sale of land within a public works development area is void, unless it complies with subsections (3) to (7).",
+          "contentHash": "d3984fe468683929688640061945919390504e067a469b8aedfd1d899399ebae"
+        },
+        {
+          "id": "33-subsection-3",
+          "sourceKey": "section:33/subsection:3",
+          "label": "33(3)",
+          "text": "33(3)An owner who intends to sell land within a public works development area shall offer for sale the land to the Minister, in writing, and the offer for sale shall contain full particulars of the proposed sale.",
+          "contentHash": "4b5298c680e6dc81e0519ae0e2c1c8a74ff601e07204627682c7e07834cdf8b1"
+        },
+        {
+          "id": "33-subsection-4",
+          "sourceKey": "section:33/subsection:4",
+          "label": "33(4)",
+          "text": "33(4)Within 90 days of the receipt of an offer under subsection (3) the Minister\n\n(a)\nmay enter into an Agreement of Sale with the owner respecting the land, or\n\n(b)\nshall indicate to the owner in writing that the Minister does not wish to purchase the land.",
+          "contentHash": "129a7ff2b31f545024c0400492442f02bc8bf310d0027e6074948886a01f78c7"
+        },
+        {
+          "id": "33-subsection-5",
+          "sourceKey": "section:33/subsection:5",
+          "label": "33(5)",
+          "text": "33(5)The Minister and the owner may by agreement extend the 90-day period referred to in subsection (4).",
+          "contentHash": "2b2d393bb3c1868fcb9a3e9a294d8e6dd6334e715c3cc5885a0d6d58c0952639"
+        },
+        {
+          "id": "33-subsection-6",
+          "sourceKey": "section:33/subsection:6",
+          "label": "33(6)",
+          "text": "33(6)If the Minister does not act in accordance with subsection (4) by the end of the 90-day period specified in that subsection or as extended under subsection (5), or if the Minister indicates to the owner that the Minister does not intend to purchase the land, the owner may sell the land to any purchaser within a period of not more than two years after the date of the offer to the Minister under subsection (3).",
+          "contentHash": "e95fb2ef22703d5561d7fc76208e086e8d1de0d0aa1f0c1dadf22df9668f755e"
+        },
+        {
+          "id": "33-subsection-7",
+          "sourceKey": "section:33/subsection:7",
+          "label": "33(7)",
+          "text": "33(7)After the two-year period referred to in subsection (6), the owner shall not sell or offer for sale the land until he or she has offered the land for sale to the Minister in accordance with subsection (3).",
+          "contentHash": "b3de8671330bf591e57a871a0f35de0240203ad3b1b017c69e0ab082a06c67c9"
+        },
+        {
+          "id": "33-subsection-8",
+          "sourceKey": "section:33/subsection:8",
+          "label": "33(8)",
+          "text": "33(8)Nothing in this section shall diminish or detract from the right of the Minister to expropriate land at any time according to the Expropriation Act or to dispose of land according to section 25 of this Act.",
+          "contentHash": "aed76b7b32bed12a5eee3891b63d9a32c8077f41e13b99a864926136c50ac56b"
+        },
+        {
+          "id": "33-subsection-9",
+          "sourceKey": "section:33/subsection:9",
+          "label": "33(9)",
+          "text": "33(9)Subject to subsection (11), if land within a public works development area is expropriated, the owner shall be compensated for that land as though the land were not in a public works development area.",
+          "contentHash": "459ee5109c8bfd987c0e0c44607856adc6c418cfab91f3113734dcc4e01662b4"
+        },
+        {
+          "id": "33-subsection-10",
+          "sourceKey": "section:33/subsection:10",
+          "label": "33(10)",
+          "text": "33(10)Unless the Minister gives his or her written consent to the owner of land in a public works development area, if there is involved a cost in excess of $5,000 in any year to the land, the owner shall not\n\n(a)\nconstruct any building or improvement on the land,\n\n(b)\nmake any addition or alteration to a building on the land, or\n\n(c)\nrenovate any building or improvement on the land.",
+          "contentHash": "bbf6828c1dfe89e5bc3a3288d5bcb5389192abaa2fa06af9ac26f78c0955d866"
+        },
+        {
+          "id": "33-subsection-11",
+          "sourceKey": "section:33/subsection:11",
+          "label": "33(11)",
+          "text": "33(11)Nothing in subsection (10) prohibits an owner from making ordinary repairs to his or her buildings.",
+          "contentHash": "85fbb386d7c057ec7f77b40821a58025df6b27bfaf394cc0a97de1846bbca50b"
+        },
+        {
+          "id": "33-subsection-12",
+          "sourceKey": "section:33/subsection:12",
+          "label": "33(12)",
+          "text": "33(12)If an owner contravenes subsection (10), nothing shall be allowed to the owner for any increase in value resulting from the contravention.",
+          "contentHash": "543de7f03e198e71f9f00016436c5bf5d627512e9e344fb643744c59ec10d1b6"
+        },
+        {
+          "id": "33-subsection-13",
+          "sourceKey": "section:33/subsection:13",
+          "label": "33(13)",
+          "text": "33(13)The Minister shall cause to be registered in the proper registry office a notice to the persons who appear from the records of that registry office to be the owners of the lands in a public works development area at the time the lands became affected by this section, that the lands are so affected.",
+          "contentHash": "db4bf1f57e73aedc44989cfc8281028a043f484f5dff38630c2d44dec5117672"
+        },
+        {
+          "id": "33-subsection-14",
+          "sourceKey": "section:33/subsection:14",
+          "label": "33(14)",
+          "text": "33(14)Where lands formerly within a public works development area are no longer within that area, the Minister shall cause to be registered in the proper registry office a notice to all persons appearing on the records of that registry office to be the owners of those lands that those lands are no longer within the public works development area.\n\nR.S.1973, c.P-28, s.13; 1983, c.72, s.1",
+          "contentHash": "63b8267c7521ae1ae3131b57f204944e24648a6bcbac51cb2f8ca6ea3c15d378"
+        }
+      ],
+      "contentHash": "580d40e57d42ca0b81e45c3f43435fa22c7bc5a88674f961719e2dbd3f86d067"
+    },
+    {
+      "id": "section-34",
+      "sourceKey": "section:34",
+      "componentType": "section",
+      "label": "34",
+      "heading": "Administration",
+      "text": "Administration\n\n34(1)The Minister is responsible for and has the general administration, management, direction and control of\n\n(a)\npublic works,\n\n(b)\nthe work carried out on public works,\n\n(c)\nall money allotted for the acquisition of public works and the work carried out on public works,\n\n(d)\nlands, buildings and other structures leased under section 11,\n\n(e)\nthe work carried out on land, buildings and other structures leased under section 11, and\n\n(f)\nall money allotted for the leasing of land, buildings and other structures under section 11.\n\n34(2)Subsection (1) does not apply to paragraph (c) of the definition “public work” in section 1 if the public work is under the administration of the Minister of Education and Early Childhood Development.\n\nR.S.1973, c.P-28, ss.2(1); 2009, c.2, s.2; 2013, c.11, s.2; 2022, c.44, s.7",
+      "subsections": [
+        {
+          "id": "34-subsection-1",
+          "sourceKey": "section:34/subsection:1",
+          "label": "34(1)",
+          "text": "34(1)The Minister is responsible for and has the general administration, management, direction and control of\n\n(a)\npublic works,\n\n(b)\nthe work carried out on public works,\n\n(c)\nall money allotted for the acquisition of public works and the work carried out on public works,\n\n(d)\nlands, buildings and other structures leased under section 11,\n\n(e)\nthe work carried out on land, buildings and other structures leased under section 11, and\n\n(f)\nall money allotted for the leasing of land, buildings and other structures under section 11.",
+          "contentHash": "016348e3fd5b93afa2b15c22da2938fdb4345bc40d8284c92739c80feb64a8c4"
+        },
+        {
+          "id": "34-subsection-2",
+          "sourceKey": "section:34/subsection:2",
+          "label": "34(2)",
+          "text": "34(2)Subsection (1) does not apply to paragraph (c) of the definition “public work” in section 1 if the public work is under the administration of the Minister of Education and Early Childhood Development.\n\nR.S.1973, c.P-28, ss.2(1); 2009, c.2, s.2; 2013, c.11, s.2; 2022, c.44, s.7",
+          "contentHash": "d7b600605c4c6f8588c3e179699ff471f46c40832827f13806561838dba8c328"
+        }
+      ],
+      "contentHash": "d1cb87148d7a971a1268e7704783a17dd9650c33478191d808210a0d6ce46c78"
+    },
+    {
+      "id": "section-35",
+      "sourceKey": "section:35",
+      "componentType": "section",
+      "label": "35",
+      "heading": "Regulations",
+      "text": "Regulations\n\n35(1)The Lieutenant-Governor in Council may make regulations\n\n(a)\nprescribing expenses relating to the administration of the Land Management Fund that are payable out of the Land Management Fund;\n\n(b)\nauthorizing the Minister to designate lands, buildings and other structures as public works for the purposes of a project, including lands, buildings and other structures referred to in paragraphs (a) to (d) of the definition “public work” in section 1;\n\n(c)\nauthorizing the Minister to revoke a designation made under paragraph (b);\n\n(d)\nexempting the lands, buildings and other structures referred to in paragraph (b), or any portion of them, from the application of the Mechanics’ Lien Act, chapter M-6 of the Revised Statutes, 1973.\n\n35(2)A regulation made under paragraph (1)(b), (c) or (d) respecting the modifications to the Petitcodiac River Causeway to restore the passage of fish and any work related to the modifications to the Petitcodiac River Causeway to restore the passage of fish may be made retroactive to any date, including a date before November 29, 2001.\n\n1992, c.73, s.2; 2009, c.1, s.3; 2013, c.11, s.14; 2020, c.29, s.113",
+      "subsections": [
+        {
+          "id": "35-subsection-1",
+          "sourceKey": "section:35/subsection:1",
+          "label": "35(1)",
+          "text": "35(1)The Lieutenant-Governor in Council may make regulations\n\n(a)\nprescribing expenses relating to the administration of the Land Management Fund that are payable out of the Land Management Fund;\n\n(b)\nauthorizing the Minister to designate lands, buildings and other structures as public works for the purposes of a project, including lands, buildings and other structures referred to in paragraphs (a) to (d) of the definition “public work” in section 1;\n\n(c)\nauthorizing the Minister to revoke a designation made under paragraph (b);\n\n(d)\nexempting the lands, buildings and other structures referred to in paragraph (b), or any portion of them, from the application of the Mechanics’ Lien Act, chapter M-6 of the Revised Statutes, 1973.",
+          "contentHash": "6bb5919e2d21967cae1da8f8e530790e4031d74e39a40852ed7548f191fc484c"
+        },
+        {
+          "id": "35-subsection-2",
+          "sourceKey": "section:35/subsection:2",
+          "label": "35(2)",
+          "text": "35(2)A regulation made under paragraph (1)(b), (c) or (d) respecting the modifications to the Petitcodiac River Causeway to restore the passage of fish and any work related to the modifications to the Petitcodiac River Causeway to restore the passage of fish may be made retroactive to any date, including a date before November 29, 2001.\n\n1992, c.73, s.2; 2009, c.1, s.3; 2013, c.11, s.14; 2020, c.29, s.113\n\nSCHEDULE A\n\nThe portion of the City of Fredericton bounded as follows:\n\nCOMMENCING at the point of intersection of the prolongation Northeasterly of the centre line of Regent Street with the bank or shore of the Saint John River; thence Southwesterly along the said centre line to the centre line of Queen Street; then Southeasterly along the centre line of Queen Street to the intersection thereof with the prolongation Northeasterly of the centre line of Camperdown Lane; thence Southwesterly along the said prolongation of and the centre line of Camperdown Lane to the intersection thereof with the centre line of King Street; then Northwesterly along the centre line of King Street to the centre line of Regent Street; thence Southwesterly along the centre line of Regent Street to the centre line of George Street; thence Southeasterly along the centre line of George Street to the intersection thereof with the centre line of St. John Street; thence Northeasterly along the centre line of St. John Street 193 feet to the prolongation of the rear lot lines of properties fronting on George Street; thence Southeasterly along these rear lot lines 282 feet to the Northwesterly sideline of lot #5, 750 Brunswick Street, owned by Luke Morrison; thence Southwesterly 50 feet along said sideline to the rear of lot #5; thence Southeasterly along said rear lot line 54 feet; thence Northeasterly 55 feet along the Southeasterly sideline of lot #5 to the original mid block line 165 feet from both George and Brunswick Streets; thence Southeasterly 132 feet along the mid block line, being the rear line of lots fronting on Brunswick Street, to the rear line of lot #2, 171 Church Street, owned by C. W. Vail, 133 feet distant from Church Street; thence Northeasterly along the rear lot lines of properties fronting on Church Street 198 feet or to the centre line of Brunswick Street; thence Northwesterly 3 feet along the centre line of Brunswick to the prolongation of rear lot line of properties fronting on Church Street; thence Northeasterly along said rear lot lines, some 136 feet distant from Church Street, 396 feet to the centre line of King Street; thence Southeasterly along the centre of King Street to the centre of Church Street; thence Northeasterly along the centre line of Church Street and the prolongation thereof to the bank or shore of the Saint John River; thence Northwesterly along the said bank or shore of the Saint John River to the place of beginning.\n\nR.S.1973, c.P-28, Schedule A\n\nN.B. This Act was proclaimed and came into force February 9, 2017.\n\nN.B. This Act is consolidated to December 13, 2024.",
+          "contentHash": "b564b6b9972c7a94d5de3addf2089abf66b88e4e709304a5f871a1065c4db5a8"
+        }
+      ],
+      "contentHash": "af099f9fd85fe04da4a8496d012fe4be3c1e04395abc576fe3d51247090b2726"
+    }
+  ],
+  "notes": []
+}

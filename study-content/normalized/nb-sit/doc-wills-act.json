@@ -1,0 +1,1882 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-wills-act",
+  "officialTitle": "Wills Act",
+  "officialCitation": "Chapter W-9",
+  "officialCitationDisplay": "Chapter W-9",
+  "officialCitationNormalized": "W-9",
+  "documentType": "act",
+  "sourceUrl": "https://laws.gnb.ca/en/document/cs/W-9",
+  "fetchDate": "2026-08-11T18:09:18.243Z",
+  "consolidatedTo": "June 16, 2023",
+  "contentHash": "c9b96f20891dcb29bb3bc7896971e035e7c8de920a43cd1f646fedccf8204e03",
+  "tableOfContents": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "label": "1",
+      "heading": "Will defined"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "label": "2",
+      "heading": "Power of testator"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "label": "3",
+      "heading": "Necessity of writing"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "label": "4",
+      "heading": "Attestation clause"
+    },
+    {
+      "id": "section-4.1",
+      "sourceKey": "section:4.1",
+      "label": "4.1",
+      "heading": "Attestation clause when using an electronic means of communication"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "label": "5",
+      "heading": "Will of member of Canadian Forces"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "label": "6",
+      "heading": "Holograph will"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "label": "7",
+      "heading": "Signature to will"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "label": "8",
+      "heading": "Persons under 19 years"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "label": "9",
+      "heading": "Validity of power of appointment"
+    },
+    {
+      "id": "section-10",
+      "sourceKey": "section:10",
+      "label": "10",
+      "heading": "Publication of will"
+    },
+    {
+      "id": "section-11",
+      "sourceKey": "section:11",
+      "label": "11",
+      "heading": "Effect of incompetency of attesting witness"
+    },
+    {
+      "id": "section-12",
+      "sourceKey": "section:12",
+      "label": "12",
+      "heading": "Conflict of interest of attesting witness"
+    },
+    {
+      "id": "section-13",
+      "sourceKey": "section:13",
+      "label": "13",
+      "heading": "Power of creditor to attest will"
+    },
+    {
+      "id": "section-14",
+      "sourceKey": "section:14",
+      "label": "14",
+      "heading": "Power of executor to attest will"
+    },
+    {
+      "id": "section-15",
+      "sourceKey": "section:15",
+      "label": "15",
+      "heading": "Revocation of will"
+    },
+    {
+      "id": "section-15.1",
+      "sourceKey": "section:15.1",
+      "label": "15.1",
+      "heading": "Effect of subsequent marriage on will"
+    },
+    {
+      "id": "section-16",
+      "sourceKey": "section:16",
+      "label": "16",
+      "heading": "Circumstances where section 15.1 does not apply"
+    },
+    {
+      "id": "section-17",
+      "sourceKey": "section:17",
+      "label": "17",
+      "heading": "Presumption of intention to revoke"
+    },
+    {
+      "id": "section-18",
+      "sourceKey": "section:18",
+      "label": "18",
+      "heading": "Alterations"
+    },
+    {
+      "id": "section-19",
+      "sourceKey": "section:19",
+      "label": "19",
+      "heading": "Revival of revocation"
+    },
+    {
+      "id": "section-20",
+      "sourceKey": "section:20",
+      "label": "20",
+      "heading": "Subsequent conveyance, ademption"
+    },
+    {
+      "id": "section-21",
+      "sourceKey": "section:21",
+      "label": "21",
+      "heading": "Revival of will"
+    },
+    {
+      "id": "section-22",
+      "sourceKey": "section:22",
+      "label": "22",
+      "heading": "Effect of failure of inter-vivos gift"
+    },
+    {
+      "id": "section-23",
+      "sourceKey": "section:23",
+      "label": "23",
+      "heading": "Devise includes leasehold and freehold estates"
+    },
+    {
+      "id": "section-24",
+      "sourceKey": "section:24",
+      "label": "24",
+      "heading": "Devise or bequest includes property that testator has power to appoint"
+    },
+    {
+      "id": "section-25",
+      "sourceKey": "section:25",
+      "label": "25",
+      "heading": "Devise passes whole of estate"
+    },
+    {
+      "id": "section-26",
+      "sourceKey": "section:26",
+      "label": "26",
+      "heading": "Devise or bequest to the “heir” of the testator"
+    },
+    {
+      "id": "section-27",
+      "sourceKey": "section:27",
+      "label": "27",
+      "heading": "Devise or bequest referring to want or failure of issue"
+    },
+    {
+      "id": "section-28",
+      "sourceKey": "section:28",
+      "label": "28",
+      "heading": "Devise to trustee or executor passes whole of estate"
+    },
+    {
+      "id": "section-29",
+      "sourceKey": "section:29",
+      "label": "29",
+      "heading": "Devise to trustee passes whole of estate when purposes of trust satisfied"
+    },
+    {
+      "id": "section-30",
+      "sourceKey": "section:30",
+      "label": "30",
+      "heading": "Gift for charitable purposes"
+    },
+    {
+      "id": "section-31",
+      "sourceKey": "section:31",
+      "label": "31",
+      "heading": "Devise of estate tail or entail estate"
+    },
+    {
+      "id": "section-32",
+      "sourceKey": "section:32",
+      "label": "32",
+      "heading": "Effect of death of beneficiary or devisee"
+    },
+    {
+      "id": "section-33",
+      "sourceKey": "section:33",
+      "label": "33",
+      "heading": "Illegitimate child deemed legitimate child"
+    },
+    {
+      "id": "section-34",
+      "sourceKey": "section:34",
+      "label": "34",
+      "heading": "Devise of mortgaged property"
+    },
+    {
+      "id": "section-35",
+      "sourceKey": "section:35",
+      "label": "35",
+      "heading": "Power of executor respecting residuary estate"
+    },
+    {
+      "id": "section-35.1",
+      "sourceKey": "section:35.1",
+      "label": "35.1",
+      "heading": "Jurisdiction of the court where formal requirements are not complied with"
+    },
+    {
+      "id": "section-36",
+      "sourceKey": "section:36",
+      "label": "36",
+      "heading": "Intrinsic validity and effect of will"
+    },
+    {
+      "id": "section-37",
+      "sourceKey": "section:37",
+      "label": "37",
+      "heading": "Manner and formalities of making will"
+    },
+    {
+      "id": "section-38",
+      "sourceKey": "section:38",
+      "label": "38",
+      "heading": "Change of domicile or in habitual residence of testator"
+    },
+    {
+      "id": "section-39",
+      "sourceKey": "section:39",
+      "label": "39",
+      "heading": "Aiding with construction of will"
+    },
+    {
+      "id": "section-40",
+      "sourceKey": "section:40",
+      "label": "40",
+      "heading": "Value of movable connected to land"
+    },
+    {
+      "id": "section-41",
+      "sourceKey": "section:41",
+      "label": "41",
+      "heading": "Application of Act"
+    }
+  ],
+  "components": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
+      "label": "1",
+      "heading": "Will defined",
+      "text": "Will defined\n\n1In this Act, “will” includes a testament, a codicil, an appointment by will or by writing in the nature of a will in exercise of a power and any other testamentary disposition.\n1959, c.15, s.1\n\nI\n\nGENERAL",
+      "subsections": [],
+      "contentHash": "2ebd551681e5565d0f00163d9cd91a8eb615b26e1d86275fe7959b18fcf5c255"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "label": "2",
+      "heading": "Power of testator",
+      "text": "Power of testator\n\n2A person may by will devise, bequeath or dispose of all real and personal property, whether acquired before or after making his will, to which at the time of his death he is entitled either at law or in equity, including,\n\n(a)\nestates pur autre vie, whether there is or is not a special occupant and whether they are corporeal or incorporeal hereditaments,\n\n(b)\ncontingent, executory or other future interest in real or personal property, whether the testator is or is not ascertained as the person or one of the persons in whom those interests may respectively become vested, and whether he is entitled to them under the instrument by which they were respectively created or under a disposition of them by deed or will, and\n\n(c)\nrights of entry.\n\n1959, c.15, s.2",
+      "subsections": [],
+      "contentHash": "5d2fa3c78e678b5c957f826d1af106c6fced3ea4669c888dacc4a7d8a279d25a"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
+      "label": "3",
+      "heading": "Necessity of writing",
+      "text": "Necessity of writing\n\n3A will is valid only when it is in writing.\n1959, c.15, s.3",
+      "subsections": [],
+      "contentHash": "356e2258c1f33e1bcb5cc08677981b54f2927fcbefcdd63081bcc743457aaaa2"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
+      "label": "4",
+      "heading": "Attestation clause",
+      "text": "Attestation clause\n\n4Subject to sections 4.1, 5 and 6, a will is not valid unless,\n\n(a)\nat its end it is signed by the testator or signed in his name by some other person in his presence and by his direction,\n\n(b)\nthe testator makes or acknowledges the signature in the presence of two or more attesting witnesses present at the time, and\n\n(c)\ntwo or more of the attesting witnesses subscribe the will in the presence of the testator.\n\n1959, c.15, s.4; 2020, c.31, s.2",
+      "subsections": [],
+      "contentHash": "89bf72e3e50f3855a2bdc4f96a2a316d51918a4d35bc9ecc1132e7f016f8817d"
+    },
+    {
+      "id": "section-4.1",
+      "sourceKey": "section:4.1",
+      "componentType": "section",
+      "label": "4.1",
+      "heading": "Attestation clause when using an electronic means of communication",
+      "text": "Attestation clause when using an electronic means of communication\n2020, c.31, s.2\n\n4.1(1)The following definition applies in this section.\n\n“electronic means of communication” means an electronic means of communication in which all persons are able to see, hear and communicate with one another in real time, to the same extent as if the persons were communicating in person in the same location. (moyen de communication électronique)\n\n4.1(2)The requirement under paragraph 4(a) that a will signed in the name of the testator by some other person is signed in the presence of the testator may be satisfied by using an electronic means of communication.\n\n4.1(3)The requirement under paragraph 4(b) that two or more attesting witnesses are present at the time the testator signs the will or acknowledges the signature may be satisfied by using an electronic means of communication, provided that at least one witness is a lawyer who is a practising member of the Law Society of New Brunswick.\n\n4.1(4)The requirement under paragraph 4(c) that two or more of the attesting witnesses subscribe the will in the presence of the testator may be satisfied by using an electronic means of communication, provided that at least one witness is a lawyer who is a practising member of the Law Society of New Brunswick.\n\n4.1(5)If a will is executed by using an electronic means of communication authorized by this section, the requirements that a will be signed or subscribed may be satisfied by signing or subscribing the will in counterpart.\n\n4.1(6)For the purposes of subsection (5), counterparts of a will shall together constitute the will.\n\n4.1(7)For the purposes of subsection (5), counterparts of a will are deemed to be identical even if there are minor, non-substantive differences in format or layout of the counterparts.\n\n4.1(8)A will made in accordance with this section shall include a statement that it was signed and witnessed in accordance with this section.\n\n2020, c.31, s.2; 2022, c.46, s.2",
+      "subsections": [
+        {
+          "id": "4.1-subsection-1",
+          "sourceKey": "section:4.1/subsection:1",
+          "label": "4.1(1)",
+          "text": "4.1(1)The following definition applies in this section.\n\n“electronic means of communication” means an electronic means of communication in which all persons are able to see, hear and communicate with one another in real time, to the same extent as if the persons were communicating in person in the same location. (moyen de communication électronique)",
+          "contentHash": "04448eae23ebba976d9c04c60660194877a6fb6049ebe4e42620a5f4bbe14ca1"
+        },
+        {
+          "id": "4.1-subsection-2",
+          "sourceKey": "section:4.1/subsection:2",
+          "label": "4.1(2)",
+          "text": "4.1(2)The requirement under paragraph 4(a) that a will signed in the name of the testator by some other person is signed in the presence of the testator may be satisfied by using an electronic means of communication.",
+          "contentHash": "d6d11377dc59eac39f5f477078259fd9556a537287fd755e3b72130ac64323c6"
+        },
+        {
+          "id": "4.1-subsection-3",
+          "sourceKey": "section:4.1/subsection:3",
+          "label": "4.1(3)",
+          "text": "4.1(3)The requirement under paragraph 4(b) that two or more attesting witnesses are present at the time the testator signs the will or acknowledges the signature may be satisfied by using an electronic means of communication, provided that at least one witness is a lawyer who is a practising member of the Law Society of New Brunswick.",
+          "contentHash": "9c78db9d8a9f86aba25c3bf168315680b21b87930c321671edb897ae64dd350e"
+        },
+        {
+          "id": "4.1-subsection-4",
+          "sourceKey": "section:4.1/subsection:4",
+          "label": "4.1(4)",
+          "text": "4.1(4)The requirement under paragraph 4(c) that two or more of the attesting witnesses subscribe the will in the presence of the testator may be satisfied by using an electronic means of communication, provided that at least one witness is a lawyer who is a practising member of the Law Society of New Brunswick.",
+          "contentHash": "a80188371a8c7710b25c4b10f3ebd6e57dc20f5e1f0eec9b58f6787f704a7d37"
+        },
+        {
+          "id": "4.1-subsection-5",
+          "sourceKey": "section:4.1/subsection:5",
+          "label": "4.1(5)",
+          "text": "4.1(5)If a will is executed by using an electronic means of communication authorized by this section, the requirements that a will be signed or subscribed may be satisfied by signing or subscribing the will in counterpart.",
+          "contentHash": "108be02ca11fba6b8dcd07095c426037984efb763df3eb3d3c893462063d7a14"
+        },
+        {
+          "id": "4.1-subsection-6",
+          "sourceKey": "section:4.1/subsection:6",
+          "label": "4.1(6)",
+          "text": "4.1(6)For the purposes of subsection (5), counterparts of a will shall together constitute the will.",
+          "contentHash": "2348a4672672b6100bea770a33b80b8d9e10fc87bf811b545f7db6ddeb02cdc0"
+        },
+        {
+          "id": "4.1-subsection-7",
+          "sourceKey": "section:4.1/subsection:7",
+          "label": "4.1(7)",
+          "text": "4.1(7)For the purposes of subsection (5), counterparts of a will are deemed to be identical even if there are minor, non-substantive differences in format or layout of the counterparts.",
+          "contentHash": "e935cf020f051a05f4927794c62bc69e697892198f4a42b3b90319ae7cb2f3ef"
+        },
+        {
+          "id": "4.1-subsection-8",
+          "sourceKey": "section:4.1/subsection:8",
+          "label": "4.1(8)",
+          "text": "4.1(8)A will made in accordance with this section shall include a statement that it was signed and witnessed in accordance with this section.\n\n2020, c.31, s.2; 2022, c.46, s.2",
+          "contentHash": "79c7d295240a2ae808e4715c904365c98bdf48d36db5c012063fe104eaf6b365"
+        }
+      ],
+      "contentHash": "b51c54a55fba9963600cdf71d9239b2c20f7a7abb0f70efbdaa007b2ff173d7d"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "componentType": "section",
+      "label": "5",
+      "heading": "Will of member of Canadian Forces",
+      "text": "Will of member of Canadian Forces\n\n5(1)A member of the Canadian Forces while placed on active service pursuant to the National Defence Act, chapter N-4 of the Revised Statutes of Canada, 1970, or a member of any other naval, land or air force while on active service, or a mariner or a seaman when at sea or in the course of a voyage, may make a will by a writing signed by him or by some other person in his presence and by his direction without any further formality or any requirement of the presence of or attestation of signature by a witness.\n\n5(2)For the purpose of this section a certificate signed by or on behalf of an officer purporting to have custody of the records of the force in which a person was serving at the time the will was made setting out that the person was on active service at that time, is sufficient proof of that fact.\n\n5(3)For the purposes of this section if a certificate under subsection (2) is not available, a member of a naval, land or air force is deemed to be on active service after he has taken steps under the orders of a superior officer preparatory to serving with or being attached to or seconded to a component of such a force that has been placed on active service.\n\n1959, c.15, s.5",
+      "subsections": [
+        {
+          "id": "5-subsection-1",
+          "sourceKey": "section:5/subsection:1",
+          "label": "5(1)",
+          "text": "5(1)A member of the Canadian Forces while placed on active service pursuant to the National Defence Act, chapter N-4 of the Revised Statutes of Canada, 1970, or a member of any other naval, land or air force while on active service, or a mariner or a seaman when at sea or in the course of a voyage, may make a will by a writing signed by him or by some other person in his presence and by his direction without any further formality or any requirement of the presence of or attestation of signature by a witness.",
+          "contentHash": "ee71bc9059d87fbf93cf1e23a994a39a78d87de2844108189f502bfb1b3c22ff"
+        },
+        {
+          "id": "5-subsection-2",
+          "sourceKey": "section:5/subsection:2",
+          "label": "5(2)",
+          "text": "5(2)For the purpose of this section a certificate signed by or on behalf of an officer purporting to have custody of the records of the force in which a person was serving at the time the will was made setting out that the person was on active service at that time, is sufficient proof of that fact.",
+          "contentHash": "8a939f3930ea2fddbba38df44ccbae13e5bbcef1bf30917e983e67573591dc00"
+        },
+        {
+          "id": "5-subsection-3",
+          "sourceKey": "section:5/subsection:3",
+          "label": "5(3)",
+          "text": "5(3)For the purposes of this section if a certificate under subsection (2) is not available, a member of a naval, land or air force is deemed to be on active service after he has taken steps under the orders of a superior officer preparatory to serving with or being attached to or seconded to a component of such a force that has been placed on active service.\n\n1959, c.15, s.5",
+          "contentHash": "b55efa1cae282a2509f811ab89c03c3aa22ade414d27a1e4ade82633e2c18524"
+        }
+      ],
+      "contentHash": "ceefac188831a226bc5da1368e2103c1c301bff88b0c93bef659aebf54f8f1f4"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "componentType": "section",
+      "label": "6",
+      "heading": "Holograph will",
+      "text": "Holograph will\n\n6A testator may make a valid will wholly by his own handwriting and signature, without formality, and without the presence, attestation or signature of a witness.\n1959, c.15, s.6",
+      "subsections": [],
+      "contentHash": "eb3ecf7cb94e6b7131ab2940882eda14c2808c803790476e654820a4b6f96745"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "componentType": "section",
+      "label": "7",
+      "heading": "Signature to will",
+      "text": "Signature to will\n\n7(1)In so far as the position of the signature is concerned, a will is valid if the signature of the testator, made either by him or the person signing for him, is placed at or after or following or under or beside or opposite to the end of the will so that it is apparent on the face of the will that the testator intended to give effect by the signature to the writing signed as his will.\n\n7(2)A will is not rendered invalid by the circumstance that\n\n(a)\nthe signature does not follow or is not immediately after the foot or end of the will,\n\n(b)\na blank space intervenes between the concluding words of the will and the signature,\n\n(c)\nthe signature is placed among the words of a testimonium clause or of a clause of attestation or follows or is after or under a clause of attestation either with or without a blank space intervening, or follows or is after or under or beside the name of a subscribing witness,\n\n(d)\nthe signature is on a side or page or other portion of the paper or papers containing the will on which no clause or paragraph or disposing part of the will is written above the signature, or\n\n(e)\nthere appears to be sufficient space on or at the bottom of the preceding side or page or other portion of the same paper on which the will is written to contain the signature.\n\n7(3)The generality of subsection (1) is not restricted by the enumeration of circumstances set out in subsection (2), but a signature in conformity with section 4, 5 or 6 or this section does not give effect to a disposition or direction that is underneath the signature or that follows the signature or to a disposition or direction inserted after the signature was made.\n\n1959, c.15, s.7",
+      "subsections": [
+        {
+          "id": "7-subsection-1",
+          "sourceKey": "section:7/subsection:1",
+          "label": "7(1)",
+          "text": "7(1)In so far as the position of the signature is concerned, a will is valid if the signature of the testator, made either by him or the person signing for him, is placed at or after or following or under or beside or opposite to the end of the will so that it is apparent on the face of the will that the testator intended to give effect by the signature to the writing signed as his will.",
+          "contentHash": "e1c792f9b01eaccb98ad2623ca846dc4ce5255eac163157ec29e8f6b281a6d1f"
+        },
+        {
+          "id": "7-subsection-2",
+          "sourceKey": "section:7/subsection:2",
+          "label": "7(2)",
+          "text": "7(2)A will is not rendered invalid by the circumstance that\n\n(a)\nthe signature does not follow or is not immediately after the foot or end of the will,\n\n(b)\na blank space intervenes between the concluding words of the will and the signature,\n\n(c)\nthe signature is placed among the words of a testimonium clause or of a clause of attestation or follows or is after or under a clause of attestation either with or without a blank space intervening, or follows or is after or under or beside the name of a subscribing witness,\n\n(d)\nthe signature is on a side or page or other portion of the paper or papers containing the will on which no clause or paragraph or disposing part of the will is written above the signature, or\n\n(e)\nthere appears to be sufficient space on or at the bottom of the preceding side or page or other portion of the same paper on which the will is written to contain the signature.",
+          "contentHash": "391eeae1694a3ab8f76da4afb5c3d928f0531dc7678977dc163577a172a92918"
+        },
+        {
+          "id": "7-subsection-3",
+          "sourceKey": "section:7/subsection:3",
+          "label": "7(3)",
+          "text": "7(3)The generality of subsection (1) is not restricted by the enumeration of circumstances set out in subsection (2), but a signature in conformity with section 4, 5 or 6 or this section does not give effect to a disposition or direction that is underneath the signature or that follows the signature or to a disposition or direction inserted after the signature was made.\n\n1959, c.15, s.7",
+          "contentHash": "cbc44a61c19a54cb9f61a9271aafea8e6f63f0c53af55ed8d9cb0ceae096224c"
+        }
+      ],
+      "contentHash": "106b8eb15e86890aa0c0ae40661bcd98d6086ba7fb4c680a542e12e78ba349ba"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "componentType": "section",
+      "label": "8",
+      "heading": "Persons under 19 years",
+      "text": "Persons under 19 years\n\n8(1)A will made by a person who is under the age of nineteen years is not valid unless at the time of making the will the person\n\n(a)\nis or has been married,\n\n(b)\nis a member of a component of the Canadian Forces\n\n(i)\nthat is referred to in the National Defence Act, chapter N-4 of the Revised Statutes of Canada, 1970 as a regular force, or\n\n(ii)\nwhile placed on active service under the National Defence Act, chapter N-4 of the Revised Statutes of Canada, 1970, or\n\n(c)\nis a mariner or seaman.\n\n8(2)A certificate purporting to be signed by or on behalf of an officer having custody of the records of the force in which a person was serving at the time the will was made setting out that the person was at that time a member of a regular force or was on active service within paragraph 1(b), is sufficient proof of that fact.\n\n8(3)A person who has made a will under subsection (1) may, while under the age of nineteen years, revoke the will.\n\n1959, c.15, s.8; 1972, c.5, s.2",
+      "subsections": [
+        {
+          "id": "8-subsection-1",
+          "sourceKey": "section:8/subsection:1",
+          "label": "8(1)",
+          "text": "8(1)A will made by a person who is under the age of nineteen years is not valid unless at the time of making the will the person\n\n(a)\nis or has been married,\n\n(b)\nis a member of a component of the Canadian Forces\n\n(i)\nthat is referred to in the National Defence Act, chapter N-4 of the Revised Statutes of Canada, 1970 as a regular force, or\n\n(ii)\nwhile placed on active service under the National Defence Act, chapter N-4 of the Revised Statutes of Canada, 1970, or\n\n(c)\nis a mariner or seaman.",
+          "contentHash": "f7647730ff01f113cf0aacdd374855b59403e7dec71720602e5031fb6d1db6df"
+        },
+        {
+          "id": "8-subsection-2",
+          "sourceKey": "section:8/subsection:2",
+          "label": "8(2)",
+          "text": "8(2)A certificate purporting to be signed by or on behalf of an officer having custody of the records of the force in which a person was serving at the time the will was made setting out that the person was at that time a member of a regular force or was on active service within paragraph 1(b), is sufficient proof of that fact.",
+          "contentHash": "430e3a3f5b446498f880ae3bf6636708ef6682eb66b2394f122314eda827c8b5"
+        },
+        {
+          "id": "8-subsection-3",
+          "sourceKey": "section:8/subsection:3",
+          "label": "8(3)",
+          "text": "8(3)A person who has made a will under subsection (1) may, while under the age of nineteen years, revoke the will.\n\n1959, c.15, s.8; 1972, c.5, s.2",
+          "contentHash": "ad398daa0698326160515de46f4d1691508ee27b1e420abdaf3a3038df9f4b6e"
+        }
+      ],
+      "contentHash": "13422ba36ecdc5058ea7a1c8e1923d4a7469f0187d5d2d3e5ef91b7b7adb7cf4"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "componentType": "section",
+      "label": "9",
+      "heading": "Validity of power of appointment",
+      "text": "Validity of power of appointment\n\n9A will made in accordance with this Act is as to form a valid execution of a power of appointment by will notwithstanding that it has been expressly required that a will in exercise of the power be made in some form other than that in which it is made.\n1959, c.15, s.9",
+      "subsections": [],
+      "contentHash": "b8ea319528a161fed1db00bc1cbf5fa1a798c6fff1c88d5d501d22788a37f4f8"
+    },
+    {
+      "id": "section-10",
+      "sourceKey": "section:10",
+      "componentType": "section",
+      "label": "10",
+      "heading": "Publication of will",
+      "text": "Publication of will\n\n10A will made in accordance with this Act is valid without other publication.\n1959, c.15, s.10",
+      "subsections": [],
+      "contentHash": "616e5dbbf925093be37db5929b4f41ec8288134ec75e10603c2b00b364a76791"
+    },
+    {
+      "id": "section-11",
+      "sourceKey": "section:11",
+      "componentType": "section",
+      "label": "11",
+      "heading": "Effect of incompetency of attesting witness",
+      "text": "Effect of incompetency of attesting witness\n\n11Where a person who attested a will was at the time of its execution or afterward has become incompetent as a witness to prove its execution, the will is not on that account invalid.\n1959, c.15, s.11",
+      "subsections": [],
+      "contentHash": "782ea801f46c8e97ea51a994c3fcc32b73b089ff4ac7182168070e5493384048"
+    },
+    {
+      "id": "section-12",
+      "sourceKey": "section:12",
+      "componentType": "section",
+      "label": "12",
+      "heading": "Conflict of interest of attesting witness",
+      "text": "Conflict of interest of attesting witness\n\n12(1)Where a will is attested by a person to whom or to whose then spouse a beneficial devise, bequest or other disposition or appointment of or affecting real or personal property, except charges and directions for payment of debt, is thereby given or made, the devise, bequest or other disposition or appointment is void so far only as it concerns the person so attesting, or his or her spouse or a person claiming under any of them; but the person so attesting is a competent witness to prove the execution of the will or its validity or invalidity.\n\n12(2)Where a will is attested by at least two persons who are not within subsection (1) or where no attestation is necessary, the devise, bequest or other disposition or appointment is not void under that subsection.\n\n1959, c.15, s.12; 2008, c.45, s.42",
+      "subsections": [
+        {
+          "id": "12-subsection-1",
+          "sourceKey": "section:12/subsection:1",
+          "label": "12(1)",
+          "text": "12(1)Where a will is attested by a person to whom or to whose then spouse a beneficial devise, bequest or other disposition or appointment of or affecting real or personal property, except charges and directions for payment of debt, is thereby given or made, the devise, bequest or other disposition or appointment is void so far only as it concerns the person so attesting, or his or her spouse or a person claiming under any of them; but the person so attesting is a competent witness to prove the execution of the will or its validity or invalidity.",
+          "contentHash": "2f6f19d533e840ab781eaf8fec8cb979c1e9ae92b4d488d02c9c79650f0a3f23"
+        },
+        {
+          "id": "12-subsection-2",
+          "sourceKey": "section:12/subsection:2",
+          "label": "12(2)",
+          "text": "12(2)Where a will is attested by at least two persons who are not within subsection (1) or where no attestation is necessary, the devise, bequest or other disposition or appointment is not void under that subsection.\n\n1959, c.15, s.12; 2008, c.45, s.42",
+          "contentHash": "08f94ed719f271a3fbca550e80767407d6985a96c3e4f713915a30a7f98a054f"
+        }
+      ],
+      "contentHash": "a62d4ec2c5361852508dab7e2eadc3c1d9af55871f20330704f01e2be7fba168"
+    },
+    {
+      "id": "section-13",
+      "sourceKey": "section:13",
+      "componentType": "section",
+      "label": "13",
+      "heading": "Power of creditor to attest will",
+      "text": "Power of creditor to attest will\n\n13Where real or personal property is charged by a will with a debt and a creditor or the spouse of a creditor whose debt is so charged attests a will, the person so attesting, notwithstanding such charge, is a competent witness to prove the execution of the will or its validity or invalidity.\n1959, c.15, s.13; 2008, c.45, s.42",
+      "subsections": [],
+      "contentHash": "764c25070922a79c778b2b4d75989bf771c99ccf093bf8e95db0524b1c047280"
+    },
+    {
+      "id": "section-14",
+      "sourceKey": "section:14",
+      "componentType": "section",
+      "label": "14",
+      "heading": "Power of executor to attest will",
+      "text": "Power of executor to attest will\n\n14A person is not incompetent as a witness to prove the execution of a will, or its validity or invalidity solely because he is an executor.\n1959, c.15, s.14",
+      "subsections": [],
+      "contentHash": "c2350a65dbc748a51013fe23215bbd2cf39c317bd1cee404e29cdd2457e0b72c"
+    },
+    {
+      "id": "section-15",
+      "sourceKey": "section:15",
+      "componentType": "section",
+      "label": "15",
+      "heading": "Revocation of will",
+      "text": "Revocation of will\n\n15A will or part of a will is revoked only by\n\n(a)\nRepealed: 1991, c.62, s.4\n\n(b)\nanother will made in accordance with the provisions of this Act,\n\n(c)\na writing declaring an intention to revoke and made in accordance with the provisions of this Act governing making of a will, or\n\n(d)\nburning, tearing or otherwise destroying it by the testator or by some person in his presence and by his direction with the intention of revoking it.\n\n1959, c.15, s.15; 1991, c.62, s.4",
+      "subsections": [],
+      "contentHash": "27f74faaadb3cdd2b00b1a288d6ac7815a84011a2524a8c49ded69e01f69e55e"
+    },
+    {
+      "id": "section-15.1",
+      "sourceKey": "section:15.1",
+      "componentType": "section",
+      "label": "15.1",
+      "heading": "Effect of subsequent marriage on will",
+      "text": "Effect of subsequent marriage on will\n\n15.1(1)In this section\n\n“Court” means The Court of King’s Bench of New Brunswick and includes a judge of that Court.(Cour)\n\n15.1(2)A person who has made a will and who subsequently marries and dies shall be deemed to have died intestate if the person dies\n\n(a)\nwhile married, or\n\n(b)\nwhile any issue of a marriage of the testator subsequent to the will is still alive.\n\n15.1(3)Where a person is deemed under subsection (2) to have died intestate, a person who is a beneficiary under the will but who will take no part of the deceased’s estate on intestacy may apply to the Court within four months after the deceased’s death for effect to be given to the devise or bequest in the will.\n\n15.1(4)On an application under subsection (3), the Court may order that effect be given to any devise or bequest, or any part of it, contained in the will if such an order can be made without undue detriment to a person who would otherwise take any part of the deceased’s estate on intestacy.\n\n15.1(5)Without limiting the generality of subsection (4), the Court may consider that a detriment to a person who is entitled to part of the deceased’s estate on intestacy and who is a beneficiary under the will is not an undue detriment if that person will receive, as a result of an order made under subsection (4), no less than the person would have been entitled to under the will.\n\n15.1(6)Notwithstanding subsection (3), the Court may, after the expiration of the period referred to in that subsection, if the Court considers it just, allow an application to be made under that subsection in respect of any portion of the deceased’s estate remaining undistributed at the date of the application.\n\n1991, c.62, s.4; 1994, c.32, s.1; 2023, c.17, s.280",
+      "subsections": [
+        {
+          "id": "15.1-subsection-1",
+          "sourceKey": "section:15.1/subsection:1",
+          "label": "15.1(1)",
+          "text": "15.1(1)In this section\n\n“Court” means The Court of King’s Bench of New Brunswick and includes a judge of that Court.(Cour)",
+          "contentHash": "46d9f9333f01ca13eda554d737c06e5469eb9140bca24ab77a31995c871aa504"
+        },
+        {
+          "id": "15.1-subsection-2",
+          "sourceKey": "section:15.1/subsection:2",
+          "label": "15.1(2)",
+          "text": "15.1(2)A person who has made a will and who subsequently marries and dies shall be deemed to have died intestate if the person dies\n\n(a)\nwhile married, or\n\n(b)\nwhile any issue of a marriage of the testator subsequent to the will is still alive.",
+          "contentHash": "dfabbd7ddb6eaff4e4c30f74073ca78dd78f0750c0da5f442168594118561df9"
+        },
+        {
+          "id": "15.1-subsection-3",
+          "sourceKey": "section:15.1/subsection:3",
+          "label": "15.1(3)",
+          "text": "15.1(3)Where a person is deemed under subsection (2) to have died intestate, a person who is a beneficiary under the will but who will take no part of the deceased’s estate on intestacy may apply to the Court within four months after the deceased’s death for effect to be given to the devise or bequest in the will.",
+          "contentHash": "ba36de6ee78e98273414bc8eb5c544c0a932e2182200794691dae6218e464c5c"
+        },
+        {
+          "id": "15.1-subsection-4",
+          "sourceKey": "section:15.1/subsection:4",
+          "label": "15.1(4)",
+          "text": "15.1(4)On an application under subsection (3), the Court may order that effect be given to any devise or bequest, or any part of it, contained in the will if such an order can be made without undue detriment to a person who would otherwise take any part of the deceased’s estate on intestacy.",
+          "contentHash": "308a23191145b8c7c82de5094a2c5a75220b5ed14f25697ea129b9341f19a6bd"
+        },
+        {
+          "id": "15.1-subsection-5",
+          "sourceKey": "section:15.1/subsection:5",
+          "label": "15.1(5)",
+          "text": "15.1(5)Without limiting the generality of subsection (4), the Court may consider that a detriment to a person who is entitled to part of the deceased’s estate on intestacy and who is a beneficiary under the will is not an undue detriment if that person will receive, as a result of an order made under subsection (4), no less than the person would have been entitled to under the will.",
+          "contentHash": "744acc70989686f4de3804df47b5ea3f6303febc721e496458f5f5c84e2d240c"
+        },
+        {
+          "id": "15.1-subsection-6",
+          "sourceKey": "section:15.1/subsection:6",
+          "label": "15.1(6)",
+          "text": "15.1(6)Notwithstanding subsection (3), the Court may, after the expiration of the period referred to in that subsection, if the Court considers it just, allow an application to be made under that subsection in respect of any portion of the deceased’s estate remaining undistributed at the date of the application.\n\n1991, c.62, s.4; 1994, c.32, s.1; 2023, c.17, s.280",
+          "contentHash": "0d2f954dff59f6bac4a165094daf38cf1b7933c766cf51618bbe1f87b357a581"
+        }
+      ],
+      "contentHash": "80a4efced7b26a0e379baf14cb502b9524d02969f7bf40c9af5dcb635420d33f"
+    },
+    {
+      "id": "section-16",
+      "sourceKey": "section:16",
+      "componentType": "section",
+      "label": "16",
+      "heading": "Circumstances where section 15.1 does not apply",
+      "text": "Circumstances where section 15.1 does not apply\n\n16Section 15.1 does not apply where\n\n(a)\nthere is a declaration in the will that it is made in contemplation of the marriage, or\n\n(b)\nthe will is made in exercise of a power of appointment of real or personal property that would not in default of the appointment pass to the heir, executor or administrator of the testator or to the persons entitled to the estate of the testator if the testator died intestate.\n\n1959, c.15, s.16; 1991, c.62, s.4",
+      "subsections": [],
+      "contentHash": "94e70ce5406713565b482180479d86bb49f10c482d7c49d4ecec23a8d40472e3"
+    },
+    {
+      "id": "section-17",
+      "sourceKey": "section:17",
+      "componentType": "section",
+      "label": "17",
+      "heading": "Presumption of intention to revoke",
+      "text": "Presumption of intention to revoke\n\n17A will is not revoked by presumption of an intention to revoke it on the ground of a change in circumstances.\n1959, c.15, s.17",
+      "subsections": [],
+      "contentHash": "effa097708d9976d13f094334491f29e7aab0e9af6cc3199287f6db41b9006ae"
+    },
+    {
+      "id": "section-18",
+      "sourceKey": "section:18",
+      "componentType": "section",
+      "label": "18",
+      "heading": "Alterations",
+      "text": "Alterations\n\n18(1)Subject to subsection (2), unless an alteration that is made in a will after the will has been made is made in accordance with the provisions of this Act governing making of a will, the alteration has no effect except to invalidate words or meanings that it renders no longer apparent.\n\n18(2)An alteration that is made in a will after the will has been made is validly made when the signature of the testator and subscription of witnesses to the signature of the testator to the alteration, or, in the case of a will that was made under section 5 or section 6, the signature of the testator, are or is made\n\n(a)\nin the margin or in some other part of the will opposite or near to the alteration, or\n\n(b)\nat the foot or end of or opposite to a memorandum referring to the alteration and written in some part of the will.\n\n1959, c.15, s.18",
+      "subsections": [
+        {
+          "id": "18-subsection-1",
+          "sourceKey": "section:18/subsection:1",
+          "label": "18(1)",
+          "text": "18(1)Subject to subsection (2), unless an alteration that is made in a will after the will has been made is made in accordance with the provisions of this Act governing making of a will, the alteration has no effect except to invalidate words or meanings that it renders no longer apparent.",
+          "contentHash": "199dcc4974204f41e1260e84fcae7f12c4d4603780d17347b7662477693fd5de"
+        },
+        {
+          "id": "18-subsection-2",
+          "sourceKey": "section:18/subsection:2",
+          "label": "18(2)",
+          "text": "18(2)An alteration that is made in a will after the will has been made is validly made when the signature of the testator and subscription of witnesses to the signature of the testator to the alteration, or, in the case of a will that was made under section 5 or section 6, the signature of the testator, are or is made\n\n(a)\nin the margin or in some other part of the will opposite or near to the alteration, or\n\n(b)\nat the foot or end of or opposite to a memorandum referring to the alteration and written in some part of the will.\n\n1959, c.15, s.18",
+          "contentHash": "029c2dd8e34780e0125dafed8d6d00f5b38c155d577db1f4f96e84319c51e524"
+        }
+      ],
+      "contentHash": "dba1dc6a2657c4ee55791788f5a0d35f81e28e83d6d15acd300d4310b3bed9f6"
+    },
+    {
+      "id": "section-19",
+      "sourceKey": "section:19",
+      "componentType": "section",
+      "label": "19",
+      "heading": "Revival of revocation",
+      "text": "Revival of revocation\n\n19(1)A will or part of a will that has been in any manner revoked is revived only\n\n(a)\nby a will made in accordance with the provisions of this Act, or\n\n(b)\nby a codicil that has been made in accordance with the provisions of this Act,\n\nthat shows an intention to give effect to the will or part that was revoked.\n\n19(2)Except where a contrary intention is shown, when a will that has been partly revoked and afterward wholly revoked, is revived, the revival does not extend to the part that was revoked before the revocation of the whole.\n\n1959, c.15, s.19",
+      "subsections": [
+        {
+          "id": "19-subsection-1",
+          "sourceKey": "section:19/subsection:1",
+          "label": "19(1)",
+          "text": "19(1)A will or part of a will that has been in any manner revoked is revived only\n\n(a)\nby a will made in accordance with the provisions of this Act, or\n\n(b)\nby a codicil that has been made in accordance with the provisions of this Act,\n\nthat shows an intention to give effect to the will or part that was revoked.",
+          "contentHash": "dce43d7d6cfd21db45d48101e9a635d3b7237b73da2c204a5f6909d118717b59"
+        },
+        {
+          "id": "19-subsection-2",
+          "sourceKey": "section:19/subsection:2",
+          "label": "19(2)",
+          "text": "19(2)Except where a contrary intention is shown, when a will that has been partly revoked and afterward wholly revoked, is revived, the revival does not extend to the part that was revoked before the revocation of the whole.\n\n1959, c.15, s.19",
+          "contentHash": "ffa13ae4879739a87d2f99a5d1f6056d192a8c24707d845e85eec42e46a83d98"
+        }
+      ],
+      "contentHash": "9e02afe50cc9dda3ff448718f62bf074b01256ce1650a1f66da7593be627dd87"
+    },
+    {
+      "id": "section-20",
+      "sourceKey": "section:20",
+      "componentType": "section",
+      "label": "20",
+      "heading": "Subsequent conveyance, ademption",
+      "text": "Subsequent conveyance, ademption\n\n20(1)A conveyance of or other act relating to real or personal property comprised in a devise or bequest or other disposition, made or done after the making of a will, does not prevent operation of the will with respect to any estate or interest in the property that the testator had power to dispose of by will at the time of his death.\n\n20(2)Except where a contrary intention appears by the will, where a testator at the time of his death has a right or chose in action or equitable estate or interest that was created by a contract respecting a conveyance of or other act relating to real or personal property that was comprised in a devise or bequest, made or done after the making of a will, the devisee or donee of that real or personal property takes the right or chose in action or equitable estate or interest of the testator.\n\n20(3)Except when a contrary intention appears by the will, where the testator has bequeathed proceeds of the sale of property and the proceeds are received by him before his death, the bequest is not adeemed by commingling the proceeds with the funds of the testator if the proceeds are traced into those funds.\n\n1959, c.15, s.20",
+      "subsections": [
+        {
+          "id": "20-subsection-1",
+          "sourceKey": "section:20/subsection:1",
+          "label": "20(1)",
+          "text": "20(1)A conveyance of or other act relating to real or personal property comprised in a devise or bequest or other disposition, made or done after the making of a will, does not prevent operation of the will with respect to any estate or interest in the property that the testator had power to dispose of by will at the time of his death.",
+          "contentHash": "c637720f33496f19bbf878e0e5ed547b8fde4ecde080debafae2b9f092210dbe"
+        },
+        {
+          "id": "20-subsection-2",
+          "sourceKey": "section:20/subsection:2",
+          "label": "20(2)",
+          "text": "20(2)Except where a contrary intention appears by the will, where a testator at the time of his death has a right or chose in action or equitable estate or interest that was created by a contract respecting a conveyance of or other act relating to real or personal property that was comprised in a devise or bequest, made or done after the making of a will, the devisee or donee of that real or personal property takes the right or chose in action or equitable estate or interest of the testator.",
+          "contentHash": "6a6fd28626f39a2c5f5e9e42d57c746f3d86d79eab6a6ea6bf857c376a992425"
+        },
+        {
+          "id": "20-subsection-3",
+          "sourceKey": "section:20/subsection:3",
+          "label": "20(3)",
+          "text": "20(3)Except when a contrary intention appears by the will, where the testator has bequeathed proceeds of the sale of property and the proceeds are received by him before his death, the bequest is not adeemed by commingling the proceeds with the funds of the testator if the proceeds are traced into those funds.\n\n1959, c.15, s.20",
+          "contentHash": "6c5ff59368594f861ab4381a0b9c836d6e77ef6d51896e78b7b790625dadff24"
+        }
+      ],
+      "contentHash": "c6f297f520cd3748b25802c7b8f929ca94575f46de6be99b476d01171b95480d"
+    },
+    {
+      "id": "section-21",
+      "sourceKey": "section:21",
+      "componentType": "section",
+      "label": "21",
+      "heading": "Revival of will",
+      "text": "Revival of will\n\n21(1)Where a will is revived or re-executed by a codicil, the will is deemed to have been made at the time at which it is revived or re-executed.\n\n21(2)Except where a contrary intention appears by the will, a will speaks and takes effect as if it had been made immediately before the death of the testator with respect to\n\n(a)\nthe real and personal property, and\n\n(b)\nthe right or chose in action or equitable estate or interest or the proceeds under subsections 20(2) and (3).\n\n1959, c.15, s.21",
+      "subsections": [
+        {
+          "id": "21-subsection-1",
+          "sourceKey": "section:21/subsection:1",
+          "label": "21(1)",
+          "text": "21(1)Where a will is revived or re-executed by a codicil, the will is deemed to have been made at the time at which it is revived or re-executed.",
+          "contentHash": "53e03a96205f69d170ef857ded05cb51c3fe8917f230dc9d4a991ecbd169eb6c"
+        },
+        {
+          "id": "21-subsection-2",
+          "sourceKey": "section:21/subsection:2",
+          "label": "21(2)",
+          "text": "21(2)Except where a contrary intention appears by the will, a will speaks and takes effect as if it had been made immediately before the death of the testator with respect to\n\n(a)\nthe real and personal property, and\n\n(b)\nthe right or chose in action or equitable estate or interest or the proceeds under subsections 20(2) and (3).\n\n1959, c.15, s.21",
+          "contentHash": "4d3ae7e09faf275a32a41ab30edf34c40f950f803ce125a1e984d13670ad38e3"
+        }
+      ],
+      "contentHash": "069cf8366f8efaf5fb7bed822cff660fd07ffb778f41c4abb0adcdad4b5f740b"
+    },
+    {
+      "id": "section-22",
+      "sourceKey": "section:22",
+      "componentType": "section",
+      "label": "22",
+      "heading": "Effect of failure of inter-vivos gift",
+      "text": "Effect of failure of inter-vivos gift\n\n22Except where a contrary intention appears by the will, real or personal property or an interest therein that is comprised or intended to be comprised in a devise or bequest that fails or becomes void by reason of the death of the devisee or donee in the lifetime of the testator, or by reason of the devise or bequest being contrary to law or otherwise incapable of taking effect, is included in the residuary devise or bequest, if any, contained in the will.\n1959, c.15, s.22",
+      "subsections": [],
+      "contentHash": "b7326729919c1a8a02f1d2204ba14e4b2065775610002f33b5731860844a2f7e"
+    },
+    {
+      "id": "section-23",
+      "sourceKey": "section:23",
+      "componentType": "section",
+      "label": "23",
+      "heading": "Devise includes leasehold and freehold estates",
+      "text": "Devise includes leasehold and freehold estates\n\n23Except where a contrary intention appears by the will, where a testator devises\n\n(a)\nhis land,\n\n(b)\nhis land in a place mentioned in the will, or in the occupation of a person mentioned in the will,\n\n(c)\nland described in a general manner, or\n\n(d)\nland described in a manner that would include a leasehold estate if the testator has no freehold estate which could be described in the manner used,\n\nthe devise includes the leasehold estates of the testator or any of them to which the description extends, as well as freehold estates.\n\n1959, c.15, s.23",
+      "subsections": [],
+      "contentHash": "2b654432045707ff69afe2a89024b74b22ee37970f27a460c1ee34e947a90705"
+    },
+    {
+      "id": "section-24",
+      "sourceKey": "section:24",
+      "componentType": "section",
+      "label": "24",
+      "heading": "Devise or bequest includes property that testator has power to appoint",
+      "text": "Devise or bequest includes property that testator has power to appoint\n\n24(1)Except where a contrary intention appears by the will, a general devise of\n\n(a)\nthe real property of the testator,\n\n(b)\nthe real property of the testator in a place mentioned in the will or in the occupation of a person mentioned in the will, or\n\n(c)\nreal property described in a general manner,\n\nincludes any real property or any real property to which the description extends, that he has power to appoint in any manner he thinks proper and operates as an execution of the power.\n\n24(2)Except where a contrary intention appears by the will, a bequest of\n\n(a)\nthe personal property of the testator, or\n\n(b)\npersonal property described in a general manner\n\nincludes any personal property or any personal property to which the description extends, that he has power to appoint in any manner he thinks proper and operates as an execution of the power.\n\n1959, c.15, s.24",
+      "subsections": [
+        {
+          "id": "24-subsection-1",
+          "sourceKey": "section:24/subsection:1",
+          "label": "24(1)",
+          "text": "24(1)Except where a contrary intention appears by the will, a general devise of\n\n(a)\nthe real property of the testator,\n\n(b)\nthe real property of the testator in a place mentioned in the will or in the occupation of a person mentioned in the will, or\n\n(c)\nreal property described in a general manner,\n\nincludes any real property or any real property to which the description extends, that he has power to appoint in any manner he thinks proper and operates as an execution of the power.",
+          "contentHash": "5b0438ff66e56556fc85a90ab7d0e7ff25ab67f52fd08f8aa7e872acc2675489"
+        },
+        {
+          "id": "24-subsection-2",
+          "sourceKey": "section:24/subsection:2",
+          "label": "24(2)",
+          "text": "24(2)Except where a contrary intention appears by the will, a bequest of\n\n(a)\nthe personal property of the testator, or\n\n(b)\npersonal property described in a general manner\n\nincludes any personal property or any personal property to which the description extends, that he has power to appoint in any manner he thinks proper and operates as an execution of the power.\n\n1959, c.15, s.24",
+          "contentHash": "2eca94d6515812a4e8c4129fdea422abbe52b38d80ce1981e0885a8f53dd11b9"
+        }
+      ],
+      "contentHash": "c622896766005f10eed5ee4869ee8f9340d1ffc3f861376e60caf439af9831f8"
+    },
+    {
+      "id": "section-25",
+      "sourceKey": "section:25",
+      "componentType": "section",
+      "label": "25",
+      "heading": "Devise passes whole of estate",
+      "text": "Devise passes whole of estate\n\n25Except where a contrary intention appears by the will, where real property is devised to a person without words of limitation, the devise passes the fee simple or the whole of any other estate that the testator had power to dispose of by will in the real property.\n1959, c.15, s.25",
+      "subsections": [],
+      "contentHash": "b64b549ff3daa95104cd587c98bc2142065c0247f2982eb1c8a32abdd8fda7a5"
+    },
+    {
+      "id": "section-26",
+      "sourceKey": "section:26",
+      "componentType": "section",
+      "label": "26",
+      "heading": "Devise or bequest to the “heir” of the testator",
+      "text": "Devise or bequest to the “heir” of the testator\n\n26Except where a contrary intention appears by the will, where property is devised or bequeathed to the “heir” of the testator or of another person\n\n(a)\nthe word “heir” means the person to whom the beneficial interest in the property would go under the law of the Province if the testator or the other person died intestate, and\n\n(b)\nwhere used in that law the word “child” includes for the purpose of this section a person related by or through adoption to the testator or the other person.\n\n1959, c.15, s.26",
+      "subsections": [],
+      "contentHash": "ff324857cc80d7e45db89db8609043dec4fa2dc874441ab04d26911c13144e67"
+    },
+    {
+      "id": "section-27",
+      "sourceKey": "section:27",
+      "componentType": "section",
+      "label": "27",
+      "heading": "Devise or bequest referring to want or failure of issue",
+      "text": "Devise or bequest referring to want or failure of issue\n\n27(1)Subject to subsection (2), in a devise or bequest of real or personal property\n\n(a)\nthe words\n\n(i)\n“die without issue”,\n\n(ii)\n“die without leaving issue”, or\n\n(iii)\n“have no issue”, or\n\n(b)\nother words importing either a want or failure of issue of a person in his lifetime or at the time of his death or an indefinite failure of his issue,\n\nmean a want or failure of issue in the lifetime or at the time of death of that person, and do not mean an indefinite failure of his issue unless a contrary intention appears by the will.\n\n27(2)This Act does not extend to cases where the words defined in subsection (1) import\n\n(a)\nif no issue described in a preceding gift be born, or\n\n(b)\nif there be no issue who live to attain the age or otherwise answer the description required for obtaining a vested estate by a preceding gift to that issue.\n\n1959, c.15, s.27",
+      "subsections": [
+        {
+          "id": "27-subsection-1",
+          "sourceKey": "section:27/subsection:1",
+          "label": "27(1)",
+          "text": "27(1)Subject to subsection (2), in a devise or bequest of real or personal property\n\n(a)\nthe words\n\n(i)\n“die without issue”,\n\n(ii)\n“die without leaving issue”, or\n\n(iii)\n“have no issue”, or\n\n(b)\nother words importing either a want or failure of issue of a person in his lifetime or at the time of his death or an indefinite failure of his issue,\n\nmean a want or failure of issue in the lifetime or at the time of death of that person, and do not mean an indefinite failure of his issue unless a contrary intention appears by the will.",
+          "contentHash": "30716d3d4748efa5eed407d7de9b4df3f6d53ef84b12c14a7c5017f6bd5f7a53"
+        },
+        {
+          "id": "27-subsection-2",
+          "sourceKey": "section:27/subsection:2",
+          "label": "27(2)",
+          "text": "27(2)This Act does not extend to cases where the words defined in subsection (1) import\n\n(a)\nif no issue described in a preceding gift be born, or\n\n(b)\nif there be no issue who live to attain the age or otherwise answer the description required for obtaining a vested estate by a preceding gift to that issue.\n\n1959, c.15, s.27",
+          "contentHash": "1570939da2af5bd61df5eb80e91896c8f0c5d9eb2f771d6bcdfd061e857af049"
+        }
+      ],
+      "contentHash": "b35816d8291720187f6d3d47c309df28ec535011380ddcbb62b7a3ae0508985e"
+    },
+    {
+      "id": "section-28",
+      "sourceKey": "section:28",
+      "componentType": "section",
+      "label": "28",
+      "heading": "Devise to trustee or executor passes whole of estate",
+      "text": "Devise to trustee or executor passes whole of estate\n\n28Except where an estate for a definite term of years absolute or determinable or an estate of freehold is devised to a trustee expressly or by implication, a devise of real property to a trustee or executor passes the fee simple or the whole of any other estate or interest that the testator had power to dispose of by will in the real property.\n1959, c.15, s.28",
+      "subsections": [],
+      "contentHash": "b1f38ccd7fdc87f47820078dcf9a736bc313d71e08972fdf7f279d17ee26d3d5"
+    },
+    {
+      "id": "section-29",
+      "sourceKey": "section:29",
+      "componentType": "section",
+      "label": "29",
+      "heading": "Devise to trustee passes whole of estate when purposes of trust satisfied",
+      "text": "Devise to trustee passes whole of estate when purposes of trust satisfied\n\n29Where real property is devised to a trustee without express limitation of the estate to be taken by him and the beneficial interest in the real property or in the surplus rents and profits\n\n(a)\nis not given to a person for life, or\n\n(b)\nis given to a person for life but the purpose of the trust may continue beyond his life,\n\nthe devise vests in the trustee the fee simple or the whole of any other legal estate that the testator had power to dispose of by will in the real property and not an estate determinable when the purposes of the trust are satisfied.\n\n1959, c.15, s.29",
+      "subsections": [],
+      "contentHash": "1d6ca6436b3742d40f05c81eb7b44101f9e607bed976c6c9c6493c5faf552260"
+    },
+    {
+      "id": "section-30",
+      "sourceKey": "section:30",
+      "componentType": "section",
+      "label": "30",
+      "heading": "Gift for charitable purposes",
+      "text": "Gift for charitable purposes\n\n30(1)Where a testator leaves property in trust or by outright gift for a charitable purpose that is linked conjunctively or disjunctively in the will with a non-charitable purpose, and the non-charitable purpose is void for uncertainty or for any other cause, the charitable trust or gift is valid and operates solely for the benefit of the charitable purpose.\n\n30(2)Where a testator leaves property in trust or by outright gift for a charitable purpose that is linked conjunctively or disjunctively in the will with a non-charitable purpose, and the non-charitable purpose is not void, the trust or gift is valid for both purposes, and, where the will has not divided the property among the charitable and non-charitable purposes, the trustee or executor shall divide the property among the charitable and non-charitable purposes according to his discretion.\n\n1959, c.15, s.30",
+      "subsections": [
+        {
+          "id": "30-subsection-1",
+          "sourceKey": "section:30/subsection:1",
+          "label": "30(1)",
+          "text": "30(1)Where a testator leaves property in trust or by outright gift for a charitable purpose that is linked conjunctively or disjunctively in the will with a non-charitable purpose, and the non-charitable purpose is void for uncertainty or for any other cause, the charitable trust or gift is valid and operates solely for the benefit of the charitable purpose.",
+          "contentHash": "b84a2766c3817e84c7645291b3315e809364c4e322b30512c7951f4fa5dc235f"
+        },
+        {
+          "id": "30-subsection-2",
+          "sourceKey": "section:30/subsection:2",
+          "label": "30(2)",
+          "text": "30(2)Where a testator leaves property in trust or by outright gift for a charitable purpose that is linked conjunctively or disjunctively in the will with a non-charitable purpose, and the non-charitable purpose is not void, the trust or gift is valid for both purposes, and, where the will has not divided the property among the charitable and non-charitable purposes, the trustee or executor shall divide the property among the charitable and non-charitable purposes according to his discretion.\n\n1959, c.15, s.30",
+          "contentHash": "3281005cde4fb7ab316db4af6a30f4e510925c1e7c2b42cb3d7aacad9f2b480b"
+        }
+      ],
+      "contentHash": "f966f007f7e0daf03b284e5cbdcb20681bcb5c5b4d8d0ff2123e7bfc009aea19"
+    },
+    {
+      "id": "section-31",
+      "sourceKey": "section:31",
+      "componentType": "section",
+      "label": "31",
+      "heading": "Devise of estate tail or entail estate",
+      "text": "Devise of estate tail or entail estate\n\n31Except where a contrary intention appears by the will, where a person to whom real property is devised for what would have been, under the law of England, an estate tail or in quasi entail\n\n(a)\ndies\n\n(i)\nin the lifetime of the testator,\n\n(ii)\nat the same time as the testator, or\n\n(iii)\nin circumstances rendering it uncertain whether that person or the testator survived the other, and\n\n(b)\nleaves issue who would inherit under the entail if that estate existed,\n\nif any such issue are living at the time of the death of the testator, the devise does not lapse but takes effect as if the death of that person had happened immediately after the death of the testator.\n\n1959, c.15, s.31",
+      "subsections": [],
+      "contentHash": "267e0004a8fad27d5073558073c665d1e3334c6bc57712555a283e97b0ab226c"
+    },
+    {
+      "id": "section-32",
+      "sourceKey": "section:32",
+      "componentType": "section",
+      "label": "32",
+      "heading": "Effect of death of beneficiary or devisee",
+      "text": "Effect of death of beneficiary or devisee\n\n32Except where a contrary intention appears by the will, where a person dies in the lifetime of a testator either before or after the testator makes the will and that person\n\n(a)\nis a child or other issue or a brother or sister of the testator to whom, either as an individual or as a member of a class, is devised or bequeathed an estate or interest in real or personal property not determinable at or before his death, and\n\n(b)\nleaves issue any of whom is living at the time of the death of the testator,\n\nthe devise or bequest does not lapse, but takes effect as if it had been made directly to the persons among whom and in the shares in which the estate of that person would have been divisible if he had died intestate and without debts immediately after the death of the testator.\n\n1959, c.15, s.32; 1987, c.6, s.119",
+      "subsections": [],
+      "contentHash": "3c547293958cc29d6109de1494ccbab0340fa4fe335617b05adb1012be201e3e"
+    },
+    {
+      "id": "section-33",
+      "sourceKey": "section:33",
+      "componentType": "section",
+      "label": "33",
+      "heading": "Illegitimate child deemed legitimate child",
+      "text": "Illegitimate child deemed legitimate child\n\n33In the construction of testamentary dispositions, except where a contrary intention appears by the will, an illegitimate child shall be treated as if he were the legitimate child of his mother.\n1959, c.15, s.33",
+      "subsections": [],
+      "contentHash": "b9e2987a0531c361ac152b6e3f8669cddaa9ebd6bb991597605833bd1df4ba1f"
+    },
+    {
+      "id": "section-34",
+      "sourceKey": "section:34",
+      "componentType": "section",
+      "label": "34",
+      "heading": "Devise of mortgaged property",
+      "text": "Devise of mortgaged property\n\n34(1)Where a person dies possessed of, or entitled to, or under a general power of appointment by his will disposes of, an interest in freehold or leasehold property which, at the time of his death, is subject to a mortgage, and the deceased has not, by will, deed or other document, signified a contrary or other intention, the interest is, as between the different persons claiming through the deceased, primarily liable for the payment or satisfaction of the mortgage debt; and every part of the interest, according to its value, bears a proportionate part of the mortgage debt on the whole interest.\n\n34(2)A testator does not signify a contrary or other intention within subsection (1) by\n\n(a)\na general direction for the payment of debts or of all the debts of the testator out of his personal estate or his residuary real or personal estate, or his residuary real estate, or\n\n(b)\na charge of debts upon that estate,\n\nunless he further signifies that intention by words expressly or by necessary implication referring to all or some part of the mortgage debt.\n\n34(3)Nothing in this section affects a right of a person entitled to the mortgage debt to obtain payment or satisfaction either out of the other assets of the deceased or otherwise.\n\n34(4)In this section, “mortgage” includes an equitable mortgage, and any charge whatsoever, whether equitable, statutory or of other nature, including a lien or claim upon freehold or leasehold property for unpaid purchase money and “mortgage debt” has a meaning similarly extended.\n\n1959, c.15, s.34",
+      "subsections": [
+        {
+          "id": "34-subsection-1",
+          "sourceKey": "section:34/subsection:1",
+          "label": "34(1)",
+          "text": "34(1)Where a person dies possessed of, or entitled to, or under a general power of appointment by his will disposes of, an interest in freehold or leasehold property which, at the time of his death, is subject to a mortgage, and the deceased has not, by will, deed or other document, signified a contrary or other intention, the interest is, as between the different persons claiming through the deceased, primarily liable for the payment or satisfaction of the mortgage debt; and every part of the interest, according to its value, bears a proportionate part of the mortgage debt on the whole interest.",
+          "contentHash": "1917e14d211d8a42f604139a4a79deefff11447b82fb4dab034d71b85a3fba77"
+        },
+        {
+          "id": "34-subsection-2",
+          "sourceKey": "section:34/subsection:2",
+          "label": "34(2)",
+          "text": "34(2)A testator does not signify a contrary or other intention within subsection (1) by\n\n(a)\na general direction for the payment of debts or of all the debts of the testator out of his personal estate or his residuary real or personal estate, or his residuary real estate, or\n\n(b)\na charge of debts upon that estate,\n\nunless he further signifies that intention by words expressly or by necessary implication referring to all or some part of the mortgage debt.",
+          "contentHash": "53b13eb11ce2f5afa1f85a41589277a779e10284ec06ef4271b1ce16eb474350"
+        },
+        {
+          "id": "34-subsection-3",
+          "sourceKey": "section:34/subsection:3",
+          "label": "34(3)",
+          "text": "34(3)Nothing in this section affects a right of a person entitled to the mortgage debt to obtain payment or satisfaction either out of the other assets of the deceased or otherwise.",
+          "contentHash": "80cc11e3d511137140f2f4619f084e72e8b261423962b5c35062cea9972eed0f"
+        },
+        {
+          "id": "34-subsection-4",
+          "sourceKey": "section:34/subsection:4",
+          "label": "34(4)",
+          "text": "34(4)In this section, “mortgage” includes an equitable mortgage, and any charge whatsoever, whether equitable, statutory or of other nature, including a lien or claim upon freehold or leasehold property for unpaid purchase money and “mortgage debt” has a meaning similarly extended.\n\n1959, c.15, s.34",
+          "contentHash": "5a10ca92acfbe289d426f02b48379041faaa653a5fd00ba7c39fa94ff8ae49b5"
+        }
+      ],
+      "contentHash": "e209878313643010d3d62d161736b7ccf3a368c161d9351af0502434b40a2604"
+    },
+    {
+      "id": "section-35",
+      "sourceKey": "section:35",
+      "componentType": "section",
+      "label": "35",
+      "heading": "Power of executor respecting residuary estate",
+      "text": "Power of executor respecting residuary estate\n\n35(1)Where a person dies after the commencement of this Act, having by will appointed a person executor, the executor is a trustee of any residue not expressly disposed of, for the person or persons, if any, who would be entitled to that residue in the event of intestacy in respect to it, unless the person so appointed executor was intended by the will to take the residue beneficially.\n\n35(2)Nothing in this section affects or prejudices a right to which the executor, if this Part had not been passed, would have been entitled, in cases where there is not a person who would be so entitled.\n\n1959, c.15, s.35",
+      "subsections": [
+        {
+          "id": "35-subsection-1",
+          "sourceKey": "section:35/subsection:1",
+          "label": "35(1)",
+          "text": "35(1)Where a person dies after the commencement of this Act, having by will appointed a person executor, the executor is a trustee of any residue not expressly disposed of, for the person or persons, if any, who would be entitled to that residue in the event of intestacy in respect to it, unless the person so appointed executor was intended by the will to take the residue beneficially.",
+          "contentHash": "3cf88077628d3536839936f6ecec180067232b70a1fbed72bceee5b22c4b22a8"
+        },
+        {
+          "id": "35-subsection-2",
+          "sourceKey": "section:35/subsection:2",
+          "label": "35(2)",
+          "text": "35(2)Nothing in this section affects or prejudices a right to which the executor, if this Part had not been passed, would have been entitled, in cases where there is not a person who would be so entitled.\n\n1959, c.15, s.35",
+          "contentHash": "87e52ca69bafa62c3890dfcb1016eef27cfe9e69ceab3cf2b653ecec19d6098a"
+        }
+      ],
+      "contentHash": "e0c1d52b55452d461a4057caca348e8d6dba459b9d66d02668da59e59c240885"
+    },
+    {
+      "id": "section-35.1",
+      "sourceKey": "section:35.1",
+      "componentType": "section",
+      "label": "35.1",
+      "heading": "Jurisdiction of the court where formal requirements are not complied with",
+      "text": "Jurisdiction of the court where formal requirements are not complied with\n\n35.1Where a court of competent jurisdiction is satisfied that a document or any writing on a document embodies\n\n(a)\nthe testamentary intentions of the deceased, or\n\n(b)\nthe intention of the deceased to revoke, alter or revive a will of the deceased or the testamentary intentions of the deceased embodied in a document other than a will,\n\nthe court may, notwithstanding that the document or writing was not executed in compliance with the formal requirements imposed by this Act, order that the document or writing is valid and fully effective as if it had been executed in compliance with the formal requirements imposed by this Act.\n\n1997, c.7, s.1\n\nII\n\nCONFLICT OF LAWS",
+      "subsections": [],
+      "contentHash": "427e65b6b29ab1b74e01f493aac1206ac0ed087fdb10ae304bdd090aff139470"
+    },
+    {
+      "id": "section-36",
+      "sourceKey": "section:36",
+      "componentType": "section",
+      "label": "36",
+      "heading": "Intrinsic validity and effect of will",
+      "text": "Intrinsic validity and effect of will\n\n36(1)In this Part\n\n(a)\nan interest in land includes a leasehold estate as well as a freehold estate in land, and any other estate or interest in land whether the estate or interest is real property or is personal property;\n\n(b)\nan interest in movables includes an interest in a tangible or intangible thing other than land, and includes personal property other than an estate or interest in land.\n\n36(2)Subject to other provisions of this Part, the intrinsic validity and effect of a will, so far it relates to an interest in land, are governed by the law of the place where the land is situated.\n\n36(3)Subject to other provisions of this Part, the intrinsic validity and effect of a will, so far as it relates to an interest in movables, are governed by the law of the place where the testator was domiciled at the time of the testator’s death.\n\n1959, c.15, s.36; 1997, c.7, s.2",
+      "subsections": [
+        {
+          "id": "36-subsection-1",
+          "sourceKey": "section:36/subsection:1",
+          "label": "36(1)",
+          "text": "36(1)In this Part\n\n(a)\nan interest in land includes a leasehold estate as well as a freehold estate in land, and any other estate or interest in land whether the estate or interest is real property or is personal property;\n\n(b)\nan interest in movables includes an interest in a tangible or intangible thing other than land, and includes personal property other than an estate or interest in land.",
+          "contentHash": "a52e045fdd7f95310756c1630fbed7647c0e0931901ab7d1ffa58d79c09865e2"
+        },
+        {
+          "id": "36-subsection-2",
+          "sourceKey": "section:36/subsection:2",
+          "label": "36(2)",
+          "text": "36(2)Subject to other provisions of this Part, the intrinsic validity and effect of a will, so far it relates to an interest in land, are governed by the law of the place where the land is situated.",
+          "contentHash": "d96d8071a45c5a8630c626ed322e29329b4898500f21cc4104a9e143c9c90f66"
+        },
+        {
+          "id": "36-subsection-3",
+          "sourceKey": "section:36/subsection:3",
+          "label": "36(3)",
+          "text": "36(3)Subject to other provisions of this Part, the intrinsic validity and effect of a will, so far as it relates to an interest in movables, are governed by the law of the place where the testator was domiciled at the time of the testator’s death.\n\n1959, c.15, s.36; 1997, c.7, s.2",
+          "contentHash": "03eaa0ac88ecaac84578cc70daca07677503a33ef23d742a35569d6afb1b15c5"
+        }
+      ],
+      "contentHash": "fa59fc4f2b4338a2ca2ce95c8b9c13e4378a22f4937162c7a27a53baa0c8027c"
+    },
+    {
+      "id": "section-37",
+      "sourceKey": "section:37",
+      "componentType": "section",
+      "label": "37",
+      "heading": "Manner and formalities of making will",
+      "text": "Manner and formalities of making will\n\n37As regards the manner and formalities of making a will, a will made either within or without the Province is valid and admissible to probate if it is made in accordance with the law in force at the time of its making in the place where\n\n(a)\nthe will was made,\n\n(b)\nthe testator was domiciled or had his or her habitual residence when the will was made, or\n\n(c)\nthe testator had his or her domicile of origin.\n\n1959, c.15, s.37; 1997, c.7, s.3",
+      "subsections": [],
+      "contentHash": "ae902a21895d615af5cae95714b31b5c74eafa4e4ed642ae5dd246e567931b00"
+    },
+    {
+      "id": "section-38",
+      "sourceKey": "section:38",
+      "componentType": "section",
+      "label": "38",
+      "heading": "Change of domicile or in habitual residence of testator",
+      "text": "Change of domicile or in habitual residence of testator\n\n38A change of domicile or in the habitual residence of the testator occurring after a will is made does not render it invalid as regards the manner and formalities of its making or alter its construction.\n1959, c.15, s.38; 1997, c.7, s.4",
+      "subsections": [],
+      "contentHash": "e7267aa107b58459032a0ef6aefe2395fcec492b25eb742f07b44f215538a50f"
+    },
+    {
+      "id": "section-39",
+      "sourceKey": "section:39",
+      "componentType": "section",
+      "label": "39",
+      "heading": "Aiding with construction of will",
+      "text": "Aiding with construction of will\n\n39Nothing in this Part precludes resort to the law of the place where the testator was domiciled or had his or her habitual residence at the time of making a will in aid of its construction as regards an interest in land or an interest in movables.\n1959, c.15, s.39; 1997, c.7, s.5",
+      "subsections": [],
+      "contentHash": "d0456f771449d1214863832b054ac0126ce83654c0846dcdcfa897480d3abd49"
+    },
+    {
+      "id": "section-40",
+      "sourceKey": "section:40",
+      "componentType": "section",
+      "label": "40",
+      "heading": "Value of movable connected to land",
+      "text": "Value of movable connected to land\n\n40Where the value of a thing that is movable consists mainly or entirely in its use in connection with a particular parcel of land by the owner or occupier of the land, succession to an interest in the thing, under a will or on an intestacy, is governed by the law of the place where the land is situated.\n1959, c.15, s.40\n\nIII\n\nAPPLICATION OF ACT",
+      "subsections": [],
+      "contentHash": "045442e144e9dbd267ac266a89400a92a04a02fa4280cdf9ee5d2cf84b96042b"
+    },
+    {
+      "id": "section-41",
+      "sourceKey": "section:41",
+      "componentType": "section",
+      "label": "41",
+      "heading": "Application of Act",
+      "text": "Application of Act\n\n41This Act applies to the will of a person who dies after the commencement of this Act whether his will was made before or after the commencement of this Act.\n1959, c.15, s.41\n\nN.B. This Act is consolidated to June 16, 2023.",
+      "subsections": [],
+      "contentHash": "ce7257366c9bc2d219b2b2ba38aea2d863e4838818a0a8592a499840871fdf61"
+    }
+  ],
+  "sections": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
+      "label": "1",
+      "heading": "Will defined",
+      "text": "Will defined\n\n1In this Act, “will” includes a testament, a codicil, an appointment by will or by writing in the nature of a will in exercise of a power and any other testamentary disposition.\n1959, c.15, s.1\n\nI\n\nGENERAL",
+      "subsections": [],
+      "contentHash": "2ebd551681e5565d0f00163d9cd91a8eb615b26e1d86275fe7959b18fcf5c255"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "label": "2",
+      "heading": "Power of testator",
+      "text": "Power of testator\n\n2A person may by will devise, bequeath or dispose of all real and personal property, whether acquired before or after making his will, to which at the time of his death he is entitled either at law or in equity, including,\n\n(a)\nestates pur autre vie, whether there is or is not a special occupant and whether they are corporeal or incorporeal hereditaments,\n\n(b)\ncontingent, executory or other future interest in real or personal property, whether the testator is or is not ascertained as the person or one of the persons in whom those interests may respectively become vested, and whether he is entitled to them under the instrument by which they were respectively created or under a disposition of them by deed or will, and\n\n(c)\nrights of entry.\n\n1959, c.15, s.2",
+      "subsections": [],
+      "contentHash": "5d2fa3c78e678b5c957f826d1af106c6fced3ea4669c888dacc4a7d8a279d25a"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
+      "label": "3",
+      "heading": "Necessity of writing",
+      "text": "Necessity of writing\n\n3A will is valid only when it is in writing.\n1959, c.15, s.3",
+      "subsections": [],
+      "contentHash": "356e2258c1f33e1bcb5cc08677981b54f2927fcbefcdd63081bcc743457aaaa2"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
+      "label": "4",
+      "heading": "Attestation clause",
+      "text": "Attestation clause\n\n4Subject to sections 4.1, 5 and 6, a will is not valid unless,\n\n(a)\nat its end it is signed by the testator or signed in his name by some other person in his presence and by his direction,\n\n(b)\nthe testator makes or acknowledges the signature in the presence of two or more attesting witnesses present at the time, and\n\n(c)\ntwo or more of the attesting witnesses subscribe the will in the presence of the testator.\n\n1959, c.15, s.4; 2020, c.31, s.2",
+      "subsections": [],
+      "contentHash": "89bf72e3e50f3855a2bdc4f96a2a316d51918a4d35bc9ecc1132e7f016f8817d"
+    },
+    {
+      "id": "section-4.1",
+      "sourceKey": "section:4.1",
+      "componentType": "section",
+      "label": "4.1",
+      "heading": "Attestation clause when using an electronic means of communication",
+      "text": "Attestation clause when using an electronic means of communication\n2020, c.31, s.2\n\n4.1(1)The following definition applies in this section.\n\n“electronic means of communication” means an electronic means of communication in which all persons are able to see, hear and communicate with one another in real time, to the same extent as if the persons were communicating in person in the same location. (moyen de communication électronique)\n\n4.1(2)The requirement under paragraph 4(a) that a will signed in the name of the testator by some other person is signed in the presence of the testator may be satisfied by using an electronic means of communication.\n\n4.1(3)The requirement under paragraph 4(b) that two or more attesting witnesses are present at the time the testator signs the will or acknowledges the signature may be satisfied by using an electronic means of communication, provided that at least one witness is a lawyer who is a practising member of the Law Society of New Brunswick.\n\n4.1(4)The requirement under paragraph 4(c) that two or more of the attesting witnesses subscribe the will in the presence of the testator may be satisfied by using an electronic means of communication, provided that at least one witness is a lawyer who is a practising member of the Law Society of New Brunswick.\n\n4.1(5)If a will is executed by using an electronic means of communication authorized by this section, the requirements that a will be signed or subscribed may be satisfied by signing or subscribing the will in counterpart.\n\n4.1(6)For the purposes of subsection (5), counterparts of a will shall together constitute the will.\n\n4.1(7)For the purposes of subsection (5), counterparts of a will are deemed to be identical even if there are minor, non-substantive differences in format or layout of the counterparts.\n\n4.1(8)A will made in accordance with this section shall include a statement that it was signed and witnessed in accordance with this section.\n\n2020, c.31, s.2; 2022, c.46, s.2",
+      "subsections": [
+        {
+          "id": "4.1-subsection-1",
+          "sourceKey": "section:4.1/subsection:1",
+          "label": "4.1(1)",
+          "text": "4.1(1)The following definition applies in this section.\n\n“electronic means of communication” means an electronic means of communication in which all persons are able to see, hear and communicate with one another in real time, to the same extent as if the persons were communicating in person in the same location. (moyen de communication électronique)",
+          "contentHash": "04448eae23ebba976d9c04c60660194877a6fb6049ebe4e42620a5f4bbe14ca1"
+        },
+        {
+          "id": "4.1-subsection-2",
+          "sourceKey": "section:4.1/subsection:2",
+          "label": "4.1(2)",
+          "text": "4.1(2)The requirement under paragraph 4(a) that a will signed in the name of the testator by some other person is signed in the presence of the testator may be satisfied by using an electronic means of communication.",
+          "contentHash": "d6d11377dc59eac39f5f477078259fd9556a537287fd755e3b72130ac64323c6"
+        },
+        {
+          "id": "4.1-subsection-3",
+          "sourceKey": "section:4.1/subsection:3",
+          "label": "4.1(3)",
+          "text": "4.1(3)The requirement under paragraph 4(b) that two or more attesting witnesses are present at the time the testator signs the will or acknowledges the signature may be satisfied by using an electronic means of communication, provided that at least one witness is a lawyer who is a practising member of the Law Society of New Brunswick.",
+          "contentHash": "9c78db9d8a9f86aba25c3bf168315680b21b87930c321671edb897ae64dd350e"
+        },
+        {
+          "id": "4.1-subsection-4",
+          "sourceKey": "section:4.1/subsection:4",
+          "label": "4.1(4)",
+          "text": "4.1(4)The requirement under paragraph 4(c) that two or more of the attesting witnesses subscribe the will in the presence of the testator may be satisfied by using an electronic means of communication, provided that at least one witness is a lawyer who is a practising member of the Law Society of New Brunswick.",
+          "contentHash": "a80188371a8c7710b25c4b10f3ebd6e57dc20f5e1f0eec9b58f6787f704a7d37"
+        },
+        {
+          "id": "4.1-subsection-5",
+          "sourceKey": "section:4.1/subsection:5",
+          "label": "4.1(5)",
+          "text": "4.1(5)If a will is executed by using an electronic means of communication authorized by this section, the requirements that a will be signed or subscribed may be satisfied by signing or subscribing the will in counterpart.",
+          "contentHash": "108be02ca11fba6b8dcd07095c426037984efb763df3eb3d3c893462063d7a14"
+        },
+        {
+          "id": "4.1-subsection-6",
+          "sourceKey": "section:4.1/subsection:6",
+          "label": "4.1(6)",
+          "text": "4.1(6)For the purposes of subsection (5), counterparts of a will shall together constitute the will.",
+          "contentHash": "2348a4672672b6100bea770a33b80b8d9e10fc87bf811b545f7db6ddeb02cdc0"
+        },
+        {
+          "id": "4.1-subsection-7",
+          "sourceKey": "section:4.1/subsection:7",
+          "label": "4.1(7)",
+          "text": "4.1(7)For the purposes of subsection (5), counterparts of a will are deemed to be identical even if there are minor, non-substantive differences in format or layout of the counterparts.",
+          "contentHash": "e935cf020f051a05f4927794c62bc69e697892198f4a42b3b90319ae7cb2f3ef"
+        },
+        {
+          "id": "4.1-subsection-8",
+          "sourceKey": "section:4.1/subsection:8",
+          "label": "4.1(8)",
+          "text": "4.1(8)A will made in accordance with this section shall include a statement that it was signed and witnessed in accordance with this section.\n\n2020, c.31, s.2; 2022, c.46, s.2",
+          "contentHash": "79c7d295240a2ae808e4715c904365c98bdf48d36db5c012063fe104eaf6b365"
+        }
+      ],
+      "contentHash": "b51c54a55fba9963600cdf71d9239b2c20f7a7abb0f70efbdaa007b2ff173d7d"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "componentType": "section",
+      "label": "5",
+      "heading": "Will of member of Canadian Forces",
+      "text": "Will of member of Canadian Forces\n\n5(1)A member of the Canadian Forces while placed on active service pursuant to the National Defence Act, chapter N-4 of the Revised Statutes of Canada, 1970, or a member of any other naval, land or air force while on active service, or a mariner or a seaman when at sea or in the course of a voyage, may make a will by a writing signed by him or by some other person in his presence and by his direction without any further formality or any requirement of the presence of or attestation of signature by a witness.\n\n5(2)For the purpose of this section a certificate signed by or on behalf of an officer purporting to have custody of the records of the force in which a person was serving at the time the will was made setting out that the person was on active service at that time, is sufficient proof of that fact.\n\n5(3)For the purposes of this section if a certificate under subsection (2) is not available, a member of a naval, land or air force is deemed to be on active service after he has taken steps under the orders of a superior officer preparatory to serving with or being attached to or seconded to a component of such a force that has been placed on active service.\n\n1959, c.15, s.5",
+      "subsections": [
+        {
+          "id": "5-subsection-1",
+          "sourceKey": "section:5/subsection:1",
+          "label": "5(1)",
+          "text": "5(1)A member of the Canadian Forces while placed on active service pursuant to the National Defence Act, chapter N-4 of the Revised Statutes of Canada, 1970, or a member of any other naval, land or air force while on active service, or a mariner or a seaman when at sea or in the course of a voyage, may make a will by a writing signed by him or by some other person in his presence and by his direction without any further formality or any requirement of the presence of or attestation of signature by a witness.",
+          "contentHash": "ee71bc9059d87fbf93cf1e23a994a39a78d87de2844108189f502bfb1b3c22ff"
+        },
+        {
+          "id": "5-subsection-2",
+          "sourceKey": "section:5/subsection:2",
+          "label": "5(2)",
+          "text": "5(2)For the purpose of this section a certificate signed by or on behalf of an officer purporting to have custody of the records of the force in which a person was serving at the time the will was made setting out that the person was on active service at that time, is sufficient proof of that fact.",
+          "contentHash": "8a939f3930ea2fddbba38df44ccbae13e5bbcef1bf30917e983e67573591dc00"
+        },
+        {
+          "id": "5-subsection-3",
+          "sourceKey": "section:5/subsection:3",
+          "label": "5(3)",
+          "text": "5(3)For the purposes of this section if a certificate under subsection (2) is not available, a member of a naval, land or air force is deemed to be on active service after he has taken steps under the orders of a superior officer preparatory to serving with or being attached to or seconded to a component of such a force that has been placed on active service.\n\n1959, c.15, s.5",
+          "contentHash": "b55efa1cae282a2509f811ab89c03c3aa22ade414d27a1e4ade82633e2c18524"
+        }
+      ],
+      "contentHash": "ceefac188831a226bc5da1368e2103c1c301bff88b0c93bef659aebf54f8f1f4"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "componentType": "section",
+      "label": "6",
+      "heading": "Holograph will",
+      "text": "Holograph will\n\n6A testator may make a valid will wholly by his own handwriting and signature, without formality, and without the presence, attestation or signature of a witness.\n1959, c.15, s.6",
+      "subsections": [],
+      "contentHash": "eb3ecf7cb94e6b7131ab2940882eda14c2808c803790476e654820a4b6f96745"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "componentType": "section",
+      "label": "7",
+      "heading": "Signature to will",
+      "text": "Signature to will\n\n7(1)In so far as the position of the signature is concerned, a will is valid if the signature of the testator, made either by him or the person signing for him, is placed at or after or following or under or beside or opposite to the end of the will so that it is apparent on the face of the will that the testator intended to give effect by the signature to the writing signed as his will.\n\n7(2)A will is not rendered invalid by the circumstance that\n\n(a)\nthe signature does not follow or is not immediately after the foot or end of the will,\n\n(b)\na blank space intervenes between the concluding words of the will and the signature,\n\n(c)\nthe signature is placed among the words of a testimonium clause or of a clause of attestation or follows or is after or under a clause of attestation either with or without a blank space intervening, or follows or is after or under or beside the name of a subscribing witness,\n\n(d)\nthe signature is on a side or page or other portion of the paper or papers containing the will on which no clause or paragraph or disposing part of the will is written above the signature, or\n\n(e)\nthere appears to be sufficient space on or at the bottom of the preceding side or page or other portion of the same paper on which the will is written to contain the signature.\n\n7(3)The generality of subsection (1) is not restricted by the enumeration of circumstances set out in subsection (2), but a signature in conformity with section 4, 5 or 6 or this section does not give effect to a disposition or direction that is underneath the signature or that follows the signature or to a disposition or direction inserted after the signature was made.\n\n1959, c.15, s.7",
+      "subsections": [
+        {
+          "id": "7-subsection-1",
+          "sourceKey": "section:7/subsection:1",
+          "label": "7(1)",
+          "text": "7(1)In so far as the position of the signature is concerned, a will is valid if the signature of the testator, made either by him or the person signing for him, is placed at or after or following or under or beside or opposite to the end of the will so that it is apparent on the face of the will that the testator intended to give effect by the signature to the writing signed as his will.",
+          "contentHash": "e1c792f9b01eaccb98ad2623ca846dc4ce5255eac163157ec29e8f6b281a6d1f"
+        },
+        {
+          "id": "7-subsection-2",
+          "sourceKey": "section:7/subsection:2",
+          "label": "7(2)",
+          "text": "7(2)A will is not rendered invalid by the circumstance that\n\n(a)\nthe signature does not follow or is not immediately after the foot or end of the will,\n\n(b)\na blank space intervenes between the concluding words of the will and the signature,\n\n(c)\nthe signature is placed among the words of a testimonium clause or of a clause of attestation or follows or is after or under a clause of attestation either with or without a blank space intervening, or follows or is after or under or beside the name of a subscribing witness,\n\n(d)\nthe signature is on a side or page or other portion of the paper or papers containing the will on which no clause or paragraph or disposing part of the will is written above the signature, or\n\n(e)\nthere appears to be sufficient space on or at the bottom of the preceding side or page or other portion of the same paper on which the will is written to contain the signature.",
+          "contentHash": "391eeae1694a3ab8f76da4afb5c3d928f0531dc7678977dc163577a172a92918"
+        },
+        {
+          "id": "7-subsection-3",
+          "sourceKey": "section:7/subsection:3",
+          "label": "7(3)",
+          "text": "7(3)The generality of subsection (1) is not restricted by the enumeration of circumstances set out in subsection (2), but a signature in conformity with section 4, 5 or 6 or this section does not give effect to a disposition or direction that is underneath the signature or that follows the signature or to a disposition or direction inserted after the signature was made.\n\n1959, c.15, s.7",
+          "contentHash": "cbc44a61c19a54cb9f61a9271aafea8e6f63f0c53af55ed8d9cb0ceae096224c"
+        }
+      ],
+      "contentHash": "106b8eb15e86890aa0c0ae40661bcd98d6086ba7fb4c680a542e12e78ba349ba"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "componentType": "section",
+      "label": "8",
+      "heading": "Persons under 19 years",
+      "text": "Persons under 19 years\n\n8(1)A will made by a person who is under the age of nineteen years is not valid unless at the time of making the will the person\n\n(a)\nis or has been married,\n\n(b)\nis a member of a component of the Canadian Forces\n\n(i)\nthat is referred to in the National Defence Act, chapter N-4 of the Revised Statutes of Canada, 1970 as a regular force, or\n\n(ii)\nwhile placed on active service under the National Defence Act, chapter N-4 of the Revised Statutes of Canada, 1970, or\n\n(c)\nis a mariner or seaman.\n\n8(2)A certificate purporting to be signed by or on behalf of an officer having custody of the records of the force in which a person was serving at the time the will was made setting out that the person was at that time a member of a regular force or was on active service within paragraph 1(b), is sufficient proof of that fact.\n\n8(3)A person who has made a will under subsection (1) may, while under the age of nineteen years, revoke the will.\n\n1959, c.15, s.8; 1972, c.5, s.2",
+      "subsections": [
+        {
+          "id": "8-subsection-1",
+          "sourceKey": "section:8/subsection:1",
+          "label": "8(1)",
+          "text": "8(1)A will made by a person who is under the age of nineteen years is not valid unless at the time of making the will the person\n\n(a)\nis or has been married,\n\n(b)\nis a member of a component of the Canadian Forces\n\n(i)\nthat is referred to in the National Defence Act, chapter N-4 of the Revised Statutes of Canada, 1970 as a regular force, or\n\n(ii)\nwhile placed on active service under the National Defence Act, chapter N-4 of the Revised Statutes of Canada, 1970, or\n\n(c)\nis a mariner or seaman.",
+          "contentHash": "f7647730ff01f113cf0aacdd374855b59403e7dec71720602e5031fb6d1db6df"
+        },
+        {
+          "id": "8-subsection-2",
+          "sourceKey": "section:8/subsection:2",
+          "label": "8(2)",
+          "text": "8(2)A certificate purporting to be signed by or on behalf of an officer having custody of the records of the force in which a person was serving at the time the will was made setting out that the person was at that time a member of a regular force or was on active service within paragraph 1(b), is sufficient proof of that fact.",
+          "contentHash": "430e3a3f5b446498f880ae3bf6636708ef6682eb66b2394f122314eda827c8b5"
+        },
+        {
+          "id": "8-subsection-3",
+          "sourceKey": "section:8/subsection:3",
+          "label": "8(3)",
+          "text": "8(3)A person who has made a will under subsection (1) may, while under the age of nineteen years, revoke the will.\n\n1959, c.15, s.8; 1972, c.5, s.2",
+          "contentHash": "ad398daa0698326160515de46f4d1691508ee27b1e420abdaf3a3038df9f4b6e"
+        }
+      ],
+      "contentHash": "13422ba36ecdc5058ea7a1c8e1923d4a7469f0187d5d2d3e5ef91b7b7adb7cf4"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "componentType": "section",
+      "label": "9",
+      "heading": "Validity of power of appointment",
+      "text": "Validity of power of appointment\n\n9A will made in accordance with this Act is as to form a valid execution of a power of appointment by will notwithstanding that it has been expressly required that a will in exercise of the power be made in some form other than that in which it is made.\n1959, c.15, s.9",
+      "subsections": [],
+      "contentHash": "b8ea319528a161fed1db00bc1cbf5fa1a798c6fff1c88d5d501d22788a37f4f8"
+    },
+    {
+      "id": "section-10",
+      "sourceKey": "section:10",
+      "componentType": "section",
+      "label": "10",
+      "heading": "Publication of will",
+      "text": "Publication of will\n\n10A will made in accordance with this Act is valid without other publication.\n1959, c.15, s.10",
+      "subsections": [],
+      "contentHash": "616e5dbbf925093be37db5929b4f41ec8288134ec75e10603c2b00b364a76791"
+    },
+    {
+      "id": "section-11",
+      "sourceKey": "section:11",
+      "componentType": "section",
+      "label": "11",
+      "heading": "Effect of incompetency of attesting witness",
+      "text": "Effect of incompetency of attesting witness\n\n11Where a person who attested a will was at the time of its execution or afterward has become incompetent as a witness to prove its execution, the will is not on that account invalid.\n1959, c.15, s.11",
+      "subsections": [],
+      "contentHash": "782ea801f46c8e97ea51a994c3fcc32b73b089ff4ac7182168070e5493384048"
+    },
+    {
+      "id": "section-12",
+      "sourceKey": "section:12",
+      "componentType": "section",
+      "label": "12",
+      "heading": "Conflict of interest of attesting witness",
+      "text": "Conflict of interest of attesting witness\n\n12(1)Where a will is attested by a person to whom or to whose then spouse a beneficial devise, bequest or other disposition or appointment of or affecting real or personal property, except charges and directions for payment of debt, is thereby given or made, the devise, bequest or other disposition or appointment is void so far only as it concerns the person so attesting, or his or her spouse or a person claiming under any of them; but the person so attesting is a competent witness to prove the execution of the will or its validity or invalidity.\n\n12(2)Where a will is attested by at least two persons who are not within subsection (1) or where no attestation is necessary, the devise, bequest or other disposition or appointment is not void under that subsection.\n\n1959, c.15, s.12; 2008, c.45, s.42",
+      "subsections": [
+        {
+          "id": "12-subsection-1",
+          "sourceKey": "section:12/subsection:1",
+          "label": "12(1)",
+          "text": "12(1)Where a will is attested by a person to whom or to whose then spouse a beneficial devise, bequest or other disposition or appointment of or affecting real or personal property, except charges and directions for payment of debt, is thereby given or made, the devise, bequest or other disposition or appointment is void so far only as it concerns the person so attesting, or his or her spouse or a person claiming under any of them; but the person so attesting is a competent witness to prove the execution of the will or its validity or invalidity.",
+          "contentHash": "2f6f19d533e840ab781eaf8fec8cb979c1e9ae92b4d488d02c9c79650f0a3f23"
+        },
+        {
+          "id": "12-subsection-2",
+          "sourceKey": "section:12/subsection:2",
+          "label": "12(2)",
+          "text": "12(2)Where a will is attested by at least two persons who are not within subsection (1) or where no attestation is necessary, the devise, bequest or other disposition or appointment is not void under that subsection.\n\n1959, c.15, s.12; 2008, c.45, s.42",
+          "contentHash": "08f94ed719f271a3fbca550e80767407d6985a96c3e4f713915a30a7f98a054f"
+        }
+      ],
+      "contentHash": "a62d4ec2c5361852508dab7e2eadc3c1d9af55871f20330704f01e2be7fba168"
+    },
+    {
+      "id": "section-13",
+      "sourceKey": "section:13",
+      "componentType": "section",
+      "label": "13",
+      "heading": "Power of creditor to attest will",
+      "text": "Power of creditor to attest will\n\n13Where real or personal property is charged by a will with a debt and a creditor or the spouse of a creditor whose debt is so charged attests a will, the person so attesting, notwithstanding such charge, is a competent witness to prove the execution of the will or its validity or invalidity.\n1959, c.15, s.13; 2008, c.45, s.42",
+      "subsections": [],
+      "contentHash": "764c25070922a79c778b2b4d75989bf771c99ccf093bf8e95db0524b1c047280"
+    },
+    {
+      "id": "section-14",
+      "sourceKey": "section:14",
+      "componentType": "section",
+      "label": "14",
+      "heading": "Power of executor to attest will",
+      "text": "Power of executor to attest will\n\n14A person is not incompetent as a witness to prove the execution of a will, or its validity or invalidity solely because he is an executor.\n1959, c.15, s.14",
+      "subsections": [],
+      "contentHash": "c2350a65dbc748a51013fe23215bbd2cf39c317bd1cee404e29cdd2457e0b72c"
+    },
+    {
+      "id": "section-15",
+      "sourceKey": "section:15",
+      "componentType": "section",
+      "label": "15",
+      "heading": "Revocation of will",
+      "text": "Revocation of will\n\n15A will or part of a will is revoked only by\n\n(a)\nRepealed: 1991, c.62, s.4\n\n(b)\nanother will made in accordance with the provisions of this Act,\n\n(c)\na writing declaring an intention to revoke and made in accordance with the provisions of this Act governing making of a will, or\n\n(d)\nburning, tearing or otherwise destroying it by the testator or by some person in his presence and by his direction with the intention of revoking it.\n\n1959, c.15, s.15; 1991, c.62, s.4",
+      "subsections": [],
+      "contentHash": "27f74faaadb3cdd2b00b1a288d6ac7815a84011a2524a8c49ded69e01f69e55e"
+    },
+    {
+      "id": "section-15.1",
+      "sourceKey": "section:15.1",
+      "componentType": "section",
+      "label": "15.1",
+      "heading": "Effect of subsequent marriage on will",
+      "text": "Effect of subsequent marriage on will\n\n15.1(1)In this section\n\n“Court” means The Court of King’s Bench of New Brunswick and includes a judge of that Court.(Cour)\n\n15.1(2)A person who has made a will and who subsequently marries and dies shall be deemed to have died intestate if the person dies\n\n(a)\nwhile married, or\n\n(b)\nwhile any issue of a marriage of the testator subsequent to the will is still alive.\n\n15.1(3)Where a person is deemed under subsection (2) to have died intestate, a person who is a beneficiary under the will but who will take no part of the deceased’s estate on intestacy may apply to the Court within four months after the deceased’s death for effect to be given to the devise or bequest in the will.\n\n15.1(4)On an application under subsection (3), the Court may order that effect be given to any devise or bequest, or any part of it, contained in the will if such an order can be made without undue detriment to a person who would otherwise take any part of the deceased’s estate on intestacy.\n\n15.1(5)Without limiting the generality of subsection (4), the Court may consider that a detriment to a person who is entitled to part of the deceased’s estate on intestacy and who is a beneficiary under the will is not an undue detriment if that person will receive, as a result of an order made under subsection (4), no less than the person would have been entitled to under the will.\n\n15.1(6)Notwithstanding subsection (3), the Court may, after the expiration of the period referred to in that subsection, if the Court considers it just, allow an application to be made under that subsection in respect of any portion of the deceased’s estate remaining undistributed at the date of the application.\n\n1991, c.62, s.4; 1994, c.32, s.1; 2023, c.17, s.280",
+      "subsections": [
+        {
+          "id": "15.1-subsection-1",
+          "sourceKey": "section:15.1/subsection:1",
+          "label": "15.1(1)",
+          "text": "15.1(1)In this section\n\n“Court” means The Court of King’s Bench of New Brunswick and includes a judge of that Court.(Cour)",
+          "contentHash": "46d9f9333f01ca13eda554d737c06e5469eb9140bca24ab77a31995c871aa504"
+        },
+        {
+          "id": "15.1-subsection-2",
+          "sourceKey": "section:15.1/subsection:2",
+          "label": "15.1(2)",
+          "text": "15.1(2)A person who has made a will and who subsequently marries and dies shall be deemed to have died intestate if the person dies\n\n(a)\nwhile married, or\n\n(b)\nwhile any issue of a marriage of the testator subsequent to the will is still alive.",
+          "contentHash": "dfabbd7ddb6eaff4e4c30f74073ca78dd78f0750c0da5f442168594118561df9"
+        },
+        {
+          "id": "15.1-subsection-3",
+          "sourceKey": "section:15.1/subsection:3",
+          "label": "15.1(3)",
+          "text": "15.1(3)Where a person is deemed under subsection (2) to have died intestate, a person who is a beneficiary under the will but who will take no part of the deceased’s estate on intestacy may apply to the Court within four months after the deceased’s death for effect to be given to the devise or bequest in the will.",
+          "contentHash": "ba36de6ee78e98273414bc8eb5c544c0a932e2182200794691dae6218e464c5c"
+        },
+        {
+          "id": "15.1-subsection-4",
+          "sourceKey": "section:15.1/subsection:4",
+          "label": "15.1(4)",
+          "text": "15.1(4)On an application under subsection (3), the Court may order that effect be given to any devise or bequest, or any part of it, contained in the will if such an order can be made without undue detriment to a person who would otherwise take any part of the deceased’s estate on intestacy.",
+          "contentHash": "308a23191145b8c7c82de5094a2c5a75220b5ed14f25697ea129b9341f19a6bd"
+        },
+        {
+          "id": "15.1-subsection-5",
+          "sourceKey": "section:15.1/subsection:5",
+          "label": "15.1(5)",
+          "text": "15.1(5)Without limiting the generality of subsection (4), the Court may consider that a detriment to a person who is entitled to part of the deceased’s estate on intestacy and who is a beneficiary under the will is not an undue detriment if that person will receive, as a result of an order made under subsection (4), no less than the person would have been entitled to under the will.",
+          "contentHash": "744acc70989686f4de3804df47b5ea3f6303febc721e496458f5f5c84e2d240c"
+        },
+        {
+          "id": "15.1-subsection-6",
+          "sourceKey": "section:15.1/subsection:6",
+          "label": "15.1(6)",
+          "text": "15.1(6)Notwithstanding subsection (3), the Court may, after the expiration of the period referred to in that subsection, if the Court considers it just, allow an application to be made under that subsection in respect of any portion of the deceased’s estate remaining undistributed at the date of the application.\n\n1991, c.62, s.4; 1994, c.32, s.1; 2023, c.17, s.280",
+          "contentHash": "0d2f954dff59f6bac4a165094daf38cf1b7933c766cf51618bbe1f87b357a581"
+        }
+      ],
+      "contentHash": "80a4efced7b26a0e379baf14cb502b9524d02969f7bf40c9af5dcb635420d33f"
+    },
+    {
+      "id": "section-16",
+      "sourceKey": "section:16",
+      "componentType": "section",
+      "label": "16",
+      "heading": "Circumstances where section 15.1 does not apply",
+      "text": "Circumstances where section 15.1 does not apply\n\n16Section 15.1 does not apply where\n\n(a)\nthere is a declaration in the will that it is made in contemplation of the marriage, or\n\n(b)\nthe will is made in exercise of a power of appointment of real or personal property that would not in default of the appointment pass to the heir, executor or administrator of the testator or to the persons entitled to the estate of the testator if the testator died intestate.\n\n1959, c.15, s.16; 1991, c.62, s.4",
+      "subsections": [],
+      "contentHash": "94e70ce5406713565b482180479d86bb49f10c482d7c49d4ecec23a8d40472e3"
+    },
+    {
+      "id": "section-17",
+      "sourceKey": "section:17",
+      "componentType": "section",
+      "label": "17",
+      "heading": "Presumption of intention to revoke",
+      "text": "Presumption of intention to revoke\n\n17A will is not revoked by presumption of an intention to revoke it on the ground of a change in circumstances.\n1959, c.15, s.17",
+      "subsections": [],
+      "contentHash": "effa097708d9976d13f094334491f29e7aab0e9af6cc3199287f6db41b9006ae"
+    },
+    {
+      "id": "section-18",
+      "sourceKey": "section:18",
+      "componentType": "section",
+      "label": "18",
+      "heading": "Alterations",
+      "text": "Alterations\n\n18(1)Subject to subsection (2), unless an alteration that is made in a will after the will has been made is made in accordance with the provisions of this Act governing making of a will, the alteration has no effect except to invalidate words or meanings that it renders no longer apparent.\n\n18(2)An alteration that is made in a will after the will has been made is validly made when the signature of the testator and subscription of witnesses to the signature of the testator to the alteration, or, in the case of a will that was made under section 5 or section 6, the signature of the testator, are or is made\n\n(a)\nin the margin or in some other part of the will opposite or near to the alteration, or\n\n(b)\nat the foot or end of or opposite to a memorandum referring to the alteration and written in some part of the will.\n\n1959, c.15, s.18",
+      "subsections": [
+        {
+          "id": "18-subsection-1",
+          "sourceKey": "section:18/subsection:1",
+          "label": "18(1)",
+          "text": "18(1)Subject to subsection (2), unless an alteration that is made in a will after the will has been made is made in accordance with the provisions of this Act governing making of a will, the alteration has no effect except to invalidate words or meanings that it renders no longer apparent.",
+          "contentHash": "199dcc4974204f41e1260e84fcae7f12c4d4603780d17347b7662477693fd5de"
+        },
+        {
+          "id": "18-subsection-2",
+          "sourceKey": "section:18/subsection:2",
+          "label": "18(2)",
+          "text": "18(2)An alteration that is made in a will after the will has been made is validly made when the signature of the testator and subscription of witnesses to the signature of the testator to the alteration, or, in the case of a will that was made under section 5 or section 6, the signature of the testator, are or is made\n\n(a)\nin the margin or in some other part of the will opposite or near to the alteration, or\n\n(b)\nat the foot or end of or opposite to a memorandum referring to the alteration and written in some part of the will.\n\n1959, c.15, s.18",
+          "contentHash": "029c2dd8e34780e0125dafed8d6d00f5b38c155d577db1f4f96e84319c51e524"
+        }
+      ],
+      "contentHash": "dba1dc6a2657c4ee55791788f5a0d35f81e28e83d6d15acd300d4310b3bed9f6"
+    },
+    {
+      "id": "section-19",
+      "sourceKey": "section:19",
+      "componentType": "section",
+      "label": "19",
+      "heading": "Revival of revocation",
+      "text": "Revival of revocation\n\n19(1)A will or part of a will that has been in any manner revoked is revived only\n\n(a)\nby a will made in accordance with the provisions of this Act, or\n\n(b)\nby a codicil that has been made in accordance with the provisions of this Act,\n\nthat shows an intention to give effect to the will or part that was revoked.\n\n19(2)Except where a contrary intention is shown, when a will that has been partly revoked and afterward wholly revoked, is revived, the revival does not extend to the part that was revoked before the revocation of the whole.\n\n1959, c.15, s.19",
+      "subsections": [
+        {
+          "id": "19-subsection-1",
+          "sourceKey": "section:19/subsection:1",
+          "label": "19(1)",
+          "text": "19(1)A will or part of a will that has been in any manner revoked is revived only\n\n(a)\nby a will made in accordance with the provisions of this Act, or\n\n(b)\nby a codicil that has been made in accordance with the provisions of this Act,\n\nthat shows an intention to give effect to the will or part that was revoked.",
+          "contentHash": "dce43d7d6cfd21db45d48101e9a635d3b7237b73da2c204a5f6909d118717b59"
+        },
+        {
+          "id": "19-subsection-2",
+          "sourceKey": "section:19/subsection:2",
+          "label": "19(2)",
+          "text": "19(2)Except where a contrary intention is shown, when a will that has been partly revoked and afterward wholly revoked, is revived, the revival does not extend to the part that was revoked before the revocation of the whole.\n\n1959, c.15, s.19",
+          "contentHash": "ffa13ae4879739a87d2f99a5d1f6056d192a8c24707d845e85eec42e46a83d98"
+        }
+      ],
+      "contentHash": "9e02afe50cc9dda3ff448718f62bf074b01256ce1650a1f66da7593be627dd87"
+    },
+    {
+      "id": "section-20",
+      "sourceKey": "section:20",
+      "componentType": "section",
+      "label": "20",
+      "heading": "Subsequent conveyance, ademption",
+      "text": "Subsequent conveyance, ademption\n\n20(1)A conveyance of or other act relating to real or personal property comprised in a devise or bequest or other disposition, made or done after the making of a will, does not prevent operation of the will with respect to any estate or interest in the property that the testator had power to dispose of by will at the time of his death.\n\n20(2)Except where a contrary intention appears by the will, where a testator at the time of his death has a right or chose in action or equitable estate or interest that was created by a contract respecting a conveyance of or other act relating to real or personal property that was comprised in a devise or bequest, made or done after the making of a will, the devisee or donee of that real or personal property takes the right or chose in action or equitable estate or interest of the testator.\n\n20(3)Except when a contrary intention appears by the will, where the testator has bequeathed proceeds of the sale of property and the proceeds are received by him before his death, the bequest is not adeemed by commingling the proceeds with the funds of the testator if the proceeds are traced into those funds.\n\n1959, c.15, s.20",
+      "subsections": [
+        {
+          "id": "20-subsection-1",
+          "sourceKey": "section:20/subsection:1",
+          "label": "20(1)",
+          "text": "20(1)A conveyance of or other act relating to real or personal property comprised in a devise or bequest or other disposition, made or done after the making of a will, does not prevent operation of the will with respect to any estate or interest in the property that the testator had power to dispose of by will at the time of his death.",
+          "contentHash": "c637720f33496f19bbf878e0e5ed547b8fde4ecde080debafae2b9f092210dbe"
+        },
+        {
+          "id": "20-subsection-2",
+          "sourceKey": "section:20/subsection:2",
+          "label": "20(2)",
+          "text": "20(2)Except where a contrary intention appears by the will, where a testator at the time of his death has a right or chose in action or equitable estate or interest that was created by a contract respecting a conveyance of or other act relating to real or personal property that was comprised in a devise or bequest, made or done after the making of a will, the devisee or donee of that real or personal property takes the right or chose in action or equitable estate or interest of the testator.",
+          "contentHash": "6a6fd28626f39a2c5f5e9e42d57c746f3d86d79eab6a6ea6bf857c376a992425"
+        },
+        {
+          "id": "20-subsection-3",
+          "sourceKey": "section:20/subsection:3",
+          "label": "20(3)",
+          "text": "20(3)Except when a contrary intention appears by the will, where the testator has bequeathed proceeds of the sale of property and the proceeds are received by him before his death, the bequest is not adeemed by commingling the proceeds with the funds of the testator if the proceeds are traced into those funds.\n\n1959, c.15, s.20",
+          "contentHash": "6c5ff59368594f861ab4381a0b9c836d6e77ef6d51896e78b7b790625dadff24"
+        }
+      ],
+      "contentHash": "c6f297f520cd3748b25802c7b8f929ca94575f46de6be99b476d01171b95480d"
+    },
+    {
+      "id": "section-21",
+      "sourceKey": "section:21",
+      "componentType": "section",
+      "label": "21",
+      "heading": "Revival of will",
+      "text": "Revival of will\n\n21(1)Where a will is revived or re-executed by a codicil, the will is deemed to have been made at the time at which it is revived or re-executed.\n\n21(2)Except where a contrary intention appears by the will, a will speaks and takes effect as if it had been made immediately before the death of the testator with respect to\n\n(a)\nthe real and personal property, and\n\n(b)\nthe right or chose in action or equitable estate or interest or the proceeds under subsections 20(2) and (3).\n\n1959, c.15, s.21",
+      "subsections": [
+        {
+          "id": "21-subsection-1",
+          "sourceKey": "section:21/subsection:1",
+          "label": "21(1)",
+          "text": "21(1)Where a will is revived or re-executed by a codicil, the will is deemed to have been made at the time at which it is revived or re-executed.",
+          "contentHash": "53e03a96205f69d170ef857ded05cb51c3fe8917f230dc9d4a991ecbd169eb6c"
+        },
+        {
+          "id": "21-subsection-2",
+          "sourceKey": "section:21/subsection:2",
+          "label": "21(2)",
+          "text": "21(2)Except where a contrary intention appears by the will, a will speaks and takes effect as if it had been made immediately before the death of the testator with respect to\n\n(a)\nthe real and personal property, and\n\n(b)\nthe right or chose in action or equitable estate or interest or the proceeds under subsections 20(2) and (3).\n\n1959, c.15, s.21",
+          "contentHash": "4d3ae7e09faf275a32a41ab30edf34c40f950f803ce125a1e984d13670ad38e3"
+        }
+      ],
+      "contentHash": "069cf8366f8efaf5fb7bed822cff660fd07ffb778f41c4abb0adcdad4b5f740b"
+    },
+    {
+      "id": "section-22",
+      "sourceKey": "section:22",
+      "componentType": "section",
+      "label": "22",
+      "heading": "Effect of failure of inter-vivos gift",
+      "text": "Effect of failure of inter-vivos gift\n\n22Except where a contrary intention appears by the will, real or personal property or an interest therein that is comprised or intended to be comprised in a devise or bequest that fails or becomes void by reason of the death of the devisee or donee in the lifetime of the testator, or by reason of the devise or bequest being contrary to law or otherwise incapable of taking effect, is included in the residuary devise or bequest, if any, contained in the will.\n1959, c.15, s.22",
+      "subsections": [],
+      "contentHash": "b7326729919c1a8a02f1d2204ba14e4b2065775610002f33b5731860844a2f7e"
+    },
+    {
+      "id": "section-23",
+      "sourceKey": "section:23",
+      "componentType": "section",
+      "label": "23",
+      "heading": "Devise includes leasehold and freehold estates",
+      "text": "Devise includes leasehold and freehold estates\n\n23Except where a contrary intention appears by the will, where a testator devises\n\n(a)\nhis land,\n\n(b)\nhis land in a place mentioned in the will, or in the occupation of a person mentioned in the will,\n\n(c)\nland described in a general manner, or\n\n(d)\nland described in a manner that would include a leasehold estate if the testator has no freehold estate which could be described in the manner used,\n\nthe devise includes the leasehold estates of the testator or any of them to which the description extends, as well as freehold estates.\n\n1959, c.15, s.23",
+      "subsections": [],
+      "contentHash": "2b654432045707ff69afe2a89024b74b22ee37970f27a460c1ee34e947a90705"
+    },
+    {
+      "id": "section-24",
+      "sourceKey": "section:24",
+      "componentType": "section",
+      "label": "24",
+      "heading": "Devise or bequest includes property that testator has power to appoint",
+      "text": "Devise or bequest includes property that testator has power to appoint\n\n24(1)Except where a contrary intention appears by the will, a general devise of\n\n(a)\nthe real property of the testator,\n\n(b)\nthe real property of the testator in a place mentioned in the will or in the occupation of a person mentioned in the will, or\n\n(c)\nreal property described in a general manner,\n\nincludes any real property or any real property to which the description extends, that he has power to appoint in any manner he thinks proper and operates as an execution of the power.\n\n24(2)Except where a contrary intention appears by the will, a bequest of\n\n(a)\nthe personal property of the testator, or\n\n(b)\npersonal property described in a general manner\n\nincludes any personal property or any personal property to which the description extends, that he has power to appoint in any manner he thinks proper and operates as an execution of the power.\n\n1959, c.15, s.24",
+      "subsections": [
+        {
+          "id": "24-subsection-1",
+          "sourceKey": "section:24/subsection:1",
+          "label": "24(1)",
+          "text": "24(1)Except where a contrary intention appears by the will, a general devise of\n\n(a)\nthe real property of the testator,\n\n(b)\nthe real property of the testator in a place mentioned in the will or in the occupation of a person mentioned in the will, or\n\n(c)\nreal property described in a general manner,\n\nincludes any real property or any real property to which the description extends, that he has power to appoint in any manner he thinks proper and operates as an execution of the power.",
+          "contentHash": "5b0438ff66e56556fc85a90ab7d0e7ff25ab67f52fd08f8aa7e872acc2675489"
+        },
+        {
+          "id": "24-subsection-2",
+          "sourceKey": "section:24/subsection:2",
+          "label": "24(2)",
+          "text": "24(2)Except where a contrary intention appears by the will, a bequest of\n\n(a)\nthe personal property of the testator, or\n\n(b)\npersonal property described in a general manner\n\nincludes any personal property or any personal property to which the description extends, that he has power to appoint in any manner he thinks proper and operates as an execution of the power.\n\n1959, c.15, s.24",
+          "contentHash": "2eca94d6515812a4e8c4129fdea422abbe52b38d80ce1981e0885a8f53dd11b9"
+        }
+      ],
+      "contentHash": "c622896766005f10eed5ee4869ee8f9340d1ffc3f861376e60caf439af9831f8"
+    },
+    {
+      "id": "section-25",
+      "sourceKey": "section:25",
+      "componentType": "section",
+      "label": "25",
+      "heading": "Devise passes whole of estate",
+      "text": "Devise passes whole of estate\n\n25Except where a contrary intention appears by the will, where real property is devised to a person without words of limitation, the devise passes the fee simple or the whole of any other estate that the testator had power to dispose of by will in the real property.\n1959, c.15, s.25",
+      "subsections": [],
+      "contentHash": "b64b549ff3daa95104cd587c98bc2142065c0247f2982eb1c8a32abdd8fda7a5"
+    },
+    {
+      "id": "section-26",
+      "sourceKey": "section:26",
+      "componentType": "section",
+      "label": "26",
+      "heading": "Devise or bequest to the “heir” of the testator",
+      "text": "Devise or bequest to the “heir” of the testator\n\n26Except where a contrary intention appears by the will, where property is devised or bequeathed to the “heir” of the testator or of another person\n\n(a)\nthe word “heir” means the person to whom the beneficial interest in the property would go under the law of the Province if the testator or the other person died intestate, and\n\n(b)\nwhere used in that law the word “child” includes for the purpose of this section a person related by or through adoption to the testator or the other person.\n\n1959, c.15, s.26",
+      "subsections": [],
+      "contentHash": "ff324857cc80d7e45db89db8609043dec4fa2dc874441ab04d26911c13144e67"
+    },
+    {
+      "id": "section-27",
+      "sourceKey": "section:27",
+      "componentType": "section",
+      "label": "27",
+      "heading": "Devise or bequest referring to want or failure of issue",
+      "text": "Devise or bequest referring to want or failure of issue\n\n27(1)Subject to subsection (2), in a devise or bequest of real or personal property\n\n(a)\nthe words\n\n(i)\n“die without issue”,\n\n(ii)\n“die without leaving issue”, or\n\n(iii)\n“have no issue”, or\n\n(b)\nother words importing either a want or failure of issue of a person in his lifetime or at the time of his death or an indefinite failure of his issue,\n\nmean a want or failure of issue in the lifetime or at the time of death of that person, and do not mean an indefinite failure of his issue unless a contrary intention appears by the will.\n\n27(2)This Act does not extend to cases where the words defined in subsection (1) import\n\n(a)\nif no issue described in a preceding gift be born, or\n\n(b)\nif there be no issue who live to attain the age or otherwise answer the description required for obtaining a vested estate by a preceding gift to that issue.\n\n1959, c.15, s.27",
+      "subsections": [
+        {
+          "id": "27-subsection-1",
+          "sourceKey": "section:27/subsection:1",
+          "label": "27(1)",
+          "text": "27(1)Subject to subsection (2), in a devise or bequest of real or personal property\n\n(a)\nthe words\n\n(i)\n“die without issue”,\n\n(ii)\n“die without leaving issue”, or\n\n(iii)\n“have no issue”, or\n\n(b)\nother words importing either a want or failure of issue of a person in his lifetime or at the time of his death or an indefinite failure of his issue,\n\nmean a want or failure of issue in the lifetime or at the time of death of that person, and do not mean an indefinite failure of his issue unless a contrary intention appears by the will.",
+          "contentHash": "30716d3d4748efa5eed407d7de9b4df3f6d53ef84b12c14a7c5017f6bd5f7a53"
+        },
+        {
+          "id": "27-subsection-2",
+          "sourceKey": "section:27/subsection:2",
+          "label": "27(2)",
+          "text": "27(2)This Act does not extend to cases where the words defined in subsection (1) import\n\n(a)\nif no issue described in a preceding gift be born, or\n\n(b)\nif there be no issue who live to attain the age or otherwise answer the description required for obtaining a vested estate by a preceding gift to that issue.\n\n1959, c.15, s.27",
+          "contentHash": "1570939da2af5bd61df5eb80e91896c8f0c5d9eb2f771d6bcdfd061e857af049"
+        }
+      ],
+      "contentHash": "b35816d8291720187f6d3d47c309df28ec535011380ddcbb62b7a3ae0508985e"
+    },
+    {
+      "id": "section-28",
+      "sourceKey": "section:28",
+      "componentType": "section",
+      "label": "28",
+      "heading": "Devise to trustee or executor passes whole of estate",
+      "text": "Devise to trustee or executor passes whole of estate\n\n28Except where an estate for a definite term of years absolute or determinable or an estate of freehold is devised to a trustee expressly or by implication, a devise of real property to a trustee or executor passes the fee simple or the whole of any other estate or interest that the testator had power to dispose of by will in the real property.\n1959, c.15, s.28",
+      "subsections": [],
+      "contentHash": "b1f38ccd7fdc87f47820078dcf9a736bc313d71e08972fdf7f279d17ee26d3d5"
+    },
+    {
+      "id": "section-29",
+      "sourceKey": "section:29",
+      "componentType": "section",
+      "label": "29",
+      "heading": "Devise to trustee passes whole of estate when purposes of trust satisfied",
+      "text": "Devise to trustee passes whole of estate when purposes of trust satisfied\n\n29Where real property is devised to a trustee without express limitation of the estate to be taken by him and the beneficial interest in the real property or in the surplus rents and profits\n\n(a)\nis not given to a person for life, or\n\n(b)\nis given to a person for life but the purpose of the trust may continue beyond his life,\n\nthe devise vests in the trustee the fee simple or the whole of any other legal estate that the testator had power to dispose of by will in the real property and not an estate determinable when the purposes of the trust are satisfied.\n\n1959, c.15, s.29",
+      "subsections": [],
+      "contentHash": "1d6ca6436b3742d40f05c81eb7b44101f9e607bed976c6c9c6493c5faf552260"
+    },
+    {
+      "id": "section-30",
+      "sourceKey": "section:30",
+      "componentType": "section",
+      "label": "30",
+      "heading": "Gift for charitable purposes",
+      "text": "Gift for charitable purposes\n\n30(1)Where a testator leaves property in trust or by outright gift for a charitable purpose that is linked conjunctively or disjunctively in the will with a non-charitable purpose, and the non-charitable purpose is void for uncertainty or for any other cause, the charitable trust or gift is valid and operates solely for the benefit of the charitable purpose.\n\n30(2)Where a testator leaves property in trust or by outright gift for a charitable purpose that is linked conjunctively or disjunctively in the will with a non-charitable purpose, and the non-charitable purpose is not void, the trust or gift is valid for both purposes, and, where the will has not divided the property among the charitable and non-charitable purposes, the trustee or executor shall divide the property among the charitable and non-charitable purposes according to his discretion.\n\n1959, c.15, s.30",
+      "subsections": [
+        {
+          "id": "30-subsection-1",
+          "sourceKey": "section:30/subsection:1",
+          "label": "30(1)",
+          "text": "30(1)Where a testator leaves property in trust or by outright gift for a charitable purpose that is linked conjunctively or disjunctively in the will with a non-charitable purpose, and the non-charitable purpose is void for uncertainty or for any other cause, the charitable trust or gift is valid and operates solely for the benefit of the charitable purpose.",
+          "contentHash": "b84a2766c3817e84c7645291b3315e809364c4e322b30512c7951f4fa5dc235f"
+        },
+        {
+          "id": "30-subsection-2",
+          "sourceKey": "section:30/subsection:2",
+          "label": "30(2)",
+          "text": "30(2)Where a testator leaves property in trust or by outright gift for a charitable purpose that is linked conjunctively or disjunctively in the will with a non-charitable purpose, and the non-charitable purpose is not void, the trust or gift is valid for both purposes, and, where the will has not divided the property among the charitable and non-charitable purposes, the trustee or executor shall divide the property among the charitable and non-charitable purposes according to his discretion.\n\n1959, c.15, s.30",
+          "contentHash": "3281005cde4fb7ab316db4af6a30f4e510925c1e7c2b42cb3d7aacad9f2b480b"
+        }
+      ],
+      "contentHash": "f966f007f7e0daf03b284e5cbdcb20681bcb5c5b4d8d0ff2123e7bfc009aea19"
+    },
+    {
+      "id": "section-31",
+      "sourceKey": "section:31",
+      "componentType": "section",
+      "label": "31",
+      "heading": "Devise of estate tail or entail estate",
+      "text": "Devise of estate tail or entail estate\n\n31Except where a contrary intention appears by the will, where a person to whom real property is devised for what would have been, under the law of England, an estate tail or in quasi entail\n\n(a)\ndies\n\n(i)\nin the lifetime of the testator,\n\n(ii)\nat the same time as the testator, or\n\n(iii)\nin circumstances rendering it uncertain whether that person or the testator survived the other, and\n\n(b)\nleaves issue who would inherit under the entail if that estate existed,\n\nif any such issue are living at the time of the death of the testator, the devise does not lapse but takes effect as if the death of that person had happened immediately after the death of the testator.\n\n1959, c.15, s.31",
+      "subsections": [],
+      "contentHash": "267e0004a8fad27d5073558073c665d1e3334c6bc57712555a283e97b0ab226c"
+    },
+    {
+      "id": "section-32",
+      "sourceKey": "section:32",
+      "componentType": "section",
+      "label": "32",
+      "heading": "Effect of death of beneficiary or devisee",
+      "text": "Effect of death of beneficiary or devisee\n\n32Except where a contrary intention appears by the will, where a person dies in the lifetime of a testator either before or after the testator makes the will and that person\n\n(a)\nis a child or other issue or a brother or sister of the testator to whom, either as an individual or as a member of a class, is devised or bequeathed an estate or interest in real or personal property not determinable at or before his death, and\n\n(b)\nleaves issue any of whom is living at the time of the death of the testator,\n\nthe devise or bequest does not lapse, but takes effect as if it had been made directly to the persons among whom and in the shares in which the estate of that person would have been divisible if he had died intestate and without debts immediately after the death of the testator.\n\n1959, c.15, s.32; 1987, c.6, s.119",
+      "subsections": [],
+      "contentHash": "3c547293958cc29d6109de1494ccbab0340fa4fe335617b05adb1012be201e3e"
+    },
+    {
+      "id": "section-33",
+      "sourceKey": "section:33",
+      "componentType": "section",
+      "label": "33",
+      "heading": "Illegitimate child deemed legitimate child",
+      "text": "Illegitimate child deemed legitimate child\n\n33In the construction of testamentary dispositions, except where a contrary intention appears by the will, an illegitimate child shall be treated as if he were the legitimate child of his mother.\n1959, c.15, s.33",
+      "subsections": [],
+      "contentHash": "b9e2987a0531c361ac152b6e3f8669cddaa9ebd6bb991597605833bd1df4ba1f"
+    },
+    {
+      "id": "section-34",
+      "sourceKey": "section:34",
+      "componentType": "section",
+      "label": "34",
+      "heading": "Devise of mortgaged property",
+      "text": "Devise of mortgaged property\n\n34(1)Where a person dies possessed of, or entitled to, or under a general power of appointment by his will disposes of, an interest in freehold or leasehold property which, at the time of his death, is subject to a mortgage, and the deceased has not, by will, deed or other document, signified a contrary or other intention, the interest is, as between the different persons claiming through the deceased, primarily liable for the payment or satisfaction of the mortgage debt; and every part of the interest, according to its value, bears a proportionate part of the mortgage debt on the whole interest.\n\n34(2)A testator does not signify a contrary or other intention within subsection (1) by\n\n(a)\na general direction for the payment of debts or of all the debts of the testator out of his personal estate or his residuary real or personal estate, or his residuary real estate, or\n\n(b)\na charge of debts upon that estate,\n\nunless he further signifies that intention by words expressly or by necessary implication referring to all or some part of the mortgage debt.\n\n34(3)Nothing in this section affects a right of a person entitled to the mortgage debt to obtain payment or satisfaction either out of the other assets of the deceased or otherwise.\n\n34(4)In this section, “mortgage” includes an equitable mortgage, and any charge whatsoever, whether equitable, statutory or of other nature, including a lien or claim upon freehold or leasehold property for unpaid purchase money and “mortgage debt” has a meaning similarly extended.\n\n1959, c.15, s.34",
+      "subsections": [
+        {
+          "id": "34-subsection-1",
+          "sourceKey": "section:34/subsection:1",
+          "label": "34(1)",
+          "text": "34(1)Where a person dies possessed of, or entitled to, or under a general power of appointment by his will disposes of, an interest in freehold or leasehold property which, at the time of his death, is subject to a mortgage, and the deceased has not, by will, deed or other document, signified a contrary or other intention, the interest is, as between the different persons claiming through the deceased, primarily liable for the payment or satisfaction of the mortgage debt; and every part of the interest, according to its value, bears a proportionate part of the mortgage debt on the whole interest.",
+          "contentHash": "1917e14d211d8a42f604139a4a79deefff11447b82fb4dab034d71b85a3fba77"
+        },
+        {
+          "id": "34-subsection-2",
+          "sourceKey": "section:34/subsection:2",
+          "label": "34(2)",
+          "text": "34(2)A testator does not signify a contrary or other intention within subsection (1) by\n\n(a)\na general direction for the payment of debts or of all the debts of the testator out of his personal estate or his residuary real or personal estate, or his residuary real estate, or\n\n(b)\na charge of debts upon that estate,\n\nunless he further signifies that intention by words expressly or by necessary implication referring to all or some part of the mortgage debt.",
+          "contentHash": "53b13eb11ce2f5afa1f85a41589277a779e10284ec06ef4271b1ce16eb474350"
+        },
+        {
+          "id": "34-subsection-3",
+          "sourceKey": "section:34/subsection:3",
+          "label": "34(3)",
+          "text": "34(3)Nothing in this section affects a right of a person entitled to the mortgage debt to obtain payment or satisfaction either out of the other assets of the deceased or otherwise.",
+          "contentHash": "80cc11e3d511137140f2f4619f084e72e8b261423962b5c35062cea9972eed0f"
+        },
+        {
+          "id": "34-subsection-4",
+          "sourceKey": "section:34/subsection:4",
+          "label": "34(4)",
+          "text": "34(4)In this section, “mortgage” includes an equitable mortgage, and any charge whatsoever, whether equitable, statutory or of other nature, including a lien or claim upon freehold or leasehold property for unpaid purchase money and “mortgage debt” has a meaning similarly extended.\n\n1959, c.15, s.34",
+          "contentHash": "5a10ca92acfbe289d426f02b48379041faaa653a5fd00ba7c39fa94ff8ae49b5"
+        }
+      ],
+      "contentHash": "e209878313643010d3d62d161736b7ccf3a368c161d9351af0502434b40a2604"
+    },
+    {
+      "id": "section-35",
+      "sourceKey": "section:35",
+      "componentType": "section",
+      "label": "35",
+      "heading": "Power of executor respecting residuary estate",
+      "text": "Power of executor respecting residuary estate\n\n35(1)Where a person dies after the commencement of this Act, having by will appointed a person executor, the executor is a trustee of any residue not expressly disposed of, for the person or persons, if any, who would be entitled to that residue in the event of intestacy in respect to it, unless the person so appointed executor was intended by the will to take the residue beneficially.\n\n35(2)Nothing in this section affects or prejudices a right to which the executor, if this Part had not been passed, would have been entitled, in cases where there is not a person who would be so entitled.\n\n1959, c.15, s.35",
+      "subsections": [
+        {
+          "id": "35-subsection-1",
+          "sourceKey": "section:35/subsection:1",
+          "label": "35(1)",
+          "text": "35(1)Where a person dies after the commencement of this Act, having by will appointed a person executor, the executor is a trustee of any residue not expressly disposed of, for the person or persons, if any, who would be entitled to that residue in the event of intestacy in respect to it, unless the person so appointed executor was intended by the will to take the residue beneficially.",
+          "contentHash": "3cf88077628d3536839936f6ecec180067232b70a1fbed72bceee5b22c4b22a8"
+        },
+        {
+          "id": "35-subsection-2",
+          "sourceKey": "section:35/subsection:2",
+          "label": "35(2)",
+          "text": "35(2)Nothing in this section affects or prejudices a right to which the executor, if this Part had not been passed, would have been entitled, in cases where there is not a person who would be so entitled.\n\n1959, c.15, s.35",
+          "contentHash": "87e52ca69bafa62c3890dfcb1016eef27cfe9e69ceab3cf2b653ecec19d6098a"
+        }
+      ],
+      "contentHash": "e0c1d52b55452d461a4057caca348e8d6dba459b9d66d02668da59e59c240885"
+    },
+    {
+      "id": "section-35.1",
+      "sourceKey": "section:35.1",
+      "componentType": "section",
+      "label": "35.1",
+      "heading": "Jurisdiction of the court where formal requirements are not complied with",
+      "text": "Jurisdiction of the court where formal requirements are not complied with\n\n35.1Where a court of competent jurisdiction is satisfied that a document or any writing on a document embodies\n\n(a)\nthe testamentary intentions of the deceased, or\n\n(b)\nthe intention of the deceased to revoke, alter or revive a will of the deceased or the testamentary intentions of the deceased embodied in a document other than a will,\n\nthe court may, notwithstanding that the document or writing was not executed in compliance with the formal requirements imposed by this Act, order that the document or writing is valid and fully effective as if it had been executed in compliance with the formal requirements imposed by this Act.\n\n1997, c.7, s.1\n\nII\n\nCONFLICT OF LAWS",
+      "subsections": [],
+      "contentHash": "427e65b6b29ab1b74e01f493aac1206ac0ed087fdb10ae304bdd090aff139470"
+    },
+    {
+      "id": "section-36",
+      "sourceKey": "section:36",
+      "componentType": "section",
+      "label": "36",
+      "heading": "Intrinsic validity and effect of will",
+      "text": "Intrinsic validity and effect of will\n\n36(1)In this Part\n\n(a)\nan interest in land includes a leasehold estate as well as a freehold estate in land, and any other estate or interest in land whether the estate or interest is real property or is personal property;\n\n(b)\nan interest in movables includes an interest in a tangible or intangible thing other than land, and includes personal property other than an estate or interest in land.\n\n36(2)Subject to other provisions of this Part, the intrinsic validity and effect of a will, so far it relates to an interest in land, are governed by the law of the place where the land is situated.\n\n36(3)Subject to other provisions of this Part, the intrinsic validity and effect of a will, so far as it relates to an interest in movables, are governed by the law of the place where the testator was domiciled at the time of the testator’s death.\n\n1959, c.15, s.36; 1997, c.7, s.2",
+      "subsections": [
+        {
+          "id": "36-subsection-1",
+          "sourceKey": "section:36/subsection:1",
+          "label": "36(1)",
+          "text": "36(1)In this Part\n\n(a)\nan interest in land includes a leasehold estate as well as a freehold estate in land, and any other estate or interest in land whether the estate or interest is real property or is personal property;\n\n(b)\nan interest in movables includes an interest in a tangible or intangible thing other than land, and includes personal property other than an estate or interest in land.",
+          "contentHash": "a52e045fdd7f95310756c1630fbed7647c0e0931901ab7d1ffa58d79c09865e2"
+        },
+        {
+          "id": "36-subsection-2",
+          "sourceKey": "section:36/subsection:2",
+          "label": "36(2)",
+          "text": "36(2)Subject to other provisions of this Part, the intrinsic validity and effect of a will, so far it relates to an interest in land, are governed by the law of the place where the land is situated.",
+          "contentHash": "d96d8071a45c5a8630c626ed322e29329b4898500f21cc4104a9e143c9c90f66"
+        },
+        {
+          "id": "36-subsection-3",
+          "sourceKey": "section:36/subsection:3",
+          "label": "36(3)",
+          "text": "36(3)Subject to other provisions of this Part, the intrinsic validity and effect of a will, so far as it relates to an interest in movables, are governed by the law of the place where the testator was domiciled at the time of the testator’s death.\n\n1959, c.15, s.36; 1997, c.7, s.2",
+          "contentHash": "03eaa0ac88ecaac84578cc70daca07677503a33ef23d742a35569d6afb1b15c5"
+        }
+      ],
+      "contentHash": "fa59fc4f2b4338a2ca2ce95c8b9c13e4378a22f4937162c7a27a53baa0c8027c"
+    },
+    {
+      "id": "section-37",
+      "sourceKey": "section:37",
+      "componentType": "section",
+      "label": "37",
+      "heading": "Manner and formalities of making will",
+      "text": "Manner and formalities of making will\n\n37As regards the manner and formalities of making a will, a will made either within or without the Province is valid and admissible to probate if it is made in accordance with the law in force at the time of its making in the place where\n\n(a)\nthe will was made,\n\n(b)\nthe testator was domiciled or had his or her habitual residence when the will was made, or\n\n(c)\nthe testator had his or her domicile of origin.\n\n1959, c.15, s.37; 1997, c.7, s.3",
+      "subsections": [],
+      "contentHash": "ae902a21895d615af5cae95714b31b5c74eafa4e4ed642ae5dd246e567931b00"
+    },
+    {
+      "id": "section-38",
+      "sourceKey": "section:38",
+      "componentType": "section",
+      "label": "38",
+      "heading": "Change of domicile or in habitual residence of testator",
+      "text": "Change of domicile or in habitual residence of testator\n\n38A change of domicile or in the habitual residence of the testator occurring after a will is made does not render it invalid as regards the manner and formalities of its making or alter its construction.\n1959, c.15, s.38; 1997, c.7, s.4",
+      "subsections": [],
+      "contentHash": "e7267aa107b58459032a0ef6aefe2395fcec492b25eb742f07b44f215538a50f"
+    },
+    {
+      "id": "section-39",
+      "sourceKey": "section:39",
+      "componentType": "section",
+      "label": "39",
+      "heading": "Aiding with construction of will",
+      "text": "Aiding with construction of will\n\n39Nothing in this Part precludes resort to the law of the place where the testator was domiciled or had his or her habitual residence at the time of making a will in aid of its construction as regards an interest in land or an interest in movables.\n1959, c.15, s.39; 1997, c.7, s.5",
+      "subsections": [],
+      "contentHash": "d0456f771449d1214863832b054ac0126ce83654c0846dcdcfa897480d3abd49"
+    },
+    {
+      "id": "section-40",
+      "sourceKey": "section:40",
+      "componentType": "section",
+      "label": "40",
+      "heading": "Value of movable connected to land",
+      "text": "Value of movable connected to land\n\n40Where the value of a thing that is movable consists mainly or entirely in its use in connection with a particular parcel of land by the owner or occupier of the land, succession to an interest in the thing, under a will or on an intestacy, is governed by the law of the place where the land is situated.\n1959, c.15, s.40\n\nIII\n\nAPPLICATION OF ACT",
+      "subsections": [],
+      "contentHash": "045442e144e9dbd267ac266a89400a92a04a02fa4280cdf9ee5d2cf84b96042b"
+    },
+    {
+      "id": "section-41",
+      "sourceKey": "section:41",
+      "componentType": "section",
+      "label": "41",
+      "heading": "Application of Act",
+      "text": "Application of Act\n\n41This Act applies to the will of a person who dies after the commencement of this Act whether his will was made before or after the commencement of this Act.\n1959, c.15, s.41\n\nN.B. This Act is consolidated to June 16, 2023.",
+      "subsections": [],
+      "contentHash": "ce7257366c9bc2d219b2b2ba38aea2d863e4838818a0a8592a499840871fdf61"
+    }
+  ],
+  "notes": []
+}

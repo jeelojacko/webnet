@@ -1,28 +1,18 @@
 {
   "corpusId": "nb-sit-statute-corpus",
   "title": "New Brunswick SIT Statute Law Corpus",
-  "generatedAt": "2026-08-11T17:13:48.740Z",
-  "manifestHash": "e61a007d5b64b1b013db4367f215a080cd9264d829793084036fd727457435f8",
+  "generatedAt": "2026-08-11T18:12:11.995Z",
+  "manifestHash": "9867d05d6691063bb7894dabb87e8e3785c1667d0eb8c4b41442b15c11a2e53b",
   "expectedActCount": 57,
   "actualRequiredActCount": 57,
-  "requiredRegulationCount": 5,
-  "candidateRegulationCount": 117,
-  "missingSourceUrls": [
-    "doc-ecological-reserves-act",
-    "doc-health-act",
-    "doc-new-brunswick-land-surveyors-act",
-    "doc-official-languages-of-new-brunswick-act",
-    "doc-public-utilities-act"
-  ],
+  "requiredRegulationCount": 6,
+  "candidateRegulationCount": 122,
+  "missingSourceUrls": [],
   "duplicateTitles": [],
   "duplicateIds": [],
   "unresolvedParentActs": [],
   "unknownCitations": [
-    "doc-ecological-reserves-act",
-    "doc-health-act",
-    "doc-new-brunswick-land-surveyors-act",
-    "doc-official-languages-of-new-brunswick-act",
-    "doc-public-utilities-act"
+    "doc-new-brunswick-land-surveyors-bylaws"
   ],
   "pilotDocuments": [
     "doc-boundaries-confirmation-act",
@@ -36,73 +26,37 @@
     "reg-registry-84-190",
     "reg-land-titles-83-130"
   ],
-  "awaitingManualConfirmation": [
-    "doc-ecological-reserves-act",
-    "doc-health-act",
-    "doc-new-brunswick-land-surveyors-act",
-    "doc-official-languages-of-new-brunswick-act",
-    "doc-public-utilities-act"
-  ],
+  "awaitingManualConfirmation": [],
   "findings": [
     {
-      "severity": "ERROR",
-      "code": "missing-source-url",
-      "documentId": "doc-ecological-reserves-act",
-      "message": "doc-ecological-reserves-act is required but has no official source URL."
-    },
-    {
-      "severity": "ERROR",
-      "code": "missing-source-url",
-      "documentId": "doc-health-act",
-      "message": "doc-health-act is required but has no official source URL."
-    },
-    {
-      "severity": "ERROR",
-      "code": "missing-source-url",
-      "documentId": "doc-new-brunswick-land-surveyors-act",
-      "message": "doc-new-brunswick-land-surveyors-act is required but has no official source URL."
-    },
-    {
-      "severity": "ERROR",
-      "code": "missing-source-url",
-      "documentId": "doc-official-languages-of-new-brunswick-act",
-      "message": "doc-official-languages-of-new-brunswick-act is required but has no official source URL."
-    },
-    {
-      "severity": "ERROR",
-      "code": "missing-source-url",
-      "documentId": "doc-public-utilities-act",
-      "message": "doc-public-utilities-act is required but has no official source URL."
-    },
-    {
       "severity": "WARNING",
       "code": "unknown-citation",
-      "documentId": "doc-ecological-reserves-act",
-      "message": "doc-ecological-reserves-act has no citation in the SIT corpus manifest."
+      "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+      "message": "doc-new-brunswick-land-surveyors-bylaws has no citation in the SIT corpus manifest."
     },
     {
-      "severity": "WARNING",
-      "code": "unknown-citation",
-      "documentId": "doc-health-act",
-      "message": "doc-health-act has no citation in the SIT corpus manifest."
+      "severity": "INFO",
+      "code": "legacy-replaced",
+      "documentId": "doc-official-languages-act",
+      "message": "Official Languages of New Brunswick Act & Regulations is represented by doc-official-languages-act pending Registrar confirmation."
     },
     {
-      "severity": "WARNING",
-      "code": "unknown-citation",
-      "documentId": "doc-new-brunswick-land-surveyors-act",
-      "message": "doc-new-brunswick-land-surveyors-act has no citation in the SIT corpus manifest."
+      "severity": "INFO",
+      "code": "legacy-replaced",
+      "documentId": "doc-protected-natural-areas-act",
+      "message": "Ecological Reserves Act & Regulations is represented by doc-protected-natural-areas-act pending Registrar confirmation."
     },
     {
-      "severity": "WARNING",
-      "code": "unknown-citation",
-      "documentId": "doc-official-languages-of-new-brunswick-act",
-      "message": "doc-official-languages-of-new-brunswick-act has no citation in the SIT corpus manifest."
+      "severity": "INFO",
+      "code": "legacy-replaced",
+      "documentId": "doc-public-health-act",
+      "message": "Health Act & Regulations is represented by doc-public-health-act pending Registrar confirmation."
     },
     {
-      "severity": "WARNING",
-      "code": "unknown-citation",
-      "documentId": "doc-public-utilities-act",
-      "message": "doc-public-utilities-act has no citation in the SIT corpus manifest."
+      "severity": "INFO",
+      "code": "legacy-replaced",
+      "documentId": "doc-energy-and-utilities-board-act",
+      "message": "Public Utilities Act is represented by doc-energy-and-utilities-board-act pending Registrar confirmation."
     }
   ]
 }

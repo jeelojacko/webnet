@@ -1,0 +1,556 @@
+{
+  "schemaVersion": 1,
+  "id": "reg-boundaries-95-166",
+  "officialTitle": "REGULATION 95-166",
+  "officialCitation": "REGULATION 95-166",
+  "officialCitationDisplay": "REGULATION 95-166",
+  "officialCitationNormalized": "95-166",
+  "officialNumberDisplay": "95-166",
+  "officialNumberNormalized": "95-166",
+  "documentType": "regulation",
+  "parentActId": "doc-boundaries-confirmation-act",
+  "enablingActs": [
+    {
+      "title": "Boundaries Confirmation Act"
+    }
+  ],
+  "sourceUrl": "https://laws.gnb.ca/en/document/cr/95-166",
+  "fetchDate": "2026-08-11T18:09:20.141Z",
+  "consolidatedTo": "May 15, 2018",
+  "contentHash": "42edb7a060c18176156cb011b97c0d4dfb8c087c876a575c7747448567549673",
+  "tableOfContents": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "label": "1"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "label": "2"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "label": "3"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "label": "4"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "label": "5"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "label": "6"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "label": "7"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "label": "8"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "label": "9"
+    },
+    {
+      "id": "section-10",
+      "sourceKey": "section:10",
+      "label": "10"
+    },
+    {
+      "id": "section-11",
+      "sourceKey": "section:11",
+      "label": "11"
+    },
+    {
+      "id": "form-form-1",
+      "sourceKey": "form:form-1",
+      "label": "Form 1"
+    }
+  ],
+  "components": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
+      "label": "1",
+      "text": "1This Regulation may be cited as the General Regulation - Boundaries Confirmation Act.\n\nDEFINITIONS",
+      "subsections": [],
+      "contentHash": "768ea997138e8cd6fba03cd3151eccb99fdf0fa893d248c7cc415ffc4ef26c87"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "label": "2",
+      "text": "2In this Regulation\n“Act” means the Boundaries Confirmation Act;(Loi)\n\n“layperson” means a person who is not a surveyor and is not a member of the Law Society of New Brunswick authorized to practise law in New Brunswick.(profane)\n\nAPPLICATIONS",
+      "subsections": [],
+      "contentHash": "cbc1eb52bcef6d6edfb768ac7dab56b906b4d33c83fe00b5b388664df7e05068"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
+      "label": "3",
+      "text": "3(1)An application to confirm the location of a boundary made under subsection 6(1) or (3) of the Act shall be in Form 1.\n\n3(2)A plan of survey required under paragraph 7(1)(a) of the Act shall be current and shall conform in every respect to\n\n(a)\nthe standards for the making of such a plan established by the Association of New Brunswick Land Surveyors and in effect at the time of making the application, and\n\n(b)\nany other requirements specified by the Registrar General.\n\n3(3)In addition to the plan of survey referred to in subsection (2), an application to confirm the location of a boundary shall be accompanied by\n\n(a)\nthe field notes and a surveyor’s report in conformity with subsection (4), prepared by the surveyor who signed the plan of survey,\n\n(b)\ncopies of any other existing plans of survey on which the boundary in question is shown and, if reasonably available to the applicant, the field notes and surveyor’s reports relating to those plans of survey,\n\n(c)\ncopies of all instruments registered in a registry office or a land titles office in the Province that relate to the location of the boundary in question and that are required by the Registrar General,\n\n(d)\nif requested by the Registrar General, an abstract of title in conformity with the directions of the Registrar General,\n\n(e)\na list of the names and mailing addresses of all the current owners of an interest in the parcel in question and all the current owners of an interest in the other parcels sharing the boundary in question, including a description of the nature of the interest of each such owner,\n\n(f)\nany consent and waiver of notice obtained by the applicant and any agreement to be bound by an order of the Registrar General, and\n\n(g)\nany other information or documentation that would or could assist the Registrar General in dealing with the application or that is requested by the Registrar General.\n\n3(4)A surveyor’s report referred to in paragraph (3)(a) shall contain\n\n(a)\na description of the issue to be determined,\n\n(b)\na description of the history of the boundary in question,\n\n(c)\na description of the evidence used to establish the location of the boundary as shown on the plan of survey, and\n\n(d)\nan explanation of the reasons for accepting or rejecting the location of the boundary as shown on any other plans of survey, as indicated by any other documentary evidence or as indicated by any physical evidence of earlier boundary lines or boundary lines that have been accepted by adjoining landowners.\n\n3(5)The Registrar General may waive any of the requirements of subsection (3), subject to such terms and conditions as the Registrar General considers appropriate.",
+      "subsections": [
+        {
+          "id": "3-subsection-1",
+          "sourceKey": "section:3/subsection:1",
+          "label": "3(1)",
+          "text": "3(1)An application to confirm the location of a boundary made under subsection 6(1) or (3) of the Act shall be in Form 1.",
+          "contentHash": "876146d98a11b33c53202ce23c4d5f7f265e4e3ef162e728ff9324a8a7fff7f8"
+        },
+        {
+          "id": "3-subsection-2",
+          "sourceKey": "section:3/subsection:2",
+          "label": "3(2)",
+          "text": "3(2)A plan of survey required under paragraph 7(1)(a) of the Act shall be current and shall conform in every respect to\n\n(a)\nthe standards for the making of such a plan established by the Association of New Brunswick Land Surveyors and in effect at the time of making the application, and\n\n(b)\nany other requirements specified by the Registrar General.",
+          "contentHash": "d7feda4d114408ecbdcb589798bc9af8ea4fd8f7ec0453d55ab4fc2b41f68ae0"
+        },
+        {
+          "id": "3-subsection-3",
+          "sourceKey": "section:3/subsection:3",
+          "label": "3(3)",
+          "text": "3(3)In addition to the plan of survey referred to in subsection (2), an application to confirm the location of a boundary shall be accompanied by\n\n(a)\nthe field notes and a surveyor’s report in conformity with subsection (4), prepared by the surveyor who signed the plan of survey,\n\n(b)\ncopies of any other existing plans of survey on which the boundary in question is shown and, if reasonably available to the applicant, the field notes and surveyor’s reports relating to those plans of survey,\n\n(c)\ncopies of all instruments registered in a registry office or a land titles office in the Province that relate to the location of the boundary in question and that are required by the Registrar General,\n\n(d)\nif requested by the Registrar General, an abstract of title in conformity with the directions of the Registrar General,\n\n(e)\na list of the names and mailing addresses of all the current owners of an interest in the parcel in question and all the current owners of an interest in the other parcels sharing the boundary in question, including a description of the nature of the interest of each such owner,\n\n(f)\nany consent and waiver of notice obtained by the applicant and any agreement to be bound by an order of the Registrar General, and\n\n(g)\nany other information or documentation that would or could assist the Registrar General in dealing with the application or that is requested by the Registrar General.",
+          "contentHash": "d6eadfbd0f2a5a8b64fc236cc11815440d114bd0c4f961dde881930bf0fe107f"
+        },
+        {
+          "id": "3-subsection-4",
+          "sourceKey": "section:3/subsection:4",
+          "label": "3(4)",
+          "text": "3(4)A surveyor’s report referred to in paragraph (3)(a) shall contain\n\n(a)\na description of the issue to be determined,\n\n(b)\na description of the history of the boundary in question,\n\n(c)\na description of the evidence used to establish the location of the boundary as shown on the plan of survey, and\n\n(d)\nan explanation of the reasons for accepting or rejecting the location of the boundary as shown on any other plans of survey, as indicated by any other documentary evidence or as indicated by any physical evidence of earlier boundary lines or boundary lines that have been accepted by adjoining landowners.",
+          "contentHash": "72916e4aafb012b71412bc644524f0951070749afe6d23d818bcdbc8d32a75a7"
+        },
+        {
+          "id": "3-subsection-5",
+          "sourceKey": "section:3/subsection:5",
+          "label": "3(5)",
+          "text": "3(5)The Registrar General may waive any of the requirements of subsection (3), subject to such terms and conditions as the Registrar General considers appropriate.",
+          "contentHash": "29ed9dbc0f0f36b9bfd596897546a7f7c9ea61589d1db8cc52f221e967376eba"
+        }
+      ],
+      "contentHash": "c93064de079be205d4f03ac4da938ed013c63e66f6a64c100a0a96e575144243"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
+      "label": "4",
+      "text": "4(1)A consent and waiver of notice provided to the Registrar General shall be on a form provided by the Registrar General.\n\n4(2)An agreement to be bound by an order of the Registrar General shall be on a form provided by the Registrar General.\n\nPROCEEDINGS",
+      "subsections": [
+        {
+          "id": "4-subsection-1",
+          "sourceKey": "section:4/subsection:1",
+          "label": "4(1)",
+          "text": "4(1)A consent and waiver of notice provided to the Registrar General shall be on a form provided by the Registrar General.",
+          "contentHash": "9320250795a687e6f7dc23934d09877e06dbd388c71974dfbe7ec2d10892ef93"
+        },
+        {
+          "id": "4-subsection-2",
+          "sourceKey": "section:4/subsection:2",
+          "label": "4(2)",
+          "text": "4(2)An agreement to be bound by an order of the Registrar General shall be on a form provided by the Registrar General.\n\nPROCEEDINGS",
+          "contentHash": "e434f99804effc6305f798bdc2781c43bcca10b800bec3280b724eb37512b373"
+        }
+      ],
+      "contentHash": "ecaffa7f882f981abc416f30f0afd24e923585237b095a0f78579b46eb49597f"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "componentType": "section",
+      "label": "5",
+      "text": "5If the New Brunswick Geographic Information Corporation designates a layperson to hold a hearing or handle another matter under the Act and the layperson is not an employee as defined in the Civil Service Act, remuneration may be paid to the layperson but the remuneration, excluding reimbursements and other expenses, shall not exceed one hundred and fifty dollars for each day or portion of a day during which the layperson prepares for the hearing, holds the hearing or otherwise handles that or any other matter.",
+      "subsections": [],
+      "contentHash": "5327a89f99c047286d05ea43f8ee69d7602bc2a54c48704b6c266524f7ae8bdb"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "componentType": "section",
+      "label": "6",
+      "text": "6(1)The Registrar General and all other parties to a hearing may introduce evidence at the hearing and may cross-examine witnesses.\n\n6(2)All parties to a hearing may be represented at the hearing by counsel.\n\n6(3)The onus of proof that the boundary of a parcel is in the location claimed by the applicant shall be upon the applicant.\n\n6(4)Subject to subsection (5), the applicant shall produce as a witness to give evidence in person at the hearing, each surveyor who signed a plan of survey prepared for the purpose of supporting the application and submitted with the application.\n\n6(5)The Registrar General may waive the requirements of subsection (4) at the request of the applicant if satisfied that it is unnecessary or impracticable for the surveyor to give evidence in person.\n\n6(6)A summons to witness issued under the Act shall be on a form provided by the Registrar General.",
+      "subsections": [
+        {
+          "id": "6-subsection-1",
+          "sourceKey": "section:6/subsection:1",
+          "label": "6(1)",
+          "text": "6(1)The Registrar General and all other parties to a hearing may introduce evidence at the hearing and may cross-examine witnesses.",
+          "contentHash": "f5a01f4ec1c02fc5f9512bc1213bf1f514aab75bb0ebf07a3c15a9e4220c1072"
+        },
+        {
+          "id": "6-subsection-2",
+          "sourceKey": "section:6/subsection:2",
+          "label": "6(2)",
+          "text": "6(2)All parties to a hearing may be represented at the hearing by counsel.",
+          "contentHash": "1ccacdf3634ec171fe148bd33a0b79b85451b98adbaf4624e7961390c8de6188"
+        },
+        {
+          "id": "6-subsection-3",
+          "sourceKey": "section:6/subsection:3",
+          "label": "6(3)",
+          "text": "6(3)The onus of proof that the boundary of a parcel is in the location claimed by the applicant shall be upon the applicant.",
+          "contentHash": "0c3d758cef191b7e348d7ed135cf39a94f78bfd95114e35b3ae10bd6439f750f"
+        },
+        {
+          "id": "6-subsection-4",
+          "sourceKey": "section:6/subsection:4",
+          "label": "6(4)",
+          "text": "6(4)Subject to subsection (5), the applicant shall produce as a witness to give evidence in person at the hearing, each surveyor who signed a plan of survey prepared for the purpose of supporting the application and submitted with the application.",
+          "contentHash": "e233529fc90b12092af4ae66702c68e44bd9b55a6f2f488ac696485ead8c47ae"
+        },
+        {
+          "id": "6-subsection-5",
+          "sourceKey": "section:6/subsection:5",
+          "label": "6(5)",
+          "text": "6(5)The Registrar General may waive the requirements of subsection (4) at the request of the applicant if satisfied that it is unnecessary or impracticable for the surveyor to give evidence in person.",
+          "contentHash": "d2a9a85b23709c20b06be809c28d7b8e8d951f206b7d7a13d56ceedfc6158a10"
+        },
+        {
+          "id": "6-subsection-6",
+          "sourceKey": "section:6/subsection:6",
+          "label": "6(6)",
+          "text": "6(6)A summons to witness issued under the Act shall be on a form provided by the Registrar General.",
+          "contentHash": "0f163715182f18f871c89a0ea09e4d9f6fe83fbbd8c0c413d6199a3d8ecc1a09"
+        }
+      ],
+      "contentHash": "69c5dcbc9bcf0e0f3e12fa44b79675ecf2b28cee0286716526c11cc137e20be7"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "componentType": "section",
+      "label": "7",
+      "text": "7At any time before or during a hearing or other proceeding under the Act, the Registrar General may allow the evidence of any witness, prospective witness or other person to be given or provided by affidavit or solemn declaration or any fact or document to be proven by affidavit or solemn declaration, in accordance with the Evidence Act, unless a party requires the attendance of the deponent or declarant at a hearing for cross-examination.\n\nAPPEALS",
+      "subsections": [],
+      "contentHash": "ef21ff2221d17eda1773cbde5f174a6d4e868348e96d0a42771071524c1f762b"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "componentType": "section",
+      "label": "8",
+      "text": "8The Rules of Court and the forms prescribed under the Rules of Court apply to an appeal under the Act in so far as they are not inconsistent with the provisions of the Act.\n\nFILING",
+      "subsections": [],
+      "contentHash": "ae8112f157b4bdec8e6c42e6409d43c6726d5f0c2b404c705ab415b87dfd2943"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "componentType": "section",
+      "label": "9",
+      "text": "9(1)The Registrar General may certify a plan of survey to be filed under the Act in the manner the Registrar General considers appropriate.\n\n9(2)If a plan of survey or a corrected plan of survey filed under subsection 15(1) or 16(4) of the Act supersedes a plan of survey filed earlier, the Registrar General shall cause a notation to be made to that effect on the plan of survey filed earlier, giving particulars sufficient to identify the superseding plan.\n\nFEES",
+      "subsections": [
+        {
+          "id": "9-subsection-1",
+          "sourceKey": "section:9/subsection:1",
+          "label": "9(1)",
+          "text": "9(1)The Registrar General may certify a plan of survey to be filed under the Act in the manner the Registrar General considers appropriate.",
+          "contentHash": "2c9bd659f73c9f5cc05fe96463861a0efef291df0bc05f869a3523ab6f3aea36"
+        },
+        {
+          "id": "9-subsection-2",
+          "sourceKey": "section:9/subsection:2",
+          "label": "9(2)",
+          "text": "9(2)If a plan of survey or a corrected plan of survey filed under subsection 15(1) or 16(4) of the Act supersedes a plan of survey filed earlier, the Registrar General shall cause a notation to be made to that effect on the plan of survey filed earlier, giving particulars sufficient to identify the superseding plan.\n\nFEES",
+          "contentHash": "4f51d903db097e196e5b42c1e56dae88e68e0ad80dea81ddcae697bb69652618"
+        }
+      ],
+      "contentHash": "8bf626d61e0eb4d9e814c5a66c9767aeebe6e42824755b87335b2ef620afc48e"
+    },
+    {
+      "id": "section-10",
+      "sourceKey": "section:10",
+      "componentType": "section",
+      "label": "10",
+      "text": "10(1)The fee for the making of an application under the Act is four hundred dollars.\n\n10(2)The fee for a transcript of evidence provided to a party under subsection 11(4) of the Act is six dollars per page for each copy requested.\n\n10(3)A fee payable under subsection (1) or (2) shall be paid into the Fund.\n\nCOMMENCEMENT",
+      "subsections": [
+        {
+          "id": "10-subsection-1",
+          "sourceKey": "section:10/subsection:1",
+          "label": "10(1)",
+          "text": "10(1)The fee for the making of an application under the Act is four hundred dollars.",
+          "contentHash": "b4bcd50ba18df652b2d8fe80fa2ed13a7b4b6578e8c1fb5ff8a6d19e2392c762"
+        },
+        {
+          "id": "10-subsection-2",
+          "sourceKey": "section:10/subsection:2",
+          "label": "10(2)",
+          "text": "10(2)The fee for a transcript of evidence provided to a party under subsection 11(4) of the Act is six dollars per page for each copy requested.",
+          "contentHash": "0ff38eed8193e86ec9f40dbce6aa5bc477e16f6896df06eba3645b906fb51a03"
+        },
+        {
+          "id": "10-subsection-3",
+          "sourceKey": "section:10/subsection:3",
+          "label": "10(3)",
+          "text": "10(3)A fee payable under subsection (1) or (2) shall be paid into the Fund.\n\nCOMMENCEMENT",
+          "contentHash": "b05526d5425aa454cbf82c6d677ef7e253c27209d81b565dcac7c056ed78eb87"
+        }
+      ],
+      "contentHash": "5053a661f9fbfdd527078608e845c6a80a733194d36d155adfbb71450985525c"
+    },
+    {
+      "id": "section-11",
+      "sourceKey": "section:11",
+      "componentType": "section",
+      "label": "11",
+      "text": "11This Regulation comes into force on January 1, 1996.",
+      "subsections": [],
+      "contentHash": "a8892e82c30249e5f29f6d381a5f5d3a5b87e2171b4d352701bfd09bd7bc8b60"
+    },
+    {
+      "id": "form-form-1",
+      "sourceKey": "form:form-1",
+      "componentType": "form",
+      "label": "Form 1",
+      "text": "Form 1\n\nN.B. This Regulation is consolidated to May 15, 2018.",
+      "contentHash": "1fdfc4ce9a8bb7ff1aae6f8ae1846239ef6b5cb86e59d7e091ef56c1ebaa15ed"
+    }
+  ],
+  "sections": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
+      "label": "1",
+      "text": "1This Regulation may be cited as the General Regulation - Boundaries Confirmation Act.\n\nDEFINITIONS",
+      "subsections": [],
+      "contentHash": "768ea997138e8cd6fba03cd3151eccb99fdf0fa893d248c7cc415ffc4ef26c87"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "label": "2",
+      "text": "2In this Regulation\n“Act” means the Boundaries Confirmation Act;(Loi)\n\n“layperson” means a person who is not a surveyor and is not a member of the Law Society of New Brunswick authorized to practise law in New Brunswick.(profane)\n\nAPPLICATIONS",
+      "subsections": [],
+      "contentHash": "cbc1eb52bcef6d6edfb768ac7dab56b906b4d33c83fe00b5b388664df7e05068"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
+      "label": "3",
+      "text": "3(1)An application to confirm the location of a boundary made under subsection 6(1) or (3) of the Act shall be in Form 1.\n\n3(2)A plan of survey required under paragraph 7(1)(a) of the Act shall be current and shall conform in every respect to\n\n(a)\nthe standards for the making of such a plan established by the Association of New Brunswick Land Surveyors and in effect at the time of making the application, and\n\n(b)\nany other requirements specified by the Registrar General.\n\n3(3)In addition to the plan of survey referred to in subsection (2), an application to confirm the location of a boundary shall be accompanied by\n\n(a)\nthe field notes and a surveyor’s report in conformity with subsection (4), prepared by the surveyor who signed the plan of survey,\n\n(b)\ncopies of any other existing plans of survey on which the boundary in question is shown and, if reasonably available to the applicant, the field notes and surveyor’s reports relating to those plans of survey,\n\n(c)\ncopies of all instruments registered in a registry office or a land titles office in the Province that relate to the location of the boundary in question and that are required by the Registrar General,\n\n(d)\nif requested by the Registrar General, an abstract of title in conformity with the directions of the Registrar General,\n\n(e)\na list of the names and mailing addresses of all the current owners of an interest in the parcel in question and all the current owners of an interest in the other parcels sharing the boundary in question, including a description of the nature of the interest of each such owner,\n\n(f)\nany consent and waiver of notice obtained by the applicant and any agreement to be bound by an order of the Registrar General, and\n\n(g)\nany other information or documentation that would or could assist the Registrar General in dealing with the application or that is requested by the Registrar General.\n\n3(4)A surveyor’s report referred to in paragraph (3)(a) shall contain\n\n(a)\na description of the issue to be determined,\n\n(b)\na description of the history of the boundary in question,\n\n(c)\na description of the evidence used to establish the location of the boundary as shown on the plan of survey, and\n\n(d)\nan explanation of the reasons for accepting or rejecting the location of the boundary as shown on any other plans of survey, as indicated by any other documentary evidence or as indicated by any physical evidence of earlier boundary lines or boundary lines that have been accepted by adjoining landowners.\n\n3(5)The Registrar General may waive any of the requirements of subsection (3), subject to such terms and conditions as the Registrar General considers appropriate.",
+      "subsections": [
+        {
+          "id": "3-subsection-1",
+          "sourceKey": "section:3/subsection:1",
+          "label": "3(1)",
+          "text": "3(1)An application to confirm the location of a boundary made under subsection 6(1) or (3) of the Act shall be in Form 1.",
+          "contentHash": "876146d98a11b33c53202ce23c4d5f7f265e4e3ef162e728ff9324a8a7fff7f8"
+        },
+        {
+          "id": "3-subsection-2",
+          "sourceKey": "section:3/subsection:2",
+          "label": "3(2)",
+          "text": "3(2)A plan of survey required under paragraph 7(1)(a) of the Act shall be current and shall conform in every respect to\n\n(a)\nthe standards for the making of such a plan established by the Association of New Brunswick Land Surveyors and in effect at the time of making the application, and\n\n(b)\nany other requirements specified by the Registrar General.",
+          "contentHash": "d7feda4d114408ecbdcb589798bc9af8ea4fd8f7ec0453d55ab4fc2b41f68ae0"
+        },
+        {
+          "id": "3-subsection-3",
+          "sourceKey": "section:3/subsection:3",
+          "label": "3(3)",
+          "text": "3(3)In addition to the plan of survey referred to in subsection (2), an application to confirm the location of a boundary shall be accompanied by\n\n(a)\nthe field notes and a surveyor’s report in conformity with subsection (4), prepared by the surveyor who signed the plan of survey,\n\n(b)\ncopies of any other existing plans of survey on which the boundary in question is shown and, if reasonably available to the applicant, the field notes and surveyor’s reports relating to those plans of survey,\n\n(c)\ncopies of all instruments registered in a registry office or a land titles office in the Province that relate to the location of the boundary in question and that are required by the Registrar General,\n\n(d)\nif requested by the Registrar General, an abstract of title in conformity with the directions of the Registrar General,\n\n(e)\na list of the names and mailing addresses of all the current owners of an interest in the parcel in question and all the current owners of an interest in the other parcels sharing the boundary in question, including a description of the nature of the interest of each such owner,\n\n(f)\nany consent and waiver of notice obtained by the applicant and any agreement to be bound by an order of the Registrar General, and\n\n(g)\nany other information or documentation that would or could assist the Registrar General in dealing with the application or that is requested by the Registrar General.",
+          "contentHash": "d6eadfbd0f2a5a8b64fc236cc11815440d114bd0c4f961dde881930bf0fe107f"
+        },
+        {
+          "id": "3-subsection-4",
+          "sourceKey": "section:3/subsection:4",
+          "label": "3(4)",
+          "text": "3(4)A surveyor’s report referred to in paragraph (3)(a) shall contain\n\n(a)\na description of the issue to be determined,\n\n(b)\na description of the history of the boundary in question,\n\n(c)\na description of the evidence used to establish the location of the boundary as shown on the plan of survey, and\n\n(d)\nan explanation of the reasons for accepting or rejecting the location of the boundary as shown on any other plans of survey, as indicated by any other documentary evidence or as indicated by any physical evidence of earlier boundary lines or boundary lines that have been accepted by adjoining landowners.",
+          "contentHash": "72916e4aafb012b71412bc644524f0951070749afe6d23d818bcdbc8d32a75a7"
+        },
+        {
+          "id": "3-subsection-5",
+          "sourceKey": "section:3/subsection:5",
+          "label": "3(5)",
+          "text": "3(5)The Registrar General may waive any of the requirements of subsection (3), subject to such terms and conditions as the Registrar General considers appropriate.",
+          "contentHash": "29ed9dbc0f0f36b9bfd596897546a7f7c9ea61589d1db8cc52f221e967376eba"
+        }
+      ],
+      "contentHash": "c93064de079be205d4f03ac4da938ed013c63e66f6a64c100a0a96e575144243"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
+      "label": "4",
+      "text": "4(1)A consent and waiver of notice provided to the Registrar General shall be on a form provided by the Registrar General.\n\n4(2)An agreement to be bound by an order of the Registrar General shall be on a form provided by the Registrar General.\n\nPROCEEDINGS",
+      "subsections": [
+        {
+          "id": "4-subsection-1",
+          "sourceKey": "section:4/subsection:1",
+          "label": "4(1)",
+          "text": "4(1)A consent and waiver of notice provided to the Registrar General shall be on a form provided by the Registrar General.",
+          "contentHash": "9320250795a687e6f7dc23934d09877e06dbd388c71974dfbe7ec2d10892ef93"
+        },
+        {
+          "id": "4-subsection-2",
+          "sourceKey": "section:4/subsection:2",
+          "label": "4(2)",
+          "text": "4(2)An agreement to be bound by an order of the Registrar General shall be on a form provided by the Registrar General.\n\nPROCEEDINGS",
+          "contentHash": "e434f99804effc6305f798bdc2781c43bcca10b800bec3280b724eb37512b373"
+        }
+      ],
+      "contentHash": "ecaffa7f882f981abc416f30f0afd24e923585237b095a0f78579b46eb49597f"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "componentType": "section",
+      "label": "5",
+      "text": "5If the New Brunswick Geographic Information Corporation designates a layperson to hold a hearing or handle another matter under the Act and the layperson is not an employee as defined in the Civil Service Act, remuneration may be paid to the layperson but the remuneration, excluding reimbursements and other expenses, shall not exceed one hundred and fifty dollars for each day or portion of a day during which the layperson prepares for the hearing, holds the hearing or otherwise handles that or any other matter.",
+      "subsections": [],
+      "contentHash": "5327a89f99c047286d05ea43f8ee69d7602bc2a54c48704b6c266524f7ae8bdb"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "componentType": "section",
+      "label": "6",
+      "text": "6(1)The Registrar General and all other parties to a hearing may introduce evidence at the hearing and may cross-examine witnesses.\n\n6(2)All parties to a hearing may be represented at the hearing by counsel.\n\n6(3)The onus of proof that the boundary of a parcel is in the location claimed by the applicant shall be upon the applicant.\n\n6(4)Subject to subsection (5), the applicant shall produce as a witness to give evidence in person at the hearing, each surveyor who signed a plan of survey prepared for the purpose of supporting the application and submitted with the application.\n\n6(5)The Registrar General may waive the requirements of subsection (4) at the request of the applicant if satisfied that it is unnecessary or impracticable for the surveyor to give evidence in person.\n\n6(6)A summons to witness issued under the Act shall be on a form provided by the Registrar General.",
+      "subsections": [
+        {
+          "id": "6-subsection-1",
+          "sourceKey": "section:6/subsection:1",
+          "label": "6(1)",
+          "text": "6(1)The Registrar General and all other parties to a hearing may introduce evidence at the hearing and may cross-examine witnesses.",
+          "contentHash": "f5a01f4ec1c02fc5f9512bc1213bf1f514aab75bb0ebf07a3c15a9e4220c1072"
+        },
+        {
+          "id": "6-subsection-2",
+          "sourceKey": "section:6/subsection:2",
+          "label": "6(2)",
+          "text": "6(2)All parties to a hearing may be represented at the hearing by counsel.",
+          "contentHash": "1ccacdf3634ec171fe148bd33a0b79b85451b98adbaf4624e7961390c8de6188"
+        },
+        {
+          "id": "6-subsection-3",
+          "sourceKey": "section:6/subsection:3",
+          "label": "6(3)",
+          "text": "6(3)The onus of proof that the boundary of a parcel is in the location claimed by the applicant shall be upon the applicant.",
+          "contentHash": "0c3d758cef191b7e348d7ed135cf39a94f78bfd95114e35b3ae10bd6439f750f"
+        },
+        {
+          "id": "6-subsection-4",
+          "sourceKey": "section:6/subsection:4",
+          "label": "6(4)",
+          "text": "6(4)Subject to subsection (5), the applicant shall produce as a witness to give evidence in person at the hearing, each surveyor who signed a plan of survey prepared for the purpose of supporting the application and submitted with the application.",
+          "contentHash": "e233529fc90b12092af4ae66702c68e44bd9b55a6f2f488ac696485ead8c47ae"
+        },
+        {
+          "id": "6-subsection-5",
+          "sourceKey": "section:6/subsection:5",
+          "label": "6(5)",
+          "text": "6(5)The Registrar General may waive the requirements of subsection (4) at the request of the applicant if satisfied that it is unnecessary or impracticable for the surveyor to give evidence in person.",
+          "contentHash": "d2a9a85b23709c20b06be809c28d7b8e8d951f206b7d7a13d56ceedfc6158a10"
+        },
+        {
+          "id": "6-subsection-6",
+          "sourceKey": "section:6/subsection:6",
+          "label": "6(6)",
+          "text": "6(6)A summons to witness issued under the Act shall be on a form provided by the Registrar General.",
+          "contentHash": "0f163715182f18f871c89a0ea09e4d9f6fe83fbbd8c0c413d6199a3d8ecc1a09"
+        }
+      ],
+      "contentHash": "69c5dcbc9bcf0e0f3e12fa44b79675ecf2b28cee0286716526c11cc137e20be7"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "componentType": "section",
+      "label": "7",
+      "text": "7At any time before or during a hearing or other proceeding under the Act, the Registrar General may allow the evidence of any witness, prospective witness or other person to be given or provided by affidavit or solemn declaration or any fact or document to be proven by affidavit or solemn declaration, in accordance with the Evidence Act, unless a party requires the attendance of the deponent or declarant at a hearing for cross-examination.\n\nAPPEALS",
+      "subsections": [],
+      "contentHash": "ef21ff2221d17eda1773cbde5f174a6d4e868348e96d0a42771071524c1f762b"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "componentType": "section",
+      "label": "8",
+      "text": "8The Rules of Court and the forms prescribed under the Rules of Court apply to an appeal under the Act in so far as they are not inconsistent with the provisions of the Act.\n\nFILING",
+      "subsections": [],
+      "contentHash": "ae8112f157b4bdec8e6c42e6409d43c6726d5f0c2b404c705ab415b87dfd2943"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "componentType": "section",
+      "label": "9",
+      "text": "9(1)The Registrar General may certify a plan of survey to be filed under the Act in the manner the Registrar General considers appropriate.\n\n9(2)If a plan of survey or a corrected plan of survey filed under subsection 15(1) or 16(4) of the Act supersedes a plan of survey filed earlier, the Registrar General shall cause a notation to be made to that effect on the plan of survey filed earlier, giving particulars sufficient to identify the superseding plan.\n\nFEES",
+      "subsections": [
+        {
+          "id": "9-subsection-1",
+          "sourceKey": "section:9/subsection:1",
+          "label": "9(1)",
+          "text": "9(1)The Registrar General may certify a plan of survey to be filed under the Act in the manner the Registrar General considers appropriate.",
+          "contentHash": "2c9bd659f73c9f5cc05fe96463861a0efef291df0bc05f869a3523ab6f3aea36"
+        },
+        {
+          "id": "9-subsection-2",
+          "sourceKey": "section:9/subsection:2",
+          "label": "9(2)",
+          "text": "9(2)If a plan of survey or a corrected plan of survey filed under subsection 15(1) or 16(4) of the Act supersedes a plan of survey filed earlier, the Registrar General shall cause a notation to be made to that effect on the plan of survey filed earlier, giving particulars sufficient to identify the superseding plan.\n\nFEES",
+          "contentHash": "4f51d903db097e196e5b42c1e56dae88e68e0ad80dea81ddcae697bb69652618"
+        }
+      ],
+      "contentHash": "8bf626d61e0eb4d9e814c5a66c9767aeebe6e42824755b87335b2ef620afc48e"
+    },
+    {
+      "id": "section-10",
+      "sourceKey": "section:10",
+      "componentType": "section",
+      "label": "10",
+      "text": "10(1)The fee for the making of an application under the Act is four hundred dollars.\n\n10(2)The fee for a transcript of evidence provided to a party under subsection 11(4) of the Act is six dollars per page for each copy requested.\n\n10(3)A fee payable under subsection (1) or (2) shall be paid into the Fund.\n\nCOMMENCEMENT",
+      "subsections": [
+        {
+          "id": "10-subsection-1",
+          "sourceKey": "section:10/subsection:1",
+          "label": "10(1)",
+          "text": "10(1)The fee for the making of an application under the Act is four hundred dollars.",
+          "contentHash": "b4bcd50ba18df652b2d8fe80fa2ed13a7b4b6578e8c1fb5ff8a6d19e2392c762"
+        },
+        {
+          "id": "10-subsection-2",
+          "sourceKey": "section:10/subsection:2",
+          "label": "10(2)",
+          "text": "10(2)The fee for a transcript of evidence provided to a party under subsection 11(4) of the Act is six dollars per page for each copy requested.",
+          "contentHash": "0ff38eed8193e86ec9f40dbce6aa5bc477e16f6896df06eba3645b906fb51a03"
+        },
+        {
+          "id": "10-subsection-3",
+          "sourceKey": "section:10/subsection:3",
+          "label": "10(3)",
+          "text": "10(3)A fee payable under subsection (1) or (2) shall be paid into the Fund.\n\nCOMMENCEMENT",
+          "contentHash": "b05526d5425aa454cbf82c6d677ef7e253c27209d81b565dcac7c056ed78eb87"
+        }
+      ],
+      "contentHash": "5053a661f9fbfdd527078608e845c6a80a733194d36d155adfbb71450985525c"
+    },
+    {
+      "id": "section-11",
+      "sourceKey": "section:11",
+      "componentType": "section",
+      "label": "11",
+      "text": "11This Regulation comes into force on January 1, 1996.",
+      "subsections": [],
+      "contentHash": "a8892e82c30249e5f29f6d381a5f5d3a5b87e2171b4d352701bfd09bd7bc8b60"
+    }
+  ],
+  "notes": []
+}

@@ -1,5 +1,9 @@
 export type SitCorpusDocumentType = 'act' | 'regulation';
 
+export type SitCorpusSourceType = 'laws-gnb-html' | 'official-pdf';
+
+export type SitCorpusSourceStatus = 'current' | 'legacy-replaced' | 'private-or-professional-act';
+
 export type SitCorpusExamScope = 'required' | 'candidate' | 'excluded';
 
 export type SitCorpusExamSource = {
@@ -14,13 +18,35 @@ export type SitCorpusManifestDocument = {
   title: string;
   citation?: string;
   sourceUrl: string;
+  sourceType?: SitCorpusSourceType;
+  sourceAuthority?: string;
   sourceIdentifier?: string;
   sourceCorpus?: 'cs' | 'cr' | 'ar';
   examScope: SitCorpusExamScope;
   examSource?: SitCorpusExamSource;
+  manualSource?: ManualScopeMapping;
+  pdfSelector?: {
+    language: 'en';
+    startPage?: number;
+    endPage?: number;
+    note?: string;
+  };
   parentActId?: string;
   expectedEnablingAct?: string;
   existingPilot?: boolean;
+};
+
+export type ManualScopeMapping = {
+  manualEntryId: string;
+  manualTitle: string;
+  historicalCitation?: string;
+  sourceStatus: SitCorpusSourceStatus;
+  currentDocumentId?: string;
+  temporarilyStudySuccessor?: boolean;
+  duplicateSuccessorContent?: boolean;
+  registrarConfirmationRequired?: boolean;
+  historicalTextAvailable?: boolean;
+  notes?: string;
 };
 
 export type SitCorpusManifest = {
@@ -29,6 +55,7 @@ export type SitCorpusManifest = {
   title: string;
   sourceAuthority: string;
   expectedRequiredActCount: number;
+  manualScopeMappings?: ManualScopeMapping[];
   documents: SitCorpusManifestDocument[];
 };
 

@@ -72,12 +72,15 @@ export const buildSitCorpusInventoryReport = (
 ): SitCorpusInventoryReport => {
   const findings: SitCorpusInventoryFinding[] = [];
   const ids = manifest.documents.map((document) => document.id);
+  const manualEntryIds = manifest.manualScopeMappings?.map((mapping) => mapping.manualEntryId) ?? [];
   const duplicateIds = findDuplicates(ids);
+  const duplicateManualEntryIds = findDuplicates(manualEntryIds);
   const duplicateTitles = findDuplicates(
     manifest.documents.map((document) => `${document.type}:${normalizeTitle(document.title)}`),
   );
   const idsSet = new Set(ids);
   const requiredActs = getRequiredSitActs(manifest);
+  const manualActCount = manifest.manualScopeMappings?.length ?? requiredActs.length;
   const requiredRegulations = getRequiredSitRegulations(manifest);
   const candidates = manifest.documents.filter((document) => document.examScope === 'candidate');
   const missingSourceUrls = getRequiredSitDocuments(manifest)
@@ -106,11 +109,19 @@ export const buildSitCorpusInventoryReport = (
       message: 'Legal text authority must reference laws.gnb.ca.',
     });
   }
-  if (requiredActs.length !== manifest.expectedRequiredActCount) {
+  if (manualActCount !== manifest.expectedRequiredActCount) {
     findings.push({
       severity: 'ERROR',
       code: 'required-act-count',
-      message: `Required Act count is ${requiredActs.length}; expected ${manifest.expectedRequiredActCount}.`,
+      message: `Manual SIT entry count is ${manualActCount}; expected ${manifest.expectedRequiredActCount}.`,
+    });
+  }
+  for (const id of duplicateManualEntryIds) {
+    findings.push({
+      severity: 'ERROR',
+      code: 'duplicate-manual-entry-id',
+      documentId: id,
+      message: `Duplicate manual entry id: ${id}.`,
     });
   }
   for (const id of duplicateIds) {
@@ -145,11 +156,22 @@ export const buildSitCorpusInventoryReport = (
   }
   for (const document of manifest.documents) {
     if (document.sourceUrl && !document.sourceUrl.startsWith('https://laws.gnb.ca/')) {
+      if (document.sourceType === 'official-pdf' && document.sourceUrl.startsWith('https://www.anbls.nb.ca/')) {
+        continue;
+      }
       findings.push({
         severity: 'ERROR',
         code: 'non-official-source',
         documentId: document.id,
         message: `${document.id} sourceUrl must use laws.gnb.ca.`,
+      });
+    }
+    if (document.sourceType === 'official-pdf' && !document.pdfSelector) {
+      findings.push({
+        severity: 'ERROR',
+        code: 'missing-pdf-selector',
+        documentId: document.id,
+        message: `${document.id} is an official PDF source without a pdfSelector.`,
       });
     }
     if (document.type === 'regulation' && document.examScope === 'required' && !document.parentActId) {
@@ -169,6 +191,25 @@ export const buildSitCorpusInventoryReport = (
       });
     }
   }
+  const legalDocumentIds = new Set(manifest.documents.map((document) => document.id));
+  for (const mapping of manifest.manualScopeMappings ?? []) {
+    if (mapping.currentDocumentId && !legalDocumentIds.has(mapping.currentDocumentId)) {
+      findings.push({
+        severity: 'ERROR',
+        code: 'manual-mapping-target-missing',
+        documentId: mapping.currentDocumentId,
+        message: `${mapping.manualEntryId} maps to missing legal document ${mapping.currentDocumentId}.`,
+      });
+    }
+    if (mapping.sourceStatus === 'legacy-replaced') {
+      findings.push({
+        severity: 'INFO',
+        code: 'legacy-replaced',
+        documentId: mapping.currentDocumentId,
+        message: `${mapping.manualTitle} is represented by ${mapping.currentDocumentId} pending Registrar confirmation.`,
+      });
+    }
+  }
 
   return {
     corpusId: manifest.corpusId,
@@ -176,7 +217,7 @@ export const buildSitCorpusInventoryReport = (
     generatedAt,
     manifestHash: hashSitCorpusManifest(manifest),
     expectedActCount: manifest.expectedRequiredActCount,
-    actualRequiredActCount: requiredActs.length,
+    actualRequiredActCount: manualActCount,
     requiredRegulationCount: requiredRegulations.length,
     candidateRegulationCount: candidates.length,
     missingSourceUrls,

@@ -1,0 +1,604 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-executors-and-trustees-act",
+  "officialTitle": "Executors and Trustees Act",
+  "officialCitation": "Chapter E-13",
+  "officialCitationDisplay": "Chapter E-13",
+  "officialCitationNormalized": "E-13",
+  "documentType": "act",
+  "sourceUrl": "https://laws.gnb.ca/en/document/cs/E-13",
+  "fetchDate": "2026-08-11T18:08:45.519Z",
+  "consolidatedTo": "June 16, 2023",
+  "contentHash": "e6ac394096d3065fc521279b3668b38a0ba5ae8bf0c6ee62a5acaeb902e7a2b8",
+  "tableOfContents": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "label": "1",
+      "heading": "Liability of joint contractor"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "label": "2",
+      "heading": "Sale of realty by executor"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "label": "3",
+      "heading": "Sale of realty by administrator"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "label": "4",
+      "heading": "Death of executor before testator"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "label": "5",
+      "heading": "Liability of executors and administrators"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "label": "6",
+      "heading": "Sale of realty to satisfy legacy"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "label": "7",
+      "heading": "Powers of successors of executors and administrators"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "label": "8",
+      "heading": "Powers of executors to mortgage realty"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "label": "9",
+      "heading": "Duty of inquiry by purchasers of realty from estate"
+    },
+    {
+      "id": "section-10",
+      "sourceKey": "section:10",
+      "label": "10",
+      "heading": "Application of sections 6 to 9"
+    },
+    {
+      "id": "section-11",
+      "sourceKey": "section:11",
+      "label": "11",
+      "heading": "Effect of contingent liabilities of estate"
+    },
+    {
+      "id": "section-12",
+      "sourceKey": "section:12",
+      "label": "12",
+      "heading": "Liability of executor for contingent liabilities"
+    },
+    {
+      "id": "section-13",
+      "sourceKey": "section:13",
+      "label": "13",
+      "heading": "Testator erroneously presumed dead"
+    },
+    {
+      "id": "section-14",
+      "sourceKey": "section:14",
+      "label": "14",
+      "heading": "Recovery of estates where later will discovered"
+    },
+    {
+      "id": "section-15",
+      "sourceKey": "section:15",
+      "label": "15",
+      "heading": "Costs and expenses where later will discovered"
+    },
+    {
+      "id": "section-16",
+      "sourceKey": "section:16",
+      "label": "16",
+      "heading": "Fraud of executors"
+    },
+    {
+      "id": "section-17",
+      "sourceKey": "section:17",
+      "label": "17",
+      "heading": "Repealed"
+    },
+    {
+      "id": "section-18",
+      "sourceKey": "section:18",
+      "label": "18",
+      "heading": "Death of sole trustee"
+    },
+    {
+      "id": "section-19",
+      "sourceKey": "section:19",
+      "label": "19",
+      "heading": "Minor as executor"
+    }
+  ],
+  "components": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
+      "label": "1",
+      "heading": "Liability of joint contractor",
+      "text": "Liability of joint contractor\n\n1In case any one or more joint contractors or obligors die, the person interested in the contract, obligation or promise entered into by such joint contractors or obligors, may proceed by action against the representatives of the deceased contractor or obligor, in the same manner as if the contract, obligation or promise had been joint and several, and this, notwithstanding there may be another person liable under such contract, obligation or promise, still living, and an action pending against such person; but the property and effects of stockholders in chartered banks or the members of other incorporated companies, shall not be liable to a greater extent than they would have been if this section had not been passed.\nR.S., c.76, s.1\n\nPOWER TO SELL, LEASE, UNDER WILL",
+      "subsections": [],
+      "contentHash": "2a812d8d9dcd0df78e820a89cdbc1fcc4406ba92afd2d0f5e0ee7b1d6bfeea6b"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "label": "2",
+      "heading": "Sale of realty by executor",
+      "text": "Sale of realty by executor\n\n2Where there is in a will of a deceased person a direction, whether express or implied, to sell, dispose of, appoint, mortgage, encumber or lease any real estate, and no person is by the said will, or some codicil thereto, or otherwise by the testator appointed to execute and carry the same into effect, the executor, if any, named in the will, shall and may execute and carry into effect every such direction to sell, dispose of, appoint, encumber or lease the real estate, and any estate or interest therein, in as full, large and ample a manner, and with the same legal effect as if the executor was appointed by the testator to execute and carry the same into effect.\nR.S., c.76, s.2",
+      "subsections": [],
+      "contentHash": "4d15d955fb3d82c97683f613664541636a25ba5ae843e081ad40e856b6136a65"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
+      "label": "3",
+      "heading": "Sale of realty by administrator",
+      "text": "Sale of realty by administrator\n\n3Where there is in a will of a deceased person, a power to an executor in the will to sell, dispose of, appoint, mortgage, encumber or lease any real estate, or any estate or interest therein, whether the power is express or arises by implication, and where from any cause letters of administration with the will annexed have been by The Probate Court of New Brunswick granted to any person, that person shall and may exercise every such power, and sell, dispose of, appoint, mortgage, encumber or lease the real estate, and any estate or interest therein, in as full, large and ample a manner, and with the same legal effect as the said executor might have done.\nR.S., c.76, s.3; 1987, c.6, s.25",
+      "subsections": [],
+      "contentHash": "ffdfc7d579a790040f13e534e88633efa3a09ec81adf5a5b06b13dba6119054e"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
+      "label": "4",
+      "heading": "Death of executor before testator",
+      "text": "Death of executor before testator\n\n4Where there is in a will of a deceased person power to sell, dispose of, appoint, mortgage, encumber, or lease any real estate or any estate or interest therein, whether the power is express or arises by implication, and no person is by the said will or otherwise by the testator appointed to execute the power, or in case the executor or other person appointed to execute the power dies before the testator, and letters of administration with the will annexed have been by The Probate Court of New Brunswick granted to any person, that person shall and may execute every such power, and sell, dispose of, appoint, mortgage, encumber or lease the real estate, and any estate or interest therein, in as full, large and ample a manner and with the same legal effect as if the last named person had been appointed by the testator to execute such power.\nR.S., c.76, s.4; 1987, c.6, s.25",
+      "subsections": [],
+      "contentHash": "d03cc330f8025df4a43ff646148d08ff16bc06c32734345c9394a7b04b8e61f4"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "componentType": "section",
+      "label": "5",
+      "heading": "Liability of executors and administrators",
+      "text": "Liability of executors and administrators\n\n5Every executor or administrator with the will annexed, shall, as respects the additional powers vested in him by sections 2, 3 and 4, and any money and assets by him received in consequence of the exercise of such powers, be subject to all the liabilities, and compellable to discharge all the duties of whatsoever kind, that, as respects the acts to be done by him under such powers, would have been imposed upon an executor or other person appointed by the testator to execute the same, or in case of there being no such executor or person, would have been imposed by law upon any person appointed by law or by any Court of competent jurisdiction to execute the powers.\nR.S., c.76, s.5\n\nDEBTS OR LEGACY CHARGED\nBY TESTATOR ON LAND",
+      "subsections": [],
+      "contentHash": "3f2fcc17eb67be0f3ab386df0fd33905e8cba0389db9467d44019c74b1b4665a"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "componentType": "section",
+      "label": "6",
+      "heading": "Sale of realty to satisfy legacy",
+      "text": "Sale of realty to satisfy legacy\n\n6Where, by a will, the testator has charged his real estate or any specific portion thereof with the payment of his debts or with the payment of a legacy or other specific sum of money and has devised the estate so charged to a trustee for the whole of his estate or interest therein, and has not made any express provision for the raising of such debt, legacy or sum of money out of the estate, it shall be lawful for the said devisee in trust, notwithstanding any trusts actually declared by the testator, to raise such debts, legacy or money as aforesaid by a sale and absolute disposition by public auction or private contract of the said real estate, or any part thereof, or by a mortgage of the same, or partly in one mode and partly in the other, and any deed of mortgage so executed may reserve such rate of interest and fix such period or periods of repayment as the person executing the same thinks proper.\nR.S., c.76, s.6",
+      "subsections": [],
+      "contentHash": "70acadcc7d33b007543fc21e145fe48b12e9c674aa90ca714b4ddddae54f37f7"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "componentType": "section",
+      "label": "7",
+      "heading": "Powers of successors of executors and administrators",
+      "text": "Powers of successors of executors and administrators\n\n7The powers conferred by section 6 extend to every person in whom the estate devised is for the time being vested by survivorship, descent or devise, or to any person who may be appointed under any power in the will, or by The Court of King’s Bench of New Brunswick, or The Probate Court of New Brunswick, to succeed to the trusteeship vested in such devisee in trust as aforesaid.\nR.S., c.76, s.7; 1979, c.41, s.47; 1987, c.6, s.25; 2023, c.17, s.80",
+      "subsections": [],
+      "contentHash": "92b2c4f183496011b77d7a6a6d6d31d297e4f2d93eb920898523698191ec7169"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "componentType": "section",
+      "label": "8",
+      "heading": "Powers of executors to mortgage realty",
+      "text": "Powers of executors to mortgage realty\n\n8If any testator who has created such a charge as is described in section 6 has not devised the real estate charged as aforesaid in such terms as that his whole estate and interest therein become vested in a trustee, the executors for the time being named in the will, if any, shall have the same or the like power of raising the said money as is hereinbefore vested in the devisee in trust of the said real estate, and such power shall from time to time devolve to and become vested in the person, if any, in whom the executorship shall for the time being be vested; but any sale or mortgage under this Act shall operate only on the estate and interest of the testator, and shall not render it unnecessary to get in any outstanding subsisting legal estate.\nR.S., c.76, s.8",
+      "subsections": [],
+      "contentHash": "d665cc81b6809967d093ab1c96a348341775bbc06fa327146780b64bf83ce666"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "componentType": "section",
+      "label": "9",
+      "heading": "Duty of inquiry by purchasers of realty from estate",
+      "text": "Duty of inquiry by purchasers of realty from estate\n\n9Purchasers or mortgagees shall not be bound to inquire whether the powers conferred by sections 6, 7 and 8 or any of them have been duly and correctly exercised by the persons acting in virtue thereof.\nR.S., c.76, s.9",
+      "subsections": [],
+      "contentHash": "cd436615155f4328d0fbfb931c01815ccac6a1dff285d585ad271392c7bf345b"
+    },
+    {
+      "id": "section-10",
+      "sourceKey": "section:10",
+      "componentType": "section",
+      "label": "10",
+      "heading": "Application of sections 6 to 9",
+      "text": "Application of sections 6 to 9\n\n10The provisions contained in sections 6 to 9 shall not extend to a devise to any person in fee or for the testator’s whole estate and interest charged with debts or legacies, nor shall they affect the power of any such devisee or devisees to sell or mortgage as he or they may by law now do.\nR.S., c.76, s.10\n\nEXECUTOR ASSIGNING LEASE",
+      "subsections": [],
+      "contentHash": "0be0edc1b4270e422a6e43fed8fe9e5309f11e6c46f4c1396f8d5fa695e21917"
+    },
+    {
+      "id": "section-11",
+      "sourceKey": "section:11",
+      "componentType": "section",
+      "label": "11",
+      "heading": "Effect of contingent liabilities of estate",
+      "text": "Effect of contingent liabilities of estate\n\n11(1)Where an executor, liable as such to the rents, covenants or agreements contained in a lease or agreement for a lease granted or assigned to the testator or intestate whose estate is being administered, has satisfied all such liabilities under the said lease or agreement for a lease as have accrued due and been claimed up to the time of the assignment hereinafter mentioned, and has set apart a sufficient fund to answer any future claim that may be made in respect of any fixed and ascertained sum covenanted or agreed by the lessee to be laid out on the property demised, or agreed to be demised, although the period for laying out the same may not have arrived, and has assigned the lease or agreement for a lease to a purchaser thereof, he shall be at liberty to distribute the estate of the deceased to and amongst the parties entitled thereto respectively without appropriating any part, or further part, as the case may be, of the personal estate of the deceased to meet any future liability under the said lease, or agreement for a lease; and the executor so distributing the residuary estate shall not, after having assigned the said lease or agreement for a lease, and having where necessary set apart a sufficient fund as aforesaid, be personally liable in respect of any subsequent claim under the said lease or agreement for a lease.\n\n11(2)Nothing herein contained shall prejudice the right of the lessor, or those claiming under him, to follow the assets of the deceased into the hands of the persons to or amongst whom the said assets may have been distributed.\n\nR.S., c.76, s.11",
+      "subsections": [
+        {
+          "id": "11-subsection-1",
+          "sourceKey": "section:11/subsection:1",
+          "label": "11(1)",
+          "text": "11(1)Where an executor, liable as such to the rents, covenants or agreements contained in a lease or agreement for a lease granted or assigned to the testator or intestate whose estate is being administered, has satisfied all such liabilities under the said lease or agreement for a lease as have accrued due and been claimed up to the time of the assignment hereinafter mentioned, and has set apart a sufficient fund to answer any future claim that may be made in respect of any fixed and ascertained sum covenanted or agreed by the lessee to be laid out on the property demised, or agreed to be demised, although the period for laying out the same may not have arrived, and has assigned the lease or agreement for a lease to a purchaser thereof, he shall be at liberty to distribute the estate of the deceased to and amongst the parties entitled thereto respectively without appropriating any part, or further part, as the case may be, of the personal estate of the deceased to meet any future liability under the said lease, or agreement for a lease; and the executor so distributing the residuary estate shall not, after having assigned the said lease or agreement for a lease, and having where necessary set apart a sufficient fund as aforesaid, be personally liable in respect of any subsequent claim under the said lease or agreement for a lease.",
+          "contentHash": "12cff351032d4cb0fb2742307bcb45fac0bb20f4e451b8380670ea8b76d4ce0d"
+        },
+        {
+          "id": "11-subsection-2",
+          "sourceKey": "section:11/subsection:2",
+          "label": "11(2)",
+          "text": "11(2)Nothing herein contained shall prejudice the right of the lessor, or those claiming under him, to follow the assets of the deceased into the hands of the persons to or amongst whom the said assets may have been distributed.\n\nR.S., c.76, s.11",
+          "contentHash": "78f782fac5382d9efd0bb758830b0a535881ba470a07b48a908d390b85e79c9f"
+        }
+      ],
+      "contentHash": "42647c116104b985bd20292ae58f5a0c2da88380b6a1e3563325763974ee5e66"
+    },
+    {
+      "id": "section-12",
+      "sourceKey": "section:12",
+      "componentType": "section",
+      "label": "12",
+      "heading": "Liability of executor for contingent liabilities",
+      "text": "Liability of executor for contingent liabilities\n\n12(1)In like manner, where an executor liable as such to the rent, covenants or agreements contained in a conveyance on chief rent or rent charge, whether any such rent is by limitation of use, grant or reservation, or agreement for such conveyance, granted or assigned to or made and entered into with the person whose estate is being administered, has satisfied all such liabilities under the said conveyance or agreement for a conveyance as may have accrued due and been claimed up to the time of the conveyance hereafter mentioned, and shall have set apart a sufficient fund to answer any future claim that may be made in respect of any fixed and ascertained sum, covenanted or agreed by the grantee, to be laid out on the property conveyed or agreed to be conveyed, although the period for laying out the same may not have arrived, and shall have conveyed such property, or assigned the said agreement for such conveyance as aforesaid to a purchaser thereof, he shall be at liberty to distribute the residuary estate of the deceased to and amongst the parties entitled thereto respectively, without appropriating any part, or further part, as the case may be, of the personal estate of the deceased to meet any future liability under the said conveyance, or agreement for a conveyance; and the executor so distributing the residuary estate shall not, after having made or executed such conveyance or assignment, and having, where necessary, set apart a sufficient fund as aforesaid, be personally liable in respect of any subsequent claim under the said conveyance or agreement for a conveyance.\n\n12(2)Nothing contained in subsection (1) shall prejudice the right of the grantor, or those claiming under him, to follow the assets of the deceased into the hands of the persons to or amongst whom the said assets may have been distributed.\n\nR.S., c.76, s.12\n\nPROTECTION OF EXECUTOR\nIN CERTAIN CASES",
+      "subsections": [
+        {
+          "id": "12-subsection-1",
+          "sourceKey": "section:12/subsection:1",
+          "label": "12(1)",
+          "text": "12(1)In like manner, where an executor liable as such to the rent, covenants or agreements contained in a conveyance on chief rent or rent charge, whether any such rent is by limitation of use, grant or reservation, or agreement for such conveyance, granted or assigned to or made and entered into with the person whose estate is being administered, has satisfied all such liabilities under the said conveyance or agreement for a conveyance as may have accrued due and been claimed up to the time of the conveyance hereafter mentioned, and shall have set apart a sufficient fund to answer any future claim that may be made in respect of any fixed and ascertained sum, covenanted or agreed by the grantee, to be laid out on the property conveyed or agreed to be conveyed, although the period for laying out the same may not have arrived, and shall have conveyed such property, or assigned the said agreement for such conveyance as aforesaid to a purchaser thereof, he shall be at liberty to distribute the residuary estate of the deceased to and amongst the parties entitled thereto respectively, without appropriating any part, or further part, as the case may be, of the personal estate of the deceased to meet any future liability under the said conveyance, or agreement for a conveyance; and the executor so distributing the residuary estate shall not, after having made or executed such conveyance or assignment, and having, where necessary, set apart a sufficient fund as aforesaid, be personally liable in respect of any subsequent claim under the said conveyance or agreement for a conveyance.",
+          "contentHash": "428015392ade659f2046230a80cf69bfc50aa2bbfbdba316235b9fcaa5631d44"
+        },
+        {
+          "id": "12-subsection-2",
+          "sourceKey": "section:12/subsection:2",
+          "label": "12(2)",
+          "text": "12(2)Nothing contained in subsection (1) shall prejudice the right of the grantor, or those claiming under him, to follow the assets of the deceased into the hands of the persons to or amongst whom the said assets may have been distributed.\n\nR.S., c.76, s.12\n\nPROTECTION OF EXECUTOR\nIN CERTAIN CASES",
+          "contentHash": "43f4379b2e0e4d3998023c34b68b9e5026cc588924ff917fedc5b71220c77dc7"
+        }
+      ],
+      "contentHash": "9df090284131e8f4ae68f873ba0479925ffe11c0d0e7f2922a94437bfae11877"
+    },
+    {
+      "id": "section-13",
+      "sourceKey": "section:13",
+      "componentType": "section",
+      "label": "13",
+      "heading": "Testator erroneously presumed dead",
+      "text": "Testator erroneously presumed dead\n\n13Where any one is appointed by a Court, having jurisdiction in that behalf, administrator of the estate of a person who on account of absence for seven years or for any other reason is presumed to be dead, or where probate of a will made by any such person is granted by a Court, all acts done under the authority of the appointment or probate, shall, notwithstanding it may thereafter appear that the presumption of death was erroneous, be as valid and effectual as such acts would have been had the person been dead; but the person erroneously presumed to be dead shall, subject to the provisions of sections 15 and 16, have the right to recover from the person acting as executor, any part of the estate remaining in his or her hands undistributed, and no more; and shall, subject to the provisions of the Statutes of Limitations, be entitled to recover from any one who received any portion of his or her estate as one of his or her next of kin, or as a devisee, legatee or heir, or as the spouse of such person presumed dead, the portion so received, or the value thereof.\nR.S., c.76, s.13; 2008, c.45, s.3",
+      "subsections": [],
+      "contentHash": "d8f2fae4a97fc327171439b6ea6af4220d1ba3d6ec59301002dda92e514203cb"
+    },
+    {
+      "id": "section-14",
+      "sourceKey": "section:14",
+      "componentType": "section",
+      "label": "14",
+      "heading": "Recovery of estates where later will discovered",
+      "text": "Recovery of estates where later will discovered\n\n14Where a will is admitted to probate or a grant of administration is made with will annexed or on account of supposed intestacy, by a Court having jurisdiction in that behalf, all acts done under the authority of such will or grant of administration shall, notwithstanding it may afterwards appear that the deceased had left a will, or left a will that superseded that of which probate was granted or that was annexed to the said letters, or notwithstanding that it appears that the will admitted to probate or administration was not duly executed, or was for any reason invalid, be as valid and effectual as such acts would have been if such will had been the last will of the deceased and had been duly executed and had been valid, or in case of administration as on intestacy, as valid as such acts would have been if the deceased had died intestate; but upon the revocation of the grant of probate or administration, the new personal representative of the deceased shall, subject to the provisions of sections 15 and 16 have the right to recover from the person acting as executor as aforesaid, any part of the estate remaining in his or her hands undistributed, and no more; and shall, subject to the provisions of the Statutes of Limitations, be entitled to recover from any one who erroneously received any portion of the estate of the deceased as one of his or her next of kin, or as a devisee, legatee, or heir, or as the spouse of the deceased, the portion so received or the value thereof.\nR.S., c.76, s.14; 2008, c.45, s.3",
+      "subsections": [],
+      "contentHash": "730427ea478d37f9b83e5b27d8109bdb3afb0e9f6d62571867fdeeadd7e7de2e"
+    },
+    {
+      "id": "section-15",
+      "sourceKey": "section:15",
+      "componentType": "section",
+      "label": "15",
+      "heading": "Costs and expenses where later will discovered",
+      "text": "Costs and expenses where later will discovered\n\n15An executor as referred to in sections 13 and 14 shall have the right to retain out of any amount remaining in his hands undistributed his proper costs and expenses in the administration of the estate.\nR.S., c.76, s.15",
+      "subsections": [],
+      "contentHash": "eb37c04ca6fced266898117ba6f3a67ec796e5b848e123f1514b655ba49e045a"
+    },
+    {
+      "id": "section-16",
+      "sourceKey": "section:16",
+      "componentType": "section",
+      "label": "16",
+      "heading": "Fraud of executors",
+      "text": "Fraud of executors\n\n16Nothing in sections 13, 14 and 15 contained shall protect any person acting as executor where the person has been privy to any fraud by means of which the grant of administration or probate was obtained, or in cases arising under section 13 in respect of anything done after he became aware that the person who was presumed to be dead is alive or, in cases arising under section 14, that the will was not duly executed or for some other reason was invalid, unless the thing so done was in pursuance of a contract for valuable consideration made before he was aware to the effect aforesaid.\nR.S., c.76, s.16\n\nLIMITATION\n\nRepealed: 2009, c.L-8.5, s.32\n\n2009, c.L-8.5, s.32",
+      "subsections": [],
+      "contentHash": "064a05c2eaf929c7318208d0adef453b304ce4354dcff8c5a23852571f03e9d3"
+    },
+    {
+      "id": "section-17",
+      "sourceKey": "section:17",
+      "componentType": "section",
+      "label": "17",
+      "heading": "Repealed",
+      "text": "Repealed\n\n17Repealed: 2009, c.L-8.5, s.32\nR.S., c.76, s.17; 2009, c.L-8.5, s.32\n\nESTATE OF INHERITANCE IN TRUST",
+      "subsections": [],
+      "contentHash": "7c6a025119577ea6a9682d3ef95b7c96b3d0d12c7bdc97d655ce0f52fe91bb4d"
+    },
+    {
+      "id": "section-18",
+      "sourceKey": "section:18",
+      "componentType": "section",
+      "label": "18",
+      "heading": "Death of sole trustee",
+      "text": "Death of sole trustee\n\n18Where an estate or interest of inheritance, or limited to the heir as special occupant, in any tenements or hereditaments, corporeal or incorporeal, is vested on any trust, in any person solely, the same shall, on his death, notwithstanding any testamentary disposition, devolve to and become vested in his personal representatives from time to time, in like manner as if the same were a chattel real vesting in them; and accordingly all the like powers for one only of several joint personal representatives, as well as for a single personal representative, and for all the personal representatives together, to dispose of and otherwise deal with the same, shall belong to the deceased’s personal representatives, from time to time, with all the like incidents, but subject to all the like rights, equities and obligations, as if the same were a chattel real, vesting in them; and for the purposes of this section, the personal representatives for the time being of the deceased, shall be deemed in law his heirs and assigns, within the meaning of all trusts and powers.\nR.S., c.76, s.18\n\nMINOR AS EXECUTOR\n\n1986, c.4, s.19",
+      "subsections": [],
+      "contentHash": "3e92a160425315db29ff150ead84abfcba85b8e5a50058c0710d2ece23c35748"
+    },
+    {
+      "id": "section-19",
+      "sourceKey": "section:19",
+      "componentType": "section",
+      "label": "19",
+      "heading": "Minor as executor",
+      "text": "Minor as executor\n\n19(1)Where a minor is sole executor, administration with the will annexed shall be granted to the guardian of the minor, or to such other person as The Probate Court of New Brunswick thinks fit, until the minor has attained the full age of nineteen years, at which period, and not before, probate of the will shall be granted to him.\n\n19(2)The person to whom such administration is granted shall have the same powers vested in him as an administrator now has by virtue of an administration granted to him durante minore aetate of the next of kin.\n\nR.S., c.76, s.19; 1972, c.5, s.2; 1986, c.4, s.19; 1987, c.6, s.25\n\nN.B. This Act is consolidated to June 16, 2023.",
+      "subsections": [
+        {
+          "id": "19-subsection-1",
+          "sourceKey": "section:19/subsection:1",
+          "label": "19(1)",
+          "text": "19(1)Where a minor is sole executor, administration with the will annexed shall be granted to the guardian of the minor, or to such other person as The Probate Court of New Brunswick thinks fit, until the minor has attained the full age of nineteen years, at which period, and not before, probate of the will shall be granted to him.",
+          "contentHash": "0f130ab6e47a043ce8ceb123f5b13da18905e52b40b67df15dcbd242a76a8232"
+        },
+        {
+          "id": "19-subsection-2",
+          "sourceKey": "section:19/subsection:2",
+          "label": "19(2)",
+          "text": "19(2)The person to whom such administration is granted shall have the same powers vested in him as an administrator now has by virtue of an administration granted to him durante minore aetate of the next of kin.\n\nR.S., c.76, s.19; 1972, c.5, s.2; 1986, c.4, s.19; 1987, c.6, s.25\n\nN.B. This Act is consolidated to June 16, 2023.",
+          "contentHash": "eeb4e3b1bfd942cae2080dec608ebed2e0c377432dfe831a8cde7bdb32fae55a"
+        }
+      ],
+      "contentHash": "b270ac36c3e3b252143e850589fa37411d0d16c2cce9697371daa2d7eb99d0bf"
+    }
+  ],
+  "sections": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
+      "label": "1",
+      "heading": "Liability of joint contractor",
+      "text": "Liability of joint contractor\n\n1In case any one or more joint contractors or obligors die, the person interested in the contract, obligation or promise entered into by such joint contractors or obligors, may proceed by action against the representatives of the deceased contractor or obligor, in the same manner as if the contract, obligation or promise had been joint and several, and this, notwithstanding there may be another person liable under such contract, obligation or promise, still living, and an action pending against such person; but the property and effects of stockholders in chartered banks or the members of other incorporated companies, shall not be liable to a greater extent than they would have been if this section had not been passed.\nR.S., c.76, s.1\n\nPOWER TO SELL, LEASE, UNDER WILL",
+      "subsections": [],
+      "contentHash": "2a812d8d9dcd0df78e820a89cdbc1fcc4406ba92afd2d0f5e0ee7b1d6bfeea6b"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "label": "2",
+      "heading": "Sale of realty by executor",
+      "text": "Sale of realty by executor\n\n2Where there is in a will of a deceased person a direction, whether express or implied, to sell, dispose of, appoint, mortgage, encumber or lease any real estate, and no person is by the said will, or some codicil thereto, or otherwise by the testator appointed to execute and carry the same into effect, the executor, if any, named in the will, shall and may execute and carry into effect every such direction to sell, dispose of, appoint, encumber or lease the real estate, and any estate or interest therein, in as full, large and ample a manner, and with the same legal effect as if the executor was appointed by the testator to execute and carry the same into effect.\nR.S., c.76, s.2",
+      "subsections": [],
+      "contentHash": "4d15d955fb3d82c97683f613664541636a25ba5ae843e081ad40e856b6136a65"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
+      "label": "3",
+      "heading": "Sale of realty by administrator",
+      "text": "Sale of realty by administrator\n\n3Where there is in a will of a deceased person, a power to an executor in the will to sell, dispose of, appoint, mortgage, encumber or lease any real estate, or any estate or interest therein, whether the power is express or arises by implication, and where from any cause letters of administration with the will annexed have been by The Probate Court of New Brunswick granted to any person, that person shall and may exercise every such power, and sell, dispose of, appoint, mortgage, encumber or lease the real estate, and any estate or interest therein, in as full, large and ample a manner, and with the same legal effect as the said executor might have done.\nR.S., c.76, s.3; 1987, c.6, s.25",
+      "subsections": [],
+      "contentHash": "ffdfc7d579a790040f13e534e88633efa3a09ec81adf5a5b06b13dba6119054e"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
+      "label": "4",
+      "heading": "Death of executor before testator",
+      "text": "Death of executor before testator\n\n4Where there is in a will of a deceased person power to sell, dispose of, appoint, mortgage, encumber, or lease any real estate or any estate or interest therein, whether the power is express or arises by implication, and no person is by the said will or otherwise by the testator appointed to execute the power, or in case the executor or other person appointed to execute the power dies before the testator, and letters of administration with the will annexed have been by The Probate Court of New Brunswick granted to any person, that person shall and may execute every such power, and sell, dispose of, appoint, mortgage, encumber or lease the real estate, and any estate or interest therein, in as full, large and ample a manner and with the same legal effect as if the last named person had been appointed by the testator to execute such power.\nR.S., c.76, s.4; 1987, c.6, s.25",
+      "subsections": [],
+      "contentHash": "d03cc330f8025df4a43ff646148d08ff16bc06c32734345c9394a7b04b8e61f4"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "componentType": "section",
+      "label": "5",
+      "heading": "Liability of executors and administrators",
+      "text": "Liability of executors and administrators\n\n5Every executor or administrator with the will annexed, shall, as respects the additional powers vested in him by sections 2, 3 and 4, and any money and assets by him received in consequence of the exercise of such powers, be subject to all the liabilities, and compellable to discharge all the duties of whatsoever kind, that, as respects the acts to be done by him under such powers, would have been imposed upon an executor or other person appointed by the testator to execute the same, or in case of there being no such executor or person, would have been imposed by law upon any person appointed by law or by any Court of competent jurisdiction to execute the powers.\nR.S., c.76, s.5\n\nDEBTS OR LEGACY CHARGED\nBY TESTATOR ON LAND",
+      "subsections": [],
+      "contentHash": "3f2fcc17eb67be0f3ab386df0fd33905e8cba0389db9467d44019c74b1b4665a"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "componentType": "section",
+      "label": "6",
+      "heading": "Sale of realty to satisfy legacy",
+      "text": "Sale of realty to satisfy legacy\n\n6Where, by a will, the testator has charged his real estate or any specific portion thereof with the payment of his debts or with the payment of a legacy or other specific sum of money and has devised the estate so charged to a trustee for the whole of his estate or interest therein, and has not made any express provision for the raising of such debt, legacy or sum of money out of the estate, it shall be lawful for the said devisee in trust, notwithstanding any trusts actually declared by the testator, to raise such debts, legacy or money as aforesaid by a sale and absolute disposition by public auction or private contract of the said real estate, or any part thereof, or by a mortgage of the same, or partly in one mode and partly in the other, and any deed of mortgage so executed may reserve such rate of interest and fix such period or periods of repayment as the person executing the same thinks proper.\nR.S., c.76, s.6",
+      "subsections": [],
+      "contentHash": "70acadcc7d33b007543fc21e145fe48b12e9c674aa90ca714b4ddddae54f37f7"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "componentType": "section",
+      "label": "7",
+      "heading": "Powers of successors of executors and administrators",
+      "text": "Powers of successors of executors and administrators\n\n7The powers conferred by section 6 extend to every person in whom the estate devised is for the time being vested by survivorship, descent or devise, or to any person who may be appointed under any power in the will, or by The Court of King’s Bench of New Brunswick, or The Probate Court of New Brunswick, to succeed to the trusteeship vested in such devisee in trust as aforesaid.\nR.S., c.76, s.7; 1979, c.41, s.47; 1987, c.6, s.25; 2023, c.17, s.80",
+      "subsections": [],
+      "contentHash": "92b2c4f183496011b77d7a6a6d6d31d297e4f2d93eb920898523698191ec7169"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "componentType": "section",
+      "label": "8",
+      "heading": "Powers of executors to mortgage realty",
+      "text": "Powers of executors to mortgage realty\n\n8If any testator who has created such a charge as is described in section 6 has not devised the real estate charged as aforesaid in such terms as that his whole estate and interest therein become vested in a trustee, the executors for the time being named in the will, if any, shall have the same or the like power of raising the said money as is hereinbefore vested in the devisee in trust of the said real estate, and such power shall from time to time devolve to and become vested in the person, if any, in whom the executorship shall for the time being be vested; but any sale or mortgage under this Act shall operate only on the estate and interest of the testator, and shall not render it unnecessary to get in any outstanding subsisting legal estate.\nR.S., c.76, s.8",
+      "subsections": [],
+      "contentHash": "d665cc81b6809967d093ab1c96a348341775bbc06fa327146780b64bf83ce666"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "componentType": "section",
+      "label": "9",
+      "heading": "Duty of inquiry by purchasers of realty from estate",
+      "text": "Duty of inquiry by purchasers of realty from estate\n\n9Purchasers or mortgagees shall not be bound to inquire whether the powers conferred by sections 6, 7 and 8 or any of them have been duly and correctly exercised by the persons acting in virtue thereof.\nR.S., c.76, s.9",
+      "subsections": [],
+      "contentHash": "cd436615155f4328d0fbfb931c01815ccac6a1dff285d585ad271392c7bf345b"
+    },
+    {
+      "id": "section-10",
+      "sourceKey": "section:10",
+      "componentType": "section",
+      "label": "10",
+      "heading": "Application of sections 6 to 9",
+      "text": "Application of sections 6 to 9\n\n10The provisions contained in sections 6 to 9 shall not extend to a devise to any person in fee or for the testator’s whole estate and interest charged with debts or legacies, nor shall they affect the power of any such devisee or devisees to sell or mortgage as he or they may by law now do.\nR.S., c.76, s.10\n\nEXECUTOR ASSIGNING LEASE",
+      "subsections": [],
+      "contentHash": "0be0edc1b4270e422a6e43fed8fe9e5309f11e6c46f4c1396f8d5fa695e21917"
+    },
+    {
+      "id": "section-11",
+      "sourceKey": "section:11",
+      "componentType": "section",
+      "label": "11",
+      "heading": "Effect of contingent liabilities of estate",
+      "text": "Effect of contingent liabilities of estate\n\n11(1)Where an executor, liable as such to the rents, covenants or agreements contained in a lease or agreement for a lease granted or assigned to the testator or intestate whose estate is being administered, has satisfied all such liabilities under the said lease or agreement for a lease as have accrued due and been claimed up to the time of the assignment hereinafter mentioned, and has set apart a sufficient fund to answer any future claim that may be made in respect of any fixed and ascertained sum covenanted or agreed by the lessee to be laid out on the property demised, or agreed to be demised, although the period for laying out the same may not have arrived, and has assigned the lease or agreement for a lease to a purchaser thereof, he shall be at liberty to distribute the estate of the deceased to and amongst the parties entitled thereto respectively without appropriating any part, or further part, as the case may be, of the personal estate of the deceased to meet any future liability under the said lease, or agreement for a lease; and the executor so distributing the residuary estate shall not, after having assigned the said lease or agreement for a lease, and having where necessary set apart a sufficient fund as aforesaid, be personally liable in respect of any subsequent claim under the said lease or agreement for a lease.\n\n11(2)Nothing herein contained shall prejudice the right of the lessor, or those claiming under him, to follow the assets of the deceased into the hands of the persons to or amongst whom the said assets may have been distributed.\n\nR.S., c.76, s.11",
+      "subsections": [
+        {
+          "id": "11-subsection-1",
+          "sourceKey": "section:11/subsection:1",
+          "label": "11(1)",
+          "text": "11(1)Where an executor, liable as such to the rents, covenants or agreements contained in a lease or agreement for a lease granted or assigned to the testator or intestate whose estate is being administered, has satisfied all such liabilities under the said lease or agreement for a lease as have accrued due and been claimed up to the time of the assignment hereinafter mentioned, and has set apart a sufficient fund to answer any future claim that may be made in respect of any fixed and ascertained sum covenanted or agreed by the lessee to be laid out on the property demised, or agreed to be demised, although the period for laying out the same may not have arrived, and has assigned the lease or agreement for a lease to a purchaser thereof, he shall be at liberty to distribute the estate of the deceased to and amongst the parties entitled thereto respectively without appropriating any part, or further part, as the case may be, of the personal estate of the deceased to meet any future liability under the said lease, or agreement for a lease; and the executor so distributing the residuary estate shall not, after having assigned the said lease or agreement for a lease, and having where necessary set apart a sufficient fund as aforesaid, be personally liable in respect of any subsequent claim under the said lease or agreement for a lease.",
+          "contentHash": "12cff351032d4cb0fb2742307bcb45fac0bb20f4e451b8380670ea8b76d4ce0d"
+        },
+        {
+          "id": "11-subsection-2",
+          "sourceKey": "section:11/subsection:2",
+          "label": "11(2)",
+          "text": "11(2)Nothing herein contained shall prejudice the right of the lessor, or those claiming under him, to follow the assets of the deceased into the hands of the persons to or amongst whom the said assets may have been distributed.\n\nR.S., c.76, s.11",
+          "contentHash": "78f782fac5382d9efd0bb758830b0a535881ba470a07b48a908d390b85e79c9f"
+        }
+      ],
+      "contentHash": "42647c116104b985bd20292ae58f5a0c2da88380b6a1e3563325763974ee5e66"
+    },
+    {
+      "id": "section-12",
+      "sourceKey": "section:12",
+      "componentType": "section",
+      "label": "12",
+      "heading": "Liability of executor for contingent liabilities",
+      "text": "Liability of executor for contingent liabilities\n\n12(1)In like manner, where an executor liable as such to the rent, covenants or agreements contained in a conveyance on chief rent or rent charge, whether any such rent is by limitation of use, grant or reservation, or agreement for such conveyance, granted or assigned to or made and entered into with the person whose estate is being administered, has satisfied all such liabilities under the said conveyance or agreement for a conveyance as may have accrued due and been claimed up to the time of the conveyance hereafter mentioned, and shall have set apart a sufficient fund to answer any future claim that may be made in respect of any fixed and ascertained sum, covenanted or agreed by the grantee, to be laid out on the property conveyed or agreed to be conveyed, although the period for laying out the same may not have arrived, and shall have conveyed such property, or assigned the said agreement for such conveyance as aforesaid to a purchaser thereof, he shall be at liberty to distribute the residuary estate of the deceased to and amongst the parties entitled thereto respectively, without appropriating any part, or further part, as the case may be, of the personal estate of the deceased to meet any future liability under the said conveyance, or agreement for a conveyance; and the executor so distributing the residuary estate shall not, after having made or executed such conveyance or assignment, and having, where necessary, set apart a sufficient fund as aforesaid, be personally liable in respect of any subsequent claim under the said conveyance or agreement for a conveyance.\n\n12(2)Nothing contained in subsection (1) shall prejudice the right of the grantor, or those claiming under him, to follow the assets of the deceased into the hands of the persons to or amongst whom the said assets may have been distributed.\n\nR.S., c.76, s.12\n\nPROTECTION OF EXECUTOR\nIN CERTAIN CASES",
+      "subsections": [
+        {
+          "id": "12-subsection-1",
+          "sourceKey": "section:12/subsection:1",
+          "label": "12(1)",
+          "text": "12(1)In like manner, where an executor liable as such to the rent, covenants or agreements contained in a conveyance on chief rent or rent charge, whether any such rent is by limitation of use, grant or reservation, or agreement for such conveyance, granted or assigned to or made and entered into with the person whose estate is being administered, has satisfied all such liabilities under the said conveyance or agreement for a conveyance as may have accrued due and been claimed up to the time of the conveyance hereafter mentioned, and shall have set apart a sufficient fund to answer any future claim that may be made in respect of any fixed and ascertained sum, covenanted or agreed by the grantee, to be laid out on the property conveyed or agreed to be conveyed, although the period for laying out the same may not have arrived, and shall have conveyed such property, or assigned the said agreement for such conveyance as aforesaid to a purchaser thereof, he shall be at liberty to distribute the residuary estate of the deceased to and amongst the parties entitled thereto respectively, without appropriating any part, or further part, as the case may be, of the personal estate of the deceased to meet any future liability under the said conveyance, or agreement for a conveyance; and the executor so distributing the residuary estate shall not, after having made or executed such conveyance or assignment, and having, where necessary, set apart a sufficient fund as aforesaid, be personally liable in respect of any subsequent claim under the said conveyance or agreement for a conveyance.",
+          "contentHash": "428015392ade659f2046230a80cf69bfc50aa2bbfbdba316235b9fcaa5631d44"
+        },
+        {
+          "id": "12-subsection-2",
+          "sourceKey": "section:12/subsection:2",
+          "label": "12(2)",
+          "text": "12(2)Nothing contained in subsection (1) shall prejudice the right of the grantor, or those claiming under him, to follow the assets of the deceased into the hands of the persons to or amongst whom the said assets may have been distributed.\n\nR.S., c.76, s.12\n\nPROTECTION OF EXECUTOR\nIN CERTAIN CASES",
+          "contentHash": "43f4379b2e0e4d3998023c34b68b9e5026cc588924ff917fedc5b71220c77dc7"
+        }
+      ],
+      "contentHash": "9df090284131e8f4ae68f873ba0479925ffe11c0d0e7f2922a94437bfae11877"
+    },
+    {
+      "id": "section-13",
+      "sourceKey": "section:13",
+      "componentType": "section",
+      "label": "13",
+      "heading": "Testator erroneously presumed dead",
+      "text": "Testator erroneously presumed dead\n\n13Where any one is appointed by a Court, having jurisdiction in that behalf, administrator of the estate of a person who on account of absence for seven years or for any other reason is presumed to be dead, or where probate of a will made by any such person is granted by a Court, all acts done under the authority of the appointment or probate, shall, notwithstanding it may thereafter appear that the presumption of death was erroneous, be as valid and effectual as such acts would have been had the person been dead; but the person erroneously presumed to be dead shall, subject to the provisions of sections 15 and 16, have the right to recover from the person acting as executor, any part of the estate remaining in his or her hands undistributed, and no more; and shall, subject to the provisions of the Statutes of Limitations, be entitled to recover from any one who received any portion of his or her estate as one of his or her next of kin, or as a devisee, legatee or heir, or as the spouse of such person presumed dead, the portion so received, or the value thereof.\nR.S., c.76, s.13; 2008, c.45, s.3",
+      "subsections": [],
+      "contentHash": "d8f2fae4a97fc327171439b6ea6af4220d1ba3d6ec59301002dda92e514203cb"
+    },
+    {
+      "id": "section-14",
+      "sourceKey": "section:14",
+      "componentType": "section",
+      "label": "14",
+      "heading": "Recovery of estates where later will discovered",
+      "text": "Recovery of estates where later will discovered\n\n14Where a will is admitted to probate or a grant of administration is made with will annexed or on account of supposed intestacy, by a Court having jurisdiction in that behalf, all acts done under the authority of such will or grant of administration shall, notwithstanding it may afterwards appear that the deceased had left a will, or left a will that superseded that of which probate was granted or that was annexed to the said letters, or notwithstanding that it appears that the will admitted to probate or administration was not duly executed, or was for any reason invalid, be as valid and effectual as such acts would have been if such will had been the last will of the deceased and had been duly executed and had been valid, or in case of administration as on intestacy, as valid as such acts would have been if the deceased had died intestate; but upon the revocation of the grant of probate or administration, the new personal representative of the deceased shall, subject to the provisions of sections 15 and 16 have the right to recover from the person acting as executor as aforesaid, any part of the estate remaining in his or her hands undistributed, and no more; and shall, subject to the provisions of the Statutes of Limitations, be entitled to recover from any one who erroneously received any portion of the estate of the deceased as one of his or her next of kin, or as a devisee, legatee, or heir, or as the spouse of the deceased, the portion so received or the value thereof.\nR.S., c.76, s.14; 2008, c.45, s.3",
+      "subsections": [],
+      "contentHash": "730427ea478d37f9b83e5b27d8109bdb3afb0e9f6d62571867fdeeadd7e7de2e"
+    },
+    {
+      "id": "section-15",
+      "sourceKey": "section:15",
+      "componentType": "section",
+      "label": "15",
+      "heading": "Costs and expenses where later will discovered",
+      "text": "Costs and expenses where later will discovered\n\n15An executor as referred to in sections 13 and 14 shall have the right to retain out of any amount remaining in his hands undistributed his proper costs and expenses in the administration of the estate.\nR.S., c.76, s.15",
+      "subsections": [],
+      "contentHash": "eb37c04ca6fced266898117ba6f3a67ec796e5b848e123f1514b655ba49e045a"
+    },
+    {
+      "id": "section-16",
+      "sourceKey": "section:16",
+      "componentType": "section",
+      "label": "16",
+      "heading": "Fraud of executors",
+      "text": "Fraud of executors\n\n16Nothing in sections 13, 14 and 15 contained shall protect any person acting as executor where the person has been privy to any fraud by means of which the grant of administration or probate was obtained, or in cases arising under section 13 in respect of anything done after he became aware that the person who was presumed to be dead is alive or, in cases arising under section 14, that the will was not duly executed or for some other reason was invalid, unless the thing so done was in pursuance of a contract for valuable consideration made before he was aware to the effect aforesaid.\nR.S., c.76, s.16\n\nLIMITATION\n\nRepealed: 2009, c.L-8.5, s.32\n\n2009, c.L-8.5, s.32",
+      "subsections": [],
+      "contentHash": "064a05c2eaf929c7318208d0adef453b304ce4354dcff8c5a23852571f03e9d3"
+    },
+    {
+      "id": "section-17",
+      "sourceKey": "section:17",
+      "componentType": "section",
+      "label": "17",
+      "heading": "Repealed",
+      "text": "Repealed\n\n17Repealed: 2009, c.L-8.5, s.32\nR.S., c.76, s.17; 2009, c.L-8.5, s.32\n\nESTATE OF INHERITANCE IN TRUST",
+      "subsections": [],
+      "contentHash": "7c6a025119577ea6a9682d3ef95b7c96b3d0d12c7bdc97d655ce0f52fe91bb4d"
+    },
+    {
+      "id": "section-18",
+      "sourceKey": "section:18",
+      "componentType": "section",
+      "label": "18",
+      "heading": "Death of sole trustee",
+      "text": "Death of sole trustee\n\n18Where an estate or interest of inheritance, or limited to the heir as special occupant, in any tenements or hereditaments, corporeal or incorporeal, is vested on any trust, in any person solely, the same shall, on his death, notwithstanding any testamentary disposition, devolve to and become vested in his personal representatives from time to time, in like manner as if the same were a chattel real vesting in them; and accordingly all the like powers for one only of several joint personal representatives, as well as for a single personal representative, and for all the personal representatives together, to dispose of and otherwise deal with the same, shall belong to the deceased’s personal representatives, from time to time, with all the like incidents, but subject to all the like rights, equities and obligations, as if the same were a chattel real, vesting in them; and for the purposes of this section, the personal representatives for the time being of the deceased, shall be deemed in law his heirs and assigns, within the meaning of all trusts and powers.\nR.S., c.76, s.18\n\nMINOR AS EXECUTOR\n\n1986, c.4, s.19",
+      "subsections": [],
+      "contentHash": "3e92a160425315db29ff150ead84abfcba85b8e5a50058c0710d2ece23c35748"
+    },
+    {
+      "id": "section-19",
+      "sourceKey": "section:19",
+      "componentType": "section",
+      "label": "19",
+      "heading": "Minor as executor",
+      "text": "Minor as executor\n\n19(1)Where a minor is sole executor, administration with the will annexed shall be granted to the guardian of the minor, or to such other person as The Probate Court of New Brunswick thinks fit, until the minor has attained the full age of nineteen years, at which period, and not before, probate of the will shall be granted to him.\n\n19(2)The person to whom such administration is granted shall have the same powers vested in him as an administrator now has by virtue of an administration granted to him durante minore aetate of the next of kin.\n\nR.S., c.76, s.19; 1972, c.5, s.2; 1986, c.4, s.19; 1987, c.6, s.25\n\nN.B. This Act is consolidated to June 16, 2023.",
+      "subsections": [
+        {
+          "id": "19-subsection-1",
+          "sourceKey": "section:19/subsection:1",
+          "label": "19(1)",
+          "text": "19(1)Where a minor is sole executor, administration with the will annexed shall be granted to the guardian of the minor, or to such other person as The Probate Court of New Brunswick thinks fit, until the minor has attained the full age of nineteen years, at which period, and not before, probate of the will shall be granted to him.",
+          "contentHash": "0f130ab6e47a043ce8ceb123f5b13da18905e52b40b67df15dcbd242a76a8232"
+        },
+        {
+          "id": "19-subsection-2",
+          "sourceKey": "section:19/subsection:2",
+          "label": "19(2)",
+          "text": "19(2)The person to whom such administration is granted shall have the same powers vested in him as an administrator now has by virtue of an administration granted to him durante minore aetate of the next of kin.\n\nR.S., c.76, s.19; 1972, c.5, s.2; 1986, c.4, s.19; 1987, c.6, s.25\n\nN.B. This Act is consolidated to June 16, 2023.",
+          "contentHash": "eeb4e3b1bfd942cae2080dec608ebed2e0c377432dfe831a8cde7bdb32fae55a"
+        }
+      ],
+      "contentHash": "b270ac36c3e3b252143e850589fa37411d0d16c2cce9697371daa2d7eb99d0bf"
+    }
+  ],
+  "notes": []
+}

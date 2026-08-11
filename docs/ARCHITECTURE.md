@@ -61,7 +61,7 @@ It owns:
 - `studyStorage.ts` for IndexedDB-backed metadata, progress, attempt, draft, scheduler-state, settings storage, and atomic rating/undo writes
 - `studyOpfs.ts` for OPFS source-file, normalized-text, imported-file, PDF, and backup path generation/writes
 - `src/study/content/*` for the development-side official NB law manifest validation, laws.gnb URL generation, exact-text normalization models, and content-package validation
-- `src/study/content/nbSitCorpus*` plus `scripts/studyCorpus.ts` for the Phase 4A NB SIT statute-corpus manifest, inventory validation, resumable official-source fetch, normalization, integrity/package reports, source-change reports, and coverage outputs
+- `src/study/content/nbSitCorpus*` plus `scripts/studyCorpus.ts` for the Phase 4A NB SIT statute-corpus manifest, manual-entry to current-source mappings, inventory validation, resumable official-source fetch, ANBLS PDF raw-source handling, normalization, integrity/package reports, source-change reports, and coverage outputs
 - `studyOfficialContent.ts` for browser-side official package validation, import preview, reference-only form classification, source-review flagging, and source-selection unit creation
 - `studyDraftGeneration.ts` for deterministic source-linked title, question, citation, and structured reference-answer drafting
 - `studyQuestionSupport.ts` for shared Study question evidence gating, Tier A/B/C metadata, Tier A surface-quality checks, unsupported-topic checks, topic-mismatch support, semantic audit support, and audit chunk suggestions
@@ -78,7 +78,7 @@ The study module does not use adjustment, parser, solver, network, import-review
 
 Official source fetching is Node-only and runs through `scripts/studyFetchNbLawPilot.ts`; normal browser runtime does not request legislation from external sites. Fetched raw HTML, normalized exact source text, and JSON content packages are stored under `study-content/` as separate layers from user-authored summaries, prompts, concepts, attempts, and progress.
 
-The full NB SIT corpus pipeline is also Node-only. Its manifest lives at `study-content/manifests/nb-sit-statute-corpus.json`, raw snapshots at `study-content/raw/nb-sit/`, normalized documents at `study-content/normalized/nb-sit/`, and reports/packages under `study-content/reports/` and `study-content/packages/`. It reuses the existing NB law normalizer and package/import shape, and it deliberately blocks fetch/build while required manual-scope Acts lack confirmed official `laws.gnb.ca` source URLs.
+The full NB SIT corpus pipeline is also Node-only. Its manifest lives at `study-content/manifests/nb-sit-statute-corpus.json`, raw snapshots at `study-content/raw/nb-sit/`, normalized documents at `study-content/normalized/nb-sit/`, and reports/packages under `study-content/reports/` and `study-content/packages/`. It reuses the existing NB law normalizer and package/import shape for `laws.gnb.ca` HTML sources. ANBLS PDFs are fetched and byte-hashed as professional-body raw sources, with embedded-text normalization guarded by document-specific English-only selectors.
 
 Browser official-package import stores authoritative metadata in `legalDocuments` and exact legal text in `legalComponents`. Existing seeded `documents` keep user-authored summaries and are enriched by stable IDs rather than overwritten. Study units may carry source references keyed by legal `sourceKey` plus link-time content hash so later imports can mark source review without changing user-authored summaries, prompts, concepts, progress, attempts, or drafts.
 

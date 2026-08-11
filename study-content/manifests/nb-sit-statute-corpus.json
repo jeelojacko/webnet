@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "corpusId": "nb-sit-statute-corpus",
   "title": "New Brunswick SIT Statute Law Corpus",
-  "sourceAuthority": "Exam scope: ANBLS Surveyor-in-Training manual inventory supplied by user. Legal text: official Government of New Brunswick laws.gnb.ca source only.",
+  "sourceAuthority": "Exam scope: ANBLS Surveyor-in-Training manual inventory supplied by user. Legal text: official Government of New Brunswick laws.gnb.ca current consolidated source, plus ANBLS-hosted professional-body PDFs for the New Brunswick Land Surveyors Act, 1986 and Bylaws.",
   "expectedRequiredActCount": 57,
   "documents": [
     {
@@ -16,7 +16,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 1
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-air-space-act",
@@ -29,7 +30,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 2
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-aquaculture-act",
@@ -42,7 +44,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 3
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-archives-act",
@@ -55,7 +58,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 4
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-assessment-act",
@@ -68,7 +72,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 5
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-assignments-and-preferences-act",
@@ -81,7 +86,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 6
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-bituminous-shale-act",
@@ -94,7 +100,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 7
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-boundaries-confirmation-act",
@@ -108,7 +115,8 @@
         "source": "ANBLS-SIT-manual",
         "order": 8
       },
-      "existingPilot": true
+      "existingPilot": true,
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-clean-environment-act",
@@ -121,7 +129,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 9
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-clean-water-act",
@@ -134,7 +143,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 10
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-community-planning-act",
@@ -148,7 +158,8 @@
         "source": "ANBLS-SIT-manual",
         "order": 11
       },
-      "existingPilot": true
+      "existingPilot": true,
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-condominium-property-act",
@@ -161,7 +172,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 12
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-conservation-easements-act",
@@ -174,7 +186,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 13
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-crown-grant-restrictions-act",
@@ -187,7 +200,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 14
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-crown-lands-and-forests-act",
@@ -200,7 +214,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 15
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-devolution-of-estates-act",
@@ -213,7 +228,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 16
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-easements-act",
@@ -226,19 +242,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 17
-      }
-    },
-    {
-      "id": "doc-ecological-reserves-act",
-      "type": "act",
-      "title": "Ecological Reserves Act",
-      "sourceUrl": "",
-      "examScope": "required",
-      "examSource": {
-        "source": "ANBLS-SIT-manual",
-        "order": 18,
-        "note": "Awaiting manual confirmation of official laws.gnb.ca source; do not substitute successor legislation silently."
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-electronic-transactions-act",
@@ -251,7 +256,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 19
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-escheats-and-forfeitures-act",
@@ -264,7 +270,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 20
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-evidence-act",
@@ -277,7 +284,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 21
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-executors-and-trustees-act",
@@ -290,7 +298,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 22
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-expropriation-act",
@@ -303,7 +312,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 23
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-gas-distribution-act",
@@ -316,7 +326,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 24
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-highway-act",
@@ -329,19 +340,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 25
-      }
-    },
-    {
-      "id": "doc-health-act",
-      "type": "act",
-      "title": "Health Act",
-      "sourceUrl": "",
-      "examScope": "required",
-      "examSource": {
-        "source": "ANBLS-SIT-manual",
-        "order": 26,
-        "note": "Awaiting manual confirmation of official laws.gnb.ca source; do not substitute successor legislation silently."
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-land-titles-act",
@@ -355,7 +355,8 @@
         "source": "ANBLS-SIT-manual",
         "order": 27
       },
-      "existingPilot": true
+      "existingPilot": true,
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-limitation-of-actions-act",
@@ -368,7 +369,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 28
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-marital-property-act",
@@ -381,7 +383,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 29
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-metric-conversion-act",
@@ -394,7 +397,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 30
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-mining-act",
@@ -407,7 +411,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 31
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-municipalities-act",
@@ -420,19 +425,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 32
-      }
-    },
-    {
-      "id": "doc-new-brunswick-land-surveyors-act",
-      "type": "act",
-      "title": "New Brunswick Land Surveyors Act, 1986",
-      "sourceUrl": "",
-      "examScope": "required",
-      "examSource": {
-        "source": "ANBLS-SIT-manual",
-        "order": 33,
-        "note": "Awaiting manual confirmation of official laws.gnb.ca source; do not substitute successor legislation silently."
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-occupational-health-and-safety-act",
@@ -445,19 +439,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 34
-      }
-    },
-    {
-      "id": "doc-official-languages-of-new-brunswick-act",
-      "type": "act",
-      "title": "Official Languages of New Brunswick Act",
-      "sourceUrl": "",
-      "examScope": "required",
-      "examSource": {
-        "source": "ANBLS-SIT-manual",
-        "order": 35,
-        "note": "Awaiting manual confirmation of official laws.gnb.ca source; do not substitute successor legislation silently."
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-oil-and-natural-gas-act",
@@ -470,7 +453,64 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 36
+      },
+      "sourceType": "laws-gnb-html"
+    },
+    {
+      "id": "doc-new-brunswick-land-surveyors-act",
+      "type": "act",
+      "title": "New Brunswick Land Surveyors Act, 1986",
+      "citation": "1986, c.91",
+      "sourceUrl": "https://www.anbls.nb.ca/pdf/ANBLSActQPrintChap91e.PDF",
+      "sourceType": "official-pdf",
+      "sourceAuthority": "Association of New Brunswick Land Surveyors",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 33,
+        "note": "Manual entry also names Bylaws; see companion Bylaws source document."
+      },
+      "manualSource": {
+        "manualEntryId": "manual-new-brunswick-land-surveyors-act-1986-and-bylaws",
+        "manualTitle": "New Brunswick Land Surveyors Act, 1986 and Bylaws",
+        "historicalCitation": "1986, c.91",
+        "sourceStatus": "private-or-professional-act",
+        "currentDocumentId": "doc-new-brunswick-land-surveyors-act",
+        "historicalTextAvailable": true,
+        "notes": "ANBLS-hosted bilingual PDF; only English Act text is in scope."
+      },
+      "pdfSelector": {
+        "language": "en",
+        "note": "Bilingual side-by-side PDF. Extract English only; normalization must stop if English/French separation is not reliable."
       }
+    },
+    {
+      "id": "doc-new-brunswick-land-surveyors-bylaws",
+      "type": "regulation",
+      "title": "Association of New Brunswick Land Surveyors Bylaws",
+      "sourceUrl": "https://www.anbls.nb.ca/pdf/ByLaws.pdf",
+      "sourceType": "official-pdf",
+      "sourceAuthority": "Association of New Brunswick Land Surveyors",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 33,
+        "note": "Companion source required by the manual phrase \"and Bylaws\"."
+      },
+      "manualSource": {
+        "manualEntryId": "manual-new-brunswick-land-surveyors-act-1986-and-bylaws",
+        "manualTitle": "New Brunswick Land Surveyors Act, 1986 and Bylaws",
+        "sourceStatus": "private-or-professional-act",
+        "currentDocumentId": "doc-new-brunswick-land-surveyors-bylaws",
+        "historicalTextAvailable": true,
+        "notes": "ANBLS-hosted bilingual PDF; only English Bylaws text is in scope."
+      },
+      "pdfSelector": {
+        "language": "en",
+        "note": "Bilingual PDF. Extract English only; normalization must stop if English/French separation is not reliable."
+      },
+      "parentActId": "doc-new-brunswick-land-surveyors-act",
+      "expectedEnablingAct": "New Brunswick Land Surveyors Act, 1986"
     },
     {
       "id": "doc-ownership-of-minerals-act",
@@ -483,6 +523,32 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 37
+      },
+      "sourceType": "laws-gnb-html"
+    },
+    {
+      "id": "doc-official-languages-act",
+      "type": "act",
+      "title": "Official Languages Act",
+      "citation": "O-0.5",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/O-0.5",
+      "sourceType": "laws-gnb-html",
+      "sourceIdentifier": "O-0.5",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 35,
+        "note": "Current successor for manual entry Official Languages of New Brunswick Act & Regulations."
+      },
+      "manualSource": {
+        "manualEntryId": "manual-official-languages-of-new-brunswick-act",
+        "manualTitle": "Official Languages of New Brunswick Act & Regulations",
+        "historicalCitation": "O-1",
+        "sourceStatus": "legacy-replaced",
+        "currentDocumentId": "doc-official-languages-act",
+        "temporarilyStudySuccessor": true,
+        "duplicateSuccessorContent": false,
+        "registrarConfirmationRequired": true
       }
     },
     {
@@ -496,7 +562,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 38
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-partnerships-and-business-names-registration-act",
@@ -509,7 +576,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 39
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-probate-court-act",
@@ -522,7 +590,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 40
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-property-act",
@@ -535,7 +604,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 41
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-protected-natural-areas-act",
@@ -548,7 +618,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 42
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-public-health-act",
@@ -561,7 +632,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 43
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-public-records-act",
@@ -574,19 +646,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 44
-      }
-    },
-    {
-      "id": "doc-public-utilities-act",
-      "type": "act",
-      "title": "Public Utilities Act",
-      "sourceUrl": "",
-      "examScope": "required",
-      "examSource": {
-        "source": "ANBLS-SIT-manual",
-        "order": 45,
-        "note": "Awaiting manual confirmation of official laws.gnb.ca source; do not substitute successor legislation silently."
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-public-works-act",
@@ -599,7 +660,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 46
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-quarriable-substances-act",
@@ -612,7 +674,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 47
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-real-property-transfer-tax-act",
@@ -625,6 +688,32 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 48
+      },
+      "sourceType": "laws-gnb-html"
+    },
+    {
+      "id": "doc-energy-and-utilities-board-act",
+      "type": "act",
+      "title": "Energy and Utilities Board Act",
+      "citation": "E-9.18",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/E-9.18",
+      "sourceType": "laws-gnb-html",
+      "sourceIdentifier": "E-9.18",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 45,
+        "note": "Current successor for manual entry Public Utilities Act."
+      },
+      "manualSource": {
+        "manualEntryId": "manual-public-utilities-act",
+        "manualTitle": "Public Utilities Act",
+        "historicalCitation": "P-27",
+        "sourceStatus": "legacy-replaced",
+        "currentDocumentId": "doc-energy-and-utilities-board-act",
+        "temporarilyStudySuccessor": true,
+        "duplicateSuccessorContent": false,
+        "registrarConfirmationRequired": true
       }
     },
     {
@@ -639,7 +728,8 @@
         "source": "ANBLS-SIT-manual",
         "order": 49
       },
-      "existingPilot": true
+      "existingPilot": true,
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-residential-property-tax-relief-act",
@@ -652,7 +742,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 50
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-service-new-brunswick-act",
@@ -665,7 +756,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 51
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-standard-forms-of-conveyances-act",
@@ -678,7 +770,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 52
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-surveys-act",
@@ -692,7 +785,8 @@
         "source": "ANBLS-SIT-manual",
         "order": 53
       },
-      "existingPilot": true
+      "existingPilot": true,
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-territorial-division-act",
@@ -705,7 +799,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 54
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-trespass-act",
@@ -718,7 +813,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 55
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-underground-storage-act",
@@ -731,7 +827,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 56
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "doc-wills-act",
@@ -744,7 +841,8 @@
       "examSource": {
         "source": "ANBLS-SIT-manual",
         "order": 57
-      }
+      },
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "reg-surveys-84-76",
@@ -762,7 +860,8 @@
       },
       "parentActId": "doc-surveys-act",
       "expectedEnablingAct": "Surveys Act",
-      "existingPilot": true
+      "existingPilot": true,
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "reg-boundaries-95-166",
@@ -780,7 +879,8 @@
       },
       "parentActId": "doc-boundaries-confirmation-act",
       "expectedEnablingAct": "Boundaries Confirmation Act",
-      "existingPilot": true
+      "existingPilot": true,
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "reg-community-planning-80-159",
@@ -798,7 +898,8 @@
       },
       "parentActId": "doc-community-planning-act",
       "expectedEnablingAct": "Community Planning Act",
-      "existingPilot": true
+      "existingPilot": true,
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "reg-registry-84-190",
@@ -816,7 +917,8 @@
       },
       "parentActId": "doc-registry-act",
       "expectedEnablingAct": "Registry Act",
-      "existingPilot": true
+      "existingPilot": true,
+      "sourceType": "laws-gnb-html"
     },
     {
       "id": "reg-land-titles-83-130",
@@ -834,7 +936,642 @@
       },
       "parentActId": "doc-land-titles-act",
       "expectedEnablingAct": "Land Titles Act",
-      "existingPilot": true
+      "existingPilot": true,
+      "sourceType": "laws-gnb-html"
+    }
+  ],
+  "manualScopeMappings": [
+    {
+      "manualEntryId": "manual-agricultural-land-protection-and-development-act",
+      "manualTitle": "Agricultural Land Protection and Development Act",
+      "historicalCitation": "A-5.11",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-agricultural-land-protection-and-development-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-air-space-act",
+      "manualTitle": "Air Space Act",
+      "historicalCitation": "2011, c.109",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-air-space-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-aquaculture-act",
+      "manualTitle": "Aquaculture Act",
+      "historicalCitation": "2019, c.40",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-aquaculture-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-archives-act",
+      "manualTitle": "Archives Act",
+      "historicalCitation": "A-11.1",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-archives-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-assessment-act",
+      "manualTitle": "Assessment Act",
+      "historicalCitation": "A-14",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-assessment-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-assignments-and-preferences-act",
+      "manualTitle": "Assignments and Preferences Act",
+      "historicalCitation": "A-16",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-assignments-and-preferences-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-bituminous-shale-act",
+      "manualTitle": "Bituminous Shale Act",
+      "historicalCitation": "B-4.1",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-bituminous-shale-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-boundaries-confirmation-act",
+      "manualTitle": "Boundaries Confirmation Act",
+      "historicalCitation": "2012, c.101",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-boundaries-confirmation-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-clean-environment-act",
+      "manualTitle": "Clean Environment Act",
+      "historicalCitation": "C-6",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-clean-environment-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-clean-water-act",
+      "manualTitle": "Clean Water Act",
+      "historicalCitation": "C-6.1",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-clean-water-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-community-planning-act",
+      "manualTitle": "Community Planning Act",
+      "historicalCitation": "2017, c.19",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-community-planning-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-condominium-property-act",
+      "manualTitle": "Condominium Property Act",
+      "historicalCitation": "C-16.05",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-condominium-property-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-conservation-easements-act",
+      "manualTitle": "Conservation Easements Act",
+      "historicalCitation": "2011, c.130",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-conservation-easements-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-crown-grant-restrictions-act",
+      "manualTitle": "Crown Grant Restrictions Act",
+      "historicalCitation": "2011, c.136",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-crown-grant-restrictions-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-crown-lands-and-forests-act",
+      "manualTitle": "Crown Lands and Forests Act",
+      "historicalCitation": "C-38.1",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-crown-lands-and-forests-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-devolution-of-estates-act",
+      "manualTitle": "Devolution of Estates Act",
+      "historicalCitation": "D-9",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-devolution-of-estates-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-easements-act",
+      "manualTitle": "Easements Act",
+      "historicalCitation": "2011, c.143",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-easements-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-electronic-transactions-act",
+      "manualTitle": "Electronic Transactions Act",
+      "historicalCitation": "2011, c.145",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-electronic-transactions-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-escheats-and-forfeitures-act",
+      "manualTitle": "Escheats and Forfeitures Act",
+      "historicalCitation": "2014, c.107",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-escheats-and-forfeitures-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-evidence-act",
+      "manualTitle": "Evidence Act",
+      "historicalCitation": "E-11",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-evidence-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-executors-and-trustees-act",
+      "manualTitle": "Executors and Trustees Act",
+      "historicalCitation": "E-13",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-executors-and-trustees-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-expropriation-act",
+      "manualTitle": "Expropriation Act",
+      "historicalCitation": "E-14",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-expropriation-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-gas-distribution-act",
+      "manualTitle": "Gas Distribution Act, 1999",
+      "historicalCitation": "G-2.11",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-gas-distribution-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-highway-act",
+      "manualTitle": "Highway Act",
+      "historicalCitation": "H-5",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-highway-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-land-titles-act",
+      "manualTitle": "Land Titles Act",
+      "historicalCitation": "L-1.1",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-land-titles-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-limitation-of-actions-act",
+      "manualTitle": "Limitation of Actions Act",
+      "historicalCitation": "L-8.5",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-limitation-of-actions-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-marital-property-act",
+      "manualTitle": "Marital Property Act",
+      "historicalCitation": "2012, c.107",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-marital-property-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-metric-conversion-act",
+      "manualTitle": "Metric Conversion Act",
+      "historicalCitation": "M-11.1",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-metric-conversion-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-mining-act",
+      "manualTitle": "Mining Act",
+      "historicalCitation": "M-14.1",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-mining-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-municipalities-act",
+      "manualTitle": "Municipalities Act",
+      "historicalCitation": "M-22",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-municipalities-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-new-brunswick-land-surveyors-act-1986-and-bylaws",
+      "manualTitle": "New Brunswick Land Surveyors Act, 1986 and Bylaws",
+      "historicalCitation": "1986, c.91",
+      "sourceStatus": "private-or-professional-act",
+      "currentDocumentId": "doc-new-brunswick-land-surveyors-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true,
+      "notes": "Manual entry is split into the ANBLS Act PDF and companion ANBLS Bylaws PDF for source ingestion."
+    },
+    {
+      "manualEntryId": "manual-occupational-health-and-safety-act",
+      "manualTitle": "Occupational Health and Safety Act",
+      "historicalCitation": "O-0.2",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-occupational-health-and-safety-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-official-languages-of-new-brunswick-act",
+      "manualTitle": "Official Languages of New Brunswick Act & Regulations",
+      "historicalCitation": "O-1",
+      "sourceStatus": "legacy-replaced",
+      "currentDocumentId": "doc-official-languages-act",
+      "temporarilyStudySuccessor": true,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": true,
+      "historicalTextAvailable": false,
+      "notes": "Current corpus uses the Official Languages Act, chapter O-0.5, pending Registrar confirmation."
+    },
+    {
+      "manualEntryId": "manual-oil-and-natural-gas-act",
+      "manualTitle": "Oil and Natural Gas Act",
+      "historicalCitation": "O-2.1",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-oil-and-natural-gas-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-ownership-of-minerals-act",
+      "manualTitle": "Ownership of Minerals Act",
+      "historicalCitation": "2011, c.200",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-ownership-of-minerals-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-parks-act",
+      "manualTitle": "Parks Act",
+      "historicalCitation": "2011, c.202",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-parks-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-partnerships-and-business-names-registration-act",
+      "manualTitle": "Partnerships and Business Names Registration Act",
+      "historicalCitation": "P-5",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-partnerships-and-business-names-registration-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-probate-court-act",
+      "manualTitle": "Probate Court Act",
+      "historicalCitation": "P-17.1",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-probate-court-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-property-act",
+      "manualTitle": "Property Act",
+      "historicalCitation": "P-19",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-property-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-protected-natural-areas-act",
+      "manualTitle": "Protected Natural Areas Act",
+      "historicalCitation": "P-19.01",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-protected-natural-areas-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-ecological-reserves-act",
+      "manualTitle": "Ecological Reserves Act & Regulations",
+      "historicalCitation": "E-1.1",
+      "sourceStatus": "legacy-replaced",
+      "currentDocumentId": "doc-protected-natural-areas-act",
+      "temporarilyStudySuccessor": true,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": true,
+      "historicalTextAvailable": false,
+      "notes": "Current corpus temporarily studies the successor Protected Natural Areas Act without duplicating successor content."
+    },
+    {
+      "manualEntryId": "manual-public-health-act",
+      "manualTitle": "Public Health Act",
+      "historicalCitation": "P-22.4",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-public-health-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-health-act",
+      "manualTitle": "Health Act & Regulations",
+      "historicalCitation": "H-2",
+      "sourceStatus": "legacy-replaced",
+      "currentDocumentId": "doc-public-health-act",
+      "temporarilyStudySuccessor": true,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": true,
+      "historicalTextAvailable": false,
+      "notes": "Current corpus temporarily studies the successor Public Health Act without duplicating successor content."
+    },
+    {
+      "manualEntryId": "manual-public-records-act",
+      "manualTitle": "Public Records Act",
+      "historicalCitation": "2011, c.213",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-public-records-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-public-utilities-act",
+      "manualTitle": "Public Utilities Act",
+      "historicalCitation": "P-27",
+      "sourceStatus": "legacy-replaced",
+      "currentDocumentId": "doc-energy-and-utilities-board-act",
+      "temporarilyStudySuccessor": true,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": true,
+      "historicalTextAvailable": false,
+      "notes": "Current corpus uses the Energy and Utilities Board Act, chapter E-9.18, pending Registrar confirmation."
+    },
+    {
+      "manualEntryId": "manual-public-works-act",
+      "manualTitle": "Public Works Act",
+      "historicalCitation": "2016, c.108",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-public-works-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-quarriable-substances-act",
+      "manualTitle": "Quarriable Substances Act",
+      "historicalCitation": "Q-1.1",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-quarriable-substances-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-real-property-transfer-tax-act",
+      "manualTitle": "Real Property Transfer Tax Act",
+      "historicalCitation": "R-2.1",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-real-property-transfer-tax-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-registry-act",
+      "manualTitle": "Registry Act",
+      "historicalCitation": "R-6",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-registry-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-residential-property-tax-relief-act",
+      "manualTitle": "Residential Property Tax Relief Act",
+      "historicalCitation": "R-10",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-residential-property-tax-relief-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-service-new-brunswick-act",
+      "manualTitle": "Service New Brunswick Act",
+      "historicalCitation": "2015, c.44",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-service-new-brunswick-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-standard-forms-of-conveyances-act",
+      "manualTitle": "Standard Forms of Conveyances Act",
+      "historicalCitation": "S-12.2",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-standard-forms-of-conveyances-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-surveys-act",
+      "manualTitle": "Surveys Act",
+      "historicalCitation": "2011, c.226",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-surveys-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-territorial-division-act",
+      "manualTitle": "Territorial Division Act",
+      "historicalCitation": "T-3",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-territorial-division-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-trespass-act",
+      "manualTitle": "Trespass Act",
+      "historicalCitation": "2012, c.117",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-trespass-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-underground-storage-act",
+      "manualTitle": "Underground Storage Act",
+      "historicalCitation": "U-1.1",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-underground-storage-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
+    },
+    {
+      "manualEntryId": "manual-wills-act",
+      "manualTitle": "Wills Act",
+      "historicalCitation": "W-9",
+      "sourceStatus": "current",
+      "currentDocumentId": "doc-wills-act",
+      "temporarilyStudySuccessor": false,
+      "duplicateSuccessorContent": false,
+      "registrarConfirmationRequired": false,
+      "historicalTextAvailable": true
     }
   ]
 }

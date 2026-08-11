@@ -1,0 +1,288 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-ownership-of-minerals-act",
+  "officialTitle": "Ownership of Minerals Act",
+  "officialCitation": "2011, c.200",
+  "officialCitationDisplay": "2011, c.200",
+  "officialCitationNormalized": "2011, c.200",
+  "documentType": "act",
+  "sourceUrl": "https://laws.gnb.ca/en/document/cs/2011,%20c.200",
+  "fetchDate": "2026-08-11T18:08:58.978Z",
+  "consolidatedTo": "September 1, 2011",
+  "contentHash": "5298416d74b31741053f6219d892bd8181a3fb72e00deab3b917a092f71eaac0",
+  "tableOfContents": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "label": "1",
+      "heading": "Definition of “mineral”"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "label": "2",
+      "heading": "Application"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "label": "3",
+      "heading": "Power of Cabinet to make orders"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "label": "4",
+      "heading": "Effect of orders"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "label": "5",
+      "heading": "Power of Cabinet to grant licence contrary to orders"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "label": "6",
+      "heading": "Power to enter into agreements respecting Crown Lands"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "label": "7",
+      "heading": "Compensation"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "label": "8",
+      "heading": "Immunity"
+    }
+  ],
+  "components": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
+      "label": "1",
+      "heading": "Definition of “mineral”",
+      "text": "Definition of “mineral”\n\n1In this Act, “mineral” has the same meaning as in the Mining Act.\nR.S.1973, c.O-6, s.1",
+      "subsections": [],
+      "contentHash": "14fdd83afb65186452e1e5a6ab366931d0b31945bf1b65c30b6654f2a5fbcd51"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "label": "2",
+      "heading": "Application",
+      "text": "Application\n\n2(1)No order made under this Act shall be construed to affect any mining licence or lease made or issued under An Act Respecting the Encouragement of the Discovery and Development of Oil and Natural Gas, chapter 31 of The Consolidated Statutes, 1903, or any mineral claim, mining licence, mining lease or other mining right acquired, granted or continued under the Mining Act.\n\n2(2)This Act supersedes the Expropriation Act.\n\nR.S.1973, c.O-6, s.9; 1979, c.52, s.1; 1985, c.M-14.1, s.135",
+      "subsections": [
+        {
+          "id": "2-subsection-1",
+          "sourceKey": "section:2/subsection:1",
+          "label": "2(1)",
+          "text": "2(1)No order made under this Act shall be construed to affect any mining licence or lease made or issued under An Act Respecting the Encouragement of the Discovery and Development of Oil and Natural Gas, chapter 31 of The Consolidated Statutes, 1903, or any mineral claim, mining licence, mining lease or other mining right acquired, granted or continued under the Mining Act.",
+          "contentHash": "1d41818dc4ebcd44bc1727970a9fcbd078bafa96363f964bde11f71b3f564745"
+        },
+        {
+          "id": "2-subsection-2",
+          "sourceKey": "section:2/subsection:2",
+          "label": "2(2)",
+          "text": "2(2)This Act supersedes the Expropriation Act.\n\nR.S.1973, c.O-6, s.9; 1979, c.52, s.1; 1985, c.M-14.1, s.135",
+          "contentHash": "b12e93c25969c8cb69ea1afbb17345b19096a87692274cff5701deae0cc9909d"
+        }
+      ],
+      "contentHash": "6c735a0cffb0fa5590c19a93785c0c93d2f95f74c5a59930a2cc51f3c0bfc73f"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
+      "label": "3",
+      "heading": "Power of Cabinet to make orders",
+      "text": "Power of Cabinet to make orders\n\n3(1)The Lieutenant-Governor in Council has full power and authority to make such orders as he or she may consider necessary or desirable\n\n(a)\nto declare all or any minerals, whether owned by the Crown or by any other person, existing in a natural state beneath the surface of the land anywhere in the Province, or in any designated area in the Province, to be property separate from the soil;\n\n(b)\nto vest in the Crown in right of the Province all or any of the minerals referred to in paragraph (a) or any part of them even though all or any of those minerals or any part of them are claimed by any person through the express words of any instrument, enactment or law, or otherwise;\n\n(c)\nto fix the effective date of any order made under paragraph (a) or (b) and for that purpose to give the order retrospective effect;\n\n(d)\nto declare that every grant of land from the Crown made at any time previously shall be construed and held to have excepted and reserved to the Crown all the minerals, within the meaning of this Act, in the land, despite the provisions of any grant or instrument or of any enactment or law;\n\n(e)\nto provide for compensation to persons sustaining loss or damage by reason of any order made under this Act and the amount of compensation;\n\n(f)\nto prescribe the terms and conditions under which any claim may be made, or compensation may be made, for loss or damage sustained by reason of any order made under this Act;\n\n(g)\nto give the exclusive right for a period not less than one year as he or she may determine for prospecting and staking for any minerals taken under this Act to the owners in fee simple of the lands under which the minerals lie.\n\n3(2)The Lieutenant-Governor in Council may make any order under this Act particular or general in its application.\n\nR.S.1973, c.O-6, s.2, s.3",
+      "subsections": [
+        {
+          "id": "3-subsection-1",
+          "sourceKey": "section:3/subsection:1",
+          "label": "3(1)",
+          "text": "3(1)The Lieutenant-Governor in Council has full power and authority to make such orders as he or she may consider necessary or desirable\n\n(a)\nto declare all or any minerals, whether owned by the Crown or by any other person, existing in a natural state beneath the surface of the land anywhere in the Province, or in any designated area in the Province, to be property separate from the soil;\n\n(b)\nto vest in the Crown in right of the Province all or any of the minerals referred to in paragraph (a) or any part of them even though all or any of those minerals or any part of them are claimed by any person through the express words of any instrument, enactment or law, or otherwise;\n\n(c)\nto fix the effective date of any order made under paragraph (a) or (b) and for that purpose to give the order retrospective effect;\n\n(d)\nto declare that every grant of land from the Crown made at any time previously shall be construed and held to have excepted and reserved to the Crown all the minerals, within the meaning of this Act, in the land, despite the provisions of any grant or instrument or of any enactment or law;\n\n(e)\nto provide for compensation to persons sustaining loss or damage by reason of any order made under this Act and the amount of compensation;\n\n(f)\nto prescribe the terms and conditions under which any claim may be made, or compensation may be made, for loss or damage sustained by reason of any order made under this Act;\n\n(g)\nto give the exclusive right for a period not less than one year as he or she may determine for prospecting and staking for any minerals taken under this Act to the owners in fee simple of the lands under which the minerals lie.",
+          "contentHash": "b45f7af70c497c900b3b1d7ccc8df5ab410bff079167c1d6501b3386e3129aff"
+        },
+        {
+          "id": "3-subsection-2",
+          "sourceKey": "section:3/subsection:2",
+          "label": "3(2)",
+          "text": "3(2)The Lieutenant-Governor in Council may make any order under this Act particular or general in its application.\n\nR.S.1973, c.O-6, s.2, s.3",
+          "contentHash": "3f8afc58bd20f21927083d3471649231d3266c6234744d53e9b8d568bd12e43f"
+        }
+      ],
+      "contentHash": "57e2a162e186423a7c70c5979649728d3024d07931ea6508d65e3cb173e52ea2"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
+      "label": "4",
+      "heading": "Effect of orders",
+      "text": "Effect of orders\n\n4Every order made under this Act has the same effect as if embodied in an Act of the Legislature.\nR.S.1973, c.O-6, s.4",
+      "subsections": [],
+      "contentHash": "5a9308d697eec78d3795bd1d5cdf715ac4f692182594fd6b5a67113877ff6f3c"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "componentType": "section",
+      "label": "5",
+      "heading": "Power of Cabinet to grant licence contrary to orders",
+      "text": "Power of Cabinet to grant licence contrary to orders\n\n5If any person shows to the satisfaction of the Lieutenant-Governor in Council that any right that person would have had to any mineral but for an order made under this Act is affected by the order and that that person has developed any such mineral or expended money for or in connection with any such mineral, and the Lieutenant-Governor in Council considers that development or expenditure to be substantial, the Lieutenant-Governor in Council may grant to that person mining rights in respect of the mineral or any part of it, in the manner and on the terms and conditions the Lieutenant-Governor in Council sees fit, despite the Mining Act.\nR.S.1973, c.O-6, s.5; 1985, c.M-14.1, s.135",
+      "subsections": [],
+      "contentHash": "af152a6c5cc865ec872cf332dce2ccb9efa9b0b7a7e5f8a53408bc863a4c436f"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "componentType": "section",
+      "label": "6",
+      "heading": "Power to enter into agreements respecting Crown Lands",
+      "text": "Power to enter into agreements respecting Crown Lands\n\n6When the Crown and any other person have an interest in minerals in the same tract of land, the Lieutenant-Governor in Council may enter into an agreement with that person for the transfer of the Crown’s interest to that person or for the transfer to the Crown of that person’s interest.\nR.S.1973, c.O-6, s.6",
+      "subsections": [],
+      "contentHash": "4814bf4cb49ef50bf8ba389580b9d62e50846dcaeac554b8a101d853d218fafa"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "componentType": "section",
+      "label": "7",
+      "heading": "Compensation",
+      "text": "Compensation\n\n7Any money compensation awarded under this Act or money payable under an agreement made under this Act shall be paid out of the Consolidated Fund.\nR.S.1973, c.O-6, s.8",
+      "subsections": [],
+      "contentHash": "852e6938b235f63d5ec9eb7483f39f67f55e62010472446de7316fc785002934"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "componentType": "section",
+      "label": "8",
+      "heading": "Immunity",
+      "text": "Immunity\n\n8No action lies against the Crown for any order made under this Act or anything done under any such order except for compensation awarded under section 3(1) or for breach of an agreement made under section 6.\nR.S.1973, c.O-6, s.7\n\nN.B. This Act was proclaimed and came into force September 1, 2011.\n\nN.B. This Act is consolidated to September 1, 2011.",
+      "subsections": [],
+      "contentHash": "14ae8763a090a89e3c1da7fe9f22becff0cb2b4fd5564e2aaa01822b071b28cc"
+    }
+  ],
+  "sections": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
+      "label": "1",
+      "heading": "Definition of “mineral”",
+      "text": "Definition of “mineral”\n\n1In this Act, “mineral” has the same meaning as in the Mining Act.\nR.S.1973, c.O-6, s.1",
+      "subsections": [],
+      "contentHash": "14fdd83afb65186452e1e5a6ab366931d0b31945bf1b65c30b6654f2a5fbcd51"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "label": "2",
+      "heading": "Application",
+      "text": "Application\n\n2(1)No order made under this Act shall be construed to affect any mining licence or lease made or issued under An Act Respecting the Encouragement of the Discovery and Development of Oil and Natural Gas, chapter 31 of The Consolidated Statutes, 1903, or any mineral claim, mining licence, mining lease or other mining right acquired, granted or continued under the Mining Act.\n\n2(2)This Act supersedes the Expropriation Act.\n\nR.S.1973, c.O-6, s.9; 1979, c.52, s.1; 1985, c.M-14.1, s.135",
+      "subsections": [
+        {
+          "id": "2-subsection-1",
+          "sourceKey": "section:2/subsection:1",
+          "label": "2(1)",
+          "text": "2(1)No order made under this Act shall be construed to affect any mining licence or lease made or issued under An Act Respecting the Encouragement of the Discovery and Development of Oil and Natural Gas, chapter 31 of The Consolidated Statutes, 1903, or any mineral claim, mining licence, mining lease or other mining right acquired, granted or continued under the Mining Act.",
+          "contentHash": "1d41818dc4ebcd44bc1727970a9fcbd078bafa96363f964bde11f71b3f564745"
+        },
+        {
+          "id": "2-subsection-2",
+          "sourceKey": "section:2/subsection:2",
+          "label": "2(2)",
+          "text": "2(2)This Act supersedes the Expropriation Act.\n\nR.S.1973, c.O-6, s.9; 1979, c.52, s.1; 1985, c.M-14.1, s.135",
+          "contentHash": "b12e93c25969c8cb69ea1afbb17345b19096a87692274cff5701deae0cc9909d"
+        }
+      ],
+      "contentHash": "6c735a0cffb0fa5590c19a93785c0c93d2f95f74c5a59930a2cc51f3c0bfc73f"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
+      "label": "3",
+      "heading": "Power of Cabinet to make orders",
+      "text": "Power of Cabinet to make orders\n\n3(1)The Lieutenant-Governor in Council has full power and authority to make such orders as he or she may consider necessary or desirable\n\n(a)\nto declare all or any minerals, whether owned by the Crown or by any other person, existing in a natural state beneath the surface of the land anywhere in the Province, or in any designated area in the Province, to be property separate from the soil;\n\n(b)\nto vest in the Crown in right of the Province all or any of the minerals referred to in paragraph (a) or any part of them even though all or any of those minerals or any part of them are claimed by any person through the express words of any instrument, enactment or law, or otherwise;\n\n(c)\nto fix the effective date of any order made under paragraph (a) or (b) and for that purpose to give the order retrospective effect;\n\n(d)\nto declare that every grant of land from the Crown made at any time previously shall be construed and held to have excepted and reserved to the Crown all the minerals, within the meaning of this Act, in the land, despite the provisions of any grant or instrument or of any enactment or law;\n\n(e)\nto provide for compensation to persons sustaining loss or damage by reason of any order made under this Act and the amount of compensation;\n\n(f)\nto prescribe the terms and conditions under which any claim may be made, or compensation may be made, for loss or damage sustained by reason of any order made under this Act;\n\n(g)\nto give the exclusive right for a period not less than one year as he or she may determine for prospecting and staking for any minerals taken under this Act to the owners in fee simple of the lands under which the minerals lie.\n\n3(2)The Lieutenant-Governor in Council may make any order under this Act particular or general in its application.\n\nR.S.1973, c.O-6, s.2, s.3",
+      "subsections": [
+        {
+          "id": "3-subsection-1",
+          "sourceKey": "section:3/subsection:1",
+          "label": "3(1)",
+          "text": "3(1)The Lieutenant-Governor in Council has full power and authority to make such orders as he or she may consider necessary or desirable\n\n(a)\nto declare all or any minerals, whether owned by the Crown or by any other person, existing in a natural state beneath the surface of the land anywhere in the Province, or in any designated area in the Province, to be property separate from the soil;\n\n(b)\nto vest in the Crown in right of the Province all or any of the minerals referred to in paragraph (a) or any part of them even though all or any of those minerals or any part of them are claimed by any person through the express words of any instrument, enactment or law, or otherwise;\n\n(c)\nto fix the effective date of any order made under paragraph (a) or (b) and for that purpose to give the order retrospective effect;\n\n(d)\nto declare that every grant of land from the Crown made at any time previously shall be construed and held to have excepted and reserved to the Crown all the minerals, within the meaning of this Act, in the land, despite the provisions of any grant or instrument or of any enactment or law;\n\n(e)\nto provide for compensation to persons sustaining loss or damage by reason of any order made under this Act and the amount of compensation;\n\n(f)\nto prescribe the terms and conditions under which any claim may be made, or compensation may be made, for loss or damage sustained by reason of any order made under this Act;\n\n(g)\nto give the exclusive right for a period not less than one year as he or she may determine for prospecting and staking for any minerals taken under this Act to the owners in fee simple of the lands under which the minerals lie.",
+          "contentHash": "b45f7af70c497c900b3b1d7ccc8df5ab410bff079167c1d6501b3386e3129aff"
+        },
+        {
+          "id": "3-subsection-2",
+          "sourceKey": "section:3/subsection:2",
+          "label": "3(2)",
+          "text": "3(2)The Lieutenant-Governor in Council may make any order under this Act particular or general in its application.\n\nR.S.1973, c.O-6, s.2, s.3",
+          "contentHash": "3f8afc58bd20f21927083d3471649231d3266c6234744d53e9b8d568bd12e43f"
+        }
+      ],
+      "contentHash": "57e2a162e186423a7c70c5979649728d3024d07931ea6508d65e3cb173e52ea2"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
+      "label": "4",
+      "heading": "Effect of orders",
+      "text": "Effect of orders\n\n4Every order made under this Act has the same effect as if embodied in an Act of the Legislature.\nR.S.1973, c.O-6, s.4",
+      "subsections": [],
+      "contentHash": "5a9308d697eec78d3795bd1d5cdf715ac4f692182594fd6b5a67113877ff6f3c"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "componentType": "section",
+      "label": "5",
+      "heading": "Power of Cabinet to grant licence contrary to orders",
+      "text": "Power of Cabinet to grant licence contrary to orders\n\n5If any person shows to the satisfaction of the Lieutenant-Governor in Council that any right that person would have had to any mineral but for an order made under this Act is affected by the order and that that person has developed any such mineral or expended money for or in connection with any such mineral, and the Lieutenant-Governor in Council considers that development or expenditure to be substantial, the Lieutenant-Governor in Council may grant to that person mining rights in respect of the mineral or any part of it, in the manner and on the terms and conditions the Lieutenant-Governor in Council sees fit, despite the Mining Act.\nR.S.1973, c.O-6, s.5; 1985, c.M-14.1, s.135",
+      "subsections": [],
+      "contentHash": "af152a6c5cc865ec872cf332dce2ccb9efa9b0b7a7e5f8a53408bc863a4c436f"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "componentType": "section",
+      "label": "6",
+      "heading": "Power to enter into agreements respecting Crown Lands",
+      "text": "Power to enter into agreements respecting Crown Lands\n\n6When the Crown and any other person have an interest in minerals in the same tract of land, the Lieutenant-Governor in Council may enter into an agreement with that person for the transfer of the Crown’s interest to that person or for the transfer to the Crown of that person’s interest.\nR.S.1973, c.O-6, s.6",
+      "subsections": [],
+      "contentHash": "4814bf4cb49ef50bf8ba389580b9d62e50846dcaeac554b8a101d853d218fafa"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "componentType": "section",
+      "label": "7",
+      "heading": "Compensation",
+      "text": "Compensation\n\n7Any money compensation awarded under this Act or money payable under an agreement made under this Act shall be paid out of the Consolidated Fund.\nR.S.1973, c.O-6, s.8",
+      "subsections": [],
+      "contentHash": "852e6938b235f63d5ec9eb7483f39f67f55e62010472446de7316fc785002934"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "componentType": "section",
+      "label": "8",
+      "heading": "Immunity",
+      "text": "Immunity\n\n8No action lies against the Crown for any order made under this Act or anything done under any such order except for compensation awarded under section 3(1) or for breach of an agreement made under section 6.\nR.S.1973, c.O-6, s.7\n\nN.B. This Act was proclaimed and came into force September 1, 2011.\n\nN.B. This Act is consolidated to September 1, 2011.",
+      "subsections": [],
+      "contentHash": "14ae8763a090a89e3c1da7fe9f22becff0cb2b4fd5564e2aaa01822b071b28cc"
+    }
+  ],
+  "notes": []
+}

@@ -1,0 +1,828 @@
+# Territorial Division Act
+
+Citation: Chapter T-3
+Document ID: doc-territorial-division-act
+Source: https://laws.gnb.ca/en/document/cs/T-3
+Content hash: 1e1ba57e12a16b25945a5630d4e4dcd1d2d5ae20cb3091499f860d3d0e665554
+Consolidated to: June 30, 1998
+
+## Components
+
+### 1 - Counties of New Brunswick
+
+Source key: section:1
+
+Counties of New Brunswick
+
+1The Province of New Brunswick is divided into fifteen counties as follows: - Albert, Carleton, Charlotte, Gloucester, Kent, Kings, Madawaska, Northumberland, Queens, Restigouche, Saint John, Sunbury, Victoria, Westmorland, York.
+R.S., c.227, s.1
+
+COUNTIES
+
+### 2 - Albert County
+
+Source key: section:2
+
+Albert County
+
+2ALBERT COUNTY is bounded as follows:- Westerly by Kings, and Saint John County; northerly by Westmorland County, and Petitcodiac River; easterly by Petitcodiac River, and southerly by Chignecto Bay, including all the islands adjacent thereto.
+R.S., c.227, s.2
+
+### 3 - Carleton County
+
+Source key: section:3
+
+Carleton County
+
+3CARLETON COUNTY is bounded as follows:- Southerly and southeasterly by York County; westerly by the State of Maine, and northerly by the River de Chute, and a line running from the mouth thereof to the western termination of the line dividing the lots number forty and number forty-one, granted to John Marro and Patrick Marro; and thence by the last-mentioned line and a prolongation thereof northeasterly until it strikes the northwesterly line of the County of York.
+R.S., c.227, s.3
+
+### 4 - Charlotte County
+
+Source key: section:4
+
+Charlotte County
+
+4CHARLOTTE COUNTY is bounded as follows:- South by the Bay of Fundy; west by the St. Croix River and western shore of the Passamaquoddy Bay; east by the line running true north thirty miles from Point Lepreau, as surveyed by Deputies Wilkinson and Mahood, in the years of our Lord one thousand eight hundred and thirty-eight, and one thousand eight hundred and forty-five; and north by the line running true west from the termination of the last mentioned line, as surveyed by Deputy Mahood in the year of our Lord one thousand eight hundred and forty-five, including all the islands adjacent thereto, and Grand Manan Island and the islands adjacent to it.
+R.S., c.227, s.4
+
+### 5 - Gloucester County
+
+Source key: section:5
+
+Gloucester County
+
+5GLOUCESTER COUNTY is bounded as follows:- Northerly by the Chaleur Bay; easterly by the Gulf of Saint Lawrence; southerly and westerly by the line run north eighty-eight degrees west by Deputy Davidson, in the year of our Lord one thousand eight hundred and forty-five, from the Gulf of Saint Lawrence at the rear of the first division of lots in the Tracadie grant, until it strikes Portage River, a branch of Northwest Miramichi River; thence north twenty-two degrees west, by the magnet of the year of our Lord one thousand seven hundred and eighty-four, to intersect the line of Restigouche County, and thence along the southerly and easterly bounds of the said county to Chaleur Bay, including Miscou Island, Shippegan Island, and all the other adjacent islands.
+R.S., c.227, s.5
+
+### 6 - Kent County
+
+Source key: section:6
+
+Kent County
+
+6KENT COUNTY is bounded as follows:- Northwesterly by Northumberland County; south by Queens and the line run true west by Deputy Palmer, in the year of our Lord one thousand eight hundred and forty-one, from the north end of Shediac Island to the northerly prolongation of the eastern line of the County of Saint John; and east by the Gulf of Saint Lawrence and Northumberland Strait, including all the islands adjacent thereto, but excepting all those parts of lots eleven, twelve, thirteen and fourteen, and the grant to the Lighthouse Commissioners, and also the public landing; all situate at or near Point Escuminac, lying southeasterly of the line run by Deputy Layton, in the year of our Lord one thousand eight hundred and forty-two.
+R.S., c.227, s.6
+
+### 7 - Kings County
+
+Source key: section:7
+
+Kings County
+
+7KINGS COUNTY is bounded as follows:- South by the County of Saint John; west by Charlotte County; east by the northern prolongation of the eastern boundary of Saint John County; and northwesterly by a line beginning at a point in the southwestern bank or shore of the Saint John River, said point being approximately south forty-five degrees west (astronomic) from the southernmost tip of Spoon Island; thence from said point and running south forty-four degrees and thirty-two minutes thirty-five seconds west (astronomic) along a line established by J. Barry Sheehan, New Brunswick Land Surveyor in 1953 and its southwestern prolongation to the Charlotte County Line, and by a line running north sixty-two degrees and thirty-four minutes east by the magnet of the year 1838 from a point in the northeastern bank or shore of the Saint John River, approximately north forty-five degrees east (astronomic) from the southernmost tip of Spoon Island, as established by Deputy Wilkinson in the year 1838, and by a line running approximately north forty-five degrees east (astronomic) from the before mentioned point in the southwestern bank or shore of the Saint John River, established by J. Barry Sheehan to the before mentioned point in the northeastern bank or shore of the Saint John River established by Deputy Wilkinson.
+R.S., c.227, s.7; 1954, c.83, s.1
+
+### 8 - Madawaska County
+
+Source key: section:8
+
+Madawaska County
+
+8MADAWASKA COUNTY is bounded as follows:- Easterly by Victoria County; westerly and southerly by the State of Maine; northeasterly by the line run by Deputy J.A. McCallum, in the year of our Lord one thousand eight hundred and seventy-three, north forty-three degrees and twenty minutes west from the point where the prolongation of the line run by Deputy Scully from the Southwest Miramichi River intersects the westerly prolongation of the south line of lot number one, in the grant to Simon Arseneau and his associates; and northerly by the Province of Quebec.
+R.S., c.227, s.8
+
+### 9 - Northumberland County
+
+Source key: section:9
+
+Northumberland County
+
+9NORTHUMBERLAND COUNTY is bounded as follows:- Northerly by Gloucester and Restigouche Counties; west by Victoria County and York County; south by York County and Sunbury County; and southeasterly by the line run from Point Escuminac south seventy degrees and forty-five minutes west forty-eight miles; thence south fifty-one degrees west twenty-three and one-half miles by Deputies Layton and Sadler, in the years one thousand eight hundred and forty-two, and one thousand eight hundred and forty-five, and easterly by the Gulf of Saint Lawrence, including all the islands adjacent thereto, and including all that part of lots eleven, twelve, thirteen and fourteen, and the grant to the Lighthouse Commissioners, and also the public landing; all situate at or near Point Escuminac, lying southeasterly of the said line run by Deputy Layton, in the year of our Lord one thousand eight hundred and forty-two.
+R.S., c.227, s.9
+
+### 10 - Queens County
+
+Source key: section:10
+
+Queens County
+
+10QUEENS COUNTY is bounded as follows:- Southeasterly by Kings County; northeasterly by the prolongation of the eastern boundary of Kings County and the line run north fifty-six degrees and thirty minutes west by Deputy Price, in the year of our Lord one thousand eight hundred and forty-one, from the northwest angle of Westmorland County; southwesterly by Charlotte County; and northwesterly by the line run from the lower line of lot number one (Conrad Stinick) southwesterly by Deputy Wilkinson, in the year of our Lord one thousand eight hundred and thirty-nine, and Deputy O’Connor, in the year of our Lord one thousand eight hundred and forty-three; and northeasterly by Deputy Munroe, in the year of our Lord one thousand eight hundred and forty-six.
+R.S., c.227, s.10
+
+### 11 - Restigouche County
+
+Source key: section:11
+
+Restigouche County
+
+11RESTIGOUCHE COUNTY is bounded as follows:- Southwesterly by Madawaska County and Victoria County; northerly and westerly by the Province of Quebec and Chaleur Bay; easterly by the line run true south by Deputy Carruthers, in the year of our Lord one thousand eight hundred and forty-eight, from Chaleur Bay, near the mouth of the Belledune River to the distance of four miles; and thence by a line running south fifty degrees west to the westerly prolongation of the south line of lot number one, in the grant to Simon Arseneau and associates, near the Little Nepisiguit, as run by Deputy McCallum, in the year of our Lord one thousand eight hundred and seventy-two; south by the said last mentioned westerly prolongation run by Deputy McCallum, to Victoria County, including all the islands adjacent thereto.
+R.S., c.227, s.11
+
+### 12 - Saint John County
+
+Source key: section:12
+
+Saint John County
+
+12SAINT JOHN COUNTY is bounded as follows:- South by the Bay of Fundy; west by Charlotte County; north by a line beginning at a brass plug set in a rock at the most southern tip of Kennebeccasis Island, said brass plug being inscribed N.B. SVYs No. 1673 and having N.B. GRID COORDINATE value of X (East) 1090087.68 feet and Y (North) 567141.83 feet; thence running by N.B. GRID azimuths and distances sixty-eight degrees thirty-two minutes and thirty-five seconds, thirty-eight thousand six hundred and twenty-two feet and six-tenths of a foot to an iron pin set in the western shoulder of the MacKay Highway, said iron pin having N.B. COORDINATE value of X (EAST) 1126033.45 feet and Y (North) 581270.02 feet; thence sixty-six degrees six minutes and five seconds, twenty-four thousand five hundred and thirty-nine feet and six-tenths of a foot to an iron pin placed on an island in Bradley Lake, said iron pin having N.B. COORDINATE value of X (East) 1148469.12 feet and Y (North) 591211.44 feet; thence sixty-six degrees twenty-nine minutes and fifty-three seconds, nine thousand and two hundred feet and one-tenth of a foot to a point in the intersection of the centre line of the Golden Grove Road and the northerly prolongation of the easterly wall of St. Pauls United Church, said point having N.B. COORDINATE value of X (East) 1156906.04 feet and Y (North) 594880.27 feet; thence sixty-eight degrees thirteen minutes and two seconds, thirty-five thousand two hundred and forty-five feet and two-tenths of a foot to a County Line marker placed by the N.B. Department of Public Works on the southerly side of the highway from Upper Loch Lomond to Barnesville, said marker having N.B. COORDINATE value of X (East) 1189634.60 feet and Y (North) 607959.35 feet; thence sixty-eight degrees twenty-four minutes and twenty-five seconds, seventeen thousand nine hundred and seventeen feet and one-tenth of a foot to an iron pin, said iron pin having N.B. COORDINATE value of X (East) 1206294.35 feet and Y (North) 614553.04 feet; thence by the magnet of the year eighteen hundred and thirty-three along a line run by Deputies Scully and Palmer in the years eighteen hundred and thirty-three and eighteen hundred and forty-one north eighty-three degrees and thirty minutes east to the western boundary of Albert County and by a line beginning at the aforesaid brass plug being the point of beginning and running by N.B. GRID azimuth two hundred and forty-seven degrees thirty-five minutes and forty seconds to the eastern boundary of Charlotte County; east by the line run magnetic north by Deputy Stiles, in the year one thousand eight hundred and thirty-eight, from a birch tree on the shore of the Bay of Fundy thirty chains east from the mouth of Goose River, including all the islands in the Bay of Fundy adjacent thereto.
+R.S., c.227, s.12; 1965, c.40, s.1
+
+### 13 - Sunbury County
+
+Source key: section:13
+
+Sunbury County
+
+13SUNBURY COUNTY is bounded as follows:- Southeasterly by Queens County; south by Charlotte County; northeasterly by the line run north fifty-six degrees and thirty minutes west, by Deputy Price in the year of our Lord one thousand eight hundred and forty-one, from the northwest angle of Westmorland County; and northwesterly by the line run north forty-seven degrees and forty-five minutes east, and south forty-seven degrees and forty-five minutes west, by Deputy Jouett, in the year of our Lord one thousand eight hundred and forty-six, from the lower boundary of the grant to Daniel Fukes and others, and its prolongation northeasterly.
+R.S., c.227, s.13
+
+### 14 - Victoria County
+
+Source key: section:14
+
+Victoria County
+
+14VICTORIA COUNTY is bounded as follows:- Southerly and southeasterly by Carleton County and York County; easterly by the northerly prolongation of the line run north six degrees and forty minutes west, by Deputy Scully, in the year of our Lord one thousand eight hundred and thirty-two, from the Southwest Miramichi River, near Boiestown, until it intersects the westerly prolongation of the south line of lot number one, in the grant to Simon Arseneau and associates, near the Little Nepisiguit; thence by a line running north forty-three degrees and twenty minutes west, run by Deputy J.A. McCallum, in the year of our Lord one thousand eight hundred and seventy-three; and westerly by the State of Maine, and the centre line of the Saint John River from the State of Maine downstream to the southern prolongation of the upper line of Lot F, situated at Grand Falls and granted to the Principal Officers of Her Majesty’s Ordnance and a line beginning at a post standing on the northern bank or shore of the Saint John River, at the intersection of the upper line of lot F, at the Grand Falls, granted to the principal officers of Her Majesty’s Ordnance; and thence running north thirteen degrees, west five chains and forty links to a post; thence north sixty-nine degrees west four chains to a post; thence north twelve degrees west eight chains to a post; thence north fifty-two degrees east seventy-three chains to a post; thence north seventy-eight degrees east one hundred and five chains, or to the northwestern line of lot number three hundred and one, Ennishone; thence along that line and its prolongation north nineteen degrees east ninety-five chains, or to meet the northwestern line of lot number three hundred and four in Ennishone; thence along that line north fifty-four degrees east to the southeastern line of lot number four hundred and four, granted to Francis Michaud; thence north nineteen degrees and thirty minutes east to the southwestern line of the tract surveyed by Deputy Beckwith, in eighteen hundred and sixty-seven, and designated on his plan as Commeau Mountain; thence south seventy degrees and thirty minutes east to the southern angle of said last mentioned tract; thence northeasterly along the southeastern line of the said Commeau Mountain to the most eastern angle of lot number thirty-eight; thence northwesterly along the northeastern line of said lot number thirty-eight, eighty chains, and thence true north to the northeastern boundary of the County.
+R.S., c.227, s.14
+
+### 15 - Westmorland County
+
+Source key: section:15
+
+Westmorland County
+
+15WESTMORLAND COUNTY is bounded as follows:- North by Kent County and Northumberland Strait; west by Kings and Queens Counties and the Petitcodiac River; south by Baie Verte, the Province of Nova Scotia, Cumberland Basin, the Petitcodiac River, and the line run south twenty degrees west nine miles, and west nine and one-half miles by Deputy Wilmot, in the year of our Lord one thousand eight hundred and forty-six, from near the mouth of Coverdale River, including Shediac and all other adjacent islands.
+R.S., c.227, s.15
+
+### 16 - York County
+
+Source key: section:16
+
+York County
+
+16YORK COUNTY is bounded as follows:- Southeasterly by Sunbury County; south by Charlotte County; southwest by the State of Maine; northeasterly by the line run north fifty-six degrees and thirty minutes west, by Deputy Price, in the year of our Lord one thousand eight hundred and forty-one, from the northwest angle of Westmorland County, and the line run north six degrees and forty minutes west, by Deputy Scully, in the year of our Lord one thousand eight hundred and thirty-two, from the Southwest Miramichi River near Boiestown and its northerly prolongation; and northwesterly by the line run true east by Deputy Jouett, in the year of our Lord one thousand eight hundred and forty-seven, from the International monument Boundary No. 1 to Eel River; thence by Eel River to its mouth; thence to the northerly side of the Saint John River, where the line runs north forty-seven degrees and twenty minutes east, by Deputy Jouett, in the year of our Lord one thousand eight hundred and forty-seven, from the said river at the upper line of the lower half of lot number twenty-eight, granted to Matthew Phillips, strikes the said river; and thence following said line, run by Deputy Jouett, and its northeasterly prolongation till it intersects the prolongation of the line aforesaid run by Deputy Scully.
+R.S., c.227, s.16
+
+PARISHES
+
+### 17 - Divisions of Albert County
+
+Source key: section:17
+
+Divisions of Albert County
+
+17ALBERT COUNTY is divided into the several divisions hereinafter named and bounded as follows:
+
+(a)
+ALMA PARISH.- North by the westerly prolongation of the northern boundary of Harvey Parish; west by the County line; south by Chignecto Bay, and east by Harvey Parish.
+
+(b)
+COVERDALE PARISH.- North and east by the Petitcodiac River; south by the south line of lot no. 2, granted to Robert Crossman, at Stoney Creek, on the western side of the Petitcodiac River and its westerly prolongation to the County line; west by the County line.
+
+(c)
+ELGIN PARISH.- North by Coverdale Parish and the County line; east by Hillsborough Parish; south by Harvey Parish and Alma Parish, and west by the County line.
+
+(d)
+HARVEY PARISH.- North by a line running south seventy-two degrees west from the northwest angle of Hopewell Parish; west by the western line of lot number three, granted to James Speer, east of Owls Head, and its northerly prolongation to the northern line of the parish; east by Hopewell Parish, and south by Chignecto Bay, including Grindstone Island, so called.
+
+(e)
+HILLSBOROUGH PARISH.- South and west by the south line of lot numbered seventeen, granted to William Carlisle and its prolongation westerly to the distance of twelve miles from The Petitcodiac River; thence by a line running north twenty degrees west by the magnet of the year one thousand seven hundred and sixty-five to Coverdale Parish; north by Coverdale Parish; and east by the Petitcodiac River.
+
+(f)
+HOPEWELL PARISH.- North by Hillsborough Parish; southeast by Chignecto Bay; and southwest by a line commencing at the mouth of Shepody River; thence up the centre of the said river to the mouth of Crooked Creek; thence up the centre of the said creek to the old bridge over the same on the old main road; and thence north twenty degrees west to intersect the south line of Hillsborough Parish or its westerly prolongation.
+
+R.S., c.227, s.17
+
+### 18 - Divisions of Carleton County
+
+Source key: section:18
+
+Divisions of Carleton County
+
+18CARLETON COUNTY is divided into the several divisions, hereinafter named, and bounded as follows:
+
+(a)
+ABERDEEN PARISH.- Beginning at the northwestern angle of lot number ten, granted to William Woodforde, on the Cold Stream; thence running by the magnet of the year one thousand eight hundred and fifty-seven north seventy-two degrees west eight chains to the eastern line of a reserved road, thence following the several courses of the said road by the base line of the lots in a northerly direction to the northwest angle of the lot letter “I”, granted to William Bain; thence south seventy-two degrees and thirty minutes east by the magnet of the year one thousand eight hundred and sixty-one, to meet the eastern line of a reserved road; thence northerly along said road to the northwest angle of lot number fifty-five, in range 5, Johnville; thence easterly to the southeast angle of lot number fifty-six, on said range 5 of Johnville; thence easterly in a direct line to the northwest angle of lot number eighty, in block 2, Glassville; thence easterly along the northern line of said lot and its eastern prolongation to the County line; thence along the said County line in a southwesterly direction to meet the eastern prolongation of the north line of the said grant to William Woodforde; thence along the said prolongation and line westerly to the place of beginning.
+
+(b)
+BRIGHTON PARISH.- South-east by the County line; south by Northampton Parish; westerly by the Saint John River, and northerly and northwesterly by a line commencing at the upper line of lot number sixty-one, granted to John Flanagan in the grant to William Turner and others, and its easterly prolongation, until it meets the rear line of the first tier of lots on the north side of the Becaguimec River; thence along the said rear line and its prolongation north-easterly to the Cold Stream; and thence following the centre of the same up stream to the southerly boundary of Aberdeen Parish; and thence easterly along the boundary of Aberdeen Parish to the County line.
+
+(c)
+KENT PARISH.- South by Peel Parish and Aberdeen Parish; east and southeast by Aberdeen Parish and the County line; north by the County line; and west by the Saint John River.
+
+(d)
+NORTHAMPTON PARISH.- Southeast by the County line; west by the Saint John River, and north by a line commencing at a marked cedar post about fifty-three rods northward of the mouth of Shaws Creek on the bank of the Saint John River, at Jesse Shaw’s upper side line; thence by the Magnet of 1928 and by Deputy A.E. Hanson’s survey of the same year, south 57 degrees east along the aforesaid side line 31.70 chains to a marked cedar post, being about 3 feet south 57 degrees east from a large cup shaped rock, thence south 82 degrees east and parallel to the present lower line of lot No. 12 originally granted to Thomas Shaw, and maintaining a rectangular distance of 8.96 chains south of said lower line of Lot No. 12, one hundred and fifty-three chains (153 chs.) or to the southwest corner of Lot No. 3 (2nd Tier) granted originally to Michael McKinney in the survey of 2nd Tier of Lots East of the Saint John River by Deputy Andrew Blair in the year 1830, thence from said southwest corner and continuing along the original division line of lots No. 3 and No. 4 granted respectively to Michael McKinney and Martin Hale, or to the rear line of these said lots thence continuing south eighty-three degrees east or to where it strikes or intersects the west or south side line of Block C granted to the York and Carleton Mining Company having a total estimated distance of 191 chains thence by the magnet of the year 1848 south 73 degrees East, and estimated distance of four hundred and ten chains more or less, or to the County line.
+
+(e)
+PEEL PARISH.- Southerly and southeasterly by Brighton Parish; easterly by Aberdeen Parish; north by a line running true east from the southeast angle of Wicklow Parish; and west by the Saint John River.
+
+(f)
+RICHMOND PARISH.- North by the Meduxnakeag River and the South Branch Meduxnakeag River; easterly by Woodstock Parish; westerly by the International Boundary, and southerly by the county boundary.
+
+(g)
+SIMONDS PARISH.- North by the line between lots number ninety-three and ninety-four, near the mouth of Whitemarsh Brook and the westerly prolongation thereof; westerly by a line commencing on the northern boundary of Wakefield Parish, at a point where the eastern boundary of lot number thirty-two, granted to George Drake, in the third tier, strikes the same; thence running northerly along the eastern boundary of the said third tier to the eastern boundary of the grant to Arthur Blaney Walsh; thence northerly along the eastern boundary of the second tier of the Presquile block, until it strikes the northern boundary of the parish; south by Wakefield Parish; and east by the Saint John River, including all the islands in front.
+
+(h)
+WAKEFIELD PARISH.- North by the lower line of lot numbered thirty-eight, granted to David Good, and the westerly prolongation thereof; westerly by the County line; south by Woodstock and Richmond Parishes, and east by the Saint John River, including all the islands in front.
+
+(i)
+WICKLOW PARISH.- North by the River de Chute; westerly by the County line; east by the Saint John River, and south by Simonds Parish and Wilmot Parish, including all the islands in front.
+
+(j)
+WILMOT PARISH.- North by the Westerly prolongation of the northern boundary of Simonds Parish; west by the County line; south by Wakefield Parish and east by Simonds Parish.
+
+(k)
+WOODSTOCK PARISH.- South by the boundary of the County; east by the Saint John River; north by the lower line of lot number one, granted to Caleb Phillips, and its prolongation westerly; and west by the rear or western line of the second tier of lots west of the Saint John River to Eel River, including all the islands in front.
+
+R.S., c.227, s.18; 1956, c.64, s.1, 2
+
+### 19 - Divisions of Charlotte County
+
+Source key: section:19
+
+Divisions of Charlotte County
+
+19CHARLOTTE COUNTY is divided into the several divisions hereinafter named and bounded as follows:
+
+(a)
+CAMPOBELLO PARISH.- Being the island so named, and other islands to the south and east of Head Harbour Passage, but west of Grand Manan.
+
+(b)
+CLARENDON PARISH.- West by Saint George Parish; north and east by the County lines, and south by a line run true west from the most southern angle of Queens County to the eastern boundary of Saint George Parish.
+
+(c)
+DUFFERIN PARISH.- Commencing in the centre of the channel of the St. Croix River opposite the mouth of Dennis Stream; thence following the centre of said channel down stream around Todds Point, so called, to Oak Bay, and up the centre of the channel of Oak Bay and of Pagans Cove, to where the northern line of lots fronting on northern side of St. Croix River intersects said cove; thence westerly and northwesterly along said line to the Bay Road, so called; thence westerly along said road to Dennis Stream, and thence down said stream to beginning.
+
+(d)
+DUMBARTON PARISH.- West by Saint David Parish and Saint James Parish; north by the County line; east by the northern prolongation of the eastern boundary of Saint Patrick Parish; and south by Saint Patrick Parish;
+
+(e)
+GRAND MANAN PARISH.- Being the island so named and all the islands to the south and east thereof.
+
+(f)
+LEPREAU PARISH.- West by Pennfield Parish; north by Clarendon Parish; east by the County line; and south by the Bay of Fundy, including Pocologan, New River and Salkeld Islands, and all other islands in front within two miles of the shore.
+
+(g)
+PENNFIELD PARISH.- Westerly by Saint George Parish and Letang River; north by Clarendon Parish; east by a line commencing at the western bank or shore of the Pocologan River, where it falls into the Bay of Fundy, and running true north to Clarendon Parish; and south by the Bay of Fundy, including The Wolves Islands, and all other islands within two miles of the shore and not included in Saint George Parish.
+
+(h)
+SAINT ANDREWS PARISH.- North by Saint Croix Parish and a direct line from the Southeast angle of Lot Number 11 granted to James Greenlaw to the most Western angle of Lot Number 20 granted to Francis Welsh; west by the St. Croix River south by Passamaquoddy Bay, and east by the west line of lot number twenty, granted to F. Welsh, including Ministers and Navy Islands.
+
+(i)
+SAINT CROIX PARISH.- East and South by a line beginning at the most Northern angle of a four hundred and eighty-eight acre lot, granted to Daniel Hill, on Waweig River; thence Southeasterly, along the Northeastern limit of said lot, to the Western angle of Lot No. 3, granted to James McFarlane; thence Northeasterly, along the Northwestern limit of Lot No. 3, to the Northern angle of same; thence Southeasterly, along the Northeastern limit of Lots Numbered 3, 2, 1 and 12 and of Lot No. 13, granted to John H. Armstrong, to the Eastern angle of Lot No. 13; thence Southwesterly, along the Southeastern limit of Lot No. 13, to the Northeastern limit of the grant to William Reading; thence Southeasterly, along the Northeastern limit of the grant to William Reading to the Eastern angle of same; thence Southwesterly, along the Southeastern limit of the grant to William Reading, to the Northeastern limit of the grant to Rachael Mowat; thence Southeasterly, along said Northeastern limit to the Eastern angle of same; thence Southwesterly, along the Southeastern limit of lot granted to Rachael Mowat and of Lots Numbered 9, 8, 7, 6 and 5 to the Northeastern limit of Lot No. 4 granted to Maxwell Lawry; thence Southeasterly along said Northeastern limit of Lot No. 4, to the Eastern angle of same; thence Southwesterly along the Southeastern limit of Lots Numbered 4, 3 and 2 to the Southern angle of Lot 2, granted to Lauchlan Doon; thence Northwesterly along the Southwestern limit of Lot No. 2 to the Southeastern limit of Lot No. 28, granted to Moses J. Greenlaw; thence Southwesterly, along the Southeastern limit of Lot No. 28 to the Northeastern angle of Lot 29, granted to Jesse C. Bartlett; thence Southerly, along the Eastern limit of lot 29, to the Northwestern angle of Lot No. 45, granted to Jesse C. Bartlett; thence Easterly along the Northern limit of Lot 45 to the Northeastern angle of same; thence Southerly, along the Eastern limit of Lot 45, to the Northern limit of the hundred acre lot granted to Andrew Dougherty; thence Easterly, along the said Northern limit to the Western bank or shore of Bonaparte Lake; thence Southerly, along said bank or shore, to meet the Northerly prolongation of the Eastern limit of Lot No. 4 granted to Leonard Bartlett; thence Southerly along said prolongation and said limit to the Northern limit of Lot No. 3 granted to Thomas Sime; thence Westerly along said Northern limit to the Northwestern angle of Lot No. 3; thence Southerly, along the Western limit of Lots Numbered 3, 2 and 1 to the Southeastern angle of Lot No. 11 granted to James Greenlaw; thence Westerly, along the Southern limit of Lot No. 11, to the Eastern bank or shore of Little Chamcook Lake; thence Southerly along the Eastern bank or shore of Little Chamcook Lake and the Eastern bank or shore of Fry Mill Stream to the bank or shore of Chamcook Lake; thence Southerly, Westerly and Northerly along the Eastern, Southern and Western banks or shores of Chamcook Lake to the Northern limit of the five hundred acre lot granted to Colin Campbell, Thomas Wyer and William Gallop; thence Westerly, along said Northern limit, to the Eastern limit of lots fronting on the St. Croix River; thence Southerly along the Eastern limit of lots fronting on the St. Croix River to the Southeastern angle of Lot No. 38 granted to Daniel Grant; thence Westerly along the Southern limit of lot 38 to the St. Croix River; West by the St. Croix River and Saint David Parish, North by Saint David Parish including Rickets Island in Waweig River.
+
+(j)
+SAINT DAVID PARISH.- South by Dufferin Parish; west by the east line of lots on Dennis Stream prolonged southerly to Dufferin Parish and by the west lines of the grant to Henry Goldsmith and others; north by the north line of the said grant; east by the east line of the said last mentioned grant; southeast and southerly by a line commencing at the most northern angle of a four hundred and eighty-eight acre lot granted to Daniel Hill on Waweig River; thence southwesterly to the most western angle of the said lot; thence southeasterly to the northeast angle of lot number thirty, granted to W. Ross; thence westerly along the north line of the said last-mentioned grant and its western prolongation to the northeast angle of lot number eight, granted to James Garcelon; thence south to the southeast angle of lot number four, granted to James Christie; thence west to the southwest angle of the said last-mentioned lot; thence south along the eastern line of lots fronting on Oak Bay to Waweig River; thence down the channel of Waweig River and up the channel of Oak Bay to Pagans Cove, where the northern line of Dufferin Parish intersects it, excluding Rickets Island in Waweig River.
+
+(k)
+SAINT GEORGE PARISH.- West by Saint Patrick Parish, Dumbarton Parish and Passamaquoddy Bay; north by the County line; east by the rear line of lot number three, granted to William Payne and its prolongation northerly to the County line, and southerly to Letang River; south by the Bay of Fundy, the channel to and through Letete Passage, and the channel to and through Letang Harbour and River, including Bliss Island.
+
+(l)
+SAINT JAMES PARISH.- South by Saint Stephen Parish and Saint David Parish; east by the northerly prolongation of the east line of Saint David Parish; north by the County line; and west by the St. Croix River.
+
+(m)
+SAINT PATRICK PARISH.- West and northwest by Saint Andrews Parish and Saint Croix Parish; east by the west line of the grant to Philip Bailey and others, and its northerly prolongation; north by a line commencing at the most southern angle of lot number five, granted to John Gilman, on the southwestern side of Digdeguash River; thence northeasterly along the southeasterly line of said lot to the Digdeguash River; thence down stream along the same to the lower line of the lot granted to John Campbell; thence along the same easterly to the rear thereof; thence northerly along the rear of the said last mentioned lot to meet the westerly prolongation of the line dividing the lots ten and eleven in the Clarence Hill grant plan, and thence easterly along the said line dividing the lots number ten and number eleven to the eastern boundary of the parish; and south by Passamaquoddy bay, including all the islands west of the east line of the said parish within two miles of the shore.
+
+(n)
+SAINT STEPHEN PARISH.- South by Dufferin Parish and the St. Croix River; east by Saint David Parish, north and west by a line beginning in the intersection of the St. Croix River with the southwesterly prolongation of the northwestern limit of Lot No. 16, granted to Angus Rankin; thence northeasterly along said prolongation and said limit to the western limit of Lot No. 115, granted to Thomas Dodd; thence northerly along the western limits of Lots Numbered 115, 116, 117 and 99 to 114 inclusive to the southern limit of Lot No. 46 granted to Thomas Grimmer Junior; thence westerly along said limit and its prolongation to the eastern limit of Lot No. 60, granted to Robert M. Todd; thence northerly along the eastern limit of Lot No. 60 and its northerly prolongation, to meet the westerly prolongation of the northern limit of No. 53 granted to Peter Christie; thence easterly along said westerly prolongation, the northern limit of Lot No. 53 and the easterly prolongation of the northern limit of Lot No. 53, to the eastern bank or shore of Moore Lake.
+
+(o)
+WEST ISLES PARISH.- To consist of Deer Island and the lesser islands contiguous to it, not included in the parishes before-mentioned.
+
+R.S., c.227, s.19; 1958, c.56, s.1, 2, 3, 4; 1987, c.6, s.110
+
+### 20 - Divisions of Gloucester County
+
+Source key: section:20
+
+Divisions of Gloucester County
+
+20GLOUCESTER COUNTY is divided into the several divisions hereinafter named and bounded as follows:
+
+(a)
+ALLARDVILLE PARISH.- Beginning at a point in the Canadian National Railways where the same is intersected by the western prolongation of the south limit of lots lettered A and B, granted to John Porter, and situated on both sides of the Highway 8; thence in an easterly direction along said prolongation, said limit of said lots and the eastern prolongation of same to a point in the west limit of a seven thousand seven hundred and fifty acre tract, granted to Henry H. Swinny; thence in a southerly direction along said limit of said tract and the southern prolongation of same to a point in the north limit of Tier One North, Allardville East; thence in an easterly direction along said limit of Allardville East; and the eastern prolongation of same to a point in the west limit of lot number two hundred and sixteen, Range Two, Saint-Isidore; thence in a southerly direction along said limit of said lot in Ranges Two, Three and Four of Saint-Isidore, to a point in the division line between said Range Four and Range Five of Saint-Isidore; thence in a westerly direction along said division line to the northwest angle of lot number two hundred and twenty-five in said Range Five of Saint-Isidore; thence in a southerly direction along the west limit of said lot and the southern prolongation of same to a point in the western prolongation of the south limit of Range Nine, Saint-Isidore; thence in a westerly direction along said prolongation of said limit of said Range to a point in the division line between Timber Blocks Numbers Three and Four, Range Eight; thence in a southerly direction along said division line of said Blocks in Ranges Eight, Nine and Ten to a point in the Gloucester-Northumberland County line; thence in a westerly direction along said County line to a point in the Canadian National Railway; and thence in a northerly direction along said railway to the point of beginning.
+
+(b)
+BATHURST PARISH.- Beginning at a point in the shoreline of the Chaleur Bay where the same is intersected by the eastern prolongation of the south limit of Lot Number One, granted to Simon Arceneau; thence in a westerly direction along said prolongation, said limit of said lot and the western prolongation of same to the most northern angle of Northumberland County; thence in a southeasterly and northeasterly direction following the Gloucester-Northumberland County line to a point in the Canadian National Railways; thence in a northerly direction along said railway to a point where the same is intersected by the western prolongation of the south limit of lots lettered A and B, granted to John Porter, said lots situated on both sides of the Highway 8; thence in an easterly direction along said prolongation, said limit of said lots and the eastern prolongation of same to a point in the west limit of a seven thousand, seven hundred and fifty acre tract, granted to Henry H. Swinny, situated on the head of the Big Tracadie River; thence in a southerly direction along said limit of said grant and its southern prolongation to a point in the north limit of Tier one north, Allardville East; thence in an easterly direction along said limit of Allardville East to a point where the same is intersected by the southern prolongation of the east limit of Lot Number twenty-nine, granted to Jacob Tague, said lot fronting on the Chaleur Bay at the mouth of Teagues Brook; thence in a northerly direction along said prolongation and said limit of said lot to a point in the shore line of Chaleur Bay; and thence following the various courses of said shoreline to the place of beginning. Including all islands in front thereof.
+
+(c)
+BERESFORD PARISH.- West by the County line; east by the Chaleur Bay and south by the easterly prolongation of the south line of Restigouche County.
+
+(d)
+CARAQUET PARISH.- North by Caraquet Bay and Caraquet Harbour; southeast by the Gulf of Saint Lawrence; east by a line running from the west side or entrance of Little Pokemouche Lagoon north fifty-two degrees west until it strikes the south branch of Saint Simons Inlet, and thence from the centre of the said inlet and the north entrance of Grant Shippegan Harbour to the Chaleur Bay; southwest and south by the northeast line of lot no. 1 (William Ferguson) and the prolongation thereof north thirty-six degrees west three hundred chains; thence in a direct line westerly to the northwest angle of lot no. 255, granted to P. de La Vivitiere, on the west side Maltempec Road; west by Paquetville Parish, including the islands of Caraquet and Pokesudie.
+
+(e)
+INKERMAN PARISH.- North by Caraquet Parish; southeasterly by the Gulf of Saint Lawrence, and westerly by Saumarez Parish, Saint Isidore Parish, and Pacquetville Parish.
+
+(f)
+NEW BRANDON PARISH.- North and east by Chaleur Bay and Caraquet Bay; west by Bathurst Parish; south by the south branch of the Caraquet River extending from its mouth, upstream to the mouth of Innishannon Brook; thence in a southwesterly, westerly and southerly direction along the bounds of the Paquetville Parish and the bounds of Saint-Isidore Parish to a point in the east limit of Bathurst Parish.
+
+(g)
+PAQUETVILLE PARISH.- Beginning at a point in the southern bank or shore of the southwest branch of Caraquet River at the northwest angle of lot numbered fourteen, granted to Francis Godin and others; thence southerly along the west limit of said lot and said limit of lot number twenty, in the second and third tiers, south of the aforesaid river, to the southwest angle of lot number twenty west, granted to Aug. Gionet; thence easterly along the southern limit of the aforesaid third tier, to the southeast angle of lot number eight in said tier, granted to Laurent Duguay; thence southerly in a direct line to the northwest angle of lot number two hundred and fifty-two, granted to J.A. Paulin, west side of the Maltempec Road; thence southerly along the rear line of lots fronting on said side of the said road to the southwest angle of lot number two hundred and seventy-two, granted to B.D. Ferguson; thence in a southwesterly direction to a point in the southern bank or shore of the Pokemouche River where the same is intersected by the east limit of lot number one, range six, Val-Doucet; thence in a southerly direction along said limit of said lot to the southeast angle of the same; thence in a westerly direction along the south limit of range six, Val-Doucet, to the northeast angle of lot number ten, range A, Saint-Isidore; thence in a southerly direction along the east limit of said lot to the southeast angle of the same; thence in a westerly direction along the south limit of said range A to the southwest angle of lot number twenty-five in said range; thence in a southerly direction along the west limit of lot number two hundred and sixteen in ranges one and two, Saint-Isidore, to a point where the same is intersected by the east prolongation of the northern Limit of tier one north, Allardville East; thence in a westerly direction along said prolongation and said limit of Allardville East to a point where the same is intersected by the southwest prolongation of a line connecting the northeast and southwest angles of a timber block number five, range five; thence along said prolongation and said line to the northeast angle of said block; thence in a northerly direction along the east limit of timber block number five, ranges four and three, to a point where the same is intersected by the west prolongation of the north limit of range three, Paquetville; thence in an easterly direction along said prolongation and said limit of said range to the northeast angle of lot number sixty in range three aforesaid; thence in a direct line to the mouth of Innishannon Brook; and thence in a northeasterly direction following the various courses of the Caraquet River, down stream to the place of beginning.
+
+(h)
+SHIPPEGAN PARISH.- West by Caraquet Parish; northwesterly by Caraquet Bay and Chaleur Bay; and southeasterly by the Gulf of Saint-Lawrence, including the islands of Shippegan and Miscou.
+
+(i)
+SAINT-ISIDORE PARISH.- Beginning at a point on the northern bank or shore of the Little Tracadie River at a point where the western limit of lot number thirty, granted to Richard Arseneault, intersects the same; thence northerly along said limit and said limit of lot number two hundred and eighty-nine, granted to Canute Arceno, Second Tier, north of said river, to a point in the south limit of Range six, Saint-Isidore; thence in an easterly direction along said limit of said Range to the southeast angle of lot number one, granted to T. Richard; thence in a northerly direction along the east limit of said lot to the southwest corner of lot number three hundred and nine, granted to A. Basque; thence in an easterly direction along the southern limit of said lot and said limit of lot number three hundred and six, granted to George Savoy, and lot number one hundred and forty-two, granted to M. Gottro, to a point in the west bank or shore of Gaspereau Creek; thence in a northerly direction along said bank or shore to a point where the same is intersected by the south limit of lot number one hundred and forty-four, granted to Dos. Landry; thence in an easterly direction along said limit of said lot to the southeast angle of the same; thence northwesterly in a direct line to the southwest angle of lot number five, granted to Jos. Lavigne, Range Six, Val-Doucet; thence in a westerly direction along the south limit of said Range Six to the northwest angle of lot number nine, Range A, Saint-Isidore; thence in a southerly direction along the west limit of said lot to a point in the division line between said Range A and Range 1, Saint-Isidore; thence in a westerly direction along said division line to the northwest angle of lot number two hundred and sixteen in said Range One of Saint-Isidore; thence in a southerly direction along the west limit of said lot in Ranges One, Two, Three and Four, Saint-Isidore, to a point in the division line between said Range Four and Range Five of Saint-Isidore; thence in a westerly direction along said division line to the northwest angle of lot number two hundred and twenty-five in said Range Five of Saint-Isidore; thence in a southerly direction along the west limit of said lot and the southern prolongation of same to a point in the western prolongation of the south limit of Range Nine, Saint-Isidore; thence in an easterly direction along said prolongation and said limit to a point in the eastern bank or shore of the Little Tracadie River; and thence following the various courses thereof downstream to the point of beginning.
+
+(j)
+SAUMAREZ PARISH.- Bounded easterly by the Gulf of St. Lawrence and northerly, westerly and southerly by the following described bounds: Beginning at a point in the most western extremity of a twenty acre lot granted to F. Vienneau, situated at the easterly entrance of the Tracadie Lagoon; thence northwesterly in a direct line across said Lagoon to the mouth of LeBouthillier Brook; thence in a northwesterly direction following the various courses of said brook upstream to Highway 11 leading from Tracadie to Pokemouche; thence in a direct line to the northeast angle of lot number one hundred and forty-five, granted to Dosite Landry, situated on the north side of the Saint-Isidore Road; thence in a westerly direction along the north limit of said lot to a point where the same is intersected by a direct line extending from the southeast angle of lot number one hundred and forty-four, granted to Dos. Landry, to the Southwest angle of lot number five, granted to Joseph Lavigne, in Range Six, Val-Doucet; thence in a southeasterly direction along said direct line to the southeast angle of aforesaid lot number one hundred and forty-four, granted to Dos. Landry; thence in a westerly direction along the south limit of said lot to a point where the same is intersected by the west bank or shore of Gaspereau Creek; thence in a southerly direction along said bank or shore to a point in the southern limit of lot number one hundred and forty-two, granted to M. Gottro; thence in a westerly direction along the southern limit of said lot and said limit of lot number three hundred and six, granted to George Savoy, and lot number three hundred and nine, granted to A. Basque, to a point in the eastern limit of lot number one, granted to T. Richard; thence in a southerly direction along said limit of said lot to the southeast angle of the same; thence in a westerly direction along the south limit of Range Six, Saint-Isidore, to the northwest angle of lot number two hundred and eighty-nine, granted to Canute Arceno, situated in the Second Tier North of the Little Tracadie River; thence in a southerly direction along the west limit of said lot and said limit of lot number thirty, granted to Richard Arseneault, to a point in the north bank or shore of the aforesaid River; thence following the said bank or shore upstream to a point where the same is intersected by the south limit of Range Nine, Saint-Isidore; thence in a westerly direction along said limit of said Range and its western prolongation to a point in the Division line between Timber Block Numbers Three and Four, Range Eight; thence in a southerly direction along said Division line in Ranges Eight, Nine and Ten to a point in the Gloucester-Northumberland County line; and thence in an easterly direction along said County line to the Gulf of St. Lawrence.
+
+R.S., c.227, s.20
+
+### 21 - Divisions of Kent County
+
+Source key: section:21
+
+Divisions of Kent County
+
+21KENT COUNTY is divided into the several divisions, hereinafter named and bounded as follows:
+
+(a)
+ACADIEVILLE PARISH.- West by the west line of Weldford Parish, prolonged northerly; south by Saint-Louis Parish; northwest by the County line; and east by Carleton Parish.
+
+(b)
+CARLETON PARISH.- Westerly by the eastern line of lot no. 124, granted to F.J. Richard, in block ten, range eight; its southern prolongation to the Saint-Louis Parish line; and its northern prolongation to the County line; south by Saint-Louis Parish; northwest by the County line; and east by the Gulf of Saint Lawrence, including the islands in front.
+
+(c)
+DUNDAS PARISH.- South by the County line; west by the McLaughlin Road; north by a line beginning at the seashore, at the northeastern angle of lot no. 1, granted to Joseph Richard; thence south seventy-two degrees and thirty minutes west seven hundred and sixty-five chains, or until it meets the westerly line of lot number 86, granted to Maximin A. Girouard; thence along the western line of said lot in a southerly direction, to meet the southern line of lot number 84, granted to Beloni Robicheau; thence westerly along the said southern line of the last-mentioned grant and its westerly prolongation to the eastern side of the McLaughlin Road; and east by the Gulf of Saint Lawrence, including all the islands in front.
+
+(d)
+HARCOURT PARISH.- South and west by the County lines; east by Saint Paul Parish and Weldford Parish; and north by a true east and west line passing through the mouth of Jimmy Graham Forks of the Richibucto River.
+
+(e)
+HUSKISSON PARISH.- Northwesterly by the County line; east by Acadieville Parish and Weldford Parish; and south by Harcourt Parish.
+
+(f)
+RICHIBUCTO PARISH.- South by Wellington Parish and Weldford Parish, west by Weldford Parish and a line running true south from the forks of the Saint-Charles River to the northern line of Weldford Parish; north by the centre of the Saint-Charles River and of the Northwest Branch and Richibucto, and east by the Gulf of Saint Lawrence, including all the islands in front; except that portion thereof formerly in said Parish of Richibucto, now included in the Parish of Saint-Charles as described below.
+
+(g)
+SAINT-CHARLES PARISH.- Beginning on the shore of the Gulf of Saint Lawrence at the southeastern angle or corner of a lot of land formerly owned by James Babin; thence following the southern line of said lot in a westerly direction to the southern line of lot 55, granted to John David, thence following the said southern line to the southwestern angle or corner of said lot 55; thence in a straight southwesterly direction till it meets the boundary line between the Weldford Parish and the Richibucto Parish, as established by the Consolidated Statutes, 1903, Chapter 2; thence in a westerly direction, following the said boundary line to a point where the Canadian National Railways line crosses the Weldford Parish line, thence in a northerly direction to the rear line running between the Saint-Charles River and the St-Louis River; thence in an easterly direction following the said rear line to the shore of the Gulf of Saint Lawrence, including all islands in front thereof.
+
+(h)
+SAINT-LOUIS PARISH.- South by Weldford Parish and Saint-Charles Parish, east by Saint-Charles Parish and the Gulf of Saint Lawrence, and north by a line commencing on the shore of the Gulf of Saint Lawrence, where the eastern prolongation of the southern line of Lot C, granted to George Kollock, intersects the same; thence westerly along said prolongation and line to the southerly prolongation of the eastern line of the William Dwyer lot, being lot number 41; thence northerly along said last mentioned prolongation and eastern line of said lot number 41, to the rear line of lot number 10, granted to James Graham; thence along the rear lines of lots granted to the said James Graham and to John Murphy, Thomas Jardine, Patrick MacKay, Patrick Harrington, and Dennis Harrington, to the eastern line of lot number 24, granted to Lucas Christian; thence southerly along said eastern line of lot number 24 to a line, being the western prolongation of the southern line of lot C, granted to George Kollock; thence westerly along said last mentioned prolongation to the post road; thence along the post road northerly to the northeast boundary of a grant to Basil White; thence along the northerly line of Basil White’s lot west to the old post road; thence along the old post road southerly to the northeast boundary of the grant to Peter Vautour; thence along the northerly side line of Peter Vautour’s lot to the northwest angle thereof; and thence south seventy-five degrees and thirty minutes west to the southern line of the parish, including the islands in front.
+
+(i)
+SAINTE-MARIE PARISH.- South by Dundas Parish; east by Wellington Parish; north by the western prolongation of the northern boundary of Wellington Parish; and west by the McLaughlin Road.
+
+(j)
+SAINT-PAUL PARISH.- North by the western prolongation of the northern line of Wellington Parish; east by the McLaughlin Road; west by the Canadian National Railways Line, and southwest by the County line.
+
+(k)
+WELDFORD PARISH.- South by Saint-Paul and Sainte-Marie Parishes; west by the prolongation of a line running north twenty-two degrees west by the magnet of the year one thousand eight hundred and sixty-seven, from a point on the County line between Westmorland and Kent Counties, distant twenty miles from the north point of Shediac Island; east and north by a line beginning at a point on the westerly prolongation of the northern line of Wellington Parish, at the intersection of a line running south from the mouth of Black Brook; thence northerly along said line to the mouth of Black Brook; thence down the East Branch of and the main Saint Nicholas River to the Richibucto River, thence up said river to the west line of lot number 9, granted to William Harley; thence northerly along said line and its northerly prolongation to the rear line of the Richibucto River Indian Reserve number 15; thence by a line running true west to the western boundary of the parish.
+
+(l)
+WELLINGTON PARISH.- South by Dundas Parish; north by Chockpish River and a line running south sixty-eight degrees west from the forks thereof; east by the Gulf of Saint Lawrence; and west by a line commencing where the southerly prolongation of the line between lots U and V, on the Little Buctouche River, strikes the northern boundary of Dundas Parish; thence along the prolongation of the said line north forty-three degrees west to the Little Buctouche River; thence down stream to the westerly line of lot number 7, granted to Joshua White; thence along the said westerly line of said lot to the northwest corner thereof; thence in a direct line to the southeast corner of lot number 13, granted to Michael Basterache, on the south side of the Buctouche River; thence along the eastern line of that lot northerly to the Buctouche River; thence to the mouth of Mill Creek; thence following the course of the said creek up stream to the eastern line of the grant to John W. Holderness, on said creek; thence northerly along that line to the rear line of said grant; thence westerly along said line to the western line of lots granted to Angus Cameron; thence northerly along that line and its prolongation to Mill Creek; thence following the various courses thereof up stream to the eastern line of lot number 101, granted to John McEachran; thence northerly along that line and its northern prolongation to the northern line of lot number 95, granted to John McNairn; thence westerly along the said last mentioned line and its western prolongation to meet the eastern line of lot number 138, granted to George Holder; thence along said eastern line and its prolongation in a northerly direction to the northern line of lot number 110 in Block O; thence along that line in an easterly direction to meet the southern prolongation of the eastern line of lot number 52, granted to John Cochrane; thence along said prolongation and eastern line of said last mentioned grant to the northern line of the parish, including the islands in front.
+
+R.S., c.227, s.21; 1991, c.27, s.41
+
+### 22 - Divisions of Kings County
+
+Source key: section:22
+
+Divisions of Kings County
+
+22KINGS COUNTY is divided into the several divisions hereinafter named and bounded as follows:
+
+(a)
+CARDWELL PARISH.- West by Sussex Parish and the east line of lot number twenty-five, granted to Jacob Snider, on the northern side of the Kennebecasis River, above Smith’s Creek; north by a line running from the northeast angle of said lot north sixty-six degrees east to the County line; east by the County line, and south by a line commencing at the northwestern angle of lot number seven, granted to Simon Armstrong; thence east following the northern side line of the said grant and its prolongation easterly until it reaches the northeastern angle of lot number eighteen, granted to David Law; thence in a direct line to the northwestern angle of lot number eight, granted to Thomas Nicholson, in Lake block; thence along the northern line of said lot number eight and its eastern prolongation to the County line.
+
+(b)
+GREENWICH PARISH.- Northwest by the County line; southwest by Westfield Parish; southeast, east and northeast by the Saint John River including the islands in the Long Reach.
+
+(c)
+HAMMOND PARISH.- Northerly by Sussex and Waterford Parishes; south and east by the County lines, and west by Upham Parish.
+
+(d)
+HAMPTON PARISH.- Northwesterly by the Kennebecasis River and Norton Parish; northeasterly by Norton and Upham Parishes; south by the County line; west by a line commencing at the junction of the Hammond River with the Kennebecasis River; thence along the eastern channel of Hammond River to an island lying between both branches of said river, and marked with the letters A, B, K and I in the grant made to widow Sarah Hunt and others, under the Great Seal of the Province of New Brunswick, bearing date the fifth day of March, one thousand seven hundred and eighty-seven; thence following a base line through said island, and also a base line through a larger adjoining island lying up stream marked C, D, E, F, G and H in said grant, which said lines are the dividing lines between lots number three, four, five and six, in the western division of lots in said grant, and also lots three, four, five and six in the eastern division of lots in said grant; thence following the said Hammond River up stream until it meets the eastern side line of the farm formerly occupied by Lorenzo D. Pierce, in the year one thousand eight hundred and seventy; thence along said line to the base line; thence along said base line until it strikes the eastern side line of the James McCullough farm; thence along that line to the County line, including Darlings Island.
+
+(e)
+HAVELOCK PARISH.- West by Studholm Parish; northwest and east by the County lines, and south by Cardwell Parish.
+
+(f)
+KARS PARISH.- West by the Saint John River; east by the eastern side lines of lots number ten, granted to Richard B. Squires, number one, granted to William McDonald, and number seven, granted to James Peters; and south by Belleisle Bay, including the islands at the mouth of Belleisle Bay.
+
+(g)
+KINGSTON PARISH.- Northwest by Belleisle Bay and Long Reach; southwest by Westfield Parish; southeast by the Kennebecasis Bay and River until it meets the line dividing lots numbered twelve and thirteen in the Kingston grant; thence northerly along said line and easterly along the rear of the said grant to the line between the lots numbered thirty-three and thirty-four therein; thence northwesterly along the prolongation of said line to the Springfield Parish line; thence southwesterly and northerly along said Springfield Parish line to Belleisle Bay, including Long Island, in the Kennebecasis River.
+
+(h)
+NORTON PARISH.- East by Sussex and Studholm Parishes; north by Kingston and Springfield Parishes; south by the Kennebecasis River and the centre of the old Westmorland Road, and west by Kingston Parish and the lower line of lot number fourteen, granted to John Fritch, prolonged southeasterly.
+
+(i)
+ROTHESAY PARISH.- Westerly and northerly by the Kennebecasis Bay and River; easterly by Hampton Parish and southerly by the County line.
+
+(j)
+SPRINGFIELD PARISH.- North by the County line and Kars Parish; west by Kars Parish and the line dividing lots number one and number eighteen, south of Belleisle Bay, and a part of the line dividing lots number fifteen and number sixteen, in the back settlement; south by a line running north sixty degrees east or parallel to the southern base line of the Belleisle Grant, and distant sixty-five chains therefrom, and extending to its intersection with a line running north from the mouth of Halfway Brook and east by a direct line from said intersection to the southeast angle of lot number eleven, granted to Henry A. Scovil in range two of Pascobac Brook lots, thence northeasterly, or in a direct line to the northeast angle of lot letter F, granted to Samuel Foster; thence northeasterly and northerly along the southeastern and eastern line of lot letter V, granted to William S. F. Wilson, to the northeastern angle thereof; thence northeasterly along the southeastern lines of the grant to John Coy and John Good, to a point intersected by the southeastern prolongation of the northeastern line of lot number one, granted to Samuel Kierstead; thence along said prolongation and line and its northwestern prolongation to Queens county line.
+
+(k)
+STUDHOLM PARISH.- West by Springfield Parish and the line running north from the mouth of the Halfway Brook; northwest by the County line; east by the western side line of the grant of nine hundred and ninety-seven acres to Thomas Leonard, the northern prolongation thereof to the County line, and the southerly prolongation thereof to Windgap Brook; thence following the several courses of said brook down stream until it intersects a line running south forty-two degrees thirty minutes east by the magnet of the year one thousand eight hundred and thirty-nine from the southwest angle of lot number one south granted to James Caruth; thence following the said last-mentioned line prolonged to Cardwell Parish, and south by Sussex and Cardwell Parishes.
+
+(l)
+SUSSEX PARISH.- West and south by a line running south from the mouth of Halfway Brook to the Old Westmorland Road; thence easterly in a direct line to a point distant seventy chains on a course north by the magnet of the year one thousand eight hundred and fifteen, from the northeastern angle of lot number one, granted to Samuel DeForest; thence by a line running in a direct course to the northeastern angle of lot fifty-five, granted to William Thompson, on the north side of Shepody Road, until it intersects the eastern side line of lot number thirty, granted to Henry Douglas, or its prolongation; east by the eastern side line of the said grant to Henry Douglas and its northerly prolongation until it strikes Trout Creek; thence up stream to the southwestern angle of lot number seven, granted to Simon Armstrong; thence north, following the western side line of last-mentioned grant and its northerly prolongation to the Kennebecasis River and north by the centre of the Kennebecasis River.
+
+(m)
+UPHAM PARISH.- North by Norton and Sussex Parishes; east by a line commencing at the southeast corner of lot number one, granted to Samuel DeForest, near Cassidy Lake, and running a north and south course from thence; south by the County line, and westerly by a line starting from a point on the County line, where the westerly side line of a three hundred acre lot, granted to Thomas Smith, or its prolongation, meets the said County line, and running northwesterly along the side line of said lot to its most westerly corner; thence a course easterly to the northeasterly angle of a three hundred acre lot granted to Richard E. Armstrong, and thence easterly in a direct line to the northeasterly angle of lot number two, granted to Robert Godfrey; thence northerly by a direct line to the southeasterly angle of lot number six, granted to William Scoullar; thence following the easterly side line of said Scoullar grant to its northeasterly corner on the Hammond River; thence following or crossing the said Hammond River to the southeasterly corner of a five hundred acre lot, granted to Charles Robertson; thence along the easterly side line of said Robertson grant to its northeasterly corner; and thence in a direct line to the northeasterly corner of a two hundred acre lot granted to James Beyea, where is standing a maple tree, and continuing the same course beyond the said maple tree to the Old Westmorland Road.
+
+(n)
+WATERFORD PARISH.- South by a line commencing at the southeast angle of Sussex Parish and running a direct course to the northeastern angle of lot fifty-five, granted to William Thompson aforesaid; thence south eighty-eight degrees east to the County of Albert; east by the County line; north by Cardwell Parish, and west by Sussex Parish.
+
+(o)
+WESTFIELD PARISH.- On the northwest, south and west, by the boundary line of the County; and on the northeast by a line beginning on the County line between Kings and Queens, intersected by the northwestern prolongation of the line dividing lots number twenty-three and number twenty-four at Devils Back, on the Long Reach; thence southeasterly along said prolongation and line to the northwestern shore of the Long Reach; thence southeasterly in a direct line across the Saint John River to the line dividing lots number twenty-five and number twenty-six, granted to Robert and Caleb Merritt; thence southeasterly along said line and its southeastern prolongation to the rear line of lots fronting on the northwest side of Kennebecasis Bay; thence southwesterly along said line to the northeast line of lot number twenty-eight, granted to Dennis Coombe; thence southeasterly along said line and its southeastern prolongation to the County line, including Kennebecasis Island.
+
+R.S., c.227, s.22; 1991, c.27, s.41
+
+### 23 - Divisions of Madawaska County
+
+Source key: section:23
+
+Divisions of Madawaska County
+
+23MADAWASKA COUNTY is divided into the several divisions hereinafter named and bounded as follows:
+
+(a)
+BAKER BROOK PARISH.- Beginning at a point in the International Boundary where it is intersected by the southern prolongation of the west limit of lot No. 83 granted to Augustine Daigle thence in a northerly direction along said prolongation and said limit to its northwest angle or to the northern limit of the lots fronting on the St. John River thence in an easterly direction along the said northern limit of lots fronting on the St. John River to the southeast angle of lot No. 1 east side of Caron Brook thence northerly along the east limit of lots fronting on the east side of Caron Brook to the northeast angle of lot No. 9 granted to Louis Lavoie thence westerly along the north limit of said lot No. 9 to the northeast limit of lot No. 10 E thence northwesterly along said limit of said lot No. 10 E to the southwest angle of lot Letter “D” granted to Thomas Ouellette thence northeasterly along the southeast limit of said lot Letter “D” and lot Letter “C” to the east limit of Range Four Val-Nadeau thence northwesterly along said limit of Range Four to the northeast angle of lot No. 17 in Range Four thence southwesterly along the northwest limit of lot No. 17 to the east limit of Range Five thence northwesterly along said limit of Range Five to the northeast angle of lot No. 33 in Range Five thence southwesterly along the northwest limit of said lot No. 33 to the east limit of lots fronting on the east side of Baker Lake thence northwesterly along said limit to the New Brunswick-Quebec Boundary line thence easterly along said Boundary line to the west limit of Tier Three, Rang-des-Morneault thence southerly along said limit to the northwest angle of lot No. 17 in said Tier Three thence easterly along the northern limit of said lot No. 17 to the east limit of Tier Three aforesaid thence southerly along said limit to the point where it is intersected by the southwest limit of lot No. 58 in Tier Six Riceville thence southeasterly along said limit of said lot No. 58 to the northwest limit of lot No. 51 in said Tier Six thence northeasterly along the northwest limit of lot No. 51 to the northeast limit of Tier Six thence southeasterly along said limit to the most easterly angle of lot No. 19 in Tier Six granted to Onesime Gagnon thence southwesterly along the southeast limit of said lot No. 19 in Tier Six, lot No. 18 in Tier Five, lot No. 95 in Tier Four and lot No. 96 in Tier Three to the southwest limit of said Tier Three thence southeasterly along said limit to the most easterly angle of lot No. 113 in Tier Two thence southwesterly along the southeast limit of said lot No. 113 to the north limit of lots fronting on the St. John River thence southeasterly along said limit to the northeast angle of lot No. 61 granted to Firmin M. Dechene thence southwesterly along the southeast limit of said lot No. 61 and its southern prolongation to the International Boundary thence in a westerly direction along said boundary line to the place of beginning.
+
+(b)
+CLAIR PARISH.- Beginning in the International Boundary at a point where it is intersected by the southern prolongation of the east limit of lot No. 9 Range Two granted to Joseph Nadeau thence along the said prolongation, said limit and its northern prolongation to the northern limit of Range Three north of the St. John River, thence in a westerly direction along said northern limit to a point where it is intersected by the western limit of Range Five west of Baker Lake, thence in a northwesterly direction along said limit to the northwest angle of lot No. 26 in said Range Five, thence northeasterly along the northern limit of last mentioned lot to the west limit of Range Four thence northwesterly along last mentioned limit to the northwest angle of lot No. 43 in Range Four, thence, northeasterly along the northern limit of said lot No. 43 to the west limit of Range Three thence northwesterly along said limit or to the northwest angle of lot No. 42 in Range Three thence in a northeasterly direction along the north west limit of said lot No. 42 to the west limit of Range Two, thence southeasterly along said west limit of said Range Two to the west limit of lots in the Second Tier west of Caron Brook thence along the said western limit to the northwest angle of lot No. 15 granted to Joseph Souci and thence easterly along the north limit of said lot No. 15, lot Letter “I” granted to George Carriveau and the northern limit of the lots fronting on the St. John River to the northwest angle of lot No. 83 granted to Augustine Daigle, thence in a southerly direction along the west limit of said lot No. 83 and its southern prolongation to the International Boundary, thence westerly along the said International Boundary to the place of beginning.
+
+(c)
+LAC BAKER PARISH.- Beginning at a point in the New Brunswick-Quebec Boundary line where it is intersected by the northwesterly prolongation of the west limit of Range Three west of Baker Lake thence southeasterly along said prolongation and said limit of Range Three to the southwest angle of lot No. 40 in Range Three, thence in a northeasterly direction along the southwest limit of said lot No. 40 to the western limit of Range Two thence southeasterly along said western limit of Range Two to the western limit of lots in the Second Tier west of Caron Brook thence along the said western limit to the northwest angle of lot No. 15 granted to Joseph Souci and thence easterly along the northern limit of said lot No. 15, lot Letter “I” granted to George Carriveau and the northern limit of the lots fronting on the St. John River to the southeast angle of lot No. 1 east side of Caron Brook, thence northerly along the east limit of lots fronting on the east side of Caron Brook to the northeast angle of lot No. 9 granted to Louis Lavoie, thence westerly along the north limit of said lot No. 9 to the northeast limit of lot No. 10 E thence northwesterly along said limit of said lot No. 10 E to the southwest angle of lot letter “D” granted to Thomas Ouellette thence northeasterly along the southeast limit of said lot Letter “D” and lot Letter “C” to the eastern limit of Range Four Val-Nadeau thence northwesterly along said limit of Range Four, to the northeast angle of lot No. 17 in Range Four, thence southwesterly along the northwest limit of lot No. 17 to the east limit of Range Five, thence northwesterly along said limit of Range Five to the northeast angle of lot No. 33 in Range Five, thence southwesterly along the northwest limit of said lot No. 33 to the east limit of lots fronting on the east side of Baker Lake, thence northwesterly along the said limit to the New Brunswick-Quebec Boundary line thence westerly along the said boundary line to the place of beginning.
+
+(d)
+MADAWASKA PARISH.- Beginning at a point in the International Boundary where it is intersected by the southeast prolongation of the southwest limit of lot No. 25 fronting on the St. John River granted to Alexander Ouellet, Jr., thence northwesterly along said prolongation and said limit of said lot No. 25 to the rear line of lots fronting on the St. John River, thence northeasterly along the northern limit of lots fronting on the St. John River to the southwest angle of lot No. 118 in Tier Two north of the St. John River granted to Vital Ouellet, thence northerly along the west limit of said lot No. 118 to the north limit of lots in Tier Two north of the St. John River thence easterly along said limit to the west limit of lots fronting on the west side of the Madawaska River, thence northerly along said limit to the northern limit of lot No. 15 granted to Peter St. Ange, thence easterly along said northern limit of lot No. 15 to the western shore of the Madawaska River, thence following the western shore of the Madawaska River downstream to a point where it is intersected by the western prolongation of the southern limit of lot No. 16 east of the Madawaska River granted to Cyprien Michaud, thence easterly along said prolongation and said southern limit of the eastern shore of Iroquois River, thence southerly along the eastern shore of said Iroquois River to the northwestern angle of lot No. 1 granted to Jos. Martin, thence in a southeasterly direction following the western limit of said lot No. 1 and its prolongation to the southeastern angle of lot No. 150, thence in a southwesterly direction following the southeastern limit of said lot No. 150 and its prolongation to the International Boundary, thence in a westerly direction along the said International Boundary to the place of beginning.
+
+Also:- Beginning at a point in Green River where the same is intersected by the northeasterly prolongation of the northwest limit of lot No. 1 north of the St. John River and near the mouth of the Madawaska River granted to John Hart, thence from said place of beginning running in a northeasterly direction along said prolongation to the boundary line between the Counties of Madawaska and Restigouche thence northwesterly along said boundary line to Green River, thence in a southerly direction following the various courses of said Green River to the place of beginning.
+
+(e)
+NOTRE-DAME-DE-LOURDES PARISH.- Beginning at the northwest angle of lot No. 54, granted to Jos. P. Cyr, situated in the Second Tier, east of the St. John River; thence in an easterly direction along the north limit of said lot to a point in the west limit of lot No. 300, granted to Augustus Cote, in Tier Three; thence in a northerly direction along said limit of said lot to the northwest angle of the same; thence in a northeasterly direction along the north limit of said lot to the northeast angle of the same; thence in a northerly direction to the southeast angle of lot No. 52, granted to D. Mazerol; thence in said direction along the east limit of the lots in the Second Tier east of the St. John River to the northeast angle of lot No. 62, granted to Paul Cyr; thence in an easterly direction along the north limit of said lot to the northeast angle of the same; thence in a northerly and easterly direction following the north limit of the lots in Tier Four from lot No. 326 to lot No. 331, both inclusive, to a point where the east limit of the last-mentioned lot intersects the Siegas River; thence in an easterly and southeasterly direction following the various courses of said river upstream to a point where the same intersects the north limit of said lots in Tier Four; thence in an easterly and southerly direction along said limit of said lots to the southeast angle of lot No. 169 northeast, granted to Ed. Dube; thence in a northerly direction along the east limit of said lot to the southwest angle of lot No. 398; thence in an easterly direction along the south limit of said lot to a point in the west limit of lot No. 1, granted to James J. Dube, in Tier Four, Siegas Lake Settlement; thence in a southerly and easterly direction following the said bounds of lots Nos. 1 to 10, in said Tier Four of said Settlement, to the southeast angle of the last-mentioned lot; thence in a northerly direction along the east limit of said lot to a point where the same is intersected by the western prolongation of the north limit of the lots in Siegas Lake Settlement; thence along said prolongation and said limit of said lots to a point in the West limit of lot No. 17, granted to Arsene Durette; thence in a northerly direction along said limit of said lot to a point in the south limit of lot No. 18, granted to D. Fournier, Tier Five, Siegas Lake Settlement; thence in an easterly direction along the south limit of said Tier Five of said settlement to the southeast angle of lot No. 23, granted to Noel Ruest; thence in a northerly direction along the east limit of said lot to a point in the south limit of the Reserved Road between lots in Siegas Lake Settlement; thence in an easterly direction along said limit of said Reserved Road to a point in the east limit of the Third Tract, granted to the New Brunswick Railway Company; thence in a southerly direction along said limit of said tract to a point where the same is intersected by the Eastern prolongation of the south limit of lots Nos. 20 East to 23 East, both inclusive, in aforesaid Tier Five, Siegas Lake Settlement; thence in an easterly direction along said prolongation to a point in the Madawaska-Victoria County Line; thence in a southerly direction along said County Line to a point where the same is intersected by the eastern prolongation of the division line between the Second Tract and the Fourth Tract West, granted to the New Brunswick Railway Company; thence in a westerly direction along said prolongation and said division line to the southeast angle of lot No. 272, granted to A. Dube; thence in a westerly and northerly direction along the base line of the lots in Tier One, south of the Grand River, to the southwest angle of lot No. 218, granted to Wm. Byram; thence in a northerly direction along the west limit of said lot to a point in the southeast bank or shore of aforesaid river; thence in a southwesterly direction along said bank or shore of said river to a point where the same is intersected by the eastern prolongation of the south limit of lot No. 281, granted to Rosomo Violette; thence in a westerly direction along said prolongation and said limit of said lot to the southwest angle of the same; and thence in a northerly direction along the east limit of the Reserved Road located along the base line of the lots fronting on the St. John River to the place of beginning.
+
+(f)
+RIVIÈRE-VERTE PARISH.- All that part of the above described Parish of Saint-Basile, lying easterly of the described lines, namely: beginning at a point on the northern side of the Saint John River in the division line between the lots now owned and occupied by Ubalde Theriault, and Victor R. Cyr, thence following the said division line to the rear line of the St. John River lots, then following said rear line of the St. John River lots in a westerly direction till it strikes the lower line of lot No. 10, granted to James Smith, said lot No. 10 is lying between the rear line of the St. John River lots and Green River, thence following said lower line of Lot No. 10 to the westerly side of Green River, thence across said Green River in a direct line to the southeasterly side of line lot No. 17, granted to Felix Martin, thence following said southeasterly side of said lot No. 17 till it strikes the rear line of lots of the first tier east of said Green River, thence in a northerly direction till it strikes the division line between lots No. 6 and 7 in tier second of said Green River, thence following said last division line till it strikes the rear line of lots in second tier east of said Green River, thence following the division line between lots No. 17 and 18 in the third tier east of said Green River, and thence following the division line between lots 21 and 22 in fourth tier east of said Green River till it strikes the rear line of lots in said fourth tier, thence following the rear line of lots in tier four in a northerly direction by a straight line to the boundary line between the Parishes of Madawaska and Saint-Basile, thence following said division line between the said Parishes of Madawaska and Saint-Basile to the Restigouche County line, thence following the said Restigouche County line to the westerly side of the division line between the Parishes of Sainte-Anne and Saint-Basile, thence following the said last division line to the Saint John River, and thence following up the said Saint John River to the place of beginning.
+
+(g)
+SAINT-ANDRÉ PARISH.- All that part of the former Parish of Saint-Léonard in the County of Madawaska, lying southeasterly of the following described lines, namely: Beginning on the eastern bank or shore of the Saint John River, at the most western angle of lot No. 147, granted to Peter C. Martin, above Powers Creek, thence northeasterly along the northwest line of said lot to the most northern angle thereof, thence southeasterly along the northeastern line of said lot and its southeastern prolongation to the southwest angle of lot No. 1, granted to R. Poitras in the second tier, thence northerly along the western line of said lot to the most northern angle thereof, thence southeasterly along the northeastern line of said lot to the most southern angle of lot number two hundred and eleven granted to O. Bellefleur, junior, in Block R., thence northeasterly along the southeastern line of said lot and its northeastern prolongation to the most eastern angle of lot No. 314 in Block R. aforesaid, thence northwesterly along the northeastern line of said lot to the most western angle of lot No. 12 in the first tract, Saint-Amand, thence northeasterly along the northwestern line of said lot and its northeastern prolongation to the southern line of lot No. 3, on the southern side of Coombes Road, thence easterly along the southern base line of lots fronting on the southern side of Coombes Road to the southeastern angle of lot No. 13 granted to Juliene John, thence northerly along the eastern line of said lot to the northeast angle thereof, thence easterly along the southern line of lot No. 15 granted to Alexander Michaud, to the southeast angle thereof, thence north along the eastern line of said lot to the northeast angle of the same, and thence easterly along the eastern prolongation of the northern line of last mentioned lot to the line dividing the Counties of Madawaska and Victoria.
+
+(h)
+SAINTE-ANNE PARISH.- Beginning at a point in the International Boundary where the same is intersected by the western prolongation of the southern limit of lot No. 99, granted to Andrew Michaud; thence in an easterly direction along said prolongation and said limit of said lot and the easterly prolongation of same to the southwest angle of lot No. 281, granted to Rosomo Violette; thence in a northerly direction along the east limit of the Reserved Road situated along the base line of the lots fronting on the St. John River to the northwest angle of lot No. 54, granted to J.P. Cyr; thence in an easterly direction along the north limit of said lot to a point in the west limit of lot No. 300, granted to Augustus Coté, in Tier Three; thence in a northerly direction along said limit of said lot to the northwest angle of the same; thence in a northeasterly direction along the north limit of said lot to the northeast angle of the same; thence in a northerly direction to the southeast angle of lot No. 52, granted to D. Mazerol; thence in said direction along the east limit of the lots in the Second Tier east of the St. John River to the northeast angle of lot No. 62, granted to Paul Cyr; thence in an easterly direction along the north limit of said lot to the northeast angle of the same; thence in a northerly and easterly direction following the north limit of the lots in Tier Four from lot No. 326 to lot No. 331, both inclusive, to a point where the east limit of the last-mentioned lot intersects the Siegas River; thence in an easterly and southeasterly direction following the various courses of said River upstream to a point where the same intersects the north limit of said lots in Tier Four; thence in an easterly and southerly direction along said limit of said lots to the southeast angle of lot No. 169 northeast, granted to Ed. Dube; thence in a northerly direction along the east limit of said lot to the southwest angle of lot No. 398; thence in an easterly direction along the south limit of said lot to a point in the west limit of lot No. 1, granted to James J. Dube, in Tier Four, Siegas Lake Settlement; thence in a southerly and easterly direction following the said bounds of lots Nos. 1 to 10 in said Tier Four of said Settlement to the southeast angle of the last-mentioned lot; thence in a northerly direction along the east limit of said lot to a point where the same is intersected by the western prolongation of the north limit of the lots in Siegas Lake Settlement; thence along said prolongation and said limit of said lots to a point in the west limit of lot No. 17, granted to Arsene Durette; thence in a northerly direction along said limit of said lot to a point in the south limit of lot No. 18, granted to D. Fournier, Tier Five, Siegas Lake Settlement; thence in an easterly direction along the south limit of said Tier Five of said Settlement to the southeast angle of lot No. 23, granted to Noel Ruest; thence in a northerly direction along the east limit of said lot to a point in the south limit of the Reserved Road between lots in Siegas Lake Settlement; thence in an easterly direction along said limit of said Reserved Road to a point in the east limit of the Third Tract, granted to the New Brunswick Railway Company; thence in a southerly direction along said limit of said Tract to a point where the same is intersected by the eastern prolongation of the south limit of lots Nos. 20 east to 23 east, both inclusive, in aforesaid Tier Five, Siegas Lake Settlement; thence in an easterly direction along said prolongation to a point in the Madawaska-Victoria County line; thence in a northerly direction along said County Line to the point of intersection with the Restigouche County Line; thence in a northwesterly direction along the last-mentioned County Line to a point where the same is intersected by the eastern prolongation of the north limit of the aforesaid Third Tract, granted to the New Brunswick Railway Company; thence in a westerly direction along said prolongation and said limit of said Tract to the northwest angle of the same; thence in a southerly direction along the west limit of said Tract to a point where the same is intersected by the southeast prolongation of the southern limit of lot No. 21, in Tier Nine, Côte-des-neiges; thence in a northwesterly direction along said prolongation said limit of said lot and said limit of lots Nos. 22, Tier Eight, and 123, Tier Seven, of aforesaid Settlement to the southwest angle of the last-mentioned lot; thence in a northerly direction along the west limit of said lot and said limit of lot No. 121 in said Tier Seven to the northwest angle of the last-mentioned lot; thence in a westerly direction crossing the Reserved Road between Tiers Six and Seven and along the south limit of lot No. 118 in said Tier Six to the southwest angle of said lot; thence in a northerly direction along the west limit of said Tier Six to a point where the same is intersected by the eastern prolongation of the division line between lots “I” and “G”, granted to John M. Stevens; thence in a westerly direction along said prolongation and said division line to the Quisibis River; thence in a northerly direction following the various courses of the said river upstream to the southeast angle of lot No. 10, granted to Amable Thibodeau; thence in a westerly direction along the south limit of said lot to the northeast angle of lot Letter “K” granted to John R. Lynch; thence in a westerly direction following the north limit of said lot to the east limit of the Reserved Road located along the base line of the St. John River lots; thence across said Reserved Road to the southeast angle of lot No. 38, granted to Francis Gaudin; thence in a westerly direction along the south limit of said lot and the western prolongation of same to a point in the International Boundary line; and thence in a southerly direction along said International Boundary line to the point of beginning.
+
+(i)
+SAINT-BASILE PARISH.- Southeasterly by Sainte-Anne; northeasterly by the County line; southwesterly by the St. John River; and northwesterly by the lower line of grant numbered eighteen hundred and eight, near the mouth of the Madawaska River, granted to Simon Herbert in the year of our Lord one thousand eight hundred and twenty-five, and its northeasterly prolongation, including the islands in front, and excluding the Ordnance lands at the mouth of the Madawaska River, and all lands lying on the northwestern side of Green River from the mouth of Little Belone Brook at the Second Falls up stream to the Little Forks, except the part thereof heretofore described establishing the Parish of Rivière-Verte.
+
+(j)
+SAINT-FRANÇOIS PARISH.- Beginning in the International Boundary at a point where it is intersected by the southern prolongation of the east limit of lot No. 9, Range Two, granted to Joseph Nadeau thence along said prolongation, said limit and its northern prolongation to the northern limit of Range Three north of the St. John River thence in a westerly direction along said northern limit to a point where it is intersected by the western limit of Range Five west of Baker Lake thence in a northwesterly direction along said limit to the northwest angle of lot No. 26 in said Range Five thence northeasterly along the northern limit of last-mentioned lot to the west limit of Range Four thence northwesterly along last-mentioned limit to the northwest angle of lot No. 43 in said Range Four thence northeasterly along the northern limit of said lot No. 43 to the west limit of Range Three thence northwesterly along said limit of Range Three and its prolongation to the New Brunswick-Quebec Boundary line thence in a westerly direction following the New Brunswick-Quebec Boundary to the International Boundary thence in a southerly and easterly direction following said International Boundary to the place of beginning.
+
+(k)
+SAINT-HILAIRE PARISH.- Beginning at a point in the International Boundary where it is intersected by the southeast prolongation of the southwest limit of lot No. 25 fronting on the St. John River granted to Alexander Ouellet, Jr., thence northwesterly along the said prolongation and said limit of said lot No. 25 to the rear line of lots fronting on the St. John River thence northeasterly along the northern limit of lots fronting on the St. John River to the southwest angle of lot No. 118 in Tier Two north of the St. John River granted to Vital Ouellet thence northerly along the western limit of said lot No. 118 to the north limit of lots in Tier Two north of the St. John River thence easterly along the said limit to a point where it is intersected by the northeast limit of Tier Six in Riceville thence northwesterly along said limit of Tier Six to the southeast angle of lot No. 19 granted to Onesime Gagnon thence southwesterly along the southeast limit of said lot No. 19 in Tier Six, lot No. 18, in Tier Five, lot No. 95 in Tier Four and lot No. 96 in Tier Three to the southwest limit of said Tier Three thence southeasterly along said limit to the southeast angle of lot No. 113 in Tier Two thence southwesterly along the southeast limit of said lot No. 113 to the north limit of lots fronting on the St. John River thence southeasterly along said limit to the northeast angle of lot No. 61 granted to Firmin M. Dechene thence southwesterly along the southeast limit of said lot No. 61 and its southern prolongation to the International Boundary thence in an easterly direction along said International Boundary to the place of beginning.
+
+(l)
+SAINT-JACQUES PARISH.- Beginning on the west side of the Madawaska River at the southeastern angle of lot No. 16 granted to Charles Hughes thence in a westerly direction along the southern limit of said lot No. 16 to the west limit of lots fronting on the west side of the Madawaska River thence in a southerly direction along the said west limit to the north limit of lots in the Second Tier north of the St. John River thence westerly along said northern limit to a point where it is intersected by the northeast limit of Tier Six Riceville thence in a northwesterly direction along said limit of said Tier Six to the northeast angle of lot No. 51 in said Tier Six thence southwesterly along the northern limit of said lot No. 51 to the southwest angle of lot No. 58 thence northwesterly along the southwest limit of said lot No. 58 to the eastern limit of Tier Three of Rang-des-Morneault thence northerly along said limit to the northeast angle of lot No. 17 in Tier Three granted to Jos. P. Nadeau thence westerly along the north limit of said limit No. 17 to the western limit of Tier Three thence northerly along said limit to the New Brunswick-Quebec boundary line thence in an easterly direction along said boundary line to the east limit of lots in Sweeney Settlement thence in a southerly direction and following the various courses of the east limit of Sweeney Settlement to the southeast angle of lot No. 2 in Sweeney Settlement, the front part of which is granted to Marcel Grandmaison thence northwesterly along the southwest limit of said lot No. 2 to the southwest angle of said lot No. 2 thence southerly along the east limit of Tier Three east of the Madawaska River to the northeast angle of lot No. 213 in Tier Three granted to Peter Plourde thence westerly along the northern limit of said lot No. 213 to the east limit of Tier Two thence southerly following the various courses of the east limit of Tier Two to the northeast angle of lot No. 214 in Tier Two granted to P. Couturier thence westerly along the northern limit of said lot No. 214 to the east limit of lots fronting on the east side of the Madawaska River thence southerly along said limit to the southeastern angle of lot No. 16 granted to Cyprien Michaud thence westerly along the southern limit of said lot No. 16 and its prolongation to the western shore of the Madawaska River thence following said shore in a northerly direction upstream to the place of beginning.
+
+Also:- Including all that portion of the County of Madawaska lying between the Green River and the Lake Branch of Green River.
+
+(m)
+SAINT-JOSEPH PARISH.- Beginning at the southwestern angle of lot No. 152 granted to B. Bouchard on the east side of the Rivière Iroquois in Therriault Settlement thence northeasterly following the southeastern limit of lots Nos. 152, 154, 156, 158, lot No. 12 in Tier Three, Therriault, lot No. 160 in Tier Four, lot No. 9 in Tier Five and its prolongation to meet the western prolongation of the north limit of lot Letter “F” west side of the Green River thence along said prolongation and said limit and its eastern prolongation to the east side of the Green River thence following the various courses of the Green River upstream to the southern limit of lot granted to O. Theriault thence following the southern and eastern limit of said lot to the Green River thence following the various courses of the Green River and Lake Branch of the Green River upstream to the New Brunswick-Quebec Boundary line thence in a westerly and southwesterly direction along said boundary line to the east limit of lots in Sweeney Settlement thence in a southerly direction and following the various courses of the east limit of Sweeney Settlement to the southeast angle of lot No. 2 in Sweeney Settlement, the front part of which is granted to Marcel Grandmaison thence northwesterly along the southwest limit of said lot No. 2 to the southwest angle of said lot No. 2 thence southerly along the east limit of Tier Three east of the Madawaska River to the northeast angle of lot No. 213 in Tier Three granted to Peter Plourde thence westerly along the northern limit of said lot No. 213 to the east limit of Tier Two thence southerly following the various courses of the east limit of Tier Two to the northeast angle of lot No. 214 in Tier Two granted to P. Couturier thence westerly along the northern limit of said lot No. 214 to the east limit of lots fronting on the east side of the Madawaska River thence southerly along said limit to the southeastern angle of lot No. 16 granted to Cyprien Michaud thence westerly along the southern limit of said lot No. 16 to the eastern shore of the Rivière Iroquois thence following the various courses of said Rivière downstream to the northwestern angle of lot No. 1 granted to Jos. Martin thence southeasterly following the western limit of said lot No. 1 and its prolongation to the place of beginning.
+
+(n)
+SAINT-LÉONARD PARISH.- Bounded easterly by the Victoria County line; southwesterly by the St. John River and northwesterly by the following described line:
+
+Beginning at a point in the International Boundary line where the same is intersected by the western prolongation of the south limit of lot No. 99, granted to Andrew Michaud; thence in an easterly direction along said prolongation and said limit of said lot, the eastern prolongation of same and the south limit of lot No. 281, granted to Rosomo Violette, and its eastern prolongation to a point in the eastern bank or shore of the Grand River; thence in a northerly direction along said bank or shore of said river to a point where the same is intersected by the west limit of lot No. 218, granted to Wm. Byram; thence in a southerly direction along said limit of said lot to the southwest angle of the same; thence in an easterly and southerly direction following the south limit of Tier One, south of the aforesaid Grand River, to the southeast angle of lot No. 272, granted to A. Dube; thence in an easterly direction along the division line between the Second Tract and the Fourth Tract West, granted to the New Brunswick Railway Company, and the eastern prolongation of same to a point in the aforesaid Victoria County line, including the Islands in front, but excepting therefrom the Parish of Saint-André.
+
+R.S., c.227, s.23; 1987, c.6, s.110; 1991, c.27, s.41
+
+### 24 - Divisions of Northumberland County
+
+Source key: section:24
+
+Divisions of Northumberland County
+
+24NORTHUMBERLAND COUNTY is divided into the several divisions hereinafter named and bounded as follows:
+
+(a)
+ALNWICK PARISH.- North by the County line; west by Bartibog River, from its mouth up to the bridge on Highway 8; thence north to the County line; and southeast by the Gulf of Saint Lawrence and Miramichi Bay, including Sheldrake Island and all the other islands in front north of the principal entrance to Miramichi Bay.
+
+(b)
+BLACKVILLE PARISH.- Southeast by the County line; west by Blissfield Parish; north by Southesk Parish; and east by a line running south twenty-two degrees east; and north twenty-two degrees west from the mouth of Renous River.
+
+(c)
+BLISSFIELD PARISH.- West by Ludlow Parish; north by Southesk Parish; south by the County line; and east by a line running north and south from the mouth of Donnelly Brook.
+
+(d)
+CHATHAM PARISH.- North by the main Miramichi River; southwest by Nelson, and south by Napan River, from its mouth to the northwest angle of lot number thirty-two (Henry Coil); thence south sixty-eight degrees west to Nelson Parish, including Middle Island.
+
+(e)
+DERBY PARISH.- West by Blackville Parish, north by Southesk Parish and the Northwest Miramichi River east by the lower extremity of Beaubears Island and to include the same, and south by the southwest branch of the Miramichi River.
+
+(f)
+GLENELG PARISH.- Southwest by Nelson Parish and the southeasterly prolongation of the northeastern line of Nelson Parish to the northern line of a 100 acre lot granted to John Townley, at the mouth of Big Hovel Brook; thence along the said line of the said grant easterly to Bay du Vin River; thence across the said river to the southern bank thereof; thence down the said Bay du Vin River in an easterly direction to the northwest angle of lot letter C, granted to the rector, church wardens and vestry of Saint Paul’s Church, Chatham; thence southerly along the west line of said lot letter C and the southern prolongation thereof to the Kent county line; northwest and north by Chatham Parish, Napan River, and Miramichi Bay; southeast by the County line; northeast by a line commencing at the mouth of Black River; thence extending up the middle of the said river, following the several courses thereof, to the mouth of Little Black River; thence up the middle of the said Little Black River, following the several courses thereof until it comes to the line separating the property of George Fowlie from the lot number five, granted to Duncan McNaughton, being the upper side line of the said lot numbered five, thence by the said line and the southerly prolongation thereof to the County line.
+
+(g)
+HARDWICKE PARISH.- Southwest by Glenelg Parish; north by Miramichi Bay; and southeast by the County line and the shore of the Gulf of St. Lawrence from Point Escuminac; westwardly to the intersection of the County line between Kent and Northumberland, near the entrance of Escuminac River, including all the islands in front, which are south of the principal entrance to Miramichi Bay.
+
+(h)
+LUDLOW PARISH.- West and south by the County lines; north by Southesk Parish; and east by a line running north and south from the mouth of Big Hole Brook.
+
+(i)
+NELSON PARISH.- Northwest by the Miramichi River and the Southwest Miramichi River; southwest by Blackville Parish; southeast by a line running parallel to the Kent County line and seven miles northwesterly therefrom; and northeast by the southwest line of lot number sixty-one, granted to Wm. Brown, and its southeasterly prolongation.
+
+(j)
+NEWCASTLE PARISH.- East by Alnwick Parish; south by Miramichi River; north by the County line; and west by a line running north from the southeast angle of lot number five, granted to Oliver Willard, at Oxford Cove.
+
+(k)
+NORTHESK PARISH.- East and northeast by Newcastle Parish and the County line; north and west by the County lines; south and southwest by the northwest Miramichi River from the Newcastle Parish line up stream to the mouth of the Little Southwest Miramichi; and thence by a line running north forty-five degrees west from the mouth of the Little Southwest Miramichi to the County line.
+
+(l)
+ROGERSVILLE PARISH.- Northwest by Nelson Parish; northeast by Glenelg Parish; southeast by the County line; and southwest by Blackville Parish.
+
+(m)
+SOUTHESK PARISH.- Beginning at the northwest angle of the lot of land at Beaubears Point granted to the St. James Church of Scotland; thence westerly in a direct line, a distance of one hundred and sixteen chains or to the southeast angle of the northwest part of Lot Letter C, conveyed by Thomas Young and wife to William Goodfellow, by deed dated October 30th, 1922, (Registered Northumberland County Records Vol. 110 pages 434-435); thence in a westerly direction along the southern limit of said part of said lot to the southwest angle thereof; thence in a northerly direction along the western limit of the said lot to the southern limit of Williamstown or Kelly Road; thence in a westerly direction along said limit to the western limit of Lot Letter E, granted to James Oxford; thence in a northerly direction along said limit to the southern limit of Lot Number Thirteen, granted to Matthew Oxford; thence in a southwesterly direction along said limit to the most southerly angle of said lot; thence in a northwesterly direction along the southwestern limit of said lot and its prolongation to the most northerly angle of Lot Letter F, granted to Jared Betts; thence in a southwesterly direction along the north limit of said lot to its northwest angle; thence in a southerly direction along the west limit of said lot to the northern limit of lots fronting on the southwest Miramichi River; thence in a westerly direction along said limit to the easterly limit of lot Number One, granted to John Clark; thence in a northerly direction along said limit to the northeast angle of said lot; thence in a westerly direction along the northern limit of said lot and its prolongation to the northwest angle of Lot Number Two granted to Hannah Mullany; thence in a southerly direction along the western limit of said lot to the northeast angle of Lot Letter K, granted to John McIntire; thence in a westerly direction along the northern limit of said lot to its northwest angle; thence in a southerly direction along the western limit of said lot to the northeast angle of Lot Number Two, granted to William Smith; thence in a westerly direction to the southeast angle of the lot granted to William A. Bryenton; thence in a northerly direction along the eastern limit of said lot to its northeast angle; thence in a westerly direction along the northern limit of said lot to its northwest angle; thence in a southerly direction along the western limit of said lot to the northern limit of Lot Number Forty-one, granted to Timothy Crocker; thence in a westerly direction along said limit to the eastern limit of Lot Number Four, granted to Patrick Lawlor; thence in a northerly direction along said limit and said limit of Lot Number Five, granted to Rowland Crocker to the northeast angle of the last-mentioned lot; thence in a westerly direction along the northern limit of said lot to its northwest angle; thence westerly in a direct line to the northeast angle of the Elm Tree Tract, granted to William Davidson; thence in a westerly direction along the northern limit of said lot and its prolongation to intersect the northerly prolongation of the line run by H. E. Tait, New Brunswick Land Surveyor, in the year 1948, as part of the line dividing the Parish of Blackville from the Parishes of Derby and Nelson; thence northerly along the said prolongation to a point distant five hundred and thirty-seven chains measured northerly along said line and said prolongation from the centre line of the Canadian National Railway; thence by a true or Astronomic Bearing south seventy-two degrees and twenty minutes west to the County Line; thence in a northwesterly direction along the County Line to the southwestern limit of the Parish of Northesk; thence in a southeasterly direction along said limit to the Northwest Miramichi River; and thence in an easterly direction down stream to the place of beginning.
+
+R.S., c.227, s.24; 1953, c.81, s.1; 1954, c.83, s.2
+
+### 25 - Divisions of Queens County
+
+Source key: section:25
+
+Divisions of Queens County
+
+25QUEENS COUNTY is divided into the several divisions hereinafter named and bounded as follows:
+
+(a)
+BRUNSWICK PARISH.- Southeast, east and northeast by the County lines; west by Johnston Parish, and northwest by the northeasterly prolongation of the northwest line of Johnston Parish.
+
+(b)
+CAMBRIDGE PARISH.- Beginning on the northeastern shore of the Saint John River, at the southeast angle of lot number sixteen, granted to Isaac Gilbert; thence following the course of the lower or southeastern line of said lot numbered sixteen northeasterly until it meets the waters of the Grand Lake; thence by the waters of the Grand Lake to the road leading from Mill Cove on the said lake, to Fowlers Cove on the Washademoak Lake; thence southeasterly by said road to Washademoak Lake; thence southwesterly by the waters of the Washademoak Lake and through the Colwells Creek and Lawson Passage to the Saint John River; and thence following the shore of the Saint John River up stream to the place of beginning.
+
+(c)
+CANNING PARISH.- Northeast by Chipman Parish; northwest by the County line; southwest by the Saint John River, and southeast by Cambridge and Waterborough Parishes.
+
+(d)
+CHIPMAN PARISH.- Northwest and northeast by the County lines; southwest by a line beginning on the Sunbury County line, intersected by the northern line of lot number nine on the eastern side of the Hardwood Ridge Road; thence easterly along said line to the northeast angle of said lot; thence south forty-five degrees east to Salmon Bay; thence southeasterly in a direct line to Indian Point; thence easterly up the northeast arm of Grand Lake to Coal Creek; thence easterly up Coal Creek to the southeast angle of lot number one, surveyed for Malcolm Carmichael, at the Round Turns on said Coal Creek; thence northeasterly parallel to the northwest line of Brunswick Parish to the County line.
+
+(e)
+GAGETOWN PARISH.- Northwest by the County line; southwest by Petersville Parish; northeast by the Saint John River; south and southeast by a line beginning on the western shore of the Saint John River at the northeast angle of lot number thirty-seven, granted to George Sweet; thence westerly along the northwest angle of same; thence south fifty-two degrees west, or to the southeast angle of lot number twenty-five, granted to T.T. Hewlett, on the northwestern side of the Gagetown Road, including Grimross Island.
+
+(f)
+HAMPSTEAD PARISH.- Northwest by Gagetown Parish; southwest by Petersville Parish; southeast by the County line and by the Saint John River, including Upper Musquash Island and Spoon Island and the western half of Long Island to be determined by a line running lengthwise through the centre of the island from the head to the foot of the same.
+
+(g)
+JOHNSTON PARISH.- Southwest by Wickham and Cambridge Parishes; northwest by the prolongation of a line running north fifty-four degrees east by the magnet of the year one thousand seven hundred and eighty-six, from the west angle of the grant to Samuel Hughes, at Lower Cambridge; east by the east line of lot number eleven, granted to A.C. Starrit, on the north side of the Canaan River above Coles Island and its northern and southern prolongation, and southeast by the County line.
+
+(h)
+PETERSVILLE PARISH.- Being all that part of the County southwest of a line beginning where the road from Jones’ mill crosses the County line; thence northerly along the said road to the northwest line of lot number one, granted to John Short; thence northeasterly along the same to the northeast line of lot number five, granted to Sylvanus Haviland; thence northwesterly along the same and its northwestern prolongation to the southeast line of lands granted to James Corbett; thence northeasterly along the same to the southwest line of the grant to Henry Appleby; thence northwesterly along the same to the Gagetown Road; thence northeasterly along the same to the northeast line of lot number twenty-five, granted to T.T. Hewlett, and thence northwesterly along the same and its northwestern prolongation to the Sunbury County line.
+
+(i)
+WATERBOROUGH PARISH.- Southeast by Johnston and Brunswick Parishes; northeast by the County line; northwest by Chipman Parish and a line along the centre of Grand Lake from the mouth of Coal Creek to Mill Cove, and southwest by Cambridge Parish.
+
+(j)
+WICKHAM PARISH.- Southeast by the County line; west by the Saint John River; northwest by Cambridge Parish; and northeast by the centre of the road leading from Washademoak Lake to Springfield, including the Lower Musquash and Hog Islands, and the eastern half of Long Island, to be determined by a line running lengthwise through the centre of the island, from the head to the foot of the same.
+
+R.S., c.227, s.25
+
+### 26 - Divisions of Restigouche County
+
+Source key: section:26
+
+Divisions of Restigouche County
+
+26RESTIGOUCHE COUNTY is divided into the several divisions hereinafter named and bounded as follows:
+
+(a)
+ADDINGTON PARISH.- West by Eldon Parish; north by the Province of Quebec; south by the Northumberland County line; and east by a line running true south from the most eastern point of the western side of the mouth of Walkers Brook, including all the islands in front in the Restigouche River which belong to this Province.
+
+(b)
+BALMORAL PARISH.- West by Addington Parish; north by Dalhousie Parish; south by Northumberland County line, and east by the southern prolongation of the eastern line of Dalhousie Parish.
+
+(c)
+COLBORNE PARISH.- West by Dalhousie and Balmoral Parishes; south by the County line; east by a line running true south from the mouth of Benjamin River, and north by Chaleur Bay including Heron Island and all the other islands in front.
+
+(d)
+DALHOUSIE PARISH.- West by Addington Parish, north by the Restigouche River; east and south by a line beginning on the east side of Eel River Gully, at the forty-eight mile post placed on the great road leading from Bathurst to Dalhousie, thence running true south to the southwest limit of Lot Number Five, fronting on Chaleur Bay, granted to Sebastian Doucett, thence in a northwesterly direction following the southwest limits of Lots Numbers Five, Four, Three, Two and One, and said limits of Lots Letters “O”, “N”, “M”, “L” and “K” to the most westerly angle of the last mentioned lot; thence in a northeasterly direction along the northwest limit of said lot to the most easterly angle of the 100 acre lot granted to Archibald Chisholm; thence in a westerly, southerly, westerly and southerly direction following the bounds of said lot to the southeast angle of Lot Number Five, Eel River Crossing, granted to William Searls; thence in a westerly direction along the south limit of said lot and its prolongation to the east limit of Lot Number Seventy-two, Range One, Balmoral, granted to Robert Good; thence in a northerly direction along said limit to the northeast angle of said lot; thence in a westerly direction along the northern limit of Range One, Balmoral, to the Addington Parish Line, including all the islands in front.
+
+(e)
+DURHAM PARISH.- East and south by the County lines; west by Colborne Parish, and north by Chaleur Bay including all the islands in front.
+
+(f)
+ELDON PARISH.- Northerly by the Province of Quebec Boundary line, easterly by a line beginning on the southern bank or shore of Restigouche River at the northwest angle of lot number twenty-two, granted to George Firth below Metapedia, thence southerly along the western line of said lot and its prolongation to the northeast angle of lot number one, in Dawsonville, thence continuing southerly along the eastern line of said lot number one and its southern prolongation, to the southeast angle of lot number two (Thomas Gracie) and thence true south to the County limits; southerly by the County line and westerly by a straight line extending from the Province of Quebec Boundary line in the Restigouche River, at the mouth of Upper Thorn Point Brook to Whites Brook railway station on the Canadian National Railways, and thence prolonged southerly to the Victoria County Boundary line.
+
+(g)
+GRIMMER PARISH.- Southerly by the southern boundary line of lot number twenty-five, granted to Paul Berube, in Range 6, Rang-Double-Sud, and the prolongation of said boundary line easterly to the Parish of Eldon, and westerly to a point on the bank or shore of the Restigouche River. West by a straight line drawn due north astronomically from the said last-mentioned point to the southern boundary line of the Province of Quebec. Northerly by said Province and easterly by the Parish of Eldon.
+
+(h)
+SAINT-QUENTIN PARISH.- On the north by the Parish of Grimmer and the Province of Quebec; on the west by the Province of Quebec; on the southwest by the Counties of Victoria and Madawaska, and on the east by the Parishes of Grimmer and Eldon.
+
+R.S., c.227, s.26; 1956, c.64, s.2
+
+### 27 - Divisions of Saint John County
+
+Source key: section:27
+
+Divisions of Saint John County
+
+27SAINT JOHN COUNTY is divided into the several divisions hereinafter named and bounded as follows:
+
+(a)
+CITY OF SAINT JOHN.- Beginning at the western extremity of the eastern head of the entrance to Musquash Harbour, and thence true North on a line to its intersection with the westerly prolongation of the north line of the County of Saint John as defined in section 12 of the Territorial Division Act; thence northeasterly along the aforementioned north line to its intersection with the division line between the lands granted by the Crown to Ward Chipman and Odina Paddock; thence southeasterly along the said division line and its prolongation southeasterly along the division line between the lands granted by the Crown to Morris Whooten and Hon. George Leonard, across Loch Lomond and along the division line between the lands granted to John Jordan and Henry Trophegar Jr. to a point 1000 feet distant northwesterly thereon from the southeasterly boundary of the aforementioned lands of John Jordan and Henry Trophegar Jr.; thence on a line northeasterly and parallel to the aforementioned southeasterly boundary line to its intersection with the northwesterly prolongation of the division line between Crown Grant Lots 27 and 28 in the African Grant Subdivision, so-called, respectively granted to J. Reed and J. McGuire; thence southeasterly along the said northerly prolongation of the aforementioned division line to a point thereon 300 feet perpendicularly distant southeasterly from the northerly prolongation of the southeasterly limit of the right-of-way of Range Road; thence southwesterly along a line 300 feet perpendicularly distant easterly from the southeasterly limit of the right-of-way of Range Road and the northerly prolongation thereof to its intersection with the division line between Crown Grant Lots 8 and 9 in the aforementioned subdivision respectively granted to Edward Grant and Samuel Gardner; thence westerly along the aforementioned division line to the division line between the African Grant Subdivision and the land granted to Francis Gilbert; thence southwesterly along the last mentioned division line being also the southeasterly boundary of the land of Francis Gilbert to the division line between the lands granted by the Crown to the said Francis Gilbert and George Bell; thence northwesterly along the said division line to the centre of the Mispec River; thence along the centre line of the Mispec River and the various courses and configurations to its mouth at Mispec Bay; thence in a southwesterly direction along and following the shore of Mispec Bay to Mispec Point and thence continuing northwesterly along and following the shore of the Bay of Fundy and Courtenay Bay to a point distant 20 feet south of the centre line of the Courtenay Causeway, so-called, or its easterly prolongation, which said centre line is described in Schedule A of Chapter 161 of 9 Elizabeth II, 1960; thence westerly parallel to the said centre line and maintaining a distance of 20 feet southerly therefrom to the middle of the mouth of Marsh Creek at low water or to where it intersects the eastern boundary of the City of Saint John as described in clause (a) of section 27 of the Territorial Division Act, R.S., 1952, c.227; thence south to a point bearing east from the southern extremity of Partridge Island at low water; thence west to the said point and continuing along low water mark to the western extremity of Partridge Island; thence northwesterly in a direct line to the point on the shore at the southeasterly extremity of the southwesterly limit of the street known as City Line; thence in a southwesterly direction along and following the shore of the Bay of Fundy and its various Coves and Harbours to the place of beginning.
+
+(b)
+MUSQUASH PARISH.- All that part of the County which lies west of the City of Saint John.
+
+(c)
+SAINT MARTINS PARISH.- All that part of the County lying to the eastward of Simonds Parish.
+
+(d)
+SIMONDS PARISH.- All that part of the County bounded south by the Bay of Fundy, west by The City of Saint John, north by the Kings County line, and east by the eastern line of lot number one, granted to Samuel Hugh, at Tynemouth Creek, and the northern prolongation thereof.
+
+R.S., c.227, s.27; O.C. 66-1053
+
+### 28 - Divisions of Sunbury County
+
+Source key: section:28
+
+Divisions of Sunbury County
+
+28SUNBURY COUNTY is divided into the several divisions hereinafter named and bounded as follows:
+
+(a)
+BLISSVILLE PARISH.- South and southeast by the County lines; northeast by Burton Parish, and west and northwest by a line beginning on the western bank or shore of the Oromocto River, where the dividing line between the Parishes of Blissville and Burton intersects the same, thence following the various courses of the said river up stream to the main forks; thence following the various courses of the south branch of the said river up stream to the northeast angle of lot thirteen, granted to Nathaniel Hubbard, about one mile above the forks; thence westerly along the northern line of said lot to the northwest angle thereof; thence southerly along the rear line of said lots fronting on western side of said south branch to the old Block House Road; and thence south sixty-seven degrees west to the Charlotte County line.
+
+(b)
+BURTON PARISH.- Southeast by the County line; southwest by the prolongation southeasterly of the southwest line of Lincoln Parish to the Queens County line; northwest by the Oromocto River and northeast by the Saint John River, including Gilbert and Ox Islands.
+
+(c)
+GLADSTONE PARISH.- All that part of the County to the southwest of the Saint John river, not included in the parishes of Burton, Lincoln and Blissville.
+
+(d)
+LINCOLN PARISH.- Northwest by the County line; northeast by the Saint John River; southeast by the Oromocto River; and southwest by a line running north sixty-six degrees west from the most southern point of Geary Block, including Thatch Island.
+
+(e)
+MAUGERVILLE PARISH.- Southwest by the Saint John River; northwest and northeast by the County lines, and southeast by the lower line of lot numbered four, granted to Nathaniel Underhill and D. Palmer, junior, and its northeastern prolongation, including Oromocto Island.
+
+(f)
+NORTHFIELD PARISH.- Southeast and northeast by the County lines; northwest by Maugerville Parish; and west by Sheffield Parish.
+
+(g)
+SHEFFIELD PARISH.- Southeast by the County line; east by the westerly side line of lot numbered nine in the New Zion Settlement granted to Gideon Corey, and its northerly and southerly prolongations; northwest by Maugerville Parish, and southwest by the Saint John River, including Middle Island.
+
+R.S., c.227, s.28
+
+### 29 - Divisions of Victoria County
+
+Source key: section:29
+
+Divisions of Victoria County
+
+29VICTORIA COUNTY is divided into the several divisions hereinafter named and bounded as follows:
+
+(a)
+ANDOVER PARISH.- South and west by the County lines; east by the Saint John River and north by the Aroostook River.
+
+(b)
+DENMARK PARISH.- Westerly and northwesterly by the Saint John River and a line beginning on the eastern bank or shore of the Saint John River at the most southern angle of a tract of land granted to Lyman Whitehead near the mouth of the Salmon River, thence following the southeastern and northeastern sidelines of said tract of land and the southeastern sideline of the John King tract in a northeasterly direction to where it intersects the aforementioned Salmon River, thence following the various courses of the said Salmon River upstream to where it intersects the sideline between lot number one hundred thirty-two (132), granted to Michael Parron and lot number one hundred thirty-four (134), granted to G.C. Poitras in Block fifty-two (52), thence northeasterly along the last mentioned sideline and its prolongation to the southwest line of lot number seventeen (17) in Range Three (3), thence northwesterly to the most westerly angle of said lot seventeen (17), thence northeasterly along the base line of said lot and its prolongation to the southwesterly line of the first tract of land granted to the New Brunswick Railway Company, thence northwesterly along the line of the said tract to the point where the prolongation of the most easterly boundary line of the Fourth Tract of the said New Brunswick Railway Company land meets the said southwesterly line of the First Tract aforesaid, thence northeasterly along the said prolongation of the most easterly boundary of the Fourth Tract, the said most easterly boundary itself, and the further prolongation thereof to the southwesterly limit of Restigouche County; northeasterly by Restigouche County; easterly by Lorne and Gordon Parishes; and south by Perth Parish.
+
+(c)
+DRUMMOND PARISH.- West by the Saint John River and Madawaska County, northeasterly by Restigouche County; easterly by Lorne Parish and southerly by Denmark Parish; except that portion thereof which is within the limits of the Town of Grand Falls.
+
+(d)
+GORDON PARISH.- Southerly and southeasterly by Carleton and York Counties; easterly by Northumberland County; north by a line run true east and west from the foot of Long Island, in the Tobique River; and westerly by a line commencing at a point where the Royal Road intersects the line between the counties of Carleton and Victoria; and running along the said Royal Road northerly to a point eight miles north of the Tobique river; thence a course north forty-five degrees east, until it strikes the north boundary of the parish.
+
+(e)
+GRAND FALLS PARISH.- South by Andover Parish; north and east by the Saint John River; and west by the County line, except that part of the area contained within the above limits which is included in (80a).
+
+(f)
+GRAND FALLS TOWN.- The area contained within the town of Grand Falls as bounded and described in section 1 of the Act 53 Victoria c. 73, as follows: “The Town plat of Colebrooke (so called) and the Stewart grant (so called) in the Parish of Grand Falls, and the Mill lease of the War Department lands (so called) in the Parish of Drummond.”
+
+(g)
+LORNE PARISH.- Northeasterly and northerly by Northumberland and Restigouche Counties; south by Gordon Parish; and northwesterly by the prolongation to the county of Restigouche of the line forming the northwesterly boundary of Gordon Parish, which runs a course north forty-five degrees east from the point on the Royal Road eight miles north of the Tobique River.
+
+(h)
+PERTH PARISH.- West by the Saint John River; north by a line run true east from the northwest angle of the Tobique Indian Reserve; east by Gordon Parish; and south by the County line.
+
+R.S., c.227, s.29
+
+### 30 - Divisions of Westmorland County
+
+Source key: section:30
+
+Divisions of Westmorland County
+
+30WESTMORLAND COUNTY is divided into the several divisions hereinafter named and bounded as follows:
+
+(a)
+BOTSFORD PARISH.- Northeast by Northumberland Strait, south by Baie Verte; west by Westmorland County and a line running magnetic south by the year eighteen hundred and twenty-four to Cumberland grant line, or its northerly prolongation from the northeast angle of a tract of fourteen hundred acres, granted to Thomas Doiron and others, at the mouth of Tedish River.
+
+(b)
+DORCHESTER PARISH.- West by Petitcodiac River; north by a line running by the magnet of eighteen hundred and ninety-four; south eighty-three degrees and forty-five minutes east from the mouth of Fox Creek; east by the southeast line of lot numbered one (John Sherwood) and the prolongation thereof two hundred and fifty chains from the sea; thence north eleven degrees east by the magnet of the year seventeen hundred and sixty-five.
+
+(c)
+MONCTON PARISH.- East by Shediac Parish; north by the County line, west by that part of the east line of the grant to Martin Gay and associates, which lies north of Petitcodiac River; and the northerly prolongation thereof, to the County line; southerly by the Petitcodiac River and Dorchester Parish.
+
+(d)
+SACKVILLE PARISH.- North by the north line of Dorchester Parish prolonged easterly to a point of intersection of the Cumberland grant line, which runs north thirty degrees and thirty minutes west by the magnet of eighteen hundred and sixty seven from the southeast angle of lot number one, granted to Otho Reed, at the mouth of Gaspereau Creek; west by Dorchester Parish and Chignecto Bay; south and east by Cumberland Basin and the Aulac River, from its mouth to the upper line of the Sackville grant; thence by a line running north by the magnet of the year seventeen hundred and sixty-five to a point on the said line one hundred and two chains southerly from where the road through Midgic leaves the said line at Edwin Dixon’s gate; thence running north fifty-seven degrees and thirty minutes east by the magnet of eighteen hundred and eighty to the channel of Big Jolicure Lake; thence along the said channel and main brook up stream to the prolongation southwestwardly of the southeast line of David Wheaton’s mill lot; thence along the said prolongation and line to the east angle of said Wheaton’s mill lot; thence north forty-five degrees east to the Botsford Parish line; northeast by Botsford Parish.
+
+(e)
+SALISBURY PARISH.- North, west and south by the County lines; and east by Moncton Parish and the County of Albert.
+
+(f)
+SHEDIAC PARISH.- East by Botsford Parish, northeasterly by Northumberland Strait and the County line; south by Dorchester and Sackville Parishes, and west by the prolongation of the west line of the grant to Columb Connor on Shediac Road.
+
+Notwithstanding anything contained in paragraphs (a) and (f), the dividing line between the Parishes of Botsford and Shediac shall be as follows: Beginning on the line separating the farms of the late Fidele LeBlanc (now called the Jude Boudreau farm) and lands formerly owned by Stephen Burk, where the said line crosses the main post road at Cap-Pelé, and following said farm line and its prolongations north four degrees and thirty minutes east by the magnet of the year nineteen hundred and three to the shore of Northumberland Strait, and also from said place of beginning south along said farm line and its prolongations four degrees and thirty minutes west to the Cumberland grant line.
+
+(g)
+WESTMORLAND PARISH.- Southeast by the Province limits; west by Sackville Parish; east by the Cumberland Grant line aforesaid and Baie Verte.
+
+It is hereby enacted and declared that the boundaries of the various divisions in the County of Westmorland, hereinbefore set out, are and shall be deemed to have been since the said parishes were respectively established the correct and legal boundaries thereof.
+
+R.S., c.227, s.30
+
+### 31 - Divisions of York County
+
+Source key: section:31
+
+Divisions of York County
+
+31YORK COUNTY is divided into the several divisions hereinafter named and bounded as follows:
+
+(a)
+BRIGHT PARISH.- Northwest by the County line; northeasterly by Douglas Parish; southeasterly by the Saint John River, and southwesterly by the northeast line of lot number fifty-nine, granted to Jonathan Williams, and its northwesterly prolongation to the County line.
+
+(b)
+CANTERBURY PARISH.- Southeast by Dumfries and McAdam Parishes; northeasterly and northerly by the Saint John River and Eel River; west by Eel River, where Bull Creek enters the same; thence up Eel River through the first, second and third lakes to the head of the last mentioned lake; thence in a direct line southeasterly to the head of the La Coote Lake; thence through said lake and down La Coote Stream and the main Palfrey Stream to the McAdam Parish line including Fall Island in the Saint John River.
+
+(c)
+CITY OF FREDERICTON.- Beginning at a post standing on the bank or shore of the St. John River in the division line of grants to the Rector Church Wardens, and Vestry of Christ’s Church, Fredericton, the Governor and Trustees of the College of New Brunswick, and the grant to Stephen Jarvis and seventy-one others, commonly known as the Kingsclear Grant, thence south 39 degrees and 30 minutes west along the said division line, as retraced by Deputy Archibald McLaughlin in 1949, 254.03 chains to a cedar post and stones placed by Deputy Wilson in the year 1908, and in the same position as a hemlock stub marked “AR” in the original survey, and at the most northerly corner of Lot No. 2 granted to John M. Bliss in the grant to W.F. Odell and twenty others, 12th June, 1806, thence south 25 degrees and 25 minutes east 115.05 chains to a cedar post standing on the western side line of the Maryland Road, so called, in the division line of the said grants to W.F. Odell aforesaid and the Governor and Trustees of the College of New Brunswick, thence continuing in the same direction south 25 degrees and 25 minutes east 116 chains to a tamarack post placed by Deputy Wilson in 1908, thence continuing south 25 degrees and 25 minutes east, 178 chains more or less or to a stake standing in the division line between the Counties of York and Sunbury, thence north 53 degrees and 40 minutes east along the said county line 275 chains more or less to a post standing on the southwestern bank of the St. John River, (said post being 3.75 chains southeast from the Adams & Segee line as run by Deputy Jouett in 1847), thence continuing in the same direction across the St. John River to the high water mark on the northeastern bank thereof; thence along the said high water mark along the said bank up stream to the western bank or shore of the Nashwaak River so called, thence along the said western bank of the said Nashwaak River up stream to the upper side line of the William Lewis’ lot (so called) the same being the southwesterly side line of the Town of Marysville, thence north 0 degrees and 45 minutes west by the magnet of the year 1950 along the said William Lewis upper side line crossing the highway leading from Fredericton to Marysville and following the said William Lewis upper side line or its prolongation to a point 19.06 chains beyond the point of intersection of the said William Lewis line with the centre line of the said highway, thence north 36 degrees and 15 minutes west as run by Deputy Ralph Hanson in the year 1944 to the western side line of lot No. 31 Letter D in the grant to the Maryland Loyalists, thence southwesterly along the northwestern side line of the said lot 31 to the highwater mark on the St. John River before mentioned, thence along said highwater mark of said river following the various sinuations thereof up stream to a point in the northeasterly prolongation of the first described line, thence south 39 degrees and 30 minutes west along the said northeasterly prolongation across the river to the place of beginning.
+
+Containing 23.5 square miles, excluding the area of the water of the St. John River.
+
+(d)
+DOUGLAS PARISH.- South and southeast by the Saint John River and the City of Fredericton; west by a line commencing at the mouth of the Keswick River; thence following the various courses of the said Keswick River up to the mouth of the Howard Brook; thence by the magnet of the year one thousand eight hundred and sixty-nine north forty degrees west till it strikes the County line; northwest by the County line, and east by Stanley and Saint Marys Parishes, including Upper Shores, Lower Shores, Mitchells, Merrithews and Keswick Islands, and the north range of lots, comprising lots number one to number nine, inclusive, and number thirty-seven to number seventy-one, inclusive, on Sugar Island.
+
+(e)
+DUMFRIES PARISH.- Southeast by Prince William Parish; northeast by the Saint John River; west and northwest by the upper sideline of lot numbered six, granted to John Benn, and a line running southwesterly from the southwest angle thereof, parallel to the upper line of Prince William Parish; and southwest by eastern lines of the grants to the New Brunswick and Canada Railway and Land Company, east of the Canadian Pacific Railroad, being commonly called “The Belt Line,” and the said Belt Line being continued northerly as surveyed by Deputy Alfred Whitehead, in the year one thousand eight hundred and fifty-nine.
+
+(f)
+KINGSCLEAR PARISH.- North by the Saint John River; southeast by the City of Fredericton and New Maryland Parish; southwest by Manners Sutton Parish, and northwest by the lower line of lot numbered one, granted to Francis Horsman, and its southwesterly prolongation, including all the islands in front, with the exception of Upper Shores, Lower Shores, Mitchells, Merrithews and Keswick Islands, and the north range of lots, comprising lots number one to number nine inclusive, and lots number thirty-seven to number seventy-one inclusive, on Sugar Island, which form part of the Parish of Douglas.
+
+(g)
+MANNERS SUTTON PARISH.- Northeast by a line running south forty-five degrees east to New Maryland Parish, and north forty-five degrees west to Lake George from the most southern angle of lot number seven, granted to James Taylor, on the northwestern side of the road from Fredericton to Saint Andrews; northwest by a line beginning at the southeastern shore of Lake George, at the intersection of the aforesaid line; thence running southwesterly parallel to the Sunbury County line to the Charlotte County line; south by the County line and southeast by New Maryland Parish.
+
+(h)
+MCADAM PARISH.- East by Dumfries and Prince William Parishes; southeast by Manners Sutton Parish; south and southwest by the County line and the International Boundary; northwest by the southwesterly prolongation of a line running southwesterly and parallel to the upper line of Prince William Parish from the southwest angle of lot number six, granted to John Benn below Shogomoc Stream.
+
+(i)
+NEW MARYLAND PARISH.- Northeast by the City of Fredericton; southeast and southwest by the County lines and northwest by a line running southwesterly and parallel to the Sunbury County line from the most westerly angle of the City of Fredericton.
+
+(j)
+NORTH LAKE PARISH.- Easterly and southeasterly by Canterbury and McAdam Parishes; southwesterly and west by the International Boundary and north by the County line.
+
+(k)
+PRINCE WILLIAM PARISH.- Southeast by Kingsclear and Manners Sutton Parishes; southwest by the eastern lines of the grants to the New Brunswick and Canada Railway and Land Company, east of the Canadian Pacific Railroad, said lines being commonly called, “The Belt Line,” northwest by the lower line of lot numbered one hundred and forty-three, granted to the rector, church wardens and vestry of Saint Clement’s church, in said parish, and its southwesterly prolongation; northeast by the Saint John River.
+
+(l)
+QUEENSBURY PARISH.- Northeast by Bright Parish; south and southwest by the Saint John River; and northwest by a line commencing at the Saint John River, at the southern angle of lot number one, granted to Joseph Cunliff, near the mouth of the Nackawic Stream; thence running northeasterly along the lower or southeastern line of said lot and its prolongation until it strikes the southwestern line of land granted to William Dobie, in Caverhill; thence northwesterly along the said line of said grant and its prolongation till it strikes the southeastern line of a grant to Henry Morehouse and three others; thence northeasterly along the line of said grant to its eastern angle; thence northwesterly along the northeast side of the said grant till it strikes the East Branch Nackawic Stream; thence following the course of the said river up stream to the forks at the mouth of the Burtt Lake Branch and thence following the course of the said Burtt Lake Branch up stream till it strikes the line of the parish of Bright.
+
+(m)
+SAINT MARYS PARISH.- South by the City of Fredericton as now bounded; west by Stanley Parish and a line to commence at the most western angle of lot numbered thirty-one, letter D, in the Maryland Loyalists’ grant; thence northeasterly along the upper line of said lot to the rear thereof; thence north forty-five degrees west to the east line of lot numbered one, granted to D. Sawyer; thence north to Stanley Parish; north by Stanley Parish, and southeast by the County line.
+
+(n)
+SOUTHAMPTON PARISH.- Northwest by the County line; northeast by Bright Parish; southeast by Queensbury Parish; and south by the Saint John River.
+
+(o)
+STANLEY PARISH.- All that part of the County bounded southerly and westerly by a line running east from the northwest angle of the grant to D. Campbell and others, and a line running from said angle southerly along the various courses of the western rear line of the grants to D. Campbell and associates, and D. Lyman and associates, to the south branch of the Dunbar Stream; thence up the same to the rear line of lots fronting on the east side of the Cardigan Road; thence northerly along the various courses of the said rear line to the northeastern angle of lot number forty-four, granted to J.W. Jouett; thence north to the County line.
+
+R.S., c.227, s.31; 1957, c.63, s.1; 1987, c.6, s.110
+
+SHIRE TOWNS
+
+### 32 - Shire towns
+
+Source key: section:32
+
+Shire towns
+
+32The following shall be and continue to be shire or county towns of the said counties respectively; namely
+
+| The City of Fredericton in the County of York.
+
+| The City of Saint John in the County of Saint John.
+
+| The City of Edmundston in the County of Madawaska.
+
+| The City of Bathurst in the County of Gloucester.
+
+| The Town of Woodstock in the County of Carleton.
+
+| The Town of Saint Andrews in the County of Charlotte.
+
+| The Town of Newcastle in the County of Northumberland.
+
+| The Town of Dalhousie in the County of Restigouche.
+
+| Hopewell Cape in Albert County.
+
+| Richibucto in Kent County.
+
+| Hampton in Kings County.
+
+| Gagetown in Queens County.
+
+| Burton in Sunbury County.
+
+| Perth-Andover in Victoria County.
+
+| Dorchester in Westmorland County.
+
+R.S., c.227, s.32
+
+N.B. This Act is consolidated to June 30, 1998.

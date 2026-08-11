@@ -1,0 +1,520 @@
+{
+  "schemaVersion": 1,
+  "id": "reg-community-planning-80-159",
+  "officialTitle": "REGULATION 80-159",
+  "officialCitation": "REGULATION 80-159",
+  "officialCitationDisplay": "REGULATION 80-159",
+  "officialCitationNormalized": "80-159",
+  "officialNumberDisplay": "80-159",
+  "officialNumberNormalized": "80-159",
+  "documentType": "regulation",
+  "parentActId": "doc-community-planning-act",
+  "enablingActs": [
+    {
+      "title": "Community Planning Act"
+    }
+  ],
+  "sourceUrl": "https://laws.gnb.ca/en/document/cr/80-159",
+  "fetchDate": "2026-08-11T18:09:20.995Z",
+  "consolidatedTo": "January 1, 2018",
+  "contentHash": "020f01ec96f9dbf49a8a3efdb703260fc650d23179ff779fe50623d8481c2034",
+  "tableOfContents": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "label": "1"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "label": "2"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "label": "3"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "label": "4"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "label": "5"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "label": "6"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "label": "7"
+    },
+    {
+      "id": "section-7.1",
+      "sourceKey": "section:7.1",
+      "label": "7.1"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "label": "8"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "label": "9"
+    }
+  ],
+  "components": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
+      "label": "1",
+      "text": "1This Regulation may be cited as the Provincial Subdivision Regulation - Community Planning Act.",
+      "subsections": [],
+      "contentHash": "ee618140b13a18676aef4ad456387cb8dc6cb86c6e15e7121f9c8d44abe65539"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "label": "2",
+      "text": "2In this Regulation\n“lot” means a parcel of land or two or more adjoining parcels of land held by the same owner and used or intended to be used as the site for a building or structure or an appurtenance thereto;(lot)\n\n“width” means, in relation to a lot,(largeur)\n\n(a)\nwhere the side lot lines are parallel, the distance measured across the lot at right angles to such lines, or\n\n(b)\nwhere the side lot lines are not parallel, the distance measured across the lot along a line parallel to a line joining the points at which the side lot lines intersect the limits of the abutting street, such parallel line being drawn through the point at which the line of minimum setback, required by by-law or regulation, intersects a line from the midpoint of and perpendicular to the line to which it is parallel.\n\nAPPLICATION",
+      "subsections": [],
+      "contentHash": "0599effe1c7f295e79ffb3fb15219cde44edb28667dfde07984a30fbcb815bb2"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
+      "label": "3",
+      "text": "3(1)Subject to subsection (2), this Regulation applies throughout the Province, exclusive of the local service district of White Head Island and the local service district of the parish of West Isles.\n\n3(2)This Regulation\n\n(a)\napplies throughout the Province to any proposed subdivision which contains a proposed lot or other parcel of land that does not abut a public street, but\n\n(b)\ndoes not apply to\n\n(i)\na city or town,\n\n(ii)\na village which has a subdivision by-law in effect, or\n\n(iii)\na rural community which has a subdivision by-law in effect.\n\n2005-34; 2014-144\n\nSCOPE",
+      "subsections": [
+        {
+          "id": "3-subsection-1",
+          "sourceKey": "section:3/subsection:1",
+          "label": "3(1)",
+          "text": "3(1)Subject to subsection (2), this Regulation applies throughout the Province, exclusive of the local service district of White Head Island and the local service district of the parish of West Isles.",
+          "contentHash": "c5b9cb8f9abfc1e2613274da80b0bc7c8fb3444c356519abec3a9c72dfcc1ac5"
+        },
+        {
+          "id": "3-subsection-2",
+          "sourceKey": "section:3/subsection:2",
+          "label": "3(2)",
+          "text": "3(2)This Regulation\n\n(a)\napplies throughout the Province to any proposed subdivision which contains a proposed lot or other parcel of land that does not abut a public street, but\n\n(b)\ndoes not apply to\n\n(i)\na city or town,\n\n(ii)\na village which has a subdivision by-law in effect, or\n\n(iii)\na rural community which has a subdivision by-law in effect.\n\n2005-34; 2014-144\n\nSCOPE",
+          "contentHash": "19e818ac82e32f6b1b2dfd870dde0c056ec413ae0aebc2f8de349f590a1da360"
+        }
+      ],
+      "contentHash": "18b3eb277cc09b73cb5e93582c9d8f769fee4bdf3e4d3c1c77b5c45ea0e34f42"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
+      "label": "4",
+      "text": "4The purpose of this Regulation is to regulate the subdividing of land in areas to which it applies.\n\nSTREETS",
+      "subsections": [],
+      "contentHash": "3dbf77484cb255fe3a544faacfc2fd8d7f034f99807c55d7f692aa8ea80d35fe"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "componentType": "section",
+      "label": "5",
+      "text": "5(1)In a proposed subdivision, unless otherwise approved by the Minister of Transportation and Infrastructure,\n\n(a)\nevery street shall have a width of twenty metres,\n\n(b)\na cul-de-sac shall not exceed one hundred and eighty metres in length and shall terminate with a circular area having a radius of eighteen metres, and\n\n(c)\nno street shall have a gradient in excess of eight per cent.\n\n5(2)Where entry will be gained to a proposed subdivision by means of an existing street or other access, by whomever owned, the person seeking approval of the plan of such subdivision shall make provision to bring the existing access to the same standard as is required for streets within the proposed subdivision.\n\n5(3)Reserve strips abutting a street in a proposed subdivision are prohibited, except where such strips are vested in the Crown or a local government.\n\n5(4)In arriving at a decision regarding a recommendation with respect to the location of streets in a proposed subdivision, the regional service commission shall give consideration to\n\n(a)\nthe topography of the land,\n\n(b)\nthe provision of lots suitable for the intended use,\n\n(c)\nstreet intersections and interceptions being as nearly as possible at right angles,\n\n(d)\nthe provision of convenient access to the proposed subdivision and to lots within it, and\n\n(e)\nthe convenient further subdividing of the land or adjoining land.\n\n2001-90; 2005-34; 2010, c.31, s.26; 2012, c.44, s.5; 2017, c.20, s.32\n\nLOTS, BLOCKS AND\nOTHER PARCELS",
+      "subsections": [
+        {
+          "id": "5-subsection-1",
+          "sourceKey": "section:5/subsection:1",
+          "label": "5(1)",
+          "text": "5(1)In a proposed subdivision, unless otherwise approved by the Minister of Transportation and Infrastructure,\n\n(a)\nevery street shall have a width of twenty metres,\n\n(b)\na cul-de-sac shall not exceed one hundred and eighty metres in length and shall terminate with a circular area having a radius of eighteen metres, and\n\n(c)\nno street shall have a gradient in excess of eight per cent.",
+          "contentHash": "ffffa4716c7f27a7c4cc6c85701927c17c17114b6c4aab0fee50c8f1dfe8cdce"
+        },
+        {
+          "id": "5-subsection-2",
+          "sourceKey": "section:5/subsection:2",
+          "label": "5(2)",
+          "text": "5(2)Where entry will be gained to a proposed subdivision by means of an existing street or other access, by whomever owned, the person seeking approval of the plan of such subdivision shall make provision to bring the existing access to the same standard as is required for streets within the proposed subdivision.",
+          "contentHash": "a5e48c3f0f4370966524a9e01a0df778b4e0ed969f4bf55159affb40e607b1f4"
+        },
+        {
+          "id": "5-subsection-3",
+          "sourceKey": "section:5/subsection:3",
+          "label": "5(3)",
+          "text": "5(3)Reserve strips abutting a street in a proposed subdivision are prohibited, except where such strips are vested in the Crown or a local government.",
+          "contentHash": "479f30314bac64fc8c8beb391596c81168ca07c071c53a3421f97f81f6da923c"
+        },
+        {
+          "id": "5-subsection-4",
+          "sourceKey": "section:5/subsection:4",
+          "label": "5(4)",
+          "text": "5(4)In arriving at a decision regarding a recommendation with respect to the location of streets in a proposed subdivision, the regional service commission shall give consideration to\n\n(a)\nthe topography of the land,\n\n(b)\nthe provision of lots suitable for the intended use,\n\n(c)\nstreet intersections and interceptions being as nearly as possible at right angles,\n\n(d)\nthe provision of convenient access to the proposed subdivision and to lots within it, and\n\n(e)\nthe convenient further subdividing of the land or adjoining land.\n\n2001-90; 2005-34; 2010, c.31, s.26; 2012, c.44, s.5; 2017, c.20, s.32\n\nLOTS, BLOCKS AND\nOTHER PARCELS",
+          "contentHash": "280b7c5d6005c8509de61adbfd10767cefeb5cafd858b717c1bfb14fe60a5335"
+        }
+      ],
+      "contentHash": "36d34d598066befd540e802b87d549bc4bdaae011beb97b8faa9f931b15b45ad"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "componentType": "section",
+      "label": "6",
+      "text": "6(1)Every lot, block and other parcel of land in a proposed subdivision shall abut\n\n(a)\na street owned by the Crown, or\n\n(b)\nsuch other access as may be approved by the regional service commission as being advisable for the development of land.\n\n6(2)Where a proposed subdivision is to be serviced by both a water system for public use and a sewer system for public use, every lot or other parcel of land therein shall have and contain\n\n(a)\na width of at least eighteen metres,\n\n(b)\na depth of at least thirty metres, and\n\n(c)\nan area of at least five hundred and forty square metres.\n\n6(3)Where a proposed subdivision is to be serviced by a sewer system for public use but not by a water system for public use, every lot or other parcel of land therein shall have and contain\n\n(a)\na width of at least twenty-three metres,\n\n(b)\na depth of at least thirty metres, and\n\n(c)\nan area of at least six hundred and ninety square metres.\n\n6(4)Where a proposed subdivision is not to be serviced by a sewer system for public use, every lot or other parcel of land therein shall have and contain\n\n(a)\na width of at least fifty-four metres,\n\n(b)\na depth of at least thirty-eight metres, and\n\n(c)\nan area of at least four thousand square metres.\n\n6(5)Subject to subsection (6), a block shall not exceed two hundred and forty metres or be less than one hundred and twenty metres in length and shall have a depth of at least two lots.\n\n6(6)Where a proposed subdivision plan lays out a series of crescents and cul-de-sacs, a block may exceed two hundred and forty metres in length if pedestrian walkways are provided in the number, location and width considered necessary by the regional service commission to provide access or circulation to schools, libraries, playgrounds or similar facilities.\n\n6(7)Where a building used for residential purposes is located on a lot meeting the requirements of subsection (2), the lot may be subdivided along any party wall of the building.\n\n83-135; 99-65; 2001-90; 2012, c.44, s.5\n\nAPPROVAL OF A SUBDIVISION PLAN",
+      "subsections": [
+        {
+          "id": "6-subsection-1",
+          "sourceKey": "section:6/subsection:1",
+          "label": "6(1)",
+          "text": "6(1)Every lot, block and other parcel of land in a proposed subdivision shall abut\n\n(a)\na street owned by the Crown, or\n\n(b)\nsuch other access as may be approved by the regional service commission as being advisable for the development of land.",
+          "contentHash": "9b1d322e7b528c1121d3b24c9f50f09ec2df4aa343a3826e27868320aa1391de"
+        },
+        {
+          "id": "6-subsection-2",
+          "sourceKey": "section:6/subsection:2",
+          "label": "6(2)",
+          "text": "6(2)Where a proposed subdivision is to be serviced by both a water system for public use and a sewer system for public use, every lot or other parcel of land therein shall have and contain\n\n(a)\na width of at least eighteen metres,\n\n(b)\na depth of at least thirty metres, and\n\n(c)\nan area of at least five hundred and forty square metres.",
+          "contentHash": "532ae9e98a485b8806de026e0b5b3d397aa4f2b29be8cc15f912f286cabe2597"
+        },
+        {
+          "id": "6-subsection-3",
+          "sourceKey": "section:6/subsection:3",
+          "label": "6(3)",
+          "text": "6(3)Where a proposed subdivision is to be serviced by a sewer system for public use but not by a water system for public use, every lot or other parcel of land therein shall have and contain\n\n(a)\na width of at least twenty-three metres,\n\n(b)\na depth of at least thirty metres, and\n\n(c)\nan area of at least six hundred and ninety square metres.",
+          "contentHash": "487e5be48507447afa7c6cd248664d8809813cc9c01a66d5bd7b74dabaafc111"
+        },
+        {
+          "id": "6-subsection-4",
+          "sourceKey": "section:6/subsection:4",
+          "label": "6(4)",
+          "text": "6(4)Where a proposed subdivision is not to be serviced by a sewer system for public use, every lot or other parcel of land therein shall have and contain\n\n(a)\na width of at least fifty-four metres,\n\n(b)\na depth of at least thirty-eight metres, and\n\n(c)\nan area of at least four thousand square metres.",
+          "contentHash": "b324a785d15b5625161abc0071abc6763ef71e651235b0870cf5c9aed49bb640"
+        },
+        {
+          "id": "6-subsection-5",
+          "sourceKey": "section:6/subsection:5",
+          "label": "6(5)",
+          "text": "6(5)Subject to subsection (6), a block shall not exceed two hundred and forty metres or be less than one hundred and twenty metres in length and shall have a depth of at least two lots.",
+          "contentHash": "8dd67df6593ca94a732b5f47ab1f9e740a200d252e7b9eff7cb5d953eeae2a16"
+        },
+        {
+          "id": "6-subsection-6",
+          "sourceKey": "section:6/subsection:6",
+          "label": "6(6)",
+          "text": "6(6)Where a proposed subdivision plan lays out a series of crescents and cul-de-sacs, a block may exceed two hundred and forty metres in length if pedestrian walkways are provided in the number, location and width considered necessary by the regional service commission to provide access or circulation to schools, libraries, playgrounds or similar facilities.",
+          "contentHash": "2a5afba62b8ce25f081e1701f053e84804995d510d3d95501f6efcb69fa17a4b"
+        },
+        {
+          "id": "6-subsection-7",
+          "sourceKey": "section:6/subsection:7",
+          "label": "6(7)",
+          "text": "6(7)Where a building used for residential purposes is located on a lot meeting the requirements of subsection (2), the lot may be subdivided along any party wall of the building.\n\n83-135; 99-65; 2001-90; 2012, c.44, s.5\n\nAPPROVAL OF A SUBDIVISION PLAN",
+          "contentHash": "5450406fc10c93ea95db3807fde767819fcd0d7955ffd62cc963f5720292c5a1"
+        }
+      ],
+      "contentHash": "7b4fde271a89bd43f3533869e29a7fe676ec9f222bb32ddb3e04206deb0066d8"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "componentType": "section",
+      "label": "7",
+      "text": "7(1)Subject to subsection (2), the development officer may approve a subdivision plan.\n\n7(2)The development officer shall not approve a subdivision plan if, in his opinion and in the opinion of the regional service commission,\n\n(a)\nthe land is not reasonably suited or cannot be economically suited to the purpose for which it is intended or may not reasonably be expected to be used for that purpose within a reasonable time after the plan is approved, or\n\n(b)\nthe proposed manner of subdividing will prejudice the possibility of further subdividing the land or the convenient subdividing of adjoining land.\n\n7(3)An approval under subsection (1) shall not constitute a warranty or representation that the land is suited or can economically be suited to the purpose for which it is intended and, without restricting the generality of the foregoing, shall not constitute a warranty or representation that the land is suitable or can economically be made suitable for any manner of on-site sewage disposal.\n\n2001-90; 2012, c.44, s.5\n\nFEES\n\n2009-32",
+      "subsections": [
+        {
+          "id": "7-subsection-1",
+          "sourceKey": "section:7/subsection:1",
+          "label": "7(1)",
+          "text": "7(1)Subject to subsection (2), the development officer may approve a subdivision plan.",
+          "contentHash": "5e67f7d00c890938b6992e2906ae5703e5dfbd51c586eff001dc596162ac4fc5"
+        },
+        {
+          "id": "7-subsection-2",
+          "sourceKey": "section:7/subsection:2",
+          "label": "7(2)",
+          "text": "7(2)The development officer shall not approve a subdivision plan if, in his opinion and in the opinion of the regional service commission,\n\n(a)\nthe land is not reasonably suited or cannot be economically suited to the purpose for which it is intended or may not reasonably be expected to be used for that purpose within a reasonable time after the plan is approved, or\n\n(b)\nthe proposed manner of subdividing will prejudice the possibility of further subdividing the land or the convenient subdividing of adjoining land.",
+          "contentHash": "d7e0ff5a8ec469135923fc0ab28f8f27134c4418ad15d471bb002f3b78873881"
+        },
+        {
+          "id": "7-subsection-3",
+          "sourceKey": "section:7/subsection:3",
+          "label": "7(3)",
+          "text": "7(3)An approval under subsection (1) shall not constitute a warranty or representation that the land is suited or can economically be suited to the purpose for which it is intended and, without restricting the generality of the foregoing, shall not constitute a warranty or representation that the land is suitable or can economically be made suitable for any manner of on-site sewage disposal.\n\n2001-90; 2012, c.44, s.5\n\nFEES\n\n2009-32",
+          "contentHash": "eaba2de174881b8215b1b71a4b8e7e56effe40aa445e89fd743918dc431c0cc8"
+        }
+      ],
+      "contentHash": "cf30ff5bfa708fcc826a42f8f23efbb3d0d16a8bf05680ec4651c190236ab66a"
+    },
+    {
+      "id": "section-7.1",
+      "sourceKey": "section:7.1",
+      "componentType": "section",
+      "label": "7.1",
+      "text": "7.1(1)A person who applies to a development officer for approval of a tentative plan shall pay the following fee:\n\n(a)\nfor a type 1 subdivision, $200 plus $25 for each lot in the subdivision; or\n\n(b)\nfor a type 2 subdivision, $500 plus $50 for each lot in the subdivision.\n\n7.1(2)The fee under subsection (1) shall be paid to the applicable regional service commission.\n\n2009-32; 2012, c.44, s.5",
+      "subsections": [
+        {
+          "id": "7.1-subsection-1",
+          "sourceKey": "section:7.1/subsection:1",
+          "label": "7.1(1)",
+          "text": "7.1(1)A person who applies to a development officer for approval of a tentative plan shall pay the following fee:\n\n(a)\nfor a type 1 subdivision, $200 plus $25 for each lot in the subdivision; or\n\n(b)\nfor a type 2 subdivision, $500 plus $50 for each lot in the subdivision.",
+          "contentHash": "9456dc5206170a7fd34ecdfcd1ec811faa49045ae5a9d7702654864c9ae58ebd"
+        },
+        {
+          "id": "7.1-subsection-2",
+          "sourceKey": "section:7.1/subsection:2",
+          "label": "7.1(2)",
+          "text": "7.1(2)The fee under subsection (1) shall be paid to the applicable regional service commission.\n\n2009-32; 2012, c.44, s.5",
+          "contentHash": "3f488e8ff9fc7dd5143cc4a4b9470e18de643a176f0fbd78a1603d4d24f00de9"
+        }
+      ],
+      "contentHash": "0cc69fbb9f67e3ded2a67754e57f987a947138395b823d7e80d7b9b851efb42d"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "componentType": "section",
+      "label": "8",
+      "text": "8Regulation 73-15 under the Community Planning Act is repealed.",
+      "subsections": [],
+      "contentHash": "b3095a96a41f2ac8471a5ce4d3e2b1146254242c954c11ea1944b33448a7fa9a"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "componentType": "section",
+      "label": "9",
+      "text": "9This Regulation comes into effect on January 1, 1981.\n\nN.B. This Regulation is consolidated to January 1, 2018.",
+      "subsections": [],
+      "contentHash": "609b6597a41cec140002b1d02eba5957b252ab058313e53c2c388f34bf99b9fa"
+    }
+  ],
+  "sections": [
+    {
+      "id": "section-1",
+      "sourceKey": "section:1",
+      "componentType": "section",
+      "label": "1",
+      "text": "1This Regulation may be cited as the Provincial Subdivision Regulation - Community Planning Act.",
+      "subsections": [],
+      "contentHash": "ee618140b13a18676aef4ad456387cb8dc6cb86c6e15e7121f9c8d44abe65539"
+    },
+    {
+      "id": "section-2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "label": "2",
+      "text": "2In this Regulation\n“lot” means a parcel of land or two or more adjoining parcels of land held by the same owner and used or intended to be used as the site for a building or structure or an appurtenance thereto;(lot)\n\n“width” means, in relation to a lot,(largeur)\n\n(a)\nwhere the side lot lines are parallel, the distance measured across the lot at right angles to such lines, or\n\n(b)\nwhere the side lot lines are not parallel, the distance measured across the lot along a line parallel to a line joining the points at which the side lot lines intersect the limits of the abutting street, such parallel line being drawn through the point at which the line of minimum setback, required by by-law or regulation, intersects a line from the midpoint of and perpendicular to the line to which it is parallel.\n\nAPPLICATION",
+      "subsections": [],
+      "contentHash": "0599effe1c7f295e79ffb3fb15219cde44edb28667dfde07984a30fbcb815bb2"
+    },
+    {
+      "id": "section-3",
+      "sourceKey": "section:3",
+      "componentType": "section",
+      "label": "3",
+      "text": "3(1)Subject to subsection (2), this Regulation applies throughout the Province, exclusive of the local service district of White Head Island and the local service district of the parish of West Isles.\n\n3(2)This Regulation\n\n(a)\napplies throughout the Province to any proposed subdivision which contains a proposed lot or other parcel of land that does not abut a public street, but\n\n(b)\ndoes not apply to\n\n(i)\na city or town,\n\n(ii)\na village which has a subdivision by-law in effect, or\n\n(iii)\na rural community which has a subdivision by-law in effect.\n\n2005-34; 2014-144\n\nSCOPE",
+      "subsections": [
+        {
+          "id": "3-subsection-1",
+          "sourceKey": "section:3/subsection:1",
+          "label": "3(1)",
+          "text": "3(1)Subject to subsection (2), this Regulation applies throughout the Province, exclusive of the local service district of White Head Island and the local service district of the parish of West Isles.",
+          "contentHash": "c5b9cb8f9abfc1e2613274da80b0bc7c8fb3444c356519abec3a9c72dfcc1ac5"
+        },
+        {
+          "id": "3-subsection-2",
+          "sourceKey": "section:3/subsection:2",
+          "label": "3(2)",
+          "text": "3(2)This Regulation\n\n(a)\napplies throughout the Province to any proposed subdivision which contains a proposed lot or other parcel of land that does not abut a public street, but\n\n(b)\ndoes not apply to\n\n(i)\na city or town,\n\n(ii)\na village which has a subdivision by-law in effect, or\n\n(iii)\na rural community which has a subdivision by-law in effect.\n\n2005-34; 2014-144\n\nSCOPE",
+          "contentHash": "19e818ac82e32f6b1b2dfd870dde0c056ec413ae0aebc2f8de349f590a1da360"
+        }
+      ],
+      "contentHash": "18b3eb277cc09b73cb5e93582c9d8f769fee4bdf3e4d3c1c77b5c45ea0e34f42"
+    },
+    {
+      "id": "section-4",
+      "sourceKey": "section:4",
+      "componentType": "section",
+      "label": "4",
+      "text": "4The purpose of this Regulation is to regulate the subdividing of land in areas to which it applies.\n\nSTREETS",
+      "subsections": [],
+      "contentHash": "3dbf77484cb255fe3a544faacfc2fd8d7f034f99807c55d7f692aa8ea80d35fe"
+    },
+    {
+      "id": "section-5",
+      "sourceKey": "section:5",
+      "componentType": "section",
+      "label": "5",
+      "text": "5(1)In a proposed subdivision, unless otherwise approved by the Minister of Transportation and Infrastructure,\n\n(a)\nevery street shall have a width of twenty metres,\n\n(b)\na cul-de-sac shall not exceed one hundred and eighty metres in length and shall terminate with a circular area having a radius of eighteen metres, and\n\n(c)\nno street shall have a gradient in excess of eight per cent.\n\n5(2)Where entry will be gained to a proposed subdivision by means of an existing street or other access, by whomever owned, the person seeking approval of the plan of such subdivision shall make provision to bring the existing access to the same standard as is required for streets within the proposed subdivision.\n\n5(3)Reserve strips abutting a street in a proposed subdivision are prohibited, except where such strips are vested in the Crown or a local government.\n\n5(4)In arriving at a decision regarding a recommendation with respect to the location of streets in a proposed subdivision, the regional service commission shall give consideration to\n\n(a)\nthe topography of the land,\n\n(b)\nthe provision of lots suitable for the intended use,\n\n(c)\nstreet intersections and interceptions being as nearly as possible at right angles,\n\n(d)\nthe provision of convenient access to the proposed subdivision and to lots within it, and\n\n(e)\nthe convenient further subdividing of the land or adjoining land.\n\n2001-90; 2005-34; 2010, c.31, s.26; 2012, c.44, s.5; 2017, c.20, s.32\n\nLOTS, BLOCKS AND\nOTHER PARCELS",
+      "subsections": [
+        {
+          "id": "5-subsection-1",
+          "sourceKey": "section:5/subsection:1",
+          "label": "5(1)",
+          "text": "5(1)In a proposed subdivision, unless otherwise approved by the Minister of Transportation and Infrastructure,\n\n(a)\nevery street shall have a width of twenty metres,\n\n(b)\na cul-de-sac shall not exceed one hundred and eighty metres in length and shall terminate with a circular area having a radius of eighteen metres, and\n\n(c)\nno street shall have a gradient in excess of eight per cent.",
+          "contentHash": "ffffa4716c7f27a7c4cc6c85701927c17c17114b6c4aab0fee50c8f1dfe8cdce"
+        },
+        {
+          "id": "5-subsection-2",
+          "sourceKey": "section:5/subsection:2",
+          "label": "5(2)",
+          "text": "5(2)Where entry will be gained to a proposed subdivision by means of an existing street or other access, by whomever owned, the person seeking approval of the plan of such subdivision shall make provision to bring the existing access to the same standard as is required for streets within the proposed subdivision.",
+          "contentHash": "a5e48c3f0f4370966524a9e01a0df778b4e0ed969f4bf55159affb40e607b1f4"
+        },
+        {
+          "id": "5-subsection-3",
+          "sourceKey": "section:5/subsection:3",
+          "label": "5(3)",
+          "text": "5(3)Reserve strips abutting a street in a proposed subdivision are prohibited, except where such strips are vested in the Crown or a local government.",
+          "contentHash": "479f30314bac64fc8c8beb391596c81168ca07c071c53a3421f97f81f6da923c"
+        },
+        {
+          "id": "5-subsection-4",
+          "sourceKey": "section:5/subsection:4",
+          "label": "5(4)",
+          "text": "5(4)In arriving at a decision regarding a recommendation with respect to the location of streets in a proposed subdivision, the regional service commission shall give consideration to\n\n(a)\nthe topography of the land,\n\n(b)\nthe provision of lots suitable for the intended use,\n\n(c)\nstreet intersections and interceptions being as nearly as possible at right angles,\n\n(d)\nthe provision of convenient access to the proposed subdivision and to lots within it, and\n\n(e)\nthe convenient further subdividing of the land or adjoining land.\n\n2001-90; 2005-34; 2010, c.31, s.26; 2012, c.44, s.5; 2017, c.20, s.32\n\nLOTS, BLOCKS AND\nOTHER PARCELS",
+          "contentHash": "280b7c5d6005c8509de61adbfd10767cefeb5cafd858b717c1bfb14fe60a5335"
+        }
+      ],
+      "contentHash": "36d34d598066befd540e802b87d549bc4bdaae011beb97b8faa9f931b15b45ad"
+    },
+    {
+      "id": "section-6",
+      "sourceKey": "section:6",
+      "componentType": "section",
+      "label": "6",
+      "text": "6(1)Every lot, block and other parcel of land in a proposed subdivision shall abut\n\n(a)\na street owned by the Crown, or\n\n(b)\nsuch other access as may be approved by the regional service commission as being advisable for the development of land.\n\n6(2)Where a proposed subdivision is to be serviced by both a water system for public use and a sewer system for public use, every lot or other parcel of land therein shall have and contain\n\n(a)\na width of at least eighteen metres,\n\n(b)\na depth of at least thirty metres, and\n\n(c)\nan area of at least five hundred and forty square metres.\n\n6(3)Where a proposed subdivision is to be serviced by a sewer system for public use but not by a water system for public use, every lot or other parcel of land therein shall have and contain\n\n(a)\na width of at least twenty-three metres,\n\n(b)\na depth of at least thirty metres, and\n\n(c)\nan area of at least six hundred and ninety square metres.\n\n6(4)Where a proposed subdivision is not to be serviced by a sewer system for public use, every lot or other parcel of land therein shall have and contain\n\n(a)\na width of at least fifty-four metres,\n\n(b)\na depth of at least thirty-eight metres, and\n\n(c)\nan area of at least four thousand square metres.\n\n6(5)Subject to subsection (6), a block shall not exceed two hundred and forty metres or be less than one hundred and twenty metres in length and shall have a depth of at least two lots.\n\n6(6)Where a proposed subdivision plan lays out a series of crescents and cul-de-sacs, a block may exceed two hundred and forty metres in length if pedestrian walkways are provided in the number, location and width considered necessary by the regional service commission to provide access or circulation to schools, libraries, playgrounds or similar facilities.\n\n6(7)Where a building used for residential purposes is located on a lot meeting the requirements of subsection (2), the lot may be subdivided along any party wall of the building.\n\n83-135; 99-65; 2001-90; 2012, c.44, s.5\n\nAPPROVAL OF A SUBDIVISION PLAN",
+      "subsections": [
+        {
+          "id": "6-subsection-1",
+          "sourceKey": "section:6/subsection:1",
+          "label": "6(1)",
+          "text": "6(1)Every lot, block and other parcel of land in a proposed subdivision shall abut\n\n(a)\na street owned by the Crown, or\n\n(b)\nsuch other access as may be approved by the regional service commission as being advisable for the development of land.",
+          "contentHash": "9b1d322e7b528c1121d3b24c9f50f09ec2df4aa343a3826e27868320aa1391de"
+        },
+        {
+          "id": "6-subsection-2",
+          "sourceKey": "section:6/subsection:2",
+          "label": "6(2)",
+          "text": "6(2)Where a proposed subdivision is to be serviced by both a water system for public use and a sewer system for public use, every lot or other parcel of land therein shall have and contain\n\n(a)\na width of at least eighteen metres,\n\n(b)\na depth of at least thirty metres, and\n\n(c)\nan area of at least five hundred and forty square metres.",
+          "contentHash": "532ae9e98a485b8806de026e0b5b3d397aa4f2b29be8cc15f912f286cabe2597"
+        },
+        {
+          "id": "6-subsection-3",
+          "sourceKey": "section:6/subsection:3",
+          "label": "6(3)",
+          "text": "6(3)Where a proposed subdivision is to be serviced by a sewer system for public use but not by a water system for public use, every lot or other parcel of land therein shall have and contain\n\n(a)\na width of at least twenty-three metres,\n\n(b)\na depth of at least thirty metres, and\n\n(c)\nan area of at least six hundred and ninety square metres.",
+          "contentHash": "487e5be48507447afa7c6cd248664d8809813cc9c01a66d5bd7b74dabaafc111"
+        },
+        {
+          "id": "6-subsection-4",
+          "sourceKey": "section:6/subsection:4",
+          "label": "6(4)",
+          "text": "6(4)Where a proposed subdivision is not to be serviced by a sewer system for public use, every lot or other parcel of land therein shall have and contain\n\n(a)\na width of at least fifty-four metres,\n\n(b)\na depth of at least thirty-eight metres, and\n\n(c)\nan area of at least four thousand square metres.",
+          "contentHash": "b324a785d15b5625161abc0071abc6763ef71e651235b0870cf5c9aed49bb640"
+        },
+        {
+          "id": "6-subsection-5",
+          "sourceKey": "section:6/subsection:5",
+          "label": "6(5)",
+          "text": "6(5)Subject to subsection (6), a block shall not exceed two hundred and forty metres or be less than one hundred and twenty metres in length and shall have a depth of at least two lots.",
+          "contentHash": "8dd67df6593ca94a732b5f47ab1f9e740a200d252e7b9eff7cb5d953eeae2a16"
+        },
+        {
+          "id": "6-subsection-6",
+          "sourceKey": "section:6/subsection:6",
+          "label": "6(6)",
+          "text": "6(6)Where a proposed subdivision plan lays out a series of crescents and cul-de-sacs, a block may exceed two hundred and forty metres in length if pedestrian walkways are provided in the number, location and width considered necessary by the regional service commission to provide access or circulation to schools, libraries, playgrounds or similar facilities.",
+          "contentHash": "2a5afba62b8ce25f081e1701f053e84804995d510d3d95501f6efcb69fa17a4b"
+        },
+        {
+          "id": "6-subsection-7",
+          "sourceKey": "section:6/subsection:7",
+          "label": "6(7)",
+          "text": "6(7)Where a building used for residential purposes is located on a lot meeting the requirements of subsection (2), the lot may be subdivided along any party wall of the building.\n\n83-135; 99-65; 2001-90; 2012, c.44, s.5\n\nAPPROVAL OF A SUBDIVISION PLAN",
+          "contentHash": "5450406fc10c93ea95db3807fde767819fcd0d7955ffd62cc963f5720292c5a1"
+        }
+      ],
+      "contentHash": "7b4fde271a89bd43f3533869e29a7fe676ec9f222bb32ddb3e04206deb0066d8"
+    },
+    {
+      "id": "section-7",
+      "sourceKey": "section:7",
+      "componentType": "section",
+      "label": "7",
+      "text": "7(1)Subject to subsection (2), the development officer may approve a subdivision plan.\n\n7(2)The development officer shall not approve a subdivision plan if, in his opinion and in the opinion of the regional service commission,\n\n(a)\nthe land is not reasonably suited or cannot be economically suited to the purpose for which it is intended or may not reasonably be expected to be used for that purpose within a reasonable time after the plan is approved, or\n\n(b)\nthe proposed manner of subdividing will prejudice the possibility of further subdividing the land or the convenient subdividing of adjoining land.\n\n7(3)An approval under subsection (1) shall not constitute a warranty or representation that the land is suited or can economically be suited to the purpose for which it is intended and, without restricting the generality of the foregoing, shall not constitute a warranty or representation that the land is suitable or can economically be made suitable for any manner of on-site sewage disposal.\n\n2001-90; 2012, c.44, s.5\n\nFEES\n\n2009-32",
+      "subsections": [
+        {
+          "id": "7-subsection-1",
+          "sourceKey": "section:7/subsection:1",
+          "label": "7(1)",
+          "text": "7(1)Subject to subsection (2), the development officer may approve a subdivision plan.",
+          "contentHash": "5e67f7d00c890938b6992e2906ae5703e5dfbd51c586eff001dc596162ac4fc5"
+        },
+        {
+          "id": "7-subsection-2",
+          "sourceKey": "section:7/subsection:2",
+          "label": "7(2)",
+          "text": "7(2)The development officer shall not approve a subdivision plan if, in his opinion and in the opinion of the regional service commission,\n\n(a)\nthe land is not reasonably suited or cannot be economically suited to the purpose for which it is intended or may not reasonably be expected to be used for that purpose within a reasonable time after the plan is approved, or\n\n(b)\nthe proposed manner of subdividing will prejudice the possibility of further subdividing the land or the convenient subdividing of adjoining land.",
+          "contentHash": "d7e0ff5a8ec469135923fc0ab28f8f27134c4418ad15d471bb002f3b78873881"
+        },
+        {
+          "id": "7-subsection-3",
+          "sourceKey": "section:7/subsection:3",
+          "label": "7(3)",
+          "text": "7(3)An approval under subsection (1) shall not constitute a warranty or representation that the land is suited or can economically be suited to the purpose for which it is intended and, without restricting the generality of the foregoing, shall not constitute a warranty or representation that the land is suitable or can economically be made suitable for any manner of on-site sewage disposal.\n\n2001-90; 2012, c.44, s.5\n\nFEES\n\n2009-32",
+          "contentHash": "eaba2de174881b8215b1b71a4b8e7e56effe40aa445e89fd743918dc431c0cc8"
+        }
+      ],
+      "contentHash": "cf30ff5bfa708fcc826a42f8f23efbb3d0d16a8bf05680ec4651c190236ab66a"
+    },
+    {
+      "id": "section-7.1",
+      "sourceKey": "section:7.1",
+      "componentType": "section",
+      "label": "7.1",
+      "text": "7.1(1)A person who applies to a development officer for approval of a tentative plan shall pay the following fee:\n\n(a)\nfor a type 1 subdivision, $200 plus $25 for each lot in the subdivision; or\n\n(b)\nfor a type 2 subdivision, $500 plus $50 for each lot in the subdivision.\n\n7.1(2)The fee under subsection (1) shall be paid to the applicable regional service commission.\n\n2009-32; 2012, c.44, s.5",
+      "subsections": [
+        {
+          "id": "7.1-subsection-1",
+          "sourceKey": "section:7.1/subsection:1",
+          "label": "7.1(1)",
+          "text": "7.1(1)A person who applies to a development officer for approval of a tentative plan shall pay the following fee:\n\n(a)\nfor a type 1 subdivision, $200 plus $25 for each lot in the subdivision; or\n\n(b)\nfor a type 2 subdivision, $500 plus $50 for each lot in the subdivision.",
+          "contentHash": "9456dc5206170a7fd34ecdfcd1ec811faa49045ae5a9d7702654864c9ae58ebd"
+        },
+        {
+          "id": "7.1-subsection-2",
+          "sourceKey": "section:7.1/subsection:2",
+          "label": "7.1(2)",
+          "text": "7.1(2)The fee under subsection (1) shall be paid to the applicable regional service commission.\n\n2009-32; 2012, c.44, s.5",
+          "contentHash": "3f488e8ff9fc7dd5143cc4a4b9470e18de643a176f0fbd78a1603d4d24f00de9"
+        }
+      ],
+      "contentHash": "0cc69fbb9f67e3ded2a67754e57f987a947138395b823d7e80d7b9b851efb42d"
+    },
+    {
+      "id": "section-8",
+      "sourceKey": "section:8",
+      "componentType": "section",
+      "label": "8",
+      "text": "8Regulation 73-15 under the Community Planning Act is repealed.",
+      "subsections": [],
+      "contentHash": "b3095a96a41f2ac8471a5ce4d3e2b1146254242c954c11ea1944b33448a7fa9a"
+    },
+    {
+      "id": "section-9",
+      "sourceKey": "section:9",
+      "componentType": "section",
+      "label": "9",
+      "text": "9This Regulation comes into effect on January 1, 1981.\n\nN.B. This Regulation is consolidated to January 1, 2018.",
+      "subsections": [],
+      "contentHash": "609b6597a41cec140002b1d02eba5957b252ab058313e53c2c388f34bf99b9fa"
+    }
+  ],
+  "notes": []
+}
