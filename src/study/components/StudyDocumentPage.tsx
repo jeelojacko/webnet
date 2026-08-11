@@ -1,15 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import {
-  buildCompleteDocumentText,
-  compareImportedLegalComponents,
-  shouldShowLegalComponentInReader,
-} from '../studyOfficialContent';
-import type {
-  ImportedLegalComponent,
-  StudyDataSnapshot,
-  StudyDocument,
-  StudyUnit,
-} from '../studyTypes';
+import { buildCompleteDocumentText, compareImportedLegalComponents, shouldShowLegalComponentInReader } from '../studyOfficialContent';
+import type { ImportedLegalComponent, StudyDataSnapshot, StudyDocument, StudyUnit } from '../studyTypes';
 
 type StudyDocumentPageProps = {
   data: StudyDataSnapshot;
@@ -19,7 +10,7 @@ type StudyDocumentPageProps = {
   onCompleteReading: (_unitId: string) => Promise<void>;
   onCreateUnitFromSelection: (_documentId: string, _components: ImportedLegalComponent[]) => Promise<void>;
   onGenerateMissingStudyContent: (_unitId: string) => Promise<void>;
-  onAcknowledgeSourceReview: (_unitId: string) => Promise<void>;
+  onAcknowledgeSourceReview: (_unitId: string) => Promise<StudyUnit | void>;
   onSelectDocument: (_documentId: string) => void;
   onNavigate: (_path: string) => void;
   onPreviewUnit: (_unitId: string) => void;
@@ -79,10 +70,7 @@ const StudyDocumentPage = ({
         .sort(compareImportedLegalComponents),
     [data.legalComponents, documentId],
   );
-  const units = useMemo(
-    () => data.units.filter((unit) => unit.documentIds.includes(documentId)),
-    [data.units, documentId],
-  );
+  const units = useMemo(() => data.units.filter((unit) => unit.documentIds.includes(documentId)), [data.units, documentId]);
   const [documentDraft, setDocumentDraft] = useState(document);
   const [unitDrafts, setUnitDrafts] = useState<Record<string, StudyUnit>>({});
   const [query, setQuery] = useState('');
@@ -90,7 +78,10 @@ const StudyDocumentPage = ({
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [focusedSourceKey, setFocusedSourceKey] = useState('');
-  const [pendingNavigation, setPendingNavigation] = useState<{ sourceKey: string; parentSourceKey: string } | null>(null);
+  const [pendingNavigation, setPendingNavigation] = useState<{
+    sourceKey: string;
+    parentSourceKey: string;
+  } | null>(null);
 
   useEffect(() => {
     setDocumentDraft(document);
@@ -98,17 +89,10 @@ const StudyDocumentPage = ({
     setSelectedKeys([]);
   }, [document, units]);
 
-  const relatedRegulations = legalDocument?.documentType === 'act'
-    ? data.legalDocuments.filter((entry) => entry.parentActId === documentId)
-    : [];
-  const parentAct = legalDocument?.parentActId
-    ? data.documents.find((entry) => entry.id === legalDocument.parentActId)
-    : undefined;
+  const relatedRegulations = legalDocument?.documentType === 'act' ? data.legalDocuments.filter((entry) => entry.parentActId === documentId) : [];
+  const parentAct = legalDocument?.parentActId ? data.documents.find((entry) => entry.id === legalDocument.parentActId) : undefined;
   const normalizedQuery = normalizeSearch(query);
-  const readerComponents = useMemo(
-    () => components.filter(shouldShowLegalComponentInReader),
-    [components],
-  );
+  const readerComponents = useMemo(() => components.filter(shouldShowLegalComponentInReader), [components]);
 
   const navigateToSourceKey = (sourceKey: string, parentSourceKey = sourceKey) => {
     setExpanded((current) => ({ ...current, [parentSourceKey]: true }));
@@ -141,15 +125,14 @@ const StudyDocumentPage = ({
   useEffect(() => {
     const sourceKey = decodeURIComponent(window.location.hash.replace(/^#/, ''));
     if (!sourceKey || readerComponents.length === 0) return;
-    const parent = readerComponents.find((component) =>
-      component.sourceKey === sourceKey || component.subsections?.some((subsection) => subsection.sourceKey === sourceKey),
+    const parent = readerComponents.find(
+      (component) => component.sourceKey === sourceKey || component.subsections?.some((subsection) => subsection.sourceKey === sourceKey),
     );
     if (parent) navigateToSourceKey(sourceKey, parent.sourceKey);
   }, [readerComponents]);
   const completeDocumentText = useMemo(() => buildCompleteDocumentText(components), [components]);
   const completeDocumentMatches =
-    filter === 'all' &&
-    (!normalizedQuery || completeDocumentText.toLowerCase().includes(normalizedQuery) || 'complete document'.includes(normalizedQuery));
+    filter === 'all' && (!normalizedQuery || completeDocumentText.toLowerCase().includes(normalizedQuery) || 'complete document'.includes(normalizedQuery));
   const visibleComponents = readerComponents.filter((component) => {
     const filterMatch = filter === 'all' || component.componentType === filter;
     return filterMatch && componentMatches(component, normalizedQuery);
@@ -167,8 +150,8 @@ const StudyDocumentPage = ({
         <div>
           <h2 className="text-xl font-semibold text-white">{legalDocument?.officialTitle ?? document.title}</h2>
           <p className="text-sm text-slate-500">
-            {legalDocument?.officialCitationDisplay ?? document.citation ?? document.kind} ·{' '}
-            {legalDocument?.documentType ?? document.kind} · priority {document.priority}
+            {legalDocument?.officialCitationDisplay ?? document.citation ?? document.kind} · {legalDocument?.documentType ?? document.kind} · priority{' '}
+            {document.priority}
           </p>
           {legalDocument ? (
             <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-400">
@@ -182,10 +165,7 @@ const StudyDocumentPage = ({
             </div>
           ) : null}
         </div>
-        <button
-          onClick={() => onSaveDocument(documentDraft)}
-          className="rounded bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-500"
-        >
+        <button onClick={() => onSaveDocument(documentDraft)} className="rounded bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-500">
           Save Document
         </button>
       </div>
@@ -201,11 +181,7 @@ const StudyDocumentPage = ({
             <div className="flex flex-wrap gap-2">
               <span className="text-slate-500">Related regulations:</span>
               {relatedRegulations.map((regulation) => (
-                <button
-                  key={regulation.id}
-                  className="text-emerald-300 hover:text-emerald-200"
-                  onClick={() => onSelectDocument(regulation.id)}
-                >
+                <button key={regulation.id} className="text-emerald-300 hover:text-emerald-200" onClick={() => onSelectDocument(regulation.id)}>
                   {regulation.officialNumberDisplay ?? regulation.officialTitle}
                 </button>
               ))}
@@ -250,9 +226,7 @@ const StudyDocumentPage = ({
             <button onClick={() => setExpanded({})} className="rounded bg-slate-800 px-3 py-2 text-xs text-slate-300">
               Collapse All
             </button>
-            <span className="text-xs text-slate-500">
-              {visibleComponents.length + (completeDocumentMatches ? 1 : 0)} results
-            </span>
+            <span className="text-xs text-slate-500">{visibleComponents.length + (completeDocumentMatches ? 1 : 0)} results</span>
           </div>
           <div className="mb-3 rounded border border-slate-800 bg-slate-900 p-3 text-xs text-slate-300">
             Selected {selectedComponents.length} components · approximately {selectedTextLength.toLocaleString()} characters
@@ -301,10 +275,10 @@ const StudyDocumentPage = ({
                   className={`rounded border bg-slate-900 p-4 ${focusedSourceKey === 'complete-document' ? 'border-amber-400 ring-2 ring-amber-400/40' : 'border-emerald-900'}`}
                 >
                   <div className="text-xs uppercase tracking-wide text-emerald-300">Official source text</div>
-                  <h3 id="complete-document-heading" tabIndex={-1} className="font-semibold text-white">Complete document</h3>
-                  <p className="text-xs text-slate-500">
-                    Combined reader text, with reference-only form stubs omitted.
-                  </p>
+                  <h3 id="complete-document-heading" tabIndex={-1} className="font-semibold text-white">
+                    Complete document
+                  </h3>
+                  <p className="text-xs text-slate-500">Combined reader text, with reference-only form stubs omitted.</p>
                   <div className="mt-3 max-h-[60vh] overflow-auto whitespace-pre-wrap text-sm leading-6 text-slate-200">
                     {highlight(completeDocumentText, normalizedQuery)}
                   </div>
@@ -327,15 +301,14 @@ const StudyDocumentPage = ({
                     className={`rounded border bg-slate-900 p-4 ${focusedSourceKey === component.sourceKey ? 'border-amber-400 ring-2 ring-amber-400/40' : 'border-slate-800'}`}
                   >
                     <div className="flex flex-wrap items-start justify-between gap-3">
-                      <button
-                        onClick={() => setExpanded({ ...expanded, [component.sourceKey]: !isExpanded })}
-                        className="text-left"
-                      >
+                      <button onClick={() => setExpanded({ ...expanded, [component.sourceKey]: !isExpanded })} className="text-left">
                         <div className="text-xs uppercase tracking-wide text-emerald-300">Official source text</div>
                         <h3 id={`${component.sourceKey}-heading`} tabIndex={-1} className="font-semibold text-white">
                           {highlight(component.label, normalizedQuery)} {component.heading ? highlight(component.heading, normalizedQuery) : null}
                         </h3>
-                        <p className="text-xs text-slate-500">{component.componentType} · {component.sourceKey}</p>
+                        <p className="text-xs text-slate-500">
+                          {component.componentType} · {component.sourceKey}
+                        </p>
                       </button>
                       <label className="flex items-center gap-2 text-xs text-slate-300">
                         <input
@@ -344,9 +317,7 @@ const StudyDocumentPage = ({
                           onChange={(event) => {
                             if (referenceOnly && event.target.checked && !window.confirm('This form is reference-only. Select it anyway?')) return;
                             setSelectedKeys((current) =>
-                              event.target.checked
-                                ? [...current, component.sourceKey].sort()
-                                : current.filter((entry) => entry !== component.sourceKey),
+                              event.target.checked ? [...current, component.sourceKey].sort() : current.filter((entry) => entry !== component.sourceKey),
                             );
                           }}
                         />
@@ -384,10 +355,7 @@ const StudyDocumentPage = ({
                       >
                         Copy Reference
                       </button>
-                      <button
-                        className="rounded bg-slate-800 px-2 py-1 text-xs text-slate-300"
-                        onClick={() => navigator.clipboard?.writeText(component.text)}
-                      >
+                      <button className="rounded bg-slate-800 px-2 py-1 text-xs text-slate-300" onClick={() => navigator.clipboard?.writeText(component.text)}>
                         Copy Text
                       </button>
                     </div>
@@ -448,10 +416,7 @@ const StudyDocumentPage = ({
                   >
                     Reading Done
                   </button>
-                  <button
-                    onClick={() => onSaveUnit(draft)}
-                    className="rounded bg-slate-700 px-3 py-1.5 text-xs text-white hover:bg-slate-600"
-                  >
+                  <button onClick={() => onSaveUnit(draft)} className="rounded bg-slate-700 px-3 py-1.5 text-xs text-white hover:bg-slate-600">
                     Save Unit
                   </button>
                 </div>
@@ -462,7 +427,10 @@ const StudyDocumentPage = ({
                   <textarea
                     value={draft.editableSummary}
                     onChange={(event) =>
-                      setUnitDrafts({ ...unitDrafts, [unit.id]: { ...draft, editableSummary: event.target.value } })
+                      setUnitDrafts({
+                        ...unitDrafts,
+                        [unit.id]: { ...draft, editableSummary: event.target.value },
+                      })
                     }
                     className="min-h-32 rounded border border-slate-700 bg-slate-950 p-3 text-sm normal-case tracking-normal text-slate-100"
                   />
@@ -472,7 +440,10 @@ const StudyDocumentPage = ({
                   <textarea
                     value={draft.referenceAnswer}
                     onChange={(event) =>
-                      setUnitDrafts({ ...unitDrafts, [unit.id]: { ...draft, referenceAnswer: event.target.value } })
+                      setUnitDrafts({
+                        ...unitDrafts,
+                        [unit.id]: { ...draft, referenceAnswer: event.target.value },
+                      })
                     }
                     className="min-h-32 rounded border border-slate-700 bg-slate-950 p-3 text-sm normal-case tracking-normal text-slate-100"
                   />

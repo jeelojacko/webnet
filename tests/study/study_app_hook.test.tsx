@@ -5,12 +5,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createSeedStudyData } from '../../src/study/studySeed';
-import type {
-  StudyAttempt,
-  StudyDataSnapshot,
-  StudyDraft,
-  StudyProgress,
-} from '../../src/study/studyTypes';
+import type { StudyAttempt, StudyDataSnapshot, StudyDraft, StudyProgress } from '../../src/study/studyTypes';
 import { useStudyApp } from '../../src/study/useStudyApp';
 
 const storageState = vi.hoisted<{
@@ -31,47 +26,32 @@ vi.mock('../../src/study/studyStorage', () => ({
       ...(storageState.snapshot as StudyDataSnapshot),
       drafts: storageState.drafts,
       attempts: storageState.attempts,
-      progress: storageState.progress.length
-        ? storageState.progress
-        : (storageState.snapshot as StudyDataSnapshot).progress,
+      progress: storageState.progress.length ? storageState.progress : (storageState.snapshot as StudyDataSnapshot).progress,
     })),
     saveDocument: vi.fn(),
-    saveUnit: vi.fn(),
+    saveUnit: vi.fn(async (unit: StudyDataSnapshot['units'][number]) => {
+      if (!storageState.snapshot) return;
+      storageState.snapshot = {
+        ...storageState.snapshot,
+        units: [...storageState.snapshot.units.filter((entry) => entry.id !== unit.id), unit],
+      };
+    }),
     savePrompt: vi.fn(),
     replaceUnitConcepts: vi.fn(),
     replaceUnitRubrics: vi.fn(),
     saveProgress: vi.fn(async (progress: StudyProgress) => {
-      storageState.progress = [
-        ...storageState.progress.filter((entry) => entry.unitId !== progress.unitId),
-        progress,
-      ];
+      storageState.progress = [...storageState.progress.filter((entry) => entry.unitId !== progress.unitId), progress];
     }),
     saveAttempt: vi.fn(async (attempt: StudyAttempt) => {
       storageState.attempts = [...storageState.attempts, attempt];
     }),
-    saveRatedAttempt: vi.fn(
-      async ({
-        attempt,
-        progress,
-        draftId,
-      }: {
-        attempt: StudyAttempt;
-        progress: StudyProgress;
-        draftId: string;
-      }) => {
-        storageState.attempts = [...storageState.attempts, attempt];
-        storageState.progress = [
-          ...storageState.progress.filter((entry) => entry.unitId !== progress.unitId),
-          progress,
-        ];
-        storageState.drafts = storageState.drafts.filter((entry) => entry.id !== draftId);
-      },
-    ),
+    saveRatedAttempt: vi.fn(async ({ attempt, progress, draftId }: { attempt: StudyAttempt; progress: StudyProgress; draftId: string }) => {
+      storageState.attempts = [...storageState.attempts, attempt];
+      storageState.progress = [...storageState.progress.filter((entry) => entry.unitId !== progress.unitId), progress];
+      storageState.drafts = storageState.drafts.filter((entry) => entry.id !== draftId);
+    }),
     saveDraft: vi.fn(async (draft: StudyDraft) => {
-      storageState.drafts = [
-        ...storageState.drafts.filter((entry) => entry.id !== draft.id),
-        draft,
-      ];
+      storageState.drafts = [...storageState.drafts.filter((entry) => entry.id !== draft.id), draft];
     }),
     clearDraft: vi.fn(async (draftId: string) => {
       storageState.drafts = storageState.drafts.filter((entry) => entry.id !== draftId);
@@ -153,12 +133,7 @@ describe('study app hook persistence', () => {
       currentHookValue?.setRevealed(true);
       currentHookValue?.toggleConcept(currentHookValue.activeItem?.concepts[0]?.id ?? '');
     });
-    expect(hookValue.current?.ratingPreviews.map((preview) => preview.rating)).toEqual([
-      'again',
-      'hard',
-      'good',
-      'easy',
-    ]);
+    expect(hookValue.current?.ratingPreviews.map((preview) => preview.rating)).toEqual(['again', 'hard', 'good', 'easy']);
     expect(storageState.attempts).toEqual([]);
     await act(async () => {
       await hookValue.current?.rateActiveItem('good');
@@ -200,9 +175,7 @@ describe('study app hook persistence', () => {
     });
 
     expect(storageState.attempts.at(-1)?.guidedResponses?.[rubricId]).toBe('Guided answer.');
-    expect(storageState.attempts.at(-1)?.rubricCoverage).toEqual([
-      { rubricItemId: rubricId, status: 'covered' },
-    ]);
+    expect(storageState.attempts.at(-1)?.rubricCoverage).toEqual([{ rubricItemId: rubricId, status: 'covered' }]);
   });
 
   it('ignores duplicate rating submissions while a rating is being saved', async () => {
@@ -261,9 +234,42 @@ describe('study app hook persistence', () => {
     });
 
     expect(storageState.attempts).toEqual([]);
-    expect(hookValue.current?.statusMessage).toBe(
-      'Review the changed source before rating this study unit.',
-    );
+    expect(hookValue.current?.statusMessage).toBe('Review the changed source before rating this study unit.');
+  });
+
+  it('acknowledges source review without mutating FSRS progress or attempts', async () => {
+    const seed = createSeedStudyData('2026-08-01T10:00:00.000Z');
+    const reviewedUnit = { ...seed.units[0], sourceReviewRequired: true };
+    storageState.snapshot = {
+      ...seed,
+      units: [reviewedUnit, ...seed.units.slice(1)],
+    };
+    storageState.progress = seed.progress;
+    storageState.drafts = [];
+    const progressBefore = JSON.stringify(storageState.progress);
+    const hookValue: { current: HookValue | null } = { current: null };
+    await act(async () => {
+      root?.render(
+        <HookHarness
+          onValue={(value) => {
+            hookValue.current = value;
+          }}
+        />,
+      );
+    });
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
+
+    await act(async () => {
+      await hookValue.current?.acknowledgeSourceReview(reviewedUnit.id);
+    });
+
+    const updatedUnit = hookValue.current?.data?.units.find((unit) => unit.id === reviewedUnit.id);
+    expect(updatedUnit?.sourceReviewRequired).toBe(false);
+    expect(updatedUnit?.sourceReviewAcknowledgedAt).toBeTruthy();
+    expect(JSON.stringify(storageState.progress)).toBe(progressBefore);
+    expect(storageState.attempts).toEqual([]);
   });
 
   it('deletes all study data when requested', async () => {

@@ -16,7 +16,8 @@
     - [x] Wire Again/Hard/Good/Easy into atomic progress plus attempt writes with idempotency/double-click guards, while keeping StudyPhase transition logic independent for the scheduled Study session path.
     - [x] Add rating previews to the scheduled Study session path using the same timestamp as the final rating operation.
     - [x] Switch the live scheduled Study session source to the FSRS queue builder with source-review items guarded from memory-rating submission.
-    - [ ] Keep Preview, default Manual Practice, default Surprise Practice, and source acknowledgement non-mutating for FSRS; add focused session tests.
+    - [x] Keep Preview and source acknowledgement non-mutating for FSRS; add focused session/editor tests.
+    - [ ] Add default Manual Practice and default Surprise Practice non-counted controls/tests, with any counted-review override explicit.
   - [ ] Batch 3E - UI integration:
     - [ ] Add rating previews, dashboard scheduling counts, Library scheduling badges/filters/sort, unit-editor read-only scheduling panel, session completion summary, and dev-only diagnostics.
   - [ ] Batch 3F - undo, docs, full validation:
@@ -303,7 +304,7 @@
 - [x] Survey CAD parcel-constraint solver batch (June 2026): extend parcel-layout solving with frontage-at-offset, minimum width, minimum depth, optional maximum depth, solution-preference scoring, and failed-rule highlighting/warnings while keeping all measurements normalized to internal metric units.
 - [x] Survey CAD parcel-auto-layout batch (June 2026): add repeated frontage-aware parcel generation for one selected parent parcel, including preview-all vs step-through creation, automatic fill mode, deterministic parcel naming, and remainder handling options that can place leftover area in the last parcel, create a remainder parcel, or redistribute it.
 - [ ] Survey CAD parcel-advanced split/report batch (June 2026): add dedicated sliding-area and hinged-area split tools plus curved-frontage support, parcel-layout history/report rows, parcel label toggles, and richer parcel table/report surfacing for generated lot sets.
-  Current slice: expand parcel-layout history/report row summaries beyond the new saved constraint settings so solved width/depth/frontage metrics are visible in history and export.
+      Current slice: expand parcel-layout history/report row summaries beyond the new saved constraint settings so solved width/depth/frontage metrics are visible in history and export.
 
 - [x] Survey CAD traverse adjustment batch (June 2026): add draft-panel angular balance plus Bowditch/transit closure adjustment on top of the native traverse editor, persist adjustment provenance/report rows through command history, and leave optional Crandall balancing for a later high-end pass.
 
@@ -858,7 +859,7 @@
       - [x] Narrow the classic-parity listing gate so live `industry-parity-current` GNSS-only runs in the app still use the compact GNSS vector listing path even when a default instrument library is loaded
       - [x] Make the listing header prefer the solved parse-state vertical deflection over stale external run diagnostics so the industry output pane reports the actual GNSS run deflection values
       - [x] Add the committed Coldstream 3rd Dimension traverse fixtures and shared run-session regression for the two-file + `.snproj` imported parity case
-      - [x] Support compact STAR*NET control/sigma shorthand tokens such as `!!*` and `&&*` without changing existing spaced-token behavior
+      - [x] Support compact STAR*NET control/sigma shorthand tokens such as `!!*`and`&&\*` without changing existing spaced-token behavior
       - [x] Keep strict unresolved mixed-face rejection for reduced direction-set handling, but allow raw-mode fallback split emission for the imported parity path
       - [x] Normalize weighted raw `DM` face-2 zenith readings, skip float zenith equations, and preserve fixed-height-only control during bootstrap seeding so the Coldstream parity case converges with the imported settings
       - [x] Map imported `.snproj` refraction, fixed-control sigma, and leveling-default settings needed by the Coldstream parity fixture
@@ -928,14 +929,14 @@
       - [x] Expose the most common per-file actions in the popover rows so duplicate/remove/open-edit no longer depend on the right-click menu
       - [x] Add focused UI regression coverage for the new quick-action controls
   - [ ] Batch 5 - error propagation precision closeout
-      - [x] Expand the parity harness to lock the full error-propagation sections (all station sigmas, station ellipses, and relative ellipses)
-      - [x] Add an error-propagation-focused machine-readable deviation summary alongside the broader reference diff
-      - [x] Centralize shared covariance-to-ellipse decomposition
-      - [x] Centralize relative covariance-from-endpoints construction
-      - [x] Remove any non-display rounding or string conversion from the propagated-precision path
-      - [x] Replace defensive `Math.abs` precision propagation with explicit tiny-negative clamping only
-      - [x] Treat sub-display floating-point noise as neutral in the industry-reference diff gate so retained parity improvements are not rejected by machine-epsilon drift
-      - [ ] Test solver-order / reweight timing only if covariance-path cleanup does not materially reduce the remaining reference diff
+    - [x] Expand the parity harness to lock the full error-propagation sections (all station sigmas, station ellipses, and relative ellipses)
+    - [x] Add an error-propagation-focused machine-readable deviation summary alongside the broader reference diff
+    - [x] Centralize shared covariance-to-ellipse decomposition
+    - [x] Centralize relative covariance-from-endpoints construction
+    - [x] Remove any non-display rounding or string conversion from the propagated-precision path
+    - [x] Replace defensive `Math.abs` precision propagation with explicit tiny-negative clamping only
+    - [x] Treat sub-display floating-point noise as neutral in the industry-reference diff gate so retained parity improvements are not rejected by machine-epsilon drift
+    - [ ] Test solver-order / reweight timing only if covariance-path cleanup does not materially reduce the remaining reference diff
     - [ ] Batch 6 - multi-case parity fixture and normalized text-diff foundation
       - [x] Keep `manual/` local-only and mirror the 4 source input/output pairs into committed fixture files under `tests/fixtures/` with generic industry-case naming
       - [x] Add a committed exact-output regression lock for the parity-clean WebNet underground 2D reference case under `tests/fixtures/`

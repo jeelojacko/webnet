@@ -29,6 +29,7 @@ type StudyUnitEditorPageProps = {
   data: StudyDataSnapshot;
   unitId: string;
   onSave: (_draft: { unit: StudyUnit; prompt: StudyPrompt; concepts: StudyConcept[]; rubrics: StudyRubricItem[] }) => Promise<void>;
+  onAcknowledgeSourceReview?: (_unitId: string) => Promise<StudyUnit | void>;
   onNavigate: (_path: string) => void;
 };
 
@@ -41,8 +42,7 @@ const emptyGeneratedState = (): StudyGeneratedContentState => ({
   rubrics: 'empty',
 });
 
-const sourceRecordKey = (component: Pick<ImportedLegalComponent, 'documentId' | 'sourceKey'>): string =>
-  `${component.documentId}::${component.sourceKey}`;
+const sourceRecordKey = (component: Pick<ImportedLegalComponent, 'documentId' | 'sourceKey'>): string => `${component.documentId}::${component.sourceKey}`;
 
 const fieldCanOverwrite = (state: StudyGeneratedContentState, field: keyof StudyGeneratedContentState): boolean =>
   state[field] !== 'user-edited' || window.confirm(`Overwrite the edited ${field} field?`);
@@ -67,21 +67,19 @@ const normalizeConceptLabel = (value: string): string => value.replace(/\s+/g, '
 const orderedConcepts = (concepts: StudyConcept[]): StudyConcept[] =>
   concepts.slice().sort((left, right) => left.order - right.order || left.label.localeCompare(right.label) || left.id.localeCompare(right.id));
 
-const conceptRowsWithOrder = (concepts: StudyConcept[]): StudyConcept[] =>
-  concepts.map((concept, index) => ({ ...concept, order: index }));
+const conceptRowsWithOrder = (concepts: StudyConcept[]): StudyConcept[] => concepts.map((concept, index) => ({ ...concept, order: index }));
 
 const orderedRubrics = (rubrics: StudyRubricItem[]): StudyRubricItem[] =>
   rubrics.slice().sort((left, right) => left.order - right.order || left.prompt.localeCompare(right.prompt) || left.id.localeCompare(right.id));
 
-const rubricRowsWithOrder = (rubrics: StudyRubricItem[]): StudyRubricItem[] =>
-  rubrics.map((rubric, index) => ({ ...rubric, order: index }));
+const rubricRowsWithOrder = (rubrics: StudyRubricItem[]): StudyRubricItem[] => rubrics.map((rubric, index) => ({ ...rubric, order: index }));
 
 const phaseOptions: StudyPhase[] = ['unread', 'guided-recall', 'free-recall', 'application', 'maintenance'];
 const promptOptions: StudyPromptKind[] = ['guided-recall', 'free-recall', 'identification', 'scenario', 'comparison'];
 const responseModeOptions: Array<StudyResponseMode | ''> = ['', 'guided', 'free-recall', 'hybrid'];
 const unitTypeOptions: StudyUnitType[] = ['section', 'whole-act', 'survey-law-case', 'custom-principle', 'custom'];
 
-const StudyUnitEditorPage = ({ data, unitId, onSave, onNavigate }: StudyUnitEditorPageProps) => {
+const StudyUnitEditorPage = ({ data, unitId, onSave, onAcknowledgeSourceReview, onNavigate }: StudyUnitEditorPageProps) => {
   const unit = data.units.find((entry) => entry.id === unitId);
   const initialPrompt =
     data.prompts.find((entry) => entry.unitId === unitId && entry.kind === (unit?.promptKind ?? 'guided-recall')) ??
@@ -91,12 +89,8 @@ const StudyUnitEditorPage = ({ data, unitId, onSave, onNavigate }: StudyUnitEdit
   const initialRubrics = orderedRubrics(data.rubrics.filter((rubric) => rubric.unitId === unitId));
   const selectedKeys = new Set(unit?.sourceReferences?.map((reference) => `${reference.documentId}::${reference.sourceKey}`) ?? []);
   const sourceComponents = data.legalComponents.filter((component) => selectedKeys.has(sourceRecordKey(component)));
-  const legalDocument = unit?.documentIds[0]
-    ? data.legalDocuments.find((document) => document.id === unit.documentIds[0])
-    : undefined;
-  const studyDocument = unit?.documentIds[0]
-    ? data.documents.find((document) => document.id === unit.documentIds[0])
-    : undefined;
+  const legalDocument = unit?.documentIds[0] ? data.legalDocuments.find((document) => document.id === unit.documentIds[0]) : undefined;
+  const studyDocument = unit?.documentIds[0] ? data.documents.find((document) => document.id === unit.documentIds[0]) : undefined;
   const returnTo =
     typeof window.history.state?.returnTo === 'string'
       ? window.history.state.returnTo
@@ -157,9 +151,9 @@ const StudyUnitEditorPage = ({ data, unitId, onSave, onNavigate }: StudyUnitEdit
 
   const updateConceptLabel = (index: number, label: string) => {
     const normalized = normalizeConceptLabel(label);
-    const duplicate = normalized && conceptDrafts.some((concept, entryIndex) =>
-      entryIndex !== index && normalizeConceptLabelKey(concept.label) === normalizeConceptLabelKey(normalized),
-    );
+    const duplicate =
+      normalized &&
+      conceptDrafts.some((concept, entryIndex) => entryIndex !== index && normalizeConceptLabelKey(concept.label) === normalizeConceptLabelKey(normalized));
     if (duplicate) {
       setConceptMessage('Duplicate concept ignored.');
       return;
@@ -188,16 +182,18 @@ const StudyUnitEditorPage = ({ data, unitId, onSave, onNavigate }: StudyUnitEdit
     }
     const next = [
       ...conceptDrafts,
-      ...nextSuggestions.map((suggestion, index): StudyConcept => ({
-        id: `${unit.id}-concept-generated-${Date.now().toString(36)}-${index + 1}`,
-        unitId: unit.id,
-        label: suggestion.label,
-        required: true,
-        origin: 'generated',
-        order: conceptDrafts.length + index,
-        createdAt: nowIso,
-        updatedAt: nowIso,
-      })),
+      ...nextSuggestions.map(
+        (suggestion, index): StudyConcept => ({
+          id: `${unit.id}-concept-generated-${Date.now().toString(36)}-${index + 1}`,
+          unitId: unit.id,
+          label: suggestion.label,
+          required: true,
+          origin: 'generated',
+          order: conceptDrafts.length + index,
+          createdAt: nowIso,
+          updatedAt: nowIso,
+        }),
+      ),
     ];
     setConcepts(next);
     setConceptMessage(`Added ${nextSuggestions.length} suggested concepts.`);
@@ -212,16 +208,18 @@ const StudyUnitEditorPage = ({ data, unitId, onSave, onNavigate }: StudyUnitEdit
     const selected = suggestions.filter((suggestion) => keysToAdd.has(normalizeConceptLabelKey(suggestion.label)));
     const next = [
       ...retained,
-      ...selected.map((suggestion, index): StudyConcept => ({
-        id: `${unit.id}-concept-generated-${Date.now().toString(36)}-${index + 1}`,
-        unitId: unit.id,
-        label: suggestion.label,
-        required: true,
-        origin: 'generated',
-        order: retained.length + index,
-        createdAt: nowIso,
-        updatedAt: nowIso,
-      })),
+      ...selected.map(
+        (suggestion, index): StudyConcept => ({
+          id: `${unit.id}-concept-generated-${Date.now().toString(36)}-${index + 1}`,
+          unitId: unit.id,
+          label: suggestion.label,
+          required: true,
+          origin: 'generated',
+          order: retained.length + index,
+          createdAt: nowIso,
+          updatedAt: nowIso,
+        }),
+      ),
     ];
     setConcepts(next);
     setConceptMessage(`Replaced ${replaceManual ? 'all' : 'generated'} concepts with ${selected.length} suggestions.`);
@@ -269,31 +267,47 @@ const StudyUnitEditorPage = ({ data, unitId, onSave, onNavigate }: StudyUnitEdit
     const cleanedConcepts = conceptRowsWithOrder(
       conceptDrafts
         .map((concept) => ({ ...concept, label: normalizeConceptLabel(concept.label) }))
-        .filter((concept, index, all) =>
-          concept.label &&
-          all.findIndex((entry) => normalizeConceptLabelKey(entry.label) === normalizeConceptLabelKey(concept.label)) === index,
+        .filter(
+          (concept, index, all) =>
+            concept.label && all.findIndex((entry) => normalizeConceptLabelKey(entry.label) === normalizeConceptLabelKey(concept.label)) === index,
         ),
     );
     await onSave({
       unit: {
         ...unitDraft,
         sourceCitationSummary: legalDocument
-          ? generateSourceCitationSummary({ document: legalDocument, selectedSources: sourceComponents })
+          ? generateSourceCitationSummary({
+              document: legalDocument,
+              selectedSources: sourceComponents,
+            })
           : unitDraft.sourceCitationSummary,
         sourceReferences: isCustom ? [] : unitDraft.sourceReferences,
         documentIds: isCustom ? [] : unitDraft.documentIds,
         sectionRefs: isCustom ? [] : unitDraft.sectionRefs,
         generatedContentState: generatedState,
       },
-      prompt: { ...promptDraft, referenceAnswer: unitDraft.referenceAnswer, conceptIds: cleanedConcepts.map((concept) => concept.id) },
+      prompt: {
+        ...promptDraft,
+        referenceAnswer: unitDraft.referenceAnswer,
+        conceptIds: cleanedConcepts.map((concept) => concept.id),
+      },
       concepts: cleanedConcepts,
       rubrics: rubricRowsWithOrder(
         rubricDrafts
-          .map((rubric) => ({ ...rubric, prompt: rubric.prompt.trim(), referenceAnswer: rubric.referenceAnswer.trim() }))
+          .map((rubric) => ({
+            ...rubric,
+            prompt: rubric.prompt.trim(),
+            referenceAnswer: rubric.referenceAnswer.trim(),
+          }))
           .filter((rubric) => rubric.prompt),
       ),
     });
     onNavigate(returnTo);
+  };
+
+  const acknowledgeSourceReview = async () => {
+    const updated = await onAcknowledgeSourceReview?.(unit.id);
+    if (updated) setUnitDraft(updated);
   };
 
   return (
@@ -308,6 +322,11 @@ const StudyUnitEditorPage = ({ data, unitId, onSave, onNavigate }: StudyUnitEdit
           {unitDraft.sourceReviewRequired || unitDraft.sourceReferenceMissing ? (
             <div className="mt-3 rounded border border-amber-800 bg-amber-950/30 p-3 text-xs text-amber-200">
               {unitDraft.sourceReferenceMissing ? 'One or more source references are missing.' : 'Source review is required.'}
+              {onAcknowledgeSourceReview ? (
+                <button onClick={acknowledgeSourceReview} className="ml-2 underline">
+                  Acknowledge reviewed source
+                </button>
+              ) : null}
             </div>
           ) : null}
           <div className="mt-4 space-y-4">
@@ -375,10 +394,19 @@ const StudyUnitEditorPage = ({ data, unitId, onSave, onNavigate }: StudyUnitEdit
             Priority
             <select
               value={unitDraft.priority}
-              onChange={(event) => setUnitDraft({ ...unitDraft, priority: Number(event.target.value) as StudyUnit['priority'] })}
+              onChange={(event) =>
+                setUnitDraft({
+                  ...unitDraft,
+                  priority: Number(event.target.value) as StudyUnit['priority'],
+                })
+              }
               className="rounded border border-slate-700 bg-slate-950 p-3 text-sm normal-case tracking-normal text-slate-100"
             >
-              {[1, 2, 3, 4, 5].map((priority) => <option key={priority} value={priority}>P{priority}</option>)}
+              {[1, 2, 3, 4, 5].map((priority) => (
+                <option key={priority} value={priority}>
+                  P{priority}
+                </option>
+              ))}
             </select>
           </label>
           <label className="grid gap-2 text-xs uppercase tracking-wide text-slate-500">
@@ -388,7 +416,11 @@ const StudyUnitEditorPage = ({ data, unitId, onSave, onNavigate }: StudyUnitEdit
               onChange={(event) => setUnitDraft({ ...unitDraft, phase: event.target.value as StudyPhase })}
               className="rounded border border-slate-700 bg-slate-950 p-3 text-sm normal-case tracking-normal text-slate-100"
             >
-              {phaseOptions.map((phase) => <option key={phase} value={phase}>{phase}</option>)}
+              {phaseOptions.map((phase) => (
+                <option key={phase} value={phase}>
+                  {phase}
+                </option>
+              ))}
             </select>
           </label>
           <label className="grid gap-2 text-xs uppercase tracking-wide text-slate-500">
@@ -398,7 +430,11 @@ const StudyUnitEditorPage = ({ data, unitId, onSave, onNavigate }: StudyUnitEdit
               onChange={(event) => setUnitDraft({ ...unitDraft, unitType: event.target.value as StudyUnitType })}
               className="rounded border border-slate-700 bg-slate-950 p-3 text-sm normal-case tracking-normal text-slate-100"
             >
-              {unitTypeOptions.map((unitType) => <option key={unitType} value={unitType}>{unitType}</option>)}
+              {unitTypeOptions.map((unitType) => (
+                <option key={unitType} value={unitType}>
+                  {unitType}
+                </option>
+              ))}
             </select>
           </label>
           <label className="grid gap-2 text-xs uppercase tracking-wide text-slate-500">
@@ -413,7 +449,11 @@ const StudyUnitEditorPage = ({ data, unitId, onSave, onNavigate }: StudyUnitEdit
               }
               className="rounded border border-slate-700 bg-slate-950 p-3 text-sm normal-case tracking-normal text-slate-100"
             >
-              {responseModeOptions.map((mode) => <option key={mode || 'default'} value={mode}>{mode || 'phase default'}</option>)}
+              {responseModeOptions.map((mode) => (
+                <option key={mode || 'default'} value={mode}>
+                  {mode || 'phase default'}
+                </option>
+              ))}
             </select>
           </label>
         </div>
@@ -442,7 +482,13 @@ const StudyUnitEditorPage = ({ data, unitId, onSave, onNavigate }: StudyUnitEdit
             <input
               value={(unitDraft.tags ?? []).join(', ')}
               onChange={(event) =>
-                setUnitDraft({ ...unitDraft, tags: event.target.value.split(',').map((tag) => tag.trim()).filter(Boolean) })
+                setUnitDraft({
+                  ...unitDraft,
+                  tags: event.target.value
+                    .split(',')
+                    .map((tag) => tag.trim())
+                    .filter(Boolean),
+                })
               }
               className="rounded border border-slate-700 bg-slate-950 p-3 text-sm normal-case tracking-normal text-slate-100"
             />
@@ -460,7 +506,11 @@ const StudyUnitEditorPage = ({ data, unitId, onSave, onNavigate }: StudyUnitEdit
               }}
               className="rounded border border-slate-700 bg-slate-950 p-3 text-sm normal-case tracking-normal text-slate-100"
             >
-              {promptOptions.map((kind) => <option key={kind} value={kind}>{kind}</option>)}
+              {promptOptions.map((kind) => (
+                <option key={kind} value={kind}>
+                  {kind}
+                </option>
+              ))}
             </select>
           </label>
           <label className="grid gap-2 text-xs uppercase tracking-wide text-slate-500">
@@ -542,13 +592,14 @@ const StudyUnitEditorPage = ({ data, unitId, onSave, onNavigate }: StudyUnitEdit
           legalDocument={legalDocument}
           onRubricsChange={(nextRubrics) => {
             setRubricDrafts(nextRubrics);
-            setGeneratedState({ ...generatedState, rubrics: nextRubrics.length > 0 ? 'user-edited' : 'empty' });
+            setGeneratedState({
+              ...generatedState,
+              rubrics: nextRubrics.length > 0 ? 'user-edited' : 'empty',
+            });
           }}
         />
         <details className="rounded border border-slate-800 bg-slate-950 p-3">
-          <summary className="cursor-pointer text-xs uppercase tracking-wide text-slate-500">
-            Keywords / Concepts ({generatedState.concepts})
-          </summary>
+          <summary className="cursor-pointer text-xs uppercase tracking-wide text-slate-500">Keywords / Concepts ({generatedState.concepts})</summary>
           <div className="mt-3 mb-2 flex flex-wrap items-center justify-between gap-2">
             <div className="text-xs uppercase tracking-wide text-slate-500">Required concepts</div>
             <button onClick={() => addConcept()} className="rounded bg-emerald-600 px-2 py-1 text-xs font-medium text-white">
@@ -567,15 +618,23 @@ const StudyUnitEditorPage = ({ data, unitId, onSave, onNavigate }: StudyUnitEdit
                     if (event.key === 'Escape' && !concept.label.trim()) removeConcept(index);
                   }}
                   onBlur={() => updateConceptLabel(index, concept.label)}
-                  onChange={(event) => setConceptDrafts(conceptDrafts.map((entry, entryIndex) =>
-                    entryIndex === index ? { ...entry, label: event.target.value } : entry,
-                  ))}
+                  onChange={(event) =>
+                    setConceptDrafts(conceptDrafts.map((entry, entryIndex) => (entryIndex === index ? { ...entry, label: event.target.value } : entry)))
+                  }
                   className="rounded border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100"
                 />
-                <button onClick={() => moveConcept(index, -1)} disabled={index === 0} className="rounded bg-slate-800 px-2 py-1 text-xs text-slate-300 disabled:text-slate-600">
+                <button
+                  onClick={() => moveConcept(index, -1)}
+                  disabled={index === 0}
+                  className="rounded bg-slate-800 px-2 py-1 text-xs text-slate-300 disabled:text-slate-600"
+                >
                   Up
                 </button>
-                <button onClick={() => moveConcept(index, 1)} disabled={index === conceptDrafts.length - 1} className="rounded bg-slate-800 px-2 py-1 text-xs text-slate-300 disabled:text-slate-600">
+                <button
+                  onClick={() => moveConcept(index, 1)}
+                  disabled={index === conceptDrafts.length - 1}
+                  className="rounded bg-slate-800 px-2 py-1 text-xs text-slate-300 disabled:text-slate-600"
+                >
                   Down
                 </button>
                 <button onClick={() => removeConcept(index)} className="rounded bg-slate-800 px-2 py-1 text-xs text-slate-300">
@@ -613,12 +672,16 @@ const StudyUnitEditorPage = ({ data, unitId, onSave, onNavigate }: StudyUnitEdit
                           checked={checkedSuggestionKeys.includes(key)}
                           onChange={(event) =>
                             setSelectedSuggestionKeys(() =>
-                              event.target.checked ? uniqueConceptKeys([...checkedSuggestionKeys, key]) : checkedSuggestionKeys.filter((entry) => entry !== key),
+                              event.target.checked
+                                ? uniqueConceptKeys([...checkedSuggestionKeys, key])
+                                : checkedSuggestionKeys.filter((entry) => entry !== key),
                             )
                           }
                         />
                         <span>{suggestion.label}</span>
-                        <span className="text-slate-500">{suggestion.reason} · {suggestion.confidence}</span>
+                        <span className="text-slate-500">
+                          {suggestion.reason} · {suggestion.confidence}
+                        </span>
                       </label>
                     );
                   })}

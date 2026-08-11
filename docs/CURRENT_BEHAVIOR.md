@@ -1,14 +1,17 @@
 # Current Behavior
 
 ## Purpose
+
 This document is the maintained feature inventory for WebNet. It summarizes the current supported behavior and the status-sensitive areas that should be treated as existing product contract unless a task explicitly changes them.
 
 This file intentionally replaces the old pattern of keeping a giant behavior inventory inside `AGENTS.md`.
 
 ## Product focus
+
 WebNet is a browser-based least-squares adjustment application designed around mixed-observation survey networks. It aims to behave like an industry-standard-style adjustment package while staying browser-first, testable, and deterministic.
 
 Core delivered outcomes include:
+
 - mixed-observation least-squares adjustment
 - control-point handling and weighted constraints
 - residuals, local tests, and statistical summaries
@@ -28,12 +31,14 @@ The Study Library separates `Documents` from `Study Units`. Document rows retain
 
 The Study sidebar is compact and desktop-collapsible with persisted state. Library search is unified across documents, official provisions, source-linked study units, and custom units, with categorized counts, highlighted snippets, debounced input, keyboard result navigation, and official-provision results routed through the optimized source-key navigation path. Study-unit preview reuses the real session UI, supports typed answers, reveal, rubric coverage, and exact source text, and keeps preview responses local so progress, drafts, attempts, and review history are unchanged.
 
-Phase 3 FSRS work has begun behind an adapter boundary. `ts-fsrs@5.4.1` is installed, Study-domain settings resolve to complete FSRS parameters, serialized cards/review logs use ISO date fields, and deterministic fixed-clock adapter tests cover previews, ratings, round trips, and retrievability. Study storage schema version `5` adds FSRS config to settings, optional scheduling wrappers to progress and attempts, and preserves legacy provisional due dates as uninitialized `legacyDueAt` schedules rather than fabricating FSRS memory history. A pure FSRS-aware queue builder now classifies source-review-required, due Learning/Relearning, due Review, New, and optional surprise-practice items with deterministic ordering and new-unit caps. The live scheduled Study session now consumes that queue, surfaces source-review-required items first without allowing memory ratings, and routes those items to the unit/source review workflow. Scheduled Study session ratings now preview all four FSRS outcomes after reveal, apply one FSRS transition per StudyUnit, store card/log metadata on the attempt, update progress scheduling, preserve independent StudyPhase progression, and persist attempt/progress/draft clearing in one IndexedDB transaction with a duplicate-submit guard. Undo, practice/surprise counted-review controls, and broader scheduling UI remain pending.
+Phase 3 FSRS work has begun behind an adapter boundary. `ts-fsrs@5.4.1` is installed, Study-domain settings resolve to complete FSRS parameters, serialized cards/review logs use ISO date fields, and deterministic fixed-clock adapter tests cover previews, ratings, round trips, and retrievability. Study storage schema version `5` adds FSRS config to settings, optional scheduling wrappers to progress and attempts, and preserves legacy provisional due dates as uninitialized `legacyDueAt` schedules rather than fabricating FSRS memory history. A pure FSRS-aware queue builder now classifies source-review-required, due Learning/Relearning, due Review, New, and optional surprise-practice items with deterministic ordering and new-unit caps. The live scheduled Study session now consumes that queue, surfaces source-review-required items first without allowing memory ratings, and routes those items to the unit/source review workflow. Preview study sessions keep recall/rubric state local, and source acknowledgement only updates unit source flags/hashes without writing attempts or progress scheduling. Scheduled Study session ratings now preview all four FSRS outcomes after reveal, apply one FSRS transition per StudyUnit, store card/log metadata on the attempt, update progress scheduling, preserve independent StudyPhase progression, and persist attempt/progress/draft clearing in one IndexedDB transaction with a duplicate-submit guard. Undo, practice/surprise counted-review controls, and broader scheduling UI remain pending.
 
 For testing-phase cleanup, `/study/manage` includes a confirmed `Delete All Data` action that replaces local Study storage with an empty valid snapshot and recreates default settings.
 
 ## Current defaults and operator-facing posture
+
 Current startup and workflow defaults include:
+
 - run profile defaults to strict industry parity mode
 - cluster detection defaults to OFF
 - auto-adjust is available but operator-controlled
@@ -63,7 +68,9 @@ Current startup and workflow defaults include:
 ## Supported input model
 
 ### Named-project multi-file runs
+
 Current named-project behavior includes:
+
 - the Input Data `Project Files` button remains available even before a named project exists and can bootstrap a named local project from the current untitled workspace
 - the toolbar folder/open-project entry opens the Project Options workspace tab directly so local project create/open actions always land in the same `Project Files` workflow surface
 - the `Project Files` options tab now lists permanent example projects above recent local projects: `Pre-analysis`, `Combined`, and `Combined (split files)`
@@ -79,9 +86,11 @@ Current named-project behavior includes:
 For the exact ordered run contract, see `docs/run-semantics.md`.
 
 ### Supported record families
+
 The current parser supports the main control, geodetic, conventional, field, GNSS, traverse, direction-set, and leveling families used by the app, including support for mixed observation sets and source-line traceability.
 
 At a high level, supported input behavior includes:
+
 - control and coordinate records with component fixity and standard errors
 - auto-created placeholder stations from early observations now upgrade to the later explicit `C`/`P`/`PH` coordinate input class instead of staying permanently `unknown`
 - total-station distance, angle, direction, bearing, zenith, and mixed-measurement families
@@ -95,7 +104,9 @@ At a high level, supported input behavior includes:
 - include expansion with scoped state restoration and deterministic hard-fail diagnostics
 
 ### Directive support
+
 The parser supports a large inline-directive surface used for:
+
 - units and coordinate-order control
 - 2D and 3D mode control
 - delta and map/reduction behavior
@@ -111,7 +122,9 @@ See the parser modules and tests for the precise directive matrix. Keep this doc
 ## Adjustment and stochastic behavior
 
 ### Solve model
+
 Current solve behavior includes:
+
 - iterative least-squares adjustment
 - mixed 2D and 3D workflows
 - weighted control and elevation constraints from station standard errors
@@ -122,7 +135,9 @@ Current solve behavior includes:
 - deterministic review-oriented ranking and sorting
 
 ### Stochastic model highlights
+
 Current stochastic behavior includes:
+
 - instrument-driven and explicit sigma support
 - EDM additive and propagated handling
 - centering inflation and parity-sensitive geometry-aware centering behavior
@@ -136,7 +151,9 @@ Current stochastic behavior includes:
 - effective-distance reporting for angular observation families
 
 ### Numerical and stability behavior
+
 Current numerical behavior includes:
+
 - dense SPD normal-equation solving through scaled Cholesky factorization
 - diagonal damping for ill-conditioned normals
 - covariance recovery through pivoted symmetric `LDLᵀ` solving
@@ -146,7 +163,9 @@ Current numerical behavior includes:
 ## Diagnostics and review workflows
 
 ### Residual, suspect, and review workflows
+
 Current review behavior includes:
+
 - explicit run-state freshness strip (`Ready`, `Dirty`, `Running`, `Result stale`, `Reviewing`) plus blocking-reason badges near the main run workflow
 - standardized residual tables with source-line traceability
 - residual diagnostic summaries by severity and family
@@ -217,7 +236,9 @@ Current review behavior includes:
 - industry-standard propagated precision is the only live precision-reporting mode exposed in the app and project workflow
 
 ### Cluster and automatic review workflows
+
 Current workflow behavior includes:
+
 - cluster detection candidate review with approve/reject and retained-point selection
 - dual-pass solving when approved merges are applied
 - revert-cluster-merge workflow
@@ -230,7 +251,9 @@ Current workflow behavior includes:
 ## Reporting and export behavior
 
 ### Main output surfaces
+
 Current output surfaces include:
+
 - adjustment report
 - processing summary
 - industry-style listing output
@@ -243,7 +266,9 @@ Current output surfaces include:
 - QA bundle export presets
 
 ### Listing and report expectations
+
 Current listing/report behavior includes:
+
 - summary-first report ordering
 - the WebNet report now uses stronger progressive disclosure for heavy late-report sections: `Residual Diagnostics` downward, including lower-priority diagnostics, observation-family residual tables, and the final `Processing Log`, start collapsed and do not render their inner table/log content until opened
 - `Direction Face Treatment Diagnostics` is hidden in preanalysis reports and, for regular adjustment runs, is rendered as a late collapsed diagnostics block immediately above `Processing Log`
@@ -275,7 +300,9 @@ Current listing/report behavior includes:
 - fixture-backed parity locks now include a small underground 2D reference case with two guards: key WebNet listing sections stay stable, and a mirrored industry-output fixture keeps adjusted coordinates, relative-confidence rows, and ellipse blocks numerically close to the actual industry result
 
 ### Precision reporting
+
 Current results use one live precision-reporting model:
+
 - industry-style outputs use unscaled propagated precision
 - older project/saved-run payloads that carried legacy precision/profile selections are normalized back to the strict industry-parity defaults on load/save
 - older project payloads that carried the retired legacy CRS-transform UI fields are normalized back to `crsTransformEnabled=false`, `crsProjectionModel=legacy-equirectangular`, and a blank `crsLabel` on load/save
@@ -288,7 +315,9 @@ Current results use one live precision-reporting model:
 ## Coordinate-system and GPS behavior
 
 ### CRS and reduction behavior
+
 Current coordinate-system behavior includes:
+
 - Local/Grid mode state
 - CRS directives and optional labels, scale, and convergence inputs
 - Canada-first CRS catalog support including NAD83(CSRS) UTM, MTM, and key provincial entries
@@ -309,7 +338,9 @@ Current coordinate-system behavior includes:
 - synthetic 3D CRS harness jobs now use paired `DV` slope+zenith records for grid-mode shots so shared HI/HT metadata stays attached to both observation components instead of relying on standalone `V` rows that do not carry HI/HT through the current parser contract
 
 ### Geoid and grid behavior
+
 Current geoid behavior includes:
+
 - optional geoid model controls and height-datum conversion controls
 - external GTX/BYN loading through parser/CLI and browser workflows
 - project save/open round-trips for browser-loaded geoid/grid sources, including portable project export/import and named local project reopen
@@ -317,7 +348,9 @@ Current geoid behavior includes:
 - Canada-first preset support for common workflows
 
 ### GNSS-specific behavior
+
 Current GNSS behavior includes:
+
 - network vs sideshot modes
 - AddHiHt support
 - rover-offset support
@@ -349,7 +382,9 @@ Current GNSS behavior includes:
 - project options now expose positional-tolerance checking controls (enable, constant mm, PPM, confidence percent) in the `Special` tab, and those settings flow through shared run-session/direct solve paths into the listing/report output
 
 ## Import and interoperability behavior
+
 Current import behavior includes:
+
 - generic importer registry and normalized imported-data model
 - first-party importers for OPUS/OPUS-RS, JobXML, industry-style survey-report HTML, FieldGenius raw, Carlson/TDS RW5-style raw, and DBX text/XML exports
 - staged import-review modal before editor mutation
@@ -367,7 +402,9 @@ For detailed import behavior, see `docs/IMPORT_WORKFLOW.md`.
 ## Workspace, performance, and delivery behavior
 
 ### Persistence and saved work
+
 Current workspace behavior includes:
+
 - a dedicated `Survey CAD` workspace page that can be opened before any solve; it currently acts as the durable entry seam for the live native-model preview, persisted CAD workspace snapshot workflow, selection/undo command-history workflow, snap-toggle workflow, typed command-input workflow (`POINT`, `COGO PT`, `LINE`, `PLINE`, `TRAVERSE`, split-button `ARC` modes, `INVERSE`, `MOVE`, `COPY`, repeatable `TRIM`, dedicated repeatable `EXT`, repeatable `FILLET` with radius `0` hard corners plus minor-sweep corner preservation, `PASTE`, `INTX`, selection-driven `ALIGN`, `ALIGN OFF`, `STA`, `STA EQ`, `STA PT`, `STA INT`, selection-driven `PARCEL`, and the `CURVE` family for solver/radial-bearing/point-on-curve/subdivide/offset/PI/chord-bearing/reverse/compound workflows), overlay command-bar workflow inside the viewport itself, direct viewport interaction (`click select`, directional drag-box selection, wheel zoom, middle-mouse pan, middle-double-click zoom extents, click-to-draw line creation, live command previews, Enter/Escape command flow, keyboard-first active command entry, keyboard copy/paste with insertion-point paste, selection excluded from undo history, stable no-surprise camera framing after edits, widened point/line/ellipse hit targets, true arc-path rendering, `Ctrl` reverse-direction arc modifiers), survey-style `TRAVERSE` segment annotation layout, geometry-derived arc labeling, geometry-derived alignment name plus station-range labeling, alignment snapshot creation from selected open line/arc chains, derived offset-alignment creation from selected native alignments, persisted alignment station equations that remap displayed stationing for later station reports/points/intervals, and selected-parcel closure reporting
 - Survey CAD project persistence now uses CAD project version 2 and carries a project-level COGO computation log. Existing COGO-producing commands such as `COGO PT`, `TRAVERSE`, arc creation, tangent curve, `INTX`, and `PARCEL` keep compatibility metadata while also recording structured COGO provenance/report rows for later report-panel and export work.
 - Survey CAD now opens as a standalone drawing workspace with native `.wncad` file controls for new/open/save/export. It no longer rebuilds the active CAD model from adjustment input or solved results on open; adjusted coordinates enter CAD only through the explicit `Import Adjusted Points` action, which upserts station points and preserves unrelated CAD geometry.
@@ -388,7 +425,9 @@ Current workspace behavior includes:
 - preservation of last successful results during reruns
 
 ### Performance and scalability
+
 Current delivered performance architecture includes:
+
 - worker-backed solve execution in the browser
 - worker solve status now reports elapsed time, active run-session stage, solve-count progress, and per-solve iteration progress in the toolbar so long traverse/parity jobs no longer look frozen
 - shared run-session orchestration for browser and CLI solve flows
@@ -412,7 +451,9 @@ Current delivered performance architecture includes:
 - the adjustment core now bypasses generic dense `AᵀP`/`AᵀPA` matrix products in its main solve and covariance/statistics paths, instead accumulating normal equations from sparse equation rows and using sparse row-matrix multiplies where `A*x` style products are still needed; this keeps parity behavior unchanged while materially improving the dense imported-project benchmark path
 
 ## CLI and batch behavior
+
 Current CLI support includes:
+
 - headless parser and engine execution
 - profile, iteration, unit, coord-mode, preanalysis, and GNSS frame controls
 - summary, JSON, listing, and LandXML style outputs
@@ -420,7 +461,9 @@ Current CLI support includes:
 - smoke-test and regression coverage
 
 ## Parity status notes
+
 Parity-sensitive behavior remains an explicit project concern. Current parity-oriented workflow includes:
+
 - a computational parity harness across reference projects
 - an industry-reference diff gate
 - a dedicated synthetic Canadian CRS harness gate that remains separate from the industry-reference parity gate (`harness:crs:synthetic` vs `parity:industry-reference`)
@@ -430,7 +473,7 @@ Parity-sensitive behavior remains an explicit project concern. Current parity-or
 - exact levelling-only industry-listing parity from `Project Option Settings` through the file end for the active leveling reference case
 - active traverse startup defaults and parser regression locks for `.INST`-scoped instrument selection across direction-set/traverse blocks
 - slot-preserving mixed sigma parsing for traverse direction-set `DM` rows, so tokens such as `& & 30` apply default direction and distance weighting while keeping only the zenith sigma explicit
-- compact STAR*NET shorthand tokens are accepted in the same slot-preserving parser path, so packed markers such as `!!*` and `&&*` expand across control and sigma slots without changing the older spaced-token behavior
+- compact STAR*NET shorthand tokens are accepted in the same slot-preserving parser path, so packed markers such as `!!*`and`&&\*` expand across control and sigma slots without changing the older spaced-token behavior
 - traverse direction-set reductions and paired `DM` distance/zenith rows now share one global observation-ID stream and preserve the active set ID, which keeps set-scoped diagnostics and review selection deterministic on the traverse parity case
 - derived grid lat/lon and projection factors for projected traverse stations are recomputed from the live adjusted coordinates unless the station came from explicit geodetic input, preventing stale factor reuse on the traverse parity case
 - the active traverse parity startup now uses the CSRS New Brunswick double-stereographic CRS under the industry `NewBrunswick83` label, with the retained classic listing calibration derived from an isolated display-only legacy NB formula instead of a second catalog CRS
@@ -468,9 +511,11 @@ Parity-sensitive behavior remains an explicit project concern. Current parity-or
 When a change affects parser semantics, weighting, reduction, residual display, confidence formatting, or listing/report ordering, treat it as parity-sensitive and consult `docs/PARITY_WORKFLOW.md`.
 
 ## What belongs here vs elsewhere
+
 Keep this file as the maintained feature inventory and status summary.
 
 Do not use this file for:
+
 - implementation step checklists -> use `TODO.md`
 - low-level coding instructions -> use `AGENTS.md`
 - deep import workflow notes -> use `docs/IMPORT_WORKFLOW.md`

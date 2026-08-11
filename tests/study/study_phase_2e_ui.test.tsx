@@ -8,6 +8,7 @@ import StudyManagePage from '../../src/study/components/StudyManagePage';
 import StudyPreviewPage from '../../src/study/components/StudyPreviewPage';
 import StudyRubricEditor from '../../src/study/components/StudyRubricEditor';
 import StudySessionPage from '../../src/study/components/StudySessionPage';
+import StudyUnitEditorPage from '../../src/study/components/StudyUnitEditorPage';
 import { createSeedStudyData } from '../../src/study/studySeed';
 import type { StudyDataSnapshot, StudySessionItem } from '../../src/study/studyTypes';
 
@@ -18,9 +19,7 @@ const renderIntoRoot = async (node: React.ReactNode, root: Root | null) => {
 };
 
 const input = (label: string): HTMLTextAreaElement | HTMLInputElement => {
-  const element = Array.from(document.querySelectorAll('textarea,input')).find(
-    (entry) => entry.closest('label')?.textContent?.includes(label),
-  );
+  const element = Array.from(document.querySelectorAll('textarea,input')).find((entry) => entry.closest('label')?.textContent?.includes(label));
   expect(element).toBeTruthy();
   return element as HTMLTextAreaElement | HTMLInputElement;
 };
@@ -56,12 +55,7 @@ describe('study phase 2E UI', () => {
   it('renders collapsed sidebar entries as icon buttons and toggles persistence callback', async () => {
     const onCollapsed = vi.fn();
     await renderIntoRoot(
-      <StudyLayout
-        activePath="/study/library"
-        sidebarCollapsed
-        onSidebarCollapsedChange={onCollapsed}
-        onNavigate={vi.fn()}
-      >
+      <StudyLayout activePath="/study/library" sidebarCollapsed onSidebarCollapsedChange={onCollapsed} onNavigate={vi.fn()}>
         <div>Content</div>
       </StudyLayout>,
       root,
@@ -84,14 +78,7 @@ describe('study phase 2E UI', () => {
     data.units[0] = { ...data.units[0], responseModeOverride: 'guided' };
     const before = JSON.stringify(data);
     const onNavigate = vi.fn();
-    await renderIntoRoot(
-      <StudyPreviewPage
-        data={data}
-        unitId={data.units[0].id}
-        onNavigate={onNavigate}
-      />,
-      root,
-    );
+    await renderIntoRoot(<StudyPreviewPage data={data} unitId={data.units[0].id} onNavigate={onNavigate} />, root);
 
     const firstGuidedBox = input(data.rubrics[0].prompt);
     await act(async () => {
@@ -116,6 +103,31 @@ describe('study phase 2E UI', () => {
       closePreview?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
     expect(onNavigate).toHaveBeenCalledWith('/study/library?tab=units');
+  });
+
+  it('acknowledges source review from the unit editor without saving authoring changes', async () => {
+    const data: StudyDataSnapshot = createSeedStudyData('2026-08-05T10:00:00.000Z');
+    data.units[0] = { ...data.units[0], sourceReviewRequired: true };
+    const acknowledged = {
+      ...data.units[0],
+      sourceReviewRequired: false,
+      sourceReviewAcknowledgedAt: '2026-08-05T11:00:00.000Z',
+    };
+    const onSave = vi.fn(async () => {});
+    const onAcknowledgeSourceReview = vi.fn(async () => acknowledged);
+    await renderIntoRoot(
+      <StudyUnitEditorPage data={data} unitId={data.units[0].id} onSave={onSave} onAcknowledgeSourceReview={onAcknowledgeSourceReview} onNavigate={vi.fn()} />,
+      root,
+    );
+
+    const acknowledge = Array.from(document.querySelectorAll('button')).find((button) => button.textContent === 'Acknowledge reviewed source');
+    await act(async () => {
+      acknowledge?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(onAcknowledgeSourceReview).toHaveBeenCalledWith(data.units[0].id);
+    expect(onSave).not.toHaveBeenCalled();
+    expect(document.body.textContent).not.toContain('Source review is required.');
   });
 
   it('renders guided mode with required rubric textboxes and no monolithic textbox', async () => {

@@ -738,6 +738,8 @@ export const useStudyApp = () => {
       const updated = acknowledgeUnitSourceReview(unit, data.legalComponents);
       await storage.saveUnit(updated);
       setData({ ...data, units: replaceById(data.units, updated) });
+      setStatusMessage(`Source review acknowledged: ${updated.title}.`);
+      return updated;
     },
     [data, storage],
   );

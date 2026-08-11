@@ -37,6 +37,7 @@ const StudyApp = () => {
           data={study.data}
           unitId={unitEditId}
           onSave={study.saveUnitAuthoring}
+          onAcknowledgeSourceReview={study.acknowledgeSourceReview}
           onNavigate={study.navigate}
         />
       );

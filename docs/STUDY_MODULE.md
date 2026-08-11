@@ -1,11 +1,13 @@
 # Study Module
 
 ## Scope
+
 The study module is an isolated local-first application at `/study` for New Brunswick statute law and survey-law study workflows.
 
 It does not use adjustment, parser, solver, network, or Survey CAD domain state.
 
 ## File Structure
+
 - `src/study/studyTypes.ts` - record contracts for documents, units, prompts, concepts, rubrics, progress, attempts, drafts, settings, and snapshots
 - `src/study/studySeed.ts` - five initial New Brunswick statute document records plus sample units, concepts, prompts, and initial progress
 - `src/study/studyScheduler.ts` - phase transition and session ordering rules
@@ -24,11 +26,13 @@ It does not use adjustment, parser, solver, network, or Survey CAD domain state.
 - `tests/study/*` - focused storage, scheduler, OPFS, separation, autosave, and attempt-persistence coverage
 
 ## IndexedDB Schema
+
 Database: `webnet.study.v1`
 
 Version: `5`
 
 Stores:
+
 - `documents`, key `id`: source metadata such as title, kind, jurisdiction, category, priority, summary, and OPFS source-file asset records
 - `units`, key `id`: learnable topics with editable summaries and reference answers. Units now carry `sourceMode: "official" | "custom"`. Official units keep document IDs, section refs, and source references; custom units keep those source fields empty and may carry tags, notes/citation text, and an optional custom source URL.
 - `prompts`, key `id`: guided recall, free recall, identification, scenario, or comparison prompts linked to units and concepts
@@ -45,6 +49,7 @@ Stores:
 Schema migration currently normalizes imported or partially missing snapshots to schema version `5`, fills default settings, defaults official-content stores to empty arrays, adds unit source mode, adds concept origin/order fields, adds the rubric store, adds Study FSRS settings/configuration, adds optional progress/attempt scheduling wrappers, and keeps existing Study data intact. Existing concepts without origin default to manual unless the linked unit already records generated concepts. Legacy snapshots without rubrics receive conservative supplemental `custom` rubric rows from existing concepts with empty reference answers, so migration does not invent legal answers or delete concept content.
 
 Study scheduling metadata is additive in schema version `5`:
+
 - `StudySettings.fsrsConfig` stores schema version, config version, user settings, and the complete resolved `ts-fsrs` parameter object.
 - `StudyProgress.scheduling` stores a Study-side FSRS schedule wrapper. Existing provisional `dueAt` values migrate to `legacyDueAt` with `initialized: false`; migration does not invent stability, difficulty, or review history.
 - `StudyAttempt.scheduling` is available for future immutable review evidence, including selected rating, card before/after snapshots, review log, due before/after, config version, reason, and undo timestamp.
@@ -52,6 +57,7 @@ Study scheduling metadata is additive in schema version `5`:
 - `isFsrsReplayableAttempt` accepts only counted FSRS review attempts with explicit rating and review timestamp, and rejects preview/source-review/undone/non-applied records.
 
 ## OPFS Layout
+
 Source and backup assets use generated paths under:
 
 ```text
@@ -59,6 +65,7 @@ study/documents/{document-id}/{role}/{file-name}
 ```
 
 Roles are:
+
 - `raw-html`
 - `pdf`
 - `imported-source`
@@ -68,6 +75,7 @@ Roles are:
 Authoritative source files are tracked by OPFS path in `StudyDocument.sourceFiles`. User-editable summaries and reference answers remain in `StudyUnit` or `StudyPrompt` records.
 
 ## Official NB Law Pilot Content
+
 Phase 2A adds a development-side official-source pipeline for a small New Brunswick legislation pilot. The pilot manifest is:
 
 ```text
@@ -133,6 +141,7 @@ form:form-1
 ```
 
 Current live pilot normalization yields:
+
 - Surveys Act: 16 sections
 - Boundaries Confirmation Act: 21 sections
 - Community Planning Act: 164 sections
@@ -145,6 +154,7 @@ Current live pilot normalization yields:
 - N.B. Reg. 83-130: 40 sections
 
 Current live pilot component counts from the integrity report:
+
 - Surveys Act: 16 sections, 19 subsections, 1 schedule, 0 forms
 - Boundaries Confirmation Act: 21 sections, 51 subsections, 0 schedules, 0 forms
 - Community Planning Act: 164 sections, 446 subsections, 1 schedule, 0 forms
@@ -157,6 +167,7 @@ Current live pilot component counts from the integrity report:
 - N.B. Reg. 83-130: 40 sections, 66 subsections, 4 schedules, 63 forms
 
 Known laws.gnb pilot findings:
+
 - Some pages emit volatile generated anchor names in otherwise identical HTML responses, so the fetch command canonicalizes those anchor IDs only for hash comparison.
 - New Brunswick Regulation 2019-29 is available through an annual regulation path but is a Highway Act regulation concerning the Route 11 Caraquet Bypass, so it was removed from the Community Planning pilot.
 - The laws.gnb site can return a missing-document message with HTTP 200; the fetcher treats that page as a failed required document.
@@ -171,6 +182,7 @@ tests/fixtures/study/nb-law-pilot/html/
 They are compact saved HTML fixtures for all ten pilot entries. The fixtures preserve the laws.gnb section/title/citation markup patterns used by the normalizer without embedding the full official corpus in tests.
 
 ## Official Package Import
+
 `/study/manage` supports importing the generated official content package from pasted JSON or a selected `.json` file. Browser import validation checks schema version, package and manifest IDs, unique document IDs, unique component `sourceKey`s per document, valid Act-regulation relationships, TOC source keys, required metadata, component hashes, document source-hash consistency, embedded integrity errors, forbidden laws.gnb.ca interface markers, and non-empty legal components.
 
 The preview groups new, updated, unchanged, and absent existing documents; new, changed, removed, and unchanged components; reference-only forms; and units that will require source review. Import writes official records atomically across `documents`, `units`, `legalDocuments`, `legalComponents`, and `importHistory`. Official text is stored only in `legalComponents`; it is not copied into editable summaries, prompts, concepts, attempts, progress, or drafts.
@@ -180,17 +192,21 @@ For testing, Manage also exposes `Delete All Data`. The first click opens an in-
 Study units linked to official source material store `documentId`, `sourceKey`, and `contentHashAtLinkTime`. Later package imports mark `sourceReviewRequired` or `sourceReferenceMissing` when linked components change or disappear. Acknowledging review updates link-time hashes for still-present components and records `sourceReviewAcknowledgedAt`.
 
 ## Reference-Only Forms
+
 Some prescribed forms normalize only as a label. Import classifies a form as `reference-only` when its normalized text, after trimming whitespace and optional consolidation text, contains only its own label. These forms remain navigable, keep source keys and hashes, display an incomplete-body warning, and require explicit confirmation before selection for study-unit creation. Short statutory sections such as repealed provisions are not classified as form stubs.
 
 ## Navigation Shell
+
 The Study sidebar is compact and collapsible on desktop. Expanded width is just wide enough for the full navigation labels and collapsed width is 2.875rem. The collapsed state is stored on `StudySettings.studySidebarCollapsed`, restored after reload, and changed through an accessible icon button. Expanded entries show icon plus text; collapsed entries keep icon-only visible chrome with accessible labels and title tooltips. The selected route continues to expose `aria-current="page"` and the main content immediately uses the released width.
 
 ## Legal Reader
+
 `/study/document/:id` displays imported official metadata, Act-regulation navigation, source URL, content hash, consolidated-to date, fetch/import dates, package ID, and safe React-rendered normalized text. The user-authored document summary remains in a visually separate editor.
 
 The reader supports table-of-contents navigation, case-insensitive search, section/schedule/form filtering, expand/collapse, subsection display, copy reference/text, component selection, and creating a generated draft study unit from selected official components. TOC, hash, and Library search-result navigation opens the selected section, schedule, form, or subsection with one click, expands subsection parents before scrolling, updates the hash, waits for React to commit the expanded DOM, performs exactly one `scrollIntoView({ behavior: "auto", block: "start" })`, focuses the heading with `preventScroll: true`, and applies a short focus highlight without another scroll. Development builds log a compact timing diagnostic for this navigation path. Created units store source references with current component hashes, generate editable study content, and then open `/study/unit/:id/edit`.
 
 ## Library
+
 The Library uses top-level `Documents` and `Study Units` tabs.
 
 A unified search bar sits near those tabs with placeholder `Search documents, provisions and study units`. Search uses a prebuilt in-memory index refreshed whenever the Study snapshot changes. The index records document metadata, official provision labels/headings/source keys/subsection labels/exact text, study-unit titles/questions/reference answers/summaries/rubric prompts/rubric answers/concepts/tags, and custom citation notes.
@@ -202,7 +218,9 @@ Documents can be filtered by all, Acts, regulations, or custom sources. Document
 Study units can be filtered by source-linked, custom, needs-review, and learning phase. Unit rows show title, related Act/regulation or custom grouping, selected section references, priority, category, phase, concept count, prompt count, source-review state, last modified date, and attempt count. Sorting supports related source, unit title, priority, phase, last modified, and attempt count. Groups are collapsible and regulation-linked units include the parent Act in the group label so both records are discoverable.
 
 ## Automatic Study-Unit Drafting
+
 Creating a unit from selected official source components now generates:
+
 - a study-unit title from document title, selected labels, and headings
 - one guided-recall question using deterministic heading/text templates
 - a structured exact-wording reference-answer draft
@@ -210,6 +228,7 @@ Creating a unit from selected official source components now generates:
 - optional conservative concept suggestions
 
 The content layers remain separate:
+
 - exact official source text stays in `legalComponents` and is displayed read-only in the unit editor
 - deterministic generated drafts live on `StudyUnit`, `StudyPrompt`, and `StudyConcept`
 - user edits are saved back only to those study records
@@ -219,6 +238,7 @@ Reference-answer generation defaults to structured exact wording. It preserves s
 Generated field state is tracked on `StudyUnit.generatedContentState` for title, question, reference answer, study summary, and concepts. Regeneration controls confirm before replacing a user-edited field. Existing source-linked units expose `Generate Missing Study Content`, which fills only empty generated fields and does not overwrite manual titles, prompts, reference answers, summaries, concepts, progress, attempts, or drafts.
 
 ## Answer Rubrics
+
 Answer rubrics are now the primary study-session assessment structure. A rubric item has a category such as purpose, scope/trigger, actor, power/duty, required material, procedure, notice, deadline/number, limit/exception, legal effect, filing/record, survey relevance, related provision, or custom. Each item carries an editable prompt and reference answer plus generated/manual origin and source-reference metadata when generated from official text.
 
 Creating a source-linked legal unit now generates structured rubric items in addition to the older concept suggestions. For legal provisions, `generateStudyRubric` classifies the section topic from the section heading first, then extracts deterministic legal facts from subsection text using statutory signals such as `subject to`, `if`, `on receiving`, `may`, `shall`, `shall not`, `commits an offence`, `punishable`, `notice`, numeric deadlines, filing/registry language, legal-effect wording, citation-title wording, and cross-references. Extracted modal facts preserve the operative actor, exact legal modality, action, source key, and source clause together so a condition actor is not promoted to the operative actor and a `may` clause is not converted into a duty. Passive clauses about common legal objects such as instruments, plans, documents, applications, certificates, notices, records, deeds, transfers, mortgages, registrations, and by-laws are rendered as object/condition-focused prompts instead of asking what the object must or may do. Legal text is prepared into exact source text, operative text, amendment-history text, consolidation-note text, and trailing structural-heading text before fact extraction or answer generation, so generator code uses operative text by default without partial citation residue or next-division heading contamination. Related facts such as offence plus penalty, duty plus filing consequence, and permission plus trigger are merged before prompt generation so generated prompts test a specific legal subject instead of repeating a generic section-level stem. Main-question generation also normalizes strong heading subjects before insertion, avoiding duplicated wording such as duties-about-duties or repeated regarding phrases. Generated reference and rubric answers stay close to operative source wording, remove amendment-history, consolidation-note, repeated heading/section prefixes, and trailing structural-heading text by default, and keep survey-relevance notes explicitly labelled as study notes.
@@ -232,6 +252,7 @@ The unit editor shows `Answer Rubric` above a collapsed `Keywords / Concepts` pa
 Every Library and document-reader study-unit row includes `Preview`. Preview opens `/study/unit/:id/preview`, renders the real session UI for that unit, allows typed guided/free/hybrid responses, allows reveal, shows reference answers, rubric self-assessment, and exact official source text when linked. Preview state is local to the preview page and does not create attempts, advance phase, change progress, alter statistics, save drafts, or persist temporary responses. Closing Preview returns to the Library Study Units tab.
 
 ## Keywords / Concepts
+
 Required concepts are editable checklist rows. The unit editor supports `+ Add Concept`, Enter-to-save normalization, Escape cancellation for empty new rows, delete, and up/down reordering. Duplicate labels are rejected case-insensitively after punctuation and whitespace normalization. Empty concepts are dropped on save. Generated and manual concepts are both editable and removable.
 
 Concept suggestions are generated by the pure deterministic `generateRequiredConcepts` function. It extracts defined terms, meaningful headings, subsection topics, actor/action/object requirements, deadlines and numerical requirements, legal effects, and conservative fallbacks for substantive non-repealed source text. It intentionally skips reference-only forms, repealed-only components, source URLs, consolidation-note-only text, amendment-history noise, and low-quality structural fragments such as `Under Subsection`, `Pursuant to`, or `Filed Under Paragraph`.
@@ -239,12 +260,15 @@ Concept suggestions are generated by the pure deterministic `generateRequiredCon
 The editor provides `Add Suggested Concepts`, `Replace Generated`, and `Replace All`. Adding suggestions preserves manual and generated concepts and adds only missing labels. Replacing generated concepts preserves manual concepts by default and requires confirmation; replacing all concepts is a separate confirmed action. Development builds may show a diagnostic panel with label, rule, confidence, and source key.
 
 ## Custom Study Units
+
 `New Custom Study Unit` creates an unlinked unit with `sourceMode: "custom"`, empty official source references, editable title/category/priority/phase/tags, study summary, recall question, reference answer, required concepts, prompt type, optional notes/citation text, and optional custom source URL.
 
 Custom units participate in sessions, attempts, drafts, import/export, editing, deletion with confirmation, duplication, and later scheduling work. They do not show missing-source warnings, official-text labels, or source-hash review flags.
 
 ## Session Rules
+
 Initial phases:
+
 - `unread`
 - `guided-recall`
 - `free-recall`
@@ -252,6 +276,7 @@ Initial phases:
 - `maintenance`
 
 Default transitions:
+
 - completing reading moves `unread` to `guided-recall`
 - two `Good` or `Easy` guided-recall attempts on separate days move to `free-recall`
 - two `Good` or `Easy` free-recall attempts on separate days move to `application`
@@ -262,6 +287,7 @@ Due reviews sort before new units. New units are then selected by priority and d
 Default response modes are phase-driven unless a unit override is set. Guided-recall uses guided mode with one answer textbox per required rubric item and hides the monolithic free-recall textbox; optional rubric prompts are available from a collapsed optional panel. Free-recall, application, and maintenance use the large free-recall answer by default. Hybrid mode keeps the free-recall answer and guided rubric prompts available together. After reveal, guided and hybrid modes show each rubric prompt with the matching user response, reference answer, and covered / partially covered / missed controls. Attempts and drafts persist response mode, guided responses by rubric item ID, and rubric coverage. Preview mode uses the same rendering without creating attempts, changing progress, or saving draft responses.
 
 ## Manual Test Procedure
+
 1. Run `npm run dev` and open `/study`.
 2. Open `Library`, choose a seeded document, edit a document summary, and save it.
 3. Edit a unit study summary and reference answer, save it, then mark reading complete.
@@ -287,6 +313,7 @@ Default response modes are phase-driven unless a unit override is set. Guided-re
 23. In Manage, click `Delete All Data`, cancel once, then confirm once; verify counts return to zero and the app can import the official package again.
 
 ## Official Content Manual Procedure
+
 1. Run `npm run study:fetch-nb-laws`.
 2. Run it a second time and confirm it reports `Unchanged: 10`.
 3. Run `npm run study:normalize-nb-laws` and confirm all ten documents normalize with non-zero sections.
@@ -295,9 +322,11 @@ Default response modes are phase-driven unless a unit override is set. Guided-re
 6. Confirm `reg-community-planning-80-159` is related to `doc-community-planning-act`, Registry Act has consolidation date `December 13, 2024`, Surveys Act section `3` exposes subsections `3(1)`, `3(1.1)`, `3(1.2)`, and `3(2)`, and Surveys Act `SCHEDULE A` is separate from section `15`.
 
 ## Phase 3 FSRS Boundary
+
 Phase 2B intentionally keeps the existing deterministic phase scheduler. Phase 3 should add FSRS fields beside `StudyProgress`, preserve current phase/progress import compatibility, and use official-source review flags as a scheduling input rather than replacing legal-source integrity checks.
 
 Phase 3A has started the scheduler foundation without changing live Study session persistence yet:
+
 - `ts-fsrs` is locked at `5.4.1`, which requires Node.js `>=20.0.0`; local implementation verification used Node `v22.23.1` and npm `10.9.8`.
 - One Study Unit maps to one future FSRS card. Rubric items, guided prompts, concepts, and responses remain evidence for a single overall unit rating, not separately scheduled cards.
 - The adapter exposes Study-facing `again`, `hard`, `good`, and `easy` ratings and maps them directly to the installed `Rating` enum inside `src/study/fsrs/studyFsrs.ts`.
@@ -309,6 +338,7 @@ Phase 3A has started the scheduler foundation without changing live Study sessio
 The browser session rating transaction foundation and pure queue builder are in place; undo, manual-practice/surprise-review counted-review controls, and broader Study UI scheduling indicators are still pending Phase 3 batches.
 
 The scheduled Study session rating path now uses a storage-level rated-attempt transaction:
+
 - one helper builds the immutable `StudyAttempt` and mutable `StudyProgress` update from the same fixed `now` timestamp
 - Again/Hard/Good/Easy map through the Study FSRS adapter and store card-before, card-after, review-log, due-before, due-after, rating, reason, and config version metadata on the attempt
 - after reveal, the real Study session previews all four rating outcomes through the FSRS adapter and displays compact interval labels on the rating buttons
@@ -319,13 +349,17 @@ The scheduled Study session rating path now uses a storage-level rated-attempt t
 - the session route ignores duplicate rating submissions while a save is in flight and disables rating buttons during that save
 - the live scheduled Study session uses `buildStudyQueue`, so source-review-required items, due Learning/Relearning cards, due Review cards, capped New units, and optional surprise-practice reasons share the same deterministic queue model as the pure tests
 - source-review-required session items are surfaced before memory-review items, but the session hides recall/rating controls for those rows and routes the operator to the unit/source review workflow; source acknowledgement remains separate from FSRS memory scheduling
+- the Study-unit preview route keeps answers, reveal state, rubric coverage, attempts, drafts, progress, and FSRS scheduling local/non-mutating
+- source acknowledgement from the document reader or unit editor only updates the unit source-review flags and source hashes; it does not write Study attempts or progress scheduling
 
 Manual-practice/surprise-review counted-review controls, undo, and scheduling dashboard/library UI remain pending.
 
 ## Phase 3 Queue Model
+
 `buildStudyQueue` is a pure/testable queue builder for the upcoming FSRS session workflow. It does not mutate progress, attempts, FSRS cards, source-review flags, or StudyPhase state.
 
 Queue items carry one explicit reason:
+
 - `source-review-required`
 - `learning-due`
 - `relearning-due`
@@ -334,6 +368,7 @@ Queue items carry one explicit reason:
 - `surprise-practice`
 
 Normal queue order is:
+
 1. source-review-required units, including missing source references
 2. due Learning/Relearning cards whose FSRS due timestamp is at or before the supplied clock time
 3. due Review cards, ordered primarily by due timestamp with priority only as a tie breaker
