@@ -1,3 +1,9 @@
+- [ ] Study content Phase 4A NB SIT statute-corpus ingestion foundation (August 2026): complete full fetch/build/import once unresolved manual-scope source URLs are confirmed.
+  - [x] Add the 57-Act NB SIT manual-scope manifest, preserve the ten pilot documents, and keep the five pilot regulations as required.
+  - [x] Add corpus inventory/fetch/normalize/validate/build/refresh commands plus inventory, candidate-regulation, fetch-status, integrity, coverage, source-change, package-diagnostic, and source-review report outputs.
+  - [x] Add focused manifest/inventory/hash tests and documentation for the Phase 4A source authority and command workflow.
+  - [ ] Confirm official `laws.gnb.ca` source URLs for `doc-ecological-reserves-act`, `doc-health-act`, `doc-new-brunswick-land-surveyors-act`, `doc-official-languages-of-new-brunswick-act`, and `doc-public-utilities-act`; full fetch/build intentionally fails until these are resolved.
+  - [ ] Run full required-corpus fetch, normalize, validate, build, import dry run, pilot reimport/idempotency test, full validation, commit, and push.
 - [x] Study module Phase 3 acceptance verification and final polish (August 2026): confirm observed FSRS behavior, add empty-session next-review messaging, add nearest-due wake-up, expose persisted per-unit undo after reload, document safe source-review testing and FSRS settings/export/practice/preview acceptance status, run focused and standard validation, commit, and push.
 - [x] Study module Phase 3 FSRS scheduling implementation (August 2026): replace the provisional Study scheduler with a `ts-fsrs` based per-StudyUnit scheduler while preserving StudyPhase behavior, local/offline persistence, source-review flags, preview/practice non-mutation rules, import/export compatibility, undo, docs, validation, commit, and push.
   - [x] Batch 3A - required pre-FSRS cleanup and scheduler foundation:

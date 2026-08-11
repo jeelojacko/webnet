@@ -1,0 +1,840 @@
+{
+  "schemaVersion": 1,
+  "corpusId": "nb-sit-statute-corpus",
+  "title": "New Brunswick SIT Statute Law Corpus",
+  "sourceAuthority": "Exam scope: ANBLS Surveyor-in-Training manual inventory supplied by user. Legal text: official Government of New Brunswick laws.gnb.ca source only.",
+  "expectedRequiredActCount": 57,
+  "documents": [
+    {
+      "id": "doc-agricultural-land-protection-and-development-act",
+      "type": "act",
+      "title": "Agricultural Land Protection and Development Act",
+      "citation": "A-5.11",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/A-5.11",
+      "sourceIdentifier": "A-5.11",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 1
+      }
+    },
+    {
+      "id": "doc-air-space-act",
+      "type": "act",
+      "title": "Air Space Act",
+      "citation": "2011, c.109",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/2011,%20c.109",
+      "sourceIdentifier": "2011, c.109",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 2
+      }
+    },
+    {
+      "id": "doc-aquaculture-act",
+      "type": "act",
+      "title": "Aquaculture Act",
+      "citation": "2019, c.40",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/2019,%20c.40",
+      "sourceIdentifier": "2019, c.40",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 3
+      }
+    },
+    {
+      "id": "doc-archives-act",
+      "type": "act",
+      "title": "Archives Act",
+      "citation": "A-11.1",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/A-11.1",
+      "sourceIdentifier": "A-11.1",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 4
+      }
+    },
+    {
+      "id": "doc-assessment-act",
+      "type": "act",
+      "title": "Assessment Act",
+      "citation": "A-14",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/A-14",
+      "sourceIdentifier": "A-14",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 5
+      }
+    },
+    {
+      "id": "doc-assignments-and-preferences-act",
+      "type": "act",
+      "title": "Assignments and Preferences Act",
+      "citation": "A-16",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/A-16",
+      "sourceIdentifier": "A-16",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 6
+      }
+    },
+    {
+      "id": "doc-bituminous-shale-act",
+      "type": "act",
+      "title": "Bituminous Shale Act",
+      "citation": "B-4.1",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/B-4.1",
+      "sourceIdentifier": "B-4.1",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 7
+      }
+    },
+    {
+      "id": "doc-boundaries-confirmation-act",
+      "type": "act",
+      "title": "Boundaries Confirmation Act",
+      "citation": "2012, c.101",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/2012,%20c.101",
+      "sourceIdentifier": "2012, c.101",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 8
+      },
+      "existingPilot": true
+    },
+    {
+      "id": "doc-clean-environment-act",
+      "type": "act",
+      "title": "Clean Environment Act",
+      "citation": "C-6",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/C-6",
+      "sourceIdentifier": "C-6",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 9
+      }
+    },
+    {
+      "id": "doc-clean-water-act",
+      "type": "act",
+      "title": "Clean Water Act",
+      "citation": "C-6.1",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/C-6.1",
+      "sourceIdentifier": "C-6.1",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 10
+      }
+    },
+    {
+      "id": "doc-community-planning-act",
+      "type": "act",
+      "title": "Community Planning Act",
+      "citation": "2017, c.19",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/2017,%20c.19",
+      "sourceIdentifier": "2017, c.19",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 11
+      },
+      "existingPilot": true
+    },
+    {
+      "id": "doc-condominium-property-act",
+      "type": "act",
+      "title": "Condominium Property Act",
+      "citation": "C-16.05",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/C-16.05",
+      "sourceIdentifier": "C-16.05",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 12
+      }
+    },
+    {
+      "id": "doc-conservation-easements-act",
+      "type": "act",
+      "title": "Conservation Easements Act",
+      "citation": "2011, c.130",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/2011,%20c.130",
+      "sourceIdentifier": "2011, c.130",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 13
+      }
+    },
+    {
+      "id": "doc-crown-grant-restrictions-act",
+      "type": "act",
+      "title": "Crown Grant Restrictions Act",
+      "citation": "2011, c.136",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/2011,%20c.136",
+      "sourceIdentifier": "2011, c.136",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 14
+      }
+    },
+    {
+      "id": "doc-crown-lands-and-forests-act",
+      "type": "act",
+      "title": "Crown Lands and Forests Act",
+      "citation": "C-38.1",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/C-38.1",
+      "sourceIdentifier": "C-38.1",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 15
+      }
+    },
+    {
+      "id": "doc-devolution-of-estates-act",
+      "type": "act",
+      "title": "Devolution of Estates Act",
+      "citation": "D-9",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/D-9",
+      "sourceIdentifier": "D-9",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 16
+      }
+    },
+    {
+      "id": "doc-easements-act",
+      "type": "act",
+      "title": "Easements Act",
+      "citation": "2011, c.143",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/2011,%20c.143",
+      "sourceIdentifier": "2011, c.143",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 17
+      }
+    },
+    {
+      "id": "doc-ecological-reserves-act",
+      "type": "act",
+      "title": "Ecological Reserves Act",
+      "sourceUrl": "",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 18,
+        "note": "Awaiting manual confirmation of official laws.gnb.ca source; do not substitute successor legislation silently."
+      }
+    },
+    {
+      "id": "doc-electronic-transactions-act",
+      "type": "act",
+      "title": "Electronic Transactions Act",
+      "citation": "2011, c.145",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/2011,%20c.145",
+      "sourceIdentifier": "2011, c.145",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 19
+      }
+    },
+    {
+      "id": "doc-escheats-and-forfeitures-act",
+      "type": "act",
+      "title": "Escheats and Forfeitures Act",
+      "citation": "2014, c.107",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/2014,%20c.107",
+      "sourceIdentifier": "2014, c.107",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 20
+      }
+    },
+    {
+      "id": "doc-evidence-act",
+      "type": "act",
+      "title": "Evidence Act",
+      "citation": "E-11",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/E-11",
+      "sourceIdentifier": "E-11",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 21
+      }
+    },
+    {
+      "id": "doc-executors-and-trustees-act",
+      "type": "act",
+      "title": "Executors and Trustees Act",
+      "citation": "E-13",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/E-13",
+      "sourceIdentifier": "E-13",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 22
+      }
+    },
+    {
+      "id": "doc-expropriation-act",
+      "type": "act",
+      "title": "Expropriation Act",
+      "citation": "E-14",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/E-14",
+      "sourceIdentifier": "E-14",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 23
+      }
+    },
+    {
+      "id": "doc-gas-distribution-act",
+      "type": "act",
+      "title": "Gas Distribution Act, 1999",
+      "citation": "G-2.11",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/G-2.11",
+      "sourceIdentifier": "G-2.11",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 24
+      }
+    },
+    {
+      "id": "doc-highway-act",
+      "type": "act",
+      "title": "Highway Act",
+      "citation": "H-5",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/H-5",
+      "sourceIdentifier": "H-5",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 25
+      }
+    },
+    {
+      "id": "doc-health-act",
+      "type": "act",
+      "title": "Health Act",
+      "sourceUrl": "",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 26,
+        "note": "Awaiting manual confirmation of official laws.gnb.ca source; do not substitute successor legislation silently."
+      }
+    },
+    {
+      "id": "doc-land-titles-act",
+      "type": "act",
+      "title": "Land Titles Act",
+      "citation": "L-1.1",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/L-1.1",
+      "sourceIdentifier": "L-1.1",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 27
+      },
+      "existingPilot": true
+    },
+    {
+      "id": "doc-limitation-of-actions-act",
+      "type": "act",
+      "title": "Limitation of Actions Act",
+      "citation": "L-8.5",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/L-8.5",
+      "sourceIdentifier": "L-8.5",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 28
+      }
+    },
+    {
+      "id": "doc-marital-property-act",
+      "type": "act",
+      "title": "Marital Property Act",
+      "citation": "2012, c.107",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/2012,%20c.107",
+      "sourceIdentifier": "2012, c.107",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 29
+      }
+    },
+    {
+      "id": "doc-metric-conversion-act",
+      "type": "act",
+      "title": "Metric Conversion Act",
+      "citation": "M-11.1",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/M-11.1",
+      "sourceIdentifier": "M-11.1",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 30
+      }
+    },
+    {
+      "id": "doc-mining-act",
+      "type": "act",
+      "title": "Mining Act",
+      "citation": "M-14.1",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/M-14.1",
+      "sourceIdentifier": "M-14.1",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 31
+      }
+    },
+    {
+      "id": "doc-municipalities-act",
+      "type": "act",
+      "title": "Municipalities Act",
+      "citation": "M-22",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/M-22",
+      "sourceIdentifier": "M-22",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 32
+      }
+    },
+    {
+      "id": "doc-new-brunswick-land-surveyors-act",
+      "type": "act",
+      "title": "New Brunswick Land Surveyors Act, 1986",
+      "sourceUrl": "",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 33,
+        "note": "Awaiting manual confirmation of official laws.gnb.ca source; do not substitute successor legislation silently."
+      }
+    },
+    {
+      "id": "doc-occupational-health-and-safety-act",
+      "type": "act",
+      "title": "Occupational Health and Safety Act",
+      "citation": "O-0.2",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/O-0.2",
+      "sourceIdentifier": "O-0.2",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 34
+      }
+    },
+    {
+      "id": "doc-official-languages-of-new-brunswick-act",
+      "type": "act",
+      "title": "Official Languages of New Brunswick Act",
+      "sourceUrl": "",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 35,
+        "note": "Awaiting manual confirmation of official laws.gnb.ca source; do not substitute successor legislation silently."
+      }
+    },
+    {
+      "id": "doc-oil-and-natural-gas-act",
+      "type": "act",
+      "title": "Oil and Natural Gas Act",
+      "citation": "O-2.1",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/O-2.1",
+      "sourceIdentifier": "O-2.1",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 36
+      }
+    },
+    {
+      "id": "doc-ownership-of-minerals-act",
+      "type": "act",
+      "title": "Ownership of Minerals Act",
+      "citation": "2011, c.200",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/2011,%20c.200",
+      "sourceIdentifier": "2011, c.200",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 37
+      }
+    },
+    {
+      "id": "doc-parks-act",
+      "type": "act",
+      "title": "Parks Act",
+      "citation": "2011, c.202",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/2011,%20c.202",
+      "sourceIdentifier": "2011, c.202",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 38
+      }
+    },
+    {
+      "id": "doc-partnerships-and-business-names-registration-act",
+      "type": "act",
+      "title": "Partnerships and Business Names Registration Act",
+      "citation": "P-5",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/P-5",
+      "sourceIdentifier": "P-5",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 39
+      }
+    },
+    {
+      "id": "doc-probate-court-act",
+      "type": "act",
+      "title": "Probate Court Act",
+      "citation": "P-17.1",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/P-17.1",
+      "sourceIdentifier": "P-17.1",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 40
+      }
+    },
+    {
+      "id": "doc-property-act",
+      "type": "act",
+      "title": "Property Act",
+      "citation": "P-19",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/P-19",
+      "sourceIdentifier": "P-19",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 41
+      }
+    },
+    {
+      "id": "doc-protected-natural-areas-act",
+      "type": "act",
+      "title": "Protected Natural Areas Act",
+      "citation": "P-19.01",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/P-19.01",
+      "sourceIdentifier": "P-19.01",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 42
+      }
+    },
+    {
+      "id": "doc-public-health-act",
+      "type": "act",
+      "title": "Public Health Act",
+      "citation": "P-22.4",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/P-22.4",
+      "sourceIdentifier": "P-22.4",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 43
+      }
+    },
+    {
+      "id": "doc-public-records-act",
+      "type": "act",
+      "title": "Public Records Act",
+      "citation": "2011, c.213",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/2011,%20c.213",
+      "sourceIdentifier": "2011, c.213",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 44
+      }
+    },
+    {
+      "id": "doc-public-utilities-act",
+      "type": "act",
+      "title": "Public Utilities Act",
+      "sourceUrl": "",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 45,
+        "note": "Awaiting manual confirmation of official laws.gnb.ca source; do not substitute successor legislation silently."
+      }
+    },
+    {
+      "id": "doc-public-works-act",
+      "type": "act",
+      "title": "Public Works Act",
+      "citation": "2016, c.108",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/2016,%20c.108",
+      "sourceIdentifier": "2016, c.108",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 46
+      }
+    },
+    {
+      "id": "doc-quarriable-substances-act",
+      "type": "act",
+      "title": "Quarriable Substances Act",
+      "citation": "Q-1.1",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/Q-1.1",
+      "sourceIdentifier": "Q-1.1",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 47
+      }
+    },
+    {
+      "id": "doc-real-property-transfer-tax-act",
+      "type": "act",
+      "title": "Real Property Transfer Tax Act",
+      "citation": "R-2.1",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/R-2.1",
+      "sourceIdentifier": "R-2.1",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 48
+      }
+    },
+    {
+      "id": "doc-registry-act",
+      "type": "act",
+      "title": "Registry Act",
+      "citation": "R-6",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/R-6",
+      "sourceIdentifier": "R-6",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 49
+      },
+      "existingPilot": true
+    },
+    {
+      "id": "doc-residential-property-tax-relief-act",
+      "type": "act",
+      "title": "Residential Property Tax Relief Act",
+      "citation": "R-10",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/R-10",
+      "sourceIdentifier": "R-10",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 50
+      }
+    },
+    {
+      "id": "doc-service-new-brunswick-act",
+      "type": "act",
+      "title": "Service New Brunswick Act",
+      "citation": "2015, c.44",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/2015,%20c.44",
+      "sourceIdentifier": "2015, c.44",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 51
+      }
+    },
+    {
+      "id": "doc-standard-forms-of-conveyances-act",
+      "type": "act",
+      "title": "Standard Forms of Conveyances Act",
+      "citation": "S-12.2",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/S-12.2",
+      "sourceIdentifier": "S-12.2",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 52
+      }
+    },
+    {
+      "id": "doc-surveys-act",
+      "type": "act",
+      "title": "Surveys Act",
+      "citation": "2011, c.226",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/2011,%20c.226",
+      "sourceIdentifier": "2011, c.226",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 53
+      },
+      "existingPilot": true
+    },
+    {
+      "id": "doc-territorial-division-act",
+      "type": "act",
+      "title": "Territorial Division Act",
+      "citation": "T-3",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/T-3",
+      "sourceIdentifier": "T-3",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 54
+      }
+    },
+    {
+      "id": "doc-trespass-act",
+      "type": "act",
+      "title": "Trespass Act",
+      "citation": "2012, c.117",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/2012,%20c.117",
+      "sourceIdentifier": "2012, c.117",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 55
+      }
+    },
+    {
+      "id": "doc-underground-storage-act",
+      "type": "act",
+      "title": "Underground Storage Act",
+      "citation": "U-1.1",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/U-1.1",
+      "sourceIdentifier": "U-1.1",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 56
+      }
+    },
+    {
+      "id": "doc-wills-act",
+      "type": "act",
+      "title": "Wills Act",
+      "citation": "W-9",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cs/W-9",
+      "sourceIdentifier": "W-9",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "order": 57
+      }
+    },
+    {
+      "id": "reg-surveys-84-76",
+      "type": "regulation",
+      "title": "New Brunswick Regulation 84-76 under the Surveys Act",
+      "citation": "N.B. Reg. 84-76",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cr/84-76",
+      "sourceIdentifier": "84-76",
+      "sourceCorpus": "cr",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "note": "Existing WebNet pilot required regulation.",
+        "order": 58
+      },
+      "parentActId": "doc-surveys-act",
+      "expectedEnablingAct": "Surveys Act",
+      "existingPilot": true
+    },
+    {
+      "id": "reg-boundaries-95-166",
+      "type": "regulation",
+      "title": "New Brunswick Regulation 95-166 under the Boundaries Confirmation Act",
+      "citation": "N.B. Reg. 95-166",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cr/95-166",
+      "sourceIdentifier": "95-166",
+      "sourceCorpus": "cr",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "note": "Existing WebNet pilot required regulation.",
+        "order": 59
+      },
+      "parentActId": "doc-boundaries-confirmation-act",
+      "expectedEnablingAct": "Boundaries Confirmation Act",
+      "existingPilot": true
+    },
+    {
+      "id": "reg-community-planning-80-159",
+      "type": "regulation",
+      "title": "New Brunswick Regulation 80-159 under the Community Planning Act",
+      "citation": "N.B. Reg. 80-159",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cr/80-159",
+      "sourceIdentifier": "80-159",
+      "sourceCorpus": "cr",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "note": "Existing WebNet pilot required regulation.",
+        "order": 60
+      },
+      "parentActId": "doc-community-planning-act",
+      "expectedEnablingAct": "Community Planning Act",
+      "existingPilot": true
+    },
+    {
+      "id": "reg-registry-84-190",
+      "type": "regulation",
+      "title": "New Brunswick Regulation 84-190 under the Registry Act",
+      "citation": "N.B. Reg. 84-190",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cr/84-190",
+      "sourceIdentifier": "84-190",
+      "sourceCorpus": "cr",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "note": "Existing WebNet pilot required regulation.",
+        "order": 61
+      },
+      "parentActId": "doc-registry-act",
+      "expectedEnablingAct": "Registry Act",
+      "existingPilot": true
+    },
+    {
+      "id": "reg-land-titles-83-130",
+      "type": "regulation",
+      "title": "New Brunswick Regulation 83-130 under the Land Titles Act",
+      "citation": "N.B. Reg. 83-130",
+      "sourceUrl": "https://laws.gnb.ca/en/document/cr/83-130",
+      "sourceIdentifier": "83-130",
+      "sourceCorpus": "cr",
+      "examScope": "required",
+      "examSource": {
+        "source": "ANBLS-SIT-manual",
+        "note": "Existing WebNet pilot required regulation.",
+        "order": 62
+      },
+      "parentActId": "doc-land-titles-act",
+      "expectedEnablingAct": "Land Titles Act",
+      "existingPilot": true
+    }
+  ]
+}

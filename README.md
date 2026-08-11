@@ -86,6 +86,7 @@ npm run test:map-browser
 - [docs/IMPORT_WORKFLOW.md](docs/IMPORT_WORKFLOW.md) - staged import and reconciliation workflow
 - [docs/PARITY_WORKFLOW.md](docs/PARITY_WORKFLOW.md) - parity-sensitive validation workflow
 - [docs/STUDY_MODULE.md](docs/STUDY_MODULE.md) - local-first statute and survey-law study module
+- [docs/STUDY_CONTENT_PIPELINE.md](docs/STUDY_CONTENT_PIPELINE.md) - official NB Study content ingestion commands, reports, and corpus scope rules
 - [docs/INLINE_OPTION_APPLICATION_MATRIX.md](docs/INLINE_OPTION_APPLICATION_MATRIX.md) - inline option application reference
 - [docs/run-semantics.md](docs/run-semantics.md) - ordered checked-file project run rules
 - [docs/webnet-survey-cad-master-plan.md](docs/webnet-survey-cad-master-plan.md) - Survey CAD architecture and phased roadmap
@@ -99,7 +100,7 @@ npm run test:map-browser
 - Open built-in example projects from `Project Options -> Project Files -> Example Projects`.
 - Open `Survey CAD` from the toolbar to work in a standalone CAD drawing. Use the CAD file controls for `New Drawing`, `Open Drawing`, `Save Drawing`, `Export Drawing`, and `Import Adjusted Points`; adjustment projects no longer auto-own CAD state.
 - Open `Study` from the toolbar, or visit `/study`, for a separate local-first New Brunswick statute and survey-law study app. Its Manage page can import the generated official NB law content package for offline legal reading, reset local Study data for testing, use Library search, source-linked study units with editable answer rubrics and preview mode, deterministic editable study-unit drafts, custom unlinked study units, and FSRS-backed due review sessions with non-mutating practice/preview paths, next-review empty-state timing, and persisted latest-rating undo.
-- For the Study official NB law pilot content pipeline, use `npm run study:fetch-nb-laws`, `npm run study:normalize-nb-laws`, and `npm run study:build-content-pack`. Use `npm run study:audit-generation` to generate developer QA reports for deterministic source-linked study-unit generation. These development commands fetch only manifest-listed `laws.gnb.ca` documents when fetching is explicitly run and do not run during normal browser use.
+- For the Study official NB law pilot content pipeline, use `npm run study:fetch-nb-laws`, `npm run study:normalize-nb-laws`, and `npm run study:build-content-pack`. For the Phase 4A NB SIT statute corpus, use `npm run study:corpus:inventory` first; fetch/build stages intentionally fail while required manual entries lack confirmed official `laws.gnb.ca` source URLs. Use `npm run study:audit-generation` to generate developer QA reports for deterministic source-linked study-unit generation. These development commands fetch only manifest-listed `laws.gnb.ca` documents when fetching is explicitly run and do not run during normal browser use.
 - In `Run Mode = Preanalysis`, optionally set a planning accuracy threshold and max added sets, then review obstacle-aware planning recommendations in the report and on the 2D map.
 - Run `Adjust`.
 - Review results in `Adjustment Report`, `Processing Summary`, `Industry Standard Output`, and `Map & Ellipses`.

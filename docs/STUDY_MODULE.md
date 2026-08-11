@@ -183,6 +183,29 @@ tests/fixtures/study/nb-law-pilot/html/
 
 They are compact saved HTML fixtures for all ten pilot entries. The fixtures preserve the laws.gnb section/title/citation markup patterns used by the normalizer without embedding the full official corpus in tests.
 
+## NB SIT Statute Corpus Ingestion
+
+Phase 4A adds a full SIT statute-corpus ingestion foundation beside the pilot. The manifest is:
+
+```text
+study-content/manifests/nb-sit-statute-corpus.json
+```
+
+It represents the 57 Act entries from the supplied ANBLS Surveyor-in-Training manual inventory, keeps the ten pilot documents marked with `existingPilot`, and treats the five pilot regulations as required regulations. Candidate regulations are review artifacts only and are not imported into the required package unless explicitly approved.
+
+The commands are:
+
+```bash
+npm run study:corpus:inventory
+npm run study:corpus:fetch
+npm run study:corpus:normalize
+npm run study:corpus:validate
+npm run study:corpus:build
+npm run study:corpus:refresh
+```
+
+Current inventory intentionally blocks full fetch/build because five manual Act entries still need confirmed official `laws.gnb.ca` source URLs. See [STUDY_CONTENT_PIPELINE.md](STUDY_CONTENT_PIPELINE.md) for the command details, report paths, source-gap list, and Phase 4A/4B boundary.
+
 ## Official Package Import
 
 `/study/manage` supports importing the generated official content package from pasted JSON or a selected `.json` file. Browser import validation checks schema version, package and manifest IDs, unique document IDs, unique component `sourceKey`s per document, valid Act-regulation relationships, TOC source keys, required metadata, component hashes, document source-hash consistency, embedded integrity errors, forbidden laws.gnb.ca interface markers, and non-empty legal components.
