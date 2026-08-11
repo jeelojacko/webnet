@@ -1,11 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import {
-  buildStudyLibrarySearchIndex,
-  highlightLibraryMatch,
-  searchStudyLibrary,
-  type StudyLibrarySearchCategory,
-  type StudyLibrarySearchResult,
-} from '../studyLibrarySearch';
+import { highlightLibraryMatch } from '../studyLibrarySearch';
+import { createStudySearchService } from '../search/studySearchService';
+import type { StudySearchResultSummary, StudySearchScope, StudySearchStatus } from '../search/studySearchTypes';
 import {
   summarizeStudySchedulingForData,
   type StudySchedulingCategory,
@@ -22,6 +18,15 @@ type StudyLibraryProps = {
   onOpenProvision: (_documentId: string, _sourceKey: string) => void;
   onDeleteUnit: (_unitId: string) => void;
   onDuplicateUnit: (_unitId: string) => void;
+  onLoadLegalDocumentComponentSummary: (_documentId: string) => Promise<{
+    documentId: string;
+    componentCount: number;
+    sectionCount: number;
+    subsectionCount: number;
+    scheduleCount: number;
+    formCount: number;
+    referenceOnlyFormCount: number;
+  }>;
 };
 
 type LibraryTab = 'documents' | 'units';
@@ -67,6 +72,8 @@ const unitSourceLabel = (unit: StudyUnit, data: StudyDataSnapshot): string => {
 const unique = (values: string[]): string[] =>
   values.filter((value, index) => values.indexOf(value) === index);
 
+type StudyLibrarySearchCategory = 'documents' | 'official-provisions' | 'study-units' | 'custom-units';
+
 const searchCategoryLabels: Record<StudyLibrarySearchCategory, string> = {
   documents: 'Documents',
   'official-provisions': 'Official Provisions',
@@ -80,6 +87,13 @@ const searchCategoryOrder: StudyLibrarySearchCategory[] = [
   'study-units',
   'custom-units',
 ];
+
+const categoryForResult = (result: StudySearchResultSummary): StudyLibrarySearchCategory => {
+  if (result.entityType === 'document') return 'documents';
+  if (result.entityType === 'official-provision') return 'official-provisions';
+  if (result.entityType === 'custom-unit') return 'custom-units';
+  return 'study-units';
+};
 
 const schedulingFilterLabels: Array<{ value: UnitFilter; label: string }> = [
   { value: 'all', label: 'All' },
@@ -104,6 +118,7 @@ const StudyLibrary = ({
   onOpenProvision,
   onDeleteUnit,
   onDuplicateUnit,
+  onLoadLegalDocumentComponentSummary,
 }: StudyLibraryProps) => {
   const [tab, setTab] = useState<LibraryTab>(() =>
     new URLSearchParams(window.location.search).get('tab') === 'units' ? 'units' : 'documents',
@@ -115,7 +130,18 @@ const StudyLibrary = ({
   const [collapsedGroups, setCollapsedGroups] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+  const [searchScope, setSearchScope] = useState<StudySearchScope>('all');
+  const [searchStatus, setSearchStatus] = useState<StudySearchStatus>({
+    ready: false,
+    phase: 'idle',
+    message: '',
+  });
+  const [searchResults, setSearchResults] = useState<StudySearchResultSummary[]>([]);
   const [activeSearchIndex, setActiveSearchIndex] = useState(0);
+  const [componentSummaries, setComponentSummaries] = useState<
+    Record<string, Awaited<ReturnType<StudyLibraryProps['onLoadLegalDocumentComponentSummary']>>>
+  >({});
+  const searchService = useMemo(() => createStudySearchService(), []);
 
   const legalById = useMemo(
     () => new Map(data.legalDocuments.map((document) => [document.id, document])),
@@ -144,34 +170,87 @@ const StudyLibrary = ({
     () => summarizeStudySchedulingForData(data, new Date()),
     [data],
   );
-  const searchIndex = useMemo(() => buildStudyLibrarySearchIndex(data), [data]);
-  const searchResults = useMemo(
-    () => searchStudyLibrary(searchIndex, debouncedSearchQuery),
-    [debouncedSearchQuery, searchIndex],
-  );
+  const unitCountsByDocumentId = useMemo(() => {
+    const map = new Map<string, number>();
+    data.units.forEach((unit) => {
+      unit.documentIds.forEach((documentId) => map.set(documentId, (map.get(documentId) ?? 0) + 1));
+    });
+    return map;
+  }, [data.units]);
+  const reviewCountsByDocumentId = useMemo(() => {
+    const map = new Map<string, number>();
+    data.units.forEach((unit) => {
+      if (!unit.sourceReviewRequired && !unit.sourceReferenceMissing) return;
+      unit.documentIds.forEach((documentId) => map.set(documentId, (map.get(documentId) ?? 0) + 1));
+    });
+    return map;
+  }, [data.units]);
   const searchResultsByCategory = useMemo(
     () =>
       searchCategoryOrder.map((category) => ({
         category,
         label: searchCategoryLabels[category],
-        results: searchResults.filter((result) => result.category === category),
+        results: searchResults.filter((result) => categoryForResult(result) === category),
       })),
     [searchResults],
   );
+
+  const filteredDocuments = data.documents.filter((document) => {
+    const legal = legalById.get(document.id);
+    if (documentFilter === 'all') return true;
+    if (documentFilter === 'custom') return !legal;
+    return legal?.documentType === documentFilter;
+  });
+
+  useEffect(() => {
+    searchService.initialize();
+    const unsubscribeStatus = searchService.subscribeStatus(setSearchStatus);
+    const unsubscribeResults = searchService.subscribeResults(setSearchResults);
+    return () => {
+      unsubscribeStatus();
+      unsubscribeResults();
+      searchService.dispose();
+    };
+  }, [searchService]);
 
   useEffect(() => {
     const handle = window.setTimeout(() => setDebouncedSearchQuery(searchQuery), 120);
     return () => window.clearTimeout(handle);
   }, [searchQuery]);
 
+  useEffect(() => {
+    if (debouncedSearchQuery.trim()) searchService.search(debouncedSearchQuery, searchScope, 8);
+    else setSearchResults([]);
+  }, [debouncedSearchQuery, searchScope, searchService]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const missing = filteredDocuments
+      .map((document) => document.id)
+      .filter((documentId) => !componentSummaries[documentId]);
+    if (missing.length === 0) return;
+    void Promise.all(missing.map((documentId) => onLoadLegalDocumentComponentSummary(documentId))).then(
+      (summaries) => {
+        if (cancelled) return;
+        setComponentSummaries((current) => ({
+          ...current,
+          ...Object.fromEntries(summaries.map((summary) => [summary.documentId, summary])),
+        }));
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [componentSummaries, filteredDocuments, onLoadLegalDocumentComponentSummary]);
+
   useEffect(() => setActiveSearchIndex(0), [debouncedSearchQuery]);
 
-  const openSearchResult = (result: StudyLibrarySearchResult) => {
-    if (result.category === 'documents' && result.documentId) onSelectDocument(result.documentId);
-    if (result.category === 'official-provisions' && result.documentId && result.sourceKey) {
+  const openSearchResult = (result: StudySearchResultSummary) => {
+    if (result.entityType === 'document' && result.documentId) onSelectDocument(result.documentId);
+    if (result.entityType === 'official-provision' && result.documentId && result.sourceKey) {
       onOpenProvision(result.documentId, result.sourceKey);
     }
-    if ((result.category === 'study-units' || result.category === 'custom-units') && result.unitId)
+    if ((result.entityType === 'study-unit' || result.entityType === 'custom-unit') && result.unitId)
       onEditUnit(result.unitId);
   };
 
@@ -185,13 +264,6 @@ const StudyLibrary = ({
         <span key={index}>{part.text}</span>
       ),
     );
-
-  const filteredDocuments = data.documents.filter((document) => {
-    const legal = legalById.get(document.id);
-    if (documentFilter === 'all') return true;
-    if (documentFilter === 'custom') return !legal;
-    return legal?.documentType === documentFilter;
-  });
 
   const filteredUnits = data.units
     .filter((unit) => {
@@ -294,6 +366,25 @@ const StudyLibrary = ({
             className="rounded border border-slate-700 bg-slate-950 px-3 py-2 text-sm normal-case tracking-normal text-slate-100"
           />
         </label>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {([
+            ['all', 'All'],
+            ['documents', 'Documents'],
+            ['official-provisions', 'Official Provisions'],
+            ['study-units', 'Study Units'],
+          ] as const).map(([value, label]) => (
+            <button
+              key={value}
+              onClick={() => setSearchScope(value)}
+              className={`rounded px-3 py-1.5 text-xs ${searchScope === value ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-300'}`}
+            >
+              {label}
+            </button>
+          ))}
+          {searchStatus.phase === 'building' || searchStatus.phase === 'loading' ? (
+            <span className="px-2 py-1 text-xs text-slate-500">{searchStatus.message}</span>
+          ) : null}
+        </div>
         {debouncedSearchQuery ? (
           <div className="mt-3 grid gap-3 lg:grid-cols-2">
             {searchResultsByCategory.map(({ category, label, results }) => (
@@ -322,9 +413,9 @@ const StudyLibrary = ({
                             {renderHighlighted(result.title)}
                           </div>
                           <div className="mt-1 text-xs text-slate-500">{result.subtitle}</div>
-                          {result.matchText ? (
+                          {result.snippet ? (
                             <div className="mt-2 text-xs text-slate-300">
-                              {renderHighlighted(result.matchText)}
+                              {renderHighlighted(result.snippet)}
                             </div>
                           ) : null}
                         </button>
@@ -366,19 +457,9 @@ const StudyLibrary = ({
           <div className="grid gap-3 lg:grid-cols-2">
             {filteredDocuments.map((document) => {
               const legal = legalById.get(document.id);
-              const unitCount = data.units.filter((unit) =>
-                unit.documentIds.includes(document.id),
-              ).length;
-              const reviewCount = data.units.filter(
-                (unit) =>
-                  unit.documentIds.includes(document.id) &&
-                  (unit.sourceReviewRequired || unit.sourceReferenceMissing),
-              ).length;
-              const relatedForms = data.legalComponents.filter(
-                (component) =>
-                  component.documentId === document.id &&
-                  component.extractionStatus === 'reference-only',
-              ).length;
+              const unitCount = unitCountsByDocumentId.get(document.id) ?? 0;
+              const reviewCount = reviewCountsByDocumentId.get(document.id) ?? 0;
+              const relatedForms = componentSummaries[document.id]?.referenceOnlyFormCount ?? 0;
               return (
                 <button
                   key={document.id}

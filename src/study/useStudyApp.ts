@@ -299,12 +299,13 @@ export const useStudyApp = () => {
       const unit = data.units.find((entry) => entry.id === unitId);
       if (!unit?.sourceReferences?.length) return;
       const selectedKeys = new Set(
-        unit.sourceReferences.map((reference) => `${reference.documentId}::${reference.sourceKey}`),
-      );
-      const sourceComponents = data.legalComponents.filter((component) =>
-        selectedKeys.has(`${component.documentId}::${component.sourceKey}`),
+        unit.sourceReferences.map((reference) => reference.sourceKey),
       );
       const documentId = unit.documentIds[0] ?? unit.sourceReferences[0]?.documentId;
+      const sourceComponents = await storage.getLegalComponentsBySourceKeys(
+        documentId,
+        Array.from(selectedKeys),
+      );
       const studyDocument = data.documents.find((entry) => entry.id === documentId);
       const legalDocument = data.legalDocuments.find((entry) => entry.id === documentId);
       if (!studyDocument || sourceComponents.length === 0) return;
@@ -632,7 +633,7 @@ export const useStudyApp = () => {
   const importData = useCallback(async () => {
     const snapshot = parseStudyImport(importText);
     await storage.replaceAll(snapshot);
-    setData(snapshot);
+    setData({ ...snapshot, legalComponents: [] });
     setStatusMessage('Study data imported.');
   }, [importText, storage]);
 
@@ -697,8 +698,9 @@ export const useStudyApp = () => {
   const importOfficialPackage = useCallback(async () => {
     const contentPackage: NbLawContentPackage = parseOfficialContentPackage(officialPackageText);
     const snapshot = await storage.importOfficialContentPackage(contentPackage);
-    setData(snapshot);
-    setOfficialPackagePreview(previewOfficialContentPackage(snapshot, contentPackage));
+    setData({ ...snapshot, legalComponents: [] });
+    setOfficialPackageText('');
+    setOfficialPackagePreview(null);
     setStatusMessage(`Official content package imported: ${contentPackage.id}.`);
   }, [officialPackageText, storage]);
 
@@ -793,7 +795,7 @@ export const useStudyApp = () => {
         drafts: data.drafts.filter((draft) => draft.unitId !== unitId),
         rubrics: data.rubrics.filter((rubric) => rubric.unitId !== unitId),
       };
-      await storage.replaceAll(next);
+      await storage.deleteUnitCascade(unitId);
       setData(next);
       setStatusMessage('Study unit deleted.');
     },
@@ -878,7 +880,11 @@ export const useStudyApp = () => {
         rubrics: [...data.rubrics, ...rubrics],
         progress: [...data.progress, progress],
       };
-      await storage.replaceAll(next);
+      await storage.saveUnit(unit);
+      await Promise.all(prompts.map((prompt) => storage.savePrompt(prompt)));
+      await storage.replaceUnitConcepts(unit.id, concepts);
+      await storage.replaceUnitRubrics(unit.id, rubrics);
+      await storage.saveProgress(progress);
       setData(next);
       setStatusMessage(`Study unit duplicated: ${unit.title}.`);
       navigate(`/study/unit/${encodeURIComponent(unit.id)}/edit`, { returnTo: '/study/library' });
@@ -891,7 +897,15 @@ export const useStudyApp = () => {
       if (!data) return;
       const unit = data.units.find((entry) => entry.id === unitId);
       if (!unit) return;
-      const updated = acknowledgeUnitSourceReview(unit, data.legalComponents);
+      const components = await Promise.all(
+        (unit.sourceReferences ?? []).map((reference) =>
+          storage.getLegalComponent(reference.documentId, reference.sourceKey),
+        ),
+      );
+      const updated = acknowledgeUnitSourceReview(
+        unit,
+        components.filter((component): component is ImportedLegalComponent => Boolean(component)),
+      );
       await storage.saveUnit(updated);
       setData({ ...data, units: replaceById(data.units, updated) });
       setStatusMessage(`Source review acknowledged: ${updated.title}.`);
@@ -949,6 +963,10 @@ export const useStudyApp = () => {
     deleteUnit,
     duplicateUnit,
     acknowledgeSourceReview,
+    getLegalComponent: storage.getLegalComponent,
+    getLegalComponentsByDocument: storage.getLegalComponentsByDocument,
+    getLegalComponentsBySourceKeys: storage.getLegalComponentsBySourceKeys,
+    getLegalDocumentComponentSummary: storage.getLegalDocumentComponentSummary,
     statusMessage,
   };
 };

@@ -13,6 +13,7 @@ export const responseModeForStudyItem = (item: StudySessionItem): StudyResponseM
 };
 
 export const sourceTextForStudyItem = (data: StudyDataSnapshot, item: StudySessionItem): string => {
+  if (data.legalComponents.length === 0) return '';
   const selectedKeys = new Set(
     item.unit.sourceReferences?.map(
       (reference) => `${reference.documentId}::${reference.sourceKey}`,

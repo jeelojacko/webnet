@@ -22,8 +22,8 @@ import type {
 } from './studyTypes';
 
 export const STUDY_DB_NAME = 'webnet.study.v1';
-export const STUDY_DB_VERSION = 5;
-export const STUDY_SCHEMA_VERSION = 5;
+export const STUDY_DB_VERSION = 6;
+export const STUDY_SCHEMA_VERSION = 6;
 
 const STORES = [
   'documents',
@@ -38,6 +38,8 @@ const STORES = [
   'legalDocuments',
   'legalComponents',
   'importHistory',
+  'searchIndexMetadata',
+  'searchIndexArtifacts',
 ] as const;
 
 type StudyStoreName = (typeof STORES)[number];
@@ -55,6 +57,8 @@ const STORE_KEYS: Record<StudyStoreName, string> = {
   legalDocuments: 'id',
   legalComponents: 'recordKey',
   importHistory: 'id',
+  searchIndexMetadata: 'id',
+  searchIndexArtifacts: 'id',
 };
 
 type StudyStorePayloads = {
@@ -70,10 +74,12 @@ type StudyStorePayloads = {
   legalDocuments: ImportedLegalDocument;
   legalComponents: ImportedLegalComponent & { recordKey: string };
   importHistory: StudyOfficialImportHistory;
+  searchIndexMetadata: { id: string; [key: string]: unknown };
+  searchIndexArtifacts: { id: string; [key: string]: unknown };
 };
 
 const hasIndexedDb = (): boolean =>
-  typeof window !== 'undefined' && typeof window.indexedDB !== 'undefined';
+  typeof globalThis.indexedDB !== 'undefined';
 
 const requestToPromise = <T>(request: IDBRequest<T>): Promise<T> =>
   new Promise((resolve, reject) => {
@@ -96,18 +102,70 @@ const openStudyDatabase = (): Promise<IDBDatabase> =>
       reject(new Error('IndexedDB is not available.'));
       return;
     }
-    const request = window.indexedDB.open(STUDY_DB_NAME, STUDY_DB_VERSION);
+    const request = globalThis.indexedDB.open(STUDY_DB_NAME, STUDY_DB_VERSION);
     request.onupgradeneeded = () => {
       const db = request.result;
       STORES.forEach((storeName) => {
         if (!db.objectStoreNames.contains(storeName)) {
-          db.createObjectStore(storeName, { keyPath: STORE_KEYS[storeName] });
+          const store = db.createObjectStore(storeName, { keyPath: STORE_KEYS[storeName] });
+          createIndexesForStore(storeName, store);
+          return;
         }
+        const transaction = request.transaction;
+        if (transaction) createMissingIndexes(storeName, transaction.objectStore(storeName));
       });
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error ?? new Error('Failed to open study database.'));
   });
+
+const hasIndex = (store: IDBObjectStore, indexName: string): boolean =>
+  'indexNames' in store && Array.from(store.indexNames).includes(indexName);
+
+const createMissingIndex = (
+  store: IDBObjectStore,
+  indexName: string,
+  keyPath: string | string[],
+): void => {
+  if ('createIndex' in store && !hasIndex(store, indexName)) store.createIndex(indexName, keyPath);
+};
+
+const createIndexesForStore = (storeName: StudyStoreName, store: IDBObjectStore): void => {
+  if (!('createIndex' in store)) return;
+  if (storeName === 'legalComponents') {
+    store.createIndex('byDocumentId', 'documentId');
+    store.createIndex('bySourceKey', ['documentId', 'sourceKey'], { unique: true });
+    store.createIndex('byType', 'componentType');
+  }
+  if (storeName === 'units') {
+    store.createIndex('bySourceMode', 'sourceMode');
+  }
+  if (storeName === 'prompts' || storeName === 'rubrics' || storeName === 'concepts') {
+    store.createIndex('byUnitId', 'unitId');
+  }
+  if (storeName === 'attempts') {
+    store.createIndex('byUnitId', 'unitId');
+    store.createIndex('byUnitReviewedAt', ['unitId', 'completedAt']);
+  }
+};
+
+const createMissingIndexes = (storeName: StudyStoreName, store: IDBObjectStore): void => {
+  if (storeName === 'legalComponents') {
+    createMissingIndex(store, 'byDocumentId', 'documentId');
+    createMissingIndex(store, 'bySourceKey', ['documentId', 'sourceKey']);
+    createMissingIndex(store, 'byType', 'componentType');
+  }
+  if (storeName === 'units') {
+    createMissingIndex(store, 'bySourceMode', 'sourceMode');
+  }
+  if (storeName === 'prompts' || storeName === 'rubrics' || storeName === 'concepts') {
+    createMissingIndex(store, 'byUnitId', 'unitId');
+  }
+  if (storeName === 'attempts') {
+    createMissingIndex(store, 'byUnitId', 'unitId');
+    createMissingIndex(store, 'byUnitReviewedAt', ['unitId', 'completedAt']);
+  }
+};
 
 const readStore = async <TStore extends StudyStoreName>(
   db: IDBDatabase,
@@ -116,6 +174,20 @@ const readStore = async <TStore extends StudyStoreName>(
   const transaction = db.transaction(storeName, 'readonly');
   const records = (await requestToPromise(
     transaction.objectStore(storeName).getAll(),
+  )) as StudyStorePayloads[TStore][];
+  await transactionDone(transaction);
+  return records;
+};
+
+const readByIndex = async <TStore extends StudyStoreName>(
+  db: IDBDatabase,
+  storeName: TStore,
+  indexName: string,
+  query: string,
+): Promise<StudyStorePayloads[TStore][]> => {
+  const transaction = db.transaction(storeName, 'readonly');
+  const records = (await requestToPromise(
+    transaction.objectStore(storeName).index(indexName).getAll(query),
   )) as StudyStorePayloads[TStore][];
   await transactionDone(transaction);
   return records;
@@ -320,7 +392,7 @@ export const createStudyStorage = (): StudyStorage => ({
         ]);
       const [legalDocuments, legalComponents, importHistory] = await Promise.all([
         readStore(db, 'legalDocuments'),
-        readStore(db, 'legalComponents'),
+        Promise.resolve([] as StudyStorePayloads['legalComponents'][]),
         readStore(db, 'importHistory'),
       ]);
       return migrateStudySnapshot({
@@ -340,6 +412,73 @@ export const createStudyStorage = (): StudyStorage => ({
     } finally {
       db.close();
     }
+  },
+  async getLegalComponent(documentId, sourceKey) {
+    if (!hasIndexedDb()) return null;
+    const db = await openStudyDatabase();
+    try {
+      const transaction = db.transaction('legalComponents', 'readonly');
+      const record = (await requestToPromise(
+        transaction.objectStore('legalComponents').get(`${documentId}::${sourceKey}`),
+      )) as StudyStorePayloads['legalComponents'] | undefined;
+      await transactionDone(transaction);
+      return record ? legalComponentFromRecord(record) : null;
+    } finally {
+      db.close();
+    }
+  },
+  async getLegalComponentsByDocument(documentId) {
+    if (!hasIndexedDb()) return [];
+    const db = await openStudyDatabase();
+    try {
+      const records = await readByIndex(db, 'legalComponents', 'byDocumentId', documentId);
+      return records.map(legalComponentFromRecord);
+    } finally {
+      db.close();
+    }
+  },
+  async getLegalComponentsBySourceKeys(documentId, sourceKeys) {
+    if (!hasIndexedDb() || sourceKeys.length === 0) return [];
+    const db = await openStudyDatabase();
+    try {
+      const records = await Promise.all(
+        sourceKeys.map(async (sourceKey) => {
+          const transaction = db.transaction('legalComponents', 'readonly');
+          const record = (await requestToPromise(
+            transaction.objectStore('legalComponents').get(`${documentId}::${sourceKey}`),
+          )) as StudyStorePayloads['legalComponents'] | undefined;
+          await transactionDone(transaction);
+          return record;
+        }),
+      );
+      return records
+        .filter((record): record is StudyStorePayloads['legalComponents'] => Boolean(record))
+        .map(legalComponentFromRecord);
+    } finally {
+      db.close();
+    }
+  },
+  async getLegalDocumentComponentSummary(documentId) {
+    const components = await this.getLegalComponentsByDocument(documentId);
+    return {
+      documentId,
+      componentCount: components.length,
+      sectionCount: components.filter((component) => component.componentType === 'section').length,
+      subsectionCount: components.reduce(
+        (sum, component) => sum + (component.subsections?.length ?? 0),
+        0,
+      ),
+      scheduleCount: components.filter((component) => component.componentType === 'schedule')
+        .length,
+      formCount: components.filter((component) => component.componentType === 'form').length,
+      referenceOnlyFormCount: components.filter(
+        (component) =>
+          component.componentType === 'form' && component.extractionStatus === 'reference-only',
+      ).length,
+    };
+  },
+  async getLegalComponentCount(documentId) {
+    return (await this.getLegalComponentsByDocument(documentId)).length;
   },
   async saveDocument(document) {
     const db = await openStudyDatabase();
@@ -469,6 +608,38 @@ export const createStudyStorage = (): StudyStorage => ({
       db.close();
     }
   },
+  async deleteUnitCascade(unitId) {
+    const db = await openStudyDatabase();
+    try {
+      const transaction = db.transaction(
+        ['units', 'prompts', 'concepts', 'rubrics', 'progress', 'attempts', 'drafts'],
+        'readwrite',
+      );
+      transaction.objectStore('units').delete(unitId);
+      transaction.objectStore('progress').delete(unitId);
+      const deleteByUnitId = async (storeName: 'prompts' | 'concepts' | 'rubrics' | 'attempts') => {
+        const records = (await requestToPromise(
+          transaction.objectStore(storeName).index('byUnitId').getAll(unitId),
+        )) as Array<{ id: string }>;
+        records.forEach((record) => transaction.objectStore(storeName).delete(record.id));
+      };
+      await Promise.all([
+        deleteByUnitId('prompts'),
+        deleteByUnitId('concepts'),
+        deleteByUnitId('rubrics'),
+        deleteByUnitId('attempts'),
+      ]);
+      const drafts = (await requestToPromise(
+        transaction.objectStore('drafts').getAll(),
+      )) as StudyDraft[];
+      drafts
+        .filter((draft) => draft.unitId === unitId)
+        .forEach((draft) => transaction.objectStore('drafts').delete(draft.id));
+      await transactionDone(transaction);
+    } finally {
+      db.close();
+    }
+  },
   async saveSettings(settings) {
     const db = await openStudyDatabase();
     try {
@@ -481,8 +652,11 @@ export const createStudyStorage = (): StudyStorage => ({
     const next = migrateStudySnapshot(snapshot);
     const db = await openStudyDatabase();
     try {
-      const transaction = db.transaction(STORES, 'readwrite');
-      STORES.forEach((storeName) => transaction.objectStore(storeName).clear());
+      const authoritativeStores = STORES.filter(
+        (storeName) => storeName !== 'searchIndexMetadata' && storeName !== 'searchIndexArtifacts',
+      );
+      const transaction = db.transaction(authoritativeStores, 'readwrite');
+      authoritativeStores.forEach((storeName) => transaction.objectStore(storeName).clear());
       putMany(transaction, 'documents', next.documents);
       putMany(transaction, 'units', next.units);
       putMany(transaction, 'prompts', next.prompts);

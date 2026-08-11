@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   DEFAULT_REFERENCE_ANSWER_OPTIONS,
   generateReferenceAnswer,
@@ -30,6 +30,10 @@ import StudySchedulingPanel from './StudySchedulingPanel';
 type StudyUnitEditorPageProps = {
   data: StudyDataSnapshot;
   unitId: string;
+  onLoadLegalComponentsBySourceKeys?: (
+    _documentId: string,
+    _sourceKeys: string[],
+  ) => Promise<ImportedLegalComponent[]>;
   onSave: (_draft: { unit: StudyUnit; prompt: StudyPrompt; concepts: StudyConcept[]; rubrics: StudyRubricItem[] }) => Promise<void>;
   onAcknowledgeSourceReview?: (_unitId: string) => Promise<StudyUnit | void>;
   onUndoLatestRating?: (_unitId: string) => Promise<void>;
@@ -86,6 +90,7 @@ const StudyUnitEditorPage = ({
   data,
   unitId,
   onSave,
+  onLoadLegalComponentsBySourceKeys,
   onAcknowledgeSourceReview,
   onUndoLatestRating,
   onNavigate,
@@ -97,8 +102,8 @@ const StudyUnitEditorPage = ({
     data.prompts.find((entry) => entry.unitId === unitId);
   const initialConcepts = orderedConcepts(data.concepts.filter((concept) => concept.unitId === unitId));
   const initialRubrics = orderedRubrics(data.rubrics.filter((rubric) => rubric.unitId === unitId));
-  const selectedKeys = new Set(unit?.sourceReferences?.map((reference) => `${reference.documentId}::${reference.sourceKey}`) ?? []);
-  const sourceComponents = data.legalComponents.filter((component) => selectedKeys.has(sourceRecordKey(component)));
+  const sourceReferences = useMemo(() => unit?.sourceReferences ?? [], [unit?.sourceReferences]);
+  const [sourceComponents, setSourceComponents] = useState<ImportedLegalComponent[]>([]);
   const progress = data.progress.find((entry) => entry.unitId === unitId);
   const schedulingSummary = unit ? summarizeStudyScheduling({ unit, progress, now: new Date() }) : null;
   const legalDocument = unit?.documentIds[0] ? data.legalDocuments.find((document) => document.id === unit.documentIds[0]) : undefined;
@@ -119,6 +124,30 @@ const StudyUnitEditorPage = ({
   const [selectedSuggestionKeys, setSelectedSuggestionKeys] = useState<string[]>([]);
   const [conceptMessage, setConceptMessage] = useState('');
   const [showDiagnostics, setShowDiagnostics] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setSourceComponents([]);
+    const documentId = sourceReferences[0]?.documentId;
+    if (!documentId || sourceReferences.length === 0) return;
+    const loadComponents =
+      onLoadLegalComponentsBySourceKeys ??
+      (async (id: string, sourceKeys: string[]) =>
+        data.legalComponents.filter(
+          (component) => component.documentId === id && sourceKeys.includes(component.sourceKey),
+        ));
+    loadComponents(
+      documentId,
+      sourceReferences
+        .filter((reference) => reference.documentId === documentId)
+        .map((reference) => reference.sourceKey),
+    ).then((components) => {
+      if (!cancelled) setSourceComponents(components);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [data.legalComponents, onLoadLegalComponentsBySourceKeys, sourceReferences]);
 
   const suggestions = useMemo(
     () => generateRequiredConcepts({ document: legalDocument, selectedSources: sourceComponents }),

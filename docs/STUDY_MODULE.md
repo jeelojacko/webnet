@@ -12,14 +12,15 @@ It does not use adjustment, parser, solver, network, or Survey CAD domain state.
 - `src/study/studySeed.ts` - five initial New Brunswick statute document records plus sample units, concepts, prompts, and initial progress
 - `src/study/studyScheduler.ts` - StudyPhase transition and initial-progress rules
 - `src/study/studyQueue.ts` - pure Phase 3 FSRS-aware queue construction with explicit queue reasons
-- `src/study/studyStorage.ts` - IndexedDB schema, seed loading, migrations, CRUD/replace operations, atomic rating/undo writes, and atomic official-content package import
+- `src/study/studyStorage.ts` - IndexedDB schema, seed loading, migrations, CRUD/replace operations, on-demand legal-component repository lookups, atomic rating/undo writes, and atomic official-content package import
 - `src/study/studyStorageTypes.ts` - public Study storage interface shared by persistence helpers
 - `src/study/studyOfficialContent.ts` - official package parsing, browser import validation, preview, source-reference review flags, reference-only form detection, and source-selection study-unit creation
 - `src/study/studyDraftGeneration.ts` - deterministic title, question, citation, reference-answer, and conservative concept drafting for source-linked study units
 - `src/study/studyRubricGeneration.ts` - deterministic answer-rubric templates and legal-provision rubric generation
 - `src/study/studyQuestionSupport.ts` - shared main-question evidence gating, Tier A/B/C metadata, unsupported-topic checks, and suggested study chunk rules
 - `src/study/fsrs/*` - Phase 3 FSRS adapter, Study-domain scheduler settings, JSON-safe card/review-log serialization, parameter validation, and fixed/system clocks
-- `src/study/studyLibrarySearch.ts` - in-memory categorized Library search index and matching helpers
+- `src/study/search/*` - derived MiniSearch record builders, IndexedDB search-index persistence, worker protocol, worker implementation, and service wrapper for Library search
+- `src/study/studyLibrarySearch.ts` - legacy highlighting helpers and compatibility tests for the former in-memory search path
 - `src/study/studyOpfs.ts` - OPFS path generation and source-file text asset writes
 - `src/study/studyExportImport.ts` - JSON export/import round trip helpers
 - `src/study/studyReviewTransaction.ts` - FSRS rating preview, counted/non-counted attempt assembly, StudyPhase preservation, and latest-rating undo state restoration
@@ -31,7 +32,7 @@ It does not use adjustment, parser, solver, network, or Survey CAD domain state.
 
 Database: `webnet.study.v1`
 
-Version: `5`
+Version: `6`
 
 Stores:
 
@@ -47,8 +48,44 @@ Stores:
 - `legalDocuments`, key `id`: imported authoritative legal document metadata, package IDs, official citation/title, source URL, fetch/import dates, content hash, parent Act and enabling Act metadata
 - `legalComponents`, key `recordKey`: imported authoritative components keyed by `{documentId}::{sourceKey}`, including sections, schedules, forms, source text, source hash, subsections, and extraction status
 - `importHistory`, key `id`: compact official-package import history with added/changed counts, reference-only form counts, and flagged-unit counts
+- `searchIndexMetadata`, key `id`: derived search index metadata for the current official and Study-content indexes
+- `searchIndexArtifacts`, key `id`: serialized derived MiniSearch index artifacts
 
-Schema migration currently normalizes imported or partially missing snapshots to schema version `5`, fills default settings, defaults official-content stores to empty arrays, adds unit source mode, adds concept origin/order fields, adds the rubric store, adds Study FSRS settings/configuration, adds optional progress/attempt scheduling wrappers, and keeps existing Study data intact. Existing concepts without origin default to manual unless the linked unit already records generated concepts. Legacy snapshots without rubrics receive conservative supplemental `custom` rubric rows from existing concepts with empty reference answers, so migration does not invent legal answers or delete concept content. Old-schema IndexedDB fixture coverage locks browser upgrade behavior for pre-FSRS data: missing stores are created, historical attempts are preserved, and ambiguous legacy due dates become uninitialized FSRS schedules instead of replayed memory history.
+Native indexes added in version `6`:
+
+- `legalComponents.byDocumentId` for document-reader on-demand loading
+- `legalComponents.bySourceKey` on `[documentId, sourceKey]` for source-linked unit hydration and source-review acknowledgement
+- `legalComponents.byType` for component-type summaries
+- `units.bySourceMode` for source/custom unit lookup
+- `prompts.byUnitId`, `rubrics.byUnitId`, and `concepts.byUnitId` for unit-editor and index-building joins
+- `attempts.byUnitId` and `attempts.byUnitReviewedAt` for per-unit attempt lookup
+
+Schema migration currently normalizes imported or partially missing snapshots to schema version `6`, fills default settings, defaults official-content stores to empty arrays, adds unit source mode, adds concept origin/order fields, adds the rubric store, adds Study FSRS settings/configuration, adds optional progress/attempt scheduling wrappers, creates native lookup indexes, and keeps existing Study data intact. Existing concepts without origin default to manual unless the linked unit already records generated concepts. Legacy snapshots without rubrics receive conservative supplemental `custom` rubric rows from existing concepts with empty reference answers, so migration does not invent legal answers or delete concept content. Old-schema IndexedDB fixture coverage locks browser upgrade behavior for pre-FSRS and v5 data: missing stores are created, historical attempts and legal components are preserved, legal lookup indexes exist, and ambiguous legacy due dates become uninitialized FSRS schedules instead of replayed memory history.
+
+Normal `loadAll()` startup no longer reads `legalComponents` with `getAll()` and no longer places official legal text in the React snapshot. The snapshot carries global UI data: documents, legal document metadata, units, prompts, concepts, rubrics, progress, attempts, drafts, settings, and import history. Official component text remains authoritative in IndexedDB and is loaded through repository methods:
+
+- `getLegalComponent(documentId, sourceKey)`
+- `getLegalComponentsByDocument(documentId)`
+- `getLegalComponentsBySourceKeys(documentId, sourceKeys)`
+- `getLegalDocumentComponentSummary(documentId)`
+- `getLegalComponentCount(documentId)`
+
+The document reader loads only the selected document's components. The Study Unit editor, preview page, generated-missing-content action, and source-review acknowledgement load only the linked source keys for the active unit.
+
+## Derived Search Indexes
+
+Search indexes are derived data. IndexedDB remains authoritative for legal documents, legal components, Study units, prompts, rubrics, concepts, progress, and attempts. Search artifacts can be deleted, invalidated, or rebuilt without losing Study data.
+
+Phase 4A.1 locks `minisearch@7.2.0`; the installed package exposes browser-compatible ES modules, bundled TypeScript declarations, `toJSON()`, and `loadJSONAsync()` for serialized index persistence. React/UI code does not import MiniSearch directly.
+
+The Study search adapter keeps two logical indexes:
+
+- official legal index: official document metadata and official provision/component records, tied to the combined `corpusContentHash`
+- Study content index: source-linked units, custom units, prompts, rubrics, concepts, tags, editable summaries, and reference answers, tied to a deterministic `studyContentRevision`
+
+Metadata is stored in `searchIndexMetadata` and serialized MiniSearch artifacts are stored in `searchIndexArtifacts` as `official-fulltext` and `study-fulltext`. `SEARCH_INDEX_SCHEMA_VERSION` and the MiniSearch package version are part of invalidation. If deserialization fails, the worker logs a development diagnostic, clears derived artifacts, and rebuilds from authoritative IndexedDB records.
+
+`src/study/search/studySearchWorker.ts` initializes lazily when Library search is opened, loads valid persisted artifacts when possible, rebuilds stale/missing indexes off the React thread, keeps warm indexes in the worker, and returns compact result summaries containing IDs, display labels, scores, and short excerpts. Search scopes support All, Documents, Official Provisions, and Study Units. Request IDs prevent stale worker results from replacing newer query results.
 
 Study scheduling metadata is additive in schema version `5`:
 

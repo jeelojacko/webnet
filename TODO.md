@@ -1,3 +1,12 @@
+- [x] Study Phase 4A.1 scalable storage/search batch (August 2026): stop loading all legal component text into the React snapshot, add IndexedDB legal lookup indexes and repository APIs, add persistent MiniSearch-derived official/study search indexes behind a worker/service boundary, clear raw official package text after successful import, add focused storage/search tests, update Study architecture/current-behavior docs, validate, commit, and push.
+  - [x] Lock `minisearch@7.2.0` after confirming TypeScript/browser packaging and `toJSON`/`loadJSONAsync` serialization support.
+  - [x] Upgrade Study IndexedDB from v5 to v6 with legal component, unit, prompt, rubric, concept, and attempt lookup indexes plus derived search artifact stores.
+  - [x] Add on-demand legal-component repository methods and remove legal component `getAll()` from normal Study startup.
+  - [x] Add `src/study/search/` adapter, MiniSearch record builders, persistence, worker protocol, worker implementation, and service wrapper.
+  - [x] Rewire document reader, Study Unit editor, preview, source-review acknowledgement, missing-content generation, and Library document counts to use on-demand legal content.
+  - [x] Rewire Library search to the worker service with scope filters and compact result summaries.
+  - [x] Clear official package raw text after successful import.
+  - [x] Run focused tests and required validation.
 - [x] Study content Phase 4A NB SIT statute-corpus ingestion foundation (August 2026): complete full normalize/build/import once ANBLS PDF English-only extraction is resolved.
   - [x] Add the 57-Act NB SIT manual-scope manifest, preserve the ten pilot documents, and keep the five pilot regulations as required.
   - [x] Add corpus inventory/fetch/normalize/validate/build/refresh commands plus inventory, candidate-regulation, fetch-status, integrity, coverage, source-change, package-diagnostic, and source-review report outputs.

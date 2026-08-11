@@ -5,6 +5,7 @@ import type {
   StudyDataSnapshot,
   StudyDocument,
   StudyDraft,
+  ImportedLegalComponent,
   StudyProgress,
   StudyPrompt,
   StudyRubricItem,
@@ -14,6 +15,25 @@ import type {
 
 export interface StudyStorage {
   loadAll: () => Promise<StudyDataSnapshot>;
+  getLegalComponent: (
+    _documentId: string,
+    _sourceKey: string,
+  ) => Promise<ImportedLegalComponent | null>;
+  getLegalComponentsByDocument: (_documentId: string) => Promise<ImportedLegalComponent[]>;
+  getLegalComponentsBySourceKeys: (
+    _documentId: string,
+    _sourceKeys: string[],
+  ) => Promise<ImportedLegalComponent[]>;
+  getLegalDocumentComponentSummary: (_documentId: string) => Promise<{
+    documentId: string;
+    componentCount: number;
+    sectionCount: number;
+    subsectionCount: number;
+    scheduleCount: number;
+    formCount: number;
+    referenceOnlyFormCount: number;
+  }>;
+  getLegalComponentCount: (_documentId: string) => Promise<number>;
   saveDocument: (_document: StudyDocument) => Promise<void>;
   saveUnit: (_unit: StudyUnit) => Promise<void>;
   savePrompt: (_prompt: StudyPrompt) => Promise<void>;
@@ -39,6 +59,7 @@ export interface StudyStorage {
   }) => Promise<void>;
   saveDraft: (_draft: StudyDraft) => Promise<void>;
   clearDraft: (_draftId: string) => Promise<void>;
+  deleteUnitCascade: (_unitId: string) => Promise<void>;
   saveSettings: (_settings: StudySettings) => Promise<void>;
   replaceAll: (_snapshot: StudyDataSnapshot) => Promise<void>;
   importOfficialContentPackage: (

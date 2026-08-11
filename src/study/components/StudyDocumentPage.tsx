@@ -5,6 +5,7 @@ import type { ImportedLegalComponent, StudyDataSnapshot, StudyDocument, StudyUni
 type StudyDocumentPageProps = {
   data: StudyDataSnapshot;
   documentId: string;
+  onLoadLegalComponentsByDocument?: (_documentId: string) => Promise<ImportedLegalComponent[]>;
   onSaveDocument: (_document: StudyDocument) => Promise<void>;
   onSaveUnit: (_unit: StudyUnit) => Promise<void>;
   onCompleteReading: (_unitId: string) => Promise<void>;
@@ -50,6 +51,7 @@ const legalReference = (document: StudyDocument, component: ImportedLegalCompone
 const StudyDocumentPage = ({
   data,
   documentId,
+  onLoadLegalComponentsByDocument,
   onSaveDocument,
   onSaveUnit,
   onCompleteReading,
@@ -62,14 +64,8 @@ const StudyDocumentPage = ({
 }: StudyDocumentPageProps) => {
   const document = data.documents.find((entry) => entry.id === documentId);
   const legalDocument = data.legalDocuments.find((entry) => entry.id === documentId);
-  const components = useMemo(
-    () =>
-      data.legalComponents
-        .filter((component) => component.documentId === documentId)
-        .slice()
-        .sort(compareImportedLegalComponents),
-    [data.legalComponents, documentId],
-  );
+  const [components, setComponents] = useState<ImportedLegalComponent[]>([]);
+  const [componentsLoading, setComponentsLoading] = useState(Boolean(legalDocument));
   const units = useMemo(() => data.units.filter((unit) => unit.documentIds.includes(documentId)), [data.units, documentId]);
   const [documentDraft, setDocumentDraft] = useState(document);
   const [unitDrafts, setUnitDrafts] = useState<Record<string, StudyUnit>>({});
@@ -88,6 +84,29 @@ const StudyDocumentPage = ({
     setUnitDrafts(Object.fromEntries(units.map((unit) => [unit.id, unit])));
     setSelectedKeys([]);
   }, [document, units]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setComponents([]);
+    if (!legalDocument) {
+      setComponentsLoading(false);
+      return;
+    }
+    setComponentsLoading(true);
+    const loadComponents =
+      onLoadLegalComponentsByDocument ??
+      (async (id: string) => data.legalComponents.filter((component) => component.documentId === id));
+    loadComponents(documentId)
+      .then((records: ImportedLegalComponent[]) => {
+        if (!cancelled) setComponents(records.slice().sort(compareImportedLegalComponents));
+      })
+      .finally(() => {
+        if (!cancelled) setComponentsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [data.legalComponents, documentId, legalDocument, onLoadLegalComponentsByDocument]);
 
   const relatedRegulations = legalDocument?.documentType === 'act' ? data.legalDocuments.filter((entry) => entry.parentActId === documentId) : [];
   const parentAct = legalDocument?.parentActId ? data.documents.find((entry) => entry.id === legalDocument.parentActId) : undefined;
@@ -201,6 +220,9 @@ const StudyDocumentPage = ({
 
       {legalDocument ? (
         <section className="rounded border border-emerald-900 bg-slate-950 p-4">
+          {componentsLoading ? (
+            <div className="mb-3 text-xs text-slate-500">Loading official document text...</div>
+          ) : null}
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <input
               value={query}

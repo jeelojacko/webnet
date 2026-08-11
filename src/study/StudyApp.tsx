@@ -44,6 +44,7 @@ const StudyApp = () => {
         <StudyUnitEditorPage
           data={study.data}
           unitId={unitEditId}
+          onLoadLegalComponentsBySourceKeys={study.getLegalComponentsBySourceKeys}
           onSave={study.saveUnitAuthoring}
           onAcknowledgeSourceReview={study.acknowledgeSourceReview}
           onUndoLatestRating={study.undoLatestStudyRatingForUnit}
@@ -53,7 +54,12 @@ const StudyApp = () => {
     }
     if (unitPreviewId) {
       return (
-        <StudyPreviewPage data={study.data} unitId={unitPreviewId} onNavigate={study.navigate} />
+        <StudyPreviewPage
+          data={study.data}
+          unitId={unitPreviewId}
+          onLoadLegalComponentsBySourceKeys={study.getLegalComponentsBySourceKeys}
+          onNavigate={study.navigate}
+        />
       );
     }
     if (unitPracticeId) {
@@ -106,6 +112,7 @@ const StudyApp = () => {
           }
           onDeleteUnit={study.deleteUnit}
           onDuplicateUnit={study.duplicateUnit}
+          onLoadLegalDocumentComponentSummary={study.getLegalDocumentComponentSummary}
         />
       );
     }
@@ -114,6 +121,7 @@ const StudyApp = () => {
         <StudyDocumentPage
           data={study.data}
           documentId={documentId}
+          onLoadLegalComponentsByDocument={study.getLegalComponentsByDocument}
           onSaveDocument={study.saveDocument}
           onSaveUnit={study.saveUnit}
           onCompleteReading={study.completeReading}

@@ -19,6 +19,7 @@ import {
 } from '../../src/study/studyStorage';
 
 type FakeStudyStores = Record<string, Map<string, unknown>>;
+type FakeStudyIndexes = Record<string, Set<string>>;
 
 const STUDY_STORE_KEYS: Record<string, string> = {
   documents: 'id',
@@ -61,9 +62,38 @@ const createFakeRequest = <T>(resolveValue: () => T, onComplete?: () => void): I
 
 const createFakeStudyStore = (
   stores: FakeStudyStores,
+  indexes: FakeStudyIndexes,
   storeName: string,
   transaction: IDBTransaction,
 ) => ({
+  indexNames: {
+    contains: (indexName: string) => indexes[storeName]?.has(indexName) ?? false,
+    [Symbol.iterator]: function* () {
+      yield* indexes[storeName] ?? [];
+    },
+  },
+  createIndex: (indexName: string) => {
+    indexes[storeName] ??= new Set();
+    indexes[storeName].add(indexName);
+  },
+  index: (indexName: string) => ({
+    getAll: (query: string) =>
+      createFakeRequest(
+        () => {
+          const records = Array.from((stores[storeName] ?? new Map()).values()) as Array<
+            Record<string, unknown>
+          >;
+          if (indexName === 'byDocumentId') {
+            return records.filter((record) => record.documentId === query);
+          }
+          if (indexName === 'byUnitId') {
+            return records.filter((record) => record.unitId === query);
+          }
+          return records;
+        },
+        () => transaction.oncomplete?.call(transaction, new Event('complete') as never),
+      ),
+  }),
   getAll: () =>
     createFakeRequest(
       () => Array.from((stores[storeName] ?? new Map()).values()),
@@ -94,9 +124,11 @@ const createFakeStudyStore = (
 const installStudyIndexedDbFixture = ({
   stores,
   oldVersion,
+  indexes = {},
 }: {
   stores: FakeStudyStores;
   oldVersion: number;
+  indexes?: FakeStudyIndexes;
 }) => {
   Object.defineProperty(window, 'indexedDB', {
     configurable: true,
@@ -105,6 +137,7 @@ const installStudyIndexedDbFixture = ({
         const request = {
           result: null as IDBDatabase | null,
           error: null as DOMException | null,
+          transaction: null as IDBTransaction | null,
           onsuccess: null as IDBOpenDBRequest['onsuccess'],
           onerror: null as IDBOpenDBRequest['onerror'],
           onupgradeneeded: null as IDBOpenDBRequest['onupgradeneeded'],
@@ -115,10 +148,11 @@ const installStudyIndexedDbFixture = ({
           },
           createObjectStore: (storeName: string) => {
             stores[storeName] ??= new Map();
-            return createFakeStudyStore(stores, storeName, {} as IDBTransaction);
+            indexes[storeName] ??= new Set();
+            return createFakeStudyStore(stores, indexes, storeName, {} as IDBTransaction);
           },
           close: () => undefined,
-          transaction: (storeNames: string | string[]) => {
+          transaction: (storeNames: string | string[], _mode?: string) => {
             const names = Array.isArray(storeNames) ? storeNames : [storeNames];
             const transaction = {
               oncomplete: null as IDBTransaction['oncomplete'],
@@ -129,10 +163,16 @@ const installStudyIndexedDbFixture = ({
               objectStore: (storeName: string) => {
                 if (!names.includes(storeName))
                   throw new Error(`Unexpected Study store ${storeName}`);
-                return createFakeStudyStore(stores, storeName, transaction as IDBTransaction);
+                indexes[storeName] ??= new Set();
+                return createFakeStudyStore(
+                  stores,
+                  indexes,
+                  storeName,
+                  transaction as unknown as IDBTransaction,
+                );
               },
             };
-            return transaction as IDBTransaction;
+            return transaction as unknown as IDBTransaction;
           },
         };
         const openRequest = request as unknown as IDBOpenDBRequest;
@@ -142,8 +182,9 @@ const installStudyIndexedDbFixture = ({
             request.onerror?.call(openRequest, new Event('error') as never);
             return;
           }
-          request.result = db as IDBDatabase;
+          request.result = db as unknown as IDBDatabase;
           if ((version ?? 0) > oldVersion) {
+            request.transaction = db.transaction(Object.keys(stores), 'versionchange');
             request.onupgradeneeded?.call(openRequest, new Event('upgradeneeded') as never);
           }
           request.onsuccess?.call(openRequest, new Event('success') as never);
@@ -349,6 +390,55 @@ describe('study storage contracts', () => {
       initialized: false,
       legacyDueAt: '2026-08-11T10:00:00.000Z',
     });
+  });
+
+  it('upgrades v5 storage with legal lookup indexes and does not load legal text globally', async () => {
+    const seed = createSeedStudyData('2026-08-01T10:00:00.000Z');
+    const component = {
+      documentId: 'doc-surveys-act',
+      id: 'section-8',
+      sourceKey: 'section-8',
+      componentType: 'section' as const,
+      label: '8',
+      heading: 'Survey plans',
+      text: 'Official legal text that should not be in the core snapshot.',
+      contentHash: 'hash-section-8',
+      extractionStatus: 'complete' as const,
+      recordKey: 'doc-surveys-act::section-8',
+    };
+    const stores: FakeStudyStores = {
+      documents: new Map(seed.documents.map((entry) => [entry.id, entry])),
+      units: new Map(seed.units.map((entry) => [entry.id, entry])),
+      prompts: new Map(seed.prompts.map((entry) => [entry.id, entry])),
+      concepts: new Map(seed.concepts.map((entry) => [entry.id, entry])),
+      rubrics: new Map(seed.rubrics.map((entry) => [entry.id, entry])),
+      progress: new Map(seed.progress.map((entry) => [entry.unitId, entry])),
+      attempts: new Map(),
+      drafts: new Map(),
+      settings: new Map([[seed.settings.id, { ...seed.settings, schemaVersion: 5 }]]),
+      legalDocuments: new Map(),
+      legalComponents: new Map([[component.recordKey, component]]),
+      importHistory: new Map(),
+    };
+    const indexes: FakeStudyIndexes = {};
+    installStudyIndexedDbFixture({ stores, indexes, oldVersion: 5 });
+
+    const storage = createStudyStorage();
+    const loaded = await storage.loadAll();
+    const byDocument = await storage.getLegalComponentsByDocument('doc-surveys-act');
+    const bySourceKey = await storage.getLegalComponent('doc-surveys-act', 'section-8');
+
+    expect(STUDY_DB_VERSION).toBe(6);
+    expect(indexes.legalComponents).toEqual(
+      new Set(['byDocumentId', 'bySourceKey', 'byType']),
+    );
+    expect(indexes.prompts).toContain('byUnitId');
+    expect(indexes.rubrics).toContain('byUnitId');
+    expect(indexes.concepts).toContain('byUnitId');
+    expect(indexes.attempts).toEqual(new Set(['byUnitId', 'byUnitReviewedAt']));
+    expect(loaded.legalComponents).toEqual([]);
+    expect(byDocument).toHaveLength(1);
+    expect(bySourceKey?.text).toBe(component.text);
   });
 
   it('does not auto-seed after an intentional clean-slate reset leaves settings behind', () => {

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createInitialProgress } from '../studyScheduler';
 import type {
   StudyDataSnapshot,
@@ -12,6 +12,10 @@ import StudySessionPage from './StudySessionPage';
 type StudyPreviewPageProps = {
   data: StudyDataSnapshot;
   unitId: string;
+  onLoadLegalComponentsBySourceKeys?: (
+    _documentId: string,
+    _sourceKeys: string[],
+  ) => Promise<Array<{ label: string; heading?: string; text: string }>>;
   onNavigate: (_path: string) => void;
 };
 
@@ -21,22 +25,23 @@ const responseModeFor = (item: StudySessionItem): StudyResponseMode => {
   return 'free-recall';
 };
 
-const sourceTextFor = (data: StudyDataSnapshot, item: StudySessionItem): string => {
-  const selectedKeys = new Set(
-    item.unit.sourceReferences?.map((reference) => `${reference.documentId}::${reference.sourceKey}`) ?? [],
-  );
-  return data.legalComponents
-    .filter((component) => selectedKeys.has(`${component.documentId}::${component.sourceKey}`))
+const sourceTextFor = (components: Array<{ label: string; heading?: string; text: string }>): string =>
+  components
     .map((component) => `${component.label}${component.heading ? ` ${component.heading}` : ''}\n\n${component.text}`)
     .join('\n\n');
-};
 
-const StudyPreviewPage = ({ data, unitId, onNavigate }: StudyPreviewPageProps) => {
+const StudyPreviewPage = ({
+  data,
+  unitId,
+  onLoadLegalComponentsBySourceKeys,
+  onNavigate,
+}: StudyPreviewPageProps) => {
   const [answer, setAnswer] = useState('');
   const [guidedResponses, setGuidedResponses] = useState<Record<string, string>>({});
   const [revealed, setRevealed] = useState(false);
   const [coveredConceptIds, setCoveredConceptIds] = useState<string[]>([]);
   const [rubricCoverage, setRubricCoverage] = useState<StudyRubricCoverage[]>([]);
+  const [sourceComponents, setSourceComponents] = useState<Array<{ label: string; heading?: string; text: string }>>([]);
 
   const item = useMemo<StudySessionItem | null>(() => {
     const unit = data.units.find((entry) => entry.id === unitId);
@@ -60,6 +65,30 @@ const StudyPreviewPage = ({ data, unitId, onNavigate }: StudyPreviewPageProps) =
     };
   }, [data, unitId]);
 
+  useEffect(() => {
+    let cancelled = false;
+    setSourceComponents([]);
+    const documentId = item?.unit.sourceReferences?.[0]?.documentId;
+    if (!documentId) return;
+    const loadComponents =
+      onLoadLegalComponentsBySourceKeys ??
+      (async (id: string, sourceKeys: string[]) =>
+        data.legalComponents.filter(
+          (component) => component.documentId === id && sourceKeys.includes(component.sourceKey),
+        ));
+    loadComponents(
+      documentId,
+      (item.unit.sourceReferences ?? [])
+        .filter((reference) => reference.documentId === documentId)
+        .map((reference) => reference.sourceKey),
+    ).then((components) => {
+      if (!cancelled) setSourceComponents(components);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [data.legalComponents, item, onLoadLegalComponentsBySourceKeys]);
+
   if (!item) return <StudyEmptyState text="Study unit not found." />;
 
   return (
@@ -82,7 +111,7 @@ const StudyPreviewPage = ({ data, unitId, onNavigate }: StudyPreviewPageProps) =
       onRubricCoverageChange={setRubricCoverage}
       onRate={async () => {}}
       previewMode
-      sourceText={sourceTextFor(data, item)}
+      sourceText={sourceTextFor(sourceComponents)}
       onClosePreview={() => onNavigate('/study/library?tab=units')}
     />
   );
