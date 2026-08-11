@@ -62,7 +62,8 @@ It owns:
 - `studyRubricGeneration.ts` for pure deterministic answer-rubric templates, source-linked legal-provision fact extraction, fixture-locked rubric generation, and development diagnostics
 - `src/study/fsrs/*` for the Phase 3 FSRS adapter boundary, including Study-domain settings, serialized card/review-log records, runtime parameter validation, fixed/system clocks, legacy schedule migration helpers, replay predicates, and `ts-fsrs` scheduling calls isolated away from React components
 - `studyLibrarySearch.ts` for the in-memory categorized Library search index, short-field fuzzy matching, and long official-text substring matching
-- `studyScheduler.ts` for deterministic phase transitions and due-before-new session ordering
+- `studyScheduler.ts` for deterministic phase transitions and the current live provisional session ordering
+- `studyQueue.ts` for the Phase 3 pure FSRS-aware queue model with explicit queue reasons, due Learning/Relearning and Review ordering, limited New material, source-review precedence, and optional surprise practice outside normal scheduling
 - `StudyApp.tsx`, `useStudyApp.ts`, and `components/*` for the dashboard, library, document reader/editor, session, and manage pages
 
 The study module does not use adjustment, parser, solver, network, import-review, or Survey CAD domain state. Authoritative source-file metadata remains on `StudyDocument.sourceFiles`; editable summaries and reference answers remain on study-unit or prompt records. See `docs/STUDY_MODULE.md` for the schema and manual workflow.

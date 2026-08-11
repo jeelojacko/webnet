@@ -9,6 +9,7 @@ It does not use adjustment, parser, solver, network, or Survey CAD domain state.
 - `src/study/studyTypes.ts` - record contracts for documents, units, prompts, concepts, rubrics, progress, attempts, drafts, settings, and snapshots
 - `src/study/studySeed.ts` - five initial New Brunswick statute document records plus sample units, concepts, prompts, and initial progress
 - `src/study/studyScheduler.ts` - phase transition and session ordering rules
+- `src/study/studyQueue.ts` - pure Phase 3 FSRS-aware queue construction with explicit queue reasons
 - `src/study/studyStorage.ts` - IndexedDB schema, seed loading, migrations, CRUD/replace operations, and atomic official-content package import
 - `src/study/studyOfficialContent.ts` - official package parsing, browser import validation, preview, source-reference review flags, reference-only form detection, and source-selection study-unit creation
 - `src/study/studyDraftGeneration.ts` - deterministic title, question, citation, reference-answer, and conservative concept drafting for source-linked study units
@@ -306,3 +307,23 @@ Phase 3A has started the scheduler foundation without changing live Study sessio
 - Uninitialized schedules do not fabricate historical FSRS state. The first real counted rating will create a fresh card at the review timestamp; ambiguous legacy due dates are intended to be preserved separately as `legacyDueAt` in a later schema batch.
 
 The browser session rating transaction, queue builder, undo, and Study UI scheduling indicators are still pending Phase 3 batches.
+
+## Phase 3 Queue Model
+`buildStudyQueue` is a pure/testable queue builder for the upcoming FSRS session workflow. It does not mutate progress, attempts, FSRS cards, source-review flags, or StudyPhase state.
+
+Queue items carry one explicit reason:
+- `source-review-required`
+- `learning-due`
+- `relearning-due`
+- `review-due`
+- `new`
+- `surprise-practice`
+
+Normal queue order is:
+1. source-review-required units, including missing source references
+2. due Learning/Relearning cards whose FSRS due timestamp is at or before the supplied clock time
+3. due Review cards, ordered primarily by due timestamp with priority only as a tie breaker
+4. New units, ordered by priority and stable title/id tie breakers, capped by `newUnitsPerSession`
+5. optional surprise practice, only when explicitly requested
+
+Uninitialized legacy progress with a preserved `legacyDueAt` queues as `review-due` only after the unit has left `unread`; unread uninitialized units remain New material. Future Learning/Relearning cards are excluded until their absolute due timestamp is reached. Surprise practice is excluded from normal scheduling and does not imply scheduling mutation.

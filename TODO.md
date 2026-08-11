@@ -9,9 +9,9 @@
     - [x] Extend `StudyProgress`, `StudyAttempt`, settings, snapshot, IndexedDB schema, export/import, and migrations for serialized FSRS scheduling state and attempt scheduling metadata without data loss.
     - [x] Preserve ambiguous legacy due dates as `legacyDueAt` instead of fabricating FSRS history; add replay predicates and idempotent migration tests.
     - [ ] Add old-schema IndexedDB fixture coverage and any safe historical replay/reschedule path needed after real counted scheduling attempts exist.
-  - [ ] Batch 3C - pure queue builder:
-    - [ ] Build a pure Study queue model with source-review-required first, due Learning/Relearning, due/overdue Review, limited New units, and optional surprise practice outside normal scheduling.
-    - [ ] Add queue ordering, due-boundary, new-unit-limit, and deterministic tie-break tests.
+  - [x] Batch 3C - pure queue builder:
+    - [x] Build a pure Study queue model with source-review-required first, due Learning/Relearning, due/overdue Review, limited New units, and optional surprise practice outside normal scheduling.
+    - [x] Add queue ordering, due-boundary, new-unit-limit, and deterministic tie-break tests.
   - [ ] Batch 3D - session rating persistence:
     - [ ] Wire Again/Hard/Good/Easy into atomic progress plus attempt writes with idempotency/double-click guards, while keeping StudyPhase transition logic independent.
     - [ ] Keep Preview, default Manual Practice, default Surprise Practice, and source acknowledgement non-mutating for FSRS; add focused session tests.
