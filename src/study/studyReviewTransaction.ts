@@ -1,12 +1,10 @@
 import { createNewStudySchedule, createStudyFsrsScheduler } from './fsrs/studyFsrs';
-import {
-  createStudyFsrsConfigRecord,
-  resolveStudyFsrsParameters,
-} from './fsrs/studyFsrsMigration';
+import { createStudyFsrsConfigRecord, resolveStudyFsrsParameters } from './fsrs/studyFsrsMigration';
 import { updateProgressAfterAttempt } from './studyScheduler';
 import type {
   StudyAttempt,
   StudyDataSnapshot,
+  StudyAttemptSchedulingReason,
   StudyFsrsConfigRecord,
   StudyFsrsSchedule,
   StudyProgress,
@@ -28,6 +26,21 @@ export type BuildRatedStudyAttemptOptions = {
   coveredConceptIds: string[];
   rubricCoverage: StudyRubricCoverage[];
   startedAt: string;
+};
+
+export type BuildNonSchedulingStudyAttemptOptions = {
+  item: StudySessionItem;
+  rating: StudyRating;
+  attemptId: string;
+  answer: string;
+  responseMode: StudyResponseMode;
+  guidedResponses: Record<string, string>;
+  coveredConceptIds: string[];
+  rubricCoverage: StudyRubricCoverage[];
+  reason: Extract<StudyAttemptSchedulingReason, 'manual-practice' | 'surprise-practice'>;
+  startedAt: string;
+  revealedAt: string;
+  completedAt: string;
 };
 
 export type RatedStudyAttemptResult = {
@@ -80,7 +93,10 @@ export const buildStudyRatingPreviews = ({
   now: Date;
 }): StudyRatingPreview[] => {
   const config = resolveConfig(data, now);
-  const scheduler = createStudyFsrsScheduler(config.userSettings, resolveStudyFsrsParameters(config));
+  const scheduler = createStudyFsrsScheduler(
+    config.userSettings,
+    resolveStudyFsrsParameters(config),
+  );
   const schedule = resolveSchedule(item, config);
   return scheduler.previewAllStudyRatings(schedule, now).map((preview) => ({
     rating: preview.rating,
@@ -104,9 +120,15 @@ export const buildRatedStudyAttempt = ({
 }: BuildRatedStudyAttemptOptions): RatedStudyAttemptResult => {
   const nowIso = now.toISOString();
   const config = resolveConfig(data, now);
-  const scheduler = createStudyFsrsScheduler(config.userSettings, resolveStudyFsrsParameters(config));
+  const scheduler = createStudyFsrsScheduler(
+    config.userSettings,
+    resolveStudyFsrsParameters(config),
+  );
   const schedule = resolveSchedule(item, config);
-  const dueBefore = schedule.initialized && schedule.card ? schedule.card.due : schedule.legacyDueAt ?? item.progress.dueAt;
+  const dueBefore =
+    schedule.initialized && schedule.card
+      ? schedule.card.due
+      : (schedule.legacyDueAt ?? item.progress.dueAt);
   const scheduled = scheduler.applyStudyRating(schedule, rating, now);
   const phaseBefore = item.progress.phase;
   const phaseProgress = updateProgressAfterAttempt({
@@ -159,3 +181,50 @@ export const buildRatedStudyAttempt = ({
   };
   return { attempt, progress };
 };
+
+export const buildNonSchedulingStudyAttempt = ({
+  item,
+  rating,
+  attemptId,
+  answer,
+  responseMode,
+  guidedResponses,
+  coveredConceptIds,
+  rubricCoverage,
+  reason,
+  startedAt,
+  revealedAt,
+  completedAt,
+}: BuildNonSchedulingStudyAttemptOptions): StudyAttempt => ({
+  id: attemptId,
+  unitId: item.unit.id,
+  promptId: item.prompt.id,
+  phase: item.progress.phase,
+  phaseBefore: item.progress.phase,
+  phaseAfter: item.progress.phase,
+  answer,
+  responseMode,
+  guidedResponses,
+  coveredConceptIds,
+  rubricCoverage,
+  rating,
+  scheduling: {
+    algorithm: 'fsrs',
+    schedulingApplied: false,
+    rating,
+    reviewedAt: completedAt,
+    dueBefore:
+      item.progress.scheduling?.initialized && item.progress.scheduling.card
+        ? item.progress.scheduling.card.due
+        : (item.progress.scheduling?.legacyDueAt ?? item.progress.dueAt),
+    dueAfter:
+      item.progress.scheduling?.initialized && item.progress.scheduling.card
+        ? item.progress.scheduling.card.due
+        : (item.progress.scheduling?.legacyDueAt ?? item.progress.dueAt),
+    configVersion: item.progress.scheduling?.configVersion,
+    reason,
+  },
+  startedAt,
+  revealedAt,
+  completedAt,
+});

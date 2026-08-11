@@ -17,7 +17,7 @@
     - [x] Add rating previews to the scheduled Study session path using the same timestamp as the final rating operation.
     - [x] Switch the live scheduled Study session source to the FSRS queue builder with source-review items guarded from memory-rating submission.
     - [x] Keep Preview and source acknowledgement non-mutating for FSRS; add focused session/editor tests.
-    - [ ] Add default Manual Practice and default Surprise Practice non-counted controls/tests, with any counted-review override explicit.
+    - [x] Add default Manual Practice and default Surprise Practice non-counted controls/tests, with any counted-review override explicit.
   - [ ] Batch 3E - UI integration:
     - [ ] Add rating previews, dashboard scheduling counts, Library scheduling badges/filters/sort, unit-editor read-only scheduling panel, session completion summary, and dev-only diagnostics.
   - [ ] Batch 3F - undo, docs, full validation:

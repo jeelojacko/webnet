@@ -22,7 +22,11 @@ import { createDefaultStudySettings } from './studySeed';
 import { createInitialProgress, markReadingComplete } from './studyScheduler';
 import { buildStudyQueue } from './studyQueue';
 import { createStudyStorage, STUDY_SCHEMA_VERSION } from './studyStorage';
-import { buildRatedStudyAttempt, buildStudyRatingPreviews } from './studyReviewTransaction';
+import {
+  buildNonSchedulingStudyAttempt,
+  buildRatedStudyAttempt,
+  buildStudyRatingPreviews,
+} from './studyReviewTransaction';
 import type {
   StudyAttempt,
   StudyDataSnapshot,
@@ -472,6 +476,57 @@ export const useStudyApp = () => {
     ],
   );
 
+  const savePracticeAttempt = useCallback(
+    async ({
+      item,
+      rating,
+      reason,
+      answer,
+      responseMode,
+      guidedResponses,
+      coveredConceptIds,
+      rubricCoverage,
+      startedAt,
+      revealedAt,
+    }: {
+      item: StudySessionItem;
+      rating: StudyRating;
+      reason: 'manual-practice' | 'surprise-practice';
+      answer: string;
+      responseMode: StudyResponseMode;
+      guidedResponses: Record<string, string>;
+      coveredConceptIds: string[];
+      rubricCoverage: StudyRubricCoverage[];
+      startedAt: string;
+      revealedAt: string;
+    }) => {
+      if (!data) return;
+      const completedAt = revealedAt;
+      const attempt = buildNonSchedulingStudyAttempt({
+        item,
+        rating,
+        attemptId: createId('attempt-practice'),
+        answer,
+        responseMode,
+        guidedResponses,
+        coveredConceptIds,
+        rubricCoverage,
+        reason,
+        startedAt,
+        revealedAt,
+        completedAt,
+      });
+      await storage.saveAttempt(attempt);
+      setData({ ...data, attempts: [...data.attempts, attempt] });
+      setStatusMessage(
+        reason === 'surprise-practice'
+          ? 'Surprise practice saved without changing scheduling.'
+          : 'Manual practice saved without changing scheduling.',
+      );
+    },
+    [data, storage],
+  );
+
   const exportText = useMemo(() => (data ? exportStudyData(data) : ''), [data]);
 
   const importData = useCallback(async () => {
@@ -764,6 +819,7 @@ export const useStudyApp = () => {
     ratingPreviews,
     ratingPending,
     rateActiveItem,
+    savePracticeAttempt,
     completeReading,
     activeItemIndex,
     setActiveItemIndex,

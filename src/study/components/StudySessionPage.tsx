@@ -94,9 +94,13 @@ const StudySessionPage = ({
               ? 'Preview'
               : sourceReviewRequired
                 ? 'Source review required'
-                : activeItem.due
-                  ? 'Due review'
-                  : 'New or upcoming'}
+                : activeItem.reason === 'manual-practice'
+                  ? 'Manual practice'
+                  : activeItem.reason === 'surprise-practice'
+                    ? 'Surprise practice'
+                    : activeItem.due
+                      ? 'Due review'
+                      : 'New or upcoming'}
           </span>
           {onClosePreview ? (
             <button

@@ -5,7 +5,12 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createSeedStudyData } from '../../src/study/studySeed';
-import type { StudyAttempt, StudyDataSnapshot, StudyDraft, StudyProgress } from '../../src/study/studyTypes';
+import type {
+  StudyAttempt,
+  StudyDataSnapshot,
+  StudyDraft,
+  StudyProgress,
+} from '../../src/study/studyTypes';
 import { useStudyApp } from '../../src/study/useStudyApp';
 
 const storageState = vi.hoisted<{
@@ -26,7 +31,9 @@ vi.mock('../../src/study/studyStorage', () => ({
       ...(storageState.snapshot as StudyDataSnapshot),
       drafts: storageState.drafts,
       attempts: storageState.attempts,
-      progress: storageState.progress.length ? storageState.progress : (storageState.snapshot as StudyDataSnapshot).progress,
+      progress: storageState.progress.length
+        ? storageState.progress
+        : (storageState.snapshot as StudyDataSnapshot).progress,
     })),
     saveDocument: vi.fn(),
     saveUnit: vi.fn(async (unit: StudyDataSnapshot['units'][number]) => {
@@ -40,18 +47,37 @@ vi.mock('../../src/study/studyStorage', () => ({
     replaceUnitConcepts: vi.fn(),
     replaceUnitRubrics: vi.fn(),
     saveProgress: vi.fn(async (progress: StudyProgress) => {
-      storageState.progress = [...storageState.progress.filter((entry) => entry.unitId !== progress.unitId), progress];
+      storageState.progress = [
+        ...storageState.progress.filter((entry) => entry.unitId !== progress.unitId),
+        progress,
+      ];
     }),
     saveAttempt: vi.fn(async (attempt: StudyAttempt) => {
       storageState.attempts = [...storageState.attempts, attempt];
     }),
-    saveRatedAttempt: vi.fn(async ({ attempt, progress, draftId }: { attempt: StudyAttempt; progress: StudyProgress; draftId: string }) => {
-      storageState.attempts = [...storageState.attempts, attempt];
-      storageState.progress = [...storageState.progress.filter((entry) => entry.unitId !== progress.unitId), progress];
-      storageState.drafts = storageState.drafts.filter((entry) => entry.id !== draftId);
-    }),
+    saveRatedAttempt: vi.fn(
+      async ({
+        attempt,
+        progress,
+        draftId,
+      }: {
+        attempt: StudyAttempt;
+        progress: StudyProgress;
+        draftId: string;
+      }) => {
+        storageState.attempts = [...storageState.attempts, attempt];
+        storageState.progress = [
+          ...storageState.progress.filter((entry) => entry.unitId !== progress.unitId),
+          progress,
+        ];
+        storageState.drafts = storageState.drafts.filter((entry) => entry.id !== draftId);
+      },
+    ),
     saveDraft: vi.fn(async (draft: StudyDraft) => {
-      storageState.drafts = [...storageState.drafts.filter((entry) => entry.id !== draft.id), draft];
+      storageState.drafts = [
+        ...storageState.drafts.filter((entry) => entry.id !== draft.id),
+        draft,
+      ];
     }),
     clearDraft: vi.fn(async (draftId: string) => {
       storageState.drafts = storageState.drafts.filter((entry) => entry.id !== draftId);
@@ -133,7 +159,12 @@ describe('study app hook persistence', () => {
       currentHookValue?.setRevealed(true);
       currentHookValue?.toggleConcept(currentHookValue.activeItem?.concepts[0]?.id ?? '');
     });
-    expect(hookValue.current?.ratingPreviews.map((preview) => preview.rating)).toEqual(['again', 'hard', 'good', 'easy']);
+    expect(hookValue.current?.ratingPreviews.map((preview) => preview.rating)).toEqual([
+      'again',
+      'hard',
+      'good',
+      'easy',
+    ]);
     expect(storageState.attempts).toEqual([]);
     await act(async () => {
       await hookValue.current?.rateActiveItem('good');
@@ -175,7 +206,9 @@ describe('study app hook persistence', () => {
     });
 
     expect(storageState.attempts.at(-1)?.guidedResponses?.[rubricId]).toBe('Guided answer.');
-    expect(storageState.attempts.at(-1)?.rubricCoverage).toEqual([{ rubricItemId: rubricId, status: 'covered' }]);
+    expect(storageState.attempts.at(-1)?.rubricCoverage).toEqual([
+      { rubricItemId: rubricId, status: 'covered' },
+    ]);
   });
 
   it('ignores duplicate rating submissions while a rating is being saved', async () => {
@@ -234,7 +267,55 @@ describe('study app hook persistence', () => {
     });
 
     expect(storageState.attempts).toEqual([]);
-    expect(hookValue.current?.statusMessage).toBe('Review the changed source before rating this study unit.');
+    expect(hookValue.current?.statusMessage).toBe(
+      'Review the changed source before rating this study unit.',
+    );
+  });
+
+  it('saves surprise practice without mutating progress scheduling', async () => {
+    const hookValue: { current: HookValue | null } = { current: null };
+    await act(async () => {
+      root?.render(
+        <HookHarness
+          onValue={(value) => {
+            hookValue.current = value;
+          }}
+        />,
+      );
+    });
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
+
+    const item = hookValue.current?.activeItem;
+    expect(item).toBeTruthy();
+    const progressBefore = JSON.stringify(storageState.progress);
+    await act(async () => {
+      if (!item) return;
+      await hookValue.current?.savePracticeAttempt({
+        item,
+        rating: 'hard',
+        reason: 'surprise-practice',
+        answer: 'Surprise answer.',
+        responseMode: hookValue.current.responseMode,
+        guidedResponses: {},
+        coveredConceptIds: [],
+        rubricCoverage: [],
+        startedAt: '2026-08-01T10:00:00.000Z',
+        revealedAt: '2026-08-01T10:05:00.000Z',
+      });
+    });
+
+    expect(storageState.attempts).toHaveLength(1);
+    expect(storageState.attempts[0]?.scheduling).toMatchObject({
+      schedulingApplied: false,
+      reason: 'surprise-practice',
+      rating: 'hard',
+    });
+    expect(JSON.stringify(storageState.progress)).toBe(progressBefore);
+    expect(hookValue.current?.statusMessage).toBe(
+      'Surprise practice saved without changing scheduling.',
+    );
   });
 
   it('acknowledges source review without mutating FSRS progress or attempts', async () => {

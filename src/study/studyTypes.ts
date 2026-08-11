@@ -216,6 +216,7 @@ export type StudyFsrsSchedule = {
 export type StudyAttemptSchedulingReason =
   | 'scheduled-review'
   | 'new-learning'
+  | 'manual-practice'
   | 'manual-counted-practice'
   | 'preview'
   | 'surprise-practice'
@@ -242,6 +243,7 @@ export type StudyQueueReason =
   | 'relearning-due'
   | 'review-due'
   | 'new'
+  | 'manual-practice'
   | 'surprise-practice';
 
 export type StudyProgress = {

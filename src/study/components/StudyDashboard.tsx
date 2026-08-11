@@ -4,6 +4,7 @@ type StudyDashboardProps = {
   data: StudyDataSnapshot;
   sessionItems: StudySessionItem[];
   onNavigate: (_path: string) => void;
+  onSurprisePractice: () => void;
 };
 
 const Stat = ({ label, value }: { label: string; value: string | number }) => (
@@ -21,11 +22,17 @@ const sessionItemLabel = (item: StudySessionItem): string => {
   if (item.reason === 'relearning-due') return 'Relearning due';
   if (item.reason === 'review-due') return 'Due review';
   if (item.reason === 'new') return 'New';
+  if (item.reason === 'manual-practice') return 'Manual practice';
   if (item.reason === 'surprise-practice') return 'Surprise practice';
   return item.due ? 'Due review' : 'New or upcoming';
 };
 
-const StudyDashboard = ({ data, sessionItems, onNavigate }: StudyDashboardProps) => {
+const StudyDashboard = ({
+  data,
+  sessionItems,
+  onNavigate,
+  onSurprisePractice,
+}: StudyDashboardProps) => {
   const dueCount = sessionItems.filter((item) =>
     item.reason ? dueReviewReasons.has(item.reason) : item.due,
   ).length;
@@ -45,12 +52,20 @@ const StudyDashboard = ({ data, sessionItems, onNavigate }: StudyDashboardProps)
           <h2 className="text-xl font-semibold text-white">Dashboard</h2>
           <p className="text-sm text-slate-500">Study units, due reviews, and review history.</p>
         </div>
-        <button
-          onClick={() => onNavigate('/study/session')}
-          className="rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500"
-        >
-          Start Session
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => onNavigate('/study/session')}
+            className="rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500"
+          >
+            Start Session
+          </button>
+          <button
+            onClick={onSurprisePractice}
+            className="rounded border border-slate-700 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800"
+          >
+            Surprise Practice
+          </button>
+        </div>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <Stat label="Documents" value={data.documents.length} />

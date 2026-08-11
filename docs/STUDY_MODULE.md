@@ -351,8 +351,10 @@ The scheduled Study session rating path now uses a storage-level rated-attempt t
 - source-review-required session items are surfaced before memory-review items, but the session hides recall/rating controls for those rows and routes the operator to the unit/source review workflow; source acknowledgement remains separate from FSRS memory scheduling
 - the Study-unit preview route keeps answers, reveal state, rubric coverage, attempts, drafts, progress, and FSRS scheduling local/non-mutating
 - source acknowledgement from the document reader or unit editor only updates the unit source-review flags and source hashes; it does not write Study attempts or progress scheduling
+- manual practice is available from Library study-unit rows at `/study/unit/:id/practice`; it records a non-counted attempt with `schedulingApplied: false` and leaves the FSRS card, due date, and StudyPhase unchanged
+- surprise practice is available from the dashboard at `/study/surprise`; it selects an eligible non-source-review unit deterministically and records the same non-counted attempt shape with reason `surprise-practice`
 
-Manual-practice/surprise-review counted-review controls, undo, and scheduling dashboard/library UI remain pending.
+Explicit counted-practice overrides, undo, and scheduling dashboard/library UI remain pending.
 
 ## Phase 3 Queue Model
 

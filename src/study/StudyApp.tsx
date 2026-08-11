@@ -4,8 +4,10 @@ import StudyLayout, { StudyEmptyState } from './components/StudyLayout';
 import StudyLibrary from './components/StudyLibrary';
 import StudyManagePage from './components/StudyManagePage';
 import StudyPreviewPage from './components/StudyPreviewPage';
+import StudyPracticePage from './components/StudyPracticePage';
 import StudySessionPage from './components/StudySessionPage';
 import StudyUnitEditorPage from './components/StudyUnitEditorPage';
+import { selectSurprisePracticeUnitId } from './studySessionItems';
 import { useStudyApp } from './useStudyApp';
 
 const decodeDocumentIdFromPath = (path: string): string | null => {
@@ -23,11 +25,17 @@ const decodeUnitPreviewIdFromPath = (path: string): string | null => {
   return match ? decodeURIComponent(match[1]) : null;
 };
 
+const decodeUnitPracticeIdFromPath = (path: string): string | null => {
+  const match = path.match(/^\/study\/unit\/([^/]+)\/practice$/);
+  return match ? decodeURIComponent(match[1]) : null;
+};
+
 const StudyApp = () => {
   const study = useStudyApp();
   const documentId = decodeDocumentIdFromPath(study.routePath);
   const unitEditId = decodeUnitEditIdFromPath(study.routePath);
   const unitPreviewId = decodeUnitPreviewIdFromPath(study.routePath);
+  const unitPracticeId = decodeUnitPracticeIdFromPath(study.routePath);
 
   const renderPage = () => {
     if (!study.data) return <StudyEmptyState text="Loading study data..." />;
@@ -47,6 +55,28 @@ const StudyApp = () => {
         <StudyPreviewPage data={study.data} unitId={unitPreviewId} onNavigate={study.navigate} />
       );
     }
+    if (unitPracticeId) {
+      return (
+        <StudyPracticePage
+          data={study.data}
+          unitId={unitPracticeId}
+          mode="manual-practice"
+          onSavePracticeAttempt={study.savePracticeAttempt}
+          onNavigate={study.navigate}
+        />
+      );
+    }
+    if (study.routePath === '/study/surprise') {
+      return (
+        <StudyPracticePage
+          data={study.data}
+          unitId={selectSurprisePracticeUnitId(study.data)}
+          mode="surprise-practice"
+          onSavePracticeAttempt={study.savePracticeAttempt}
+          onNavigate={study.navigate}
+        />
+      );
+    }
     if (study.routePath === '/study/library') {
       return (
         <StudyLibrary
@@ -60,6 +90,11 @@ const StudyApp = () => {
           }
           onPreviewUnit={(unitId) =>
             study.navigate(`/study/unit/${encodeURIComponent(unitId)}/preview`, {
+              returnTo: '/study/library?tab=units',
+            })
+          }
+          onPracticeUnit={(unitId) =>
+            study.navigate(`/study/unit/${encodeURIComponent(unitId)}/practice`, {
               returnTo: '/study/library?tab=units',
             })
           }
@@ -143,6 +178,7 @@ const StudyApp = () => {
         data={study.data}
         sessionItems={study.sessionItems}
         onNavigate={study.navigate}
+        onSurprisePractice={() => study.navigate('/study/surprise')}
       />
     );
   };

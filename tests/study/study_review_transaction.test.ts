@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { buildRatedStudyAttempt, buildStudyRatingPreviews } from '../../src/study/studyReviewTransaction';
+import {
+  buildNonSchedulingStudyAttempt,
+  buildRatedStudyAttempt,
+  buildStudyRatingPreviews,
+} from '../../src/study/studyReviewTransaction';
 import { buildSessionItems, markReadingComplete } from '../../src/study/studyScheduler';
 import { createSeedStudyData } from '../../src/study/studySeed';
 
@@ -72,10 +76,42 @@ describe('study review transaction builder', () => {
     expect(result.progress.dueAt).toBe(result.attempt.scheduling?.dueAfter);
   });
 
+  it('builds manual practice attempts without changing scheduling state', () => {
+    const { item } = activeSessionItem();
+    const attempt = buildNonSchedulingStudyAttempt({
+      item,
+      rating: 'easy',
+      attemptId: 'attempt-practice',
+      answer: 'practice answer',
+      responseMode: 'free-recall',
+      guidedResponses: {},
+      coveredConceptIds: [],
+      rubricCoverage: [],
+      reason: 'manual-practice',
+      startedAt: '2026-08-10T10:00:00.000Z',
+      revealedAt: '2026-08-10T10:05:00.000Z',
+      completedAt: '2026-08-10T10:05:00.000Z',
+    });
+
+    expect(attempt.scheduling).toMatchObject({
+      algorithm: 'fsrs',
+      schedulingApplied: false,
+      rating: 'easy',
+      reason: 'manual-practice',
+      dueBefore: item.progress.scheduling?.legacyDueAt,
+      dueAfter: item.progress.scheduling?.legacyDueAt,
+    });
+    expect(attempt.phaseBefore).toBe(item.progress.phase);
+    expect(attempt.phaseAfter).toBe(item.progress.phase);
+    expect(attempt.scheduling?.cardAfter).toBeUndefined();
+  });
+
   it('uses the same timestamp for preview and final rating results', () => {
     const { data, item } = activeSessionItem();
     const now = new Date('2026-08-10T10:06:00.000Z');
-    const preview = buildStudyRatingPreviews({ data, item, now }).find((entry) => entry.rating === 'hard');
+    const preview = buildStudyRatingPreviews({ data, item, now }).find(
+      (entry) => entry.rating === 'hard',
+    );
     const result = buildRatedStudyAttempt({
       data,
       item,

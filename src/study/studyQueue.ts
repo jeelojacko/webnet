@@ -86,6 +86,7 @@ const queueGroupRank: Record<StudyQueueReason, number> = {
   'relearning-due': 1,
   'review-due': 2,
   new: 3,
+  'manual-practice': 4,
   'surprise-practice': 4,
 };
 
@@ -145,7 +146,7 @@ const buildCandidate = ({
       .sort(
         (a, b) => a.order - b.order || a.prompt.localeCompare(b.prompt) || a.id.localeCompare(b.id),
       ),
-    due: reason !== 'new' && reason !== 'surprise-practice',
+    due: reason !== 'new' && reason !== 'manual-practice' && reason !== 'surprise-practice',
     reason,
     dueAt,
   };
