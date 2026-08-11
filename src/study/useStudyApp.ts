@@ -24,9 +24,15 @@ import { buildStudyQueue } from './studyQueue';
 import { buildStudySessionCompletionSummary } from './studySessionSummary';
 import { createStudyStorage, STUDY_SCHEMA_VERSION } from './studyStorage';
 import {
+  getLatestEligibleSchedulingAttempt,
+  replaceById,
+  replaceProgress,
+} from './studyStateUpdates';
+import {
   buildNonSchedulingStudyAttempt,
   buildRatedStudyAttempt,
   buildStudyRatingPreviews,
+  buildUndoLatestSchedulingRating,
 } from './studyReviewTransaction';
 import type {
   StudyAttempt,
@@ -49,16 +55,6 @@ const ACTIVE_DRAFT_ID = 'active-session';
 
 const createId = (prefix: string): string =>
   `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-
-const replaceById = <T extends { id: string }>(items: T[], item: T): T[] => [
-  ...items.filter((entry) => entry.id !== item.id),
-  item,
-];
-
-const replaceProgress = (items: StudyProgress[], item: StudyProgress): StudyProgress[] => [
-  ...items.filter((entry) => entry.unitId !== item.unitId),
-  item,
-];
 
 export const useStudyApp = () => {
   const storage = useMemo(() => createStudyStorage(), []);
@@ -547,6 +543,34 @@ export const useStudyApp = () => {
     [data, storage],
   );
 
+  const undoLatestStudyRating = useCallback(async () => {
+    if (!data) return;
+    const latest = getLatestEligibleSchedulingAttempt(data.attempts);
+    if (!latest) {
+      setStatusMessage('No eligible Study rating is available to undo.');
+      return;
+    }
+    const { attempt, progress } = buildUndoLatestSchedulingRating({
+      data,
+      attemptId: latest.id,
+      now: new Date(),
+    });
+    await storage.saveSchedulingUndo({
+      attempt,
+      progress,
+      expectedProgressUpdatedAt: data.progress.find((entry) => entry.unitId === progress.unitId)
+        ?.updatedAt,
+    });
+    setData({
+      ...data,
+      attempts: replaceById(data.attempts, attempt),
+      progress: replaceProgress(data.progress, progress),
+    });
+    setSessionAttemptIds((ids) => ids.filter((id) => id !== attempt.id));
+    setActiveItemIndex(0);
+    setStatusMessage('Latest Study rating undone.');
+  }, [data, storage]);
+
   const exportText = useMemo(() => (data ? exportStudyData(data) : ''), [data]);
 
   const importData = useCallback(async () => {
@@ -841,6 +865,7 @@ export const useStudyApp = () => {
     ratingPreviews,
     ratingPending,
     rateActiveItem,
+    undoLatestStudyRating,
     savePracticeAttempt,
     completeReading,
     activeItemIndex,

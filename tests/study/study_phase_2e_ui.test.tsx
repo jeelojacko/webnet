@@ -279,6 +279,7 @@ describe('study phase 2E UI', () => {
 
   it('renders session completion summary and scheduler diagnostics', async () => {
     const data: StudyDataSnapshot = createSeedStudyData('2026-08-05T10:00:00.000Z');
+    const onUndoLatestRating = vi.fn(async () => {});
     await renderIntoRoot(
       <StudySessionPage
         activeItem={null}
@@ -301,6 +302,7 @@ describe('study phase 2E UI', () => {
           stillDue: 0,
           nextShortTermReview: '10m',
         }}
+        onUndoLatestRating={onUndoLatestRating}
       />,
       root,
     );
@@ -308,6 +310,13 @@ describe('study phase 2E UI', () => {
     expect(document.body.textContent).toContain('Session Complete');
     expect(document.body.textContent).toContain('Reviewed: 2');
     expect(document.body.textContent).toContain('Next short-term review: 10m');
+    const undo = Array.from(document.querySelectorAll('button')).find(
+      (button) => button.textContent === 'Undo Last Rating',
+    );
+    await act(async () => {
+      undo?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    expect(onUndoLatestRating).toHaveBeenCalledTimes(1);
 
     await renderIntoRoot(
       <StudySessionPage

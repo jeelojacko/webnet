@@ -148,6 +148,7 @@ const StudyApp = () => {
           ratingPreviews={study.ratingPreviews}
           onRate={study.rateActiveItem}
           completionSummary={study.sessionCompletionSummary}
+          onUndoLatestRating={study.undoLatestStudyRating}
           onOpenUnit={(unitId) =>
             study.navigate(`/study/unit/${encodeURIComponent(unitId)}/edit`, {
               returnTo: '/study/session',

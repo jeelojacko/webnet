@@ -358,8 +358,9 @@ The scheduled Study session rating path now uses a storage-level rated-attempt t
 - the Study unit editor includes a read-only Scheduling panel with state, due label, last reviewed, review count, lapse count, and advanced stability/difficulty fields
 - scheduled Study sessions show a completion summary after the queue is exhausted, including reviewed count, rating totals, new learned count, still due count, and next short-term review
 - development builds expose a collapsed scheduler diagnostics panel on active session items with unit id, queue reason, FSRS state, due timestamp, last review, stability, difficulty, reps, lapses, and config version
+- the session completion view can undo the latest eligible counted Study rating; undo is atomic across the attempt and progress records, marks the attempt scheduling metadata with `undoneAt`, restores the stored FSRS card/due snapshot and `phaseBefore`, rejects non-latest/intervening counted reviews, and leaves the historical attempt record in place
 
-Explicit counted-practice overrides and undo remain pending.
+Explicit counted-practice overrides remain pending.
 
 ## Phase 3 Queue Model
 

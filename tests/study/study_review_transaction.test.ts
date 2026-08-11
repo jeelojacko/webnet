@@ -3,6 +3,7 @@ import {
   buildNonSchedulingStudyAttempt,
   buildRatedStudyAttempt,
   buildStudyRatingPreviews,
+  buildUndoLatestSchedulingRating,
 } from '../../src/study/studyReviewTransaction';
 import { buildSessionItems, markReadingComplete } from '../../src/study/studyScheduler';
 import { createSeedStudyData } from '../../src/study/studySeed';
@@ -128,6 +129,82 @@ describe('study review transaction builder', () => {
 
     expect(result.attempt.scheduling?.dueAfter).toBe(preview?.due);
     expect(result.progress.dueAt).toBe(preview?.due);
+  });
+
+  it('undoes the latest counted rating by restoring due and phase snapshots', () => {
+    const { data, item } = activeSessionItem();
+    const first = buildRatedStudyAttempt({
+      data,
+      item,
+      rating: 'good',
+      now: new Date('2026-08-10T10:06:00.000Z'),
+      attemptId: 'attempt-undo',
+      answer: '',
+      responseMode: 'guided',
+      guidedResponses: {},
+      coveredConceptIds: [],
+      rubricCoverage: [],
+      startedAt: '2026-08-10T10:00:00.000Z',
+    });
+    const undo = buildUndoLatestSchedulingRating({
+      data: {
+        ...data,
+        attempts: [first.attempt],
+        progress: [first.progress, ...data.progress.slice(1)],
+      },
+      attemptId: first.attempt.id,
+      now: new Date('2026-08-10T10:07:00.000Z'),
+    });
+
+    expect(undo.attempt.scheduling?.undoneAt).toBe('2026-08-10T10:07:00.000Z');
+    expect(undo.progress.phase).toBe(first.attempt.phaseBefore);
+    expect(undo.progress.dueAt).toBe(first.attempt.scheduling?.dueBefore);
+    expect(undo.progress.scheduling).toMatchObject({
+      initialized: false,
+      legacyDueAt: first.attempt.scheduling?.dueBefore,
+    });
+  });
+
+  it('rejects undo when a later counted rating exists for the same unit', () => {
+    const { data, item } = activeSessionItem();
+    const first = buildRatedStudyAttempt({
+      data,
+      item,
+      rating: 'good',
+      now: new Date('2026-08-10T10:06:00.000Z'),
+      attemptId: 'attempt-1',
+      answer: '',
+      responseMode: 'guided',
+      guidedResponses: {},
+      coveredConceptIds: [],
+      rubricCoverage: [],
+      startedAt: '2026-08-10T10:00:00.000Z',
+    });
+    const second = buildRatedStudyAttempt({
+      data,
+      item: { ...item, progress: first.progress },
+      rating: 'hard',
+      now: new Date('2026-08-10T10:08:00.000Z'),
+      attemptId: 'attempt-2',
+      answer: '',
+      responseMode: 'guided',
+      guidedResponses: {},
+      coveredConceptIds: [],
+      rubricCoverage: [],
+      startedAt: '2026-08-10T10:07:00.000Z',
+    });
+
+    expect(() =>
+      buildUndoLatestSchedulingRating({
+        data: {
+          ...data,
+          attempts: [first.attempt, second.attempt],
+          progress: [second.progress, ...data.progress.slice(1)],
+        },
+        attemptId: first.attempt.id,
+        now: new Date('2026-08-10T10:09:00.000Z'),
+      }),
+    ).toThrow('Only the latest scheduling rating for this unit can be undone.');
   });
 
   it('records phase before and after independently from FSRS state', () => {

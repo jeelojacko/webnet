@@ -1,8 +1,5 @@
 import { createSeedStudyData, createDefaultStudySettings } from './studySeed';
-import {
-  createStudyFsrsConfigRecord,
-  migrateStudyFsrsSchedule,
-} from './fsrs/studyFsrsMigration';
+import { createStudyFsrsConfigRecord, migrateStudyFsrsSchedule } from './fsrs/studyFsrsMigration';
 import type { NbLawContentPackage } from './content/nbLawTypes';
 import {
   applyOfficialContentPackageToSnapshot,
@@ -90,11 +87,18 @@ export interface StudyStorage {
     draftId: string;
     expectedProgressUpdatedAt?: string;
   }) => Promise<void>;
+  saveSchedulingUndo: (_options: {
+    attempt: StudyAttempt;
+    progress: StudyProgress;
+    expectedProgressUpdatedAt?: string;
+  }) => Promise<void>;
   saveDraft: (_draft: StudyDraft) => Promise<void>;
   clearDraft: (_draftId: string) => Promise<void>;
   saveSettings: (_settings: StudySettings) => Promise<void>;
   replaceAll: (_snapshot: StudyDataSnapshot) => Promise<void>;
-  importOfficialContentPackage: (_contentPackage: NbLawContentPackage) => Promise<StudyDataSnapshot>;
+  importOfficialContentPackage: (
+    _contentPackage: NbLawContentPackage,
+  ) => Promise<StudyDataSnapshot>;
 }
 
 const hasIndexedDb = (): boolean =>
@@ -109,8 +113,10 @@ const requestToPromise = <T>(request: IDBRequest<T>): Promise<T> =>
 const transactionDone = (transaction: IDBTransaction): Promise<void> =>
   new Promise((resolve, reject) => {
     transaction.oncomplete = () => resolve();
-    transaction.onerror = () => reject(transaction.error ?? new Error('IndexedDB transaction failed.'));
-    transaction.onabort = () => reject(transaction.error ?? new Error('IndexedDB transaction aborted.'));
+    transaction.onerror = () =>
+      reject(transaction.error ?? new Error('IndexedDB transaction failed.'));
+    transaction.onabort = () =>
+      reject(transaction.error ?? new Error('IndexedDB transaction aborted.'));
   });
 
 const openStudyDatabase = (): Promise<IDBDatabase> =>
@@ -137,7 +143,9 @@ const readStore = async <TStore extends StudyStoreName>(
   storeName: TStore,
 ): Promise<StudyStorePayloads[TStore][]> => {
   const transaction = db.transaction(storeName, 'readonly');
-  const records = (await requestToPromise(transaction.objectStore(storeName).getAll())) as StudyStorePayloads[TStore][];
+  const records = (await requestToPromise(
+    transaction.objectStore(storeName).getAll(),
+  )) as StudyStorePayloads[TStore][];
   await transactionDone(transaction);
   return records;
 };
@@ -200,13 +208,18 @@ export const migrateStudySnapshot = (input: Partial<StudyDataSnapshot>): StudyDa
     fsrsConfig,
   };
   const legalDocuments = input.legalDocuments ?? [];
-  const documents = upsertStudyDocumentsWithOfficialMetadata(input.documents ?? seed.documents, legalDocuments);
+  const documents = upsertStudyDocumentsWithOfficialMetadata(
+    input.documents ?? seed.documents,
+    legalDocuments,
+  );
   const incomingUnits = input.units ?? seed.units;
   const units = incomingUnits.map((unit) => ({
     ...unit,
     sourceMode:
       unit.sourceMode ??
-      ((unit.sourceReferences?.length ?? 0) > 0 || (unit.documentIds?.length ?? 0) > 0 ? 'official' : 'custom'),
+      ((unit.sourceReferences?.length ?? 0) > 0 || (unit.documentIds?.length ?? 0) > 0
+        ? 'official'
+        : 'custom'),
     documentIds: unit.documentIds ?? [],
     sectionRefs: unit.sectionRefs ?? [],
     tags: unit.tags ?? [],
@@ -229,18 +242,20 @@ export const migrateStudySnapshot = (input: Partial<StudyDataSnapshot>): StudyDa
   });
   const rubrics =
     input.rubrics ??
-    concepts.map((concept): StudyRubricItem => ({
-      id: `${concept.id}-rubric`,
-      unitId: concept.unitId,
-      category: 'custom',
-      prompt: concept.label,
-      referenceAnswer: concept.explanation ?? '',
-      required: concept.required,
-      origin: concept.origin,
-      order: concept.order,
-      createdAt: concept.createdAt,
-      updatedAt: concept.updatedAt,
-    }));
+    concepts.map(
+      (concept): StudyRubricItem => ({
+        id: `${concept.id}-rubric`,
+        unitId: concept.unitId,
+        category: 'custom',
+        prompt: concept.label,
+        referenceAnswer: concept.explanation ?? '',
+        required: concept.required,
+        origin: concept.origin,
+        order: concept.order,
+        createdAt: concept.createdAt,
+        updatedAt: concept.updatedAt,
+      }),
+    );
   const progress = (input.progress ?? seed.progress).map((entry) => ({
     ...entry,
     scheduling: migrateStudyFsrsSchedule({
@@ -270,7 +285,8 @@ export const migrateStudySnapshot = (input: Partial<StudyDataSnapshot>): StudyDa
 const seedIfEmpty = async (db: IDBDatabase): Promise<void> => {
   const settings = await readStore(db, 'settings');
   const documents = await readStore(db, 'documents');
-  if (!shouldSeedStudyData({ documentCount: documents.length, settingsCount: settings.length })) return;
+  if (!shouldSeedStudyData({ documentCount: documents.length, settingsCount: settings.length }))
+    return;
   const seed = createSeedStudyData(new Date().toISOString());
   const transaction = db.transaction(STORES, 'readwrite');
   putMany(transaction, 'documents', seed.documents);
@@ -301,12 +317,11 @@ export const createStudyStorage = (): StudyStorage => ({
           readStore(db, 'drafts'),
           readStore(db, 'settings'),
         ]);
-      const [legalDocuments, legalComponents, importHistory] =
-        await Promise.all([
-          readStore(db, 'legalDocuments'),
-          readStore(db, 'legalComponents'),
-          readStore(db, 'importHistory'),
-        ]);
+      const [legalDocuments, legalComponents, importHistory] = await Promise.all([
+        readStore(db, 'legalDocuments'),
+        readStore(db, 'legalComponents'),
+        readStore(db, 'importHistory'),
+      ]);
       return migrateStudySnapshot({
         documents,
         units,
@@ -355,7 +370,9 @@ export const createStudyStorage = (): StudyStorage => ({
       const existing = await readStore(db, 'concepts');
       const transaction = db.transaction('concepts', 'readwrite');
       const store = transaction.objectStore('concepts');
-      existing.filter((concept) => concept.unitId === unitId).forEach((concept) => store.delete(concept.id));
+      existing
+        .filter((concept) => concept.unitId === unitId)
+        .forEach((concept) => store.delete(concept.id));
       concepts.forEach((concept) => store.put(concept));
       await transactionDone(transaction);
     } finally {
@@ -368,7 +385,9 @@ export const createStudyStorage = (): StudyStorage => ({
       const existing = await readStore(db, 'rubrics');
       const transaction = db.transaction('rubrics', 'readwrite');
       const store = transaction.objectStore('rubrics');
-      existing.filter((rubric) => rubric.unitId === unitId).forEach((rubric) => store.delete(rubric.id));
+      existing
+        .filter((rubric) => rubric.unitId === unitId)
+        .forEach((rubric) => store.delete(rubric.id));
       rubrics.forEach((rubric) => store.put(rubric));
       await transactionDone(transaction);
     } finally {
@@ -396,14 +415,43 @@ export const createStudyStorage = (): StudyStorage => ({
     try {
       const transaction = db.transaction(['attempts', 'progress', 'drafts'], 'readwrite');
       const progressStore = transaction.objectStore('progress');
-      const existing = await requestToPromise(progressStore.get(progress.unitId) as IDBRequest<StudyProgress | undefined>);
-      if (expectedProgressUpdatedAt && existing && existing.updatedAt !== expectedProgressUpdatedAt) {
+      const existing = await requestToPromise(
+        progressStore.get(progress.unitId) as IDBRequest<StudyProgress | undefined>,
+      );
+      if (
+        expectedProgressUpdatedAt &&
+        existing &&
+        existing.updatedAt !== expectedProgressUpdatedAt
+      ) {
         transaction.abort();
         throw new Error('Study progress changed before the rating could be saved.');
       }
       transaction.objectStore('attempts').put(attempt);
       progressStore.put(progress);
       transaction.objectStore('drafts').delete(draftId);
+      await transactionDone(transaction);
+    } finally {
+      db.close();
+    }
+  },
+  async saveSchedulingUndo({ attempt, progress, expectedProgressUpdatedAt }) {
+    const db = await openStudyDatabase();
+    try {
+      const transaction = db.transaction(['attempts', 'progress'], 'readwrite');
+      const progressStore = transaction.objectStore('progress');
+      const existing = await requestToPromise(
+        progressStore.get(progress.unitId) as IDBRequest<StudyProgress | undefined>,
+      );
+      if (
+        expectedProgressUpdatedAt &&
+        existing &&
+        existing.updatedAt !== expectedProgressUpdatedAt
+      ) {
+        transaction.abort();
+        throw new Error('Study progress changed before the rating could be undone.');
+      }
+      transaction.objectStore('attempts').put(attempt);
+      progressStore.put(progress);
       await transactionDone(transaction);
     } finally {
       db.close();
@@ -461,21 +509,33 @@ export const createStudyStorage = (): StudyStorage => ({
   async importOfficialContentPackage(contentPackage) {
     const db = await openStudyDatabase();
     try {
-      const [documents, units, prompts, concepts, rubrics, progress, attempts, drafts, settings, legalDocuments, legalComponents, importHistory] =
-        await Promise.all([
-          readStore(db, 'documents'),
-          readStore(db, 'units'),
-          readStore(db, 'prompts'),
-          readStore(db, 'concepts'),
-          readStore(db, 'rubrics'),
-          readStore(db, 'progress'),
-          readStore(db, 'attempts'),
-          readStore(db, 'drafts'),
-          readStore(db, 'settings'),
-          readStore(db, 'legalDocuments'),
-          readStore(db, 'legalComponents'),
-          readStore(db, 'importHistory'),
-        ]);
+      const [
+        documents,
+        units,
+        prompts,
+        concepts,
+        rubrics,
+        progress,
+        attempts,
+        drafts,
+        settings,
+        legalDocuments,
+        legalComponents,
+        importHistory,
+      ] = await Promise.all([
+        readStore(db, 'documents'),
+        readStore(db, 'units'),
+        readStore(db, 'prompts'),
+        readStore(db, 'concepts'),
+        readStore(db, 'rubrics'),
+        readStore(db, 'progress'),
+        readStore(db, 'attempts'),
+        readStore(db, 'drafts'),
+        readStore(db, 'settings'),
+        readStore(db, 'legalDocuments'),
+        readStore(db, 'legalComponents'),
+        readStore(db, 'importHistory'),
+      ]);
       const current = migrateStudySnapshot({
         documents,
         units,
@@ -498,8 +558,8 @@ export const createStudyStorage = (): StudyStorage => ({
         ['documents', 'units', 'legalDocuments', 'legalComponents', 'importHistory'],
         'readwrite',
       );
-      ['documents', 'units', 'legalDocuments', 'legalComponents', 'importHistory'].forEach((storeName) =>
-        transaction.objectStore(storeName).clear(),
+      ['documents', 'units', 'legalDocuments', 'legalComponents', 'importHistory'].forEach(
+        (storeName) => transaction.objectStore(storeName).clear(),
       );
       putMany(transaction, 'documents', snapshot.documents);
       putMany(transaction, 'units', snapshot.units);

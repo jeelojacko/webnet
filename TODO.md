@@ -22,7 +22,7 @@
     - [x] Add dashboard scheduling counts, Library scheduling badges/filters/sort, and unit-editor read-only scheduling panel.
     - [x] Add session completion summary and dev-only scheduler diagnostics.
   - [ ] Batch 3F - undo, docs, full validation:
-    - [ ] Add immediate undo of the latest eligible scheduling rating using stored card/phase snapshots.
+    - [x] Add immediate undo of the latest eligible scheduling rating using stored card/phase snapshots.
     - [ ] Update `README.md`, `docs/ARCHITECTURE.md`, `docs/CURRENT_BEHAVIOR.md`, and `docs/STUDY_MODULE.md`; run required validation including full lint/typecheck/test/build and parity where applicable; commit and push.
 - [x] Study generation Phase 2E.7 final generator cleanup batch (August 2026): add conservative final question normalization, citation-title handling for regulation section 1, inanimate/passive legal-object prompt cleanup and audit warnings, trailing structural-heading stripping for generated study text, rubric-answer prefix cleanup, focused regression tests, pilot audit rerun, validation, commit, and push.
 - [x] Study generation Phase 2E.6 final heading-question polish batch (August 2026): add narrow strong-heading main-question templates, reject strong-heading topic mismatches, normalize duplicated heading wording, rerun pilot audit, validate, commit, and push.

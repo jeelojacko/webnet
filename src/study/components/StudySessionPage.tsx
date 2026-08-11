@@ -26,6 +26,7 @@ type StudySessionPageProps = {
   ratingPreviews?: Array<{ rating: StudyRating; intervalLabel: string; due: string }>;
   onRate: (_rating: StudyRating) => Promise<void>;
   completionSummary?: StudySessionCompletionSummary | null;
+  onUndoLatestRating?: () => Promise<void>;
   previewMode?: boolean;
   sourceText?: string;
   onClosePreview?: () => void;
@@ -51,9 +52,25 @@ const orderedRequiredRubrics = (activeItem: StudySessionItem) =>
 const orderedOptionalRubrics = (activeItem: StudySessionItem) =>
   activeItem.rubrics.filter((rubric) => !rubric.required);
 
-const StudyCompletionPanel = ({ summary }: { summary: StudySessionCompletionSummary }) => (
+const StudyCompletionPanel = ({
+  summary,
+  onUndoLatestRating,
+}: {
+  summary: StudySessionCompletionSummary;
+  onUndoLatestRating?: () => Promise<void>;
+}) => (
   <section className="rounded border border-emerald-800 bg-emerald-950/20 p-4">
-    <div className="text-sm font-semibold text-emerald-100">Session Complete</div>
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="text-sm font-semibold text-emerald-100">Session Complete</div>
+      {onUndoLatestRating ? (
+        <button
+          onClick={() => void onUndoLatestRating()}
+          className="rounded border border-emerald-700 px-3 py-1.5 text-xs text-emerald-100 hover:bg-emerald-900/40"
+        >
+          Undo Last Rating
+        </button>
+      ) : null}
+    </div>
     <div className="mt-3 grid gap-2 text-sm text-slate-300 sm:grid-cols-2 lg:grid-cols-4">
       <div>Reviewed: {summary.reviewed}</div>
       <div>Again: {summary.ratings.again}</div>
@@ -109,6 +126,7 @@ const StudySessionPage = ({
   ratingPreviews = [],
   onRate,
   completionSummary = null,
+  onUndoLatestRating,
   previewMode = false,
   sourceText,
   onClosePreview,
@@ -116,7 +134,7 @@ const StudySessionPage = ({
 }: StudySessionPageProps) => {
   if (!activeItem) {
     return completionSummary ? (
-      <StudyCompletionPanel summary={completionSummary} />
+      <StudyCompletionPanel summary={completionSummary} onUndoLatestRating={onUndoLatestRating} />
     ) : (
       <StudyEmptyState text="No study units are available." />
     );

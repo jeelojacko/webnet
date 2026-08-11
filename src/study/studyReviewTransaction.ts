@@ -48,6 +48,11 @@ export type RatedStudyAttemptResult = {
   progress: StudyProgress;
 };
 
+export type StudyUndoRatingResult = {
+  attempt: StudyAttempt;
+  progress: StudyProgress;
+};
+
 export type StudyRatingPreview = {
   rating: StudyRating;
   due: string;
@@ -70,6 +75,61 @@ const resolveSchedule = (
     configVersion: config.configVersion,
     legacyDueAt: item.progress.dueAt,
   });
+
+const isSuccessfulRating = (rating: StudyRating): boolean => rating === 'good' || rating === 'easy';
+
+const removeDay = (days: string[], completedAt: string): string[] => {
+  const day = completedAt.slice(0, 10);
+  const index = days.lastIndexOf(day);
+  if (index < 0) return days.slice();
+  return [...days.slice(0, index), ...days.slice(index + 1)];
+};
+
+const restoreProgressPhaseAfterUndo = (
+  progress: StudyProgress,
+  attempt: StudyAttempt,
+): StudyProgress => {
+  const rating = attempt.scheduling?.rating ?? attempt.rating;
+  if (!isSuccessfulRating(rating)) {
+    return {
+      ...progress,
+      phase: attempt.phaseBefore ?? progress.phase,
+      reviewCount: Math.max(0, progress.reviewCount - 1),
+    };
+  }
+  if (attempt.phaseBefore === 'guided-recall') {
+    return {
+      ...progress,
+      phase: attempt.phaseBefore,
+      successfulGuidedRecallDays: removeDay(
+        progress.successfulGuidedRecallDays,
+        attempt.completedAt,
+      ),
+      reviewCount: Math.max(0, progress.reviewCount - 1),
+    };
+  }
+  if (attempt.phaseBefore === 'free-recall') {
+    return {
+      ...progress,
+      phase: attempt.phaseBefore,
+      successfulFreeRecallDays: removeDay(progress.successfulFreeRecallDays, attempt.completedAt),
+      reviewCount: Math.max(0, progress.reviewCount - 1),
+    };
+  }
+  if (attempt.phaseBefore === 'application') {
+    return {
+      ...progress,
+      phase: attempt.phaseBefore,
+      applicationSuccessCount: Math.max(0, progress.applicationSuccessCount - 1),
+      reviewCount: Math.max(0, progress.reviewCount - 1),
+    };
+  }
+  return {
+    ...progress,
+    phase: attempt.phaseBefore ?? progress.phase,
+    reviewCount: Math.max(0, progress.reviewCount - 1),
+  };
+};
 
 const intervalLabel = (from: Date, dueIso: string): string => {
   const ms = new Date(dueIso).getTime() - from.getTime();
@@ -228,3 +288,82 @@ export const buildNonSchedulingStudyAttempt = ({
   revealedAt,
   completedAt,
 });
+
+export const buildUndoLatestSchedulingRating = ({
+  data,
+  attemptId,
+  now,
+}: {
+  data: StudyDataSnapshot;
+  attemptId: string;
+  now: Date;
+}): StudyUndoRatingResult => {
+  const attempt = data.attempts.find((entry) => entry.id === attemptId);
+  if (!attempt?.scheduling?.schedulingApplied || attempt.scheduling.undoneAt) {
+    throw new Error('No eligible scheduling rating was found to undo.');
+  }
+  const countedAttempts = data.attempts
+    .filter(
+      (entry) =>
+        entry.unitId === attempt.unitId &&
+        entry.scheduling?.schedulingApplied === true &&
+        !entry.scheduling.undoneAt,
+    )
+    .slice()
+    .sort(
+      (left, right) =>
+        right.completedAt.localeCompare(left.completedAt) || right.id.localeCompare(left.id),
+    );
+  if (countedAttempts[0]?.id !== attempt.id) {
+    throw new Error('Only the latest scheduling rating for this unit can be undone.');
+  }
+  const existingProgress = data.progress.find((entry) => entry.unitId === attempt.unitId);
+  if (!existingProgress) throw new Error('Study progress was not found for the rating undo.');
+  const dueAt = attempt.scheduling.dueBefore ?? existingProgress.dueAt;
+  const restoredPhase = restoreProgressPhaseAfterUndo(existingProgress, attempt);
+  const progress: StudyProgress = {
+    ...restoredPhase,
+    dueAt,
+    scheduling:
+      attempt.scheduling.reason === 'new-learning'
+        ? {
+            schemaVersion: 1,
+            algorithm: 'fsrs',
+            initialized: false,
+            configVersion:
+              attempt.scheduling.configVersion ??
+              existingProgress.scheduling?.configVersion ??
+              data.settings.fsrsConfig?.configVersion ??
+              1,
+            legacyDueAt: dueAt,
+          }
+        : {
+            schemaVersion: 1,
+            algorithm: 'fsrs',
+            initialized: true,
+            card:
+              attempt.scheduling.cardBefore ??
+              (() => {
+                throw new Error('The rating does not include a restorable FSRS card snapshot.');
+              })(),
+            initializedAt: existingProgress.scheduling?.initializedAt,
+            lastScheduledAt: attempt.scheduling.cardBefore?.last_review ?? undefined,
+            configVersion:
+              attempt.scheduling.configVersion ??
+              existingProgress.scheduling?.configVersion ??
+              data.settings.fsrsConfig?.configVersion ??
+              1,
+          },
+    updatedAt: now.toISOString(),
+  };
+  return {
+    attempt: {
+      ...attempt,
+      scheduling: {
+        ...attempt.scheduling,
+        undoneAt: now.toISOString(),
+      },
+    },
+    progress,
+  };
+};

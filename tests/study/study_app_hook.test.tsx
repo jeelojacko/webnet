@@ -73,6 +73,18 @@ vi.mock('../../src/study/studyStorage', () => ({
         storageState.drafts = storageState.drafts.filter((entry) => entry.id !== draftId);
       },
     ),
+    saveSchedulingUndo: vi.fn(
+      async ({ attempt, progress }: { attempt: StudyAttempt; progress: StudyProgress }) => {
+        storageState.attempts = [
+          ...storageState.attempts.filter((entry) => entry.id !== attempt.id),
+          attempt,
+        ];
+        storageState.progress = [
+          ...storageState.progress.filter((entry) => entry.unitId !== progress.unitId),
+          progress,
+        ];
+      },
+    ),
     saveDraft: vi.fn(async (draft: StudyDraft) => {
       storageState.drafts = [
         ...storageState.drafts.filter((entry) => entry.id !== draft.id),
@@ -212,6 +224,50 @@ describe('study app hook persistence', () => {
       newLearned: 1,
       ratings: { again: 0, hard: 0, good: 1, easy: 0 },
     });
+  });
+
+  it('undoes the latest scheduled rating and restores the unit to the queue', async () => {
+    const seed = createSeedStudyData('2026-08-01T10:00:00.000Z');
+    storageState.snapshot = {
+      ...seed,
+      units: seed.units.slice(0, 1),
+      prompts: seed.prompts.filter((prompt) => prompt.unitId === seed.units[0].id),
+      concepts: seed.concepts.filter((concept) => concept.unitId === seed.units[0].id),
+      rubrics: seed.rubrics.filter((rubric) => rubric.unitId === seed.units[0].id),
+      progress: seed.progress.filter((progress) => progress.unitId === seed.units[0].id),
+    };
+    const hookValue: { current: HookValue | null } = { current: null };
+    await act(async () => {
+      root?.render(
+        <HookHarness
+          onValue={(value) => {
+            hookValue.current = value;
+          }}
+        />,
+      );
+    });
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
+
+    await act(async () => {
+      hookValue.current?.setRevealed(true);
+    });
+    await act(async () => {
+      await hookValue.current?.rateActiveItem('good');
+    });
+    expect(hookValue.current?.activeItem).toBeNull();
+    expect(storageState.attempts[0]?.scheduling?.schedulingApplied).toBe(true);
+
+    await act(async () => {
+      await hookValue.current?.undoLatestStudyRating();
+    });
+
+    expect(storageState.attempts[0]?.scheduling?.undoneAt).toBeTruthy();
+    expect(storageState.progress[0]?.scheduling?.initialized).toBe(false);
+    expect(hookValue.current?.activeItem?.unit.id).toBe(seed.units[0].id);
+    expect(hookValue.current?.sessionCompletionSummary).toBeNull();
+    expect(hookValue.current?.statusMessage).toBe('Latest Study rating undone.');
   });
 
   it('persists guided responses and rubric coverage with attempts', async () => {
