@@ -1,4 +1,8 @@
-import type { StudySearchIndexKind, StudySearchIndexMetadata } from './studySearchTypes';
+import type {
+  StudySearchDiagnostics,
+  StudySearchIndexKind,
+  StudySearchIndexMetadata,
+} from './studySearchTypes';
 
 const DB_NAME = 'webnet.study.v1';
 const DB_VERSION = 6;
@@ -90,4 +94,18 @@ export const clearSearchArtifacts = async (db: IDBDatabase): Promise<void> => {
   transaction.objectStore('searchIndexMetadata').clear();
   transaction.objectStore('searchIndexArtifacts').clear();
   await transactionDone(transaction);
+};
+
+export const readSearchDiagnostics = async (db: IDBDatabase): Promise<StudySearchDiagnostics> => {
+  const metadata = await readSearchMetadata(db);
+  const official = await readSearchArtifact(db, 'official');
+  const study = await readSearchArtifact(db, 'study');
+  const officialArtifactBytes = official?.serialized.length ?? 0;
+  const studyArtifactBytes = study?.serialized.length ?? 0;
+  return {
+    metadata,
+    officialArtifactBytes,
+    studyArtifactBytes,
+    totalArtifactBytes: officialArtifactBytes + studyArtifactBytes,
+  };
 };

@@ -3,7 +3,7 @@ import type { StudySearchRecord } from './studySearchTypes';
 
 export const MINISEARCH_VERSION = '7.2.0';
 export const SEARCH_INDEX_SCHEMA_VERSION = 1;
-export const SEARCH_INDEX_VERSION = 1;
+export const SEARCH_INDEX_VERSION = 2;
 
 const normalizeTerm = (term: string): string | false => {
   const normalized = term.toLowerCase().replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '');
@@ -23,6 +23,7 @@ export const studySearchOptions: Options<StudySearchRecord> = {
     'citation',
     'heading',
     'excerpt',
+    'snippetText',
   ],
   processTerm: normalizeTerm,
 };

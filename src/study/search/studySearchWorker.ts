@@ -21,10 +21,12 @@ import {
   clearSearchArtifacts,
   openStudySearchDatabase,
   readSearchArtifact,
+  readSearchDiagnostics,
   readSearchMetadata,
   writeSearchArtifact,
   writeSearchMetadata,
 } from './studySearchPersistence';
+import { buildMatchedSnippet, exactSearchBoost } from './studySearchRanking';
 import type { StudySearchWorkerRequest, StudySearchWorkerResponse } from './studySearchMessages';
 import type { StudySearchRecord, StudySearchResultSummary, StudySearchScope } from './studySearchTypes';
 
@@ -250,19 +252,59 @@ const loadOrBuildIndexes = async (requestId: string, forceRebuild = false): Prom
   }
 };
 
-const exactBoost = (query: string, result: StudySearchResultSummary): number => {
-  const normalizedQuery = query.trim().toLowerCase();
-  const title = result.title.toLowerCase();
-  const citation = (result.citation ?? '').toLowerCase();
-  if (!normalizedQuery) return 0;
-  if (title === normalizedQuery || citation === normalizedQuery) return 5000;
-  if (title.includes(normalizedQuery) || citation.includes(normalizedQuery)) return 1200;
-  const section = normalizedQuery.match(/^(?:s\.|section\s*)?(\d+[a-z]?)$/i)?.[1];
-  if (section && result.entityType === 'official-provision') {
-    const sourceKey = result.sourceKey?.toLowerCase() ?? '';
-    if (sourceKey === `section-${section}` || title.startsWith(section)) return 2500;
+const rebuildStudyIndexOnly = async (requestId: string): Promise<void> => {
+  const db = await openStudySearchDatabase();
+  try {
+    let metadata = await readSearchMetadata(db);
+    const officialArtifact = await readSearchArtifact(db, 'official');
+    if (!metadata || !officialArtifact || !state.officialIndex) {
+      await loadOrBuildIndexes(requestId);
+      metadata = await readSearchMetadata(db);
+    }
+    if (!metadata) return;
+    const study = await buildStudyIndex(db);
+    state.studyIndex = study.index;
+    await writeSearchArtifact(db, 'study', serializeMiniSearch(study.index));
+    await writeSearchMetadata(db, {
+      ...metadata,
+      schemaVersion: SEARCH_INDEX_SCHEMA_VERSION,
+      indexVersion: SEARCH_INDEX_VERSION,
+      engineVersion: MINISEARCH_VERSION,
+      studyIndex: {
+        contentRevision: study.contentRevision,
+        builtAt: new Date().toISOString(),
+        recordCount: study.recordCount,
+      },
+    });
+    post({
+      type: 'ready',
+      requestId,
+      status: { ready: true, phase: 'ready', message: 'Study search index updated.' },
+    });
+  } finally {
+    db.close();
   }
-  return 0;
+};
+
+const postDiagnostics = async (requestId: string): Promise<void> => {
+  const db = await openStudySearchDatabase();
+  try {
+    post({
+      type: 'diagnostics',
+      requestId,
+      diagnostics: await readSearchDiagnostics(db),
+    });
+  } finally {
+    db.close();
+  }
+};
+
+const exactBoost = (query: string, result: StudySearchResultSummary): number => {
+  return exactSearchBoost({
+    query,
+    result,
+    snippetText: result.snippet ?? '',
+  });
 };
 
 const toSummary = (
@@ -277,7 +319,12 @@ const toSummary = (
   documentId: typeof result.documentId === 'string' ? result.documentId : undefined,
   sourceKey: typeof result.sourceKey === 'string' ? result.sourceKey : undefined,
   unitId: typeof result.unitId === 'string' ? result.unitId : undefined,
-  snippet: typeof result.excerpt === 'string' ? result.excerpt : undefined,
+  snippet:
+    typeof result.snippetText === 'string'
+      ? result.snippetText
+      : typeof result.excerpt === 'string'
+        ? result.excerpt
+        : undefined,
   score: result.score,
 });
 
@@ -288,7 +335,12 @@ const limitByCategory = (
 ): StudySearchResultSummary[] => {
   const byType = new Map<string, StudySearchResultSummary[]>();
   for (const result of results) {
-    const boosted = { ...result, score: result.score + exactBoost(query, result) };
+    const snippetSource = result.snippet ?? '';
+    const boosted = {
+      ...result,
+      snippet: buildMatchedSnippet({ text: snippetSource, query }),
+      score: result.score + exactBoost(query, result),
+    };
     byType.set(boosted.entityType, [...(byType.get(boosted.entityType) ?? []), boosted]);
   }
   return Array.from(byType.values())
@@ -318,9 +370,19 @@ const runSearch = (message: Extract<StudySearchWorkerRequest, { type: 'search' }
       fullText: 1,
     },
   };
+  const collect = (index: MiniSearch<StudySearchRecord> | null) => {
+    if (!index) return [];
+    const andResults = index.search(query, { ...searchOptions, combineWith: 'AND' }).map(toSummary);
+    const seen = new Set(andResults.map((result) => result.id));
+    const orResults = index
+      .search(query, searchOptions)
+      .map(toSummary)
+      .filter((result) => !seen.has(result.id));
+    return [...andResults, ...orResults];
+  };
   if (message.scope === 'all' || message.scope === 'documents' || message.scope === 'official-provisions') {
     results.push(
-      ...(state.officialIndex?.search(query, searchOptions).map(toSummary) ?? []).filter(
+      ...collect(state.officialIndex).filter(
         (result) =>
           message.scope === 'all' ||
           (message.scope === 'documents' && result.entityType === 'document') ||
@@ -329,7 +391,7 @@ const runSearch = (message: Extract<StudySearchWorkerRequest, { type: 'search' }
     );
   }
   if (message.scope === 'all' || message.scope === 'study-units') {
-    results.push(...(state.studyIndex?.search(query, searchOptions).map(toSummary) ?? []));
+    results.push(...collect(state.studyIndex));
   }
   if (state.latestSearchRequestId !== message.requestId) return;
   post({
@@ -346,6 +408,8 @@ self.onmessage = (event: MessageEvent<StudySearchWorkerRequest>) => {
     try {
       if (message.type === 'initialize') await loadOrBuildIndexes(message.requestId);
       if (message.type === 'rebuild') await loadOrBuildIndexes(message.requestId, true);
+      if (message.type === 'study-bulk-update') await rebuildStudyIndexOnly(message.requestId);
+      if (message.type === 'diagnostics') await postDiagnostics(message.requestId);
       if (message.type === 'search') {
         if (!state.officialIndex || !state.studyIndex) await loadOrBuildIndexes(message.requestId);
         runSearch(message);

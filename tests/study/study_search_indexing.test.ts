@@ -7,12 +7,15 @@ import {
   corpusContentHashFor,
   studyContentRevisionFor,
 } from '../../src/study/search/studySearchDocuments';
+import { beginStudySearchBulkUpdate } from '../../src/study/search/studySearchBulkIndexing';
 import {
   createMiniSearch,
   deserializeMiniSearch,
   MINISEARCH_VERSION,
+  SEARCH_INDEX_VERSION,
   serializeMiniSearch,
 } from '../../src/study/search/studySearchMiniSearch';
+import { buildMatchedSnippet, exactSearchBoost } from '../../src/study/search/studySearchRanking';
 import { createSeedStudyData } from '../../src/study/studySeed';
 import type { ImportedLegalComponent, ImportedLegalDocument } from '../../src/study/studyTypes';
 
@@ -47,6 +50,7 @@ const component: ImportedLegalComponent = {
 describe('study search indexing', () => {
   it('builds deterministic compact official records and round-trips MiniSearch serialization', async () => {
     expect(MINISEARCH_VERSION).toBe('7.2.0');
+    expect(SEARCH_INDEX_VERSION).toBe(2);
     const index = createMiniSearch();
     const records = [
       ...buildDocumentSearchRecords([legalDocument]),
@@ -69,6 +73,51 @@ describe('study search indexing', () => {
     });
     expect(records[1].fullText).toContain('coordinate monument');
     expect(results[0]?.id).toBe('provision:doc-surveys-act:section-83');
+  });
+
+  it('keeps exact official-provision phrase matches visible in snippets', async () => {
+    const longPrefix = 'General administrative wording. '.repeat(20);
+    const directorComponent: ImportedLegalComponent = {
+      ...component,
+      id: 'section-6',
+      sourceKey: 'section-6',
+      label: '6',
+      heading: 'Powers of Director',
+      text: `${longPrefix}The Director of Surveys may require additional evidence before approving the survey plan.`,
+      contentHash: 'component-hash-6',
+    };
+    const index = createMiniSearch();
+    index.add(
+      buildOfficialProvisionSearchRecord({ document: legalDocument, component: directorComponent }),
+    );
+
+    const restored = await deserializeMiniSearch(serializeMiniSearch(index));
+    const result = restored.search('Director of Surveys', {
+      combineWith: 'AND',
+      boost: { title: 8, citation: 10, heading: 6, metadataText: 4, fullText: 1 },
+    })[0] as Record<string, unknown> & { id: string; score: number };
+    const snippet = buildMatchedSnippet({
+      text: String(result.snippetText),
+      query: 'Director of Surveys',
+    });
+
+    expect(result.id).toBe('provision:doc-surveys-act:section-6');
+    expect(snippet).toContain('Director of Surveys');
+    expect(
+      exactSearchBoost({
+        query: 'Director of Surveys',
+        result: {
+          id: result.id,
+          entityType: 'official-provision',
+          entityId: 'doc-surveys-act::section-6',
+          title: '6 Powers of Director',
+          documentId: 'doc-surveys-act',
+          sourceKey: 'section-6',
+          score: result.score,
+        },
+        snippetText: String(result.snippetText),
+      }),
+    ).toBeGreaterThan(1000);
   });
 
   it('separates corpus hash from searchable study-content revision', () => {
@@ -94,5 +143,25 @@ describe('study search indexing', () => {
     expect(record.fullText).toContain(seed.units[0].referenceAnswer);
     expect(record).not.toHaveProperty('progress');
     expect(record).not.toHaveProperty('attempts');
+  });
+
+  it('coalesces Phase 4B bulk Study search updates into one commit payload', () => {
+    const commits: Array<{ upsertUnitIds: string[]; removeUnitIds: string[] }> = [];
+    const bulk = beginStudySearchBulkUpdate({
+      commitStudyBulkUpdate: (payload) => commits.push(payload),
+    });
+
+    bulk.upsertManyStudyUnits(['unit-3', 'unit-1', 'unit-1']);
+    bulk.removeStudyUnits(['unit-2']);
+    bulk.removeStudyUnits(['unit-3']);
+    bulk.upsertManyStudyUnits(['unit-2']);
+    bulk.commit();
+
+    expect(commits).toEqual([
+      {
+        upsertUnitIds: ['unit-1', 'unit-2'],
+        removeUnitIds: ['unit-3'],
+      },
+    ]);
   });
 });

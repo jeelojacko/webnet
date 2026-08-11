@@ -1,4 +1,9 @@
-import type { StudySearchResultSummary, StudySearchScope, StudySearchStatus } from './studySearchTypes';
+import type {
+  StudySearchDiagnostics,
+  StudySearchResultSummary,
+  StudySearchScope,
+  StudySearchStatus,
+} from './studySearchTypes';
 
 export type StudySearchInitializeMessage = {
   type: 'initialize';
@@ -18,10 +23,24 @@ export type StudySearchRebuildMessage = {
   requestId: string;
 };
 
+export type StudySearchBulkUpdateMessage = {
+  type: 'study-bulk-update';
+  requestId: string;
+  upsertUnitIds: string[];
+  removeUnitIds: string[];
+};
+
+export type StudySearchDiagnosticsMessage = {
+  type: 'diagnostics';
+  requestId: string;
+};
+
 export type StudySearchWorkerRequest =
   | StudySearchInitializeMessage
   | StudySearchQueryMessage
-  | StudySearchRebuildMessage;
+  | StudySearchRebuildMessage
+  | StudySearchBulkUpdateMessage
+  | StudySearchDiagnosticsMessage;
 
 export type StudySearchReadyMessage = {
   type: 'ready';
@@ -48,8 +67,15 @@ export type StudySearchErrorMessage = {
   message: string;
 };
 
+export type StudySearchDiagnosticsResponseMessage = {
+  type: 'diagnostics';
+  requestId: string;
+  diagnostics: StudySearchDiagnostics;
+};
+
 export type StudySearchWorkerResponse =
   | StudySearchReadyMessage
   | StudySearchProgressMessage
   | StudySearchResultsMessage
-  | StudySearchErrorMessage;
+  | StudySearchErrorMessage
+  | StudySearchDiagnosticsResponseMessage;

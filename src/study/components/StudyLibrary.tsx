@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { highlightLibraryMatch } from '../studyLibrarySearch';
 import { createStudySearchService } from '../search/studySearchService';
-import type { StudySearchResultSummary, StudySearchScope, StudySearchStatus } from '../search/studySearchTypes';
+import type {
+  StudySearchDiagnostics,
+  StudySearchResultSummary,
+  StudySearchScope,
+  StudySearchStatus,
+} from '../search/studySearchTypes';
 import {
   summarizeStudySchedulingForData,
   type StudySchedulingCategory,
@@ -137,6 +142,7 @@ const StudyLibrary = ({
     message: '',
   });
   const [searchResults, setSearchResults] = useState<StudySearchResultSummary[]>([]);
+  const [searchDiagnostics, setSearchDiagnostics] = useState<StudySearchDiagnostics | null>(null);
   const [activeSearchIndex, setActiveSearchIndex] = useState(0);
   const [componentSummaries, setComponentSummaries] = useState<
     Record<string, Awaited<ReturnType<StudyLibraryProps['onLoadLegalDocumentComponentSummary']>>>
@@ -195,12 +201,12 @@ const StudyLibrary = ({
     [searchResults],
   );
 
-  const filteredDocuments = data.documents.filter((document) => {
+  const filteredDocuments = useMemo(() => data.documents.filter((document) => {
     const legal = legalById.get(document.id);
     if (documentFilter === 'all') return true;
     if (documentFilter === 'custom') return !legal;
     return legal?.documentType === documentFilter;
-  });
+  }), [data.documents, documentFilter, legalById]);
 
   useEffect(() => {
     searchService.initialize();
@@ -214,12 +220,17 @@ const StudyLibrary = ({
   }, [searchService]);
 
   useEffect(() => {
+    if (!import.meta.env.DEV || searchStatus.phase !== 'ready') return;
+    void searchService.requestDiagnostics().then(setSearchDiagnostics);
+  }, [searchService, searchStatus.phase]);
+
+  useEffect(() => {
     const handle = window.setTimeout(() => setDebouncedSearchQuery(searchQuery), 120);
     return () => window.clearTimeout(handle);
   }, [searchQuery]);
 
   useEffect(() => {
-    if (debouncedSearchQuery.trim()) searchService.search(debouncedSearchQuery, searchScope, 8);
+    if (debouncedSearchQuery.trim()) searchService.search(debouncedSearchQuery, searchScope, 12);
     else setSearchResults([]);
   }, [debouncedSearchQuery, searchScope, searchService]);
 
@@ -385,6 +396,14 @@ const StudyLibrary = ({
             <span className="px-2 py-1 text-xs text-slate-500">{searchStatus.message}</span>
           ) : null}
         </div>
+        {import.meta.env.DEV && searchDiagnostics ? (
+          <div className="mt-2 text-xs text-slate-600">
+            Search index:{' '}
+            {Math.round(searchDiagnostics.totalArtifactBytes / 1024).toLocaleString()} KB derived ·{' '}
+            {searchDiagnostics.metadata?.officialIndex.recordCount ?? 0} official ·{' '}
+            {searchDiagnostics.metadata?.studyIndex.recordCount ?? 0} study
+          </div>
+        ) : null}
         {debouncedSearchQuery ? (
           <div className="mt-3 grid gap-3 lg:grid-cols-2">
             {searchResultsByCategory.map(({ category, label, results }) => (

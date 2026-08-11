@@ -65,6 +65,15 @@ export const buildDocumentSearchRecords = (
       .filter(Boolean)
       .join(' '),
     excerpt: document.consolidatedTo,
+    snippetText: [
+      document.officialTitle,
+      document.officialCitationDisplay,
+      document.officialCitationNormalized,
+      document.officialNumberDisplay,
+      document.consolidatedTo,
+    ]
+      .filter(Boolean)
+      .join(' '),
   }));
 
 export const buildOfficialProvisionSearchRecord = ({
@@ -97,6 +106,16 @@ export const buildOfficialProvisionSearchRecord = ({
     ...(component.subsections ?? []).flatMap((subsection) => [subsection.label, subsection.text]),
   ].join('\n'),
   excerpt: component.text.slice(0, 260),
+  snippetText: [
+    document?.officialTitle,
+    document?.officialCitationDisplay,
+    component.label,
+    component.heading,
+    component.text,
+    ...(component.subsections ?? []).flatMap((subsection) => [subsection.label, subsection.text]),
+  ]
+    .filter(Boolean)
+    .join('\n'),
 });
 
 const promptsFor = (prompts: StudyPrompt[], unitId: string): StudyPrompt[] =>
@@ -146,5 +165,16 @@ export const buildStudyUnitSearchRecord = (
       ...concepts.map((concept) => concept.explanation ?? ''),
     ].join('\n'),
     excerpt: unit.editableSummary || unit.referenceAnswer.slice(0, 260),
+    snippetText: [
+      unit.title,
+      unit.sourceCitationSummary?.text,
+      unit.editableSummary,
+      unit.referenceAnswer,
+      ...prompts.flatMap((prompt) => [prompt.question, prompt.referenceAnswer]),
+      ...rubrics.flatMap((rubric) => [rubric.prompt, rubric.referenceAnswer]),
+      ...concepts.flatMap((concept) => [concept.label, concept.explanation ?? '']),
+    ]
+      .filter(Boolean)
+      .join('\n'),
   };
 };

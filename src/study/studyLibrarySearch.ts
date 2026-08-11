@@ -233,9 +233,15 @@ export const highlightLibraryMatch = (text: string, query: string): Array<{ text
   if (!normalizedQuery) return [{ text, match: false }];
   const { normalized, map } = normalizeSearchTextWithMap(text);
   const index = normalized.indexOf(normalizedQuery);
-  if (index < 0) return [{ text, match: false }];
-  const start = map[index] ?? 0;
-  const end = (map[index + normalizedQuery.length - 1] ?? start) + 1;
+  const tokenMatches = tokensFor(query)
+    .map((token) => ({ token, index: normalized.indexOf(token) }))
+    .filter((entry) => entry.index >= 0)
+    .sort((left, right) => left.index - right.index);
+  const tokenIndex = index >= 0 ? index : tokenMatches[0]?.index;
+  if (tokenIndex === undefined) return [{ text, match: false }];
+  const matchLength = index >= 0 ? normalizedQuery.length : tokenMatches[0]?.token.length ?? 0;
+  const start = map[tokenIndex] ?? 0;
+  const end = (map[tokenIndex + matchLength - 1] ?? start) + 1;
   return [
     { text: text.slice(0, start), match: false },
     { text: text.slice(start, end), match: true },

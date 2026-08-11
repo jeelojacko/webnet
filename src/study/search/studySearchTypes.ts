@@ -19,6 +19,7 @@ export type StudySearchRecord = {
   metadataText?: string;
   fullText?: string;
   excerpt?: string;
+  snippetText?: string;
 };
 
 export type StudySearchResultSummary = {
@@ -60,4 +61,11 @@ export type StudySearchStatus = {
   message: string;
   indexed?: number;
   total?: number;
+};
+
+export type StudySearchDiagnostics = {
+  metadata: StudySearchIndexMetadata | null;
+  officialArtifactBytes: number;
+  studyArtifactBytes: number;
+  totalArtifactBytes: number;
 };

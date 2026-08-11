@@ -85,7 +85,11 @@ The Study search adapter keeps two logical indexes:
 
 Metadata is stored in `searchIndexMetadata` and serialized MiniSearch artifacts are stored in `searchIndexArtifacts` as `official-fulltext` and `study-fulltext`. `SEARCH_INDEX_SCHEMA_VERSION` and the MiniSearch package version are part of invalidation. If deserialization fails, the worker logs a development diagnostic, clears derived artifacts, and rebuilds from authoritative IndexedDB records.
 
-`src/study/search/studySearchWorker.ts` initializes lazily when Library search is opened, loads valid persisted artifacts when possible, rebuilds stale/missing indexes off the React thread, keeps warm indexes in the worker, and returns compact result summaries containing IDs, display labels, scores, and short excerpts. Search scopes support All, Documents, Official Provisions, and Study Units. Request IDs prevent stale worker results from replacing newer query results.
+`src/study/search/studySearchWorker.ts` initializes lazily when Library search is opened, loads valid persisted artifacts when possible, rebuilds stale/missing indexes off the React thread, keeps warm indexes in the worker, and returns compact result summaries containing IDs, display labels, scores, and worker-generated matched excerpts. Search scopes support All, Documents, Official Provisions, and Study Units. Request IDs prevent stale worker results from replacing newer query results.
+
+Search index version `2` stores derived snippet text inside the serialized artifact so official-provision snippets can be built around the actual hit without fetching full source components into React. Exact phrase matches such as `Director of Surveys`, exact title/citation matches, exact section searches, heading/title matches, and AND-term matches receive ranking boosts before incidental full-text OR matches. Development builds show compact Library search diagnostics with derived artifact size and official/Study record counts.
+
+Phase 4B bulk generation can use `beginStudySearchBulkUpdate()` from `src/study/search/studySearchBulkIndexing.ts` to queue many upsert/remove unit IDs and commit one worker update. The current commit path rebuilds and persists the Study-content index once from authoritative IndexedDB records, avoiding thousands of separate serializations during bulk generation while preserving the official legal index.
 
 Study scheduling metadata is additive in schema version `5`:
 

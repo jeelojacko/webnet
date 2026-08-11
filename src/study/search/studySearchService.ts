@@ -1,5 +1,10 @@
 import type { StudySearchWorkerRequest, StudySearchWorkerResponse } from './studySearchMessages';
-import type { StudySearchResultSummary, StudySearchScope, StudySearchStatus } from './studySearchTypes';
+import type {
+  StudySearchDiagnostics,
+  StudySearchResultSummary,
+  StudySearchScope,
+  StudySearchStatus,
+} from './studySearchTypes';
 
 type SearchListener = (_results: StudySearchResultSummary[]) => void;
 type StatusListener = (_status: StudySearchStatus) => void;
@@ -12,6 +17,7 @@ export class StudySearchService {
   private latestSearchRequestId = '';
   private resultListeners = new Set<SearchListener>();
   private statusListeners = new Set<StatusListener>();
+  private diagnosticsResolvers = new Map<string, (_diagnostics: StudySearchDiagnostics) => void>();
 
   initialize(): void {
     this.ensureWorker();
@@ -28,6 +34,31 @@ export class StudySearchService {
   rebuild(): void {
     this.ensureWorker();
     this.post({ type: 'rebuild', requestId: createRequestId() });
+  }
+
+  commitStudyBulkUpdate({
+    upsertUnitIds,
+    removeUnitIds,
+  }: {
+    upsertUnitIds: string[];
+    removeUnitIds: string[];
+  }): void {
+    this.ensureWorker();
+    this.post({
+      type: 'study-bulk-update',
+      requestId: createRequestId(),
+      upsertUnitIds,
+      removeUnitIds,
+    });
+  }
+
+  requestDiagnostics(): Promise<StudySearchDiagnostics> {
+    this.ensureWorker();
+    const requestId = createRequestId();
+    return new Promise((resolve) => {
+      this.diagnosticsResolvers.set(requestId, resolve);
+      this.post({ type: 'diagnostics', requestId });
+    });
   }
 
   subscribeResults(listener: SearchListener): () => void {
@@ -57,6 +88,10 @@ export class StudySearchService {
       }
       if (message.type === 'results' && message.requestId === this.latestSearchRequestId) {
         this.resultListeners.forEach((listener) => listener(message.results));
+      }
+      if (message.type === 'diagnostics') {
+        this.diagnosticsResolvers.get(message.requestId)?.(message.diagnostics);
+        this.diagnosticsResolvers.delete(message.requestId);
       }
       if (message.type === 'error') {
         this.statusListeners.forEach((listener) =>

@@ -1,3 +1,9 @@
+- [x] Study Phase 4A.1 search quality, diagnostics, and Phase 4B readiness follow-up (August 2026): restore exact-phrase official-provision snippets/highlights, improve worker ranking/filtering, add search diagnostics and bulk Study index API seams, update docs/tests, validate, commit, and push.
+  - [x] Add worker-side matched snippets so official-provision results for phrases such as `Director of Surveys` display highlighted matching text.
+  - [x] Improve search ranking so exact phrase, citation/title, heading, and AND-term matches outrank incidental full-text OR matches.
+  - [x] Add focused golden search-quality tests for official provisions, section searches, and snippets.
+  - [x] Add Phase 4B bulk Study search indexing API seam and diagnostics reporting for artifact sizes/build/load/search timings.
+  - [x] Run focused tests and required validation.
 - [x] Study Phase 4A.1 scalable storage/search batch (August 2026): stop loading all legal component text into the React snapshot, add IndexedDB legal lookup indexes and repository APIs, add persistent MiniSearch-derived official/study search indexes behind a worker/service boundary, clear raw official package text after successful import, add focused storage/search tests, update Study architecture/current-behavior docs, validate, commit, and push.
   - [x] Lock `minisearch@7.2.0` after confirming TypeScript/browser packaging and `toJSON`/`loadJSONAsync` serialization support.
   - [x] Upgrade Study IndexedDB from v5 to v6 with legal component, unit, prompt, rubric, concept, and attempt lookup indexes plus derived search artifact stores.
