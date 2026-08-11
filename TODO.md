@@ -8,7 +8,7 @@
   - [ ] Batch 3B - Study data model and migration:
     - [x] Extend `StudyProgress`, `StudyAttempt`, settings, snapshot, IndexedDB schema, export/import, and migrations for serialized FSRS scheduling state and attempt scheduling metadata without data loss.
     - [x] Preserve ambiguous legacy due dates as `legacyDueAt` instead of fabricating FSRS history; add replay predicates and idempotent migration tests.
-    - [ ] Add old-schema IndexedDB fixture coverage and any safe historical replay/reschedule path needed after real counted scheduling attempts exist.
+    - [x] Add old-schema IndexedDB fixture coverage and any safe historical replay/reschedule path needed after real counted scheduling attempts exist.
   - [x] Batch 3C - pure queue builder:
     - [x] Build a pure Study queue model with source-review-required first, due Learning/Relearning, due/overdue Review, limited New units, and optional surprise practice outside normal scheduling.
     - [x] Add queue ordering, due-boundary, new-unit-limit, and deterministic tie-break tests.

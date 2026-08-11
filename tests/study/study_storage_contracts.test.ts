@@ -1,11 +1,163 @@
-import { describe, expect, it } from 'vitest';
+/** @vitest-environment jsdom */
+
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { exportStudyData, parseStudyImport } from '../../src/study/studyExportImport';
 import { createStudyFsrsScheduler } from '../../src/study/fsrs/studyFsrs';
 import { isFsrsReplayableAttempt } from '../../src/study/fsrs/studyFsrsMigration';
 import { buildStudyOpfsPath, sanitizeStudyPathSegment } from '../../src/study/studyOpfs';
 import { createSeedStudyData } from '../../src/study/studySeed';
-import { migrateStudySnapshot, shouldSeedStudyData, STUDY_SCHEMA_VERSION } from '../../src/study/studyStorage';
+import {
+  createStudyStorage,
+  migrateStudySnapshot,
+  shouldSeedStudyData,
+  STUDY_DB_NAME,
+  STUDY_DB_VERSION,
+  STUDY_SCHEMA_VERSION,
+} from '../../src/study/studyStorage';
+
+type FakeStudyStores = Record<string, Map<string, unknown>>;
+
+const STUDY_STORE_KEYS: Record<string, string> = {
+  documents: 'id',
+  units: 'id',
+  prompts: 'id',
+  concepts: 'id',
+  rubrics: 'id',
+  progress: 'unitId',
+  attempts: 'id',
+  drafts: 'id',
+  settings: 'id',
+  legalDocuments: 'id',
+  legalComponents: 'recordKey',
+  importHistory: 'id',
+};
+
+const originalIndexedDb = window.indexedDB;
+
+const createFakeRequest = <T>(resolveValue: () => T, onComplete?: () => void): IDBRequest<T> => {
+  const request = {
+    result: undefined as T,
+    error: null as DOMException | null,
+    onsuccess: null as IDBRequest<T>['onsuccess'],
+    onerror: null as IDBRequest<T>['onerror'],
+  };
+  const idbRequest = request as unknown as IDBRequest<T>;
+  window.setTimeout(() => {
+    try {
+      request.result = resolveValue();
+      request.onsuccess?.call(idbRequest, new Event('success') as never);
+    } catch (error) {
+      request.error = error as DOMException;
+      request.onerror?.call(idbRequest, new Event('error') as never);
+    } finally {
+      window.setTimeout(() => onComplete?.(), 0);
+    }
+  }, 0);
+  return idbRequest;
+};
+
+const createFakeStudyStore = (
+  stores: FakeStudyStores,
+  storeName: string,
+  transaction: IDBTransaction,
+) => ({
+  getAll: () =>
+    createFakeRequest(
+      () => Array.from((stores[storeName] ?? new Map()).values()),
+      () => transaction.oncomplete?.call(transaction, new Event('complete') as never),
+    ),
+  get: (key: string) =>
+    createFakeRequest(
+      () => stores[storeName]?.get(key),
+      () => transaction.oncomplete?.call(transaction, new Event('complete') as never),
+    ),
+  put: (value: unknown) => {
+    const keyPath = STUDY_STORE_KEYS[storeName];
+    const key = (value as Record<string, string>)[keyPath];
+    stores[storeName] ??= new Map();
+    stores[storeName].set(key, value);
+    return createFakeRequest(() => key);
+  },
+  delete: (key: string) => {
+    stores[storeName]?.delete(key);
+    return createFakeRequest(() => undefined);
+  },
+  clear: () => {
+    stores[storeName]?.clear();
+    return createFakeRequest(() => undefined);
+  },
+});
+
+const installStudyIndexedDbFixture = ({
+  stores,
+  oldVersion,
+}: {
+  stores: FakeStudyStores;
+  oldVersion: number;
+}) => {
+  Object.defineProperty(window, 'indexedDB', {
+    configurable: true,
+    value: {
+      open: (name: string, version?: number) => {
+        const request = {
+          result: null as IDBDatabase | null,
+          error: null as DOMException | null,
+          onsuccess: null as IDBOpenDBRequest['onsuccess'],
+          onerror: null as IDBOpenDBRequest['onerror'],
+          onupgradeneeded: null as IDBOpenDBRequest['onupgradeneeded'],
+        };
+        const db = {
+          objectStoreNames: {
+            contains: (storeName: string) => stores[storeName] !== undefined,
+          },
+          createObjectStore: (storeName: string) => {
+            stores[storeName] ??= new Map();
+            return createFakeStudyStore(stores, storeName, {} as IDBTransaction);
+          },
+          close: () => undefined,
+          transaction: (storeNames: string | string[]) => {
+            const names = Array.isArray(storeNames) ? storeNames : [storeNames];
+            const transaction = {
+              oncomplete: null as IDBTransaction['oncomplete'],
+              onerror: null as IDBTransaction['onerror'],
+              onabort: null as IDBTransaction['onabort'],
+              error: null as DOMException | null,
+              abort: () => undefined,
+              objectStore: (storeName: string) => {
+                if (!names.includes(storeName))
+                  throw new Error(`Unexpected Study store ${storeName}`);
+                return createFakeStudyStore(stores, storeName, transaction as IDBTransaction);
+              },
+            };
+            return transaction as IDBTransaction;
+          },
+        };
+        const openRequest = request as unknown as IDBOpenDBRequest;
+        window.setTimeout(() => {
+          if (name !== STUDY_DB_NAME) {
+            request.error = new DOMException('Unexpected database name.');
+            request.onerror?.call(openRequest, new Event('error') as never);
+            return;
+          }
+          request.result = db as IDBDatabase;
+          if ((version ?? 0) > oldVersion) {
+            request.onupgradeneeded?.call(openRequest, new Event('upgradeneeded') as never);
+          }
+          request.onsuccess?.call(openRequest, new Event('success') as never);
+        }, 0);
+        return openRequest;
+      },
+    },
+  });
+};
+
+afterEach(() => {
+  Object.defineProperty(window, 'indexedDB', {
+    configurable: true,
+    value: originalIndexedDb,
+  });
+});
 
 describe('study storage contracts', () => {
   it('migrates partial imported data to the current schema version', () => {
@@ -59,7 +211,10 @@ describe('study storage contracts', () => {
   });
 
   it('preserves valid FSRS card schedules and sanitizes corrupt ones during migration', () => {
-    const scheduler = createStudyFsrsScheduler({ ...createSeedStudyData().settings.fsrsConfig!.userSettings, enableFuzz: false });
+    const scheduler = createStudyFsrsScheduler({
+      ...createSeedStudyData().settings.fsrsConfig!.userSettings,
+      enableFuzz: false,
+    });
     const now = new Date('2026-08-10T10:00:00.000Z');
     const result = scheduler.applyStudyRating(
       {
@@ -122,10 +277,75 @@ describe('study storage contracts', () => {
       drafts: [],
     });
 
-    expect(migrated.progress.find((entry) => entry.unitId === 'valid')?.scheduling?.card).toEqual(result.card);
-    expect(migrated.progress.find((entry) => entry.unitId === 'corrupt')?.scheduling).toMatchObject({
+    expect(migrated.progress.find((entry) => entry.unitId === 'valid')?.scheduling?.card).toEqual(
+      result.card,
+    );
+    expect(migrated.progress.find((entry) => entry.unitId === 'corrupt')?.scheduling).toMatchObject(
+      {
+        initialized: false,
+        legacyDueAt: '2026-08-12T10:00:00.000Z',
+      },
+    );
+  });
+
+  it('loads an old-schema IndexedDB fixture without replaying ambiguous historical attempts', async () => {
+    const seed = createSeedStudyData('2026-08-01T10:00:00.000Z');
+    const legacyProgress = {
+      ...seed.progress[0],
+      dueAt: '2026-08-11T10:00:00.000Z',
+      scheduling: undefined,
+    };
+    const legacyAttempt = {
+      id: 'legacy-attempt-1',
+      unitId: seed.units[0].id,
+      promptId: seed.prompts[0].id,
+      phase: 'guided-recall' as const,
+      phaseBefore: 'guided-recall' as const,
+      responseMode: 'freeText' as const,
+      answer: 'legacy answer',
+      guidedResponses: {},
+      coveredConceptIds: [seed.concepts[0].id],
+      rubricCoverage: [],
+      rating: 'good' as const,
+      startedAt: '2026-08-10T10:00:00.000Z',
+      revealedAt: '2026-08-10T10:05:00.000Z',
+      completedAt: '2026-08-10T10:06:00.000Z',
+      scheduling: undefined,
+    };
+    const stores: FakeStudyStores = {
+      documents: new Map(seed.documents.map((entry) => [entry.id, entry])),
+      units: new Map(seed.units.map((entry) => [entry.id, entry])),
+      prompts: new Map(seed.prompts.map((entry) => [entry.id, entry])),
+      concepts: new Map(seed.concepts.map((entry) => [entry.id, entry])),
+      rubrics: new Map(seed.rubrics.map((entry) => [entry.id, entry])),
+      progress: new Map([[legacyProgress.unitId, legacyProgress]]),
+      attempts: new Map([[legacyAttempt.id, legacyAttempt]]),
+      drafts: new Map(),
+      settings: new Map([
+        [
+          seed.settings.id,
+          {
+            ...seed.settings,
+            schemaVersion: STUDY_DB_VERSION - 1,
+            fsrsConfig: undefined,
+          },
+        ],
+      ]),
+    };
+    installStudyIndexedDbFixture({ stores, oldVersion: STUDY_DB_VERSION - 1 });
+
+    const loaded = await createStudyStorage().loadAll();
+
+    expect(stores.legalDocuments).toBeInstanceOf(Map);
+    expect(stores.legalComponents).toBeInstanceOf(Map);
+    expect(stores.importHistory).toBeInstanceOf(Map);
+    expect(loaded.schemaVersion).toBe(STUDY_SCHEMA_VERSION);
+    expect(loaded.attempts).toEqual([legacyAttempt]);
+    expect(loaded.progress[0]?.scheduling).toMatchObject({
+      schemaVersion: 1,
+      algorithm: 'fsrs',
       initialized: false,
-      legacyDueAt: '2026-08-12T10:00:00.000Z',
+      legacyDueAt: '2026-08-11T10:00:00.000Z',
     });
   });
 
@@ -164,7 +384,9 @@ describe('study storage contracts', () => {
 
     const migrated = migrateStudySnapshot(legacy);
 
-    expect(migrated.units.find((unit) => unit.id === seed.units[0].id)?.sourceMode).toBe('official');
+    expect(migrated.units.find((unit) => unit.id === seed.units[0].id)?.sourceMode).toBe(
+      'official',
+    );
     expect(migrated.units.find((unit) => unit.id === 'legacy-unlinked')?.sourceMode).toBe('custom');
     expect(migrated.units[0].tags).toEqual([]);
     expect(migrated.concepts[0].origin).toBe('manual');
@@ -242,11 +464,23 @@ describe('study storage contracts', () => {
     };
 
     expect(isFsrsReplayableAttempt(counted)).toBe(true);
-    expect(isFsrsReplayableAttempt({ scheduling: { ...counted.scheduling, schedulingApplied: false } })).toBe(false);
-    expect(isFsrsReplayableAttempt({ scheduling: { ...counted.scheduling, reason: 'preview' } })).toBe(false);
-    expect(isFsrsReplayableAttempt({ scheduling: { ...counted.scheduling, reason: 'source-review' } })).toBe(false);
-    expect(isFsrsReplayableAttempt({ scheduling: { ...counted.scheduling, reviewedAt: 'bad-date' } })).toBe(false);
-    expect(isFsrsReplayableAttempt({ scheduling: { ...counted.scheduling, undoneAt: '2026-08-10T11:00:00.000Z' } })).toBe(false);
+    expect(
+      isFsrsReplayableAttempt({ scheduling: { ...counted.scheduling, schedulingApplied: false } }),
+    ).toBe(false);
+    expect(
+      isFsrsReplayableAttempt({ scheduling: { ...counted.scheduling, reason: 'preview' } }),
+    ).toBe(false);
+    expect(
+      isFsrsReplayableAttempt({ scheduling: { ...counted.scheduling, reason: 'source-review' } }),
+    ).toBe(false);
+    expect(
+      isFsrsReplayableAttempt({ scheduling: { ...counted.scheduling, reviewedAt: 'bad-date' } }),
+    ).toBe(false);
+    expect(
+      isFsrsReplayableAttempt({
+        scheduling: { ...counted.scheduling, undoneAt: '2026-08-10T11:00:00.000Z' },
+      }),
+    ).toBe(false);
   });
 
   it('generates deterministic OPFS paths for source assets', () => {
