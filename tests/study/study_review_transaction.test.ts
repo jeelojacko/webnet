@@ -107,6 +107,32 @@ describe('study review transaction builder', () => {
     expect(attempt.scheduling?.cardAfter).toBeUndefined();
   });
 
+  it('creates explicit counted practice scheduling transitions', () => {
+    const { data, item } = activeSessionItem();
+    const result = buildRatedStudyAttempt({
+      data,
+      item,
+      rating: 'good',
+      now: new Date('2026-08-10T10:06:00.000Z'),
+      attemptId: 'attempt-counted-practice',
+      answer: 'counted practice answer',
+      responseMode: 'free-recall',
+      guidedResponses: {},
+      coveredConceptIds: [],
+      rubricCoverage: [],
+      startedAt: '2026-08-10T10:00:00.000Z',
+      countedReason: 'manual-counted-practice',
+    });
+
+    expect(result.attempt.scheduling).toMatchObject({
+      schedulingApplied: true,
+      reason: 'manual-counted-practice',
+      rating: 'good',
+      dueAfter: result.progress.dueAt,
+    });
+    expect(result.progress.scheduling?.initialized).toBe(true);
+  });
+
   it('uses the same timestamp for preview and final rating results', () => {
     const { data, item } = activeSessionItem();
     const now = new Date('2026-08-10T10:06:00.000Z');

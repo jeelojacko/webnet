@@ -22,6 +22,7 @@ import { createDefaultStudySettings } from './studySeed';
 import { createInitialProgress, markReadingComplete } from './studyScheduler';
 import { buildStudyQueue } from './studyQueue';
 import { buildStudySessionCompletionSummary } from './studySessionSummary';
+import { persistStudyPracticeAttempt } from './studyPracticePersistence';
 import { createStudyStorage, STUDY_SCHEMA_VERSION } from './studyStorage';
 import {
   getLatestEligibleSchedulingAttempt,
@@ -29,7 +30,6 @@ import {
   replaceProgress,
 } from './studyStateUpdates';
 import {
-  buildNonSchedulingStudyAttempt,
   buildRatedStudyAttempt,
   buildStudyRatingPreviews,
   buildUndoLatestSchedulingRating,
@@ -504,6 +504,7 @@ export const useStudyApp = () => {
       rubricCoverage,
       startedAt,
       revealedAt,
+      countScheduling = false,
     }: {
       item: StudySessionItem;
       rating: StudyRating;
@@ -515,30 +516,27 @@ export const useStudyApp = () => {
       rubricCoverage: StudyRubricCoverage[];
       startedAt: string;
       revealedAt: string;
+      countScheduling?: boolean;
     }) => {
       if (!data) return;
-      const completedAt = revealedAt;
-      const attempt = buildNonSchedulingStudyAttempt({
+      const result = await persistStudyPracticeAttempt({
+        data,
+        storage,
         item,
         rating,
-        attemptId: createId('attempt-practice'),
+        reason,
         answer,
         responseMode,
         guidedResponses,
         coveredConceptIds,
         rubricCoverage,
-        reason,
         startedAt,
         revealedAt,
-        completedAt,
+        countScheduling,
+        attemptId: createId('attempt-practice'),
       });
-      await storage.saveAttempt(attempt);
-      setData({ ...data, attempts: [...data.attempts, attempt] });
-      setStatusMessage(
-        reason === 'surprise-practice'
-          ? 'Surprise practice saved without changing scheduling.'
-          : 'Manual practice saved without changing scheduling.',
-      );
+      setData(result.snapshot);
+      setStatusMessage(result.statusMessage);
     },
     [data, storage],
   );

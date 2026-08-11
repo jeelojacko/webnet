@@ -1,10 +1,10 @@
 import { createSeedStudyData, createDefaultStudySettings } from './studySeed';
 import { createStudyFsrsConfigRecord, migrateStudyFsrsSchedule } from './fsrs/studyFsrsMigration';
-import type { NbLawContentPackage } from './content/nbLawTypes';
 import {
   applyOfficialContentPackageToSnapshot,
   upsertStudyDocumentsWithOfficialMetadata,
 } from './studyOfficialContent';
+import type { StudyStorage } from './studyStorageTypes';
 import type {
   ImportedLegalComponent,
   ImportedLegalDocument,
@@ -71,35 +71,6 @@ type StudyStorePayloads = {
   legalComponents: ImportedLegalComponent & { recordKey: string };
   importHistory: StudyOfficialImportHistory;
 };
-
-export interface StudyStorage {
-  loadAll: () => Promise<StudyDataSnapshot>;
-  saveDocument: (_document: StudyDocument) => Promise<void>;
-  saveUnit: (_unit: StudyUnit) => Promise<void>;
-  savePrompt: (_prompt: StudyPrompt) => Promise<void>;
-  replaceUnitConcepts: (_unitId: string, _concepts: StudyConcept[]) => Promise<void>;
-  replaceUnitRubrics: (_unitId: string, _rubrics: StudyRubricItem[]) => Promise<void>;
-  saveProgress: (_progress: StudyProgress) => Promise<void>;
-  saveAttempt: (_attempt: StudyAttempt) => Promise<void>;
-  saveRatedAttempt: (_options: {
-    attempt: StudyAttempt;
-    progress: StudyProgress;
-    draftId: string;
-    expectedProgressUpdatedAt?: string;
-  }) => Promise<void>;
-  saveSchedulingUndo: (_options: {
-    attempt: StudyAttempt;
-    progress: StudyProgress;
-    expectedProgressUpdatedAt?: string;
-  }) => Promise<void>;
-  saveDraft: (_draft: StudyDraft) => Promise<void>;
-  clearDraft: (_draftId: string) => Promise<void>;
-  saveSettings: (_settings: StudySettings) => Promise<void>;
-  replaceAll: (_snapshot: StudyDataSnapshot) => Promise<void>;
-  importOfficialContentPackage: (
-    _contentPackage: NbLawContentPackage,
-  ) => Promise<StudyDataSnapshot>;
-}
 
 const hasIndexedDb = (): boolean =>
   typeof window !== 'undefined' && typeof window.indexedDB !== 'undefined';
@@ -299,6 +270,36 @@ const seedIfEmpty = async (db: IDBDatabase): Promise<void> => {
   await transactionDone(transaction);
 };
 
+const saveAttemptProgressTransaction = async ({
+  attempt,
+  progress,
+  expectedProgressUpdatedAt,
+  staleMessage,
+}: {
+  attempt: StudyAttempt;
+  progress: StudyProgress;
+  expectedProgressUpdatedAt?: string;
+  staleMessage: string;
+}): Promise<void> => {
+  const db = await openStudyDatabase();
+  try {
+    const transaction = db.transaction(['attempts', 'progress'], 'readwrite');
+    const progressStore = transaction.objectStore('progress');
+    const existing = await requestToPromise(
+      progressStore.get(progress.unitId) as IDBRequest<StudyProgress | undefined>,
+    );
+    if (expectedProgressUpdatedAt && existing && existing.updatedAt !== expectedProgressUpdatedAt) {
+      transaction.abort();
+      throw new Error(staleMessage);
+    }
+    transaction.objectStore('attempts').put(attempt);
+    progressStore.put(progress);
+    await transactionDone(transaction);
+  } finally {
+    db.close();
+  }
+};
+
 export const createStudyStorage = (): StudyStorage => ({
   async loadAll() {
     if (!hasIndexedDb()) return createSeedStudyData(new Date().toISOString());
@@ -435,27 +436,20 @@ export const createStudyStorage = (): StudyStorage => ({
     }
   },
   async saveSchedulingUndo({ attempt, progress, expectedProgressUpdatedAt }) {
-    const db = await openStudyDatabase();
-    try {
-      const transaction = db.transaction(['attempts', 'progress'], 'readwrite');
-      const progressStore = transaction.objectStore('progress');
-      const existing = await requestToPromise(
-        progressStore.get(progress.unitId) as IDBRequest<StudyProgress | undefined>,
-      );
-      if (
-        expectedProgressUpdatedAt &&
-        existing &&
-        existing.updatedAt !== expectedProgressUpdatedAt
-      ) {
-        transaction.abort();
-        throw new Error('Study progress changed before the rating could be undone.');
-      }
-      transaction.objectStore('attempts').put(attempt);
-      progressStore.put(progress);
-      await transactionDone(transaction);
-    } finally {
-      db.close();
-    }
+    await saveAttemptProgressTransaction({
+      attempt,
+      progress,
+      expectedProgressUpdatedAt,
+      staleMessage: 'Study progress changed before the rating could be undone.',
+    });
+  },
+  async saveAttemptProgress({ attempt, progress, expectedProgressUpdatedAt }) {
+    await saveAttemptProgressTransaction({
+      attempt,
+      progress,
+      expectedProgressUpdatedAt,
+      staleMessage: 'Study progress changed before the practice rating could be saved.',
+    });
   },
   async saveDraft(draft) {
     const db = await openStudyDatabase();

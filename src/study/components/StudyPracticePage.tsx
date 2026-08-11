@@ -30,6 +30,7 @@ type StudyPracticePageProps = {
     rubricCoverage: StudyRubricCoverage[];
     revealedAt: string;
     startedAt: string;
+    countScheduling?: boolean;
   }) => Promise<void>;
   onNavigate: (_path: string) => void;
 };
@@ -59,6 +60,7 @@ const StudyPracticePage = ({
   const [startedAt] = useState(() => new Date().toISOString());
   const [coveredConceptIds, setCoveredConceptIds] = useState<string[]>([]);
   const [rubricCoverage, setRubricCoverage] = useState<StudyRubricCoverage[]>([]);
+  const [countScheduling, setCountScheduling] = useState(false);
   const item = useMemo(
     () =>
       unitId
@@ -93,6 +95,7 @@ const StudyPracticePage = ({
       rubricCoverage,
       revealedAt: nowIso,
       startedAt,
+      countScheduling,
     });
     onNavigate('/study/library?tab=units');
   };
@@ -101,6 +104,15 @@ const StudyPracticePage = ({
     <div className="space-y-3">
       <section className="rounded border border-amber-700 bg-amber-950/30 p-3 text-sm text-amber-100">
         {modeText[mode].title}
+        <label className="mt-3 flex items-center gap-2 text-xs text-amber-50">
+          <input
+            type="checkbox"
+            checked={countScheduling}
+            onChange={(event) => setCountScheduling(event.target.checked)}
+            className="h-4 w-4 rounded border-amber-600 bg-slate-950"
+          />
+          Count this practice rating toward scheduling
+        </label>
       </section>
       <StudySessionPage
         activeItem={item}

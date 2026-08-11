@@ -1,9 +1,11 @@
 # Architecture
 
 ## Purpose
+
 This document describes the current WebNet module layout, the main data flow, and the repository seams that matter most when making changes.
 
 ## High-level shape
+
 WebNet is a browser-first TypeScript application built around a strict parser + solver + result-model pipeline, with React UI layers that consume deterministic solve results and review metadata.
 
 At a high level:
@@ -18,6 +20,7 @@ At a high level:
 ## Major areas
 
 ### App shell and browser workflows
+
 Primary app-facing state and workflow orchestration live in the app shell plus hooks:
 
 - `src/App.tsx`
@@ -35,6 +38,7 @@ Primary app-facing state and workflow orchestration live in the app shell plus h
 - `src/hooks/useWorkspaceReviewState.ts`
 
 These modules coordinate:
+
 - input text and include bundles
 - project and parser settings
 - worker-backed run orchestration
@@ -48,11 +52,13 @@ These modules coordinate:
 - post-solve hydration timing, deferred QA-derived review state, and staged heavy-tab warmup
 
 ### Study module
+
 The `/study` route is a separate local-first study application under `src/study/`.
 
 It owns:
+
 - `studyTypes.ts` for study document/unit/prompt/concept/rubric/progress/attempt/draft/settings contracts
-- `studyStorage.ts` for IndexedDB-backed metadata, progress, attempt, draft, scheduler-state, and settings storage
+- `studyStorage.ts` for IndexedDB-backed metadata, progress, attempt, draft, scheduler-state, settings storage, and atomic rating/undo writes
 - `studyOpfs.ts` for OPFS source-file, normalized-text, imported-file, PDF, and backup path generation/writes
 - `src/study/content/*` for the development-side official NB law manifest validation, laws.gnb URL generation, exact-text normalization models, and content-package validation
 - `studyOfficialContent.ts` for browser-side official package validation, import preview, reference-only form classification, source-review flagging, and source-selection unit creation
@@ -62,9 +68,9 @@ It owns:
 - `studyRubricGeneration.ts` for pure deterministic answer-rubric templates, source-linked legal-provision fact extraction, fixture-locked rubric generation, and development diagnostics
 - `src/study/fsrs/*` for the Phase 3 FSRS adapter boundary, including Study-domain settings, serialized card/review-log records, runtime parameter validation, fixed/system clocks, legacy schedule migration helpers, replay predicates, and `ts-fsrs` scheduling calls isolated away from React components
 - `studyLibrarySearch.ts` for the in-memory categorized Library search index, short-field fuzzy matching, and long official-text substring matching
-- `studyScheduler.ts` for deterministic phase transitions and the current live provisional session ordering
+- `studyScheduler.ts` for deterministic StudyPhase transitions and legacy initial progress helpers
 - `studyQueue.ts` for the Phase 3 pure FSRS-aware queue model with explicit queue reasons, due Learning/Relearning and Review ordering, limited New material, source-review precedence, and optional surprise practice outside normal scheduling
-- `studyReviewTransaction.ts` for Phase 3 scheduled-session rating assembly, combining one FSRS transition, existing StudyPhase progression, immutable attempt metadata, and mutable progress state before storage writes
+- `studyReviewTransaction.ts` for Phase 3 scheduled-session rating and undo assembly, combining one FSRS transition, existing StudyPhase progression, immutable attempt metadata, and mutable progress state before storage writes
 - `StudyApp.tsx`, `useStudyApp.ts`, and `components/*` for the dashboard, library, document reader/editor, session, and manage pages
 
 The study module does not use adjustment, parser, solver, network, import-review, or Survey CAD domain state. Authoritative source-file metadata remains on `StudyDocument.sourceFiles`; editable summaries and reference answers remain on study-unit or prompt records. See `docs/STUDY_MODULE.md` for the schema and manual workflow.
@@ -76,6 +82,7 @@ Browser official-package import stores authoritative metadata in `legalDocuments
 The source-selection authoring workflow creates editable generated study records while keeping authoritative legal text read-only in `legalComponents`. Generated title and reference-answer state lives on `StudyUnit`, guided questions live on `StudyPrompt`, answer rubrics live on `StudyRubricItem`, and legacy keyword/concept rows live on `StudyConcept` with manual/generated origin and display order. Rubric-generation diagnostics keep extracted legal facts with operative actor, modality, action, source key, and source clause together so Tier A prompts can be downgraded when actor/modality binding is unsafe. The `/study/unit/:id/edit` route displays selected official source text beside the editable unit draft for official units, supports custom unlinked units through `sourceMode: "custom"`, and guards replacement of user-authored/generated rubric and concept content with explicit actions.
 
 ### Engine core
+
 The engine is centered under `src/engine/`.
 
 Important seams include:
@@ -106,9 +113,11 @@ Representative modules include:
 - `projectBundle.ts`
 
 Current listing seams:
+
 - `industryListing.ts` owns the industry-style listing ordering and top-level section assembly, while `industryListingStationContext.ts` builds lost-station filtering, entered-station classification, classic traverse station order, and display-factor context, `industryListingGpsDisplay.ts` builds GNSS display vectors, covariance displays, and listing-only GPS statistical rows, `industryListingInputSummary.ts` renders the classic/compact/standard unadjusted input summary sections, `industryListingCoordinateSections.ts` renders adjusted coordinates, control-component status, geodetic positions, and factor diagnostics, `industryListingRelationshipPrecision.ts` builds relationship precision, selected ellipse/relative pair, and positional tolerance models, `industryListingAdjustedOutputSections.ts` renders adjustment statistics, adjusted GNSS vectors, data-check/blunder diagnostics, and grid-vs-ground distance diagnostics, `industryListingPostAdjustmentSections.ts` renders post-adjusted sideshots, GPS rover offsets, GPS loops, and leveling loops, and `industryListingDiagnosticsSections.ts` renders auto-adjust, auto-sideshot, cluster, description reconciliation, and alias trace diagnostics.
 
 ### Parser decomposition
+
 Parser responsibilities are now split across focused modules. The main parser delegates to extracted families and state helpers such as:
 
 - `parseDirectiveRegistry.ts`
@@ -126,6 +135,7 @@ Parser responsibilities are now split across focused modules. The main parser de
 - `parseDirectionSetWorkflow.ts`
 
 Use these modules when changing:
+
 - directive semantics
 - include behavior
 - alias or canonical-ID handling
@@ -134,6 +144,7 @@ Use these modules when changing:
 - traceability and parser log shaping
 
 ### Solver decomposition
+
 Adjustment and diagnostic work is similarly split into focused seams such as:
 
 - `adjustmentPreprocessing.ts`
@@ -152,6 +163,7 @@ Adjustment and diagnostic work is similarly split into focused seams such as:
 - `reductionUsageSummary.ts`
 
 Use these modules when changing:
+
 - solve planning
 - equation row construction
 - conditioning or covariance recovery
@@ -161,9 +173,11 @@ Use these modules when changing:
 - loop and traverse diagnostics
 
 ### UI composition
+
 UI modules live primarily under `src/components/`.
 
 Representative areas:
+
 - `InputPane`
 - `ReportView` and `src/components/report/*`
 - `MapView`
@@ -173,9 +187,11 @@ Representative areas:
 - workspace shell and toolbar components
 
 Current report seams:
+
 - `ReportView.tsx` owns report wiring, selector coordination, and section ordering, `ReportView.types.ts` owns the report prop contract, `src/components/report/ReportRunSummarySections.tsx` renders the pending-run, adjustment-summary, data-check, and blunder-detect summary panels, `src/components/report/ReportSuspectImpactSection.tsx` renders the what-if exclusion table/action panel, `src/components/report/ReportReviewWorkflowSections.tsx` groups traceability, cluster, auto-adjust, and auto-sideshot review panels, `src/components/report/ReportObservationWorkflowSections.tsx` groups post-adjusted sideshots, report filters, adjusted coordinates, and residual observation tables, `src/components/report/ReportDiagnosticPanels.tsx` renders auto-adjust, auto-sideshot, setup, and GPS rover offset diagnostics, `src/components/report/ReportPreanalysisSections.tsx` renders preanalysis planning, locked-planned-observation, and added-set recommendation sections, `src/components/report/ReportPrecisionSections.tsx` renders preanalysis covariance and weak-geometry precision sections, `src/components/report/ReportResidualSummarySections.tsx` renders the regular-run residual summary sections, `src/components/report/ReportClosingSections.tsx` groups final face-treatment diagnostics and the processing log, and `src/components/report/useReportRenderHelpers.tsx` owns shared report render helpers.
 
 Current Survey CAD spike seams:
+
 - `src/engine/cad/cadTypes.ts` defines native CAD entities, now including arc, polyline, polygon, parcel, and alignment families plus persisted Survey CAD project-state payloads with a versioned COGO computation log
 - `src/engine/cad/cadCogoTypes.ts` defines the shared COGO result/report/warning/provenance shape used by command-created computations and the persisted CAD project computation log
 - `src/engine/cad/cadCogoReports.ts` formats persisted or live COGO computations into export-preview text for TXT/CSV/Markdown output without changing the underlying CAD project state
@@ -207,6 +223,7 @@ Current Survey CAD spike seams:
 The UI should treat solve results as the source of truth and avoid duplicating engine logic in view code.
 
 `MapView` now has an explicit 2D layered-render split under `src/components/mapView/`:
+
 - `MapView.types.ts` owns the public `MapView` prop and snapshot contracts, and `mapViewConstants.ts` owns shared sizing, threshold, interaction, and OSM tile constants used by the top-level map component
 - `MapViewRoot.tsx` owns the remaining map workflow wiring behind the public `src/components/MapView.tsx` facade, while `MapViewContent.tsx` and `MapViewControls.tsx` own the extracted render shell and top planning/display controls
 - `useMapViewShellEffects.ts`, `useMapViewRootUiState.ts`, `useMapViewEffectiveMode.ts`, `useMapViewTransformAvailability.ts`, `useMapViewRenderSurfaces.ts`, `useMapViewObstacleFetch.ts`, `useMapView2dRenderState.ts`, `useMapViewViewportState.ts`, `useMapViewCoordinates.ts`, `useMapView3dProjection.ts`, `useMapViewDragInteractions.ts`, `useMapViewSelectionInteractions.ts`, `useMapViewContentProps.ts`, and `MapViewRoot.props.ts` own extracted viewport/container effects, root UI state, 3D fallback selection, transform availability cleanup, canvas/WebGL render-surface wiring, OSM obstacle fetch lifecycle, the 2D derived/render-state bridge, viewport/reset state, SVG/map coordinate conversion, 3D projection/view presets, drag/wheel pointer interactions, selection/context-menu hit handling, and render prop assembly so `MapViewRoot.tsx` stays under the source-size target without changing map behavior
@@ -247,9 +264,11 @@ For real-browser interaction debugging, `map-pan-harness.html` plus `src/dev/map
 ## Data flow
 
 ### 1. Input and settings
+
 The user edits untitled input text or a named-project source-file workspace, along with project settings, parser settings, instrument data, and export preferences.
 
 Those browser-facing artifacts are stored in workspace state and can also be:
+
 - recovered from local draft state
 - saved into named local browser projects backed by a manifest + source-file workspace
 - exported/imported as flattened portable `.wnproj` snapshots or zipped manifest bundles
@@ -258,6 +277,7 @@ Those browser-facing artifacts are stored in workspace state and can also be:
 Survey CAD drawings are separate `.wncad` documents. Adjustment projects do not automatically own or refresh CAD state; the explicit `Import Adjusted Points` command copies the current successful adjustment result into the active CAD drawing.
 
 Named-project source-file workspaces now distinguish:
+
 - checked project files for run assembly
 - open editor tabs
 - one focused editor tab that drives the visible textarea
@@ -265,7 +285,9 @@ Named-project source-file workspaces now distinguish:
 For the detailed ordered checked-file run contract, see `docs/run-semantics.md`.
 
 ### 2. Optional external import review
+
 If an external file is imported, the importer registry normalizes the source into staged rows and groups. The staged import-review workflow allows:
+
 - grouping and reshaping rows
 - excluding or fixing rows
 - reconciling conflicts with current editor content
@@ -273,7 +295,9 @@ If an external file is imported, the importer registry normalizes the source int
 - committing grouped WebNet text back into the editor
 
 ### 3. Parse stage
+
 The parser:
+
 - expands includes
 - applies inline directives and scoped state
 - canonicalizes IDs and alias mappings
@@ -282,7 +306,9 @@ The parser:
 - produces normalized stations, observations, unknowns, and parser logs
 
 ### 4. Solve stage
+
 The solver:
+
 - preprocesses observations and control constraints
 - builds active equation rows
 - assembles normal equations
@@ -291,7 +317,9 @@ The solver:
 - produces statistical summaries, local-test outputs, diagnostics, and review metadata
 
 ### 5. Result shaping
+
 Result builders then generate:
+
 - WebNet report sections
 - industry-style listing sections
 - processing-summary sections
@@ -301,7 +329,9 @@ Result builders then generate:
 - QA comparison models and bundle-export metadata
 
 ### 6. UI rendering and review
+
 The UI renders those shaped models through:
+
 - report tabs and filters
 - map review and context tools
 - compare workflows
@@ -310,6 +340,7 @@ The UI renders those shaped models through:
 - local workspace recovery
 
 After a successful run, the app shell now follows a two-phase handoff:
+
 - the urgent phase commits the core result, active tab, and minimal run metadata so the report surface becomes interactive first
 - a deferred phase computes QA-derived review/map models, warms heavy tabs sequentially, and lets `Processing Summary`, `Industry Standard Output`, and `Map` mount progressively on idle or first open
 
@@ -318,30 +349,40 @@ In dev builds, app-side UI timing helpers record worker-success, result-commit, 
 ## Boundary rules
 
 ### Parser boundary
+
 Parser modules should:
+
 - resolve input syntax and scoped state
 - preserve traceability
 - avoid presentation formatting concerns
 
 ### Solver boundary
+
 Solver modules should:
+
 - operate on normalized internal units
 - avoid UI-specific shaping
 - emit structured diagnostics rather than formatted prose when possible
 
 ### Output-builder boundary
+
 Output-builder modules should:
+
 - shape result payloads into deterministic textual or export forms
 - avoid re-solving or mutating engine state
 
 ### UI boundary
+
 UI modules should:
+
 - consume derived result models
 - manage interaction state
 - avoid duplicating numerical logic already owned by the engine
 
 ## Performance and scaling notes
+
 Current performance-oriented architecture includes:
+
 - worker-backed browser run execution
 - shared run-session orchestration between browser and CLI paths
 - lazy-loaded heavy result views and modals
@@ -360,6 +401,7 @@ Current performance-oriented architecture includes:
 - benchmark coverage for large browser workloads and imported-job flows
 
 ## Where to add new work
+
 Use this routing guide when deciding where a change belongs:
 
 - New directive or record-family parsing -> parser family/state modules under `src/engine/`
@@ -371,6 +413,7 @@ Use this routing guide when deciding where a change belongs:
 - Canadian CRS synthetic harness foundation -> `src/engine/canadianCrsTestCatalog.ts`, `src/engine/generateSyntheticCanadianNetwork.ts`, `src/engine/generateSyntheticObservations.ts`, `src/engine/runSyntheticCrsAdjustmentTest.ts`, and `tests/canadianCrsHarness/`
 
 ## Related docs
+
 - `docs/CURRENT_BEHAVIOR.md`
 - `docs/PARITY_WORKFLOW.md`
 - `docs/IMPORT_WORKFLOW.md`

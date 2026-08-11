@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import StudyLayout from '../../src/study/components/StudyLayout';
 import StudyManagePage from '../../src/study/components/StudyManagePage';
 import StudyPreviewPage from '../../src/study/components/StudyPreviewPage';
+import StudyPracticePage from '../../src/study/components/StudyPracticePage';
 import StudyRubricEditor from '../../src/study/components/StudyRubricEditor';
 import StudySessionPage from '../../src/study/components/StudySessionPage';
 import StudyUnitEditorPage from '../../src/study/components/StudyUnitEditorPage';
@@ -123,6 +124,45 @@ describe('study phase 2E UI', () => {
       closePreview?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
     expect(onNavigate).toHaveBeenCalledWith('/study/library?tab=units');
+  });
+
+  it('forwards the explicit counted-practice override from practice pages', async () => {
+    const data: StudyDataSnapshot = createSeedStudyData('2026-08-05T10:00:00.000Z');
+    const onSavePracticeAttempt = vi.fn(async () => undefined);
+    await renderIntoRoot(
+      <StudyPracticePage
+        data={data}
+        unitId={data.units[0].id}
+        mode="manual-practice"
+        onSavePracticeAttempt={onSavePracticeAttempt}
+        onNavigate={vi.fn()}
+      />,
+      root,
+    );
+
+    const countScheduling = input('Count this practice rating toward scheduling');
+    await act(async () => {
+      countScheduling.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    const reveal = Array.from(document.querySelectorAll('button')).find(
+      (button) => button.textContent === 'Reveal',
+    );
+    await act(async () => {
+      reveal?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    const good = Array.from(document.querySelectorAll('button')).find(
+      (button) => button.textContent === 'Good',
+    );
+    await act(async () => {
+      good?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(onSavePracticeAttempt).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reason: 'manual-practice',
+        countScheduling: true,
+      }),
+    );
   });
 
   it('acknowledges source review from the unit editor without saving authoring changes', async () => {

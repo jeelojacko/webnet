@@ -26,6 +26,10 @@ export type BuildRatedStudyAttemptOptions = {
   coveredConceptIds: string[];
   rubricCoverage: StudyRubricCoverage[];
   startedAt: string;
+  countedReason?: Extract<
+    StudyAttemptSchedulingReason,
+    'manual-counted-practice' | 'surprise-practice'
+  >;
 };
 
 export type BuildNonSchedulingStudyAttemptOptions = {
@@ -177,6 +181,7 @@ export const buildRatedStudyAttempt = ({
   coveredConceptIds,
   rubricCoverage,
   startedAt,
+  countedReason,
 }: BuildRatedStudyAttemptOptions): RatedStudyAttemptResult => {
   const nowIso = now.toISOString();
   const config = resolveConfig(data, now);
@@ -233,7 +238,7 @@ export const buildRatedStudyAttempt = ({
       dueBefore,
       dueAfter: scheduled.due,
       configVersion: config.configVersion,
-      reason: schedule.initialized ? 'scheduled-review' : 'new-learning',
+      reason: countedReason ?? (schedule.initialized ? 'scheduled-review' : 'new-learning'),
     },
     startedAt,
     revealedAt: nowIso,

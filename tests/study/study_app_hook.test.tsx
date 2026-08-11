@@ -85,6 +85,15 @@ vi.mock('../../src/study/studyStorage', () => ({
         ];
       },
     ),
+    saveAttemptProgress: vi.fn(
+      async ({ attempt, progress }: { attempt: StudyAttempt; progress: StudyProgress }) => {
+        storageState.attempts = [...storageState.attempts, attempt];
+        storageState.progress = [
+          ...storageState.progress.filter((entry) => entry.unitId !== progress.unitId),
+          progress,
+        ];
+      },
+    ),
     saveDraft: vi.fn(async (draft: StudyDraft) => {
       storageState.drafts = [
         ...storageState.drafts.filter((entry) => entry.id !== draft.id),
@@ -410,6 +419,52 @@ describe('study app hook persistence', () => {
     expect(JSON.stringify(storageState.progress)).toBe(progressBefore);
     expect(hookValue.current?.statusMessage).toBe(
       'Surprise practice saved without changing scheduling.',
+    );
+  });
+
+  it('counts explicit manual practice toward FSRS scheduling', async () => {
+    const hookValue: { current: HookValue | null } = { current: null };
+    await act(async () => {
+      root?.render(
+        <HookHarness
+          onValue={(value) => {
+            hookValue.current = value;
+          }}
+        />,
+      );
+    });
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
+
+    const item = hookValue.current?.activeItem;
+    expect(item).toBeTruthy();
+    await act(async () => {
+      if (!item) return;
+      await hookValue.current?.savePracticeAttempt({
+        item,
+        rating: 'good',
+        reason: 'manual-practice',
+        answer: 'Manual counted answer.',
+        responseMode: hookValue.current.responseMode,
+        guidedResponses: {},
+        coveredConceptIds: [],
+        rubricCoverage: [],
+        startedAt: '2026-08-01T10:00:00.000Z',
+        revealedAt: '2026-08-01T10:05:00.000Z',
+        countScheduling: true,
+      });
+    });
+
+    expect(storageState.attempts).toHaveLength(1);
+    expect(storageState.attempts[0]?.scheduling).toMatchObject({
+      schedulingApplied: true,
+      reason: 'manual-counted-practice',
+      rating: 'good',
+    });
+    expect(storageState.progress[0]?.scheduling?.initialized).toBe(true);
+    expect(hookValue.current?.statusMessage).toBe(
+      'Manual practice saved and counted toward scheduling.',
     );
   });
 

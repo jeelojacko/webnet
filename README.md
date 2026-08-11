@@ -24,10 +24,11 @@ npm run dev
 ```
 
 5. Open the local Vite URL shown in the terminal.
-Usually this is `http://localhost:5173`.
-The study module is available at `http://localhost:5173/study`.
+   Usually this is `http://localhost:5173`.
+   The study module is available at `http://localhost:5173/study`.
 
 Successful startup looks like:
+
 - the terminal shows a local development URL
 - the browser opens the WebNet app shell
 - the toolbar shows `Project Options`, `Survey CAD`, `Study`, and `Adjust`
@@ -97,7 +98,7 @@ npm run test:map-browser
 - Configure solve settings in `Project Options`.
 - Open built-in example projects from `Project Options -> Project Files -> Example Projects`.
 - Open `Survey CAD` from the toolbar to work in a standalone CAD drawing. Use the CAD file controls for `New Drawing`, `Open Drawing`, `Save Drawing`, `Export Drawing`, and `Import Adjusted Points`; adjustment projects no longer auto-own CAD state.
-- Open `Study` from the toolbar, or visit `/study`, for a separate local-first New Brunswick statute and survey-law study app. Its Manage page can import the generated official NB law content package for offline legal reading, reset local Study data for testing, use Library search, source-linked study units with editable answer rubrics and preview mode, deterministic editable study-unit drafts, and custom unlinked study units.
+- Open `Study` from the toolbar, or visit `/study`, for a separate local-first New Brunswick statute and survey-law study app. Its Manage page can import the generated official NB law content package for offline legal reading, reset local Study data for testing, use Library search, source-linked study units with editable answer rubrics and preview mode, deterministic editable study-unit drafts, custom unlinked study units, and FSRS-backed due review sessions with non-mutating practice/preview paths and latest-rating undo.
 - For the Study official NB law pilot content pipeline, use `npm run study:fetch-nb-laws`, `npm run study:normalize-nb-laws`, and `npm run study:build-content-pack`. Use `npm run study:audit-generation` to generate developer QA reports for deterministic source-linked study-unit generation. These development commands fetch only manifest-listed `laws.gnb.ca` documents when fetching is explicitly run and do not run during normal browser use.
 - In `Run Mode = Preanalysis`, optionally set a planning accuracy threshold and max added sets, then review obstacle-aware planning recommendations in the report and on the 2D map.
 - Run `Adjust`.

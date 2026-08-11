@@ -10,9 +10,10 @@ It does not use adjustment, parser, solver, network, or Survey CAD domain state.
 
 - `src/study/studyTypes.ts` - record contracts for documents, units, prompts, concepts, rubrics, progress, attempts, drafts, settings, and snapshots
 - `src/study/studySeed.ts` - five initial New Brunswick statute document records plus sample units, concepts, prompts, and initial progress
-- `src/study/studyScheduler.ts` - phase transition and session ordering rules
+- `src/study/studyScheduler.ts` - StudyPhase transition and initial-progress rules
 - `src/study/studyQueue.ts` - pure Phase 3 FSRS-aware queue construction with explicit queue reasons
-- `src/study/studyStorage.ts` - IndexedDB schema, seed loading, migrations, CRUD/replace operations, and atomic official-content package import
+- `src/study/studyStorage.ts` - IndexedDB schema, seed loading, migrations, CRUD/replace operations, atomic rating/undo writes, and atomic official-content package import
+- `src/study/studyStorageTypes.ts` - public Study storage interface shared by persistence helpers
 - `src/study/studyOfficialContent.ts` - official package parsing, browser import validation, preview, source-reference review flags, reference-only form detection, and source-selection study-unit creation
 - `src/study/studyDraftGeneration.ts` - deterministic title, question, citation, reference-answer, and conservative concept drafting for source-linked study units
 - `src/study/studyRubricGeneration.ts` - deterministic answer-rubric templates and legal-provision rubric generation
@@ -21,9 +22,10 @@ It does not use adjustment, parser, solver, network, or Survey CAD domain state.
 - `src/study/studyLibrarySearch.ts` - in-memory categorized Library search index and matching helpers
 - `src/study/studyOpfs.ts` - OPFS path generation and source-file text asset writes
 - `src/study/studyExportImport.ts` - JSON export/import round trip helpers
-- `src/study/useStudyApp.ts` - route-local state, autosave, reveal/rating flow, and persistence orchestration
+- `src/study/studyReviewTransaction.ts` - FSRS rating preview, counted/non-counted attempt assembly, StudyPhase preservation, and latest-rating undo state restoration
+- `src/study/useStudyApp.ts` - route-local state, autosave, reveal/rating flow, latest-rating undo, and persistence orchestration
 - `src/study/StudyApp.tsx` and `src/study/components/*` - dashboard, library, document, session, and manage pages
-- `tests/study/*` - focused storage, scheduler, OPFS, separation, autosave, and attempt-persistence coverage
+- `tests/study/*` - focused storage, scheduler, FSRS, queue, OPFS, separation, autosave, UI, and attempt-persistence coverage
 
 ## IndexedDB Schema
 
@@ -46,7 +48,7 @@ Stores:
 - `legalComponents`, key `recordKey`: imported authoritative components keyed by `{documentId}::{sourceKey}`, including sections, schedules, forms, source text, source hash, subsections, and extraction status
 - `importHistory`, key `id`: compact official-package import history with added/changed counts, reference-only form counts, and flagged-unit counts
 
-Schema migration currently normalizes imported or partially missing snapshots to schema version `5`, fills default settings, defaults official-content stores to empty arrays, adds unit source mode, adds concept origin/order fields, adds the rubric store, adds Study FSRS settings/configuration, adds optional progress/attempt scheduling wrappers, and keeps existing Study data intact. Existing concepts without origin default to manual unless the linked unit already records generated concepts. Legacy snapshots without rubrics receive conservative supplemental `custom` rubric rows from existing concepts with empty reference answers, so migration does not invent legal answers or delete concept content.
+Schema migration currently normalizes imported or partially missing snapshots to schema version `5`, fills default settings, defaults official-content stores to empty arrays, adds unit source mode, adds concept origin/order fields, adds the rubric store, adds Study FSRS settings/configuration, adds optional progress/attempt scheduling wrappers, and keeps existing Study data intact. Existing concepts without origin default to manual unless the linked unit already records generated concepts. Legacy snapshots without rubrics receive conservative supplemental `custom` rubric rows from existing concepts with empty reference answers, so migration does not invent legal answers or delete concept content. Old-schema IndexedDB fixture coverage locks browser upgrade behavior for pre-FSRS data: missing stores are created, historical attempts are preserved, and ambiguous legacy due dates become uninitialized FSRS schedules instead of replayed memory history.
 
 Study scheduling metadata is additive in schema version `5`:
 
@@ -323,9 +325,7 @@ Default response modes are phase-driven unless a unit override is set. Guided-re
 
 ## Phase 3 FSRS Boundary
 
-Phase 2B intentionally keeps the existing deterministic phase scheduler. Phase 3 should add FSRS fields beside `StudyProgress`, preserve current phase/progress import compatibility, and use official-source review flags as a scheduling input rather than replacing legal-source integrity checks.
-
-Phase 3A has started the scheduler foundation without changing live Study session persistence yet:
+Phase 3 adds FSRS fields beside `StudyProgress`, preserves phase/progress import compatibility, and uses official-source review flags as a scheduling input rather than replacing legal-source integrity checks.
 
 - `ts-fsrs` is locked at `5.4.1`, which requires Node.js `>=20.0.0`; local implementation verification used Node `v22.23.1` and npm `10.9.8`.
 - One Study Unit maps to one future FSRS card. Rubric items, guided prompts, concepts, and responses remain evidence for a single overall unit rating, not separately scheduled cards.
@@ -333,9 +333,7 @@ Phase 3A has started the scheduler foundation without changing live Study sessio
 - Study FSRS settings resolve through the installed `generatorParameters()` API, and the complete resolved parameter object is persisted through the Study-side config record shape.
 - Serialized cards and review logs store Date fields as normalized ISO strings and restore real `Date` objects before calling `ts-fsrs`.
 - `StudyClock` provides `systemStudyClock` for runtime and `fixedStudyClock` for deterministic tests.
-- Uninitialized schedules do not fabricate historical FSRS state. The first real counted rating will create a fresh card at the review timestamp; ambiguous legacy due dates are intended to be preserved separately as `legacyDueAt` in a later schema batch.
-
-The browser session rating transaction foundation and pure queue builder are in place; undo, manual-practice/surprise-review counted-review controls, and broader Study UI scheduling indicators are still pending Phase 3 batches.
+- Uninitialized schedules do not fabricate historical FSRS state. The first real counted rating creates a fresh card at the review timestamp; ambiguous legacy due dates are preserved separately as `legacyDueAt`.
 
 The scheduled Study session rating path now uses a storage-level rated-attempt transaction:
 
@@ -351,8 +349,9 @@ The scheduled Study session rating path now uses a storage-level rated-attempt t
 - source-review-required session items are surfaced before memory-review items, but the session hides recall/rating controls for those rows and routes the operator to the unit/source review workflow; source acknowledgement remains separate from FSRS memory scheduling
 - the Study-unit preview route keeps answers, reveal state, rubric coverage, attempts, drafts, progress, and FSRS scheduling local/non-mutating
 - source acknowledgement from the document reader or unit editor only updates the unit source-review flags and source hashes; it does not write Study attempts or progress scheduling
-- manual practice is available from Library study-unit rows at `/study/unit/:id/practice`; it records a non-counted attempt with `schedulingApplied: false` and leaves the FSRS card, due date, and StudyPhase unchanged
-- surprise practice is available from the dashboard at `/study/surprise`; it selects an eligible non-source-review unit deterministically and records the same non-counted attempt shape with reason `surprise-practice`
+- manual practice is available from Library study-unit rows at `/study/unit/:id/practice`; it records a non-counted attempt with `schedulingApplied: false` and leaves the FSRS card, due date, and StudyPhase unchanged by default
+- surprise practice is available from the dashboard at `/study/surprise`; it selects an eligible non-source-review unit deterministically and records the same non-counted attempt shape with reason `surprise-practice` by default
+- practice pages include an explicit opt-in checkbox to count the rating toward scheduling; counted manual practice stores reason `manual-counted-practice`, counted surprise practice stores reason `surprise-practice`, and both paths write the attempt plus progress atomically with the stale-progress guard
 - dashboard scheduling cards now show Due Now, Overdue, Learning, New Available, and Source Review counts from the full Study unit set
 - Library study-unit rows show compact scheduling badges and support scheduling filters/sort for source review, due, overdue, new, learning, relearning, review, and due date
 - the Study unit editor includes a read-only Scheduling panel with state, due label, last reviewed, review count, lapse count, and advanced stability/difficulty fields
@@ -360,11 +359,9 @@ The scheduled Study session rating path now uses a storage-level rated-attempt t
 - development builds expose a collapsed scheduler diagnostics panel on active session items with unit id, queue reason, FSRS state, due timestamp, last review, stability, difficulty, reps, lapses, and config version
 - the session completion view can undo the latest eligible counted Study rating; undo is atomic across the attempt and progress records, marks the attempt scheduling metadata with `undoneAt`, restores the stored FSRS card/due snapshot and `phaseBefore`, rejects non-latest/intervening counted reviews, and leaves the historical attempt record in place
 
-Explicit counted-practice overrides remain pending.
-
 ## Phase 3 Queue Model
 
-`buildStudyQueue` is a pure/testable queue builder for the upcoming FSRS session workflow. It does not mutate progress, attempts, FSRS cards, source-review flags, or StudyPhase state.
+`buildStudyQueue` is the pure/testable queue builder for the FSRS session workflow. It does not mutate progress, attempts, FSRS cards, source-review flags, or StudyPhase state.
 
 Queue items carry one explicit reason:
 
