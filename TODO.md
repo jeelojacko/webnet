@@ -20,7 +20,7 @@
     - [x] Add default Manual Practice and default Surprise Practice non-counted controls/tests, with any counted-review override explicit.
   - [ ] Batch 3E - UI integration:
     - [x] Add dashboard scheduling counts, Library scheduling badges/filters/sort, and unit-editor read-only scheduling panel.
-    - [ ] Add session completion summary and dev-only scheduler diagnostics.
+    - [x] Add session completion summary and dev-only scheduler diagnostics.
   - [ ] Batch 3F - undo, docs, full validation:
     - [ ] Add immediate undo of the latest eligible scheduling rating using stored card/phase snapshots.
     - [ ] Update `README.md`, `docs/ARCHITECTURE.md`, `docs/CURRENT_BEHAVIOR.md`, and `docs/STUDY_MODULE.md`; run required validation including full lint/typecheck/test/build and parity where applicable; commit and push.

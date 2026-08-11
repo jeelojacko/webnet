@@ -1,10 +1,12 @@
 import type {
+  SerializedStudyFsrsCard,
   StudyRating,
   StudyResponseMode,
   StudyRubricCoverage,
   StudyRubricCoverageStatus,
   StudySessionItem,
 } from '../studyTypes';
+import type { StudySessionCompletionSummary } from '../studySessionSummary';
 import { StudyEmptyState } from './StudyLayout';
 
 type StudySessionPageProps = {
@@ -23,6 +25,7 @@ type StudySessionPageProps = {
   ratingPending?: boolean;
   ratingPreviews?: Array<{ rating: StudyRating; intervalLabel: string; due: string }>;
   onRate: (_rating: StudyRating) => Promise<void>;
+  completionSummary?: StudySessionCompletionSummary | null;
   previewMode?: boolean;
   sourceText?: string;
   onClosePreview?: () => void;
@@ -48,6 +51,47 @@ const orderedRequiredRubrics = (activeItem: StudySessionItem) =>
 const orderedOptionalRubrics = (activeItem: StudySessionItem) =>
   activeItem.rubrics.filter((rubric) => !rubric.required);
 
+const StudyCompletionPanel = ({ summary }: { summary: StudySessionCompletionSummary }) => (
+  <section className="rounded border border-emerald-800 bg-emerald-950/20 p-4">
+    <div className="text-sm font-semibold text-emerald-100">Session Complete</div>
+    <div className="mt-3 grid gap-2 text-sm text-slate-300 sm:grid-cols-2 lg:grid-cols-4">
+      <div>Reviewed: {summary.reviewed}</div>
+      <div>Again: {summary.ratings.again}</div>
+      <div>Hard: {summary.ratings.hard}</div>
+      <div>Good: {summary.ratings.good}</div>
+      <div>Easy: {summary.ratings.easy}</div>
+      <div>New learned: {summary.newLearned}</div>
+      <div>Still due: {summary.stillDue}</div>
+      <div>Next short-term review: {summary.nextShortTermReview ?? 'none'}</div>
+    </div>
+  </section>
+);
+
+const StudySchedulerDiagnostics = ({ activeItem }: { activeItem: StudySessionItem }) => {
+  if (!import.meta.env.DEV) return null;
+  const card: SerializedStudyFsrsCard | undefined = activeItem.progress.scheduling?.card;
+  return (
+    <details className="rounded border border-slate-800 bg-slate-950 p-3 text-xs text-slate-400">
+      <summary className="cursor-pointer text-slate-500">Scheduler diagnostics</summary>
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        <div>Unit ID: {activeItem.unit.id}</div>
+        <div>Reason: {activeItem.reason ?? 'unclassified'}</div>
+        <div>FSRS state: {card?.state ?? 'uninitialized'}</div>
+        <div>
+          Due:{' '}
+          {card?.due ?? activeItem.progress.scheduling?.legacyDueAt ?? activeItem.progress.dueAt}
+        </div>
+        <div>Last review: {card?.last_review ?? 'never'}</div>
+        <div>Stability: {card?.stability ?? 'n/a'}</div>
+        <div>Difficulty: {card?.difficulty ?? 'n/a'}</div>
+        <div>Reps: {card?.reps ?? 0}</div>
+        <div>Lapses: {card?.lapses ?? 0}</div>
+        <div>Config version: {activeItem.progress.scheduling?.configVersion ?? 'n/a'}</div>
+      </div>
+    </details>
+  );
+};
+
 const StudySessionPage = ({
   activeItem,
   answer,
@@ -64,12 +108,19 @@ const StudySessionPage = ({
   ratingPending = false,
   ratingPreviews = [],
   onRate,
+  completionSummary = null,
   previewMode = false,
   sourceText,
   onClosePreview,
   onOpenUnit,
 }: StudySessionPageProps) => {
-  if (!activeItem) return <StudyEmptyState text="No study units are available." />;
+  if (!activeItem) {
+    return completionSummary ? (
+      <StudyCompletionPanel summary={completionSummary} />
+    ) : (
+      <StudyEmptyState text="No study units are available." />
+    );
+  }
   const requiredRubrics = orderedRequiredRubrics(activeItem);
   const optionalRubrics = orderedOptionalRubrics(activeItem);
   const guidedRubrics = requiredRubrics.length > 0 ? requiredRubrics : activeItem.rubrics;
@@ -121,6 +172,7 @@ const StudySessionPage = ({
         <div className="text-xs uppercase tracking-wide text-slate-500">Prompt</div>
         <div className="mt-2 text-base text-slate-100">{activeItem.prompt.question}</div>
       </section>
+      <StudySchedulerDiagnostics activeItem={activeItem} />
       {sourceReviewRequired ? (
         <section className="rounded border border-amber-800 bg-amber-950/30 p-4">
           <div className="text-sm font-semibold text-amber-100">

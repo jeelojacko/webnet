@@ -21,6 +21,7 @@ import { generateStudyRubric } from './studyRubricGeneration';
 import { createDefaultStudySettings } from './studySeed';
 import { createInitialProgress, markReadingComplete } from './studyScheduler';
 import { buildStudyQueue } from './studyQueue';
+import { buildStudySessionCompletionSummary } from './studySessionSummary';
 import { createStudyStorage, STUDY_SCHEMA_VERSION } from './studyStorage';
 import {
   buildNonSchedulingStudyAttempt,
@@ -71,6 +72,7 @@ export const useStudyApp = () => {
   const [coveredConceptIds, setCoveredConceptIds] = useState<string[]>([]);
   const [rubricCoverage, setRubricCoverage] = useState<StudyRubricCoverage[]>([]);
   const [ratingPending, setRatingPending] = useState(false);
+  const [sessionAttemptIds, setSessionAttemptIds] = useState<string[]>([]);
   const [statusMessage, setStatusMessage] = useState('');
   const [importText, setImportText] = useState('');
   const [officialPackageText, setOfficialPackageText] = useState('');
@@ -128,7 +130,25 @@ export const useStudyApp = () => {
     });
   }, [data]);
 
-  const activeItem = sessionItems[activeItemIndex] ?? sessionItems[0] ?? null;
+  const activeItem = sessionItems[activeItemIndex] ?? null;
+  const sessionAttempts = useMemo(
+    () =>
+      data?.attempts.filter(
+        (attempt) =>
+          sessionAttemptIds.includes(attempt.id) &&
+          attempt.scheduling?.schedulingApplied === true &&
+          !attempt.scheduling.undoneAt,
+      ) ?? [],
+    [data?.attempts, sessionAttemptIds],
+  );
+  const sessionCompletionSummary = useMemo(() => {
+    if (!data || activeItem || sessionAttempts.length === 0) return null;
+    return buildStudySessionCompletionSummary({
+      attempts: sessionAttempts,
+      remainingItems: sessionItems,
+      now: new Date(),
+    });
+  }, [activeItem, data, sessionAttempts, sessionItems]);
   const responseMode: StudyResponseMode = useMemo(() => {
     const phase = activeItem?.progress.phase;
     if (activeItem?.unit.responseModeOverride) return activeItem.unit.responseModeOverride;
@@ -450,13 +470,14 @@ export const useStudyApp = () => {
           progress: replaceProgress(data.progress, progress),
           drafts: data.drafts.filter((entry) => entry.id !== ACTIVE_DRAFT_ID),
         });
+        setSessionAttemptIds((ids) => [...ids, attempt.id]);
         setAnswer('');
         setGuidedResponses({});
         setRevealed(false);
         setRatingNowIso(null);
         setCoveredConceptIds([]);
         setRubricCoverage([]);
-        setActiveItemIndex((index) => Math.min(index + 1, Math.max(sessionItems.length - 1, 0)));
+        setActiveItemIndex(0);
       } finally {
         ratingInFlightRef.current = false;
         setRatingPending(false);
@@ -471,7 +492,6 @@ export const useStudyApp = () => {
       ratingNowIso,
       responseMode,
       rubricCoverage,
-      sessionItems.length,
       storage,
     ],
   );
@@ -563,6 +583,7 @@ export const useStudyApp = () => {
     setCoveredConceptIds([]);
     setRubricCoverage([]);
     setActiveItemIndex(0);
+    setSessionAttemptIds([]);
     setImportText('');
     setOfficialPackageText('');
     setOfficialPackagePreview(null);
@@ -805,6 +826,7 @@ export const useStudyApp = () => {
     navigate,
     sessionItems,
     activeItem,
+    sessionCompletionSummary,
     answer,
     setAnswer,
     guidedResponses,

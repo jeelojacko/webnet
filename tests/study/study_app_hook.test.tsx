@@ -175,6 +175,45 @@ describe('study app hook persistence', () => {
     expect(storageState.drafts).toEqual([]);
   });
 
+  it('summarizes completed scheduled ratings when the session queue is exhausted', async () => {
+    const seed = createSeedStudyData('2026-08-01T10:00:00.000Z');
+    storageState.snapshot = {
+      ...seed,
+      units: seed.units.slice(0, 1),
+      prompts: seed.prompts.filter((prompt) => prompt.unitId === seed.units[0].id),
+      concepts: seed.concepts.filter((concept) => concept.unitId === seed.units[0].id),
+      rubrics: seed.rubrics.filter((rubric) => rubric.unitId === seed.units[0].id),
+      progress: seed.progress.filter((progress) => progress.unitId === seed.units[0].id),
+    };
+    const hookValue: { current: HookValue | null } = { current: null };
+    await act(async () => {
+      root?.render(
+        <HookHarness
+          onValue={(value) => {
+            hookValue.current = value;
+          }}
+        />,
+      );
+    });
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
+
+    await act(async () => {
+      hookValue.current?.setRevealed(true);
+    });
+    await act(async () => {
+      await hookValue.current?.rateActiveItem('good');
+    });
+
+    expect(hookValue.current?.activeItem).toBeNull();
+    expect(hookValue.current?.sessionCompletionSummary).toMatchObject({
+      reviewed: 1,
+      newLearned: 1,
+      ratings: { again: 0, hard: 0, good: 1, easy: 0 },
+    });
+  });
+
   it('persists guided responses and rubric coverage with attempts', async () => {
     const hookValue: { current: HookValue | null } = { current: null };
     await act(async () => {

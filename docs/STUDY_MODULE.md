@@ -356,8 +356,10 @@ The scheduled Study session rating path now uses a storage-level rated-attempt t
 - dashboard scheduling cards now show Due Now, Overdue, Learning, New Available, and Source Review counts from the full Study unit set
 - Library study-unit rows show compact scheduling badges and support scheduling filters/sort for source review, due, overdue, new, learning, relearning, review, and due date
 - the Study unit editor includes a read-only Scheduling panel with state, due label, last reviewed, review count, lapse count, and advanced stability/difficulty fields
+- scheduled Study sessions show a completion summary after the queue is exhausted, including reviewed count, rating totals, new learned count, still due count, and next short-term review
+- development builds expose a collapsed scheduler diagnostics panel on active session items with unit id, queue reason, FSRS state, due timestamp, last review, stability, difficulty, reps, lapses, and config version
 
-Explicit counted-practice overrides, session completion summary, dev-only diagnostics, and undo remain pending.
+Explicit counted-practice overrides and undo remain pending.
 
 ## Phase 3 Queue Model
 

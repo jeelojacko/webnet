@@ -19,7 +19,9 @@ const renderIntoRoot = async (node: React.ReactNode, root: Root | null) => {
 };
 
 const input = (label: string): HTMLTextAreaElement | HTMLInputElement => {
-  const element = Array.from(document.querySelectorAll('textarea,input')).find((entry) => entry.closest('label')?.textContent?.includes(label));
+  const element = Array.from(document.querySelectorAll('textarea,input')).find((entry) =>
+    entry.closest('label')?.textContent?.includes(label),
+  );
   expect(element).toBeTruthy();
   return element as HTMLTextAreaElement | HTMLInputElement;
 };
@@ -38,7 +40,9 @@ describe('study phase 2E UI', () => {
   let container: HTMLDivElement | null = null;
 
   beforeEach(() => {
-    (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+    (
+      globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
+    ).IS_REACT_ACT_ENVIRONMENT = true;
     container = document.createElement('div');
     document.body.appendChild(container);
     root = createRoot(container);
@@ -55,7 +59,12 @@ describe('study phase 2E UI', () => {
   it('renders collapsed sidebar entries as icon buttons and toggles persistence callback', async () => {
     const onCollapsed = vi.fn();
     await renderIntoRoot(
-      <StudyLayout activePath="/study/library" sidebarCollapsed onSidebarCollapsedChange={onCollapsed} onNavigate={vi.fn()}>
+      <StudyLayout
+        activePath="/study/library"
+        sidebarCollapsed
+        onSidebarCollapsedChange={onCollapsed}
+        onNavigate={vi.fn()}
+      >
         <div>Content</div>
       </StudyLayout>,
       root,
@@ -78,27 +87,38 @@ describe('study phase 2E UI', () => {
     data.units[0] = { ...data.units[0], responseModeOverride: 'guided' };
     const before = JSON.stringify(data);
     const onNavigate = vi.fn();
-    await renderIntoRoot(<StudyPreviewPage data={data} unitId={data.units[0].id} onNavigate={onNavigate} />, root);
+    await renderIntoRoot(
+      <StudyPreviewPage data={data} unitId={data.units[0].id} onNavigate={onNavigate} />,
+      root,
+    );
 
     const firstGuidedBox = input(data.rubrics[0].prompt);
     await act(async () => {
       firstGuidedBox.value = 'Preview answer';
       firstGuidedBox.dispatchEvent(new Event('input', { bubbles: true }));
     });
-    const reveal = Array.from(document.querySelectorAll('button')).find((button) => button.textContent === 'Reveal');
+    const reveal = Array.from(document.querySelectorAll('button')).find(
+      (button) => button.textContent === 'Reveal',
+    );
     await act(async () => {
       reveal?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
-    const covered = Array.from(document.querySelectorAll('button')).find((button) => button.textContent === 'Covered');
+    const covered = Array.from(document.querySelectorAll('button')).find(
+      (button) => button.textContent === 'Covered',
+    );
     await act(async () => {
       covered?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
 
-    expect(document.body.textContent).toContain('Preview mode - progress and review history will not be changed.');
+    expect(document.body.textContent).toContain(
+      'Preview mode - progress and review history will not be changed.',
+    );
     expect(document.body.textContent).not.toContain('Good');
     expect(JSON.stringify(data)).toBe(before);
 
-    const closePreview = Array.from(document.querySelectorAll('button')).find((button) => button.textContent === 'Close Preview');
+    const closePreview = Array.from(document.querySelectorAll('button')).find(
+      (button) => button.textContent === 'Close Preview',
+    );
     await act(async () => {
       closePreview?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
@@ -116,11 +136,19 @@ describe('study phase 2E UI', () => {
     const onSave = vi.fn(async () => {});
     const onAcknowledgeSourceReview = vi.fn(async () => acknowledged);
     await renderIntoRoot(
-      <StudyUnitEditorPage data={data} unitId={data.units[0].id} onSave={onSave} onAcknowledgeSourceReview={onAcknowledgeSourceReview} onNavigate={vi.fn()} />,
+      <StudyUnitEditorPage
+        data={data}
+        unitId={data.units[0].id}
+        onSave={onSave}
+        onAcknowledgeSourceReview={onAcknowledgeSourceReview}
+        onNavigate={vi.fn()}
+      />,
       root,
     );
 
-    const acknowledge = Array.from(document.querySelectorAll('button')).find((button) => button.textContent === 'Acknowledge reviewed source');
+    const acknowledge = Array.from(document.querySelectorAll('button')).find(
+      (button) => button.textContent === 'Acknowledge reviewed source',
+    );
     await act(async () => {
       acknowledge?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
@@ -153,7 +181,15 @@ describe('study phase 2E UI', () => {
         },
       },
     };
-    await renderIntoRoot(<StudyUnitEditorPage data={data} unitId={data.units[0].id} onSave={vi.fn(async () => {})} onNavigate={vi.fn()} />, root);
+    await renderIntoRoot(
+      <StudyUnitEditorPage
+        data={data}
+        unitId={data.units[0].id}
+        onSave={vi.fn(async () => {})}
+        onNavigate={vi.fn()}
+      />,
+      root,
+    );
 
     expect(document.body.textContent).toContain('Scheduling');
     expect(document.body.textContent).toContain('State: Review');
@@ -183,7 +219,9 @@ describe('study phase 2E UI', () => {
     );
 
     const textareas = Array.from(document.querySelectorAll('textarea'));
-    expect(textareas).toHaveLength(data.rubrics.filter((rubric) => rubric.unitId === data.units[0].id && rubric.required).length);
+    expect(textareas).toHaveLength(
+      data.rubrics.filter((rubric) => rubric.unitId === data.units[0].id && rubric.required).length,
+    );
     expect(document.body.textContent).not.toContain('Typed Recall');
   });
 
@@ -239,6 +277,61 @@ describe('study phase 2E UI', () => {
     expect(document.body.textContent).toContain(item.rubrics[0].referenceAnswer);
   });
 
+  it('renders session completion summary and scheduler diagnostics', async () => {
+    const data: StudyDataSnapshot = createSeedStudyData('2026-08-05T10:00:00.000Z');
+    await renderIntoRoot(
+      <StudySessionPage
+        activeItem={null}
+        answer=""
+        onAnswerChange={vi.fn()}
+        guidedResponses={{}}
+        onGuidedResponsesChange={vi.fn()}
+        responseMode="guided"
+        revealed={false}
+        onRevealChange={vi.fn()}
+        coveredConceptIds={[]}
+        onToggleConcept={vi.fn()}
+        rubricCoverage={[]}
+        onRubricCoverageChange={vi.fn()}
+        onRate={vi.fn()}
+        completionSummary={{
+          reviewed: 2,
+          ratings: { again: 1, hard: 0, good: 1, easy: 0 },
+          newLearned: 1,
+          stillDue: 0,
+          nextShortTermReview: '10m',
+        }}
+      />,
+      root,
+    );
+
+    expect(document.body.textContent).toContain('Session Complete');
+    expect(document.body.textContent).toContain('Reviewed: 2');
+    expect(document.body.textContent).toContain('Next short-term review: 10m');
+
+    await renderIntoRoot(
+      <StudySessionPage
+        activeItem={sessionItemFromSeed(data)}
+        answer=""
+        onAnswerChange={vi.fn()}
+        guidedResponses={{}}
+        onGuidedResponsesChange={vi.fn()}
+        responseMode="guided"
+        revealed={false}
+        onRevealChange={vi.fn()}
+        coveredConceptIds={[]}
+        onToggleConcept={vi.fn()}
+        rubricCoverage={[]}
+        onRubricCoverageChange={vi.fn()}
+        onRate={vi.fn()}
+      />,
+      root,
+    );
+
+    expect(document.body.textContent).toContain('Scheduler diagnostics');
+    expect(document.body.textContent).toContain(`Unit ID: ${data.units[0].id}`);
+  });
+
   it('renders rubric question on its own row with a title tooltip', async () => {
     const data: StudyDataSnapshot = createSeedStudyData('2026-08-05T10:00:00.000Z');
     await renderIntoRoot(
@@ -279,14 +372,18 @@ describe('study phase 2E UI', () => {
       root,
     );
 
-    const deleteButton = Array.from(document.querySelectorAll('button')).find((button) => button.textContent === 'Delete All Data');
+    const deleteButton = Array.from(document.querySelectorAll('button')).find(
+      (button) => button.textContent === 'Delete All Data',
+    );
     await act(async () => {
       deleteButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
     expect(document.body.textContent).toContain('Delete all Study data?');
     expect(onDeleteAllData).not.toHaveBeenCalled();
 
-    const confirmButton = Array.from(document.querySelectorAll('button')).find((button) => button.textContent === 'Confirm Delete All Data');
+    const confirmButton = Array.from(document.querySelectorAll('button')).find(
+      (button) => button.textContent === 'Confirm Delete All Data',
+    );
     await act(async () => {
       confirmButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
