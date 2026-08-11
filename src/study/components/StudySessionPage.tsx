@@ -26,6 +26,7 @@ type StudySessionPageProps = {
   previewMode?: boolean;
   sourceText?: string;
   onClosePreview?: () => void;
+  onOpenUnit?: (_unitId: string) => void;
 };
 
 const RATINGS: Array<{ rating: StudyRating; label: string; className: string }> = [
@@ -66,28 +67,42 @@ const StudySessionPage = ({
   previewMode = false,
   sourceText,
   onClosePreview,
+  onOpenUnit,
 }: StudySessionPageProps) => {
   if (!activeItem) return <StudyEmptyState text="No study units are available." />;
   const requiredRubrics = orderedRequiredRubrics(activeItem);
   const optionalRubrics = orderedOptionalRubrics(activeItem);
   const guidedRubrics = requiredRubrics.length > 0 ? requiredRubrics : activeItem.rubrics;
   const previewByRating = new Map(ratingPreviews.map((preview) => [preview.rating, preview]));
+  const sourceReviewRequired = !previewMode && activeItem.reason === 'source-review-required';
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-xl font-semibold text-white">{previewMode ? 'Study Unit Preview' : 'Study Session'}</h2>
+          <h2 className="text-xl font-semibold text-white">
+            {previewMode ? 'Study Unit Preview' : 'Study Session'}
+          </h2>
           <p className="text-sm text-slate-500">
-            {activeItem.unit.title} · {activeItem.progress.phase} · priority {activeItem.unit.priority}
+            {activeItem.unit.title} · {activeItem.progress.phase} · priority{' '}
+            {activeItem.unit.priority}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <span className="rounded bg-slate-900 px-3 py-1.5 text-xs text-slate-400">
-            {previewMode ? 'Preview' : activeItem.due ? 'Due review' : 'New or upcoming'}
+            {previewMode
+              ? 'Preview'
+              : sourceReviewRequired
+                ? 'Source review required'
+                : activeItem.due
+                  ? 'Due review'
+                  : 'New or upcoming'}
           </span>
           {onClosePreview ? (
-            <button onClick={onClosePreview} className="rounded border border-slate-700 px-3 py-1.5 text-xs text-slate-300">
+            <button
+              onClick={onClosePreview}
+              className="rounded border border-slate-700 px-3 py-1.5 text-xs text-slate-300"
+            >
               Close Preview
             </button>
           ) : null}
@@ -102,177 +117,234 @@ const StudySessionPage = ({
         <div className="text-xs uppercase tracking-wide text-slate-500">Prompt</div>
         <div className="mt-2 text-base text-slate-100">{activeItem.prompt.question}</div>
       </section>
-      {responseMode !== 'guided' ? (
-        <section className="rounded border border-slate-800 bg-slate-900 p-4">
-          <div className="mb-2 flex items-center justify-between gap-3">
-            <label className="text-xs uppercase tracking-wide text-slate-500">Typed Recall</label>
-            <span className="text-xs text-slate-600">Autosaves locally</span>
+      {sourceReviewRequired ? (
+        <section className="rounded border border-amber-800 bg-amber-950/30 p-4">
+          <div className="text-sm font-semibold text-amber-100">
+            Review the official source before studying this unit.
           </div>
-          <textarea
-            value={answer}
-            onChange={(event) => onAnswerChange(event.target.value)}
-            className="min-h-[18rem] w-full rounded border border-slate-700 bg-slate-950 p-4 text-sm leading-6 text-slate-100"
-          />
+          <p className="mt-2 text-sm text-amber-200">
+            Source acknowledgement is separate from memory review and will not change FSRS
+            scheduling.
+          </p>
+          {onOpenUnit ? (
+            <button
+              onClick={() => onOpenUnit(activeItem.unit.id)}
+              className="mt-3 rounded bg-amber-600 px-3 py-2 text-sm font-medium text-white hover:bg-amber-500"
+            >
+              Open Unit Source
+            </button>
+          ) : null}
         </section>
       ) : null}
-      {responseMode !== 'free-recall' ? (
-        <section className="rounded border border-slate-800 bg-slate-900 p-4">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <label className="text-xs uppercase tracking-wide text-slate-500">Guided Prompts</label>
-            <span className="text-xs text-slate-600">Autosaves locally</span>
-          </div>
-          <div className="space-y-3">
-            {guidedRubrics.map((rubric) => (
-              <label key={rubric.id} className="grid gap-2 text-sm text-slate-200">
-                {rubric.prompt}
-                <textarea
-                  value={guidedResponses[rubric.id] ?? ''}
-                  onChange={(event) =>
-                    onGuidedResponsesChange({ ...guidedResponses, [rubric.id]: event.target.value })
-                  }
-                  className="min-h-24 rounded border border-slate-700 bg-slate-950 p-3 text-sm leading-6 text-slate-100"
-                />
-              </label>
-            ))}
-            {optionalRubrics.length > 0 ? (
-              <details className="rounded border border-slate-800 bg-slate-950 p-3">
-                <summary className="cursor-pointer text-xs uppercase tracking-wide text-slate-500">
-                  Optional guided prompts ({optionalRubrics.length})
-                </summary>
+      {!sourceReviewRequired ? (
+        <>
+          {responseMode !== 'guided' ? (
+            <section className="rounded border border-slate-800 bg-slate-900 p-4">
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <label className="text-xs uppercase tracking-wide text-slate-500">
+                  Typed Recall
+                </label>
+                <span className="text-xs text-slate-600">Autosaves locally</span>
+              </div>
+              <textarea
+                value={answer}
+                onChange={(event) => onAnswerChange(event.target.value)}
+                className="min-h-[18rem] w-full rounded border border-slate-700 bg-slate-950 p-4 text-sm leading-6 text-slate-100"
+              />
+            </section>
+          ) : null}
+          {responseMode !== 'free-recall' ? (
+            <section className="rounded border border-slate-800 bg-slate-900 p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <label className="text-xs uppercase tracking-wide text-slate-500">
+                  Guided Prompts
+                </label>
+                <span className="text-xs text-slate-600">Autosaves locally</span>
+              </div>
+              <div className="space-y-3">
+                {guidedRubrics.map((rubric) => (
+                  <label key={rubric.id} className="grid gap-2 text-sm text-slate-200">
+                    {rubric.prompt}
+                    <textarea
+                      value={guidedResponses[rubric.id] ?? ''}
+                      onChange={(event) =>
+                        onGuidedResponsesChange({
+                          ...guidedResponses,
+                          [rubric.id]: event.target.value,
+                        })
+                      }
+                      className="min-h-24 rounded border border-slate-700 bg-slate-950 p-3 text-sm leading-6 text-slate-100"
+                    />
+                  </label>
+                ))}
+                {optionalRubrics.length > 0 ? (
+                  <details className="rounded border border-slate-800 bg-slate-950 p-3">
+                    <summary className="cursor-pointer text-xs uppercase tracking-wide text-slate-500">
+                      Optional guided prompts ({optionalRubrics.length})
+                    </summary>
+                    <div className="mt-3 space-y-3">
+                      {optionalRubrics.map((rubric) => (
+                        <label key={rubric.id} className="grid gap-2 text-sm text-slate-200">
+                          {rubric.prompt}
+                          <textarea
+                            value={guidedResponses[rubric.id] ?? ''}
+                            onChange={(event) =>
+                              onGuidedResponsesChange({
+                                ...guidedResponses,
+                                [rubric.id]: event.target.value,
+                              })
+                            }
+                            className="min-h-24 rounded border border-slate-700 bg-slate-950 p-3 text-sm leading-6 text-slate-100"
+                          />
+                        </label>
+                      ))}
+                    </div>
+                  </details>
+                ) : null}
+              </div>
+            </section>
+          ) : null}
+          {!revealed ? (
+            <button
+              onClick={() => onRevealChange(true)}
+              className="rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500"
+            >
+              Reveal
+            </button>
+          ) : (
+            <div className="space-y-4">
+              {responseMode === 'guided' ? null : (
+                <section className="grid gap-4 lg:grid-cols-2">
+                  <div className="rounded border border-slate-800 bg-slate-900 p-4">
+                    <div className="text-xs uppercase tracking-wide text-slate-500">
+                      Your Answer
+                    </div>
+                    <div className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-200">
+                      {answer || 'No answer entered.'}
+                    </div>
+                  </div>
+                  <div className="rounded border border-slate-800 bg-slate-900 p-4">
+                    <div className="text-xs uppercase tracking-wide text-slate-500">
+                      Reference Answer
+                    </div>
+                    <div className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-200">
+                      {activeItem.prompt.referenceAnswer || activeItem.unit.referenceAnswer}
+                    </div>
+                  </div>
+                </section>
+              )}
+              <section className="rounded border border-slate-800 bg-slate-900 p-4">
+                <div className="text-xs uppercase tracking-wide text-slate-500">Answer Rubric</div>
                 <div className="mt-3 space-y-3">
-                  {optionalRubrics.map((rubric) => (
-                    <label key={rubric.id} className="grid gap-2 text-sm text-slate-200">
-                      {rubric.prompt}
-                      <textarea
-                        value={guidedResponses[rubric.id] ?? ''}
-                        onChange={(event) =>
-                          onGuidedResponsesChange({ ...guidedResponses, [rubric.id]: event.target.value })
-                        }
-                        className="min-h-24 rounded border border-slate-700 bg-slate-950 p-3 text-sm leading-6 text-slate-100"
+                  {activeItem.rubrics.map((rubric) => {
+                    const selected = rubricCoverage.find(
+                      (entry) => entry.rubricItemId === rubric.id,
+                    )?.status;
+                    return (
+                      <div
+                        key={rubric.id}
+                        className="rounded border border-slate-800 bg-slate-950 p-3"
+                      >
+                        <div className="font-medium text-slate-100">{rubric.prompt}</div>
+                        {responseMode !== 'free-recall' ? (
+                          <div className="mt-2 rounded border border-slate-800 bg-slate-900 p-3">
+                            <div className="text-xs uppercase tracking-wide text-slate-500">
+                              User response
+                            </div>
+                            <div className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-200">
+                              {guidedResponses[rubric.id] || 'No guided response entered.'}
+                            </div>
+                          </div>
+                        ) : null}
+                        <div className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-300">
+                          {rubric.referenceAnswer ||
+                            'No reference answer has been set for this rubric item.'}
+                        </div>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {COVERAGE_OPTIONS.map((option) => (
+                            <button
+                              key={option.status}
+                              onClick={() =>
+                                onRubricCoverageChange([
+                                  ...rubricCoverage.filter(
+                                    (entry) => entry.rubricItemId !== rubric.id,
+                                  ),
+                                  { rubricItemId: rubric.id, status: option.status },
+                                ])
+                              }
+                              className={`rounded px-3 py-1.5 text-xs ${
+                                selected === option.status
+                                  ? 'bg-emerald-600 text-white'
+                                  : 'bg-slate-800 text-slate-300'
+                              }`}
+                            >
+                              {option.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+              {sourceText ? (
+                <details className="rounded border border-slate-800 bg-slate-900 p-4">
+                  <summary className="cursor-pointer text-xs uppercase tracking-wide text-slate-500">
+                    Exact Official Source Text
+                  </summary>
+                  <div className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-200">
+                    {sourceText}
+                  </div>
+                </details>
+              ) : null}
+              <section className="rounded border border-slate-800 bg-slate-900 p-4">
+                <div className="text-xs uppercase tracking-wide text-slate-500">
+                  Keywords / Concepts
+                </div>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {activeItem.concepts.map((concept) => (
+                    <label
+                      key={concept.id}
+                      className="flex items-center gap-2 rounded bg-slate-950 px-3 py-2 text-sm text-slate-300"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={coveredConceptIds.includes(concept.id)}
+                        onChange={() => onToggleConcept(concept.id)}
+                        className="h-4 w-4"
                       />
+                      <span>{concept.label}</span>
                     </label>
                   ))}
                 </div>
-              </details>
-            ) : null}
-          </div>
-        </section>
-      ) : null}
-      {!revealed ? (
-        <button
-          onClick={() => onRevealChange(true)}
-          className="rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500"
-        >
-          Reveal
-        </button>
-      ) : (
-        <div className="space-y-4">
-          {responseMode === 'guided' ? null : (
-            <section className="grid gap-4 lg:grid-cols-2">
-              <div className="rounded border border-slate-800 bg-slate-900 p-4">
-                <div className="text-xs uppercase tracking-wide text-slate-500">Your Answer</div>
-                <div className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-200">
-                  {answer || 'No answer entered.'}
-                </div>
-              </div>
-              <div className="rounded border border-slate-800 bg-slate-900 p-4">
-                <div className="text-xs uppercase tracking-wide text-slate-500">Reference Answer</div>
-                <div className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-200">
-                  {activeItem.prompt.referenceAnswer || activeItem.unit.referenceAnswer}
-                </div>
-              </div>
-            </section>
-          )}
-          <section className="rounded border border-slate-800 bg-slate-900 p-4">
-            <div className="text-xs uppercase tracking-wide text-slate-500">Answer Rubric</div>
-            <div className="mt-3 space-y-3">
-              {activeItem.rubrics.map((rubric) => {
-                const selected = rubricCoverage.find((entry) => entry.rubricItemId === rubric.id)?.status;
-                return (
-                  <div key={rubric.id} className="rounded border border-slate-800 bg-slate-950 p-3">
-                    <div className="font-medium text-slate-100">{rubric.prompt}</div>
-                    {responseMode !== 'free-recall' ? (
-                      <div className="mt-2 rounded border border-slate-800 bg-slate-900 p-3">
-                        <div className="text-xs uppercase tracking-wide text-slate-500">User response</div>
-                        <div className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-200">
-                          {guidedResponses[rubric.id] || 'No guided response entered.'}
-                        </div>
-                      </div>
-                    ) : null}
-                    <div className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-300">
-                      {rubric.referenceAnswer || 'No reference answer has been set for this rubric item.'}
-                    </div>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {COVERAGE_OPTIONS.map((option) => (
-                        <button
-                          key={option.status}
-                          onClick={() =>
-                            onRubricCoverageChange([
-                              ...rubricCoverage.filter((entry) => entry.rubricItemId !== rubric.id),
-                              { rubricItemId: rubric.id, status: option.status },
-                            ])
-                          }
-                          className={`rounded px-3 py-1.5 text-xs ${
-                            selected === option.status ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-300'
-                          }`}
-                        >
-                          {option.label}
-                        </button>
-                      ))}
-                    </div>
+              </section>
+              {!previewMode ? (
+                <div className="space-y-2">
+                  <div className="text-sm font-medium text-slate-200">
+                    How well did you remember this unit?
                   </div>
-                );
-              })}
+                  <div className="flex flex-wrap gap-2">
+                    {RATINGS.map(({ rating, label, className }) => (
+                      <button
+                        key={rating}
+                        onClick={() => onRate(rating)}
+                        disabled={ratingPending}
+                        title={previewByRating.get(rating)?.due}
+                        className={`min-w-24 rounded px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
+                      >
+                        <span className="block">{label}</span>
+                        <span className="mt-1 block text-xs font-normal text-white/80">
+                          {previewByRating.get(rating)?.intervalLabel ?? ''}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </div>
-          </section>
-          {sourceText ? (
-            <details className="rounded border border-slate-800 bg-slate-900 p-4">
-              <summary className="cursor-pointer text-xs uppercase tracking-wide text-slate-500">Exact Official Source Text</summary>
-              <div className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-200">{sourceText}</div>
-            </details>
-          ) : null}
-          <section className="rounded border border-slate-800 bg-slate-900 p-4">
-            <div className="text-xs uppercase tracking-wide text-slate-500">Keywords / Concepts</div>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              {activeItem.concepts.map((concept) => (
-                <label
-                  key={concept.id}
-                  className="flex items-center gap-2 rounded bg-slate-950 px-3 py-2 text-sm text-slate-300"
-                >
-                  <input
-                    type="checkbox"
-                    checked={coveredConceptIds.includes(concept.id)}
-                    onChange={() => onToggleConcept(concept.id)}
-                    className="h-4 w-4"
-                  />
-                  <span>{concept.label}</span>
-                </label>
-              ))}
-            </div>
-          </section>
-          {!previewMode ? (
-            <div className="space-y-2">
-              <div className="text-sm font-medium text-slate-200">How well did you remember this unit?</div>
-              <div className="flex flex-wrap gap-2">
-              {RATINGS.map(({ rating, label, className }) => (
-                <button
-                  key={rating}
-                  onClick={() => onRate(rating)}
-                  disabled={ratingPending}
-                  title={previewByRating.get(rating)?.due}
-                  className={`min-w-24 rounded px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
-                >
-                  <span className="block">{label}</span>
-                  <span className="mt-1 block text-xs font-normal text-white/80">
-                    {previewByRating.get(rating)?.intervalLabel ?? ''}
-                  </span>
-                </button>
-              ))}
-              </div>
-            </div>
-          ) : null}
-        </div>
-      )}
+          )}
+        </>
+      ) : null}
     </div>
   );
 };

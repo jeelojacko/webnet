@@ -5,19 +5,12 @@ import type {
   StudyPhase,
   StudyProgress,
   StudyPrompt,
+  StudyQueueReason,
   StudyRubricItem,
   StudySessionItem,
   StudyUnit,
 } from './studyTypes';
 import { createInitialProgress } from './studyScheduler';
-
-export type StudyQueueReason =
-  | 'source-review-required'
-  | 'learning-due'
-  | 'relearning-due'
-  | 'review-due'
-  | 'new'
-  | 'surprise-practice';
 
 export type StudyQueueItem = StudySessionItem & {
   reason: StudyQueueReason;
@@ -45,7 +38,7 @@ const promptRank = (prompt: StudyPrompt, phase: StudyPhase): number => {
   return 3;
 };
 
-const groupBy = <T,>(items: T[], keyFor: (_item: T) => string): Map<string, T[]> => {
+const groupBy = <T>(items: T[], keyFor: (_item: T) => string): Map<string, T[]> => {
   const grouped = new Map<string, T[]>();
   for (const item of items) {
     const key = keyFor(item);
@@ -62,12 +55,18 @@ const scheduleDueAt = (schedule: StudyFsrsSchedule | undefined): string | null =
 
 const isDue = (dueAt: string | null, nowIso: string): boolean => Boolean(dueAt && dueAt <= nowIso);
 
-const initializedState = (schedule: StudyFsrsSchedule | undefined): SerializedStudyFsrsCard['state'] | null => {
+const initializedState = (
+  schedule: StudyFsrsSchedule | undefined,
+): SerializedStudyFsrsCard['state'] | null => {
   if (!schedule?.initialized || !schedule.card) return null;
   return schedule.card.state;
 };
 
-const reasonFor = (unit: StudyUnit, progress: StudyProgress, nowIso: string): StudyQueueReason | null => {
+const reasonFor = (
+  unit: StudyUnit,
+  progress: StudyProgress,
+  nowIso: string,
+): StudyQueueReason | null => {
   if (unit.sourceReviewRequired || unit.sourceReferenceMissing) return 'source-review-required';
   const state = initializedState(progress.scheduling);
   const dueAt = scheduleDueAt(progress.scheduling);
@@ -138,10 +137,14 @@ const buildCandidate = ({
     unit,
     prompt,
     progress,
-    concepts: (conceptsByUnit.get(unit.id) ?? []).slice().sort((a, b) => a.label.localeCompare(b.label)),
+    concepts: (conceptsByUnit.get(unit.id) ?? [])
+      .slice()
+      .sort((a, b) => a.label.localeCompare(b.label)),
     rubrics: (rubricsByUnit.get(unit.id) ?? [])
       .slice()
-      .sort((a, b) => a.order - b.order || a.prompt.localeCompare(b.prompt) || a.id.localeCompare(b.id)),
+      .sort(
+        (a, b) => a.order - b.order || a.prompt.localeCompare(b.prompt) || a.id.localeCompare(b.id),
+      ),
     due: reason !== 'new' && reason !== 'surprise-practice',
     reason,
     dueAt,
@@ -176,7 +179,9 @@ export const buildStudyQueue = ({
     const reason = reasonFor(unit, entry, nowIso);
     const dueAt = scheduleDueAt(entry.scheduling);
     const queueReason =
-      includeSurprisePractice && surpriseIds.has(unit.id) && reason === null ? 'surprise-practice' : reason;
+      includeSurprisePractice && surpriseIds.has(unit.id) && reason === null
+        ? 'surprise-practice'
+        : reason;
     if (!queueReason) continue;
     const candidate = buildCandidate({
       unit,

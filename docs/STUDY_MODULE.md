@@ -306,7 +306,7 @@ Phase 3A has started the scheduler foundation without changing live Study sessio
 - `StudyClock` provides `systemStudyClock` for runtime and `fixedStudyClock` for deterministic tests.
 - Uninitialized schedules do not fabricate historical FSRS state. The first real counted rating will create a fresh card at the review timestamp; ambiguous legacy due dates are intended to be preserved separately as `legacyDueAt` in a later schema batch.
 
-The browser session rating transaction foundation and pure queue builder are in place; rating previews, live queue adoption, undo, and Study UI scheduling indicators are still pending Phase 3 batches.
+The browser session rating transaction foundation and pure queue builder are in place; undo, manual-practice/surprise-review counted-review controls, and broader Study UI scheduling indicators are still pending Phase 3 batches.
 
 The scheduled Study session rating path now uses a storage-level rated-attempt transaction:
 - one helper builds the immutable `StudyAttempt` and mutable `StudyProgress` update from the same fixed `now` timestamp
@@ -317,8 +317,10 @@ The scheduled Study session rating path now uses a storage-level rated-attempt t
 - the existing StudyPhase transition helper still determines `phaseAfter`; FSRS only determines the next scheduling due timestamp
 - IndexedDB writes attempt, progress, and draft deletion in one transaction with a stale-progress guard
 - the session route ignores duplicate rating submissions while a save is in flight and disables rating buttons during that save
+- the live scheduled Study session uses `buildStudyQueue`, so source-review-required items, due Learning/Relearning cards, due Review cards, capped New units, and optional surprise-practice reasons share the same deterministic queue model as the pure tests
+- source-review-required session items are surfaced before memory-review items, but the session hides recall/rating controls for those rows and routes the operator to the unit/source review workflow; source acknowledgement remains separate from FSRS memory scheduling
 
-Replacing the live session source with `buildStudyQueue`, manual-practice/surprise-review counted-review controls, source-review acknowledgement protections, undo, and scheduling dashboard/library UI remain pending.
+Manual-practice/surprise-review counted-review controls, undo, and scheduling dashboard/library UI remain pending.
 
 ## Phase 3 Queue Model
 `buildStudyQueue` is a pure/testable queue builder for the upcoming FSRS session workflow. It does not mutate progress, attempts, FSRS cards, source-review flags, or StudyPhase state.

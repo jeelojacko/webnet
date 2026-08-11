@@ -8,12 +8,7 @@ export type StudyDocumentKind =
 
 export type StudyPriority = 1 | 2 | 3 | 4 | 5;
 
-export type StudyPhase =
-  | 'unread'
-  | 'guided-recall'
-  | 'free-recall'
-  | 'application'
-  | 'maintenance';
+export type StudyPhase = 'unread' | 'guided-recall' | 'free-recall' | 'application' | 'maintenance';
 
 export type StudyPromptKind =
   | 'guided-recall'
@@ -24,7 +19,12 @@ export type StudyPromptKind =
 
 export type StudyRating = 'again' | 'hard' | 'good' | 'easy';
 
-export type StudyFileRole = 'raw-html' | 'pdf' | 'imported-source' | 'normalized-markdown' | 'backup';
+export type StudyFileRole =
+  | 'raw-html'
+  | 'pdf'
+  | 'imported-source'
+  | 'normalized-markdown'
+  | 'backup';
 
 export type StudyGeneratedFieldState = 'empty' | 'generated' | 'user-edited';
 
@@ -46,7 +46,12 @@ export type StudyRubricCategory =
   | 'related-provision'
   | 'custom';
 
-export type StudyUnitType = 'section' | 'whole-act' | 'survey-law-case' | 'custom-principle' | 'custom';
+export type StudyUnitType =
+  | 'section'
+  | 'whole-act'
+  | 'survey-law-case'
+  | 'custom-principle'
+  | 'custom';
 
 export type StudyResponseMode = 'guided' | 'free-recall' | 'hybrid';
 
@@ -231,6 +236,14 @@ export type StudyAttemptScheduling = {
   undoneAt?: string;
 };
 
+export type StudyQueueReason =
+  | 'source-review-required'
+  | 'learning-due'
+  | 'relearning-due'
+  | 'review-due'
+  | 'new'
+  | 'surprise-practice';
+
 export type StudyProgress = {
   unitId: string;
   phase: StudyPhase;
@@ -400,4 +413,6 @@ export type StudySessionItem = {
   concepts: StudyConcept[];
   rubrics: StudyRubricItem[];
   due: boolean;
+  reason?: StudyQueueReason;
+  dueAt?: string | null;
 };

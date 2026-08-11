@@ -5,7 +5,12 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createSeedStudyData } from '../../src/study/studySeed';
-import type { StudyAttempt, StudyDataSnapshot, StudyDraft, StudyProgress } from '../../src/study/studyTypes';
+import type {
+  StudyAttempt,
+  StudyDataSnapshot,
+  StudyDraft,
+  StudyProgress,
+} from '../../src/study/studyTypes';
 import { useStudyApp } from '../../src/study/useStudyApp';
 
 const storageState = vi.hoisted<{
@@ -32,9 +37,9 @@ vi.mock('../../src/study/studyStorage', () => ({
     })),
     saveDocument: vi.fn(),
     saveUnit: vi.fn(),
-  savePrompt: vi.fn(),
-  replaceUnitConcepts: vi.fn(),
-  replaceUnitRubrics: vi.fn(),
+    savePrompt: vi.fn(),
+    replaceUnitConcepts: vi.fn(),
+    replaceUnitRubrics: vi.fn(),
     saveProgress: vi.fn(async (progress: StudyProgress) => {
       storageState.progress = [
         ...storageState.progress.filter((entry) => entry.unitId !== progress.unitId),
@@ -44,22 +49,24 @@ vi.mock('../../src/study/studyStorage', () => ({
     saveAttempt: vi.fn(async (attempt: StudyAttempt) => {
       storageState.attempts = [...storageState.attempts, attempt];
     }),
-    saveRatedAttempt: vi.fn(async ({
-      attempt,
-      progress,
-      draftId,
-    }: {
-      attempt: StudyAttempt;
-      progress: StudyProgress;
-      draftId: string;
-    }) => {
-      storageState.attempts = [...storageState.attempts, attempt];
-      storageState.progress = [
-        ...storageState.progress.filter((entry) => entry.unitId !== progress.unitId),
+    saveRatedAttempt: vi.fn(
+      async ({
+        attempt,
         progress,
-      ];
-      storageState.drafts = storageState.drafts.filter((entry) => entry.id !== draftId);
-    }),
+        draftId,
+      }: {
+        attempt: StudyAttempt;
+        progress: StudyProgress;
+        draftId: string;
+      }) => {
+        storageState.attempts = [...storageState.attempts, attempt];
+        storageState.progress = [
+          ...storageState.progress.filter((entry) => entry.unitId !== progress.unitId),
+          progress,
+        ];
+        storageState.drafts = storageState.drafts.filter((entry) => entry.id !== draftId);
+      },
+    ),
     saveDraft: vi.fn(async (draft: StudyDraft) => {
       storageState.drafts = [
         ...storageState.drafts.filter((entry) => entry.id !== draft.id),
@@ -117,7 +124,13 @@ describe('study app hook persistence', () => {
   it('autosaves typed answers and clears the draft after rating', async () => {
     const hookValue: { current: HookValue | null } = { current: null };
     await act(async () => {
-      root?.render(<HookHarness onValue={(value) => { hookValue.current = value; }} />);
+      root?.render(
+        <HookHarness
+          onValue={(value) => {
+            hookValue.current = value;
+          }}
+        />,
+      );
     });
     await act(async () => {
       await vi.runAllTimersAsync();
@@ -140,7 +153,12 @@ describe('study app hook persistence', () => {
       currentHookValue?.setRevealed(true);
       currentHookValue?.toggleConcept(currentHookValue.activeItem?.concepts[0]?.id ?? '');
     });
-    expect(hookValue.current?.ratingPreviews.map((preview) => preview.rating)).toEqual(['again', 'hard', 'good', 'easy']);
+    expect(hookValue.current?.ratingPreviews.map((preview) => preview.rating)).toEqual([
+      'again',
+      'hard',
+      'good',
+      'easy',
+    ]);
     expect(storageState.attempts).toEqual([]);
     await act(async () => {
       await hookValue.current?.rateActiveItem('good');
@@ -154,7 +172,13 @@ describe('study app hook persistence', () => {
   it('persists guided responses and rubric coverage with attempts', async () => {
     const hookValue: { current: HookValue | null } = { current: null };
     await act(async () => {
-      root?.render(<HookHarness onValue={(value) => { hookValue.current = value; }} />);
+      root?.render(
+        <HookHarness
+          onValue={(value) => {
+            hookValue.current = value;
+          }}
+        />,
+      );
     });
     await act(async () => {
       await vi.runAllTimersAsync();
@@ -184,7 +208,13 @@ describe('study app hook persistence', () => {
   it('ignores duplicate rating submissions while a rating is being saved', async () => {
     const hookValue: { current: HookValue | null } = { current: null };
     await act(async () => {
-      root?.render(<HookHarness onValue={(value) => { hookValue.current = value; }} />);
+      root?.render(
+        <HookHarness
+          onValue={(value) => {
+            hookValue.current = value;
+          }}
+        />,
+      );
     });
     await act(async () => {
       await vi.runAllTimersAsync();
@@ -204,10 +234,48 @@ describe('study app hook persistence', () => {
     expect(storageState.attempts[0]?.scheduling?.cardAfter?.reps).toBe(1);
   });
 
+  it('surfaces source-review items first without allowing memory ratings', async () => {
+    storageState.snapshot = {
+      ...createSeedStudyData('2026-08-01T10:00:00.000Z'),
+      units: createSeedStudyData('2026-08-01T10:00:00.000Z').units.map((unit, index) =>
+        index === 2 ? { ...unit, sourceReviewRequired: true, priority: 5 as const } : unit,
+      ),
+    };
+    const hookValue: { current: HookValue | null } = { current: null };
+    await act(async () => {
+      root?.render(
+        <HookHarness
+          onValue={(value) => {
+            hookValue.current = value;
+          }}
+        />,
+      );
+    });
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
+
+    expect(hookValue.current?.activeItem?.reason).toBe('source-review-required');
+    await act(async () => {
+      await hookValue.current?.rateActiveItem('good');
+    });
+
+    expect(storageState.attempts).toEqual([]);
+    expect(hookValue.current?.statusMessage).toBe(
+      'Review the changed source before rating this study unit.',
+    );
+  });
+
   it('deletes all study data when requested', async () => {
     const hookValue: { current: HookValue | null } = { current: null };
     await act(async () => {
-      root?.render(<HookHarness onValue={(value) => { hookValue.current = value; }} />);
+      root?.render(
+        <HookHarness
+          onValue={(value) => {
+            hookValue.current = value;
+          }}
+        />,
+      );
     });
     await act(async () => {
       await vi.runAllTimersAsync();

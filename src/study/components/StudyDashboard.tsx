@@ -13,8 +13,25 @@ const Stat = ({ label, value }: { label: string; value: string | number }) => (
   </div>
 );
 
+const dueReviewReasons = new Set(['learning-due', 'relearning-due', 'review-due']);
+
+const sessionItemLabel = (item: StudySessionItem): string => {
+  if (item.reason === 'source-review-required') return 'Source review required';
+  if (item.reason === 'learning-due') return 'Learning due';
+  if (item.reason === 'relearning-due') return 'Relearning due';
+  if (item.reason === 'review-due') return 'Due review';
+  if (item.reason === 'new') return 'New';
+  if (item.reason === 'surprise-practice') return 'Surprise practice';
+  return item.due ? 'Due review' : 'New or upcoming';
+};
+
 const StudyDashboard = ({ data, sessionItems, onNavigate }: StudyDashboardProps) => {
-  const dueCount = sessionItems.filter((item) => item.due).length;
+  const dueCount = sessionItems.filter((item) =>
+    item.reason ? dueReviewReasons.has(item.reason) : item.due,
+  ).length;
+  const sourceReviewCount = sessionItems.filter(
+    (item) => item.reason === 'source-review-required',
+  ).length;
   const attemptCount = data.attempts.length;
   const phaseCounts = data.progress.reduce<Record<string, number>>((acc, entry) => {
     acc[entry.phase] = (acc[entry.phase] ?? 0) + 1;
@@ -35,10 +52,11 @@ const StudyDashboard = ({ data, sessionItems, onNavigate }: StudyDashboardProps)
           Start Session
         </button>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <Stat label="Documents" value={data.documents.length} />
         <Stat label="Study Units" value={data.units.length} />
         <Stat label="Due Reviews" value={dueCount} />
+        <Stat label="Source Review" value={sourceReviewCount} />
         <Stat label="Attempts" value={attemptCount} />
       </div>
       <section className="rounded border border-slate-800 bg-slate-900">
@@ -67,8 +85,7 @@ const StudyDashboard = ({ data, sessionItems, onNavigate }: StudyDashboardProps)
             >
               <span className="text-sm font-medium text-slate-100">{item.unit.title}</span>
               <span className="text-xs text-slate-500">
-                {item.due ? 'Due review' : 'New or upcoming'} · {item.progress.phase} · priority{' '}
-                {item.unit.priority}
+                {sessionItemLabel(item)} · {item.progress.phase} · priority {item.unit.priority}
               </span>
             </button>
           ))}

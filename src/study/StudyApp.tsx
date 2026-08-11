@@ -43,11 +43,7 @@ const StudyApp = () => {
     }
     if (unitPreviewId) {
       return (
-        <StudyPreviewPage
-          data={study.data}
-          unitId={unitPreviewId}
-          onNavigate={study.navigate}
-        />
+        <StudyPreviewPage data={study.data} unitId={unitPreviewId} onNavigate={study.navigate} />
       );
     }
     if (study.routePath === '/study/library') {
@@ -56,10 +52,20 @@ const StudyApp = () => {
           data={study.data}
           onSelectDocument={study.selectDocument}
           onCreateCustomUnit={study.createCustomUnit}
-          onEditUnit={(unitId) => study.navigate(`/study/unit/${encodeURIComponent(unitId)}/edit`, { returnTo: '/study/library' })}
-          onPreviewUnit={(unitId) => study.navigate(`/study/unit/${encodeURIComponent(unitId)}/preview`, { returnTo: '/study/library?tab=units' })}
+          onEditUnit={(unitId) =>
+            study.navigate(`/study/unit/${encodeURIComponent(unitId)}/edit`, {
+              returnTo: '/study/library',
+            })
+          }
+          onPreviewUnit={(unitId) =>
+            study.navigate(`/study/unit/${encodeURIComponent(unitId)}/preview`, {
+              returnTo: '/study/library?tab=units',
+            })
+          }
           onOpenProvision={(documentId, sourceKey) =>
-            study.navigate(`/study/document/${encodeURIComponent(documentId)}#${encodeURIComponent(sourceKey)}`)
+            study.navigate(
+              `/study/document/${encodeURIComponent(documentId)}#${encodeURIComponent(sourceKey)}`,
+            )
           }
           onDeleteUnit={study.deleteUnit}
           onDuplicateUnit={study.duplicateUnit}
@@ -105,6 +111,11 @@ const StudyApp = () => {
           ratingPending={study.ratingPending}
           ratingPreviews={study.ratingPreviews}
           onRate={study.rateActiveItem}
+          onOpenUnit={(unitId) =>
+            study.navigate(`/study/unit/${encodeURIComponent(unitId)}/edit`, {
+              returnTo: '/study/session',
+            })
+          }
         />
       );
     }
@@ -140,7 +151,8 @@ const StudyApp = () => {
       activePath={study.routePath}
       sidebarCollapsed={Boolean(study.data?.settings.studySidebarCollapsed)}
       onSidebarCollapsedChange={(collapsed) => {
-        if (study.data) void study.saveSettings({ ...study.data.settings, studySidebarCollapsed: collapsed });
+        if (study.data)
+          void study.saveSettings({ ...study.data.settings, studySidebarCollapsed: collapsed });
       }}
       onNavigate={study.navigate}
     >

@@ -19,7 +19,8 @@ import {
 import { normalizeConceptLabelKey } from './studyConceptGeneration';
 import { generateStudyRubric } from './studyRubricGeneration';
 import { createDefaultStudySettings } from './studySeed';
-import { buildSessionItems, createInitialProgress, markReadingComplete } from './studyScheduler';
+import { createInitialProgress, markReadingComplete } from './studyScheduler';
+import { buildStudyQueue } from './studyQueue';
 import { createStudyStorage, STUDY_SCHEMA_VERSION } from './studyStorage';
 import { buildRatedStudyAttempt, buildStudyRatingPreviews } from './studyReviewTransaction';
 import type {
@@ -69,7 +70,8 @@ export const useStudyApp = () => {
   const [statusMessage, setStatusMessage] = useState('');
   const [importText, setImportText] = useState('');
   const [officialPackageText, setOfficialPackageText] = useState('');
-  const [officialPackagePreview, setOfficialPackagePreview] = useState<OfficialContentPreview | null>(null);
+  const [officialPackagePreview, setOfficialPackagePreview] =
+    useState<OfficialContentPreview | null>(null);
   const ratingInFlightRef = useRef(false);
 
   useEffect(() => {
@@ -110,14 +112,14 @@ export const useStudyApp = () => {
 
   const sessionItems = useMemo<StudySessionItem[]>(() => {
     if (!data) return [];
-    return buildSessionItems({
+    return buildStudyQueue({
       units: data.units,
       prompts: data.prompts,
       concepts: data.concepts,
       rubrics: data.rubrics,
       progress: data.progress,
-      nowIso: new Date().toISOString(),
-      newPriorityLimit: data.settings.newUnitPriorityLimit,
+      now: new Date(),
+      newUnitsPerSession: data.settings.fsrsConfig?.userSettings.newUnitsPerSession ?? 5,
       limit: 25,
     });
   }, [data]);
@@ -145,7 +147,8 @@ export const useStudyApp = () => {
   }, [activeItem, data, ratingNowIso, revealed]);
 
   useEffect(() => {
-    const hasDraftAnswer = Boolean(answer) || Object.values(guidedResponses).some((value) => value.trim());
+    const hasDraftAnswer =
+      Boolean(answer) || Object.values(guidedResponses).some((value) => value.trim());
     if (!activeItem || !hasDraftAnswer) return;
     const nowIso = new Date().toISOString();
     const draft: StudyDraft = {
@@ -200,10 +203,24 @@ export const useStudyApp = () => {
   );
 
   const saveUnitAuthoring = useCallback(
-    async ({ unit, prompt, concepts, rubrics }: { unit: StudyUnit; prompt: StudyPrompt; concepts: StudyConcept[]; rubrics: StudyRubricItem[] }) => {
+    async ({
+      unit,
+      prompt,
+      concepts,
+      rubrics,
+    }: {
+      unit: StudyUnit;
+      prompt: StudyPrompt;
+      concepts: StudyConcept[];
+      rubrics: StudyRubricItem[];
+    }) => {
       const nowIso = new Date().toISOString();
       const updatedUnit = { ...unit, updatedAt: nowIso };
-      const updatedPrompt = { ...prompt, referenceAnswer: updatedUnit.referenceAnswer, updatedAt: nowIso };
+      const updatedPrompt = {
+        ...prompt,
+        referenceAnswer: updatedUnit.referenceAnswer,
+        updatedAt: nowIso,
+      };
       const updatedConcepts = concepts.map((concept) => ({ ...concept, updatedAt: nowIso }));
       const updatedRubrics = rubrics.map((rubric) => ({ ...rubric, updatedAt: nowIso }));
       await storage.saveUnit(updatedUnit);
@@ -237,7 +254,9 @@ export const useStudyApp = () => {
       if (!data) return;
       const unit = data.units.find((entry) => entry.id === unitId);
       if (!unit?.sourceReferences?.length) return;
-      const selectedKeys = new Set(unit.sourceReferences.map((reference) => `${reference.documentId}::${reference.sourceKey}`));
+      const selectedKeys = new Set(
+        unit.sourceReferences.map((reference) => `${reference.documentId}::${reference.sourceKey}`),
+      );
       const sourceComponents = data.legalComponents.filter((component) =>
         selectedKeys.has(`${component.documentId}::${component.sourceKey}`),
       );
@@ -248,14 +267,20 @@ export const useStudyApp = () => {
       const nowIso = new Date().toISOString();
       const documentTitle = legalDocument?.officialTitle ?? studyDocument.title;
       const currentState = unit.generatedContentState ?? {
-        title: unit.title ? 'user-edited' as const : 'empty' as const,
+        title: unit.title ? ('user-edited' as const) : ('empty' as const),
         question: 'empty' as const,
-        referenceAnswer: unit.referenceAnswer ? 'user-edited' as const : 'empty' as const,
-        editableSummary: unit.editableSummary ? 'user-edited' as const : 'empty' as const,
-        concepts: data.concepts.some((concept) => concept.unitId === unit.id) ? 'user-edited' as const : 'empty' as const,
-        rubrics: data.rubrics.some((rubric) => rubric.unitId === unit.id) ? 'user-edited' as const : 'empty' as const,
+        referenceAnswer: unit.referenceAnswer ? ('user-edited' as const) : ('empty' as const),
+        editableSummary: unit.editableSummary ? ('user-edited' as const) : ('empty' as const),
+        concepts: data.concepts.some((concept) => concept.unitId === unit.id)
+          ? ('user-edited' as const)
+          : ('empty' as const),
+        rubrics: data.rubrics.some((rubric) => rubric.unitId === unit.id)
+          ? ('user-edited' as const)
+          : ('empty' as const),
       };
-      const title = unit.title.trim() ? unit.title : generateStudyTitle({ documentTitle, selectedSources: sourceComponents });
+      const title = unit.title.trim()
+        ? unit.title
+        : generateStudyTitle({ documentTitle, selectedSources: sourceComponents });
       const referenceAnswer =
         unit.referenceAnswer.trim() || !legalDocument
           ? unit.referenceAnswer
@@ -269,12 +294,19 @@ export const useStudyApp = () => {
         title,
         referenceAnswer,
         sourceCitationSummary: legalDocument
-          ? generateSourceCitationSummary({ document: legalDocument, selectedSources: sourceComponents })
+          ? generateSourceCitationSummary({
+              document: legalDocument,
+              selectedSources: sourceComponents,
+            })
           : unit.sourceCitationSummary,
         generatedContentState: {
           ...currentState,
           title: unit.title.trim() ? currentState.title : 'generated',
-          referenceAnswer: unit.referenceAnswer.trim() ? currentState.referenceAnswer : referenceAnswer ? 'generated' : 'empty',
+          referenceAnswer: unit.referenceAnswer.trim()
+            ? currentState.referenceAnswer
+            : referenceAnswer
+              ? 'generated'
+              : 'empty',
         },
         updatedAt: nowIso,
       };
@@ -284,12 +316,15 @@ export const useStudyApp = () => {
         selectedSources: sourceComponents,
         unitType: unit.unitType ?? 'section',
       });
-      const existingPrompt = data.prompts.find((entry) => entry.unitId === unit.id && entry.kind === 'guided-recall')
-        ?? data.prompts.find((entry) => entry.unitId === unit.id);
+      const existingPrompt =
+        data.prompts.find((entry) => entry.unitId === unit.id && entry.kind === 'guided-recall') ??
+        data.prompts.find((entry) => entry.unitId === unit.id);
       const generatedQuestion = generateStudyQuestion({
         documentTitle,
         selectedSources: sourceComponents,
-        rubricCategories: (existingRubrics.length ? existingRubrics : generatedRubrics).map((rubric) => rubric.category),
+        rubricCategories: (existingRubrics.length ? existingRubrics : generatedRubrics).map(
+          (rubric) => rubric.category,
+        ),
       }).question;
       const prompt: StudyPrompt = existingPrompt
         ? {
@@ -311,25 +346,29 @@ export const useStudyApp = () => {
       const existingConcepts = data.concepts.filter((concept) => concept.unitId === unit.id);
       const concepts = existingConcepts.length
         ? existingConcepts
-        : suggestRequiredConcepts(sourceComponents).map((label, index): StudyConcept => ({
-            id: `${unit.id}-concept-${index + 1}`,
-            unitId: unit.id,
-            label,
-            required: true,
-            origin: 'generated',
-            order: index,
-            createdAt: nowIso,
-            updatedAt: nowIso,
-          }));
+        : suggestRequiredConcepts(sourceComponents).map(
+            (label, index): StudyConcept => ({
+              id: `${unit.id}-concept-${index + 1}`,
+              unitId: unit.id,
+              label,
+              required: true,
+              origin: 'generated',
+              order: index,
+              createdAt: nowIso,
+              updatedAt: nowIso,
+            }),
+          );
       const rubrics = existingRubrics.length
         ? existingRubrics
-        : generatedRubrics.map((rubric, index): StudyRubricItem => ({
-            ...rubric,
-            id: `${unit.id}-rubric-${index + 1}`,
-            unitId: unit.id,
-            createdAt: nowIso,
-            updatedAt: nowIso,
-          }));
+        : generatedRubrics.map(
+            (rubric, index): StudyRubricItem => ({
+              ...rubric,
+              id: `${unit.id}-rubric-${index + 1}`,
+              unitId: unit.id,
+              createdAt: nowIso,
+              updatedAt: nowIso,
+            }),
+          );
       await storage.saveUnit(updatedUnit);
       await storage.savePrompt({ ...prompt, conceptIds: concepts.map((concept) => concept.id) });
       if (existingConcepts.length === 0) await storage.replaceUnitConcepts(unit.id, concepts);
@@ -337,7 +376,10 @@ export const useStudyApp = () => {
       setData({
         ...data,
         units: replaceById(data.units, updatedUnit),
-        prompts: replaceById(data.prompts, { ...prompt, conceptIds: concepts.map((concept) => concept.id) }),
+        prompts: replaceById(data.prompts, {
+          ...prompt,
+          conceptIds: concepts.map((concept) => concept.id),
+        }),
         concepts: existingConcepts.length ? data.concepts : [...data.concepts, ...concepts],
         rubrics: existingRubrics.length ? data.rubrics : [...data.rubrics, ...rubrics],
       });
@@ -350,8 +392,7 @@ export const useStudyApp = () => {
     async (unitId: string) => {
       if (!data) return;
       const existing =
-        data.progress.find((entry) => entry.unitId === unitId) ??
-        activeItem?.progress;
+        data.progress.find((entry) => entry.unitId === unitId) ?? activeItem?.progress;
       if (!existing) return;
       const progress = markReadingComplete(existing, new Date().toISOString());
       await storage.saveProgress(progress);
@@ -371,6 +412,10 @@ export const useStudyApp = () => {
   const rateActiveItem = useCallback(
     async (rating: StudyRating) => {
       if (!data || !activeItem || ratingInFlightRef.current) return;
+      if (activeItem.reason === 'source-review-required') {
+        setStatusMessage('Review the changed source before rating this study unit.');
+        return;
+      }
       ratingInFlightRef.current = true;
       setRatingPending(true);
       const now = ratingNowIso ? new Date(ratingNowIso) : new Date();
@@ -385,7 +430,8 @@ export const useStudyApp = () => {
         guidedResponses,
         coveredConceptIds,
         rubricCoverage,
-        startedAt: data.drafts.find((entry) => entry.id === ACTIVE_DRAFT_ID)?.startedAt ?? now.toISOString(),
+        startedAt:
+          data.drafts.find((entry) => entry.id === ACTIVE_DRAFT_ID)?.startedAt ?? now.toISOString(),
       });
       try {
         await storage.saveRatedAttempt({
@@ -412,7 +458,18 @@ export const useStudyApp = () => {
         setRatingPending(false);
       }
     },
-    [activeItem, answer, coveredConceptIds, data, guidedResponses, ratingNowIso, responseMode, rubricCoverage, sessionItems.length, storage],
+    [
+      activeItem,
+      answer,
+      coveredConceptIds,
+      data,
+      guidedResponses,
+      ratingNowIso,
+      responseMode,
+      rubricCoverage,
+      sessionItems.length,
+      storage,
+    ],
   );
 
   const exportText = useMemo(() => (data ? exportStudyData(data) : ''), [data]);
@@ -593,7 +650,9 @@ export const useStudyApp = () => {
       const source = data.units.find((unit) => unit.id === unitId);
       if (!source) return;
       const nowIso = new Date().toISOString();
-      const duplicateId = createId(source.sourceMode === 'custom' ? 'unit-custom-copy' : 'unit-source-copy');
+      const duplicateId = createId(
+        source.sourceMode === 'custom' ? 'unit-custom-copy' : 'unit-source-copy',
+      );
       const unit: StudyUnit = {
         ...source,
         id: duplicateId,
@@ -609,40 +668,51 @@ export const useStudyApp = () => {
         .filter((concept) => concept.unitId === unitId)
         .slice()
         .sort((a, b) => a.order - b.order || a.label.localeCompare(b.label));
-      const concepts = sourceConcepts.map((concept, index): StudyConcept => ({
-        ...concept,
-        id: `${duplicateId}-concept-${index + 1}`,
-        unitId: duplicateId,
-        order: index,
-        createdAt: nowIso,
-        updatedAt: nowIso,
-      }));
-      const conceptIdByKey = new Map(
-        sourceConcepts.map((concept, index) => [normalizeConceptLabelKey(concept.label), concepts[index].id]),
-      );
-      const prompts = sourcePrompts.map((prompt, index): StudyPrompt => ({
-        ...prompt,
-        id: `${duplicateId}-${prompt.kind}-${index + 1}`,
-        unitId: duplicateId,
-        conceptIds: prompt.conceptIds
-          .map((conceptId) => sourceConcepts.find((concept) => concept.id === conceptId))
-          .map((concept) => (concept ? conceptIdByKey.get(normalizeConceptLabelKey(concept.label)) : undefined))
-          .filter((conceptId): conceptId is string => Boolean(conceptId)),
-        createdAt: nowIso,
-        updatedAt: nowIso,
-      }));
-      const rubrics = data.rubrics
-        .filter((rubric) => rubric.unitId === unitId)
-        .slice()
-        .sort((a, b) => a.order - b.order || a.prompt.localeCompare(b.prompt))
-        .map((rubric, index): StudyRubricItem => ({
-          ...rubric,
-          id: `${duplicateId}-rubric-${index + 1}`,
+      const concepts = sourceConcepts.map(
+        (concept, index): StudyConcept => ({
+          ...concept,
+          id: `${duplicateId}-concept-${index + 1}`,
           unitId: duplicateId,
           order: index,
           createdAt: nowIso,
           updatedAt: nowIso,
-        }));
+        }),
+      );
+      const conceptIdByKey = new Map(
+        sourceConcepts.map((concept, index) => [
+          normalizeConceptLabelKey(concept.label),
+          concepts[index].id,
+        ]),
+      );
+      const prompts = sourcePrompts.map(
+        (prompt, index): StudyPrompt => ({
+          ...prompt,
+          id: `${duplicateId}-${prompt.kind}-${index + 1}`,
+          unitId: duplicateId,
+          conceptIds: prompt.conceptIds
+            .map((conceptId) => sourceConcepts.find((concept) => concept.id === conceptId))
+            .map((concept) =>
+              concept ? conceptIdByKey.get(normalizeConceptLabelKey(concept.label)) : undefined,
+            )
+            .filter((conceptId): conceptId is string => Boolean(conceptId)),
+          createdAt: nowIso,
+          updatedAt: nowIso,
+        }),
+      );
+      const rubrics = data.rubrics
+        .filter((rubric) => rubric.unitId === unitId)
+        .slice()
+        .sort((a, b) => a.order - b.order || a.prompt.localeCompare(b.prompt))
+        .map(
+          (rubric, index): StudyRubricItem => ({
+            ...rubric,
+            id: `${duplicateId}-rubric-${index + 1}`,
+            unitId: duplicateId,
+            order: index,
+            createdAt: nowIso,
+            updatedAt: nowIso,
+          }),
+        );
       const progress = createInitialProgress(duplicateId, nowIso);
       const next: StudyDataSnapshot = {
         ...data,
