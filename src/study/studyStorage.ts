@@ -84,6 +84,12 @@ export interface StudyStorage {
   replaceUnitRubrics: (_unitId: string, _rubrics: StudyRubricItem[]) => Promise<void>;
   saveProgress: (_progress: StudyProgress) => Promise<void>;
   saveAttempt: (_attempt: StudyAttempt) => Promise<void>;
+  saveRatedAttempt: (_options: {
+    attempt: StudyAttempt;
+    progress: StudyProgress;
+    draftId: string;
+    expectedProgressUpdatedAt?: string;
+  }) => Promise<void>;
   saveDraft: (_draft: StudyDraft) => Promise<void>;
   clearDraft: (_draftId: string) => Promise<void>;
   saveSettings: (_settings: StudySettings) => Promise<void>;
@@ -381,6 +387,24 @@ export const createStudyStorage = (): StudyStorage => ({
     const db = await openStudyDatabase();
     try {
       await putRecord(db, 'attempts', attempt);
+    } finally {
+      db.close();
+    }
+  },
+  async saveRatedAttempt({ attempt, progress, draftId, expectedProgressUpdatedAt }) {
+    const db = await openStudyDatabase();
+    try {
+      const transaction = db.transaction(['attempts', 'progress', 'drafts'], 'readwrite');
+      const progressStore = transaction.objectStore('progress');
+      const existing = await requestToPromise(progressStore.get(progress.unitId) as IDBRequest<StudyProgress | undefined>);
+      if (expectedProgressUpdatedAt && existing && existing.updatedAt !== expectedProgressUpdatedAt) {
+        transaction.abort();
+        throw new Error('Study progress changed before the rating could be saved.');
+      }
+      transaction.objectStore('attempts').put(attempt);
+      progressStore.put(progress);
+      transaction.objectStore('drafts').delete(draftId);
+      await transactionDone(transaction);
     } finally {
       db.close();
     }

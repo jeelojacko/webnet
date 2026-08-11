@@ -102,6 +102,7 @@ const StudyApp = () => {
           onToggleConcept={study.toggleConcept}
           rubricCoverage={study.rubricCoverage}
           onRubricCoverageChange={study.setRubricCoverage}
+          ratingPending={study.ratingPending}
           onRate={study.rateActiveItem}
         />
       );

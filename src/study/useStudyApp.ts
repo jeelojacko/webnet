@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { exportStudyData, parseStudyImport } from './studyExportImport';
 import type { NbLawContentPackage } from './content/nbLawTypes';
 import {
@@ -19,8 +19,9 @@ import {
 import { normalizeConceptLabelKey } from './studyConceptGeneration';
 import { generateStudyRubric } from './studyRubricGeneration';
 import { createDefaultStudySettings } from './studySeed';
-import { buildSessionItems, createInitialProgress, markReadingComplete, updateProgressAfterAttempt } from './studyScheduler';
+import { buildSessionItems, createInitialProgress, markReadingComplete } from './studyScheduler';
 import { createStudyStorage, STUDY_SCHEMA_VERSION } from './studyStorage';
+import { buildRatedStudyAttempt } from './studyReviewTransaction';
 import type {
   StudyAttempt,
   StudyDataSnapshot,
@@ -63,10 +64,12 @@ export const useStudyApp = () => {
   const [revealed, setRevealed] = useState(false);
   const [coveredConceptIds, setCoveredConceptIds] = useState<string[]>([]);
   const [rubricCoverage, setRubricCoverage] = useState<StudyRubricCoverage[]>([]);
+  const [ratingPending, setRatingPending] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
   const [importText, setImportText] = useState('');
   const [officialPackageText, setOfficialPackageText] = useState('');
   const [officialPackagePreview, setOfficialPackagePreview] = useState<OfficialContentPreview | null>(null);
+  const ratingInFlightRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -352,43 +355,46 @@ export const useStudyApp = () => {
 
   const rateActiveItem = useCallback(
     async (rating: StudyRating) => {
-      if (!data || !activeItem) return;
-      const nowIso = new Date().toISOString();
-      const attempt: StudyAttempt = {
-        id: createId('attempt'),
-        unitId: activeItem.unit.id,
-        promptId: activeItem.prompt.id,
-        phase: activeItem.progress.phase,
+      if (!data || !activeItem || ratingInFlightRef.current) return;
+      ratingInFlightRef.current = true;
+      setRatingPending(true);
+      const now = new Date();
+      const { attempt, progress } = buildRatedStudyAttempt({
+        data,
+        item: activeItem,
+        rating,
+        now,
+        attemptId: createId('attempt'),
         answer,
         responseMode,
         guidedResponses,
         coveredConceptIds,
         rubricCoverage,
-        rating,
-        startedAt: data.drafts.find((entry) => entry.id === ACTIVE_DRAFT_ID)?.startedAt ?? nowIso,
-        revealedAt: nowIso,
-        completedAt: nowIso,
-      };
-      const progress = updateProgressAfterAttempt({
-        progress: activeItem.progress,
-        attempt,
-        rules: data.settings.phaseRules,
+        startedAt: data.drafts.find((entry) => entry.id === ACTIVE_DRAFT_ID)?.startedAt ?? now.toISOString(),
       });
-      await storage.saveAttempt(attempt);
-      await storage.saveProgress(progress);
-      await storage.clearDraft(ACTIVE_DRAFT_ID);
-      setData({
-        ...data,
-        attempts: [...data.attempts, attempt],
-        progress: replaceProgress(data.progress, progress),
-        drafts: data.drafts.filter((entry) => entry.id !== ACTIVE_DRAFT_ID),
-      });
-      setAnswer('');
-      setGuidedResponses({});
-      setRevealed(false);
-      setCoveredConceptIds([]);
-      setRubricCoverage([]);
-      setActiveItemIndex((index) => Math.min(index + 1, Math.max(sessionItems.length - 1, 0)));
+      try {
+        await storage.saveRatedAttempt({
+          attempt,
+          progress,
+          draftId: ACTIVE_DRAFT_ID,
+          expectedProgressUpdatedAt: activeItem.progress.updatedAt,
+        });
+        setData({
+          ...data,
+          attempts: [...data.attempts, attempt],
+          progress: replaceProgress(data.progress, progress),
+          drafts: data.drafts.filter((entry) => entry.id !== ACTIVE_DRAFT_ID),
+        });
+        setAnswer('');
+        setGuidedResponses({});
+        setRevealed(false);
+        setCoveredConceptIds([]);
+        setRubricCoverage([]);
+        setActiveItemIndex((index) => Math.min(index + 1, Math.max(sessionItems.length - 1, 0)));
+      } finally {
+        ratingInFlightRef.current = false;
+        setRatingPending(false);
+      }
     },
     [activeItem, answer, coveredConceptIds, data, guidedResponses, responseMode, rubricCoverage, sessionItems.length, storage],
   );
@@ -482,18 +488,7 @@ export const useStudyApp = () => {
       await storage.savePrompt(prompt);
       await storage.replaceUnitConcepts(unit.id, concepts);
       await storage.replaceUnitRubrics(unit.id, rubrics);
-      const progress = {
-        unitId: unit.id,
-        phase: 'unread' as const,
-        dueAt: unit.createdAt,
-        lastStudiedAt: null,
-        successfulGuidedRecallDays: [],
-        successfulFreeRecallDays: [],
-        applicationSuccessCount: 0,
-        reviewCount: 0,
-        createdAt: unit.createdAt,
-        updatedAt: unit.createdAt,
-      };
+      const progress = createInitialProgress(unit.id, unit.createdAt);
       await storage.saveProgress(progress);
       setData({
         ...data,
@@ -677,6 +672,7 @@ export const useStudyApp = () => {
     toggleConcept,
     rubricCoverage,
     setRubricCoverage,
+    ratingPending,
     rateActiveItem,
     completeReading,
     activeItemIndex,

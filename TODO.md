@@ -13,7 +13,8 @@
     - [x] Build a pure Study queue model with source-review-required first, due Learning/Relearning, due/overdue Review, limited New units, and optional surprise practice outside normal scheduling.
     - [x] Add queue ordering, due-boundary, new-unit-limit, and deterministic tie-break tests.
   - [ ] Batch 3D - session rating persistence:
-    - [ ] Wire Again/Hard/Good/Easy into atomic progress plus attempt writes with idempotency/double-click guards, while keeping StudyPhase transition logic independent.
+    - [x] Wire Again/Hard/Good/Easy into atomic progress plus attempt writes with idempotency/double-click guards, while keeping StudyPhase transition logic independent for the scheduled Study session path.
+    - [ ] Add rating previews and explicit session-source queue adoption around the scheduled Study session path.
     - [ ] Keep Preview, default Manual Practice, default Surprise Practice, and source acknowledgement non-mutating for FSRS; add focused session tests.
   - [ ] Batch 3E - UI integration:
     - [ ] Add rating previews, dashboard scheduling counts, Library scheduling badges/filters/sort, unit-editor read-only scheduling panel, session completion summary, and dev-only diagnostics.

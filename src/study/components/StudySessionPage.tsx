@@ -20,6 +20,7 @@ type StudySessionPageProps = {
   onToggleConcept: (_conceptId: string) => void;
   rubricCoverage: StudyRubricCoverage[];
   onRubricCoverageChange: (_coverage: StudyRubricCoverage[]) => void;
+  ratingPending?: boolean;
   onRate: (_rating: StudyRating) => Promise<void>;
   previewMode?: boolean;
   sourceText?: string;
@@ -58,6 +59,7 @@ const StudySessionPage = ({
   onToggleConcept,
   rubricCoverage,
   onRubricCoverageChange,
+  ratingPending = false,
   onRate,
   previewMode = false,
   sourceText,
@@ -251,7 +253,8 @@ const StudySessionPage = ({
                 <button
                   key={rating}
                   onClick={() => onRate(rating)}
-                  className={`rounded px-4 py-2 text-sm font-medium text-white ${className}`}
+                  disabled={ratingPending}
+                  className={`rounded px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
                 >
                   {label}
                 </button>

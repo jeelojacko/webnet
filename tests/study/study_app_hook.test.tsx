@@ -44,6 +44,22 @@ vi.mock('../../src/study/studyStorage', () => ({
     saveAttempt: vi.fn(async (attempt: StudyAttempt) => {
       storageState.attempts = [...storageState.attempts, attempt];
     }),
+    saveRatedAttempt: vi.fn(async ({
+      attempt,
+      progress,
+      draftId,
+    }: {
+      attempt: StudyAttempt;
+      progress: StudyProgress;
+      draftId: string;
+    }) => {
+      storageState.attempts = [...storageState.attempts, attempt];
+      storageState.progress = [
+        ...storageState.progress.filter((entry) => entry.unitId !== progress.unitId),
+        progress,
+      ];
+      storageState.drafts = storageState.drafts.filter((entry) => entry.id !== draftId);
+    }),
     saveDraft: vi.fn(async (draft: StudyDraft) => {
       storageState.drafts = [
         ...storageState.drafts.filter((entry) => entry.id !== draft.id),
@@ -58,10 +74,10 @@ vi.mock('../../src/study/studyStorage', () => ({
       storageState.snapshot = snapshot;
     }),
   }),
-  STUDY_SCHEMA_VERSION: 4,
+  STUDY_SCHEMA_VERSION: 5,
   STUDY_DB_NAME: 'webnet.study.v1',
   STUDY_DB_VERSION: 1,
-  migrateStudySnapshot: (input: Partial<StudyDataSnapshot>) => ({ ...input, schemaVersion: 4 }),
+  migrateStudySnapshot: (input: Partial<StudyDataSnapshot>) => ({ ...input, schemaVersion: 5 }),
 }));
 
 type HookValue = ReturnType<typeof useStudyApp>;
@@ -161,6 +177,29 @@ describe('study app hook persistence', () => {
     expect(storageState.attempts.at(-1)?.rubricCoverage).toEqual([
       { rubricItemId: rubricId, status: 'covered' },
     ]);
+  });
+
+  it('ignores duplicate rating submissions while a rating is being saved', async () => {
+    const hookValue: { current: HookValue | null } = { current: null };
+    await act(async () => {
+      root?.render(<HookHarness onValue={(value) => { hookValue.current = value; }} />);
+    });
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
+
+    await act(async () => {
+      hookValue.current?.setAnswer('One answer.');
+    });
+    await act(async () => {
+      const first = hookValue.current?.rateActiveItem('good');
+      const second = hookValue.current?.rateActiveItem('good');
+      await Promise.all([first, second]);
+    });
+
+    expect(storageState.attempts).toHaveLength(1);
+    expect(storageState.progress).toHaveLength(1);
+    expect(storageState.attempts[0]?.scheduling?.cardAfter?.reps).toBe(1);
   });
 
   it('deletes all study data when requested', async () => {
