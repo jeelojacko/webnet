@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createSeedStudyData } from '../../src/study/studySeed';
 import type {
+  SerializedStudyFsrsCard,
   StudyAttempt,
   StudyDataSnapshot,
   StudyDraft,
@@ -116,6 +117,22 @@ vi.mock('../../src/study/studyStorage', () => ({
 
 type HookValue = ReturnType<typeof useStudyApp>;
 
+const fsrsCard = (
+  state: SerializedStudyFsrsCard['state'],
+  due: string,
+): SerializedStudyFsrsCard => ({
+  due,
+  stability: 1,
+  difficulty: 5,
+  elapsed_days: 0,
+  scheduled_days: 0,
+  learning_steps: 0,
+  reps: 1,
+  lapses: 0,
+  state,
+  last_review: '2026-08-11T11:50:00.000Z',
+});
+
 const HookHarness = ({ onValue }: { onValue: (_value: HookValue) => void }) => {
   const value = useStudyApp();
   React.useEffect(() => {
@@ -130,6 +147,7 @@ describe('study app hook persistence', () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-11T12:00:00.000Z'));
     storageState.snapshot = createSeedStudyData('2026-08-01T10:00:00.000Z');
     storageState.drafts = [];
     storageState.attempts = [];
@@ -233,6 +251,73 @@ describe('study app hook persistence', () => {
       newLearned: 1,
       ratings: { again: 0, hard: 0, good: 1, easy: 0 },
     });
+  });
+
+  it('wakes an open session when the earliest future scheduled card becomes due', async () => {
+    const seed = createSeedStudyData('2026-08-01T10:00:00.000Z');
+    const unit = seed.units[0];
+    const futureDueAt = '2026-08-11T12:10:00.000Z';
+    storageState.snapshot = {
+      ...seed,
+      units: [unit],
+      prompts: seed.prompts.filter((prompt) => prompt.unitId === unit.id),
+      concepts: seed.concepts.filter((concept) => concept.unitId === unit.id),
+      rubrics: seed.rubrics.filter((rubric) => rubric.unitId === unit.id),
+      progress: [
+        {
+          ...seed.progress[0],
+          unitId: unit.id,
+          phase: 'guided-recall',
+          dueAt: futureDueAt,
+          scheduling: {
+            schemaVersion: 1,
+            algorithm: 'fsrs',
+            initialized: true,
+            card: fsrsCard('Learning', futureDueAt),
+            initializedAt: '2026-08-11T11:50:00.000Z',
+            lastScheduledAt: '2026-08-11T11:50:00.000Z',
+            configVersion: 1,
+          },
+        },
+      ],
+      settings: {
+        ...seed.settings,
+        fsrsConfig: {
+          ...seed.settings.fsrsConfig!,
+          userSettings: {
+            ...seed.settings.fsrsConfig!.userSettings,
+            newUnitsPerSession: 0,
+          },
+        },
+      },
+    };
+    storageState.progress = storageState.snapshot.progress;
+    const hookValue: { current: HookValue | null } = { current: null };
+    await act(async () => {
+      root?.render(
+        <HookHarness
+          onValue={(value) => {
+            hookValue.current = value;
+          }}
+        />,
+      );
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(hookValue.current?.activeItem).toBeNull();
+    expect(hookValue.current?.nextScheduledReview).toMatchObject({
+      unitId: unit.id,
+      dueAt: futureDueAt,
+    });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10 * 60_000 + 25);
+    });
+
+    expect(hookValue.current?.activeItem?.unit.id).toBe(unit.id);
+    expect(hookValue.current?.activeItem?.reason).toBe('learning-due');
   });
 
   it('undoes the latest scheduled rating and restores the unit to the queue', async () => {

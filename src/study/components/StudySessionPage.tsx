@@ -7,6 +7,7 @@ import type {
   StudySessionItem,
 } from '../studyTypes';
 import type { StudySessionCompletionSummary } from '../studySessionSummary';
+import type { StudyNextScheduledReview as NextScheduledReview } from '../studyNextReview';
 import { StudyEmptyState } from './StudyLayout';
 
 type StudySessionPageProps = {
@@ -26,6 +27,7 @@ type StudySessionPageProps = {
   ratingPreviews?: Array<{ rating: StudyRating; intervalLabel: string; due: string }>;
   onRate: (_rating: StudyRating) => Promise<void>;
   completionSummary?: StudySessionCompletionSummary | null;
+  nextScheduledReview?: NextScheduledReview | null;
   onUndoLatestRating?: () => Promise<void>;
   previewMode?: boolean;
   sourceText?: string;
@@ -109,6 +111,35 @@ const StudySchedulerDiagnostics = ({ activeItem }: { activeItem: StudySessionIte
   );
 };
 
+const relativeIntervalLabel = (dueAt: string): string => {
+  const ms = new Date(dueAt).getTime() - Date.now();
+  const minutes = Math.max(1, Math.round(ms / 60_000));
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'}`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'}`;
+  const days = Math.round(hours / 24);
+  return `${days} day${days === 1 ? '' : 's'}`;
+};
+
+const localDueLabel = (dueAt: string): string =>
+  new Intl.DateTimeFormat(undefined, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(new Date(dueAt));
+
+const StudyNoDueState = ({ nextReview }: { nextReview?: NextScheduledReview | null }) => {
+  if (!nextReview) return <StudyEmptyState text="No study units are available." />;
+  return (
+    <div className="flex min-h-[18rem] flex-col items-center justify-center gap-3 rounded border border-slate-800 bg-slate-900/50 px-4 text-center text-slate-500">
+      <div className="text-sm font-medium text-slate-300">Nothing is due right now.</div>
+      <div className="text-sm">
+        Next review: {nextReview.title} in {relativeIntervalLabel(nextReview.dueAt)}.
+      </div>
+      <div className="text-xs text-slate-600">Due {localDueLabel(nextReview.dueAt)}</div>
+    </div>
+  );
+};
+
 const StudySessionPage = ({
   activeItem,
   answer,
@@ -126,6 +157,7 @@ const StudySessionPage = ({
   ratingPreviews = [],
   onRate,
   completionSummary = null,
+  nextScheduledReview = null,
   onUndoLatestRating,
   previewMode = false,
   sourceText,
@@ -136,7 +168,7 @@ const StudySessionPage = ({
     return completionSummary ? (
       <StudyCompletionPanel summary={completionSummary} onUndoLatestRating={onUndoLatestRating} />
     ) : (
-      <StudyEmptyState text="No study units are available." />
+      <StudyNoDueState nextReview={nextScheduledReview} />
     );
   }
   const requiredRubrics = orderedRequiredRubrics(activeItem);

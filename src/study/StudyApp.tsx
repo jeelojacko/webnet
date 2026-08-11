@@ -46,6 +46,7 @@ const StudyApp = () => {
           unitId={unitEditId}
           onSave={study.saveUnitAuthoring}
           onAcknowledgeSourceReview={study.acknowledgeSourceReview}
+          onUndoLatestRating={study.undoLatestStudyRatingForUnit}
           onNavigate={study.navigate}
         />
       );
@@ -148,6 +149,7 @@ const StudyApp = () => {
           ratingPreviews={study.ratingPreviews}
           onRate={study.rateActiveItem}
           completionSummary={study.sessionCompletionSummary}
+          nextScheduledReview={study.nextScheduledReview}
           onUndoLatestRating={study.undoLatestStudyRating}
           onOpenUnit={(unitId) =>
             study.navigate(`/study/unit/${encodeURIComponent(unitId)}/edit`, {

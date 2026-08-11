@@ -22,3 +22,9 @@ export const getLatestEligibleSchedulingAttempt = (
       (left, right) =>
         right.completedAt.localeCompare(left.completedAt) || right.id.localeCompare(left.id),
     )[0];
+
+export const getLatestEligibleSchedulingAttemptForUnit = (
+  attempts: StudyAttempt[],
+  unitId: string,
+): StudyAttempt | undefined =>
+  getLatestEligibleSchedulingAttempt(attempts.filter((attempt) => attempt.unitId === unitId));

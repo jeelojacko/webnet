@@ -356,8 +356,11 @@ The scheduled Study session rating path now uses a storage-level rated-attempt t
 - Library study-unit rows show compact scheduling badges and support scheduling filters/sort for source review, due, overdue, new, learning, relearning, review, and due date
 - the Study unit editor includes a read-only Scheduling panel with state, due label, last reviewed, review count, lapse count, and advanced stability/difficulty fields
 - scheduled Study sessions show a completion summary after the queue is exhausted, including reviewed count, rating totals, new learned count, still due count, and next short-term review
+- if the Session queue is empty because every initialized FSRS card is still future-due, the page says that nothing is due right now and shows the earliest future review by Study Unit title, relative interval, and local absolute due time
+- an open Session page schedules one lightweight timeout for the earliest future scheduled review and rebuilds eligibility when that timestamp is reached, so a Learning/Relearning card can appear without a browser refresh
 - development builds expose a collapsed scheduler diagnostics panel on active session items with unit id, queue reason, FSRS state, due timestamp, last review, stability, difficulty, reps, lapses, and config version
 - the session completion view can undo the latest eligible counted Study rating; undo is atomic across the attempt and progress records, marks the attempt scheduling metadata with `undoneAt`, restores the stored FSRS card/due snapshot and `phaseBefore`, rejects non-latest/intervening counted reviews, and leaves the historical attempt record in place
+- the Study Unit Editor Scheduling panel also shows `Undo last counted review` after reload when the unit has an eligible latest counted FSRS attempt in IndexedDB
 
 ## Phase 3 Queue Model
 
@@ -381,3 +384,40 @@ Normal queue order is:
 5. optional surprise practice, only when explicitly requested
 
 Uninitialized legacy progress with a preserved `legacyDueAt` queues as `review-due` only after the unit has left `unread`; unread uninitialized units remain New material. Future Learning/Relearning cards are excluded until their absolute due timestamp is reached. Surprise practice is excluded from normal scheduling and does not imply scheduling mutation.
+
+## Phase 3 Acceptance Notes
+
+Future-due cards are intentionally blocked until their stored FSRS due timestamp. If no due cards are available and no New units are eligible under the configured `newUnitsPerSession` cap, Session displays the earliest future initialized or legacy scheduled review. Unscheduled New units are not included in that message unless the queue builder would actually allow them into the current session.
+
+Undo after refresh is data-backed. Counted scheduling attempts store `cardBefore`, `cardAfter`, `dueBefore`, `dueAfter`, phase before/after, rating, reviewed timestamp, scheduling reason, FSRS review log, and config version. The undo path reloads those persisted records, requires the attempt to be the latest non-undone counted attempt for that unit, restores the stored card/due/phase snapshot in one IndexedDB transaction, and marks the attempt as undone instead of deleting it.
+
+Current default FSRS settings are:
+
+- desired/request retention: `0.9`
+- maximum interval: `36500` days
+- fuzz: enabled
+- short-term learning: enabled
+- learning steps: `10m`
+- relearning steps: `10m`
+- new units per session: `5`
+- config version: `1`
+
+There is currently no normal user-facing FSRS settings editor. The only Study settings UI today is the sidebar collapsed-state control; FSRS values are persisted in the default settings record and preserved by export/import.
+
+Source-review-required is set only during official content package preview/import for units that already carry source references. For each reference, WebNet looks up the incoming component by the same `documentId` and `sourceKey`; if the incoming component exists and its `contentHash` differs from the unit's `contentHashAtLinkTime`, `sourceReviewRequired` is set. If the incoming component is absent, `sourceReferenceMissing` is set. Acknowledgement updates link-time hashes for still-present components and does not write attempts or mutate FSRS scheduling.
+
+Safe manual source-review test:
+
+1. Use a development browser profile or click `/study/manage -> Delete All Data`, then import `study-content/packages/nb-law-pilot.content-package.json`.
+2. Open one harmless provision, create a Study Unit from it, and confirm the unit does not show `Source review required`.
+3. Make a temporary copy of the package JSON outside the production package path.
+4. In the copy, change only that selected component's harmless text and `contentHash` value, keeping the same `documentId` and `sourceKey`.
+5. Paste/import the copied package through `/study/manage`.
+6. Confirm the unit shows `Source review required`.
+7. Open `/study/session` and confirm the source-review item appears before normal memory reviews.
+8. Confirm Again/Hard/Good/Easy controls are not shown for that item and no FSRS rating can be submitted.
+9. Open the unit source and acknowledge the reviewed source.
+10. Confirm no Study attempt was created, the FSRS card/due state did not change, and the source-review flag cleared.
+11. Later complete a normal memory review for that unit and confirm FSRS scheduling updates normally.
+
+Do not edit the committed production pilot package for this test; use a throwaway copied package or a clean development browser profile.

@@ -6,6 +6,8 @@ import { exportStudyData, parseStudyImport } from '../../src/study/studyExportIm
 import { createStudyFsrsScheduler } from '../../src/study/fsrs/studyFsrs';
 import { isFsrsReplayableAttempt } from '../../src/study/fsrs/studyFsrsMigration';
 import { buildStudyOpfsPath, sanitizeStudyPathSegment } from '../../src/study/studyOpfs';
+import { buildRatedStudyAttempt, buildUndoLatestSchedulingRating } from '../../src/study/studyReviewTransaction';
+import { buildSessionItems, markReadingComplete } from '../../src/study/studyScheduler';
 import { createSeedStudyData } from '../../src/study/studySeed';
 import {
   createStudyStorage,
@@ -399,24 +401,39 @@ describe('study storage contracts', () => {
     });
   });
 
-  it('round-trips exported study data and preserves attempts and drafts', () => {
+  it('round-trips exported study data and preserves exact FSRS schedule and attempt metadata', () => {
     const seed = createSeedStudyData('2026-08-01T10:00:00.000Z');
-    const snapshot = {
+    const progress = markReadingComplete(seed.progress[0], '2026-08-01T10:00:00.000Z');
+    const baseData = {
       ...seed,
-      attempts: [
-        {
-          id: 'attempt-1',
-          unitId: seed.units[0].id,
-          promptId: seed.prompts[0].id,
-          phase: 'guided-recall' as const,
-          answer: 'typed answer',
-          coveredConceptIds: [seed.concepts[0].id],
-          rating: 'good' as const,
-          startedAt: '2026-08-01T10:00:00.000Z',
-          revealedAt: '2026-08-01T10:05:00.000Z',
-          completedAt: '2026-08-01T10:06:00.000Z',
-        },
-      ],
+      progress: [progress, ...seed.progress.slice(1)],
+    };
+    const item = buildSessionItems({
+      units: baseData.units,
+      prompts: baseData.prompts,
+      concepts: baseData.concepts,
+      rubrics: baseData.rubrics,
+      progress: baseData.progress,
+      nowIso: '2026-08-01T10:05:00.000Z',
+    })[0];
+    if (!item) throw new Error('Expected a Study session item.');
+    const rated = buildRatedStudyAttempt({
+      data: baseData,
+      item,
+      rating: 'good',
+      now: new Date('2026-08-01T10:06:00.000Z'),
+      attemptId: 'attempt-1',
+      answer: 'typed answer',
+      responseMode: 'guided',
+      guidedResponses: {},
+      coveredConceptIds: [seed.concepts[0].id],
+      rubricCoverage: [],
+      startedAt: '2026-08-01T10:00:00.000Z',
+    });
+    const snapshot = {
+      ...baseData,
+      progress: [rated.progress, ...baseData.progress.slice(1)],
+      attempts: [rated.attempt],
       drafts: [
         {
           id: 'active-session',
@@ -449,7 +466,89 @@ describe('study storage contracts', () => {
     expect(restored.drafts[0]?.answer).toBe('autosaved answer');
     expect(restored.rubrics[0]?.prompt).toBe('What is the purpose?');
     expect(restored.settings.fsrsConfig?.resolvedParameters).toBeTruthy();
-    expect(restored.progress[0]?.scheduling?.algorithm).toBe('fsrs');
+    expect(restored.progress[0]?.scheduling?.card).toEqual(rated.progress.scheduling?.card);
+    expect(restored.attempts[0]?.scheduling).toEqual(rated.attempt.scheduling);
+    expect(restored.attempts[0]?.scheduling).toMatchObject({
+      schedulingApplied: true,
+      cardBefore: rated.attempt.scheduling?.cardBefore,
+      cardAfter: rated.attempt.scheduling?.cardAfter,
+      fsrsReviewLog: rated.attempt.scheduling?.fsrsReviewLog,
+      dueBefore: rated.attempt.scheduling?.dueBefore,
+      dueAfter: rated.attempt.scheduling?.dueAfter,
+      configVersion: rated.attempt.scheduling?.configVersion,
+    });
+  });
+
+  it('loads a counted rating from IndexedDB after refresh and atomically undoes it', async () => {
+    const seed = createSeedStudyData('2026-08-01T10:00:00.000Z');
+    const progress = markReadingComplete(seed.progress[0], '2026-08-01T10:00:00.000Z');
+    const baseData = {
+      ...seed,
+      units: seed.units.slice(0, 1),
+      prompts: seed.prompts.filter((prompt) => prompt.unitId === seed.units[0].id),
+      concepts: seed.concepts.filter((concept) => concept.unitId === seed.units[0].id),
+      rubrics: seed.rubrics.filter((rubric) => rubric.unitId === seed.units[0].id),
+      progress: [progress],
+    };
+    const item = buildSessionItems({
+      units: baseData.units,
+      prompts: baseData.prompts,
+      concepts: baseData.concepts,
+      rubrics: baseData.rubrics,
+      progress: baseData.progress,
+      nowIso: '2026-08-01T10:05:00.000Z',
+    })[0];
+    if (!item) throw new Error('Expected a Study session item.');
+    const rated = buildRatedStudyAttempt({
+      data: baseData,
+      item,
+      rating: 'good',
+      now: new Date('2026-08-01T10:06:00.000Z'),
+      attemptId: 'attempt-persisted-undo',
+      answer: 'typed answer',
+      responseMode: 'guided',
+      guidedResponses: {},
+      coveredConceptIds: [],
+      rubricCoverage: [],
+      startedAt: '2026-08-01T10:00:00.000Z',
+    });
+    const stores: FakeStudyStores = {
+      documents: new Map(baseData.documents.map((entry) => [entry.id, entry])),
+      units: new Map(baseData.units.map((entry) => [entry.id, entry])),
+      prompts: new Map(baseData.prompts.map((entry) => [entry.id, entry])),
+      concepts: new Map(baseData.concepts.map((entry) => [entry.id, entry])),
+      rubrics: new Map(baseData.rubrics.map((entry) => [entry.id, entry])),
+      progress: new Map([[rated.progress.unitId, rated.progress]]),
+      attempts: new Map([[rated.attempt.id, rated.attempt]]),
+      drafts: new Map(),
+      settings: new Map([[baseData.settings.id, baseData.settings]]),
+      legalDocuments: new Map(),
+      legalComponents: new Map(),
+      importHistory: new Map(),
+    };
+    installStudyIndexedDbFixture({ stores, oldVersion: STUDY_DB_VERSION });
+    const storage = createStudyStorage();
+
+    const reloaded = await storage.loadAll();
+    const undo = buildUndoLatestSchedulingRating({
+      data: reloaded,
+      attemptId: rated.attempt.id,
+      now: new Date('2026-08-01T10:07:00.000Z'),
+    });
+    await storage.saveSchedulingUndo({
+      attempt: undo.attempt,
+      progress: undo.progress,
+      expectedProgressUpdatedAt: rated.progress.updatedAt,
+    });
+    const afterUndo = await storage.loadAll();
+
+    expect(afterUndo.attempts[0]?.scheduling?.undoneAt).toBe('2026-08-01T10:07:00.000Z');
+    expect(afterUndo.progress[0]?.phase).toBe(rated.attempt.phaseBefore);
+    expect(afterUndo.progress[0]?.dueAt).toBe(rated.attempt.scheduling?.dueBefore);
+    expect(afterUndo.progress[0]?.scheduling).toMatchObject({
+      initialized: false,
+      legacyDueAt: rated.attempt.scheduling?.dueBefore,
+    });
   });
 
   it('identifies only counted FSRS review attempts as replayable', () => {

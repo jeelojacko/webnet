@@ -20,11 +20,16 @@ import { normalizeConceptLabelKey } from './studyConceptGeneration';
 import { generateStudyRubric } from './studyRubricGeneration';
 import { createDefaultStudySettings } from './studySeed';
 import { createInitialProgress, markReadingComplete } from './studyScheduler';
+import {
+  findNextScheduledStudyReview,
+  millisecondsUntilNextScheduledReview,
+} from './studyNextReview';
 import { buildStudyQueue } from './studyQueue';
 import { buildStudySessionCompletionSummary } from './studySessionSummary';
 import { persistStudyPracticeAttempt } from './studyPracticePersistence';
 import { createStudyStorage, STUDY_SCHEMA_VERSION } from './studyStorage';
 import {
+  getLatestEligibleSchedulingAttemptForUnit,
   getLatestEligibleSchedulingAttempt,
   replaceById,
   replaceProgress,
@@ -60,6 +65,7 @@ export const useStudyApp = () => {
   const storage = useMemo(() => createStudyStorage(), []);
   const [data, setData] = useState<StudyDataSnapshot | null>(null);
   const [routePath, setRoutePath] = useState(() => window.location.pathname);
+  const [clockNowMs, setClockNowMs] = useState(() => Date.now());
   const [activeItemIndex, setActiveItemIndex] = useState(0);
   const [answer, setAnswer] = useState('');
   const [guidedResponses, setGuidedResponses] = useState<Record<string, string>>({});
@@ -75,11 +81,13 @@ export const useStudyApp = () => {
   const [officialPackagePreview, setOfficialPackagePreview] =
     useState<OfficialContentPreview | null>(null);
   const ratingInFlightRef = useRef(false);
+  const clockNow = useMemo(() => new Date(clockNowMs), [clockNowMs]);
 
   useEffect(() => {
     let cancelled = false;
     storage.loadAll().then((snapshot) => {
       if (cancelled) return;
+      setClockNowMs(Date.now());
       setData(snapshot);
       const draft = snapshot.drafts.find((entry) => entry.id === ACTIVE_DRAFT_ID);
       if (draft) {
@@ -101,6 +109,7 @@ export const useStudyApp = () => {
   const navigate = useCallback((path: string, state: unknown = null) => {
     window.history.pushState(state, '', path);
     setRoutePath(window.location.pathname);
+    setClockNowMs(Date.now());
   }, []);
 
   const saveSettings = useCallback(
@@ -120,11 +129,26 @@ export const useStudyApp = () => {
       concepts: data.concepts,
       rubrics: data.rubrics,
       progress: data.progress,
-      now: new Date(),
+      now: clockNow,
       newUnitsPerSession: data.settings.fsrsConfig?.userSettings.newUnitsPerSession ?? 5,
       limit: 25,
     });
-  }, [data]);
+  }, [clockNow, data]);
+
+  const nextScheduledReview = useMemo(
+    () => (data ? findNextScheduledStudyReview(data, clockNow) : null),
+    [clockNow, data],
+  );
+
+  useEffect(() => {
+    const delay = millisecondsUntilNextScheduledReview(nextScheduledReview, clockNow);
+    if (delay === null) return;
+    const handle = window.setTimeout(
+      () => setClockNowMs(Date.now()),
+      Math.min(delay + 25, 2_147_483_647),
+    );
+    return () => window.clearTimeout(handle);
+  }, [clockNow, nextScheduledReview]);
 
   const activeItem = sessionItems[activeItemIndex] ?? null;
   const sessionAttempts = useMemo(
@@ -142,9 +166,9 @@ export const useStudyApp = () => {
     return buildStudySessionCompletionSummary({
       attempts: sessionAttempts,
       remainingItems: sessionItems,
-      now: new Date(),
+      now: clockNow,
     });
-  }, [activeItem, data, sessionAttempts, sessionItems]);
+  }, [activeItem, clockNow, data, sessionAttempts, sessionItems]);
   const responseMode: StudyResponseMode = useMemo(() => {
     const phase = activeItem?.progress.phase;
     if (activeItem?.unit.responseModeOverride) return activeItem.unit.responseModeOverride;
@@ -474,6 +498,7 @@ export const useStudyApp = () => {
         setCoveredConceptIds([]);
         setRubricCoverage([]);
         setActiveItemIndex(0);
+        setClockNowMs(Date.now());
       } finally {
         ratingInFlightRef.current = false;
         setRatingPending(false);
@@ -566,8 +591,41 @@ export const useStudyApp = () => {
     });
     setSessionAttemptIds((ids) => ids.filter((id) => id !== attempt.id));
     setActiveItemIndex(0);
+    setClockNowMs(Date.now());
     setStatusMessage('Latest Study rating undone.');
   }, [data, storage]);
+
+  const undoLatestStudyRatingForUnit = useCallback(
+    async (unitId: string) => {
+      if (!data) return;
+      const latest = getLatestEligibleSchedulingAttemptForUnit(data.attempts, unitId);
+      if (!latest) {
+        setStatusMessage('No eligible Study rating is available to undo for this unit.');
+        return;
+      }
+      const { attempt, progress } = buildUndoLatestSchedulingRating({
+        data,
+        attemptId: latest.id,
+        now: new Date(),
+      });
+      await storage.saveSchedulingUndo({
+        attempt,
+        progress,
+        expectedProgressUpdatedAt: data.progress.find((entry) => entry.unitId === progress.unitId)
+          ?.updatedAt,
+      });
+      setData({
+        ...data,
+        attempts: replaceById(data.attempts, attempt),
+        progress: replaceProgress(data.progress, progress),
+      });
+      setSessionAttemptIds((ids) => ids.filter((id) => id !== attempt.id));
+      setActiveItemIndex(0);
+      setClockNowMs(Date.now());
+      setStatusMessage('Latest Study rating undone.');
+    },
+    [data, storage],
+  );
 
   const exportText = useMemo(() => (data ? exportStudyData(data) : ''), [data]);
 
@@ -847,6 +905,7 @@ export const useStudyApp = () => {
     routePath,
     navigate,
     sessionItems,
+    nextScheduledReview,
     activeItem,
     sessionCompletionSummary,
     answer,
@@ -864,6 +923,7 @@ export const useStudyApp = () => {
     ratingPending,
     rateActiveItem,
     undoLatestStudyRating,
+    undoLatestStudyRatingForUnit,
     savePracticeAttempt,
     completeReading,
     activeItemIndex,

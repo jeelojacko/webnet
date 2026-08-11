@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { findNextScheduledStudyReview } from '../../src/study/studyNextReview';
 import { buildStudyQueue } from '../../src/study/studyQueue';
 import { createSeedStudyData } from '../../src/study/studySeed';
 import type {
@@ -125,6 +126,40 @@ describe('study FSRS queue builder', () => {
 
     expect(queue.map((item) => item.unit.id)).toEqual([seed.units[0].id]);
     expect(queue[0]?.reason).toBe('learning-due');
+  });
+
+  it('finds the earliest future scheduled review for an empty due queue', () => {
+    const seed = createSeedStudyData(nowIso);
+    const progress = [
+      progressFor(seed.units[0].id, schedule('Learning', '2026-08-11T12:12:00.000Z')),
+      progressFor(seed.units[1].id, schedule('Review', '2026-08-11T12:06:00.000Z')),
+      progressFor(seed.units[2].id, {
+        schemaVersion: 1,
+        algorithm: 'fsrs',
+        initialized: false,
+        configVersion: 1,
+      }, 'unread'),
+    ];
+    const data = {
+      ...seed,
+      progress,
+      settings: {
+        ...seed.settings,
+        fsrsConfig: {
+          ...seed.settings.fsrsConfig!,
+          userSettings: {
+            ...seed.settings.fsrsConfig!.userSettings,
+            newUnitsPerSession: 0,
+          },
+        },
+      },
+    };
+
+    expect(queueFor({ progress, newUnitsPerSession: 0 })).toEqual([]);
+    expect(findNextScheduledStudyReview(data, now)).toMatchObject({
+      unitId: seed.units[1].id,
+      dueAt: '2026-08-11T12:06:00.000Z',
+    });
   });
 
   it('uses due time first and priority only as a due-review tie breaker', () => {
