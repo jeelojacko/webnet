@@ -140,6 +140,8 @@ describe('study app hook persistence', () => {
       currentHookValue?.setRevealed(true);
       currentHookValue?.toggleConcept(currentHookValue.activeItem?.concepts[0]?.id ?? '');
     });
+    expect(hookValue.current?.ratingPreviews.map((preview) => preview.rating)).toEqual(['again', 'hard', 'good', 'easy']);
+    expect(storageState.attempts).toEqual([]);
     await act(async () => {
       await hookValue.current?.rateActiveItem('good');
     });

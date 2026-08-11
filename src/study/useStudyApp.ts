@@ -21,7 +21,7 @@ import { generateStudyRubric } from './studyRubricGeneration';
 import { createDefaultStudySettings } from './studySeed';
 import { buildSessionItems, createInitialProgress, markReadingComplete } from './studyScheduler';
 import { createStudyStorage, STUDY_SCHEMA_VERSION } from './studyStorage';
-import { buildRatedStudyAttempt } from './studyReviewTransaction';
+import { buildRatedStudyAttempt, buildStudyRatingPreviews } from './studyReviewTransaction';
 import type {
   StudyAttempt,
   StudyDataSnapshot,
@@ -62,6 +62,7 @@ export const useStudyApp = () => {
   const [answer, setAnswer] = useState('');
   const [guidedResponses, setGuidedResponses] = useState<Record<string, string>>({});
   const [revealed, setRevealed] = useState(false);
+  const [ratingNowIso, setRatingNowIso] = useState<string | null>(null);
   const [coveredConceptIds, setCoveredConceptIds] = useState<string[]>([]);
   const [rubricCoverage, setRubricCoverage] = useState<StudyRubricCoverage[]>([]);
   const [ratingPending, setRatingPending] = useState(false);
@@ -128,6 +129,20 @@ export const useStudyApp = () => {
     if (phase === 'guided-recall') return 'guided';
     return 'free-recall';
   }, [activeItem]);
+
+  const setSessionRevealed = useCallback((nextRevealed: boolean) => {
+    setRevealed(nextRevealed);
+    setRatingNowIso(nextRevealed ? new Date().toISOString() : null);
+  }, []);
+
+  const ratingPreviews = useMemo(() => {
+    if (!data || !activeItem || !revealed || !ratingNowIso) return [];
+    return buildStudyRatingPreviews({
+      data,
+      item: activeItem,
+      now: new Date(ratingNowIso),
+    });
+  }, [activeItem, data, ratingNowIso, revealed]);
 
   useEffect(() => {
     const hasDraftAnswer = Boolean(answer) || Object.values(guidedResponses).some((value) => value.trim());
@@ -358,7 +373,7 @@ export const useStudyApp = () => {
       if (!data || !activeItem || ratingInFlightRef.current) return;
       ratingInFlightRef.current = true;
       setRatingPending(true);
-      const now = new Date();
+      const now = ratingNowIso ? new Date(ratingNowIso) : new Date();
       const { attempt, progress } = buildRatedStudyAttempt({
         data,
         item: activeItem,
@@ -388,6 +403,7 @@ export const useStudyApp = () => {
         setAnswer('');
         setGuidedResponses({});
         setRevealed(false);
+        setRatingNowIso(null);
         setCoveredConceptIds([]);
         setRubricCoverage([]);
         setActiveItemIndex((index) => Math.min(index + 1, Math.max(sessionItems.length - 1, 0)));
@@ -396,7 +412,7 @@ export const useStudyApp = () => {
         setRatingPending(false);
       }
     },
-    [activeItem, answer, coveredConceptIds, data, guidedResponses, responseMode, rubricCoverage, sessionItems.length, storage],
+    [activeItem, answer, coveredConceptIds, data, guidedResponses, ratingNowIso, responseMode, rubricCoverage, sessionItems.length, storage],
   );
 
   const exportText = useMemo(() => (data ? exportStudyData(data) : ''), [data]);
@@ -431,6 +447,7 @@ export const useStudyApp = () => {
     setAnswer('');
     setGuidedResponses({});
     setRevealed(false);
+    setRatingNowIso(null);
     setCoveredConceptIds([]);
     setRubricCoverage([]);
     setActiveItemIndex(0);
@@ -667,11 +684,12 @@ export const useStudyApp = () => {
     setGuidedResponses,
     responseMode,
     revealed,
-    setRevealed,
+    setRevealed: setSessionRevealed,
     coveredConceptIds,
     toggleConcept,
     rubricCoverage,
     setRubricCoverage,
+    ratingPreviews,
     ratingPending,
     rateActiveItem,
     completeReading,

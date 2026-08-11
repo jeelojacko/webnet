@@ -21,6 +21,7 @@ type StudySessionPageProps = {
   rubricCoverage: StudyRubricCoverage[];
   onRubricCoverageChange: (_coverage: StudyRubricCoverage[]) => void;
   ratingPending?: boolean;
+  ratingPreviews?: Array<{ rating: StudyRating; intervalLabel: string; due: string }>;
   onRate: (_rating: StudyRating) => Promise<void>;
   previewMode?: boolean;
   sourceText?: string;
@@ -60,6 +61,7 @@ const StudySessionPage = ({
   rubricCoverage,
   onRubricCoverageChange,
   ratingPending = false,
+  ratingPreviews = [],
   onRate,
   previewMode = false,
   sourceText,
@@ -69,6 +71,7 @@ const StudySessionPage = ({
   const requiredRubrics = orderedRequiredRubrics(activeItem);
   const optionalRubrics = orderedOptionalRubrics(activeItem);
   const guidedRubrics = requiredRubrics.length > 0 ? requiredRubrics : activeItem.rubrics;
+  const previewByRating = new Map(ratingPreviews.map((preview) => [preview.rating, preview]));
 
   return (
     <div className="space-y-4">
@@ -248,17 +251,24 @@ const StudySessionPage = ({
             </div>
           </section>
           {!previewMode ? (
-            <div className="flex flex-wrap gap-2">
+            <div className="space-y-2">
+              <div className="text-sm font-medium text-slate-200">How well did you remember this unit?</div>
+              <div className="flex flex-wrap gap-2">
               {RATINGS.map(({ rating, label, className }) => (
                 <button
                   key={rating}
                   onClick={() => onRate(rating)}
                   disabled={ratingPending}
-                  className={`rounded px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
+                  title={previewByRating.get(rating)?.due}
+                  className={`min-w-24 rounded px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
                 >
-                  {label}
+                  <span className="block">{label}</span>
+                  <span className="mt-1 block text-xs font-normal text-white/80">
+                    {previewByRating.get(rating)?.intervalLabel ?? ''}
+                  </span>
                 </button>
               ))}
+              </div>
             </div>
           ) : null}
         </div>

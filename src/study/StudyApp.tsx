@@ -103,6 +103,7 @@ const StudyApp = () => {
           rubricCoverage={study.rubricCoverage}
           onRubricCoverageChange={study.setRubricCoverage}
           ratingPending={study.ratingPending}
+          ratingPreviews={study.ratingPreviews}
           onRate={study.rateActiveItem}
         />
       );

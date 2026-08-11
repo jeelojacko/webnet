@@ -14,7 +14,8 @@
     - [x] Add queue ordering, due-boundary, new-unit-limit, and deterministic tie-break tests.
   - [ ] Batch 3D - session rating persistence:
     - [x] Wire Again/Hard/Good/Easy into atomic progress plus attempt writes with idempotency/double-click guards, while keeping StudyPhase transition logic independent for the scheduled Study session path.
-    - [ ] Add rating previews and explicit session-source queue adoption around the scheduled Study session path.
+    - [x] Add rating previews to the scheduled Study session path using the same timestamp as the final rating operation.
+    - [ ] Switch the live scheduled Study session source to the FSRS queue builder.
     - [ ] Keep Preview, default Manual Practice, default Surprise Practice, and source acknowledgement non-mutating for FSRS; add focused session tests.
   - [ ] Batch 3E - UI integration:
     - [ ] Add rating previews, dashboard scheduling counts, Library scheduling badges/filters/sort, unit-editor read-only scheduling panel, session completion summary, and dev-only diagnostics.

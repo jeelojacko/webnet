@@ -311,12 +311,14 @@ The browser session rating transaction foundation and pure queue builder are in 
 The scheduled Study session rating path now uses a storage-level rated-attempt transaction:
 - one helper builds the immutable `StudyAttempt` and mutable `StudyProgress` update from the same fixed `now` timestamp
 - Again/Hard/Good/Easy map through the Study FSRS adapter and store card-before, card-after, review-log, due-before, due-after, rating, reason, and config version metadata on the attempt
+- after reveal, the real Study session previews all four rating outcomes through the FSRS adapter and displays compact interval labels on the rating buttons
+- the preview timestamp is captured once at reveal and reused for the final rating operation, so the selected result matches the preview for that interaction
 - `StudyProgress.scheduling` stores the resulting active FSRS card and clears legacy scheduling for that unit
 - the existing StudyPhase transition helper still determines `phaseAfter`; FSRS only determines the next scheduling due timestamp
 - IndexedDB writes attempt, progress, and draft deletion in one transaction with a stale-progress guard
 - the session route ignores duplicate rating submissions while a save is in flight and disables rating buttons during that save
 
-Rating previews, replacing the live session source with `buildStudyQueue`, manual-practice/surprise-review counted-review controls, source-review acknowledgement protections, undo, and scheduling dashboard/library UI remain pending.
+Replacing the live session source with `buildStudyQueue`, manual-practice/surprise-review counted-review controls, source-review acknowledgement protections, undo, and scheduling dashboard/library UI remain pending.
 
 ## Phase 3 Queue Model
 `buildStudyQueue` is a pure/testable queue builder for the upcoming FSRS session workflow. It does not mutate progress, attempts, FSRS cards, source-review flags, or StudyPhase state.

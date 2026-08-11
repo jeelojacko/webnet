@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildRatedStudyAttempt } from '../../src/study/studyReviewTransaction';
+import { buildRatedStudyAttempt, buildStudyRatingPreviews } from '../../src/study/studyReviewTransaction';
 import { buildSessionItems, markReadingComplete } from '../../src/study/studyScheduler';
 import { createSeedStudyData } from '../../src/study/studySeed';
 
@@ -23,6 +23,20 @@ const activeSessionItem = () => {
 };
 
 describe('study review transaction builder', () => {
+  it('previews rating intervals without mutating progress', () => {
+    const { data, item } = activeSessionItem();
+    const before = structuredClone(item.progress);
+    const previews = buildStudyRatingPreviews({
+      data,
+      item,
+      now: new Date('2026-08-10T10:06:00.000Z'),
+    });
+
+    expect(previews.map((preview) => preview.rating)).toEqual(['again', 'hard', 'good', 'easy']);
+    expect(previews.every((preview) => preview.intervalLabel.length > 0)).toBe(true);
+    expect(item.progress).toEqual(before);
+  });
+
   it('creates one FSRS scheduling transition for a rated unit attempt', () => {
     const { data, item } = activeSessionItem();
     const now = new Date('2026-08-10T10:06:00.000Z');
@@ -56,6 +70,28 @@ describe('study review transaction builder', () => {
     expect(result.progress.scheduling?.initialized).toBe(true);
     expect(result.progress.scheduling?.card).toEqual(result.attempt.scheduling?.cardAfter);
     expect(result.progress.dueAt).toBe(result.attempt.scheduling?.dueAfter);
+  });
+
+  it('uses the same timestamp for preview and final rating results', () => {
+    const { data, item } = activeSessionItem();
+    const now = new Date('2026-08-10T10:06:00.000Z');
+    const preview = buildStudyRatingPreviews({ data, item, now }).find((entry) => entry.rating === 'hard');
+    const result = buildRatedStudyAttempt({
+      data,
+      item,
+      rating: 'hard',
+      now,
+      attemptId: 'attempt-hard',
+      answer: '',
+      responseMode: 'guided',
+      guidedResponses: {},
+      coveredConceptIds: [],
+      rubricCoverage: [],
+      startedAt: '2026-08-10T10:00:00.000Z',
+    });
+
+    expect(result.attempt.scheduling?.dueAfter).toBe(preview?.due);
+    expect(result.progress.dueAt).toBe(preview?.due);
   });
 
   it('records phase before and after independently from FSRS state', () => {
