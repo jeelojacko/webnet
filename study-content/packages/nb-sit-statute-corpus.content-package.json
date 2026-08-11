@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "nb-sit-statute-corpus-2026-08-11",
   "manifestId": "nb-sit-statute-corpus",
-  "createdAt": "2026-08-11T18:29:27.082Z",
+  "createdAt": "2026-08-11T18:42:32.074Z",
   "documents": [
     {
       "schemaVersion": 1,
@@ -196901,7 +196901,7 @@
     }
   ],
   "integrityReport": {
-    "createdAt": "2026-08-11T18:29:27.082Z",
+    "createdAt": "2026-08-11T18:42:32.074Z",
     "documents": [
       {
         "documentId": "doc-agricultural-land-protection-and-development-act",
@@ -198809,7 +198809,7 @@
     "schemaVersion": 1,
     "manifestHash": "8a111a72d8926ab7f9407750390aba45aea540e4faabc6e62ea24cf65da227ec",
     "corpusContentHash": "6f0442fc121eb0d2bcc9d3c1023c7a624e2cd4adf36922079bc3f6858fdcc32b",
-    "generatedAt": "2026-08-11T18:29:27.082Z",
+    "generatedAt": "2026-08-11T18:42:32.074Z",
     "fetchPipelineVersion": "nb-sit-fetch-1",
     "normalizerVersion": "nb-law-normalizer-1",
     "packageSchemaVersion": "nb-law-content-package-1"

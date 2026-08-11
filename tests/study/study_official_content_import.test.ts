@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
 import contentPackageJson from '../../study-content/packages/nb-law-pilot.content-package.json';
 import type { NbLawContentPackage } from '../../src/study/content/nbLawTypes';
 import {
@@ -15,8 +16,16 @@ import { createSeedStudyData } from '../../src/study/studySeed';
 import type { ImportedLegalComponent, StudyDataSnapshot } from '../../src/study/studyTypes';
 
 const pilotPackage = contentPackageJson as NbLawContentPackage;
+const sitCorpusPackage = JSON.parse(
+  readFileSync(
+    new URL('../../study-content/packages/nb-sit-statute-corpus.content-package.json', import.meta.url),
+    'utf8',
+  ),
+) as NbLawContentPackage;
 
 const clonePackage = (): NbLawContentPackage => JSON.parse(JSON.stringify(pilotPackage)) as NbLawContentPackage;
+const cloneSitCorpusPackage = (): NbLawContentPackage =>
+  JSON.parse(JSON.stringify(sitCorpusPackage)) as NbLawContentPackage;
 
 const importSeed = (): StudyDataSnapshot =>
   applyOfficialContentPackageToSnapshot({
@@ -57,6 +66,47 @@ describe('official content package validation and preview', () => {
     expect(secondPreview.updatedDocuments).toHaveLength(0);
     expect(secondPreview.unchangedDocuments).toHaveLength(10);
     expect(secondPreview.changedComponents).toHaveLength(0);
+  });
+
+  it('dry-runs the full NB SIT corpus package and treats identical re-import as unchanged', () => {
+    const seed = createSeedStudyData('2026-08-11T10:00:00.000Z');
+    const pkg = cloneSitCorpusPackage();
+    const firstPreview = previewOfficialContentPackage(seed, pkg);
+
+    expect(validateOfficialContentPackageForImport(pkg)).toEqual([]);
+    expect(firstPreview.valid).toBe(true);
+    expect(firstPreview.newDocuments).toHaveLength(61);
+    expect(firstPreview.newComponents).toHaveLength(3758);
+    expect(firstPreview.changedComponents).toHaveLength(0);
+
+    const { snapshot } = applyOfficialContentPackageToSnapshot({
+      snapshot: seed,
+      contentPackage: pkg,
+      importedAt: '2026-08-11T11:00:00.000Z',
+    });
+    expect(snapshot.documents).toHaveLength(61);
+    expect(snapshot.legalDocuments).toHaveLength(61);
+    expect(snapshot.legalComponents).toHaveLength(3758);
+    expect(snapshot.importHistory.at(-1)).toMatchObject({
+      packageId: pkg.id,
+      addedDocuments: 61,
+      addedComponents: 3758,
+      changedDocuments: 0,
+      changedComponents: 0,
+      removedComponents: 0,
+      result: 'success',
+    });
+
+    const secondPreview = previewOfficialContentPackage(snapshot, cloneSitCorpusPackage());
+    expect(secondPreview.valid).toBe(true);
+    expect(secondPreview.newDocuments).toHaveLength(0);
+    expect(secondPreview.updatedDocuments).toHaveLength(0);
+    expect(secondPreview.unchangedDocuments).toHaveLength(61);
+    expect(secondPreview.newComponents).toHaveLength(0);
+    expect(secondPreview.changedComponents).toHaveLength(0);
+    expect(secondPreview.removedComponents).toHaveLength(0);
+    expect(secondPreview.unchangedComponents).toHaveLength(3758);
+    expect(secondPreview.unitsRequiringSourceReview).toHaveLength(0);
   });
 
   it('previews changed and removed components', () => {

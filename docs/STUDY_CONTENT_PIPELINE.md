@@ -8,7 +8,7 @@ Phase 4A introduces the New Brunswick SIT statute-law corpus manifest:
 study-content/manifests/nb-sit-statute-corpus.json
 ```
 
-The exam-scope authority is the ANBLS Surveyor-in-Training manual inventory supplied for the B-5.2 Statute Law of New Brunswick examination. The legal-text authority is the official Government of New Brunswick `laws.gnb.ca` source only. The pipeline must not substitute successor or related legislation when the manual names a repealed or unresolved Act.
+The exam-scope authority is the ANBLS Surveyor-in-Training manual inventory supplied for the B-5.2 Statute Law of New Brunswick examination. The legal-text authority is the official Government of New Brunswick `laws.gnb.ca` source for public legislation, plus ANBLS-hosted professional-body PDF sources for the New Brunswick Land Surveyors Act, 1986 and Bylaws. The pipeline must not substitute successor or related legislation when the manual names a repealed or unresolved Act.
 
 The manifest records all 57 required manual Act entries and preserves the ten pilot documents. Manual entries are now distinct from unique current legal source documents because several old SIT manual entries name repealed legislation. Legacy entries may map to a current successor without duplicating successor content.
 
@@ -19,7 +19,7 @@ The current successor mappings are:
 - `Official Languages of New Brunswick Act & Regulations` -> `Official Languages Act`
 - `Public Utilities Act` -> `Energy and Utilities Board Act`
 
-The `New Brunswick Land Surveyors Act, 1986 and Bylaws` manual entry is split into two ANBLS-hosted professional-body PDF sources: the 1986 Act PDF and the Bylaws PDF. These PDFs are fetched and hashed as raw official/professional sources. Normalization is intentionally blocked until a reliable English-only extraction selector is added, because the embedded text is bilingual and interleaved. OCR is not used.
+The `New Brunswick Land Surveyors Act, 1986 and Bylaws` manual entry is split into two ANBLS-hosted professional-body PDF sources: the 1986 Act PDF and the Bylaws PDF. These PDFs are fetched and hashed as raw official/professional sources. Their bilingual side-by-side text is normalized from the left-side English column only; OCR is not used.
 
 ## Commands
 
@@ -87,7 +87,7 @@ study-content/reports/nb-sit-source-review-queue.md
 
 Component hashes are deterministic SHA-256 hashes of normalized component text. Corpus metadata also records manifest hash, corpus content hash, fetch pipeline version, normalizer version, and package schema version. Generated timestamps are report/package metadata and are excluded from component hashes.
 
-PDF raw hashes are SHA-256 hashes of the PDF bytes. The Node-only corpus pipeline uses `pdf-parse` for embedded PDF text extraction; this dependency is isolated to development-side source ingestion and is not used by normal browser Study runtime.
+PDF raw hashes are SHA-256 hashes of the PDF bytes. The Node-only corpus pipeline uses `pdfjs-dist` for positioned embedded PDF text extraction so bilingual side-by-side sources can select the English column; this dependency is isolated to development-side source ingestion and is not used by normal browser Study runtime.
 
 Legacy-source reporting is written to:
 
@@ -97,4 +97,4 @@ study-content/reports/nb-sit-legacy-sources.md
 
 ## Import Boundary
 
-The corpus package uses the existing official-content package shape consumed by `/study/manage`. Import preview and source-review behavior remain browser-side Study concerns. Phase 4A stops at official legal source ingestion, validation, packaging, and import readiness; full-corpus deterministic StudyUnit generation is reserved for Phase 4B.
+The corpus package uses the existing official-content package shape consumed by `/study/manage`. Import preview and source-review behavior remain browser-side Study concerns. Phase 4A validates import readiness through a pure full-corpus dry-run and identical reimport/idempotency test; full-corpus deterministic StudyUnit generation is reserved for Phase 4B.
