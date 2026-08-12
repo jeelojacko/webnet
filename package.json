@@ -32,6 +32,7 @@
     "study:ai:status": "tsx scripts/studyAiAuthoring.ts status",
     "study:ai:validate-results": "tsx scripts/studyAiAuthoring.ts validate-results",
     "study:ai:validate-unit-proposals": "tsx scripts/studyAiAuthoring.ts validate-unit-proposals",
+    "study:ai:pilot-report": "tsx scripts/studyAiAuthoring.ts pilot-report",
     "crs:report:canada": "tsx scripts/reportCanadianCrsCatalog.ts",
     "crs:report:synthetic": "tsx scripts/generateSyntheticCrsReports.ts",
     "crs:report:synthetic:perfect": "tsx scripts/generateSyntheticCrsReports.ts --perfect",

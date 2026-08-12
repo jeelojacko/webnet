@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
@@ -138,6 +138,16 @@ const sourceComponentWithSubsections: ImportedLegalComponent = {
     },
   ],
 };
+
+afterAll(() => {
+  [
+    'ai-test-jsonl-robustness',
+    'ai-test-phase-4b1-sampling',
+    'ai-test-pilot-report',
+  ].forEach((runId) => {
+    rmSync(join('study-content', 'ai', 'runs', runId), { recursive: true, force: true });
+  });
+});
 
 describe('AI authoring schemas and validation', () => {
   it('accepts a valid Study Map job and rejects an invalid disposition', () => {
@@ -358,6 +368,136 @@ describe('AI CLI JSONL robustness', () => {
     );
 
     expect(report).toContain('Malformed:         1');
+  }, 20000);
+
+  it('applies Phase 4B.1 required cases to the 100-job representative pilot sample', () => {
+    const runId = 'ai-test-phase-4b1-sampling';
+    const runDir = join('study-content', 'ai', 'runs', runId);
+    rmSync(runDir, { recursive: true, force: true });
+
+    execFileSync(
+      'npx',
+      [
+        'tsx',
+        'scripts/studyAiAuthoring.ts',
+        'prepare-map',
+        '--run',
+        runId,
+        '--sample',
+        '100',
+        '--seed',
+        '42',
+        '--strategy',
+        'representative',
+      ],
+      {
+        stdio: 'pipe',
+        shell: process.platform === 'win32',
+      },
+    );
+    const report = JSON.parse(
+      readFileSync(join(runDir, 'reports', 'sampling-report.json'), 'utf8'),
+    ) as {
+      phase4b1RequiredIncludesApplied: boolean;
+      selectedJobs: number;
+      documentDistribution: Record<string, number>;
+    };
+    const jobs = readFileSync(join(runDir, 'jobs', 'batch-001.jobs.jsonl'), 'utf8')
+      .trim()
+      .split(/\r?\n/)
+      .map((line) => JSON.parse(line) as AiStudyMapJob);
+    const allJobs = [
+      ...jobs,
+      ...readFileSync(join(runDir, 'jobs', 'batch-002.jobs.jsonl'), 'utf8')
+        .trim()
+        .split(/\r?\n/)
+        .map((line) => JSON.parse(line) as AiStudyMapJob),
+      ...readFileSync(join(runDir, 'jobs', 'batch-003.jobs.jsonl'), 'utf8')
+        .trim()
+        .split(/\r?\n/)
+        .map((line) => JSON.parse(line) as AiStudyMapJob),
+      ...readFileSync(join(runDir, 'jobs', 'batch-004.jobs.jsonl'), 'utf8')
+        .trim()
+        .split(/\r?\n/)
+        .map((line) => JSON.parse(line) as AiStudyMapJob),
+    ];
+    const includeKeys = new Set(
+      allJobs.map((job) => `${job.document.documentId}:${job.target.sectionLabels[0]}`),
+    );
+
+    expect(report.phase4b1RequiredIncludesApplied).toBe(true);
+    expect(report.selectedJobs).toBe(100);
+    expect(allJobs.filter((job) => job.document.type === 'regulation').length).toBeGreaterThanOrEqual(8);
+    expect(includeKeys).toContain('doc-boundaries-confirmation-act:10');
+    expect(includeKeys).toContain('doc-surveys-act:14');
+    expect(includeKeys).toContain('doc-community-planning-act:125');
+    expect(includeKeys).toContain('doc-land-titles-act:83');
+    expect(includeKeys).toContain('doc-registry-act:19');
+  }, 30000);
+
+  it('writes Phase 4B.1 pilot audit reports with evaluation counts', () => {
+    const runId = 'ai-test-pilot-report';
+    const runDir = join('study-content', 'ai', 'runs', runId);
+    rmSync(runDir, { recursive: true, force: true });
+    mkdirSync(join(runDir, 'reports'), { recursive: true });
+    const mapProposal = {
+      ...mapResultToProposal({
+        job: mapJob(),
+        result: {
+          schemaVersion: 1,
+          jobId: 'map-1',
+          runId,
+          corpusContentHash: 'corpus-hash',
+          inputHash: 'input-hash',
+          promptSpecVersion: 'study-map-v2',
+          disposition: 'standalone',
+          confidence: 'high',
+          reason: 'Focused procedure.',
+          proposedGroups: [
+            {
+              groupId: 'group-1',
+              titleSuggestion: 'Objection',
+              sourceKeys: ['section:10'],
+              reason: 'Focused.',
+              approximateLearningGoal: 'Know objection delivery.',
+            },
+          ],
+          warnings: [],
+        },
+      }),
+      runId,
+      pilotEvaluation: 'good-as-is',
+    };
+    const proposal = {
+      ...unitProposal(),
+      runId,
+      sourceHashes: { [sourceComponent.sourceKey]: sourceComponent.contentHash },
+      pilotEvaluation: 'good',
+      pilotEvaluationNotes: 'Useful concise answer.',
+    };
+    writeFileSync(join(runDir, 'reports', 'map-proposals.json'), JSON.stringify([mapProposal], null, 2));
+    writeFileSync(join(runDir, 'reports', 'unit-proposals.json'), JSON.stringify([proposal], null, 2));
+
+    execFileSync(
+      'npx',
+      ['tsx', 'scripts/studyAiAuthoring.ts', 'pilot-report', '--run', runId, '--unit-run', runId],
+      {
+        stdio: 'pipe',
+        shell: process.platform === 'win32',
+      },
+    );
+    const audit = JSON.parse(
+      readFileSync(join(runDir, 'reports', 'pilot-authoring-audit.json'), 'utf8'),
+    ) as {
+      map: { pilotEvaluationCounts: Record<string, number> };
+      units: { evaluationCounts: Record<string, number> };
+      proposals: Array<{ pilotEvaluation?: string; deterministicComparison: { available?: boolean } }>;
+    };
+
+    expect(audit.map.pilotEvaluationCounts['good-as-is']).toBe(1);
+    expect(audit.units.evaluationCounts.good).toBe(1);
+    expect(audit.proposals[0]?.pilotEvaluation).toBe('good');
+    expect(existsSync(join(runDir, 'reports', 'pilot-authoring-audit.md'))).toBe(true);
   }, 20000);
 });
 

@@ -1,6 +1,6 @@
 # Study AI Authoring
 
-Phase 4B.0.1 hardens the provider-neutral AI authoring workflow before any 4B.1 pilot processing.
+Phase 4B.1 supports the first real provider-neutral AI authoring pilot. It prepares and evaluates a bounded Study Map and Unit Authoring sample; it does not process the full corpus automatically.
 
 AI output is an authoring aid only. The official legal source remains immutable authority, and approved AI content keeps source links, source hashes, and provenance.
 
@@ -77,6 +77,13 @@ Available Map actions:
 
 Editable Map fields include disposition, priority, group title, group source keys, and approximate learning goal. Users can add groups. Skip and reference-only recommendations are visible and can be approved or changed before approval.
 
+For the Phase 4B.1 pilot, each Map proposal can also record:
+
+- `pilotEvaluation`: `good-as-is`, `minor-edit`, `major-edit`, or `wrong`
+- `pilotEvaluationNotes`
+
+These fields are pilot metadata only. They do not change normal Study state or FSRS scheduling.
+
 `prepare-units` only uses Map proposals that are approved, valid or warning-valid, non-conflicted, and not skip/reference-only. Validated but unapproved Map proposals do not create Unit Authoring jobs.
 
 ## Unit Proposal Review
@@ -100,6 +107,14 @@ Minimum editor controls include:
 - approve
 
 Approval creates normal Study records only after explicit review. It never overwrites existing StudyUnits automatically and does not create attempts or FSRS history.
+
+For the Phase 4B.1 pilot, each Unit Proposal can also record:
+
+- overall `pilotEvaluation`: `excellent`, `good`, `needs-minor-edit`, `needs-major-edit`, or `reject`
+- optional per-area evaluations for main question, learning objectives, guided questions, study answers, source coverage, grounding, and Study-unit grouping
+- `pilotEvaluationNotes`
+
+These fields are stored with the proposal artifact and remain separate from approved StudyUnits.
 
 ## Validation
 
@@ -151,9 +166,17 @@ Validation compares proposals by `documentId + sourceKey`.
 
 ## Representative Sampling
 
-`--strategy representative` now uses deterministic stratified sampling for a fixed corpus hash, seed, sample size, and strategy version.
+`--strategy representative` uses deterministic stratified sampling for a fixed corpus hash, seed, sample size, and strategy version.
 
 The sampler considers document type, document diversity, provision length, detectable legal-rule categories, large/problem-case markers, and optional manual includes.
+
+When the requested command is the Phase 4B.1 pilot shape:
+
+```bash
+npm run study:ai:prepare-map -- --sample 100 --seed 42 --strategy representative
+```
+
+the sampler automatically applies the required golden Study Map cases from the pilot plan, including Boundaries Confirmation Act sections 10 and 16, Surveys Act sections 1, 3, 8, and 14, Community Planning Act sections 83 and 125, Land Titles Act sections 1, 18, and 83, selected Registry Act filing/passive-effect provisions, and representative regulation provisions. It also tops up regulation representation to at least eight regulation provisions when the representative sample would otherwise under-sample regulations. Use `--skip-phase-4b1-includes` only for non-pilot sampling experiments.
 
 Example:
 
@@ -209,6 +232,20 @@ npm run study:ai:status -- --run <run-id>
 npm run study:ai:validate-results -- --run <run-id>
 npm run study:ai:prepare-units -- --run <map-run-id>
 npm run study:ai:validate-unit-proposals -- --proposals path/to/unit-proposals.json
+npm run study:ai:pilot-report -- --run <map-run-id> --unit-run <unit-run-id>
 ```
 
-These commands prepare and validate infrastructure only. They do not call an AI API and do not process the 4B.1 pilot.
+These commands prepare, validate, and report on artifacts only. They do not call an AI API, do not browse, and do not mass-approve AI StudyUnits.
+
+## Phase 4B.1 Pilot Reports
+
+`pilot-report` reads reviewed Map proposals and optional Unit Proposals, then writes:
+
+```text
+study-content/ai/runs/<run-id>/reports/pilot-authoring-audit.json
+study-content/ai/runs/<run-id>/reports/pilot-authoring-audit.md
+```
+
+The JSON audit includes Map disposition/confidence/evaluation counts, conflict/context warning counts, Unit Proposal evaluation and validation warning counts, source text, AI questions/answers/evidence, coverage, validation warnings, deterministic comparison output where available, and pilot evaluation fields.
+
+The report is evaluation-only. It does not decide whether AI authoring is ready for scale and does not start full-corpus generation.

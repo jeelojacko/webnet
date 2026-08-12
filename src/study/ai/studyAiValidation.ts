@@ -112,7 +112,7 @@ export const validateAiStudyMapResult = (
     if (value.runId !== job.runId) addIssue(issues, { code: 'RUN_MISMATCH', jobId, message: 'Result runId does not match the job.' });
     if (value.corpusContentHash !== job.corpusContentHash) addIssue(issues, { code: 'STALE_PROPOSAL', jobId, message: 'Result corpusContentHash does not match the job.' });
     if (value.inputHash && value.inputHash !== job.inputHash) addIssue(issues, { code: 'INPUT_HASH_MISMATCH', jobId, message: 'Result inputHash does not match the job.' });
-    if (stringValue(value.promptSpecVersion) && value.promptSpecVersion !== job.promptSpecVersion) {
+    if (value.promptSpecVersion !== job.promptSpecVersion) {
       addIssue(issues, { code: 'PROMPT_SPEC_MISMATCH', jobId, message: 'Result promptSpecVersion does not match the job.' });
     }
   }

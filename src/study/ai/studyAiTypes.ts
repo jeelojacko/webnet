@@ -31,6 +31,25 @@ export type AiProposalReviewStatus =
 
 export type AiProposalValidationStatus = 'not-validated' | 'valid' | 'warnings' | 'invalid';
 
+export type PilotMapEvaluation = 'good-as-is' | 'minor-edit' | 'major-edit' | 'wrong';
+
+export type PilotUnitEvaluation =
+  | 'excellent'
+  | 'good'
+  | 'needs-minor-edit'
+  | 'needs-major-edit'
+  | 'reject';
+
+export type PilotUnitEvaluationDetail = {
+  mainQuestion?: PilotUnitEvaluation;
+  learningObjectives?: PilotUnitEvaluation;
+  guidedQuestions?: PilotUnitEvaluation;
+  studyAnswers?: PilotUnitEvaluation;
+  sourceCoverage?: PilotUnitEvaluation;
+  grounding?: PilotUnitEvaluation;
+  studyUnitGrouping?: PilotUnitEvaluation;
+};
+
 export type AiLearningObjectiveType =
   | 'definition'
   | 'scope'
@@ -287,6 +306,8 @@ export type AiStudyMapProposal = {
   reviewStatus: AiProposalReviewStatus;
   validationStatus: AiProposalValidationStatus;
   validationMessages: string[];
+  pilotEvaluation?: PilotMapEvaluation;
+  pilotEvaluationNotes?: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -296,6 +317,9 @@ export type AiStoredUnitProposal = AiStudyUnitProposal & {
   validationStatus: AiProposalValidationStatus;
   validationMessages: string[];
   conflictCodes: string[];
+  pilotEvaluation?: PilotUnitEvaluation;
+  pilotEvaluationDetails?: PilotUnitEvaluationDetail;
+  pilotEvaluationNotes?: string;
   approvedUnitId?: string;
   createdAt: string;
   updatedAt: string;

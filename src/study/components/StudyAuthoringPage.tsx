@@ -16,6 +16,8 @@ import type {
   AiStudyDisposition,
   AiStudyMapProposal,
   AiSuggestedPriority,
+  PilotMapEvaluation,
+  PilotUnitEvaluation,
 } from '../ai/studyAiTypes';
 import type { StudyDataSnapshot } from '../studyTypes';
 
@@ -43,6 +45,14 @@ const dispositions: AiStudyDisposition[] = [
 ];
 
 const priorities: AiSuggestedPriority[] = ['P1', 'P2', 'P3', 'P4'];
+const mapEvaluations: PilotMapEvaluation[] = ['good-as-is', 'minor-edit', 'major-edit', 'wrong'];
+const unitEvaluations: PilotUnitEvaluation[] = [
+  'excellent',
+  'good',
+  'needs-minor-edit',
+  'needs-major-edit',
+  'reject',
+];
 
 const updateObjective = (
   proposal: AiStoredUnitProposal,
@@ -339,6 +349,41 @@ const StudyAuthoringPage = ({
                   </div>
                 </div>
               </div>
+              <div className="grid gap-3 lg:grid-cols-[16rem_minmax(0,1fr)]">
+                <label className="text-xs text-slate-400">
+                  Pilot evaluation
+                  <select
+                    value={mapProposal.pilotEvaluation ?? ''}
+                    onChange={(event) =>
+                      void onUpdateMapProposal({
+                        ...mapProposal,
+                        pilotEvaluation: event.target.value
+                          ? (event.target.value as PilotMapEvaluation)
+                          : undefined,
+                      })
+                    }
+                    className="mt-1 w-full rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm text-white"
+                  >
+                    <option value="">Not evaluated</option>
+                    {mapEvaluations.map((evaluation) => (
+                      <option key={evaluation}>{evaluation}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="text-xs text-slate-400">
+                  Pilot notes
+                  <input
+                    value={mapProposal.pilotEvaluationNotes ?? ''}
+                    onChange={(event) =>
+                      void onUpdateMapProposal({
+                        ...mapProposal,
+                        pilotEvaluationNotes: event.target.value,
+                      })
+                    }
+                    className="mt-1 w-full rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm text-white"
+                  />
+                </label>
+              </div>
               <label className="block text-sm text-slate-300">
                 Reason
                 <textarea
@@ -521,6 +566,83 @@ const StudyAuthoringPage = ({
               </div>
               <div className="grid gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
                 <div className="space-y-3">
+                  <div className="rounded border border-slate-800 bg-slate-950 p-3">
+                    <div className="mb-2 text-xs uppercase tracking-wide text-slate-500">
+                      Pilot Evaluation
+                    </div>
+                    <label className="block text-xs text-slate-400">
+                      Overall
+                      <select
+                        value={unitProposal.pilotEvaluation ?? ''}
+                        onChange={(event) =>
+                          void onUpdateUnitProposal({
+                            ...unitProposal,
+                            pilotEvaluation: event.target.value
+                              ? (event.target.value as PilotUnitEvaluation)
+                              : undefined,
+                          })
+                        }
+                        className="mt-1 w-full rounded border border-slate-700 bg-slate-900 px-2 py-1.5 text-sm text-white"
+                      >
+                        <option value="">Not evaluated</option>
+                        {unitEvaluations.map((evaluation) => (
+                          <option key={evaluation}>{evaluation}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                      {[
+                        ['mainQuestion', 'Main question'],
+                        ['learningObjectives', 'Learning objectives'],
+                        ['guidedQuestions', 'Guided questions'],
+                        ['studyAnswers', 'Study answers'],
+                        ['sourceCoverage', 'Source coverage'],
+                        ['grounding', 'Grounding'],
+                        ['studyUnitGrouping', 'Study-unit grouping'],
+                      ].map(([key, label]) => (
+                        <label key={key} className="text-xs text-slate-400">
+                          {label}
+                          <select
+                            value={
+                              unitProposal.pilotEvaluationDetails?.[
+                                key as keyof NonNullable<typeof unitProposal.pilotEvaluationDetails>
+                              ] ?? ''
+                            }
+                            onChange={(event) =>
+                              void onUpdateUnitProposal({
+                                ...unitProposal,
+                                pilotEvaluationDetails: {
+                                  ...(unitProposal.pilotEvaluationDetails ?? {}),
+                                  [key]: event.target.value
+                                    ? (event.target.value as PilotUnitEvaluation)
+                                    : undefined,
+                                },
+                              })
+                            }
+                            className="mt-1 w-full rounded border border-slate-700 bg-slate-900 px-2 py-1.5 text-sm text-white"
+                          >
+                            <option value="">Not evaluated</option>
+                            {unitEvaluations.map((evaluation) => (
+                              <option key={evaluation}>{evaluation}</option>
+                            ))}
+                          </select>
+                        </label>
+                      ))}
+                    </div>
+                    <label className="mt-3 block text-xs text-slate-400">
+                      Notes
+                      <textarea
+                        value={unitProposal.pilotEvaluationNotes ?? ''}
+                        onChange={(event) =>
+                          void onUpdateUnitProposal({
+                            ...unitProposal,
+                            pilotEvaluationNotes: event.target.value,
+                          })
+                        }
+                        className="mt-1 min-h-16 w-full rounded border border-slate-700 bg-slate-900 px-2 py-1.5 text-sm text-white"
+                      />
+                    </label>
+                  </div>
                   <div className="text-xs uppercase tracking-wide text-slate-500">
                     Official Source
                   </div>

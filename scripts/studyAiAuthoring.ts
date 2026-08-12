@@ -4,11 +4,19 @@ import { basename, join } from 'node:path';
 import type { NbLawContentPackage, NbLawDocumentComponent } from '../src/study/content/nbLawTypes';
 import type {
   AiAuthoringRun,
+  AiStoredUnitProposal,
   AiStudyMapJob,
   AiStudyMapResult,
   AiStudyUnitProposal,
   AiUnitAuthoringJob,
 } from '../src/study/ai/studyAiTypes';
+import type { ImportedLegalComponent, ImportedLegalDocument } from '../src/study/studyTypes';
+import {
+  generateReferenceAnswer,
+  generateStudyQuestion,
+  generateStudyTitle,
+} from '../src/study/studyDraftGeneration';
+import { generateStudyRubric } from '../src/study/studyRubricGeneration';
 import {
   mapResultToProposal,
   reconcileAiStudyMapProposals,
@@ -27,6 +35,33 @@ const LARGE_SECTION_THRESHOLD = 8000;
 const CONTEXT_TEXT_LIMIT = 1800;
 const DEFINITION_CONTEXT_LIMIT = 3000;
 const DIRECT_REFERENCE_LIMIT = 5;
+const PHASE_4B1_REGULATION_MINIMUM = 8;
+
+const PHASE_4B1_REQUIRED_INCLUDES = [
+  'doc-boundaries-confirmation-act:10',
+  'doc-boundaries-confirmation-act:16',
+  'doc-surveys-act:1',
+  'doc-surveys-act:3',
+  'doc-surveys-act:8',
+  'doc-surveys-act:14',
+  'doc-community-planning-act:83',
+  'doc-community-planning-act:125',
+  'doc-land-titles-act:1',
+  'doc-land-titles-act:18',
+  'doc-land-titles-act:83',
+  'doc-registry-act:19',
+  'doc-registry-act:34',
+  'doc-registry-act:64',
+  'reg-surveys-84-76:1',
+  'reg-surveys-84-76:4',
+  'reg-surveys-84-76:6',
+  'reg-surveys-84-76:8',
+  'reg-boundaries-95-166:1',
+  'reg-boundaries-95-166:3',
+  'reg-community-planning-80-159:5',
+  'reg-registry-84-190:2',
+  'reg-land-titles-83-130:15',
+] as const;
 
 const hashText = (value: string): string => createHash('sha256').update(value).digest('hex');
 
@@ -342,6 +377,7 @@ const representativeSample = (
   sample: number,
   seed: number,
   includes: string[],
+  regulationMinimum = 0,
 ): { jobs: AiStudyMapJob[]; reasons: Record<string, string[]>; report: Record<string, unknown> } => {
   const selected = new Map<string, AiStudyMapJob>();
   const reasons: Record<string, string[]> = {};
@@ -367,6 +403,17 @@ const representativeSample = (
       const pick = seededSample(candidates, 1, seed + category.length)[0];
       if (pick) add(pick, `bucket: ${category}`);
     });
+  const regulationCount = () =>
+    Array.from(selected.values()).filter((job) => job.document.type === 'regulation').length;
+  seededSample(
+    jobs.filter((job) => job.document.type === 'regulation'),
+    jobs.length,
+    seed + 4101,
+  ).forEach((job) => {
+    if (selected.size < sample && regulationCount() < regulationMinimum) {
+      add(job, `pilot regulation representation minimum ${regulationMinimum}`);
+    }
+  });
   seededSample(jobs, jobs.length, seed).forEach((job) => {
     if (selected.size < sample) add(job, 'seeded weighted fill');
   });
@@ -437,7 +484,11 @@ const commandPrepareMap = (options: Record<string, string | boolean>): void => {
   const seed = Number(options.seed ?? 42);
   const batchSize = Number(options['batch-size'] ?? 25);
   const strategy = String(options.strategy ?? (sample > 0 ? 'representative' : 'all-sections'));
-  const includes = parseIncludes(options.include);
+  const explicitIncludes = parseIncludes(options.include);
+  const phase4b1Pilot = strategy === 'representative' && sample === 100 && options['skip-phase-4b1-includes'] !== true;
+  const includes = Array.from(
+    new Set([...(phase4b1Pilot ? PHASE_4B1_REQUIRED_INCLUDES : []), ...explicitIncludes]),
+  );
   const runDir = join(RUNS_DIR, runId);
   const jobsDir = join(runDir, 'jobs');
   const reportsDir = join(runDir, 'reports');
@@ -448,7 +499,13 @@ const commandPrepareMap = (options: Record<string, string | boolean>): void => {
   const allJobs = allSectionJobs(pkg, runId);
   const selection =
     sample > 0 && strategy === 'representative'
-      ? representativeSample(allJobs, sample, seed, includes)
+      ? representativeSample(
+          allJobs,
+          sample,
+          seed,
+          includes,
+          phase4b1Pilot ? PHASE_4B1_REGULATION_MINIMUM : 0,
+        )
       : {
           jobs: sample > 0 ? seededSample(allJobs, sample, seed) : allJobs,
           reasons: {},
@@ -509,6 +566,8 @@ const commandPrepareMap = (options: Record<string, string | boolean>): void => {
     requestedSample: sample,
     selectedJobs: jobs.length,
     manualIncludes: includes,
+    phase4b1RequiredIncludesApplied: phase4b1Pilot,
+    phase4b1RequiredIncludes: phase4b1Pilot ? PHASE_4B1_REQUIRED_INCLUDES : [],
     ...selection.report,
   };
   writeJson(join(reportsDir, 'sampling-report.json'), samplingReport);
@@ -810,9 +869,207 @@ const commandValidateUnitProposals = (options: Record<string, string | boolean>)
   if (options.report) writeJson(String(options.report), { proposals: proposals.length, issues });
 };
 
+const countBy = <T extends string>(values: T[]): Record<T, number> =>
+  values.reduce<Record<T, number>>((acc, value) => {
+    acc[value] = (acc[value] ?? 0) + 1;
+    return acc;
+  }, {} as Record<T, number>);
+
+const readJsonOrJsonl = <T>(path: string): T[] => {
+  const text = readFileSync(path, 'utf8').trim();
+  if (!text) return [];
+  if (text.startsWith('[')) return JSON.parse(text) as T[];
+  return readJsonl<T>(path);
+};
+
+const componentToImported = (
+  document: NbLawContentPackage['documents'][number],
+  component: NbLawDocumentComponent,
+): ImportedLegalComponent => ({
+  documentId: document.id,
+  id: component.id,
+  sourceKey: component.sourceKey,
+  componentType: component.componentType,
+  label: component.label,
+  heading: component.heading,
+  text: component.text,
+  contentHash: component.contentHash,
+  subsections: component.componentType === 'section' ? component.subsections : undefined,
+  extractionStatus: 'complete',
+});
+
+const deterministicComparison = (
+  pkg: NbLawContentPackage,
+  proposal: AiStudyUnitProposal,
+): Record<string, unknown> => {
+  const document = pkg.documents.find((entry) => entry.id === proposal.sourceDocumentId);
+  if (!document) return { available: false, reason: 'Document not found in package.' };
+  const components = document.components
+    .filter((component) => proposal.sourceKeys.includes(component.sourceKey))
+    .map((component) => componentToImported(document, component));
+  if (components.length === 0) return { available: false, reason: 'Source components not found.' };
+  const deterministicRubrics = generateStudyRubric({
+    document: document as unknown as ImportedLegalDocument,
+    selectedSources: components,
+    unitType: 'section',
+  });
+  return {
+    available: true,
+    title: generateStudyTitle({ documentTitle: document.officialTitle, selectedSources: components }),
+    mainQuestion: generateStudyQuestion({
+      documentTitle: document.officialTitle,
+      selectedSources: components,
+      rubricCategories: deterministicRubrics.map((item) => item.category),
+    }).question,
+    rubricQuestions: deterministicRubrics.map((item) => item.prompt),
+    referenceAnswer: generateReferenceAnswer({
+      document: document as unknown as ImportedLegalDocument,
+      selectedSources: components,
+      options: {
+        format: 'structured-exact',
+        includeAmendmentHistory: false,
+        includeConsolidationNotes: false,
+        includeRepealedProvisions: true,
+        includeSectionHeadings: true,
+        includeSourceCitationAfterEachSection: false,
+      },
+    }).text,
+  };
+};
+
+const commandPilotReport = (options: Record<string, string | boolean>): void => {
+  const pkg = readJson<NbLawContentPackage>(String(options.package ?? DEFAULT_PACKAGE));
+  const mapRunId = String(options.run ?? '');
+  const unitRunId = String(options['unit-run'] ?? '');
+  const mapPath = String(options.maps ?? join(RUNS_DIR, mapRunId, 'reports', 'map-proposals.json'));
+  const unitPath = options['unit-proposals']
+    ? String(options['unit-proposals'])
+    : unitRunId
+      ? join(RUNS_DIR, unitRunId, 'reports', 'unit-proposals.json')
+      : '';
+  const reportRunId = unitRunId || mapRunId || `pilot-${new Date().toISOString().replace(/[:.]/g, '-')}`;
+  const reportsDir = join(RUNS_DIR, reportRunId, 'reports');
+  mkdirSync(reportsDir, { recursive: true });
+  const mapProposals = existsSync(mapPath)
+    ? readJson<ReturnType<typeof reconcileAiStudyMapProposals>>(mapPath)
+    : [];
+  const unitProposals = unitPath && existsSync(unitPath)
+    ? readJsonOrJsonl<AiStoredUnitProposal>(unitPath)
+    : [];
+  const unitIssues = unitProposals.flatMap((proposal) => {
+    const document = pkg.documents.find((entry) => entry.id === proposal.sourceDocumentId);
+    const sourceComponents =
+      document?.components
+        .filter((component) => proposal.sourceKeys.includes(component.sourceKey))
+        .map((component) => componentToImported(document, component)) ?? [];
+    return validateAiStudyUnitProposal({ proposal, sourceComponents }).issues.map((issue) => ({
+      proposalId: proposal.proposalId,
+      ...issue,
+    }));
+  });
+  const audit = {
+    schemaVersion: 1,
+    mapRunId,
+    unitRunId,
+    generatedAt: new Date().toISOString(),
+    map: {
+      jobsProcessed: mapProposals.length,
+      dispositionCounts: countBy(mapProposals.map((proposal) => proposal.disposition)),
+      confidenceCounts: countBy(mapProposals.map((proposal) => proposal.confidence)),
+      conflicts: mapProposals.filter((proposal) => proposal.conflictCodes.length > 0).length,
+      contextWarnings: mapProposals.filter(
+        (proposal) => (proposal.context?.omittedContextWarnings?.length ?? 0) > 0,
+      ).length,
+      humanEditedMapProposals: mapProposals.filter(
+        (proposal) => proposal.updatedAt !== proposal.createdAt,
+      ).length,
+      humanOverriddenDispositions: mapProposals.filter(
+        (proposal) => proposal.pilotEvaluation === 'major-edit' || proposal.pilotEvaluation === 'wrong',
+      ).length,
+      pilotEvaluationCounts: countBy(
+        mapProposals.flatMap((proposal) => proposal.pilotEvaluation ? [proposal.pilotEvaluation] : []),
+      ),
+    },
+    units: {
+      proposalsProcessed: unitProposals.length,
+      valid: unitProposals.filter(
+        (proposal) =>
+          !unitIssues.some(
+            (issue) => issue.proposalId === proposal.proposalId && issue.severity === 'error',
+          ),
+      ).length,
+      warningCount: unitIssues.filter((issue) => issue.severity === 'warning').length,
+      warningTypes: countBy(unitIssues.filter((issue) => issue.severity === 'warning').map((issue) => issue.code)),
+      evaluationCounts: countBy(
+        unitProposals.flatMap((proposal) => proposal.pilotEvaluation ? [proposal.pilotEvaluation] : []),
+      ),
+    },
+    proposals: unitProposals.map((proposal) => {
+      const document = pkg.documents.find((entry) => entry.id === proposal.sourceDocumentId);
+      const sourceComponents =
+        document?.components.filter((component) => proposal.sourceKeys.includes(component.sourceKey)) ?? [];
+      const mapProposal = mapProposals.find(
+        (entry) => entry.id === proposal.generationMetadata.sourceJobId || entry.id === proposal.approvedGroup?.groupId,
+      );
+      return {
+        proposalId: proposal.proposalId,
+        document: document?.officialTitle ?? proposal.sourceDocumentId,
+        citation: sourceComponents.map((component) => component.label).join(', '),
+        sourceText: sourceComponents.map((component) => component.text).join('\n\n'),
+        mapDisposition: proposal.mapDisposition ?? mapProposal?.disposition,
+        mapRationale: proposal.mapReason ?? mapProposal?.reason,
+        approvedGrouping: proposal.approvedGroup,
+        aiTitle: proposal.title,
+        mainQuestion: proposal.mainQuestion,
+        objectives: proposal.objectives.map((objective) => objective.objective),
+        guidedQuestions: proposal.objectives.map((objective) => objective.guidedQuestion),
+        studyAnswers: proposal.objectives.map((objective) => objective.studyAnswer),
+        evidence: proposal.objectives.flatMap((objective) => objective.evidence),
+        sourceCoverage: proposal.sourceCoverage ?? [],
+        validationWarnings: unitIssues.filter(
+          (issue) => issue.proposalId === proposal.proposalId && issue.severity === 'warning',
+        ),
+        confidence: proposal.confidence,
+        deterministicComparison: deterministicComparison(pkg, proposal),
+        pilotEvaluation: proposal.pilotEvaluation,
+        pilotEvaluationDetails: proposal.pilotEvaluationDetails,
+        pilotEvaluationNotes: proposal.pilotEvaluationNotes,
+      };
+    }),
+  };
+  writeJson(join(reportsDir, 'pilot-authoring-audit.json'), audit);
+  writeFileSync(
+    join(reportsDir, 'pilot-authoring-audit.md'),
+    [
+      `# Phase 4B.1 Pilot Authoring Audit ${reportRunId}`,
+      '',
+      `Map proposals: ${mapProposals.length}`,
+      `Unit proposals: ${unitProposals.length}`,
+      `Unit validation warnings: ${audit.units.warningCount}`,
+      '',
+      '## Map Dispositions',
+      ...Object.entries(audit.map.dispositionCounts).map(([key, value]) => `- ${key}: ${value}`),
+      '',
+      '## Map Confidence',
+      ...Object.entries(audit.map.confidenceCounts).map(([key, value]) => `- ${key}: ${value}`),
+      '',
+      '## Unit Evaluations',
+      ...Object.entries(audit.units.evaluationCounts).map(([key, value]) => `- ${key}: ${value}`),
+      '',
+      '## Unit Proposals',
+      ...audit.proposals.map(
+        (proposal) =>
+          `- ${proposal.document} ${proposal.citation}: ${proposal.mainQuestion} (${proposal.confidence})`,
+      ),
+      '',
+    ].join('\n'),
+  );
+  console.log(`Wrote pilot audit reports to ${reportsDir}`);
+};
+
 const commandHelp = (): void => {
   console.log(
-    'Commands: prepare-map, prepare-units, status, validate-results, validate-unit-proposals',
+    'Commands: prepare-map, prepare-units, status, validate-results, validate-unit-proposals, pilot-report',
   );
 };
 
@@ -822,6 +1079,7 @@ else if (command === 'prepare-units') commandPrepareUnitJobs(options);
 else if (command === 'status') commandStatus(options);
 else if (command === 'validate-results') commandValidateResults(options);
 else if (command === 'validate-unit-proposals') commandValidateUnitProposals(options);
+else if (command === 'pilot-report') commandPilotReport(options);
 else commandHelp();
 
 export const __studyAiAuthoringTest = {
