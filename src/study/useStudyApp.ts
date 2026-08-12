@@ -1,11 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { exportStudyData, parseStudyImport } from './studyExportImport';
-import type { NbLawContentPackage } from './content/nbLawTypes';
 import {
   acknowledgeUnitSourceReview,
   createStudyContentFromSourceSelection,
-  parseOfficialContentPackage,
-  type OfficialContentPreview,
 } from './studyOfficialContent';
 import {
   DEFAULT_REFERENCE_ANSWER_OPTIONS,
@@ -17,7 +14,7 @@ import {
 } from './studyDraftGeneration';
 import { normalizeConceptLabelKey } from './studyConceptGeneration';
 import { generateStudyRubric } from './studyRubricGeneration';
-import { createDefaultStudySettings } from './studySeed';
+import { createEmptyStudyData } from './studySeed';
 import { createInitialProgress, markReadingComplete } from './studyScheduler';
 import {
   findNextScheduledStudyReview,
@@ -26,6 +23,8 @@ import {
 import { buildStudyQueue } from './studyQueue';
 import { buildStudySessionCompletionSummary } from './studySessionSummary';
 import { persistStudyPracticeAttempt } from './studyPracticePersistence';
+import { useStudyAiAuthoring } from './useStudyAiAuthoring';
+import { useStudyOfficialPackageImport } from './useStudyOfficialPackageImport';
 import { createStudyStorage, STUDY_SCHEMA_VERSION } from './studyStorage';
 import {
   getLatestEligibleSchedulingAttemptForUnit,
@@ -76,9 +75,6 @@ export const useStudyApp = () => {
   const [sessionAttemptIds, setSessionAttemptIds] = useState<string[]>([]);
   const [statusMessage, setStatusMessage] = useState('');
   const [importText, setImportText] = useState('');
-  const [officialPackageText, setOfficialPackageText] = useState('');
-  const [officialPackagePreview, setOfficialPackagePreview] =
-    useState<OfficialContentPreview | null>(null);
   const ratingInFlightRef = useRef(false);
   const clockNow = useMemo(() => new Date(clockNowMs), [clockNowMs]);
 
@@ -629,6 +625,21 @@ export const useStudyApp = () => {
 
   const exportText = useMemo(() => (data ? exportStudyData(data) : ''), [data]);
 
+  const officialPackageImport = useStudyOfficialPackageImport({
+    data,
+    storage,
+    setData,
+    setStatusMessage,
+  });
+
+  const aiAuthoring = useStudyAiAuthoring({
+    data,
+    storage,
+    setData,
+    setStatusMessage,
+    navigate,
+  });
+
   const importData = useCallback(async () => {
     const snapshot = parseStudyImport(importText);
     await storage.replaceAll(snapshot);
@@ -637,23 +648,7 @@ export const useStudyApp = () => {
   }, [importText, storage]);
 
   const deleteAllData = useCallback(async () => {
-    const nowIso = new Date().toISOString();
-    const snapshot: StudyDataSnapshot = {
-      schemaVersion: data?.schemaVersion ?? STUDY_SCHEMA_VERSION,
-      exportedAt: nowIso,
-      documents: [],
-      units: [],
-      prompts: [],
-      concepts: [],
-      rubrics: [],
-      progress: [],
-      attempts: [],
-      drafts: [],
-      settings: createDefaultStudySettings(nowIso),
-      legalDocuments: [],
-      legalComponents: [],
-      importHistory: [],
-    };
+    const snapshot = { ...createEmptyStudyData(), schemaVersion: data?.schemaVersion ?? STUDY_SCHEMA_VERSION };
     await storage.replaceAll(snapshot);
     setData(snapshot);
     setAnswer('');
@@ -665,45 +660,10 @@ export const useStudyApp = () => {
     setActiveItemIndex(0);
     setSessionAttemptIds([]);
     setImportText('');
-    setOfficialPackageText('');
-    setOfficialPackagePreview(null);
+    officialPackageImport.clearOfficialPackageImport();
     setStatusMessage('All Study data deleted. Clean slate ready.');
     navigate('/study/manage');
-  }, [data?.schemaVersion, navigate, storage]);
-
-  const previewOfficialPackage = useCallback(() => {
-    if (!data) return;
-    void (async () => {
-      try {
-      const contentPackage = parseOfficialContentPackage(officialPackageText);
-        setOfficialPackagePreview(await storage.previewOfficialContentPackage(contentPackage));
-      } catch (error) {
-        setOfficialPackagePreview({
-          valid: false,
-          errors: [error instanceof Error ? error.message : String(error)],
-          newDocuments: [],
-          updatedDocuments: [],
-          unchangedDocuments: [],
-          absentExistingDocuments: [],
-          newComponents: [],
-          changedComponents: [],
-          removedComponents: [],
-          unchangedComponents: [],
-          referenceOnlyForms: [],
-          unitsRequiringSourceReview: [],
-        });
-      }
-    })();
-  }, [data, officialPackageText, storage]);
-
-  const importOfficialPackage = useCallback(async () => {
-    const contentPackage: NbLawContentPackage = parseOfficialContentPackage(officialPackageText);
-    const snapshot = await storage.importOfficialContentPackage(contentPackage);
-    setData({ ...snapshot, legalComponents: [] });
-    setOfficialPackageText('');
-    setOfficialPackagePreview(null);
-    setStatusMessage(`Official content package imported: ${contentPackage.id}.`);
-  }, [officialPackageText, storage]);
+  }, [data?.schemaVersion, navigate, officialPackageImport, storage]);
 
   const createUnitFromSourceSelection = useCallback(
     async (documentId: string, selectedComponents: ImportedLegalComponent[]) => {
@@ -954,11 +914,8 @@ export const useStudyApp = () => {
     setImportText,
     importData,
     deleteAllData,
-    officialPackageText,
-    setOfficialPackageText,
-    officialPackagePreview,
-    previewOfficialPackage,
-    importOfficialPackage,
+    ...officialPackageImport,
+    ...aiAuthoring,
     createUnitFromSourceSelection,
     createCustomUnit,
     deleteUnit,

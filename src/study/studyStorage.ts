@@ -7,6 +7,12 @@ import {
 } from './studyOfficialContent';
 import type { StudyStorage } from './studyStorageTypes';
 import type {
+  AiAuthoringRun,
+  AiStoredUnitProposal,
+  AiStudyMapProposal,
+} from './ai/studyAiTypes';
+import { applyAiProposalApprovalToSnapshot } from './ai/studyAiApproval';
+import type {
   ImportedLegalComponent,
   ImportedLegalDocument,
   StudyAttempt,
@@ -23,8 +29,8 @@ import type {
 } from './studyTypes';
 
 export const STUDY_DB_NAME = 'webnet.study.v1';
-export const STUDY_DB_VERSION = 7;
-export const STUDY_SCHEMA_VERSION = 7;
+export const STUDY_DB_VERSION = 8;
+export const STUDY_SCHEMA_VERSION = 8;
 
 const STORES = [
   'documents',
@@ -41,6 +47,9 @@ const STORES = [
   'importHistory',
   'searchIndexMetadata',
   'searchIndexArtifacts',
+  'aiAuthoringRuns',
+  'aiStudyMapProposals',
+  'aiUnitProposals',
 ] as const;
 
 type StudyStoreName = (typeof STORES)[number];
@@ -60,6 +69,9 @@ const STORE_KEYS: Record<StudyStoreName, string> = {
   importHistory: 'id',
   searchIndexMetadata: 'id',
   searchIndexArtifacts: 'id',
+  aiAuthoringRuns: 'runId',
+  aiStudyMapProposals: 'id',
+  aiUnitProposals: 'proposalId',
 };
 
 type StudyStorePayloads = {
@@ -77,6 +89,9 @@ type StudyStorePayloads = {
   importHistory: StudyOfficialImportHistory;
   searchIndexMetadata: { id: string; [key: string]: unknown };
   searchIndexArtifacts: { id: string; [key: string]: unknown };
+  aiAuthoringRuns: AiAuthoringRun;
+  aiStudyMapProposals: AiStudyMapProposal;
+  aiUnitProposals: AiStoredUnitProposal;
 };
 
 const hasIndexedDb = (): boolean =>
@@ -160,6 +175,11 @@ const createIndexesForStore = (storeName: StudyStoreName, store: IDBObjectStore)
     store.createIndex('byUnitId', 'unitId');
     store.createIndex('byUnitReviewedAt', ['unitId', 'completedAt']);
   }
+  if (storeName === 'aiStudyMapProposals' || storeName === 'aiUnitProposals') {
+    store.createIndex('byRunId', 'runId');
+    store.createIndex('byReviewStatus', 'reviewStatus');
+    store.createIndex('byValidationStatus', 'validationStatus');
+  }
 };
 
 const createMissingIndexes = (storeName: StudyStoreName, store: IDBObjectStore): void => {
@@ -177,6 +197,11 @@ const createMissingIndexes = (storeName: StudyStoreName, store: IDBObjectStore):
   if (storeName === 'attempts') {
     createMissingIndex(store, 'byUnitId', 'unitId');
     createMissingIndex(store, 'byUnitReviewedAt', ['unitId', 'completedAt']);
+  }
+  if (storeName === 'aiStudyMapProposals' || storeName === 'aiUnitProposals') {
+    createMissingIndex(store, 'byRunId', 'runId');
+    createMissingIndex(store, 'byReviewStatus', 'reviewStatus');
+    createMissingIndex(store, 'byValidationStatus', 'validationStatus');
   }
 };
 
@@ -342,6 +367,9 @@ export const migrateStudySnapshot = (input: Partial<StudyDataSnapshot>): StudyDa
     legalDocuments,
     legalComponents: input.legalComponents ?? [],
     importHistory: input.importHistory ?? [],
+    aiAuthoringRuns: input.aiAuthoringRuns ?? [],
+    aiStudyMapProposals: input.aiStudyMapProposals ?? [],
+    aiUnitProposals: input.aiUnitProposals ?? [],
   };
 };
 
@@ -376,6 +404,9 @@ const loadAuthoritativeSnapshot = async (db: IDBDatabase): Promise<StudyDataSnap
     legalDocuments,
     legalComponents,
     importHistory,
+    aiAuthoringRuns,
+    aiStudyMapProposals,
+    aiUnitProposals,
   ] = await Promise.all([
     readStore(db, 'documents'),
     readStore(db, 'units'),
@@ -389,6 +420,9 @@ const loadAuthoritativeSnapshot = async (db: IDBDatabase): Promise<StudyDataSnap
     readStore(db, 'legalDocuments'),
     readStore(db, 'legalComponents'),
     readStore(db, 'importHistory'),
+    readStore(db, 'aiAuthoringRuns'),
+    readStore(db, 'aiStudyMapProposals'),
+    readStore(db, 'aiUnitProposals'),
   ]);
   return migrateStudySnapshot({
     documents,
@@ -403,6 +437,9 @@ const loadAuthoritativeSnapshot = async (db: IDBDatabase): Promise<StudyDataSnap
     legalDocuments,
     legalComponents: legalComponents.map(legalComponentFromRecord),
     importHistory,
+    aiAuthoringRuns,
+    aiStudyMapProposals,
+    aiUnitProposals,
   });
 };
 
@@ -459,6 +496,11 @@ export const createStudyStorage = (): StudyStorage => ({
         Promise.resolve([] as StudyStorePayloads['legalComponents'][]),
         readStore(db, 'importHistory'),
       ]);
+      const [aiAuthoringRuns, aiStudyMapProposals, aiUnitProposals] = await Promise.all([
+        readStore(db, 'aiAuthoringRuns'),
+        readStore(db, 'aiStudyMapProposals'),
+        readStore(db, 'aiUnitProposals'),
+      ]);
       return migrateStudySnapshot({
         documents,
         units,
@@ -472,6 +514,9 @@ export const createStudyStorage = (): StudyStorage => ({
         legalDocuments,
         legalComponents: legalComponents.map(legalComponentFromRecord),
         importHistory,
+        aiAuthoringRuns,
+        aiStudyMapProposals,
+        aiUnitProposals,
       });
     } finally {
       db.close();
@@ -721,6 +766,89 @@ export const createStudyStorage = (): StudyStorage => ({
       db.close();
     }
   },
+  async saveAiAuthoringRun(run) {
+    const db = await openStudyDatabase();
+    try {
+      await putRecord(db, 'aiAuthoringRuns', run);
+    } finally {
+      db.close();
+    }
+  },
+  async saveAiStudyMapProposal(proposal) {
+    const db = await openStudyDatabase();
+    try {
+      await putRecord(db, 'aiStudyMapProposals', proposal);
+    } finally {
+      db.close();
+    }
+  },
+  async saveAiUnitProposal(proposal) {
+    const db = await openStudyDatabase();
+    try {
+      await putRecord(db, 'aiUnitProposals', proposal);
+    } finally {
+      db.close();
+    }
+  },
+  async replaceAiAuthoringArtifacts({ runs, mapProposals, unitProposals }) {
+    const db = await openStudyDatabase();
+    try {
+      const transaction = db.transaction(
+        ['aiAuthoringRuns', 'aiStudyMapProposals', 'aiUnitProposals'],
+        'readwrite',
+      );
+      if (runs) putMany(transaction, 'aiAuthoringRuns', runs);
+      if (mapProposals) putMany(transaction, 'aiStudyMapProposals', mapProposals);
+      if (unitProposals) putMany(transaction, 'aiUnitProposals', unitProposals);
+      await transactionDone(transaction);
+    } finally {
+      db.close();
+    }
+  },
+  async approveAiUnitProposal({ proposalId, sourceComponents }) {
+    const db = await openStudyDatabase();
+    try {
+      const current = await loadAuthoritativeSnapshot(db);
+      const proposal = current.aiUnitProposals.find((entry) => entry.proposalId === proposalId);
+      if (!proposal) throw new Error(`AI unit proposal not found: ${proposalId}`);
+      if (proposal.reviewStatus === 'approved') {
+        throw new Error(`AI unit proposal is already approved: ${proposalId}`);
+      }
+      if (proposal.validationStatus === 'invalid') {
+        throw new Error(`AI unit proposal is invalid and cannot be approved: ${proposalId}`);
+      }
+      const snapshot = applyAiProposalApprovalToSnapshot({
+        snapshot: current,
+        proposal,
+        sourceComponents,
+      });
+      const transaction = db.transaction(
+        ['units', 'prompts', 'concepts', 'rubrics', 'progress', 'aiUnitProposals'],
+        'readwrite',
+      );
+      const approvedUnit = snapshot.units.at(-1);
+      const approvedProgress = snapshot.progress.at(-1);
+      if (!approvedUnit || !approvedProgress) throw new Error('AI proposal approval failed.');
+      transaction.objectStore('units').put(approvedUnit);
+      snapshot.prompts
+        .filter((prompt) => prompt.unitId === approvedUnit.id)
+        .forEach((prompt) => transaction.objectStore('prompts').put(prompt));
+      snapshot.concepts
+        .filter((concept) => concept.unitId === approvedUnit.id)
+        .forEach((concept) => transaction.objectStore('concepts').put(concept));
+      snapshot.rubrics
+        .filter((rubric) => rubric.unitId === approvedUnit.id)
+        .forEach((rubric) => transaction.objectStore('rubrics').put(rubric));
+      transaction.objectStore('progress').put(approvedProgress);
+      transaction.objectStore('aiUnitProposals').put(
+        snapshot.aiUnitProposals.find((entry) => entry.proposalId === proposalId) ?? proposal,
+      );
+      await transactionDone(transaction);
+      return snapshot;
+    } finally {
+      db.close();
+    }
+  },
   async replaceAll(snapshot) {
     const next = migrateStudySnapshot(snapshot);
     const db = await openStudyDatabase();
@@ -742,6 +870,9 @@ export const createStudyStorage = (): StudyStorage => ({
       putMany(transaction, 'legalDocuments', next.legalDocuments);
       putMany(transaction, 'legalComponents', next.legalComponents.map(legalComponentRecord));
       putMany(transaction, 'importHistory', next.importHistory);
+      putMany(transaction, 'aiAuthoringRuns', next.aiAuthoringRuns);
+      putMany(transaction, 'aiStudyMapProposals', next.aiStudyMapProposals);
+      putMany(transaction, 'aiUnitProposals', next.aiUnitProposals);
       await transactionDone(transaction);
     } finally {
       db.close();

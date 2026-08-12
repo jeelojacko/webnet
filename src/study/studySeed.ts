@@ -230,4 +230,27 @@ export const createSeedStudyData = (nowIso = SEED_CREATED_AT): StudyDataSnapshot
   legalDocuments: [],
   legalComponents: [],
   importHistory: [],
+  aiAuthoringRuns: [],
+  aiStudyMapProposals: [],
+  aiUnitProposals: [],
+});
+
+export const createEmptyStudyData = (nowIso = new Date().toISOString()): StudyDataSnapshot => ({
+  schemaVersion: 8,
+  exportedAt: nowIso,
+  documents: [],
+  units: [],
+  prompts: [],
+  concepts: [],
+  rubrics: [],
+  progress: [],
+  attempts: [],
+  drafts: [],
+  settings: createDefaultStudySettings(nowIso),
+  legalDocuments: [],
+  legalComponents: [],
+  importHistory: [],
+  aiAuthoringRuns: [],
+  aiStudyMapProposals: [],
+  aiUnitProposals: [],
 });

@@ -1,3 +1,10 @@
+import type {
+  AiAuthoringProviderKind,
+  AiAuthoringRun,
+  AiStoredUnitProposal,
+  AiStudyMapProposal,
+} from './ai/studyAiTypes';
+
 export type StudyDocumentKind =
   | 'act'
   | 'regulation'
@@ -65,6 +72,11 @@ export type StudyGeneratedContentState = {
 };
 
 export type StudySourceMode = 'official' | 'custom';
+export type StudyGenerationOrigin = 'deterministic' | 'ai' | 'manual';
+export type StudyReferenceAnswerOrigin =
+  | 'deterministic-exact'
+  | 'ai-source-grounded'
+  | 'manual';
 
 export type StudySourceCitationSummary = {
   text: string;
@@ -125,6 +137,13 @@ export type StudyUnit = {
   customSourceUrl?: string;
   editableSummary: string;
   referenceAnswer: string;
+  referenceAnswerOrigin?: StudyReferenceAnswerOrigin;
+  generationOrigin?: StudyGenerationOrigin;
+  aiAuthoring?: {
+    proposalId: string;
+    runId: string;
+    providerKind: AiAuthoringProviderKind;
+  };
   createdAt: string;
   updatedAt: string;
 };
@@ -406,6 +425,9 @@ export type StudyDataSnapshot = {
   legalDocuments: ImportedLegalDocument[];
   legalComponents: ImportedLegalComponent[];
   importHistory: StudyOfficialImportHistory[];
+  aiAuthoringRuns: AiAuthoringRun[];
+  aiStudyMapProposals: AiStudyMapProposal[];
+  aiUnitProposals: AiStoredUnitProposal[];
 };
 
 export type StudySessionItem = {

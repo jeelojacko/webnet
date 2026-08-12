@@ -1,3 +1,10 @@
+- [x] Study Phase 4B.0 AI-assisted authoring architecture batch (August 2026): add provider-neutral AI study-map/unit-proposal schemas, external Codex JSONL job workflow, deterministic validation/reconciliation/reporting, proposal IndexedDB storage/import/export, authoring review UI, focused tests, docs, validation, commit, and push.
+  - [x] Add schema/types for AI authoring runs, study-map jobs/results, source groups, unit proposals, learning objectives, grounding evidence, notes, review/validation statuses, and generation metadata.
+  - [x] Add Node CLI tooling for preparing resumable study-map batches, status checks, validating JSONL results, reconciling map conflicts, creating unit-authoring jobs from map groups, and unit-proposal validation.
+  - [x] Add IndexedDB stores and repository methods for authoring runs, study-map proposals, and unit proposals without creating FSRS state before approval.
+  - [x] Add Study Authoring UI for runs, map proposals, unit proposals, editable learning objectives, grounding display, stale/source-hash checks, and proposal approval into normal StudyUnits.
+  - [x] Extend Study export/import and docs for AI authoring artifacts and the Codex/Plus external workflow.
+  - [x] Add focused schema, grounding, reconciliation, lifecycle, approval mapping, and import/export tests; run required validation.
 - [x] Study Phase 4A.1 NB SIT import persistence repair (August 2026): repair malformed legacy `legalComponents` IndexedDB key paths that collapsed full-corpus imports, make Manage preview compare against authoritative IndexedDB legal components instead of the lean React snapshot, invalidate derived search after official import, update docs/tests, validate, commit, and push.
 - [x] Study Phase 4A.1 search quality, diagnostics, and Phase 4B readiness follow-up (August 2026): restore exact-phrase official-provision snippets/highlights, improve worker ranking/filtering, add search diagnostics and bulk Study index API seams, update docs/tests, validate, commit, and push.
   - [x] Add worker-side matched snippets so official-provision results for phrases such as `Director of Surveys` display highlighted matching text.

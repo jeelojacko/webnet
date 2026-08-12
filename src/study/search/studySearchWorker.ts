@@ -42,7 +42,10 @@ type StoreName =
   | 'settings'
   | 'legalDocuments'
   | 'legalComponents'
-  | 'importHistory';
+  | 'importHistory'
+  | 'aiAuthoringRuns'
+  | 'aiStudyMapProposals'
+  | 'aiUnitProposals';
 
 type WorkerState = {
   officialIndex: MiniSearch<StudySearchRecord> | null;
@@ -98,7 +101,7 @@ const readSnapshotWithoutLegalText = async (db: IDBDatabase): Promise<StudyDataS
       readStore(db, 'importHistory'),
     ]);
   return {
-    schemaVersion: 7,
+    schemaVersion: 8,
     exportedAt: new Date().toISOString(),
     documents,
     units,
@@ -112,6 +115,9 @@ const readSnapshotWithoutLegalText = async (db: IDBDatabase): Promise<StudyDataS
     legalDocuments,
     legalComponents: [],
     importHistory,
+    aiAuthoringRuns: [],
+    aiStudyMapProposals: [],
+    aiUnitProposals: [],
   } as StudyDataSnapshot;
 };
 

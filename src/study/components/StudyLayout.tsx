@@ -1,5 +1,5 @@
 import type React from 'react';
-import { BookOpen, ChevronLeft, ChevronRight, FileText, Home, Library, RotateCcw, Settings } from 'lucide-react';
+import { BookOpen, ChevronLeft, ChevronRight, FileText, Home, Library, PencilLine, RotateCcw, Settings } from 'lucide-react';
 
 type StudyLayoutProps = {
   activePath: string;
@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { path: '/study', label: 'Dashboard', icon: Home },
   { path: '/study/library', label: 'Library', icon: Library },
   { path: '/study/session', label: 'Session', icon: BookOpen },
+  { path: '/study/authoring', label: 'Authoring', icon: PencilLine },
   { path: '/study/manage', label: 'Manage', icon: Settings },
 ];
 
@@ -80,7 +81,7 @@ const StudyLayout = ({ activePath, sidebarCollapsed, onSidebarCollapsedChange, o
         <div className="mx-auto w-full max-w-7xl p-4 md:p-6">{children}</div>
       </main>
     </div>
-    <div className="grid grid-cols-4 border-t border-slate-800 bg-slate-900 md:hidden">
+    <div className="grid grid-cols-5 border-t border-slate-800 bg-slate-900 md:hidden">
       {NAV_ITEMS.map(({ path, label, icon: Icon }) => (
         <button
           key={path}

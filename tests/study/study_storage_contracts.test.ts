@@ -35,6 +35,9 @@ const STUDY_STORE_KEYS: Record<string, string> = {
   legalDocuments: 'id',
   legalComponents: 'recordKey',
   importHistory: 'id',
+  aiAuthoringRuns: 'runId',
+  aiStudyMapProposals: 'id',
+  aiUnitProposals: 'proposalId',
 };
 
 const originalIndexedDb = window.indexedDB;
@@ -449,7 +452,7 @@ describe('study storage contracts', () => {
     const byDocument = await storage.getLegalComponentsByDocument('doc-surveys-act');
     const bySourceKey = await storage.getLegalComponent('doc-surveys-act', 'section-8');
 
-    expect(STUDY_DB_VERSION).toBe(7);
+    expect(STUDY_DB_VERSION).toBe(8);
     expect(indexes.legalComponents).toEqual(
       new Set(['byDocumentId', 'bySourceKey', 'byType']),
     );

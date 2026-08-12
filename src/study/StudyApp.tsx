@@ -1,4 +1,5 @@
 import StudyDashboard from './components/StudyDashboard';
+import StudyAuthoringPage from './components/StudyAuthoringPage';
 import StudyDocumentPage from './components/StudyDocumentPage';
 import StudyLayout, { StudyEmptyState } from './components/StudyLayout';
 import StudyLibrary from './components/StudyLibrary';
@@ -181,6 +182,20 @@ const StudyApp = () => {
           officialPackagePreview={study.officialPackagePreview}
           onPreviewOfficialPackage={study.previewOfficialPackage}
           onImportOfficialPackage={study.importOfficialPackage}
+          statusMessage={study.statusMessage}
+        />
+      );
+    }
+    if (study.routePath === '/study/authoring') {
+      return (
+        <StudyAuthoringPage
+          data={study.data}
+          aiImportText={study.aiImportText}
+          onAiImportTextChange={study.setAiImportText}
+          onImportAiAuthoring={study.importAiAuthoringJson}
+          onUpdateUnitProposal={study.updateAiUnitProposal}
+          onValidateUnitProposal={study.validateAiUnitProposalById}
+          onApproveUnitProposal={study.approveAiUnitProposal}
           statusMessage={study.statusMessage}
         />
       );

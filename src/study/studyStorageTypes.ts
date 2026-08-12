@@ -1,6 +1,11 @@
 import type { NbLawContentPackage } from './content/nbLawTypes';
 import type { OfficialContentPreview } from './studyOfficialContent';
 import type {
+  AiAuthoringRun,
+  AiStoredUnitProposal,
+  AiStudyMapProposal,
+} from './ai/studyAiTypes';
+import type {
   StudyAttempt,
   StudyConcept,
   StudyDataSnapshot,
@@ -65,6 +70,18 @@ export interface StudyStorage {
   clearDraft: (_draftId: string) => Promise<void>;
   deleteUnitCascade: (_unitId: string) => Promise<void>;
   saveSettings: (_settings: StudySettings) => Promise<void>;
+  saveAiAuthoringRun: (_run: AiAuthoringRun) => Promise<void>;
+  saveAiStudyMapProposal: (_proposal: AiStudyMapProposal) => Promise<void>;
+  saveAiUnitProposal: (_proposal: AiStoredUnitProposal) => Promise<void>;
+  replaceAiAuthoringArtifacts: (_artifacts: {
+    runs?: AiAuthoringRun[];
+    mapProposals?: AiStudyMapProposal[];
+    unitProposals?: AiStoredUnitProposal[];
+  }) => Promise<void>;
+  approveAiUnitProposal: (_options: {
+    proposalId: string;
+    sourceComponents: ImportedLegalComponent[];
+  }) => Promise<StudyDataSnapshot>;
   replaceAll: (_snapshot: StudyDataSnapshot) => Promise<void>;
   importOfficialContentPackage: (
     _contentPackage: NbLawContentPackage,

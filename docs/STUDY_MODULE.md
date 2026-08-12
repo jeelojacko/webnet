@@ -20,6 +20,7 @@ It does not use adjustment, parser, solver, network, or Survey CAD domain state.
 - `src/study/studyQuestionSupport.ts` - shared main-question evidence gating, Tier A/B/C metadata, unsupported-topic checks, and suggested study chunk rules
 - `src/study/fsrs/*` - Phase 3 FSRS adapter, Study-domain scheduler settings, JSON-safe card/review-log serialization, parameter validation, and fixed/system clocks
 - `src/study/search/*` - derived MiniSearch record builders, IndexedDB search-index persistence, worker protocol, worker implementation, and service wrapper for Library search
+- `src/study/ai/*` - provider-neutral AI authoring schemas, Study Map result validation/reconciliation, grounding checks, and approval mapping into normal Study records
 - `src/study/studyLibrarySearch.ts` - legacy highlighting helpers and compatibility tests for the former in-memory search path
 - `src/study/studyOpfs.ts` - OPFS path generation and source-file text asset writes
 - `src/study/studyExportImport.ts` - JSON export/import round trip helpers
@@ -32,7 +33,7 @@ It does not use adjustment, parser, solver, network, or Survey CAD domain state.
 
 Database: `webnet.study.v1`
 
-Version: `7`
+Version: `8`
 
 Stores:
 
@@ -50,6 +51,9 @@ Stores:
 - `importHistory`, key `id`: compact official-package import history with added/changed counts, reference-only form counts, and flagged-unit counts
 - `searchIndexMetadata`, key `id`: derived search index metadata for the current official and Study-content indexes
 - `searchIndexArtifacts`, key `id`: serialized derived MiniSearch index artifacts
+- `aiAuthoringRuns`, key `runId`: external/provider-neutral AI authoring run metadata
+- `aiStudyMapProposals`, key `id`: validated Study Map disposition proposals and conflict/review state
+- `aiUnitProposals`, key `proposalId`: AI-authored StudyUnit proposals with objectives, grounding, validation status, review status, and approval provenance
 
 Native indexes added in version `6`:
 
@@ -62,7 +66,22 @@ Native indexes added in version `6`:
 
 Schema migration currently normalizes imported or partially missing snapshots to schema version `7`, fills default settings, defaults official-content stores to empty arrays, adds unit source mode, adds concept origin/order fields, adds the rubric store, adds Study FSRS settings/configuration, adds optional progress/attempt scheduling wrappers, creates native lookup indexes, repairs malformed legacy `legalComponents` key paths, and keeps existing Study data intact. Existing concepts without origin default to manual unless the linked unit already records generated concepts. Legacy snapshots without rubrics receive conservative supplemental `custom` rubric rows from existing concepts with empty reference answers, so migration does not invent legal answers or delete concept content. Old-schema IndexedDB fixture coverage locks browser upgrade behavior for pre-FSRS and v5/v6 data: missing stores are created, historical attempts are preserved, malformed official legal component stores are recreated for reimport, legal lookup indexes exist, and ambiguous legacy due dates become uninitialized FSRS schedules instead of replayed memory history.
 
-Version `7` specifically repairs browsers that created `legalComponents` with an old plain `id` key path. Full-corpus packages reuse component ids such as `section:1` across documents, so that malformed store can collapse thousands of components to the number of unique local ids. The repair drops only that authoritative imported legal-text store and recreates it with `recordKey`; reimporting the official package restores the complete component set without touching Study units, progress, attempts, drafts, or settings.
+Version `7` specifically repairs browsers that created `legalComponents` with an old plain `id` key path. Full-corpus packages reuse component ids such as `section:1` across documents, so that malformed store can collapse thousands of components to the number of unique local ids. The repair drops only that authoritative imported legal-text store and recreates it with `recordKey`; reimporting the official package restores the complete component set without touching Study units, progress, attempts, drafts, or settings. Version `8` adds AI authoring proposal stores without converting proposals into StudyUnits.
+
+## AI Authoring
+
+Phase 4B.0 adds an Authoring page and external-file AI workflow. The initial path is:
+
+```bash
+npm run study:ai:prepare-map -- --sample 120 --seed 42 --strategy representative
+npm run study:ai:prepare-units -- --run <map-run-id>
+npm run study:ai:status -- --run <run-id>
+npm run study:ai:validate-results -- --run <run-id>
+```
+
+Prepared runs write JSONL jobs, generated Codex instructions, and prompt specs under `study-content/ai/`. Codex or ChatGPT can process those files without WebNet using an OpenAI API key. Result files are validated as untrusted imported data. AI proposals remain separate from StudyUnits until the Authoring page explicitly approves one proposal. Approval creates one normal source-linked StudyUnit, guided prompt, generated concepts, generated rubric rows, and initial progress, while preserving proposal/run provenance and source hashes.
+
+See `docs/STUDY_AI_AUTHORING.md` for schema, grounding, review, and future API-provider details.
 
 Normal `loadAll()` startup no longer reads `legalComponents` with `getAll()` and no longer places official legal text in the React snapshot. The snapshot carries global UI data: documents, legal document metadata, units, prompts, concepts, rubrics, progress, attempts, drafts, settings, and import history. Official component text remains authoritative in IndexedDB and is loaded through repository methods:
 
