@@ -30,7 +30,8 @@ const DEFAULT_PACKAGE = 'study-content/packages/nb-sit-statute-corpus.content-pa
 const RUNS_DIR = 'study-content/ai/runs';
 const SPEC_DIR = 'study-content/ai/specs';
 const MAP_PROMPT_SPEC_VERSION = 'study-map-v3';
-const UNIT_PROMPT_SPEC_VERSION = 'unit-authoring-v3';
+const UNIT_PROMPT_SPEC_VERSION = 'unit-authoring-v4';
+const PHASE_4B13_UNIT_PROMPT_SPEC_VERSION = 'unit-authoring-v3';
 const REPRESENTATIVE_STRATEGY_VERSION = 'representative-v2-stratified';
 const LARGE_SECTION_THRESHOLD = 8000;
 const CONTEXT_TEXT_LIMIT = 1800;
@@ -1034,6 +1035,12 @@ const commandPrepareUnitJobs = (options: Record<string, string | boolean>): void
     options.strategy === 'phase-4b1.3-unit-pilot'
       ? phase4b13PilotSelection(rawProposals)
       : rawProposals;
+  const unitPromptSpecVersion = String(
+    options['unit-prompt'] ??
+      (options.strategy === 'phase-4b1.3-unit-pilot'
+        ? PHASE_4B13_UNIT_PROMPT_SPEC_VERSION
+        : UNIT_PROMPT_SPEC_VERSION),
+  );
   const documentsById = new Map(pkg.documents.map((document) => [document.id, document]));
   const jobs = proposals.flatMap((proposal): AiUnitAuthoringJob[] => {
     if (proposal.reviewStatus !== 'approved') return [];
@@ -1061,12 +1068,12 @@ const commandPrepareUnitJobs = (options: Record<string, string | boolean>): void
             mapRunId,
             proposalId: proposal.id,
             groupId: group.groupId,
-            promptSpecVersion: UNIT_PROMPT_SPEC_VERSION,
+            promptSpecVersion: unitPromptSpecVersion,
             sourceKeys: group.sourceKeys,
           }),
         ).slice(0, 16)}`,
         runId: unitRunId,
-        promptSpecVersion: UNIT_PROMPT_SPEC_VERSION,
+        promptSpecVersion: unitPromptSpecVersion,
         sourceMapRunId: mapRunId,
         sourceMapProposalId: proposal.id,
         corpusContentHash: proposal.corpusContentHash,
@@ -1122,7 +1129,7 @@ const commandPrepareUnitJobs = (options: Record<string, string | boolean>): void
     updatedAt: new Date().toISOString(),
     providerKind: 'external-codex',
     jobType: 'unit-authoring',
-    promptSpecVersion: UNIT_PROMPT_SPEC_VERSION,
+    promptSpecVersion: unitPromptSpecVersion,
     corpusContentHash: hashText(JSON.stringify(pkg.sourceHashes)),
     sourcePackageId: pkg.id,
     status: 'prepared',
@@ -1144,7 +1151,7 @@ const commandPrepareUnitJobs = (options: Record<string, string | boolean>): void
     [
       '# Codex Instructions',
       '',
-      `Process ONLY the requested content job files in ${runDir}/jobs using study-content/ai/specs/${UNIT_PROMPT_SPEC_VERSION}.md.`,
+      `Process ONLY the requested content job files in ${runDir}/jobs using study-content/ai/specs/${unitPromptSpecVersion}.md.`,
       'Write JSONL results to the matching file under results/, for example batch-001.results.jsonl.',
       'Write only the requested result file(s). Use one JSON object per line.',
       'Do not wrap JSONL in Markdown code fences. Do not add commentary to JSONL.',
@@ -1156,7 +1163,7 @@ const commandPrepareUnitJobs = (options: Record<string, string | boolean>): void
       'The approvedGroup is the AUTHORING SOURCE. The context block is CONTEXT FOR UNDERSTANDING ONLY.',
       'Do not author objectives or study answers from context-only law or unselected sibling focus.',
       'Preserve jobId, runId, inputHash, corpusContentHash, and promptSpecVersion.',
-      `Follow promptSpecVersion ${UNIT_PROMPT_SPEC_VERSION}.`,
+      `Follow promptSpecVersion ${unitPromptSpecVersion}.`,
       'Keep official source, AI study answers, and inference notes separate.',
       'Resume by skipping jobIds that already have valid result lines.',
       'Never rewrite valid existing result lines unless explicitly told to regenerate them.',

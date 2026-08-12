@@ -235,6 +235,16 @@ export type AiSourceCoverage = {
   }>;
 };
 
+export type AiMapRevisionSuggestion = {
+  reason: string;
+  proposedGroups: Array<{
+    title: string;
+    sourceKeys: string[];
+    focusSelections: AiMapFocusSelection[];
+    approximateLearningGoal: string;
+  }>;
+};
+
 export type AiLearningObjective = {
   id: string;
   type: AiLearningObjectiveType;
@@ -285,6 +295,8 @@ export type AiStudyUnitProposal = {
   mapReason?: string;
   approximateLearningGoal?: string;
   suggestedPriority?: AiSuggestedPriority;
+  authoringStatus?: 'generated' | 'needs-map-revision';
+  mapRevisionSuggestion?: AiMapRevisionSuggestion;
   confidence: AiConfidence;
   warnings: string[];
   generationMetadata: AiGenerationMetadata;
@@ -358,7 +370,12 @@ export type AiValidationIssue = {
   message: string;
   jobId?: string;
   proposalId?: string;
+  objectiveId?: string;
   sourceKey?: string;
+  guidedQuestion?: string;
+  answerFragment?: string;
+  sourceFragment?: string;
+  trigger?: string;
 };
 
 export type AiValidationReport = {

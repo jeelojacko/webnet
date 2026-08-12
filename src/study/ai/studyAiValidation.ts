@@ -252,11 +252,49 @@ const validateQuestionQuality = (
   });
 };
 
-const tokenPattern =
-  /\$?\b\d+(?:\.\d+)?\b(?:\s*(?:days?|months?|years?|per cent|percent|%))?|\bsection\s+\d+(?:\([^)]+\))*|\bsubsection\s+\d+(?:\([^)]+\))*|\bparagraph\s+\d+\([^)]+\)/gi;
+const legalReferencePattern =
+  /\b(?:sections?|subsections?|paragraphs?)\s+(?:\d+(?:\.\d+)?|\(\d+(?:\.\d+)?\))(?:\([^)]+\))*(?:\s+or\s+(?:\d+(?:\.\d+)?)?\([^)]+\))*|\b\d+(?:\.\d+)?\([^)]+\)(?:\([^)]+\))*/gi;
+
+const quantityPattern =
+  /\$\s*\b\d+(?:\.\d+)?\b|\b\d+(?:\.\d+)?\s*(?:days?|months?|years?|per cent|percent|%)\b|\b(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirty|sixty)\s+(?:days?|months?|years?)\b/gi;
+
+const sourceSectionFromKey = (sourceKey: string): string | undefined =>
+  /^section:(\d+(?:\.\d+)?)/i.exec(sourceKey)?.[1];
+
+const normalizeLegalReference = (token: string, currentSection?: string): string[] => {
+  const normalized = normalizeText(token).replace(/\s+/g, ' ');
+  const prefixMatch = /^(sections?|subsections?|paragraphs?)\s+(.+)$/i.exec(normalized);
+  if (!prefixMatch) return [normalized];
+  const prefix = prefixMatch[1].toLowerCase().replace(/s$/, '');
+  const body = prefixMatch[2];
+  const parts = body.split(/\s+or\s+/i);
+  return parts.map((part, index) => {
+    const trimmed = part.trim();
+    if (/^\(\d+(?:\.\d+)?\)/.test(trimmed)) {
+      const base = currentSection ?? /^\d+(?:\.\d+)?/.exec(parts[0])?.[0];
+      return base ? `${prefix} ${base}${trimmed}` : `${prefix} ${trimmed}`;
+    }
+    if (index > 0 && /^\([^)]+\)/.test(trimmed)) {
+      const base = /^\d+(?:\.\d+)?/.exec(parts[0])?.[0] ?? currentSection;
+      return base ? `${prefix} ${base}${trimmed}` : `${prefix} ${trimmed}`;
+    }
+    return `${prefix} ${trimmed}`;
+  });
+};
+
+const collectLegalReferences = (text: string, currentSection?: string): string[] =>
+  Array.from(new Set(Array.from(text.matchAll(legalReferencePattern)).flatMap((match) =>
+    normalizeLegalReference(match[0], currentSection),
+  )));
 
 const collectRiskTokens = (text: string): string[] =>
-  Array.from(new Set((text.match(tokenPattern) ?? []).map((token) => normalizeText(token))));
+  Array.from(new Set([
+    ...collectLegalReferences(text),
+    ...Array.from(text.matchAll(quantityPattern)).map((match) => normalizeText(match[0])),
+  ]));
+
+const collectRiskTokensForSource = (text: string, sourceKey: string): string[] =>
+  Array.from(new Set([...collectLegalReferences(text, sourceSectionFromKey(sourceKey)), ...collectRiskTokens(text)]));
 
 const modalityTokens = (text: string): Set<string> => {
   const normalized = normalizeText(text);
@@ -315,61 +353,94 @@ const significantTerms = (text: string): string[] => {
 const validateObjectiveFidelity = (
   objective: AiLearningObjective,
   proposal: AiStudyUnitProposal,
-  sources: Map<string, ImportedLegalComponent | { text: string; contentHash: string; documentId: string }>,
+  sourceComponents: ImportedLegalComponent[],
   issues: AiValidationIssue[],
 ): void => {
-  const linkedTexts = objective.evidence
-    .map((evidence) => `${evidence.evidenceText} ${sources.get(evidence.sourceKey)?.text ?? ''}`)
-    .join(' ');
-  const sourceTokenSet = new Set(collectRiskTokens(linkedTexts));
+  const evidenceText = objective.evidence.map((evidence) => evidence.evidenceText).join(' ');
+  const approvedFocusText = approvedFocusTextForObjective(objective, proposal, sourceComponents);
+  const sourceTokenSet = riskTokensForFocus(objective, proposal, sourceComponents);
   collectRiskTokens(objective.studyAnswer).forEach((token) => {
     if (!sourceTokenSet.has(token)) {
       addIssue(issues, {
         code: 'UNSUPPORTED_NUMERIC_OR_REFERENCE',
         severity: 'warning',
         proposalId: proposal.proposalId,
-        message: `Study answer includes unsupported numeric or legal-reference token: ${token}.`,
+        objectiveId: objective.id,
+        guidedQuestion: objective.guidedQuestion,
+        answerFragment: objective.studyAnswer,
+        sourceFragment: approvedFocusText.slice(0, 300),
+        trigger: token,
+        message: `Objective ${objective.id} answer includes unsupported numeric or legal-reference token "${token}" for question "${objective.guidedQuestion}".`,
       });
     }
   });
   const answerModalities = modalityTokens(objective.studyAnswer);
-  const evidenceModalities = modalityTokens(linkedTexts);
+  const focusModalities = modalityTokens(approvedFocusText);
   if (
-    (answerModalities.has('duty') && evidenceModalities.has('permission') && !evidenceModalities.has('duty')) ||
-    (answerModalities.has('permission') && evidenceModalities.has('duty') && !evidenceModalities.has('permission')) ||
-    (evidenceModalities.has('prohibition') && !answerModalities.has('prohibition'))
+    (answerModalities.has('duty') && focusModalities.has('permission') && !focusModalities.has('duty')) ||
+    (answerModalities.has('permission') && focusModalities.has('duty') && !focusModalities.has('permission') && !focusModalities.has('prohibition')) ||
+    (focusModalities.has('prohibition') && answerModalities.has('permission') && !answerModalities.has('prohibition') && !focusModalities.has('permission'))
   ) {
     addIssue(issues, {
       code: 'POSSIBLE_MODALITY_MISMATCH',
       severity: 'warning',
       proposalId: proposal.proposalId,
-      message: 'Study answer may have changed legal modality from the evidence.',
+      objectiveId: objective.id,
+      guidedQuestion: objective.guidedQuestion,
+      answerFragment: objective.studyAnswer,
+      sourceFragment: approvedFocusText.slice(0, 300),
+      trigger: `answer=${Array.from(answerModalities).join(',')}; source=${Array.from(focusModalities).join(',')}`,
+      message: `Objective ${objective.id} may change legal modality for question "${objective.guidedQuestion}".`,
     });
   }
   const answerActors = extractLikelyActors(objective.studyAnswer);
-  const evidenceActors = extractLikelyActors(linkedTexts);
+  const focusActors = extractLikelyActors(approvedFocusText);
   if (
     answerActors.length > 0 &&
-    evidenceActors.length > 0 &&
-    answerActors.some((actor) => !evidenceActors.includes(actor))
+    focusActors.length > 0 &&
+    answerActors.some((actor) => !focusActors.includes(actor))
   ) {
+    const trigger = answerActors.find((actor) => !focusActors.includes(actor));
     addIssue(issues, {
       code: 'POSSIBLE_ACTOR_MISMATCH',
       severity: 'warning',
       proposalId: proposal.proposalId,
-      message: 'Study answer names a legal actor not found in the linked evidence.',
+      objectiveId: objective.id,
+      guidedQuestion: objective.guidedQuestion,
+      answerFragment: objective.studyAnswer,
+      sourceFragment: approvedFocusText.slice(0, 300),
+      trigger,
+      message: `Objective ${objective.id} answer names actor "${trigger}" not found in the approved focus for question "${objective.guidedQuestion}".`,
     });
   }
-  const evidenceTerms = new Set(significantTerms(linkedTexts));
-  const unsupportedTerms = significantTerms(objective.studyAnswer).filter(
-    (term) => !evidenceTerms.has(term),
-  );
-  if (unsupportedTerms.length >= 3) {
+  const focusTerms = new Set(significantTerms(approvedFocusText));
+  const evidenceTerms = new Set(significantTerms(evidenceText));
+  const answerTerms = significantTerms(objective.studyAnswer);
+  const unsupportedByFocus = answerTerms.filter((term) => !focusTerms.has(term));
+  const unsupportedByEvidence = answerTerms.filter((term) => !evidenceTerms.has(term));
+  if (unsupportedByFocus.length >= 3) {
     addIssue(issues, {
       code: 'ANSWER_EXTENDS_BEYOND_EVIDENCE',
       severity: 'warning',
       proposalId: proposal.proposalId,
-      message: 'Study answer may include claims not supported by linked evidence.',
+      objectiveId: objective.id,
+      guidedQuestion: objective.guidedQuestion,
+      answerFragment: objective.studyAnswer,
+      sourceFragment: approvedFocusText.slice(0, 300),
+      trigger: unsupportedByFocus.slice(0, 8).join(', '),
+      message: `Objective ${objective.id} answer may include claims not supported by the approved focus for question "${objective.guidedQuestion}".`,
+    });
+  } else if (unsupportedByEvidence.length >= 3) {
+    addIssue(issues, {
+      code: 'EVIDENCE_INCOMPLETE_FOR_ANSWER',
+      severity: 'warning',
+      proposalId: proposal.proposalId,
+      objectiveId: objective.id,
+      guidedQuestion: objective.guidedQuestion,
+      answerFragment: objective.studyAnswer,
+      sourceFragment: evidenceText.slice(0, 300),
+      trigger: unsupportedByEvidence.slice(0, 8).join(', '),
+      message: `Objective ${objective.id} evidence does not demonstrate important answer terms for question "${objective.guidedQuestion}".`,
     });
   }
 };
@@ -445,6 +516,43 @@ const focusTextForSource = (
   );
   return childTexts.length > 0 ? childTexts.join('\n\n') : component.text;
 };
+
+const approvedFocusTextForObjective = (
+  objective: AiLearningObjective,
+  proposal: AiStudyUnitProposal,
+  sourceComponents: ImportedLegalComponent[],
+): string => {
+  if (!proposal.approvedGroup) {
+    return objective.sourceKeys
+      .map((sourceKey) => sourceComponents.find((component) => component.sourceKey === sourceKey)?.text ?? '')
+      .join('\n\n');
+  }
+  return objective.sourceKeys
+    .map((sourceKey) => focusTextForSource(sourceComponents, proposal.approvedGroup as AiProposedSourceGroup, sourceKey))
+    .join('\n\n');
+};
+
+const riskTokensForFocus = (
+  objective: AiLearningObjective,
+  proposal: AiStudyUnitProposal,
+  sourceComponents: ImportedLegalComponent[],
+): Set<string> =>
+  new Set(
+    objective.sourceKeys.flatMap((sourceKey) => {
+      const focusText = proposal.approvedGroup
+        ? focusTextForSource(sourceComponents, proposal.approvedGroup, sourceKey)
+        : sourceComponents.find((component) => component.sourceKey === sourceKey)?.text ?? '';
+      const labels = proposal.approvedGroup?.focusSelections
+        .filter((selection) => selection.sourceKey === sourceKey)
+        .flatMap((selection) => selection.childLabels ?? []) ?? [];
+      const sectionReference = sourceSectionFromKey(sourceKey);
+      return [
+        ...collectRiskTokensForSource(focusText, sourceKey),
+        ...(sectionReference ? [`section ${sectionReference}`] : []),
+        ...labels.flatMap((label) => normalizeLegalReference(`subsection ${label}`, sourceSectionFromKey(sourceKey))),
+      ];
+    }),
+  );
 
 const evidenceWithinApprovedFocus = (
   evidenceText: string,
@@ -549,6 +657,48 @@ const validateApprovedFocusCoverage = (
   });
 };
 
+const validateMapRevisionSuggestion = (
+  proposal: AiStudyUnitProposal,
+  issues: AiValidationIssue[],
+): void => {
+  if (!proposal.warnings?.includes('MAP_GROUP_TOO_BROAD_FOR_GOOD_UNIT')) return;
+  if (proposal.generationMetadata.promptSpecVersion !== 'unit-authoring-v4') return;
+  if (proposal.authoringStatus !== 'needs-map-revision') {
+    addIssue(issues, {
+      code: 'BROAD_GROUP_MUST_NEED_MAP_REVISION',
+      severity: 'warning',
+      proposalId: proposal.proposalId,
+      message: 'A broad-group Unit proposal should be marked authoringStatus needs-map-revision.',
+    });
+  }
+  const suggestion = proposal.mapRevisionSuggestion;
+  if (!suggestion || !nonEmptyString(suggestion.reason) || !Array.isArray(suggestion.proposedGroups) || suggestion.proposedGroups.length < 2) {
+    addIssue(issues, {
+      code: 'MAP_REVISION_SUGGESTION_REQUIRED',
+      proposalId: proposal.proposalId,
+      message: 'MAP_GROUP_TOO_BROAD_FOR_GOOD_UNIT requires a mapRevisionSuggestion with at least two finer proposed groups.',
+    });
+    return;
+  }
+  suggestion.proposedGroups.forEach((group) => {
+    if (!nonEmptyString(group.title) || !stringArray(group.sourceKeys) || group.sourceKeys.length === 0 || !Array.isArray(group.focusSelections) || !nonEmptyString(group.approximateLearningGoal)) {
+      addIssue(issues, {
+        code: 'MAP_REVISION_GROUP_INVALID',
+        proposalId: proposal.proposalId,
+        message: 'Each mapRevisionSuggestion group requires title, sourceKeys, focusSelections, and approximateLearningGoal.',
+      });
+      return;
+    }
+    if (group.sourceKeys.some((sourceKey) => !proposal.sourceKeys.includes(sourceKey))) {
+      addIssue(issues, {
+        code: 'MAP_REVISION_OUTSIDE_SOURCE',
+        proposalId: proposal.proposalId,
+        message: 'mapRevisionSuggestion groups must stay inside the original approved sourceKeys.',
+      });
+    }
+  });
+};
+
 const validateObjectiveSchema = (
   objective: AiLearningObjective,
   proposal: AiStudyUnitProposal,
@@ -587,6 +737,7 @@ export const validateAiStudyUnitProposal = ({
   if (!Array.isArray(typed.objectives) || typed.objectives.length === 0) addIssue(issues, { code: 'OBJECTIVES_REQUIRED', proposalId: typed.proposalId, message: 'At least one learning objective is required.' });
   if (!CONFIDENCES.has(String(typed.confidence))) addIssue(issues, { code: 'INVALID_CONFIDENCE', proposalId: typed.proposalId, message: 'Invalid proposal confidence.' });
   if (!Array.isArray(typed.warnings)) addIssue(issues, { code: 'WARNINGS_REQUIRED', proposalId: typed.proposalId, message: 'warnings must be an array.' });
+  validateMapRevisionSuggestion(typed, issues);
   const sources = sourceTextByKey(sourceComponents);
   typed.objectives?.forEach((objective) => {
     validateObjectiveSchema(objective, typed, issues);
@@ -614,7 +765,7 @@ export const validateAiStudyUnitProposal = ({
         });
       }
     });
-    validateObjectiveFidelity(objective, typed, sources, issues);
+    validateObjectiveFidelity(objective, typed, sourceComponents, issues);
   });
   validateCoverage(typed, sourceComponents, issues);
   validateApprovedFocusCoverage(typed, typed.approvedGroup, issues);

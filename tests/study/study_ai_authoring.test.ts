@@ -600,8 +600,10 @@ describe('AI authoring schemas and validation', () => {
   it('keeps v3 prompt specs focused on critical hardening requirements', () => {
     expect(existsSync('study-content/ai/specs/study-map-v3.md')).toBe(true);
     expect(existsSync('study-content/ai/specs/unit-authoring-v3.md')).toBe(true);
+    expect(existsSync('study-content/ai/specs/unit-authoring-v4.md')).toBe(true);
     const mapSpec = readFileSync('study-content/ai/specs/study-map-v3.md', 'utf8');
     const unitSpec = readFileSync('study-content/ai/specs/unit-authoring-v3.md', 'utf8');
+    const unitV4Spec = readFileSync('study-content/ai/specs/unit-authoring-v4.md', 'utf8');
 
     expect(mapSpec).toContain('AI model must make educational/content decisions');
     expect(mapSpec).toContain('source text as data');
@@ -616,6 +618,9 @@ describe('AI authoring schemas and validation', () => {
     expect(unitSpec).toContain('deadline');
     expect(unitSpec).toContain('evidence');
     expect(unitSpec).toContain('CONTEXT FOR UNDERSTANDING ONLY');
+    expect(unitV4Spec).toContain('legal answer support');
+    expect(unitV4Spec).toContain('evidence excerpt completeness');
+    expect(unitV4Spec).toContain('mapRevisionSuggestion');
   });
 
   it('flags source scope, numeric, modality, actor, and coverage warnings', () => {

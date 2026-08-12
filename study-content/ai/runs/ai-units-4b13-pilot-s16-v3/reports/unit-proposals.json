@@ -149,15 +149,11 @@
     "reviewStatus": "needs-review",
     "validationStatus": "warnings",
     "validationMessages": [
-      "POSSIBLE_MODALITY_MISMATCH",
-      "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-      "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-      "POSSIBLE_MODALITY_MISMATCH",
-      "POSSIBLE_MODALITY_MISMATCH"
+      "EVIDENCE_INCOMPLETE_FOR_ANSWER"
     ],
     "conflictCodes": [],
-    "createdAt": "2026-08-12T17:08:36.431Z",
-    "updatedAt": "2026-08-12T17:08:36.431Z"
+    "createdAt": "2026-08-12T17:57:03.834Z",
+    "updatedAt": "2026-08-12T17:57:03.834Z"
   },
   {
     "schemaVersion": 1,
@@ -329,14 +325,11 @@
     "reviewStatus": "needs-review",
     "validationStatus": "warnings",
     "validationMessages": [
-      "POSSIBLE_MODALITY_MISMATCH",
-      "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-      "POSSIBLE_MODALITY_MISMATCH",
-      "POSSIBLE_MODALITY_MISMATCH"
+      "EVIDENCE_INCOMPLETE_FOR_ANSWER"
     ],
     "conflictCodes": [],
-    "createdAt": "2026-08-12T17:08:36.432Z",
-    "updatedAt": "2026-08-12T17:08:36.432Z"
+    "createdAt": "2026-08-12T17:57:03.836Z",
+    "updatedAt": "2026-08-12T17:57:03.836Z"
   },
   {
     "schemaVersion": 1,
@@ -563,19 +556,15 @@
     "reviewStatus": "needs-review",
     "validationStatus": "warnings",
     "validationMessages": [
-      "POSSIBLE_MODALITY_MISMATCH",
       "ANSWER_EXTENDS_BEYOND_EVIDENCE",
-      "POSSIBLE_MODALITY_MISMATCH",
       "ANSWER_EXTENDS_BEYOND_EVIDENCE",
-      "POSSIBLE_MODALITY_MISMATCH",
       "ANSWER_EXTENDS_BEYOND_EVIDENCE",
-      "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-      "POSSIBLE_MODALITY_MISMATCH",
-      "POSSIBLE_MODALITY_MISMATCH"
+      "EVIDENCE_INCOMPLETE_FOR_ANSWER",
+      "EVIDENCE_INCOMPLETE_FOR_ANSWER"
     ],
     "conflictCodes": [],
-    "createdAt": "2026-08-12T17:08:36.432Z",
-    "updatedAt": "2026-08-12T17:08:36.432Z"
+    "createdAt": "2026-08-12T17:57:03.836Z",
+    "updatedAt": "2026-08-12T17:57:03.836Z"
   },
   {
     "schemaVersion": 1,
@@ -710,11 +699,11 @@
     "reviewStatus": "needs-review",
     "validationStatus": "warnings",
     "validationMessages": [
-      "UNSUPPORTED_NUMERIC_OR_REFERENCE"
+      "EVIDENCE_INCOMPLETE_FOR_ANSWER"
     ],
     "conflictCodes": [],
-    "createdAt": "2026-08-12T17:08:36.432Z",
-    "updatedAt": "2026-08-12T17:08:36.432Z"
+    "createdAt": "2026-08-12T17:57:03.836Z",
+    "updatedAt": "2026-08-12T17:57:03.836Z"
   },
   {
     "schemaVersion": 1,
@@ -843,11 +832,12 @@
     "reviewStatus": "needs-review",
     "validationStatus": "warnings",
     "validationMessages": [
-      "UNSUPPORTED_NUMERIC_OR_REFERENCE"
+      "EVIDENCE_INCOMPLETE_FOR_ANSWER",
+      "EVIDENCE_INCOMPLETE_FOR_ANSWER"
     ],
     "conflictCodes": [],
-    "createdAt": "2026-08-12T17:08:36.432Z",
-    "updatedAt": "2026-08-12T17:08:36.432Z"
+    "createdAt": "2026-08-12T17:57:03.836Z",
+    "updatedAt": "2026-08-12T17:57:03.836Z"
   },
   {
     "schemaVersion": 1,
@@ -990,12 +980,11 @@
     "reviewStatus": "needs-review",
     "validationStatus": "warnings",
     "validationMessages": [
-      "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-      "UNSUPPORTED_NUMERIC_OR_REFERENCE"
+      "EVIDENCE_INCOMPLETE_FOR_ANSWER"
     ],
     "conflictCodes": [],
-    "createdAt": "2026-08-12T17:08:36.432Z",
-    "updatedAt": "2026-08-12T17:08:36.432Z"
+    "createdAt": "2026-08-12T17:57:03.836Z",
+    "updatedAt": "2026-08-12T17:57:03.836Z"
   },
   {
     "schemaVersion": 1,
@@ -1092,8 +1081,8 @@
     "validationStatus": "valid",
     "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-12T17:08:36.432Z",
-    "updatedAt": "2026-08-12T17:08:36.432Z"
+    "createdAt": "2026-08-12T17:57:03.836Z",
+    "updatedAt": "2026-08-12T17:57:03.836Z"
   },
   {
     "schemaVersion": 1,
@@ -1190,8 +1179,8 @@
     "validationStatus": "valid",
     "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-12T17:08:36.432Z",
-    "updatedAt": "2026-08-12T17:08:36.432Z"
+    "createdAt": "2026-08-12T17:57:03.836Z",
+    "updatedAt": "2026-08-12T17:57:03.836Z"
   },
   {
     "schemaVersion": 1,
@@ -1327,11 +1316,11 @@
     "reviewStatus": "needs-review",
     "validationStatus": "warnings",
     "validationMessages": [
-      "UNSUPPORTED_NUMERIC_OR_REFERENCE"
+      "EVIDENCE_INCOMPLETE_FOR_ANSWER"
     ],
     "conflictCodes": [],
-    "createdAt": "2026-08-12T17:08:36.432Z",
-    "updatedAt": "2026-08-12T17:08:36.432Z"
+    "createdAt": "2026-08-12T17:57:03.836Z",
+    "updatedAt": "2026-08-12T17:57:03.836Z"
   },
   {
     "schemaVersion": 1,
@@ -1458,12 +1447,16 @@
       "sourceJobInputHash": "62d8f75a862b705bccc47ebaf7fb167b97d925f25d28d28fe4829b37104995d6",
       "rawResultFile": "batch-002.results.jsonl"
     },
-    "reviewStatus": "validated",
-    "validationStatus": "valid",
-    "validationMessages": [],
+    "reviewStatus": "needs-review",
+    "validationStatus": "warnings",
+    "validationMessages": [
+      "EVIDENCE_INCOMPLETE_FOR_ANSWER",
+      "EVIDENCE_INCOMPLETE_FOR_ANSWER",
+      "EVIDENCE_INCOMPLETE_FOR_ANSWER"
+    ],
     "conflictCodes": [],
-    "createdAt": "2026-08-12T17:08:36.432Z",
-    "updatedAt": "2026-08-12T17:08:36.432Z"
+    "createdAt": "2026-08-12T17:57:03.836Z",
+    "updatedAt": "2026-08-12T17:57:03.836Z"
   },
   {
     "schemaVersion": 1,
@@ -1579,12 +1572,12 @@
     "reviewStatus": "needs-review",
     "validationStatus": "warnings",
     "validationMessages": [
-      "POSSIBLE_MODALITY_MISMATCH",
-      "POSSIBLE_MODALITY_MISMATCH"
+      "EVIDENCE_INCOMPLETE_FOR_ANSWER",
+      "EVIDENCE_INCOMPLETE_FOR_ANSWER"
     ],
     "conflictCodes": [],
-    "createdAt": "2026-08-12T17:08:36.432Z",
-    "updatedAt": "2026-08-12T17:08:36.432Z"
+    "createdAt": "2026-08-12T17:57:03.836Z",
+    "updatedAt": "2026-08-12T17:57:03.836Z"
   },
   {
     "schemaVersion": 1,
@@ -1754,14 +1747,14 @@
     "reviewStatus": "needs-review",
     "validationStatus": "warnings",
     "validationMessages": [
-      "POSSIBLE_MODALITY_MISMATCH",
-      "POSSIBLE_MODALITY_MISMATCH",
-      "POSSIBLE_MODALITY_MISMATCH",
-      "POSSIBLE_MODALITY_MISMATCH"
+      "EVIDENCE_INCOMPLETE_FOR_ANSWER",
+      "EVIDENCE_INCOMPLETE_FOR_ANSWER",
+      "EVIDENCE_INCOMPLETE_FOR_ANSWER",
+      "EVIDENCE_INCOMPLETE_FOR_ANSWER"
     ],
     "conflictCodes": [],
-    "createdAt": "2026-08-12T17:08:36.432Z",
-    "updatedAt": "2026-08-12T17:08:36.432Z"
+    "createdAt": "2026-08-12T17:57:03.836Z",
+    "updatedAt": "2026-08-12T17:57:03.836Z"
   },
   {
     "schemaVersion": 1,
@@ -1897,13 +1890,11 @@
     "reviewStatus": "needs-review",
     "validationStatus": "warnings",
     "validationMessages": [
-      "POSSIBLE_MODALITY_MISMATCH",
-      "POSSIBLE_MODALITY_MISMATCH",
       "ANSWER_EXTENDS_BEYOND_EVIDENCE"
     ],
     "conflictCodes": [],
-    "createdAt": "2026-08-12T17:08:36.432Z",
-    "updatedAt": "2026-08-12T17:08:36.432Z"
+    "createdAt": "2026-08-12T17:57:03.836Z",
+    "updatedAt": "2026-08-12T17:57:03.836Z"
   },
   {
     "schemaVersion": 1,
@@ -2039,11 +2030,11 @@
     "reviewStatus": "needs-review",
     "validationStatus": "warnings",
     "validationMessages": [
-      "UNSUPPORTED_NUMERIC_OR_REFERENCE"
+      "EVIDENCE_INCOMPLETE_FOR_ANSWER"
     ],
     "conflictCodes": [],
-    "createdAt": "2026-08-12T17:08:36.432Z",
-    "updatedAt": "2026-08-12T17:08:36.432Z"
+    "createdAt": "2026-08-12T17:57:03.836Z",
+    "updatedAt": "2026-08-12T17:57:03.836Z"
   },
   {
     "schemaVersion": 1,
@@ -2200,12 +2191,14 @@
     "reviewStatus": "needs-review",
     "validationStatus": "warnings",
     "validationMessages": [
-      "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-      "ANSWER_EXTENDS_BEYOND_EVIDENCE"
+      "EVIDENCE_INCOMPLETE_FOR_ANSWER",
+      "ANSWER_EXTENDS_BEYOND_EVIDENCE",
+      "EVIDENCE_INCOMPLETE_FOR_ANSWER",
+      "EVIDENCE_INCOMPLETE_FOR_ANSWER"
     ],
     "conflictCodes": [],
-    "createdAt": "2026-08-12T17:08:36.432Z",
-    "updatedAt": "2026-08-12T17:08:36.432Z"
+    "createdAt": "2026-08-12T17:57:03.836Z",
+    "updatedAt": "2026-08-12T17:57:03.836Z"
   },
   {
     "schemaVersion": 1,
@@ -2311,13 +2304,11 @@
       "sourceJobInputHash": "a545a9a582198befa7a6c66a38816557859bd935b1f6a6744ccbb2f863c301a2",
       "rawResultFile": "batch-002.results.jsonl"
     },
-    "reviewStatus": "needs-review",
-    "validationStatus": "warnings",
-    "validationMessages": [
-      "UNSUPPORTED_NUMERIC_OR_REFERENCE"
-    ],
+    "reviewStatus": "validated",
+    "validationStatus": "valid",
+    "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-12T17:08:36.432Z",
-    "updatedAt": "2026-08-12T17:08:36.432Z"
+    "createdAt": "2026-08-12T17:57:03.836Z",
+    "updatedAt": "2026-08-12T17:57:03.836Z"
   }
 ]

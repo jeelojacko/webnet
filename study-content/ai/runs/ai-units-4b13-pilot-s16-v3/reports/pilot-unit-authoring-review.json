@@ -3,7 +3,7 @@
   "runId": "ai-units-4b13-pilot-s16-v3",
   "mapRunId": "ai-map-4b12-grounding-s9-v1",
   "unitRunId": "ai-units-4b13-pilot-s16-v3",
-  "generatedAt": "2026-08-12T17:08:48.530Z",
+  "generatedAt": "2026-08-12T17:57:15.417Z",
   "proposals": [
     {
       "sourceIdentity": {
@@ -70,32 +70,13 @@
           {
             "proposalId": "unit-e9b26da1364e32a8",
             "severity": "warning",
-            "code": "POSSIBLE_MODALITY_MISMATCH",
-            "message": "Study answer may have changed legal modality from the evidence."
-          },
-          {
-            "proposalId": "unit-e9b26da1364e32a8",
-            "severity": "warning",
-            "code": "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-            "message": "Study answer includes unsupported numeric or legal-reference token: subsection 18(4)."
-          },
-          {
-            "proposalId": "unit-e9b26da1364e32a8",
-            "severity": "warning",
-            "code": "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-            "message": "Study answer includes unsupported numeric or legal-reference token: subsection 18(2)."
-          },
-          {
-            "proposalId": "unit-e9b26da1364e32a8",
-            "severity": "warning",
-            "code": "POSSIBLE_MODALITY_MISMATCH",
-            "message": "Study answer may have changed legal modality from the evidence."
-          },
-          {
-            "proposalId": "unit-e9b26da1364e32a8",
-            "severity": "warning",
-            "code": "POSSIBLE_MODALITY_MISMATCH",
-            "message": "Study answer may have changed legal modality from the evidence."
+            "code": "EVIDENCE_INCOMPLETE_FOR_ANSWER",
+            "objectiveId": "lta18a-3",
+            "guidedQuestion": "On what grounds may the registrar refuse to file or register and reject an instrument?",
+            "answerFragment": "The registrar may reject an instrument if the appropriate fee has not been paid, if it does not relate to land in the district, lacks the approved parcel identifier or is otherwise incomplete, uses a retired parcel identifier or an added description, is not in proper form or fit for filing or registration, or does not comply with the Community Planning Act if applicable.",
+            "sourceFragment": "registrar may refuse to file or register and may reject an instrument where the appropriate fee has not been paid therefor or where the instrument",
+            "trigger": "relate, district, lacks, approved, parcel, identifier, otherwise, incomplete",
+            "message": "Objective lta18a-3 evidence does not demonstrate important answer terms for question \"On what grounds may the registrar refuse to file or register and reject an instrument?\"."
           }
         ],
         "coverage": [
@@ -236,26 +217,13 @@
           {
             "proposalId": "unit-247fe204bd384dfe",
             "severity": "warning",
-            "code": "POSSIBLE_MODALITY_MISMATCH",
-            "message": "Study answer may have changed legal modality from the evidence."
-          },
-          {
-            "proposalId": "unit-247fe204bd384dfe",
-            "severity": "warning",
-            "code": "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-            "message": "Study answer includes unsupported numeric or legal-reference token: subsection 18(4)."
-          },
-          {
-            "proposalId": "unit-247fe204bd384dfe",
-            "severity": "warning",
-            "code": "POSSIBLE_MODALITY_MISMATCH",
-            "message": "Study answer may have changed legal modality from the evidence."
-          },
-          {
-            "proposalId": "unit-247fe204bd384dfe",
-            "severity": "warning",
-            "code": "POSSIBLE_MODALITY_MISMATCH",
-            "message": "Study answer may have changed legal modality from the evidence."
+            "code": "EVIDENCE_INCOMPLETE_FOR_ANSWER",
+            "objectiveId": "lta18b-4",
+            "guidedQuestion": "When may a Registry Act document dealing with registered land be registered under the Land Titles Act?",
+            "answerFragment": "If a document sufficient to pass an estate or interest in land under the Registry Act deals with land registered under the Land Titles Act, the Registrar General may, in absolute discretion, order the proper registrar to register it under the Land Titles Act; once registered, it has the same effect as if registered as an instrument.",
+            "sourceFragment": "Registrar General may, in his absolute discretion, order the proper registrar to register it under this Act, and when so registered it shall have the same effect as if registered as an instrument",
+            "trigger": "document, sufficient, estate, interest, registry, deals, titles",
+            "message": "Objective lta18b-4 evidence does not demonstrate important answer terms for question \"When may a Registry Act document dealing with registered land be registered under the Land Titles Act?\"."
           }
         ],
         "coverage": [
@@ -407,56 +375,57 @@
           {
             "proposalId": "unit-2e4ddc419619ecf3",
             "severity": "warning",
-            "code": "POSSIBLE_MODALITY_MISMATCH",
-            "message": "Study answer may have changed legal modality from the evidence."
+            "code": "ANSWER_EXTENDS_BEYOND_EVIDENCE",
+            "objectiveId": "cpa125-1",
+            "guidedQuestion": "What may a subdivision regulation provide for under subsection 125(10)?",
+            "answerFragment": "It may provide for setting aside public-purpose land or paying money in lieu at the Minister discretion, vest specified access and subdivision-plan approval powers in a regional service commission, prescribe tentative-plan approval fees, make subdivision street naming subject to regional service commission approval, and add exemptions under subsection 80(1).",
+            "sourceFragment": "125(10)A subdivision regulation under this section may\n\n(a)\nsubject to subsections (12) and (13), provide for\n\n(i)\nthe setting aside of land for public purposes at a location as may be approved by the Minister after consultation with the regional service commission, the indicating of the land on a s",
+            "trigger": "public-purpose, specified, subdivision-plan, tentative-plan, street",
+            "message": "Objective cpa125-1 answer may include claims not supported by the approved focus for question \"What may a subdivision regulation provide for under subsection 125(10)?\"."
           },
           {
             "proposalId": "unit-2e4ddc419619ecf3",
             "severity": "warning",
             "code": "ANSWER_EXTENDS_BEYOND_EVIDENCE",
-            "message": "Study answer may include claims not supported by linked evidence."
-          },
-          {
-            "proposalId": "unit-2e4ddc419619ecf3",
-            "severity": "warning",
-            "code": "POSSIBLE_MODALITY_MISMATCH",
-            "message": "Study answer may have changed legal modality from the evidence."
-          },
-          {
-            "proposalId": "unit-2e4ddc419619ecf3",
-            "severity": "warning",
-            "code": "ANSWER_EXTENDS_BEYOND_EVIDENCE",
-            "message": "Study answer may include claims not supported by linked evidence."
-          },
-          {
-            "proposalId": "unit-2e4ddc419619ecf3",
-            "severity": "warning",
-            "code": "POSSIBLE_MODALITY_MISMATCH",
-            "message": "Study answer may have changed legal modality from the evidence."
+            "objectiveId": "cpa125-2",
+            "guidedQuestion": "What modified rules apply if a subdivision regulation under section 125 is in effect?",
+            "answerFragment": "Section 77 applies with necessary modifications, except that a plan setting aside public-purpose land cannot be approved unless the regional service commission recommends the location and the Minister approves and signs the plan; variance powers under section 78 are vested in the regional service commission or development officer, and sections 79 and 80 apply with necessary modifications.",
+            "sourceFragment": "125(10)A subdivision regulation under this section may\n\n(a)\nsubject to subsections (12) and (13), provide for\n\n(i)\nthe setting aside of land for public purposes at a location as may be approved by the Minister after consultation with the regional service commission, the indicating of the land on a s",
+            "trigger": "public-purpose, cannot, recommends, approves, signs",
+            "message": "Objective cpa125-2 answer may include claims not supported by the approved focus for question \"What modified rules apply if a subdivision regulation under section 125 is in effect?\"."
           },
           {
             "proposalId": "unit-2e4ddc419619ecf3",
             "severity": "warning",
             "code": "ANSWER_EXTENDS_BEYOND_EVIDENCE",
-            "message": "Study answer may include claims not supported by linked evidence."
+            "objectiveId": "cpa125-3",
+            "guidedQuestion": "How must public-purpose land and money in lieu be held or used?",
+            "answerFragment": "Land vested in the Crown shall be held undeveloped or developed for public purposes and may later be conveyed to a local government if included within its boundaries. Money received in lieu of land or from sale of the land must go into a special account and be spent only to acquire or develop public-purpose land, with investment earnings paid into that account and later local-government transfer rules if applicable.",
+            "sourceFragment": "125(10)A subdivision regulation under this section may\n\n(a)\nsubject to subsections (12) and (13), provide for\n\n(i)\nthe setting aside of land for public purposes at a location as may be approved by the Minister after consultation with the regional service commission, the indicating of the land on a s",
+            "trigger": "later, spent, acquire, develop, public-purpose, investment, local-government, transfer",
+            "message": "Objective cpa125-3 answer may include claims not supported by the approved focus for question \"How must public-purpose land and money in lieu be held or used?\"."
           },
           {
             "proposalId": "unit-2e4ddc419619ecf3",
             "severity": "warning",
-            "code": "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-            "message": "Study answer includes unsupported numeric or legal-reference token: paragraph 125(1)."
+            "code": "EVIDENCE_INCOMPLETE_FOR_ANSWER",
+            "objectiveId": "cpa125-4",
+            "guidedQuestion": "What must the Minister do before making a regulation under section 125?",
+            "answerFragment": "Before making a regulation, the Minister shall request views from the regional service commission if the regulation would have effect in a region, request advisory committee views for specified rural district regulations, and follow, with necessary modifications, the preliminary by-law procedure under section 111 except for regulations under paragraph 125(1)(a), (b), (f), or (g).",
+            "sourceFragment": "Before making a regulation under this section, the Minister shall",
+            "trigger": "request, views, regional, service, commission, would, effect, region",
+            "message": "Objective cpa125-4 evidence does not demonstrate important answer terms for question \"What must the Minister do before making a regulation under section 125?\"."
           },
           {
             "proposalId": "unit-2e4ddc419619ecf3",
             "severity": "warning",
-            "code": "POSSIBLE_MODALITY_MISMATCH",
-            "message": "Study answer may have changed legal modality from the evidence."
-          },
-          {
-            "proposalId": "unit-2e4ddc419619ecf3",
-            "severity": "warning",
-            "code": "POSSIBLE_MODALITY_MISMATCH",
-            "message": "Study answer may have changed legal modality from the evidence."
+            "code": "EVIDENCE_INCOMPLETE_FOR_ANSWER",
+            "objectiveId": "cpa125-5",
+            "guidedQuestion": "What do subsections 125(15) and 125(16) say about summaries and filing?",
+            "answerFragment": "For a zoning regulation or rural plan, section 111 does not require the Minister to make the proposed rural plan or amendment available for public consideration if a written summary is made available. The Director shall file a copy of each regulation in the land registration office for every affected county, but filing is not a condition precedent to the regulation coming into force.",
+            "sourceFragment": "written summary of the proposed rural plan or amendment",
+            "trigger": "zoning, regulation, section, require, minister, available, public, consideration",
+            "message": "Objective cpa125-5 evidence does not demonstrate important answer terms for question \"What do subsections 125(15) and 125(16) say about summaries and filing?\"."
           }
         ],
         "coverage": [
@@ -611,8 +580,13 @@
           {
             "proposalId": "unit-3a77dbeb9a642313",
             "severity": "warning",
-            "code": "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-            "message": "Study answer includes unsupported numeric or legal-reference token: subsection 10(1)."
+            "code": "EVIDENCE_INCOMPLETE_FOR_ANSWER",
+            "objectiveId": "bca10a-3",
+            "guidedQuestion": "When must the Registrar General hold a hearing after an objection?",
+            "answerFragment": "If a written statement of objection is delivered before the deadline in accordance with subsection 10(1), the Registrar General shall hold a hearing to determine the validity of the objection and, if applicable, the validity of the applicant claim that the boundaries lie as shown on the plan of survey.",
+            "sourceFragment": "Registrar General shall hold a hearing to determine the validity of the objection and, if applicable, the validity of the applicant",
+            "trigger": "written, statement, delivered, before, deadline, accordance, subsection, claim",
+            "message": "Objective bca10a-3 evidence does not demonstrate important answer terms for question \"When must the Registrar General hold a hearing after an objection?\"."
           }
         ],
         "coverage": [
@@ -722,8 +696,24 @@
           {
             "proposalId": "unit-4d0b7e568468b99d",
             "severity": "warning",
-            "code": "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-            "message": "Study answer includes unsupported numeric or legal-reference token: subsection 10(1)."
+            "code": "EVIDENCE_INCOMPLETE_FOR_ANSWER",
+            "objectiveId": "bca10b-2",
+            "guidedQuestion": "When may the Registrar General confirm the boundary without holding a hearing?",
+            "answerFragment": "The Registrar General may confirm the boundary as shown on the plan of survey without a hearing if satisfied by all material filed in the proceeding, including the application if applicable, that the boundary or boundaries should be confirmed.",
+            "sourceFragment": "if satisfied by all the material filed in the proceeding, including the application if applicable, that the boundary or boundaries in question should be confirmed",
+            "trigger": "registrar, general, confirm, shown, survey, without, hearing",
+            "message": "Objective bca10b-2 evidence does not demonstrate important answer terms for question \"When may the Registrar General confirm the boundary without holding a hearing?\"."
+          },
+          {
+            "proposalId": "unit-4d0b7e568468b99d",
+            "severity": "warning",
+            "code": "EVIDENCE_INCOMPLETE_FOR_ANSWER",
+            "objectiveId": "bca10b-3",
+            "guidedQuestion": "When may the Registrar General hold a hearing despite no objection being delivered?",
+            "answerFragment": "If not satisfied by all material filed in the proceeding, including the application if applicable, that the boundary or boundaries should be confirmed, the Registrar General may hold a hearing in accordance with the Act and regulations.",
+            "sourceFragment": "if not satisfied by all the material filed in the proceeding, including the application if applicable, that the boundary or boundaries in question should be confirmed",
+            "trigger": "registrar, general, hearing, accordance, regulations",
+            "message": "Objective bca10b-3 evidence does not demonstrate important answer terms for question \"When may the Registrar General hold a hearing despite no objection being delivered?\"."
           }
         ],
         "coverage": [
@@ -829,14 +819,13 @@
           {
             "proposalId": "unit-de6c92036e6a8ac1",
             "severity": "warning",
-            "code": "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-            "message": "Study answer includes unsupported numeric or legal-reference token: subsection 10(1)."
-          },
-          {
-            "proposalId": "unit-de6c92036e6a8ac1",
-            "severity": "warning",
-            "code": "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-            "message": "Study answer includes unsupported numeric or legal-reference token: subsection 10(6)."
+            "code": "EVIDENCE_INCOMPLETE_FOR_ANSWER",
+            "objectiveId": "bca10c-3",
+            "guidedQuestion": "What information must a notice of hearing specify or describe?",
+            "answerFragment": "The notice shall specify the date, time, and place of the hearing, describe the reasons for the application or proceeding, set out related grounds and arguments, describe the reasons and set out the grounds and arguments in any objections received, and otherwise be given in accordance with the regulations.",
+            "sourceFragment": "shall specify the date, time and place of the hearing",
+            "trigger": "notice, describe, reasons, application, proceeding, related, grounds, arguments",
+            "message": "Objective bca10c-3 evidence does not demonstrate important answer terms for question \"What information must a notice of hearing specify or describe?\"."
           }
         ],
         "coverage": [
@@ -1107,8 +1096,13 @@
           {
             "proposalId": "unit-deb346b19788fc8d",
             "severity": "warning",
-            "code": "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-            "message": "Study answer includes unsupported numeric or legal-reference token: section 49."
+            "code": "EVIDENCE_INCOMPLETE_FOR_ANSWER",
+            "objectiveId": "eub49-2",
+            "guidedQuestion": "When may a regulator render assistance to the Board without becoming a party?",
+            "answerFragment": "On application of the Board after commencement of a proceeding resulting from financial and consumer services legislation, a regulator not already a party may render assistance to the Board without becoming a party.",
+            "sourceFragment": "may render assistance to the Board without becoming a party to the proceedings",
+            "trigger": "application, after, commencement, proceeding, resulting, financial, consumer, services",
+            "message": "Objective eub49-2 evidence does not demonstrate important answer terms for question \"When may a regulator render assistance to the Board without becoming a party?\"."
           }
         ],
         "coverage": [
@@ -1212,7 +1206,41 @@
       },
       "validation": {
         "errors": [],
-        "warnings": [],
+        "warnings": [
+          {
+            "proposalId": "unit-fff5b5e3ff897a1c",
+            "severity": "warning",
+            "code": "EVIDENCE_INCOMPLETE_FOR_ANSWER",
+            "objectiveId": "ohs91-1",
+            "guidedQuestion": "With what hazards must a supervisor acquaint employees?",
+            "answerFragment": "Every supervisor shall acquaint employees under the supervisor supervision and direction with any hazard connected with the use, handling, storage, disposal, and transport of any tool, equipment, machine, device, or biological, chemical, or physical agent.",
+            "sourceFragment": "acquaint the employees under the supervisor’s supervision and direction with any hazard in connection with the use, handling, storage, disposal and transport",
+            "trigger": "every, connected, equipment, machine, device, biological, chemical, physical",
+            "message": "Objective ohs91-1 evidence does not demonstrate important answer terms for question \"With what hazards must a supervisor acquaint employees?\"."
+          },
+          {
+            "proposalId": "unit-fff5b5e3ff897a1c",
+            "severity": "warning",
+            "code": "EVIDENCE_INCOMPLETE_FOR_ANSWER",
+            "objectiveId": "ohs91-2",
+            "guidedQuestion": "What information must a supervisor provide to employees?",
+            "answerFragment": "Every supervisor shall provide the information necessary to ensure the health and safety of employees under the supervisor supervision and direction.",
+            "sourceFragment": "provide the information that is necessary to ensure the health and safety of the employees",
+            "trigger": "every, supervisor, supervision, direction",
+            "message": "Objective ohs91-2 evidence does not demonstrate important answer terms for question \"What information must a supervisor provide to employees?\"."
+          },
+          {
+            "proposalId": "unit-fff5b5e3ff897a1c",
+            "severity": "warning",
+            "code": "EVIDENCE_INCOMPLETE_FOR_ANSWER",
+            "objectiveId": "ohs91-3",
+            "guidedQuestion": "What instruction must a supervisor provide to employees?",
+            "answerFragment": "Every supervisor shall provide the instruction necessary to ensure the health and safety of employees under the supervisor supervision and direction.",
+            "sourceFragment": "provide the instruction that is necessary to ensure the health and safety of the employees",
+            "trigger": "every, supervisor, supervision, direction",
+            "message": "Objective ohs91-3 evidence does not demonstrate important answer terms for question \"What instruction must a supervisor provide to employees?\"."
+          }
+        ],
         "coverage": [
           {
             "sourceKey": "section:9.1",
@@ -1304,14 +1332,24 @@
           {
             "proposalId": "unit-fd9377e0f65a8ddc",
             "severity": "warning",
-            "code": "POSSIBLE_MODALITY_MISMATCH",
-            "message": "Study answer may have changed legal modality from the evidence."
+            "code": "EVIDENCE_INCOMPLETE_FOR_ANSWER",
+            "objectiveId": "ra19a-1",
+            "guidedQuestion": "What happens to an unregistered instrument against a subsequent purchaser?",
+            "answerFragment": "Subject to subsections 19(3), (4), (4.1), and (5), an instrument not registered in the county registry office where the lands lie is deemed fraudulent and void against subsequent purchasers for valuable consideration whose conveyances are previously registered.",
+            "sourceFragment": "shall, subject to the provisions of subsections (3), (4), (4.1) and (5), be deemed fraudulent and void against subsequent purchasers for valuable consideration whose conveyances are previously registered",
+            "trigger": "instrument, county, registry, office, where, lands",
+            "message": "Objective ra19a-1 evidence does not demonstrate important answer terms for question \"What happens to an unregistered instrument against a subsequent purchaser?\"."
           },
           {
             "proposalId": "unit-fd9377e0f65a8ddc",
             "severity": "warning",
-            "code": "POSSIBLE_MODALITY_MISMATCH",
-            "message": "Study answer may have changed legal modality from the evidence."
+            "code": "EVIDENCE_INCOMPLETE_FOR_ANSWER",
+            "objectiveId": "ra19a-2",
+            "guidedQuestion": "When is an instrument deemed fraudulent and void against a bona fide judgment creditor?",
+            "answerFragment": "Subject to subsections 19(3), (4), (4.1), and (5), if an instrument is not registered within three months of execution, it is deemed fraudulent and void against a bona fide judgment creditor when the judgment or memorial was registered before the conveyance was registered.",
+            "sourceFragment": "if not registered within three months of the date of their execution, be deemed fraudulent and void as against any bona fide judgment creditor",
+            "trigger": "subject, subsections, instrument, memorial, before, conveyance",
+            "message": "Objective ra19a-2 evidence does not demonstrate important answer terms for question \"When is an instrument deemed fraudulent and void against a bona fide judgment creditor?\"."
           }
         ],
         "coverage": [
@@ -1433,26 +1471,46 @@
           {
             "proposalId": "unit-a6b469d1b34d7233",
             "severity": "warning",
-            "code": "POSSIBLE_MODALITY_MISMATCH",
-            "message": "Study answer may have changed legal modality from the evidence."
+            "code": "EVIDENCE_INCOMPLETE_FOR_ANSWER",
+            "objectiveId": "ra19b-1",
+            "guidedQuestion": "Which leases need not be registered merely to avoid being fraudulent and void?",
+            "answerFragment": "A lease for a term not exceeding three years need not be registered, and is not deemed fraudulent and void merely for non-registration, if actual possession goes along with the lease; this does not apply to leases over three years or leases without actual possession.",
+            "sourceFragment": "No lease for a term not exceeding three years, where the actual possession goes along with the lease, need be registered",
+            "trigger": "deemed, fraudulent, merely, non-registration, apply, leases, without",
+            "message": "Objective ra19b-1 evidence does not demonstrate important answer terms for question \"Which leases need not be registered merely to avoid being fraudulent and void?\"."
           },
           {
             "proposalId": "unit-a6b469d1b34d7233",
             "severity": "warning",
-            "code": "POSSIBLE_MODALITY_MISMATCH",
-            "message": "Study answer may have changed legal modality from the evidence."
+            "code": "EVIDENCE_INCOMPLETE_FOR_ANSWER",
+            "objectiveId": "ra19b-2",
+            "guidedQuestion": "When is an official-capacity public-auction conveyance protected as if registered at the time of sale?",
+            "answerFragment": "When a person in an official capacity executes a conveyance of an interest in lands sold at public auction pursuant to law, the conveyance is as valid against subsequent purchasers or judgment creditors as if registered at the time of sale if registered within six months of the day of sale.",
+            "sourceFragment": "if registered within six months of the day of such sale, shall, as against any subsequent purchaser or judgment creditor, be as valid as if registered at the time of sale",
+            "trigger": "person, official, capacity, executes, conveyance, interest, lands, public",
+            "message": "Objective ra19b-2 evidence does not demonstrate important answer terms for question \"When is an official-capacity public-auction conveyance protected as if registered at the time of sale?\"."
           },
           {
             "proposalId": "unit-a6b469d1b34d7233",
             "severity": "warning",
-            "code": "POSSIBLE_MODALITY_MISMATCH",
-            "message": "Study answer may have changed legal modality from the evidence."
+            "code": "EVIDENCE_INCOMPLETE_FOR_ANSWER",
+            "objectiveId": "ra19b-3",
+            "guidedQuestion": "When is a sheriff sale conveyance protected as if registered on its execution day?",
+            "answerFragment": "If a sheriff executes a conveyance of an interest in lands sold under the Enforcement of Money Judgments Act, it is as valid against subsequent purchasers or judgment creditors as if registered on the day of execution if registered within six months after the day of execution.",
+            "sourceFragment": "if registered within six months after the day of its execution, shall, as against any subsequent purchaser or judgment creditor, be as valid as if registered on the day of its execution",
+            "trigger": "sheriff, executes, conveyance, interest, lands, enforcement, money, judgments",
+            "message": "Objective ra19b-3 evidence does not demonstrate important answer terms for question \"When is a sheriff sale conveyance protected as if registered on its execution day?\"."
           },
           {
             "proposalId": "unit-a6b469d1b34d7233",
             "severity": "warning",
-            "code": "POSSIBLE_MODALITY_MISMATCH",
-            "message": "Study answer may have changed legal modality from the evidence."
+            "code": "EVIDENCE_INCOMPLETE_FOR_ANSWER",
+            "objectiveId": "ra19b-4",
+            "guidedQuestion": "When is a registered will protected as if registered immediately after death?",
+            "answerFragment": "A will is as valid against subsequent purchasers or judgment creditors as if registered immediately after death if registered within six months after death when the testator died in the Province, or within one year after death when the testator died outside the Province.",
+            "sourceFragment": "A will registered within six months after the death of the testator if he died within the Province, or within one year after death if he died without the Province",
+            "trigger": "valid, against, subsequent, purchasers, judgment, creditors, immediately, outside",
+            "message": "Objective ra19b-4 evidence does not demonstrate important answer terms for question \"When is a registered will protected as if registered immediately after death?\"."
           }
         ],
         "coverage": [
@@ -1578,20 +1636,13 @@
           {
             "proposalId": "unit-30de1e83f7ea3eed",
             "severity": "warning",
-            "code": "POSSIBLE_MODALITY_MISMATCH",
-            "message": "Study answer may have changed legal modality from the evidence."
-          },
-          {
-            "proposalId": "unit-30de1e83f7ea3eed",
-            "severity": "warning",
-            "code": "POSSIBLE_MODALITY_MISMATCH",
-            "message": "Study answer may have changed legal modality from the evidence."
-          },
-          {
-            "proposalId": "unit-30de1e83f7ea3eed",
-            "severity": "warning",
             "code": "ANSWER_EXTENDS_BEYOND_EVIDENCE",
-            "message": "Study answer may include claims not supported by linked evidence."
+            "objectiveId": "ra19c-2",
+            "guidedQuestion": "What information must the affidavit set out, and who may make it?",
+            "answerFragment": "The affidavit must set out the true and actual consideration, party names, location and description of the real property, and prescribed information; it must be made by the grantee, the grantee solicitor, or another duly authorized agent, in the regulatory form or to like effect.",
+            "sourceFragment": "19(6)No deed affecting the transfer of real property shall be registered unless accompanied by an affidavit of the transfer setting forth the true and actual consideration for which such property was acquired, the names of the parties, the location and description of real property and such other inf",
+            "trigger": "party, another, regulatory",
+            "message": "Objective ra19c-2 answer may include claims not supported by the approved focus for question \"What information must the affidavit set out, and who may make it?\"."
           }
         ],
         "coverage": [
@@ -1704,8 +1755,13 @@
           {
             "proposalId": "unit-198246513c3c013f",
             "severity": "warning",
-            "code": "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-            "message": "Study answer includes unsupported numeric or legal-reference token: 6."
+            "code": "EVIDENCE_INCOMPLETE_FOR_ANSWER",
+            "objectiveId": "reg3a-3",
+            "guidedQuestion": "To what standards and requirements must the plan conform?",
+            "answerFragment": "The plan shall conform in every respect to the Association of New Brunswick Land Surveyors standards for making such a plan that are in effect at the time of application, and to any other requirements specified by the Registrar General.",
+            "sourceFragment": "shall conform in every respect to",
+            "trigger": "association, brunswick, surveyors, standards, making, effect, application, other",
+            "message": "Objective reg3a-3 evidence does not demonstrate important answer terms for question \"To what standards and requirements must the plan conform?\"."
           }
         ],
         "coverage": [
@@ -1825,14 +1881,46 @@
           {
             "proposalId": "unit-d3522996fe86a65d",
             "severity": "warning",
-            "code": "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-            "message": "Study answer includes unsupported numeric or legal-reference token: subsection 3(4)."
+            "code": "EVIDENCE_INCOMPLETE_FOR_ANSWER",
+            "objectiveId": "reg3b-1",
+            "guidedQuestion": "What surveyor-prepared material must accompany the application?",
+            "answerFragment": "The application shall be accompanied by the field notes and a surveyor report conforming with subsection 3(4), prepared by the surveyor who signed the plan of survey.",
+            "sourceFragment": "the field notes and a surveyor’s report in conformity with subsection (4), prepared by the surveyor who signed the plan of survey",
+            "trigger": "application, accompanied, conforming",
+            "message": "Objective reg3b-1 evidence does not demonstrate important answer terms for question \"What surveyor-prepared material must accompany the application?\"."
           },
           {
             "proposalId": "unit-d3522996fe86a65d",
             "severity": "warning",
             "code": "ANSWER_EXTENDS_BEYOND_EVIDENCE",
-            "message": "Study answer may include claims not supported by linked evidence."
+            "objectiveId": "reg3b-2",
+            "guidedQuestion": "What other documents and information must accompany the application?",
+            "answerFragment": "The application must include available existing plans and related field notes or surveyor reports, required registered instruments, any requested abstract of title, names and mailing addresses of current interest owners with the nature of each interest, any consent and waiver of notice or agreement to be bound, and other helpful or requested information or documentation.",
+            "sourceFragment": "3(3)In addition to the plan of survey referred to in subsection (2), an application to confirm the location of a boundary shall be accompanied by\n\n(a)\nthe field notes and a surveyor’s report in conformity with subsection (4), prepared by the surveyor who signed the plan of survey,\n\n(b)\ncopies of any",
+            "trigger": "include, related, helpful",
+            "message": "Objective reg3b-2 answer may include claims not supported by the approved focus for question \"What other documents and information must accompany the application?\"."
+          },
+          {
+            "proposalId": "unit-d3522996fe86a65d",
+            "severity": "warning",
+            "code": "EVIDENCE_INCOMPLETE_FOR_ANSWER",
+            "objectiveId": "reg3b-3",
+            "guidedQuestion": "What must the surveyor report contain?",
+            "answerFragment": "The report must describe the issue to be determined, the history of the boundary, and the evidence used to establish the boundary location shown on the plan of survey.",
+            "sourceFragment": "A surveyor’s report referred to in paragraph (3)(a) shall contain",
+            "trigger": "describe, issue, determined, history, boundary, evidence, establish, location",
+            "message": "Objective reg3b-3 evidence does not demonstrate important answer terms for question \"What must the surveyor report contain?\"."
+          },
+          {
+            "proposalId": "unit-d3522996fe86a65d",
+            "severity": "warning",
+            "code": "EVIDENCE_INCOMPLETE_FOR_ANSWER",
+            "objectiveId": "reg3b-4",
+            "guidedQuestion": "What explanation must the surveyor report give about other boundary locations?",
+            "answerFragment": "It must explain the reasons for accepting or rejecting the boundary location shown on other plans, documentary evidence, physical evidence of earlier boundary lines, or boundary lines accepted by adjoining landowners.",
+            "sourceFragment": "an explanation of the reasons for accepting or rejecting the location of the boundary as shown on any other plans of survey",
+            "trigger": "explain, documentary, evidence, physical, earlier, lines, accepted, adjoining",
+            "message": "Objective reg3b-4 evidence does not demonstrate important answer terms for question \"What explanation must the surveyor report give about other boundary locations?\"."
           }
         ],
         "coverage": [
@@ -1931,14 +2019,7 @@
       },
       "validation": {
         "errors": [],
-        "warnings": [
-          {
-            "proposalId": "unit-715da6cfeac482a1",
-            "severity": "warning",
-            "code": "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-            "message": "Study answer includes unsupported numeric or legal-reference token: subsection 3(3)."
-          }
-        ],
+        "warnings": [],
         "coverage": [
           {
             "sourceKey": "section:3",

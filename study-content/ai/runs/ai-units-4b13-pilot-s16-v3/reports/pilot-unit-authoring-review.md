@@ -79,7 +79,7 @@ Answer: The registrar may reject an instrument if the appropriate fee has not be
 
 ### Validation
 Errors: 0
-Warnings: 5
+Warnings: 1
 
 ### Human Evaluation
 overall: 
@@ -172,7 +172,7 @@ Answer: If a document sufficient to pass an estate or interest in land under the
 
 ### Validation
 Errors: 0
-Warnings: 4
+Warnings: 1
 
 ### Human Evaluation
 overall: 
@@ -410,7 +410,7 @@ Answer: For a zoning regulation or rural plan, section 111 does not require the 
 
 ### Validation
 Errors: 0
-Warnings: 9
+Warnings: 5
 
 ### Human Evaluation
 overall: 
@@ -520,7 +520,7 @@ Answer: If not satisfied by all material filed in the proceeding, including the 
 
 ### Validation
 Errors: 0
-Warnings: 1
+Warnings: 2
 
 ### Human Evaluation
 overall: 
@@ -575,7 +575,7 @@ Answer: The notice shall specify the date, time, and place of the hearing, descr
 
 ### Validation
 Errors: 0
-Warnings: 2
+Warnings: 1
 
 ### Human Evaluation
 overall: 
@@ -783,7 +783,7 @@ Answer: Every supervisor shall provide the instruction necessary to ensure the h
 
 ### Validation
 Errors: 0
-Warnings: 0
+Warnings: 3
 
 ### Human Evaluation
 overall: 
@@ -954,7 +954,7 @@ Answer: The registrar shall not record the affidavit, but shall forward it to th
 
 ### Validation
 Errors: 0
-Warnings: 3
+Warnings: 1
 
 ### Human Evaluation
 overall: 
@@ -1121,7 +1121,7 @@ Answer: It must explain the reasons for accepting or rejecting the boundary loca
 
 ### Validation
 Errors: 0
-Warnings: 2
+Warnings: 4
 
 ### Human Evaluation
 overall: 
@@ -1200,7 +1200,7 @@ Answer: The waiver may be subject to the terms and conditions the Registrar Gene
 
 ### Validation
 Errors: 0
-Warnings: 1
+Warnings: 0
 
 ### Human Evaluation
 overall: 

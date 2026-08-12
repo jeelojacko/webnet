@@ -2,7 +2,7 @@
 
 Map proposals: 9
 Unit proposals: 16
-Unit validation warnings: 36
+Unit validation warnings: 27
 
 ## Map Dispositions
 - split: 7

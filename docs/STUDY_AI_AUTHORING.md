@@ -1,6 +1,6 @@
 # Study AI Authoring
 
-Phase 4B.1 supports the first real provider-neutral AI authoring pilot. Phase 4B.1.1 remediates the Study Map pilot with stricter v3 Map prompts, schema validation, source-focus tracking, and a targeted 24-provision review run. Phase 4B.1.2 adds the target-source grounding gate for Study Map validation. Phase 4B.1.3 runs the first grounded Unit Authoring v3 pilot from 16 externally selected corrected Map groups without approving the resulting proposals into production StudyUnits.
+Phase 4B.1 supports the first real provider-neutral AI authoring pilot. Phase 4B.1.1 remediates the Study Map pilot with stricter v3 Map prompts, schema validation, source-focus tracking, and a targeted 24-provision review run. Phase 4B.1.2 adds the target-source grounding gate for Study Map validation. Phase 4B.1.3 runs the first grounded Unit Authoring v3 pilot from 16 externally selected corrected Map groups without approving the resulting proposals into production StudyUnits. Phase 4B.1.4 preserves that pilot as a baseline and introduces Unit Authoring v4 plus calibrated validation that separates legal answer support from evidence excerpt completeness.
 
 AI output is an authoring aid only. The official legal source remains immutable authority, and approved AI content keeps source links, source hashes, and provenance.
 
@@ -27,13 +27,13 @@ The original v1 prompt specs remain under `study-content/ai/specs/` for reproduc
 New jobs default to:
 
 - `study-map-v3`
-- `unit-authoring-v3`
+- `unit-authoring-v4`
 
 Every job records `promptSpecVersion`, and the deterministic `inputHash` includes that prompt version. A result with the wrong prompt spec is stale/invalid for that job.
 
 Study Map v3 explicitly treats the ANBLS corpus as exam scope, tells the model that source text is data, forbids external legal research/memory, preserves official source scope, and gives concrete criteria for `standalone`, `combine`, `split`, `reference-only`, `skip`, and `needs-human-review`. It also requires genuine per-job content reasoning, forbids deterministic/template authoring, forbids keyword or source-length shortcuts, requires `focusSelections` for proposed groups, and limits `suggestedPriority` to `P1`, `P2`, `P3`, or `P4`.
 
-Unit Authoring v3 explicitly treats authoring as educational work, requires natural specific questions, concise legally faithful answers, actor/modality/numeric fidelity, approved-group scope, target-source-only evidence grounding, approved focus coverage, inference separation, broad-group warnings, and separation between official source, AI study content, and user notes.
+Unit Authoring v4 retains the v3 source and focus restrictions, explicitly treats authoring as educational work, requires natural specific questions, concise legally faithful answers, actor/modality/numeric fidelity, approved-group scope, target-source-only evidence grounding, approved focus coverage, inference separation, broad-group warnings, and separation between official source, AI study content, and user notes. v4 adds evidence completeness guidance, qualifier-attachment guidance, source-matched question framing, normal grammar requirements, Community Planning Act s.125 regulation-vs-statutory-rule framing, and `mapRevisionSuggestion` feedback when an approved Map group is too broad for a useful StudyUnit.
 
 ## Source Input
 
@@ -149,9 +149,16 @@ Warnings include:
 - possible actor mismatch
 - uncovered substantive subsection
 - unexplained omission
-- answer appears to extend beyond evidence
+- answer appears to extend beyond the full approved focus
+- evidence excerpts are incomplete for the answer
 
 Warnings remain approvable after explicit review.
+
+Unit answer support and evidence completeness are separate checks. Numeric/reference, actor, modality, and answer-extension validation compare the study answer against the full approved authoring focus: approved `sourceKeys`, selected `childLabels`, selected `definedTerms`, and the corresponding operative source text. Evidence text still must be found inside the approved authoring source and may not be satisfied by context-only text. When the full approved focus supports the answer but the selected excerpts do not demonstrate important answer terms, validation emits `EVIDENCE_INCOMPLETE_FOR_ANSWER` instead of `ANSWER_EXTENDS_BEYOND_EVIDENCE`.
+
+Statutory-reference validation normalizes relative references against the current source section. For example, within section 18, `subsection (4)` and `subsection 18(4)` compare as the same reference; within section 10, `subsection (1)` and `subsection 10(1)` compare as the same reference. Compound relative references such as `subsection 6(1) or (3)` normalize to `subsection 6(1)` and `subsection 6(3)`. Decimal sections such as `section 49.1`, `section 17.11`, and `section 3.1` remain decimal references rather than becoming `section 49`, `section 17`, or `section 3`. Integers inside legal references are not treated as independent quantity claims; actual quantities such as `thirty days`, `60 days`, `$500`, and `25%` remain separately checked.
+
+Modality validation is conservative and full-focus aware. It still warns on true may/must drift and prohibition reversal, but no longer warns merely because a selected focus contains both permission and duty/prohibition language in different clauses while the answer preserves a supported permission. Passive legal-effect prose such as `shall be deemed` versus `is deemed` is not treated as a may/must inversion by itself.
 
 Study Map validation also blocks malformed dispositions, source status values, suggested priorities outside `P1`-`P4`, warning codes leaked into prose reasons, malformed warning codes, and missing v3 `focusSelections`. Review warnings flag suspicious reference-only or trivial standalone decisions, generic group titles, and selected high-risk ungrounded topic words.
 
@@ -287,6 +294,51 @@ study-content/ai/runs/ai-units-4b13-pilot-s16-v3/reports/deterministic-compariso
 ```
 
 These artifacts are evaluation-only. They leave human evaluation fields unset and do not approve proposals into real StudyUnits.
+
+## Phase 4B.1.4 Unit Validation Calibration
+
+The calibration phase preserves the raw Phase 4B.1.3 run:
+
+```text
+ai-units-4b13-pilot-s16-v3
+```
+
+Do not mutate its `results/*.results.jsonl` raw proposal lines. Revalidation may regenerate reports under `reports/`.
+
+The preserved v3 pilot revalidated read-only with:
+
+```bash
+npm run study:ai:validate-unit-proposals -- --run ai-units-4b13-pilot-s16-v3
+npm run study:ai:pilot-report -- --run ai-map-4b12-grounding-s9-v1 --unit-run ai-units-4b13-pilot-s16-v3
+```
+
+Before calibration, the validator reported 36 warnings. After calibration it reports 27 warnings:
+
+```text
+EVIDENCE_INCOMPLETE_FOR_ANSWER  22
+ANSWER_EXTENDS_BEYOND_EVIDENCE   5
+```
+
+The net warning-type change is:
+
+```text
+UNSUPPORTED_NUMERIC_OR_REFERENCE  removed after relative-reference, plural-reference,
+                                  standalone-reference, and decimal-section normalization
+POSSIBLE_MODALITY_MISMATCH        removed after full-focus mixed-modality comparison
+EVIDENCE_INCOMPLETE_FOR_ANSWER    added as a provenance-quality warning
+```
+
+Many previous evidence-extension and modality warnings now become more specific evidence-completeness warnings, while numeric/reference false positives are removed outright.
+
+Community Planning Act s.125 remains a broad-group regression. Existing v3 raw output contains `MAP_GROUP_TOO_BROAD_FOR_GOOD_UNIT` but does not include v4 `mapRevisionSuggestion` because raw output is preserved. Future v4 output that raises `MAP_GROUP_TOO_BROAD_FOR_GOOD_UNIT` must set `authoringStatus: "needs-map-revision"` and provide source-grounded finer groups. A reasonable s.125 feedback shape is:
+
+```text
+125(10)-125(11): subdivision-regulation powers and modified subdivision rules
+125(12)-125(13): public-purpose land and money
+125(14)-125(16): pre-regulation procedure, written summary, and filing
+```
+
+Do not process those revised groups into StudyUnits until a later expanded pilot phase.
 
 ## External Codex Workflow
 
