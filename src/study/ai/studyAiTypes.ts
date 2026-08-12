@@ -89,6 +89,13 @@ export type AiSourceContext = {
 
 export type AiSourceStatus = 'current' | 'repealed' | 'historical';
 
+export type AiSourceContentFlags = {
+  containsRepealedSubprovision?: boolean;
+  repealOnly?: boolean;
+  commencementOnly?: boolean;
+  transitional?: boolean;
+};
+
 export type AiSourceMetadata = {
   amendmentHistory?: string[];
   consolidationNotes?: string[];
@@ -119,11 +126,18 @@ export type AiStudyMapJob = {
     operativeSourceText: string;
     sourceMetadata: AiSourceMetadata;
     sourceStatus: AiSourceStatus;
+    contentFlags?: AiSourceContentFlags;
     approximateInputSize: {
       exactCharacters: number;
       operativeCharacters: number;
       largeSection: boolean;
     };
+    sourceFocusOptions?: Array<{
+      sourceKey: string;
+      label: string;
+      childLabels?: string[];
+      definedTerms?: string[];
+    }>;
     sourceHashes: Record<string, string>;
   };
   context: {
@@ -169,8 +183,16 @@ export type AiProposedSourceGroup = {
   groupId: string;
   titleSuggestion: string;
   sourceKeys: string[];
+  focusSelections: AiMapFocusSelection[];
   reason: string;
   approximateLearningGoal: string;
+};
+
+export type AiMapFocusSelection = {
+  sourceKey: string;
+  childLabels?: string[];
+  definedTerms?: string[];
+  evidenceText?: string[];
 };
 
 export type AiStudyMapResult = {

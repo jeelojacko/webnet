@@ -1,0 +1,138 @@
+{
+  "runId": "ai-map-4b11-targeted-s24-v3",
+  "strategy": "phase-4b1.1-targeted",
+  "seed": 42,
+  "requestedSample": 0,
+  "selectedJobs": 24,
+  "manualIncludes": [],
+  "phase4b1RequiredIncludesApplied": false,
+  "phase4b1RequiredIncludes": [],
+  "strategyVersion": "phase-4b1.1-targeted-v1",
+  "sampleSize": 24,
+  "requiredIncludes": [
+    "doc-boundaries-confirmation-act:10",
+    "doc-boundaries-confirmation-act:16",
+    "doc-surveys-act:1",
+    "doc-surveys-act:3",
+    "doc-surveys-act:8",
+    "doc-community-planning-act:125",
+    "doc-land-titles-act:18",
+    "doc-registry-act:19",
+    "reg-surveys-84-76:1",
+    "reg-surveys-84-76:8",
+    "reg-boundaries-95-166:3",
+    "doc-underground-storage-act:22",
+    "doc-energy-and-utilities-board-act:49.1",
+    "doc-occupational-health-and-safety-act:9.1",
+    "doc-conservation-easements-act:5",
+    "doc-highway-act:39.1",
+    "doc-public-health-act:27",
+    "doc-land-titles-act:17.11",
+    "doc-marital-property-act:30",
+    "doc-evidence-act:7",
+    "doc-registry-act:23",
+    "doc-aquaculture-act:19",
+    "doc-new-brunswick-land-surveyors-bylaws:4.2.2"
+  ],
+  "repealOnlyJobId": "map-a69ca10a80667d9f",
+  "selectedJobIds": [
+    "map-324db09e5f0e12de",
+    "map-364ffbcb2ed6551a",
+    "map-8b1cf0e7aa43d3bc",
+    "map-ee7feee303535823",
+    "map-085a972f81673c56",
+    "map-33ecdfe080193d4f",
+    "map-921478a7044024bd",
+    "map-17219353deb3fd8b",
+    "map-e3630105099f9f54",
+    "map-7610524609e93c96",
+    "map-ed3f74e6ccd6099c",
+    "map-7cb951c7273b3a37",
+    "map-d1f94730dd849158",
+    "map-3e938238707b231f",
+    "map-979dd27e8aa86e4c",
+    "map-aed2ddda4c4be5b8",
+    "map-5ca759ca045bb206",
+    "map-f30e75754481963f",
+    "map-b7af4191c14c17b5",
+    "map-8585da13f05b1699",
+    "map-03b0d63cdb3c860c",
+    "map-9485be3ae320b1d0",
+    "map-c69e07960c63c352",
+    "map-a69ca10a80667d9f"
+  ],
+  "selectionReasons": {
+    "map-324db09e5f0e12de": [
+      "phase 4B.1.1 targeted include: doc-boundaries-confirmation-act:10"
+    ],
+    "map-364ffbcb2ed6551a": [
+      "phase 4B.1.1 targeted include: doc-boundaries-confirmation-act:16"
+    ],
+    "map-8b1cf0e7aa43d3bc": [
+      "phase 4B.1.1 targeted include: doc-surveys-act:1"
+    ],
+    "map-ee7feee303535823": [
+      "phase 4B.1.1 targeted include: doc-surveys-act:3"
+    ],
+    "map-085a972f81673c56": [
+      "phase 4B.1.1 targeted include: doc-surveys-act:8"
+    ],
+    "map-33ecdfe080193d4f": [
+      "phase 4B.1.1 targeted include: doc-community-planning-act:125"
+    ],
+    "map-921478a7044024bd": [
+      "phase 4B.1.1 targeted include: doc-land-titles-act:18"
+    ],
+    "map-17219353deb3fd8b": [
+      "phase 4B.1.1 targeted include: doc-registry-act:19"
+    ],
+    "map-e3630105099f9f54": [
+      "phase 4B.1.1 targeted include: reg-surveys-84-76:1"
+    ],
+    "map-7610524609e93c96": [
+      "phase 4B.1.1 targeted include: reg-surveys-84-76:8"
+    ],
+    "map-ed3f74e6ccd6099c": [
+      "phase 4B.1.1 targeted include: reg-boundaries-95-166:3"
+    ],
+    "map-7cb951c7273b3a37": [
+      "phase 4B.1.1 targeted include: doc-underground-storage-act:22"
+    ],
+    "map-d1f94730dd849158": [
+      "phase 4B.1.1 targeted include: doc-energy-and-utilities-board-act:49.1"
+    ],
+    "map-3e938238707b231f": [
+      "phase 4B.1.1 targeted include: doc-occupational-health-and-safety-act:9.1"
+    ],
+    "map-979dd27e8aa86e4c": [
+      "phase 4B.1.1 targeted include: doc-conservation-easements-act:5"
+    ],
+    "map-aed2ddda4c4be5b8": [
+      "phase 4B.1.1 targeted include: doc-highway-act:39.1"
+    ],
+    "map-5ca759ca045bb206": [
+      "phase 4B.1.1 targeted include: doc-public-health-act:27"
+    ],
+    "map-f30e75754481963f": [
+      "phase 4B.1.1 targeted include: doc-land-titles-act:17.11"
+    ],
+    "map-b7af4191c14c17b5": [
+      "phase 4B.1.1 targeted include: doc-marital-property-act:30"
+    ],
+    "map-8585da13f05b1699": [
+      "phase 4B.1.1 targeted include: doc-evidence-act:7"
+    ],
+    "map-03b0d63cdb3c860c": [
+      "phase 4B.1.1 targeted include: doc-registry-act:23"
+    ],
+    "map-9485be3ae320b1d0": [
+      "phase 4B.1.1 targeted include: doc-aquaculture-act:19"
+    ],
+    "map-c69e07960c63c352": [
+      "phase 4B.1.1 targeted include: doc-new-brunswick-land-surveyors-bylaws:4.2.2"
+    ],
+    "map-a69ca10a80667d9f": [
+      "phase 4B.1.1 genuine repeal-only provision"
+    ]
+  }
+}

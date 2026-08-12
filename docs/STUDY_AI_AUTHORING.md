@@ -1,6 +1,6 @@
 # Study AI Authoring
 
-Phase 4B.1 supports the first real provider-neutral AI authoring pilot. It prepares and evaluates a bounded Study Map and Unit Authoring sample; it does not process the full corpus automatically.
+Phase 4B.1 supports the first real provider-neutral AI authoring pilot. Phase 4B.1.1 remediates the Study Map pilot with stricter v3 Map prompts, schema validation, source-focus tracking, and a targeted 24-provision review run. It does not process the full corpus automatically, and Phase 4B.1.1 does not start Unit Authoring.
 
 AI output is an authoring aid only. The official legal source remains immutable authority, and approved AI content keeps source links, source hashes, and provenance.
 
@@ -26,12 +26,12 @@ The original v1 prompt specs remain under `study-content/ai/specs/` for reproduc
 
 New jobs default to:
 
-- `study-map-v2`
+- `study-map-v3`
 - `unit-authoring-v2`
 
 Every job records `promptSpecVersion`, and the deterministic `inputHash` includes that prompt version. A result with the wrong prompt spec is stale/invalid for that job.
 
-Study Map v2 explicitly treats the ANBLS corpus as exam scope, tells the model that source text is data, forbids external legal research/memory, preserves official source scope, and gives concrete criteria for `standalone`, `combine`, `split`, `reference-only`, `skip`, and `needs-human-review`.
+Study Map v3 explicitly treats the ANBLS corpus as exam scope, tells the model that source text is data, forbids external legal research/memory, preserves official source scope, and gives concrete criteria for `standalone`, `combine`, `split`, `reference-only`, `skip`, and `needs-human-review`. It also requires genuine per-job content reasoning, forbids deterministic/template authoring, forbids keyword or source-length shortcuts, requires `focusSelections` for proposed groups, and limits `suggestedPriority` to `P1`, `P2`, `P3`, or `P4`.
 
 Unit Authoring v2 explicitly treats authoring as educational work, requires natural specific questions, concise legally faithful answers, actor/modality/numeric fidelity, approved-group scope, evidence grounding, inference separation, and objective-level source coverage.
 
@@ -45,7 +45,9 @@ AI jobs distinguish:
 
 Job preparation does not alter authoritative `legalComponents`. It only cleans the AI job input so amendment history, consolidation notes, and obvious metadata are not treated as operative law.
 
-Jobs also record `sourceStatus` as `current`, `repealed`, or `historical` when detectable. Repealed material is not automatically skipped; the Map proposal remains reviewable.
+Jobs also record `sourceStatus` as `current`, `repealed`, or `historical` when detectable. A section with one repealed subprovision remains `current` and records `contentFlags.containsRepealedSubprovision`; only whole-source repeal text is marked `repealed` with `contentFlags.repealOnly`. Repealed material is not automatically skipped; the Map proposal remains reviewable.
+
+Study Map jobs also include `sourceFocusOptions` when subsections or detected defined terms are available. v3 Map results must carry group-level `focusSelections` so split decisions identify the child labels, defined terms, or evidence phrases actually covered by each proposed unit.
 
 ## Context
 
@@ -65,7 +67,7 @@ Unit Authoring v2 distinguishes the approved authoring source group from context
 
 The Study Authoring page has separate `Runs`, `Study Map`, and `Unit Proposals` views.
 
-Study Map review shows document identity, section/citation labels, heading, operative source text, disposition, confidence, reason, priority, proposed groups, warnings, and conflict codes.
+Study Map review shows document identity, section/citation labels, heading, operative source text, disposition, confidence, reason, priority, proposed groups, source-focus selections, warnings, and conflict codes.
 
 Available Map actions:
 
@@ -85,6 +87,8 @@ For the Phase 4B.1 pilot, each Map proposal can also record:
 These fields are pilot metadata only. They do not change normal Study state or FSRS scheduling.
 
 `prepare-units` only uses Map proposals that are approved, valid or warning-valid, non-conflicted, and not skip/reference-only. Validated but unapproved Map proposals do not create Unit Authoring jobs.
+
+Map conflict reconciliation is focus-aware for v3 proposals. Split groups that share one parent section are not conflicts when their `focusSelections` identify distinct child labels, defined terms, or evidence focus. True overlapping coverage still receives `MAP_CONFLICT`.
 
 ## Unit Proposal Review
 
@@ -145,6 +149,8 @@ Warnings include:
 
 Warnings remain approvable after explicit review.
 
+Study Map validation also blocks malformed dispositions, source status values, suggested priorities outside `P1`-`P4`, warning codes leaked into prose reasons, malformed warning codes, and missing v3 `focusSelections`. Review warnings flag suspicious reference-only or trivial standalone decisions, generic group titles, and selected high-risk ungrounded topic words.
+
 ## Coverage
 
 Unit proposals may include `sourceCoverage` entries keyed by sourceKey. Child labels can be marked:
@@ -192,6 +198,26 @@ study-content/ai/runs/<run-id>/reports/sampling-report.md
 ```
 
 The report records sample size, seed, strategy version, Acts/Regulations represented, document distribution, category counts, selected job IDs, and selection reasons.
+
+## Phase 4B.1.1 Targeted Map Pilot
+
+The remediation pilot uses a fixed targeted sample of 24 provisions that cover the known Study Map failure modes from the 100-job pilot: definition leakage, split granularity, mixed repealed subprovisions, repeal-only provisions, regulation-making provisions, citation/reference-only provisions, and substantive provisions previously misclassified as trivial.
+
+```bash
+npm run study:ai:prepare-map -- --run ai-map-4b11-targeted-s24-v3 --strategy phase-4b1.1-targeted --batch-size 8
+npm run study:ai:status -- --run ai-map-4b11-targeted-s24-v3
+npm run study:ai:validate-results -- --run ai-map-4b11-targeted-s24-v3
+```
+
+Validation writes the normal result validation and Map proposal artifacts, plus human-review aids:
+
+```text
+study-content/ai/runs/<run-id>/reports/validation.json
+study-content/ai/runs/<run-id>/reports/validation.md
+study-content/ai/runs/<run-id>/reports/map-proposals.json
+study-content/ai/runs/<run-id>/reports/study-map-pilot-review.json
+study-content/ai/runs/<run-id>/reports/study-map-pilot-review.md
+```
 
 ## External Codex Workflow
 

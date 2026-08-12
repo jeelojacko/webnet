@@ -419,6 +419,9 @@ const StudyAuthoringPage = ({
                               groupId: `group-${mapProposal.proposedGroups.length + 1}`,
                               titleSuggestion: '',
                               sourceKeys: mapProposal.targetSourceKeys,
+                              focusSelections: mapProposal.targetSourceKeys.map((sourceKey) => ({
+                                sourceKey,
+                              })),
                               reason: '',
                               approximateLearningGoal: '',
                             },
@@ -472,6 +475,9 @@ const StudyAuthoringPage = ({
                         placeholder="Approximate learning goal"
                         className="mt-2 min-h-16 w-full rounded border border-slate-700 bg-slate-900 px-2 py-1.5 text-sm text-white"
                       />
+                      <pre className="mt-2 max-h-28 overflow-auto rounded border border-slate-800 bg-slate-950 p-2 text-xs text-slate-300">
+                        {JSON.stringify(group.focusSelections ?? [], null, 2)}
+                      </pre>
                     </div>
                   ))}
                   {[...mapProposal.warnings, ...mapProposal.conflictCodes].length > 0 ? (

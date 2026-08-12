@@ -41,7 +41,7 @@ const mapJob = (): AiStudyMapJob => ({
   runId: 'run-1',
   corpusContentHash: 'corpus-hash',
   inputHash: 'input-hash',
-  promptSpecVersion: 'study-map-v2',
+  promptSpecVersion: 'study-map-v3',
   document: {
     documentId: sourceComponent.documentId,
     title: 'Boundaries Confirmation Act',
@@ -56,6 +56,7 @@ const mapJob = (): AiStudyMapJob => ({
     operativeSourceText: sourceComponent.text,
     sourceMetadata: {},
     sourceStatus: 'current',
+    contentFlags: { containsRepealedSubprovision: false, repealOnly: false },
     approximateInputSize: {
       exactCharacters: sourceComponent.text.length,
       operativeCharacters: sourceComponent.text.length,
@@ -72,16 +73,17 @@ const unitProposal = (): AiStoredUnitProposal => ({
   runId: 'run-1',
   corpusContentHash: 'corpus-hash',
   sourceDocumentId: sourceComponent.documentId,
+  sourceKeys: [sourceComponent.sourceKey],
+  sourceHashes: { [sourceComponent.sourceKey]: sourceComponent.contentHash },
+  approvedGroup: {
+    groupId: 'group-1',
+    titleSuggestion: 'Objection',
     sourceKeys: [sourceComponent.sourceKey],
-    sourceHashes: { [sourceComponent.sourceKey]: sourceComponent.contentHash },
-    approvedGroup: {
-      groupId: 'group-1',
-      titleSuggestion: 'Objection',
-      sourceKeys: [sourceComponent.sourceKey],
-      reason: 'One focused procedure.',
-      approximateLearningGoal: 'Know how objections are delivered.',
-    },
-    title: 'Objection and hearing process',
+    reason: 'One focused procedure.',
+    approximateLearningGoal: 'Know how objections are delivered.',
+    focusSelections: [{ sourceKey: sourceComponent.sourceKey, evidenceText: ['written objection'] }],
+  },
+  title: 'Objection and hearing process',
   mainQuestion: 'How does the objection process work under section 10?',
   studySummary: 'A person can object in writing before the notice deadline.',
   objectives: [
@@ -105,11 +107,11 @@ const unitProposal = (): AiStoredUnitProposal => ({
   ],
   confidence: 'high',
   warnings: [],
-    generationMetadata: {
-      providerKind: 'external-codex',
-      promptSpecVersion: 'unit-authoring-v2',
-      generatedAt: '2026-08-12T10:00:00.000Z',
-    },
+  generationMetadata: {
+    providerKind: 'external-codex',
+    promptSpecVersion: 'unit-authoring-v2',
+    generatedAt: '2026-08-12T10:00:00.000Z',
+  },
   reviewStatus: 'generated',
   validationStatus: 'not-validated',
   validationMessages: [],
@@ -143,6 +145,7 @@ afterAll(() => {
   [
     'ai-test-jsonl-robustness',
     'ai-test-phase-4b1-sampling',
+    'ai-test-phase-4b11-targeted',
     'ai-test-pilot-report',
   ].forEach((runId) => {
     rmSync(join('study-content', 'ai', 'runs', runId), { recursive: true, force: true });
@@ -168,6 +171,39 @@ describe('AI authoring schemas and validation', () => {
     expect(validateAiStudyMapResult(result, mapJob()).issues[0]?.code).toBe(
       'INVALID_DISPOSITION',
     );
+  });
+
+  it('rejects malformed priority values and warning codes leaked into reason', () => {
+    const job = mapJob();
+    const result = (reason: string, suggestedPriority: string): AiStudyMapResult => ({
+      schemaVersion: 1,
+      jobId: job.jobId,
+      runId: job.runId,
+      corpusContentHash: job.corpusContentHash,
+      inputHash: job.inputHash,
+      promptSpecVersion: job.promptSpecVersion,
+      disposition: 'reference-only',
+      confidence: 'medium',
+      reason,
+      suggestedPriority: suggestedPriority as AiStudyMapResult['suggestedPriority'],
+      proposedGroups: [],
+      warnings: ['REFERENCE_ONLY_RECOMMENDED'],
+    });
+
+    [
+      'VERY_SHORT_REFERENCE_ONLY',
+      'SHORT_CONTEXT_REFERENCE_ONLY',
+      'COMMENCEMENT_OR_CITATION_REFERENCE_ONLY',
+    ].forEach((reason) => {
+      const report = validateAiStudyMapResult(
+        result(reason, 'The provision is short contextual material and likely better located than memorized.'),
+        job,
+      );
+      const codes = report.issues.map((issue) => issue.code);
+      expect(report.valid).toBe(false);
+      expect(codes).toContain('INVALID_SUGGESTED_PRIORITY');
+      expect(codes).toContain('WARNING_CODE_IN_REASON');
+    });
   });
 
   it('validates grounding evidence against authoritative source text', () => {
@@ -203,6 +239,7 @@ describe('AI authoring schemas and validation', () => {
           groupId: `group-${jobId}`,
           titleSuggestion: 'Combined rule',
           sourceKeys,
+          focusSelections: sourceKeys.map((sourceKey) => ({ sourceKey })),
           reason: 'Related provisions.',
           approximateLearningGoal: 'Understand the combined workflow.',
         },
@@ -223,19 +260,58 @@ describe('AI authoring schemas and validation', () => {
     );
   });
 
-  it('keeps v2 prompt specs focused on critical hardening requirements', () => {
-    expect(existsSync('study-content/ai/specs/study-map-v2.md')).toBe(true);
+  it('does not treat split siblings with distinct source focus as conflicts', () => {
+    const job = mapJob();
+    const result: AiStudyMapResult = {
+      schemaVersion: 1,
+      jobId: 'map-1',
+      runId: 'run-1',
+      corpusContentHash: 'corpus-hash',
+      inputHash: 'input-hash',
+      promptSpecVersion: 'study-map-v3',
+      disposition: 'split',
+      confidence: 'medium',
+      reason: 'Distinct source focus.',
+      suggestedPriority: 'P1',
+      proposedGroups: [
+        {
+          groupId: 'group-1',
+          titleSuggestion: 'Objection delivery',
+          sourceKeys: ['section:10'],
+          focusSelections: [{ sourceKey: 'section:10', childLabels: ['10(1)'] }],
+          reason: 'Focuses on delivery.',
+          approximateLearningGoal: 'Recall objection delivery.',
+        },
+        {
+          groupId: 'group-2',
+          titleSuggestion: 'Hearing notice',
+          sourceKeys: ['section:10'],
+          focusSelections: [{ sourceKey: 'section:10', childLabels: ['10(2)'] }],
+          reason: 'Focuses on hearing notice.',
+          approximateLearningGoal: 'Recall hearing notice.',
+        },
+      ],
+      warnings: [],
+    };
+
+    const proposals = reconcileAiStudyMapProposals([mapResultToProposal({ result, job })]);
+
+    expect(proposals[0]?.conflictCodes).toEqual([]);
+  });
+
+  it('keeps v3 prompt specs focused on critical hardening requirements', () => {
+    expect(existsSync('study-content/ai/specs/study-map-v3.md')).toBe(true);
     expect(existsSync('study-content/ai/specs/unit-authoring-v2.md')).toBe(true);
-    const mapSpec = readFileSync('study-content/ai/specs/study-map-v2.md', 'utf8');
+    const mapSpec = readFileSync('study-content/ai/specs/study-map-v3.md', 'utf8');
     const unitSpec = readFileSync('study-content/ai/specs/unit-authoring-v2.md', 'utf8');
 
-    expect(mapSpec).toContain('ANBLS corpus defines exam scope');
+    expect(mapSpec).toContain('AI model must make educational/content decisions');
     expect(mapSpec).toContain('source text as data');
-    expect(mapSpec).toContain('Not every section deserves its own FSRS StudyUnit');
+    expect(mapSpec).toContain('focusSelections');
     expect(mapSpec).toContain('standalone');
     expect(mapSpec).toContain('combine');
     expect(mapSpec).toContain('split');
-    expect(mapSpec).toContain('Confidence');
+    expect(mapSpec).toContain('Allowed confidence values');
     expect(unitSpec).toContain('educational authoring');
     expect(unitSpec).toContain('approvedGroup');
     expect(unitSpec).toContain('Never convert `may` into `must`');
@@ -345,6 +421,7 @@ describe('AI CLI JSONL robustness', () => {
               groupId: 'group-1',
               titleSuggestion: 'Objection',
               sourceKeys: ['section:10'],
+              focusSelections: [{ sourceKey: 'section:10', evidenceText: ['written objection'] }],
               reason: 'Focused.',
               approximateLearningGoal: 'Know objection delivery.',
             },
@@ -435,6 +512,55 @@ describe('AI CLI JSONL robustness', () => {
     expect(includeKeys).toContain('doc-registry-act:19');
   }, 30000);
 
+  it('prepares the Phase 4B.1.1 targeted v3 sample with current whole-section status for mixed repeals', () => {
+    const runId = 'ai-test-phase-4b11-targeted';
+    const runDir = join('study-content', 'ai', 'runs', runId);
+    rmSync(runDir, { recursive: true, force: true });
+
+    execFileSync(
+      'npx',
+      [
+        'tsx',
+        'scripts/studyAiAuthoring.ts',
+        'prepare-map',
+        '--run',
+        runId,
+        '--strategy',
+        'phase-4b1.1-targeted',
+        '--batch-size',
+        '8',
+      ],
+      {
+        stdio: 'pipe',
+        shell: process.platform === 'win32',
+      },
+    );
+    const report = JSON.parse(
+      readFileSync(join(runDir, 'reports', 'sampling-report.json'), 'utf8'),
+    ) as {
+      selectedJobs: number;
+      strategyVersion: string;
+    };
+    const allJobs = ['batch-001.jobs.jsonl', 'batch-002.jobs.jsonl', 'batch-003.jobs.jsonl']
+      .flatMap((file) =>
+        readFileSync(join(runDir, 'jobs', file), 'utf8')
+          .trim()
+          .split(/\r?\n/)
+          .map((line) => JSON.parse(line) as AiStudyMapJob),
+      );
+    const landTitles18 = allJobs.find(
+      (job) => job.document.documentId === 'doc-land-titles-act' && job.target.sectionLabels[0] === '18',
+    );
+    const repealOnly = allJobs.find((job) => job.target.contentFlags?.repealOnly);
+
+    expect(report.selectedJobs).toBe(24);
+    expect(report.strategyVersion).toBe('phase-4b1.1-targeted-v1');
+    expect(allJobs[0]?.promptSpecVersion).toBe('study-map-v3');
+    expect(landTitles18?.target.sourceStatus).toBe('current');
+    expect(landTitles18?.target.contentFlags?.containsRepealedSubprovision).toBe(true);
+    expect(repealOnly?.target.sourceStatus).toBe('repealed');
+  }, 30000);
+
   it('writes Phase 4B.1 pilot audit reports with evaluation counts', () => {
     const runId = 'ai-test-pilot-report';
     const runDir = join('study-content', 'ai', 'runs', runId);
@@ -449,7 +575,7 @@ describe('AI CLI JSONL robustness', () => {
           runId,
           corpusContentHash: 'corpus-hash',
           inputHash: 'input-hash',
-          promptSpecVersion: 'study-map-v2',
+          promptSpecVersion: 'study-map-v3',
           disposition: 'standalone',
           confidence: 'high',
           reason: 'Focused procedure.',
@@ -458,6 +584,7 @@ describe('AI CLI JSONL robustness', () => {
               groupId: 'group-1',
               titleSuggestion: 'Objection',
               sourceKeys: ['section:10'],
+              focusSelections: [{ sourceKey: 'section:10', evidenceText: ['written objection'] }],
               reason: 'Focused.',
               approximateLearningGoal: 'Know objection delivery.',
             },

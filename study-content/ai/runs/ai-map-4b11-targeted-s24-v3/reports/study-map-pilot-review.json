@@ -1,0 +1,1285 @@
+{
+  "runId": "ai-map-4b11-targeted-s24-v3",
+  "proposals": [
+    {
+      "source": "Boundaries Confirmation Act s. 10",
+      "disposition": "split",
+      "confidence": "high",
+      "priority": "P1",
+      "reason": "Section 10 contains three distinct objection-hearing topics: making an objection and triggering a hearing, the Registrar General's path when no objection is delivered, and party/notice rules for a hearing.",
+      "proposedGroups": [
+        {
+          "groupId": "group-1",
+          "titleSuggestion": "Objection delivery and required hearing",
+          "sourceKeys": [
+            "section:10"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:10",
+              "childLabels": [
+                "10(1)",
+                "10(2)"
+              ],
+              "evidenceText": [
+                "written statement setting out the reasons for and any grounds and arguments",
+                "Registrar General shall hold a hearing to determine the validity of the objection"
+              ]
+            }
+          ],
+          "reason": "Subsections 10(1) and 10(2) cover how an objection is delivered and the hearing that follows a timely objection.",
+          "approximateLearningGoal": "Recall how a boundary-confirmation objection is delivered and when it requires the Registrar General to hold a hearing."
+        },
+        {
+          "groupId": "group-2",
+          "titleSuggestion": "No-objection confirmation or hearing decision",
+          "sourceKeys": [
+            "section:10"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:10",
+              "childLabels": [
+                "10(3)"
+              ],
+              "evidenceText": [
+                "If no written statement of objection is delivered",
+                "confirm the location of the boundary or boundaries",
+                "hold a hearing in accordance with this Act and the regulations"
+              ]
+            }
+          ],
+          "reason": "Subsection 10(3) is a separate decision path for confirmation without a hearing or for holding a hearing when the filed material is not satisfactory.",
+          "approximateLearningGoal": "Recall the Registrar General's options when no written objection is delivered by the deadline."
+        },
+        {
+          "groupId": "group-3",
+          "titleSuggestion": "Hearing parties and notice contents",
+          "sourceKeys": [
+            "section:10"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:10",
+              "childLabels": [
+                "10(4)",
+                "10(5)",
+                "10(6)"
+              ],
+              "evidenceText": [
+                "are parties to a hearing held under this section",
+                "shall cause a notice of hearing to be given",
+                "shall specify the date, time and place of the hearing"
+              ]
+            }
+          ],
+          "reason": "Subsections 10(4) through 10(6) identify hearing parties and the content and delivery of hearing notice.",
+          "approximateLearningGoal": "Recall who is a party to a section 10 hearing and what the notice of hearing must contain."
+        }
+      ],
+      "warnings": [],
+      "conflictCodes": [],
+      "sourceStatus": "current",
+      "contentFlags": {
+        "containsRepealedSubprovision": false,
+        "repealOnly": false,
+        "commencementOnly": false,
+        "transitional": false
+      }
+    },
+    {
+      "source": "Boundaries Confirmation Act s. 16",
+      "disposition": "standalone",
+      "confidence": "high",
+      "priority": "P1",
+      "reason": "The correction provision is one coherent remedy for corrected plans of survey, including authority, notice, boundary limits, filing, cross-reference effect, and notation.",
+      "proposedGroups": [
+        {
+          "groupId": "group-1",
+          "titleSuggestion": "Corrected boundary-confirmation plan of survey",
+          "sourceKeys": [
+            "section:16"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:16",
+              "childLabels": [
+                "16(1)",
+                "16(2)",
+                "16(3)",
+                "16(4)",
+                "16(5)",
+                "16(6)"
+              ],
+              "evidenceText": [
+                "order that a corrected plan of survey be made",
+                "shall not affect the location of a boundary",
+                "cause a notation to be made on the plan of survey"
+              ]
+            }
+          ],
+          "reason": "All subsections describe the same corrected-plan workflow and consequences.",
+          "approximateLearningGoal": "Recall when a corrected boundary-confirmation plan may be ordered, what it cannot change, and how it is filed and noted."
+        }
+      ],
+      "warnings": [],
+      "conflictCodes": [],
+      "sourceStatus": "current",
+      "contentFlags": {
+        "containsRepealedSubprovision": false,
+        "repealOnly": false,
+        "commencementOnly": false,
+        "transitional": false
+      }
+    },
+    {
+      "source": "Surveys Act s. 1",
+      "disposition": "split",
+      "confidence": "high",
+      "priority": "P1",
+      "reason": "The target is a short definitions section with six actual defined terms. Splitting is useful only by those target terms, not by context from nearby sections.",
+      "proposedGroups": [
+        {
+          "groupId": "group-1",
+          "titleSuggestion": "Coordinate monument and coordinate survey system definitions",
+          "sourceKeys": [
+            "section:1"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:1",
+              "definedTerms": [
+                "coordinate monument",
+                "coordinate survey system"
+              ],
+              "evidenceText": [
+                "coordinate monument means a brass, bronze or aluminum cap or plate",
+                "coordinate survey system means a system established under section 2"
+              ]
+            }
+          ],
+          "reason": "These two definitions describe the coordinate-survey infrastructure used elsewhere in the Act.",
+          "approximateLearningGoal": "Recall what a coordinate monument is and what the coordinate survey system means under the Surveys Act."
+        },
+        {
+          "groupId": "group-2",
+          "titleSuggestion": "Corner and legal monument definitions",
+          "sourceKeys": [
+            "section:1"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:1",
+              "definedTerms": [
+                "corner",
+                "legal monument"
+              ],
+              "evidenceText": [
+                "corner means a point in an intersection of boundaries of land",
+                "legal monument means a device planted by a surveyor"
+              ]
+            }
+          ],
+          "reason": "These terms identify boundary points and the physical devices used in survey work.",
+          "approximateLearningGoal": "Recall the definitions of corner and legal monument."
+        },
+        {
+          "groupId": "group-3",
+          "titleSuggestion": "Survey and surveyor definitions",
+          "sourceKeys": [
+            "section:1"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:1",
+              "definedTerms": [
+                "survey",
+                "surveyor"
+              ],
+              "evidenceText": [
+                "survey means a survey to define the boundaries of land",
+                "surveyor means a New Brunswick Land Surveyor"
+              ]
+            }
+          ],
+          "reason": "These two definitions identify the activity and professional actor covered by the Act.",
+          "approximateLearningGoal": "Recall what survey and surveyor mean in the Surveys Act."
+        }
+      ],
+      "warnings": [],
+      "conflictCodes": [],
+      "sourceStatus": "current",
+      "contentFlags": {
+        "containsRepealedSubprovision": false,
+        "repealOnly": false,
+        "commencementOnly": false,
+        "transitional": false
+      }
+    },
+    {
+      "source": "Surveys Act s. 3",
+      "disposition": "standalone",
+      "confidence": "high",
+      "priority": "P1",
+      "reason": "Section 3 is a coherent Director of Surveys topic covering designation, delegation eligibility, and coordinate monument duties.",
+      "proposedGroups": [
+        {
+          "groupId": "group-1",
+          "titleSuggestion": "Director of Surveys designation and coordinate monument duties",
+          "sourceKeys": [
+            "section:3"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:3",
+              "childLabels": [
+                "3(1)",
+                "3(1.1)",
+                "3(1.2)",
+                "3(2)"
+              ],
+              "evidenceText": [
+                "shall designate a surveyor as Director of Surveys",
+                "may designate one or more surveyors to perform any of the duties",
+                "shall establish and maintain coordinate monuments"
+              ]
+            }
+          ],
+          "reason": "All four subsections concern who may act as Director of Surveys and what the Director does for the coordinate survey system.",
+          "approximateLearningGoal": "Recall how the Director of Surveys is designated or delegated and the Director's coordinate monument duty."
+        }
+      ],
+      "warnings": [],
+      "conflictCodes": [],
+      "sourceStatus": "current",
+      "contentFlags": {
+        "containsRepealedSubprovision": false,
+        "repealOnly": false,
+        "commencementOnly": false,
+        "transitional": false
+      }
+    },
+    {
+      "source": "Surveys Act s. 8",
+      "disposition": "standalone",
+      "confidence": "high",
+      "priority": "P1",
+      "reason": "Section 8 is one integrated-survey-area plan rule covering surveyor certification, Director acceptance, non-adjudication of title, and application only inside integrated survey areas.",
+      "proposedGroups": [
+        {
+          "groupId": "group-1",
+          "titleSuggestion": "Survey plan certification and acceptance in integrated survey areas",
+          "sourceKeys": [
+            "section:8"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:8",
+              "childLabels": [
+                "8(1)",
+                "8(2)",
+                "8(3)",
+                "8(4)"
+              ],
+              "evidenceText": [
+                "shall not certify to the correctness of the plan unless",
+                "Director of Surveys shall not accept it",
+                "acceptance does not constitute an adjudication on title",
+                "applies to only integrated survey areas"
+              ]
+            }
+          ],
+          "reason": "The subsections work together as one rule for plans prepared in integrated survey areas.",
+          "approximateLearningGoal": "Recall the certification, acceptance, title-effect, and application limits for survey plans in integrated survey areas."
+        }
+      ],
+      "warnings": [],
+      "conflictCodes": [],
+      "sourceStatus": "current",
+      "contentFlags": {
+        "containsRepealedSubprovision": false,
+        "repealOnly": false,
+        "commencementOnly": false,
+        "transitional": false
+      }
+    },
+    {
+      "source": "Community Planning Act s. 125",
+      "disposition": "split",
+      "confidence": "medium",
+      "priority": "P2",
+      "reason": "Section 125 is a large regulation-making provision with many distinct planning and development regulation subjects. The groups stay within the regulation-power topics actually listed in the target.",
+      "proposedGroups": [
+        {
+          "groupId": "group-1",
+          "titleSuggestion": "Planning regulation powers for setbacks, sites, signs, extraction, and subdivisions",
+          "sourceKeys": [
+            "section:125"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:125",
+              "childLabels": [
+                "125(1)"
+              ],
+              "evidenceText": [
+                "governing the setting back of buildings and structures",
+                "mobile home parks",
+                "service stations, gas bars, car washes",
+                "public advertising signs and billboards",
+                "respecting the subdividing of land"
+              ]
+            }
+          ],
+          "reason": "The opening regulation list groups physical planning controls and subdivision-related regulation powers.",
+          "approximateLearningGoal": "Recall the main planning-control subjects that may be regulated under subsection 125(1)."
+        },
+        {
+          "groupId": "group-2",
+          "titleSuggestion": "Development approval and building-work regulation powers",
+          "sourceKeys": [
+            "section:125"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:125",
+              "childLabels": [
+                "125(1)"
+              ],
+              "evidenceText": [
+                "respecting development approvals",
+                "building inspection services",
+                "building, dimensions, locating or relocating, demolishing, altering"
+              ]
+            }
+          ],
+          "reason": "These paragraphs focus on development approvals, fees, inspection, and building-work standards.",
+          "approximateLearningGoal": "Recall how section 125 supports regulations for development approvals, fees, inspections, and building work."
+        },
+        {
+          "groupId": "group-3",
+          "titleSuggestion": "Administrative, appeal, delegation, and transitional regulation powers",
+          "sourceKeys": [
+            "section:125"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:125",
+              "childLabels": [
+                "125(2)",
+                "125(3)",
+                "125(4)",
+                "125(5)",
+                "125(6)",
+                "125(7)",
+                "125(8)",
+                "125(9)",
+                "125(10)",
+                "125(11)",
+                "125(12)",
+                "125(13)",
+                "125(14)",
+                "125(15)",
+                "125(16)"
+              ],
+              "evidenceText": [
+                "may delegate a matter to or confer discretion on",
+                "appeals",
+                "transitional"
+              ]
+            }
+          ],
+          "reason": "The later subsections qualify or support the regulation powers through delegation, appeal, administrative, and transitional machinery.",
+          "approximateLearningGoal": "Recall that section 125 includes supporting powers and limits for how planning and development regulations may operate."
+        }
+      ],
+      "warnings": [],
+      "conflictCodes": [],
+      "sourceStatus": "current",
+      "contentFlags": {
+        "containsRepealedSubprovision": false,
+        "repealOnly": false,
+        "commencementOnly": false,
+        "transitional": false
+      }
+    },
+    {
+      "source": "Land Titles Act s. 18",
+      "disposition": "split",
+      "confidence": "medium",
+      "priority": "P1",
+      "reason": "Section 18 is current despite one repealed subsection. It contains several learnable registration mechanics and legal-effect topics that should be separated by subsection focus.",
+      "proposedGroups": [
+        {
+          "groupId": "group-1",
+          "titleSuggestion": "Instrument receipt, examination, acceptance, and rejection",
+          "sourceKeys": [
+            "section:18"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:18",
+              "childLabels": [
+                "18(1)",
+                "18(2)",
+                "18(3)",
+                "18(4)"
+              ],
+              "evidenceText": [
+                "assign a registration number, date and time",
+                "examined",
+                "accepted for registration",
+                "may refuse to file or register and may reject an instrument"
+              ]
+            }
+          ],
+          "reason": "Subsections 18(1) through 18(4) cover the front-end filing/registration workflow and rejection grounds.",
+          "approximateLearningGoal": "Recall the registrar's receipt, examination, acceptance, registration, and rejection steps for instruments."
+        },
+        {
+          "groupId": "group-2",
+          "titleSuggestion": "Certificates and notices when land or instruments are registered",
+          "sourceKeys": [
+            "section:18"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:18",
+              "childLabels": [
+                "18(5)",
+                "18(6)",
+                "18(7)"
+              ],
+              "evidenceText": [
+                "cancel the certificate of registered ownership",
+                "issue to the owner",
+                "issue and record under the Registry Act a notice"
+              ]
+            }
+          ],
+          "reason": "These subsections deal with certificates and notices flowing from registration actions.",
+          "approximateLearningGoal": "Recall what certificate or notice actions accompany registration of land, title, or instruments."
+        },
+        {
+          "groupId": "group-3",
+          "titleSuggestion": "Registration timing and priority effects",
+          "sourceKeys": [
+            "section:18"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:18",
+              "childLabels": [
+                "18(9)",
+                "18(10)",
+                "18(11)",
+                "18(12)"
+              ],
+              "evidenceText": [
+                "deemed to be registered on the date and at the time",
+                "subject to subsection (11)",
+                "priority of registration"
+              ]
+            }
+          ],
+          "reason": "The later current subsections address when registration is effective and how priority is determined; subsection 18(8) is repealed and not a study focus.",
+          "approximateLearningGoal": "Recall the timing and priority effects of registration under Land Titles Act section 18."
+        }
+      ],
+      "warnings": [],
+      "conflictCodes": [],
+      "sourceStatus": "current",
+      "contentFlags": {
+        "containsRepealedSubprovision": true,
+        "repealOnly": false,
+        "commencementOnly": false,
+        "transitional": false
+      }
+    },
+    {
+      "source": "Registry Act s. 19",
+      "disposition": "split",
+      "confidence": "medium",
+      "priority": "P1",
+      "reason": "Section 19 has separate rules for registration consequences, exceptions and timing for specific instruments, and deed-affidavit forwarding. Repealed subsections 19(8) and 19(9) are not study focuses.",
+      "proposedGroups": [
+        {
+          "groupId": "group-1",
+          "titleSuggestion": "Unregistered instrument consequences for purchasers and judgment creditors",
+          "sourceKeys": [
+            "section:19"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:19",
+              "childLabels": [
+                "19(1)",
+                "19(2)"
+              ],
+              "evidenceText": [
+                "deemed fraudulent and void against subsequent purchasers",
+                "deemed fraudulent and void as against any bona fide judgment creditor"
+              ]
+            }
+          ],
+          "reason": "Subsections 19(1) and 19(2) state the core legal consequences of non-registration.",
+          "approximateLearningGoal": "Recall when unregistered instruments are void against purchasers or judgment creditors."
+        },
+        {
+          "groupId": "group-2",
+          "titleSuggestion": "Special registration timing rules for leases, auction conveyances, sheriff conveyances, and wills",
+          "sourceKeys": [
+            "section:19"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:19",
+              "childLabels": [
+                "19(3)",
+                "19(4)",
+                "19(4.1)",
+                "19(5)"
+              ],
+              "evidenceText": [
+                "No lease for a term not exceeding three years",
+                "registered within six months",
+                "A will registered within six months"
+              ]
+            }
+          ],
+          "reason": "These subsections are distinct timing or exception rules for particular instrument classes.",
+          "approximateLearningGoal": "Recall the special Registry Act timing and exception rules for leases, official auction conveyances, sheriff conveyances, and wills."
+        },
+        {
+          "groupId": "group-3",
+          "titleSuggestion": "Deed transfer affidavit and forwarding duty",
+          "sourceKeys": [
+            "section:19"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:19",
+              "childLabels": [
+                "19(6)",
+                "19(7)"
+              ],
+              "evidenceText": [
+                "No deed affecting the transfer of real property shall be registered unless accompanied by an affidavit",
+                "shall forward the same to the Executive Director of Assessment"
+              ]
+            }
+          ],
+          "reason": "Subsections 19(6) and 19(7) cover the affidavit required with deed registration and what the registrar does with it.",
+          "approximateLearningGoal": "Recall the affidavit requirement for real-property deed registration and the registrar's forwarding duty."
+        }
+      ],
+      "warnings": [],
+      "conflictCodes": [],
+      "sourceStatus": "current",
+      "contentFlags": {
+        "containsRepealedSubprovision": true,
+        "repealOnly": false,
+        "commencementOnly": false,
+        "transitional": false
+      }
+    },
+    {
+      "source": "REGULATION 84-76 s. 1",
+      "disposition": "reference-only",
+      "confidence": "high",
+      "priority": "P4",
+      "reason": "The target is only the citation title for the General Regulation under the Surveys Act. It is useful to recognize but does not justify a memorized StudyUnit.",
+      "proposedGroups": [],
+      "warnings": [],
+      "conflictCodes": [],
+      "sourceStatus": "current",
+      "contentFlags": {
+        "containsRepealedSubprovision": false,
+        "repealOnly": false,
+        "commencementOnly": true,
+        "transitional": false
+      }
+    },
+    {
+      "source": "REGULATION 84-76 s. 8",
+      "disposition": "skip",
+      "confidence": "high",
+      "priority": "P4",
+      "reason": "The target only repeals Regulation 72-160 under the Surveys Act, so it is a repeal-only source with no current substantive rule to memorize.",
+      "proposedGroups": [],
+      "warnings": [],
+      "conflictCodes": [],
+      "sourceStatus": "repealed",
+      "contentFlags": {
+        "containsRepealedSubprovision": false,
+        "repealOnly": true,
+        "commencementOnly": false,
+        "transitional": false
+      }
+    },
+    {
+      "source": "REGULATION 95-166 s. 3",
+      "disposition": "split",
+      "confidence": "high",
+      "priority": "P1",
+      "reason": "Regulation 95-166 section 3 contains several concrete boundary-confirmation application topics: the application/form requirement, plan standards, supporting materials, surveyor report contents, and waiver authority.",
+      "proposedGroups": [
+        {
+          "groupId": "group-1",
+          "titleSuggestion": "Boundary confirmation application form and plan standards",
+          "sourceKeys": [
+            "section:3"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:3",
+              "childLabels": [
+                "3(1)",
+                "3(2)"
+              ],
+              "evidenceText": [
+                "application to confirm the location of a boundary",
+                "shall be in Form 1",
+                "plan of survey required",
+                "shall be current and shall conform"
+              ]
+            }
+          ],
+          "reason": "Subsections 3(1) and 3(2) set the application form and current-plan standard.",
+          "approximateLearningGoal": "Recall the required form and plan standards for a boundary-confirmation application."
+        },
+        {
+          "groupId": "group-2",
+          "titleSuggestion": "Supporting materials for a boundary confirmation application",
+          "sourceKeys": [
+            "section:3"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:3",
+              "childLabels": [
+                "3(3)"
+              ],
+              "evidenceText": [
+                "shall be accompanied by",
+                "field notes and a surveyor's report",
+                "copies of all instruments registered",
+                "list of the names and mailing addresses"
+              ]
+            }
+          ],
+          "reason": "Subsection 3(3) lists the supporting materials that must accompany the application.",
+          "approximateLearningGoal": "Recall the field notes, reports, plans, instruments, ownership list, consents, and other documents that may accompany a boundary-confirmation application."
+        },
+        {
+          "groupId": "group-3",
+          "titleSuggestion": "Surveyor report contents and Registrar General waiver",
+          "sourceKeys": [
+            "section:3"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:3",
+              "childLabels": [
+                "3(4)",
+                "3(5)"
+              ],
+              "evidenceText": [
+                "A surveyor's report",
+                "description of the issue to be determined",
+                "history of the boundary",
+                "Registrar General may waive any of the requirements"
+              ]
+            }
+          ],
+          "reason": "Subsections 3(4) and 3(5) separately specify surveyor report content and waiver authority.",
+          "approximateLearningGoal": "Recall what a boundary-confirmation surveyor's report must contain and when the Registrar General may waive application requirements."
+        }
+      ],
+      "warnings": [],
+      "conflictCodes": [],
+      "sourceStatus": "current",
+      "contentFlags": {
+        "containsRepealedSubprovision": false,
+        "repealOnly": false,
+        "commencementOnly": false,
+        "transitional": false
+      }
+    },
+    {
+      "source": "Underground Storage Act s. 22",
+      "disposition": "standalone",
+      "confidence": "high",
+      "priority": "P2",
+      "reason": "The target is a regulation-making provision, not a definitions section. Its listed powers are closely related to fees, licence/lease/permit requirements, work requirements, and general implementation under the Underground Storage Act.",
+      "proposedGroups": [
+        {
+          "groupId": "group-1",
+          "titleSuggestion": "Underground storage regulation-making powers",
+          "sourceKeys": [
+            "section:22"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:22",
+              "evidenceText": [
+                "may make regulations",
+                "prescribing the amount of any fee, rental or security",
+                "prescribing information that must be contained in an application",
+                "terms and conditions and prescribing the form",
+                "work requirements"
+              ]
+            }
+          ],
+          "reason": "The section is one compact list of regulation-making powers under the Underground Storage Act.",
+          "approximateLearningGoal": "Recall the subjects that may be regulated for underground storage fees, applications, licences, leases, construction permits, work requirements, and general implementation."
+        }
+      ],
+      "warnings": [],
+      "conflictCodes": [],
+      "sourceStatus": "current",
+      "contentFlags": {
+        "containsRepealedSubprovision": false,
+        "repealOnly": false,
+        "commencementOnly": false,
+        "transitional": false
+      }
+    },
+    {
+      "source": "Energy and Utilities Board Act s. 49.1",
+      "disposition": "standalone",
+      "confidence": "high",
+      "priority": "P2",
+      "reason": "Section 49.1 has one definition needed for the section and one assistance rule. It does not contain land or instrument definition topics.",
+      "proposedGroups": [
+        {
+          "groupId": "group-1",
+          "titleSuggestion": "Regulator definition and assistance to the Board",
+          "sourceKeys": [
+            "section:49.1"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:49.1",
+              "childLabels": [
+                "49.1(1)",
+                "49.1(2)"
+              ],
+              "definedTerms": [
+                "regulator"
+              ],
+              "evidenceText": [
+                "regulator means a regulator as defined in the Financial and Consumer Services Commission Act",
+                "may render assistance to the Board without becoming a party",
+                "may receive and accept information from the regulator"
+              ]
+            }
+          ],
+          "reason": "Both subsections support one topic: who a regulator is and how a regulator may assist the Board in a proceeding.",
+          "approximateLearningGoal": "Recall the definition of regulator for section 49.1 and how a regulator may assist the Energy and Utilities Board without becoming a party."
+        }
+      ],
+      "warnings": [],
+      "conflictCodes": [],
+      "sourceStatus": "current",
+      "contentFlags": {
+        "containsRepealedSubprovision": false,
+        "repealOnly": false,
+        "commencementOnly": false,
+        "transitional": false
+      }
+    },
+    {
+      "source": "Occupational Health and Safety Act s. 9.1",
+      "disposition": "split",
+      "confidence": "high",
+      "priority": "P1",
+      "reason": "OHSA section 9.1 is a substantive duties provision. It should not be reference-only merely because it mentions regulations; the target imposes explicit supervisor duties.",
+      "proposedGroups": [
+        {
+          "groupId": "group-1",
+          "titleSuggestion": "General supervisor health and safety duties",
+          "sourceKeys": [
+            "section:9.1"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:9.1",
+              "childLabels": [
+                "9.1(1)"
+              ],
+              "evidenceText": [
+                "Every supervisor shall",
+                "take every reasonable precaution",
+                "comply with this Act, the regulations and any order",
+                "ensure that the employees under the supervisor's supervision and direction comply",
+                "co-operate with"
+              ]
+            }
+          ],
+          "reason": "Subsection 9.1(1) lists the general statutory duties of supervisors.",
+          "approximateLearningGoal": "Recall the general OHSA duties every supervisor owes for employee health and safety, compliance, and cooperation."
+        },
+        {
+          "groupId": "group-2",
+          "titleSuggestion": "Supervisor hazard, information, and instruction duties",
+          "sourceKeys": [
+            "section:9.1"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:9.1",
+              "childLabels": [
+                "9.1(2)"
+              ],
+              "evidenceText": [
+                "acquaint the employees",
+                "with any hazard",
+                "provide the information",
+                "provide the instruction"
+              ]
+            }
+          ],
+          "reason": "Subsection 9.1(2) adds specific duties to acquaint employees with hazards and provide necessary information and instruction.",
+          "approximateLearningGoal": "Recall the supervisor's specific hazard-warning, information, and instruction duties."
+        }
+      ],
+      "warnings": [],
+      "conflictCodes": [],
+      "sourceStatus": "current",
+      "contentFlags": {
+        "containsRepealedSubprovision": false,
+        "repealOnly": false,
+        "commencementOnly": false,
+        "transitional": false
+      }
+    },
+    {
+      "source": "Conservation Easements Act s. 5",
+      "disposition": "standalone",
+      "confidence": "high",
+      "priority": "P2",
+      "reason": "Section 5 is not regulation-making authority; it lists who may hold a conservation easement, with one repealed paragraph and several current holder categories.",
+      "proposedGroups": [
+        {
+          "groupId": "group-1",
+          "titleSuggestion": "Who may hold a conservation easement",
+          "sourceKeys": [
+            "section:5"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:5",
+              "evidenceText": [
+                "Any of the following may hold a conservation easement",
+                "Crown in right of the Province",
+                "Crown in right of Canada",
+                "a local government",
+                "a non-profit corporation",
+                "any person, body or group or class of persons"
+              ]
+            }
+          ],
+          "reason": "The provision is a compact list of eligible conservation easement holders, so one StudyUnit is enough.",
+          "approximateLearningGoal": "Recall the public, non-profit, and prescribed private categories that may hold a conservation easement."
+        }
+      ],
+      "warnings": [],
+      "conflictCodes": [],
+      "sourceStatus": "current",
+      "contentFlags": {
+        "containsRepealedSubprovision": true,
+        "repealOnly": false,
+        "commencementOnly": false,
+        "transitional": false
+      }
+    },
+    {
+      "source": "Highway Act s. 39.1",
+      "disposition": "standalone",
+      "confidence": "high",
+      "priority": "P2",
+      "reason": "Section 39.1 is a focused permit rule for access to highways that are not controlled access highways, with a prohibition/permit requirement and a safety-standard basis for granting a permit.",
+      "proposedGroups": [
+        {
+          "groupId": "group-1",
+          "titleSuggestion": "Permit for access to non-controlled-access highway",
+          "sourceKeys": [
+            "section:39.1"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:39.1",
+              "childLabels": [
+                "39.1(1)",
+                "39.1(2)"
+              ],
+              "evidenceText": [
+                "No person shall construct, use or permit the use",
+                "without obtaining a permit from the Minister",
+                "Minister may grant an application",
+                "would not be inconsistent with such safety standards"
+              ]
+            }
+          ],
+          "reason": "Both subsections describe one access-permit rule and the Minister's safety-standard approval condition.",
+          "approximateLearningGoal": "Recall when a permit is required for access to a highway that is not controlled access and the basis on which the Minister may grant it."
+        }
+      ],
+      "warnings": [],
+      "conflictCodes": [],
+      "sourceStatus": "current",
+      "contentFlags": {
+        "containsRepealedSubprovision": false,
+        "repealOnly": false,
+        "commencementOnly": false,
+        "transitional": false
+      }
+    },
+    {
+      "source": "Public Health Act s. 27",
+      "disposition": "standalone",
+      "confidence": "high",
+      "priority": "P2",
+      "reason": "Section 27 is a focused mandatory reporting provision for specified health professionals. The reference to regulations describes how reports are made and does not make the section reference-only.",
+      "proposedGroups": [
+        {
+          "groupId": "group-1",
+          "titleSuggestion": "Professional reporting duty for notifiable disease, injury risk, or notifiable event",
+          "sourceKeys": [
+            "section:27"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:27",
+              "childLabels": [
+                "27(1)",
+                "27(2)"
+              ],
+              "evidenceText": [
+                "shall report to a medical officer of health",
+                "reasonable grounds to believe",
+                "has or may have a notifiable disease",
+                "has or may be affected by an injury or risk factor",
+                "has suffered a notifiable event",
+                "shall be made in accordance with the regulations"
+              ]
+            }
+          ],
+          "reason": "Both subsections state who must report, the triggering beliefs, and the required manner of reporting.",
+          "approximateLearningGoal": "Recall which professionals must report under Public Health Act section 27, what triggers the report, and that the report is made according to the regulations."
+        }
+      ],
+      "warnings": [],
+      "conflictCodes": [],
+      "sourceStatus": "current",
+      "contentFlags": {
+        "containsRepealedSubprovision": false,
+        "repealOnly": false,
+        "commencementOnly": false,
+        "transitional": false
+      }
+    },
+    {
+      "source": "Land Titles Act s. 17.11",
+      "disposition": "standalone",
+      "confidence": "high",
+      "priority": "P1",
+      "reason": "Section 17.11 is one electronic filing topic for digitally scanned images, including when image submission is allowed, required format/technology, and identity or authorization evidence.",
+      "proposedGroups": [
+        {
+          "groupId": "group-1",
+          "titleSuggestion": "Digitally scanned image filing or registration of instruments",
+          "sourceKeys": [
+            "section:17.11"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:17.11",
+              "childLabels": [
+                "17.11(1)",
+                "17.11(2)",
+                "17.11(3)"
+              ],
+              "evidenceText": [
+                "may be filed or registered by submitting a digitally scanned image",
+                "shall be in a format that has been approved by the Registrar General",
+                "shall be submitted using the technology put in place by Service New Brunswick",
+                "shall provide to the registrar evidence of his or her identity or authorization"
+              ]
+            }
+          ],
+          "reason": "The subsections work together as one rule for filing or registering instruments by digitally scanned image.",
+          "approximateLearningGoal": "Recall when Land Titles Act instruments may be submitted as digitally scanned images and what format, technology, and identity evidence are required."
+        }
+      ],
+      "warnings": [],
+      "conflictCodes": [],
+      "sourceStatus": "current",
+      "contentFlags": {
+        "containsRepealedSubprovision": false,
+        "repealOnly": false,
+        "commencementOnly": false,
+        "transitional": false
+      }
+    },
+    {
+      "source": "Marital Property Act s. 30",
+      "disposition": "standalone",
+      "confidence": "high",
+      "priority": "P2",
+      "reason": "Section 30 is one coherent Personal Property Registry notice rule for household-goods orders, including registration, amendment, notice effect, and exceptions.",
+      "proposedGroups": [
+        {
+          "groupId": "group-1",
+          "titleSuggestion": "Personal Property Registry notice of household-goods order",
+          "sourceKeys": [
+            "section:30"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:30",
+              "childLabels": [
+                "30(1)",
+                "30(2)",
+                "30(3)",
+                "30(4)"
+              ],
+              "evidenceText": [
+                "may register a notice of the order in the Personal Property Registry",
+                "may be renewed, discharged or otherwise amended",
+                "shall be deemed to be notice of the order and its terms",
+                "does not apply to"
+              ]
+            }
+          ],
+          "reason": "All subsections describe the same registered-notice mechanism and its exceptions.",
+          "approximateLearningGoal": "Recall how a notice of a household-goods order is registered, amended, and treated as notice, plus the serial-number and consumer-goods exceptions."
+        }
+      ],
+      "warnings": [],
+      "conflictCodes": [],
+      "sourceStatus": "current",
+      "contentFlags": {
+        "containsRepealedSubprovision": false,
+        "repealOnly": false,
+        "commencementOnly": false,
+        "transitional": false
+      }
+    },
+    {
+      "source": "Evidence Act s. 7",
+      "disposition": "standalone",
+      "confidence": "medium",
+      "priority": "P3",
+      "reason": "Section 7 is one evidentiary compellability rule: a witness cannot refuse to answer because of self-incrimination risk, but the compelled evidence has limited later use.",
+      "proposedGroups": [
+        {
+          "groupId": "group-1",
+          "titleSuggestion": "Compelled answers and limited later use in provincial proceedings",
+          "sourceKeys": [
+            "section:7"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:7",
+              "evidenceText": [
+                "no person shall be excused from answering any question",
+                "may tend to render him liable to a prosecution, penalty or forfeiture",
+                "no evidence so given shall be used or receivable in evidence",
+                "other than a prosecution for perjury"
+              ]
+            }
+          ],
+          "reason": "The section states one rule and one protection for compelled answers.",
+          "approximateLearningGoal": "Recall that a witness must answer despite possible provincial prosecution or penalty exposure, and that the answer is generally not usable later except for perjury."
+        }
+      ],
+      "warnings": [],
+      "conflictCodes": [],
+      "sourceStatus": "current",
+      "contentFlags": {
+        "containsRepealedSubprovision": false,
+        "repealOnly": false,
+        "commencementOnly": false,
+        "transitional": false
+      }
+    },
+    {
+      "source": "Registry Act s. 23",
+      "disposition": "split",
+      "confidence": "medium",
+      "priority": "P2",
+      "reason": "Registry Act section 23 has related but distinct will-registration paths: extra-provincial court copies/probate materials, proof when probate has not been granted, and notarial wills.",
+      "proposedGroups": [
+        {
+          "groupId": "group-1",
+          "titleSuggestion": "Registering extra-provincial court will materials affecting land",
+          "sourceKeys": [
+            "section:23"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:23",
+              "childLabels": [
+                "23(1)"
+              ],
+              "evidenceText": [
+                "where a will affecting land in this Province",
+                "is deposited in any court out of this Province",
+                "certified copy thereof, the probate of such will",
+                "may be registered in the registry office"
+              ]
+            }
+          ],
+          "reason": "Subsection 23(1) covers registration of certified copies, probate, letters, or exemplifications from an extra-provincial court.",
+          "approximateLearningGoal": "Recall what extra-provincial court will materials may be registered in New Brunswick and their effect when registered."
+        },
+        {
+          "groupId": "group-2",
+          "titleSuggestion": "Affidavits required when extra-provincial will probate is absent",
+          "sourceKeys": [
+            "section:23"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:23",
+              "childLabels": [
+                "23(2)"
+              ],
+              "evidenceText": [
+                "has not been granted probate",
+                "affidavit sworn by one of the witnesses",
+                "affidavit of the death of the testator"
+              ]
+            }
+          ],
+          "reason": "Subsection 23(2) adds a separate proof requirement when probate has not been granted.",
+          "approximateLearningGoal": "Recall the affidavits required to register an extra-provincial will when probate has not been granted."
+        },
+        {
+          "groupId": "group-3",
+          "titleSuggestion": "Registration of Quebec or South Africa notarial wills",
+          "sourceKeys": [
+            "section:23"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:23",
+              "childLabels": [
+                "23(3)"
+              ],
+              "evidenceText": [
+                "notarial will under the laws of the Province of Quebec or of South Africa",
+                "notarial certified copy",
+                "valid and subsisting will"
+              ]
+            }
+          ],
+          "reason": "Subsection 23(3) is a distinct path for notarial wills from Quebec or South Africa.",
+          "approximateLearningGoal": "Recall the special registration rule for Quebec or South Africa notarial wills affecting land in New Brunswick."
+        }
+      ],
+      "warnings": [],
+      "conflictCodes": [],
+      "sourceStatus": "current",
+      "contentFlags": {
+        "containsRepealedSubprovision": false,
+        "repealOnly": false,
+        "commencementOnly": false,
+        "transitional": false
+      }
+    },
+    {
+      "source": "Aquaculture Act s. 19",
+      "disposition": "standalone",
+      "confidence": "high",
+      "priority": "P3",
+      "reason": "Aquaculture Act section 19 is a short but substantive rent duty for lease holders, with the amount fixed by regulation or by the Registrar when no regulation applies.",
+      "proposedGroups": [
+        {
+          "groupId": "group-1",
+          "titleSuggestion": "Aquaculture lease-holder rent amount",
+          "sourceKeys": [
+            "section:19"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:19",
+              "evidenceText": [
+                "A lease holder shall pay rent",
+                "in an amount fixed by the regulations",
+                "when there is no applicable regulation, at a rent fixed by the Registrar"
+              ]
+            }
+          ],
+          "reason": "The single provision states one clear rent obligation and fallback amount-setting rule.",
+          "approximateLearningGoal": "Recall who pays aquaculture lease rent and how the rent amount is fixed."
+        }
+      ],
+      "warnings": [],
+      "conflictCodes": [],
+      "sourceStatus": "current",
+      "contentFlags": {
+        "containsRepealedSubprovision": false,
+        "repealOnly": false,
+        "commencementOnly": false,
+        "transitional": false
+      }
+    },
+    {
+      "source": "Association of New Brunswick Land Surveyors Bylaws s. 4.2.2",
+      "disposition": "standalone",
+      "confidence": "high",
+      "priority": "P2",
+      "reason": "Bylaw section 4.2.2 is one procedural approval rule for the amount of a special levy: Council determines it and voting members approve it at an annual or special meeting.",
+      "proposedGroups": [
+        {
+          "groupId": "group-1",
+          "titleSuggestion": "Special levy amount determination and member approval",
+          "sourceKeys": [
+            "section:4.2.2"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:4.2.2",
+              "evidenceText": [
+                "amount of the special levy shall be determined by the Council",
+                "approved at either the annual general meeting or a special meeting",
+                "by a vote of the voting members present"
+              ]
+            }
+          ],
+          "reason": "The provision is a compact rule for determining and approving a special levy amount.",
+          "approximateLearningGoal": "Recall how the amount of an ANBLS special levy is determined and approved."
+        }
+      ],
+      "warnings": [],
+      "conflictCodes": [],
+      "sourceStatus": "current",
+      "contentFlags": {
+        "containsRepealedSubprovision": false,
+        "repealOnly": false,
+        "commencementOnly": false,
+        "transitional": false
+      }
+    },
+    {
+      "source": "Agricultural Land Protection\nand Development Act s. 10",
+      "disposition": "skip",
+      "confidence": "high",
+      "priority": "P4",
+      "reason": "The target is a genuine repeal-only provision for registered agricultural land and contains no operative current rule for StudyUnit authoring.",
+      "proposedGroups": [],
+      "warnings": [],
+      "conflictCodes": [],
+      "sourceStatus": "repealed",
+      "contentFlags": {
+        "containsRepealedSubprovision": false,
+        "repealOnly": true,
+        "commencementOnly": false,
+        "transitional": false
+      }
+    }
+  ]
+}

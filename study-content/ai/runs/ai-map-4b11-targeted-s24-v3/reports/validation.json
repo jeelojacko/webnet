@@ -1,0 +1,10 @@
+{
+  "runId": "ai-map-4b11-targeted-s24-v3",
+  "jobs": 24,
+  "results": 24,
+  "invalid": 0,
+  "malformed": [],
+  "duplicateResults": 0,
+  "issues": [],
+  "mapConflicts": 0
+}
