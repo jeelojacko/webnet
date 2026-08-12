@@ -1,0 +1,10 @@
+{
+  "runId": "ai-map-4b12-grounding-s9-v1",
+  "jobs": 9,
+  "results": 9,
+  "invalid": 0,
+  "malformed": [],
+  "duplicateResults": 0,
+  "issues": [],
+  "mapConflicts": 0
+}

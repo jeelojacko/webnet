@@ -62,6 +62,13 @@ const mapJob = (): AiStudyMapJob => ({
       operativeCharacters: sourceComponent.text.length,
       largeSection: false,
     },
+    sourceFocusOptions: [
+      {
+        sourceKey: sourceComponent.sourceKey,
+        label: sourceComponent.label,
+        childLabels: sourceComponent.subsections?.map((subsection) => subsection.label),
+      },
+    ],
     sourceHashes: { [sourceComponent.sourceKey]: sourceComponent.contentHash },
   },
   context: { omittedContextWarnings: [] },
@@ -146,6 +153,7 @@ afterAll(() => {
     'ai-test-jsonl-robustness',
     'ai-test-phase-4b1-sampling',
     'ai-test-phase-4b11-targeted',
+    'ai-test-phase-4b12-grounding',
     'ai-test-pilot-report',
   ].forEach((runId) => {
     rmSync(join('study-content', 'ai', 'runs', runId), { recursive: true, force: true });
@@ -204,6 +212,295 @@ describe('AI authoring schemas and validation', () => {
       expect(codes).toContain('INVALID_SUGGESTED_PRIORITY');
       expect(codes).toContain('WARNING_CODE_IN_REASON');
     });
+  });
+
+  it('blocks Study Map focus evidence sourced only from next context', () => {
+    const job = {
+      ...mapJob(),
+      target: {
+        ...mapJob().target,
+        sourceKeys: ['section:18'],
+        sectionLabels: ['18'],
+        exactSourceText: '18(9) The registrar shall notify the presenter of rejection.',
+        operativeSourceText: '18(9) The registrar shall notify the presenter of rejection.',
+        sourceHashes: { 'section:18': 'hash-section-18' },
+        sourceFocusOptions: [{ sourceKey: 'section:18', label: '18', childLabels: ['18(9)'] }],
+      },
+      context: {
+        next: {
+          sourceKey: 'section:19',
+          sectionLabel: '19',
+          text: '19 Priority is determined according to registration date and time.',
+          operativeText: '19 Priority is determined according to registration date and time.',
+          sourceHash: 'hash-section-19',
+          contextRole: 'next' as const,
+        },
+        omittedContextWarnings: [],
+      },
+    };
+    const result: AiStudyMapResult = {
+      schemaVersion: 1,
+      jobId: job.jobId,
+      runId: job.runId,
+      corpusContentHash: job.corpusContentHash,
+      inputHash: job.inputHash,
+      promptSpecVersion: job.promptSpecVersion,
+      disposition: 'standalone',
+      confidence: 'high',
+      reason: 'Priority timing is the key effect.',
+      proposedGroups: [
+        {
+          groupId: 'group-1',
+          titleSuggestion: 'Registration priority and timing',
+          sourceKeys: ['section:18'],
+          focusSelections: [
+            {
+              sourceKey: 'section:18',
+              childLabels: ['18(9)'],
+              evidenceText: ['registration date and time'],
+            },
+          ],
+          reason: 'Priority is determined by timing.',
+          approximateLearningGoal: 'Recall registration priority and timing.',
+        },
+      ],
+      warnings: [],
+    };
+    const report = validateAiStudyMapResult(result, job);
+    const codes = report.issues.map((issue) => issue.code);
+
+    expect(report.valid).toBe(false);
+    expect(codes).toContain('FOCUS_EVIDENCE_NOT_IN_SOURCE');
+    expect(codes).toContain('GROUP_TOPIC_NOT_GROUNDED');
+  });
+
+  it('blocks Study Map topics sourced only from previous context', () => {
+    const job = {
+      ...mapJob(),
+      target: {
+        ...mapJob().target,
+        sourceKeys: ['section:125'],
+        sectionLabels: ['125'],
+        exactSourceText: '125 Regulations may prescribe the effect of development approvals.',
+        operativeSourceText: '125 Regulations may prescribe the effect of development approvals.',
+        sourceHashes: { 'section:125': 'hash-section-125' },
+        sourceFocusOptions: [{ sourceKey: 'section:125', label: '125' }],
+      },
+      context: {
+        previous: {
+          sourceKey: 'section:124',
+          sectionLabel: '124',
+          text: '124 Regulations may establish appeal procedures.',
+          operativeText: '124 Regulations may establish appeal procedures.',
+          sourceHash: 'hash-section-124',
+          contextRole: 'previous' as const,
+        },
+        omittedContextWarnings: [],
+      },
+    };
+    const result: AiStudyMapResult = {
+      schemaVersion: 1,
+      jobId: job.jobId,
+      runId: job.runId,
+      corpusContentHash: job.corpusContentHash,
+      inputHash: job.inputHash,
+      promptSpecVersion: job.promptSpecVersion,
+      disposition: 'standalone',
+      confidence: 'high',
+      reason: 'Appeal procedure topic.',
+      proposedGroups: [
+        {
+          groupId: 'group-1',
+          titleSuggestion: 'Appeal procedure',
+          sourceKeys: ['section:125'],
+          focusSelections: [{ sourceKey: 'section:125', evidenceText: ['development approvals'] }],
+          reason: 'Appeals are the main administrative process.',
+          approximateLearningGoal: 'Recall appeal procedures.',
+        },
+      ],
+      warnings: [],
+    };
+
+    expect(validateAiStudyMapResult(result, job).issues.map((issue) => issue.code)).toContain(
+      'GROUP_TOPIC_NOT_GROUNDED',
+    );
+  });
+
+  it('allows target-grounded Study Map paraphrase and evidence', () => {
+    const job = {
+      ...mapJob(),
+      target: {
+        ...mapJob().target,
+        sourceKeys: ['section:18'],
+        sectionLabels: ['18'],
+        exactSourceText: '18(9) The registrar shall notify the presenter of rejection.',
+        operativeSourceText: '18(9) The registrar shall notify the presenter of rejection.',
+        sourceHashes: { 'section:18': 'hash-section-18' },
+        sourceFocusOptions: [{ sourceKey: 'section:18', label: '18', childLabels: ['18(9)'] }],
+      },
+      context: {
+        next: {
+          sourceKey: 'section:19',
+          sectionLabel: '19',
+          text: '19 Priority is determined according to registration date and time.',
+          operativeText: '19 Priority is determined according to registration date and time.',
+          sourceHash: 'hash-section-19',
+          contextRole: 'next' as const,
+        },
+        omittedContextWarnings: [],
+      },
+    };
+    const result: AiStudyMapResult = {
+      schemaVersion: 1,
+      jobId: job.jobId,
+      runId: job.runId,
+      corpusContentHash: job.corpusContentHash,
+      inputHash: job.inputHash,
+      promptSpecVersion: job.promptSpecVersion,
+      disposition: 'standalone',
+      confidence: 'high',
+      reason: 'Notification after rejection is the target rule.',
+      proposedGroups: [
+        {
+          groupId: 'group-1',
+          titleSuggestion: 'Notification after rejection',
+          sourceKeys: ['section:18'],
+          focusSelections: [{ sourceKey: 'section:18', childLabels: ['18(9)'], evidenceText: ['notify the presenter of rejection'] }],
+          reason: 'The target requires the registrar to notify the presenter.',
+          approximateLearningGoal: 'Recall who must be notified after rejection.',
+        },
+      ],
+      warnings: [],
+    };
+
+    expect(validateAiStudyMapResult(result, job).valid).toBe(true);
+  });
+
+  it('allows evidence from explicitly included combine sources but not omitted context', () => {
+    const job = {
+      ...mapJob(),
+      target: {
+        ...mapJob().target,
+        sourceKeys: ['section:10'],
+        sectionLabels: ['10'],
+        exactSourceText: '10 A registrar shall give notice.',
+        operativeSourceText: '10 A registrar shall give notice.',
+        sourceHashes: { 'section:10': 'hash-section-10' },
+        sourceFocusOptions: [{ sourceKey: 'section:10', label: '10' }],
+      },
+      context: {
+        next: {
+          sourceKey: 'section:11',
+          sectionLabel: '11',
+          text: '11 A presenter may request reasons.',
+          operativeText: '11 A presenter may request reasons.',
+          sourceHash: 'hash-section-11',
+          contextRole: 'next' as const,
+        },
+        directlyReferencedProvisions: [
+          {
+            sourceKey: 'section:12',
+            sectionLabel: '12',
+            text: '12 Priority follows registration time.',
+            operativeText: '12 Priority follows registration time.',
+            sourceHash: 'hash-section-12',
+            contextRole: 'direct-reference' as const,
+          },
+        ],
+        omittedContextWarnings: [],
+      },
+    };
+    const result: AiStudyMapResult = {
+      schemaVersion: 1,
+      jobId: job.jobId,
+      runId: job.runId,
+      corpusContentHash: job.corpusContentHash,
+      inputHash: job.inputHash,
+      promptSpecVersion: job.promptSpecVersion,
+      disposition: 'combine',
+      confidence: 'high',
+      reason: 'Notice and reasons fit together.',
+      proposedGroups: [
+        {
+          groupId: 'group-1',
+          titleSuggestion: 'Notice and reasons',
+          sourceKeys: ['section:10', 'section:11'],
+          focusSelections: [
+            { sourceKey: 'section:10', evidenceText: ['give notice'] },
+            { sourceKey: 'section:11', evidenceText: ['request reasons'] },
+          ],
+          reason: 'The included sources cover notice and reasons.',
+          approximateLearningGoal: 'Recall notice and reasons.',
+        },
+      ],
+      warnings: [],
+    };
+    expect(validateAiStudyMapResult(result, job).valid).toBe(true);
+
+    result.proposedGroups[0] = {
+      ...result.proposedGroups[0],
+      titleSuggestion: 'Notice, reasons, and priority',
+      reason: 'Priority follows registration time too.',
+      approximateLearningGoal: 'Recall notice, reasons, and priority.',
+    };
+    expect(validateAiStudyMapResult(result, job).issues.map((issue) => issue.code)).toContain(
+      'GROUP_TOPIC_NOT_GROUNDED',
+    );
+  });
+
+  it('blocks child labels and defined terms absent from the focus source', () => {
+    const job = {
+      ...mapJob(),
+      target: {
+        ...mapJob().target,
+        sourceKeys: ['section:1'],
+        sectionLabels: ['1'],
+        exactSourceText: '"coordinate monument" means a brass, bronze or aluminum cap or plate.',
+        operativeSourceText: '"coordinate monument" means a brass, bronze or aluminum cap or plate.',
+        sourceHashes: { 'section:1': 'hash-section-1' },
+        sourceFocusOptions: [
+          {
+            sourceKey: 'section:1',
+            label: '1',
+            childLabels: ['1(1)'],
+            definedTerms: ['coordinate monument'],
+          },
+        ],
+      },
+    };
+    const result: AiStudyMapResult = {
+      schemaVersion: 1,
+      jobId: job.jobId,
+      runId: job.runId,
+      corpusContentHash: job.corpusContentHash,
+      inputHash: job.inputHash,
+      promptSpecVersion: job.promptSpecVersion,
+      disposition: 'split',
+      confidence: 'high',
+      reason: 'Definition grouping.',
+      proposedGroups: [
+        {
+          groupId: 'group-1',
+          titleSuggestion: 'Director definition',
+          sourceKeys: ['section:1'],
+          focusSelections: [
+            {
+              sourceKey: 'section:1',
+              childLabels: ['1(2)'],
+              definedTerms: ['Director'],
+              evidenceText: ['coordinate monument means a brass'],
+            },
+          ],
+          reason: 'Director definition.',
+          approximateLearningGoal: 'Recall the Director definition.',
+        },
+      ],
+      warnings: [],
+    };
+    const codes = validateAiStudyMapResult(result, job).issues.map((issue) => issue.code);
+
+    expect(codes).toContain('FOCUS_CHILD_LABEL_NOT_IN_SOURCE');
+    expect(codes).toContain('DEFINED_TERM_NOT_IN_FOCUS_SOURCE');
   });
 
   it('validates grounding evidence against authoritative source text', () => {
@@ -559,6 +856,49 @@ describe('AI CLI JSONL robustness', () => {
     expect(landTitles18?.target.sourceStatus).toBe('current');
     expect(landTitles18?.target.contentFlags?.containsRepealedSubprovision).toBe(true);
     expect(repealOnly?.target.sourceStatus).toBe('repealed');
+  }, 30000);
+
+  it('prepares the Phase 4B.1.2 grounding sample with citation-only metadata separated from commencement', () => {
+    const runId = 'ai-test-phase-4b12-grounding';
+    const runDir = join('study-content', 'ai', 'runs', runId);
+    rmSync(runDir, { recursive: true, force: true });
+
+    execFileSync(
+      'npx',
+      [
+        'tsx',
+        'scripts/studyAiAuthoring.ts',
+        'prepare-map',
+        '--run',
+        runId,
+        '--strategy',
+        'phase-4b1.2-grounding',
+        '--batch-size',
+        '9',
+      ],
+      {
+        stdio: 'pipe',
+        shell: process.platform === 'win32',
+      },
+    );
+    const report = JSON.parse(
+      readFileSync(join(runDir, 'reports', 'sampling-report.json'), 'utf8'),
+    ) as {
+      selectedJobs: number;
+      strategyVersion: string;
+    };
+    const jobs = readFileSync(join(runDir, 'jobs', 'batch-001.jobs.jsonl'), 'utf8')
+      .trim()
+      .split(/\r?\n/)
+      .map((line) => JSON.parse(line) as AiStudyMapJob);
+    const citationRule = jobs.find(
+      (job) => job.document.documentId === 'reg-surveys-84-76' && job.target.sectionLabels[0] === '1',
+    );
+
+    expect(report.selectedJobs).toBe(9);
+    expect(report.strategyVersion).toBe('phase-4b1.2-grounding-v1');
+    expect(citationRule?.target.contentFlags?.citationOnly).toBe(true);
+    expect(citationRule?.target.contentFlags?.commencementOnly).toBe(false);
   }, 30000);
 
   it('writes Phase 4B.1 pilot audit reports with evaluation counts', () => {

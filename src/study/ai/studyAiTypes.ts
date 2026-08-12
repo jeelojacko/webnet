@@ -93,6 +93,7 @@ export type AiSourceContentFlags = {
   containsRepealedSubprovision?: boolean;
   repealOnly?: boolean;
   commencementOnly?: boolean;
+  citationOnly?: boolean;
   transitional?: boolean;
 };
 

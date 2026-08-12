@@ -10,6 +10,7 @@ import type {
   AiValidationIssue,
   AiValidationReport,
 } from './studyAiTypes';
+import { validateStudyMapGroupGrounding } from './studyAiGrounding';
 
 const DISPOSITIONS = new Set(['standalone', 'combine', 'split', 'reference-only', 'skip', 'needs-human-review']);
 const CONFIDENCES = new Set(['high', 'medium', 'low']);
@@ -79,98 +80,6 @@ const addIssue = (
 const groupRequiresFocus = (job?: AiStudyMapJob): boolean =>
   job?.promptSpecVersion === 'study-map-v3';
 
-const sourceTextForGroup = (job: AiStudyMapJob, group: AiProposedSourceGroup): string => {
-  const contexts = [
-    job.context.previous,
-    job.context.next,
-    ...(job.context.relevantDefinitions ?? []),
-    ...(job.context.directlyReferencedProvisions ?? []),
-  ];
-  const extraContext = contexts
-    .filter((context) => context && group.sourceKeys.includes(context.sourceKey))
-    .map((context) => `${context?.operativeText ?? ''} ${context?.text ?? ''}`)
-    .join(' ');
-  return `${job.target.operativeSourceText} ${extraContext}`;
-};
-
-const genericGroupPattern =
-  /^(?:[^-:]+[-:]\s*)?(?:core rule|procedure or conditions|effects, exceptions, or enforcement|other defined terms|related provisions)$/i;
-
-const hasSpecificTopicSuffix = (title: string): boolean =>
-  /\b(?:of|for|by|re|respecting|under|to)\s+[a-z][a-z-]{3,}/i.test(title);
-
-const mapTopicTerms = (text: string): string[] => {
-  const stopWords = new Set([
-    'act',
-    'section',
-    'regulation',
-    'regulations',
-    'rule',
-    'rules',
-    'recall',
-    'know',
-    'understand',
-    'practical',
-    'legal',
-    'effect',
-    'effects',
-    'source',
-    'sources',
-    'study',
-    'unit',
-    'provision',
-    'provisions',
-    'defined',
-    'definitions',
-    'terms',
-    'scope',
-    'limits',
-    'other',
-    'core',
-    'procedure',
-    'conditions',
-    'enforcement',
-    'related',
-    'topic',
-    'topics',
-    'group',
-  ]);
-  return Array.from(new Set(normalizeText(text).match(/\b[a-z][a-z-]{4,}\b/g) ?? [])).filter(
-    (word) => !stopWords.has(word),
-  );
-};
-
-const validateGroupGrounding = (
-  group: AiProposedSourceGroup,
-  job: AiStudyMapJob,
-  issues: AiValidationIssue[],
-): void => {
-  if (genericGroupPattern.test(group.titleSuggestion.trim()) && !hasSpecificTopicSuffix(group.titleSuggestion)) {
-    addIssue(issues, {
-      code: 'GENERIC_MAP_GROUP',
-      severity: 'warning',
-      jobId: job.jobId,
-      message: `Generic Study Map group title: ${group.titleSuggestion}.`,
-    });
-  }
-  const sourceTerms = new Set(mapTopicTerms(sourceTextForGroup(job, group)));
-  const topicTerms = mapTopicTerms(`${group.titleSuggestion} ${group.approximateLearningGoal}`);
-  const unsupported = topicTerms.filter(
-    (term) => !sourceTerms.has(term) && !sourceTerms.has(`${term}s`) && !(term.endsWith('s') && sourceTerms.has(term.slice(0, -1))),
-  );
-  const highRiskUnsupported = unsupported.filter((term) =>
-    ['director', 'minister', 'instrument', 'instruments', 'land', 'integrated', 'institution', 'institutions'].includes(term),
-  );
-  if (highRiskUnsupported.length > 0) {
-    addIssue(issues, {
-      code: 'GROUP_TOPIC_NOT_GROUNDED',
-      severity: 'warning',
-      jobId: job.jobId,
-      message: `Group topic may not be grounded in target or included combined source: ${highRiskUnsupported.slice(0, 5).join(', ')}.`,
-    });
-  }
-};
-
 const validateMapGroup = (
   group: unknown,
   result: Record<string, unknown>,
@@ -204,7 +113,7 @@ const validateMapGroup = (
     if (!optionalStringArray(selection.evidenceText)) addIssue(issues, { code: 'FOCUS_EVIDENCE_INVALID', jobId, message: 'evidenceText must be string array when present.' });
   });
   if (job && nonEmptyString(group.titleSuggestion) && nonEmptyString(group.approximateLearningGoal)) {
-    validateGroupGrounding(group as AiProposedSourceGroup, job, issues);
+    validateStudyMapGroupGrounding(group as AiProposedSourceGroup, job, issues);
   }
 };
 

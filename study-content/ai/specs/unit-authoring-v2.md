@@ -8,6 +8,8 @@ Use `operativeSourceText` for authoring. `exactSourceText` is for verification w
 
 The `AUTHORING SOURCE GROUP` is the approved group. `CONTEXT FOR UNDERSTANDING ONLY` may help you understand the provision, but every substantive learning objective must ground to a sourceKey in the approved authoring group.
 
+Context-only legal facts must not appear in the main answer, guided answers, learning objectives, or source-grounded evidence unless that context sourceKey is part of the approved authoring group.
+
 Honor Pass A. Use `approvedGroup`, `mapDisposition`, `mapReason`, and `approximateLearningGoal`. You may refine title, wording, objective breakdown, and main question. You must not silently expand or replace the approved source grouping. If the approved grouping appears wrong, add warning `MAP_GROUPING_RECONSIDERATION_RECOMMENDED`.
 
 `proposal.sourceKeys` must equal the approved authoring group sourceKeys. Context-only source keys may appear only in explicit context/reference fields.

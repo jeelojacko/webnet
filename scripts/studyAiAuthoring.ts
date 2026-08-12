@@ -63,6 +63,18 @@ const PHASE_4B11_TARGETED_INCLUDES = [
   'doc-new-brunswick-land-surveyors-bylaws:4.2.2',
 ] as const;
 
+const PHASE_4B12_GROUNDING_INCLUDES = [
+  'doc-land-titles-act:18',
+  'doc-community-planning-act:125',
+  'doc-boundaries-confirmation-act:10',
+  'doc-surveys-act:1',
+  'doc-energy-and-utilities-board-act:49.1',
+  'doc-occupational-health-and-safety-act:9.1',
+  'doc-registry-act:19',
+  'reg-boundaries-95-166:3',
+  'reg-surveys-84-76:1',
+] as const;
+
 const PHASE_4B1_REQUIRED_INCLUDES = [
   'doc-boundaries-confirmation-act:10',
   'doc-boundaries-confirmation-act:16',
@@ -209,10 +221,12 @@ const sourceStatusFromComponent = (component: NbLawDocumentComponent): 'current'
 const contentFlagsFromComponent = (component: NbLawDocumentComponent): AiStudyMapJob['target']['contentFlags'] => {
   const text = component.text;
   const normalized = text.toLowerCase();
+  const citationOnly = /\bmay be cited as\b/i.test(text) && text.length < 700;
   return {
     containsRepealedSubprovision: /\brepealed\b/i.test(text) && !isRepealOnlyText(text),
     repealOnly: isRepealOnlyText(text),
-    commencementOnly: /\bcomes? into force\b|\bmay be cited as\b|\bfixed by proclamation\b/i.test(text) && text.length < 700,
+    commencementOnly: !citationOnly && /\bcomes? into force\b|\bfixed by proclamation\b/i.test(text) && text.length < 700,
+    citationOnly,
     transitional: /\btransitional\b/i.test(normalized),
   };
 };
@@ -530,6 +544,35 @@ const targetedPhase4b11Sample = (
   };
 };
 
+const targetedPhase4b12GroundingSample = (
+  jobs: AiStudyMapJob[],
+  extraIncludes: string[] = [],
+): { jobs: AiStudyMapJob[]; reasons: Record<string, string[]>; report: Record<string, unknown> } => {
+  const selected = new Map<string, AiStudyMapJob>();
+  const reasons: Record<string, string[]> = {};
+  [...PHASE_4B12_GROUNDING_INCLUDES, ...extraIncludes].forEach((include) => {
+    const found = jobs.find((job) => jobIncludeKey(job) === include || job.target.sourceKeys.includes(include));
+    if (!found) throw new Error(`Required Phase 4B.1.2 include not found: ${include}`);
+    selected.set(found.jobId, found);
+    reasons[found.jobId] = Array.from(
+      new Set([...(reasons[found.jobId] ?? []), `phase 4B.1.2 grounding include: ${include}`]),
+    );
+  });
+  const selectedJobs = Array.from(selected.values());
+  return {
+    jobs: selectedJobs,
+    reasons,
+    report: {
+      strategyVersion: 'phase-4b1.2-grounding-v1',
+      sampleSize: selectedJobs.length,
+      requiredIncludes: PHASE_4B12_GROUNDING_INCLUDES,
+      extraIncludes,
+      selectedJobIds: selectedJobs.map((job) => job.jobId),
+      selectionReasons: Object.fromEntries(selectedJobs.map((job) => [job.jobId, reasons[job.jobId] ?? []])),
+    },
+  };
+};
+
 const ensureSpecFiles = (): void => {
   mkdirSync(SPEC_DIR, { recursive: true });
   if (!existsSync(join(SPEC_DIR, 'study-map-v1.md'))) writeFileSync(
@@ -572,6 +615,7 @@ const ensureSpecFiles = (): void => {
       '',
       'Context is context only. Previous section, next section, definitions, and direct references may aid understanding but may not become target content unless that sourceKey is explicitly included in a proposed combined group.',
       'For standalone and split targets, every group title, reason, and approximateLearningGoal must be supported by the target operative source.',
+      "For each focusSelections entry, evidenceText, childLabels, and definedTerms must be supported by the operative text for that entry's sourceKey. Do not satisfy focus grounding from context unless that context sourceKey is explicitly included in group sourceKeys.",
       '',
       'Do not invent generic groups such as Core rule, Procedure or conditions, Effects, exceptions, Defined actors and institutions, Defined land or instrument concepts, Other defined terms, or Related provisions unless the supplied target specifically supports that topic. Use standalone or needs-human-review instead of vague split groups.',
       '',
@@ -617,6 +661,8 @@ const commandPrepareMap = (options: Record<string, string | boolean>): void => {
   const selection =
     strategy === 'phase-4b1.1-targeted'
       ? targetedPhase4b11Sample(allJobs)
+      : strategy === 'phase-4b1.2-grounding'
+      ? targetedPhase4b12GroundingSample(allJobs, explicitIncludes)
       : sample > 0 && strategy === 'representative'
       ? representativeSample(
           allJobs,

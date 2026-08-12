@@ -1,6 +1,6 @@
 # Study AI Authoring
 
-Phase 4B.1 supports the first real provider-neutral AI authoring pilot. Phase 4B.1.1 remediates the Study Map pilot with stricter v3 Map prompts, schema validation, source-focus tracking, and a targeted 24-provision review run. It does not process the full corpus automatically, and Phase 4B.1.1 does not start Unit Authoring.
+Phase 4B.1 supports the first real provider-neutral AI authoring pilot. Phase 4B.1.1 remediates the Study Map pilot with stricter v3 Map prompts, schema validation, source-focus tracking, and a targeted 24-provision review run. Phase 4B.1.2 adds the target-source grounding gate for Study Map validation. It does not process the full corpus automatically, and these remediation phases do not start Unit Authoring.
 
 AI output is an authoring aid only. The official legal source remains immutable authority, and approved AI content keeps source links, source hashes, and provenance.
 
@@ -47,6 +47,8 @@ Job preparation does not alter authoritative `legalComponents`. It only cleans t
 
 Jobs also record `sourceStatus` as `current`, `repealed`, or `historical` when detectable. A section with one repealed subprovision remains `current` and records `contentFlags.containsRepealedSubprovision`; only whole-source repeal text is marked `repealed` with `contentFlags.repealOnly`. Repealed material is not automatically skipped; the Map proposal remains reviewable.
 
+Citation-title provisions are tracked separately from commencement provisions. A short `may be cited as` source records `contentFlags.citationOnly: true` and `contentFlags.commencementOnly: false` unless it also contains an actual commencement rule.
+
 Study Map jobs also include `sourceFocusOptions` when subsections or detected defined terms are available. v3 Map results must carry group-level `focusSelections` so split decisions identify the child labels, defined terms, or evidence phrases actually covered by each proposed unit.
 
 ## Context
@@ -62,6 +64,8 @@ Study Map and Unit Authoring jobs can include bounded context:
 Definition and cross-reference resolution is deterministic and first-level only. It does not recursively expand references and does not send whole definitions sections merely because one defined term appears.
 
 Unit Authoring v2 distinguishes the approved authoring source group from context for understanding only. Substantive objectives must ground to approved-group source keys.
+
+Study Map validation now enforces the same source boundary: context may help the model understand a target, but context cannot satisfy grounding unless that context `sourceKey` is explicitly included in a proposed group. For each `focusSelections` entry, evidence text, child labels, and defined terms are validated against the operative text for that entry's `sourceKey`, not against the union of target text, previous/next context, definitions, and direct references.
 
 ## Study Map Review
 
@@ -151,6 +155,14 @@ Warnings remain approvable after explicit review.
 
 Study Map validation also blocks malformed dispositions, source status values, suggested priorities outside `P1`-`P4`, warning codes leaked into prose reasons, malformed warning codes, and missing v3 `focusSelections`. Review warnings flag suspicious reference-only or trivial standalone decisions, generic group titles, and selected high-risk ungrounded topic words.
 
+Additional blocking Study Map grounding errors include:
+
+- `FOCUS_EVIDENCE_NOT_IN_SOURCE` when focus evidence is not present in the operative authoring source for that focus source key.
+- `FOCUS_CHILD_LABEL_NOT_IN_SOURCE` when a selected child label is not available under the focus source.
+- `FOCUS_CHILD_LABEL_NOT_USABLE` when a selected child is repeal-only.
+- `DEFINED_TERM_NOT_IN_FOCUS_SOURCE` when a supplied defined term is not defined in the focus source.
+- `GROUP_TOPIC_NOT_GROUNDED` when high-risk topic leakage such as priority, appeal, delegation, or transitional concepts is grounded only in non-authoring context.
+
 ## Coverage
 
 Unit proposals may include `sourceCoverage` entries keyed by sourceKey. Child labels can be marked:
@@ -208,6 +220,27 @@ npm run study:ai:prepare-map -- --run ai-map-4b11-targeted-s24-v3 --strategy pha
 npm run study:ai:status -- --run ai-map-4b11-targeted-s24-v3
 npm run study:ai:validate-results -- --run ai-map-4b11-targeted-s24-v3
 ```
+
+## Phase 4B.1.2 Grounding Gate
+
+The grounding-gate correction preserves both earlier runs:
+
+```text
+ai-map-4b1-pilot-s100-seed42
+ai-map-4b11-targeted-s24-v3
+```
+
+The existing 24 V3 results were revalidated read-only under the corrected validator. The corrected validator newly invalidates Land Titles Act section 18 and Community Planning Act section 125 because their failed groups used non-authoring context as evidence or topic grounding.
+
+The small corrected run is:
+
+```bash
+npm run study:ai:prepare-map -- --run ai-map-4b12-grounding-s9-v1 --strategy phase-4b1.2-grounding --batch-size 9
+npm run study:ai:validate-results -- --run ai-map-4b12-grounding-s9-v1
+npm run study:ai:status -- --run ai-map-4b12-grounding-s9-v1
+```
+
+It includes Land Titles Act section 18, Community Planning Act section 125, Boundaries Confirmation Act section 10, Surveys Act section 1, Energy and Utilities Board Act section 49.1, Occupational Health and Safety Act section 9.1, Registry Act section 19, Regulation 95-166 section 3, and Regulation 84-76 section 1.
 
 Validation writes the normal result validation and Map proposal artifacts, plus human-review aids:
 

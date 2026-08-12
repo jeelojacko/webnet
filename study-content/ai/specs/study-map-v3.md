@@ -10,6 +10,8 @@ Context is context only. Previous section, next section, definitions, and direct
 
 For standalone and split targets, every group title, group reason, and approximateLearningGoal must be supported by the target operative source. For combine targets, those fields must be supported by the target plus each explicitly included combined source.
 
+For each `focusSelections` entry, `evidenceText`, `childLabels`, and `definedTerms` must be supported by the operative text for that entry's `sourceKey`. Do not satisfy focus grounding from previous/next context, definition context, or direct-reference context unless that context `sourceKey` is explicitly included in the group `sourceKeys`.
+
 Do not invent generic groups such as:
 
 - Core rule
