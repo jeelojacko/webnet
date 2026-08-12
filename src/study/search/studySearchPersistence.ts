@@ -5,7 +5,7 @@ import type {
 } from './studySearchTypes';
 
 const DB_NAME = 'webnet.study.v1';
-const DB_VERSION = 6;
+const DB_VERSION = 7;
 
 type SearchArtifactRecord = {
   id: string;

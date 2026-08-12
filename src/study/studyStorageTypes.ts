@@ -1,4 +1,5 @@
 import type { NbLawContentPackage } from './content/nbLawTypes';
+import type { OfficialContentPreview } from './studyOfficialContent';
 import type {
   StudyAttempt,
   StudyConcept,
@@ -34,6 +35,9 @@ export interface StudyStorage {
     referenceOnlyFormCount: number;
   }>;
   getLegalComponentCount: (_documentId: string) => Promise<number>;
+  previewOfficialContentPackage: (
+    _contentPackage: NbLawContentPackage,
+  ) => Promise<OfficialContentPreview>;
   saveDocument: (_document: StudyDocument) => Promise<void>;
   saveUnit: (_unit: StudyUnit) => Promise<void>;
   savePrompt: (_prompt: StudyPrompt) => Promise<void>;

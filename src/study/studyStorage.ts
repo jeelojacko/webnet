@@ -2,6 +2,7 @@ import { createSeedStudyData, createDefaultStudySettings } from './studySeed';
 import { createStudyFsrsConfigRecord, migrateStudyFsrsSchedule } from './fsrs/studyFsrsMigration';
 import {
   applyOfficialContentPackageToSnapshot,
+  previewOfficialContentPackage as previewOfficialContentPackageForSnapshot,
   upsertStudyDocumentsWithOfficialMetadata,
 } from './studyOfficialContent';
 import type { StudyStorage } from './studyStorageTypes';
@@ -22,8 +23,8 @@ import type {
 } from './studyTypes';
 
 export const STUDY_DB_NAME = 'webnet.study.v1';
-export const STUDY_DB_VERSION = 6;
-export const STUDY_SCHEMA_VERSION = 6;
+export const STUDY_DB_VERSION = 7;
+export const STUDY_SCHEMA_VERSION = 7;
 
 const STORES = [
   'documents',
@@ -112,7 +113,19 @@ const openStudyDatabase = (): Promise<IDBDatabase> =>
           return;
         }
         const transaction = request.transaction;
-        if (transaction) createMissingIndexes(storeName, transaction.objectStore(storeName));
+        if (!transaction) return;
+        if (storeName === 'legalComponents') {
+          const store = transaction.objectStore(storeName);
+          if (store.keyPath !== STORE_KEYS.legalComponents) {
+            db.deleteObjectStore(storeName);
+            createIndexesForStore(
+              storeName,
+              db.createObjectStore(storeName, { keyPath: STORE_KEYS[storeName] }),
+            );
+            return;
+          }
+        }
+        createMissingIndexes(storeName, transaction.objectStore(storeName));
       });
     };
     request.onsuccess = () => resolve(request.result);
@@ -210,6 +223,13 @@ const putMany = <TStore extends StudyStoreName>(
 ): void => {
   const store = transaction.objectStore(storeName);
   values.forEach((value) => store.put(value));
+};
+
+const clearDerivedSearchStores = async (db: IDBDatabase): Promise<void> => {
+  const transaction = db.transaction(['searchIndexMetadata', 'searchIndexArtifacts'], 'readwrite');
+  transaction.objectStore('searchIndexMetadata').clear();
+  transaction.objectStore('searchIndexArtifacts').clear();
+  await transactionDone(transaction);
 };
 
 const legalComponentRecord = (
@@ -340,6 +360,50 @@ const seedIfEmpty = async (db: IDBDatabase): Promise<void> => {
   putMany(transaction, 'progress', seed.progress);
   putMany(transaction, 'settings', [seed.settings]);
   await transactionDone(transaction);
+};
+
+const loadAuthoritativeSnapshot = async (db: IDBDatabase): Promise<StudyDataSnapshot> => {
+  const [
+    documents,
+    units,
+    prompts,
+    concepts,
+    rubrics,
+    progress,
+    attempts,
+    drafts,
+    settings,
+    legalDocuments,
+    legalComponents,
+    importHistory,
+  ] = await Promise.all([
+    readStore(db, 'documents'),
+    readStore(db, 'units'),
+    readStore(db, 'prompts'),
+    readStore(db, 'concepts'),
+    readStore(db, 'rubrics'),
+    readStore(db, 'progress'),
+    readStore(db, 'attempts'),
+    readStore(db, 'drafts'),
+    readStore(db, 'settings'),
+    readStore(db, 'legalDocuments'),
+    readStore(db, 'legalComponents'),
+    readStore(db, 'importHistory'),
+  ]);
+  return migrateStudySnapshot({
+    documents,
+    units,
+    prompts,
+    concepts,
+    rubrics,
+    progress,
+    attempts,
+    drafts,
+    settings: settings[0],
+    legalDocuments,
+    legalComponents: legalComponents.map(legalComponentFromRecord),
+    importHistory,
+  });
 };
 
 const saveAttemptProgressTransaction = async ({
@@ -479,6 +543,15 @@ export const createStudyStorage = (): StudyStorage => ({
   },
   async getLegalComponentCount(documentId) {
     return (await this.getLegalComponentsByDocument(documentId)).length;
+  },
+  async previewOfficialContentPackage(contentPackage) {
+    const db = await openStudyDatabase();
+    try {
+      const snapshot = await loadAuthoritativeSnapshot(db);
+      return previewOfficialContentPackageForSnapshot(snapshot, contentPackage);
+    } finally {
+      db.close();
+    }
   },
   async saveDocument(document) {
     const db = await openStudyDatabase();
@@ -677,47 +750,7 @@ export const createStudyStorage = (): StudyStorage => ({
   async importOfficialContentPackage(contentPackage) {
     const db = await openStudyDatabase();
     try {
-      const [
-        documents,
-        units,
-        prompts,
-        concepts,
-        rubrics,
-        progress,
-        attempts,
-        drafts,
-        settings,
-        legalDocuments,
-        legalComponents,
-        importHistory,
-      ] = await Promise.all([
-        readStore(db, 'documents'),
-        readStore(db, 'units'),
-        readStore(db, 'prompts'),
-        readStore(db, 'concepts'),
-        readStore(db, 'rubrics'),
-        readStore(db, 'progress'),
-        readStore(db, 'attempts'),
-        readStore(db, 'drafts'),
-        readStore(db, 'settings'),
-        readStore(db, 'legalDocuments'),
-        readStore(db, 'legalComponents'),
-        readStore(db, 'importHistory'),
-      ]);
-      const current = migrateStudySnapshot({
-        documents,
-        units,
-        prompts,
-        concepts,
-        rubrics,
-        progress,
-        attempts,
-        drafts,
-        settings: settings[0],
-        legalDocuments,
-        legalComponents: legalComponents.map(legalComponentFromRecord),
-        importHistory,
-      });
+      const current = await loadAuthoritativeSnapshot(db);
       const { snapshot } = applyOfficialContentPackageToSnapshot({
         snapshot: current,
         contentPackage,
@@ -735,6 +768,7 @@ export const createStudyStorage = (): StudyStorage => ({
       putMany(transaction, 'legalComponents', snapshot.legalComponents.map(legalComponentRecord));
       putMany(transaction, 'importHistory', snapshot.importHistory);
       await transactionDone(transaction);
+      await clearDerivedSearchStores(db);
       return snapshot;
     } finally {
       db.close();

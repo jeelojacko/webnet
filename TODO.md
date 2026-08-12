@@ -1,3 +1,4 @@
+- [x] Study Phase 4A.1 NB SIT import persistence repair (August 2026): repair malformed legacy `legalComponents` IndexedDB key paths that collapsed full-corpus imports, make Manage preview compare against authoritative IndexedDB legal components instead of the lean React snapshot, invalidate derived search after official import, update docs/tests, validate, commit, and push.
 - [x] Study Phase 4A.1 search quality, diagnostics, and Phase 4B readiness follow-up (August 2026): restore exact-phrase official-provision snippets/highlights, improve worker ranking/filtering, add search diagnostics and bulk Study index API seams, update docs/tests, validate, commit, and push.
   - [x] Add worker-side matched snippets so official-provision results for phrases such as `Director of Surveys` display highlighted matching text.
   - [x] Improve search ranking so exact phrase, citation/title, heading, and AND-term matches outrank incidental full-text OR matches.

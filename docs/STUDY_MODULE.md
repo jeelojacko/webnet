@@ -32,7 +32,7 @@ It does not use adjustment, parser, solver, network, or Survey CAD domain state.
 
 Database: `webnet.study.v1`
 
-Version: `6`
+Version: `7`
 
 Stores:
 
@@ -60,7 +60,9 @@ Native indexes added in version `6`:
 - `prompts.byUnitId`, `rubrics.byUnitId`, and `concepts.byUnitId` for unit-editor and index-building joins
 - `attempts.byUnitId` and `attempts.byUnitReviewedAt` for per-unit attempt lookup
 
-Schema migration currently normalizes imported or partially missing snapshots to schema version `6`, fills default settings, defaults official-content stores to empty arrays, adds unit source mode, adds concept origin/order fields, adds the rubric store, adds Study FSRS settings/configuration, adds optional progress/attempt scheduling wrappers, creates native lookup indexes, and keeps existing Study data intact. Existing concepts without origin default to manual unless the linked unit already records generated concepts. Legacy snapshots without rubrics receive conservative supplemental `custom` rubric rows from existing concepts with empty reference answers, so migration does not invent legal answers or delete concept content. Old-schema IndexedDB fixture coverage locks browser upgrade behavior for pre-FSRS and v5 data: missing stores are created, historical attempts and legal components are preserved, legal lookup indexes exist, and ambiguous legacy due dates become uninitialized FSRS schedules instead of replayed memory history.
+Schema migration currently normalizes imported or partially missing snapshots to schema version `7`, fills default settings, defaults official-content stores to empty arrays, adds unit source mode, adds concept origin/order fields, adds the rubric store, adds Study FSRS settings/configuration, adds optional progress/attempt scheduling wrappers, creates native lookup indexes, repairs malformed legacy `legalComponents` key paths, and keeps existing Study data intact. Existing concepts without origin default to manual unless the linked unit already records generated concepts. Legacy snapshots without rubrics receive conservative supplemental `custom` rubric rows from existing concepts with empty reference answers, so migration does not invent legal answers or delete concept content. Old-schema IndexedDB fixture coverage locks browser upgrade behavior for pre-FSRS and v5/v6 data: missing stores are created, historical attempts are preserved, malformed official legal component stores are recreated for reimport, legal lookup indexes exist, and ambiguous legacy due dates become uninitialized FSRS schedules instead of replayed memory history.
+
+Version `7` specifically repairs browsers that created `legalComponents` with an old plain `id` key path. Full-corpus packages reuse component ids such as `section:1` across documents, so that malformed store can collapse thousands of components to the number of unique local ids. The repair drops only that authoritative imported legal-text store and recreates it with `recordKey`; reimporting the official package restores the complete component set without touching Study units, progress, attempts, drafts, or settings.
 
 Normal `loadAll()` startup no longer reads `legalComponents` with `getAll()` and no longer places official legal text in the React snapshot. The snapshot carries global UI data: documents, legal document metadata, units, prompts, concepts, rubrics, progress, attempts, drafts, settings, and import history. Official component text remains authoritative in IndexedDB and is loaded through repository methods:
 

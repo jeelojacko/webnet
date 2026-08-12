@@ -20,6 +20,7 @@ import {
 
 type FakeStudyStores = Record<string, Map<string, unknown>>;
 type FakeStudyIndexes = Record<string, Set<string>>;
+type FakeStudyKeyPaths = Record<string, string>;
 
 const STUDY_STORE_KEYS: Record<string, string> = {
   documents: 'id',
@@ -63,9 +64,11 @@ const createFakeRequest = <T>(resolveValue: () => T, onComplete?: () => void): I
 const createFakeStudyStore = (
   stores: FakeStudyStores,
   indexes: FakeStudyIndexes,
+  keyPaths: FakeStudyKeyPaths,
   storeName: string,
   transaction: IDBTransaction,
 ) => ({
+  keyPath: keyPaths[storeName],
   indexNames: {
     contains: (indexName: string) => indexes[storeName]?.has(indexName) ?? false,
     [Symbol.iterator]: function* () {
@@ -105,7 +108,7 @@ const createFakeStudyStore = (
       () => transaction.oncomplete?.call(transaction, new Event('complete') as never),
     ),
   put: (value: unknown) => {
-    const keyPath = STUDY_STORE_KEYS[storeName];
+    const keyPath = keyPaths[storeName] ?? STUDY_STORE_KEYS[storeName];
     const key = (value as Record<string, string>)[keyPath];
     stores[storeName] ??= new Map();
     stores[storeName].set(key, value);
@@ -125,11 +128,16 @@ const installStudyIndexedDbFixture = ({
   stores,
   oldVersion,
   indexes = {},
+  keyPaths = {},
 }: {
   stores: FakeStudyStores;
   oldVersion: number;
   indexes?: FakeStudyIndexes;
+  keyPaths?: FakeStudyKeyPaths;
 }) => {
+  Object.keys(stores).forEach((storeName) => {
+    keyPaths[storeName] ??= STUDY_STORE_KEYS[storeName];
+  });
   Object.defineProperty(window, 'indexedDB', {
     configurable: true,
     value: {
@@ -149,7 +157,19 @@ const installStudyIndexedDbFixture = ({
           createObjectStore: (storeName: string) => {
             stores[storeName] ??= new Map();
             indexes[storeName] ??= new Set();
-            return createFakeStudyStore(stores, indexes, storeName, {} as IDBTransaction);
+            keyPaths[storeName] = STUDY_STORE_KEYS[storeName];
+            return createFakeStudyStore(
+              stores,
+              indexes,
+              keyPaths,
+              storeName,
+              {} as IDBTransaction,
+            );
+          },
+          deleteObjectStore: (storeName: string) => {
+            stores[storeName] = new Map();
+            indexes[storeName] = new Set();
+            delete keyPaths[storeName];
           },
           close: () => undefined,
           transaction: (storeNames: string | string[], _mode?: string) => {
@@ -167,6 +187,7 @@ const installStudyIndexedDbFixture = ({
                 return createFakeStudyStore(
                   stores,
                   indexes,
+                  keyPaths,
                   storeName,
                   transaction as unknown as IDBTransaction,
                 );
@@ -428,7 +449,7 @@ describe('study storage contracts', () => {
     const byDocument = await storage.getLegalComponentsByDocument('doc-surveys-act');
     const bySourceKey = await storage.getLegalComponent('doc-surveys-act', 'section-8');
 
-    expect(STUDY_DB_VERSION).toBe(6);
+    expect(STUDY_DB_VERSION).toBe(7);
     expect(indexes.legalComponents).toEqual(
       new Set(['byDocumentId', 'bySourceKey', 'byType']),
     );
@@ -439,6 +460,46 @@ describe('study storage contracts', () => {
     expect(loaded.legalComponents).toEqual([]);
     expect(byDocument).toHaveLength(1);
     expect(bySourceKey?.text).toBe(component.text);
+  });
+
+  it('repairs legacy legal component stores keyed by component id before import', async () => {
+    const seed = createSeedStudyData('2026-08-01T10:00:00.000Z');
+    const stores: FakeStudyStores = {
+      documents: new Map(seed.documents.map((entry) => [entry.id, entry])),
+      units: new Map(seed.units.map((entry) => [entry.id, entry])),
+      prompts: new Map(seed.prompts.map((entry) => [entry.id, entry])),
+      concepts: new Map(seed.concepts.map((entry) => [entry.id, entry])),
+      rubrics: new Map(seed.rubrics.map((entry) => [entry.id, entry])),
+      progress: new Map(seed.progress.map((entry) => [entry.unitId, entry])),
+      attempts: new Map(),
+      drafts: new Map(),
+      settings: new Map([[seed.settings.id, { ...seed.settings, schemaVersion: 6 }]]),
+      legalDocuments: new Map(),
+      legalComponents: new Map([
+        [
+          'section-1',
+          {
+            id: 'section-1',
+            documentId: 'doc-old',
+            sourceKey: 'section:1',
+            componentType: 'section',
+            label: '1',
+            text: 'legacy component keyed by id',
+            contentHash: 'old',
+            extractionStatus: 'complete',
+          },
+        ],
+      ]),
+      importHistory: new Map(),
+    };
+    const keyPaths: FakeStudyKeyPaths = { legalComponents: 'id' };
+    installStudyIndexedDbFixture({ stores, keyPaths, oldVersion: 6 });
+
+    const loaded = await createStudyStorage().loadAll();
+
+    expect(loaded.legalComponents).toEqual([]);
+    expect(stores.legalComponents.size).toBe(0);
+    expect(keyPaths.legalComponents).toBe('recordKey');
   });
 
   it('does not auto-seed after an intentional clean-slate reset leaves settings behind', () => {

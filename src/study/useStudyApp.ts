@@ -5,7 +5,6 @@ import {
   acknowledgeUnitSourceReview,
   createStudyContentFromSourceSelection,
   parseOfficialContentPackage,
-  previewOfficialContentPackage,
   type OfficialContentPreview,
 } from './studyOfficialContent';
 import {
@@ -674,26 +673,28 @@ export const useStudyApp = () => {
 
   const previewOfficialPackage = useCallback(() => {
     if (!data) return;
-    try {
+    void (async () => {
+      try {
       const contentPackage = parseOfficialContentPackage(officialPackageText);
-      setOfficialPackagePreview(previewOfficialContentPackage(data, contentPackage));
-    } catch (error) {
-      setOfficialPackagePreview({
-        valid: false,
-        errors: [error instanceof Error ? error.message : String(error)],
-        newDocuments: [],
-        updatedDocuments: [],
-        unchangedDocuments: [],
-        absentExistingDocuments: [],
-        newComponents: [],
-        changedComponents: [],
-        removedComponents: [],
-        unchangedComponents: [],
-        referenceOnlyForms: [],
-        unitsRequiringSourceReview: [],
-      });
-    }
-  }, [data, officialPackageText]);
+        setOfficialPackagePreview(await storage.previewOfficialContentPackage(contentPackage));
+      } catch (error) {
+        setOfficialPackagePreview({
+          valid: false,
+          errors: [error instanceof Error ? error.message : String(error)],
+          newDocuments: [],
+          updatedDocuments: [],
+          unchangedDocuments: [],
+          absentExistingDocuments: [],
+          newComponents: [],
+          changedComponents: [],
+          removedComponents: [],
+          unchangedComponents: [],
+          referenceOnlyForms: [],
+          unitsRequiringSourceReview: [],
+        });
+      }
+    })();
+  }, [data, officialPackageText, storage]);
 
   const importOfficialPackage = useCallback(async () => {
     const contentPackage: NbLawContentPackage = parseOfficialContentPackage(officialPackageText);

@@ -98,7 +98,7 @@ const readSnapshotWithoutLegalText = async (db: IDBDatabase): Promise<StudyDataS
       readStore(db, 'importHistory'),
     ]);
   return {
-    schemaVersion: 6,
+    schemaVersion: 7,
     exportedAt: new Date().toISOString(),
     documents,
     units,
