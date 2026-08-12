@@ -1,0 +1,16 @@
+# Codex Instructions
+
+Process ONLY the requested content job files in study-content\ai\runs\ai-units-4b001-bca10-illustrative/jobs using study-content/ai/specs/unit-authoring-v2.md.
+Write JSONL results to the matching file under results/, for example batch-001.results.jsonl.
+Write only the requested result file(s). Use one JSON object per line.
+Do not wrap JSONL in Markdown code fences. Do not add commentary to JSONL.
+Do not modify application source code.
+Do not edit prompt/spec/schema files.
+Do not use external legal research or legal memory.
+Do not browse web/external legal sources.
+Do not use legal memory to supplement supplied source.
+Preserve jobId, runId, inputHash, corpusContentHash, and promptSpecVersion.
+Follow promptSpecVersion unit-authoring-v2.
+Keep official source, AI study answers, and inference notes separate.
+Resume by skipping jobIds that already have valid result lines.
+Never rewrite valid existing result lines unless explicitly told to regenerate them.

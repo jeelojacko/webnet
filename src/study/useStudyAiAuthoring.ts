@@ -1,7 +1,13 @@
 import { useCallback, useState, type Dispatch, type SetStateAction } from 'react';
 import type { StudyStorage } from './studyStorageTypes';
-import type { AiStudyMapJob, AiStudyMapResult, AiStoredUnitProposal } from './ai/studyAiTypes';
+import type {
+  AiStudyMapJob,
+  AiStudyMapProposal,
+  AiStudyMapResult,
+  AiStoredUnitProposal,
+} from './ai/studyAiTypes';
 import {
+  detectAiUnitProposalOverlaps,
   mapResultToProposal,
   reconcileAiStudyMapProposals,
   validateAiStudyMapResult,
@@ -14,6 +20,14 @@ const replaceAiUnitProposal = (
   proposal: AiStoredUnitProposal,
 ): AiStoredUnitProposal[] => [
   ...proposals.filter((entry) => entry.proposalId !== proposal.proposalId),
+  proposal,
+];
+
+const replaceAiStudyMapProposal = (
+  proposals: AiStudyMapProposal[],
+  proposal: AiStudyMapProposal,
+): AiStudyMapProposal[] => [
+  ...proposals.filter((entry) => entry.id !== proposal.id),
   proposal,
 ];
 
@@ -95,6 +109,20 @@ export const useStudyAiAuthoring = ({
     [data, setData, setStatusMessage, storage],
   );
 
+  const updateAiStudyMapProposal = useCallback(
+    async (proposal: AiStudyMapProposal) => {
+      if (!data) return;
+      const updated = { ...proposal, updatedAt: new Date().toISOString() };
+      await storage.saveAiStudyMapProposal(updated);
+      setData({
+        ...data,
+        aiStudyMapProposals: replaceAiStudyMapProposal(data.aiStudyMapProposals, updated),
+      });
+      setStatusMessage(`Study Map proposal saved: ${updated.targetSectionLabels.join(', ')}.`);
+    },
+    [data, setData, setStatusMessage, storage],
+  );
+
   const validateAiUnitProposalById = useCallback(
     async (proposalId: string) => {
       if (!data) return;
@@ -111,15 +139,20 @@ export const useStudyAiAuthoring = ({
           (entry) => entry.id === proposal.sourceDocumentId,
         )?.contentHash,
       });
+      const overlapIssues = detectAiUnitProposalOverlaps({
+        proposals: data.aiUnitProposals,
+        existingUnits: data.units,
+      }).filter((issue) => issue.proposalId === proposal.proposalId);
+      const issues = [...report.issues, ...overlapIssues];
       const updated: AiStoredUnitProposal = {
         ...proposal,
         validationStatus: report.valid
-          ? report.issues.some((issue) => issue.severity === 'warning')
+          ? issues.some((issue) => issue.severity === 'warning')
             ? 'warnings'
             : 'valid'
           : 'invalid',
         reviewStatus: report.valid ? 'validated' : 'needs-review',
-        validationMessages: report.issues.map((issue) => `${issue.code}: ${issue.message}`),
+        validationMessages: issues.map((issue) => `${issue.code}: ${issue.message}`),
         updatedAt: new Date().toISOString(),
       };
       await storage.saveAiUnitProposal(updated);
@@ -142,11 +175,17 @@ export const useStudyAiAuthoring = ({
         proposal.sourceKeys,
       );
       const report = validateAiStudyUnitProposal({ proposal, sourceComponents });
+      const overlapIssues = detectAiUnitProposalOverlaps({
+        proposals: data.aiUnitProposals,
+        existingUnits: data.units,
+      }).filter((issue) => issue.proposalId === proposal.proposalId);
       if (!report.valid) {
         const updated = {
           ...proposal,
           validationStatus: 'invalid' as const,
-          validationMessages: report.issues.map((issue) => `${issue.code}: ${issue.message}`),
+          validationMessages: [...report.issues, ...overlapIssues].map(
+            (issue) => `${issue.code}: ${issue.message}`,
+          ),
           updatedAt: new Date().toISOString(),
         };
         await storage.saveAiUnitProposal(updated);
@@ -175,6 +214,7 @@ export const useStudyAiAuthoring = ({
     aiImportText,
     setAiImportText,
     importAiAuthoringJson,
+    updateAiStudyMapProposal,
     updateAiUnitProposal,
     validateAiUnitProposalById,
     approveAiUnitProposal,

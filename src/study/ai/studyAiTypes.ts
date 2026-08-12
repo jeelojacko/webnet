@@ -63,7 +63,18 @@ export type AiSourceContext = {
   sectionLabel: string;
   heading?: string;
   text: string;
+  operativeText?: string;
   sourceHash: string;
+  contextRole?: 'previous' | 'next' | 'definition' | 'direct-reference' | 'context-only';
+};
+
+export type AiSourceStatus = 'current' | 'repealed' | 'historical';
+
+export type AiSourceMetadata = {
+  amendmentHistory?: string[];
+  consolidationNotes?: string[];
+  citationMetadata?: string[];
+  cleaningWarnings?: string[];
 };
 
 export type AiSourceDocumentSummary = {
@@ -77,6 +88,7 @@ export type AiStudyMapJob = {
   schemaVersion: 1;
   jobId: string;
   runId: string;
+  promptSpecVersion: string;
   corpusContentHash: string;
   inputHash: string;
   document: AiSourceDocumentSummary;
@@ -85,6 +97,14 @@ export type AiStudyMapJob = {
     sectionLabels: string[];
     heading?: string;
     exactSourceText: string;
+    operativeSourceText: string;
+    sourceMetadata: AiSourceMetadata;
+    sourceStatus: AiSourceStatus;
+    approximateInputSize: {
+      exactCharacters: number;
+      operativeCharacters: number;
+      largeSection: boolean;
+    };
     sourceHashes: Record<string, string>;
   };
   context: {
@@ -92,6 +112,7 @@ export type AiStudyMapJob = {
     next?: AiSourceContext;
     relevantDefinitions?: AiSourceContext[];
     directlyReferencedProvisions?: AiSourceContext[];
+    omittedContextWarnings?: string[];
   };
 };
 
@@ -99,17 +120,29 @@ export type AiUnitAuthoringJob = {
   schemaVersion: 1;
   jobId: string;
   runId: string;
+  promptSpecVersion: string;
   sourceMapRunId: string;
   sourceMapProposalId: string;
   corpusContentHash: string;
   inputHash: string;
   document: AiSourceDocumentSummary;
+  approvedGroup: AiProposedSourceGroup;
+  mapDisposition: AiStudyDisposition;
+  mapReason: string;
+  approximateLearningGoal: string;
   group: AiProposedSourceGroup;
   sourceHashes: Record<string, string>;
   exactSourceText: string;
+  operativeSourceText: string;
+  sourceMetadata: AiSourceMetadata;
   context: {
+    previous?: AiSourceContext;
+    next?: AiSourceContext;
+    relevantDefinitions?: AiSourceContext[];
+    directlyReferencedProvisions?: AiSourceContext[];
     relatedSourceKeys?: string[];
     warnings?: string[];
+    omittedContextWarnings?: string[];
   };
 };
 
@@ -127,6 +160,7 @@ export type AiStudyMapResult = {
   runId: string;
   corpusContentHash: string;
   inputHash?: string;
+  promptSpecVersion?: string;
   disposition: AiStudyDisposition;
   confidence: AiConfidence;
   reason: string;
@@ -139,6 +173,22 @@ export type AiGroundingEvidence = {
   sourceKey: string;
   evidenceText: string;
   evidenceHash?: string;
+};
+
+export type AiSourceCoverageStatus =
+  | 'covered'
+  | 'context-only'
+  | 'intentionally-omitted'
+  | 'not-assessed';
+
+export type AiSourceCoverage = {
+  sourceKey: string;
+  childLabels?: Array<{
+    label: string;
+    status: AiSourceCoverageStatus;
+    objectiveIds?: string[];
+    reason?: string;
+  }>;
 };
 
 export type AiLearningObjective = {
@@ -185,6 +235,11 @@ export type AiStudyUnitProposal = {
   objectives: AiLearningObjective[];
   relatedSourceKeys?: string[];
   studyNotes?: AiStudyNote[];
+  sourceCoverage?: AiSourceCoverage[];
+  approvedGroup?: AiProposedSourceGroup;
+  mapDisposition?: AiStudyDisposition;
+  mapReason?: string;
+  approximateLearningGoal?: string;
   suggestedPriority?: AiSuggestedPriority;
   confidence: AiConfidence;
   warnings: string[];
@@ -218,6 +273,10 @@ export type AiStudyMapProposal = {
   document: AiSourceDocumentSummary;
   targetSourceKeys: string[];
   targetSectionLabels: string[];
+  targetHeading?: string;
+  exactSourceText?: string;
+  operativeSourceText?: string;
+  context?: AiStudyMapJob['context'];
   disposition: AiStudyDisposition;
   confidence: AiConfidence;
   reason: string;

@@ -1,6 +1,8 @@
 import type { ImportedLegalComponent } from '../studyTypes';
 import type {
   AiLearningObjective,
+  AiProposedSourceGroup,
+  AiSourceCoverage,
   AiStudyMapJob,
   AiStudyMapProposal,
   AiStudyMapResult,
@@ -50,6 +52,12 @@ const nonEmptyString = (value: unknown): value is string =>
 const stringArray = (value: unknown): value is string[] =>
   Array.isArray(value) && value.every(stringValue);
 
+const normalizeKeySet = (values: string[]): string[] =>
+  Array.from(new Set(values)).sort((left, right) => left.localeCompare(right));
+
+const sameKeySet = (left: string[], right: string[]): boolean =>
+  JSON.stringify(normalizeKeySet(left)) === JSON.stringify(normalizeKeySet(right));
+
 const addIssue = (
   issues: AiValidationIssue[],
   issue: Omit<AiValidationIssue, 'severity'> & { severity?: AiValidationIssue['severity'] },
@@ -63,6 +71,7 @@ export const validateAiStudyMapJob = (value: unknown): AiValidationReport => {
   if (value.schemaVersion !== 1) addIssue(issues, { code: 'SCHEMA_VERSION', message: 'Study Map job schemaVersion must be 1.' });
   if (!nonEmptyString(value.jobId)) addIssue(issues, { code: 'JOB_ID_REQUIRED', message: 'jobId is required.' });
   if (!nonEmptyString(value.runId)) addIssue(issues, { code: 'RUN_ID_REQUIRED', message: 'runId is required.' });
+  if (!nonEmptyString(value.promptSpecVersion)) addIssue(issues, { code: 'PROMPT_SPEC_VERSION_REQUIRED', message: 'promptSpecVersion is required.' });
   if (!nonEmptyString(value.corpusContentHash)) addIssue(issues, { code: 'CORPUS_HASH_REQUIRED', message: 'corpusContentHash is required.' });
   if (!nonEmptyString(value.inputHash)) addIssue(issues, { code: 'INPUT_HASH_REQUIRED', message: 'inputHash is required.' });
   const document = value.document;
@@ -76,6 +85,8 @@ export const validateAiStudyMapJob = (value: unknown): AiValidationReport => {
     if (!stringArray(target.sourceKeys) || target.sourceKeys.length === 0) addIssue(issues, { code: 'SOURCE_KEYS_REQUIRED', message: 'target.sourceKeys must be non-empty.' });
     if (!stringArray(target.sectionLabels)) addIssue(issues, { code: 'SECTION_LABELS_INVALID', message: 'target.sectionLabels must be an array.' });
     if (!nonEmptyString(target.exactSourceText)) addIssue(issues, { code: 'SOURCE_TEXT_REQUIRED', message: 'target.exactSourceText is required.' });
+    if (!nonEmptyString(target.operativeSourceText)) addIssue(issues, { code: 'OPERATIVE_SOURCE_TEXT_REQUIRED', message: 'target.operativeSourceText is required.' });
+    if (!isRecord(target.sourceMetadata)) addIssue(issues, { code: 'SOURCE_METADATA_REQUIRED', message: 'target.sourceMetadata is required.' });
     if (!isRecord(target.sourceHashes)) addIssue(issues, { code: 'SOURCE_HASHES_REQUIRED', message: 'target.sourceHashes is required.' });
   }
   return { valid: issues.every((issue) => issue.severity !== 'error'), issues };
@@ -101,6 +112,12 @@ export const validateAiStudyMapResult = (
     if (value.runId !== job.runId) addIssue(issues, { code: 'RUN_MISMATCH', jobId, message: 'Result runId does not match the job.' });
     if (value.corpusContentHash !== job.corpusContentHash) addIssue(issues, { code: 'STALE_PROPOSAL', jobId, message: 'Result corpusContentHash does not match the job.' });
     if (value.inputHash && value.inputHash !== job.inputHash) addIssue(issues, { code: 'INPUT_HASH_MISMATCH', jobId, message: 'Result inputHash does not match the job.' });
+    if (stringValue(value.promptSpecVersion) && value.promptSpecVersion !== job.promptSpecVersion) {
+      addIssue(issues, { code: 'PROMPT_SPEC_MISMATCH', jobId, message: 'Result promptSpecVersion does not match the job.' });
+    }
+  }
+  if (value.confidence === 'low') {
+    addIssue(issues, { code: 'LOW_CONFIDENCE', severity: 'warning', jobId, message: 'Low confidence requires human review.' });
   }
   return { valid: issues.every((issue) => issue.severity !== 'error'), issues };
 };
@@ -141,6 +158,179 @@ const validateQuestionQuality = (
   });
 };
 
+const tokenPattern =
+  /\$?\b\d+(?:\.\d+)?\b(?:\s*(?:days?|months?|years?|per cent|percent|%))?|\bsection\s+\d+(?:\([^)]+\))*|\bsubsection\s+\d+(?:\([^)]+\))*|\bparagraph\s+\d+\([^)]+\)/gi;
+
+const collectRiskTokens = (text: string): string[] =>
+  Array.from(new Set((text.match(tokenPattern) ?? []).map((token) => normalizeText(token))));
+
+const modalityTokens = (text: string): Set<string> => {
+  const normalized = normalizeText(text);
+  const tokens = new Set<string>();
+  if (/\bshall not\b|\bmust not\b|\bmay not\b|\bprohibited\b/.test(normalized)) tokens.add('prohibition');
+  if (/\bshall\b|\bmust\b|\brequired\b/.test(normalized)) tokens.add('duty');
+  if (/\bmay\b|\bpermitted\b/.test(normalized)) tokens.add('permission');
+  if (/\bentitled\b/.test(normalized)) tokens.add('entitlement');
+  if (/\bdeemed\b|\bfinal\b|\bbinding\b|\bconclusive\b/.test(normalized)) tokens.add('legal-effect');
+  return tokens;
+};
+
+const extractLikelyActors = (text: string): string[] =>
+  Array.from(
+    new Set(
+      Array.from(
+        text.matchAll(
+          /\b(Registrar General|Director of Surveys|surveyor|person|Minister|Board|Council|inspector|owner|applicant)\b/gi,
+        ),
+      ).map((match) => normalizeText(match[1])),
+    ),
+  );
+
+const significantTerms = (text: string): string[] => {
+  const stopWords = new Set([
+    'the',
+    'and',
+    'or',
+    'of',
+    'to',
+    'a',
+    'an',
+    'in',
+    'for',
+    'by',
+    'with',
+    'that',
+    'this',
+    'is',
+    'be',
+    'as',
+    'it',
+    'under',
+    'from',
+    'on',
+    'at',
+    'may',
+    'must',
+    'shall',
+  ]);
+  return Array.from(new Set(normalizeText(text).match(/\b[a-z][a-z-]{4,}\b/g) ?? [])).filter(
+    (word) => !stopWords.has(word),
+  );
+};
+
+const validateObjectiveFidelity = (
+  objective: AiLearningObjective,
+  proposal: AiStudyUnitProposal,
+  sources: Map<string, ImportedLegalComponent | { text: string; contentHash: string; documentId: string }>,
+  issues: AiValidationIssue[],
+): void => {
+  const linkedTexts = objective.evidence
+    .map((evidence) => `${evidence.evidenceText} ${sources.get(evidence.sourceKey)?.text ?? ''}`)
+    .join(' ');
+  const sourceTokenSet = new Set(collectRiskTokens(linkedTexts));
+  collectRiskTokens(objective.studyAnswer).forEach((token) => {
+    if (!sourceTokenSet.has(token)) {
+      addIssue(issues, {
+        code: 'UNSUPPORTED_NUMERIC_OR_REFERENCE',
+        severity: 'warning',
+        proposalId: proposal.proposalId,
+        message: `Study answer includes unsupported numeric or legal-reference token: ${token}.`,
+      });
+    }
+  });
+  const answerModalities = modalityTokens(objective.studyAnswer);
+  const evidenceModalities = modalityTokens(linkedTexts);
+  if (
+    (answerModalities.has('duty') && evidenceModalities.has('permission') && !evidenceModalities.has('duty')) ||
+    (answerModalities.has('permission') && evidenceModalities.has('duty') && !evidenceModalities.has('permission')) ||
+    (evidenceModalities.has('prohibition') && !answerModalities.has('prohibition'))
+  ) {
+    addIssue(issues, {
+      code: 'POSSIBLE_MODALITY_MISMATCH',
+      severity: 'warning',
+      proposalId: proposal.proposalId,
+      message: 'Study answer may have changed legal modality from the evidence.',
+    });
+  }
+  const answerActors = extractLikelyActors(objective.studyAnswer);
+  const evidenceActors = extractLikelyActors(linkedTexts);
+  if (
+    answerActors.length > 0 &&
+    evidenceActors.length > 0 &&
+    answerActors.some((actor) => !evidenceActors.includes(actor))
+  ) {
+    addIssue(issues, {
+      code: 'POSSIBLE_ACTOR_MISMATCH',
+      severity: 'warning',
+      proposalId: proposal.proposalId,
+      message: 'Study answer names a legal actor not found in the linked evidence.',
+    });
+  }
+  const evidenceTerms = new Set(significantTerms(linkedTexts));
+  const unsupportedTerms = significantTerms(objective.studyAnswer).filter(
+    (term) => !evidenceTerms.has(term),
+  );
+  if (unsupportedTerms.length >= 3) {
+    addIssue(issues, {
+      code: 'ANSWER_EXTENDS_BEYOND_EVIDENCE',
+      severity: 'warning',
+      proposalId: proposal.proposalId,
+      message: 'Study answer may include claims not supported by linked evidence.',
+    });
+  }
+};
+
+const validateCoverage = (
+  proposal: AiStudyUnitProposal,
+  sourceComponents: ImportedLegalComponent[],
+  issues: AiValidationIssue[],
+): void => {
+  const coverage = proposal.sourceCoverage ?? [];
+  const coverageByKey = new Map(coverage.map((entry) => [entry.sourceKey, entry]));
+  sourceComponents.forEach((component) => {
+    const labels = component.subsections?.map((subsection) => subsection.label) ?? [];
+    if (labels.length === 0) return;
+    const entry = coverageByKey.get(component.sourceKey);
+    labels.forEach((label) => {
+      const child = entry?.childLabels?.find((item) => item.label === label);
+      if (!child) {
+        addIssue(issues, {
+          code: 'UNCOVERED_SUBSTANTIVE_SOURCE',
+          severity: 'warning',
+          proposalId: proposal.proposalId,
+          sourceKey: component.sourceKey,
+          message: `No coverage status supplied for ${label}.`,
+        });
+        return;
+      }
+      if (child.status === 'intentionally-omitted' && !child.reason?.trim()) {
+        addIssue(issues, {
+          code: 'UNEXPLAINED_OMISSION',
+          severity: 'warning',
+          proposalId: proposal.proposalId,
+          sourceKey: component.sourceKey,
+          message: `Coverage marks ${label} omitted without a reason.`,
+        });
+      }
+    });
+  });
+};
+
+const validateApprovedScope = (
+  proposal: AiStudyUnitProposal,
+  approvedGroup: AiProposedSourceGroup | undefined,
+  issues: AiValidationIssue[],
+): void => {
+  if (!approvedGroup) return;
+  if (!sameKeySet(proposal.sourceKeys, approvedGroup.sourceKeys)) {
+    addIssue(issues, {
+      code: 'AUTHORING_SCOPE_MISMATCH',
+      proposalId: proposal.proposalId,
+      message: 'Proposal sourceKeys must equal the approved authoring group sourceKeys.',
+    });
+  }
+};
+
 const validateObjectiveSchema = (
   objective: AiLearningObjective,
   proposal: AiStudyUnitProposal,
@@ -172,6 +362,8 @@ export const validateAiStudyUnitProposal = ({
   if (!nonEmptyString(typed.runId)) addIssue(issues, { code: 'RUN_ID_REQUIRED', proposalId: typed.proposalId, message: 'runId is required.' });
   if (corpusContentHash && typed.corpusContentHash !== corpusContentHash) addIssue(issues, { code: 'STALE_PROPOSAL', proposalId: typed.proposalId, message: 'Proposal corpusContentHash does not match current corpus.' });
   if (!stringArray(typed.sourceKeys) || typed.sourceKeys.length === 0) addIssue(issues, { code: 'SOURCE_KEYS_REQUIRED', proposalId: typed.proposalId, message: 'sourceKeys must be non-empty.' });
+  validateApprovedScope(typed, typed.approvedGroup, issues);
+  if (typed.confidence === 'low') addIssue(issues, { code: 'LOW_CONFIDENCE', severity: 'warning', proposalId: typed.proposalId, message: 'Low confidence proposal requires explicit review.' });
   if (!nonEmptyString(typed.title)) addIssue(issues, { code: 'TITLE_REQUIRED', proposalId: typed.proposalId, message: 'title is required.' });
   if (!nonEmptyString(typed.mainQuestion)) addIssue(issues, { code: 'MAIN_QUESTION_REQUIRED', proposalId: typed.proposalId, message: 'mainQuestion is required.' });
   if (!Array.isArray(typed.objectives) || typed.objectives.length === 0) addIssue(issues, { code: 'OBJECTIVES_REQUIRED', proposalId: typed.proposalId, message: 'At least one learning objective is required.' });
@@ -196,9 +388,61 @@ export const validateAiStudyUnitProposal = ({
         addIssue(issues, { code: 'EVIDENCE_NOT_FOUND', proposalId: typed.proposalId, sourceKey: evidence.sourceKey, message: 'Evidence text was not found in the authoritative source.' });
       }
     });
+    validateObjectiveFidelity(objective, typed, sources, issues);
   });
+  validateCoverage(typed, sourceComponents, issues);
   validateQuestionQuality(typed, issues);
   return { valid: issues.every((issue) => issue.severity !== 'error'), issues };
+};
+
+export const detectAiUnitProposalOverlaps = ({
+  proposals,
+  existingUnits = [],
+}: {
+  proposals: AiStudyUnitProposal[];
+  existingUnits?: Array<{
+    id: string;
+    title: string;
+    phase?: string;
+    sourceReferences?: Array<{ documentId: string; sourceKey: string }>;
+    scheduling?: unknown;
+    fsrs?: unknown;
+  }>;
+}): AiValidationIssue[] => {
+  const issues: AiValidationIssue[] = [];
+  const proposalCoverage = new Map<string, string[]>();
+  proposals.forEach((proposal) => {
+    proposal.sourceKeys.forEach((sourceKey) => {
+      const key = `${proposal.sourceDocumentId}::${sourceKey}`;
+      proposalCoverage.set(key, [...(proposalCoverage.get(key) ?? []), proposal.proposalId]);
+    });
+  });
+  proposals.forEach((proposal) => {
+    proposal.sourceKeys.forEach((sourceKey) => {
+      const key = `${proposal.sourceDocumentId}::${sourceKey}`;
+      if ((proposalCoverage.get(key)?.length ?? 0) > 1) {
+        addIssue(issues, {
+          code: 'PROPOSAL_SOURCE_OVERLAP',
+          severity: 'warning',
+          proposalId: proposal.proposalId,
+          sourceKey,
+          message: 'Another AI unit proposal covers this source key.',
+        });
+      }
+      existingUnits.forEach((unit) => {
+        if (unit.sourceReferences?.some((ref) => ref.documentId === proposal.sourceDocumentId && ref.sourceKey === sourceKey)) {
+          addIssue(issues, {
+            code: 'EXISTING_UNIT_OVERLAP',
+            severity: 'warning',
+            proposalId: proposal.proposalId,
+            sourceKey,
+            message: `Existing StudyUnit overlaps this source: ${unit.title} (${unit.phase ?? 'unknown phase'}).`,
+          });
+        }
+      });
+    });
+  });
+  return issues;
 };
 
 export const reconcileAiStudyMapProposals = (
@@ -257,6 +501,10 @@ export const mapResultToProposal = ({
   document: job.document,
   targetSourceKeys: job.target.sourceKeys,
   targetSectionLabels: job.target.sectionLabels,
+  targetHeading: job.target.heading,
+  exactSourceText: job.target.exactSourceText,
+  operativeSourceText: job.target.operativeSourceText,
+  context: job.context,
   disposition: result.disposition,
   confidence: result.confidence,
   reason: result.reason,
@@ -264,9 +512,9 @@ export const mapResultToProposal = ({
   proposedGroups: result.proposedGroups,
   warnings: result.warnings,
   conflictCodes: [],
-  reviewStatus: 'generated',
-  validationStatus: 'valid',
-  validationMessages: [],
+  reviewStatus: result.confidence === 'low' ? 'needs-review' : 'validated',
+  validationStatus: result.confidence === 'low' ? 'warnings' : 'valid',
+  validationMessages: result.confidence === 'low' ? ['LOW_CONFIDENCE'] : [],
   createdAt,
   updatedAt: createdAt,
 });

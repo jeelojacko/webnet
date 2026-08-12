@@ -193,6 +193,7 @@ const StudyApp = () => {
           aiImportText={study.aiImportText}
           onAiImportTextChange={study.setAiImportText}
           onImportAiAuthoring={study.importAiAuthoringJson}
+          onUpdateMapProposal={study.updateAiStudyMapProposal}
           onUpdateUnitProposal={study.updateAiUnitProposal}
           onValidateUnitProposal={study.validateAiUnitProposalById}
           onApproveUnitProposal={study.approveAiUnitProposal}

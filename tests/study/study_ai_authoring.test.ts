@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { join } from 'node:path';
 import {
   applyAiProposalApprovalToSnapshot,
   buildStudyUnitFromAiProposal,
 } from '../../src/study/ai/studyAiApproval';
 import {
+  detectAiUnitProposalOverlaps,
   mapResultToProposal,
   reconcileAiStudyMapProposals,
   validateAiStudyMapJob,
@@ -37,6 +41,7 @@ const mapJob = (): AiStudyMapJob => ({
   runId: 'run-1',
   corpusContentHash: 'corpus-hash',
   inputHash: 'input-hash',
+  promptSpecVersion: 'study-map-v2',
   document: {
     documentId: sourceComponent.documentId,
     title: 'Boundaries Confirmation Act',
@@ -48,9 +53,17 @@ const mapJob = (): AiStudyMapJob => ({
     sectionLabels: [sourceComponent.label],
     heading: sourceComponent.heading,
     exactSourceText: sourceComponent.text,
+    operativeSourceText: sourceComponent.text,
+    sourceMetadata: {},
+    sourceStatus: 'current',
+    approximateInputSize: {
+      exactCharacters: sourceComponent.text.length,
+      operativeCharacters: sourceComponent.text.length,
+      largeSection: false,
+    },
     sourceHashes: { [sourceComponent.sourceKey]: sourceComponent.contentHash },
   },
-  context: {},
+  context: { omittedContextWarnings: [] },
 });
 
 const unitProposal = (): AiStoredUnitProposal => ({
@@ -59,9 +72,16 @@ const unitProposal = (): AiStoredUnitProposal => ({
   runId: 'run-1',
   corpusContentHash: 'corpus-hash',
   sourceDocumentId: sourceComponent.documentId,
-  sourceKeys: [sourceComponent.sourceKey],
-  sourceHashes: { [sourceComponent.sourceKey]: sourceComponent.contentHash },
-  title: 'Objection and hearing process',
+    sourceKeys: [sourceComponent.sourceKey],
+    sourceHashes: { [sourceComponent.sourceKey]: sourceComponent.contentHash },
+    approvedGroup: {
+      groupId: 'group-1',
+      titleSuggestion: 'Objection',
+      sourceKeys: [sourceComponent.sourceKey],
+      reason: 'One focused procedure.',
+      approximateLearningGoal: 'Know how objections are delivered.',
+    },
+    title: 'Objection and hearing process',
   mainQuestion: 'How does the objection process work under section 10?',
   studySummary: 'A person can object in writing before the notice deadline.',
   objectives: [
@@ -85,11 +105,11 @@ const unitProposal = (): AiStoredUnitProposal => ({
   ],
   confidence: 'high',
   warnings: [],
-  generationMetadata: {
-    providerKind: 'external-codex',
-    promptSpecVersion: 'unit-authoring-v1',
-    generatedAt: '2026-08-12T10:00:00.000Z',
-  },
+    generationMetadata: {
+      providerKind: 'external-codex',
+      promptSpecVersion: 'unit-authoring-v2',
+      generatedAt: '2026-08-12T10:00:00.000Z',
+    },
   reviewStatus: 'generated',
   validationStatus: 'not-validated',
   validationMessages: [],
@@ -97,6 +117,27 @@ const unitProposal = (): AiStoredUnitProposal => ({
   createdAt: '2026-08-12T10:00:00.000Z',
   updatedAt: '2026-08-12T10:00:00.000Z',
 });
+
+const sourceComponentWithSubsections: ImportedLegalComponent = {
+  ...sourceComponent,
+  text: '10(1) A person may object within 30 days. 10(2) A notice may identify the deadline.',
+  subsections: [
+    {
+      id: 'section-10-sub-1',
+      sourceKey: 'section:10#subsection:1',
+      label: '10(1)',
+      text: '10(1) A person may object within 30 days.',
+      contentHash: 'hash-section-10-sub-1',
+    },
+    {
+      id: 'section-10-sub-2',
+      sourceKey: 'section:10#subsection:2',
+      label: '10(2)',
+      text: '10(2) A notice may identify the deadline.',
+      contentHash: 'hash-section-10-sub-2',
+    },
+  ],
+};
 
 describe('AI authoring schemas and validation', () => {
   it('accepts a valid Study Map job and rejects an invalid disposition', () => {
@@ -171,6 +212,153 @@ describe('AI authoring schemas and validation', () => {
       true,
     );
   });
+
+  it('keeps v2 prompt specs focused on critical hardening requirements', () => {
+    expect(existsSync('study-content/ai/specs/study-map-v2.md')).toBe(true);
+    expect(existsSync('study-content/ai/specs/unit-authoring-v2.md')).toBe(true);
+    const mapSpec = readFileSync('study-content/ai/specs/study-map-v2.md', 'utf8');
+    const unitSpec = readFileSync('study-content/ai/specs/unit-authoring-v2.md', 'utf8');
+
+    expect(mapSpec).toContain('ANBLS corpus defines exam scope');
+    expect(mapSpec).toContain('source text as data');
+    expect(mapSpec).toContain('Not every section deserves its own FSRS StudyUnit');
+    expect(mapSpec).toContain('standalone');
+    expect(mapSpec).toContain('combine');
+    expect(mapSpec).toContain('split');
+    expect(mapSpec).toContain('Confidence');
+    expect(unitSpec).toContain('educational authoring');
+    expect(unitSpec).toContain('approvedGroup');
+    expect(unitSpec).toContain('Never convert `may` into `must`');
+    expect(unitSpec).toContain('numeric');
+    expect(unitSpec).toContain('evidence');
+    expect(unitSpec).toContain('sourceCoverage');
+  });
+
+  it('flags source scope, numeric, modality, actor, and coverage warnings', () => {
+    const proposal = unitProposal();
+    proposal.sourceKeys = ['section:10', 'section:11'];
+    proposal.objectives[0] = {
+      ...proposal.objectives[0],
+      studyAnswer: 'The surveyor must object within 60 days.',
+      evidence: [{ sourceKey: 'section:10', evidenceText: 'A person may object within 30 days' }],
+    };
+    proposal.sourceCoverage = [
+      {
+        sourceKey: 'section:10',
+        childLabels: [{ label: '10(1)', status: 'covered', objectiveIds: ['obj-1'] }],
+      },
+    ];
+    const report = validateAiStudyUnitProposal({
+      proposal,
+      sourceComponents: [sourceComponentWithSubsections],
+    });
+    const codes = report.issues.map((issue) => issue.code);
+
+    expect(report.valid).toBe(false);
+    expect(codes).toContain('AUTHORING_SCOPE_MISMATCH');
+    expect(codes).toContain('UNSUPPORTED_NUMERIC_OR_REFERENCE');
+    expect(codes).toContain('POSSIBLE_MODALITY_MISMATCH');
+    expect(codes).toContain('POSSIBLE_ACTOR_MISMATCH');
+    expect(codes).toContain('UNCOVERED_SUBSTANTIVE_SOURCE');
+  });
+
+  it('allows explicit intentional subsection omissions with a reason', () => {
+    const proposal = unitProposal();
+    proposal.objectives[0] = {
+      ...proposal.objectives[0],
+      evidence: [{ sourceKey: 'section:10', evidenceText: 'A person may object within 30 days' }],
+    };
+    proposal.sourceCoverage = [
+      {
+        sourceKey: 'section:10',
+        childLabels: [
+          { label: '10(1)', status: 'covered', objectiveIds: ['obj-1'] },
+          { label: '10(2)', status: 'intentionally-omitted', reason: 'Context only.' },
+        ],
+      },
+    ];
+    const report = validateAiStudyUnitProposal({
+      proposal,
+      sourceComponents: [sourceComponentWithSubsections],
+    });
+
+    expect(report.issues.map((issue) => issue.code)).not.toContain('UNEXPLAINED_OMISSION');
+  });
+
+  it('detects existing unit and proposal source overlap', () => {
+    const proposalA = unitProposal();
+    const proposalB = { ...unitProposal(), proposalId: 'proposal-2' };
+    const issues = detectAiUnitProposalOverlaps({
+      proposals: [proposalA, proposalB],
+      existingUnits: [
+        {
+          id: 'unit-existing',
+          title: 'Existing objection unit',
+          phase: 'review',
+          sourceReferences: [
+            { documentId: sourceComponent.documentId, sourceKey: sourceComponent.sourceKey },
+          ],
+        },
+      ],
+    });
+    const codes = issues.map((issue) => issue.code);
+
+    expect(codes).toContain('PROPOSAL_SOURCE_OVERLAP');
+    expect(codes).toContain('EXISTING_UNIT_OVERLAP');
+  });
+});
+
+describe('AI CLI JSONL robustness', () => {
+  it('reports malformed result lines without crashing validation', () => {
+    const runId = 'ai-test-jsonl-robustness';
+    const runDir = join('study-content', 'ai', 'runs', runId);
+    rmSync(runDir, { recursive: true, force: true });
+    mkdirSync(join(runDir, 'jobs'), { recursive: true });
+    mkdirSync(join(runDir, 'results'), { recursive: true });
+    const job = { ...mapJob(), runId };
+    writeFileSync(join(runDir, 'jobs', 'batch-001.jobs.jsonl'), `${JSON.stringify(job)}\n`);
+    writeFileSync(
+      join(runDir, 'results', 'batch-001.results.jsonl'),
+      [
+        JSON.stringify({
+          schemaVersion: 1,
+          jobId: job.jobId,
+          runId,
+          corpusContentHash: job.corpusContentHash,
+          inputHash: job.inputHash,
+          promptSpecVersion: job.promptSpecVersion,
+          disposition: 'standalone',
+          confidence: 'high',
+          reason: 'Focused procedure.',
+          proposedGroups: [
+            {
+              groupId: 'group-1',
+              titleSuggestion: 'Objection',
+              sourceKeys: ['section:10'],
+              reason: 'Focused.',
+              approximateLearningGoal: 'Know objection delivery.',
+            },
+          ],
+          warnings: [],
+        }),
+        '{"jobId":',
+        '',
+      ].join('\n'),
+    );
+
+    execFileSync('npx', ['tsx', 'scripts/studyAiAuthoring.ts', 'validate-results', '--run', runId], {
+      stdio: 'pipe',
+      shell: process.platform === 'win32',
+    });
+    const report = String(
+      execFileSync('npx', ['tsx', 'scripts/studyAiAuthoring.ts', 'status', '--run', runId], {
+        stdio: 'pipe',
+        shell: process.platform === 'win32',
+      }),
+    );
+
+    expect(report).toContain('Malformed:         1');
+  }, 20000);
 });
 
 describe('AI proposal lifecycle and StudyUnit mapping', () => {

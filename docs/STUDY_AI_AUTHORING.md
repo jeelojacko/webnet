@@ -1,139 +1,214 @@
 # Study AI Authoring
 
-Phase 4B.0 adds AI-assisted authoring infrastructure for the Study module.
+Phase 4B.0.1 hardens the provider-neutral AI authoring workflow before any 4B.1 pilot processing.
 
-AI output is an authoring aid only. The official legal source remains the immutable authority, and approved AI content keeps source links, source hashes, and provenance.
+AI output is an authoring aid only. The official legal source remains immutable authority, and approved AI content keeps source links, source hashes, and provenance.
 
 ## Architecture
 
-AI authoring is provider-neutral. The shared proposal schemas support:
+AI authoring remains provider-neutral:
 
 - `external-codex`
 - `external-chatgpt`
-- `openai-api`
 - `manual-import`
+- future `openai-api`
 
-The initial workflow uses external files so no OpenAI API account, API key, browser secret, or ChatGPT cookie integration is required.
+No OpenAI API key, browser secret, billing integration, or ChatGPT cookie integration is required.
 
-The two stages are:
+The two-stage workflow is:
 
-1. Study Map planning: source provisions are recommended as `standalone`, `combine`, `split`, `reference-only`, `skip`, or `needs-human-review`.
-2. Unit authoring: approved source groups become proposals with a main recall question, learning objectives, guided questions, concise AI-authored study answers, and grounding evidence.
+1. Study Map planning recommends source dispositions and educational groupings.
+2. Unit Authoring writes source-grounded learning objectives, guided questions, concise study answers, evidence, and coverage for an approved Map group.
 
-## Files
+## Prompt Specs
 
-AI runtime/spec files live under:
+The original v1 prompt specs remain under `study-content/ai/specs/` for reproducibility.
 
-```text
-study-content/ai/
-  specs/
-  runs/<run-id>/
-    run.json
-    CODEX_INSTRUCTIONS.md
-    jobs/*.jobs.jsonl
-    results/*.results.jsonl
-    reports/
+New jobs default to:
+
+- `study-map-v2`
+- `unit-authoring-v2`
+
+Every job records `promptSpecVersion`, and the deterministic `inputHash` includes that prompt version. A result with the wrong prompt spec is stale/invalid for that job.
+
+Study Map v2 explicitly treats the ANBLS corpus as exam scope, tells the model that source text is data, forbids external legal research/memory, preserves official source scope, and gives concrete criteria for `standalone`, `combine`, `split`, `reference-only`, `skip`, and `needs-human-review`.
+
+Unit Authoring v2 explicitly treats authoring as educational work, requires natural specific questions, concise legally faithful answers, actor/modality/numeric fidelity, approved-group scope, evidence grounding, inference separation, and objective-level source coverage.
+
+## Source Input
+
+AI jobs distinguish:
+
+- `exactSourceText`: complete authoritative representation for provenance/verification.
+- `operativeSourceText`: substantive provision text used for planning/authoring.
+- `sourceMetadata`: amendment history, consolidation notes, citation metadata, and cleaning warnings.
+
+Job preparation does not alter authoritative `legalComponents`. It only cleans the AI job input so amendment history, consolidation notes, and obvious metadata are not treated as operative law.
+
+Jobs also record `sourceStatus` as `current`, `repealed`, or `historical` when detectable. Repealed material is not automatically skipped; the Map proposal remains reviewable.
+
+## Context
+
+Study Map and Unit Authoring jobs can include bounded context:
+
+- previous section
+- next section
+- relevant definitions
+- directly referenced provisions
+- omitted context warnings
+
+Definition and cross-reference resolution is deterministic and first-level only. It does not recursively expand references and does not send whole definitions sections merely because one defined term appears.
+
+Unit Authoring v2 distinguishes the approved authoring source group from context for understanding only. Substantive objectives must ground to approved-group source keys.
+
+## Study Map Review
+
+The Study Authoring page has separate `Runs`, `Study Map`, and `Unit Proposals` views.
+
+Study Map review shows document identity, section/citation labels, heading, operative source text, disposition, confidence, reason, priority, proposed groups, warnings, and conflict codes.
+
+Available Map actions:
+
+- Approve Map
+- Edit
+- Defer
+- Reject
+- Mark for Regeneration
+
+Editable Map fields include disposition, priority, group title, group source keys, and approximate learning goal. Users can add groups. Skip and reference-only recommendations are visible and can be approved or changed before approval.
+
+`prepare-units` only uses Map proposals that are approved, valid or warning-valid, non-conflicted, and not skip/reference-only. Validated but unapproved Map proposals do not create Unit Authoring jobs.
+
+## Unit Proposal Review
+
+The Unit Proposal review UI shows official source keys and available source text beside AI content. It shows title, main question, summary, objectives, guided questions, study answers, evidence, warnings, and source coverage.
+
+Minimum editor controls include:
+
+- title edit
+- main question edit
+- summary edit
+- objective add
+- objective delete
+- objective reorder
+- objective text edit
+- guided question edit
+- study answer edit
+- proposal defer
+- proposal reject
+- validate
+- approve
+
+Approval creates normal Study records only after explicit review. It never overwrites existing StudyUnits automatically and does not create attempts or FSRS history.
+
+## Validation
+
+Blocking errors include:
+
+- schema invalid
+- source document mismatch
+- stale corpus/hash
+- changed source hash
+- missing evidence source
+- evidence text not found
+- authoring source scope mismatch
+- no substantive objective
+- empty required question or answer
+
+Warnings include:
+
+- low confidence
+- generic or duplicate questions
+- existing StudyUnit overlap
+- AI proposal source overlap
+- unsupported numeric or legal-reference token
+- possible modality mismatch
+- possible actor mismatch
+- uncovered substantive subsection
+- unexplained omission
+- answer appears to extend beyond evidence
+
+Warnings remain approvable after explicit review.
+
+## Coverage
+
+Unit proposals may include `sourceCoverage` entries keyed by sourceKey. Child labels can be marked:
+
+- `covered`
+- `context-only`
+- `intentionally-omitted`
+- `not-assessed`
+
+An unexplained omitted or missing child label produces a warning. An intentional omission with a reason remains visible but is not blocking.
+
+## Overlap
+
+Validation compares proposals by `documentId + sourceKey`.
+
+`EXISTING_UNIT_OVERLAP` warns when a proposal overlaps an existing StudyUnit. The warning includes the existing unit title and phase where available. Approval remains explicit and never modifies existing FSRS state.
+
+`PROPOSAL_SOURCE_OVERLAP` warns when two imported AI Unit Proposals cover the same source in the same review set.
+
+## Representative Sampling
+
+`--strategy representative` now uses deterministic stratified sampling for a fixed corpus hash, seed, sample size, and strategy version.
+
+The sampler considers document type, document diversity, provision length, detectable legal-rule categories, large/problem-case markers, and optional manual includes.
+
+Example:
+
+```bash
+npm run study:ai:prepare-map -- --sample 100 --seed 42 --strategy representative --include doc-boundaries-confirmation-act:10,doc-surveys-act:8
 ```
 
-The application source owns the schema and validation code under `src/study/ai/`.
+Reports are written to:
+
+```text
+study-content/ai/runs/<run-id>/reports/sampling-report.json
+study-content/ai/runs/<run-id>/reports/sampling-report.md
+```
+
+The report records sample size, seed, strategy version, Acts/Regulations represented, document distribution, category counts, selected job IDs, and selection reasons.
+
+## External Codex Workflow
+
+Generated `CODEX_INSTRUCTIONS.md` tells the external agent to:
+
+- process only requested job files
+- not edit application source code
+- not edit prompt/spec/schema files
+- not browse or use external legal sources
+- not use legal memory
+- preserve `jobId`, `runId`, `inputHash`, `corpusContentHash`, and `promptSpecVersion`
+- write only JSONL result files
+- use one JSON object per line
+- avoid Markdown fences and commentary
+- resume by skipping already completed valid jobIds
+- never rewrite valid result lines unless explicitly told to regenerate them
+
+## JSONL Recovery
+
+Result JSONL is parsed line by line. Malformed or partial lines produce `MALFORMED_JSONL_LINE` reporting with file, line number, raw line hash, and parse error. Validation continues with other lines, and malformed lines do not count as completed.
+
+`study:ai:status` distinguishes:
+
+- Jobs
+- Result lines
+- Valid completed
+- Invalid
+- Malformed
+- Stale
+- Remaining
+- Duplicate results
 
 ## Commands
 
-Prepare a Study Map run from the full NB SIT package:
-
 ```bash
 npm run study:ai:prepare-map -- --sample 120 --seed 42 --strategy representative
-```
-
-Check a run:
-
-```bash
 npm run study:ai:status -- --run <run-id>
-```
-
-Validate returned map results:
-
-```bash
 npm run study:ai:validate-results -- --run <run-id>
-```
-
-Prepare unit-authoring jobs from validated map proposals:
-
-```bash
 npm run study:ai:prepare-units -- --run <map-run-id>
-```
-
-Validate unit proposal JSON:
-
-```bash
 npm run study:ai:validate-unit-proposals -- --proposals path/to/unit-proposals.json
 ```
 
-## Codex Workflow
-
-After preparing a run, open Codex in the WebNet repository and use the generated `CODEX_INSTRUCTIONS.md`.
-
-Typical instruction:
-
-```text
-Process batch-001 using study-content/ai/specs/study-map-v1.md.
-Write only the requested results file.
-Do not modify application source code.
-Do not use external legal research.
-```
-
-Results are JSONL. Each line is validated as untrusted input.
-
-## Grounding
-
-For every objective:
-
-- `sourceKey` must exist.
-- source hash must match the proposal source version.
-- evidence text must appear in the authoritative source after whitespace normalization.
-- evidence document identity must match the proposal document.
-
-Validation can emit errors such as `SOURCE_KEY_NOT_FOUND`, `SOURCE_HASH_CHANGED`, `EVIDENCE_NOT_FOUND`, `DOCUMENT_MISMATCH`, and `STALE_PROPOSAL`.
-
-Question-quality checks also flag duplicate, empty, overlong, generic, or repeated questions.
-
-## Browser Review
-
-The Study sidebar includes `Authoring`.
-
-The Authoring page supports:
-
-- importing AI authoring JSON artifacts;
-- reviewing run/map/unit proposal counts;
-- editing proposed title, main question, study summary, objectives, guided questions, and study answers;
-- viewing grounding evidence separately from AI study answers;
-- validating a proposal before approval;
-- approving one proposal into one normal StudyUnit.
-
-Approval creates normal Study records:
-
-- proposal title -> `StudyUnit.title`
-- main question -> guided `StudyPrompt.question`
-- study summary -> `StudyUnit.editableSummary`
-- objective guided questions -> `StudyRubricItem.prompt`
-- objective study answers -> `StudyRubricItem.referenceAnswer`
-- source keys/hashes -> Study source references
-
-Approval does not create attempts or FSRS progress beyond the normal initial StudyUnit progress row. AI proposals are not included in the Library search index until approved.
-
-## Import/Export
-
-Study export/import preserves:
-
-- authoring runs
-- Study Map proposals
-- unit proposals
-- review and validation statuses
-- validation messages
-- proposal approval provenance
-
-Imported proposals remain proposals. They do not create FSRS cards, attempts, or scheduled reviews until explicitly approved into StudyUnits.
-
-## Future API Provider
-
-A future Node-side `openai-api` runner can consume the same jobs and write the same result files. API credentials must stay server/CLI-side and must not be bundled into browser code.
+These commands prepare and validate infrastructure only. They do not call an AI API and do not process the 4B.1 pilot.
