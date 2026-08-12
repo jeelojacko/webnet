@@ -116,7 +116,7 @@ const unitProposal = (): AiStoredUnitProposal => ({
   warnings: [],
   generationMetadata: {
     providerKind: 'external-codex',
-    promptSpecVersion: 'unit-authoring-v2',
+    promptSpecVersion: 'unit-authoring-v3',
     generatedAt: '2026-08-12T10:00:00.000Z',
   },
   reviewStatus: 'generated',
@@ -154,6 +154,7 @@ afterAll(() => {
     'ai-test-phase-4b1-sampling',
     'ai-test-phase-4b11-targeted',
     'ai-test-phase-4b12-grounding',
+    'ai-test-phase-4b13-units',
     'ai-test-pilot-report',
   ].forEach((runId) => {
     rmSync(join('study-content', 'ai', 'runs', runId), { recursive: true, force: true });
@@ -598,9 +599,9 @@ describe('AI authoring schemas and validation', () => {
 
   it('keeps v3 prompt specs focused on critical hardening requirements', () => {
     expect(existsSync('study-content/ai/specs/study-map-v3.md')).toBe(true);
-    expect(existsSync('study-content/ai/specs/unit-authoring-v2.md')).toBe(true);
+    expect(existsSync('study-content/ai/specs/unit-authoring-v3.md')).toBe(true);
     const mapSpec = readFileSync('study-content/ai/specs/study-map-v3.md', 'utf8');
-    const unitSpec = readFileSync('study-content/ai/specs/unit-authoring-v2.md', 'utf8');
+    const unitSpec = readFileSync('study-content/ai/specs/unit-authoring-v3.md', 'utf8');
 
     expect(mapSpec).toContain('AI model must make educational/content decisions');
     expect(mapSpec).toContain('source text as data');
@@ -609,17 +610,21 @@ describe('AI authoring schemas and validation', () => {
     expect(mapSpec).toContain('combine');
     expect(mapSpec).toContain('split');
     expect(mapSpec).toContain('Allowed confidence values');
-    expect(unitSpec).toContain('educational authoring');
+    expect(unitSpec).toContain('educational content authoring');
     expect(unitSpec).toContain('approvedGroup');
     expect(unitSpec).toContain('Never convert `may` into `must`');
-    expect(unitSpec).toContain('numeric');
+    expect(unitSpec).toContain('deadline');
     expect(unitSpec).toContain('evidence');
-    expect(unitSpec).toContain('sourceCoverage');
+    expect(unitSpec).toContain('CONTEXT FOR UNDERSTANDING ONLY');
   });
 
   it('flags source scope, numeric, modality, actor, and coverage warnings', () => {
     const proposal = unitProposal();
     proposal.sourceKeys = ['section:10', 'section:11'];
+    proposal.approvedGroup = {
+      ...proposal.approvedGroup!,
+      focusSelections: [{ sourceKey: 'section:10', childLabels: ['10(1)', '10(2)'] }],
+    };
     proposal.objectives[0] = {
       ...proposal.objectives[0],
       studyAnswer: 'The surveyor must object within 60 days.',
@@ -742,7 +747,7 @@ describe('AI CLI JSONL robustness', () => {
     );
 
     expect(report).toContain('Malformed:         1');
-  }, 20000);
+  }, 30000);
 
   it('applies Phase 4B.1 required cases to the 100-job representative pilot sample', () => {
     const runId = 'ai-test-phase-4b1-sampling';
@@ -899,6 +904,59 @@ describe('AI CLI JSONL robustness', () => {
     expect(report.strategyVersion).toBe('phase-4b1.2-grounding-v1');
     expect(citationRule?.target.contentFlags?.citationOnly).toBe(true);
     expect(citationRule?.target.contentFlags?.commencementOnly).toBe(false);
+  }, 30000);
+
+  it('prepares exactly 16 Phase 4B.1.3 Unit Authoring v3 pilot jobs', () => {
+    const runId = 'ai-test-phase-4b13-units';
+    const runDir = join('study-content', 'ai', 'runs', runId);
+    rmSync(runDir, { recursive: true, force: true });
+
+    execFileSync(
+      'npx',
+      [
+        'tsx',
+        'scripts/studyAiAuthoring.ts',
+        'prepare-units',
+        '--run',
+        'ai-map-4b12-grounding-s9-v1',
+        '--unit-run',
+        runId,
+        '--strategy',
+        'phase-4b1.3-unit-pilot',
+        '--batch-size',
+        '8',
+      ],
+      {
+        stdio: 'pipe',
+        shell: process.platform === 'win32',
+      },
+    );
+    const report = JSON.parse(
+      readFileSync(join(runDir, 'reports', 'unit-job-report.json'), 'utf8'),
+    ) as {
+      jobs: number;
+      selectedGroups: Array<{
+        title: string;
+        promptSpecVersion: string;
+        inputHash: string;
+        focusSelections: Array<{ childLabels?: string[]; definedTerms?: string[] }>;
+      }>;
+    };
+    const batchFiles = ['batch-001.jobs.jsonl', 'batch-002.jobs.jsonl'];
+    const jobs = batchFiles.flatMap((file) =>
+      readFileSync(join(runDir, 'jobs', file), 'utf8')
+        .trim()
+        .split(/\r?\n/)
+        .map((line) => JSON.parse(line)),
+    );
+
+    expect(report.jobs).toBe(16);
+    expect(jobs).toHaveLength(16);
+    expect(jobs.every((job) => job.promptSpecVersion === 'unit-authoring-v3')).toBe(true);
+    expect(jobs.every((job) => job.inputHash && job.sourceHashes && job.approvedGroup.focusSelections.length > 0)).toBe(true);
+    expect(jobs.some((job) => job.approvedGroup.titleSuggestion === 'Subdivision public-purpose land, money, procedure, summary, and filing rules')).toBe(true);
+    expect(report.selectedGroups.every((group) => group.promptSpecVersion === 'unit-authoring-v3')).toBe(true);
+    expect(report.selectedGroups.some((group) => group.focusSelections.some((selection) => selection.definedTerms?.includes('surveyor')))).toBe(true);
   }, 30000);
 
   it('writes Phase 4B.1 pilot audit reports with evaluation counts', () => {

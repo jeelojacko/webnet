@@ -5,6 +5,7 @@ import type { NbLawContentPackage, NbLawDocumentComponent } from '../src/study/c
 import type {
   AiAuthoringRun,
   AiStoredUnitProposal,
+  AiStudyMapProposal,
   AiStudyMapJob,
   AiStudyMapResult,
   AiStudyUnitProposal,
@@ -29,7 +30,7 @@ const DEFAULT_PACKAGE = 'study-content/packages/nb-sit-statute-corpus.content-pa
 const RUNS_DIR = 'study-content/ai/runs';
 const SPEC_DIR = 'study-content/ai/specs';
 const MAP_PROMPT_SPEC_VERSION = 'study-map-v3';
-const UNIT_PROMPT_SPEC_VERSION = 'unit-authoring-v2';
+const UNIT_PROMPT_SPEC_VERSION = 'unit-authoring-v3';
 const REPRESENTATIVE_STRATEGY_VERSION = 'representative-v2-stratified';
 const LARGE_SECTION_THRESHOLD = 8000;
 const CONTEXT_TEXT_LIMIT = 1800;
@@ -73,6 +74,25 @@ const PHASE_4B12_GROUNDING_INCLUDES = [
   'doc-registry-act:19',
   'reg-boundaries-95-166:3',
   'reg-surveys-84-76:1',
+] as const;
+
+const PHASE_4B13_UNIT_PILOT_GROUPS = [
+  ['doc-boundaries-confirmation-act', '10', 'Objection delivery and required hearing'],
+  ['doc-boundaries-confirmation-act', '10', 'No-objection confirmation or hearing decision'],
+  ['doc-boundaries-confirmation-act', '10', 'Hearing parties and notice contents'],
+  ['doc-surveys-act', '1', 'Coordinate monument and coordinate survey system definitions'],
+  ['doc-surveys-act', '1', 'Survey and surveyor definitions'],
+  ['doc-land-titles-act', '18', 'Instrument record, examination, acceptance, and rejection'],
+  ['doc-land-titles-act', '18', 'Rejection notice, amending instruments, and discretionary Registry Act document registration'],
+  ['doc-registry-act', '19', 'Unregistered instrument consequences for purchasers and judgment creditors'],
+  ['doc-registry-act', '19', 'Lease, official-sale, sheriff-sale, and will registration timing exceptions'],
+  ['doc-registry-act', '19', 'Transfer affidavit requirement and forwarding'],
+  ['reg-boundaries-95-166', '3', 'Boundary-confirmation application form and current plan requirements'],
+  ['reg-boundaries-95-166', '3', 'Application materials and surveyor report content'],
+  ['reg-boundaries-95-166', '3', 'Registrar General waiver of application requirements'],
+  ['doc-energy-and-utilities-board-act', '49.1', 'Regulator assistance to the Board without party status'],
+  ['doc-occupational-health-and-safety-act', '9.1', 'Supervisor hazard, information, and instruction duties'],
+  ['doc-community-planning-act', '125', 'Subdivision public-purpose land, money, procedure, summary, and filing rules'],
 ] as const;
 
 const PHASE_4B1_REQUIRED_INCLUDES = [
@@ -636,6 +656,43 @@ const ensureSpecFiles = (): void => {
       '',
     ].join('\n'),
   );
+  if (!existsSync(join(SPEC_DIR, 'unit-authoring-v3.md'))) writeFileSync(
+    join(SPEC_DIR, 'unit-authoring-v3.md'),
+    [
+      '# WebNet Unit Authoring v3',
+      '',
+      'Unit Authoring is grounded educational content authoring, not statute summarization and not deterministic generation.',
+      '',
+      'Use only supplied legal source/context. Do not browse, use outside legal knowledge, rely on legal memory, add common-law principles, predict court interpretation, infer unstated consequences, supply outside definitions, or add current-law updates.',
+      '',
+      'The approved Study Map group defines the AUTHORING SCOPE. The job may include full parent source, previous/next context, relevant definitions, and direct references for understanding, but authored StudyUnit content may test only approvedGroup.sourceKeys, approvedGroup.focusSelections, childLabels, and definedTerms unless another sourceKey is explicitly part of approvedGroup.sourceKeys.',
+      '',
+      'Treat `operativeSourceText` under AUTHORING SOURCE as the source for authoring. `exactSourceText` is for verification. `sourceMetadata` is not operative law. CONTEXT FOR UNDERSTANDING ONLY may not become a study objective, study answer, source coverage item, or evidence source.',
+      '',
+      'Write one main recall question for the unit as a coherent whole. The question must identify the legal subject and make sense without the source visible. Avoid `What does section X provide?`, `What must a person do?`, `What rule applies?`, and similarly generic prompts.',
+      '',
+      'Write only the learning objectives needed to test the approved focus. Typical target is 2-5 objectives. One objective is acceptable for a simple unit. More than 6 should be unusual and should add warning `MAP_GROUP_TOO_BROAD_FOR_GOOD_UNIT` when the approved group is too broad.',
+      '',
+      'Every objective needs a natural, specific guided question and a concise study answer. Study answers should directly answer the question, usually be shorter than the statutory source, retain legally important terminology, and remain easy to compare against learner recall.',
+      '',
+      "Preserve legal fidelity: actor, shall/must, may/discretion, shall not/prohibition, entitlement, trigger, condition, deadline, quantity, fee, percentage, filing destination, required information, exception, limitation, legal consequence, priority/effect, and essential statutory references. Never convert `may` into `must`, `shall` into `may`, or assign one actor's duty or power to another actor.",
+      '',
+      'Do not simplify away important conditions introduced by subject to, unless, except, notwithstanding, only if, if satisfied, or prescribed-condition wording.',
+      '',
+      'Ground every substantive objective in the approved authoring source/focus. Use the exact focus sourceKey, childLabels where available, definedTerms where applicable, and the smallest useful evidence passages. Context-only text cannot satisfy Unit Authoring grounding.',
+      '',
+      'Do not pull in unselected siblings. If approved focus is only 10(3), do not create objectives about 10(1), 10(2), or other sibling labels. Use warning `OUTSIDE_APPROVED_FOCUS` if you believe the approved focus cannot stand alone.',
+      '',
+      'For definition-focused units, prefer useful recall prompts such as `What is a coordinate monument under the Surveys Act?`; do not ask `What definitions are provided?` unless that is genuinely the best unit.',
+      '',
+      'Write a short studySummary that synthesizes the objectives without pasting giant raw source quotations. Official source remains separate from AI study content.',
+      '',
+      'If the approved Map group is too broad for one useful StudyUnit, add warning `MAP_GROUP_TOO_BROAD_FOR_GOOD_UNIT`, explain why in studyNotes or summary, and still produce the best proposal you reasonably can. If not possible, use low confidence and warning `NEEDS_HUMAN_REVIEW`.',
+      '',
+      'Return one JSON object per job line matching AiStudyUnitProposal schemaVersion 1. Preserve jobId as proposalId or generationMetadata.sourceJobId, runId, inputHash in generationMetadata.sourceJobInputHash, corpusContentHash, and promptSpecVersion.',
+      '',
+    ].join('\n'),
+  );
 };
 
 const commandPrepareMap = (options: Record<string, string | boolean>): void => {
@@ -923,6 +980,45 @@ const commandValidateResults = (options: Record<string, string | boolean>): void
   console.log(`Validated ${proposals.length} results for ${runId}; invalid ${issues.length}`);
 };
 
+const pilotGroupKey = (documentId: string, sectionLabel: string, title: string): string =>
+  `${documentId}::${sectionLabel}::${title}`;
+
+const phase4b13PilotSelection = (proposals: AiStudyMapProposal[]): AiStudyMapProposal[] => {
+  const required = new Set(
+    PHASE_4B13_UNIT_PILOT_GROUPS.map(([documentId, sectionLabel, title]) =>
+      pilotGroupKey(documentId, sectionLabel, title),
+    ),
+  );
+  const found = new Set<string>();
+  const selected = proposals.flatMap((proposal): AiStudyMapProposal[] => {
+    const sectionLabel = proposal.targetSectionLabels[0] ?? '';
+    const groups = proposal.proposedGroups.filter((group) => {
+      const key = pilotGroupKey(proposal.document.documentId, sectionLabel, group.titleSuggestion);
+      if (!required.has(key)) return false;
+      found.add(key);
+      return true;
+    });
+    if (groups.length === 0) return [];
+    return [
+      {
+        ...proposal,
+        proposedGroups: groups,
+        reviewStatus: 'approved',
+        updatedAt: new Date().toISOString(),
+      },
+    ];
+  });
+  const missing = Array.from(required).filter((key) => !found.has(key));
+  if (missing.length > 0) {
+    throw new Error(`Phase 4B.1.3 pilot Map groups missing: ${missing.join('; ')}`);
+  }
+  const jobCount = selected.reduce((sum, proposal) => sum + proposal.proposedGroups.length, 0);
+  if (jobCount !== 16) {
+    throw new Error(`Phase 4B.1.3 pilot expected exactly 16 Unit jobs, found ${jobCount}.`);
+  }
+  return selected;
+};
+
 const commandPrepareUnitJobs = (options: Record<string, string | boolean>): void => {
   const mapRunId = String(options.run);
   const pkg = readJson<NbLawContentPackage>(String(options.package ?? DEFAULT_PACKAGE));
@@ -933,7 +1029,11 @@ const commandPrepareUnitJobs = (options: Record<string, string | boolean>): void
     options['unit-run'] ?? `ai-units-${new Date().toISOString().replace(/[:.]/g, '-')}`,
   );
   const batchSize = Number(options['batch-size'] ?? 20);
-  const proposals = readJson<ReturnType<typeof reconcileAiStudyMapProposals>>(sourcePath);
+  const rawProposals = readJson<AiStudyMapProposal[]>(sourcePath);
+  const proposals =
+    options.strategy === 'phase-4b1.3-unit-pilot'
+      ? phase4b13PilotSelection(rawProposals)
+      : rawProposals;
   const documentsById = new Map(pkg.documents.map((document) => [document.id, document]));
   const jobs = proposals.flatMap((proposal): AiUnitAuthoringJob[] => {
     if (proposal.reviewStatus !== 'approved') return [];
@@ -979,6 +1079,12 @@ const commandPrepareUnitJobs = (options: Record<string, string | boolean>): void
         group,
         sourceHashes: Object.fromEntries(
           components.map((component) => [component.sourceKey, component.contentHash]),
+        ),
+        sourceStatuses: Object.fromEntries(
+          components.map((component) => [component.sourceKey, sourceStatusFromComponent(component)]),
+        ),
+        contentFlagsBySourceKey: Object.fromEntries(
+          components.map((component) => [component.sourceKey, contentFlagsFromComponent(component)]),
         ),
         exactSourceText,
         operativeSourceText,
@@ -1038,7 +1144,7 @@ const commandPrepareUnitJobs = (options: Record<string, string | boolean>): void
     [
       '# Codex Instructions',
       '',
-      `Process ONLY the requested content job files in ${runDir}/jobs using study-content/ai/specs/unit-authoring-v2.md.`,
+      `Process ONLY the requested content job files in ${runDir}/jobs using study-content/ai/specs/${UNIT_PROMPT_SPEC_VERSION}.md.`,
       'Write JSONL results to the matching file under results/, for example batch-001.results.jsonl.',
       'Write only the requested result file(s). Use one JSON object per line.',
       'Do not wrap JSONL in Markdown code fences. Do not add commentary to JSONL.',
@@ -1047,6 +1153,8 @@ const commandPrepareUnitJobs = (options: Record<string, string | boolean>): void
       'Do not use external legal research or legal memory.',
       'Do not browse web/external legal sources.',
       'Do not use legal memory to supplement supplied source.',
+      'The approvedGroup is the AUTHORING SOURCE. The context block is CONTEXT FOR UNDERSTANDING ONLY.',
+      'Do not author objectives or study answers from context-only law or unselected sibling focus.',
       'Preserve jobId, runId, inputHash, corpusContentHash, and promptSpecVersion.',
       `Follow promptSpecVersion ${UNIT_PROMPT_SPEC_VERSION}.`,
       'Keep official source, AI study answers, and inference notes separate.',
@@ -1059,7 +1167,9 @@ const commandPrepareUnitJobs = (options: Record<string, string | boolean>): void
     unitRunId,
     sourceMapRunId: mapRunId,
     jobs: jobs.length,
-    candidateMapProposals: proposals.length,
+    strategy: options.strategy,
+    candidateMapProposals: rawProposals.length,
+    selectedMapProposals: proposals.length,
     approvedEligibleMapProposals: proposals.filter(
       (proposal) =>
         proposal.reviewStatus === 'approved' &&
@@ -1068,18 +1178,38 @@ const commandPrepareUnitJobs = (options: Record<string, string | boolean>): void
         proposal.disposition !== 'skip' &&
         proposal.disposition !== 'reference-only',
     ).length,
+    selectedGroups: jobs.map((job) => ({
+      jobId: job.jobId,
+      source: `${job.document.documentId}:${job.approvedGroup.sourceKeys.join(',')}`,
+      title: job.approvedGroup.titleSuggestion,
+      focusSelections: job.approvedGroup.focusSelections,
+      promptSpecVersion: job.promptSpecVersion,
+      inputHash: job.inputHash,
+      corpusContentHash: job.corpusContentHash,
+    })),
   });
   console.log(`Prepared ${jobs.length} Unit Authoring jobs in ${runDir}`);
 };
 
 const commandValidateUnitProposals = (options: Record<string, string | boolean>): void => {
   const pkg = readJson<NbLawContentPackage>(String(options.package ?? DEFAULT_PACKAGE));
-  const proposals = readJson<AiStudyUnitProposal[]>(String(options.proposals));
+  const runId = options.run ? String(options.run) : '';
+  const proposals = runId
+    ? readdirSync(join(RUNS_DIR, runId, 'results'))
+        .filter((file) => file.endsWith('.results.jsonl'))
+        .flatMap((file) => readJsonl<AiStudyUnitProposal>(join(RUNS_DIR, runId, 'results', file)))
+    : readJson<AiStudyUnitProposal[]>(String(options.proposals));
   const issues = proposals.flatMap((proposal) => {
     const document = pkg.documents.find((entry) => entry.id === proposal.sourceDocumentId);
     const sourceComponents =
-      document?.components.filter((component) => proposal.sourceKeys.includes(component.sourceKey)) ?? [];
-    return validateAiStudyUnitProposal({ proposal, sourceComponents }).issues.map((issue) => ({
+      document?.components
+        .filter((component) => proposal.sourceKeys.includes(component.sourceKey))
+        .map((component) => componentToImported(document, component)) ?? [];
+    return validateAiStudyUnitProposal({
+      proposal,
+      sourceComponents,
+      corpusContentHash: proposal.corpusContentHash,
+    }).issues.map((issue) => ({
       proposalId: proposal.proposalId,
       ...issue,
     }));
@@ -1087,6 +1217,48 @@ const commandValidateUnitProposals = (options: Record<string, string | boolean>)
   console.log(`Unit proposals: ${proposals.length}`);
   console.log(`Issues: ${issues.length}`);
   if (options.report) writeJson(String(options.report), { proposals: proposals.length, issues });
+  if (runId) {
+    const reportsDir = join(RUNS_DIR, runId, 'reports');
+    mkdirSync(reportsDir, { recursive: true });
+    const stored: AiStoredUnitProposal[] = proposals.map((proposal) => {
+      const proposalIssues = issues.filter((issue) => issue.proposalId === proposal.proposalId);
+      const errors = proposalIssues.filter((issue) => issue.severity === 'error');
+      const warnings = proposalIssues.filter((issue) => issue.severity === 'warning');
+      const now = new Date().toISOString();
+      return {
+        ...proposal,
+        reviewStatus: errors.length > 0 || warnings.length > 0 ? 'needs-review' : 'validated',
+        validationStatus: errors.length > 0 ? 'invalid' : warnings.length > 0 ? 'warnings' : 'valid',
+        validationMessages: proposalIssues.map((issue) => issue.code),
+        conflictCodes: [],
+        createdAt: now,
+        updatedAt: now,
+      };
+    });
+    writeJson(join(reportsDir, 'unit-validation.json'), {
+      runId,
+      proposals: proposals.length,
+      valid: stored.filter((proposal) => proposal.validationStatus === 'valid').length,
+      warningValid: stored.filter((proposal) => proposal.validationStatus === 'warnings').length,
+      invalid: stored.filter((proposal) => proposal.validationStatus === 'invalid').length,
+      issues,
+    });
+    writeFileSync(
+      join(reportsDir, 'unit-validation.md'),
+      [
+        `# Unit Proposal Validation ${runId}`,
+        '',
+        `Proposals: ${proposals.length}`,
+        `Valid: ${stored.filter((proposal) => proposal.validationStatus === 'valid').length}`,
+        `Warnings: ${stored.filter((proposal) => proposal.validationStatus === 'warnings').length}`,
+        `Invalid: ${stored.filter((proposal) => proposal.validationStatus === 'invalid').length}`,
+        '',
+        ...issues.map((issue) => `- ${issue.severity.toUpperCase()} ${issue.proposalId}: ${issue.code}: ${issue.message}`),
+        '',
+      ].join('\n'),
+    );
+    writeJson(join(reportsDir, 'unit-proposals.json'), stored);
+  }
 };
 
 const countBy = <T extends string>(values: T[]): Record<T, number> =>
@@ -1258,6 +1430,68 @@ const commandPilotReport = (options: Record<string, string | boolean>): void => 
     }),
   };
   writeJson(join(reportsDir, 'pilot-authoring-audit.json'), audit);
+  const review = {
+    schemaVersion: 1,
+    runId: reportRunId,
+    mapRunId,
+    unitRunId,
+    generatedAt: audit.generatedAt,
+    proposals: audit.proposals.map((proposal) => ({
+      sourceIdentity: {
+        document: proposal.document,
+        citation: proposal.citation,
+        approvedGroupTitle: proposal.approvedGrouping?.titleSuggestion,
+        focusSelections: proposal.approvedGrouping?.focusSelections ?? [],
+      },
+      officialFocusedSource: proposal.sourceText,
+      aiContent: {
+        title: proposal.aiTitle,
+        mainQuestion: proposal.mainQuestion,
+        studySummary: unitProposals.find((entry) => entry.proposalId === proposal.proposalId)?.studySummary,
+        learningObjectives: proposal.objectives,
+        guidedQuestions: proposal.guidedQuestions,
+        studyAnswers: proposal.studyAnswers,
+        evidence: proposal.evidence,
+        confidence: proposal.confidence,
+      },
+      validation: {
+        errors: unitIssues.filter(
+          (issue) => issue.proposalId === proposal.proposalId && issue.severity === 'error',
+        ),
+        warnings: unitIssues.filter(
+          (issue) => issue.proposalId === proposal.proposalId && issue.severity === 'warning',
+        ),
+        coverage: proposal.sourceCoverage,
+      },
+      deterministicComparison: proposal.deterministicComparison,
+      humanEvaluation: {
+        overall: null,
+        mainQuestion: null,
+        objectives: null,
+        guidedQuestions: null,
+        studyAnswers: null,
+        legalFidelity: null,
+        notes: null,
+      },
+    })),
+  };
+  const comparison = {
+    schemaVersion: 1,
+    runId: reportRunId,
+    generatedAt: audit.generatedAt,
+    comparisons: audit.proposals.map((proposal) => ({
+      proposalId: proposal.proposalId,
+      officialFocusedSource: proposal.sourceText,
+      deterministic: proposal.deterministicComparison,
+      ai: {
+        mainQuestion: proposal.mainQuestion,
+        guidedQuestions: proposal.guidedQuestions,
+        studyAnswers: proposal.studyAnswers,
+      },
+    })),
+  };
+  writeJson(join(reportsDir, 'pilot-unit-authoring-review.json'), review);
+  writeJson(join(reportsDir, 'deterministic-comparison.json'), comparison);
   writeFileSync(
     join(reportsDir, 'pilot-authoring-audit.md'),
     [
@@ -1282,6 +1516,46 @@ const commandPilotReport = (options: Record<string, string | boolean>): void => 
           `- ${proposal.document} ${proposal.citation}: ${proposal.mainQuestion} (${proposal.confidence})`,
       ),
       '',
+    ].join('\n'),
+  );
+  writeFileSync(
+    join(reportsDir, 'pilot-unit-authoring-review.md'),
+    [
+      `# Pilot Unit Authoring Review ${reportRunId}`,
+      '',
+      ...review.proposals.flatMap((proposal, index) => [
+        `## ${index + 1}. ${proposal.sourceIdentity.document} ${proposal.sourceIdentity.citation}`,
+        `Approved group: ${proposal.sourceIdentity.approvedGroupTitle ?? 'n/a'}`,
+        `Focus: ${JSON.stringify(proposal.sourceIdentity.focusSelections)}`,
+        '',
+        '### Official Focused Source',
+        proposal.officialFocusedSource,
+        '',
+        '### AI Content',
+        `Title: ${proposal.aiContent.title}`,
+        `Main question: ${proposal.aiContent.mainQuestion}`,
+        `Study summary: ${proposal.aiContent.studySummary ?? ''}`,
+        '',
+        ...proposal.aiContent.learningObjectives.flatMap((objective, objectiveIndex) => [
+          `${objectiveIndex + 1}. ${objective}`,
+          `Question: ${proposal.aiContent.guidedQuestions[objectiveIndex] ?? ''}`,
+          `Answer: ${proposal.aiContent.studyAnswers[objectiveIndex] ?? ''}`,
+        ]),
+        '',
+        '### Validation',
+        `Errors: ${proposal.validation.errors.length}`,
+        `Warnings: ${proposal.validation.warnings.length}`,
+        '',
+        '### Human Evaluation',
+        'overall: ',
+        'mainQuestion: ',
+        'objectives: ',
+        'guidedQuestions: ',
+        'studyAnswers: ',
+        'legalFidelity: ',
+        'notes: ',
+        '',
+      ]),
     ].join('\n'),
   );
   console.log(`Wrote pilot audit reports to ${reportsDir}`);

@@ -1,0 +1,225 @@
+{
+  "runId": "ai-units-4b13-pilot-s16-v3",
+  "proposals": 16,
+  "valid": 3,
+  "warningValid": 13,
+  "invalid": 0,
+  "issues": [
+    {
+      "proposalId": "unit-e9b26da1364e32a8",
+      "severity": "warning",
+      "code": "POSSIBLE_MODALITY_MISMATCH",
+      "message": "Study answer may have changed legal modality from the evidence."
+    },
+    {
+      "proposalId": "unit-e9b26da1364e32a8",
+      "severity": "warning",
+      "code": "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+      "message": "Study answer includes unsupported numeric or legal-reference token: subsection 18(4)."
+    },
+    {
+      "proposalId": "unit-e9b26da1364e32a8",
+      "severity": "warning",
+      "code": "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+      "message": "Study answer includes unsupported numeric or legal-reference token: subsection 18(2)."
+    },
+    {
+      "proposalId": "unit-e9b26da1364e32a8",
+      "severity": "warning",
+      "code": "POSSIBLE_MODALITY_MISMATCH",
+      "message": "Study answer may have changed legal modality from the evidence."
+    },
+    {
+      "proposalId": "unit-e9b26da1364e32a8",
+      "severity": "warning",
+      "code": "POSSIBLE_MODALITY_MISMATCH",
+      "message": "Study answer may have changed legal modality from the evidence."
+    },
+    {
+      "proposalId": "unit-247fe204bd384dfe",
+      "severity": "warning",
+      "code": "POSSIBLE_MODALITY_MISMATCH",
+      "message": "Study answer may have changed legal modality from the evidence."
+    },
+    {
+      "proposalId": "unit-247fe204bd384dfe",
+      "severity": "warning",
+      "code": "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+      "message": "Study answer includes unsupported numeric or legal-reference token: subsection 18(4)."
+    },
+    {
+      "proposalId": "unit-247fe204bd384dfe",
+      "severity": "warning",
+      "code": "POSSIBLE_MODALITY_MISMATCH",
+      "message": "Study answer may have changed legal modality from the evidence."
+    },
+    {
+      "proposalId": "unit-247fe204bd384dfe",
+      "severity": "warning",
+      "code": "POSSIBLE_MODALITY_MISMATCH",
+      "message": "Study answer may have changed legal modality from the evidence."
+    },
+    {
+      "proposalId": "unit-2e4ddc419619ecf3",
+      "severity": "warning",
+      "code": "POSSIBLE_MODALITY_MISMATCH",
+      "message": "Study answer may have changed legal modality from the evidence."
+    },
+    {
+      "proposalId": "unit-2e4ddc419619ecf3",
+      "severity": "warning",
+      "code": "ANSWER_EXTENDS_BEYOND_EVIDENCE",
+      "message": "Study answer may include claims not supported by linked evidence."
+    },
+    {
+      "proposalId": "unit-2e4ddc419619ecf3",
+      "severity": "warning",
+      "code": "POSSIBLE_MODALITY_MISMATCH",
+      "message": "Study answer may have changed legal modality from the evidence."
+    },
+    {
+      "proposalId": "unit-2e4ddc419619ecf3",
+      "severity": "warning",
+      "code": "ANSWER_EXTENDS_BEYOND_EVIDENCE",
+      "message": "Study answer may include claims not supported by linked evidence."
+    },
+    {
+      "proposalId": "unit-2e4ddc419619ecf3",
+      "severity": "warning",
+      "code": "POSSIBLE_MODALITY_MISMATCH",
+      "message": "Study answer may have changed legal modality from the evidence."
+    },
+    {
+      "proposalId": "unit-2e4ddc419619ecf3",
+      "severity": "warning",
+      "code": "ANSWER_EXTENDS_BEYOND_EVIDENCE",
+      "message": "Study answer may include claims not supported by linked evidence."
+    },
+    {
+      "proposalId": "unit-2e4ddc419619ecf3",
+      "severity": "warning",
+      "code": "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+      "message": "Study answer includes unsupported numeric or legal-reference token: paragraph 125(1)."
+    },
+    {
+      "proposalId": "unit-2e4ddc419619ecf3",
+      "severity": "warning",
+      "code": "POSSIBLE_MODALITY_MISMATCH",
+      "message": "Study answer may have changed legal modality from the evidence."
+    },
+    {
+      "proposalId": "unit-2e4ddc419619ecf3",
+      "severity": "warning",
+      "code": "POSSIBLE_MODALITY_MISMATCH",
+      "message": "Study answer may have changed legal modality from the evidence."
+    },
+    {
+      "proposalId": "unit-3a77dbeb9a642313",
+      "severity": "warning",
+      "code": "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+      "message": "Study answer includes unsupported numeric or legal-reference token: subsection 10(1)."
+    },
+    {
+      "proposalId": "unit-4d0b7e568468b99d",
+      "severity": "warning",
+      "code": "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+      "message": "Study answer includes unsupported numeric or legal-reference token: subsection 10(1)."
+    },
+    {
+      "proposalId": "unit-de6c92036e6a8ac1",
+      "severity": "warning",
+      "code": "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+      "message": "Study answer includes unsupported numeric or legal-reference token: subsection 10(1)."
+    },
+    {
+      "proposalId": "unit-de6c92036e6a8ac1",
+      "severity": "warning",
+      "code": "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+      "message": "Study answer includes unsupported numeric or legal-reference token: subsection 10(6)."
+    },
+    {
+      "proposalId": "unit-deb346b19788fc8d",
+      "severity": "warning",
+      "code": "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+      "message": "Study answer includes unsupported numeric or legal-reference token: section 49."
+    },
+    {
+      "proposalId": "unit-fd9377e0f65a8ddc",
+      "severity": "warning",
+      "code": "POSSIBLE_MODALITY_MISMATCH",
+      "message": "Study answer may have changed legal modality from the evidence."
+    },
+    {
+      "proposalId": "unit-fd9377e0f65a8ddc",
+      "severity": "warning",
+      "code": "POSSIBLE_MODALITY_MISMATCH",
+      "message": "Study answer may have changed legal modality from the evidence."
+    },
+    {
+      "proposalId": "unit-a6b469d1b34d7233",
+      "severity": "warning",
+      "code": "POSSIBLE_MODALITY_MISMATCH",
+      "message": "Study answer may have changed legal modality from the evidence."
+    },
+    {
+      "proposalId": "unit-a6b469d1b34d7233",
+      "severity": "warning",
+      "code": "POSSIBLE_MODALITY_MISMATCH",
+      "message": "Study answer may have changed legal modality from the evidence."
+    },
+    {
+      "proposalId": "unit-a6b469d1b34d7233",
+      "severity": "warning",
+      "code": "POSSIBLE_MODALITY_MISMATCH",
+      "message": "Study answer may have changed legal modality from the evidence."
+    },
+    {
+      "proposalId": "unit-a6b469d1b34d7233",
+      "severity": "warning",
+      "code": "POSSIBLE_MODALITY_MISMATCH",
+      "message": "Study answer may have changed legal modality from the evidence."
+    },
+    {
+      "proposalId": "unit-30de1e83f7ea3eed",
+      "severity": "warning",
+      "code": "POSSIBLE_MODALITY_MISMATCH",
+      "message": "Study answer may have changed legal modality from the evidence."
+    },
+    {
+      "proposalId": "unit-30de1e83f7ea3eed",
+      "severity": "warning",
+      "code": "POSSIBLE_MODALITY_MISMATCH",
+      "message": "Study answer may have changed legal modality from the evidence."
+    },
+    {
+      "proposalId": "unit-30de1e83f7ea3eed",
+      "severity": "warning",
+      "code": "ANSWER_EXTENDS_BEYOND_EVIDENCE",
+      "message": "Study answer may include claims not supported by linked evidence."
+    },
+    {
+      "proposalId": "unit-198246513c3c013f",
+      "severity": "warning",
+      "code": "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+      "message": "Study answer includes unsupported numeric or legal-reference token: 6."
+    },
+    {
+      "proposalId": "unit-d3522996fe86a65d",
+      "severity": "warning",
+      "code": "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+      "message": "Study answer includes unsupported numeric or legal-reference token: subsection 3(4)."
+    },
+    {
+      "proposalId": "unit-d3522996fe86a65d",
+      "severity": "warning",
+      "code": "ANSWER_EXTENDS_BEYOND_EVIDENCE",
+      "message": "Study answer may include claims not supported by linked evidence."
+    },
+    {
+      "proposalId": "unit-715da6cfeac482a1",
+      "severity": "warning",
+      "code": "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+      "message": "Study answer includes unsupported numeric or legal-reference token: subsection 3(3)."
+    }
+  ]
+}

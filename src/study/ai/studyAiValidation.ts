@@ -381,8 +381,17 @@ const validateCoverage = (
 ): void => {
   const coverage = proposal.sourceCoverage ?? [];
   const coverageByKey = new Map(coverage.map((entry) => [entry.sourceKey, entry]));
+  const approvedLabelsBySource = new Map(
+    (proposal.approvedGroup?.focusSelections ?? []).map((selection) => [
+      selection.sourceKey,
+      new Set(selection.childLabels ?? []),
+    ]),
+  );
   sourceComponents.forEach((component) => {
-    const labels = component.subsections?.map((subsection) => subsection.label) ?? [];
+    const approvedLabels = approvedLabelsBySource.get(component.sourceKey);
+    const labels = component.subsections
+      ?.map((subsection) => subsection.label)
+      .filter((label) => !approvedLabels || approvedLabels.has(label)) ?? [];
     if (labels.length === 0) return;
     const entry = coverageByKey.get(component.sourceKey);
     labels.forEach((label) => {
@@ -410,6 +419,48 @@ const validateCoverage = (
   });
 };
 
+const childLabelSourceText = (
+  sourceComponents: ImportedLegalComponent[],
+  sourceKey: string,
+  label: string,
+): string | undefined => {
+  const component = sourceComponents.find((entry) => entry.sourceKey === sourceKey);
+  if (!component) return undefined;
+  const subsection = component.subsections?.find((entry) => entry.label === label);
+  return subsection?.text ?? (component.label === label ? component.text : undefined);
+};
+
+const focusTextForSource = (
+  sourceComponents: ImportedLegalComponent[],
+  approvedGroup: AiProposedSourceGroup,
+  sourceKey: string,
+): string => {
+  const component = sourceComponents.find((entry) => entry.sourceKey === sourceKey);
+  if (!component) return '';
+  const selections = approvedGroup.focusSelections.filter((selection) => selection.sourceKey === sourceKey);
+  const childTexts = selections.flatMap((selection) =>
+    (selection.childLabels ?? [])
+      .map((label) => childLabelSourceText(sourceComponents, sourceKey, label))
+      .filter((text): text is string => Boolean(text)),
+  );
+  return childTexts.length > 0 ? childTexts.join('\n\n') : component.text;
+};
+
+const evidenceWithinApprovedFocus = (
+  evidenceText: string,
+  proposal: AiStudyUnitProposal,
+  sourceComponents: ImportedLegalComponent[],
+): boolean => {
+  if (!proposal.approvedGroup) return true;
+  return normalizeText(focusTextForSource(sourceComponents, proposal.approvedGroup, proposal.sourceKeys[0] ?? '')).includes(
+    normalizeText(evidenceText),
+  ) || proposal.sourceKeys.some((sourceKey) =>
+    normalizeText(focusTextForSource(sourceComponents, proposal.approvedGroup as AiProposedSourceGroup, sourceKey)).includes(
+      normalizeText(evidenceText),
+    ),
+  );
+};
+
 const validateApprovedScope = (
   proposal: AiStudyUnitProposal,
   approvedGroup: AiProposedSourceGroup | undefined,
@@ -423,6 +474,79 @@ const validateApprovedScope = (
       message: 'Proposal sourceKeys must equal the approved authoring group sourceKeys.',
     });
   }
+  if (!Array.isArray(proposal.objectives)) return;
+  proposal.objectives.forEach((objective) => {
+    if (objective.sourceKeys.some((sourceKey) => !approvedGroup.sourceKeys.includes(sourceKey))) {
+      addIssue(issues, {
+        code: 'OUTSIDE_APPROVED_FOCUS',
+        proposalId: proposal.proposalId,
+        message: 'Objective sourceKeys must stay inside the approved authoring group.',
+      });
+    }
+    objective.evidence.forEach((evidence) => {
+      if (!approvedGroup.sourceKeys.includes(evidence.sourceKey)) {
+        addIssue(issues, {
+          code: 'UNIT_CONTEXT_LEAKAGE',
+          proposalId: proposal.proposalId,
+          sourceKey: evidence.sourceKey,
+          message: 'Evidence sourceKey is context-only and not part of the approved group.',
+        });
+      }
+    });
+  });
+};
+
+const validateApprovedFocusCoverage = (
+  proposal: AiStudyUnitProposal,
+  approvedGroup: AiProposedSourceGroup | undefined,
+  issues: AiValidationIssue[],
+): void => {
+  if (!approvedGroup) return;
+  const coveredLabels = new Set(
+    (proposal.sourceCoverage ?? []).flatMap((entry) =>
+      (entry.childLabels ?? [])
+        .filter((child) => child.status === 'covered')
+        .flatMap((child) => child.objectiveIds?.map((id) => `${entry.sourceKey}::${child.label}::${id}`) ?? [`${entry.sourceKey}::${child.label}`]),
+    ),
+  );
+  const omittedLabels = new Set(
+    (proposal.sourceCoverage ?? []).flatMap((entry) =>
+      (entry.childLabels ?? [])
+        .filter((child) => child.status === 'intentionally-omitted' && child.reason?.trim())
+        .map((child) => `${entry.sourceKey}::${child.label}`),
+    ),
+  );
+  if (!Array.isArray(proposal.objectives)) return;
+  approvedGroup.focusSelections.forEach((selection) => {
+    selection.childLabels?.forEach((label) => {
+      const prefix = `${selection.sourceKey}::${label}`;
+      const covered = Array.from(coveredLabels).some((entry) => entry.startsWith(prefix));
+      if (!covered && !omittedLabels.has(prefix)) {
+        addIssue(issues, {
+          code: 'APPROVED_FOCUS_NOT_COVERED',
+          severity: 'warning',
+          proposalId: proposal.proposalId,
+          sourceKey: selection.sourceKey,
+          message: `Approved focus item is not covered or intentionally omitted: ${label}.`,
+        });
+      }
+    });
+    selection.definedTerms?.forEach((term) => {
+      const termText = normalizeText(term);
+      const covered = proposal.objectives.some((objective) =>
+        normalizeText(`${objective.objective} ${objective.guidedQuestion} ${objective.studyAnswer}`).includes(termText),
+      );
+      if (!covered) {
+        addIssue(issues, {
+          code: 'APPROVED_FOCUS_NOT_COVERED',
+          severity: 'warning',
+          proposalId: proposal.proposalId,
+          sourceKey: selection.sourceKey,
+          message: `Approved defined term is not covered: ${term}.`,
+        });
+      }
+    });
+  });
 };
 
 const validateObjectiveSchema = (
@@ -481,10 +605,19 @@ export const validateAiStudyUnitProposal = ({
       if (!normalizeText(source.text).includes(normalizeText(evidence.evidenceText))) {
         addIssue(issues, { code: 'EVIDENCE_NOT_FOUND', proposalId: typed.proposalId, sourceKey: evidence.sourceKey, message: 'Evidence text was not found in the authoritative source.' });
       }
+      if (!evidenceWithinApprovedFocus(evidence.evidenceText, typed, sourceComponents)) {
+        addIssue(issues, {
+          code: 'OUTSIDE_APPROVED_FOCUS',
+          proposalId: typed.proposalId,
+          sourceKey: evidence.sourceKey,
+          message: 'Evidence text is not within the approved focus for this source.',
+        });
+      }
     });
     validateObjectiveFidelity(objective, typed, sources, issues);
   });
   validateCoverage(typed, sourceComponents, issues);
+  validateApprovedFocusCoverage(typed, typed.approvedGroup, issues);
   validateQuestionQuality(typed, issues);
   return { valid: issues.every((issue) => issue.severity !== 'error'), issues };
 };

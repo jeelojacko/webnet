@@ -166,6 +166,8 @@ export type AiUnitAuthoringJob = {
   approximateLearningGoal: string;
   group: AiProposedSourceGroup;
   sourceHashes: Record<string, string>;
+  sourceStatuses?: Record<string, AiSourceStatus>;
+  contentFlagsBySourceKey?: Record<string, AiSourceContentFlags | undefined>;
   exactSourceText: string;
   operativeSourceText: string;
   sourceMetadata: AiSourceMetadata;

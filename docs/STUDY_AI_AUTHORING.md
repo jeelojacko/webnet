@@ -1,6 +1,6 @@
 # Study AI Authoring
 
-Phase 4B.1 supports the first real provider-neutral AI authoring pilot. Phase 4B.1.1 remediates the Study Map pilot with stricter v3 Map prompts, schema validation, source-focus tracking, and a targeted 24-provision review run. Phase 4B.1.2 adds the target-source grounding gate for Study Map validation. It does not process the full corpus automatically, and these remediation phases do not start Unit Authoring.
+Phase 4B.1 supports the first real provider-neutral AI authoring pilot. Phase 4B.1.1 remediates the Study Map pilot with stricter v3 Map prompts, schema validation, source-focus tracking, and a targeted 24-provision review run. Phase 4B.1.2 adds the target-source grounding gate for Study Map validation. Phase 4B.1.3 runs the first grounded Unit Authoring v3 pilot from 16 externally selected corrected Map groups without approving the resulting proposals into production StudyUnits.
 
 AI output is an authoring aid only. The official legal source remains immutable authority, and approved AI content keeps source links, source hashes, and provenance.
 
@@ -27,13 +27,13 @@ The original v1 prompt specs remain under `study-content/ai/specs/` for reproduc
 New jobs default to:
 
 - `study-map-v3`
-- `unit-authoring-v2`
+- `unit-authoring-v3`
 
 Every job records `promptSpecVersion`, and the deterministic `inputHash` includes that prompt version. A result with the wrong prompt spec is stale/invalid for that job.
 
 Study Map v3 explicitly treats the ANBLS corpus as exam scope, tells the model that source text is data, forbids external legal research/memory, preserves official source scope, and gives concrete criteria for `standalone`, `combine`, `split`, `reference-only`, `skip`, and `needs-human-review`. It also requires genuine per-job content reasoning, forbids deterministic/template authoring, forbids keyword or source-length shortcuts, requires `focusSelections` for proposed groups, and limits `suggestedPriority` to `P1`, `P2`, `P3`, or `P4`.
 
-Unit Authoring v2 explicitly treats authoring as educational work, requires natural specific questions, concise legally faithful answers, actor/modality/numeric fidelity, approved-group scope, evidence grounding, inference separation, and objective-level source coverage.
+Unit Authoring v3 explicitly treats authoring as educational work, requires natural specific questions, concise legally faithful answers, actor/modality/numeric fidelity, approved-group scope, target-source-only evidence grounding, approved focus coverage, inference separation, broad-group warnings, and separation between official source, AI study content, and user notes.
 
 ## Source Input
 
@@ -251,6 +251,42 @@ study-content/ai/runs/<run-id>/reports/map-proposals.json
 study-content/ai/runs/<run-id>/reports/study-map-pilot-review.json
 study-content/ai/runs/<run-id>/reports/study-map-pilot-review.md
 ```
+
+## Phase 4B.1.3 Unit Authoring Pilot
+
+The Unit Authoring pilot uses corrected groups from:
+
+```text
+ai-map-4b12-grounding-s9-v1
+```
+
+It prepares exactly 16 Unit Authoring v3 jobs:
+
+```bash
+npm run study:ai:prepare-units -- --run ai-map-4b12-grounding-s9-v1 --unit-run ai-units-4b13-pilot-s16-v3 --strategy phase-4b1.3-unit-pilot --batch-size 8
+```
+
+The pilot selection clones only the externally selected Map groups as approved for job preparation. It does not modify preserved Map run artifacts and fails if any selected group is missing or if the job count is not 16.
+
+After raw JSONL results are authored, validate and report with:
+
+```bash
+npm run study:ai:validate-unit-proposals -- --run ai-units-4b13-pilot-s16-v3
+npm run study:ai:pilot-report -- --run ai-map-4b12-grounding-s9-v1 --unit-run ai-units-4b13-pilot-s16-v3
+```
+
+Reports include:
+
+```text
+study-content/ai/runs/ai-units-4b13-pilot-s16-v3/reports/unit-validation.json
+study-content/ai/runs/ai-units-4b13-pilot-s16-v3/reports/unit-validation.md
+study-content/ai/runs/ai-units-4b13-pilot-s16-v3/reports/unit-proposals.json
+study-content/ai/runs/ai-units-4b13-pilot-s16-v3/reports/pilot-unit-authoring-review.json
+study-content/ai/runs/ai-units-4b13-pilot-s16-v3/reports/pilot-unit-authoring-review.md
+study-content/ai/runs/ai-units-4b13-pilot-s16-v3/reports/deterministic-comparison.json
+```
+
+These artifacts are evaluation-only. They leave human evaluation fields unset and do not approve proposals into real StudyUnits.
 
 ## External Codex Workflow
 
