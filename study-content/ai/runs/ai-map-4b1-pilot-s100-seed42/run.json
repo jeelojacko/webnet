@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "runId": "ai-map-4b1-pilot-s100-seed42",
+  "createdAt": "2026-08-12T15:01:53.315Z",
+  "updatedAt": "2026-08-12T15:01:53.316Z",
+  "providerKind": "external-codex",
+  "jobType": "study-map",
+  "promptSpecVersion": "study-map-v2",
+  "corpusContentHash": "5dc991611b320de87981ba35ded9a99f0951569e732e2bacb35c6d21b3c7e3a1",
+  "sourcePackageId": "nb-sit-statute-corpus-2026-08-11",
+  "status": "prepared",
+  "jobCount": 100,
+  "completedCount": 0,
+  "invalidCount": 0
+}

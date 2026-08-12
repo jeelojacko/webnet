@@ -1,0 +1,535 @@
+{
+  "runId": "ai-map-4b1-pilot-s100-seed42",
+  "strategy": "representative",
+  "seed": 42,
+  "requestedSample": 100,
+  "selectedJobs": 100,
+  "manualIncludes": [
+    "doc-boundaries-confirmation-act:10",
+    "doc-boundaries-confirmation-act:16",
+    "doc-surveys-act:1",
+    "doc-surveys-act:3",
+    "doc-surveys-act:8",
+    "doc-surveys-act:14",
+    "doc-community-planning-act:83",
+    "doc-community-planning-act:125",
+    "doc-land-titles-act:1",
+    "doc-land-titles-act:18",
+    "doc-land-titles-act:83",
+    "doc-registry-act:19",
+    "doc-registry-act:34",
+    "doc-registry-act:64",
+    "reg-surveys-84-76:1",
+    "reg-surveys-84-76:4",
+    "reg-surveys-84-76:6",
+    "reg-surveys-84-76:8",
+    "reg-boundaries-95-166:1",
+    "reg-boundaries-95-166:3",
+    "reg-community-planning-80-159:5",
+    "reg-registry-84-190:2",
+    "reg-land-titles-83-130:15"
+  ],
+  "phase4b1RequiredIncludesApplied": true,
+  "phase4b1RequiredIncludes": [
+    "doc-boundaries-confirmation-act:10",
+    "doc-boundaries-confirmation-act:16",
+    "doc-surveys-act:1",
+    "doc-surveys-act:3",
+    "doc-surveys-act:8",
+    "doc-surveys-act:14",
+    "doc-community-planning-act:83",
+    "doc-community-planning-act:125",
+    "doc-land-titles-act:1",
+    "doc-land-titles-act:18",
+    "doc-land-titles-act:83",
+    "doc-registry-act:19",
+    "doc-registry-act:34",
+    "doc-registry-act:64",
+    "reg-surveys-84-76:1",
+    "reg-surveys-84-76:4",
+    "reg-surveys-84-76:6",
+    "reg-surveys-84-76:8",
+    "reg-boundaries-95-166:1",
+    "reg-boundaries-95-166:3",
+    "reg-community-planning-80-159:5",
+    "reg-registry-84-190:2",
+    "reg-land-titles-83-130:15"
+  ],
+  "strategyVersion": "representative-v2-stratified",
+  "sampleSize": 100,
+  "actsRepresented": 38,
+  "regulationsRepresented": 6,
+  "documentDistribution": {
+    "doc-boundaries-confirmation-act": 2,
+    "doc-surveys-act": 4,
+    "doc-community-planning-act": 3,
+    "doc-land-titles-act": 4,
+    "doc-registry-act": 6,
+    "reg-surveys-84-76": 4,
+    "reg-boundaries-95-166": 2,
+    "reg-community-planning-80-159": 1,
+    "reg-registry-84-190": 1,
+    "reg-land-titles-83-130": 3,
+    "doc-assessment-act": 2,
+    "doc-residential-property-tax-relief-act": 1,
+    "doc-highway-act": 2,
+    "doc-energy-and-utilities-board-act": 2,
+    "doc-public-works-act": 2,
+    "doc-clean-environment-act": 1,
+    "doc-gas-distribution-act": 4,
+    "doc-underground-storage-act": 1,
+    "doc-crown-lands-and-forests-act": 3,
+    "doc-service-new-brunswick-act": 4,
+    "doc-protected-natural-areas-act": 1,
+    "doc-new-brunswick-land-surveyors-bylaws": 4,
+    "doc-aquaculture-act": 3,
+    "doc-agricultural-land-protection-and-development-act": 1,
+    "doc-mining-act": 1,
+    "doc-official-languages-act": 4,
+    "doc-limitation-of-actions-act": 3,
+    "doc-new-brunswick-land-surveyors-act": 4,
+    "doc-marital-property-act": 3,
+    "doc-expropriation-act": 2,
+    "doc-condominium-property-act": 1,
+    "doc-municipalities-act": 5,
+    "doc-ownership-of-minerals-act": 1,
+    "doc-evidence-act": 2,
+    "doc-easements-act": 1,
+    "doc-occupational-health-and-safety-act": 3,
+    "doc-partnerships-and-business-names-registration-act": 1,
+    "doc-public-health-act": 2,
+    "doc-real-property-transfer-tax-act": 1,
+    "doc-property-act": 1,
+    "doc-probate-court-act": 1,
+    "doc-wills-act": 1,
+    "doc-oil-and-natural-gas-act": 1,
+    "doc-conservation-easements-act": 1
+  },
+  "categoryCounts": {
+    "act": 85,
+    "medium": 31,
+    "authority-power": 65,
+    "duty": 63,
+    "procedure": 29,
+    "deadline": 16,
+    "filing-registration": 30,
+    "regulation-making": 37,
+    "prohibition": 15,
+    "legal-effect": 25,
+    "short": 58,
+    "definitions": 8,
+    "offence-penalty": 11,
+    "very-long": 2,
+    "long": 9,
+    "commencement-repeal": 26,
+    "regulation": 15,
+    "appeal": 2,
+    "transitional": 1
+  },
+  "selectedJobIds": [
+    "map-4ed301eff2b9a474",
+    "map-037cb82be6687956",
+    "map-e704be898cc3eee1",
+    "map-9b04b8577fc5d1c1",
+    "map-11136036eef1413c",
+    "map-26ad927f02680a66",
+    "map-b58c19ace43860db",
+    "map-bee8fba90f52f057",
+    "map-f6d46f505f2ab7e1",
+    "map-37ad9a84eb105eff",
+    "map-8c5e88f0cef4d74b",
+    "map-933fcfcc945b4e60",
+    "map-506e93d5f16119bd",
+    "map-37df9ac252e0857a",
+    "map-9ad8ea1d3a28d906",
+    "map-7b6e1692bf2a5e76",
+    "map-6c7b06dfe9eb5ee9",
+    "map-bff9070363dfba64",
+    "map-40dd13d0357a4d9e",
+    "map-6a2a5288973a4ccf",
+    "map-e2243ee99a4ef7f7",
+    "map-0a5dc88736bcde89",
+    "map-e7a4a8e888fddfaa",
+    "map-a906f12bd2f041e0",
+    "map-2e938ac9a9b1cf75",
+    "map-0f8f08c0e9f51358",
+    "map-7ad7220428b50059",
+    "map-5864e2edb4d224ac",
+    "map-7ad3586f1c8f5c53",
+    "map-cfa270a89e536cc6",
+    "map-9ac40f4d8a4a749d",
+    "map-234eed665c7c3fa3",
+    "map-48d309e9beef0f93",
+    "map-a5722316e70c52dc",
+    "map-a3d42ac1fbb24aeb",
+    "map-89eb3c5e954773f2",
+    "map-6007579f8b767a52",
+    "map-7c350947ab17019e",
+    "map-d4ab5410260e988b",
+    "map-cb94468d9cd46de1",
+    "map-c685cd878b6a2348",
+    "map-761497d803172448",
+    "map-646895d0b522c48b",
+    "map-3ea2fb7cbb2fe0a0",
+    "map-d2becf4c9f3d6a20",
+    "map-fd7ab4e9fd110186",
+    "map-c08b4d41473aafed",
+    "map-f8251b34f3880a85",
+    "map-05aaa28a76c494da",
+    "map-db7c3286bd9e3032",
+    "map-be659e946cbd18b1",
+    "map-cf5c05d575cecbf8",
+    "map-007651531e6533c8",
+    "map-63f220bdcc7e2b5c",
+    "map-73556f6ffe3ce71f",
+    "map-c4b8e07fd1664439",
+    "map-100d190377da8ce1",
+    "map-b80454d416392dc7",
+    "map-f5d6c558b4e94b0f",
+    "map-91797d5f1d4b5afc",
+    "map-a05823699bf7faa0",
+    "map-a7307e79c76b8f1d",
+    "map-c9517736b2ca7b78",
+    "map-eecc7e9506441ae2",
+    "map-f80b44dc2cf66540",
+    "map-da891e65769879d3",
+    "map-7dfb97aad57cbb96",
+    "map-9de65a13e78aab03",
+    "map-eb8a9294024dfba5",
+    "map-0410972a50232798",
+    "map-f231ae601924d2db",
+    "map-f3a405531a1da53d",
+    "map-e2747f8f7e281f04",
+    "map-a138c16cd5bce9eb",
+    "map-e352b2ace51abcf1",
+    "map-c0550717ac6e153b",
+    "map-f8201aab983572b6",
+    "map-4f768db9973629b5",
+    "map-9fc563366fab1207",
+    "map-7a6521bb9acdb4d1",
+    "map-288d6538df3db0d3",
+    "map-1859d63d360defec",
+    "map-efdcd38cde777c54",
+    "map-72e255f26bc58a2e",
+    "map-5bcd67f5c7a117c5",
+    "map-9436b24b22248207",
+    "map-02cf81dda73a3ea4",
+    "map-3969154b40e98e22",
+    "map-851389e807a3068c",
+    "map-2e3e490ac8ae0ead",
+    "map-4229e3aa0a89846a",
+    "map-73a894e50d581b23",
+    "map-497fc4251ad81349",
+    "map-4ed9d11118b1bafe",
+    "map-be983b89903f2198",
+    "map-455b6ba70bdffa63",
+    "map-c1d52773132dd083",
+    "map-d4a984336955514e",
+    "map-86568aa0f65eb718",
+    "map-c3bba5bdb167438b"
+  ],
+  "selectionReasons": {
+    "map-4ed301eff2b9a474": [
+      "manual include: doc-boundaries-confirmation-act:10"
+    ],
+    "map-037cb82be6687956": [
+      "manual include: doc-boundaries-confirmation-act:16"
+    ],
+    "map-e704be898cc3eee1": [
+      "manual include: doc-surveys-act:1"
+    ],
+    "map-9b04b8577fc5d1c1": [
+      "manual include: doc-surveys-act:3"
+    ],
+    "map-11136036eef1413c": [
+      "manual include: doc-surveys-act:8"
+    ],
+    "map-26ad927f02680a66": [
+      "manual include: doc-surveys-act:14"
+    ],
+    "map-b58c19ace43860db": [
+      "manual include: doc-community-planning-act:83"
+    ],
+    "map-bee8fba90f52f057": [
+      "manual include: doc-community-planning-act:125"
+    ],
+    "map-f6d46f505f2ab7e1": [
+      "manual include: doc-land-titles-act:1"
+    ],
+    "map-37ad9a84eb105eff": [
+      "manual include: doc-land-titles-act:18"
+    ],
+    "map-8c5e88f0cef4d74b": [
+      "manual include: doc-land-titles-act:83"
+    ],
+    "map-933fcfcc945b4e60": [
+      "manual include: doc-registry-act:19"
+    ],
+    "map-506e93d5f16119bd": [
+      "manual include: doc-registry-act:34"
+    ],
+    "map-37df9ac252e0857a": [
+      "manual include: doc-registry-act:64"
+    ],
+    "map-9ad8ea1d3a28d906": [
+      "manual include: reg-surveys-84-76:1"
+    ],
+    "map-7b6e1692bf2a5e76": [
+      "manual include: reg-surveys-84-76:4"
+    ],
+    "map-6c7b06dfe9eb5ee9": [
+      "manual include: reg-surveys-84-76:6"
+    ],
+    "map-bff9070363dfba64": [
+      "manual include: reg-surveys-84-76:8"
+    ],
+    "map-40dd13d0357a4d9e": [
+      "manual include: reg-boundaries-95-166:1"
+    ],
+    "map-6a2a5288973a4ccf": [
+      "manual include: reg-boundaries-95-166:3"
+    ],
+    "map-e2243ee99a4ef7f7": [
+      "manual include: reg-community-planning-80-159:5"
+    ],
+    "map-0a5dc88736bcde89": [
+      "manual include: reg-registry-84-190:2",
+      "seeded weighted fill"
+    ],
+    "map-e7a4a8e888fddfaa": [
+      "manual include: reg-land-titles-83-130:15"
+    ],
+    "map-a906f12bd2f041e0": [
+      "bucket: act"
+    ],
+    "map-2e938ac9a9b1cf75": [
+      "bucket: appeal"
+    ],
+    "map-0f8f08c0e9f51358": [
+      "bucket: authority-power"
+    ],
+    "map-7ad7220428b50059": [
+      "bucket: commencement-repeal"
+    ],
+    "map-5864e2edb4d224ac": [
+      "bucket: deadline"
+    ],
+    "map-7ad3586f1c8f5c53": [
+      "bucket: definitions"
+    ],
+    "map-cfa270a89e536cc6": [
+      "bucket: duty"
+    ],
+    "map-9ac40f4d8a4a749d": [
+      "bucket: filing-registration"
+    ],
+    "map-234eed665c7c3fa3": [
+      "bucket: legal-effect"
+    ],
+    "map-48d309e9beef0f93": [
+      "bucket: long"
+    ],
+    "map-a5722316e70c52dc": [
+      "bucket: medium"
+    ],
+    "map-a3d42ac1fbb24aeb": [
+      "bucket: offence-penalty"
+    ],
+    "map-89eb3c5e954773f2": [
+      "bucket: procedure"
+    ],
+    "map-6007579f8b767a52": [
+      "bucket: prohibition"
+    ],
+    "map-7c350947ab17019e": [
+      "bucket: regulation"
+    ],
+    "map-d4ab5410260e988b": [
+      "bucket: regulation-making"
+    ],
+    "map-cb94468d9cd46de1": [
+      "bucket: short"
+    ],
+    "map-c685cd878b6a2348": [
+      "bucket: transitional"
+    ],
+    "map-761497d803172448": [
+      "bucket: very-long"
+    ],
+    "map-646895d0b522c48b": [
+      "seeded weighted fill"
+    ],
+    "map-3ea2fb7cbb2fe0a0": [
+      "seeded weighted fill"
+    ],
+    "map-d2becf4c9f3d6a20": [
+      "seeded weighted fill"
+    ],
+    "map-fd7ab4e9fd110186": [
+      "seeded weighted fill"
+    ],
+    "map-c08b4d41473aafed": [
+      "seeded weighted fill"
+    ],
+    "map-f8251b34f3880a85": [
+      "seeded weighted fill"
+    ],
+    "map-05aaa28a76c494da": [
+      "seeded weighted fill"
+    ],
+    "map-db7c3286bd9e3032": [
+      "seeded weighted fill"
+    ],
+    "map-be659e946cbd18b1": [
+      "seeded weighted fill"
+    ],
+    "map-cf5c05d575cecbf8": [
+      "seeded weighted fill"
+    ],
+    "map-007651531e6533c8": [
+      "seeded weighted fill"
+    ],
+    "map-63f220bdcc7e2b5c": [
+      "seeded weighted fill"
+    ],
+    "map-73556f6ffe3ce71f": [
+      "seeded weighted fill"
+    ],
+    "map-c4b8e07fd1664439": [
+      "seeded weighted fill"
+    ],
+    "map-100d190377da8ce1": [
+      "seeded weighted fill"
+    ],
+    "map-b80454d416392dc7": [
+      "seeded weighted fill"
+    ],
+    "map-f5d6c558b4e94b0f": [
+      "seeded weighted fill"
+    ],
+    "map-91797d5f1d4b5afc": [
+      "seeded weighted fill"
+    ],
+    "map-a05823699bf7faa0": [
+      "seeded weighted fill"
+    ],
+    "map-a7307e79c76b8f1d": [
+      "seeded weighted fill"
+    ],
+    "map-c9517736b2ca7b78": [
+      "seeded weighted fill"
+    ],
+    "map-eecc7e9506441ae2": [
+      "seeded weighted fill"
+    ],
+    "map-f80b44dc2cf66540": [
+      "seeded weighted fill"
+    ],
+    "map-da891e65769879d3": [
+      "seeded weighted fill"
+    ],
+    "map-7dfb97aad57cbb96": [
+      "seeded weighted fill"
+    ],
+    "map-9de65a13e78aab03": [
+      "seeded weighted fill"
+    ],
+    "map-eb8a9294024dfba5": [
+      "seeded weighted fill"
+    ],
+    "map-0410972a50232798": [
+      "seeded weighted fill"
+    ],
+    "map-f231ae601924d2db": [
+      "seeded weighted fill"
+    ],
+    "map-f3a405531a1da53d": [
+      "seeded weighted fill"
+    ],
+    "map-e2747f8f7e281f04": [
+      "seeded weighted fill"
+    ],
+    "map-a138c16cd5bce9eb": [
+      "seeded weighted fill"
+    ],
+    "map-e352b2ace51abcf1": [
+      "seeded weighted fill"
+    ],
+    "map-c0550717ac6e153b": [
+      "seeded weighted fill"
+    ],
+    "map-f8201aab983572b6": [
+      "seeded weighted fill"
+    ],
+    "map-4f768db9973629b5": [
+      "seeded weighted fill"
+    ],
+    "map-9fc563366fab1207": [
+      "seeded weighted fill"
+    ],
+    "map-7a6521bb9acdb4d1": [
+      "seeded weighted fill"
+    ],
+    "map-288d6538df3db0d3": [
+      "seeded weighted fill"
+    ],
+    "map-1859d63d360defec": [
+      "seeded weighted fill"
+    ],
+    "map-efdcd38cde777c54": [
+      "seeded weighted fill"
+    ],
+    "map-72e255f26bc58a2e": [
+      "seeded weighted fill"
+    ],
+    "map-5bcd67f5c7a117c5": [
+      "seeded weighted fill"
+    ],
+    "map-9436b24b22248207": [
+      "seeded weighted fill"
+    ],
+    "map-02cf81dda73a3ea4": [
+      "seeded weighted fill"
+    ],
+    "map-3969154b40e98e22": [
+      "seeded weighted fill"
+    ],
+    "map-851389e807a3068c": [
+      "seeded weighted fill"
+    ],
+    "map-2e3e490ac8ae0ead": [
+      "seeded weighted fill"
+    ],
+    "map-4229e3aa0a89846a": [
+      "seeded weighted fill"
+    ],
+    "map-73a894e50d581b23": [
+      "seeded weighted fill"
+    ],
+    "map-497fc4251ad81349": [
+      "seeded weighted fill"
+    ],
+    "map-4ed9d11118b1bafe": [
+      "seeded weighted fill"
+    ],
+    "map-be983b89903f2198": [
+      "seeded weighted fill"
+    ],
+    "map-455b6ba70bdffa63": [
+      "seeded weighted fill"
+    ],
+    "map-c1d52773132dd083": [
+      "seeded weighted fill"
+    ],
+    "map-d4a984336955514e": [
+      "seeded weighted fill"
+    ],
+    "map-86568aa0f65eb718": [
+      "seeded weighted fill"
+    ],
+    "map-c3bba5bdb167438b": [
+      "seeded weighted fill"
+    ]
+  },
+  "deterministicProblemCaseCount": 12
+}

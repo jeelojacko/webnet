@@ -1,0 +1,10 @@
+{
+  "runId": "ai-map-4b1-pilot-s100-seed42",
+  "jobs": 100,
+  "results": 100,
+  "invalid": 0,
+  "malformed": [],
+  "duplicateResults": 0,
+  "issues": [],
+  "mapConflicts": 22
+}

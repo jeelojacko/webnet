@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "mapRunId": "ai-map-4b1-pilot-s100-seed42",
+  "unitRunId": "",
+  "generatedAt": "2026-08-12T15:03:54.650Z",
+  "map": {
+    "jobsProcessed": 100,
+    "dispositionCounts": {
+      "split": 22,
+      "standalone": 45,
+      "reference-only": 24,
+      "skip": 5,
+      "combine": 4
+    },
+    "confidenceCounts": {
+      "medium": 65,
+      "high": 35
+    },
+    "conflicts": 22,
+    "contextWarnings": 12,
+    "humanEditedMapProposals": 0,
+    "humanOverriddenDispositions": 0,
+    "pilotEvaluationCounts": {}
+  },
+  "units": {
+    "proposalsProcessed": 0,
+    "valid": 0,
+    "warningCount": 0,
+    "warningTypes": {},
+    "evaluationCounts": {}
+  },
+  "proposals": []
+}
