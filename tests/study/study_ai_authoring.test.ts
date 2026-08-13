@@ -655,6 +655,154 @@ describe('AI authoring schemas and validation', () => {
     expect(codes).toContain('UNCOVERED_SUBSTANTIVE_SOURCE');
   });
 
+  it('does not treat ordinary statutory evidence fragments as truncated answers', () => {
+    const proposal = unitProposal();
+    proposal.objectives[0] = {
+      ...proposal.objectives[0],
+      evidence: [
+        { sourceKey: 'section:10', evidenceText: 'governing the setting back of buildings' },
+        { sourceKey: 'section:10', evidenceText: '(d) co-operate with' },
+      ],
+    };
+    const source = {
+      ...sourceComponent,
+      text: '10 Regulations may include provisions governing the setting back of buildings and (d) co-operate with other officials.',
+    };
+    const report = validateAiStudyUnitProposal({ proposal, sourceComponents: [source] });
+
+    expect(report.issues.map((issue) => issue.code)).not.toContain('ANSWER_APPEARS_TRUNCATED');
+  });
+
+  it('keeps mechanical answer truncation warnings', () => {
+    const proposal = unitProposal();
+    proposal.objectives[0] = {
+      ...proposal.objectives[0],
+      studyAnswer: 'egistrar General may confirm...',
+    };
+    const report = validateAiStudyUnitProposal({
+      proposal,
+      sourceComponents: [{ ...sourceComponent, text: '10 The Registrar General may confirm the boundaries.' }],
+    });
+
+    expect(report.issues.map((issue) => issue.code)).toContain('ANSWER_APPEARS_TRUNCATED');
+  });
+
+  it('canonicalizes same-section and continued legal references before support comparison', () => {
+    const cases: Array<{ sourceKey: string; text: string; answer: string }> = [
+      {
+        sourceKey: 'section:10',
+        text: '10(3) If no written objection is delivered under subsection (1), the Registrar General may confirm the boundaries.',
+        answer: 'The Registrar General may act when no objection was delivered under subsection 10(1).',
+      },
+      {
+        sourceKey: 'section:19',
+        text: '19(6) Subsections (3), (4), (4.1) and (5) do not apply to the listed leases.',
+        answer: 'The lease exception refers to subsections 19(3), 19(4), 19(4.1), and 19(5).',
+      },
+      {
+        sourceKey: 'section:18',
+        text: '18(5) The registrar shall not reject an instrument despite subsection (4).',
+        answer: 'The registrar may not reject the instrument despite subsection 18(4).',
+      },
+      {
+        sourceKey: 'section:3',
+        text: '3(2) The application may proceed under subsection 6(1) or (3).',
+        answer: 'The application may proceed under subsection 6(1) or 6(3).',
+      },
+      {
+        sourceKey: 'section:125',
+        text: '125(1) Regulations may be made respecting paragraph (1)(h) and paragraph (1)(j).',
+        answer: 'Regulations may address paragraph 125(1)(h) and paragraph 125(1)(j).',
+      },
+      {
+        sourceKey: 'section:49.1',
+        text: '49.1(2) On application of the Board following the commencement of subsection (1), a regulator may render assistance.',
+        answer: 'The application follows subsection 49.1(1).',
+      },
+    ];
+
+    cases.forEach(({ sourceKey, text, answer }, index) => {
+      const proposal = unitProposal();
+      proposal.sourceKeys = [sourceKey];
+      proposal.approvedGroup = {
+        ...proposal.approvedGroup!,
+        sourceKeys: [sourceKey],
+        focusSelections: [{ sourceKey }],
+      };
+      proposal.objectives[0] = {
+        ...proposal.objectives[0],
+        id: `reference-${index}`,
+        sourceKeys: [sourceKey],
+        studyAnswer: answer,
+        evidence: [{ sourceKey, evidenceText: text }],
+      };
+      const report = validateAiStudyUnitProposal({
+        proposal,
+        sourceComponents: [{ ...sourceComponent, sourceKey, text }],
+      });
+
+      expect(report.issues.map((issue) => issue.code)).not.toContain('UNSUPPORTED_NUMERIC_OR_REFERENCE');
+    });
+  });
+
+  it('still warns for invented legal references', () => {
+    const proposal = unitProposal();
+    proposal.objectives[0] = {
+      ...proposal.objectives[0],
+      studyAnswer: 'The objection is governed by subsection 99(1).',
+    };
+    const report = validateAiStudyUnitProposal({ proposal, sourceComponents: [sourceComponent] });
+
+    expect(report.issues.map((issue) => issue.code)).toContain('UNSUPPORTED_NUMERIC_OR_REFERENCE');
+  });
+
+  it('does not require literal overlap for ordinary supported paraphrases', () => {
+    const proposal = unitProposal();
+    proposal.objectives[0] = {
+      ...proposal.objectives[0],
+      studyAnswer: 'The employer must comply with the Occupational Health and Safety Act.',
+      evidence: [{ sourceKey: 'section:10', evidenceText: 'The employer shall comply with this Act.' }],
+    };
+    const report = validateAiStudyUnitProposal({
+      proposal,
+      sourceComponents: [{ ...sourceComponent, text: '10 The employer shall comply with this Act.' }],
+    });
+    const codes = report.issues.map((issue) => issue.code);
+
+    expect(codes).not.toContain('ANSWER_EXTENDS_BEYOND_EVIDENCE');
+    expect(codes).not.toContain('EVIDENCE_INCOMPLETE_FOR_ANSWER');
+  });
+
+  it('preserves the EUBA modality warning while accepting the supported phrasing', () => {
+    const source = {
+      ...sourceComponent,
+      sourceKey: 'section:49.1',
+      text: '49.1(2) On application of the Board following the commencement of subsection (1), a regulator may render assistance to the Board.',
+    };
+    const warned = unitProposal();
+    warned.sourceKeys = [source.sourceKey];
+    warned.approvedGroup = { ...warned.approvedGroup!, sourceKeys: [source.sourceKey], focusSelections: [{ sourceKey: source.sourceKey }] };
+    warned.objectives[0] = {
+      ...warned.objectives[0],
+      sourceKeys: [source.sourceKey],
+      studyAnswer: 'The Board must apply following the commencement before a regulator assists.',
+      evidence: [{ sourceKey: source.sourceKey, evidenceText: source.text }],
+    };
+    const clean = {
+      ...warned,
+      proposalId: 'proposal-euba-clean',
+      objectives: [{
+        ...warned.objectives[0],
+        studyAnswer: 'On application of the Board following the commencement, a regulator may render assistance.',
+      }],
+    };
+
+    expect(validateAiStudyUnitProposal({ proposal: warned, sourceComponents: [source] }).issues.map((issue) => issue.code))
+      .toContain('POSSIBLE_MODALITY_MISMATCH');
+    expect(validateAiStudyUnitProposal({ proposal: clean, sourceComponents: [source] }).issues.map((issue) => issue.code))
+      .not.toContain('POSSIBLE_MODALITY_MISMATCH');
+  });
+
   it('allows explicit intentional subsection omissions with a reason', () => {
     const proposal = unitProposal();
     proposal.objectives[0] = {

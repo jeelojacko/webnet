@@ -115,8 +115,8 @@
     "validationStatus": "valid",
     "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.084Z",
-    "updatedAt": "2026-08-13T12:57:13.084Z"
+    "createdAt": "2026-08-13T13:54:37.247Z",
+    "updatedAt": "2026-08-13T13:54:37.247Z"
   },
   {
     "schemaVersion": 1,
@@ -243,18 +243,12 @@
       "sourceJobInputHash": "0ea96e3c87d6f81081ae91e8ff0ab4bdcb4265e193fb5fc596fc230bc7586d12",
       "rawResultFile": "batch-001.results.jsonl"
     },
-    "reviewStatus": "needs-review",
-    "validationStatus": "warnings",
-    "validationMessages": [
-      "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-      "ANSWER_APPEARS_TRUNCATED",
-      "EVIDENCE_INCOMPLETE_FOR_ANSWER",
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_APPEARS_TRUNCATED"
-    ],
+    "reviewStatus": "validated",
+    "validationStatus": "valid",
+    "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.086Z",
-    "updatedAt": "2026-08-13T12:57:13.086Z"
+    "createdAt": "2026-08-13T13:54:37.248Z",
+    "updatedAt": "2026-08-13T13:54:37.248Z"
   },
   {
     "schemaVersion": 1,
@@ -395,14 +389,12 @@
       "sourceJobInputHash": "3240d826d3b0ef7315c40a9994d3a295d343335de9c0816ff133f3547e5ee50d",
       "rawResultFile": "batch-001.results.jsonl"
     },
-    "reviewStatus": "needs-review",
-    "validationStatus": "warnings",
-    "validationMessages": [
-      "UNSUPPORTED_NUMERIC_OR_REFERENCE"
-    ],
+    "reviewStatus": "validated",
+    "validationStatus": "valid",
+    "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.086Z",
-    "updatedAt": "2026-08-13T12:57:13.086Z"
+    "createdAt": "2026-08-13T13:54:37.248Z",
+    "updatedAt": "2026-08-13T13:54:37.248Z"
   },
   {
     "schemaVersion": 1,
@@ -597,8 +589,8 @@
     "validationStatus": "valid",
     "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.086Z",
-    "updatedAt": "2026-08-13T12:57:13.086Z"
+    "createdAt": "2026-08-13T13:54:37.248Z",
+    "updatedAt": "2026-08-13T13:54:37.248Z"
   },
   {
     "schemaVersion": 1,
@@ -716,8 +708,8 @@
     "validationStatus": "valid",
     "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.086Z",
-    "updatedAt": "2026-08-13T12:57:13.086Z"
+    "createdAt": "2026-08-13T13:54:37.248Z",
+    "updatedAt": "2026-08-13T13:54:37.248Z"
   },
   {
     "schemaVersion": 1,
@@ -835,8 +827,8 @@
     "validationStatus": "valid",
     "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.086Z",
-    "updatedAt": "2026-08-13T12:57:13.086Z"
+    "createdAt": "2026-08-13T13:54:37.248Z",
+    "updatedAt": "2026-08-13T13:54:37.248Z"
   },
   {
     "schemaVersion": 1,
@@ -954,8 +946,8 @@
     "validationStatus": "valid",
     "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.086Z",
-    "updatedAt": "2026-08-13T12:57:13.086Z"
+    "createdAt": "2026-08-13T13:54:37.248Z",
+    "updatedAt": "2026-08-13T13:54:37.248Z"
   },
   {
     "schemaVersion": 1,
@@ -1130,17 +1122,12 @@
       "sourceJobInputHash": "da577b1f8fa9dd20ca7cf9c59b9c57a4d31256b3264148427115b189e99eb3af",
       "rawResultFile": "batch-001.results.jsonl"
     },
-    "reviewStatus": "needs-review",
-    "validationStatus": "warnings",
-    "validationMessages": [
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_APPEARS_TRUNCATED"
-    ],
+    "reviewStatus": "validated",
+    "validationStatus": "valid",
+    "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.086Z",
-    "updatedAt": "2026-08-13T12:57:13.086Z"
+    "createdAt": "2026-08-13T13:54:37.248Z",
+    "updatedAt": "2026-08-13T13:54:37.248Z"
   },
   {
     "schemaVersion": 1,
@@ -1312,8 +1299,8 @@
     "validationStatus": "valid",
     "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.086Z",
-    "updatedAt": "2026-08-13T12:57:13.086Z"
+    "createdAt": "2026-08-13T13:54:37.248Z",
+    "updatedAt": "2026-08-13T13:54:37.248Z"
   },
   {
     "schemaVersion": 1,
@@ -1454,27 +1441,12 @@
       "sourceJobInputHash": "0175cd9f717f23d38eb0c2ab57c928bec372caa39836d53af537c76e4e589443",
       "rawResultFile": "batch-002.results.jsonl"
     },
-    "reviewStatus": "needs-review",
-    "validationStatus": "warnings",
-    "validationMessages": [
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_EXTENDS_BEYOND_EVIDENCE",
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_EXTENDS_BEYOND_EVIDENCE",
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_APPEARS_TRUNCATED"
-    ],
+    "reviewStatus": "validated",
+    "validationStatus": "valid",
+    "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.086Z",
-    "updatedAt": "2026-08-13T12:57:13.086Z"
+    "createdAt": "2026-08-13T13:54:37.248Z",
+    "updatedAt": "2026-08-13T13:54:37.248Z"
   },
   {
     "schemaVersion": 1,
@@ -1601,21 +1573,12 @@
       "sourceJobInputHash": "2c0e66def460c5e2e87752f743665f5114bc2ec79af84fb05733506a81c81b54",
       "rawResultFile": "batch-002.results.jsonl"
     },
-    "reviewStatus": "needs-review",
-    "validationStatus": "warnings",
-    "validationMessages": [
-      "EVIDENCE_INCOMPLETE_FOR_ANSWER",
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_EXTENDS_BEYOND_EVIDENCE",
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_EXTENDS_BEYOND_EVIDENCE",
-      "ANSWER_APPEARS_TRUNCATED"
-    ],
+    "reviewStatus": "validated",
+    "validationStatus": "valid",
+    "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.086Z",
-    "updatedAt": "2026-08-13T12:57:13.086Z"
+    "createdAt": "2026-08-13T13:54:37.248Z",
+    "updatedAt": "2026-08-13T13:54:37.248Z"
   },
   {
     "schemaVersion": 1,
@@ -2033,15 +1996,11 @@
     "reviewStatus": "needs-review",
     "validationStatus": "warnings",
     "validationMessages": [
-      "ANSWER_EXTENDS_BEYOND_EVIDENCE",
-      "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-      "ANSWER_EXTENDS_BEYOND_EVIDENCE",
-      "ANSWER_EXTENDS_BEYOND_EVIDENCE",
-      "ANSWER_EXTENDS_BEYOND_EVIDENCE"
+      "UNSUPPORTED_NUMERIC_OR_REFERENCE"
     ],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.086Z",
-    "updatedAt": "2026-08-13T12:57:13.086Z"
+    "createdAt": "2026-08-13T13:54:37.249Z",
+    "updatedAt": "2026-08-13T13:54:37.249Z"
   },
   {
     "schemaVersion": 1,
@@ -2199,8 +2158,8 @@
     "validationStatus": "valid",
     "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.086Z",
-    "updatedAt": "2026-08-13T12:57:13.086Z"
+    "createdAt": "2026-08-13T13:54:37.249Z",
+    "updatedAt": "2026-08-13T13:54:37.249Z"
   },
   {
     "schemaVersion": 1,
@@ -2341,14 +2300,12 @@
       "sourceJobInputHash": "957727b0e95f7e1abbc885c653e54f9e385482870dc69e3be3f047300240beda",
       "rawResultFile": "batch-002.results.jsonl"
     },
-    "reviewStatus": "needs-review",
-    "validationStatus": "warnings",
-    "validationMessages": [
-      "ANSWER_EXTENDS_BEYOND_EVIDENCE"
-    ],
+    "reviewStatus": "validated",
+    "validationStatus": "valid",
+    "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.086Z",
-    "updatedAt": "2026-08-13T12:57:13.086Z"
+    "createdAt": "2026-08-13T13:54:37.249Z",
+    "updatedAt": "2026-08-13T13:54:37.249Z"
   },
   {
     "schemaVersion": 1,
@@ -2515,15 +2472,12 @@
       "sourceJobInputHash": "9cc37a553cb21c4f3edec6b4a8f8528378ee772a82fc21ac19368dd66bef6825",
       "rawResultFile": "batch-002.results.jsonl"
     },
-    "reviewStatus": "needs-review",
-    "validationStatus": "warnings",
-    "validationMessages": [
-      "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-      "ANSWER_EXTENDS_BEYOND_EVIDENCE"
-    ],
+    "reviewStatus": "validated",
+    "validationStatus": "valid",
+    "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.086Z",
-    "updatedAt": "2026-08-13T12:57:13.086Z"
+    "createdAt": "2026-08-13T13:54:37.249Z",
+    "updatedAt": "2026-08-13T13:54:37.249Z"
   },
   {
     "schemaVersion": 1,
@@ -2637,21 +2591,12 @@
       "sourceJobInputHash": "c7b3cf5b39a04277cea6f2126e64c2633550d7ce09dcaffeaacf20fccb615df9",
       "rawResultFile": "batch-002.results.jsonl"
     },
-    "reviewStatus": "needs-review",
-    "validationStatus": "warnings",
-    "validationMessages": [
-      "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-      "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-      "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-      "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-      "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-      "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-      "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-      "UNSUPPORTED_NUMERIC_OR_REFERENCE"
-    ],
+    "reviewStatus": "validated",
+    "validationStatus": "valid",
+    "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.086Z",
-    "updatedAt": "2026-08-13T12:57:13.086Z"
+    "createdAt": "2026-08-13T13:54:37.249Z",
+    "updatedAt": "2026-08-13T13:54:37.249Z"
   },
   {
     "schemaVersion": 1,
@@ -2818,14 +2763,12 @@
       "sourceJobInputHash": "9f72754c410239665534778b53a194f652ea0170730f12b0d11f5b69ec0cc9f3",
       "rawResultFile": "batch-003.results.jsonl"
     },
-    "reviewStatus": "needs-review",
-    "validationStatus": "warnings",
-    "validationMessages": [
-      "ANSWER_EXTENDS_BEYOND_EVIDENCE"
-    ],
+    "reviewStatus": "validated",
+    "validationStatus": "valid",
+    "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.086Z",
-    "updatedAt": "2026-08-13T12:57:13.086Z"
+    "createdAt": "2026-08-13T13:54:37.249Z",
+    "updatedAt": "2026-08-13T13:54:37.249Z"
   },
   {
     "schemaVersion": 1,
@@ -2958,15 +2901,12 @@
       "sourceJobInputHash": "49f9e835e55a0dbe5054944441d982f6505b1299b5d37297ff9cff559f2d7682",
       "rawResultFile": "batch-003.results.jsonl"
     },
-    "reviewStatus": "needs-review",
-    "validationStatus": "warnings",
-    "validationMessages": [
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_APPEARS_TRUNCATED"
-    ],
+    "reviewStatus": "validated",
+    "validationStatus": "valid",
+    "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.086Z",
-    "updatedAt": "2026-08-13T12:57:13.086Z"
+    "createdAt": "2026-08-13T13:54:37.249Z",
+    "updatedAt": "2026-08-13T13:54:37.249Z"
   },
   {
     "schemaVersion": 1,
@@ -3086,15 +3026,12 @@
       "sourceJobInputHash": "06616fbe5eb2a95516610adcda53db0de7a549199898aca2b7e934932eb55ab4",
       "rawResultFile": "batch-003.results.jsonl"
     },
-    "reviewStatus": "needs-review",
-    "validationStatus": "warnings",
-    "validationMessages": [
-      "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-      "ANSWER_APPEARS_TRUNCATED"
-    ],
+    "reviewStatus": "validated",
+    "validationStatus": "valid",
+    "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.086Z",
-    "updatedAt": "2026-08-13T12:57:13.086Z"
+    "createdAt": "2026-08-13T13:54:37.249Z",
+    "updatedAt": "2026-08-13T13:54:37.249Z"
   },
   {
     "schemaVersion": 1,
@@ -3257,22 +3194,12 @@
       "sourceJobInputHash": "cec8ac55429b9d8854b7fd319be271f43736be20c46ecd1eb94bfaba6a5c5275",
       "rawResultFile": "batch-003.results.jsonl"
     },
-    "reviewStatus": "needs-review",
-    "validationStatus": "warnings",
-    "validationMessages": [
-      "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_APPEARS_TRUNCATED",
-      "EVIDENCE_INCOMPLETE_FOR_ANSWER",
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_APPEARS_TRUNCATED"
-    ],
+    "reviewStatus": "validated",
+    "validationStatus": "valid",
+    "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.086Z",
-    "updatedAt": "2026-08-13T12:57:13.086Z"
+    "createdAt": "2026-08-13T13:54:37.249Z",
+    "updatedAt": "2026-08-13T13:54:37.249Z"
   },
   {
     "schemaVersion": 1,
@@ -3411,16 +3338,12 @@
       "sourceJobInputHash": "01e2bbb204e92561a39bf9765dcc7b9d9cd666d6d7187fba2cf2db435c09fd4e",
       "rawResultFile": "batch-003.results.jsonl"
     },
-    "reviewStatus": "needs-review",
-    "validationStatus": "warnings",
-    "validationMessages": [
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_APPEARS_TRUNCATED",
-      "UNSUPPORTED_NUMERIC_OR_REFERENCE"
-    ],
+    "reviewStatus": "validated",
+    "validationStatus": "valid",
+    "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.086Z",
-    "updatedAt": "2026-08-13T12:57:13.086Z"
+    "createdAt": "2026-08-13T13:54:37.249Z",
+    "updatedAt": "2026-08-13T13:54:37.249Z"
   },
   {
     "schemaVersion": 1,
@@ -3551,21 +3474,12 @@
       "sourceJobInputHash": "5f16c3710e9fff1ca2af4a2212546fc6f3298d46cf08e2431b39b1a5382dfb67",
       "rawResultFile": "batch-003.results.jsonl"
     },
-    "reviewStatus": "needs-review",
-    "validationStatus": "warnings",
-    "validationMessages": [
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_EXTENDS_BEYOND_EVIDENCE",
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_EXTENDS_BEYOND_EVIDENCE",
-      "ANSWER_APPEARS_TRUNCATED"
-    ],
+    "reviewStatus": "validated",
+    "validationStatus": "valid",
+    "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.086Z",
-    "updatedAt": "2026-08-13T12:57:13.086Z"
+    "createdAt": "2026-08-13T13:54:37.249Z",
+    "updatedAt": "2026-08-13T13:54:37.249Z"
   },
   {
     "schemaVersion": 1,
@@ -3705,12 +3619,11 @@
     "reviewStatus": "needs-review",
     "validationStatus": "warnings",
     "validationMessages": [
-      "POSSIBLE_MODALITY_MISMATCH",
-      "ANSWER_APPEARS_TRUNCATED"
+      "POSSIBLE_MODALITY_MISMATCH"
     ],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.086Z",
-    "updatedAt": "2026-08-13T12:57:13.086Z"
+    "createdAt": "2026-08-13T13:54:37.249Z",
+    "updatedAt": "2026-08-13T13:54:37.249Z"
   },
   {
     "schemaVersion": 1,
@@ -3866,20 +3779,12 @@
       "sourceJobInputHash": "bd4d08b3d8f613f6060efcacae17cb4f768dde447541130336942b8789e03f84",
       "rawResultFile": "batch-003.results.jsonl"
     },
-    "reviewStatus": "needs-review",
-    "validationStatus": "warnings",
-    "validationMessages": [
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_APPEARS_TRUNCATED",
-      "EVIDENCE_INCOMPLETE_FOR_ANSWER",
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_APPEARS_TRUNCATED",
-      "EVIDENCE_INCOMPLETE_FOR_ANSWER",
-      "ANSWER_APPEARS_TRUNCATED"
-    ],
+    "reviewStatus": "validated",
+    "validationStatus": "valid",
+    "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.086Z",
-    "updatedAt": "2026-08-13T12:57:13.086Z"
+    "createdAt": "2026-08-13T13:54:37.249Z",
+    "updatedAt": "2026-08-13T13:54:37.249Z"
   },
   {
     "schemaVersion": 1,
@@ -4007,15 +3912,12 @@
       "sourceJobInputHash": "994d3d9574162e045c69c6025c8a054d3ba0028eb621e5ab6a1a3d35a963427e",
       "rawResultFile": "batch-004.results.jsonl"
     },
-    "reviewStatus": "needs-review",
-    "validationStatus": "warnings",
-    "validationMessages": [
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_APPEARS_TRUNCATED"
-    ],
+    "reviewStatus": "validated",
+    "validationStatus": "valid",
+    "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.087Z",
-    "updatedAt": "2026-08-13T12:57:13.087Z"
+    "createdAt": "2026-08-13T13:54:37.249Z",
+    "updatedAt": "2026-08-13T13:54:37.249Z"
   },
   {
     "schemaVersion": 1,
@@ -4127,15 +4029,12 @@
       "sourceJobInputHash": "efa8b73967a4a54444d756c1b51c0e5d6c6d34f20b7c1738641c2091012e7734",
       "rawResultFile": "batch-004.results.jsonl"
     },
-    "reviewStatus": "needs-review",
-    "validationStatus": "warnings",
-    "validationMessages": [
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_APPEARS_TRUNCATED"
-    ],
+    "reviewStatus": "validated",
+    "validationStatus": "valid",
+    "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.087Z",
-    "updatedAt": "2026-08-13T12:57:13.087Z"
+    "createdAt": "2026-08-13T13:54:37.249Z",
+    "updatedAt": "2026-08-13T13:54:37.249Z"
   },
   {
     "schemaVersion": 1,
@@ -4255,8 +4154,8 @@
     "validationStatus": "valid",
     "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.087Z",
-    "updatedAt": "2026-08-13T12:57:13.087Z"
+    "createdAt": "2026-08-13T13:54:37.249Z",
+    "updatedAt": "2026-08-13T13:54:37.249Z"
   },
   {
     "schemaVersion": 1,
@@ -4412,16 +4311,12 @@
       "sourceJobInputHash": "387d32a2675ad8d33d26a167020da7caa2a5e66c5bce40c4e72c363dfd44f399",
       "rawResultFile": "batch-004.results.jsonl"
     },
-    "reviewStatus": "needs-review",
-    "validationStatus": "warnings",
-    "validationMessages": [
-      "ANSWER_EXTENDS_BEYOND_EVIDENCE",
-      "ANSWER_APPEARS_TRUNCATED",
-      "EVIDENCE_INCOMPLETE_FOR_ANSWER"
-    ],
+    "reviewStatus": "validated",
+    "validationStatus": "valid",
+    "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.087Z",
-    "updatedAt": "2026-08-13T12:57:13.087Z"
+    "createdAt": "2026-08-13T13:54:37.249Z",
+    "updatedAt": "2026-08-13T13:54:37.249Z"
   },
   {
     "schemaVersion": 1,
@@ -4567,8 +4462,8 @@
     "validationStatus": "valid",
     "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.087Z",
-    "updatedAt": "2026-08-13T12:57:13.087Z"
+    "createdAt": "2026-08-13T13:54:37.249Z",
+    "updatedAt": "2026-08-13T13:54:37.249Z"
   },
   {
     "schemaVersion": 1,
@@ -4740,8 +4635,8 @@
     "validationStatus": "valid",
     "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.087Z",
-    "updatedAt": "2026-08-13T12:57:13.087Z"
+    "createdAt": "2026-08-13T13:54:37.249Z",
+    "updatedAt": "2026-08-13T13:54:37.249Z"
   },
   {
     "schemaVersion": 1,
@@ -4851,18 +4746,12 @@
       "sourceJobInputHash": "99a49209fda83efe87d687a8379a6b109532824514c1ad69cb78c2d7d0082b5c",
       "rawResultFile": "batch-004.results.jsonl"
     },
-    "reviewStatus": "needs-review",
-    "validationStatus": "warnings",
-    "validationMessages": [
-      "ANSWER_APPEARS_TRUNCATED",
-      "EVIDENCE_INCOMPLETE_FOR_ANSWER",
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_APPEARS_TRUNCATED"
-    ],
+    "reviewStatus": "validated",
+    "validationStatus": "valid",
+    "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.087Z",
-    "updatedAt": "2026-08-13T12:57:13.087Z"
+    "createdAt": "2026-08-13T13:54:37.249Z",
+    "updatedAt": "2026-08-13T13:54:37.249Z"
   },
   {
     "schemaVersion": 1,
@@ -5009,19 +4898,12 @@
       "sourceJobInputHash": "43a18f393034ebde9cdf68fd0d232d6aecdfc8643213a71a1fd3c27752186135",
       "rawResultFile": "batch-004.results.jsonl"
     },
-    "reviewStatus": "needs-review",
-    "validationStatus": "warnings",
-    "validationMessages": [
-      "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_APPEARS_TRUNCATED",
-      "EVIDENCE_INCOMPLETE_FOR_ANSWER"
-    ],
+    "reviewStatus": "validated",
+    "validationStatus": "valid",
+    "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.087Z",
-    "updatedAt": "2026-08-13T12:57:13.087Z"
+    "createdAt": "2026-08-13T13:54:37.249Z",
+    "updatedAt": "2026-08-13T13:54:37.249Z"
   },
   {
     "schemaVersion": 1,
@@ -5114,8 +4996,8 @@
     "validationStatus": "valid",
     "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.087Z",
-    "updatedAt": "2026-08-13T12:57:13.087Z"
+    "createdAt": "2026-08-13T13:54:37.249Z",
+    "updatedAt": "2026-08-13T13:54:37.249Z"
   },
   {
     "schemaVersion": 1,
@@ -5223,14 +5105,12 @@
       "sourceJobInputHash": "ade559d79edfcfb10cf40cf78c97c017ee05c1704d68a314f1a08ef3b21cd405",
       "rawResultFile": "batch-005.results.jsonl"
     },
-    "reviewStatus": "needs-review",
-    "validationStatus": "warnings",
-    "validationMessages": [
-      "ANSWER_EXTENDS_BEYOND_EVIDENCE"
-    ],
+    "reviewStatus": "validated",
+    "validationStatus": "valid",
+    "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.087Z",
-    "updatedAt": "2026-08-13T12:57:13.087Z"
+    "createdAt": "2026-08-13T13:54:37.249Z",
+    "updatedAt": "2026-08-13T13:54:37.249Z"
   },
   {
     "schemaVersion": 1,
@@ -5320,8 +5200,8 @@
     "validationStatus": "valid",
     "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.087Z",
-    "updatedAt": "2026-08-13T12:57:13.087Z"
+    "createdAt": "2026-08-13T13:54:37.249Z",
+    "updatedAt": "2026-08-13T13:54:37.249Z"
   },
   {
     "schemaVersion": 1,
@@ -5411,8 +5291,8 @@
     "validationStatus": "valid",
     "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.087Z",
-    "updatedAt": "2026-08-13T12:57:13.087Z"
+    "createdAt": "2026-08-13T13:54:37.249Z",
+    "updatedAt": "2026-08-13T13:54:37.249Z"
   },
   {
     "schemaVersion": 1,
@@ -5570,8 +5450,8 @@
     "validationStatus": "valid",
     "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.087Z",
-    "updatedAt": "2026-08-13T12:57:13.087Z"
+    "createdAt": "2026-08-13T13:54:37.249Z",
+    "updatedAt": "2026-08-13T13:54:37.249Z"
   },
   {
     "schemaVersion": 1,
@@ -5713,14 +5593,12 @@
       "sourceJobInputHash": "e95b9febdfabf06da8120ae75e631f56bc4234a6211522cc1c93199e076002c2",
       "rawResultFile": "batch-005.results.jsonl"
     },
-    "reviewStatus": "needs-review",
-    "validationStatus": "warnings",
-    "validationMessages": [
-      "ANSWER_EXTENDS_BEYOND_EVIDENCE"
-    ],
+    "reviewStatus": "validated",
+    "validationStatus": "valid",
+    "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.087Z",
-    "updatedAt": "2026-08-13T12:57:13.087Z"
+    "createdAt": "2026-08-13T13:54:37.249Z",
+    "updatedAt": "2026-08-13T13:54:37.249Z"
   },
   {
     "schemaVersion": 1,
@@ -5894,8 +5772,8 @@
     "validationStatus": "valid",
     "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.087Z",
-    "updatedAt": "2026-08-13T12:57:13.087Z"
+    "createdAt": "2026-08-13T13:54:37.249Z",
+    "updatedAt": "2026-08-13T13:54:37.249Z"
   },
   {
     "schemaVersion": 1,
@@ -6121,15 +5999,12 @@
         }
       ]
     },
-    "reviewStatus": "needs-review",
-    "validationStatus": "warnings",
-    "validationMessages": [
-      "ANSWER_EXTENDS_BEYOND_EVIDENCE",
-      "ANSWER_EXTENDS_BEYOND_EVIDENCE"
-    ],
+    "reviewStatus": "validated",
+    "validationStatus": "valid",
+    "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.087Z",
-    "updatedAt": "2026-08-13T12:57:13.087Z"
+    "createdAt": "2026-08-13T13:54:37.249Z",
+    "updatedAt": "2026-08-13T13:54:37.249Z"
   },
   {
     "schemaVersion": 1,
@@ -6438,20 +6313,12 @@
     "warnings": [
       "MAP_GROUP_TOO_BROAD_FOR_GOOD_UNIT"
     ],
-    "reviewStatus": "needs-review",
-    "validationStatus": "warnings",
-    "validationMessages": [
-      "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-      "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-      "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-      "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-      "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-      "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-      "ANSWER_EXTENDS_BEYOND_EVIDENCE"
-    ],
+    "reviewStatus": "validated",
+    "validationStatus": "valid",
+    "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.087Z",
-    "updatedAt": "2026-08-13T12:57:13.087Z"
+    "createdAt": "2026-08-13T13:54:37.249Z",
+    "updatedAt": "2026-08-13T13:54:37.249Z"
   },
   {
     "schemaVersion": 1,
@@ -6767,19 +6634,12 @@
     "warnings": [
       "MAP_GROUP_TOO_BROAD_FOR_GOOD_UNIT"
     ],
-    "reviewStatus": "needs-review",
-    "validationStatus": "warnings",
-    "validationMessages": [
-      "ANSWER_EXTENDS_BEYOND_EVIDENCE",
-      "EVIDENCE_INCOMPLETE_FOR_ANSWER",
-      "ANSWER_EXTENDS_BEYOND_EVIDENCE",
-      "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-      "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-      "ANSWER_EXTENDS_BEYOND_EVIDENCE"
-    ],
+    "reviewStatus": "validated",
+    "validationStatus": "valid",
+    "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.087Z",
-    "updatedAt": "2026-08-13T12:57:13.087Z"
+    "createdAt": "2026-08-13T13:54:37.249Z",
+    "updatedAt": "2026-08-13T13:54:37.249Z"
   },
   {
     "schemaVersion": 1,
@@ -6913,14 +6773,12 @@
     "authoringStatus": "generated",
     "confidence": "high",
     "warnings": [],
-    "reviewStatus": "needs-review",
-    "validationStatus": "warnings",
-    "validationMessages": [
-      "ANSWER_APPEARS_TRUNCATED"
-    ],
+    "reviewStatus": "validated",
+    "validationStatus": "valid",
+    "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.087Z",
-    "updatedAt": "2026-08-13T12:57:13.087Z"
+    "createdAt": "2026-08-13T13:54:37.249Z",
+    "updatedAt": "2026-08-13T13:54:37.249Z"
   },
   {
     "schemaVersion": 1,
@@ -7092,8 +6950,8 @@
     "validationStatus": "valid",
     "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.087Z",
-    "updatedAt": "2026-08-13T12:57:13.087Z"
+    "createdAt": "2026-08-13T13:54:37.249Z",
+    "updatedAt": "2026-08-13T13:54:37.249Z"
   },
   {
     "schemaVersion": 1,
@@ -7227,15 +7085,12 @@
     "authoringStatus": "generated",
     "confidence": "high",
     "warnings": [],
-    "reviewStatus": "needs-review",
-    "validationStatus": "warnings",
-    "validationMessages": [
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_APPEARS_TRUNCATED"
-    ],
+    "reviewStatus": "validated",
+    "validationStatus": "valid",
+    "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.087Z",
-    "updatedAt": "2026-08-13T12:57:13.087Z"
+    "createdAt": "2026-08-13T13:54:37.249Z",
+    "updatedAt": "2026-08-13T13:54:37.249Z"
   },
   {
     "schemaVersion": 1,
@@ -7350,14 +7205,12 @@
     "authoringStatus": "generated",
     "confidence": "high",
     "warnings": [],
-    "reviewStatus": "needs-review",
-    "validationStatus": "warnings",
-    "validationMessages": [
-      "UNSUPPORTED_NUMERIC_OR_REFERENCE"
-    ],
+    "reviewStatus": "validated",
+    "validationStatus": "valid",
+    "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.087Z",
-    "updatedAt": "2026-08-13T12:57:13.087Z"
+    "createdAt": "2026-08-13T13:54:37.249Z",
+    "updatedAt": "2026-08-13T13:54:37.249Z"
   },
   {
     "schemaVersion": 1,
@@ -7493,15 +7346,12 @@
     "authoringStatus": "generated",
     "confidence": "high",
     "warnings": [],
-    "reviewStatus": "needs-review",
-    "validationStatus": "warnings",
-    "validationMessages": [
-      "ANSWER_APPEARS_TRUNCATED",
-      "ANSWER_EXTENDS_BEYOND_EVIDENCE"
-    ],
+    "reviewStatus": "validated",
+    "validationStatus": "valid",
+    "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.087Z",
-    "updatedAt": "2026-08-13T12:57:13.087Z"
+    "createdAt": "2026-08-13T13:54:37.249Z",
+    "updatedAt": "2026-08-13T13:54:37.249Z"
   },
   {
     "schemaVersion": 1,
@@ -7608,14 +7458,11 @@
     "authoringStatus": "generated",
     "confidence": "high",
     "warnings": [],
-    "reviewStatus": "needs-review",
-    "validationStatus": "warnings",
-    "validationMessages": [
-      "UNSUPPORTED_NUMERIC_OR_REFERENCE",
-      "ANSWER_APPEARS_TRUNCATED"
-    ],
+    "reviewStatus": "validated",
+    "validationStatus": "valid",
+    "validationMessages": [],
     "conflictCodes": [],
-    "createdAt": "2026-08-13T12:57:13.087Z",
-    "updatedAt": "2026-08-13T12:57:13.087Z"
+    "createdAt": "2026-08-13T13:54:37.249Z",
+    "updatedAt": "2026-08-13T13:54:37.249Z"
   }
 ]

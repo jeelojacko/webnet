@@ -11,6 +11,17 @@ import type {
   AiValidationReport,
 } from './studyAiTypes';
 import { validateStudyMapGroupGrounding } from './studyAiGrounding';
+import {
+  approvedFocusTextForObjective,
+  collectRiskTokens,
+  collectRiskTokensForSource,
+  findTruncationCandidates,
+  focusTextForSource,
+  normalizeAiValidationText,
+  normalizeLegalReference,
+  significantLegalSupportTerms,
+  sourceSectionFromKey,
+} from './studyAiUnitFidelity';
 
 const DISPOSITIONS = new Set(['standalone', 'combine', 'split', 'reference-only', 'skip', 'needs-human-review']);
 const CONFIDENCES = new Set(['high', 'medium', 'low']);
@@ -47,8 +58,7 @@ const OBJECTIVE_TYPES = new Set([
   'other',
 ]);
 
-const normalizeText = (value: string): string =>
-  value.replace(/\s+/g, ' ').replace(/[“”]/g, '"').replace(/[‘’]/g, "'").trim().toLowerCase();
+const normalizeText = normalizeAiValidationText;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -263,52 +273,6 @@ const validateQuestionQuality = (
   });
 };
 
-const legalReferencePattern =
-  /\b(?:sections?|subsections?|paragraphs?)\s+(?:\d+(?:\.\d+)?|\(\d+(?:\.\d+)?\))(?:\([^)]+\))*(?:\s+or\s+(?:\d+(?:\.\d+)?)?\([^)]+\))*|\b\d+(?:\.\d+)?\([^)]+\)(?:\([^)]+\))*/gi;
-
-const quantityPattern =
-  /\$\s*\b\d+(?:\.\d+)?\b|\b\d+(?:\.\d+)?\s*(?:days?|months?|years?|per cent|percent|%)\b|\b(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirty|sixty)\s+(?:days?|months?|years?)\b/gi;
-
-const sourceSectionFromKey = (sourceKey: string): string | undefined =>
-  /^section:(\d+(?:\.\d+)?)/i.exec(sourceKey)?.[1];
-
-const normalizeLegalReference = (token: string, currentSection?: string): string[] => {
-  const normalized = normalizeText(token).replace(/\s+/g, ' ');
-  const prefixMatch = /^(sections?|subsections?|paragraphs?)\s+(.+)$/i.exec(normalized);
-  if (!prefixMatch) return [normalized];
-  const prefix = prefixMatch[1].toLowerCase().replace(/s$/, '');
-  const body = prefixMatch[2];
-  const parts = body.split(/\s+or\s+/i);
-  return parts.flatMap((part, index) => {
-    const trimmed = part.trim();
-    const withBare = (value: string): string[] =>
-      /^\d+(?:\.\d+)?\([^)]+\)/.test(trimmed) ? [value, trimmed] : [value];
-    if (/^\(\d+(?:\.\d+)?\)/.test(trimmed)) {
-      const base = currentSection ?? /^\d+(?:\.\d+)?/.exec(parts[0])?.[0];
-      return base ? `${prefix} ${base}${trimmed}` : `${prefix} ${trimmed}`;
-    }
-    if (index > 0 && /^\([^)]+\)/.test(trimmed)) {
-      const base = /^\d+(?:\.\d+)?/.exec(parts[0])?.[0] ?? currentSection;
-      return base ? `${prefix} ${base}${trimmed}` : `${prefix} ${trimmed}`;
-    }
-    return withBare(`${prefix} ${trimmed}`);
-  });
-};
-
-const collectLegalReferences = (text: string, currentSection?: string): string[] =>
-  Array.from(new Set(Array.from(text.matchAll(legalReferencePattern)).flatMap((match) =>
-    normalizeLegalReference(match[0], currentSection),
-  )));
-
-const collectRiskTokens = (text: string): string[] =>
-  Array.from(new Set([
-    ...collectLegalReferences(text),
-    ...Array.from(text.matchAll(quantityPattern)).map((match) => normalizeText(match[0])),
-  ]));
-
-const collectRiskTokensForSource = (text: string, sourceKey: string): string[] =>
-  Array.from(new Set([...collectLegalReferences(text, sourceSectionFromKey(sourceKey)), ...collectRiskTokens(text)]));
-
 const modalityTokens = (text: string): Set<string> => {
   const normalized = normalizeText(text);
   const tokens = new Set<string>();
@@ -331,39 +295,24 @@ const extractLikelyActors = (text: string): string[] =>
     ),
   );
 
-const significantTerms = (text: string): string[] => {
-  const stopWords = new Set([
-    'the',
-    'and',
-    'or',
-    'of',
-    'to',
-    'a',
-    'an',
-    'in',
-    'for',
-    'by',
-    'with',
-    'that',
-    'this',
-    'is',
-    'be',
-    'as',
-    'it',
-    'under',
-    'from',
-    'on',
-    'at',
-    'may',
-    'must',
-    'shall',
-  ]);
-  return Array.from(new Set(normalizeText(text).match(/\b[a-z][a-z-]{4,}\b/g) ?? [])).filter(
-    (word) => !stopWords.has(word),
-  );
+const modalityEquivalent = (term: string): 'duty' | 'permission' | 'prohibition' | undefined => {
+  if (term === 'shall' || term === 'must' || term === 'required') return 'duty';
+  if (term === 'may') return 'permission';
+  if (term === 'shall not' || term === 'must not' || term === 'may not' || term === 'prohibited') return 'prohibition';
+  return undefined;
 };
 
-const isAlphanumeric = (value: string | undefined): boolean => Boolean(value && /[A-Za-z0-9]/.test(value));
+const termIsSupported = (term: string, sourceTerms: Set<string>, sourceText: string): boolean => {
+  if (sourceTerms.has(term)) return true;
+  const referenceWithoutKind = /^(?:section|subsection|paragraph)\s+(.+)$/.exec(term)?.[1];
+  if (referenceWithoutKind && sourceTerms.has(referenceWithoutKind)) return true;
+  const modality = modalityEquivalent(term);
+  if (modality) {
+    return Array.from(sourceTerms).some((sourceTerm) => modalityEquivalent(sourceTerm) === modality);
+  }
+  if (term.endsWith(' act') && /\bthis act\b/i.test(sourceText)) return true;
+  return false;
+};
 
 const sourceTextsForObjective = (
   objective: AiLearningObjective,
@@ -399,38 +348,17 @@ const validateTruncation = (
   sourceComponents: ImportedLegalComponent[],
   issues: AiValidationIssue[],
 ): void => {
-  const candidates = [
-    { field: 'answer' as const, text: objective.studyAnswer },
-    ...objective.evidence.map((evidence) => ({ field: 'evidence' as const, text: evidence.evidenceText })),
-  ];
-  const sourceTexts = sourceTextsForObjective(objective, sourceComponents);
-  candidates.forEach(({ field, text }) => {
-    const trimmed = text.trim();
-    if (!trimmed) return;
-    if (/[.。…]{3,}\s*$/.test(trimmed)) {
-      addTruncationIssue(issues, proposal, objective, trimmed, sourceTexts.join('\n\n'), field, 'literal-ellipsis');
-    }
-    if (/^[a-z]\w*\b/.test(trimmed) && !/^(a|an|and|as|at|by|for|if|in|of|on|or|the|to|with)\b/i.test(trimmed)) {
-      addTruncationIssue(issues, proposal, objective, trimmed, sourceTexts.join('\n\n'), field, 'suspicious-lowercase-start');
-    }
-    if (/[A-Za-z,;:]$/.test(trimmed) && !/\b(Act|Regulation|Registrar General|Director of Surveys|Board|Minister|Council)$/.test(trimmed)) {
-      addTruncationIssue(issues, proposal, objective, trimmed, sourceTexts.join('\n\n'), field, 'suspicious-ending');
-    }
-    sourceTexts.forEach((sourceText) => {
-      const index = sourceText.indexOf(trimmed);
-      if (index < 0) return;
-      if (isAlphanumeric(sourceText[index - 1]) && isAlphanumeric(trimmed[0])) {
-        addTruncationIssue(issues, proposal, objective, trimmed, sourceText, field, 'mid-token-start');
-      }
-      const after = sourceText[index + trimmed.length];
-      if (isAlphanumeric(after) && isAlphanumeric(trimmed.at(-1))) {
-        addTruncationIssue(issues, proposal, objective, trimmed, sourceText, field, 'mid-token-end');
-      }
-    });
+  findTruncationCandidates(objective, proposal, sourceComponents).forEach((candidate) => {
+    addTruncationIssue(
+      issues,
+      proposal,
+      objective,
+      candidate.text,
+      candidate.sourceText,
+      candidate.field,
+      candidate.trigger,
+    );
   });
-  if (/[.。…]{3,}/.test(proposal.studySummary) && objective.studyAnswer.includes('...')) {
-    addTruncationIssue(issues, proposal, objective, proposal.studySummary, sourceTexts.join('\n\n'), 'answer', 'summary-built-from-truncated-answer');
-  }
 };
 
 const definitionTermsForObjective = (
@@ -508,7 +436,7 @@ const validateObjectiveFidelity = (
   const evidenceText = objective.evidence.map((evidence) => evidence.evidenceText).join(' ');
   const approvedFocusText = approvedFocusTextForObjective(objective, proposal, sourceComponents);
   const sourceTokenSet = riskTokensForFocus(objective, proposal, sourceComponents);
-  collectRiskTokens(objective.studyAnswer).forEach((token) => {
+  collectRiskTokens(objective.studyAnswer, sourceSectionFromKey(objective.sourceKeys[0] ?? '')).forEach((token) => {
     if (!sourceTokenSet.has(token)) {
       addIssue(issues, {
         code: 'UNSUPPORTED_NUMERIC_OR_REFERENCE',
@@ -562,11 +490,11 @@ const validateObjectiveFidelity = (
       message: `Objective ${objective.id} answer names actor "${trigger}" not found in the approved focus for question "${objective.guidedQuestion}".`,
     });
   }
-  const focusTerms = new Set(significantTerms(approvedFocusText));
-  const evidenceTerms = new Set(significantTerms(evidenceText));
-  const answerTerms = significantTerms(objective.studyAnswer);
-  const unsupportedByFocus = answerTerms.filter((term) => !focusTerms.has(term));
-  const unsupportedByEvidence = answerTerms.filter((term) => !evidenceTerms.has(term));
+  const focusTerms = new Set(significantLegalSupportTerms(approvedFocusText));
+  const evidenceTerms = new Set(significantLegalSupportTerms(evidenceText));
+  const answerTerms = significantLegalSupportTerms(objective.studyAnswer);
+  const unsupportedByFocus = answerTerms.filter((term) => !termIsSupported(term, focusTerms, approvedFocusText));
+  const unsupportedByEvidence = answerTerms.filter((term) => !termIsSupported(term, evidenceTerms, evidenceText));
   if (unsupportedByFocus.length >= 3) {
     addIssue(issues, {
       code: 'ANSWER_EXTENDS_BEYOND_EVIDENCE',
@@ -639,48 +567,6 @@ const validateCoverage = (
       }
     });
   });
-};
-
-const childLabelSourceText = (
-  sourceComponents: ImportedLegalComponent[],
-  sourceKey: string,
-  label: string,
-): string | undefined => {
-  const component = sourceComponents.find((entry) => entry.sourceKey === sourceKey);
-  if (!component) return undefined;
-  const subsection = component.subsections?.find((entry) => entry.label === label);
-  return subsection?.text ?? (component.label === label ? component.text : undefined);
-};
-
-const focusTextForSource = (
-  sourceComponents: ImportedLegalComponent[],
-  approvedGroup: AiProposedSourceGroup,
-  sourceKey: string,
-): string => {
-  const component = sourceComponents.find((entry) => entry.sourceKey === sourceKey);
-  if (!component) return '';
-  const selections = approvedGroup.focusSelections.filter((selection) => selection.sourceKey === sourceKey);
-  const childTexts = selections.flatMap((selection) =>
-    (selection.childLabels ?? [])
-      .map((label) => childLabelSourceText(sourceComponents, sourceKey, label))
-      .filter((text): text is string => Boolean(text)),
-  );
-  return childTexts.length > 0 ? childTexts.join('\n\n') : component.text;
-};
-
-const approvedFocusTextForObjective = (
-  objective: AiLearningObjective,
-  proposal: AiStudyUnitProposal,
-  sourceComponents: ImportedLegalComponent[],
-): string => {
-  if (!proposal.approvedGroup) {
-    return objective.sourceKeys
-      .map((sourceKey) => sourceComponents.find((component) => component.sourceKey === sourceKey)?.text ?? '')
-      .join('\n\n');
-  }
-  return objective.sourceKeys
-    .map((sourceKey) => focusTextForSource(sourceComponents, proposal.approvedGroup as AiProposedSourceGroup, sourceKey))
-    .join('\n\n');
 };
 
 const riskTokensForFocus = (

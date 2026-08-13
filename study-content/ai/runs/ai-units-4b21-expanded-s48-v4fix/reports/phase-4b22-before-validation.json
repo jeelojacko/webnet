@@ -1,0 +1,14 @@
+{
+  "runId": "ai-units-4b21-expanded-s48-v4fix",
+  "cleanValid": 16,
+  "warningValid": 32,
+  "invalid": 0,
+  "totalWarnings": 125,
+  "warningCounts": {
+    "UNSUPPORTED_NUMERIC_OR_REFERENCE": 26,
+    "ANSWER_APPEARS_TRUNCATED": 66,
+    "EVIDENCE_INCOMPLETE_FOR_ANSWER": 9,
+    "ANSWER_EXTENDS_BEYOND_EVIDENCE": 23,
+    "POSSIBLE_MODALITY_MISMATCH": 1
+  }
+}

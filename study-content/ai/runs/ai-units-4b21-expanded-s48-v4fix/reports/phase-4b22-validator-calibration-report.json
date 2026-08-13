@@ -1,0 +1,54 @@
+{
+  "runId": "ai-units-4b21-expanded-s48-v4fix",
+  "before": {
+    "runId": "ai-units-4b21-expanded-s48-v4fix",
+    "cleanValid": 16,
+    "warningValid": 32,
+    "invalid": 0,
+    "totalWarnings": 125,
+    "warningCounts": {
+      "UNSUPPORTED_NUMERIC_OR_REFERENCE": 26,
+      "ANSWER_APPEARS_TRUNCATED": 66,
+      "EVIDENCE_INCOMPLETE_FOR_ANSWER": 9,
+      "ANSWER_EXTENDS_BEYOND_EVIDENCE": 23,
+      "POSSIBLE_MODALITY_MISMATCH": 1
+    }
+  },
+  "after": {
+    "runId": "ai-units-4b21-expanded-s48-v4fix",
+    "cleanValid": 46,
+    "warningValid": 2,
+    "invalid": 0,
+    "totalWarnings": 2,
+    "warningCounts": {
+      "UNSUPPORTED_NUMERIC_OR_REFERENCE": 1,
+      "POSSIBLE_MODALITY_MISMATCH": 1
+    }
+  },
+  "deltas": {
+    "truncationWarningsRemoved": 66,
+    "referenceWarningsRemoved": 25,
+    "evidenceWarningsRemoved": 32
+  },
+  "remaining": [
+    {
+      "proposalId": "unit-2fa5132093e8c1e1",
+      "objectiveId": "cpa125g3-2",
+      "code": "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+      "trigger": "section 53",
+      "message": "Objective cpa125g3-2 answer includes unsupported numeric or legal-reference token \"section 53\" for question \"What kinds of powers may be vested or adapted for a zoning regulation or zoning provisions in a rural plan under section 125?\".",
+      "answerFragment": "Subsection 125(9) allows listed section 53 powers and functions, powers respecting particular uses, a Minister letter for one section 53 requirement, possible regional service commission powers, Consolidated Fund treatment and possible return of a fee, deemed vesting of certain proposed-use and variance powers, and Minister orders or agreements for rezoning applications with section 59 applying with necessary modifications.",
+      "sourceFragment": "125(2)If a fee is prescribed under paragraph (1)(h), the fee shall be paid, despite the Financial Administration Act, to the regional service commission and shall be credited to the cost of the delivery of the land use planning service under subsection 161(4) of the Local Governance Act.\n\n125(3)Subj"
+    },
+    {
+      "proposalId": "unit-e6cd7bbc18ac8615",
+      "objectiveId": "euba491-2",
+      "code": "POSSIBLE_MODALITY_MISMATCH",
+      "trigger": "answer=prohibition,duty; source=permission",
+      "message": "Objective euba491-2 may change legal modality for question \"What must have happened before a non-party regulator may assist the Board under subsection 49.1(2)?\".",
+      "answerFragment": "The Board must apply following the commencement of a proceeding resulting from the application of financial and consumer services legislation, and the regulator must not already be a party to the proceedings.",
+      "sourceFragment": "49.1(1)For the purposes of this section, “regulator” means a regulator as defined in the Financial and Consumer Services Commission Act.\n\n49.1(2)On application of the Board following the commencement of a proceeding resulting from the application of financial and consumer services legislation, a reg"
+    }
+  ],
+  "readiness": "PHASE 4B.2.2 VALIDATOR CALIBRATION PASSED — READY FOR FULL-CORPUS BATCH PIPELINE"
+}
