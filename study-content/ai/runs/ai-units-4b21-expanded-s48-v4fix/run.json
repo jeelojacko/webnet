@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "runId": "ai-units-4b21-expanded-s48-v4fix",
+  "createdAt": "2026-08-13T12:13:33.693Z",
+  "updatedAt": "2026-08-13T12:13:33.694Z",
+  "providerKind": "external-codex",
+  "jobType": "unit-authoring",
+  "promptSpecVersion": "unit-authoring-v4",
+  "corpusContentHash": "f1565fa2738a2eebaa249c3448aac6789f994eed0fc2f1cc1bf39894853c7b3a",
+  "status": "prepared",
+  "jobCount": 48,
+  "completedCount": 0,
+  "invalidCount": 0,
+  "notes": "Prepared from the same 48 approved Map groups as ai-units-4b2-expanded-s48-v4; deterministic local prose authoring is disabled."
+}

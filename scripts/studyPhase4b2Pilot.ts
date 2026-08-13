@@ -3,10 +3,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import { join } from 'node:path';
 import type { NbLawContentPackage, NbLawDocumentComponent } from '../src/study/content/nbLawTypes';
 import type {
-  AiLearningObjective,
-  AiLearningObjectiveType,
   AiMapFocusSelection,
-  AiSourceCoverage,
   AiStoredUnitProposal,
   AiStudyMapProposal,
   AiStudyUnitProposal,
@@ -15,17 +12,13 @@ import type {
 } from '../src/study/ai/studyAiTypes';
 import { validateAiStudyUnitProposal } from '../src/study/ai/studyAiValidation';
 import type { ImportedLegalComponent } from '../src/study/studyTypes';
-import {
-  generateReferenceAnswer,
-  generateStudyQuestion,
-  generateStudyTitle,
-} from '../src/study/studyDraftGeneration';
-import { generateStudyRubric } from '../src/study/studyRubricGeneration';
 
 const RUN_ID = 'ai-units-4b2-expanded-s48-v4';
+const FIX_RUN_ID = 'ai-units-4b21-expanded-s48-v4fix';
 const SELECTION_RUN_ID = 'ai-map-4b2-expanded-selection';
 const PACKAGE_PATH = 'study-content/packages/nb-sit-statute-corpus.content-package.json';
 const RUN_DIR = join('study-content', 'ai', 'runs', RUN_ID);
+const FIX_RUN_DIR = join('study-content', 'ai', 'runs', FIX_RUN_ID);
 const ROOT_REPORTS_DIR = 'reports';
 const RUN_REPORTS_DIR = join(RUN_DIR, 'reports');
 const SOURCE_MAP_RUNS = ['ai-map-4b11-targeted-s24-v3', 'ai-map-4b12-grounding-s9-v1'];
@@ -96,12 +89,6 @@ const countBy = (values: string[]): Record<string, number> =>
     acc[value] = (acc[value] ?? 0) + 1;
     return acc;
   }, {});
-
-const normalizeText = (value: string): string =>
-  value.replace(/[“”]/g, '"').replace(/[‘’]/g, "'").replace(/\s+/g, ' ').trim();
-
-const cleanLabelPrefix = (value: string, label: string): string =>
-  normalizeText(value).replace(new RegExp(`^${label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*`), '').trim();
 
 const sourceKeyLabel = (sourceKey: string): string =>
   /^section:(.+)$/i.exec(sourceKey)?.[1] ?? sourceKey;
@@ -283,6 +270,14 @@ const loadJobs = (): AiUnitAuthoringJob[] =>
     .sort()
     .flatMap((file) => readJsonl<AiUnitAuthoringJob>(join(RUN_DIR, 'jobs', file)));
 
+const loadResults = (runDir = RUN_DIR): AiStudyUnitProposal[] =>
+  existsSync(join(runDir, 'results'))
+    ? readdirSync(join(runDir, 'results'))
+        .filter((file) => file.endsWith('.results.jsonl'))
+        .sort()
+        .flatMap((file) => readJsonl<AiStudyUnitProposal>(join(runDir, 'results', file)))
+    : [];
+
 const componentToImported = (
   document: NbLawContentPackage['documents'][number],
   component: NbLawDocumentComponent,
@@ -310,239 +305,17 @@ const sourceComponentsForJob = (
     .map((component) => componentToImported(document, component));
 };
 
-const findComponent = (
+const writeResults = (_pkg: NbLawContentPackage, _selections: SelectedGroup[]): void => {
+  throw new Error(
+    'Deterministic Phase 4B.2 Unit Authoring is disabled. Prepare jobs with `prepare-v4fix`, author results externally per CODEX_INSTRUCTIONS.md, then run `validate`/`report`.',
+  );
+};
+
+const validateAndStore = (
   pkg: NbLawContentPackage,
-  documentId: string,
-  sourceKey: string,
-): NbLawDocumentComponent | undefined =>
-  pkg.documents.find((document) => document.id === documentId)?.components.find((component) => component.sourceKey === sourceKey);
-
-const childText = (component: NbLawDocumentComponent | undefined, label: string): string =>
-  component?.subsections?.find((entry) => entry.label === label)?.text ?? component?.text ?? '';
-
-const evidenceForSelection = (
-  pkg: NbLawContentPackage,
-  job: AiUnitAuthoringJob,
-  selection: AiMapFocusSelection,
-  childLabel?: string,
-  term?: string,
-): string => {
-  const component = findComponent(pkg, job.document.documentId, selection.sourceKey);
-  const source = childLabel ? childText(component, childLabel) : component?.text ?? '';
-  if (term) {
-    const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const match = new RegExp(`["“]${escaped}["”][\\s\\S]{0,500?(?=\\n\\n["“]|\\n\\n\\d|$)`, 'i').exec(source);
-    if (match?.[0]) return normalizeText(match[0]).slice(0, 900);
-  }
-  const hinted = selection.evidenceText?.find((hint) => normalizeText(source).toLowerCase().includes(normalizeText(hint).toLowerCase()));
-  if (hinted) {
-    const normalizedSource = normalizeText(source);
-    const idx = normalizedSource.toLowerCase().indexOf(normalizeText(hinted).toLowerCase());
-    return normalizedSource.slice(Math.max(0, idx - 120), Math.min(normalizedSource.length, idx + hinted.length + 320));
-  }
-  return normalizeText(source).slice(0, 1000);
-};
-
-const objectiveTypeForText = (text: string, tags: string[]): AiLearningObjectiveType => {
-  const lowered = text.toLowerCase();
-  if (tags.includes('definitions')) return 'definition';
-  if (tags.includes('offence-penalty')) return lowered.includes('penalt') ? 'penalty' : 'offence';
-  if (tags.includes('filing-registration')) return 'filing';
-  if (tags.includes('notice')) return 'notice';
-  if (tags.includes('deadlines-time-periods')) return 'deadline';
-  if (tags.includes('prohibitions')) return 'prohibition';
-  if (tags.includes('duties')) return 'duty';
-  if (tags.includes('exceptions-qualifiers')) return 'exception';
-  if (tags.includes('legal-effect')) return 'legal-effect';
-  if (tags.includes('discretionary-powers') || tags.includes('regulation-making')) return 'authority';
-  if (tags.includes('procedure')) return 'procedure';
-  if (tags.includes('surveying-specific')) return 'surveying-practice';
-  return 'other';
-};
-
-const answerFromEvidence = (label: string, evidence: string): string => {
-  const cleaned = cleanLabelPrefix(evidence, label);
-  const first = cleaned.split(/(?<=\.)\s+/)[0] ?? cleaned;
-  return first.length > 420 ? `${first.slice(0, 417).trim()}...` : first;
-};
-
-const titleSubject = (title: string): string =>
-  title
-    .replace(/^REGULATION\s+\S+\s+s\.\s+\S+\s*[-:]?\s*/i, '')
-    .replace(/^.+?\s+s\.\s+\S+\s*[-:]?\s*/i, '')
-    .trim();
-
-const buildObjectives = (
-  pkg: NbLawContentPackage,
-  job: AiUnitAuthoringJob,
-  tags: string[],
-): { objectives: AiLearningObjective[]; coverage: AiSourceCoverage[] } => {
-  const objectives: AiLearningObjective[] = [];
-  const coverage: AiSourceCoverage[] = [];
-  job.approvedGroup.focusSelections.forEach((selection) => {
-    const childLabels = selection.childLabels ?? [];
-    const terms = selection.definedTerms ?? [];
-    const coverageLabels: NonNullable<AiSourceCoverage['childLabels']> = [];
-    if (terms.length > 0) {
-      terms.forEach((term, index) => {
-        const evidence = evidenceForSelection(pkg, job, selection, undefined, term);
-        const id = `obj-${objectives.length + 1}`;
-        objectives.push({
-          id,
-          type: 'definition',
-          objective: `Recall the ${term} definition.`,
-          guidedQuestion: `What does ${term} mean for ${job.document.title}?`,
-          studyAnswer: answerFromEvidence(term, evidence),
-          required: true,
-          sourceKeys: [selection.sourceKey],
-          evidence: [{ sourceKey: selection.sourceKey, evidenceText: evidence }],
-          confidence: 'high',
-        });
-        if (index > 4) return;
-      });
-    }
-    childLabels.forEach((label) => {
-      const evidence = evidenceForSelection(pkg, job, selection, label);
-      const id = `obj-${objectives.length + 1}`;
-      const type = objectiveTypeForText(evidence, tags);
-      objectives.push({
-        id,
-        type,
-        objective: `Recall ${label} for ${titleSubject(job.approvedGroup.titleSuggestion) || job.approvedGroup.titleSuggestion}.`,
-        guidedQuestion: `What does ${label} require or allow for ${titleSubject(job.approvedGroup.titleSuggestion) || job.document.title}?`,
-        studyAnswer: answerFromEvidence(label, evidence),
-        required: true,
-        sourceKeys: [selection.sourceKey],
-        evidence: [{ sourceKey: selection.sourceKey, evidenceText: evidence }],
-        confidence: 'high',
-      });
-      coverageLabels.push({ label, status: 'covered', objectiveIds: [id] });
-    });
-    if (childLabels.length > 0) {
-      coverage.push({ sourceKey: selection.sourceKey, childLabels: coverageLabels });
-    } else {
-      coverage.push({ sourceKey: selection.sourceKey });
-    }
-  });
-  if (objectives.length === 0) {
-    const sourceKey = job.approvedGroup.sourceKeys[0] ?? job.sourceKeys[0];
-    const evidence = evidenceForSelection(pkg, job, { sourceKey });
-    objectives.push({
-      id: 'obj-1',
-      type: objectiveTypeForText(evidence, tags),
-      objective: `Recall the rule for ${titleSubject(job.approvedGroup.titleSuggestion) || job.approvedGroup.titleSuggestion}.`,
-      guidedQuestion: `What is the rule for ${titleSubject(job.approvedGroup.titleSuggestion) || job.document.title}?`,
-      studyAnswer: answerFromEvidence(sourceKeyLabel(sourceKey), evidence),
-      required: true,
-      sourceKeys: [sourceKey],
-      evidence: [{ sourceKey, evidenceText: evidence }],
-      confidence: 'high',
-    });
-    coverage.push({ sourceKey });
-  }
-  return { objectives: objectives.slice(0, 8), coverage };
-};
-
-const mapRevisionSuggestionForBroadGroup = (job: AiUnitAuthoringJob) => ({
-  reason: 'The approved focus combines public-purpose land, money handling, procedure, summary delivery, filing, and retroactivity rules, which is too broad for one durable retrieval-practice StudyUnit.',
-  proposedGroups: [
-    {
-      title: 'Subdivision land or money for public purposes',
-      sourceKeys: job.approvedGroup.sourceKeys,
-      focusSelections: [{ sourceKey: 'section:125', childLabels: ['125(10)', '125(11)', '125(12)'] }],
-      approximateLearningGoal: 'Recall how public-purpose land and money rules apply to subdivision regulations.',
-    },
-    {
-      title: 'Procedure before making subdivision rural plan regulations',
-      sourceKeys: job.approvedGroup.sourceKeys,
-      focusSelections: [{ sourceKey: 'section:125', childLabels: ['125(13)', '125(14)'] }],
-      approximateLearningGoal: 'Recall the Ministerial summary and delivery steps before making these regulations.',
-    },
-    {
-      title: 'Filing and retroactive effect of subdivision rural plan regulations',
-      sourceKeys: job.approvedGroup.sourceKeys,
-      focusSelections: [{ sourceKey: 'section:125', childLabels: ['125(15)', '125(16)'] }],
-      approximateLearningGoal: 'Recall filing duties and limits on retroactive effect.',
-    },
-  ],
-});
-
-const authorProposal = (
-  pkg: NbLawContentPackage,
-  job: AiUnitAuthoringJob,
-  selectionByJob: Map<string, SelectedGroup>,
-): AiStudyUnitProposal => {
-  const selected = selectionByJob.get(job.jobId);
-  const tags = selected?.categoryTags ?? classifyTags(job.operativeSourceText, job.approvedGroup.titleSuggestion, job.document.documentId);
-  const { objectives, coverage } = buildObjectives(pkg, job, tags);
-  const broadCommunityPlanning =
-    job.document.documentId === 'doc-community-planning-act' &&
-    job.approvedGroup.focusSelections.some((selection) => selection.childLabels?.includes('125(10)') && selection.childLabels?.includes('125(16)'));
-  return {
-    schemaVersion: 1,
-    proposalId: job.jobId,
-    runId: job.runId,
-    corpusContentHash: job.corpusContentHash,
-    sourceDocumentId: job.document.documentId,
-    sourceKeys: job.approvedGroup.sourceKeys,
-    sourceHashes: job.sourceHashes,
-    title: titleSubject(job.approvedGroup.titleSuggestion) || job.approvedGroup.titleSuggestion,
-    mainQuestion: `What should a learner remember about ${titleSubject(job.approvedGroup.titleSuggestion) || job.approvedGroup.titleSuggestion}?`,
-    studySummary: objectives.map((objective) => objective.studyAnswer).join(' ').slice(0, 1200),
-    objectives,
-    relatedSourceKeys: [],
-    studyNotes: [],
-    sourceCoverage: coverage,
-    approvedGroup: job.approvedGroup,
-    mapDisposition: job.mapDisposition,
-    mapReason: job.mapReason,
-    approximateLearningGoal: job.approximateLearningGoal,
-    authoringStatus: broadCommunityPlanning ? 'needs-map-revision' : 'generated',
-    mapRevisionSuggestion: broadCommunityPlanning ? mapRevisionSuggestionForBroadGroup(job) : undefined,
-    confidence: broadCommunityPlanning ? 'medium' : 'high',
-    warnings: broadCommunityPlanning ? ['MAP_GROUP_TOO_BROAD_FOR_GOOD_UNIT'] : [],
-    generationMetadata: {
-      providerKind: 'external-codex',
-      promptSpecVersion: job.promptSpecVersion,
-      generatedAt: GENERATED_AT,
-      sourceJobId: job.jobId,
-      sourceJobInputHash: job.inputHash,
-    },
-  };
-};
-
-const writeResults = (pkg: NbLawContentPackage, selections: SelectedGroup[]): void => {
-  const jobs = loadJobs();
-  if (jobs.length !== 48) throw new Error(`Expected 48 jobs before authoring, found ${jobs.length}.`);
-  if (!jobs.every((job) => job.promptSpecVersion === 'unit-authoring-v4')) {
-    throw new Error('Every Phase 4B.2 job must use unit-authoring-v4.');
-  }
-  const selectionByTitle = new Map(selections.map((entry) => [entry.proposal.proposedGroups[0]?.titleSuggestion ?? '', entry]));
-  const selectionByJob = new Map<string, SelectedGroup>();
-  jobs.forEach((job) => {
-    const selection = selectionByTitle.get(job.approvedGroup.titleSuggestion);
-    if (selection) selectionByJob.set(job.jobId, selection);
-  });
-  const proposals = jobs.map((job) => authorProposal(pkg, job, selectionByJob));
-  mkdirSync(join(RUN_DIR, 'results'), { recursive: true });
-  for (let index = 0; index < proposals.length; index += 8) {
-    const batch = Math.floor(index / 8) + 1;
-    const batchProposals = proposals.slice(index, index + 8).map((proposal) => ({
-      ...proposal,
-      generationMetadata: {
-        ...proposal.generationMetadata,
-        rawResultFile: `batch-${String(batch).padStart(3, '0')}.results.jsonl`,
-      },
-    }));
-    writeJsonl(join(RUN_DIR, 'results', `batch-${String(batch).padStart(3, '0')}.results.jsonl`), batchProposals);
-  }
-};
-
-const validateAndStore = (pkg: NbLawContentPackage): { stored: AiStoredUnitProposal[]; issues: Array<AiValidationIssue & { proposalId: string }> } => {
-  const proposals = readdirSync(join(RUN_DIR, 'results'))
-    .filter((file) => file.endsWith('.results.jsonl'))
-    .sort()
-    .flatMap((file) => readJsonl<AiStudyUnitProposal>(join(RUN_DIR, 'results', file)));
+  artifactPrefix = 'unit',
+): { stored: AiStoredUnitProposal[]; issues: Array<AiValidationIssue & { proposalId: string }> } => {
+  const proposals = loadResults();
   const issues = proposals.flatMap((proposal) =>
     validateAiStudyUnitProposal({
       proposal,
@@ -568,8 +341,8 @@ const validateAndStore = (pkg: NbLawContentPackage): { stored: AiStoredUnitPropo
       updatedAt: now,
     };
   });
-  writeJson(join(RUN_REPORTS_DIR, 'unit-proposals.json'), stored);
-  writeJson(join(RUN_REPORTS_DIR, 'unit-validation.json'), {
+  writeJson(join(RUN_REPORTS_DIR, `${artifactPrefix}-proposals.json`), stored);
+  writeJson(join(RUN_REPORTS_DIR, `${artifactPrefix}-validation.json`), {
     runId: RUN_ID,
     proposals: proposals.length,
     valid: stored.filter((proposal) => proposal.validationStatus === 'valid').length,
@@ -578,9 +351,12 @@ const validateAndStore = (pkg: NbLawContentPackage): { stored: AiStoredUnitPropo
     issues,
   });
   writeFileSync(
-    join(RUN_REPORTS_DIR, 'unit-validation.md'),
+    join(RUN_REPORTS_DIR, `${artifactPrefix}-validation.md`),
     [
-      `# Unit Proposal Validation ${RUN_ID}`,
+      `# Phase 4B.2.1 Preserved Run Revalidation ${RUN_ID}`,
+      '',
+      'This report revalidates preserved Phase 4B.2 result JSONL with the remediated validator.',
+      'It does not replace the original Phase 4B.2 validation artifacts.',
       '',
       `Proposals: ${proposals.length}`,
       `Valid: ${stored.filter((proposal) => proposal.validationStatus === 'valid').length}`,
@@ -594,332 +370,171 @@ const validateAndStore = (pkg: NbLawContentPackage): { stored: AiStoredUnitPropo
   return { stored, issues };
 };
 
-const deterministicComparison = (
-  pkg: NbLawContentPackage,
-  proposal: AiStudyUnitProposal,
-): Record<string, unknown> => {
-  const document = pkg.documents.find((entry) => entry.id === proposal.sourceDocumentId);
-  if (!document) return { available: false, reason: 'Document not found.' };
-  const components = document.components
-    .filter((component) => proposal.sourceKeys.includes(component.sourceKey))
-    .map((component) => componentToImported(document, component));
-  if (components.length === 0) return { available: false, reason: 'Source components not found.' };
-  const rubrics = generateStudyRubric({
-    document: document as unknown as Parameters<typeof generateStudyRubric>[0]['document'],
-    selectedSources: components,
-    unitType: 'section',
-  });
-  return {
-    available: true,
-    title: generateStudyTitle({ documentTitle: document.officialTitle, selectedSources: components }),
-    mainQuestion: generateStudyQuestion({
-      documentTitle: document.officialTitle,
-      selectedSources: components,
-      rubricCategories: rubrics.map((item) => item.category),
-    }).question,
-    rubricQuestions: rubrics.map((item) => item.prompt),
-    referenceAnswer: generateReferenceAnswer({
-      document: document as unknown as Parameters<typeof generateReferenceAnswer>[0]['document'],
-      selectedSources: components,
-      options: {
-        format: 'structured-exact',
-        includeAmendmentHistory: false,
-        includeConsolidationNotes: false,
-        includeRepealedProvisions: true,
-        includeSectionHeadings: true,
-        includeSourceCitationAfterEachSection: false,
-      },
-    }).text,
+const rewriteJobForRun = (job: AiUnitAuthoringJob, runId: string): AiUnitAuthoringJob => {
+  const base = {
+    ...job,
+    runId,
+    inputHash: '',
   };
+  return { ...base, inputHash: hashText(JSON.stringify(base)) };
 };
 
-const writeReviewReports = (
-  pkg: NbLawContentPackage,
-  stored: AiStoredUnitProposal[],
-  issues: Array<AiValidationIssue & { proposalId: string }>,
-): void => {
-  const proposals = stored.map((proposal) => {
-    const document = pkg.documents.find((entry) => entry.id === proposal.sourceDocumentId);
-    const components = document?.components.filter((component) => proposal.sourceKeys.includes(component.sourceKey)) ?? [];
-    return {
-      sourceIdentity: {
-        document: document?.officialTitle ?? proposal.sourceDocumentId,
-        citation: components.map((component) => component.label).join(', '),
-        approvedGroup: proposal.approvedGroup?.titleSuggestion,
-        focusSelections: proposal.approvedGroup?.focusSelections ?? [],
-      },
-      officialFocusedSource: components.map((component) => component.text).join('\n\n'),
-      aiContent: {
-        title: proposal.title,
-        mainQuestion: proposal.mainQuestion,
-        studySummary: proposal.studySummary,
-        learningObjectives: proposal.objectives.map((objective) => objective.objective),
-        guidedQuestions: proposal.objectives.map((objective) => objective.guidedQuestion),
-        studyAnswers: proposal.objectives.map((objective) => objective.studyAnswer),
-        evidence: proposal.objectives.flatMap((objective) => objective.evidence),
-      },
-      validation: {
-        errors: issues.filter((issue) => issue.proposalId === proposal.proposalId && issue.severity === 'error'),
-        warnings: issues.filter((issue) => issue.proposalId === proposal.proposalId && issue.severity === 'warning'),
-        evidenceCompleteness: issues.filter((issue) => issue.proposalId === proposal.proposalId && issue.code === 'EVIDENCE_INCOMPLETE_FOR_ANSWER'),
-        focusCoverage: proposal.sourceCoverage ?? [],
-      },
-      deterministicComparison: deterministicComparison(pkg, proposal),
-      humanEvaluation: {
-        overall: null,
-        mainQuestion: null,
-        guidedQuestions: null,
-        studyAnswers: null,
-        legalFidelity: null,
-        evidenceQuality: null,
-        notes: null,
-      },
-    };
-  });
-  writeJson(join(RUN_REPORTS_DIR, 'expanded-pilot-review.json'), {
+const prepareV4FixRun = (): void => {
+  const jobs = loadJobs().map((job) => rewriteJobForRun(job, FIX_RUN_ID));
+  if (jobs.length !== 48) throw new Error(`Expected 48 preserved jobs to prepare V4-fix run, found ${jobs.length}.`);
+  mkdirSync(join(FIX_RUN_DIR, 'jobs'), { recursive: true });
+  mkdirSync(join(FIX_RUN_DIR, 'results'), { recursive: true });
+  mkdirSync(join(FIX_RUN_DIR, 'reports'), { recursive: true });
+  writeJson(join(FIX_RUN_DIR, 'run.json'), {
     schemaVersion: 1,
-    runId: RUN_ID,
-    generatedAt: GENERATED_AT,
-    proposals,
+    runId: FIX_RUN_ID,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    providerKind: 'external-codex',
+    jobType: 'unit-authoring',
+    promptSpecVersion: 'unit-authoring-v4',
+    corpusContentHash: hashText(JSON.stringify(jobs.map((job) => job.corpusContentHash))),
+    status: 'prepared',
+    jobCount: jobs.length,
+    completedCount: 0,
+    invalidCount: 0,
+    notes: `Prepared from the same 48 approved Map groups as ${RUN_ID}; deterministic local prose authoring is disabled.`,
   });
+  for (let index = 0; index < jobs.length; index += 8) {
+    const batch = Math.floor(index / 8) + 1;
+    writeJsonl(join(FIX_RUN_DIR, 'jobs', `batch-${String(batch).padStart(3, '0')}.jobs.jsonl`), jobs.slice(index, index + 8));
+  }
   writeFileSync(
-    join(RUN_REPORTS_DIR, 'expanded-pilot-review.md'),
+    join(FIX_RUN_DIR, 'CODEX_INSTRUCTIONS.md'),
     [
-      `# Expanded Pilot Review ${RUN_ID}`,
+      '# Codex Instructions',
       '',
-      ...proposals.flatMap((proposal, index) => [
-        `## ${index + 1}. ${proposal.sourceIdentity.document} ${proposal.sourceIdentity.citation}`,
-        `Group: ${proposal.sourceIdentity.approvedGroup ?? ''}`,
-        `Focus: ${JSON.stringify(proposal.sourceIdentity.focusSelections)}`,
-        '',
-        '### Source',
-        proposal.officialFocusedSource,
-        '',
-        '### AI',
-        `Title: ${proposal.aiContent.title}`,
-        `Main question: ${proposal.aiContent.mainQuestion}`,
-        `Study summary: ${proposal.aiContent.studySummary}`,
-        '',
-        ...proposal.aiContent.learningObjectives.flatMap((objective, objectiveIndex) => [
-          `${objectiveIndex + 1}. ${objective}`,
-          `Question: ${proposal.aiContent.guidedQuestions[objectiveIndex] ?? ''}`,
-          `Answer: ${proposal.aiContent.studyAnswers[objectiveIndex] ?? ''}`,
-        ]),
-        '',
-        '### Validation',
-        `Errors: ${proposal.validation.errors.length}`,
-        `Warnings: ${proposal.validation.warnings.length}`,
-        '',
-        '### Human Evaluation',
-        'overall:',
-        'mainQuestion:',
-        'guidedQuestions:',
-        'studyAnswers:',
-        'legalFidelity:',
-        'evidenceQuality:',
-        'notes:',
-        '',
-      ]),
+      `Process ONLY the requested content job files in ${FIX_RUN_DIR}/jobs using study-content/ai/specs/unit-authoring-v4.md.`,
+      'Write JSONL results to the matching file under results/, for example batch-001.results.jsonl.',
+      'Write one JSON object per line and no Markdown fences.',
+      'Use genuine per-job legal/educational reasoning from the supplied approvedGroup focus.',
+      'Do not use deterministic templates for main questions, guided questions, study answers, or mapRevisionSuggestion prose.',
+      'Do not use fixed-length source substrings or append ellipses because a limit was reached.',
+      'Definition objectives must answer the actual defined term, not the generic definitions-section preamble.',
+      'The approvedGroup is the AUTHORING SOURCE. Context is for understanding only.',
+      'Do not browse, use outside legal research, or add legal memory.',
+      'Preserve jobId as proposalId or generationMetadata.sourceJobId, runId, corpusContentHash, promptSpecVersion, and inputHash in generationMetadata.sourceJobInputHash.',
+      '',
     ].join('\n'),
   );
-  writeJson(join(RUN_REPORTS_DIR, 'deterministic-comparison.json'), {
+  writeJson(join(FIX_RUN_DIR, 'reports', 'same-48-preparation.json'), {
     schemaVersion: 1,
-    runId: RUN_ID,
-    generatedAt: GENERATED_AT,
-    comparisons: stored.map((proposal) => ({
-      proposalId: proposal.proposalId,
-      deterministic: deterministicComparison(pkg, proposal),
-      ai: {
-        mainQuestion: proposal.mainQuestion,
-        guidedQuestions: proposal.objectives.map((objective) => objective.guidedQuestion),
-        studyAnswers: proposal.objectives.map((objective) => objective.studyAnswer),
-      },
+    oldRunId: RUN_ID,
+    newRunId: FIX_RUN_ID,
+    jobs: jobs.length,
+    selectedGroups: jobs.map((job) => ({
+      jobId: job.jobId,
+      documentId: job.document.documentId,
+      title: job.approvedGroup.titleSuggestion,
+      sourceKeys: job.approvedGroup.sourceKeys,
+      focusSelections: job.approvedGroup.focusSelections,
     })),
   });
+  console.log(`Prepared ${jobs.length} same-48 V4-fix jobs in ${FIX_RUN_DIR}`);
 };
 
-const writeV3V4Comparison = (stored: AiStoredUnitProposal[]): void => {
-  const v3ResultsDir = join('study-content', 'ai', 'runs', 'ai-units-4b13-pilot-s16-v3', 'results');
-  const v3 = existsSync(v3ResultsDir)
-    ? readdirSync(v3ResultsDir)
-        .filter((file) => file.endsWith('.results.jsonl'))
-        .flatMap((file) => readJsonl<AiStudyUnitProposal>(join(v3ResultsDir, file)))
-    : [];
-  const comparisons = stored
-    .map((v4) => {
-      const match = v3.find(
-        (entry) =>
-          entry.sourceDocumentId === v4.sourceDocumentId &&
-          JSON.stringify(entry.approvedGroup?.focusSelections ?? []) === JSON.stringify(v4.approvedGroup?.focusSelections ?? []),
-      );
-      if (!match) return undefined;
-      return {
-        sourceDocumentId: v4.sourceDocumentId,
-        sourceKeys: v4.sourceKeys,
-        approvedGroup: v4.approvedGroup?.titleSuggestion,
-        v3: {
-          proposalId: match.proposalId,
-          mainQuestion: match.mainQuestion,
-          guidedQuestions: match.objectives.map((objective) => objective.guidedQuestion),
-          studyAnswers: match.objectives.map((objective) => objective.studyAnswer),
-          evidenceCount: match.objectives.reduce((sum, objective) => sum + objective.evidence.length, 0),
-          warnings: match.warnings,
-        },
-        v4: {
-          proposalId: v4.proposalId,
-          mainQuestion: v4.mainQuestion,
-          guidedQuestions: v4.objectives.map((objective) => objective.guidedQuestion),
-          studyAnswers: v4.objectives.map((objective) => objective.studyAnswer),
-          evidenceCount: v4.objectives.reduce((sum, objective) => sum + objective.evidence.length, 0),
-          warnings: v4.validationMessages,
-        },
-      };
-    })
-    .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
-  writeJson(join(RUN_REPORTS_DIR, 'v3-v4-comparison.json'), {
+const writeRemediationReport = (
+  stored: AiStoredUnitProposal[],
+  issues: Array<AiValidationIssue & { proposalId: string }>,
+): void => {
+  const codeCounts = countBy(issues.map((issue) => issue.code));
+  const fixResults = loadResults(FIX_RUN_DIR);
+  const report = {
     schemaVersion: 1,
-    runId: RUN_ID,
-    baselineRunId: 'ai-units-4b13-pilot-s16-v3',
-    generatedAt: GENERATED_AT,
-    comparisons,
-  });
+    oldRunId: RUN_ID,
+    newRunId: FIX_RUN_ID,
+    generatedAt: new Date().toISOString(),
+    provenanceFinding: 'Phase 4B.2 result JSONL was produced by scripts/studyPhase4b2Pilot.ts deterministic helper authoring, not genuine per-job external Codex reasoning.',
+    deterministicAuthoringDisabled: true,
+    preservedOldRunProposals: stored.length,
+    preparedFixRunJobs: existsSync(join(FIX_RUN_DIR, 'jobs')) ? loadJobs().length : 0,
+    fixRunResultsPresent: fixResults.length,
+    validation: {
+      clean: stored.filter((proposal) => proposal.validationStatus === 'valid').length,
+      warningValid: stored.filter((proposal) => proposal.validationStatus === 'warnings').length,
+      invalid: stored.filter((proposal) => proposal.validationStatus === 'invalid').length,
+      issueCounts: codeCounts,
+    },
+    educationalDiagnostics: {
+      genericMainQuestions: issues.filter((issue) => issue.code === 'GENERIC_MAIN_QUESTION').length,
+      genericGuidedQuestions: issues.filter((issue) => issue.code === 'GENERIC_GUIDED_QUESTION').length,
+      suspectedTruncation: issues.filter((issue) => issue.code === 'ANSWER_APPEARS_TRUNCATED').length,
+      definitionResponsivenessFailures: issues.filter((issue) => issue.code === 'DEFINITION_ANSWER_MISSING_TERM_MEANING').length,
+      duplicateNonresponsiveAnswers: issues.filter((issue) => issue.code === 'DUPLICATE_NONRESPONSIVE_ANSWER').length,
+    },
+  };
+  writeJson(join(RUN_REPORTS_DIR, 'phase-4b21-remediation-report.json'), report);
   writeFileSync(
-    join(RUN_REPORTS_DIR, 'v3-v4-comparison.md'),
+    join(RUN_REPORTS_DIR, 'phase-4b21-remediation-report.md'),
     [
-      '# V3/V4 Control Comparison',
+      '# Phase 4B.2.1 Remediation Report',
       '',
-      `Controls matched: ${comparisons.length}`,
+      `Old run: ${RUN_ID}`,
+      `New run: ${FIX_RUN_ID}`,
       '',
-      ...comparisons.flatMap((comparison, index) => [
-        `## ${index + 1}. ${comparison.sourceDocumentId} ${comparison.approvedGroup}`,
-        `V3 main question: ${comparison.v3.mainQuestion}`,
-        `V4 main question: ${comparison.v4.mainQuestion}`,
-        `V3 evidence count: ${comparison.v3.evidenceCount}`,
-        `V4 evidence count: ${comparison.v4.evidenceCount}`,
-        `V3 warnings: ${comparison.v3.warnings.join(', ') || 'none'}`,
-        `V4 validation messages: ${comparison.v4.warnings.join(', ') || 'none'}`,
-        '',
-      ]),
+      '## Provenance',
+      `- ${report.provenanceFinding}`,
+      '- Deterministic local Unit prose authoring is now disabled in the Phase 4B.2 pilot script.',
+      '',
+      '## Deterministic Validation Outcome',
+      `- Preserved old proposals: ${report.preservedOldRunProposals}`,
+      `- Clean: ${report.validation.clean}`,
+      `- Warning-valid: ${report.validation.warningValid}`,
+      `- Invalid: ${report.validation.invalid}`,
+      '',
+      '## Educational Diagnostics',
+      `- Generic main questions: ${report.educationalDiagnostics.genericMainQuestions}`,
+      `- Generic guided questions: ${report.educationalDiagnostics.genericGuidedQuestions}`,
+      `- Suspected truncation: ${report.educationalDiagnostics.suspectedTruncation}`,
+      `- Definition responsiveness failures: ${report.educationalDiagnostics.definitionResponsivenessFailures}`,
+      `- Duplicate/nonresponsive answer diagnostics: ${report.educationalDiagnostics.duplicateNonresponsiveAnswers}`,
+      '',
+      '## New Run',
+      `- Same-48 V4-fix job run prepared: ${existsSync(join(FIX_RUN_DIR, 'run.json')) ? 'yes' : 'no'}`,
+      `- Genuine external-authored result lines present: ${report.fixRunResultsPresent}`,
+      '- Human educational-quality outcome: pending review after genuine external authoring results are supplied.',
+      '- Full-corpus generation: not started.',
+      '',
+      '## Issue Counts',
+      ...Object.entries(report.validation.issueCounts).map(([code, count]) => `- ${code}: ${count}`),
+      '',
     ].join('\n'),
   );
 };
 
-const writeCompletionReport = (
-  selections: SelectedGroup[],
-  stored: AiStoredUnitProposal[],
-  issues: Array<AiValidationIssue & { proposalId: string }>,
-): void => {
-  const selectionReport = readJson<StoredSelectionReport>(join(RUN_REPORTS_DIR, 'expanded-pilot-selection.json'));
-  const warningIssues = issues.filter((issue) => issue.severity === 'warning');
-  const errorIssues = issues.filter((issue) => issue.severity === 'error');
-  const warningDistribution = countBy(warningIssues.map((issue) => issue.code));
-  const affectedByWarning = Object.fromEntries(
-    Object.keys(warningDistribution).map((code) => [
-      code,
-      new Set(warningIssues.filter((issue) => issue.code === code).map((issue) => issue.proposalId)).size,
-    ]),
-  );
-  const broad = stored.filter((proposal) => proposal.warnings.includes('MAP_GROUP_TOO_BROAD_FOR_GOOD_UNIT'));
-  const averageEvidence =
-    stored.reduce((sum, proposal) => sum + proposal.objectives.reduce((inner, objective) => inner + objective.evidence.length, 0), 0) /
-    Math.max(1, stored.reduce((sum, proposal) => sum + proposal.objectives.length, 0));
-  const report = [
-    '# Phase 4B.2 Expanded V4 Pilot Completion Report',
-    '',
-    '## Run',
-    `- Run ID: ${RUN_ID}`,
-    '- Prompt spec: unit-authoring-v4',
-    `- Jobs: ${stored.length}`,
-    '- Batches: 6',
-    '',
-    '## Sample',
-    `- Acts: ${selectionReport.aggregates.acts}`,
-    `- Regulations/Bylaws: ${selectionReport.aggregates.regulationsOrBylaws}`,
-    `- Unique documents: ${selectionReport.aggregates.uniqueDocuments}`,
-    `- Category distribution: ${JSON.stringify(selectionReport.aggregates.categoryCounts)}`,
-    `- Complexity distribution: ${JSON.stringify(selectionReport.aggregates.complexityCounts)}`,
-    '',
-    '## Validation',
-    `- Valid clean: ${stored.filter((proposal) => proposal.validationStatus === 'valid').length}`,
-    `- Warning-valid: ${stored.filter((proposal) => proposal.validationStatus === 'warnings').length}`,
-    `- Invalid: ${stored.filter((proposal) => proposal.validationStatus === 'invalid').length}`,
-    '- Malformed: 0',
-    '- Stale: 0',
-    '- Duplicate: 0',
-    '',
-    '## Warning Distribution',
-    ...Object.entries(warningDistribution).map(([code, count]) => `- ${code}: ${count}; affected proposals: ${affectedByWarning[code] ?? 0}`),
-    '',
-    '## Legal Fidelity',
-    `- Context leakage: ${issues.filter((issue) => issue.code === 'UNIT_CONTEXT_LEAKAGE').length}`,
-    `- Outside-focus leakage: ${issues.filter((issue) => issue.code === 'OUTSIDE_APPROVED_FOCUS').length}`,
-    `- Actor mismatch: ${issues.filter((issue) => issue.code === 'POSSIBLE_ACTOR_MISMATCH').length}`,
-    `- Modality mismatch: ${issues.filter((issue) => issue.code === 'POSSIBLE_MODALITY_MISMATCH').length}`,
-    `- Numeric/reference drift: ${issues.filter((issue) => issue.code === 'UNSUPPORTED_NUMERIC_OR_REFERENCE').length}`,
-    `- Qualifier-loss warnings: ${issues.filter((issue) => issue.code === 'POSSIBLE_QUALIFIER_LOSS').length}`,
-    `- Unsupported claims/errors: ${errorIssues.length}`,
-    '',
-    '## Evidence',
-    `- EVIDENCE_INCOMPLETE_FOR_ANSWER count: ${issues.filter((issue) => issue.code === 'EVIDENCE_INCOMPLETE_FOR_ANSWER').length}`,
-    `- ANSWER_EXTENDS_BEYOND_EVIDENCE count: ${issues.filter((issue) => issue.code === 'ANSWER_EXTENDS_BEYOND_EVIDENCE').length}`,
-    `- Average evidence items/objective: ${averageEvidence.toFixed(2)}`,
-    '- Preserved V3 pilot comparison is in v3-v4-comparison reports.',
-    '',
-    '## Educational Diagnostics',
-    `- Generic questions: ${issues.filter((issue) => issue.code === 'GENERIC_MAIN_QUESTION').length}`,
-    `- Duplicate questions: ${issues.filter((issue) => issue.code === 'DUPLICATE_QUESTION').length}`,
-    `- Long answers: ${issues.filter((issue) => issue.code === 'ANSWER_TOO_LONG').length}`,
-    `- Malformed questions: ${issues.filter((issue) => issue.code === 'MALFORMED_QUESTION').length}`,
-    `- Too many objectives: ${stored.filter((proposal) => proposal.objectives.length > 6).length}`,
-    `- Broad Map groups: ${broad.length}`,
-    '',
-    '## V3/V4 Controls',
-    '- Mechanical comparison only; no human quality rating assigned.',
-    '',
-    '## Map Revisions',
-    ...broad.map((proposal) => `- ${proposal.sourceDocumentId} ${proposal.approvedGroup?.titleSuggestion}: ${JSON.stringify(proposal.mapRevisionSuggestion)}`),
-    '',
-    '## Artifacts',
-    '- Selection JSON: reports/expanded-pilot-selection.json',
-    '- Selection MD: reports/expanded-pilot-selection.md',
-    `- Jobs: ${RUN_DIR}/jobs`,
-    `- Raw results: ${RUN_DIR}/results`,
-    `- Validation: ${RUN_REPORTS_DIR}/unit-validation.json and .md`,
-    `- Proposals: ${RUN_REPORTS_DIR}/unit-proposals.json`,
-    `- Expanded review: ${RUN_REPORTS_DIR}/expanded-pilot-review.json and .md`,
-    `- Deterministic comparison: ${RUN_REPORTS_DIR}/deterministic-comparison.json`,
-    `- V3/V4 comparison: ${RUN_REPORTS_DIR}/v3-v4-comparison.json and .md`,
-    '',
-    '## Checks',
-    '- lint: pending',
-    '- typecheck: pending',
-    '- focused tests: pending',
-    '- full tests: pending',
-    '- build: pending',
-    '',
-    stored.some((proposal) => proposal.validationStatus === 'invalid')
-      ? 'V4 AUTHORING NEEDS TECHNICAL REMEDIATION'
-      : 'EXPANDED V4 PILOT READY FOR HUMAN REVIEW',
-    '',
-  ].join('\n');
-  writeFileSync(join(RUN_REPORTS_DIR, 'completion-report.md'), report);
-};
-
-const command = process.argv[2] ?? 'all';
+const command = process.argv[2] ?? 'help';
 const pkg = readJson<NbLawContentPackage>(PACKAGE_PATH);
 
-if (command === 'select' || command === 'all') {
+if (command === 'select') {
   const selections = loadSelections();
   writeSelectionReports(selections);
   console.log(`Wrote ${selections.length} Phase 4B.2 selections.`);
 }
 
-if (command === 'author' || command === 'all') {
+if (command === 'prepare-v4fix') {
+  prepareV4FixRun();
+}
+
+if (command === 'validate' || command === 'report') {
+  const selections = loadSelections();
+  const { stored, issues } = validateAndStore(pkg, 'phase-4b21-revalidation');
+  if (command === 'report') {
+    void selections;
+    writeRemediationReport(stored, issues);
+  }
+  console.log(`Validated ${stored.length} preserved Phase 4B.2 proposals with ${issues.length} issues.`);
+}
+
+if (command === 'author') {
   const selections = loadSelections();
   writeResults(pkg, selections);
-  const { stored, issues } = validateAndStore(pkg);
-  writeReviewReports(pkg, stored, issues);
-  writeV3V4Comparison(stored);
-  writeCompletionReport(selections, stored, issues);
-  console.log(`Authored and reported ${stored.length} Phase 4B.2 proposals.`);
+}
+
+if (!['select', 'prepare-v4fix', 'validate', 'report', 'author'].includes(command)) {
+  console.log('Commands: select, prepare-v4fix, validate, report. The author command intentionally fails closed.');
 }

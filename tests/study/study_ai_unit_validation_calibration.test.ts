@@ -130,6 +130,30 @@ describe('AI Unit Authoring validation calibration', () => {
     expect(codesFor(proposal, [source])).not.toContain('UNSUPPORTED_NUMERIC_OR_REFERENCE');
   });
 
+  it('allows Marital Property Act 30(3) to reference subsection 27(3)', () => {
+    const source = component({
+      sourceKey: 'section:30',
+      label: '30',
+      text: '30(3) Subsection 27(3) and paragraph 23(1)(d) apply with the necessary modifications.',
+      subsections: [
+        {
+          id: 's30-3',
+          sourceKey: 'section:30#subsection:3',
+          label: '30(3)',
+          text: '30(3) Subsection 27(3) and paragraph 23(1)(d) apply with the necessary modifications.',
+          contentHash: 'hash-s30-3',
+        },
+      ],
+    });
+    const proposal = proposalFor({
+      source,
+      answer: 'Subsection 27(3) and paragraph 23(1)(d) apply with the necessary modifications.',
+      evidence: source.subsections?.[0]?.text ?? source.text,
+    });
+
+    expect(codesFor(proposal, [source])).not.toContain('UNSUPPORTED_NUMERIC_OR_REFERENCE');
+  });
+
   it('still catches true modality, prohibition, deadline, actor, and reference drift', () => {
     const maySource = component({ sourceKey: 'section:3', label: '3', text: '3 The Registrar General may waive the requirement.' });
     expect(codesFor(proposalFor({ source: maySource, answer: 'The Registrar General must waive the requirement.', evidence: maySource.text }), [maySource])).toContain('POSSIBLE_MODALITY_MISMATCH');
@@ -145,6 +169,76 @@ describe('AI Unit Authoring validation calibration', () => {
 
     const refSource = component({ sourceKey: 'section:18', label: '18', text: '18 A notice refers to subsection 18(4).' });
     expect(codesFor(proposalFor({ source: refSource, answer: 'A notice refers to subsection 18(5).', evidence: refSource.text }), [refSource])).toContain('UNSUPPORTED_NUMERIC_OR_REFERENCE');
+  });
+
+  it('detects mid-token and literal-ellipsis clipping in answers and evidence', () => {
+    const source = component({
+      sourceKey: 'section:125',
+      label: '125',
+      text: '125(3) Subject to subsections (4) and (7), the Lieutenant-Governor in Council may designate an area for the application of a regulation.',
+    });
+
+    expect(codesFor(proposalFor({ source, answer: 'ubject to subsections (4) and (7), the Lieutenant-Governor in Council may designate an area...', evidence: 'ubject to subsections (4) and (7)' }), [source])).toContain('ANSWER_APPEARS_TRUNCATED');
+    expect(codesFor(proposalFor({ source, answer: 'Subject to subsections (4) and (7), the Lieutenant-Governor in Council may designate an', evidence: 'Subject to subsections (4) and (7), the Lieutenant-Governor in Council may designate an' }), [source])).toContain('ANSWER_APPEARS_TRUNCATED');
+  });
+
+  it('detects normalized generic main and guided question templates', () => {
+    const source = component({ sourceKey: 'section:10', label: '10', text: '10 A person may deliver an objection.' });
+    const proposal = proposalFor({
+      source,
+      answer: 'A person may deliver an objection.',
+      evidence: source.text,
+      question: 'What does 10 require or allow for Objection delivery?',
+    });
+    proposal.mainQuestion = 'What should a learner remember about Objection delivery?';
+    proposal.approvedGroup!.titleSuggestion = 'Objection delivery';
+
+    const codes = codesFor(proposal, [source]);
+
+    expect(codes).toContain('GENERIC_MAIN_QUESTION');
+    expect(codes).toContain('GENERIC_GUIDED_QUESTION');
+  });
+
+  it('rejects definition answers that return only the definitions preamble', () => {
+    const source = component({
+      sourceKey: 'section:1',
+      label: '1',
+      text: 'Definitions 1 The following definitions apply in this Act. "coordinate monument" means a brass, bronze or aluminum cap or plate established and maintained in accordance with section 3.',
+    });
+    const proposal = proposalFor({
+      source,
+      answer: 'Definitions 1 The following definitions apply in this Act.',
+      evidence: 'Definitions 1 The following definitions apply in this Act.',
+      question: 'What does coordinate monument mean for Surveys Act?',
+    });
+    proposal.objectives[0].type = 'definition';
+    proposal.approvedGroup!.focusSelections = [{ sourceKey: source.sourceKey, definedTerms: ['coordinate monument'] }];
+
+    expect(codesFor(proposal, [source])).toContain('DEFINITION_ANSWER_MISSING_TERM_MEANING');
+  });
+
+  it('detects duplicate nonresponsive answers for distinct definition objectives', () => {
+    const source = component({
+      sourceKey: 'section:1',
+      label: '1',
+      text: '"coordinate monument" means a brass cap. "surveyor" means a member of the Association.',
+    });
+    const proposal = proposalFor({
+      source,
+      answer: 'Definitions 1 The following definitions apply in this Act.',
+      evidence: source.text,
+      question: 'What does coordinate monument mean?',
+    });
+    proposal.approvedGroup!.focusSelections = [{ sourceKey: source.sourceKey, definedTerms: ['coordinate monument', 'surveyor'] }];
+    proposal.objectives = [
+      { ...proposal.objectives[0], id: 'obj-1', type: 'definition', guidedQuestion: 'What does coordinate monument mean?' },
+      { ...proposal.objectives[0], id: 'obj-2', type: 'definition', guidedQuestion: 'What does surveyor mean?' },
+    ];
+
+    const codes = codesFor(proposal, [source]);
+
+    expect(codes).toContain('DUPLICATE_NONRESPONSIVE_ANSWER');
+    expect(codes).toContain('DEFINITION_ANSWER_MISSING_TERM_MEANING');
   });
 
   it('warns about incomplete evidence separately when the full focus supports the answer', () => {
@@ -207,5 +301,38 @@ describe('AI Unit Authoring validation calibration', () => {
 
     expect(codesFor(broad, [source])).not.toContain('MAP_REVISION_SUGGESTION_REQUIRED');
   });
-});
 
+  it('flags unsupported retroactive-effect map revision suggestions for Community Planning 125', () => {
+    const source = component({
+      sourceKey: 'section:125',
+      label: '125',
+      text: '125(15) The Minister may deliver a written summary. 125(16) The Director shall file a copy, but filing is not a condition precedent to coming into force.',
+    });
+    const broad = proposalFor({
+      source,
+      answer: 'The group is too broad.',
+      evidence: source.text,
+      warnings: ['MAP_GROUP_TOO_BROAD_FOR_GOOD_UNIT'],
+    });
+    broad.authoringStatus = 'needs-map-revision';
+    broad.mapRevisionSuggestion = {
+      reason: 'Split distinct rules.',
+      proposedGroups: [
+        {
+          title: 'Filing and retroactive effect',
+          sourceKeys: ['section:125'],
+          focusSelections: [{ sourceKey: 'section:125', childLabels: ['125(15)', '125(16)'] }],
+          approximateLearningGoal: 'Recall filing duties and retroactive effect.',
+        },
+        {
+          title: 'Written summary alternative',
+          sourceKeys: ['section:125'],
+          focusSelections: [{ sourceKey: 'section:125', childLabels: ['125(15)'] }],
+          approximateLearningGoal: 'Recall the written summary alternative.',
+        },
+      ],
+    };
+
+    expect(codesFor(broad, [source])).toContain('MAP_REVISION_UNSUPPORTED_CONCEPT');
+  });
+});

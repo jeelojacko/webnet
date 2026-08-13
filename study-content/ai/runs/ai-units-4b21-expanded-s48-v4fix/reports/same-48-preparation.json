@@ -1,0 +1,1121 @@
+{
+  "schemaVersion": 1,
+  "oldRunId": "ai-units-4b2-expanded-s48-v4",
+  "newRunId": "ai-units-4b21-expanded-s48-v4fix",
+  "jobs": 48,
+  "selectedGroups": [
+    {
+      "jobId": "unit-197d016afe9eab43",
+      "documentId": "doc-boundaries-confirmation-act",
+      "title": "Objection delivery and required hearing",
+      "sourceKeys": [
+        "section:10"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:10",
+          "childLabels": [
+            "10(1)",
+            "10(2)"
+          ],
+          "evidenceText": [
+            "written statement setting out the reasons for and any grounds and arguments",
+            "Registrar General shall hold a hearing to determine the validity of the objection"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-bf1545b1c75e32a1",
+      "documentId": "doc-boundaries-confirmation-act",
+      "title": "No-objection confirmation or hearing decision",
+      "sourceKeys": [
+        "section:10"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:10",
+          "childLabels": [
+            "10(3)"
+          ],
+          "evidenceText": [
+            "If no written statement of objection is delivered",
+            "confirm the location of the boundary or boundaries",
+            "hold a hearing in accordance with this Act and the regulations"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-923d511177b8f05e",
+      "documentId": "doc-boundaries-confirmation-act",
+      "title": "Hearing parties and notice contents",
+      "sourceKeys": [
+        "section:10"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:10",
+          "childLabels": [
+            "10(4)",
+            "10(5)",
+            "10(6)"
+          ],
+          "evidenceText": [
+            "are parties to a hearing held under this section",
+            "shall cause a notice of hearing to be given",
+            "shall specify the date, time and place of the hearing"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-b6e0060bad18b255",
+      "documentId": "doc-boundaries-confirmation-act",
+      "title": "Corrected boundary-confirmation plan of survey",
+      "sourceKeys": [
+        "section:16"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:16",
+          "childLabels": [
+            "16(1)",
+            "16(2)",
+            "16(3)",
+            "16(4)",
+            "16(5)",
+            "16(6)"
+          ],
+          "evidenceText": [
+            "order that a corrected plan of survey be made",
+            "shall not affect the location of a boundary",
+            "cause a notation to be made on the plan of survey"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-516a64150bb94e4d",
+      "documentId": "doc-surveys-act",
+      "title": "Coordinate monument and coordinate survey system definitions",
+      "sourceKeys": [
+        "section:1"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:1",
+          "definedTerms": [
+            "coordinate monument",
+            "coordinate survey system"
+          ],
+          "evidenceText": [
+            "coordinate monument means a brass, bronze or aluminum cap or plate",
+            "coordinate survey system means a system established under section 2"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-e2e7024d15914ce1",
+      "documentId": "doc-surveys-act",
+      "title": "Corner and legal monument definitions",
+      "sourceKeys": [
+        "section:1"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:1",
+          "definedTerms": [
+            "corner",
+            "legal monument"
+          ],
+          "evidenceText": [
+            "corner means a point in an intersection of boundaries of land",
+            "legal monument means a device planted by a surveyor"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-317710a40c570d33",
+      "documentId": "doc-surveys-act",
+      "title": "Survey and surveyor definitions",
+      "sourceKeys": [
+        "section:1"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:1",
+          "definedTerms": [
+            "survey",
+            "surveyor"
+          ],
+          "evidenceText": [
+            "survey means a survey to define the boundaries of land",
+            "surveyor means a New Brunswick Land Surveyor"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-7b9d653913a94c80",
+      "documentId": "doc-surveys-act",
+      "title": "Director of Surveys designation and coordinate monument duties",
+      "sourceKeys": [
+        "section:3"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:3",
+          "childLabels": [
+            "3(1)",
+            "3(1.1)",
+            "3(1.2)",
+            "3(2)"
+          ],
+          "evidenceText": [
+            "shall designate a surveyor as Director of Surveys",
+            "may designate one or more surveyors to perform any of the duties",
+            "shall establish and maintain coordinate monuments"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-856771d460325d53",
+      "documentId": "doc-surveys-act",
+      "title": "Survey plan certification and acceptance in integrated survey areas",
+      "sourceKeys": [
+        "section:8"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:8",
+          "childLabels": [
+            "8(1)",
+            "8(2)",
+            "8(3)",
+            "8(4)"
+          ],
+          "evidenceText": [
+            "shall not certify to the correctness of the plan unless",
+            "Director of Surveys shall not accept it",
+            "acceptance does not constitute an adjudication on title",
+            "applies to only integrated survey areas"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-ad5c953315b6ae6a",
+      "documentId": "doc-community-planning-act",
+      "title": "Planning regulation powers for setbacks, sites, signs, extraction, and subdivisions",
+      "sourceKeys": [
+        "section:125"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:125",
+          "childLabels": [
+            "125(1)"
+          ],
+          "evidenceText": [
+            "governing the setting back of buildings and structures",
+            "mobile home parks",
+            "service stations, gas bars, car washes",
+            "public advertising signs and billboards",
+            "respecting the subdividing of land"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-2af38514fe47bbd0",
+      "documentId": "doc-community-planning-act",
+      "title": "Development approval and building-work regulation powers",
+      "sourceKeys": [
+        "section:125"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:125",
+          "childLabels": [
+            "125(1)"
+          ],
+          "evidenceText": [
+            "respecting development approvals",
+            "building inspection services",
+            "building, dimensions, locating or relocating, demolishing, altering"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-2fa5132093e8c1e1",
+      "documentId": "doc-community-planning-act",
+      "title": "Administrative, appeal, delegation, and transitional regulation powers",
+      "sourceKeys": [
+        "section:125"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:125",
+          "childLabels": [
+            "125(2)",
+            "125(3)",
+            "125(4)",
+            "125(5)",
+            "125(6)",
+            "125(7)",
+            "125(8)",
+            "125(9)",
+            "125(10)",
+            "125(11)",
+            "125(12)",
+            "125(13)",
+            "125(14)",
+            "125(15)",
+            "125(16)"
+          ],
+          "evidenceText": [
+            "may delegate a matter to or confer discretion on",
+            "appeals",
+            "transitional"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-16f4131aaa4dac3b",
+      "documentId": "doc-land-titles-act",
+      "title": "Instrument receipt, examination, acceptance, and rejection",
+      "sourceKeys": [
+        "section:18"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:18",
+          "childLabels": [
+            "18(1)",
+            "18(2)",
+            "18(3)",
+            "18(4)"
+          ],
+          "evidenceText": [
+            "assign a registration number, date and time",
+            "examined",
+            "accepted for registration",
+            "may refuse to file or register and may reject an instrument"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-b04e8a9c4d249157",
+      "documentId": "doc-land-titles-act",
+      "title": "Certificates and notices when land or instruments are registered",
+      "sourceKeys": [
+        "section:18"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:18",
+          "childLabels": [
+            "18(5)",
+            "18(6)",
+            "18(7)"
+          ],
+          "evidenceText": [
+            "cancel the certificate of registered ownership",
+            "issue to the owner",
+            "issue and record under the Registry Act a notice"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-219c1714b8db388d",
+      "documentId": "doc-land-titles-act",
+      "title": "Registration timing and priority effects",
+      "sourceKeys": [
+        "section:18"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:18",
+          "childLabels": [
+            "18(9)",
+            "18(10)",
+            "18(11)",
+            "18(12)"
+          ],
+          "evidenceText": [
+            "deemed to be registered on the date and at the time",
+            "subject to subsection (11)",
+            "priority of registration"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-a334b4f68d41876c",
+      "documentId": "doc-registry-act",
+      "title": "Unregistered instrument consequences for purchasers and judgment creditors",
+      "sourceKeys": [
+        "section:19"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:19",
+          "childLabels": [
+            "19(1)",
+            "19(2)"
+          ],
+          "evidenceText": [
+            "deemed fraudulent and void against subsequent purchasers",
+            "deemed fraudulent and void as against any bona fide judgment creditor"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-8af2998e4e19d27d",
+      "documentId": "doc-registry-act",
+      "title": "Special registration timing rules for leases, auction conveyances, sheriff conveyances, and wills",
+      "sourceKeys": [
+        "section:19"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:19",
+          "childLabels": [
+            "19(3)",
+            "19(4)",
+            "19(4.1)",
+            "19(5)"
+          ],
+          "evidenceText": [
+            "No lease for a term not exceeding three years",
+            "registered within six months",
+            "A will registered within six months"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-55474b270b212fe1",
+      "documentId": "doc-registry-act",
+      "title": "Deed transfer affidavit and forwarding duty",
+      "sourceKeys": [
+        "section:19"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:19",
+          "childLabels": [
+            "19(6)",
+            "19(7)"
+          ],
+          "evidenceText": [
+            "No deed affecting the transfer of real property shall be registered unless accompanied by an affidavit",
+            "shall forward the same to the Executive Director of Assessment"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-78f88c7739f84d85",
+      "documentId": "reg-boundaries-95-166",
+      "title": "Boundary confirmation application form and plan standards",
+      "sourceKeys": [
+        "section:3"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:3",
+          "childLabels": [
+            "3(1)",
+            "3(2)"
+          ],
+          "evidenceText": [
+            "application to confirm the location of a boundary",
+            "shall be in Form 1",
+            "plan of survey required",
+            "shall be current and shall conform"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-c68c6a674351401b",
+      "documentId": "reg-boundaries-95-166",
+      "title": "Supporting materials for a boundary confirmation application",
+      "sourceKeys": [
+        "section:3"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:3",
+          "childLabels": [
+            "3(3)"
+          ],
+          "evidenceText": [
+            "shall be accompanied by",
+            "field notes and a surveyor's report",
+            "copies of all instruments registered",
+            "list of the names and mailing addresses"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-1c5cc758c01f4890",
+      "documentId": "reg-boundaries-95-166",
+      "title": "Surveyor report contents and Registrar General waiver",
+      "sourceKeys": [
+        "section:3"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:3",
+          "childLabels": [
+            "3(4)",
+            "3(5)"
+          ],
+          "evidenceText": [
+            "A surveyor's report",
+            "description of the issue to be determined",
+            "history of the boundary",
+            "Registrar General may waive any of the requirements"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-e857314bd8739718",
+      "documentId": "doc-underground-storage-act",
+      "title": "Underground storage regulation-making powers",
+      "sourceKeys": [
+        "section:22"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:22",
+          "evidenceText": [
+            "may make regulations",
+            "prescribing the amount of any fee, rental or security",
+            "prescribing information that must be contained in an application",
+            "terms and conditions and prescribing the form",
+            "work requirements"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-e6cd7bbc18ac8615",
+      "documentId": "doc-energy-and-utilities-board-act",
+      "title": "Regulator definition and assistance to the Board",
+      "sourceKeys": [
+        "section:49.1"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:49.1",
+          "childLabels": [
+            "49.1(1)",
+            "49.1(2)"
+          ],
+          "definedTerms": [
+            "regulator"
+          ],
+          "evidenceText": [
+            "regulator means a regulator as defined in the Financial and Consumer Services Commission Act",
+            "may render assistance to the Board without becoming a party",
+            "may receive and accept information from the regulator"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-b5aabfa0be5e6cf8",
+      "documentId": "doc-occupational-health-and-safety-act",
+      "title": "General supervisor health and safety duties",
+      "sourceKeys": [
+        "section:9.1"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:9.1",
+          "childLabels": [
+            "9.1(1)"
+          ],
+          "evidenceText": [
+            "Every supervisor shall",
+            "take every reasonable precaution",
+            "comply with this Act, the regulations and any order",
+            "ensure that the employees under the supervisor's supervision and direction comply",
+            "co-operate with"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-673635a65c9780c7",
+      "documentId": "doc-occupational-health-and-safety-act",
+      "title": "Supervisor hazard, information, and instruction duties",
+      "sourceKeys": [
+        "section:9.1"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:9.1",
+          "childLabels": [
+            "9.1(2)"
+          ],
+          "evidenceText": [
+            "acquaint the employees",
+            "with any hazard",
+            "provide the information",
+            "provide the instruction"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-740677331b772d1c",
+      "documentId": "doc-conservation-easements-act",
+      "title": "Who may hold a conservation easement",
+      "sourceKeys": [
+        "section:5"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:5",
+          "evidenceText": [
+            "Any of the following may hold a conservation easement",
+            "Crown in right of the Province",
+            "Crown in right of Canada",
+            "a local government",
+            "a non-profit corporation",
+            "any person, body or group or class of persons"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-94d23e35f23fcc3e",
+      "documentId": "doc-highway-act",
+      "title": "Permit for access to non-controlled-access highway",
+      "sourceKeys": [
+        "section:39.1"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:39.1",
+          "childLabels": [
+            "39.1(1)",
+            "39.1(2)"
+          ],
+          "evidenceText": [
+            "No person shall construct, use or permit the use",
+            "without obtaining a permit from the Minister",
+            "Minister may grant an application",
+            "would not be inconsistent with such safety standards"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-30436d29b3182b44",
+      "documentId": "doc-public-health-act",
+      "title": "Professional reporting duty for notifiable disease, injury risk, or notifiable event",
+      "sourceKeys": [
+        "section:27"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:27",
+          "childLabels": [
+            "27(1)",
+            "27(2)"
+          ],
+          "evidenceText": [
+            "shall report to a medical officer of health",
+            "reasonable grounds to believe",
+            "has or may have a notifiable disease",
+            "has or may be affected by an injury or risk factor",
+            "has suffered a notifiable event",
+            "shall be made in accordance with the regulations"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-c25cdc1c124bdfa3",
+      "documentId": "doc-land-titles-act",
+      "title": "Digitally scanned image filing or registration of instruments",
+      "sourceKeys": [
+        "section:17.11"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:17.11",
+          "childLabels": [
+            "17.11(1)",
+            "17.11(2)",
+            "17.11(3)"
+          ],
+          "evidenceText": [
+            "may be filed or registered by submitting a digitally scanned image",
+            "shall be in a format that has been approved by the Registrar General",
+            "shall be submitted using the technology put in place by Service New Brunswick",
+            "shall provide to the registrar evidence of his or her identity or authorization"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-280306837ad798f5",
+      "documentId": "doc-marital-property-act",
+      "title": "Personal Property Registry notice of household-goods order",
+      "sourceKeys": [
+        "section:30"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:30",
+          "childLabels": [
+            "30(1)",
+            "30(2)",
+            "30(3)",
+            "30(4)"
+          ],
+          "evidenceText": [
+            "may register a notice of the order in the Personal Property Registry",
+            "may be renewed, discharged or otherwise amended",
+            "shall be deemed to be notice of the order and its terms",
+            "does not apply to"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-7049ad7106bf6fa9",
+      "documentId": "doc-evidence-act",
+      "title": "Compelled answers and limited later use in provincial proceedings",
+      "sourceKeys": [
+        "section:7"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:7",
+          "evidenceText": [
+            "no person shall be excused from answering any question",
+            "may tend to render him liable to a prosecution, penalty or forfeiture",
+            "no evidence so given shall be used or receivable in evidence",
+            "other than a prosecution for perjury"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-ba299c0586183a79",
+      "documentId": "doc-registry-act",
+      "title": "Registering extra-provincial court will materials affecting land",
+      "sourceKeys": [
+        "section:23"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:23",
+          "childLabels": [
+            "23(1)"
+          ],
+          "evidenceText": [
+            "where a will affecting land in this Province",
+            "is deposited in any court out of this Province",
+            "certified copy thereof, the probate of such will",
+            "may be registered in the registry office"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-4d1e4e4d3889b49c",
+      "documentId": "doc-registry-act",
+      "title": "Affidavits required when extra-provincial will probate is absent",
+      "sourceKeys": [
+        "section:23"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:23",
+          "childLabels": [
+            "23(2)"
+          ],
+          "evidenceText": [
+            "has not been granted probate",
+            "affidavit sworn by one of the witnesses",
+            "affidavit of the death of the testator"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-f108841b7033b837",
+      "documentId": "doc-registry-act",
+      "title": "Registration of Quebec or South Africa notarial wills",
+      "sourceKeys": [
+        "section:23"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:23",
+          "childLabels": [
+            "23(3)"
+          ],
+          "evidenceText": [
+            "notarial will under the laws of the Province of Quebec or of South Africa",
+            "notarial certified copy",
+            "valid and subsisting will"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-431c1908f846bf30",
+      "documentId": "doc-aquaculture-act",
+      "title": "Aquaculture lease-holder rent amount",
+      "sourceKeys": [
+        "section:19"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:19",
+          "evidenceText": [
+            "A lease holder shall pay rent",
+            "in an amount fixed by the regulations",
+            "when there is no applicable regulation, at a rent fixed by the Registrar"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-eb078fdbdd6df5d1",
+      "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+      "title": "Special levy amount determination and member approval",
+      "sourceKeys": [
+        "section:4.2.2"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:4.2.2",
+          "evidenceText": [
+            "amount of the special levy shall be determined by the Council",
+            "approved at either the annual general meeting or a special meeting",
+            "by a vote of the voting members present"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-f7d250102392e222",
+      "documentId": "doc-land-titles-act",
+      "title": "Instrument record, examination, acceptance, and rejection",
+      "sourceKeys": [
+        "section:18"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:18",
+          "childLabels": [
+            "18(1)",
+            "18(2)",
+            "18(3)",
+            "18(4)"
+          ],
+          "evidenceText": [
+            "assign a registration number, date and time",
+            "record of the acceptance of the instrument",
+            "accepted for registration",
+            "may refuse to file or register and may reject an instrument"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-2e97218fd4286e39",
+      "documentId": "doc-land-titles-act",
+      "title": "Certificates, Registry Act notice, and parcel identification",
+      "sourceKeys": [
+        "section:18"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:18",
+          "childLabels": [
+            "18(5)",
+            "18(6)",
+            "18(7)"
+          ],
+          "evidenceText": [
+            "cancel the certificate of registered ownership",
+            "issue to the owner",
+            "issue and record under the Registry Act a notice",
+            "identified by its approved parcel identifier"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-c2798137eacf0834",
+      "documentId": "doc-land-titles-act",
+      "title": "Rejection notice, amending instruments, and discretionary Registry Act document registration",
+      "sourceKeys": [
+        "section:18"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:18",
+          "childLabels": [
+            "18(9)",
+            "18(10)",
+            "18(11)",
+            "18(12)"
+          ],
+          "evidenceText": [
+            "enter in the instrument record a record of the rejection",
+            "memorandum of the reasons for such rejection",
+            "shall notify the person who presented the instrument",
+            "shall not reject an instrument referred to in subsection 12(10)",
+            "be amended by the filing or registration of an amending instrument",
+            "may, in his absolute discretion, order the proper registrar to register it under this Act"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-a152e2ff86bdc5e5",
+      "documentId": "doc-community-planning-act",
+      "title": "Planning and development regulation subjects",
+      "sourceKeys": [
+        "section:125"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:125",
+          "childLabels": [
+            "125(1)"
+          ],
+          "evidenceText": [
+            "governing the setting back of buildings and structures",
+            "prescribing the location, layout, equipment, standards and licensing of mobile home parks",
+            "respecting the subdividing of land",
+            "respecting development approvals",
+            "respecting land use and development policies"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-e5ce973cd5c67da3",
+      "documentId": "doc-community-planning-act",
+      "title": "Area designation, effectiveness, inconsistency, and development officer rules",
+      "sourceKeys": [
+        "section:125"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:125",
+          "childLabels": [
+            "125(2)",
+            "125(3)",
+            "125(4)",
+            "125(5)",
+            "125(6)",
+            "125(7)",
+            "125(8)",
+            "125(9)"
+          ],
+          "evidenceText": [
+            "the fee shall be paid",
+            "designate an area or areas for the purpose of the application of a regulation",
+            "is not effective in a municipality",
+            "is effective in a local government or local service district specified in the regulation",
+            "the regulation under paragraph (1)(j) prevails",
+            "shall be consistent with a rural plan",
+            "the planning director as defined in the Regional Services Delivery Act is the development officer",
+            "may be vested in a regional service commission"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-8f66e465d392196c",
+      "documentId": "doc-community-planning-act",
+      "title": "Subdivision public-purpose land, money, procedure, summary, and filing rules",
+      "sourceKeys": [
+        "section:125"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:125",
+          "childLabels": [
+            "125(10)",
+            "125(11)",
+            "125(12)",
+            "125(13)",
+            "125(14)",
+            "125(15)",
+            "125(16)"
+          ],
+          "evidenceText": [
+            "the setting aside of land for public purposes",
+            "sections 79 and 80 apply with the necessary modifications",
+            "Land vested in the Crown under this section shall be held undeveloped or developed for public purposes",
+            "All money received by the Minister in lieu of land for public purposes",
+            "Before making a regulation under this section, the Minister shall",
+            "written summary of the proposed rural plan or amendment",
+            "file a copy of each regulation made under this section in the land registration office"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-5480b046630e0958",
+      "documentId": "doc-energy-and-utilities-board-act",
+      "title": "Regulator assistance to the Board without party status",
+      "sourceKeys": [
+        "section:49.1"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:49.1",
+          "childLabels": [
+            "49.1(1)",
+            "49.1(2)"
+          ],
+          "evidenceText": [
+            "regulator” means a regulator as defined in the Financial and Consumer Services Commission Act",
+            "may render assistance to the Board without becoming a party to the proceedings",
+            "may receive and accept information from the regulator that it considers relevant"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-f7e3dd78ffe7da63",
+      "documentId": "doc-registry-act",
+      "title": "Lease, official-sale, sheriff-sale, and will registration timing exceptions",
+      "sourceKeys": [
+        "section:19"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:19",
+          "childLabels": [
+            "19(3)",
+            "19(4)",
+            "19(4.1)",
+            "19(5)"
+          ],
+          "evidenceText": [
+            "No lease for a term not exceeding three years",
+            "if registered within six months of the day of such sale",
+            "if registered within six months after the day of its execution",
+            "A will registered within six months after the death of the testator"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-80614ecc1254a284",
+      "documentId": "doc-registry-act",
+      "title": "Transfer affidavit requirement and forwarding",
+      "sourceKeys": [
+        "section:19"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:19",
+          "childLabels": [
+            "19(6)",
+            "19(7)"
+          ],
+          "evidenceText": [
+            "No deed affecting the transfer of real property shall be registered unless accompanied by an affidavit of the transfer",
+            "shall not record such affidavit but shall forward the same to the Executive Director of Assessment",
+            "not later than thirty days after the date of registration of the deed"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-561d1bfb1a22bef3",
+      "documentId": "reg-boundaries-95-166",
+      "title": "Boundary-confirmation application form and current plan requirements",
+      "sourceKeys": [
+        "section:3"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:3",
+          "childLabels": [
+            "3(1)",
+            "3(2)"
+          ],
+          "evidenceText": [
+            "shall be in Form 1",
+            "A plan of survey required under paragraph 7(1)(a) of the Act shall be current",
+            "shall conform in every respect to"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-d8097f2d378d6801",
+      "documentId": "reg-boundaries-95-166",
+      "title": "Application materials and surveyor report content",
+      "sourceKeys": [
+        "section:3"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:3",
+          "childLabels": [
+            "3(3)",
+            "3(4)"
+          ],
+          "evidenceText": [
+            "shall be accompanied by",
+            "the field notes and a surveyor’s report",
+            "copies of all instruments registered in a registry office or a land titles office",
+            "a description of the issue to be determined",
+            "an explanation of the reasons for accepting or rejecting the location of the boundary"
+          ]
+        }
+      ]
+    },
+    {
+      "jobId": "unit-8006b65638d22c74",
+      "documentId": "reg-boundaries-95-166",
+      "title": "Registrar General waiver of application requirements",
+      "sourceKeys": [
+        "section:3"
+      ],
+      "focusSelections": [
+        {
+          "sourceKey": "section:3",
+          "childLabels": [
+            "3(5)"
+          ],
+          "evidenceText": [
+            "may waive any of the requirements of subsection (3)",
+            "subject to such terms and conditions as the Registrar General considers appropriate"
+          ]
+        }
+      ]
+    }
+  ]
+}

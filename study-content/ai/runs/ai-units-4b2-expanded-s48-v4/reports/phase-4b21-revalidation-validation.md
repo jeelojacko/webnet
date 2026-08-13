@@ -1,0 +1,357 @@
+# Phase 4B.2.1 Preserved Run Revalidation ai-units-4b2-expanded-s48-v4
+
+This report revalidates preserved Phase 4B.2 result JSONL with the remediated validator.
+It does not replace the original Phase 4B.2 validation artifacts.
+
+Proposals: 48
+Valid: 0
+Warnings: 46
+Invalid: 2
+
+- WARNING unit-197d016afe9eab43: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 10(1) require or allow for Objection delivery and required hearing?".
+- WARNING unit-197d016afe9eab43: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 10(1) require or allow for Objection delivery and required hearing?".
+- WARNING unit-197d016afe9eab43: ANSWER_APPEARS_TRUNCATED: Objective obj-1 evidence appears truncated for question "What does 10(1) require or allow for Objection delivery and required hearing?".
+- WARNING unit-197d016afe9eab43: ANSWER_APPEARS_TRUNCATED: Objective obj-1 evidence appears truncated for question "What does 10(1) require or allow for Objection delivery and required hearing?".
+- WARNING unit-197d016afe9eab43: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-197d016afe9eab43: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 10(1) require or allow for Objection delivery and required hearing?
+- WARNING unit-197d016afe9eab43: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 10(2) require or allow for Objection delivery and required hearing?
+- WARNING unit-bf1545b1c75e32a1: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 10(3) require or allow for No-objection confirmation or hearing decision?".
+- WARNING unit-bf1545b1c75e32a1: ANSWER_APPEARS_TRUNCATED: Objective obj-1 evidence appears truncated for question "What does 10(3) require or allow for No-objection confirmation or hearing decision?".
+- WARNING unit-bf1545b1c75e32a1: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-bf1545b1c75e32a1: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 10(3) require or allow for No-objection confirmation or hearing decision?
+- WARNING unit-923d511177b8f05e: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 10(4) require or allow for Hearing parties and notice contents?".
+- WARNING unit-923d511177b8f05e: ANSWER_APPEARS_TRUNCATED: Objective obj-1 evidence appears truncated for question "What does 10(4) require or allow for Hearing parties and notice contents?".
+- WARNING unit-923d511177b8f05e: ANSWER_APPEARS_TRUNCATED: Objective obj-3 answer appears truncated for question "What does 10(6) require or allow for Hearing parties and notice contents?".
+- WARNING unit-923d511177b8f05e: ANSWER_APPEARS_TRUNCATED: Objective obj-3 evidence appears truncated for question "What does 10(6) require or allow for Hearing parties and notice contents?".
+- WARNING unit-923d511177b8f05e: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-923d511177b8f05e: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 10(4) require or allow for Hearing parties and notice contents?
+- WARNING unit-923d511177b8f05e: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 10(5) require or allow for Hearing parties and notice contents?
+- WARNING unit-923d511177b8f05e: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 10(6) require or allow for Hearing parties and notice contents?
+- WARNING unit-b6e0060bad18b255: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-b6e0060bad18b255: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 16(1) require or allow for Corrected boundary-confirmation plan of survey?
+- WARNING unit-b6e0060bad18b255: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 16(2) require or allow for Corrected boundary-confirmation plan of survey?
+- WARNING unit-b6e0060bad18b255: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 16(3) require or allow for Corrected boundary-confirmation plan of survey?
+- WARNING unit-b6e0060bad18b255: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 16(4) require or allow for Corrected boundary-confirmation plan of survey?
+- WARNING unit-b6e0060bad18b255: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 16(5) require or allow for Corrected boundary-confirmation plan of survey?
+- WARNING unit-b6e0060bad18b255: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 16(6) require or allow for Corrected boundary-confirmation plan of survey?
+- WARNING unit-516a64150bb94e4d: DEFINITION_ANSWER_MISSING_TERM_MEANING: Objective obj-1 definition answer does not state the term-specific meaning for question "What does coordinate monument mean for Surveys Act?".
+- WARNING unit-516a64150bb94e4d: DEFINITION_ANSWER_MISSING_TERM_MEANING: Objective obj-2 definition answer does not state the term-specific meaning for question "What does coordinate survey system mean for Surveys Act?".
+- WARNING unit-516a64150bb94e4d: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-516a64150bb94e4d: DUPLICATE_NONRESPONSIVE_ANSWER: Objective obj-1 repeats the same study answer used for a distinct question.
+- WARNING unit-516a64150bb94e4d: DUPLICATE_NONRESPONSIVE_ANSWER: Objective obj-2 repeats the same study answer used for a distinct question.
+- WARNING unit-e2e7024d15914ce1: DEFINITION_ANSWER_MISSING_TERM_MEANING: Objective obj-1 definition answer does not state the term-specific meaning for question "What does corner mean for Surveys Act?".
+- WARNING unit-e2e7024d15914ce1: DEFINITION_ANSWER_MISSING_TERM_MEANING: Objective obj-2 definition answer does not state the term-specific meaning for question "What does legal monument mean for Surveys Act?".
+- WARNING unit-e2e7024d15914ce1: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-e2e7024d15914ce1: DUPLICATE_NONRESPONSIVE_ANSWER: Objective obj-1 repeats the same study answer used for a distinct question.
+- WARNING unit-e2e7024d15914ce1: DUPLICATE_NONRESPONSIVE_ANSWER: Objective obj-2 repeats the same study answer used for a distinct question.
+- WARNING unit-317710a40c570d33: DEFINITION_ANSWER_MISSING_TERM_MEANING: Objective obj-1 definition answer does not state the term-specific meaning for question "What does survey mean for Surveys Act?".
+- WARNING unit-317710a40c570d33: DEFINITION_ANSWER_MISSING_TERM_MEANING: Objective obj-2 definition answer does not state the term-specific meaning for question "What does surveyor mean for Surveys Act?".
+- WARNING unit-317710a40c570d33: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-317710a40c570d33: DUPLICATE_NONRESPONSIVE_ANSWER: Objective obj-1 repeats the same study answer used for a distinct question.
+- WARNING unit-317710a40c570d33: DUPLICATE_NONRESPONSIVE_ANSWER: Objective obj-2 repeats the same study answer used for a distinct question.
+- WARNING unit-7b9d653913a94c80: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-7b9d653913a94c80: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 3(1) require or allow for Director of Surveys designation and coordinate monument duties?
+- WARNING unit-7b9d653913a94c80: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 3(1.1) require or allow for Director of Surveys designation and coordinate monument duties?
+- WARNING unit-7b9d653913a94c80: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 3(1.2) require or allow for Director of Surveys designation and coordinate monument duties?
+- WARNING unit-7b9d653913a94c80: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 3(2) require or allow for Director of Surveys designation and coordinate monument duties?
+- WARNING unit-856771d460325d53: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-856771d460325d53: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 8(1) require or allow for Survey plan certification and acceptance in integrated survey areas?
+- WARNING unit-856771d460325d53: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 8(2) require or allow for Survey plan certification and acceptance in integrated survey areas?
+- WARNING unit-856771d460325d53: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 8(3) require or allow for Survey plan certification and acceptance in integrated survey areas?
+- WARNING unit-856771d460325d53: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 8(4) require or allow for Survey plan certification and acceptance in integrated survey areas?
+- WARNING unit-ad5c953315b6ae6a: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 125(1) require or allow for Planning regulation powers for setbacks, sites, signs, extraction, and subdivisions?".
+- WARNING unit-ad5c953315b6ae6a: ANSWER_APPEARS_TRUNCATED: Objective obj-1 evidence appears truncated for question "What does 125(1) require or allow for Planning regulation powers for setbacks, sites, signs, extraction, and subdivisions?".
+- WARNING unit-ad5c953315b6ae6a: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 125(1) require or allow for Planning regulation powers for setbacks, sites, signs, extraction, and subdivisions?".
+- WARNING unit-ad5c953315b6ae6a: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-ad5c953315b6ae6a: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 125(1) require or allow for Planning regulation powers for setbacks, sites, signs, extraction, and subdivisions?
+- WARNING unit-2af38514fe47bbd0: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 125(1) require or allow for Development approval and building-work regulation powers?".
+- WARNING unit-2af38514fe47bbd0: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 125(1) require or allow for Development approval and building-work regulation powers?".
+- WARNING unit-2af38514fe47bbd0: ANSWER_APPEARS_TRUNCATED: Objective obj-1 evidence appears truncated for question "What does 125(1) require or allow for Development approval and building-work regulation powers?".
+- WARNING unit-2af38514fe47bbd0: ANSWER_APPEARS_TRUNCATED: Objective obj-1 evidence appears truncated for question "What does 125(1) require or allow for Development approval and building-work regulation powers?".
+- WARNING unit-2af38514fe47bbd0: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 125(1) require or allow for Development approval and building-work regulation powers?".
+- WARNING unit-2af38514fe47bbd0: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-2af38514fe47bbd0: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 125(1) require or allow for Development approval and building-work regulation powers?
+- ERROR unit-2fa5132093e8c1e1: MAP_REVISION_UNSUPPORTED_CONCEPT: mapRevisionSuggestion introduces an unsupported retroactive-effect concept.
+- WARNING unit-2fa5132093e8c1e1: ANSWER_APPEARS_TRUNCATED: Objective obj-2 answer appears truncated for question "What does 125(3) require or allow for Administrative, appeal, delegation, and transitional regulation powers?".
+- WARNING unit-2fa5132093e8c1e1: ANSWER_APPEARS_TRUNCATED: Objective obj-2 answer appears truncated for question "What does 125(3) require or allow for Administrative, appeal, delegation, and transitional regulation powers?".
+- WARNING unit-2fa5132093e8c1e1: ANSWER_APPEARS_TRUNCATED: Objective obj-3 answer appears truncated for question "What does 125(4) require or allow for Administrative, appeal, delegation, and transitional regulation powers?".
+- WARNING unit-2fa5132093e8c1e1: ANSWER_APPEARS_TRUNCATED: Objective obj-3 answer appears truncated for question "What does 125(4) require or allow for Administrative, appeal, delegation, and transitional regulation powers?".
+- WARNING unit-2fa5132093e8c1e1: ANSWER_APPEARS_TRUNCATED: Objective obj-8 answer appears truncated for question "What does 125(9) require or allow for Administrative, appeal, delegation, and transitional regulation powers?".
+- WARNING unit-2fa5132093e8c1e1: ANSWER_APPEARS_TRUNCATED: Objective obj-8 evidence appears truncated for question "What does 125(9) require or allow for Administrative, appeal, delegation, and transitional regulation powers?".
+- WARNING unit-2fa5132093e8c1e1: ANSWER_APPEARS_TRUNCATED: Objective obj-8 answer appears truncated for question "What does 125(9) require or allow for Administrative, appeal, delegation, and transitional regulation powers?".
+- WARNING unit-2fa5132093e8c1e1: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-2fa5132093e8c1e1: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 125(2) require or allow for Administrative, appeal, delegation, and transitional regulation powers?
+- WARNING unit-2fa5132093e8c1e1: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 125(3) require or allow for Administrative, appeal, delegation, and transitional regulation powers?
+- WARNING unit-2fa5132093e8c1e1: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 125(4) require or allow for Administrative, appeal, delegation, and transitional regulation powers?
+- WARNING unit-2fa5132093e8c1e1: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 125(5) require or allow for Administrative, appeal, delegation, and transitional regulation powers?
+- WARNING unit-2fa5132093e8c1e1: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 125(6) require or allow for Administrative, appeal, delegation, and transitional regulation powers?
+- WARNING unit-2fa5132093e8c1e1: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 125(7) require or allow for Administrative, appeal, delegation, and transitional regulation powers?
+- WARNING unit-2fa5132093e8c1e1: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 125(8) require or allow for Administrative, appeal, delegation, and transitional regulation powers?
+- WARNING unit-2fa5132093e8c1e1: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 125(9) require or allow for Administrative, appeal, delegation, and transitional regulation powers?
+- WARNING unit-16f4131aaa4dac3b: ANSWER_APPEARS_TRUNCATED: Objective obj-4 answer appears truncated for question "What does 18(4) require or allow for Instrument receipt, examination, acceptance, and rejection?".
+- WARNING unit-16f4131aaa4dac3b: ANSWER_APPEARS_TRUNCATED: Objective obj-4 evidence appears truncated for question "What does 18(4) require or allow for Instrument receipt, examination, acceptance, and rejection?".
+- WARNING unit-16f4131aaa4dac3b: ANSWER_APPEARS_TRUNCATED: Objective obj-4 answer appears truncated for question "What does 18(4) require or allow for Instrument receipt, examination, acceptance, and rejection?".
+- WARNING unit-16f4131aaa4dac3b: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-16f4131aaa4dac3b: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 18(1) require or allow for Instrument receipt, examination, acceptance, and rejection?
+- WARNING unit-16f4131aaa4dac3b: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 18(2) require or allow for Instrument receipt, examination, acceptance, and rejection?
+- WARNING unit-16f4131aaa4dac3b: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 18(3) require or allow for Instrument receipt, examination, acceptance, and rejection?
+- WARNING unit-16f4131aaa4dac3b: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 18(4) require or allow for Instrument receipt, examination, acceptance, and rejection?
+- WARNING unit-b04e8a9c4d249157: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 18(5) require or allow for Certificates and notices when land or instruments are registered?".
+- WARNING unit-b04e8a9c4d249157: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 18(5) require or allow for Certificates and notices when land or instruments are registered?".
+- WARNING unit-b04e8a9c4d249157: ANSWER_APPEARS_TRUNCATED: Objective obj-2 answer appears truncated for question "What does 18(6) require or allow for Certificates and notices when land or instruments are registered?".
+- WARNING unit-b04e8a9c4d249157: ANSWER_APPEARS_TRUNCATED: Objective obj-2 evidence appears truncated for question "What does 18(6) require or allow for Certificates and notices when land or instruments are registered?".
+- WARNING unit-b04e8a9c4d249157: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-b04e8a9c4d249157: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 18(5) require or allow for Certificates and notices when land or instruments are registered?
+- WARNING unit-b04e8a9c4d249157: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 18(6) require or allow for Certificates and notices when land or instruments are registered?
+- WARNING unit-b04e8a9c4d249157: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 18(7) require or allow for Certificates and notices when land or instruments are registered?
+- WARNING unit-219c1714b8db388d: ANSWER_APPEARS_TRUNCATED: Objective obj-4 evidence appears truncated for question "What does 18(12) require or allow for Registration timing and priority effects?".
+- WARNING unit-219c1714b8db388d: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-219c1714b8db388d: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 18(9) require or allow for Registration timing and priority effects?
+- WARNING unit-219c1714b8db388d: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 18(10) require or allow for Registration timing and priority effects?
+- WARNING unit-219c1714b8db388d: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 18(11) require or allow for Registration timing and priority effects?
+- WARNING unit-219c1714b8db388d: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 18(12) require or allow for Registration timing and priority effects?
+- WARNING unit-a334b4f68d41876c: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 19(1) require or allow for Unregistered instrument consequences for purchasers and judgment creditors?".
+- WARNING unit-a334b4f68d41876c: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 19(1) require or allow for Unregistered instrument consequences for purchasers and judgment creditors?".
+- WARNING unit-a334b4f68d41876c: ANSWER_APPEARS_TRUNCATED: Objective obj-1 evidence appears truncated for question "What does 19(1) require or allow for Unregistered instrument consequences for purchasers and judgment creditors?".
+- WARNING unit-a334b4f68d41876c: ANSWER_APPEARS_TRUNCATED: Objective obj-1 evidence appears truncated for question "What does 19(1) require or allow for Unregistered instrument consequences for purchasers and judgment creditors?".
+- WARNING unit-a334b4f68d41876c: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-a334b4f68d41876c: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 19(1) require or allow for Unregistered instrument consequences for purchasers and judgment creditors?
+- WARNING unit-a334b4f68d41876c: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 19(2) require or allow for Unregistered instrument consequences for purchasers and judgment creditors?
+- WARNING unit-8af2998e4e19d27d: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 19(3) require or allow for Special registration timing rules for leases, auction conveyances, sheriff conveyances, and wills?".
+- WARNING unit-8af2998e4e19d27d: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 19(3) require or allow for Special registration timing rules for leases, auction conveyances, sheriff conveyances, and wills?".
+- WARNING unit-8af2998e4e19d27d: ANSWER_APPEARS_TRUNCATED: Objective obj-1 evidence appears truncated for question "What does 19(3) require or allow for Special registration timing rules for leases, auction conveyances, sheriff conveyances, and wills?".
+- WARNING unit-8af2998e4e19d27d: ANSWER_APPEARS_TRUNCATED: Objective obj-1 evidence appears truncated for question "What does 19(3) require or allow for Special registration timing rules for leases, auction conveyances, sheriff conveyances, and wills?".
+- WARNING unit-8af2998e4e19d27d: ANSWER_APPEARS_TRUNCATED: Objective obj-2 answer appears truncated for question "What does 19(4) require or allow for Special registration timing rules for leases, auction conveyances, sheriff conveyances, and wills?".
+- WARNING unit-8af2998e4e19d27d: ANSWER_APPEARS_TRUNCATED: Objective obj-2 answer appears truncated for question "What does 19(4) require or allow for Special registration timing rules for leases, auction conveyances, sheriff conveyances, and wills?".
+- WARNING unit-8af2998e4e19d27d: ANSWER_APPEARS_TRUNCATED: Objective obj-2 evidence appears truncated for question "What does 19(4) require or allow for Special registration timing rules for leases, auction conveyances, sheriff conveyances, and wills?".
+- WARNING unit-8af2998e4e19d27d: ANSWER_APPEARS_TRUNCATED: Objective obj-2 evidence appears truncated for question "What does 19(4) require or allow for Special registration timing rules for leases, auction conveyances, sheriff conveyances, and wills?".
+- WARNING unit-8af2998e4e19d27d: ANSWER_APPEARS_TRUNCATED: Objective obj-3 answer appears truncated for question "What does 19(4.1) require or allow for Special registration timing rules for leases, auction conveyances, sheriff conveyances, and wills?".
+- WARNING unit-8af2998e4e19d27d: ANSWER_APPEARS_TRUNCATED: Objective obj-3 evidence appears truncated for question "What does 19(4.1) require or allow for Special registration timing rules for leases, auction conveyances, sheriff conveyances, and wills?".
+- WARNING unit-8af2998e4e19d27d: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-8af2998e4e19d27d: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 19(3) require or allow for Special registration timing rules for leases, auction conveyances, sheriff conveyances, and wills?
+- WARNING unit-8af2998e4e19d27d: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 19(4) require or allow for Special registration timing rules for leases, auction conveyances, sheriff conveyances, and wills?
+- WARNING unit-8af2998e4e19d27d: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 19(4.1) require or allow for Special registration timing rules for leases, auction conveyances, sheriff conveyances, and wills?
+- WARNING unit-8af2998e4e19d27d: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 19(5) require or allow for Special registration timing rules for leases, auction conveyances, sheriff conveyances, and wills?
+- WARNING unit-55474b270b212fe1: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 19(6) require or allow for Deed transfer affidavit and forwarding duty?".
+- WARNING unit-55474b270b212fe1: ANSWER_APPEARS_TRUNCATED: Objective obj-1 evidence appears truncated for question "What does 19(6) require or allow for Deed transfer affidavit and forwarding duty?".
+- WARNING unit-55474b270b212fe1: ANSWER_APPEARS_TRUNCATED: Objective obj-1 evidence appears truncated for question "What does 19(6) require or allow for Deed transfer affidavit and forwarding duty?".
+- WARNING unit-55474b270b212fe1: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 19(6) require or allow for Deed transfer affidavit and forwarding duty?".
+- WARNING unit-55474b270b212fe1: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-55474b270b212fe1: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 19(6) require or allow for Deed transfer affidavit and forwarding duty?
+- WARNING unit-55474b270b212fe1: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 19(7) require or allow for Deed transfer affidavit and forwarding duty?
+- WARNING unit-78f88c7739f84d85: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-78f88c7739f84d85: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 3(1) require or allow for Boundary confirmation application form and plan standards?
+- WARNING unit-78f88c7739f84d85: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 3(2) require or allow for Boundary confirmation application form and plan standards?
+- WARNING unit-c68c6a674351401b: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 3(3) require or allow for Supporting materials for a boundary confirmation application?".
+- WARNING unit-c68c6a674351401b: ANSWER_APPEARS_TRUNCATED: Objective obj-1 evidence appears truncated for question "What does 3(3) require or allow for Supporting materials for a boundary confirmation application?".
+- WARNING unit-c68c6a674351401b: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 3(3) require or allow for Supporting materials for a boundary confirmation application?".
+- WARNING unit-c68c6a674351401b: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-c68c6a674351401b: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 3(3) require or allow for Supporting materials for a boundary confirmation application?
+- WARNING unit-1c5cc758c01f4890: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 3(4) require or allow for Surveyor report contents and Registrar General waiver?".
+- WARNING unit-1c5cc758c01f4890: ANSWER_APPEARS_TRUNCATED: Objective obj-1 evidence appears truncated for question "What does 3(4) require or allow for Surveyor report contents and Registrar General waiver?".
+- WARNING unit-1c5cc758c01f4890: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-1c5cc758c01f4890: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 3(4) require or allow for Surveyor report contents and Registrar General waiver?
+- WARNING unit-1c5cc758c01f4890: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 3(5) require or allow for Surveyor report contents and Registrar General waiver?
+- WARNING unit-e857314bd8739718: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What is the rule for Underground storage regulation-making powers?".
+- WARNING unit-e857314bd8739718: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What is the rule for Underground storage regulation-making powers?".
+- WARNING unit-e857314bd8739718: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-e857314bd8739718: GENERIC_GUIDED_QUESTION: Guided question is generic: What is the rule for Underground storage regulation-making powers?
+- WARNING unit-e6cd7bbc18ac8615: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does regulator mean for Energy and Utilities Board Act?".
+- WARNING unit-e6cd7bbc18ac8615: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does regulator mean for Energy and Utilities Board Act?".
+- WARNING unit-e6cd7bbc18ac8615: ANSWER_APPEARS_TRUNCATED: Objective obj-1 evidence appears truncated for question "What does regulator mean for Energy and Utilities Board Act?".
+- WARNING unit-e6cd7bbc18ac8615: ANSWER_APPEARS_TRUNCATED: Objective obj-3 answer appears truncated for question "What does 49.1(2) require or allow for Regulator definition and assistance to the Board?".
+- WARNING unit-e6cd7bbc18ac8615: ANSWER_APPEARS_TRUNCATED: Objective obj-3 answer appears truncated for question "What does 49.1(2) require or allow for Regulator definition and assistance to the Board?".
+- WARNING unit-e6cd7bbc18ac8615: ANSWER_APPEARS_TRUNCATED: Objective obj-3 evidence appears truncated for question "What does 49.1(2) require or allow for Regulator definition and assistance to the Board?".
+- WARNING unit-e6cd7bbc18ac8615: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-e6cd7bbc18ac8615: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 49.1(1) require or allow for Regulator definition and assistance to the Board?
+- WARNING unit-e6cd7bbc18ac8615: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 49.1(2) require or allow for Regulator definition and assistance to the Board?
+- WARNING unit-e6cd7bbc18ac8615: DUPLICATE_NONRESPONSIVE_ANSWER: Objective obj-1 repeats the same study answer used for a distinct question.
+- WARNING unit-e6cd7bbc18ac8615: DUPLICATE_NONRESPONSIVE_ANSWER: Objective obj-3 repeats the same study answer used for a distinct question.
+- WARNING unit-b5aabfa0be5e6cf8: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 9.1(1) require or allow for General supervisor health and safety duties?".
+- WARNING unit-b5aabfa0be5e6cf8: ANSWER_APPEARS_TRUNCATED: Objective obj-1 evidence appears truncated for question "What does 9.1(1) require or allow for General supervisor health and safety duties?".
+- WARNING unit-b5aabfa0be5e6cf8: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-b5aabfa0be5e6cf8: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 9.1(1) require or allow for General supervisor health and safety duties?
+- WARNING unit-673635a65c9780c7: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 9.1(2) require or allow for Supervisor hazard, information, and instruction duties?".
+- WARNING unit-673635a65c9780c7: ANSWER_APPEARS_TRUNCATED: Objective obj-1 evidence appears truncated for question "What does 9.1(2) require or allow for Supervisor hazard, information, and instruction duties?".
+- WARNING unit-673635a65c9780c7: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 9.1(2) require or allow for Supervisor hazard, information, and instruction duties?".
+- WARNING unit-673635a65c9780c7: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-673635a65c9780c7: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 9.1(2) require or allow for Supervisor hazard, information, and instruction duties?
+- WARNING unit-740677331b772d1c: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What is the rule for Who may hold a conservation easement?".
+- WARNING unit-740677331b772d1c: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What is the rule for Who may hold a conservation easement?".
+- WARNING unit-740677331b772d1c: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-740677331b772d1c: GENERIC_GUIDED_QUESTION: Guided question is generic: What is the rule for Who may hold a conservation easement?
+- WARNING unit-94d23e35f23fcc3e: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-94d23e35f23fcc3e: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 39.1(1) require or allow for Permit for access to non-controlled-access highway?
+- WARNING unit-94d23e35f23fcc3e: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 39.1(2) require or allow for Permit for access to non-controlled-access highway?
+- WARNING unit-30436d29b3182b44: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 27(1) require or allow for Professional reporting duty for notifiable disease, injury risk, or notifiable event?".
+- WARNING unit-30436d29b3182b44: ANSWER_APPEARS_TRUNCATED: Objective obj-1 evidence appears truncated for question "What does 27(1) require or allow for Professional reporting duty for notifiable disease, injury risk, or notifiable event?".
+- WARNING unit-30436d29b3182b44: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 27(1) require or allow for Professional reporting duty for notifiable disease, injury risk, or notifiable event?".
+- WARNING unit-30436d29b3182b44: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-30436d29b3182b44: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 27(1) require or allow for Professional reporting duty for notifiable disease, injury risk, or notifiable event?
+- WARNING unit-30436d29b3182b44: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 27(2) require or allow for Professional reporting duty for notifiable disease, injury risk, or notifiable event?
+- WARNING unit-c25cdc1c124bdfa3: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 17.11(1) require or allow for Digitally scanned image filing or registration of instruments?".
+- WARNING unit-c25cdc1c124bdfa3: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 17.11(1) require or allow for Digitally scanned image filing or registration of instruments?".
+- WARNING unit-c25cdc1c124bdfa3: ANSWER_APPEARS_TRUNCATED: Objective obj-1 evidence appears truncated for question "What does 17.11(1) require or allow for Digitally scanned image filing or registration of instruments?".
+- WARNING unit-c25cdc1c124bdfa3: ANSWER_APPEARS_TRUNCATED: Objective obj-1 evidence appears truncated for question "What does 17.11(1) require or allow for Digitally scanned image filing or registration of instruments?".
+- WARNING unit-c25cdc1c124bdfa3: ANSWER_APPEARS_TRUNCATED: Objective obj-2 answer appears truncated for question "What does 17.11(2) require or allow for Digitally scanned image filing or registration of instruments?".
+- WARNING unit-c25cdc1c124bdfa3: ANSWER_APPEARS_TRUNCATED: Objective obj-2 evidence appears truncated for question "What does 17.11(2) require or allow for Digitally scanned image filing or registration of instruments?".
+- WARNING unit-c25cdc1c124bdfa3: ANSWER_APPEARS_TRUNCATED: Objective obj-3 answer appears truncated for question "What does 17.11(3) require or allow for Digitally scanned image filing or registration of instruments?".
+- WARNING unit-c25cdc1c124bdfa3: ANSWER_APPEARS_TRUNCATED: Objective obj-3 answer appears truncated for question "What does 17.11(3) require or allow for Digitally scanned image filing or registration of instruments?".
+- WARNING unit-c25cdc1c124bdfa3: ANSWER_APPEARS_TRUNCATED: Objective obj-3 evidence appears truncated for question "What does 17.11(3) require or allow for Digitally scanned image filing or registration of instruments?".
+- WARNING unit-c25cdc1c124bdfa3: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-c25cdc1c124bdfa3: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 17.11(1) require or allow for Digitally scanned image filing or registration of instruments?
+- WARNING unit-c25cdc1c124bdfa3: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 17.11(2) require or allow for Digitally scanned image filing or registration of instruments?
+- WARNING unit-c25cdc1c124bdfa3: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 17.11(3) require or allow for Digitally scanned image filing or registration of instruments?
+- WARNING unit-280306837ad798f5: ANSWER_APPEARS_TRUNCATED: Objective obj-3 answer appears truncated for question "What does 30(3) require or allow for Personal Property Registry notice of household-goods order?".
+- WARNING unit-280306837ad798f5: ANSWER_APPEARS_TRUNCATED: Objective obj-3 evidence appears truncated for question "What does 30(3) require or allow for Personal Property Registry notice of household-goods order?".
+- WARNING unit-280306837ad798f5: ANSWER_APPEARS_TRUNCATED: Objective obj-4 answer appears truncated for question "What does 30(4) require or allow for Personal Property Registry notice of household-goods order?".
+- WARNING unit-280306837ad798f5: ANSWER_APPEARS_TRUNCATED: Objective obj-4 evidence appears truncated for question "What does 30(4) require or allow for Personal Property Registry notice of household-goods order?".
+- WARNING unit-280306837ad798f5: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-280306837ad798f5: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 30(1) require or allow for Personal Property Registry notice of household-goods order?
+- WARNING unit-280306837ad798f5: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 30(2) require or allow for Personal Property Registry notice of household-goods order?
+- WARNING unit-280306837ad798f5: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 30(3) require or allow for Personal Property Registry notice of household-goods order?
+- WARNING unit-280306837ad798f5: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 30(4) require or allow for Personal Property Registry notice of household-goods order?
+- WARNING unit-7049ad7106bf6fa9: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What is the rule for Compelled answers and limited later use in provincial proceedings?".
+- WARNING unit-7049ad7106bf6fa9: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What is the rule for Compelled answers and limited later use in provincial proceedings?".
+- WARNING unit-7049ad7106bf6fa9: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-7049ad7106bf6fa9: GENERIC_GUIDED_QUESTION: Guided question is generic: What is the rule for Compelled answers and limited later use in provincial proceedings?
+- WARNING unit-ba299c0586183a79: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 23(1) require or allow for Registering extra-provincial court will materials affecting land?".
+- WARNING unit-ba299c0586183a79: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 23(1) require or allow for Registering extra-provincial court will materials affecting land?".
+- WARNING unit-ba299c0586183a79: ANSWER_APPEARS_TRUNCATED: Objective obj-1 evidence appears truncated for question "What does 23(1) require or allow for Registering extra-provincial court will materials affecting land?".
+- WARNING unit-ba299c0586183a79: ANSWER_APPEARS_TRUNCATED: Objective obj-1 evidence appears truncated for question "What does 23(1) require or allow for Registering extra-provincial court will materials affecting land?".
+- WARNING unit-ba299c0586183a79: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-ba299c0586183a79: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 23(1) require or allow for Registering extra-provincial court will materials affecting land?
+- WARNING unit-4d1e4e4d3889b49c: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-4d1e4e4d3889b49c: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 23(2) require or allow for Affidavits required when extra-provincial will probate is absent?
+- WARNING unit-f108841b7033b837: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 23(3) require or allow for Registration of Quebec or South Africa notarial wills?".
+- WARNING unit-f108841b7033b837: ANSWER_APPEARS_TRUNCATED: Objective obj-1 evidence appears truncated for question "What does 23(3) require or allow for Registration of Quebec or South Africa notarial wills?".
+- WARNING unit-f108841b7033b837: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-f108841b7033b837: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 23(3) require or allow for Registration of Quebec or South Africa notarial wills?
+- WARNING unit-431c1908f846bf30: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-431c1908f846bf30: GENERIC_GUIDED_QUESTION: Guided question is generic: What is the rule for Aquaculture lease-holder rent amount?
+- WARNING unit-eb078fdbdd6df5d1: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-eb078fdbdd6df5d1: GENERIC_GUIDED_QUESTION: Guided question is generic: What is the rule for Special levy amount determination and member approval?
+- WARNING unit-f7d250102392e222: ANSWER_APPEARS_TRUNCATED: Objective obj-4 answer appears truncated for question "What does 18(4) require or allow for Instrument record, examination, acceptance, and rejection?".
+- WARNING unit-f7d250102392e222: ANSWER_APPEARS_TRUNCATED: Objective obj-4 evidence appears truncated for question "What does 18(4) require or allow for Instrument record, examination, acceptance, and rejection?".
+- WARNING unit-f7d250102392e222: ANSWER_APPEARS_TRUNCATED: Objective obj-4 answer appears truncated for question "What does 18(4) require or allow for Instrument record, examination, acceptance, and rejection?".
+- WARNING unit-f7d250102392e222: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-f7d250102392e222: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 18(1) require or allow for Instrument record, examination, acceptance, and rejection?
+- WARNING unit-f7d250102392e222: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 18(2) require or allow for Instrument record, examination, acceptance, and rejection?
+- WARNING unit-f7d250102392e222: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 18(3) require or allow for Instrument record, examination, acceptance, and rejection?
+- WARNING unit-f7d250102392e222: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 18(4) require or allow for Instrument record, examination, acceptance, and rejection?
+- WARNING unit-2e97218fd4286e39: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 18(5) require or allow for Certificates, Registry Act notice, and parcel identification?".
+- WARNING unit-2e97218fd4286e39: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 18(5) require or allow for Certificates, Registry Act notice, and parcel identification?".
+- WARNING unit-2e97218fd4286e39: ANSWER_APPEARS_TRUNCATED: Objective obj-2 answer appears truncated for question "What does 18(6) require or allow for Certificates, Registry Act notice, and parcel identification?".
+- WARNING unit-2e97218fd4286e39: ANSWER_APPEARS_TRUNCATED: Objective obj-2 evidence appears truncated for question "What does 18(6) require or allow for Certificates, Registry Act notice, and parcel identification?".
+- WARNING unit-2e97218fd4286e39: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-2e97218fd4286e39: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 18(5) require or allow for Certificates, Registry Act notice, and parcel identification?
+- WARNING unit-2e97218fd4286e39: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 18(6) require or allow for Certificates, Registry Act notice, and parcel identification?
+- WARNING unit-2e97218fd4286e39: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 18(7) require or allow for Certificates, Registry Act notice, and parcel identification?
+- WARNING unit-c2798137eacf0834: ANSWER_APPEARS_TRUNCATED: Objective obj-3 answer appears truncated for question "What does 18(11) require or allow for Rejection notice, amending instruments, and discretionary Registry Act document registration?".
+- WARNING unit-c2798137eacf0834: ANSWER_APPEARS_TRUNCATED: Objective obj-3 answer appears truncated for question "What does 18(11) require or allow for Rejection notice, amending instruments, and discretionary Registry Act document registration?".
+- WARNING unit-c2798137eacf0834: ANSWER_APPEARS_TRUNCATED: Objective obj-3 evidence appears truncated for question "What does 18(11) require or allow for Rejection notice, amending instruments, and discretionary Registry Act document registration?".
+- WARNING unit-c2798137eacf0834: ANSWER_APPEARS_TRUNCATED: Objective obj-3 evidence appears truncated for question "What does 18(11) require or allow for Rejection notice, amending instruments, and discretionary Registry Act document registration?".
+- WARNING unit-c2798137eacf0834: ANSWER_APPEARS_TRUNCATED: Objective obj-4 answer appears truncated for question "What does 18(12) require or allow for Rejection notice, amending instruments, and discretionary Registry Act document registration?".
+- WARNING unit-c2798137eacf0834: ANSWER_APPEARS_TRUNCATED: Objective obj-4 answer appears truncated for question "What does 18(12) require or allow for Rejection notice, amending instruments, and discretionary Registry Act document registration?".
+- WARNING unit-c2798137eacf0834: ANSWER_APPEARS_TRUNCATED: Objective obj-4 evidence appears truncated for question "What does 18(12) require or allow for Rejection notice, amending instruments, and discretionary Registry Act document registration?".
+- WARNING unit-c2798137eacf0834: ANSWER_APPEARS_TRUNCATED: Objective obj-4 evidence appears truncated for question "What does 18(12) require or allow for Rejection notice, amending instruments, and discretionary Registry Act document registration?".
+- WARNING unit-c2798137eacf0834: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-c2798137eacf0834: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 18(9) require or allow for Rejection notice, amending instruments, and discretionary Registry Act document registration?
+- WARNING unit-c2798137eacf0834: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 18(10) require or allow for Rejection notice, amending instruments, and discretionary Registry Act document registration?
+- WARNING unit-c2798137eacf0834: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 18(11) require or allow for Rejection notice, amending instruments, and discretionary Registry Act document registration?
+- WARNING unit-c2798137eacf0834: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 18(12) require or allow for Rejection notice, amending instruments, and discretionary Registry Act document registration?
+- WARNING unit-a152e2ff86bdc5e5: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 125(1) require or allow for Planning and development regulation subjects?".
+- WARNING unit-a152e2ff86bdc5e5: ANSWER_APPEARS_TRUNCATED: Objective obj-1 evidence appears truncated for question "What does 125(1) require or allow for Planning and development regulation subjects?".
+- WARNING unit-a152e2ff86bdc5e5: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 125(1) require or allow for Planning and development regulation subjects?".
+- WARNING unit-a152e2ff86bdc5e5: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-a152e2ff86bdc5e5: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 125(1) require or allow for Planning and development regulation subjects?
+- WARNING unit-e5ce973cd5c67da3: ANSWER_APPEARS_TRUNCATED: Objective obj-2 answer appears truncated for question "What does 125(3) require or allow for Area designation, effectiveness, inconsistency, and development officer rules?".
+- WARNING unit-e5ce973cd5c67da3: ANSWER_APPEARS_TRUNCATED: Objective obj-2 answer appears truncated for question "What does 125(3) require or allow for Area designation, effectiveness, inconsistency, and development officer rules?".
+- WARNING unit-e5ce973cd5c67da3: ANSWER_APPEARS_TRUNCATED: Objective obj-2 evidence appears truncated for question "What does 125(3) require or allow for Area designation, effectiveness, inconsistency, and development officer rules?".
+- WARNING unit-e5ce973cd5c67da3: ANSWER_APPEARS_TRUNCATED: Objective obj-2 answer appears truncated for question "What does 125(3) require or allow for Area designation, effectiveness, inconsistency, and development officer rules?".
+- WARNING unit-e5ce973cd5c67da3: ANSWER_APPEARS_TRUNCATED: Objective obj-3 answer appears truncated for question "What does 125(4) require or allow for Area designation, effectiveness, inconsistency, and development officer rules?".
+- WARNING unit-e5ce973cd5c67da3: ANSWER_APPEARS_TRUNCATED: Objective obj-3 evidence appears truncated for question "What does 125(4) require or allow for Area designation, effectiveness, inconsistency, and development officer rules?".
+- WARNING unit-e5ce973cd5c67da3: ANSWER_APPEARS_TRUNCATED: Objective obj-5 answer appears truncated for question "What does 125(6) require or allow for Area designation, effectiveness, inconsistency, and development officer rules?".
+- WARNING unit-e5ce973cd5c67da3: ANSWER_APPEARS_TRUNCATED: Objective obj-5 evidence appears truncated for question "What does 125(6) require or allow for Area designation, effectiveness, inconsistency, and development officer rules?".
+- WARNING unit-e5ce973cd5c67da3: ANSWER_APPEARS_TRUNCATED: Objective obj-6 answer appears truncated for question "What does 125(7) require or allow for Area designation, effectiveness, inconsistency, and development officer rules?".
+- WARNING unit-e5ce973cd5c67da3: ANSWER_APPEARS_TRUNCATED: Objective obj-6 answer appears truncated for question "What does 125(7) require or allow for Area designation, effectiveness, inconsistency, and development officer rules?".
+- WARNING unit-e5ce973cd5c67da3: ANSWER_APPEARS_TRUNCATED: Objective obj-6 evidence appears truncated for question "What does 125(7) require or allow for Area designation, effectiveness, inconsistency, and development officer rules?".
+- WARNING unit-e5ce973cd5c67da3: ANSWER_APPEARS_TRUNCATED: Objective obj-6 evidence appears truncated for question "What does 125(7) require or allow for Area designation, effectiveness, inconsistency, and development officer rules?".
+- WARNING unit-e5ce973cd5c67da3: ANSWER_APPEARS_TRUNCATED: Objective obj-8 answer appears truncated for question "What does 125(9) require or allow for Area designation, effectiveness, inconsistency, and development officer rules?".
+- WARNING unit-e5ce973cd5c67da3: ANSWER_APPEARS_TRUNCATED: Objective obj-8 answer appears truncated for question "What does 125(9) require or allow for Area designation, effectiveness, inconsistency, and development officer rules?".
+- WARNING unit-e5ce973cd5c67da3: ANSWER_APPEARS_TRUNCATED: Objective obj-8 evidence appears truncated for question "What does 125(9) require or allow for Area designation, effectiveness, inconsistency, and development officer rules?".
+- WARNING unit-e5ce973cd5c67da3: ANSWER_APPEARS_TRUNCATED: Objective obj-8 evidence appears truncated for question "What does 125(9) require or allow for Area designation, effectiveness, inconsistency, and development officer rules?".
+- WARNING unit-e5ce973cd5c67da3: ANSWER_APPEARS_TRUNCATED: Objective obj-8 answer appears truncated for question "What does 125(9) require or allow for Area designation, effectiveness, inconsistency, and development officer rules?".
+- WARNING unit-e5ce973cd5c67da3: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-e5ce973cd5c67da3: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 125(2) require or allow for Area designation, effectiveness, inconsistency, and development officer rules?
+- WARNING unit-e5ce973cd5c67da3: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 125(3) require or allow for Area designation, effectiveness, inconsistency, and development officer rules?
+- WARNING unit-e5ce973cd5c67da3: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 125(4) require or allow for Area designation, effectiveness, inconsistency, and development officer rules?
+- WARNING unit-e5ce973cd5c67da3: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 125(5) require or allow for Area designation, effectiveness, inconsistency, and development officer rules?
+- WARNING unit-e5ce973cd5c67da3: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 125(6) require or allow for Area designation, effectiveness, inconsistency, and development officer rules?
+- WARNING unit-e5ce973cd5c67da3: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 125(7) require or allow for Area designation, effectiveness, inconsistency, and development officer rules?
+- WARNING unit-e5ce973cd5c67da3: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 125(8) require or allow for Area designation, effectiveness, inconsistency, and development officer rules?
+- WARNING unit-e5ce973cd5c67da3: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 125(9) require or allow for Area designation, effectiveness, inconsistency, and development officer rules?
+- ERROR unit-8f66e465d392196c: MAP_REVISION_UNSUPPORTED_CONCEPT: mapRevisionSuggestion introduces an unsupported retroactive-effect concept.
+- WARNING unit-8f66e465d392196c: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 125(10) require or allow for Subdivision public-purpose land, money, procedure, summary, and filing rules?".
+- WARNING unit-8f66e465d392196c: ANSWER_APPEARS_TRUNCATED: Objective obj-1 evidence appears truncated for question "What does 125(10) require or allow for Subdivision public-purpose land, money, procedure, summary, and filing rules?".
+- WARNING unit-8f66e465d392196c: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 125(10) require or allow for Subdivision public-purpose land, money, procedure, summary, and filing rules?".
+- WARNING unit-8f66e465d392196c: ANSWER_APPEARS_TRUNCATED: Objective obj-2 answer appears truncated for question "What does 125(11) require or allow for Subdivision public-purpose land, money, procedure, summary, and filing rules?".
+- WARNING unit-8f66e465d392196c: ANSWER_APPEARS_TRUNCATED: Objective obj-2 answer appears truncated for question "What does 125(11) require or allow for Subdivision public-purpose land, money, procedure, summary, and filing rules?".
+- WARNING unit-8f66e465d392196c: ANSWER_APPEARS_TRUNCATED: Objective obj-2 evidence appears truncated for question "What does 125(11) require or allow for Subdivision public-purpose land, money, procedure, summary, and filing rules?".
+- WARNING unit-8f66e465d392196c: ANSWER_APPEARS_TRUNCATED: Objective obj-2 evidence appears truncated for question "What does 125(11) require or allow for Subdivision public-purpose land, money, procedure, summary, and filing rules?".
+- WARNING unit-8f66e465d392196c: ANSWER_APPEARS_TRUNCATED: Objective obj-2 answer appears truncated for question "What does 125(11) require or allow for Subdivision public-purpose land, money, procedure, summary, and filing rules?".
+- WARNING unit-8f66e465d392196c: ANSWER_APPEARS_TRUNCATED: Objective obj-4 answer appears truncated for question "What does 125(13) require or allow for Subdivision public-purpose land, money, procedure, summary, and filing rules?".
+- WARNING unit-8f66e465d392196c: ANSWER_APPEARS_TRUNCATED: Objective obj-4 evidence appears truncated for question "What does 125(13) require or allow for Subdivision public-purpose land, money, procedure, summary, and filing rules?".
+- WARNING unit-8f66e465d392196c: ANSWER_APPEARS_TRUNCATED: Objective obj-5 answer appears truncated for question "What does 125(14) require or allow for Subdivision public-purpose land, money, procedure, summary, and filing rules?".
+- WARNING unit-8f66e465d392196c: ANSWER_APPEARS_TRUNCATED: Objective obj-5 evidence appears truncated for question "What does 125(14) require or allow for Subdivision public-purpose land, money, procedure, summary, and filing rules?".
+- WARNING unit-8f66e465d392196c: ANSWER_APPEARS_TRUNCATED: Objective obj-6 answer appears truncated for question "What does 125(15) require or allow for Subdivision public-purpose land, money, procedure, summary, and filing rules?".
+- WARNING unit-8f66e465d392196c: ANSWER_APPEARS_TRUNCATED: Objective obj-6 evidence appears truncated for question "What does 125(15) require or allow for Subdivision public-purpose land, money, procedure, summary, and filing rules?".
+- WARNING unit-8f66e465d392196c: ANSWER_APPEARS_TRUNCATED: Objective obj-7 evidence appears truncated for question "What does 125(16) require or allow for Subdivision public-purpose land, money, procedure, summary, and filing rules?".
+- WARNING unit-8f66e465d392196c: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-8f66e465d392196c: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 125(10) require or allow for Subdivision public-purpose land, money, procedure, summary, and filing rules?
+- WARNING unit-8f66e465d392196c: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 125(11) require or allow for Subdivision public-purpose land, money, procedure, summary, and filing rules?
+- WARNING unit-8f66e465d392196c: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 125(12) require or allow for Subdivision public-purpose land, money, procedure, summary, and filing rules?
+- WARNING unit-8f66e465d392196c: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 125(13) require or allow for Subdivision public-purpose land, money, procedure, summary, and filing rules?
+- WARNING unit-8f66e465d392196c: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 125(14) require or allow for Subdivision public-purpose land, money, procedure, summary, and filing rules?
+- WARNING unit-8f66e465d392196c: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 125(15) require or allow for Subdivision public-purpose land, money, procedure, summary, and filing rules?
+- WARNING unit-8f66e465d392196c: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 125(16) require or allow for Subdivision public-purpose land, money, procedure, summary, and filing rules?
+- WARNING unit-5480b046630e0958: ANSWER_APPEARS_TRUNCATED: Objective obj-2 answer appears truncated for question "What does 49.1(2) require or allow for Regulator assistance to the Board without party status?".
+- WARNING unit-5480b046630e0958: ANSWER_APPEARS_TRUNCATED: Objective obj-2 answer appears truncated for question "What does 49.1(2) require or allow for Regulator assistance to the Board without party status?".
+- WARNING unit-5480b046630e0958: ANSWER_APPEARS_TRUNCATED: Objective obj-2 evidence appears truncated for question "What does 49.1(2) require or allow for Regulator assistance to the Board without party status?".
+- WARNING unit-5480b046630e0958: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-5480b046630e0958: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 49.1(1) require or allow for Regulator assistance to the Board without party status?
+- WARNING unit-5480b046630e0958: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 49.1(2) require or allow for Regulator assistance to the Board without party status?
+- WARNING unit-f7e3dd78ffe7da63: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 19(3) require or allow for Lease, official-sale, sheriff-sale, and will registration timing exceptions?".
+- WARNING unit-f7e3dd78ffe7da63: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 19(3) require or allow for Lease, official-sale, sheriff-sale, and will registration timing exceptions?".
+- WARNING unit-f7e3dd78ffe7da63: ANSWER_APPEARS_TRUNCATED: Objective obj-1 evidence appears truncated for question "What does 19(3) require or allow for Lease, official-sale, sheriff-sale, and will registration timing exceptions?".
+- WARNING unit-f7e3dd78ffe7da63: ANSWER_APPEARS_TRUNCATED: Objective obj-1 evidence appears truncated for question "What does 19(3) require or allow for Lease, official-sale, sheriff-sale, and will registration timing exceptions?".
+- WARNING unit-f7e3dd78ffe7da63: ANSWER_APPEARS_TRUNCATED: Objective obj-2 answer appears truncated for question "What does 19(4) require or allow for Lease, official-sale, sheriff-sale, and will registration timing exceptions?".
+- WARNING unit-f7e3dd78ffe7da63: ANSWER_APPEARS_TRUNCATED: Objective obj-2 answer appears truncated for question "What does 19(4) require or allow for Lease, official-sale, sheriff-sale, and will registration timing exceptions?".
+- WARNING unit-f7e3dd78ffe7da63: ANSWER_APPEARS_TRUNCATED: Objective obj-2 evidence appears truncated for question "What does 19(4) require or allow for Lease, official-sale, sheriff-sale, and will registration timing exceptions?".
+- WARNING unit-f7e3dd78ffe7da63: ANSWER_APPEARS_TRUNCATED: Objective obj-2 evidence appears truncated for question "What does 19(4) require or allow for Lease, official-sale, sheriff-sale, and will registration timing exceptions?".
+- WARNING unit-f7e3dd78ffe7da63: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-f7e3dd78ffe7da63: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 19(3) require or allow for Lease, official-sale, sheriff-sale, and will registration timing exceptions?
+- WARNING unit-f7e3dd78ffe7da63: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 19(4) require or allow for Lease, official-sale, sheriff-sale, and will registration timing exceptions?
+- WARNING unit-f7e3dd78ffe7da63: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 19(4.1) require or allow for Lease, official-sale, sheriff-sale, and will registration timing exceptions?
+- WARNING unit-f7e3dd78ffe7da63: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 19(5) require or allow for Lease, official-sale, sheriff-sale, and will registration timing exceptions?
+- WARNING unit-80614ecc1254a284: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 19(6) require or allow for Transfer affidavit requirement and forwarding?".
+- WARNING unit-80614ecc1254a284: ANSWER_APPEARS_TRUNCATED: Objective obj-1 evidence appears truncated for question "What does 19(6) require or allow for Transfer affidavit requirement and forwarding?".
+- WARNING unit-80614ecc1254a284: ANSWER_APPEARS_TRUNCATED: Objective obj-1 evidence appears truncated for question "What does 19(6) require or allow for Transfer affidavit requirement and forwarding?".
+- WARNING unit-80614ecc1254a284: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 19(6) require or allow for Transfer affidavit requirement and forwarding?".
+- WARNING unit-80614ecc1254a284: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-80614ecc1254a284: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 19(6) require or allow for Transfer affidavit requirement and forwarding?
+- WARNING unit-80614ecc1254a284: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 19(7) require or allow for Transfer affidavit requirement and forwarding?
+- WARNING unit-561d1bfb1a22bef3: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-561d1bfb1a22bef3: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 3(1) require or allow for Boundary-confirmation application form and current plan requirements?
+- WARNING unit-561d1bfb1a22bef3: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 3(2) require or allow for Boundary-confirmation application form and current plan requirements?
+- WARNING unit-d8097f2d378d6801: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 3(3) require or allow for Application materials and surveyor report content?".
+- WARNING unit-d8097f2d378d6801: ANSWER_APPEARS_TRUNCATED: Objective obj-1 evidence appears truncated for question "What does 3(3) require or allow for Application materials and surveyor report content?".
+- WARNING unit-d8097f2d378d6801: ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question "What does 3(3) require or allow for Application materials and surveyor report content?".
+- WARNING unit-d8097f2d378d6801: ANSWER_APPEARS_TRUNCATED: Objective obj-2 answer appears truncated for question "What does 3(4) require or allow for Application materials and surveyor report content?".
+- WARNING unit-d8097f2d378d6801: ANSWER_APPEARS_TRUNCATED: Objective obj-2 evidence appears truncated for question "What does 3(4) require or allow for Application materials and surveyor report content?".
+- WARNING unit-d8097f2d378d6801: ANSWER_APPEARS_TRUNCATED: Objective obj-2 answer appears truncated for question "What does 3(4) require or allow for Application materials and surveyor report content?".
+- WARNING unit-d8097f2d378d6801: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-d8097f2d378d6801: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 3(3) require or allow for Application materials and surveyor report content?
+- WARNING unit-d8097f2d378d6801: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 3(4) require or allow for Application materials and surveyor report content?
+- WARNING unit-8006b65638d22c74: GENERIC_MAIN_QUESTION: Main question is generic.
+- WARNING unit-8006b65638d22c74: GENERIC_GUIDED_QUESTION: Guided question is generic: What does 3(5) require or allow for Registrar General waiver of application requirements?

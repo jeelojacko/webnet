@@ -236,9 +236,14 @@ const validateQuestionQuality = (
   issues: AiValidationIssue[],
 ): void => {
   const questions = proposal.objectives.map((objective) => objective.guidedQuestion.trim());
+  const approvedTitle = proposal.approvedGroup?.titleSuggestion.trim();
   if (!proposal.mainQuestion.trim()) addIssue(issues, { code: 'EMPTY_MAIN_QUESTION', proposalId: proposal.proposalId, message: 'Main question is empty.' });
   if (proposal.mainQuestion.length > 240) addIssue(issues, { code: 'MAIN_QUESTION_TOO_LONG', severity: 'warning', proposalId: proposal.proposalId, message: 'Main question is unusually long.' });
-  if (/what must (a )?(person|registrar general) do\??/i.test(proposal.mainQuestion)) {
+  if (
+    /what must (a )?(person|registrar general) do\??/i.test(proposal.mainQuestion) ||
+    /^what should a learner remember about .+\?$/i.test(proposal.mainQuestion.trim()) ||
+    (approvedTitle && normalizeText(proposal.mainQuestion) === normalizeText(`What should a learner remember about ${approvedTitle}?`))
+  ) {
     addIssue(issues, { code: 'GENERIC_MAIN_QUESTION', severity: 'warning', proposalId: proposal.proposalId, message: 'Main question is generic.' });
   }
   const seen = new Set<string>();
@@ -248,6 +253,12 @@ const validateQuestionQuality = (
     if (seen.has(key)) addIssue(issues, { code: 'DUPLICATE_QUESTION', severity: 'warning', proposalId: proposal.proposalId, message: `Duplicate guided question: ${question}` });
     if (key === normalizeText(proposal.mainQuestion)) addIssue(issues, { code: 'MAIN_EQUALS_GUIDED', severity: 'warning', proposalId: proposal.proposalId, message: 'Main question matches a guided question.' });
     if (question.length > 220) addIssue(issues, { code: 'GUIDED_QUESTION_TOO_LONG', severity: 'warning', proposalId: proposal.proposalId, message: `Guided question is unusually long: ${question}` });
+    if (
+      /^what does .+ require or allow for .+\?$/i.test(question.trim()) ||
+      /^what is the rule for .+\?$/i.test(question.trim())
+    ) {
+      addIssue(issues, { code: 'GENERIC_GUIDED_QUESTION', severity: 'warning', proposalId: proposal.proposalId, message: `Guided question is generic: ${question}` });
+    }
     seen.add(key);
   });
 };
@@ -268,8 +279,10 @@ const normalizeLegalReference = (token: string, currentSection?: string): string
   const prefix = prefixMatch[1].toLowerCase().replace(/s$/, '');
   const body = prefixMatch[2];
   const parts = body.split(/\s+or\s+/i);
-  return parts.map((part, index) => {
+  return parts.flatMap((part, index) => {
     const trimmed = part.trim();
+    const withBare = (value: string): string[] =>
+      /^\d+(?:\.\d+)?\([^)]+\)/.test(trimmed) ? [value, trimmed] : [value];
     if (/^\(\d+(?:\.\d+)?\)/.test(trimmed)) {
       const base = currentSection ?? /^\d+(?:\.\d+)?/.exec(parts[0])?.[0];
       return base ? `${prefix} ${base}${trimmed}` : `${prefix} ${trimmed}`;
@@ -278,7 +291,7 @@ const normalizeLegalReference = (token: string, currentSection?: string): string
       const base = /^\d+(?:\.\d+)?/.exec(parts[0])?.[0] ?? currentSection;
       return base ? `${prefix} ${base}${trimmed}` : `${prefix} ${trimmed}`;
     }
-    return `${prefix} ${trimmed}`;
+    return withBare(`${prefix} ${trimmed}`);
   });
 };
 
@@ -348,6 +361,142 @@ const significantTerms = (text: string): string[] => {
   return Array.from(new Set(normalizeText(text).match(/\b[a-z][a-z-]{4,}\b/g) ?? [])).filter(
     (word) => !stopWords.has(word),
   );
+};
+
+const isAlphanumeric = (value: string | undefined): boolean => Boolean(value && /[A-Za-z0-9]/.test(value));
+
+const sourceTextsForObjective = (
+  objective: AiLearningObjective,
+  sourceComponents: ImportedLegalComponent[],
+): string[] =>
+  objective.sourceKeys.map((sourceKey) => sourceComponents.find((component) => component.sourceKey === sourceKey)?.text ?? '');
+
+const addTruncationIssue = (
+  issues: AiValidationIssue[],
+  proposal: AiStudyUnitProposal,
+  objective: AiLearningObjective,
+  text: string,
+  sourceText: string,
+  field: 'answer' | 'evidence',
+  trigger: string,
+): void => {
+  addIssue(issues, {
+    code: 'ANSWER_APPEARS_TRUNCATED',
+    severity: 'warning',
+    proposalId: proposal.proposalId,
+    objectiveId: objective.id,
+    guidedQuestion: objective.guidedQuestion,
+    answerFragment: text,
+    sourceFragment: sourceText.slice(0, 300),
+    trigger: `${field}:${trigger}`,
+    message: `Objective ${objective.id} ${field} appears truncated for question "${objective.guidedQuestion}".`,
+  });
+};
+
+const validateTruncation = (
+  objective: AiLearningObjective,
+  proposal: AiStudyUnitProposal,
+  sourceComponents: ImportedLegalComponent[],
+  issues: AiValidationIssue[],
+): void => {
+  const candidates = [
+    { field: 'answer' as const, text: objective.studyAnswer },
+    ...objective.evidence.map((evidence) => ({ field: 'evidence' as const, text: evidence.evidenceText })),
+  ];
+  const sourceTexts = sourceTextsForObjective(objective, sourceComponents);
+  candidates.forEach(({ field, text }) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    if (/[.。…]{3,}\s*$/.test(trimmed)) {
+      addTruncationIssue(issues, proposal, objective, trimmed, sourceTexts.join('\n\n'), field, 'literal-ellipsis');
+    }
+    if (/^[a-z]\w*\b/.test(trimmed) && !/^(a|an|and|as|at|by|for|if|in|of|on|or|the|to|with)\b/i.test(trimmed)) {
+      addTruncationIssue(issues, proposal, objective, trimmed, sourceTexts.join('\n\n'), field, 'suspicious-lowercase-start');
+    }
+    if (/[A-Za-z,;:]$/.test(trimmed) && !/\b(Act|Regulation|Registrar General|Director of Surveys|Board|Minister|Council)$/.test(trimmed)) {
+      addTruncationIssue(issues, proposal, objective, trimmed, sourceTexts.join('\n\n'), field, 'suspicious-ending');
+    }
+    sourceTexts.forEach((sourceText) => {
+      const index = sourceText.indexOf(trimmed);
+      if (index < 0) return;
+      if (isAlphanumeric(sourceText[index - 1]) && isAlphanumeric(trimmed[0])) {
+        addTruncationIssue(issues, proposal, objective, trimmed, sourceText, field, 'mid-token-start');
+      }
+      const after = sourceText[index + trimmed.length];
+      if (isAlphanumeric(after) && isAlphanumeric(trimmed.at(-1))) {
+        addTruncationIssue(issues, proposal, objective, trimmed, sourceText, field, 'mid-token-end');
+      }
+    });
+  });
+  if (/[.。…]{3,}/.test(proposal.studySummary) && objective.studyAnswer.includes('...')) {
+    addTruncationIssue(issues, proposal, objective, proposal.studySummary, sourceTexts.join('\n\n'), 'answer', 'summary-built-from-truncated-answer');
+  }
+};
+
+const definitionTermsForObjective = (
+  objective: AiLearningObjective,
+  proposal: AiStudyUnitProposal,
+): string[] => {
+  const focusTerms = proposal.approvedGroup?.focusSelections.flatMap((selection) => selection.definedTerms ?? []) ?? [];
+  const haystack = normalizeText(`${objective.objective} ${objective.guidedQuestion}`);
+  return focusTerms.filter((term) => haystack.includes(normalizeText(term)));
+};
+
+const validateDefinitionResponsiveness = (
+  objective: AiLearningObjective,
+  proposal: AiStudyUnitProposal,
+  sourceComponents: ImportedLegalComponent[],
+  issues: AiValidationIssue[],
+): void => {
+  if (objective.type !== 'definition' && definitionTermsForObjective(objective, proposal).length === 0) return;
+  const answer = normalizeText(objective.studyAnswer);
+  const terms = definitionTermsForObjective(objective, proposal);
+  const preambleOnly = /\bdefinitions?\b.+\bthe following definitions apply\b/.test(answer) && !/\bmeans\b|\bincludes\b/.test(answer);
+  const missingFocusedTerm = terms.length > 0 && terms.every((term) => !answer.includes(normalizeText(term)));
+  const sourceHasMeaning = sourceTextsForObjective(objective, sourceComponents).some((sourceText) =>
+    terms.some((term) => new RegExp(`["“]?${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["”]?\\s+(?:means|includes)`, 'i').test(sourceText)),
+  );
+  if (preambleOnly || (sourceHasMeaning && missingFocusedTerm)) {
+    addIssue(issues, {
+      code: 'DEFINITION_ANSWER_MISSING_TERM_MEANING',
+      severity: 'warning',
+      proposalId: proposal.proposalId,
+      objectiveId: objective.id,
+      guidedQuestion: objective.guidedQuestion,
+      answerFragment: objective.studyAnswer,
+      sourceFragment: sourceTextsForObjective(objective, sourceComponents).join('\n\n').slice(0, 300),
+      trigger: terms.join(', ') || 'definition',
+      message: `Objective ${objective.id} definition answer does not state the term-specific meaning for question "${objective.guidedQuestion}".`,
+    });
+  }
+};
+
+const validateDuplicateAnswers = (
+  proposal: AiStudyUnitProposal,
+  issues: AiValidationIssue[],
+): void => {
+  const answers = new Map<string, AiLearningObjective[]>();
+  proposal.objectives.forEach((objective) => {
+    const key = normalizeText(objective.studyAnswer);
+    if (!key) return;
+    answers.set(key, [...(answers.get(key) ?? []), objective]);
+  });
+  answers.forEach((objectives) => {
+    const distinctQuestions = new Set(objectives.map((objective) => normalizeText(objective.guidedQuestion)));
+    if (objectives.length > 1 && distinctQuestions.size > 1) {
+      objectives.forEach((objective) => {
+        addIssue(issues, {
+          code: 'DUPLICATE_NONRESPONSIVE_ANSWER',
+          severity: 'warning',
+          proposalId: proposal.proposalId,
+          objectiveId: objective.id,
+          guidedQuestion: objective.guidedQuestion,
+          answerFragment: objective.studyAnswer,
+          message: `Objective ${objective.id} repeats the same study answer used for a distinct question.`,
+        });
+      });
+    }
+  });
 };
 
 const validateObjectiveFidelity = (
@@ -443,6 +592,8 @@ const validateObjectiveFidelity = (
       message: `Objective ${objective.id} evidence does not demonstrate important answer terms for question "${objective.guidedQuestion}".`,
     });
   }
+  validateTruncation(objective, proposal, sourceComponents, issues);
+  validateDefinitionResponsiveness(objective, proposal, sourceComponents, issues);
 };
 
 const validateCoverage = (
@@ -659,6 +810,7 @@ const validateApprovedFocusCoverage = (
 
 const validateMapRevisionSuggestion = (
   proposal: AiStudyUnitProposal,
+  sourceComponents: ImportedLegalComponent[],
   issues: AiValidationIssue[],
 ): void => {
   if (!proposal.warnings?.includes('MAP_GROUP_TOO_BROAD_FOR_GOOD_UNIT')) return;
@@ -694,6 +846,19 @@ const validateMapRevisionSuggestion = (
         code: 'MAP_REVISION_OUTSIDE_SOURCE',
         proposalId: proposal.proposalId,
         message: 'mapRevisionSuggestion groups must stay inside the original approved sourceKeys.',
+      });
+    }
+    const groupText = normalizeText(`${group.title} ${group.approximateLearningGoal}`);
+    const approvedText = normalizeText(
+      group.sourceKeys
+        .map((sourceKey) => sourceComponents.find((component) => component.sourceKey === sourceKey)?.text ?? '')
+        .join('\n\n'),
+    );
+    if (/\bretroactive\b|\bretroactivity\b/.test(groupText) && !/\bretroactive\b|\bretroactivity\b/.test(approvedText)) {
+      addIssue(issues, {
+        code: 'MAP_REVISION_UNSUPPORTED_CONCEPT',
+        proposalId: proposal.proposalId,
+        message: 'mapRevisionSuggestion introduces an unsupported retroactive-effect concept.',
       });
     }
   });
@@ -737,7 +902,7 @@ export const validateAiStudyUnitProposal = ({
   if (!Array.isArray(typed.objectives) || typed.objectives.length === 0) addIssue(issues, { code: 'OBJECTIVES_REQUIRED', proposalId: typed.proposalId, message: 'At least one learning objective is required.' });
   if (!CONFIDENCES.has(String(typed.confidence))) addIssue(issues, { code: 'INVALID_CONFIDENCE', proposalId: typed.proposalId, message: 'Invalid proposal confidence.' });
   if (!Array.isArray(typed.warnings)) addIssue(issues, { code: 'WARNINGS_REQUIRED', proposalId: typed.proposalId, message: 'warnings must be an array.' });
-  validateMapRevisionSuggestion(typed, issues);
+  validateMapRevisionSuggestion(typed, sourceComponents, issues);
   const sources = sourceTextByKey(sourceComponents);
   typed.objectives?.forEach((objective) => {
     validateObjectiveSchema(objective, typed, issues);
@@ -770,6 +935,7 @@ export const validateAiStudyUnitProposal = ({
   validateCoverage(typed, sourceComponents, issues);
   validateApprovedFocusCoverage(typed, typed.approvedGroup, issues);
   validateQuestionQuality(typed, issues);
+  validateDuplicateAnswers(typed, issues);
   return { valid: issues.every((issue) => issue.severity !== 'error'), issues };
 };
 

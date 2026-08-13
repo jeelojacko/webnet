@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "oldRunId": "ai-units-4b2-expanded-s48-v4",
+  "newRunId": "ai-units-4b21-expanded-s48-v4fix",
+  "generatedAt": "2026-08-13T12:14:47.316Z",
+  "provenanceFinding": "Phase 4B.2 result JSONL was produced by scripts/studyPhase4b2Pilot.ts deterministic helper authoring, not genuine per-job external Codex reasoning.",
+  "deterministicAuthoringDisabled": true,
+  "preservedOldRunProposals": 48,
+  "preparedFixRunJobs": 48,
+  "fixRunResultsPresent": 0,
+  "validation": {
+    "clean": 0,
+    "warningValid": 46,
+    "invalid": 2,
+    "issueCounts": {
+      "ANSWER_APPEARS_TRUNCATED": 166,
+      "GENERIC_MAIN_QUESTION": 48,
+      "GENERIC_GUIDED_QUESTION": 117,
+      "DEFINITION_ANSWER_MISSING_TERM_MEANING": 6,
+      "DUPLICATE_NONRESPONSIVE_ANSWER": 8,
+      "MAP_REVISION_UNSUPPORTED_CONCEPT": 2
+    }
+  },
+  "educationalDiagnostics": {
+    "genericMainQuestions": 48,
+    "genericGuidedQuestions": 117,
+    "suspectedTruncation": 166,
+    "definitionResponsivenessFailures": 6,
+    "duplicateNonresponsiveAnswers": 8
+  }
+}
