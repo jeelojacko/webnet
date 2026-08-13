@@ -1,0 +1,20 @@
+{
+  "runId": "ai-units-4b2-expanded-s48-v4",
+  "proposals": 48,
+  "valid": 47,
+  "warningValid": 1,
+  "invalid": 0,
+  "issues": [
+    {
+      "proposalId": "unit-280306837ad798f5",
+      "severity": "warning",
+      "code": "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+      "objectiveId": "obj-3",
+      "guidedQuestion": "What does 30(3) require or allow for Personal Property Registry notice of household-goods order?",
+      "answerFragment": "on 27(3) or paragraph 23(1)(d), the registration under subsection (1) of a notice of an order affecting household goods shall be deemed to be notice of the order and its terms to that person.",
+      "sourceFragment": "30(1)A spouse in whose favour an order in respect of household goods is made under subsection 27(3) or paragraph 23(1)(d) may register a notice of the order in the Personal Property Registry in accordance with the regulations under the Personal Property Security Act.\n\n30(2)A registration under subse",
+      "trigger": "27(3)",
+      "message": "Objective obj-3 answer includes unsupported numeric or legal-reference token \"27(3)\" for question \"What does 30(3) require or allow for Personal Property Registry notice of household-goods order?\"."
+    }
+  ]
+}

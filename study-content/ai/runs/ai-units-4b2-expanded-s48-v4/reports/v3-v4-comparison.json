@@ -1,0 +1,552 @@
+{
+  "schemaVersion": 1,
+  "runId": "ai-units-4b2-expanded-s48-v4",
+  "baselineRunId": "ai-units-4b13-pilot-s16-v3",
+  "generatedAt": "2026-08-13T00:00:00.000Z",
+  "comparisons": [
+    {
+      "sourceDocumentId": "doc-boundaries-confirmation-act",
+      "sourceKeys": [
+        "section:10"
+      ],
+      "approvedGroup": "Objection delivery and required hearing",
+      "v3": {
+        "proposalId": "unit-3a77dbeb9a642313",
+        "mainQuestion": "How must an objection to boundary confirmation be submitted, and when does it require a hearing?",
+        "guidedQuestions": [
+          "By what methods and by when must an objection be delivered?",
+          "What must the written statement of objection set out?",
+          "When must the Registrar General hold a hearing after an objection?"
+        ],
+        "studyAnswers": [
+          "The objector shall deliver the objection to the Registrar General by personal service, registered mail, or courier service before the deadline stipulated in the notice sent under subsection 9(1) or (2).",
+          "It must set out the reasons for the objection and any grounds and arguments in relation to the objection.",
+          "If a written statement of objection is delivered before the deadline in accordance with subsection 10(1), the Registrar General shall hold a hearing to determine the validity of the objection and, if applicable, the validity of the applicant claim that the boundaries lie as shown on the plan of survey."
+        ],
+        "evidenceCount": 3,
+        "warnings": []
+      },
+      "v4": {
+        "proposalId": "unit-197d016afe9eab43",
+        "mainQuestion": "What should a learner remember about Objection delivery and required hearing?",
+        "guidedQuestions": [
+          "What does 10(1) require or allow for Objection delivery and required hearing?",
+          "What does 10(2) require or allow for Objection delivery and required hearing?"
+        ],
+        "studyAnswers": [
+          "e, registered mail or courier service before the deadline stipulated in the notice sent under subsection 9(1) or (2), a written statement setting out the reasons for and any grounds and arguments in relation to the objection.",
+          "If a written statement of objection is delivered before the deadline in accordance with subsection (1), the Registrar General shall hold a hearing to determine the validity of the objection and, if applicable, the validity of the applicant's claim that the boundaries lie as shown on the plan of survey."
+        ],
+        "evidenceCount": 2,
+        "warnings": []
+      }
+    },
+    {
+      "sourceDocumentId": "doc-boundaries-confirmation-act",
+      "sourceKeys": [
+        "section:10"
+      ],
+      "approvedGroup": "No-objection confirmation or hearing decision",
+      "v3": {
+        "proposalId": "unit-4d0b7e568468b99d",
+        "mainQuestion": "What may the Registrar General do when no boundary-confirmation objection is delivered by the deadline?",
+        "guidedQuestions": [
+          "What triggers the Registrar General no-objection options?",
+          "When may the Registrar General confirm the boundary without holding a hearing?",
+          "When may the Registrar General hold a hearing despite no objection being delivered?"
+        ],
+        "studyAnswers": [
+          "The options apply if no written statement of objection is delivered before the deadline in accordance with subsection 10(1).",
+          "The Registrar General may confirm the boundary as shown on the plan of survey without a hearing if satisfied by all material filed in the proceeding, including the application if applicable, that the boundary or boundaries should be confirmed.",
+          "If not satisfied by all material filed in the proceeding, including the application if applicable, that the boundary or boundaries should be confirmed, the Registrar General may hold a hearing in accordance with the Act and regulations."
+        ],
+        "evidenceCount": 3,
+        "warnings": []
+      },
+      "v4": {
+        "proposalId": "unit-bf1545b1c75e32a1",
+        "mainQuestion": "What should a learner remember about No-objection confirmation or hearing decision?",
+        "guidedQuestions": [
+          "What does 10(3) require or allow for No-objection confirmation or hearing decision?"
+        ],
+        "studyAnswers": [
+          "If no written statement of objection is delivered before the deadline in accordance with subsection (1), the Registrar General may (a) if satisfied by all the material filed in the proceeding, including the application if applicable, that the boundary or boundaries in question should be confirmed, confirm the location of the boundary or boundaries in question as show"
+        ],
+        "evidenceCount": 1,
+        "warnings": []
+      }
+    },
+    {
+      "sourceDocumentId": "doc-boundaries-confirmation-act",
+      "sourceKeys": [
+        "section:10"
+      ],
+      "approvedGroup": "Hearing parties and notice contents",
+      "v3": {
+        "proposalId": "unit-de6c92036e6a8ac1",
+        "mainQuestion": "Who participates in a boundary-confirmation hearing, and what must the hearing notice contain?",
+        "guidedQuestions": [
+          "Who are parties to a hearing held under section 10?",
+          "To whom must the Registrar General cause notice of hearing to be given?",
+          "What information must a notice of hearing specify or describe?"
+        ],
+        "studyAnswers": [
+          "The applicant, any person who delivers a statement of objection under subsection 10(1), and any other persons the Registrar General specifies are parties to the hearing.",
+          "The Registrar General shall cause notice of hearing to be given, in accordance with subsection 10(6), to the parties and to any other persons the Registrar General specifies.",
+          "The notice shall specify the date, time, and place of the hearing, describe the reasons for the application or proceeding, set out related grounds and arguments, describe the reasons and set out the grounds and arguments in any objections received, and otherwise be given in accordance with the regulations."
+        ],
+        "evidenceCount": 3,
+        "warnings": []
+      },
+      "v4": {
+        "proposalId": "unit-923d511177b8f05e",
+        "mainQuestion": "What should a learner remember about Hearing parties and notice contents?",
+        "guidedQuestions": [
+          "What does 10(4) require or allow for Hearing parties and notice contents?",
+          "What does 10(5) require or allow for Hearing parties and notice contents?",
+          "What does 10(6) require or allow for Hearing parties and notice contents?"
+        ],
+        "studyAnswers": [
+          "on who delivers a statement of objection under subsection (1) and such other persons as the Registrar General specifies are parties to a hearing held under this section.",
+          "The Registrar General shall cause a notice of hearing to be given, in accordance with subsection (6), to the parties and to such other persons as the Registrar General specifies.",
+          "A notice given under subsection (5) shall specify the date, time and place of the hearing, shall contain a description of the reasons for the making of the application or the initiating of the proceeding, as the case may be, shall set out any grounds and arguments in relation to it, shall describe the reasons and set out the grounds and arguments contained in any objections received and shall otherwise be"
+        ],
+        "evidenceCount": 3,
+        "warnings": []
+      }
+    },
+    {
+      "sourceDocumentId": "doc-registry-act",
+      "sourceKeys": [
+        "section:19"
+      ],
+      "approvedGroup": "Unregistered instrument consequences for purchasers and judgment creditors",
+      "v3": {
+        "proposalId": "unit-fd9377e0f65a8ddc",
+        "mainQuestion": "What are the consequences of not registering instruments for purchasers and judgment creditors under section 19?",
+        "guidedQuestions": [
+          "What happens to an unregistered instrument against a subsequent purchaser?",
+          "When is an instrument deemed fraudulent and void against a bona fide judgment creditor?"
+        ],
+        "studyAnswers": [
+          "Subject to subsections 19(3), (4), (4.1), and (5), an instrument not registered in the county registry office where the lands lie is deemed fraudulent and void against subsequent purchasers for valuable consideration whose conveyances are previously registered.",
+          "Subject to subsections 19(3), (4), (4.1), and (5), if an instrument is not registered within three months of execution, it is deemed fraudulent and void against a bona fide judgment creditor when the judgment or memorial was registered before the conveyance was registered."
+        ],
+        "evidenceCount": 2,
+        "warnings": []
+      },
+      "v4": {
+        "proposalId": "unit-a334b4f68d41876c",
+        "mainQuestion": "What should a learner remember about Unregistered instrument consequences for purchasers and judgment creditors?",
+        "guidedQuestions": [
+          "What does 19(1) require or allow for Unregistered instrument consequences for purchasers and judgment creditors?",
+          "What does 19(2) require or allow for Unregistered instrument consequences for purchasers and judgment creditors?"
+        ],
+        "studyAnswers": [
+          "re the lands lie, and if not so registered, shall, subject to the provisions of subsections (3), (4), (4.1) and (5), be deemed fraudulent and void against subsequent purchasers for valuable consideration whose conveyances are previously registered.",
+          "3), (4), (4.1) and (5), all instruments shall, if not registered within three months of the date of their execution, be deemed fraudulent and void as against any bona fide judgment creditor, when, prior to the registry of such conveyance, the judgment or a memorial of the judgment has been registered."
+        ],
+        "evidenceCount": 2,
+        "warnings": []
+      }
+    },
+    {
+      "sourceDocumentId": "doc-occupational-health-and-safety-act",
+      "sourceKeys": [
+        "section:9.1"
+      ],
+      "approvedGroup": "Supervisor hazard, information, and instruction duties",
+      "v3": {
+        "proposalId": "unit-fff5b5e3ff897a1c",
+        "mainQuestion": "What specific hazard, information, and instruction duties does subsection 9.1(2) impose on supervisors?",
+        "guidedQuestions": [
+          "With what hazards must a supervisor acquaint employees?",
+          "What information must a supervisor provide to employees?",
+          "What instruction must a supervisor provide to employees?"
+        ],
+        "studyAnswers": [
+          "Every supervisor shall acquaint employees under the supervisor supervision and direction with any hazard connected with the use, handling, storage, disposal, and transport of any tool, equipment, machine, device, or biological, chemical, or physical agent.",
+          "Every supervisor shall provide the information necessary to ensure the health and safety of employees under the supervisor supervision and direction.",
+          "Every supervisor shall provide the instruction necessary to ensure the health and safety of employees under the supervisor supervision and direction."
+        ],
+        "evidenceCount": 3,
+        "warnings": []
+      },
+      "v4": {
+        "proposalId": "unit-673635a65c9780c7",
+        "mainQuestion": "What should a learner remember about Supervisor hazard, information, and instruction duties?",
+        "guidedQuestions": [
+          "What does 9.1(2) require or allow for Supervisor hazard, information, and instruction duties?"
+        ],
+        "studyAnswers": [
+          "Without limiting the generality of the duties under subsection (1), every supervisor shall (a) acquaint the employees under the supervisor's supervision and direction with any hazard in connection with the use, handling, storage, disposal and transport of any tool, equipment, machine, device, or biological, chemical or physical agent; (b) provide the information that is necessary to ensure the health and safety of..."
+        ],
+        "evidenceCount": 1,
+        "warnings": []
+      }
+    },
+    {
+      "sourceDocumentId": "doc-land-titles-act",
+      "sourceKeys": [
+        "section:18"
+      ],
+      "approvedGroup": "Instrument record, examination, acceptance, and rejection",
+      "v3": {
+        "proposalId": "unit-e9b26da1364e32a8",
+        "mainQuestion": "How does the registrar process an instrument from receipt through acceptance or rejection under section 18?",
+        "guidedQuestions": [
+          "What must the registrar assign and record when an instrument is received?",
+          "What happens after the instrument is recorded for examination?",
+          "On what grounds may the registrar refuse to file or register and reject an instrument?"
+        ],
+        "studyAnswers": [
+          "The registrar shall assign a registration number, date, and time to every instrument received at the land titles office for filing or registration, and shall enter the instrument, date, time, and number in the instrument record.",
+          "The instrument is examined and, subject to subsection 18(4), a record of its acceptance for filing or registration is entered in the instrument record. When accepted for registration under subsection 18(2), it shall be registered.",
+          "The registrar may reject an instrument if the appropriate fee has not been paid, if it does not relate to land in the district, lacks the approved parcel identifier or is otherwise incomplete, uses a retired parcel identifier or an added description, is not in proper form or fit for filing or registration, or does not comply with the Community Planning Act if applicable."
+        ],
+        "evidenceCount": 3,
+        "warnings": []
+      },
+      "v4": {
+        "proposalId": "unit-f7d250102392e222",
+        "mainQuestion": "What should a learner remember about Instrument record, examination, acceptance, and rejection?",
+        "guidedQuestions": [
+          "What does 18(1) require or allow for Instrument record, examination, acceptance, and rejection?",
+          "What does 18(2) require or allow for Instrument record, examination, acceptance, and rejection?",
+          "What does 18(3) require or allow for Instrument record, examination, acceptance, and rejection?",
+          "What does 18(4) require or allow for Instrument record, examination, acceptance, and rejection?"
+        ],
+        "studyAnswers": [
+          "The registrar shall assign a registration number, date and time to every instrument received at the land titles office for filing or registration and shall enter a record of the instrument, date, time and number in the instrument record.",
+          "The instrument shall then be examined and, subject to subsection (4), a record of the acceptance of the instrument for filing or registration shall be entered in the instrument record.",
+          "When an instrument is accepted for registration pursuant to subsection (2), it shall be registered.",
+          "Notwithstanding anything in this or any other enactment, the registrar may refuse to file or register and may reject an instrument where the appropriate fee has not been paid therefor or where the instrument (a) does not relate to land situated in his district; (b) does not describe the land to which it relates by its approved parcel identifier, or is otherwise incomplete; (b.1) describes the land (i) by reference..."
+        ],
+        "evidenceCount": 4,
+        "warnings": []
+      }
+    },
+    {
+      "sourceDocumentId": "doc-land-titles-act",
+      "sourceKeys": [
+        "section:18"
+      ],
+      "approvedGroup": "Rejection notice, amending instruments, and discretionary Registry Act document registration",
+      "v3": {
+        "proposalId": "unit-247fe204bd384dfe",
+        "mainQuestion": "What rules govern rejection records, amending instruments, and discretionary registration of Registry Act documents under section 18?",
+        "guidedQuestions": [
+          "What must the registrar do when an instrument is rejected?",
+          "What instrument shall the registrar not reject despite subsection 18(4)?",
+          "How may an instrument filed or registered under the Act be amended?",
+          "When may a Registry Act document dealing with registered land be registered under the Land Titles Act?"
+        ],
+        "studyAnswers": [
+          "The registrar shall enter in the instrument record a record of the rejection and a memorandum of the reasons, and shall notify the person who presented the instrument for registration.",
+          "Notwithstanding subsection 18(4), the registrar shall not reject an instrument referred to in subsection 12(10).",
+          "An instrument filed or registered under the Act may, subject to terms and conditions imposed by the registrar, be amended by filing or registering an amending instrument in prescribed form.",
+          "If a document sufficient to pass an estate or interest in land under the Registry Act deals with land registered under the Land Titles Act, the Registrar General may, in absolute discretion, order the proper registrar to register it under the Land Titles Act; once registered, it has the same effect as if registered as an instrument."
+        ],
+        "evidenceCount": 4,
+        "warnings": []
+      },
+      "v4": {
+        "proposalId": "unit-c2798137eacf0834",
+        "mainQuestion": "What should a learner remember about Rejection notice, amending instruments, and discretionary Registry Act document registration?",
+        "guidedQuestions": [
+          "What does 18(9) require or allow for Rejection notice, amending instruments, and discretionary Registry Act document registration?",
+          "What does 18(10) require or allow for Rejection notice, amending instruments, and discretionary Registry Act document registration?",
+          "What does 18(11) require or allow for Rejection notice, amending instruments, and discretionary Registry Act document registration?",
+          "What does 18(12) require or allow for Rejection notice, amending instruments, and discretionary Registry Act document registration?"
+        ],
+        "studyAnswers": [
+          "Upon the rejection of an instrument, the registrar shall enter in the instrument record a record of the rejection and a memorandum of the reasons for such rejection, and shall notify the person who presented the instrument for registration.",
+          "Notwithstanding subsection (4), the registrar shall not reject an instrument referred to in subsection 12(10).",
+          "ument that is filed or registered under this Act may, subject to such terms and conditions as the registrar may impose, be amended by the filing or registration of an amending instrument in prescribed form.",
+          "s an estate or interest in land under the Registry Act deals with land registered under this Act, the Registrar General may, in his absolute discretion, order the proper registrar to register it under this Act, and when so registered it shall have the same effect as if registered as an instrument."
+        ],
+        "evidenceCount": 4,
+        "warnings": []
+      }
+    },
+    {
+      "sourceDocumentId": "doc-community-planning-act",
+      "sourceKeys": [
+        "section:125"
+      ],
+      "approvedGroup": "Subdivision public-purpose land, money, procedure, summary, and filing rules",
+      "v3": {
+        "proposalId": "unit-2e4ddc419619ecf3",
+        "mainQuestion": "What public-purpose land, money, procedure, summary, and filing rules may subdivision regulations address under section 125?",
+        "guidedQuestions": [
+          "What may a subdivision regulation provide for under subsection 125(10)?",
+          "What modified rules apply if a subdivision regulation under section 125 is in effect?",
+          "How must public-purpose land and money in lieu be held or used?",
+          "What must the Minister do before making a regulation under section 125?",
+          "What do subsections 125(15) and 125(16) say about summaries and filing?"
+        ],
+        "studyAnswers": [
+          "It may provide for setting aside public-purpose land or paying money in lieu at the Minister discretion, vest specified access and subdivision-plan approval powers in a regional service commission, prescribe tentative-plan approval fees, make subdivision street naming subject to regional service commission approval, and add exemptions under subsection 80(1).",
+          "Section 77 applies with necessary modifications, except that a plan setting aside public-purpose land cannot be approved unless the regional service commission recommends the location and the Minister approves and signs the plan; variance powers under section 78 are vested in the regional service commission or development officer, and sections 79 and 80 apply with necessary modifications.",
+          "Land vested in the Crown shall be held undeveloped or developed for public purposes and may later be conveyed to a local government if included within its boundaries. Money received in lieu of land or from sale of the land must go into a special account and be spent only to acquire or develop public-purpose land, with investment earnings paid into that account and later local-government transfer rules if applicable.",
+          "Before making a regulation, the Minister shall request views from the regional service commission if the regulation would have effect in a region, request advisory committee views for specified rural district regulations, and follow, with necessary modifications, the preliminary by-law procedure under section 111 except for regulations under paragraph 125(1)(a), (b), (f), or (g).",
+          "For a zoning regulation or rural plan, section 111 does not require the Minister to make the proposed rural plan or amendment available for public consideration if a written summary is made available. The Director shall file a copy of each regulation in the land registration office for every affected county, but filing is not a condition precedent to the regulation coming into force."
+        ],
+        "evidenceCount": 5,
+        "warnings": [
+          "MAP_GROUP_TOO_BROAD_FOR_GOOD_UNIT"
+        ]
+      },
+      "v4": {
+        "proposalId": "unit-8f66e465d392196c",
+        "mainQuestion": "What should a learner remember about Subdivision public-purpose land, money, procedure, summary, and filing rules?",
+        "guidedQuestions": [
+          "What does 125(10) require or allow for Subdivision public-purpose land, money, procedure, summary, and filing rules?",
+          "What does 125(11) require or allow for Subdivision public-purpose land, money, procedure, summary, and filing rules?",
+          "What does 125(12) require or allow for Subdivision public-purpose land, money, procedure, summary, and filing rules?",
+          "What does 125(13) require or allow for Subdivision public-purpose land, money, procedure, summary, and filing rules?",
+          "What does 125(14) require or allow for Subdivision public-purpose land, money, procedure, summary, and filing rules?",
+          "What does 125(15) require or allow for Subdivision public-purpose land, money, procedure, summary, and filing rules?",
+          "What does 125(16) require or allow for Subdivision public-purpose land, money, procedure, summary, and filing rules?"
+        ],
+        "studyAnswers": [
+          "A subdivision regulation under this section may (a) subject to subsections (12) and (13), provide for (i) the setting aside of land for public purposes at a location as may be approved by the Minister after consultation with the regional service commission, the indicating of the land on a subdivision plan and the vesting of the land in the Crown on the filing of the subdivision plan in the land registration office...",
+          "ith respect to a subdivision by-law apply with the necessary modifications to the regulation, except if a plan involves the setting aside of land for public purposes, in which case the plan shall not be approved unless (i) the location of the land has been recommended by the regional service commission, and (ii) the plan has been approved and signed by the Minister, (b) the powers mentioned in section 78 with resp...",
+          "Land vested in the Crown under this section shall be held undeveloped or developed for public purposes and may, if subsequently included within the boundaries of a local government, be conveyed to the local government and the land shall be subject to all provisions of this Act affecting land for public purposes vested in a local government under this Act.",
+          "All money received by the Minister in lieu of land for public purposes or realized by the Minister on the sale of the land is to be paid into a special account, and the money in that account is to be expended by the Minister for acquiring or developing land for public purposes and for no other purpose, and (a) pending the expenditure the money shall be invested and the earnings derived f",
+          "Before making a regulation under this section, the Minister shall (a) if the regulation would have effect in a region, request the regional service commission to give its views on the regulation, (b) if the regulation is to be made under section 51 and would have effect in a rural district that has an advisory committee, request the advisory committee to give its views on the regula",
+          "or public consideration the proposed rural plan or amendment if the Minister makes available for public consideration a written summary of the proposed rural plan or amendment.",
+          "The Director shall file a copy of each regulation made under this section in the land registration office for every county in which any land affected by the regulation is situated, but the filing shall not be a condition precedent to the coming into force of the regulation."
+        ],
+        "evidenceCount": 7,
+        "warnings": []
+      }
+    },
+    {
+      "sourceDocumentId": "doc-energy-and-utilities-board-act",
+      "sourceKeys": [
+        "section:49.1"
+      ],
+      "approvedGroup": "Regulator assistance to the Board without party status",
+      "v3": {
+        "proposalId": "unit-deb346b19788fc8d",
+        "mainQuestion": "How may a regulator assist the Energy and Utilities Board without becoming a party?",
+        "guidedQuestions": [
+          "Who is a regulator for the purposes of section 49.1?",
+          "When may a regulator render assistance to the Board without becoming a party?",
+          "What information may the Board receive and accept from the regulator?"
+        ],
+        "studyAnswers": [
+          "For section 49.1, regulator means a regulator as defined in the Financial and Consumer Services Commission Act.",
+          "On application of the Board after commencement of a proceeding resulting from financial and consumer services legislation, a regulator not already a party may render assistance to the Board without becoming a party.",
+          "The Board may receive and accept information from the regulator that it considers relevant, whether or not the information would be admissible in a court of law."
+        ],
+        "evidenceCount": 3,
+        "warnings": []
+      },
+      "v4": {
+        "proposalId": "unit-5480b046630e0958",
+        "mainQuestion": "What should a learner remember about Regulator assistance to the Board without party status?",
+        "guidedQuestions": [
+          "What does 49.1(1) require or allow for Regulator assistance to the Board without party status?",
+          "What does 49.1(2) require or allow for Regulator assistance to the Board without party status?"
+        ],
+        "studyAnswers": [
+          "For the purposes of this section, \"regulator\" means a regulator as defined in the Financial and Consumer Services Commission Act.",
+          "e application of financial and consumer services legislation, a regulator who is not already a party to the proceedings may render assistance to the Board without becoming a party to the proceedings and the Board may receive and accept information from the regulator that it considers relevant, whether or not the information would be admissible in a court of law."
+        ],
+        "evidenceCount": 2,
+        "warnings": []
+      }
+    },
+    {
+      "sourceDocumentId": "doc-registry-act",
+      "sourceKeys": [
+        "section:19"
+      ],
+      "approvedGroup": "Lease, official-sale, sheriff-sale, and will registration timing exceptions",
+      "v3": {
+        "proposalId": "unit-a6b469d1b34d7233",
+        "mainQuestion": "What registration timing exceptions protect certain leases, sale conveyances, and wills under section 19?",
+        "guidedQuestions": [
+          "Which leases need not be registered merely to avoid being fraudulent and void?",
+          "When is an official-capacity public-auction conveyance protected as if registered at the time of sale?",
+          "When is a sheriff sale conveyance protected as if registered on its execution day?",
+          "When is a registered will protected as if registered immediately after death?"
+        ],
+        "studyAnswers": [
+          "A lease for a term not exceeding three years need not be registered, and is not deemed fraudulent and void merely for non-registration, if actual possession goes along with the lease; this does not apply to leases over three years or leases without actual possession.",
+          "When a person in an official capacity executes a conveyance of an interest in lands sold at public auction pursuant to law, the conveyance is as valid against subsequent purchasers or judgment creditors as if registered at the time of sale if registered within six months of the day of sale.",
+          "If a sheriff executes a conveyance of an interest in lands sold under the Enforcement of Money Judgments Act, it is as valid against subsequent purchasers or judgment creditors as if registered on the day of execution if registered within six months after the day of execution.",
+          "A will is as valid against subsequent purchasers or judgment creditors as if registered immediately after death if registered within six months after death when the testator died in the Province, or within one year after death when the testator died outside the Province."
+        ],
+        "evidenceCount": 4,
+        "warnings": []
+      },
+      "v4": {
+        "proposalId": "unit-f7e3dd78ffe7da63",
+        "mainQuestion": "What should a learner remember about Lease, official-sale, sheriff-sale, and will registration timing exceptions?",
+        "guidedQuestions": [
+          "What does 19(3) require or allow for Lease, official-sale, sheriff-sale, and will registration timing exceptions?",
+          "What does 19(4) require or allow for Lease, official-sale, sheriff-sale, and will registration timing exceptions?",
+          "What does 19(4.1) require or allow for Lease, official-sale, sheriff-sale, and will registration timing exceptions?",
+          "What does 19(5) require or allow for Lease, official-sale, sheriff-sale, and will registration timing exceptions?"
+        ],
+        "studyAnswers": [
+          "No lease for a term not exceeding three years, where the actual possession goes along with the lease, need be registered, nor shall such lease be deemed fraudulent and void merely by reason of its not being registered; but this subsection does not extend or apply to any lease for a greater term than three years, nor to any lease where the actual possession does n",
+          "fficial capacity executes a conveyance of an interest in lands sold at public auction, pursuant to law, the conveyance, if registered within six months of the day of such sale, shall, as against any subsequent purchaser or judgment creditor, be as valid as if registered at the time of sale.",
+          "a conveyance of an interest in lands sold by the sheriff under the Enforcement of Money Judgments Act, the conveyance, if registered within six months after the day of its execution, shall, as against any subsequent purchaser or judgment creditor, be as valid as if registered on the day of its execution.",
+          "A will registered within six months after the death of the testator if he died within the Province, or within one year after death if he died without the Province, shall as against subsequent purchasers or judgment creditors be as valid as if it had been registered immediately after the death of the testator."
+        ],
+        "evidenceCount": 4,
+        "warnings": []
+      }
+    },
+    {
+      "sourceDocumentId": "doc-registry-act",
+      "sourceKeys": [
+        "section:19"
+      ],
+      "approvedGroup": "Transfer affidavit requirement and forwarding",
+      "v3": {
+        "proposalId": "unit-30de1e83f7ea3eed",
+        "mainQuestion": "What affidavit must accompany a deed transferring real property, and what must the registrar do with it?",
+        "guidedQuestions": [
+          "What must accompany a deed affecting transfer of real property before it can be registered?",
+          "What information must the affidavit set out, and who may make it?",
+          "What must the registrar do with the affidavit after registering the deed?"
+        ],
+        "studyAnswers": [
+          "No deed affecting transfer of real property shall be registered unless accompanied by an affidavit of the transfer.",
+          "The affidavit must set out the true and actual consideration, party names, location and description of the real property, and prescribed information; it must be made by the grantee, the grantee solicitor, or another duly authorized agent, in the regulatory form or to like effect.",
+          "The registrar shall not record the affidavit, but shall forward it to the Executive Director of Assessment under the Assessment Act not later than thirty days after the date of registration of the deed."
+        ],
+        "evidenceCount": 3,
+        "warnings": []
+      },
+      "v4": {
+        "proposalId": "unit-80614ecc1254a284",
+        "mainQuestion": "What should a learner remember about Transfer affidavit requirement and forwarding?",
+        "guidedQuestions": [
+          "What does 19(6) require or allow for Transfer affidavit requirement and forwarding?",
+          "What does 19(7) require or allow for Transfer affidavit requirement and forwarding?"
+        ],
+        "studyAnswers": [
+          "No deed affecting the transfer of real property shall be registered unless accompanied by an affidavit of the transfer setting forth the true and actual consideration for which such property was acquired, the names of the parties, the location and description of real property and such other information prescribed by regulation, which affidavit shall be made by the grantee, his solicitor or other agent duly authori...",
+          "The registrar shall not record such affidavit but shall forward the same to the Executive Director of Assessment under the Assessment Act not later than thirty days after the date of registration of the deed."
+        ],
+        "evidenceCount": 2,
+        "warnings": []
+      }
+    },
+    {
+      "sourceDocumentId": "reg-boundaries-95-166",
+      "sourceKeys": [
+        "section:3"
+      ],
+      "approvedGroup": "Boundary-confirmation application form and current plan requirements",
+      "v3": {
+        "proposalId": "unit-198246513c3c013f",
+        "mainQuestion": "What form and current-plan requirements apply to a boundary-confirmation application under Regulation 95-166?",
+        "guidedQuestions": [
+          "What form must a boundary-confirmation application use?",
+          "What must be true of the plan of survey required under paragraph 7(1)(a) of the Act?",
+          "To what standards and requirements must the plan conform?"
+        ],
+        "studyAnswers": [
+          "An application to confirm the location of a boundary made under subsection 6(1) or 6(3) of the Act shall be in Form 1.",
+          "The plan of survey shall be current.",
+          "The plan shall conform in every respect to the Association of New Brunswick Land Surveyors standards for making such a plan that are in effect at the time of application, and to any other requirements specified by the Registrar General."
+        ],
+        "evidenceCount": 3,
+        "warnings": []
+      },
+      "v4": {
+        "proposalId": "unit-561d1bfb1a22bef3",
+        "mainQuestion": "What should a learner remember about Boundary-confirmation application form and current plan requirements?",
+        "guidedQuestions": [
+          "What does 3(1) require or allow for Boundary-confirmation application form and current plan requirements?",
+          "What does 3(2) require or allow for Boundary-confirmation application form and current plan requirements?"
+        ],
+        "studyAnswers": [
+          "An application to confirm the location of a boundary made under subsection 6(1) or (3) of the Act shall be in Form 1.",
+          "A plan of survey required under paragraph 7(1)(a) of the Act shall be current and shall conform in every respect to (a) the standards for the making of such a plan established by the Association of New Brunswick Land Surveyors and in effect at the time of making the application, and (b) any other requirements specified by the Registrar General."
+        ],
+        "evidenceCount": 2,
+        "warnings": []
+      }
+    },
+    {
+      "sourceDocumentId": "reg-boundaries-95-166",
+      "sourceKeys": [
+        "section:3"
+      ],
+      "approvedGroup": "Application materials and surveyor report content",
+      "v3": {
+        "proposalId": "unit-d3522996fe86a65d",
+        "mainQuestion": "What materials and surveyor-report content must accompany a boundary-confirmation application?",
+        "guidedQuestions": [
+          "What surveyor-prepared material must accompany the application?",
+          "What other documents and information must accompany the application?",
+          "What must the surveyor report contain?",
+          "What explanation must the surveyor report give about other boundary locations?"
+        ],
+        "studyAnswers": [
+          "The application shall be accompanied by the field notes and a surveyor report conforming with subsection 3(4), prepared by the surveyor who signed the plan of survey.",
+          "The application must include available existing plans and related field notes or surveyor reports, required registered instruments, any requested abstract of title, names and mailing addresses of current interest owners with the nature of each interest, any consent and waiver of notice or agreement to be bound, and other helpful or requested information or documentation.",
+          "The report must describe the issue to be determined, the history of the boundary, and the evidence used to establish the boundary location shown on the plan of survey.",
+          "It must explain the reasons for accepting or rejecting the boundary location shown on other plans, documentary evidence, physical evidence of earlier boundary lines, or boundary lines accepted by adjoining landowners."
+        ],
+        "evidenceCount": 4,
+        "warnings": []
+      },
+      "v4": {
+        "proposalId": "unit-d8097f2d378d6801",
+        "mainQuestion": "What should a learner remember about Application materials and surveyor report content?",
+        "guidedQuestions": [
+          "What does 3(3) require or allow for Application materials and surveyor report content?",
+          "What does 3(4) require or allow for Application materials and surveyor report content?"
+        ],
+        "studyAnswers": [
+          "3)In addition to the plan of survey referred to in subsection (2), an application to confirm the location of a boundary shall be accompanied by (a) the field notes and a surveyor's report in conformity with subsection (4), prepared by the surveyor who signed the plan of survey, (b) copies of any other existing plans of survey on which the boundary in question is shown and, if reasonably available to the applicant,...",
+          "A surveyor's report referred to in paragraph (3)(a) shall contain (a) a description of the issue to be determined, (b) a description of the history of the boundary in question, (c) a description of the evidence used to establish the location of the boundary as shown on the plan of survey, and (d) an explanation of the reasons for accepting or rejecting the location of the boundary as shown on any other plans of su..."
+        ],
+        "evidenceCount": 2,
+        "warnings": []
+      }
+    },
+    {
+      "sourceDocumentId": "reg-boundaries-95-166",
+      "sourceKeys": [
+        "section:3"
+      ],
+      "approvedGroup": "Registrar General waiver of application requirements",
+      "v3": {
+        "proposalId": "unit-715da6cfeac482a1",
+        "mainQuestion": "When may the Registrar General waive boundary-confirmation application-material requirements?",
+        "guidedQuestions": [
+          "Which application requirements may the Registrar General waive?",
+          "What may the Registrar General attach to a waiver?"
+        ],
+        "studyAnswers": [
+          "The Registrar General may waive any of the requirements of subsection 3(3).",
+          "The waiver may be subject to the terms and conditions the Registrar General considers appropriate."
+        ],
+        "evidenceCount": 2,
+        "warnings": []
+      },
+      "v4": {
+        "proposalId": "unit-8006b65638d22c74",
+        "mainQuestion": "What should a learner remember about Registrar General waiver of application requirements?",
+        "guidedQuestions": [
+          "What does 3(5) require or allow for Registrar General waiver of application requirements?"
+        ],
+        "studyAnswers": [
+          "The Registrar General may waive any of the requirements of subsection (3), subject to such terms and conditions as the Registrar General considers appropriate."
+        ],
+        "evidenceCount": 1,
+        "warnings": []
+      }
+    }
+  ]
+}

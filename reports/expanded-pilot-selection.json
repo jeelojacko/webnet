@@ -1,0 +1,1806 @@
+{
+  "schemaVersion": 1,
+  "runId": "ai-map-4b2-expanded-selection",
+  "unitRunId": "ai-units-4b2-expanded-s48-v4",
+  "generatedAt": "2026-08-13T00:00:00.000Z",
+  "sourceMapRuns": [
+    "ai-map-4b11-targeted-s24-v3",
+    "ai-map-4b12-grounding-s9-v1"
+  ],
+  "selectedJobs": 48,
+  "limitations": [
+    "Only 16 unique documents are available in the exact 48 focus-grounded selected groups; the target of at least 20 cannot be met from current approved-focus proposal data.",
+    "Only 7 Regulation/Bylaw groups are available in the exact 48 focus-grounded selected groups; the 12-18 target cannot be met from current approved-focus proposal data."
+  ],
+  "aggregates": {
+    "acts": 41,
+    "regulationsOrBylaws": 7,
+    "uniqueDocuments": 16,
+    "categoryCounts": {
+      "deadlines-time-periods": 26,
+      "discretionary-powers": 40,
+      "duties": 42,
+      "exceptions-qualifiers": 33,
+      "filing-registration": 32,
+      "legal-effect": 32,
+      "notice": 17,
+      "procedure": 38,
+      "regulation-making": 26,
+      "surveying-specific": 37,
+      "prohibitions": 21,
+      "definitions": 6,
+      "offence-penalty": 12
+    },
+    "complexityCounts": {
+      "stress-test": 30,
+      "medium": 10,
+      "complex": 6,
+      "simple": 2
+    }
+  },
+  "selected": [
+    {
+      "jobNumber": 1,
+      "document": "Boundaries Confirmation Act",
+      "citation": "2012, c.101",
+      "sourceRunId": "ai-map-4b11-targeted-s24-v3",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-324db09e5f0e12de:a816c89a",
+      "sourceDocumentId": "doc-boundaries-confirmation-act",
+      "sectionLabel": "10",
+      "approvedGroup": "Objection delivery and required hearing",
+      "focusSelections": [
+        {
+          "sourceKey": "section:10",
+          "childLabels": [
+            "10(1)",
+            "10(2)"
+          ],
+          "evidenceText": [
+            "written statement setting out the reasons for and any grounds and arguments",
+            "Registrar General shall hold a hearing to determine the validity of the objection"
+          ]
+        }
+      ],
+      "complexity": "stress-test",
+      "categoryTags": [
+        "deadlines-time-periods",
+        "discretionary-powers",
+        "duties",
+        "exceptions-qualifiers",
+        "filing-registration",
+        "legal-effect",
+        "notice",
+        "procedure",
+        "regulation-making",
+        "surveying-specific"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 2,
+      "document": "Boundaries Confirmation Act",
+      "citation": "2012, c.101",
+      "sourceRunId": "ai-map-4b11-targeted-s24-v3",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-324db09e5f0e12de:8f05446b",
+      "sourceDocumentId": "doc-boundaries-confirmation-act",
+      "sectionLabel": "10",
+      "approvedGroup": "No-objection confirmation or hearing decision",
+      "focusSelections": [
+        {
+          "sourceKey": "section:10",
+          "childLabels": [
+            "10(3)"
+          ],
+          "evidenceText": [
+            "If no written statement of objection is delivered",
+            "confirm the location of the boundary or boundaries",
+            "hold a hearing in accordance with this Act and the regulations"
+          ]
+        }
+      ],
+      "complexity": "stress-test",
+      "categoryTags": [
+        "deadlines-time-periods",
+        "discretionary-powers",
+        "duties",
+        "exceptions-qualifiers",
+        "filing-registration",
+        "legal-effect",
+        "notice",
+        "procedure",
+        "regulation-making",
+        "surveying-specific"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 3,
+      "document": "Boundaries Confirmation Act",
+      "citation": "2012, c.101",
+      "sourceRunId": "ai-map-4b11-targeted-s24-v3",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-324db09e5f0e12de:7a50a4c8",
+      "sourceDocumentId": "doc-boundaries-confirmation-act",
+      "sectionLabel": "10",
+      "approvedGroup": "Hearing parties and notice contents",
+      "focusSelections": [
+        {
+          "sourceKey": "section:10",
+          "childLabels": [
+            "10(4)",
+            "10(5)",
+            "10(6)"
+          ],
+          "evidenceText": [
+            "are parties to a hearing held under this section",
+            "shall cause a notice of hearing to be given",
+            "shall specify the date, time and place of the hearing"
+          ]
+        }
+      ],
+      "complexity": "stress-test",
+      "categoryTags": [
+        "deadlines-time-periods",
+        "discretionary-powers",
+        "duties",
+        "exceptions-qualifiers",
+        "filing-registration",
+        "legal-effect",
+        "notice",
+        "procedure",
+        "regulation-making",
+        "surveying-specific"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 4,
+      "document": "Boundaries Confirmation Act",
+      "citation": "2012, c.101",
+      "sourceRunId": "ai-map-4b11-targeted-s24-v3",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-364ffbcb2ed6551a:e7477d80",
+      "sourceDocumentId": "doc-boundaries-confirmation-act",
+      "sectionLabel": "16",
+      "approvedGroup": "Corrected boundary-confirmation plan of survey",
+      "focusSelections": [
+        {
+          "sourceKey": "section:16",
+          "childLabels": [
+            "16(1)",
+            "16(2)",
+            "16(3)",
+            "16(4)",
+            "16(5)",
+            "16(6)"
+          ],
+          "evidenceText": [
+            "order that a corrected plan of survey be made",
+            "shall not affect the location of a boundary",
+            "cause a notation to be made on the plan of survey"
+          ]
+        }
+      ],
+      "complexity": "stress-test",
+      "categoryTags": [
+        "deadlines-time-periods",
+        "discretionary-powers",
+        "duties",
+        "exceptions-qualifiers",
+        "filing-registration",
+        "legal-effect",
+        "notice",
+        "prohibitions",
+        "regulation-making",
+        "surveying-specific"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 5,
+      "document": "Surveys Act",
+      "citation": "2011, c.226",
+      "sourceRunId": "ai-map-4b11-targeted-s24-v3",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-8b1cf0e7aa43d3bc:c73c20f8",
+      "sourceDocumentId": "doc-surveys-act",
+      "sectionLabel": "1",
+      "approvedGroup": "Coordinate monument and coordinate survey system definitions",
+      "focusSelections": [
+        {
+          "sourceKey": "section:1",
+          "definedTerms": [
+            "coordinate monument",
+            "coordinate survey system"
+          ],
+          "evidenceText": [
+            "coordinate monument means a brass, bronze or aluminum cap or plate",
+            "coordinate survey system means a system established under section 2"
+          ]
+        }
+      ],
+      "complexity": "medium",
+      "categoryTags": [
+        "definitions",
+        "offence-penalty",
+        "surveying-specific"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 6,
+      "document": "Surveys Act",
+      "citation": "2011, c.226",
+      "sourceRunId": "ai-map-4b11-targeted-s24-v3",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-8b1cf0e7aa43d3bc:a5c3c49b",
+      "sourceDocumentId": "doc-surveys-act",
+      "sectionLabel": "1",
+      "approvedGroup": "Corner and legal monument definitions",
+      "focusSelections": [
+        {
+          "sourceKey": "section:1",
+          "definedTerms": [
+            "corner",
+            "legal monument"
+          ],
+          "evidenceText": [
+            "corner means a point in an intersection of boundaries of land",
+            "legal monument means a device planted by a surveyor"
+          ]
+        }
+      ],
+      "complexity": "medium",
+      "categoryTags": [
+        "definitions",
+        "offence-penalty",
+        "surveying-specific"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 7,
+      "document": "Surveys Act",
+      "citation": "2011, c.226",
+      "sourceRunId": "ai-map-4b11-targeted-s24-v3",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-8b1cf0e7aa43d3bc:1187290d",
+      "sourceDocumentId": "doc-surveys-act",
+      "sectionLabel": "1",
+      "approvedGroup": "Survey and surveyor definitions",
+      "focusSelections": [
+        {
+          "sourceKey": "section:1",
+          "definedTerms": [
+            "survey",
+            "surveyor"
+          ],
+          "evidenceText": [
+            "survey means a survey to define the boundaries of land",
+            "surveyor means a New Brunswick Land Surveyor"
+          ]
+        }
+      ],
+      "complexity": "medium",
+      "categoryTags": [
+        "definitions",
+        "offence-penalty",
+        "surveying-specific"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 8,
+      "document": "Surveys Act",
+      "citation": "2011, c.226",
+      "sourceRunId": "ai-map-4b11-targeted-s24-v3",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-ee7feee303535823:22e4df32",
+      "sourceDocumentId": "doc-surveys-act",
+      "sectionLabel": "3",
+      "approvedGroup": "Director of Surveys designation and coordinate monument duties",
+      "focusSelections": [
+        {
+          "sourceKey": "section:3",
+          "childLabels": [
+            "3(1)",
+            "3(1.1)",
+            "3(1.2)",
+            "3(2)"
+          ],
+          "evidenceText": [
+            "shall designate a surveyor as Director of Surveys",
+            "may designate one or more surveyors to perform any of the duties",
+            "shall establish and maintain coordinate monuments"
+          ]
+        }
+      ],
+      "complexity": "complex",
+      "categoryTags": [
+        "discretionary-powers",
+        "duties",
+        "procedure",
+        "regulation-making",
+        "surveying-specific"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 9,
+      "document": "Surveys Act",
+      "citation": "2011, c.226",
+      "sourceRunId": "ai-map-4b11-targeted-s24-v3",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-085a972f81673c56:874eb161",
+      "sourceDocumentId": "doc-surveys-act",
+      "sectionLabel": "8",
+      "approvedGroup": "Survey plan certification and acceptance in integrated survey areas",
+      "focusSelections": [
+        {
+          "sourceKey": "section:8",
+          "childLabels": [
+            "8(1)",
+            "8(2)",
+            "8(3)",
+            "8(4)"
+          ],
+          "evidenceText": [
+            "shall not certify to the correctness of the plan unless",
+            "Director of Surveys shall not accept it",
+            "acceptance does not constitute an adjudication on title",
+            "applies to only integrated survey areas"
+          ]
+        }
+      ],
+      "complexity": "stress-test",
+      "categoryTags": [
+        "duties",
+        "exceptions-qualifiers",
+        "prohibitions",
+        "regulation-making",
+        "surveying-specific"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 10,
+      "document": "Community Planning Act",
+      "citation": "Chapter 2017, c.19",
+      "sourceRunId": "ai-map-4b11-targeted-s24-v3",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-33ecdfe080193d4f:39d6a518",
+      "sourceDocumentId": "doc-community-planning-act",
+      "sectionLabel": "125",
+      "approvedGroup": "Planning regulation powers for setbacks, sites, signs, extraction, and subdivisions",
+      "focusSelections": [
+        {
+          "sourceKey": "section:125",
+          "childLabels": [
+            "125(1)"
+          ],
+          "evidenceText": [
+            "governing the setting back of buildings and structures",
+            "mobile home parks",
+            "service stations, gas bars, car washes",
+            "public advertising signs and billboards",
+            "respecting the subdividing of land"
+          ]
+        }
+      ],
+      "complexity": "stress-test",
+      "categoryTags": [
+        "deadlines-time-periods",
+        "discretionary-powers",
+        "duties",
+        "exceptions-qualifiers",
+        "filing-registration",
+        "legal-effect",
+        "offence-penalty",
+        "procedure",
+        "prohibitions",
+        "regulation-making",
+        "surveying-specific"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 11,
+      "document": "Community Planning Act",
+      "citation": "Chapter 2017, c.19",
+      "sourceRunId": "ai-map-4b11-targeted-s24-v3",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-33ecdfe080193d4f:e1d5264b",
+      "sourceDocumentId": "doc-community-planning-act",
+      "sectionLabel": "125",
+      "approvedGroup": "Development approval and building-work regulation powers",
+      "focusSelections": [
+        {
+          "sourceKey": "section:125",
+          "childLabels": [
+            "125(1)"
+          ],
+          "evidenceText": [
+            "respecting development approvals",
+            "building inspection services",
+            "building, dimensions, locating or relocating, demolishing, altering"
+          ]
+        }
+      ],
+      "complexity": "stress-test",
+      "categoryTags": [
+        "deadlines-time-periods",
+        "discretionary-powers",
+        "duties",
+        "exceptions-qualifiers",
+        "filing-registration",
+        "legal-effect",
+        "offence-penalty",
+        "procedure",
+        "prohibitions",
+        "regulation-making",
+        "surveying-specific"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 12,
+      "document": "Community Planning Act",
+      "citation": "Chapter 2017, c.19",
+      "sourceRunId": "ai-map-4b11-targeted-s24-v3",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-33ecdfe080193d4f:f9b48659",
+      "sourceDocumentId": "doc-community-planning-act",
+      "sectionLabel": "125",
+      "approvedGroup": "Administrative, appeal, delegation, and transitional regulation powers",
+      "focusSelections": [
+        {
+          "sourceKey": "section:125",
+          "childLabels": [
+            "125(2)",
+            "125(3)",
+            "125(4)",
+            "125(5)",
+            "125(6)",
+            "125(7)",
+            "125(8)",
+            "125(9)",
+            "125(10)",
+            "125(11)",
+            "125(12)",
+            "125(13)",
+            "125(14)",
+            "125(15)",
+            "125(16)"
+          ],
+          "evidenceText": [
+            "may delegate a matter to or confer discretion on",
+            "appeals",
+            "transitional"
+          ]
+        }
+      ],
+      "complexity": "stress-test",
+      "categoryTags": [
+        "deadlines-time-periods",
+        "discretionary-powers",
+        "duties",
+        "exceptions-qualifiers",
+        "filing-registration",
+        "legal-effect",
+        "offence-penalty",
+        "procedure",
+        "prohibitions",
+        "regulation-making",
+        "surveying-specific"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 13,
+      "document": "Land Titles Act",
+      "citation": "Chapter L-1.1",
+      "sourceRunId": "ai-map-4b11-targeted-s24-v3",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-921478a7044024bd:61f6a470",
+      "sourceDocumentId": "doc-land-titles-act",
+      "sectionLabel": "18",
+      "approvedGroup": "Instrument receipt, examination, acceptance, and rejection",
+      "focusSelections": [
+        {
+          "sourceKey": "section:18",
+          "childLabels": [
+            "18(1)",
+            "18(2)",
+            "18(3)",
+            "18(4)"
+          ],
+          "evidenceText": [
+            "assign a registration number, date and time",
+            "examined",
+            "accepted for registration",
+            "may refuse to file or register and may reject an instrument"
+          ]
+        }
+      ],
+      "complexity": "stress-test",
+      "categoryTags": [
+        "deadlines-time-periods",
+        "discretionary-powers",
+        "duties",
+        "exceptions-qualifiers",
+        "filing-registration",
+        "legal-effect",
+        "notice",
+        "procedure",
+        "prohibitions",
+        "surveying-specific"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 14,
+      "document": "Land Titles Act",
+      "citation": "Chapter L-1.1",
+      "sourceRunId": "ai-map-4b11-targeted-s24-v3",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-921478a7044024bd:6bba99cf",
+      "sourceDocumentId": "doc-land-titles-act",
+      "sectionLabel": "18",
+      "approvedGroup": "Certificates and notices when land or instruments are registered",
+      "focusSelections": [
+        {
+          "sourceKey": "section:18",
+          "childLabels": [
+            "18(5)",
+            "18(6)",
+            "18(7)"
+          ],
+          "evidenceText": [
+            "cancel the certificate of registered ownership",
+            "issue to the owner",
+            "issue and record under the Registry Act a notice"
+          ]
+        }
+      ],
+      "complexity": "stress-test",
+      "categoryTags": [
+        "deadlines-time-periods",
+        "discretionary-powers",
+        "duties",
+        "exceptions-qualifiers",
+        "filing-registration",
+        "legal-effect",
+        "notice",
+        "procedure",
+        "prohibitions",
+        "surveying-specific"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 15,
+      "document": "Land Titles Act",
+      "citation": "Chapter L-1.1",
+      "sourceRunId": "ai-map-4b11-targeted-s24-v3",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-921478a7044024bd:10aca001",
+      "sourceDocumentId": "doc-land-titles-act",
+      "sectionLabel": "18",
+      "approvedGroup": "Registration timing and priority effects",
+      "focusSelections": [
+        {
+          "sourceKey": "section:18",
+          "childLabels": [
+            "18(9)",
+            "18(10)",
+            "18(11)",
+            "18(12)"
+          ],
+          "evidenceText": [
+            "deemed to be registered on the date and at the time",
+            "subject to subsection (11)",
+            "priority of registration"
+          ]
+        }
+      ],
+      "complexity": "stress-test",
+      "categoryTags": [
+        "deadlines-time-periods",
+        "discretionary-powers",
+        "duties",
+        "exceptions-qualifiers",
+        "filing-registration",
+        "legal-effect",
+        "notice",
+        "procedure",
+        "prohibitions",
+        "surveying-specific"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 16,
+      "document": "Registry Act",
+      "citation": "Chapter R-6",
+      "sourceRunId": "ai-map-4b11-targeted-s24-v3",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-17219353deb3fd8b:c3fd8ddc",
+      "sourceDocumentId": "doc-registry-act",
+      "sectionLabel": "19",
+      "approvedGroup": "Unregistered instrument consequences for purchasers and judgment creditors",
+      "focusSelections": [
+        {
+          "sourceKey": "section:19",
+          "childLabels": [
+            "19(1)",
+            "19(2)"
+          ],
+          "evidenceText": [
+            "deemed fraudulent and void against subsequent purchasers",
+            "deemed fraudulent and void as against any bona fide judgment creditor"
+          ]
+        }
+      ],
+      "complexity": "stress-test",
+      "categoryTags": [
+        "deadlines-time-periods",
+        "discretionary-powers",
+        "duties",
+        "exceptions-qualifiers",
+        "filing-registration",
+        "legal-effect",
+        "procedure",
+        "prohibitions",
+        "regulation-making",
+        "surveying-specific"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 17,
+      "document": "Registry Act",
+      "citation": "Chapter R-6",
+      "sourceRunId": "ai-map-4b11-targeted-s24-v3",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-17219353deb3fd8b:acd47bfb",
+      "sourceDocumentId": "doc-registry-act",
+      "sectionLabel": "19",
+      "approvedGroup": "Special registration timing rules for leases, auction conveyances, sheriff conveyances, and wills",
+      "focusSelections": [
+        {
+          "sourceKey": "section:19",
+          "childLabels": [
+            "19(3)",
+            "19(4)",
+            "19(4.1)",
+            "19(5)"
+          ],
+          "evidenceText": [
+            "No lease for a term not exceeding three years",
+            "registered within six months",
+            "A will registered within six months"
+          ]
+        }
+      ],
+      "complexity": "stress-test",
+      "categoryTags": [
+        "deadlines-time-periods",
+        "discretionary-powers",
+        "duties",
+        "exceptions-qualifiers",
+        "filing-registration",
+        "legal-effect",
+        "procedure",
+        "prohibitions",
+        "regulation-making",
+        "surveying-specific"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 18,
+      "document": "Registry Act",
+      "citation": "Chapter R-6",
+      "sourceRunId": "ai-map-4b11-targeted-s24-v3",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-17219353deb3fd8b:6d53f378",
+      "sourceDocumentId": "doc-registry-act",
+      "sectionLabel": "19",
+      "approvedGroup": "Deed transfer affidavit and forwarding duty",
+      "focusSelections": [
+        {
+          "sourceKey": "section:19",
+          "childLabels": [
+            "19(6)",
+            "19(7)"
+          ],
+          "evidenceText": [
+            "No deed affecting the transfer of real property shall be registered unless accompanied by an affidavit",
+            "shall forward the same to the Executive Director of Assessment"
+          ]
+        }
+      ],
+      "complexity": "stress-test",
+      "categoryTags": [
+        "deadlines-time-periods",
+        "discretionary-powers",
+        "duties",
+        "exceptions-qualifiers",
+        "filing-registration",
+        "legal-effect",
+        "procedure",
+        "prohibitions",
+        "regulation-making",
+        "surveying-specific"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 19,
+      "document": "REGULATION 95-166",
+      "citation": "REGULATION 95-166",
+      "sourceRunId": "ai-map-4b11-targeted-s24-v3",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-ed3f74e6ccd6099c:94eae363",
+      "sourceDocumentId": "reg-boundaries-95-166",
+      "sectionLabel": "3",
+      "approvedGroup": "Boundary confirmation application form and plan standards",
+      "focusSelections": [
+        {
+          "sourceKey": "section:3",
+          "childLabels": [
+            "3(1)",
+            "3(2)"
+          ],
+          "evidenceText": [
+            "application to confirm the location of a boundary",
+            "shall be in Form 1",
+            "plan of survey required",
+            "shall be current and shall conform"
+          ]
+        }
+      ],
+      "complexity": "stress-test",
+      "categoryTags": [
+        "discretionary-powers",
+        "duties",
+        "exceptions-qualifiers",
+        "filing-registration",
+        "legal-effect",
+        "notice",
+        "procedure",
+        "surveying-specific"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 20,
+      "document": "REGULATION 95-166",
+      "citation": "REGULATION 95-166",
+      "sourceRunId": "ai-map-4b11-targeted-s24-v3",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-ed3f74e6ccd6099c:28f6c9ae",
+      "sourceDocumentId": "reg-boundaries-95-166",
+      "sectionLabel": "3",
+      "approvedGroup": "Supporting materials for a boundary confirmation application",
+      "focusSelections": [
+        {
+          "sourceKey": "section:3",
+          "childLabels": [
+            "3(3)"
+          ],
+          "evidenceText": [
+            "shall be accompanied by",
+            "field notes and a surveyor's report",
+            "copies of all instruments registered",
+            "list of the names and mailing addresses"
+          ]
+        }
+      ],
+      "complexity": "stress-test",
+      "categoryTags": [
+        "discretionary-powers",
+        "duties",
+        "exceptions-qualifiers",
+        "filing-registration",
+        "legal-effect",
+        "notice",
+        "procedure",
+        "surveying-specific"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 21,
+      "document": "REGULATION 95-166",
+      "citation": "REGULATION 95-166",
+      "sourceRunId": "ai-map-4b11-targeted-s24-v3",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-ed3f74e6ccd6099c:c10d3b68",
+      "sourceDocumentId": "reg-boundaries-95-166",
+      "sectionLabel": "3",
+      "approvedGroup": "Surveyor report contents and Registrar General waiver",
+      "focusSelections": [
+        {
+          "sourceKey": "section:3",
+          "childLabels": [
+            "3(4)",
+            "3(5)"
+          ],
+          "evidenceText": [
+            "A surveyor's report",
+            "description of the issue to be determined",
+            "history of the boundary",
+            "Registrar General may waive any of the requirements"
+          ]
+        }
+      ],
+      "complexity": "stress-test",
+      "categoryTags": [
+        "discretionary-powers",
+        "duties",
+        "exceptions-qualifiers",
+        "filing-registration",
+        "legal-effect",
+        "notice",
+        "procedure",
+        "surveying-specific"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 22,
+      "document": "Underground Storage Act",
+      "citation": "Chapter U-1.1",
+      "sourceRunId": "ai-map-4b11-targeted-s24-v3",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-7cb951c7273b3a37:c0cab6e1",
+      "sourceDocumentId": "doc-underground-storage-act",
+      "sectionLabel": "22",
+      "approvedGroup": "Underground storage regulation-making powers",
+      "focusSelections": [
+        {
+          "sourceKey": "section:22",
+          "evidenceText": [
+            "may make regulations",
+            "prescribing the amount of any fee, rental or security",
+            "prescribing information that must be contained in an application",
+            "terms and conditions and prescribing the form",
+            "work requirements"
+          ]
+        }
+      ],
+      "complexity": "medium",
+      "categoryTags": [
+        "definitions",
+        "discretionary-powers",
+        "duties",
+        "legal-effect",
+        "procedure",
+        "regulation-making"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 23,
+      "document": "Energy and Utilities Board Act",
+      "citation": "Chapter E-9.18",
+      "sourceRunId": "ai-map-4b11-targeted-s24-v3",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-d1f94730dd849158:11672a41",
+      "sourceDocumentId": "doc-energy-and-utilities-board-act",
+      "sectionLabel": "49.1",
+      "approvedGroup": "Regulator definition and assistance to the Board",
+      "focusSelections": [
+        {
+          "sourceKey": "section:49.1",
+          "childLabels": [
+            "49.1(1)",
+            "49.1(2)"
+          ],
+          "definedTerms": [
+            "regulator"
+          ],
+          "evidenceText": [
+            "regulator means a regulator as defined in the Financial and Consumer Services Commission Act",
+            "may render assistance to the Board without becoming a party",
+            "may receive and accept information from the regulator"
+          ]
+        }
+      ],
+      "complexity": "medium",
+      "categoryTags": [
+        "definitions",
+        "discretionary-powers",
+        "offence-penalty",
+        "procedure"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 24,
+      "document": "Occupational Health and Safety Act",
+      "citation": "Chapter O-0.2",
+      "sourceRunId": "ai-map-4b11-targeted-s24-v3",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-3e938238707b231f:042a5ce0",
+      "sourceDocumentId": "doc-occupational-health-and-safety-act",
+      "sectionLabel": "9.1",
+      "approvedGroup": "General supervisor health and safety duties",
+      "focusSelections": [
+        {
+          "sourceKey": "section:9.1",
+          "childLabels": [
+            "9.1(1)"
+          ],
+          "evidenceText": [
+            "Every supervisor shall",
+            "take every reasonable precaution",
+            "comply with this Act, the regulations and any order",
+            "ensure that the employees under the supervisor's supervision and direction comply",
+            "co-operate with"
+          ]
+        }
+      ],
+      "complexity": "medium",
+      "categoryTags": [
+        "duties",
+        "procedure",
+        "regulation-making"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 25,
+      "document": "Occupational Health and Safety Act",
+      "citation": "Chapter O-0.2",
+      "sourceRunId": "ai-map-4b11-targeted-s24-v3",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-3e938238707b231f:5ebf311f",
+      "sourceDocumentId": "doc-occupational-health-and-safety-act",
+      "sectionLabel": "9.1",
+      "approvedGroup": "Supervisor hazard, information, and instruction duties",
+      "focusSelections": [
+        {
+          "sourceKey": "section:9.1",
+          "childLabels": [
+            "9.1(2)"
+          ],
+          "evidenceText": [
+            "acquaint the employees",
+            "with any hazard",
+            "provide the information",
+            "provide the instruction"
+          ]
+        }
+      ],
+      "complexity": "medium",
+      "categoryTags": [
+        "duties",
+        "procedure",
+        "regulation-making"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 26,
+      "document": "Conservation Easements Act",
+      "citation": "2011, c.130",
+      "sourceRunId": "ai-map-4b11-targeted-s24-v3",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-979dd27e8aa86e4c:ac8cb2c1",
+      "sourceDocumentId": "doc-conservation-easements-act",
+      "sectionLabel": "5",
+      "approvedGroup": "Who may hold a conservation easement",
+      "focusSelections": [
+        {
+          "sourceKey": "section:5",
+          "evidenceText": [
+            "Any of the following may hold a conservation easement",
+            "Crown in right of the Province",
+            "Crown in right of Canada",
+            "a local government",
+            "a non-profit corporation",
+            "any person, body or group or class of persons"
+          ]
+        }
+      ],
+      "complexity": "simple",
+      "categoryTags": [
+        "discretionary-powers",
+        "regulation-making"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 27,
+      "document": "Highway Act",
+      "citation": "Chapter H-5",
+      "sourceRunId": "ai-map-4b11-targeted-s24-v3",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-aed2ddda4c4be5b8:86dfeccb",
+      "sourceDocumentId": "doc-highway-act",
+      "sectionLabel": "39.1",
+      "approvedGroup": "Permit for access to non-controlled-access highway",
+      "focusSelections": [
+        {
+          "sourceKey": "section:39.1",
+          "childLabels": [
+            "39.1(1)",
+            "39.1(2)"
+          ],
+          "evidenceText": [
+            "No person shall construct, use or permit the use",
+            "without obtaining a permit from the Minister",
+            "Minister may grant an application",
+            "would not be inconsistent with such safety standards"
+          ]
+        }
+      ],
+      "complexity": "complex",
+      "categoryTags": [
+        "discretionary-powers",
+        "duties",
+        "procedure",
+        "prohibitions",
+        "regulation-making"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 28,
+      "document": "Public Health Act",
+      "citation": "Chapter P-22.4",
+      "sourceRunId": "ai-map-4b11-targeted-s24-v3",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-5ca759ca045bb206:36d858a4",
+      "sourceDocumentId": "doc-public-health-act",
+      "sectionLabel": "27",
+      "approvedGroup": "Professional reporting duty for notifiable disease, injury risk, or notifiable event",
+      "focusSelections": [
+        {
+          "sourceKey": "section:27",
+          "childLabels": [
+            "27(1)",
+            "27(2)"
+          ],
+          "evidenceText": [
+            "shall report to a medical officer of health",
+            "reasonable grounds to believe",
+            "has or may have a notifiable disease",
+            "has or may be affected by an injury or risk factor",
+            "has suffered a notifiable event",
+            "shall be made in accordance with the regulations"
+          ]
+        }
+      ],
+      "complexity": "complex",
+      "categoryTags": [
+        "discretionary-powers",
+        "duties",
+        "procedure",
+        "regulation-making"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 29,
+      "document": "Land Titles Act",
+      "citation": "Chapter L-1.1",
+      "sourceRunId": "ai-map-4b11-targeted-s24-v3",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-f30e75754481963f:4cd2f2bc",
+      "sourceDocumentId": "doc-land-titles-act",
+      "sectionLabel": "17.11",
+      "approvedGroup": "Digitally scanned image filing or registration of instruments",
+      "focusSelections": [
+        {
+          "sourceKey": "section:17.11",
+          "childLabels": [
+            "17.11(1)",
+            "17.11(2)",
+            "17.11(3)"
+          ],
+          "evidenceText": [
+            "may be filed or registered by submitting a digitally scanned image",
+            "shall be in a format that has been approved by the Registrar General",
+            "shall be submitted using the technology put in place by Service New Brunswick",
+            "shall provide to the registrar evidence of his or her identity or authorization"
+          ]
+        }
+      ],
+      "complexity": "stress-test",
+      "categoryTags": [
+        "discretionary-powers",
+        "duties",
+        "exceptions-qualifiers",
+        "filing-registration",
+        "procedure",
+        "regulation-making",
+        "surveying-specific"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 30,
+      "document": "Marital Property Act",
+      "citation": "2012, c.107",
+      "sourceRunId": "ai-map-4b11-targeted-s24-v3",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-b7af4191c14c17b5:7a021345",
+      "sourceDocumentId": "doc-marital-property-act",
+      "sectionLabel": "30",
+      "approvedGroup": "Personal Property Registry notice of household-goods order",
+      "focusSelections": [
+        {
+          "sourceKey": "section:30",
+          "childLabels": [
+            "30(1)",
+            "30(2)",
+            "30(3)",
+            "30(4)"
+          ],
+          "evidenceText": [
+            "may register a notice of the order in the Personal Property Registry",
+            "may be renewed, discharged or otherwise amended",
+            "shall be deemed to be notice of the order and its terms",
+            "does not apply to"
+          ]
+        }
+      ],
+      "complexity": "stress-test",
+      "categoryTags": [
+        "deadlines-time-periods",
+        "discretionary-powers",
+        "duties",
+        "exceptions-qualifiers",
+        "filing-registration",
+        "legal-effect",
+        "notice",
+        "regulation-making"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 31,
+      "document": "Evidence Act",
+      "citation": "Chapter E-11",
+      "sourceRunId": "ai-map-4b11-targeted-s24-v3",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-8585da13f05b1699:9665ec98",
+      "sourceDocumentId": "doc-evidence-act",
+      "sectionLabel": "7",
+      "approvedGroup": "Compelled answers and limited later use in provincial proceedings",
+      "focusSelections": [
+        {
+          "sourceKey": "section:7",
+          "evidenceText": [
+            "no person shall be excused from answering any question",
+            "may tend to render him liable to a prosecution, penalty or forfeiture",
+            "no evidence so given shall be used or receivable in evidence",
+            "other than a prosecution for perjury"
+          ]
+        }
+      ],
+      "complexity": "medium",
+      "categoryTags": [
+        "discretionary-powers",
+        "duties",
+        "offence-penalty",
+        "prohibitions"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 32,
+      "document": "Registry Act",
+      "citation": "Chapter R-6",
+      "sourceRunId": "ai-map-4b11-targeted-s24-v3",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-03b0d63cdb3c860c:d5a0abbb",
+      "sourceDocumentId": "doc-registry-act",
+      "sectionLabel": "23",
+      "approvedGroup": "Registering extra-provincial court will materials affecting land",
+      "focusSelections": [
+        {
+          "sourceKey": "section:23",
+          "childLabels": [
+            "23(1)"
+          ],
+          "evidenceText": [
+            "where a will affecting land in this Province",
+            "is deposited in any court out of this Province",
+            "certified copy thereof, the probate of such will",
+            "may be registered in the registry office"
+          ]
+        }
+      ],
+      "complexity": "complex",
+      "categoryTags": [
+        "deadlines-time-periods",
+        "discretionary-powers",
+        "duties",
+        "exceptions-qualifiers",
+        "filing-registration",
+        "legal-effect",
+        "procedure",
+        "surveying-specific"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 33,
+      "document": "Registry Act",
+      "citation": "Chapter R-6",
+      "sourceRunId": "ai-map-4b11-targeted-s24-v3",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-03b0d63cdb3c860c:240e8179",
+      "sourceDocumentId": "doc-registry-act",
+      "sectionLabel": "23",
+      "approvedGroup": "Affidavits required when extra-provincial will probate is absent",
+      "focusSelections": [
+        {
+          "sourceKey": "section:23",
+          "childLabels": [
+            "23(2)"
+          ],
+          "evidenceText": [
+            "has not been granted probate",
+            "affidavit sworn by one of the witnesses",
+            "affidavit of the death of the testator"
+          ]
+        }
+      ],
+      "complexity": "complex",
+      "categoryTags": [
+        "deadlines-time-periods",
+        "discretionary-powers",
+        "duties",
+        "exceptions-qualifiers",
+        "filing-registration",
+        "legal-effect",
+        "procedure",
+        "surveying-specific"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 34,
+      "document": "Registry Act",
+      "citation": "Chapter R-6",
+      "sourceRunId": "ai-map-4b11-targeted-s24-v3",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-03b0d63cdb3c860c:6183e6fb",
+      "sourceDocumentId": "doc-registry-act",
+      "sectionLabel": "23",
+      "approvedGroup": "Registration of Quebec or South Africa notarial wills",
+      "focusSelections": [
+        {
+          "sourceKey": "section:23",
+          "childLabels": [
+            "23(3)"
+          ],
+          "evidenceText": [
+            "notarial will under the laws of the Province of Quebec or of South Africa",
+            "notarial certified copy",
+            "valid and subsisting will"
+          ]
+        }
+      ],
+      "complexity": "complex",
+      "categoryTags": [
+        "deadlines-time-periods",
+        "discretionary-powers",
+        "duties",
+        "exceptions-qualifiers",
+        "filing-registration",
+        "legal-effect",
+        "procedure",
+        "surveying-specific"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 35,
+      "document": "Aquaculture Act",
+      "citation": "Chapter 2019, c.40",
+      "sourceRunId": "ai-map-4b11-targeted-s24-v3",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-9485be3ae320b1d0:99e87253",
+      "sourceDocumentId": "doc-aquaculture-act",
+      "sectionLabel": "19",
+      "approvedGroup": "Aquaculture lease-holder rent amount",
+      "focusSelections": [
+        {
+          "sourceKey": "section:19",
+          "evidenceText": [
+            "A lease holder shall pay rent",
+            "in an amount fixed by the regulations",
+            "when there is no applicable regulation, at a rent fixed by the Registrar"
+          ]
+        }
+      ],
+      "complexity": "medium",
+      "categoryTags": [
+        "deadlines-time-periods",
+        "duties",
+        "regulation-making"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 36,
+      "document": "Association of New Brunswick Land Surveyors Bylaws",
+      "citation": "ANBLS Bylaws",
+      "sourceRunId": "ai-map-4b11-targeted-s24-v3",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-c69e07960c63c352:5901bfbe",
+      "sourceDocumentId": "doc-new-brunswick-land-surveyors-bylaws",
+      "sectionLabel": "4.2.2",
+      "approvedGroup": "Special levy amount determination and member approval",
+      "focusSelections": [
+        {
+          "sourceKey": "section:4.2.2",
+          "evidenceText": [
+            "amount of the special levy shall be determined by the Council",
+            "approved at either the annual general meeting or a special meeting",
+            "by a vote of the voting members present"
+          ]
+        }
+      ],
+      "complexity": "simple",
+      "categoryTags": [
+        "duties",
+        "surveying-specific"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 37,
+      "document": "Land Titles Act",
+      "citation": "Chapter L-1.1",
+      "sourceRunId": "ai-map-4b12-grounding-s9-v1",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-921478a7044024bd:dfa725e8",
+      "sourceDocumentId": "doc-land-titles-act",
+      "sectionLabel": "18",
+      "approvedGroup": "Instrument record, examination, acceptance, and rejection",
+      "focusSelections": [
+        {
+          "sourceKey": "section:18",
+          "childLabels": [
+            "18(1)",
+            "18(2)",
+            "18(3)",
+            "18(4)"
+          ],
+          "evidenceText": [
+            "assign a registration number, date and time",
+            "record of the acceptance of the instrument",
+            "accepted for registration",
+            "may refuse to file or register and may reject an instrument"
+          ]
+        }
+      ],
+      "complexity": "stress-test",
+      "categoryTags": [
+        "deadlines-time-periods",
+        "discretionary-powers",
+        "duties",
+        "exceptions-qualifiers",
+        "filing-registration",
+        "legal-effect",
+        "notice",
+        "procedure",
+        "prohibitions",
+        "surveying-specific"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 38,
+      "document": "Land Titles Act",
+      "citation": "Chapter L-1.1",
+      "sourceRunId": "ai-map-4b12-grounding-s9-v1",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-921478a7044024bd:f56dc4bc",
+      "sourceDocumentId": "doc-land-titles-act",
+      "sectionLabel": "18",
+      "approvedGroup": "Certificates, Registry Act notice, and parcel identification",
+      "focusSelections": [
+        {
+          "sourceKey": "section:18",
+          "childLabels": [
+            "18(5)",
+            "18(6)",
+            "18(7)"
+          ],
+          "evidenceText": [
+            "cancel the certificate of registered ownership",
+            "issue to the owner",
+            "issue and record under the Registry Act a notice",
+            "identified by its approved parcel identifier"
+          ]
+        }
+      ],
+      "complexity": "stress-test",
+      "categoryTags": [
+        "deadlines-time-periods",
+        "discretionary-powers",
+        "duties",
+        "exceptions-qualifiers",
+        "filing-registration",
+        "legal-effect",
+        "notice",
+        "procedure",
+        "prohibitions",
+        "surveying-specific"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 39,
+      "document": "Land Titles Act",
+      "citation": "Chapter L-1.1",
+      "sourceRunId": "ai-map-4b12-grounding-s9-v1",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-921478a7044024bd:288f762d",
+      "sourceDocumentId": "doc-land-titles-act",
+      "sectionLabel": "18",
+      "approvedGroup": "Rejection notice, amending instruments, and discretionary Registry Act document registration",
+      "focusSelections": [
+        {
+          "sourceKey": "section:18",
+          "childLabels": [
+            "18(9)",
+            "18(10)",
+            "18(11)",
+            "18(12)"
+          ],
+          "evidenceText": [
+            "enter in the instrument record a record of the rejection",
+            "memorandum of the reasons for such rejection",
+            "shall notify the person who presented the instrument",
+            "shall not reject an instrument referred to in subsection 12(10)",
+            "be amended by the filing or registration of an amending instrument",
+            "may, in his absolute discretion, order the proper registrar to register it under this Act"
+          ]
+        }
+      ],
+      "complexity": "stress-test",
+      "categoryTags": [
+        "deadlines-time-periods",
+        "discretionary-powers",
+        "duties",
+        "exceptions-qualifiers",
+        "filing-registration",
+        "legal-effect",
+        "notice",
+        "procedure",
+        "prohibitions",
+        "surveying-specific"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 40,
+      "document": "Community Planning Act",
+      "citation": "Chapter 2017, c.19",
+      "sourceRunId": "ai-map-4b12-grounding-s9-v1",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-33ecdfe080193d4f:8d9726c8",
+      "sourceDocumentId": "doc-community-planning-act",
+      "sectionLabel": "125",
+      "approvedGroup": "Planning and development regulation subjects",
+      "focusSelections": [
+        {
+          "sourceKey": "section:125",
+          "childLabels": [
+            "125(1)"
+          ],
+          "evidenceText": [
+            "governing the setting back of buildings and structures",
+            "prescribing the location, layout, equipment, standards and licensing of mobile home parks",
+            "respecting the subdividing of land",
+            "respecting development approvals",
+            "respecting land use and development policies"
+          ]
+        }
+      ],
+      "complexity": "stress-test",
+      "categoryTags": [
+        "deadlines-time-periods",
+        "discretionary-powers",
+        "duties",
+        "exceptions-qualifiers",
+        "filing-registration",
+        "legal-effect",
+        "offence-penalty",
+        "procedure",
+        "prohibitions",
+        "regulation-making",
+        "surveying-specific"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 41,
+      "document": "Community Planning Act",
+      "citation": "Chapter 2017, c.19",
+      "sourceRunId": "ai-map-4b12-grounding-s9-v1",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-33ecdfe080193d4f:93ab287b",
+      "sourceDocumentId": "doc-community-planning-act",
+      "sectionLabel": "125",
+      "approvedGroup": "Area designation, effectiveness, inconsistency, and development officer rules",
+      "focusSelections": [
+        {
+          "sourceKey": "section:125",
+          "childLabels": [
+            "125(2)",
+            "125(3)",
+            "125(4)",
+            "125(5)",
+            "125(6)",
+            "125(7)",
+            "125(8)",
+            "125(9)"
+          ],
+          "evidenceText": [
+            "the fee shall be paid",
+            "designate an area or areas for the purpose of the application of a regulation",
+            "is not effective in a municipality",
+            "is effective in a local government or local service district specified in the regulation",
+            "the regulation under paragraph (1)(j) prevails",
+            "shall be consistent with a rural plan",
+            "the planning director as defined in the Regional Services Delivery Act is the development officer",
+            "may be vested in a regional service commission"
+          ]
+        }
+      ],
+      "complexity": "stress-test",
+      "categoryTags": [
+        "deadlines-time-periods",
+        "discretionary-powers",
+        "duties",
+        "exceptions-qualifiers",
+        "filing-registration",
+        "legal-effect",
+        "offence-penalty",
+        "procedure",
+        "prohibitions",
+        "regulation-making",
+        "surveying-specific"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 42,
+      "document": "Community Planning Act",
+      "citation": "Chapter 2017, c.19",
+      "sourceRunId": "ai-map-4b12-grounding-s9-v1",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-33ecdfe080193d4f:4c11ea6c",
+      "sourceDocumentId": "doc-community-planning-act",
+      "sectionLabel": "125",
+      "approvedGroup": "Subdivision public-purpose land, money, procedure, summary, and filing rules",
+      "focusSelections": [
+        {
+          "sourceKey": "section:125",
+          "childLabels": [
+            "125(10)",
+            "125(11)",
+            "125(12)",
+            "125(13)",
+            "125(14)",
+            "125(15)",
+            "125(16)"
+          ],
+          "evidenceText": [
+            "the setting aside of land for public purposes",
+            "sections 79 and 80 apply with the necessary modifications",
+            "Land vested in the Crown under this section shall be held undeveloped or developed for public purposes",
+            "All money received by the Minister in lieu of land for public purposes",
+            "Before making a regulation under this section, the Minister shall",
+            "written summary of the proposed rural plan or amendment",
+            "file a copy of each regulation made under this section in the land registration office"
+          ]
+        }
+      ],
+      "complexity": "stress-test",
+      "categoryTags": [
+        "deadlines-time-periods",
+        "discretionary-powers",
+        "duties",
+        "exceptions-qualifiers",
+        "filing-registration",
+        "legal-effect",
+        "offence-penalty",
+        "procedure",
+        "prohibitions",
+        "regulation-making",
+        "surveying-specific"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 43,
+      "document": "Energy and Utilities Board Act",
+      "citation": "Chapter E-9.18",
+      "sourceRunId": "ai-map-4b12-grounding-s9-v1",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-d1f94730dd849158:9efb27cb",
+      "sourceDocumentId": "doc-energy-and-utilities-board-act",
+      "sectionLabel": "49.1",
+      "approvedGroup": "Regulator assistance to the Board without party status",
+      "focusSelections": [
+        {
+          "sourceKey": "section:49.1",
+          "childLabels": [
+            "49.1(1)",
+            "49.1(2)"
+          ],
+          "evidenceText": [
+            "regulator” means a regulator as defined in the Financial and Consumer Services Commission Act",
+            "may render assistance to the Board without becoming a party to the proceedings",
+            "may receive and accept information from the regulator that it considers relevant"
+          ]
+        }
+      ],
+      "complexity": "medium",
+      "categoryTags": [
+        "definitions",
+        "discretionary-powers",
+        "offence-penalty",
+        "procedure"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 44,
+      "document": "Registry Act",
+      "citation": "Chapter R-6",
+      "sourceRunId": "ai-map-4b12-grounding-s9-v1",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-17219353deb3fd8b:2f9802e4",
+      "sourceDocumentId": "doc-registry-act",
+      "sectionLabel": "19",
+      "approvedGroup": "Lease, official-sale, sheriff-sale, and will registration timing exceptions",
+      "focusSelections": [
+        {
+          "sourceKey": "section:19",
+          "childLabels": [
+            "19(3)",
+            "19(4)",
+            "19(4.1)",
+            "19(5)"
+          ],
+          "evidenceText": [
+            "No lease for a term not exceeding three years",
+            "if registered within six months of the day of such sale",
+            "if registered within six months after the day of its execution",
+            "A will registered within six months after the death of the testator"
+          ]
+        }
+      ],
+      "complexity": "stress-test",
+      "categoryTags": [
+        "deadlines-time-periods",
+        "discretionary-powers",
+        "duties",
+        "exceptions-qualifiers",
+        "filing-registration",
+        "legal-effect",
+        "procedure",
+        "prohibitions",
+        "regulation-making",
+        "surveying-specific"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 45,
+      "document": "Registry Act",
+      "citation": "Chapter R-6",
+      "sourceRunId": "ai-map-4b12-grounding-s9-v1",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-17219353deb3fd8b:8a3472fa",
+      "sourceDocumentId": "doc-registry-act",
+      "sectionLabel": "19",
+      "approvedGroup": "Transfer affidavit requirement and forwarding",
+      "focusSelections": [
+        {
+          "sourceKey": "section:19",
+          "childLabels": [
+            "19(6)",
+            "19(7)"
+          ],
+          "evidenceText": [
+            "No deed affecting the transfer of real property shall be registered unless accompanied by an affidavit of the transfer",
+            "shall not record such affidavit but shall forward the same to the Executive Director of Assessment",
+            "not later than thirty days after the date of registration of the deed"
+          ]
+        }
+      ],
+      "complexity": "stress-test",
+      "categoryTags": [
+        "deadlines-time-periods",
+        "discretionary-powers",
+        "duties",
+        "exceptions-qualifiers",
+        "filing-registration",
+        "legal-effect",
+        "procedure",
+        "prohibitions",
+        "regulation-making",
+        "surveying-specific"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 46,
+      "document": "REGULATION 95-166",
+      "citation": "REGULATION 95-166",
+      "sourceRunId": "ai-map-4b12-grounding-s9-v1",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-ed3f74e6ccd6099c:024a0043",
+      "sourceDocumentId": "reg-boundaries-95-166",
+      "sectionLabel": "3",
+      "approvedGroup": "Boundary-confirmation application form and current plan requirements",
+      "focusSelections": [
+        {
+          "sourceKey": "section:3",
+          "childLabels": [
+            "3(1)",
+            "3(2)"
+          ],
+          "evidenceText": [
+            "shall be in Form 1",
+            "A plan of survey required under paragraph 7(1)(a) of the Act shall be current",
+            "shall conform in every respect to"
+          ]
+        }
+      ],
+      "complexity": "stress-test",
+      "categoryTags": [
+        "discretionary-powers",
+        "duties",
+        "exceptions-qualifiers",
+        "filing-registration",
+        "legal-effect",
+        "notice",
+        "procedure",
+        "surveying-specific"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 47,
+      "document": "REGULATION 95-166",
+      "citation": "REGULATION 95-166",
+      "sourceRunId": "ai-map-4b12-grounding-s9-v1",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-ed3f74e6ccd6099c:f9cd4556",
+      "sourceDocumentId": "reg-boundaries-95-166",
+      "sectionLabel": "3",
+      "approvedGroup": "Application materials and surveyor report content",
+      "focusSelections": [
+        {
+          "sourceKey": "section:3",
+          "childLabels": [
+            "3(3)",
+            "3(4)"
+          ],
+          "evidenceText": [
+            "shall be accompanied by",
+            "the field notes and a surveyor’s report",
+            "copies of all instruments registered in a registry office or a land titles office",
+            "a description of the issue to be determined",
+            "an explanation of the reasons for accepting or rejecting the location of the boundary"
+          ]
+        }
+      ],
+      "complexity": "stress-test",
+      "categoryTags": [
+        "discretionary-powers",
+        "duties",
+        "exceptions-qualifiers",
+        "filing-registration",
+        "legal-effect",
+        "notice",
+        "procedure",
+        "surveying-specific"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    },
+    {
+      "jobNumber": 48,
+      "document": "REGULATION 95-166",
+      "citation": "REGULATION 95-166",
+      "sourceRunId": "ai-map-4b12-grounding-s9-v1",
+      "sourceMapProposalId": "ai-map-4b2-expanded-selection:map-ed3f74e6ccd6099c:bc7afcff",
+      "sourceDocumentId": "reg-boundaries-95-166",
+      "sectionLabel": "3",
+      "approvedGroup": "Registrar General waiver of application requirements",
+      "focusSelections": [
+        {
+          "sourceKey": "section:3",
+          "childLabels": [
+            "3(5)"
+          ],
+          "evidenceText": [
+            "may waive any of the requirements of subsection (3)",
+            "subject to such terms and conditions as the Registrar General considers appropriate"
+          ]
+        }
+      ],
+      "complexity": "stress-test",
+      "categoryTags": [
+        "discretionary-powers",
+        "duties",
+        "exceptions-qualifiers",
+        "filing-registration",
+        "legal-effect",
+        "notice",
+        "procedure",
+        "surveying-specific"
+      ],
+      "whySelected": "Included as one of the exactly 48 unique focus-grounded approved Map groups available across the current Phase 4B.1.1 and Phase 4B.1.2 proposal data."
+    }
+  ]
+}
