@@ -1,7 +1,7 @@
 # Coverage Audit ai-map-4c1-full-corpus-v1
 
 Documents represented: 61
-Source keys with no Map disposition: 3673
+Source keys with no Map disposition: 3692
 Duplicate focus groups: 0
 Conflicting groups: 0
 Suspiciously enormous groups: 0

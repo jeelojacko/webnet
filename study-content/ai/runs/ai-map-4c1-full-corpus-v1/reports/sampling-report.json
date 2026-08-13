@@ -3,8 +3,8 @@
   "strategy": "full-corpus",
   "seed": 42,
   "requestedSample": 0,
-  "selectedJobs": 3673,
-  "batchCount": 218,
+  "selectedJobs": 3692,
+  "batchCount": 220,
   "batchingPolicy": {
     "maxJobsPerBatch": 18,
     "maxInputCharactersPerBatch": 120000
@@ -13,5 +13,5 @@
   "phase4b1RequiredIncludesApplied": false,
   "phase4b1RequiredIncludes": [],
   "strategyVersion": "full-corpus-v1-size-batched",
-  "sampleSize": 3673
+  "sampleSize": 3692
 }

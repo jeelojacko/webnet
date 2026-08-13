@@ -9,6 +9,9 @@ Do not edit prompt/spec/schema files.
 Do not use external legal research or web browsing.
 Do not use legal memory to supplement supplied source.
 The model must inspect each job individually. Do not use deterministic scripts, keyword rules, source length, canned templates, or generic group buckets to author dispositions, reasons, priorities, titles, goals, or focus selections.
+The target may be a section, schedule, or form. Preserve the target sourceKey exactly; do not force schedules/forms into fake section numbers.
+Schedules may contain tables, lists, technical definitions/data, offence classifications, legal descriptions, covenants, fees, or other authoritative structures. Use the existing dispositions; do not invent a schedule-only disposition.
+Direct-reference context can include schedules or forms for understanding only. Do not let context-only material satisfy target-source grounding unless a group explicitly includes that sourceKey.
 Preserve jobId, runId, inputHash, corpusContentHash, and promptSpecVersion.
 Follow promptSpecVersion study-map-v3.
 Resume by skipping jobIds that already have valid result lines.

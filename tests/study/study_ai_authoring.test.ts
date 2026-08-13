@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from 'vitest';
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import {
@@ -20,9 +20,17 @@ import type {
   AiStudyMapResult,
 } from '../../src/study/ai/studyAiTypes';
 import { batchMapJobsByEstimatedSize } from '../../scripts/studyAiFullCorpusMap';
+import {
+  buildCorpusInventoryReport,
+  classifyComponentEligibility,
+  documentReportingType,
+  findDirectlyReferencedSourceKeys,
+  verifyFullCorpusPreparation,
+} from '../../scripts/studyAiFullCorpusMap';
 import { exportStudyData, parseStudyImport } from '../../src/study/studyExportImport';
 import { createSeedStudyData } from '../../src/study/studySeed';
 import type { ImportedLegalComponent } from '../../src/study/studyTypes';
+import type { NbLawContentPackage, NbLawDocumentComponent } from '../../src/study/content/nbLawTypes';
 
 const sourceComponent: ImportedLegalComponent = {
   documentId: 'doc-boundaries-confirmation-act',
@@ -147,6 +155,22 @@ const sourceComponentWithSubsections: ImportedLegalComponent = {
       contentHash: 'hash-section-10-sub-2',
     },
   ],
+};
+
+const readCorpusPackage = (): NbLawContentPackage =>
+  JSON.parse(
+    readFileSync('study-content/packages/nb-sit-statute-corpus.content-package.json', 'utf8'),
+  ) as NbLawContentPackage;
+
+const corpusComponent = (
+  pkg: NbLawContentPackage,
+  documentId: string,
+  sourceKey: string,
+): { document: NbLawContentPackage['documents'][number]; component: NbLawDocumentComponent } => {
+  const document = pkg.documents.find((entry) => entry.id === documentId);
+  const component = document?.components.find((entry) => entry.sourceKey === sourceKey);
+  if (!document || !component) throw new Error(`Missing corpus component ${documentId} ${sourceKey}`);
+  return { document, component };
 };
 
 afterAll(() => {
@@ -1084,6 +1108,86 @@ describe('AI CLI JSONL robustness', () => {
     expect(batches[1]?.oversized).toBe(true);
   });
 
+  it('marks directly referenced technical and offence schedules eligible', () => {
+    const pkg = readCorpusPackage();
+    const surveys = corpusComponent(pkg, 'doc-surveys-act', 'schedule:schedule-a');
+    const planning = corpusComponent(pkg, 'doc-community-planning-act', 'schedule:schedule-a');
+    const surveysRefs = findDirectlyReferencedSourceKeys(surveys.document);
+    const planningRefs = findDirectlyReferencedSourceKeys(planning.document);
+
+    expect(surveysRefs.has('schedule:schedule-a')).toBe(true);
+    expect(planningRefs.has('schedule:schedule-a')).toBe(true);
+    expect(classifyComponentEligibility(surveys.document, surveys.component, surveysRefs)).toMatchObject({
+      eligible: true,
+      reason: 'schedule-directly-referenced-by-operative-section',
+      directlyReferenced: true,
+    });
+    expect(classifyComponentEligibility(planning.document, planning.component, planningRefs)).toMatchObject({
+      eligible: true,
+      reason: 'schedule-directly-referenced-by-operative-section',
+      directlyReferenced: true,
+    });
+  });
+
+  it('keeps offence and technical schedules eligible without schedule-only special cases', () => {
+    const pkg = readCorpusPackage();
+    const publicHealth = corpusComponent(pkg, 'doc-public-health-act', 'schedule:schedule-a');
+    const surveys = corpusComponent(pkg, 'doc-surveys-act', 'schedule:schedule-a');
+
+    expect(classifyComponentEligibility(publicHealth.document, publicHealth.component, new Set())).toMatchObject({
+      eligible: true,
+      reason: 'schedule-offence-category-table',
+    });
+    expect(classifyComponentEligibility(surveys.document, surveys.component, new Set())).toMatchObject({
+      eligible: true,
+      reason: 'schedule-technical-standard-or-reference-system',
+    });
+  });
+
+  it('excludes placeholder forms but does not automatically exclude substantive forms', () => {
+    const pkg = readCorpusPackage();
+    const placeholder = corpusComponent(pkg, 'reg-land-titles-83-130', 'form:form-3');
+    const substantiveForm: NbLawDocumentComponent = {
+      id: 'form-substantive',
+      sourceKey: 'form:form-9',
+      componentType: 'form',
+      label: 'Form 9',
+      text: 'Form 9\nAPPLICATION\nI certify that the prescribed application information is true.',
+      contentHash: 'hash-form-9',
+    };
+    const document = { ...placeholder.document, components: [...placeholder.document.components, substantiveForm] };
+
+    expect(classifyComponentEligibility(placeholder.document, placeholder.component)).toMatchObject({
+      eligible: false,
+      reason: 'form-placeholder-no-substantive-text',
+    });
+    expect(classifyComponentEligibility(document, substantiveForm)).toMatchObject({
+      eligible: true,
+      reason: 'form-substantive-prescribed-content',
+    });
+  });
+
+  it('defensibly excludes the large consequential Metric Conversion Act schedule', () => {
+    const pkg = readCorpusPackage();
+    const metric = corpusComponent(pkg, 'doc-metric-conversion-act', 'schedule:schedule-a');
+
+    expect(metric.component.text.length).toBeGreaterThan(100000);
+    expect(classifyComponentEligibility(metric.document, metric.component)).toMatchObject({
+      eligible: false,
+      reason: 'schedule-consequential-amendment-conversion-table',
+    });
+  });
+
+  it('reports ANBLS Bylaws as bylaw in audit classification without source mutation', () => {
+    const pkg = readCorpusPackage();
+    const bylaws = pkg.documents.find((entry) => entry.id === 'doc-new-brunswick-land-surveyors-bylaws')!;
+    const inventory = buildCorpusInventoryReport(pkg, []);
+
+    expect(bylaws.documentType).toBe('regulation');
+    expect(documentReportingType(bylaws)).toBe('bylaw');
+    expect(inventory.documentTypes.bylaw).toBe(1);
+  });
+
   it('prepares a full-corpus Study Map run with inventory and size-batched jobs', () => {
     const runId = 'ai-test-full-corpus-map';
     const runDir = join('study-content', 'ai', 'runs', runId);
@@ -1117,6 +1221,9 @@ describe('AI CLI JSONL robustness', () => {
       totalExcludedComponents: number;
       jobsByType: Record<string, number>;
       largestJobsBySourceSize: Array<{ jobId: string }>;
+      eligibleByComponentType: Record<string, number>;
+      schedules: { totalImported: number; eligible: number; excluded: number; directlyReferenced: number };
+      forms: { totalImported: number; eligible: number; excluded: number };
     };
     const manifest = JSON.parse(
       readFileSync(join(runDir, 'reports', 'batch-manifest.json'), 'utf8'),
@@ -1134,6 +1241,22 @@ describe('AI CLI JSONL robustness', () => {
       .trim()
       .split(/\r?\n/)
       .map((line) => JSON.parse(line) as AiStudyMapJob);
+    const allPreparedJobs = readdirSync(join(runDir, 'jobs'))
+      .filter((file) => file.endsWith('.jobs.jsonl'))
+      .flatMap((file) =>
+        readFileSync(join(runDir, 'jobs', file), 'utf8')
+          .trim()
+          .split(/\r?\n/)
+          .map((line) => JSON.parse(line) as AiStudyMapJob),
+      );
+    const verification = verifyFullCorpusPreparation({
+      pkg: readCorpusPackage(),
+      jobs: allPreparedJobs,
+      maxInputCharactersPerBatch: 200000,
+    });
+    const directRefs = allPreparedJobs.find(
+      (job) => job.document.documentId === 'doc-surveys-act' && job.target.sourceKeys[0] === 'section:9',
+    )?.context.directlyReferencedProvisions?.map((context) => context.sourceKey) ?? [];
 
     expect(run.providerKind).toBe('external-codex');
     expect(run.promptSpecVersion).toBe('study-map-v3');
@@ -1142,11 +1265,22 @@ describe('AI CLI JSONL robustness', () => {
     expect(inventory.totalExcludedComponents).toBeGreaterThan(0);
     expect(inventory.jobsByType.act).toBeGreaterThan(0);
     expect(inventory.jobsByType.regulation).toBeGreaterThan(0);
+    expect(inventory.jobsByType.bylaw).toBeGreaterThan(0);
+    expect(inventory.eligibleByComponentType.schedule).toBeGreaterThan(0);
+    expect(inventory.schedules.totalImported).toBe(21);
+    expect(inventory.schedules.eligible).toBeGreaterThan(0);
+    expect(inventory.forms.totalImported).toBe(64);
+    expect(inventory.forms.excluded).toBe(64);
     expect(inventory.largestJobsBySourceSize.length).toBeGreaterThan(0);
     expect(manifest.totalJobs).toBe(run.jobCount);
     expect(manifest.batchCount).toBeGreaterThan(1);
     expect(manifest.policy.maxJobsPerBatch).toBe(40);
     expect(firstBatchJobs.every((job) => validateAiStudyMapJob(job).valid)).toBe(true);
+    expect(allPreparedJobs.some((job) => job.document.documentId === 'doc-surveys-act' && job.target.sourceKeys[0] === 'schedule:schedule-a')).toBe(true);
+    expect(allPreparedJobs.some((job) => job.document.documentId === 'doc-community-planning-act' && job.target.sourceKeys[0] === 'schedule:schedule-a')).toBe(true);
+    expect(allPreparedJobs.some((job) => job.target.sourceKeys[0] === 'form:form-3')).toBe(false);
+    expect(directRefs).toContain('schedule:schedule-a');
+    expect(verification.valid).toBe(true);
   }, 30000);
 
   it('reports partial full-corpus validation without hiding missing source keys', () => {

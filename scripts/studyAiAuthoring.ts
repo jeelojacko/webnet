@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import type { NbLawContentPackage, NbLawDocumentComponent } from '../src/study/content/nbLawTypes';
 import type {
@@ -34,9 +34,13 @@ import {
   buildCorpusInventoryReport,
   buildCoverageAuditReport,
   buildDispositionSummary,
+  classifyComponentEligibility,
+  documentReportingType,
   buildMapValidationReport,
+  findDirectlyReferencedSourceKeys,
   buildReviewQueues,
   buildRunStatusReport,
+  verifyFullCorpusPreparation,
 } from './studyAiFullCorpusMap';
 
 const DEFAULT_PACKAGE = 'study-content/packages/nb-sit-statute-corpus.content-package.json';
@@ -197,8 +201,8 @@ const readJsonlDetailed = <T>(path: string): JsonlReadResult<T> => {
 const readJsonl = <T>(path: string): T[] =>
   readJsonlDetailed<T>(path).rows.map((row) => row.value);
 
-const documentType = (type: string): AiStudyMapJob['document']['type'] =>
-  type === 'regulation' ? 'regulation' : type === 'bylaw' ? 'bylaw' : 'act';
+const documentType = (document: NbLawContentPackage['documents'][number]): AiStudyMapJob['document']['type'] =>
+  documentReportingType(document);
 
 const cleanAiSourceText = (text: string): {
   operativeSourceText: string;
@@ -323,17 +327,34 @@ const resolveDirectReferences = (
   target: NbLawDocumentComponent,
   components: NbLawDocumentComponent[],
 ): { contexts: ReturnType<typeof contextFromComponent>[]; warnings: string[] } => {
-  const byLabel = new Map(components.map((component) => [component.label, component]));
-  const labels = Array.from(
+  const byLabel = new Map(components.map((component) => [component.label.toLowerCase(), component]));
+  const bySupplementalLabel = new Map(
+    components
+      .filter((component) => component.componentType === 'schedule' || component.componentType === 'form')
+      .map((component) => [
+        component.label.toLowerCase().replace(/[^a-z0-9.]+/g, ' ').trim().replace(/\s+/g, ' '),
+        component,
+      ]),
+  );
+  const sectionLabels = Array.from(
     new Set(Array.from(target.text.matchAll(/\b(?:section|subsection)\s+(\d+)(?:\([^)]+\))?/gi)).map((match) => match[1])),
   ).filter((label) => label !== target.label);
-  const contexts = labels
+  const supplementalLabels = [
+    ...Array.from(target.text.matchAll(/\bSchedule\s+([A-Z0-9.]+)\b/gi)).map((match) => `schedule ${match[1]}`),
+    ...Array.from(target.text.matchAll(/\bForm\s+(\d+(?:\.\d+)?)\b/gi)).map((match) => `form ${match[1]}`),
+  ].map((label) => label.toLowerCase().replace(/[^a-z0-9.]+/g, ' ').trim().replace(/\s+/g, ' '));
+  const referencedComponents = [
+    ...sectionLabels.map((label) => byLabel.get(label.toLowerCase())),
+    ...supplementalLabels.map((label) => bySupplementalLabel.get(label)),
+  ].filter((component): component is NbLawDocumentComponent => Boolean(component) && component.sourceKey !== target.sourceKey);
+  const contexts = Array.from(new Map(referencedComponents.map((component) => [component.sourceKey, component])).values())
     .slice(0, DIRECT_REFERENCE_LIMIT)
-    .map((label) => contextFromComponent(byLabel.get(label), 'direct-reference'))
+    .map((component) => contextFromComponent(component, 'direct-reference'))
     .filter((context): context is NonNullable<typeof context> => Boolean(context));
+  const referenceCount = sectionLabels.length + supplementalLabels.length;
   return {
     contexts,
-    warnings: labels.length > DIRECT_REFERENCE_LIMIT ? ['DIRECT_REFERENCE_CONTEXT_TRUNCATED'] : [],
+    warnings: referenceCount > DIRECT_REFERENCE_LIMIT ? ['DIRECT_REFERENCE_CONTEXT_TRUNCATED'] : [],
   };
 };
 
@@ -375,11 +396,12 @@ const buildMapJob = ({
       documentId: document.id,
       title: document.officialTitle,
       citation: document.officialCitationDisplay,
-      type: documentType(document.documentType),
+      type: documentType(document),
     },
     target: {
       sourceKeys: [component.sourceKey],
       sectionLabels: [component.label],
+      componentType: component.componentType,
       heading: component.heading,
       exactSourceText: component.text,
       operativeSourceText: cleaned.operativeSourceText,
@@ -409,20 +431,24 @@ const buildMapJob = ({
   return { ...base, inputHash: hashText(JSON.stringify(base)) };
 };
 
-const allSectionJobs = (pkg: NbLawContentPackage, runId: string): AiStudyMapJob[] =>
+const allEligibleMapJobs = (pkg: NbLawContentPackage, runId: string): AiStudyMapJob[] =>
   pkg.documents.flatMap((document) =>
-    document.components
-      .filter((component) => component.componentType === 'section')
-      .map((component, index, components) =>
+    (() => {
+      const directlyReferenced = findDirectlyReferencedSourceKeys(document);
+      const eligibleComponents = document.components.filter(
+        (component) => classifyComponentEligibility(document, component, directlyReferenced).eligible,
+      );
+      return eligibleComponents.map((component, index) =>
         buildMapJob({
           pkg,
           document,
           component,
-          previous: components[index - 1],
-          next: components[index + 1],
+          previous: eligibleComponents[index - 1],
+          next: eligibleComponents[index + 1],
           runId,
         }),
-      ),
+      );
+    })(),
   );
 
 const seededSample = <T>(items: T[], sample: number, seed: number): T[] => {
@@ -735,7 +761,12 @@ const commandPrepareMap = (options: Record<string, string | boolean>): void => {
   mkdirSync(join(runDir, 'results'), { recursive: true });
   mkdirSync(reportsDir, { recursive: true });
   ensureSpecFiles();
-  const allJobs = allSectionJobs(pkg, runId);
+  rmSync(jobsDir, { recursive: true, force: true });
+  rmSync(reportsDir, { recursive: true, force: true });
+  mkdirSync(jobsDir, { recursive: true });
+  mkdirSync(join(runDir, 'results'), { recursive: true });
+  mkdirSync(reportsDir, { recursive: true });
+  const allJobs = allEligibleMapJobs(pkg, runId);
   const selection =
     strategy === 'phase-4b1.1-targeted'
       ? targetedPhase4b11Sample(allJobs)
@@ -804,6 +835,9 @@ const commandPrepareMap = (options: Record<string, string | boolean>): void => {
       'Do not use external legal research or web browsing.',
       'Do not use legal memory to supplement supplied source.',
       'The model must inspect each job individually. Do not use deterministic scripts, keyword rules, source length, canned templates, or generic group buckets to author dispositions, reasons, priorities, titles, goals, or focus selections.',
+      'The target may be a section, schedule, or form. Preserve the target sourceKey exactly; do not force schedules/forms into fake section numbers.',
+      'Schedules may contain tables, lists, technical definitions/data, offence classifications, legal descriptions, covenants, fees, or other authoritative structures. Use the existing dispositions; do not invent a schedule-only disposition.',
+      'Direct-reference context can include schedules or forms for understanding only. Do not let context-only material satisfy target-source grounding unless a group explicitly includes that sourceKey.',
       'Preserve jobId, runId, inputHash, corpusContentHash, and promptSpecVersion.',
       `Follow promptSpecVersion ${MAP_PROMPT_SPEC_VERSION}.`,
       'Resume by skipping jobIds that already have valid result lines.',
@@ -832,6 +866,9 @@ const commandPrepareMap = (options: Record<string, string | boolean>): void => {
     maxJobsPerBatch: batchSize,
     maxInputCharactersPerBatch: Number.MAX_SAFE_INTEGER,
   });
+  const preparationVerification = fullCorpus
+    ? verifyFullCorpusPreparation({ pkg, jobs, maxInputCharactersPerBatch: fullCorpusPolicy.maxInputCharactersPerBatch })
+    : undefined;
   writeJson(join(reportsDir, 'corpus-inventory.json'), inventoryReport);
   writeFileSync(
     join(reportsDir, 'corpus-inventory.md'),
@@ -843,11 +880,17 @@ const commandPrepareMap = (options: Record<string, string | boolean>): void => {
       `Eligible Map jobs: ${inventoryReport.totalEligibleMapJobs}`,
       `Excluded components: ${inventoryReport.totalExcludedComponents}`,
       `Sections: ${inventoryReport.sections}`,
+      `Eligible by component type: ${JSON.stringify(inventoryReport.eligibleByComponentType)}`,
+      `Excluded by component type: ${JSON.stringify(inventoryReport.excludedByComponentType)}`,
+      `Direct-referenced by component type: ${JSON.stringify(inventoryReport.directReferencedByComponentType)}`,
       `Subsections/components: ${inventoryReport.subsections}`,
       `Definitions sections: ${inventoryReport.definitionSections}`,
-      `Schedules/forms excluded: ${inventoryReport.schedulesAndForms}`,
+      `Schedules: ${JSON.stringify(inventoryReport.schedules)}`,
+      `Forms: ${JSON.stringify(inventoryReport.forms)}`,
       `Administrative/non-substantive sections flagged: ${inventoryReport.administrativeOrNonSubstantiveSections}`,
       `Total source characters: ${inventoryReport.totalSourceCharacters}`,
+      `Eligible source characters: ${inventoryReport.totalEligibleCharacters}`,
+      `Excluded source characters: ${inventoryReport.totalExcludedCharacters}`,
       '',
       '## Exclusions By Reason',
       ...Object.entries(inventoryReport.exclusionsByReason).map(([reason, count]) => `- ${reason}: ${count}`),
@@ -866,6 +909,7 @@ const commandPrepareMap = (options: Record<string, string | boolean>): void => {
     ].join('\n'),
   );
   writeJson(join(reportsDir, 'batch-manifest.json'), batchManifest);
+  if (preparationVerification) writeJson(join(reportsDir, 'preparation-verification.json'), preparationVerification);
   writeJson(join(reportsDir, 'run-status.json'), {
     runId,
     expectedJobs: jobs.length,

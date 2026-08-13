@@ -48,16 +48,126 @@ const countBy = <T extends string>(values: T[]): Record<T, number> =>
     return acc;
   }, {} as Record<T, number>);
 
-const documentKind = (documentType: string): 'act' | 'regulation' | 'bylaw' =>
-  documentType === 'regulation' ? 'regulation' : documentType === 'bylaw' ? 'bylaw' : 'act';
+type CorpusDocument = NbLawContentPackage['documents'][number];
+
+export type ComponentEligibility =
+  | { eligible: true; reason: string; directlyReferenced: boolean }
+  | { eligible: false; reason: string; directlyReferenced: boolean };
+
+export const documentReportingType = (document: Pick<CorpusDocument, 'id' | 'documentType'>): 'act' | 'regulation' | 'bylaw' => {
+  if (document.id === 'doc-new-brunswick-land-surveyors-bylaws') return 'bylaw';
+  return document.documentType === 'regulation' ? 'regulation' : 'act';
+};
 
 const isDefinitionsComponent = (component: NbLawDocumentComponent): boolean =>
   /\bdefinitions?\b/i.test(`${component.label} ${component.heading ?? ''}`) || /["“][^"”]+["”]\s+means\b/i.test(component.text);
 
-const exclusionReason = (component: NbLawDocumentComponent): string | undefined => {
-  if (component.componentType === 'section') return undefined;
-  if (component.componentType === 'schedule') return 'schedule-or-form-excluded-from-map-reasoning';
-  return `${component.componentType}-excluded-from-map-reasoning`;
+const normalizeReferenceLabel = (value: string): string =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9.]+/g, ' ')
+    .trim()
+    .replace(/\s+/g, ' ');
+
+const referencedSupplementalLabels = (text: string): string[] => {
+  const labels = [
+    ...Array.from(text.matchAll(/\bSchedule\s+([A-Z0-9.]+)\b/gi)).map((match) => `schedule ${match[1]}`),
+    ...Array.from(text.matchAll(/\bForm\s+(\d+(?:\.\d+)?)\b/gi)).map((match) => `form ${match[1]}`),
+  ];
+  return Array.from(new Set(labels.map(normalizeReferenceLabel)));
+};
+
+export const findDirectlyReferencedSourceKeys = (document: CorpusDocument): Set<string> => {
+  const referencedLabels = new Set(
+    document.components
+      .filter((component) => component.componentType === 'section')
+      .flatMap((component) => referencedSupplementalLabels(component.text)),
+  );
+  return new Set(
+    document.components
+      .filter((component) => component.componentType === 'schedule' || component.componentType === 'form')
+      .filter((component) => referencedLabels.has(normalizeReferenceLabel(component.label)))
+      .map((component) => component.sourceKey),
+  );
+};
+
+const isPlaceholderForm = (component: NbLawDocumentComponent): boolean => {
+  const text = component.text
+    .replace(/\bN\.B\.\s+This\s+Regulation\s+is\s+consolidated\b.*$/i, '')
+    .replace(/\bN\.B\.\s+This\s+Act\s+is\s+consolidated\b.*$/i, '')
+    .trim();
+  return /^Form\s+\d+(?:\.\d+)?$/i.test(text);
+};
+
+const isRepealedOrEmptySchedule = (text: string): boolean =>
+  text.trim().length === 0 || /\bRepealed\b/i.test(text) && text.length < 500;
+
+const isConsequentialAmendmentSchedule = (text: string): boolean =>
+  /\bEnglish version of\b/i.test(text) &&
+  /\bis repealed and the following substituted\b/i.test(text) &&
+  Array.from(text.matchAll(/\bAct\b/g)).length >= 20;
+
+const substantiveScheduleReason = (component: NbLawDocumentComponent, directlyReferenced: boolean): string | undefined => {
+  const text = `${component.label}\n${component.heading ?? ''}\n${component.text}`;
+  if (directlyReferenced) return 'schedule-directly-referenced-by-operative-section';
+  if (/\bcategory of offence\b|\boffence\b.*\bcategory\b/i.test(text)) return 'schedule-offence-category-table';
+  if (/\bNAD83\b|\bCSRS\b|\bellipsoid\b|\bcoordinate projection\b|\bcoordinate system\b|\bdatum\b|\bformula\b/i.test(text)) {
+    return 'schedule-technical-standard-or-reference-system';
+  }
+  if (/\bbounded as follows\b|\bCOMMENCING at\b|\bthence\b/i.test(text)) return 'schedule-operative-boundary-description';
+  if (/\bSTATUTORY (?:MORTGAGE|LEASE) COVENANTS\b|\bcovenants with\b/i.test(text)) return 'schedule-statutory-covenants';
+  if (/\bfee per parcel\b|\btax payable\b|\bColumn\b.+\bColumn\b|\bForm\s+\d+(?:\.\d+)?\b.+\|/is.test(text)) {
+    return 'schedule-substantive-table-or-list';
+  }
+  return undefined;
+};
+
+const substantiveFormReason = (component: NbLawDocumentComponent, directlyReferenced: boolean): string | undefined => {
+  if (isPlaceholderForm(component)) return undefined;
+  const text = `${component.label}\n${component.heading ?? ''}\n${component.text}`;
+  if (/\bdeclaration\b|\bcertif(?:y|ication)\b|\bnotice\b|\bapplication\b|\baffidavit\b|\bconsent\b|\bwaiver\b|\bshall contain\b|\bmust contain\b|\bprescribed\b/i.test(text)) {
+    return directlyReferenced ? 'form-directly-referenced-substantive-content' : 'form-substantive-prescribed-content';
+  }
+  return directlyReferenced && component.text.trim().length > component.label.length + 20
+    ? 'form-directly-referenced-substantive-content'
+    : undefined;
+};
+
+export const classifyComponentEligibility = (
+  document: CorpusDocument,
+  component: NbLawDocumentComponent,
+  directlyReferencedKeys = findDirectlyReferencedSourceKeys(document),
+): ComponentEligibility => {
+  const directlyReferenced = directlyReferencedKeys.has(component.sourceKey);
+  if (component.componentType === 'section') return { eligible: true, reason: 'section-target', directlyReferenced };
+  if (component.componentType === 'schedule') {
+    if (isRepealedOrEmptySchedule(component.text)) return { eligible: false, reason: 'schedule-repealed-or-empty', directlyReferenced };
+    if (isConsequentialAmendmentSchedule(component.text)) {
+      return { eligible: false, reason: 'schedule-consequential-amendment-conversion-table', directlyReferenced };
+    }
+    const reason = substantiveScheduleReason(component, directlyReferenced);
+    return reason
+      ? { eligible: true, reason, directlyReferenced }
+      : { eligible: false, reason: 'schedule-no-independent-study-value', directlyReferenced };
+  }
+  if (component.componentType === 'form') {
+    const reason = substantiveFormReason(component, directlyReferenced);
+    return reason
+      ? { eligible: true, reason, directlyReferenced }
+      : { eligible: false, reason: isPlaceholderForm(component) ? 'form-placeholder-no-substantive-text' : 'form-no-substantive-authoritative-content', directlyReferenced };
+  }
+  return { eligible: false, reason: `${component.componentType}-not-study-target-component`, directlyReferenced };
+};
+
+const eligibilityByComponent = (pkg: NbLawContentPackage): Map<string, ComponentEligibility> => {
+  const entries = pkg.documents.flatMap((document) => {
+    const referenced = findDirectlyReferencedSourceKeys(document);
+    return document.components.map((component) => [
+      `${document.id}::${component.sourceKey}`,
+      classifyComponentEligibility(document, component, referenced),
+    ] as const);
+  });
+  return new Map(entries);
 };
 
 const estimatedJobInputCharacters = (job: AiStudyMapJob): number =>
@@ -112,17 +222,19 @@ export const batchMapJobsByEstimatedSize = (
 };
 
 export const buildCorpusInventoryReport = (pkg: NbLawContentPackage, jobs: AiStudyMapJob[]) => {
+  const eligibility = eligibilityByComponent(pkg);
   const excluded = pkg.documents.flatMap((document) =>
     document.components.flatMap((component) => {
-      const reason = exclusionReason(component);
-      return reason
+      const status = eligibility.get(`${document.id}::${component.sourceKey}`);
+      return status && !status.eligible
         ? [{
             documentId: document.id,
-            documentType: documentKind(document.documentType),
+            documentType: documentReportingType(document),
             sourceKey: component.sourceKey,
             label: component.label,
             componentType: component.componentType,
-            reason,
+            reason: status.reason,
+            directlyReferenced: status.directlyReferenced,
             characters: component.text.length,
           }]
         : [];
@@ -131,13 +243,15 @@ export const buildCorpusInventoryReport = (pkg: NbLawContentPackage, jobs: AiStu
   const components = pkg.documents.flatMap((document) =>
     document.components.map((component) => ({
       documentId: document.id,
-      documentType: documentKind(document.documentType),
+      documentType: documentReportingType(document),
       componentType: component.componentType,
       sourceKey: component.sourceKey,
       label: component.label,
       heading: component.heading,
       characters: component.text.length,
       definitions: isDefinitionsComponent(component),
+      directlyReferenced: eligibility.get(`${document.id}::${component.sourceKey}`)?.directlyReferenced ?? false,
+      eligible: eligibility.get(`${document.id}::${component.sourceKey}`)?.eligible ?? false,
     })),
   );
   const jobsByDocument = jobs.reduce<Record<string, number>>((acc, job) => {
@@ -154,14 +268,23 @@ export const buildCorpusInventoryReport = (pkg: NbLawContentPackage, jobs: AiStu
     manifestId: pkg.manifestId,
     corpusContentHash: hashText(JSON.stringify(pkg.sourceHashes)),
     legalDocuments: pkg.documents.length,
-    documentTypes: countBy(pkg.documents.map((document) => documentKind(document.documentType))),
+    documentTypes: countBy(pkg.documents.map((document) => documentReportingType(document))),
     totalSourceComponents: components.length,
     totalEligibleMapJobs: jobs.length,
     totalExcludedComponents: excluded.length,
+    totalEligibleCharacters: jobs.reduce((sum, job) => sum + job.target.exactSourceText.length, 0),
+    totalExcludedCharacters: excluded.reduce((sum, component) => sum + component.characters, 0),
     exclusionsByReason: countBy(excluded.map((entry) => entry.reason)),
     jobsByDocument,
     jobsByType,
     componentTypes: countBy(components.map((entry) => entry.componentType)),
+    eligibleByComponentType: countBy(jobs.flatMap((job) => job.target.componentType ? [job.target.componentType] : [])),
+    excludedByComponentType: countBy(excluded.map((entry) => entry.componentType)),
+    directReferencedByComponentType: countBy(
+      components
+        .filter((component) => component.directlyReferenced)
+        .map((component) => component.componentType),
+    ),
     sections: components.filter((component) => component.componentType === 'section').length,
     subsections: pkg.documents.reduce(
       (sum, document) =>
@@ -174,7 +297,21 @@ export const buildCorpusInventoryReport = (pkg: NbLawContentPackage, jobs: AiStu
       0,
     ),
     definitionSections: components.filter((component) => component.componentType === 'section' && component.definitions).length,
-    schedulesAndForms: components.filter((component) => component.componentType !== 'section').length,
+    schedulesAndForms: components.filter((component) => component.componentType === 'schedule' || component.componentType === 'form').length,
+    schedules: {
+      totalImported: components.filter((component) => component.componentType === 'schedule').length,
+      eligible: jobs.filter((job) => job.target.componentType === 'schedule').length,
+      excluded: excluded.filter((component) => component.componentType === 'schedule').length,
+      directlyReferenced: components.filter((component) => component.componentType === 'schedule' && component.directlyReferenced).length,
+      excludedByReason: countBy(excluded.filter((component) => component.componentType === 'schedule').map((entry) => entry.reason)),
+    },
+    forms: {
+      totalImported: components.filter((component) => component.componentType === 'form').length,
+      eligible: jobs.filter((job) => job.target.componentType === 'form').length,
+      excluded: excluded.filter((component) => component.componentType === 'form').length,
+      directlyReferenced: components.filter((component) => component.componentType === 'form' && component.directlyReferenced).length,
+      excludedByReason: countBy(excluded.filter((component) => component.componentType === 'form').map((entry) => entry.reason)),
+    },
     administrativeOrNonSubstantiveSections: jobs.filter((job) =>
       job.target.contentFlags?.citationOnly ||
       job.target.contentFlags?.commencementOnly ||
@@ -188,6 +325,7 @@ export const buildCorpusInventoryReport = (pkg: NbLawContentPackage, jobs: AiStu
         sourceKey: job.target.sourceKeys[0],
         label: job.target.sectionLabels[0],
         heading: job.target.heading,
+        componentType: job.target.componentType,
         exactCharacters: job.target.approximateInputSize.exactCharacters,
         estimatedInputCharacters: estimatedJobInputCharacters(job),
       }))
@@ -213,6 +351,77 @@ export const buildBatchManifest = (batches: MapBatch[], policy: MapBatchPolicy) 
     jobIds: batch.jobs.map((job) => job.jobId),
   })),
 });
+
+export const verifyFullCorpusPreparation = ({
+  pkg,
+  jobs,
+  maxInputCharactersPerBatch,
+}: {
+  pkg: NbLawContentPackage;
+  jobs: AiStudyMapJob[];
+  maxInputCharactersPerBatch: number;
+}) => {
+  const eligibility = eligibilityByComponent(pkg);
+  const expectedEligible = Array.from(eligibility.entries()).filter(([, status]) => status.eligible);
+  const excluded = Array.from(eligibility.entries()).filter(([, status]) => !status.eligible);
+  const targetKeys = jobs.flatMap((job) => job.target.sourceKeys.map((sourceKey) => `${job.document.documentId}::${sourceKey}`));
+  const targetCounts = targetKeys.reduce<Map<string, number>>((acc, key) => acc.set(key, (acc.get(key) ?? 0) + 1), new Map());
+  const duplicateTargets = Array.from(targetCounts.entries()).filter(([, count]) => count > 1).map(([key]) => key);
+  const jobCounts = jobs.reduce<Map<string, number>>((acc, job) => acc.set(job.jobId, (acc.get(job.jobId) ?? 0) + 1), new Map());
+  const duplicateJobIds = Array.from(jobCounts.entries()).filter(([, count]) => count > 1).map(([jobId]) => jobId);
+  const missingEligibleTargets = expectedEligible.map(([key]) => key).filter((key) => !targetCounts.has(key));
+  const unexpectedTargets = targetKeys.filter((key) => !eligibility.get(key)?.eligible);
+  const missingSourceHashes = jobs
+    .filter((job) => job.target.sourceKeys.some((sourceKey) => !job.target.sourceHashes[sourceKey]))
+    .map((job) => job.jobId);
+  const oversizedUnhandledJobs = jobs
+    .filter((job) => estimatedJobInputCharacters(job) > maxInputCharactersPerBatch)
+    .filter((job) => job.target.sourceKeys.length > 1)
+    .map((job) => job.jobId);
+  const sourceComponents = pkg.documents.reduce((sum, document) => sum + document.components.length, 0);
+  const accountingBalances = sourceComponents === jobs.length + excluded.length;
+  const directReferenceContexts = jobs.flatMap((job) =>
+    (job.context.directlyReferencedProvisions ?? []).map((context) => `${job.document.documentId}::${context.sourceKey}`),
+  );
+  const requiredTargets = [
+    'doc-surveys-act::schedule:schedule-a',
+    'doc-community-planning-act::schedule:schedule-a',
+  ];
+  const placeholderFormTargets = jobs
+    .filter((job) => job.target.componentType === 'form')
+    .filter((job) => /^Form\s+\d+(?:\.\d+)?$/i.test(job.target.exactSourceText.trim()))
+    .map((job) => `${job.document.documentId}::${job.target.sourceKeys[0]}`);
+  const issues = [
+    ...duplicateTargets.map((key) => ({ code: 'DUPLICATE_TARGET', key })),
+    ...duplicateJobIds.map((key) => ({ code: 'DUPLICATE_JOB_ID', key })),
+    ...missingEligibleTargets.map((key) => ({ code: 'ELIGIBLE_TARGET_MISSING_JOB', key })),
+    ...unexpectedTargets.map((key) => ({ code: 'EXCLUDED_TARGET_HAS_JOB', key })),
+    ...missingSourceHashes.map((key) => ({ code: 'MISSING_SOURCE_HASH', key })),
+    ...oversizedUnhandledJobs.map((key) => ({ code: 'OVERSIZED_UNHANDLED_JOB', key })),
+    ...requiredTargets.filter((key) => !targetCounts.has(key)).map((key) => ({ code: 'REQUIRED_SCHEDULE_TARGET_MISSING', key })),
+    ...placeholderFormTargets.map((key) => ({ code: 'PLACEHOLDER_FORM_TARGET', key })),
+    ...(accountingBalances ? [] : [{ code: 'COMPONENT_ACCOUNTING_MISMATCH', key: `${sourceComponents} != ${jobs.length} + ${excluded.length}` }]),
+  ];
+  return {
+    schemaVersion: 1,
+    valid: issues.length === 0,
+    issues,
+    totalSourceComponents: sourceComponents,
+    eligibleTargets: jobs.length,
+    excludedComponents: excluded.length,
+    accountingBalances,
+    duplicateTargets,
+    duplicateJobIds,
+    missingEligibleTargets,
+    unexpectedTargets,
+    missingSourceHashes,
+    oversizedUnhandledJobs,
+    requiredScheduleTargetsPresent: requiredTargets.every((key) => targetCounts.has(key)),
+    surveysScheduleAInDirectReferenceContext: directReferenceContexts.includes('doc-surveys-act::schedule:schedule-a'),
+    communityPlanningScheduleAInDirectReferenceContext: directReferenceContexts.includes('doc-community-planning-act::schedule:schedule-a'),
+    placeholderFormTargets,
+  };
+};
 
 export const buildRunStatusReport = ({
   runId,
@@ -345,8 +554,10 @@ export const buildCoverageAuditReport = (pkg: NbLawContentPackage, jobs: AiStudy
     return {
       documentId: document.id,
       title: document.officialTitle,
-      type: documentKind(document.documentType),
-      eligibleSourceSections: documentJobs.length,
+      type: documentReportingType(document),
+      eligibleSourceSections: documentJobs.filter((job) => job.target.componentType === 'section' || !job.target.componentType).length,
+      eligibleSchedules: documentJobs.filter((job) => job.target.componentType === 'schedule').length,
+      eligibleForms: documentJobs.filter((job) => job.target.componentType === 'form').length,
       mapJobsProcessed: documentProposals.length,
       substantiveGroupsProposed: documentProposals.reduce((sum, proposal) => sum + proposal.proposedGroups.length, 0),
       definitionGroups: documentProposals.reduce(

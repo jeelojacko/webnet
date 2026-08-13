@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "valid": true,
+  "issues": [],
+  "totalSourceComponents": 3758,
+  "eligibleTargets": 3692,
+  "excludedComponents": 66,
+  "accountingBalances": true,
+  "duplicateTargets": [],
+  "duplicateJobIds": [],
+  "missingEligibleTargets": [],
+  "unexpectedTargets": [],
+  "missingSourceHashes": [],
+  "oversizedUnhandledJobs": [],
+  "requiredScheduleTargetsPresent": true,
+  "surveysScheduleAInDirectReferenceContext": true,
+  "communityPlanningScheduleAInDirectReferenceContext": true,
+  "placeholderFormTargets": []
+}

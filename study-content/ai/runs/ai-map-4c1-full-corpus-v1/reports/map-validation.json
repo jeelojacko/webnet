@@ -3,10 +3,10 @@
   "runId": "ai-map-4c1-full-corpus-v1",
   "status": {
     "runId": "ai-map-4c1-full-corpus-v1",
-    "expectedJobs": 3673,
+    "expectedJobs": 3692,
     "resultLines": 0,
     "completed": 0,
-    "missing": 3673,
+    "missing": 3692,
     "malformed": 0,
     "stale": 0,
     "duplicate": 0,

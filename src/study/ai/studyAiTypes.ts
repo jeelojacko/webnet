@@ -122,6 +122,7 @@ export type AiStudyMapJob = {
   target: {
     sourceKeys: string[];
     sectionLabels: string[];
+    componentType?: 'section' | 'schedule' | 'form' | 'appendix' | 'part-heading' | 'division-heading';
     heading?: string;
     exactSourceText: string;
     operativeSourceText: string;

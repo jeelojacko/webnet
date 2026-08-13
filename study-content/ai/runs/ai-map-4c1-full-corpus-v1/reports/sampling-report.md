@@ -1,6 +1,6 @@
 # Sampling Report ai-map-4c1-full-corpus-v1
 
-Sample size: 3673
+Sample size: 3692
 Seed: 42
 Strategy: full-corpus
 Strategy version: full-corpus-v1-size-batched
@@ -165,6 +165,7 @@ and Development Act 25 -
 - map-2b40e19c1eb87430 - Aquaculture Act 96 - 
 - map-fbc9ff5f2754320e - Aquaculture Act 97 - 
 - map-88ed0ac6ca2085f0 - Aquaculture Act 98 - 
+- map-92ccc44fb06ad4bf - Aquaculture Act SCHEDULE A - 
 - map-6e4361af8c24ccc7 - Archives Act 1 - 
 - map-eaad9cf7048e6a30 - Archives Act 2 - 
 - map-90cc3f721443506e - Archives Act 3 - 
@@ -257,6 +258,8 @@ and Development Act 25 -
 - map-6e95777a8b455807 - Assessment Act 39 - 
 - map-d5f20a94cebb9552 - Assessment Act 40 - 
 - map-5f76a85832cc0afb - Assessment Act 41 - 
+- map-cdccb73ccde818fe - Assessment Act SCHEDULE A - 
+- map-02b867a7fbbd1f00 - Assessment Act SCHEDULE B - 
 - map-6ad62669d64e8c20 - Assignments And Preferences Act 1 - 
 - map-618e07286de71647 - Assignments And Preferences Act 2 - 
 - map-e6c20a68310b2d1e - Assignments And Preferences Act 3 - 
@@ -658,6 +661,7 @@ and Development Act 25 -
 - map-5d5a2009a80d9e55 - Community Planning Act 153 - 
 - map-1e15b88b5dac6cbb - Community Planning Act 154 - 
 - map-a896a1c325bf1b9e - Community Planning Act 155 - 
+- map-471f24badd21e17e - Community Planning Act SCHEDULE A - 
 - map-3f89b1579eed6e71 - Condominium Property Act 1 - 
 - map-fe76053ca9582196 - Condominium Property Act 2 - 
 - map-2c7e46ee508fe48c - Condominium Property Act 3 - 
@@ -1305,6 +1309,7 @@ and Development Act 25 -
 - map-3376cd55bb097e09 - Gas Distribution Act, 1999 104 - 
 - map-9ae14f9d20d68adc - Gas Distribution Act, 1999 105 - 
 - map-ee80164e55572e5f - Gas Distribution Act, 1999 106 - 
+- map-b1c164ada6bc1bf5 - Gas Distribution Act, 1999 SCHEDULE A - 
 - map-151e38171aafde49 - Highway Act 1 - 
 - map-480ffb4c3e9e7005 - Highway Act 2 - 
 - map-48d74a0556785a2c - Highway Act 3 - 
@@ -1392,6 +1397,7 @@ and Development Act 25 -
 - map-251bc6d2496b4e06 - Highway Act 70.01 - 
 - map-f56fce2d33600eec - Highway Act 70.1 - 
 - map-4285a52eb0c447c9 - Highway Act 71 - 
+- map-81b6bcb485af25e4 - Highway Act SCHEDULE A - 
 - map-41a19f21c932d8d4 - Land Titles Act 1 - 
 - map-5521a91f15f24e61 - Land Titles Act 2 - 
 - map-e2c74c501e85859c - Land Titles Act 2.1 - 
@@ -1790,6 +1796,7 @@ and Development Act 25 -
 - map-03706d95fa9dafb5 - Mining Act 139 - 
 - map-c811e6ab8de7b645 - Mining Act 140 - 
 - map-5c9e9cc2249bf2dd - Mining Act 141 - 
+- map-b4a4fa8d738faa33 - Mining Act SCHEDULE A - 
 - map-9fb6b29ec7131274 - Municipalities Act 1 - 
 - map-91915798f403a735 - Municipalities Act 2 - 
 - map-b842790fc0d0a4b4 - Municipalities Act 3 - 
@@ -2813,6 +2820,8 @@ Registration Act 18.1 -
 Registration Act 19 - 
 - map-0f13f0421444d121 - Partnerships and Business Names
 Registration Act 20 - 
+- map-068e4fe7b72c087b - Partnerships and Business Names
+Registration Act SCHEDULE A - 
 - map-665ea607d8769559 - Probate Court Act 1 - 
 - map-67190aacd100bfe2 - Probate Court Act 2 - 
 - map-d2ba29382b14c2a9 - Probate Court Act 3 - 
@@ -2895,6 +2904,7 @@ Registration Act 20 -
 - map-e2f75b1468c9f377 - Probate Court Act 78 - 
 - map-fd6e7380df105b67 - Probate Court Act 79 - 
 - map-e56b0e82f1e05eea - Probate Court Act 80 - 
+- map-a127768efdf2cbfe - Probate Court Act SCHEDULE A - 
 - map-d29afc02c2db98a0 - Property Act 1 - 
 - map-6236f93024480f45 - Property Act 2 - 
 - map-3c38ec35b7fa4510 - Property Act 3 - 
@@ -3117,6 +3127,7 @@ Registration Act 20 -
 - map-5ad017e76232b8fa - Public Health Act 73.2 - 
 - map-f3edcd905559ee5a - Public Health Act 74 - 
 - map-64e790da68583dd6 - Public Health Act 75 - 
+- map-1f15e69adbaee802 - Public Health Act SCHEDULE A - 
 - map-d4777d970a9058ee - Public Records Act 1 - 
 - map-8234bb2015743579 - Public Records Act 2 - 
 - map-b981fd78b413e408 - Public Records Act 3 - 
@@ -3160,6 +3171,7 @@ Registration Act 20 -
 - map-9e7dd384a99332b2 - Public Works Act 33 - 
 - map-17eccd6d5e92ef5d - Public Works Act 34 - 
 - map-e52e880d411dffd7 - Public Works Act 35 - 
+- map-58a2368c022b7f0d - Public Works Act SCHEDULE A - 
 - map-14537b4cbff8f642 - Quarriable Substances Act 1 - 
 - map-f2c27cf00849d18d - Quarriable Substances Act 2 - 
 - map-088860e01818cb74 - Quarriable Substances Act 3 - 
@@ -3204,6 +3216,7 @@ Registration Act 20 -
 - map-2275a5ebb91bb008 - Quarriable Substances Act 41.1 - 
 - map-770a87f1bd33b400 - Quarriable Substances Act 42 - 
 - map-4fb50ce06f6b4123 - Quarriable Substances Act 43 - 
+- map-b6945602bbf972d8 - Quarriable Substances Act SCHEDULE A - 
 - map-dedf17275385394b - Real Property Transfer Tax Act 1 - 
 - map-8ad306d720b334e0 - Real Property Transfer Tax Act 2 - 
 - map-84943f6ac6f80c52 - Real Property Transfer Tax Act 3 - 
@@ -3327,6 +3340,7 @@ Registration Act 20 -
 - map-f875e850defdeaaf - Energy and Utilities Board Act 102 - 
 - map-6512a020f2a1bc14 - Energy and Utilities Board Act 103 - 
 - map-c13f46fa543901c5 - Energy and Utilities Board Act 104 - 
+- map-cac3ebd4b0cd7868 - Energy and Utilities Board Act SCHEDULE A - 
 - map-ded795e42faeae5f - Registry Act 1 - 
 - map-b5b175e489986a72 - Registry Act 1.1 - 
 - map-481305d4ae7c1ab4 - Registry Act 2 - 
@@ -3591,6 +3605,7 @@ Tax Relief Act 14.1 -
 - map-022de9af0c2cc613 - Surveys Act 14 - 
 - map-7a468539b6091105 - Surveys Act 14.1 - 
 - map-9d2b1b9f65a8460a - Surveys Act 15 - 
+- map-e26bd21729f4a7eb - Surveys Act SCHEDULE A - 
 - map-175f41d54cad07ec - Territorial Division Act 1 - 
 - map-63046b2f02df28ac - Territorial Division Act 2 - 
 - map-3dd3dfd58df86dc3 - Territorial Division Act 3 - 
@@ -3642,6 +3657,7 @@ Tax Relief Act 14.1 -
 - map-c7780c8d2a75eaf8 - Trespass Act 14 - 
 - map-45f660635855cd31 - Trespass Act 15 - 
 - map-f198dc42b993689a - Trespass Act 16 - 
+- map-5ba94d1953b432da - Trespass Act SCHEDULE A - 
 - map-14d5ab7d4d2914b3 - Underground Storage Act 1 - 
 - map-f0e61571b43e4d86 - Underground Storage Act 2 - 
 - map-f41723c924698f87 - Underground Storage Act 2.1 - 
@@ -3784,3 +3800,7 @@ Tax Relief Act 14.1 -
 - map-7f2febb1ca8b3ca9 - REGULATION 83-130 23 - 
 - map-1e8f5f4a8e9be2da - REGULATION 83-130 24 - 
 - map-c8095a6e9e8730c1 - REGULATION 83-130 25 - 
+- map-c2c9eca88a19d559 - REGULATION 83-130 SCHEDULE A - 
+- map-f4f1731d76c011c8 - REGULATION 83-130 SCHEDULE B - 
+- map-c02fd2ace8a508ce - REGULATION 83-130 SCHEDULE C - 
+- map-460ae38c7b732209 - REGULATION 83-130 SCHEDULE D - 

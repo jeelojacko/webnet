@@ -1,8 +1,8 @@
 # Completion Report ai-map-4c1-full-corpus-v1
 
-Expected jobs: 3673
+Expected jobs: 3692
 Completed: 0
-Missing: 3673
+Missing: 3692
 Malformed: 0
 Stale: 0
 Duplicate: 0
@@ -16,7 +16,7 @@ Human-attention queue: 0
 Clean/high-confidence queue: 0
 Broad-group risk count: 0
 Definition groups: 0
-Batch count: 218
+Batch count: 220
 Oversized batches: 0
 Batching policy: {"maxJobsPerBatch":18,"maxInputCharactersPerBatch":120000}
 
