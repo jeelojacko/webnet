@@ -1,0 +1,1090 @@
+{
+  "schemaVersion": 1,
+  "packageId": "nb-sit-statute-corpus-2026-08-11",
+  "manifestId": "nb-sit-statute-corpus",
+  "corpusContentHash": "5dc991611b320de87981ba35ded9a99f0951569e732e2bacb35c6d21b3c7e3a1",
+  "legalDocuments": 61,
+  "documentTypes": {
+    "act": 55,
+    "regulation": 6
+  },
+  "totalSourceComponents": 3758,
+  "totalEligibleMapJobs": 3673,
+  "totalExcludedComponents": 85,
+  "exclusionsByReason": {
+    "schedule-or-form-excluded-from-map-reasoning": 21,
+    "form-excluded-from-map-reasoning": 64
+  },
+  "jobsByDocument": {
+    "doc-agricultural-land-protection-and-development-act": 25,
+    "doc-air-space-act": 9,
+    "doc-aquaculture-act": 98,
+    "doc-archives-act": 24,
+    "doc-assessment-act": 68,
+    "doc-assignments-and-preferences-act": 34,
+    "doc-bituminous-shale-act": 42,
+    "doc-boundaries-confirmation-act": 21,
+    "doc-clean-environment-act": 91,
+    "doc-clean-water-act": 49,
+    "doc-community-planning-act": 164,
+    "doc-condominium-property-act": 80,
+    "doc-conservation-easements-act": 12,
+    "doc-crown-grant-restrictions-act": 4,
+    "doc-crown-lands-and-forests-act": 140,
+    "doc-devolution-of-estates-act": 38,
+    "doc-easements-act": 10,
+    "doc-electronic-transactions-act": 20,
+    "doc-escheats-and-forfeitures-act": 5,
+    "doc-evidence-act": 101,
+    "doc-executors-and-trustees-act": 19,
+    "doc-expropriation-act": 67,
+    "doc-gas-distribution-act": 151,
+    "doc-highway-act": 87,
+    "doc-land-titles-act": 106,
+    "doc-limitation-of-actions-act": 46,
+    "doc-marital-property-act": 50,
+    "doc-metric-conversion-act": 3,
+    "doc-mining-act": 193,
+    "doc-municipalities-act": 313,
+    "doc-occupational-health-and-safety-act": 82,
+    "doc-oil-and-natural-gas-act": 81,
+    "doc-new-brunswick-land-surveyors-act": 124,
+    "doc-new-brunswick-land-surveyors-bylaws": 217,
+    "doc-ownership-of-minerals-act": 8,
+    "doc-official-languages-act": 55,
+    "doc-parks-act": 27,
+    "doc-partnerships-and-business-names-registration-act": 58,
+    "doc-probate-court-act": 82,
+    "doc-property-act": 74,
+    "doc-protected-natural-areas-act": 47,
+    "doc-public-health-act": 101,
+    "doc-public-records-act": 6,
+    "doc-public-works-act": 37,
+    "doc-quarriable-substances-act": 44,
+    "doc-real-property-transfer-tax-act": 11,
+    "doc-energy-and-utilities-board-act": 112,
+    "doc-registry-act": 84,
+    "doc-residential-property-tax-relief-act": 20,
+    "doc-service-new-brunswick-act": 115,
+    "doc-standard-forms-of-conveyances-act": 9,
+    "doc-surveys-act": 16,
+    "doc-territorial-division-act": 32,
+    "doc-trespass-act": 19,
+    "doc-underground-storage-act": 25,
+    "doc-wills-act": 44,
+    "reg-surveys-84-76": 8,
+    "reg-boundaries-95-166": 11,
+    "reg-community-planning-80-159": 10,
+    "reg-registry-84-190": 4,
+    "reg-land-titles-83-130": 40
+  },
+  "jobsByType": {
+    "act": 3383,
+    "regulation": 290
+  },
+  "componentTypes": {
+    "section": 3673,
+    "schedule": 21,
+    "form": 64
+  },
+  "sections": 3673,
+  "subsections": 6852,
+  "definitionSections": 174,
+  "schedulesAndForms": 85,
+  "administrativeOrNonSubstantiveSections": 369,
+  "totalSourceCharacters": 3553717,
+  "largestJobsBySourceSize": [
+    {
+      "jobId": "map-cefc2142c588c976",
+      "documentId": "doc-territorial-division-act",
+      "sourceKey": "section:23",
+      "label": "23",
+      "heading": "Divisions of Madawaska County",
+      "exactCharacters": 33645,
+      "estimatedInputCharacters": 70835
+    },
+    {
+      "jobId": "map-4536afdc409f329d",
+      "documentId": "doc-clean-environment-act",
+      "sourceKey": "section:32",
+      "label": "32",
+      "heading": "Regulations",
+      "exactCharacters": 18329,
+      "estimatedInputCharacters": 46035
+    },
+    {
+      "jobId": "map-fb424bb1f2a71655",
+      "documentId": "doc-municipalities-act",
+      "sourceKey": "section:19",
+      "label": "19",
+      "heading": "Order in Council respecting structural change of municipality",
+      "exactCharacters": 15423,
+      "estimatedInputCharacters": 45479
+    },
+    {
+      "jobId": "map-a1b00f2c0372351b",
+      "documentId": "doc-clean-water-act",
+      "sourceKey": "section:1",
+      "label": "1",
+      "heading": "Definitions",
+      "exactCharacters": 12684,
+      "estimatedInputCharacters": 32959
+    },
+    {
+      "jobId": "map-33ecdfe080193d4f",
+      "documentId": "doc-community-planning-act",
+      "sourceKey": "section:125",
+      "label": "125",
+      "heading": "Regulations re planning and development",
+      "exactCharacters": 11628,
+      "estimatedInputCharacters": 32379
+    },
+    {
+      "jobId": "map-562652e92d734a71",
+      "documentId": "doc-highway-act",
+      "sourceKey": "section:44.1",
+      "label": "44.1",
+      "heading": "Usage of highways",
+      "exactCharacters": 9737,
+      "estimatedInputCharacters": 31760
+    },
+    {
+      "jobId": "map-5609d4c3e56a8283",
+      "documentId": "doc-gas-distribution-act",
+      "sourceKey": "section:1",
+      "label": "1",
+      "heading": "Definitions",
+      "exactCharacters": 12362,
+      "estimatedInputCharacters": 31470
+    },
+    {
+      "jobId": "map-c574dbc7eba21c05",
+      "documentId": "doc-territorial-division-act",
+      "sourceKey": "section:20",
+      "label": "20",
+      "heading": "Divisions of Gloucester County",
+      "exactCharacters": 13667,
+      "estimatedInputCharacters": 30915
+    },
+    {
+      "jobId": "map-84da0f6ac1ed5a60",
+      "documentId": "doc-municipalities-act",
+      "sourceKey": "section:190.073",
+      "label": "190.073",
+      "heading": "Rural communities",
+      "exactCharacters": 9745,
+      "estimatedInputCharacters": 30860
+    },
+    {
+      "jobId": "map-f8baf51989a69071",
+      "documentId": "doc-community-planning-act",
+      "sourceKey": "section:77",
+      "label": "77",
+      "heading": "Exemptions and variances",
+      "exactCharacters": 7010,
+      "estimatedInputCharacters": 29187
+    },
+    {
+      "jobId": "map-626e10410a6354df",
+      "documentId": "doc-clean-environment-act",
+      "sourceKey": "section:1",
+      "label": "1",
+      "heading": "Definitions",
+      "exactCharacters": 11271,
+      "estimatedInputCharacters": 29067
+    },
+    {
+      "jobId": "map-fe06f861a6a03a9e",
+      "documentId": "doc-assessment-act",
+      "sourceKey": "section:4",
+      "label": "4",
+      "heading": "Exemptions",
+      "exactCharacters": 8600,
+      "estimatedInputCharacters": 27824
+    },
+    {
+      "jobId": "map-c19112bb32badb09",
+      "documentId": "doc-municipalities-act",
+      "sourceKey": "section:189",
+      "label": "189",
+      "heading": "Utility Commissions",
+      "exactCharacters": 8549,
+      "estimatedInputCharacters": 27557
+    },
+    {
+      "jobId": "map-a16b5164d75c9972",
+      "documentId": "doc-highway-act",
+      "sourceKey": "section:67",
+      "label": "67",
+      "heading": "Regulations",
+      "exactCharacters": 7383,
+      "estimatedInputCharacters": 27526
+    },
+    {
+      "jobId": "map-d5f20a94cebb9552",
+      "documentId": "doc-assessment-act",
+      "sourceKey": "section:40",
+      "label": "40",
+      "heading": "Regulations",
+      "exactCharacters": 7526,
+      "estimatedInputCharacters": 27295
+    },
+    {
+      "jobId": "map-78a08074fcf7a4a6",
+      "documentId": "doc-oil-and-natural-gas-act",
+      "sourceKey": "section:59",
+      "label": "59",
+      "heading": "Regulations",
+      "exactCharacters": 11026,
+      "estimatedInputCharacters": 27153
+    },
+    {
+      "jobId": "map-2747c7df7d91dc10",
+      "documentId": "doc-community-planning-act",
+      "sourceKey": "section:53",
+      "label": "53",
+      "heading": "Making of zoning by-law",
+      "exactCharacters": 10044,
+      "estimatedInputCharacters": 26759
+    },
+    {
+      "jobId": "map-de8f9df011dbbfdd",
+      "documentId": "doc-assessment-act",
+      "sourceKey": "section:1",
+      "label": "1",
+      "heading": "Definitions",
+      "exactCharacters": 8949,
+      "estimatedInputCharacters": 26223
+    },
+    {
+      "jobId": "map-8961dcdd49da0ab9",
+      "documentId": "doc-residential-property-tax-relief-act",
+      "sourceKey": "section:2.1",
+      "label": "2.1",
+      "heading": "Idem",
+      "exactCharacters": 10269,
+      "estimatedInputCharacters": 25879
+    },
+    {
+      "jobId": "map-7a6fb31cb975f1eb",
+      "documentId": "doc-expropriation-act",
+      "sourceKey": "section:19",
+      "label": "19",
+      "heading": "Notice of expropriation, quashing notice, abandonment of expropriation, extension of time, compensation on abandonment",
+      "exactCharacters": 8060,
+      "estimatedInputCharacters": 24999
+    },
+    {
+      "jobId": "map-8860d90d22aae7ed",
+      "documentId": "doc-public-health-act",
+      "sourceKey": "section:68",
+      "label": "68",
+      "heading": "Regulations",
+      "exactCharacters": 8585,
+      "estimatedInputCharacters": 24821
+    },
+    {
+      "jobId": "map-2f044349bc6e6bbe",
+      "documentId": "doc-crown-lands-and-forests-act",
+      "sourceKey": "section:56.5",
+      "label": "56.5",
+      "heading": "Seizure of timber, property of the Crown, equipment or vehicle and return or forfeiture of thing seized",
+      "exactCharacters": 9342,
+      "estimatedInputCharacters": 24277
+    },
+    {
+      "jobId": "map-b0163225501e861d",
+      "documentId": "doc-highway-act",
+      "sourceKey": "section:37",
+      "label": "37",
+      "heading": "Commercial vehicle inspectors, weighing devices, qualified technicians, Registrar of Motor Vehicles",
+      "exactCharacters": 7515,
+      "estimatedInputCharacters": 24022
+    },
+    {
+      "jobId": "map-eea90cafefa1cf7a",
+      "documentId": "doc-assessment-act",
+      "sourceKey": "section:4.1",
+      "label": "4.1",
+      "heading": "Low rental housing accommodation",
+      "exactCharacters": 7863,
+      "estimatedInputCharacters": 23860
+    },
+    {
+      "jobId": "map-c00f8c6c42edd133",
+      "documentId": "doc-official-languages-act",
+      "sourceKey": "section:43",
+      "label": "43",
+      "heading": "Mandate and responsibilities of Commissioner",
+      "exactCharacters": 10501,
+      "estimatedInputCharacters": 23812
+    }
+  ],
+  "excludedComponents": [
+    {
+      "documentId": "doc-aquaculture-act",
+      "documentType": "act",
+      "sourceKey": "schedule:schedule-a",
+      "label": "SCHEDULE A",
+      "componentType": "schedule",
+      "reason": "schedule-or-form-excluded-from-map-reasoning",
+      "characters": 855
+    },
+    {
+      "documentId": "doc-assessment-act",
+      "documentType": "act",
+      "sourceKey": "schedule:schedule-a",
+      "label": "SCHEDULE A",
+      "componentType": "schedule",
+      "reason": "schedule-or-form-excluded-from-map-reasoning",
+      "characters": 1409
+    },
+    {
+      "documentId": "doc-assessment-act",
+      "documentType": "act",
+      "sourceKey": "schedule:schedule-b",
+      "label": "SCHEDULE B",
+      "componentType": "schedule",
+      "reason": "schedule-or-form-excluded-from-map-reasoning",
+      "characters": 190
+    },
+    {
+      "documentId": "doc-community-planning-act",
+      "documentType": "act",
+      "sourceKey": "schedule:schedule-a",
+      "label": "SCHEDULE A",
+      "componentType": "schedule",
+      "reason": "schedule-or-form-excluded-from-map-reasoning",
+      "characters": 574
+    },
+    {
+      "documentId": "doc-gas-distribution-act",
+      "documentType": "act",
+      "sourceKey": "schedule:schedule-a",
+      "label": "SCHEDULE A",
+      "componentType": "schedule",
+      "reason": "schedule-or-form-excluded-from-map-reasoning",
+      "characters": 1411
+    },
+    {
+      "documentId": "doc-highway-act",
+      "documentType": "act",
+      "sourceKey": "schedule:schedule-a",
+      "label": "SCHEDULE A",
+      "componentType": "schedule",
+      "reason": "schedule-or-form-excluded-from-map-reasoning",
+      "characters": 1012
+    },
+    {
+      "documentId": "doc-metric-conversion-act",
+      "documentType": "act",
+      "sourceKey": "schedule:schedule-a",
+      "label": "SCHEDULE A",
+      "componentType": "schedule",
+      "reason": "schedule-or-form-excluded-from-map-reasoning",
+      "characters": 101953
+    },
+    {
+      "documentId": "doc-mining-act",
+      "documentType": "act",
+      "sourceKey": "schedule:schedule-a",
+      "label": "SCHEDULE A",
+      "componentType": "schedule",
+      "reason": "schedule-or-form-excluded-from-map-reasoning",
+      "characters": 1474
+    },
+    {
+      "documentId": "doc-parks-act",
+      "documentType": "act",
+      "sourceKey": "schedule:schedule-a",
+      "label": "SCHEDULE A",
+      "componentType": "schedule",
+      "reason": "schedule-or-form-excluded-from-map-reasoning",
+      "characters": 253
+    },
+    {
+      "documentId": "doc-partnerships-and-business-names-registration-act",
+      "documentType": "act",
+      "sourceKey": "schedule:schedule-a",
+      "label": "SCHEDULE A",
+      "componentType": "schedule",
+      "reason": "schedule-or-form-excluded-from-map-reasoning",
+      "characters": 362
+    },
+    {
+      "documentId": "doc-probate-court-act",
+      "documentType": "act",
+      "sourceKey": "schedule:schedule-a",
+      "label": "SCHEDULE A",
+      "componentType": "schedule",
+      "reason": "schedule-or-form-excluded-from-map-reasoning",
+      "characters": 1136
+    },
+    {
+      "documentId": "doc-public-health-act",
+      "documentType": "act",
+      "sourceKey": "schedule:schedule-a",
+      "label": "SCHEDULE A",
+      "componentType": "schedule",
+      "reason": "schedule-or-form-excluded-from-map-reasoning",
+      "characters": 1890
+    },
+    {
+      "documentId": "doc-public-works-act",
+      "documentType": "act",
+      "sourceKey": "schedule:schedule-a",
+      "label": "SCHEDULE A",
+      "componentType": "schedule",
+      "reason": "schedule-or-form-excluded-from-map-reasoning",
+      "characters": 2629
+    },
+    {
+      "documentId": "doc-quarriable-substances-act",
+      "documentType": "act",
+      "sourceKey": "schedule:schedule-a",
+      "label": "SCHEDULE A",
+      "componentType": "schedule",
+      "reason": "schedule-or-form-excluded-from-map-reasoning",
+      "characters": 621
+    },
+    {
+      "documentId": "doc-energy-and-utilities-board-act",
+      "documentType": "act",
+      "sourceKey": "schedule:schedule-a",
+      "label": "SCHEDULE A",
+      "componentType": "schedule",
+      "reason": "schedule-or-form-excluded-from-map-reasoning",
+      "characters": 1229
+    },
+    {
+      "documentId": "doc-surveys-act",
+      "documentType": "act",
+      "sourceKey": "schedule:schedule-a",
+      "label": "SCHEDULE A",
+      "componentType": "schedule",
+      "reason": "schedule-or-form-excluded-from-map-reasoning",
+      "characters": 3218
+    },
+    {
+      "documentId": "doc-trespass-act",
+      "documentType": "act",
+      "sourceKey": "schedule:schedule-a",
+      "label": "SCHEDULE A",
+      "componentType": "schedule",
+      "reason": "schedule-or-form-excluded-from-map-reasoning",
+      "characters": 494
+    },
+    {
+      "documentId": "reg-boundaries-95-166",
+      "documentType": "regulation",
+      "sourceKey": "form:form-1",
+      "label": "Form 1",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 61
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-3",
+      "label": "Form 3",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 6
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-56",
+      "label": "Form 56",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-57",
+      "label": "Form 57",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-58",
+      "label": "Form 58",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-59",
+      "label": "Form 59",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-52",
+      "label": "Form 52",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-43",
+      "label": "Form 43",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-43.1",
+      "label": "Form 43.1",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 9
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-44",
+      "label": "Form 44",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-1",
+      "label": "Form 1",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 6
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-13",
+      "label": "Form 13",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-15",
+      "label": "Form 15",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-15.1",
+      "label": "Form 15.1",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 9
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-17",
+      "label": "Form 17",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-2",
+      "label": "Form 2",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 6
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-23",
+      "label": "Form 23",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-48",
+      "label": "Form 48",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-48.1",
+      "label": "Form 48.1",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 9
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "schedule:schedule-a",
+      "label": "SCHEDULE A",
+      "componentType": "schedule",
+      "reason": "schedule-or-form-excluded-from-map-reasoning",
+      "characters": 2825
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-4.1",
+      "label": "Form 4.1",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 8
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-8.1",
+      "label": "Form 8.1",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 8
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-9",
+      "label": "Form 9",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 6
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-10",
+      "label": "Form 10",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-11",
+      "label": "Form 11",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-12",
+      "label": "Form 12",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-13.2",
+      "label": "Form 13.2",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 9
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-13.3",
+      "label": "Form 13.3",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 9
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-14",
+      "label": "Form 14",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-16",
+      "label": "Form 16",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-18",
+      "label": "Form 18",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-19",
+      "label": "Form 19",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-20",
+      "label": "Form 20",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-21",
+      "label": "Form 21",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-22",
+      "label": "Form 22",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-24",
+      "label": "Form 24",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-25",
+      "label": "Form 25",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-26",
+      "label": "Form 26",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-27",
+      "label": "Form 27",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-28",
+      "label": "Form 28",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-29",
+      "label": "Form 29",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-30",
+      "label": "Form 30",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-31",
+      "label": "Form 31",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-31.1",
+      "label": "Form 31.1",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 9
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-32",
+      "label": "Form 32",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-32.1",
+      "label": "Form 32.1",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 9
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-33",
+      "label": "Form 33",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-34",
+      "label": "Form 34",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-35",
+      "label": "Form 35",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-36",
+      "label": "Form 36",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-36.1",
+      "label": "Form 36.1",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 9
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-37",
+      "label": "Form 37",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-38",
+      "label": "Form 38",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-39",
+      "label": "Form 39",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-41",
+      "label": "Form 41",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-45",
+      "label": "Form 45",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-47",
+      "label": "Form 47",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-49",
+      "label": "Form 49",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-50",
+      "label": "Form 50",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-51",
+      "label": "Form 51",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-53",
+      "label": "Form 53",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-54",
+      "label": "Form 54",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-55",
+      "label": "Form 55",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-61",
+      "label": "Form 61",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "form:form-62",
+      "label": "Form 62",
+      "componentType": "form",
+      "reason": "form-excluded-from-map-reasoning",
+      "characters": 7
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "schedule:schedule-b",
+      "label": "SCHEDULE B",
+      "componentType": "schedule",
+      "reason": "schedule-or-form-excluded-from-map-reasoning",
+      "characters": 3389
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "schedule:schedule-c",
+      "label": "SCHEDULE C",
+      "componentType": "schedule",
+      "reason": "schedule-or-form-excluded-from-map-reasoning",
+      "characters": 11967
+    },
+    {
+      "documentId": "reg-land-titles-83-130",
+      "documentType": "regulation",
+      "sourceKey": "schedule:schedule-d",
+      "label": "SCHEDULE D",
+      "componentType": "schedule",
+      "reason": "schedule-or-form-excluded-from-map-reasoning",
+      "characters": 13563
+    }
+  ]
+}

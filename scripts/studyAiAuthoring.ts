@@ -25,6 +25,19 @@ import {
   validateAiStudyMapResult,
   validateAiStudyUnitProposal,
 } from '../src/study/ai/studyAiValidation';
+import {
+  DEFAULT_FULL_CORPUS_BATCH_POLICY,
+  FULL_CORPUS_STRATEGY_VERSION,
+  batchMapJobsByEstimatedSize,
+  buildBatchManifest,
+  buildCleanReviewSample,
+  buildCorpusInventoryReport,
+  buildCoverageAuditReport,
+  buildDispositionSummary,
+  buildMapValidationReport,
+  buildReviewQueues,
+  buildRunStatusReport,
+} from './studyAiFullCorpusMap';
 
 const DEFAULT_PACKAGE = 'study-content/packages/nb-sit-statute-corpus.content-package.json';
 const RUNS_DIR = 'study-content/ai/runs';
@@ -185,7 +198,7 @@ const readJsonl = <T>(path: string): T[] =>
   readJsonlDetailed<T>(path).rows.map((row) => row.value);
 
 const documentType = (type: string): AiStudyMapJob['document']['type'] =>
-  type === 'regulation' ? 'regulation' : 'act';
+  type === 'regulation' ? 'regulation' : type === 'bylaw' ? 'bylaw' : 'act';
 
 const cleanAiSourceText = (text: string): {
   operativeSourceText: string;
@@ -702,7 +715,14 @@ const commandPrepareMap = (options: Record<string, string | boolean>): void => {
   const sample = Number(options.sample ?? 0);
   const seed = Number(options.seed ?? 42);
   const batchSize = Number(options['batch-size'] ?? 25);
+  const fullCorpusPolicy = {
+    maxJobsPerBatch: Number(options['max-jobs-per-batch'] ?? DEFAULT_FULL_CORPUS_BATCH_POLICY.maxJobsPerBatch),
+    maxInputCharactersPerBatch: Number(
+      options['max-input-chars-per-batch'] ?? DEFAULT_FULL_CORPUS_BATCH_POLICY.maxInputCharactersPerBatch,
+    ),
+  };
   const strategy = String(options.strategy ?? (sample > 0 ? 'representative' : 'all-sections'));
+  const fullCorpus = strategy === 'full-corpus' || strategy === 'all-sections';
   const explicitIncludes = parseIncludes(options.include);
   const phase4b1Pilot = strategy === 'representative' && sample === 100 && options['skip-phase-4b1-includes'] !== true;
   const includes = Array.from(
@@ -733,12 +753,18 @@ const commandPrepareMap = (options: Record<string, string | boolean>): void => {
           jobs: sample > 0 ? seededSample(allJobs, sample, seed) : allJobs,
           reasons: {},
           report: {
-            strategyVersion: sample > 0 ? 'seeded-sample-v1' : 'all-sections',
+            strategyVersion: fullCorpus ? FULL_CORPUS_STRATEGY_VERSION : sample > 0 ? 'seeded-sample-v1' : 'all-sections',
             sampleSize: sample > 0 ? sample : allJobs.length,
             seed,
           },
         };
   const jobs = selection.jobs;
+  const batches = fullCorpus
+    ? batchMapJobsByEstimatedSize(jobs, fullCorpusPolicy)
+    : batchMapJobsByEstimatedSize(jobs, {
+        maxJobsPerBatch: batchSize,
+        maxInputCharactersPerBatch: Number.MAX_SAFE_INTEGER,
+      });
   const run: AiAuthoringRun = {
     schemaVersion: 1,
     runId,
@@ -753,15 +779,17 @@ const commandPrepareMap = (options: Record<string, string | boolean>): void => {
     jobCount: jobs.length,
     completedCount: 0,
     invalidCount: 0,
+    notes: fullCorpus
+      ? `Phase 4C.1 full-corpus Study Map V3 job set. Batching policy: max ${fullCorpusPolicy.maxJobsPerBatch} jobs and ${fullCorpusPolicy.maxInputCharactersPerBatch} estimated input characters per batch.`
+      : undefined,
   };
   writeJson(join(runDir, 'run.json'), run);
-  for (let index = 0; index < jobs.length; index += batchSize) {
-    const batchNumber = Math.floor(index / batchSize) + 1;
+  batches.forEach((batch) => {
     writeJsonl(
-      join(jobsDir, `batch-${String(batchNumber).padStart(3, '0')}.jobs.jsonl`),
-      jobs.slice(index, index + batchSize),
+      join(jobsDir, `batch-${String(batch.batchNumber).padStart(3, '0')}.jobs.jsonl`),
+      batch.jobs,
     );
-  }
+  });
   writeFileSync(
     join(runDir, 'CODEX_INSTRUCTIONS.md'),
     [
@@ -780,6 +808,9 @@ const commandPrepareMap = (options: Record<string, string | boolean>): void => {
       `Follow promptSpecVersion ${MAP_PROMPT_SPEC_VERSION}.`,
       'Resume by skipping jobIds that already have valid result lines.',
       'Never rewrite valid existing result lines unless explicitly told to regenerate them.',
+      fullCorpus
+        ? `Full-corpus batching policy: max ${fullCorpusPolicy.maxJobsPerBatch} jobs and ${fullCorpusPolicy.maxInputCharactersPerBatch} estimated input characters per batch; oversized provisions are isolated in their own batch.`
+        : '',
       '',
     ].join('\n'),
   );
@@ -789,11 +820,65 @@ const commandPrepareMap = (options: Record<string, string | boolean>): void => {
     seed,
     requestedSample: sample,
     selectedJobs: jobs.length,
+    batchCount: batches.length,
+    batchingPolicy: fullCorpus ? fullCorpusPolicy : { maxJobsPerBatch: batchSize, maxInputCharactersPerBatch: null },
     manualIncludes: includes,
     phase4b1RequiredIncludesApplied: phase4b1Pilot,
     phase4b1RequiredIncludes: phase4b1Pilot ? PHASE_4B1_REQUIRED_INCLUDES : [],
     ...selection.report,
   };
+  const inventoryReport = buildCorpusInventoryReport(pkg, jobs);
+  const batchManifest = buildBatchManifest(batches, fullCorpus ? fullCorpusPolicy : {
+    maxJobsPerBatch: batchSize,
+    maxInputCharactersPerBatch: Number.MAX_SAFE_INTEGER,
+  });
+  writeJson(join(reportsDir, 'corpus-inventory.json'), inventoryReport);
+  writeFileSync(
+    join(reportsDir, 'corpus-inventory.md'),
+    [
+      `# Corpus Inventory ${runId}`,
+      '',
+      `Legal documents: ${inventoryReport.legalDocuments}`,
+      `Total source components: ${inventoryReport.totalSourceComponents}`,
+      `Eligible Map jobs: ${inventoryReport.totalEligibleMapJobs}`,
+      `Excluded components: ${inventoryReport.totalExcludedComponents}`,
+      `Sections: ${inventoryReport.sections}`,
+      `Subsections/components: ${inventoryReport.subsections}`,
+      `Definitions sections: ${inventoryReport.definitionSections}`,
+      `Schedules/forms excluded: ${inventoryReport.schedulesAndForms}`,
+      `Administrative/non-substantive sections flagged: ${inventoryReport.administrativeOrNonSubstantiveSections}`,
+      `Total source characters: ${inventoryReport.totalSourceCharacters}`,
+      '',
+      '## Exclusions By Reason',
+      ...Object.entries(inventoryReport.exclusionsByReason).map(([reason, count]) => `- ${reason}: ${count}`),
+      '',
+      '## Jobs By Type',
+      ...Object.entries(inventoryReport.jobsByType).map(([type, count]) => `- ${type}: ${count}`),
+      '',
+      '## Largest Jobs',
+      ...inventoryReport.largestJobsBySourceSize
+        .slice(0, 15)
+        .map(
+          (job) =>
+            `- ${job.documentId} ${job.label} (${job.sourceKey}): ${job.estimatedInputCharacters} estimated chars`,
+        ),
+      '',
+    ].join('\n'),
+  );
+  writeJson(join(reportsDir, 'batch-manifest.json'), batchManifest);
+  writeJson(join(reportsDir, 'run-status.json'), {
+    runId,
+    expectedJobs: jobs.length,
+    resultLines: 0,
+    completed: 0,
+    missing: jobs.length,
+    malformed: 0,
+    stale: 0,
+    duplicate: 0,
+    invalid: 0,
+    batchCount: batches.length,
+    batchingPolicy: batchManifest.policy,
+  });
   writeJson(join(reportsDir, 'sampling-report.json'), samplingReport);
   writeFileSync(
     join(reportsDir, 'sampling-report.md'),
@@ -908,9 +993,11 @@ const commandStatus = (options: Record<string, string | boolean>): void => {
 
 const commandValidateResults = (options: Record<string, string | boolean>): void => {
   const runId = String(options.run);
+  const pkg = readJson<NbLawContentPackage>(String(options.package ?? DEFAULT_PACKAGE));
   const jobs = loadRunJobs(runId);
   const jobsById = new Map(jobs.map((job) => [job.jobId, job]));
   const issues: string[] = [];
+  const validationIssues: Array<{ jobId?: string; code: string; severity: 'error' | 'warning'; message: string }> = [];
   const { results, malformed } = loadRunResultsDetailed(runId);
   const seenResultJobs = new Set<string>();
   let duplicateResults = 0;
@@ -919,6 +1006,12 @@ const commandValidateResults = (options: Record<string, string | boolean>): void
     seenResultJobs.add(result.jobId);
     const job = jobsById.get(result.jobId);
     const report = validateAiStudyMapResult(result, job);
+    validationIssues.push(...report.issues.map((issue) => ({
+      jobId: result.jobId,
+      code: issue.code,
+      severity: issue.severity,
+      message: issue.message,
+    })));
     if (!job || !report.valid) {
       issues.push(...report.issues.map((issue) => `${file}:${lineNumber}: ${issue.code}: ${issue.message}`));
       return [];
@@ -939,8 +1032,35 @@ const commandValidateResults = (options: Record<string, string | boolean>): void
     ];
   });
   const reconciled = reconcileAiStudyMapProposals(proposals);
+  const statusReport = buildRunStatusReport({
+    runId,
+    jobs,
+    results: results.map((entry) => entry.result),
+    malformed,
+    invalidJobIds: validationIssues
+      .filter((issue) => issue.severity === 'error')
+      .map((issue) => issue.jobId ?? ''),
+    staleJobIds: validationIssues
+      .filter((issue) => issue.code === 'STALE_PROPOSAL' || issue.code === 'INPUT_HASH_MISMATCH')
+      .map((issue) => issue.jobId ?? ''),
+  });
+  const mapValidation = buildMapValidationReport({
+    runId,
+    status: statusReport,
+    proposals: reconciled,
+    issues: validationIssues,
+  });
+  const dispositionSummary = buildDispositionSummary(reconciled);
+  const coverageAudit = buildCoverageAuditReport(pkg, jobs, reconciled);
+  const reviewQueues = buildReviewQueues(reconciled, statusReport);
+  const cleanSample = buildCleanReviewSample(reviewQueues.cleanHighConfidence);
   const reportsDir = join(RUNS_DIR, runId, 'reports');
   mkdirSync(reportsDir, { recursive: true });
+  const preparedBatchManifest = existsSync(join(reportsDir, 'batch-manifest.json'))
+    ? readJson<{ batchCount: number; policy: unknown; oversizedBatchCount: number }>(
+        join(reportsDir, 'batch-manifest.json'),
+      )
+    : undefined;
   writeJson(join(reportsDir, 'validation.json'), {
     runId,
     jobs: jobs.length,
@@ -969,6 +1089,122 @@ const commandValidateResults = (options: Record<string, string | boolean>): void
     ].join('\n'),
   );
   writeJson(join(reportsDir, 'map-proposals.json'), reconciled);
+  writeJson(join(reportsDir, 'run-status.json'), statusReport);
+  writeJson(join(reportsDir, 'map-validation.json'), mapValidation);
+  writeJson(join(reportsDir, 'disposition-summary.json'), dispositionSummary);
+  writeFileSync(
+    join(reportsDir, 'disposition-summary.md'),
+    [
+      `# Disposition Summary ${runId}`,
+      '',
+      `Total proposals: ${dispositionSummary.totalProposals}`,
+      `Proposed Study Map groups: ${dispositionSummary.proposedStudyMapGroupCount}`,
+      `Definition groups: ${dispositionSummary.definitionGroupCount}`,
+      `Broad-group risk count: ${dispositionSummary.broadGroupRiskCount}`,
+      '',
+      '## Dispositions',
+      ...Object.entries(dispositionSummary.dispositionCounts).map(([key, value]) => `- ${key}: ${value}`),
+      '',
+      '## Confidence',
+      ...Object.entries(dispositionSummary.confidenceCounts).map(([key, value]) => `- ${key}: ${value}`),
+      '',
+    ].join('\n'),
+  );
+  writeJson(join(reportsDir, 'coverage-audit.json'), coverageAudit);
+  writeFileSync(
+    join(reportsDir, 'coverage-audit.md'),
+    [
+      `# Coverage Audit ${runId}`,
+      '',
+      `Documents represented: ${coverageAudit.documents.length}`,
+      `Source keys with no Map disposition: ${coverageAudit.sourceKeysWithNoMapDisposition.length}`,
+      `Duplicate focus groups: ${coverageAudit.duplicateFocusGroups.length}`,
+      `Conflicting groups: ${coverageAudit.conflictingGroups.length}`,
+      `Suspiciously enormous groups: ${coverageAudit.suspiciouslyEnormousGroups.length}`,
+      `Definitions not assigned: ${coverageAudit.definitionsNotAssigned.length}`,
+      '',
+      '## Documents',
+      ...coverageAudit.documents.map(
+        (document) =>
+          `- ${document.documentId}: eligible ${document.eligibleSourceSections}, processed ${document.mapJobsProcessed}, groups ${document.substantiveGroupsProposed}, invalid ${document.invalidProposals}, conflicts ${document.unresolvedConflicts}`,
+      ),
+      '',
+    ].join('\n'),
+  );
+  writeJson(join(reportsDir, 'conflicts.json'), {
+    runId,
+    conflicts: coverageAudit.conflictingGroups,
+    duplicateFocusGroups: coverageAudit.duplicateFocusGroups,
+  });
+  writeFileSync(
+    join(reportsDir, 'conflicts.md'),
+    [
+      `# Conflicts ${runId}`,
+      '',
+      `Conflicting groups: ${coverageAudit.conflictingGroups.length}`,
+      `Duplicate focus groups: ${coverageAudit.duplicateFocusGroups.length}`,
+      '',
+      ...coverageAudit.conflictingGroups.map(
+        (entry) => `- ${entry.proposalId}: ${entry.conflicts.join(', ')}`,
+      ),
+      '',
+    ].join('\n'),
+  );
+  writeJson(join(reportsDir, 'review-queue-blockers.json'), reviewQueues.blockers);
+  writeJson(join(reportsDir, 'review-queue-human-attention.json'), reviewQueues.humanAttention);
+  writeJson(join(reportsDir, 'review-queue-clean-high-confidence.json'), reviewQueues.cleanHighConfidence);
+  writeJson(join(reportsDir, 'review-sample-clean.json'), cleanSample);
+  writeJson(join(reportsDir, 'completion-report.json'), {
+    runId,
+    status: statusReport,
+    validation: mapValidation,
+    dispositionSummary,
+    coverageGaps: coverageAudit.sourceKeysWithNoMapDisposition,
+    blockerQueueCount: reviewQueues.blockers.proposals.length,
+    humanAttentionQueueCount: reviewQueues.humanAttention.length,
+    cleanHighConfidenceQueueCount: reviewQueues.cleanHighConfidence.length,
+    broadGroupRiskCount: dispositionSummary.broadGroupRiskCount,
+    definitionGroupStatistics: {
+      definitionGroups: dispositionSummary.definitionGroupCount,
+      definitionsNotAssigned: coverageAudit.definitionsNotAssigned.length,
+    },
+    batching: preparedBatchManifest
+      ? {
+          batchCount: preparedBatchManifest.batchCount,
+          oversizedBatchCount: preparedBatchManifest.oversizedBatchCount,
+          policy: preparedBatchManifest.policy,
+        }
+      : null,
+  });
+  writeFileSync(
+    join(reportsDir, 'completion-report.md'),
+    [
+      `# Completion Report ${runId}`,
+      '',
+      `Expected jobs: ${statusReport.expectedJobs}`,
+      `Completed: ${statusReport.completed}`,
+      `Missing: ${statusReport.missing}`,
+      `Malformed: ${statusReport.malformed}`,
+      `Stale: ${statusReport.stale}`,
+      `Duplicate: ${statusReport.duplicate}`,
+      `Invalid: ${statusReport.invalid}`,
+      `Valid: ${mapValidation.proposalStatusCounts.valid ?? 0}`,
+      `Warning-valid: ${mapValidation.proposalStatusCounts['warning-valid'] ?? 0}`,
+      `Invalid proposals: ${mapValidation.proposalStatusCounts.invalid ?? 0}`,
+      `Proposed Study Map groups: ${dispositionSummary.proposedStudyMapGroupCount}`,
+      `Blocker queue: ${reviewQueues.blockers.proposals.length}`,
+      `Human-attention queue: ${reviewQueues.humanAttention.length}`,
+      `Clean/high-confidence queue: ${reviewQueues.cleanHighConfidence.length}`,
+      `Broad-group risk count: ${dispositionSummary.broadGroupRiskCount}`,
+      `Definition groups: ${dispositionSummary.definitionGroupCount}`,
+      `Batch count: ${preparedBatchManifest?.batchCount ?? 'n/a'}`,
+      `Oversized batches: ${preparedBatchManifest?.oversizedBatchCount ?? 'n/a'}`,
+      `Batching policy: ${preparedBatchManifest ? JSON.stringify(preparedBatchManifest.policy) : 'n/a'}`,
+      '',
+      'STOP: Phase 4C.1 does not start Unit Authoring.',
+      '',
+    ].join('\n'),
+  );
   writeJson(join(reportsDir, 'study-map-pilot-review.json'), {
     runId,
     proposals: reconciled.map((proposal) => ({

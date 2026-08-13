@@ -19,6 +19,7 @@ import type {
   AiStudyMapJob,
   AiStudyMapResult,
 } from '../../src/study/ai/studyAiTypes';
+import { batchMapJobsByEstimatedSize } from '../../scripts/studyAiFullCorpusMap';
 import { exportStudyData, parseStudyImport } from '../../src/study/studyExportImport';
 import { createSeedStudyData } from '../../src/study/studySeed';
 import type { ImportedLegalComponent } from '../../src/study/studyTypes';
@@ -156,6 +157,8 @@ afterAll(() => {
     'ai-test-phase-4b12-grounding',
     'ai-test-phase-4b13-units',
     'ai-test-pilot-report',
+    'ai-test-full-corpus-map',
+    'ai-test-full-corpus-partial',
   ].forEach((runId) => {
     rmSync(join('study-content', 'ai', 'runs', runId), { recursive: true, force: true });
   });
@@ -1057,6 +1060,175 @@ describe('AI CLI JSONL robustness', () => {
     expect(report.strategyVersion).toBe('phase-4b1.2-grounding-v1');
     expect(citationRule?.target.contentFlags?.citationOnly).toBe(true);
     expect(citationRule?.target.contentFlags?.commencementOnly).toBe(false);
+  }, 30000);
+
+  it('batches Study Map jobs by estimated input size and isolates oversized jobs', () => {
+    const smallA = mapJob();
+    const smallB = { ...mapJob(), jobId: 'map-2' };
+    const oversized = {
+      ...mapJob(),
+      jobId: 'map-oversized',
+      target: {
+        ...mapJob().target,
+        exactSourceText: 'x'.repeat(180),
+        operativeSourceText: 'x'.repeat(180),
+      },
+    };
+    const batches = batchMapJobsByEstimatedSize([smallA, oversized, smallB], {
+      maxJobsPerBatch: 2,
+      maxInputCharactersPerBatch: 120,
+    });
+
+    expect(batches).toHaveLength(3);
+    expect(batches[1]?.jobs[0]?.jobId).toBe('map-oversized');
+    expect(batches[1]?.oversized).toBe(true);
+  });
+
+  it('prepares a full-corpus Study Map run with inventory and size-batched jobs', () => {
+    const runId = 'ai-test-full-corpus-map';
+    const runDir = join('study-content', 'ai', 'runs', runId);
+    rmSync(runDir, { recursive: true, force: true });
+
+    execFileSync(
+      'npx',
+      [
+        'tsx',
+        'scripts/studyAiAuthoring.ts',
+        'prepare-map',
+        '--run',
+        runId,
+        '--strategy',
+        'full-corpus',
+        '--max-jobs-per-batch',
+        '40',
+        '--max-input-chars-per-batch',
+        '200000',
+      ],
+      {
+        stdio: 'pipe',
+        shell: process.platform === 'win32',
+      },
+    );
+    const inventory = JSON.parse(
+      readFileSync(join(runDir, 'reports', 'corpus-inventory.json'), 'utf8'),
+    ) as {
+      legalDocuments: number;
+      totalEligibleMapJobs: number;
+      totalExcludedComponents: number;
+      jobsByType: Record<string, number>;
+      largestJobsBySourceSize: Array<{ jobId: string }>;
+    };
+    const manifest = JSON.parse(
+      readFileSync(join(runDir, 'reports', 'batch-manifest.json'), 'utf8'),
+    ) as {
+      batchCount: number;
+      totalJobs: number;
+      policy: { maxJobsPerBatch: number; maxInputCharactersPerBatch: number };
+    };
+    const run = JSON.parse(readFileSync(join(runDir, 'run.json'), 'utf8')) as {
+      providerKind: string;
+      promptSpecVersion: string;
+      jobCount: number;
+    };
+    const firstBatchJobs = readFileSync(join(runDir, 'jobs', 'batch-001.jobs.jsonl'), 'utf8')
+      .trim()
+      .split(/\r?\n/)
+      .map((line) => JSON.parse(line) as AiStudyMapJob);
+
+    expect(run.providerKind).toBe('external-codex');
+    expect(run.promptSpecVersion).toBe('study-map-v3');
+    expect(inventory.legalDocuments).toBeGreaterThan(50);
+    expect(inventory.totalEligibleMapJobs).toBe(run.jobCount);
+    expect(inventory.totalExcludedComponents).toBeGreaterThan(0);
+    expect(inventory.jobsByType.act).toBeGreaterThan(0);
+    expect(inventory.jobsByType.regulation).toBeGreaterThan(0);
+    expect(inventory.largestJobsBySourceSize.length).toBeGreaterThan(0);
+    expect(manifest.totalJobs).toBe(run.jobCount);
+    expect(manifest.batchCount).toBeGreaterThan(1);
+    expect(manifest.policy.maxJobsPerBatch).toBe(40);
+    expect(firstBatchJobs.every((job) => validateAiStudyMapJob(job).valid)).toBe(true);
+  }, 30000);
+
+  it('reports partial full-corpus validation without hiding missing source keys', () => {
+    const runId = 'ai-test-full-corpus-partial';
+    const runDir = join('study-content', 'ai', 'runs', runId);
+    rmSync(runDir, { recursive: true, force: true });
+    execFileSync(
+      'npx',
+      [
+        'tsx',
+        'scripts/studyAiAuthoring.ts',
+        'prepare-map',
+        '--run',
+        runId,
+        '--strategy',
+        'full-corpus',
+        '--max-jobs-per-batch',
+        '100',
+        '--max-input-chars-per-batch',
+        '300000',
+      ],
+      {
+        stdio: 'pipe',
+        shell: process.platform === 'win32',
+      },
+    );
+    const firstJob = readFileSync(join(runDir, 'jobs', 'batch-001.jobs.jsonl'), 'utf8')
+      .trim()
+      .split(/\r?\n/)
+      .map((line) => JSON.parse(line) as AiStudyMapJob)[0]!;
+    writeFileSync(
+      join(runDir, 'results', 'batch-001.results.jsonl'),
+      `${JSON.stringify({
+        schemaVersion: 1,
+        jobId: firstJob.jobId,
+        runId,
+        corpusContentHash: firstJob.corpusContentHash,
+        inputHash: firstJob.inputHash,
+        promptSpecVersion: firstJob.promptSpecVersion,
+        disposition: 'standalone',
+        confidence: 'high',
+        reason: 'The target source contains one focused study rule.',
+        suggestedPriority: 'P2',
+        proposedGroups: [
+          {
+            groupId: 'group-1',
+            titleSuggestion: firstJob.target.heading ?? 'Focused rule',
+            sourceKeys: firstJob.target.sourceKeys,
+            focusSelections: [
+              {
+                sourceKey: firstJob.target.sourceKeys[0],
+                evidenceText: [firstJob.target.operativeSourceText.slice(0, 40).trim()],
+              },
+            ],
+            reason: 'The group is limited to the target source.',
+            approximateLearningGoal: 'Recall the focused target rule.',
+          },
+        ],
+        warnings: [],
+      })}\n`,
+    );
+
+    execFileSync('npx', ['tsx', 'scripts/studyAiAuthoring.ts', 'validate-results', '--run', runId], {
+      stdio: 'pipe',
+      shell: process.platform === 'win32',
+    });
+    const status = JSON.parse(readFileSync(join(runDir, 'reports', 'run-status.json'), 'utf8')) as {
+      expectedJobs: number;
+      completed: number;
+      missing: number;
+    };
+    const coverage = JSON.parse(
+      readFileSync(join(runDir, 'reports', 'coverage-audit.json'), 'utf8'),
+    ) as {
+      sourceKeysWithNoMapDisposition: string[];
+    };
+
+    expect(status.completed).toBe(1);
+    expect(status.missing).toBe(status.expectedJobs - 1);
+    expect(coverage.sourceKeysWithNoMapDisposition.length).toBe(status.missing);
+    expect(existsSync(join(runDir, 'reports', 'review-queue-clean-high-confidence.json'))).toBe(true);
+    expect(existsSync(join(runDir, 'reports', 'completion-report.md'))).toBe(true);
   }, 30000);
 
   it('prepares exactly 16 Phase 4B.1.3 Unit Authoring v3 pilot jobs', () => {
