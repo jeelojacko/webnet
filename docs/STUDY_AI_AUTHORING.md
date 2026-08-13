@@ -379,7 +379,13 @@ to prepare the same exact 48 approved Map groups for the new run:
 ai-units-4b21-expanded-s48-v4fix
 ```
 
-The new run contains jobs and instructions only until an external author writes genuine per-job result JSONL. It must not be filled by deterministic templates or copied V3 answers.
+The same-48 V4-fix run was authored through six disjoint external Codex batch jobs, one result file per prepared job batch:
+
+```text
+study-content/ai/runs/ai-units-4b21-expanded-s48-v4fix/results/
+```
+
+The result JSONL is preserved as raw external-authored output. It was not filled by deterministic templates or copied V3 answers.
 
 Preserved-run revalidation writes separate Phase 4B.2.1 artifacts without replacing the original Phase 4B.2 reports:
 
@@ -402,6 +408,36 @@ MAP_REVISION_UNSUPPORTED_CONCEPT: 2
 ```
 
 The Marital Property Act s.30(3) reference to subsection 27(3) is now treated as supported when present in the complete approved focus. True invented references remain warning-positive.
+
+The remediated V4-fix run validates as ready for human educational-quality review, not scale approval:
+
+```text
+Result lines: 48 / 48
+Malformed: 0
+Stale: 0
+Duplicate: 0
+Clean-valid: 16
+Warning-valid: 32
+Invalid: 0
+GENERIC_MAIN_QUESTION: 0
+GENERIC_GUIDED_QUESTION: 0
+ANSWER_APPEARS_TRUNCATED: 66
+DEFINITION_ANSWER_MISSING_TERM_MEANING: 0
+DUPLICATE_NONRESPONSIVE_ANSWER: 0
+MAP_REVISION_UNSUPPORTED_CONCEPT: 0
+EVIDENCE_INCOMPLETE_FOR_ANSWER: 9
+ANSWER_EXTENDS_BEYOND_EVIDENCE: 23
+POSSIBLE_MODALITY_MISMATCH: 1
+UNSUPPORTED_NUMERIC_OR_REFERENCE: 26
+```
+
+The normal validation, proposal, pilot-audit, V3-control comparison, and completion artifacts are under:
+
+```text
+study-content/ai/runs/ai-units-4b21-expanded-s48-v4fix/reports/
+```
+
+Four broad Community Planning Act s.125 proposals are intentionally marked `authoringStatus: "needs-map-revision"` with `MAP_GROUP_TOO_BROAD_FOR_GOOD_UNIT` and source-grounded `mapRevisionSuggestion` groups. Definition controls for the Surveys Act terms and Energy and Utilities Board Act `regulator` no longer emit missing-meaning diagnostics.
 
 ## External Codex Workflow
 

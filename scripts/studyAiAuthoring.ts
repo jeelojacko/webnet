@@ -822,6 +822,13 @@ const loadRunJobs = (runId: string): AiStudyMapJob[] => {
     .flatMap((file) => readJsonl<AiStudyMapJob>(join(jobsDir, file)));
 };
 
+const loadAnyRunJobs = (runId: string): Array<AiStudyMapJob | AiUnitAuthoringJob> => {
+  const jobsDir = join(RUNS_DIR, runId, 'jobs');
+  return readdirSync(jobsDir)
+    .filter((file) => file.endsWith('.jobs.jsonl'))
+    .flatMap((file) => readJsonl<AiStudyMapJob | AiUnitAuthoringJob>(join(jobsDir, file)));
+};
+
 const loadRunResultsDetailed = (runId: string): {
   results: Array<{ file: string; lineNumber: number; rawHash: string; result: AiStudyMapResult }>;
   malformed: JsonlReadResult<AiStudyMapResult>['malformed'];
@@ -845,9 +852,30 @@ const loadRunResultsDetailed = (runId: string): {
   };
 };
 
+const validateUnitResultIdentity = (result: AiStudyUnitProposal, job: AiUnitAuthoringJob | undefined) => {
+  const issues: Array<{ code: string; severity: 'error' | 'warning'; message: string }> = [];
+  if (!job) {
+    issues.push({ code: 'JOB_NOT_FOUND', severity: 'error', message: 'No matching Unit Authoring job was found.' });
+    return { valid: false, issues };
+  }
+  if (result.runId !== job.runId) {
+    issues.push({ code: 'RUN_ID_MISMATCH', severity: 'error', message: 'Result runId does not match the job.' });
+  }
+  if (result.corpusContentHash !== job.corpusContentHash) {
+    issues.push({ code: 'STALE_PROPOSAL', severity: 'error', message: 'Result corpusContentHash does not match the job.' });
+  }
+  if (result.generationMetadata?.promptSpecVersion !== job.promptSpecVersion) {
+    issues.push({ code: 'PROMPT_SPEC_MISMATCH', severity: 'error', message: 'Result prompt spec does not match the job.' });
+  }
+  if (result.generationMetadata?.sourceJobInputHash !== job.inputHash) {
+    issues.push({ code: 'INPUT_HASH_MISMATCH', severity: 'error', message: 'Result input hash does not match the job.' });
+  }
+  return { valid: issues.every((issue) => issue.severity !== 'error'), issues };
+};
+
 const commandStatus = (options: Record<string, string | boolean>): void => {
   const runId = String(options.run);
-  const jobs = loadRunJobs(runId);
+  const jobs = loadAnyRunJobs(runId);
   const { results, malformed } = loadRunResultsDetailed(runId);
   const jobsById = new Map(jobs.map((job) => [job.jobId, job]));
   const validCompleted = new Set<string>();
@@ -856,13 +884,17 @@ const commandStatus = (options: Record<string, string | boolean>): void => {
   const seen = new Set<string>();
   let duplicates = 0;
   results.forEach(({ result }) => {
-    const job = jobsById.get(result.jobId);
-    const report = validateAiStudyMapResult(result, job);
+    const resultJobId = result.jobId ?? (result as unknown as AiStudyUnitProposal).generationMetadata?.sourceJobId ?? '';
+    const job = jobsById.get(resultJobId);
+    const isUnitJob = job?.promptSpecVersion?.startsWith('unit-authoring') ?? false;
+    const report = isUnitJob
+      ? validateUnitResultIdentity(result as unknown as AiStudyUnitProposal, job as AiUnitAuthoringJob)
+      : validateAiStudyMapResult(result, job as AiStudyMapJob | undefined);
     if (!job || !report.valid) invalid += 1;
-    else validCompleted.add(result.jobId);
+    else validCompleted.add(resultJobId);
     if (report.issues.some((issue) => issue.code === 'STALE_PROPOSAL' || issue.code === 'INPUT_HASH_MISMATCH')) stale += 1;
-    if (seen.has(result.jobId)) duplicates += 1;
-    seen.add(result.jobId);
+    if (seen.has(resultJobId)) duplicates += 1;
+    seen.add(resultJobId);
   });
   console.log(`Jobs:              ${jobs.length}`);
   console.log(`Result lines:      ${results.length}`);
