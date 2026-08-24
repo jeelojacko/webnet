@@ -8,11 +8,19 @@
       "eligibleSourceSections": 25,
       "eligibleSchedules": 0,
       "eligibleForms": 0,
-      "mapJobsProcessed": 0,
-      "substantiveGroupsProposed": 0,
-      "definitionGroups": 0,
-      "dispositionCounts": {},
-      "confidenceCounts": {},
+      "mapJobsProcessed": 25,
+      "substantiveGroupsProposed": 28,
+      "definitionGroups": 3,
+      "dispositionCounts": {
+        "split": 4,
+        "standalone": 15,
+        "skip": 3,
+        "reference-only": 3
+      },
+      "confidenceCounts": {
+        "medium": 1,
+        "high": 24
+      },
       "invalidProposals": 0,
       "unresolvedConflicts": 0
     },
@@ -23,11 +31,16 @@
       "eligibleSourceSections": 9,
       "eligibleSchedules": 0,
       "eligibleForms": 0,
-      "mapJobsProcessed": 0,
-      "substantiveGroupsProposed": 0,
-      "definitionGroups": 0,
-      "dispositionCounts": {},
-      "confidenceCounts": {},
+      "mapJobsProcessed": 9,
+      "substantiveGroupsProposed": 15,
+      "definitionGroups": 4,
+      "dispositionCounts": {
+        "split": 3,
+        "standalone": 6
+      },
+      "confidenceCounts": {
+        "high": 9
+      },
       "invalidProposals": 0,
       "unresolvedConflicts": 0
     },
@@ -38,11 +51,19 @@
       "eligibleSourceSections": 98,
       "eligibleSchedules": 1,
       "eligibleForms": 0,
-      "mapJobsProcessed": 0,
-      "substantiveGroupsProposed": 0,
-      "definitionGroups": 0,
-      "dispositionCounts": {},
-      "confidenceCounts": {},
+      "mapJobsProcessed": 99,
+      "substantiveGroupsProposed": 151,
+      "definitionGroups": 4,
+      "dispositionCounts": {
+        "split": 33,
+        "standalone": 62,
+        "reference-only": 1,
+        "skip": 3
+      },
+      "confidenceCounts": {
+        "medium": 5,
+        "high": 94
+      },
       "invalidProposals": 0,
       "unresolvedConflicts": 0
     },
@@ -53,11 +74,17 @@
       "eligibleSourceSections": 24,
       "eligibleSchedules": 0,
       "eligibleForms": 0,
-      "mapJobsProcessed": 0,
-      "substantiveGroupsProposed": 0,
-      "definitionGroups": 0,
-      "dispositionCounts": {},
-      "confidenceCounts": {},
+      "mapJobsProcessed": 24,
+      "substantiveGroupsProposed": 39,
+      "definitionGroups": 3,
+      "dispositionCounts": {
+        "split": 8,
+        "standalone": 14,
+        "skip": 2
+      },
+      "confidenceCounts": {
+        "high": 24
+      },
       "invalidProposals": 0,
       "unresolvedConflicts": 0
     },
@@ -68,11 +95,19 @@
       "eligibleSourceSections": 68,
       "eligibleSchedules": 2,
       "eligibleForms": 0,
-      "mapJobsProcessed": 0,
-      "substantiveGroupsProposed": 0,
+      "mapJobsProcessed": 15,
+      "substantiveGroupsProposed": 20,
       "definitionGroups": 0,
-      "dispositionCounts": {},
-      "confidenceCounts": {},
+      "dispositionCounts": {
+        "needs-human-review": 2,
+        "standalone": 7,
+        "split": 4,
+        "skip": 2
+      },
+      "confidenceCounts": {
+        "low": 2,
+        "high": 13
+      },
       "invalidProposals": 0,
       "unresolvedConflicts": 0
     },
@@ -918,178 +953,6 @@
     }
   ],
   "sourceKeysWithNoMapDisposition": [
-    "doc-agricultural-land-protection-and-development-act::section:1",
-    "doc-agricultural-land-protection-and-development-act::section:2",
-    "doc-agricultural-land-protection-and-development-act::section:3",
-    "doc-agricultural-land-protection-and-development-act::section:4",
-    "doc-agricultural-land-protection-and-development-act::section:5",
-    "doc-agricultural-land-protection-and-development-act::section:6",
-    "doc-agricultural-land-protection-and-development-act::section:7",
-    "doc-agricultural-land-protection-and-development-act::section:8",
-    "doc-agricultural-land-protection-and-development-act::section:9",
-    "doc-agricultural-land-protection-and-development-act::section:10",
-    "doc-agricultural-land-protection-and-development-act::section:11",
-    "doc-agricultural-land-protection-and-development-act::section:12",
-    "doc-agricultural-land-protection-and-development-act::section:13",
-    "doc-agricultural-land-protection-and-development-act::section:14",
-    "doc-agricultural-land-protection-and-development-act::section:15",
-    "doc-agricultural-land-protection-and-development-act::section:16",
-    "doc-agricultural-land-protection-and-development-act::section:17",
-    "doc-agricultural-land-protection-and-development-act::section:18",
-    "doc-agricultural-land-protection-and-development-act::section:19",
-    "doc-agricultural-land-protection-and-development-act::section:20",
-    "doc-agricultural-land-protection-and-development-act::section:21",
-    "doc-agricultural-land-protection-and-development-act::section:22",
-    "doc-agricultural-land-protection-and-development-act::section:23",
-    "doc-agricultural-land-protection-and-development-act::section:24",
-    "doc-agricultural-land-protection-and-development-act::section:25",
-    "doc-air-space-act::section:1",
-    "doc-air-space-act::section:2",
-    "doc-air-space-act::section:3",
-    "doc-air-space-act::section:4",
-    "doc-air-space-act::section:5",
-    "doc-air-space-act::section:6",
-    "doc-air-space-act::section:7",
-    "doc-air-space-act::section:7.1",
-    "doc-air-space-act::section:8",
-    "doc-aquaculture-act::section:1",
-    "doc-aquaculture-act::section:2",
-    "doc-aquaculture-act::section:3",
-    "doc-aquaculture-act::section:4",
-    "doc-aquaculture-act::section:5",
-    "doc-aquaculture-act::section:6",
-    "doc-aquaculture-act::section:7",
-    "doc-aquaculture-act::section:8",
-    "doc-aquaculture-act::section:9",
-    "doc-aquaculture-act::section:10",
-    "doc-aquaculture-act::section:11",
-    "doc-aquaculture-act::section:12",
-    "doc-aquaculture-act::section:13",
-    "doc-aquaculture-act::section:14",
-    "doc-aquaculture-act::section:15",
-    "doc-aquaculture-act::section:16",
-    "doc-aquaculture-act::section:17",
-    "doc-aquaculture-act::section:18",
-    "doc-aquaculture-act::section:19",
-    "doc-aquaculture-act::section:20",
-    "doc-aquaculture-act::section:21",
-    "doc-aquaculture-act::section:22",
-    "doc-aquaculture-act::section:23",
-    "doc-aquaculture-act::section:24",
-    "doc-aquaculture-act::section:25",
-    "doc-aquaculture-act::section:26",
-    "doc-aquaculture-act::section:27",
-    "doc-aquaculture-act::section:28",
-    "doc-aquaculture-act::section:29",
-    "doc-aquaculture-act::section:30",
-    "doc-aquaculture-act::section:31",
-    "doc-aquaculture-act::section:32",
-    "doc-aquaculture-act::section:33",
-    "doc-aquaculture-act::section:34",
-    "doc-aquaculture-act::section:35",
-    "doc-aquaculture-act::section:36",
-    "doc-aquaculture-act::section:37",
-    "doc-aquaculture-act::section:38",
-    "doc-aquaculture-act::section:39",
-    "doc-aquaculture-act::section:40",
-    "doc-aquaculture-act::section:41",
-    "doc-aquaculture-act::section:42",
-    "doc-aquaculture-act::section:43",
-    "doc-aquaculture-act::section:44",
-    "doc-aquaculture-act::section:45",
-    "doc-aquaculture-act::section:46",
-    "doc-aquaculture-act::section:47",
-    "doc-aquaculture-act::section:48",
-    "doc-aquaculture-act::section:49",
-    "doc-aquaculture-act::section:50",
-    "doc-aquaculture-act::section:51",
-    "doc-aquaculture-act::section:52",
-    "doc-aquaculture-act::section:53",
-    "doc-aquaculture-act::section:54",
-    "doc-aquaculture-act::section:55",
-    "doc-aquaculture-act::section:56",
-    "doc-aquaculture-act::section:57",
-    "doc-aquaculture-act::section:58",
-    "doc-aquaculture-act::section:59",
-    "doc-aquaculture-act::section:60",
-    "doc-aquaculture-act::section:61",
-    "doc-aquaculture-act::section:62",
-    "doc-aquaculture-act::section:63",
-    "doc-aquaculture-act::section:64",
-    "doc-aquaculture-act::section:65",
-    "doc-aquaculture-act::section:66",
-    "doc-aquaculture-act::section:67",
-    "doc-aquaculture-act::section:68",
-    "doc-aquaculture-act::section:69",
-    "doc-aquaculture-act::section:70",
-    "doc-aquaculture-act::section:71",
-    "doc-aquaculture-act::section:72",
-    "doc-aquaculture-act::section:73",
-    "doc-aquaculture-act::section:74",
-    "doc-aquaculture-act::section:75",
-    "doc-aquaculture-act::section:76",
-    "doc-aquaculture-act::section:77",
-    "doc-aquaculture-act::section:78",
-    "doc-aquaculture-act::section:79",
-    "doc-aquaculture-act::section:80",
-    "doc-aquaculture-act::section:81",
-    "doc-aquaculture-act::section:82",
-    "doc-aquaculture-act::section:83",
-    "doc-aquaculture-act::section:84",
-    "doc-aquaculture-act::section:85",
-    "doc-aquaculture-act::section:86",
-    "doc-aquaculture-act::section:87",
-    "doc-aquaculture-act::section:88",
-    "doc-aquaculture-act::section:89",
-    "doc-aquaculture-act::section:90",
-    "doc-aquaculture-act::section:91",
-    "doc-aquaculture-act::section:92",
-    "doc-aquaculture-act::section:93",
-    "doc-aquaculture-act::section:94",
-    "doc-aquaculture-act::section:95",
-    "doc-aquaculture-act::section:96",
-    "doc-aquaculture-act::section:97",
-    "doc-aquaculture-act::section:98",
-    "doc-aquaculture-act::schedule:schedule-a",
-    "doc-archives-act::section:1",
-    "doc-archives-act::section:2",
-    "doc-archives-act::section:3",
-    "doc-archives-act::section:4",
-    "doc-archives-act::section:5",
-    "doc-archives-act::section:6",
-    "doc-archives-act::section:7",
-    "doc-archives-act::section:8",
-    "doc-archives-act::section:9",
-    "doc-archives-act::section:10",
-    "doc-archives-act::section:10.1",
-    "doc-archives-act::section:10.2",
-    "doc-archives-act::section:10.3",
-    "doc-archives-act::section:10.4",
-    "doc-archives-act::section:10.5",
-    "doc-archives-act::section:10.6",
-    "doc-archives-act::section:10.7",
-    "doc-archives-act::section:10.8",
-    "doc-archives-act::section:10.9",
-    "doc-archives-act::section:11",
-    "doc-archives-act::section:12",
-    "doc-archives-act::section:13",
-    "doc-archives-act::section:14",
-    "doc-archives-act::section:15",
-    "doc-assessment-act::section:1",
-    "doc-assessment-act::section:2",
-    "doc-assessment-act::section:2.1",
-    "doc-assessment-act::section:3",
-    "doc-assessment-act::section:4",
-    "doc-assessment-act::section:4.1",
-    "doc-assessment-act::section:5",
-    "doc-assessment-act::section:6",
-    "doc-assessment-act::section:7",
-    "doc-assessment-act::section:7.1",
-    "doc-assessment-act::section:7.2",
-    "doc-assessment-act::section:8",
-    "doc-assessment-act::section:9",
-    "doc-assessment-act::section:10",
-    "doc-assessment-act::section:11",
     "doc-assessment-act::section:12",
     "doc-assessment-act::section:12.1",
     "doc-assessment-act::section:12.2",
@@ -4613,6 +4476,200 @@
   ],
   "duplicateFocusGroups": [],
   "conflictingGroups": [],
-  "suspiciouslyEnormousGroups": [],
-  "definitionsNotAssigned": []
+  "suspiciouslyEnormousGroups": [
+    {
+      "proposalId": "ai-map-4c1-full-corpus-v1:map-4b70f4bdd4f7d13e",
+      "jobId": "map-4b70f4bdd4f7d13e",
+      "documentId": "doc-agricultural-land-protection-and-development-act",
+      "codes": [
+        "LARGE_FOCUS_SELECTION_COUNT"
+      ]
+    },
+    {
+      "proposalId": "ai-map-4c1-full-corpus-v1:map-68f23ed566e61bf3",
+      "jobId": "map-68f23ed566e61bf3",
+      "documentId": "doc-agricultural-land-protection-and-development-act",
+      "codes": [
+        "LARGE_FOCUS_SELECTION_COUNT"
+      ]
+    },
+    {
+      "proposalId": "ai-map-4c1-full-corpus-v1:map-645a6dc5c4d63ed9",
+      "jobId": "map-645a6dc5c4d63ed9",
+      "documentId": "doc-agricultural-land-protection-and-development-act",
+      "codes": [
+        "LARGE_FOCUS_SELECTION_COUNT"
+      ]
+    },
+    {
+      "proposalId": "ai-map-4c1-full-corpus-v1:map-cf69c802e244a586",
+      "jobId": "map-cf69c802e244a586",
+      "documentId": "doc-agricultural-land-protection-and-development-act",
+      "codes": [
+        "LARGE_FOCUS_SELECTION_COUNT"
+      ]
+    },
+    {
+      "proposalId": "ai-map-4c1-full-corpus-v1:map-b1c6edf5b8a864e1",
+      "jobId": "map-b1c6edf5b8a864e1",
+      "documentId": "doc-air-space-act",
+      "codes": [
+        "LARGE_FOCUS_SELECTION_COUNT"
+      ]
+    },
+    {
+      "proposalId": "ai-map-4c1-full-corpus-v1:map-623bbbe29dd970a3",
+      "jobId": "map-623bbbe29dd970a3",
+      "documentId": "doc-aquaculture-act",
+      "codes": [
+        "LARGE_FOCUS_SELECTION_COUNT"
+      ]
+    },
+    {
+      "proposalId": "ai-map-4c1-full-corpus-v1:map-810095dd2e429485",
+      "jobId": "map-810095dd2e429485",
+      "documentId": "doc-aquaculture-act",
+      "codes": [
+        "LARGE_FOCUS_SELECTION_COUNT"
+      ]
+    },
+    {
+      "proposalId": "ai-map-4c1-full-corpus-v1:map-707d3c44aac10875",
+      "jobId": "map-707d3c44aac10875",
+      "documentId": "doc-aquaculture-act",
+      "codes": [
+        "LARGE_FOCUS_SELECTION_COUNT"
+      ]
+    },
+    {
+      "proposalId": "ai-map-4c1-full-corpus-v1:map-d1fadd2dfd0ce395",
+      "jobId": "map-d1fadd2dfd0ce395",
+      "documentId": "doc-aquaculture-act",
+      "codes": [
+        "LARGE_FOCUS_SELECTION_COUNT"
+      ]
+    },
+    {
+      "proposalId": "ai-map-4c1-full-corpus-v1:map-0f631e6f674a6010",
+      "jobId": "map-0f631e6f674a6010",
+      "documentId": "doc-aquaculture-act",
+      "codes": [
+        "LARGE_FOCUS_SELECTION_COUNT"
+      ]
+    },
+    {
+      "proposalId": "ai-map-4c1-full-corpus-v1:map-6e4361af8c24ccc7",
+      "jobId": "map-6e4361af8c24ccc7",
+      "documentId": "doc-archives-act",
+      "codes": [
+        "LARGE_FOCUS_SELECTION_COUNT"
+      ]
+    },
+    {
+      "proposalId": "ai-map-4c1-full-corpus-v1:map-884b625567fba49c",
+      "jobId": "map-884b625567fba49c",
+      "documentId": "doc-archives-act",
+      "codes": [
+        "LARGE_FOCUS_SELECTION_COUNT",
+        "MANY_PROPOSED_GROUPS"
+      ]
+    },
+    {
+      "proposalId": "ai-map-4c1-full-corpus-v1:map-f112b0e9e29422a6",
+      "jobId": "map-f112b0e9e29422a6",
+      "documentId": "doc-archives-act",
+      "codes": [
+        "LARGE_FOCUS_SELECTION_COUNT"
+      ]
+    },
+    {
+      "proposalId": "ai-map-4c1-full-corpus-v1:map-c63be268ebf9b65f",
+      "jobId": "map-c63be268ebf9b65f",
+      "documentId": "doc-archives-act",
+      "codes": [
+        "LARGE_FOCUS_SELECTION_COUNT"
+      ]
+    },
+    {
+      "proposalId": "ai-map-4c1-full-corpus-v1:map-ef8474eeffec972d",
+      "jobId": "map-ef8474eeffec972d",
+      "documentId": "doc-archives-act",
+      "codes": [
+        "LARGE_FOCUS_SELECTION_COUNT"
+      ]
+    },
+    {
+      "proposalId": "ai-map-4c1-full-corpus-v1:map-fdc6d68d36e0e492",
+      "jobId": "map-fdc6d68d36e0e492",
+      "documentId": "doc-archives-act",
+      "codes": [
+        "LARGE_FOCUS_SELECTION_COUNT"
+      ]
+    },
+    {
+      "proposalId": "ai-map-4c1-full-corpus-v1:map-ae9602f8120c9f58",
+      "jobId": "map-ae9602f8120c9f58",
+      "documentId": "doc-archives-act",
+      "codes": [
+        "LARGE_FOCUS_SELECTION_COUNT"
+      ]
+    },
+    {
+      "proposalId": "ai-map-4c1-full-corpus-v1:map-de8f9df011dbbfdd",
+      "jobId": "map-de8f9df011dbbfdd",
+      "documentId": "doc-assessment-act",
+      "codes": [
+        "LARGE_SOURCE_CHARACTER_SPAN"
+      ]
+    },
+    {
+      "proposalId": "ai-map-4c1-full-corpus-v1:map-fe06f861a6a03a9e",
+      "jobId": "map-fe06f861a6a03a9e",
+      "documentId": "doc-assessment-act",
+      "codes": [
+        "LARGE_FOCUS_SELECTION_COUNT",
+        "LARGE_SOURCE_CHARACTER_SPAN"
+      ]
+    },
+    {
+      "proposalId": "ai-map-4c1-full-corpus-v1:map-b96d5fa4bdebce4a",
+      "jobId": "map-b96d5fa4bdebce4a",
+      "documentId": "doc-assessment-act",
+      "codes": [
+        "LARGE_FOCUS_SELECTION_COUNT"
+      ]
+    },
+    {
+      "proposalId": "ai-map-4c1-full-corpus-v1:map-8a420d59ab205b71",
+      "jobId": "map-8a420d59ab205b71",
+      "documentId": "doc-assessment-act",
+      "codes": [
+        "LARGE_FOCUS_SELECTION_COUNT"
+      ]
+    },
+    {
+      "proposalId": "ai-map-4c1-full-corpus-v1:map-0b37e875b708dfca",
+      "jobId": "map-0b37e875b708dfca",
+      "documentId": "doc-assessment-act",
+      "codes": [
+        "LARGE_FOCUS_SELECTION_COUNT"
+      ]
+    },
+    {
+      "proposalId": "ai-map-4c1-full-corpus-v1:map-a0d5aea64d01ab37",
+      "jobId": "map-a0d5aea64d01ab37",
+      "documentId": "doc-assessment-act",
+      "codes": [
+        "LARGE_FOCUS_SELECTION_COUNT"
+      ]
+    }
+  ],
+  "definitionsNotAssigned": [
+    "ai-map-4c1-full-corpus-v1:map-cf69c802e244a586",
+    "ai-map-4c1-full-corpus-v1:map-d1fadd2dfd0ce395",
+    "ai-map-4c1-full-corpus-v1:map-e313e3d570a66567",
+    "ai-map-4c1-full-corpus-v1:map-de8f9df011dbbfdd",
+    "ai-map-4c1-full-corpus-v1:map-fe06f861a6a03a9e",
+    "ai-map-4c1-full-corpus-v1:map-eea90cafefa1cf7a"
+  ]
 }

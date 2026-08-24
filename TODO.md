@@ -1,3 +1,8 @@
+- [ ] Study Phase 4C.1.2 full-corpus Study Map V3 external execution (August 2026): execute all 3,692 prepared `ai-map-4c1-full-corpus-v1` jobs through genuine external Codex reasoning using disjoint sub-agent batch ownership, validate/report the full run, generate review queues and clean sample for the human semantic audit gate, run required checks, commit, push, and stop before Unit Authoring.
+  - [x] Execute canary batches 001-010 and verify mechanical integrity before continuing.
+  - [ ] Execute remaining batches 011-220 with disjoint batch ownership and resumability.
+  - [ ] Run Study AI status, validation, reporting, coverage, conflict, queue, and sample generation for the complete result set.
+  - [ ] Run required focused/full validation checks and commit/push the completed batch.
 - [ ] Study Phase 4C.1.1 full-corpus Study Map eligibility repair (August 2026): fix schedule/form component eligibility before external authoring, add direct section-to-schedule/form references, report ANBLS Bylaws as a bylaw audit class without changing source identity, rebuild the unexecuted `ai-map-4c1-full-corpus-v1` preparation because it has zero result lines, add focused regression coverage, regenerate inventory/jobs/batch/status/coverage reports, run validation, commit, push, and stop before Unit Authoring.
   - [x] Replace blanket schedule/form exclusion with substantive deterministic eligibility and specific exclusion reasons.
   - [x] Regenerate `ai-map-4c1-full-corpus-v1` full-corpus Study Map V3 preparation and verify target/exclusion accounting.

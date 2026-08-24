@@ -2,9 +2,9 @@
   "status": {
     "runId": "ai-map-4c1-full-corpus-v1",
     "expectedJobs": 3692,
-    "resultLines": 0,
-    "completed": 0,
-    "missing": 3692,
+    "resultLines": 172,
+    "completed": 172,
+    "missing": 3520,
     "malformed": 0,
     "stale": 0,
     "duplicate": 0,

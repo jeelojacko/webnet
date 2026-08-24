@@ -1,9 +1,19 @@
 {
   "schemaVersion": 1,
-  "totalProposals": 0,
-  "dispositionCounts": {},
-  "confidenceCounts": {},
-  "proposedStudyMapGroupCount": 0,
-  "definitionGroupCount": 0,
-  "broadGroupRiskCount": 0
+  "totalProposals": 172,
+  "dispositionCounts": {
+    "split": 52,
+    "standalone": 104,
+    "skip": 10,
+    "reference-only": 4,
+    "needs-human-review": 2
+  },
+  "confidenceCounts": {
+    "medium": 6,
+    "high": 164,
+    "low": 2
+  },
+  "proposedStudyMapGroupCount": 253,
+  "definitionGroupCount": 14,
+  "broadGroupRiskCount": 23
 }

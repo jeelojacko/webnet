@@ -4,19 +4,35 @@
   "status": {
     "runId": "ai-map-4c1-full-corpus-v1",
     "expectedJobs": 3692,
-    "resultLines": 0,
-    "completed": 0,
-    "missing": 3692,
+    "resultLines": 172,
+    "completed": 172,
+    "missing": 3520,
     "malformed": 0,
     "stale": 0,
     "duplicate": 0,
     "invalid": 0
   },
-  "proposalStatusCounts": {},
-  "dispositionCounts": {},
-  "confidenceCounts": {},
+  "proposalStatusCounts": {
+    "warning-valid": 19,
+    "valid": 153
+  },
+  "dispositionCounts": {
+    "split": 52,
+    "standalone": 104,
+    "skip": 10,
+    "reference-only": 4,
+    "needs-human-review": 2
+  },
+  "confidenceCounts": {
+    "medium": 6,
+    "high": 164,
+    "low": 2
+  },
   "conflictCounts": {},
-  "validationIssueCounts": {},
+  "validationIssueCounts": {
+    "LOW_CONFIDENCE": 2,
+    "POSSIBLE_TRIVIAL_STANDALONE": 1
+  },
   "groundingWarnings": 0,
   "contextLeakage": 0,
   "definedTermGroundingFailures": 0,

@@ -1,18 +1,18 @@
 # Coverage Audit ai-map-4c1-full-corpus-v1
 
 Documents represented: 61
-Source keys with no Map disposition: 3692
+Source keys with no Map disposition: 3520
 Duplicate focus groups: 0
 Conflicting groups: 0
-Suspiciously enormous groups: 0
-Definitions not assigned: 0
+Suspiciously enormous groups: 23
+Definitions not assigned: 6
 
 ## Documents
-- doc-agricultural-land-protection-and-development-act: eligible 25, processed 0, groups 0, invalid 0, conflicts 0
-- doc-air-space-act: eligible 9, processed 0, groups 0, invalid 0, conflicts 0
-- doc-aquaculture-act: eligible 98, processed 0, groups 0, invalid 0, conflicts 0
-- doc-archives-act: eligible 24, processed 0, groups 0, invalid 0, conflicts 0
-- doc-assessment-act: eligible 68, processed 0, groups 0, invalid 0, conflicts 0
+- doc-agricultural-land-protection-and-development-act: eligible 25, processed 25, groups 28, invalid 0, conflicts 0
+- doc-air-space-act: eligible 9, processed 9, groups 15, invalid 0, conflicts 0
+- doc-aquaculture-act: eligible 98, processed 99, groups 151, invalid 0, conflicts 0
+- doc-archives-act: eligible 24, processed 24, groups 39, invalid 0, conflicts 0
+- doc-assessment-act: eligible 68, processed 15, groups 20, invalid 0, conflicts 0
 - doc-assignments-and-preferences-act: eligible 34, processed 0, groups 0, invalid 0, conflicts 0
 - doc-bituminous-shale-act: eligible 42, processed 0, groups 0, invalid 0, conflicts 0
 - doc-boundaries-confirmation-act: eligible 21, processed 0, groups 0, invalid 0, conflicts 0
