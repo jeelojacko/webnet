@@ -247,6 +247,17 @@ npm run study:ai:prepare-map -- --run ai-map-4c1-full-corpus-v1 --strategy full-
 
 The command prepares `study-map-v3` jobs only. It does not create Map proposals and does not start Unit Authoring. Each result must still be authored externally through Codex into `results/*.results.jsonl` with `providerKind: external-codex` provenance preserved on the run.
 
+The repaired Phase 4C.1.3 continuation run is prepared and analyzed deterministically:
+
+```bash
+npm run study:ai:prepare-map -- --run ai-map-4c12-full-corpus-v2 --strategy full-corpus
+npm run study:ai:v2-artifacts
+```
+
+V2 uses only parsed legal-source structure for `sourceFocusOptions.childLabels`. Parenthetical numbers found in prose, numeric equivalents, cross-references, form references, and schedule references are not promoted to child labels. V2 also records `authoringInputFingerprint`, a canonical SHA-256 fingerprint of the semantic model-visible job payload: schema/prompt version, corpus hash, document identity, target source text/metadata/focus options/source hashes, and permitted context. Execution metadata such as timestamps is excluded.
+
+The canonical Study Map V3 result JSON Schema is written to `study-content/ai/schemas/study-map-v3-result.schema.json`. Later local OpenAI-compatible authoring is documented in `study-content/ai/LOCAL_MAP_AUTHORING.md`.
+
 The current Phase 4C.1.1 preparation for `ai-map-4c1-full-corpus-v1` contains:
 
 ```text

@@ -1,0 +1,534 @@
+{
+  "status": {
+    "runId": "ai-map-4c12-full-corpus-v2",
+    "expectedJobs": 3692,
+    "resultLines": 816,
+    "completed": 816,
+    "missing": 2876,
+    "malformed": 0,
+    "stale": 0,
+    "duplicate": 0,
+    "invalid": 0
+  },
+  "proposals": [
+    {
+      "id": "ai-map-4c12-full-corpus-v2:map-1fa5a6239a1f7144",
+      "schemaVersion": 1,
+      "runId": "ai-map-4c12-full-corpus-v2",
+      "jobId": "map-1fa5a6239a1f7144",
+      "corpusContentHash": "3973ff2c40d06fbca416a7be2c4b8147eb576b3c8c9970932ecca137acd75d12",
+      "inputHash": "f60debe2541cdbae5e377019876c0d665455dc3a3c6b5e86999a7b177db2d6b1",
+      "document": {
+        "documentId": "doc-community-planning-act",
+        "title": "Community Planning Act",
+        "citation": "Chapter 2017, c.19",
+        "type": "act"
+      },
+      "targetSourceKeys": [
+        "section:1"
+      ],
+      "targetSectionLabels": [
+        "1"
+      ],
+      "targetHeading": "Definitions and interpretation",
+      "exactSourceText": "Definitions and interpretation\n\n1(1)The following definitions apply in this Act.\n\n“abut” includes having access thereto directly.(attenant)\n\n“advisory committee” means a planning advisory committee established under section 3.(comité consultatif)\n\n“Board” means the Assessment and Planning Appeal Board continued as the Assessment and Planning Appeal Tribunal under the Local Governance Commission Act.(Commission)\n\n“building inspector” means a building inspector as defined in the Building Code Administration Act.(inspecteur en bâtiment)\n\n“building inspector” Repealed: 2020, c.8, s.28\n\n“clerk” means a clerk of a local government appointed under the Local Governance Act. (greffier)\n\n“council” means the mayor and councillors of a local government. (conseil)\n\n“Crown” means the Crown in right of the Province. (Couronne)\n\n“development” means(aménagement)\n\n(a)\nthe erecting, placing, relocating, removing, demolishing, altering, repairing or replacing of a building or structure other than utility poles and wires, traffic control devices and pipelines defined in the Pipeline Act, 2005 except for buildings and structures remote from a pipeline used for management and administration or housing or storing of moveable equipment or statutory notices,\n\n(b)\nif the purpose for which land, buildings and structures are used is set out in a regional land use plan, municipal plan, rural plan, development scheme, zoning by-law or regulation, a change in the purpose for which the land, building or structure is used,\n\n(c)\nany excavation of sand, gravel, clay, shale, limestone or other deposits for a development mentioned in paragraph (a) or for purposes of the sale or other commercial use of the material excavated, or\n\n(d)\nthe making of land by cutting or filling to a depth in excess of one metre, except in the case of laying pipelines defined in the Pipeline Act, 2005.\n\n“development officer” means(agent d’aménagement)\n\n(a)\nwith respect to a local government that is providing its own land use planning service,\n\n(i)\nthe planning director appointed under paragraph 10(1)(b), or\n\n(ii)\nthe Director, if the Director is appointed as the development officer under paragraph 10(3)(a), or if paragraph 10(3)(b) applies, and\n\n(b)\nwith respect to a local government or a rural district that is not providing its own land use planning service, the planning director as defined in the Regional Service Delivery Act.\n\n“development scheme” means a development scheme described in section 101.(projet d’aménagement)\n\n“Director” means the Provincial Planning Director appointed under section 9.(directeur provincial)\n\n“land for public purposes” means land, other than streets, for the recreational or other use or enjoyment of the general public.(terrain d’utilité publique)\n\n“land registration office” means a registry office established under the Registry Act or a land titles office established under the Land Titles Act. (bureau d’enregistrement des biens-fonds)\n\n“local government” means a municipality, rural community or regional municipality. (gouvernement local )\n\n“local service district” Repealed: 2021, c.44, s.1\n\n“Minister” means the Minister of Local Government and includes any person designated by the Minister to act on the Minister’s behalf.(ministre)\n\n“municipal plan” means a municipal plan under section 21.(plan municipal)\n\n“non-conforming use” means a use of any land, building or structure, including a building or structure that is lawfully under construction or for which a development approval under this Act is in effect or for which a building permit under the Building Code Administration Act is in effect, that is not permitted by\n\n(a)\nan existing or proposed zoning by-law or rural plan under section 33 or 44 for which a resolution under section 114 has been passed by the council and remains in effect, or\n\n(b)\nan existing or proposed rural plan or zoning regulation under section 51 or 125 for which a notice has been published under paragraph 111(1)(b) and six months have not elapsed since the publication, if the use existed on the day the by-law was made, the plan or regulation was made, the resolution was passed or the notice was published.\n\n“planner” means a member in good standing with the New Brunswick Association of Planners who is authorised to use the designation “Registered Professional Planner” or “RPP”.(urbaniste)\n\n“region” means a region as defined in the Regional Service Delivery Act.(région)\n\n“regional development” Repealed: 2021, c.44, s.1\n\n“regional land use plan” means a regional land use plan under section 18.(plan régional en matière d’utilisation des terres)\n\n“regional plan” Repealed: 2021, c.44, s.1\n\n“regional service commission” means a regional service commission established under the Regional Service Delivery Act.(commission de services régionaux)\n\n“registrar” means the registrar as defined in the Registry Act or the Land Titles Act, as the case may be. (registrateur)\n\n“rural community” means a rural community incorporated or continued under the Local Governance Act.(communauté rurale)\n\n“rural district” means a rural district as defined in subsection 1(1) of the Local Governance Act.(district rural)\n\n“rural plan” means a rural plan under section 33 or 44 or a regulation under section 52, as the case may be.(plan rural)\n\n“statement of provincial interest” Repealed: 2021, c.44, s.1\n\n“statement of public interest” means a statement of public interest under section 13.(déclaration d’intérêt public)\n\n“street” means the entire width between the boundary lines of a street, road or highway.(rue)\n\n“subdivide” means to divide a parcel of land into two or more parcels.(lotir)\n\n“type 1 subdivision” means a subdivision of land that is not a type 2 subdivision.(lotissement de type 1)\n\n“type 2 subdivision” means a subdivision of land that requires the development of(lotissement de type 2)\n\n(a)\none or more streets, or\n\n(b)\na form of access other than a street and approved by an advisory committee or regional service commission as being advisable for the development of the land.\n\n“use of land” includes the mining or excavation of sand, gravel, clay, shale, limestone or other deposits whether or not for the purpose of sale or other commercial use of the material mined or excavated.(usage des terrains)(affectation des terrains)\n\n1(2)In this Act, a reference to a local government is a reference to the body corporate or to the area inside the territorial limits of the local government, as the context requires.\n\n2020, c.8, s.28; 2020, c.25, s.29; 2021, c.44, s.1; 2023, c.18, s.94; 2023, c.40, s.15",
+      "operativeSourceText": "Definitions and interpretation\n\n1(1)The following definitions apply in this Act.\n\n“abut” includes having access thereto directly.(attenant)\n\n“advisory committee” means a planning advisory committee established under section 3.(comité consultatif)\n\n“Board” means the Assessment and Planning Appeal Board continued as the Assessment and Planning Appeal Tribunal under the Local Governance Commission Act.(Commission)\n\n“building inspector” means a building inspector as defined in the Building Code Administration Act.(inspecteur en bâtiment)\n\n“building inspector” Repealed: 2020, c.8, s.28\n\n“clerk” means a clerk of a local government appointed under the Local Governance Act. (greffier)\n\n“council” means the mayor and councillors of a local government. (conseil)\n\n“Crown” means the Crown in right of the Province. (Couronne)\n\n“development” means(aménagement)\n\n(a)\nthe erecting, placing, relocating, removing, demolishing, altering, repairing or replacing of a building or structure other than utility poles and wires, traffic control devices and pipelines defined in the Pipeline Act, 2005 except for buildings and structures remote from a pipeline used for management and administration or housing or storing of moveable equipment or statutory notices,\n\n(b)\nif the purpose for which land, buildings and structures are used is set out in a regional land use plan, municipal plan, rural plan, development scheme, zoning by-law or regulation, a change in the purpose for which the land, building or structure is used,\n\n(c)\nany excavation of sand, gravel, clay, shale, limestone or other deposits for a development mentioned in paragraph (a) or for purposes of the sale or other commercial use of the material excavated, or\n\n(d)\nthe making of land by cutting or filling to a depth in excess of one metre, except in the case of laying pipelines defined in the Pipeline Act, 2005.\n\n“development officer” means(agent d’aménagement)\n\n(a)\nwith respect to a local government that is providing its own land use planning service,\n\n(i)\nthe planning director appointed under paragraph 10(1)(b), or\n\n(ii)\nthe Director, if the Director is appointed as the development officer under paragraph 10(3)(a), or if paragraph 10(3)(b) applies, and\n\n(b)\nwith respect to a local government or a rural district that is not providing its own land use planning service, the planning director as defined in the Regional Service Delivery Act.\n\n“development scheme” means a development scheme described in section 101.(projet d’aménagement)\n\n“Director” means the Provincial Planning Director appointed under section 9.(directeur provincial)\n\n“land for public purposes” means land, other than streets, for the recreational or other use or enjoyment of the general public.(terrain d’utilité publique)\n\n“land registration office” means a registry office established under the Registry Act or a land titles office established under the Land Titles Act. (bureau d’enregistrement des biens-fonds)\n\n“local government” means a municipality, rural community or regional municipality. (gouvernement local )\n\n“local service district” Repealed: 2021, c.44, s.1\n\n“Minister” means the Minister of Local Government and includes any person designated by the Minister to act on the Minister’s behalf.(ministre)\n\n“municipal plan” means a municipal plan under section 21.(plan municipal)\n\n“non-conforming use” means a use of any land, building or structure, including a building or structure that is lawfully under construction or for which a development approval under this Act is in effect or for which a building permit under the Building Code Administration Act is in effect, that is not permitted by\n\n(a)\nan existing or proposed zoning by-law or rural plan under section 33 or 44 for which a resolution under section 114 has been passed by the council and remains in effect, or\n\n(b)\nan existing or proposed rural plan or zoning regulation under section 51 or 125 for which a notice has been published under paragraph 111(1)(b) and six months have not elapsed since the publication, if the use existed on the day the by-law was made, the plan or regulation was made, the resolution was passed or the notice was published.\n\n“planner” means a member in good standing with the New Brunswick Association of Planners who is authorised to use the designation “Registered Professional Planner” or “RPP”.(urbaniste)\n\n“region” means a region as defined in the Regional Service Delivery Act.(région)\n\n“regional development” Repealed: 2021, c.44, s.1\n\n“regional land use plan” means a regional land use plan under section 18.(plan régional en matière d’utilisation des terres)\n\n“regional plan” Repealed: 2021, c.44, s.1\n\n“regional service commission” means a regional service commission established under the Regional Service Delivery Act.(commission de services régionaux)\n\n“registrar” means the registrar as defined in the Registry Act or the Land Titles Act, as the case may be. (registrateur)\n\n“rural community” means a rural community incorporated or continued under the Local Governance Act.(communauté rurale)\n\n“rural district” means a rural district as defined in subsection 1(1) of the Local Governance Act.(district rural)\n\n“rural plan” means a rural plan under section 33 or 44 or a regulation under section 52, as the case may be.(plan rural)\n\n“statement of provincial interest” Repealed: 2021, c.44, s.1\n\n“statement of public interest” means a statement of public interest under section 13.(déclaration d’intérêt public)\n\n“street” means the entire width between the boundary lines of a street, road or highway.(rue)\n\n“subdivide” means to divide a parcel of land into two or more parcels.(lotir)\n\n“type 1 subdivision” means a subdivision of land that is not a type 2 subdivision.(lotissement de type 1)\n\n“type 2 subdivision” means a subdivision of land that requires the development of(lotissement de type 2)\n\n(a)\none or more streets, or\n\n(b)\na form of access other than a street and approved by an advisory committee or regional service commission as being advisable for the development of the land.\n\n“use of land” includes the mining or excavation of sand, gravel, clay, shale, limestone or other deposits whether or not for the purpose of sale or other commercial use of the material mined or excavated.(usage des terrains)(affectation des terrains)\n\n1(2)In this Act, a reference to a local government is a reference to the body corporate or to the area inside the territorial limits of the local government, as the context requires.",
+      "context": {
+        "next": {
+          "sourceKey": "section:2",
+          "sectionLabel": "2",
+          "heading": "Purposes of Act",
+          "text": "Purposes of Act\n\n2The purposes of this Act are as follows:\n\n(a)\nto support the development of environmentally, economically, socially and culturally sustainable communities;\n\n(b)\nto enable the articulation of provincial priorities and to guide regional and local planning decisions in the development of communities; and\n\n(c)\nto enable co-operation between local governments, rural districts, regional service commissions and other jurisdictions and agencies in the delivery of planning services and infrastructure development.\n\n2021, c.44, s.1\n\n2\n\nPLANNING ADMINISTRATION AND AUTHORITIES",
+          "operativeText": "Purposes of Act\n\n2The purposes of this Act are as follows:\n\n(a)\nto support the development of environmentally, economically, socially and culturally sustainable communities;\n\n(b)\nto enable the articulation of provincial priorities and to guide regional and local planning decisions in the development of communities; and\n\n(c)\nto enable co-operation between local governments, rural districts, regional service commissions and other jurisdictions and agencies in the delivery of planning services and infrastructure development.\n\n\n2",
+          "sourceHash": "a7817eb7900c9cc1e4709122d1c122806d0b007c22104dbedde31df6f9fd4e32",
+          "contextRole": "next"
+        },
+        "relevantDefinitions": [
+          {
+            "sourceKey": "section:1",
+            "sectionLabel": "1",
+            "heading": "Definitions and interpretation",
+            "text": "Definitions and interpretation\n\n1(1)The following definitions apply in this Act.\n\n“abut” includes having access thereto directly.(attenant)\n\n“advisory committee” means a planning advisory committee established under section 3.(comité consultatif)\n\n“Board” means the Assessment and Planning Appeal Board continued as the Assessment and Planning Appeal Tribunal under the Local Governance Commission Act.(Commission)\n\n“building inspector” means a building inspector as defined in the Building Code Administration Act.(inspecteur en bâtiment)\n\n“building inspector” Repealed: 2020, c.8, s.28\n\n“clerk” means a clerk of a local government appointed under the Local Governance Act. (greffier)\n\n“council” means the mayor and councillors of a local government. (conseil)\n\n“Crown” means the Crown in right of the Province. (Couronne)\n\n“development” means(aménagement)\n\n(a)\nthe erecting, placing, relocating, removing, demolishing, altering, repairing or replacing of a building or structure other than utility poles and wires, traffic control devices and pipelines defined in the Pipeline Act, 2005 except for buildings and structures remote from a pipeline used for management and administration or housing or storing of moveable equipment or statutory notices,\n\n(b)\nif the purpose for which land, buildings and structures are used is set out in a regional land use plan, municipal plan, rural plan, development scheme, zoning by-law or regulation, a change in the purpose for which the land, building or structure is used,\n\n(c)\nany excavation of sand, gravel, clay, shale, limestone or other deposits for a development mentioned in paragraph (a) or for purposes of the sale or other commercial use of the material excavated, or\n\n(d)\nthe making of land by cutting or filling to a depth in excess of one metre,",
+            "operativeText": "Definitions and interpretation\n\n1(1)The following definitions apply in this Act.\n\n“abut” includes having access thereto directly.(attenant)\n\n“advisory committee” means a planning advisory committee established under section 3.(comité consultatif)\n\n“Board” means the Assessment and Planning Appeal Board continued as the Assessment and Planning Appeal Tribunal under the Local Governance Commission Act.(Commission)\n\n“building inspector” means a building inspector as defined in the Building Code Administration Act.(inspecteur en bâtiment)\n\n“building inspector” Repealed: 2020, c.8, s.28\n\n“clerk” means a clerk of a local government appointed under the Local Governance Act. (greffier)\n\n“council” means the mayor and councillors of a local government. (conseil)\n\n“Crown” means the Crown in right of the Province. (Couronne)\n\n“development” means(aménagement)\n\n(a)\nthe erecting, placing, relocating, removing, demolishing, altering, repairing or replacing of a building or structure other than utility poles and wires, traffic control devices and pipelines defined in the Pipeline Act, 2005 except for buildings and structures remote from a pipeline used for management and administration or housing or storing of moveable equipment or statutory notices,\n\n(b)\nif the purpose for which land, buildings and structures are used is set out in a regional land use plan, municipal plan, rural plan, development scheme, zoning by-law or regulation, a change in the purpose for which the land, building or structure is used,\n\n(c)\nany excavation of sand, gravel, clay, shale, limestone or other deposits for a development mentioned in paragraph (a) or for purposes of the sale or other commercial use of the material excavated, or\n\n(d)\nthe making of land by cutting or filling to a depth in excess of one metre,",
+            "sourceHash": "d408615355ef8d4a19404599632fe85131d1df2ed9f5827ff6cda578829b4e6d",
+            "contextRole": "definition"
+          }
+        ],
+        "directlyReferencedProvisions": [
+          {
+            "sourceKey": "section:3",
+            "sectionLabel": "3",
+            "heading": "Establishment of advisory committees",
+            "text": "Establishment of advisory committees\n\n3(1)A council that is providing its own land use planning service shall make a by-law establishing a planning advisory committee.\n\n3(2)No by-law establishing a planning advisory committee is valid unless the requirement of paragraph 112(1)(b) is complied with and comes into force when filed in the land registration office in accordance with that paragraph or on a date after the filing as the by-law provides.",
+            "operativeText": "Establishment of advisory committees\n\n3(1)A council that is providing its own land use planning service shall make a by-law establishing a planning advisory committee.\n\n3(2)No by-law establishing a planning advisory committee is valid unless the requirement of paragraph 112(1)(b) is complied with and comes into force when filed in the land registration office in accordance with that paragraph or on a date after the filing as the by-law provides.",
+            "sourceHash": "b5f79529c00e9371b86004fa3952845cee0be5bb54def184d309bbb914208ef8",
+            "contextRole": "direct-reference"
+          },
+          {
+            "sourceKey": "section:101",
+            "sectionLabel": "101",
+            "heading": "Development scheme",
+            "text": "Development scheme\n\n101If a municipal plan or rural plan under section 33 or 44 is in effect, a council may make a by-law adopting a development scheme to carry out or amplify\n\n(a)\na proposal suggested or outlined in the plan, or\n\n(b)\na project that is not inconsistent with the plan.",
+            "operativeText": "Development scheme\n\n101If a municipal plan or rural plan under section 33 or 44 is in effect, a council may make a by-law adopting a development scheme to carry out or amplify\n\n(a)\na proposal suggested or outlined in the plan, or\n\n(b)\na project that is not inconsistent with the plan.",
+            "sourceHash": "206d2c3dd0a3a60c30f8f7b5afdc77c5affb8a23c772ec130e9485a6df169029",
+            "contextRole": "direct-reference"
+          },
+          {
+            "sourceKey": "section:9",
+            "sectionLabel": "9",
+            "heading": "Provincial Planning Director",
+            "text": "Provincial Planning Director\n\n9(1)The Lieutenant-Governor in Council shall appoint a planner who is an employee of the Department of Environment and Local Government as the Provincial Planning Director, to whom the Civil Service Act shall apply.\n\n9(2)In local governments that are providing their own land use planning service, the Director is the development officer for the purposes of\n\n(a)\nRepealed: 2021, c.44, s.1\n\n(b)\nadministering a subdivision by-law and approving developments under the by-law in a village or rural community that appoints the Director as the development officer under paragraph 10(3)(a), and\n\n(c)\nadministering a subdivision regulation under this Act in a village or rural community in which the regulation is in effect.\n\n9(3)The Director may\n\n(a)\ndelegate an administrative power conferred on the Director under this Act,\n\n(b)\nprovide technical planning assistance for councils, advisory committees and regional service commissions, and\n\n(c)\nexercise the powers and perform the duties in relation to community planning that the Minister assigns to the Director.\n\n2021, c.44, s.1",
+            "operativeText": "Provincial Planning Director\n\n9(1)The Lieutenant-Governor in Council shall appoint a planner who is an employee of the Department of Environment and Local Government as the Provincial Planning Director, to whom the Civil Service Act shall apply.\n\n9(2)In local governments that are providing their own land use planning service, the Director is the development officer for the purposes of\n\n(a)\nRepealed: 2021, c.44, s.1\n\n(b)\nadministering a subdivision by-law and approving developments under the by-law in a village or rural community that appoints the Director as the development officer under paragraph 10(3)(a), and\n\n(c)\nadministering a subdivision regulation under this Act in a village or rural community in which the regulation is in effect.\n\n9(3)The Director may\n\n(a)\ndelegate an administrative power conferred on the Director under this Act,\n\n(b)\nprovide technical planning assistance for councils, advisory committees and regional service commissions, and\n\n(c)\nexercise the powers and perform the duties in relation to community planning that the Minister assigns to the Director.",
+            "sourceHash": "3441e72f406efe267b5c85936d29c3657c06850f5180b1d09a49f62dfffcca75",
+            "contextRole": "direct-reference"
+          },
+          {
+            "sourceKey": "section:21",
+            "sectionLabel": "21",
+            "heading": "Adoption and approval of municipal plan",
+            "text": "Adoption and approval of municipal plan\n\n21(1)Within five years after the incorporation of a municipality, its council shall make a by-law adopting a municipal plan, prepared in the manner set out in this Act and the regulations, if no municipal plan by-law is already in force.\n\n21(2)The Minister shall assess the municipal plan and shall approve it if it meets the requirements prescribed by this Act and the regulations, if any.\n\n2021, c.44, s.1",
+            "operativeText": "Adoption and approval of municipal plan\n\n21(1)Within five years after the incorporation of a municipality, its council shall make a by-law adopting a municipal plan, prepared in the manner set out in this Act and the regulations, if no municipal plan by-law is already in force.\n\n21(2)The Minister shall assess the municipal plan and shall approve it if it meets the requirements prescribed by this Act and the regulations, if any.",
+            "sourceHash": "e66c59f8c592f96e4a13b5d533bc05a51ebd13d0d12a7a0fa2e57350259e1396",
+            "contextRole": "direct-reference"
+          },
+          {
+            "sourceKey": "section:33",
+            "sectionLabel": "33",
+            "heading": "Adoption and approval of rural plans for villages",
+            "text": "Adoption and approval of rural plans for villages\n\n33(1)Within five years after the incorporation of a village, its council shall make a by-law adopting a rural plan for the village, prepared in the manner set out in this Act and the regulations, if no rural plan by-law for the village is already in force.\n\n33(2)The Minister shall assess the rural plan for the village and approve it if it meets the requirements prescribed by this Act and the regulations, if any.\n\n2021, c.44, s.1",
+            "operativeText": "Adoption and approval of rural plans for villages\n\n33(1)Within five years after the incorporation of a village, its council shall make a by-law adopting a rural plan for the village, prepared in the manner set out in this Act and the regulations, if no rural plan by-law for the village is already in force.\n\n33(2)The Minister shall assess the rural plan for the village and approve it if it meets the requirements prescribed by this Act and the regulations, if any.",
+            "sourceHash": "8532015f2c4099fbc5a41e243f1ff5d7b724a5f36c88a8ea5ee6cf3b067ba935",
+            "contextRole": "direct-reference"
+          }
+        ],
+        "omittedContextWarnings": [
+          "DIRECT_REFERENCE_CONTEXT_TRUNCATED"
+        ]
+      },
+      "disposition": "split",
+      "confidence": "high",
+      "reason": "Community Planning Act section 1 is a large definitions and interpretation section. Its current target-defined terms support separate study groups for institutions and officials, planning instruments and local-government geography, and development, land, and subdivision concepts.",
+      "suggestedPriority": "P1",
+      "proposedGroups": [
+        {
+          "groupId": "group-1",
+          "titleSuggestion": "Community planning institutions, officials, and roles",
+          "sourceKeys": [
+            "section:1"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:1",
+              "childLabels": [
+                "1(1)"
+              ]
+            }
+          ],
+          "reason": "These definitions identify the committees, tribunal, inspectors, local-government officials, Crown, development officer, Director, Minister, planner, and registrar roles used in the Act.",
+          "approximateLearningGoal": "Recall the Community Planning Act meanings of advisory committee, Board, building inspector, clerk, council, Crown, development officer, Director, Minister, planner, and registrar."
+        },
+        {
+          "groupId": "group-2",
+          "titleSuggestion": "Planning instruments, regional bodies, and local-government interpretation",
+          "sourceKeys": [
+            "section:1"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:1",
+              "childLabels": [
+                "1(1)",
+                "1(2)"
+              ]
+            }
+          ],
+          "reason": "These definitions and the interpretation rule explain the planning instruments, regional and rural entities, statement of public interest, local-government meaning, and context-dependent reference to the body corporate or area.",
+          "approximateLearningGoal": "Recall the Act's meanings for planning instruments, regional and rural entities, statement of public interest, regional service commissions, and references to local government."
+        },
+        {
+          "groupId": "group-3",
+          "titleSuggestion": "Development, land, registration, non-conforming use, and subdivision definitions",
+          "sourceKeys": [
+            "section:1"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:1",
+              "childLabels": [
+                "1(1)"
+              ]
+            }
+          ],
+          "reason": "These definitions govern core land-development concepts, public-purpose land, registration offices, non-conforming uses, streets, subdivision, and the distinction between type 1 and type 2 subdivisions.",
+          "approximateLearningGoal": "Recall the Act's meanings for development, land for public purposes, land registration office, non-conforming use, street, subdivide, type 1 subdivision, and type 2 subdivision."
+        }
+      ],
+      "warnings": [
+        "REPEALED_SUBPROVISION_PRESENT"
+      ],
+      "conflictCodes": [
+        "MAP_CONFLICT"
+      ],
+      "reviewStatus": "validated",
+      "validationStatus": "warnings",
+      "validationMessages": [
+        "MAP_CONFLICT"
+      ],
+      "createdAt": "2026-08-24T16:57:13.430Z",
+      "updatedAt": "2026-08-24T16:57:13.430Z"
+    },
+    {
+      "id": "ai-map-4c12-full-corpus-v2:map-208559fbf2dbeffa",
+      "schemaVersion": 1,
+      "runId": "ai-map-4c12-full-corpus-v2",
+      "jobId": "map-208559fbf2dbeffa",
+      "corpusContentHash": "c60e748f8638957a8711ece45ff9798cd6e60cabf8fd32eb57054d852abb0b62",
+      "inputHash": "a722dfbdd792c6a6473aa99aacfa6089638d933ab11aec7752e6a0b2ea8a6bf5",
+      "document": {
+        "documentId": "doc-mining-act",
+        "title": "Mining Act",
+        "citation": "Chapter M-14.1",
+        "type": "act"
+      },
+      "targetSourceKeys": [
+        "section:68"
+      ],
+      "targetSectionLabels": [
+        "68"
+      ],
+      "targetHeading": "Conditions for granting mining leases",
+      "exactSourceText": "Conditions for granting mining leases\n\n68(1)A holder of a recorded mineral claim or a group of contiguous recorded mineral claims may apply to the Minister for and obtain from him a mining lease if\n\n(a)\neach mineral claim in respect of which the application is made is in good standing under this Act and the applicant has demonstrated to the satisfaction of the Minister that each mineral claim is necessary for the planned mine or mines or is necessary to cover the extension of ore along the strike and down the dip;\n\n(a.1)\nthe land to be covered by the lease shall consist of only whole mineral claim units located within the claim area of the mineral claim;\n\n(b)\nthe applicant has proved to the satisfaction of the Minister that within the land to be covered by the lease the existence, extent and value of an orebody has been determined, and the applicant has made a decision to commence production;\n\n(c)\nthe applicant has submitted to the Minister\n\n(i)\na feasibility study report prepared in accordance with the regulations with respect to a feasibility study performed within the twelve months immediately preceding the application for the lease;\n\n(ii)\nthe following information regarding every corporation holding an interest in any mineral claim in respect of which application is made:\n\n(A)\na certificate of incorporation or a certified copy of the instrument of incorporation, and a certified copy of all supplementary instruments and of all by-laws of the corporation;\n\n(B)\nthe names, residences, post office addresses and callings of the president, secretary, treasurer, directors and manager of the corporation;\n\n(C)\nthe location of the head or registered office of the corporation, giving street and number where possible;\n\n(D)\nthe location of the principal office of the corporation in the Province if the head or registered office is situated outside the Province;\n\n(E)\nthe name, residence and post office address of the agent or manager in the Province who is authorized to represent the corporation and to accept service in all suits and proceedings against the corporation;\n\n(F)\nthe date on which the last annual meeting of the corporation was held; and\n\n(G)\nsuch additional information as the Minister may require;\n\n(iii)\nsuch information as the Minister may require with respect to every partnership holding an interest in any mineral claim in respect of which application is made;\n\n(iv)\nproof to the satisfaction of the Minister that the applicant\n\n(A)\nis the owner of the land in respect of which the application is made,\n\n(B)\nhas obtained a written agreement indicating that the owner of the land in respect of which the application is made\n\n(I)\nhas received and reviewed a copy of the applicant’s program for protection, reclamation and rehabilitation of the environment as set out in the feasibility study report referred to in subparagraph (i) and approves the program, and\n\n(II)\nconsents to the work being done on the land, or\n\n(C)\nhas given security in accordance with section 111 and has delivered to the owner of the land in respect of which the application is made, at least sixty days before submission of the application, a copy of the applicant’s program for protection, reclamation and rehabilitation of the environment as set out in the feasibility study report referred to in subparagraph (i);\n\n(iv.1)\nif a written agreement referred to in clause (iv)(B) has been obtained, a copy of the agreement;\n\n(v)\nsecurity conditioned for the payment of costs with respect to protection, reclamation and rehabilitation of the environment during and on discontinuance of mining, which security shall be in the form and amount required in accordance with the regulations;\n\n(vi)\nproof to the satisfaction of the Minister that the applicant has the right to all privately-owned minerals that he intends to mine;\n\n(vii)\nthe fee payable, as prescribed by regulation, upon application for a mining lease; and\n\n(viii)\nthe rent required by regulation for the first year of the mining lease;\n\n(d)\nfor each mineral claim in respect of which the application is made the applicant has submitted to the Minister proof of the performance of the required work; and\n\n(e)\nsubject to subsection (3), the boundaries of the land to be covered by the mining lease have been surveyed in accordance with sections 90 to 95, and a return of that survey has been approved by the Minister and filed with the Recorder.\n\n68(2)Notwithstanding subsection (1), a mining lease shall not be granted until the Minister, having obtained the approval of the Minister of Environment and Climate Change and the Minister of Agriculture, Aquaculture and Fisheries insofar as the program may affect their responsibilities, has approved the applicant’s program for protection, reclamation and rehabilitation of the environment as set forth in the feasibility study report referred to in subparagraph (1)(c)(i).\n\n68(3)If all or part of the boundaries of the land to be covered by the mining lease have been previously surveyed and a return of that survey has been approved by the Recorder or the Director of Surveys and filed with the Recorder, another survey of those boundaries or that part of the boundaries is not required except\n\n(a)\nto replace any survey pin that is missing or damaged or to place properly any survey pin that has been disturbed, and\n\n(b)\nto re-mark the boundaries in accordance with the regulations.\n\n68(4)Upon the commencement of the first term of a mining lease, all mineral claims in respect of which the application for the lease was made are replaced by the mining lease.\n\n1986, c.8, s.76; 1987, c.36, s.2; 1989, c.25, s.6; 1989, c.55, s.33; 1996, c.25, s.22; 2000, c.26, s.191; 2006, c.16, s.112; 2007, c.10, s.58; 2009, c.35, s.49; 2010, c.31, s.83; 2012, c.39, s.90; 2017, c.63, s.36; 2019, c.2, s.91; 2020, c.25, s.72\n\nForm and Recording of Mining Leases",
+      "operativeSourceText": "Conditions for granting mining leases\n\n68(1)A holder of a recorded mineral claim or a group of contiguous recorded mineral claims may apply to the Minister for and obtain from him a mining lease if\n\n(a)\neach mineral claim in respect of which the application is made is in good standing under this Act and the applicant has demonstrated to the satisfaction of the Minister that each mineral claim is necessary for the planned mine or mines or is necessary to cover the extension of ore along the strike and down the dip;\n\n(a.1)\nthe land to be covered by the lease shall consist of only whole mineral claim units located within the claim area of the mineral claim;\n\n(b)\nthe applicant has proved to the satisfaction of the Minister that within the land to be covered by the lease the existence, extent and value of an orebody has been determined, and the applicant has made a decision to commence production;\n\n(c)\nthe applicant has submitted to the Minister\n\n(i)\na feasibility study report prepared in accordance with the regulations with respect to a feasibility study performed within the twelve months immediately preceding the application for the lease;\n\n(ii)\nthe following information regarding every corporation holding an interest in any mineral claim in respect of which application is made:\n\n(A)\na certificate of incorporation or a certified copy of the instrument of incorporation, and a certified copy of all supplementary instruments and of all by-laws of the corporation;\n\n(B)\nthe names, residences, post office addresses and callings of the president, secretary, treasurer, directors and manager of the corporation;\n\n(C)\nthe location of the head or registered office of the corporation, giving street and number where possible;\n\n(D)\nthe location of the principal office of the corporation in the Province if the head or registered office is situated outside the Province;\n\n(E)\nthe name, residence and post office address of the agent or manager in the Province who is authorized to represent the corporation and to accept service in all suits and proceedings against the corporation;\n\n(F)\nthe date on which the last annual meeting of the corporation was held; and\n\n(G)\nsuch additional information as the Minister may require;\n\n(iii)\nsuch information as the Minister may require with respect to every partnership holding an interest in any mineral claim in respect of which application is made;\n\n(iv)\nproof to the satisfaction of the Minister that the applicant\n\n(A)\nis the owner of the land in respect of which the application is made,\n\n(B)\nhas obtained a written agreement indicating that the owner of the land in respect of which the application is made\n\n(I)\nhas received and reviewed a copy of the applicant’s program for protection, reclamation and rehabilitation of the environment as set out in the feasibility study report referred to in subparagraph (i) and approves the program, and\n\n(II)\nconsents to the work being done on the land, or\n\n(C)\nhas given security in accordance with section 111 and has delivered to the owner of the land in respect of which the application is made, at least sixty days before submission of the application, a copy of the applicant’s program for protection, reclamation and rehabilitation of the environment as set out in the feasibility study report referred to in subparagraph (i);\n\n(iv.1)\nif a written agreement referred to in clause (iv)(B) has been obtained, a copy of the agreement;\n\n(v)\nsecurity conditioned for the payment of costs with respect to protection, reclamation and rehabilitation of the environment during and on discontinuance of mining, which security shall be in the form and amount required in accordance with the regulations;\n\n(vi)\nproof to the satisfaction of the Minister that the applicant has the right to all privately-owned minerals that he intends to mine;\n\n(vii)\nthe fee payable, as prescribed by regulation, upon application for a mining lease; and\n\n(viii)\nthe rent required by regulation for the first year of the mining lease;\n\n(d)\nfor each mineral claim in respect of which the application is made the applicant has submitted to the Minister proof of the performance of the required work; and\n\n(e)\nsubject to subsection (3), the boundaries of the land to be covered by the mining lease have been surveyed in accordance with sections 90 to 95, and a return of that survey has been approved by the Minister and filed with the Recorder.\n\n68(2)Notwithstanding subsection (1), a mining lease shall not be granted until the Minister, having obtained the approval of the Minister of Environment and Climate Change and the Minister of Agriculture, Aquaculture and Fisheries insofar as the program may affect their responsibilities, has approved the applicant’s program for protection, reclamation and rehabilitation of the environment as set forth in the feasibility study report referred to in subparagraph (1)(c)(i).\n\n68(3)If all or part of the boundaries of the land to be covered by the mining lease have been previously surveyed and a return of that survey has been approved by the Recorder or the Director of Surveys and filed with the Recorder, another survey of those boundaries or that part of the boundaries is not required except\n\n(a)\nto replace any survey pin that is missing or damaged or to place properly any survey pin that has been disturbed, and\n\n(b)\nto re-mark the boundaries in accordance with the regulations.\n\n68(4)Upon the commencement of the first term of a mining lease, all mineral claims in respect of which the application for the lease was made are replaced by the mining lease.\n\n\nForm and Recording of Mining Leases",
+      "context": {
+        "previous": {
+          "sourceKey": "section:67",
+          "sectionLabel": "67",
+          "heading": "Prohibitions unless holder of mining lease",
+          "text": "Prohibitions unless holder of mining lease\n\n67No person shall carry on production or cause production to be carried on unless he is the holder of a mining lease.\n\nConditions for Granting Mining Leases",
+          "operativeText": "Prohibitions unless holder of mining lease\n\n67No person shall carry on production or cause production to be carried on unless he is the holder of a mining lease.\n\nConditions for Granting Mining Leases",
+          "sourceHash": "4ade922ce63cfff6ca1fac7f8a8e5a860875409daf48992bf1881902ea3a772b",
+          "contextRole": "previous"
+        },
+        "next": {
+          "sourceKey": "section:69",
+          "sectionLabel": "69",
+          "heading": "Form and recording of mining leases",
+          "text": "Form and recording of mining leases\n\n69(1)A mining lease, in the form prescribed by regulation, shall be executed in duplicate; and one duplicate, to be known as the counterpart, shall be delivered to the lessee and the other shall be filed and recorded in the Fredericton office of the Recorder.\n\n69(2)Every mining lease granted under this Act shall be executed by the Minister under his hand and seal of office and by the lessee under his hand and seal or that of his duly authorized attorney or agent and, where a mining lease is executed by an attorney or agent, the instrument conferring such power shall be filed in the Fredericton office of the Recorder before the counterpart of the mining lease is delivered to the lessee.\n\n69(3)A certification of the filing and recording required under subsection (1) shall be endorsed by the Recorder on the counterpart delivered to the lessee.\n\nTerms and Conditions of Mining Leases",
+          "operativeText": "Form and recording of mining leases\n\n69(1)A mining lease, in the form prescribed by regulation, shall be executed in duplicate; and one duplicate, to be known as the counterpart, shall be delivered to the lessee and the other shall be filed and recorded in the Fredericton office of the Recorder.\n\n69(2)Every mining lease granted under this Act shall be executed by the Minister under his hand and seal of office and by the lessee under his hand and seal or that of his duly authorized attorney or agent and, where a mining lease is executed by an attorney or agent, the instrument conferring such power shall be filed in the Fredericton office of the Recorder before the counterpart of the mining lease is delivered to the lessee.\n\n69(3)A certification of the filing and recording required under subsection (1) shall be endorsed by the Recorder on the counterpart delivered to the lessee.\n\nTerms and Conditions of Mining Leases",
+          "sourceHash": "0b6fd99b9bb7d3bcdb576ad97b54d61aac7617eed2298c7abc91205320ac9ab9",
+          "contextRole": "next"
+        },
+        "relevantDefinitions": [
+          {
+            "sourceKey": "section:1",
+            "sectionLabel": "1",
+            "heading": "Definitions",
+            "text": "Definitions\n\n1In this Act\n“Board” means the New Brunswick Energy and Utilities Board continued under section 3 of the Energy and Utilities Board Act;(Commission)\n\n“boundary survey” means a survey to determine the boundaries of the land covered by a mining lease;(bornage)\n\n“claim area” means the land covered by a mineral claim;(superficie d’un claim)\n\n“Crown” means the Crown in right of the Province;(Couronne)\n\n“Crown Lands” means all or any part of the lands vested in the Crown that are under the administration and control of the Minister and includes any water upon or under the surface of such lands;(terres de la Couronne)\n\n“cultivated land” means(terre en culture)\n\n(a)\npasture fields seeded with cultivated grass,\n\n(b)\nland on which planted crops are growing,\n\n(c)\nland which is or which is usually prepared for the growing of planted crops,\n\n(d)\nChristmas tree plantations,\n\n(e)\nforest experimental lots,\n\n(f)\nmanaged sugar bush stands, and\n\n(g)\norchards;\n\n“Director of Surveys” means the Director of Surveys designated under subsection 3(1) of the Surveys Act;(directeur de l’arpentage)\n\n“environment” means air, water or soil;(environnement)\n\n“holder” means( titulaire)\n\n(a)\nin relation to a mineral claim, a person whose name appears on the record for that claim in the registry as having an interest in the mineral claim, and\n\n(b)\nin relation to a mining lease, a person whose name appears in the records of the Recorder as having an interest in the mining lease,\n\nbut does not include a person who has an interest in a mineral claim or a mining lease only for purposes of security for a debt;\n\n“instrument” , unless the context otherwise requires, means, with respect to the registry, a document for which provision is made under this Act for submission in electronic format;(acte)\n\n",
+            "operativeText": "Definitions\n\n1In this Act\n“Board” means the New Brunswick Energy and Utilities Board continued under section 3 of the Energy and Utilities Board Act;(Commission)\n\n“boundary survey” means a survey to determine the boundaries of the land covered by a mining lease;(bornage)\n\n“claim area” means the land covered by a mineral claim;(superficie d’un claim)\n\n“Crown” means the Crown in right of the Province;(Couronne)\n\n“Crown Lands” means all or any part of the lands vested in the Crown that are under the administration and control of the Minister and includes any water upon or under the surface of such lands;(terres de la Couronne)\n\n“cultivated land” means(terre en culture)\n\n(a)\npasture fields seeded with cultivated grass,\n\n(b)\nland on which planted crops are growing,\n\n(c)\nland which is or which is usually prepared for the growing of planted crops,\n\n(d)\nChristmas tree plantations,\n\n(e)\nforest experimental lots,\n\n(f)\nmanaged sugar bush stands, and\n\n(g)\norchards;\n\n“Director of Surveys” means the Director of Surveys designated under subsection 3(1) of the Surveys Act;(directeur de l’arpentage)\n\n“environment” means air, water or soil;(environnement)\n\n“holder” means( titulaire)\n\n(a)\nin relation to a mineral claim, a person whose name appears on the record for that claim in the registry as having an interest in the mineral claim, and\n\n(b)\nin relation to a mining lease, a person whose name appears in the records of the Recorder as having an interest in the mining lease,\n\nbut does not include a person who has an interest in a mineral claim or a mining lease only for purposes of security for a debt;\n\n“instrument” , unless the context otherwise requires, means, with respect to the registry, a document for which provision is made under this Act for submission in electronic format;(acte)\n\n",
+            "sourceHash": "d71ca61ba41851289a313233b807f1ab5d01a66b12193f16a03ffded6f5f3896",
+            "contextRole": "definition"
+          },
+          {
+            "sourceKey": "section:112.01",
+            "sectionLabel": "112.01",
+            "heading": "Definitions for this Part",
+            "text": "Definitions for this Part\n\n2015, c.38, s.1\n\n112.01The following definitions apply in this Part.\n“applicant” means the holder of a mineral claim.(demandeur)\n\n“application” means an application for a vesting order.(demande)\n\n“Court” means The Court of King’s Bench of New Brunswick and includes a judge of that court.(Cour)\n\n“owner” means the owner of private land that is the subject of an application.(propriétaire)\n\n2015, c.38, s.1; 2023, c.17, s.158",
+            "operativeText": "Definitions for this Part\n\n\n112.01The following definitions apply in this Part.\n“applicant” means the holder of a mineral claim.(demandeur)\n\n“application” means an application for a vesting order.(demande)\n\n“Court” means The Court of King’s Bench of New Brunswick and includes a judge of that court.(Cour)\n\n“owner” means the owner of private land that is the subject of an application.(propriétaire)",
+            "sourceHash": "548687aabdb88bc495064f5a2fa2d8e2d3f39ced0465d8e37ea07d49673eec96",
+            "contextRole": "definition"
+          },
+          {
+            "sourceKey": "section:136",
+            "sectionLabel": "136",
+            "heading": "Pipe Line Act",
+            "text": "Pipe Line Act\n\n136Section 1 of the Pipe Line Act, chapter P-8.1 of the Acts of New Brunswick, 1976, is amended by repealing the definition “mineral” and substituting therefor the following:\n“mineral” means any natural, solid, inorganic or fossilized organic substance and such other substances as are prescribed by regulation to be minerals, but does not include(minéral)\n\n(a)\nsand, gravel, clay or soil unless it is to be used for its chemical or special physical properties, or both, or where it is taken for contained minerals,\n\n(b)\nordinary stone used for building or construction,\n\n(c)\npeat or peat moss,\n\n(d)\nbituminous shale, oil shale, albertite or intimately associated substances or products derived therefrom,\n\n(e)\noil or natural gas, or\n\n(f)\nsuch other substances as prescribed by regulation not to be minerals.",
+            "operativeText": "Pipe Line Act\n\n136Section 1 of the Pipe Line Act, chapter P-8.1 of the Acts of New Brunswick, 1976, is amended by repealing the definition “mineral” and substituting therefor the following:\n“mineral” means any natural, solid, inorganic or fossilized organic substance and such other substances as are prescribed by regulation to be minerals, but does not include(minéral)\n\n(a)\nsand, gravel, clay or soil unless it is to be used for its chemical or special physical properties, or both, or where it is taken for contained minerals,\n\n(b)\nordinary stone used for building or construction,\n\n(c)\npeat or peat moss,\n\n(d)\nbituminous shale, oil shale, albertite or intimately associated substances or products derived therefrom,\n\n(e)\noil or natural gas, or\n\n(f)\nsuch other substances as prescribed by regulation not to be minerals.",
+            "sourceHash": "de19b1b2eeffa7af8e80b626a309211083bd7b7d0597ed4a46ee2c5b9a2f94af",
+            "contextRole": "definition"
+          }
+        ],
+        "directlyReferencedProvisions": [
+          {
+            "sourceKey": "section:111",
+            "sectionLabel": "111",
+            "heading": "Security",
+            "text": "Security\n\n111(1)Security given under this section operates to compensate the owner or lessee for actual damage to or interference with the use and enjoyment of property caused by a prospector, the holder of a mineral claim or mining lease or the operator of a mine, or by anyone acting on his behalf, prospecting, staking, mining or otherwise working land.\n\n111(2)Security given under this section shall be in the form and amount required in accordance with the regulations and shall be deposited with the Recorder before prospecting, mining or other work on the land is undertaken by the holder of a prospecting licence, mineral claim or mining lease, by the operator of a mine or by a person acting on his behalf.\n\n111(3)Repealed: 1989, c.25, s.9\n\n1989, c.25, s.9",
+            "operativeText": "Security\n\n111(1)Security given under this section operates to compensate the owner or lessee for actual damage to or interference with the use and enjoyment of property caused by a prospector, the holder of a mineral claim or mining lease or the operator of a mine, or by anyone acting on his behalf, prospecting, staking, mining or otherwise working land.\n\n111(2)Security given under this section shall be in the form and amount required in accordance with the regulations and shall be deposited with the Recorder before prospecting, mining or other work on the land is undertaken by the holder of a prospecting licence, mineral claim or mining lease, by the operator of a mine or by a person acting on his behalf.\n\n111(3)Repealed: 1989, c.25, s.9",
+            "sourceHash": "237e1854b251e523495f3537c22d0155ce8224dc6e6220b9df41a712355b72da",
+            "contextRole": "direct-reference"
+          }
+        ],
+        "omittedContextWarnings": [
+          "DEFINITION_CONTEXT_TRUNCATED"
+        ]
+      },
+      "disposition": "split",
+      "confidence": "medium",
+      "reason": "Section 68 is a detailed mining lease grant provision that should be split into eligibility, application submissions, environmental approval, survey exception, and conversion effect.",
+      "suggestedPriority": "P1",
+      "proposedGroups": [
+        {
+          "groupId": "group-1",
+          "titleSuggestion": "Eligibility and necessity for mining lease application",
+          "sourceKeys": [
+            "section:68"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:68",
+              "childLabels": [
+                "68(1)"
+              ]
+            }
+          ],
+          "reason": "Paragraphs 68(1)(a), 68(1)(a.1), and 68(1)(b) require good-standing claims, whole claim units, mineral proof, and a production decision.",
+          "approximateLearningGoal": "Recall the claim status, land-unit, orebody, and production-decision conditions for obtaining a mining lease."
+        },
+        {
+          "groupId": "group-2",
+          "titleSuggestion": "Required application submissions and security",
+          "sourceKeys": [
+            "section:68"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:68",
+              "childLabels": [
+                "68(1)"
+              ]
+            }
+          ],
+          "reason": "Paragraphs 68(1)(c) and 68(1)(d) require feasibility, corporate or partnership information, landowner or security proof, environmental security, mineral rights, fees, rent, and required work proof.",
+          "approximateLearningGoal": "Recall the information, proof, security, fee, rent, and required-work submissions for a mining lease application."
+        },
+        {
+          "groupId": "group-3",
+          "titleSuggestion": "Environmental program approval before lease grant",
+          "sourceKeys": [
+            "section:68"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:68",
+              "childLabels": [
+                "68(2)"
+              ]
+            }
+          ],
+          "reason": "Subsection 68(2) bars grant until the Minister approves the protection, reclamation, and rehabilitation program after obtaining specified approvals.",
+          "approximateLearningGoal": "Recall the environmental program approval condition before granting a mining lease."
+        },
+        {
+          "groupId": "group-4",
+          "titleSuggestion": "Boundary survey exception and mineral claim replacement",
+          "sourceKeys": [
+            "section:68"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:68",
+              "childLabels": [
+                "68(3)",
+                "68(4)"
+              ]
+            }
+          ],
+          "reason": "Subsections 68(3) and 68(4) address when another boundary survey is not required and when mineral claims are replaced by the mining lease.",
+          "approximateLearningGoal": "Recall the prior-survey exception and the effect of the first mining lease term on mineral claims."
+        }
+      ],
+      "warnings": [],
+      "conflictCodes": [
+        "MAP_CONFLICT"
+      ],
+      "reviewStatus": "validated",
+      "validationStatus": "warnings",
+      "validationMessages": [
+        "MAP_CONFLICT"
+      ],
+      "createdAt": "2026-08-24T16:57:14.841Z",
+      "updatedAt": "2026-08-24T16:57:14.841Z"
+    },
+    {
+      "id": "ai-map-4c12-full-corpus-v2:map-f0addd2670f48902",
+      "schemaVersion": 1,
+      "runId": "ai-map-4c12-full-corpus-v2",
+      "jobId": "map-f0addd2670f48902",
+      "corpusContentHash": "00243204f59e7bcccc9defa9c4fb90d5e2912fc6d15123787dff80d212dc243c",
+      "inputHash": "82cdbb2d0b077cecb0d6707fe14f3ae715bc2c9d0003afdc364c1d678dd2c18f",
+      "document": {
+        "documentId": "doc-municipalities-act",
+        "title": "Municipalities Act",
+        "citation": "Chapter M-22",
+        "type": "act"
+      },
+      "targetSourceKeys": [
+        "section:192"
+      ],
+      "targetSectionLabels": [
+        "192"
+      ],
+      "targetHeading": "Regulations",
+      "exactSourceText": "Regulations\n\n192(1)The Lieutenant-Governor in Council may make regulations to give effect to this Act and, without restricting the generality of the foregoing, may make regulations\n\n(a)\nprescribing a scale of maximum fees for licences required by by-laws of municipalities when such maximum fees are not prescribed by this Act;\n\n(a.1)\nprescribing the maximum rate at which a municipality may charge interest on debts owing to the municipality;\n\n(a.2)\nprescribing those matters to be included in the procedural by-law of a municipality or rural community;\n\n(a.3)\nrespecting the sharing of services by an agreement under subsection 7(4), including the sharing of the cost and other matters related to the operation of shared services;\n\n(b)\nprescribing forms necessary for the administration of this Act;\n\n(c)\nprescribing punishment on conviction for the violation of any regulation including fines not exceeding the maximum fine that may be imposed for commission of an offence punishable under Part II of the Provincial Offences Procedure Act as a category D offence;\n\n(d)\nprescribing the powers and duties of persons engaged or employed in the administration or enforcement of this Act;\n\n(e)\nprescribing the forms and procedures for accounting and formulating of financial statements in municipalities and rural communities;\n\n(f)\nprescribing the day on or before which a municipality or rural community shall prepare and submit an estimate of the money required for the operation of the municipality or rural community;\n\n(g)\nproviding for regular and spot audits of municipal accounts;\n\n(g.1)\nprescribing financial records or documents of a municipality that shall be open for inspection or examination by members of the public;\n\n(h)\nproviding for the regulating and licensing of operators of theatres as defined by the Theatres, Cinematographs and Amusements Act immediately before the commencement of the Admission and Amusement Tax Act;\n\n(h.1)\nprescribing bodies for the purposes of the definition “local board” in section 90.1;\n\n(i)\nrespecting the disclosure of interest of a member of a council with any person having dealings with the municipality;\n\n(j)\nprescribing a scale of fees for presiding officers, poll clerks, constables and other officers necessary for the conduct of an election;\n\n(j.1)\nprescribing the percentage of the budget of a municipality for the purposes of paragraph 89(5)(b) and prescribing terms and conditions relating thereto;\n\n(j.2)\nprescribing the percentage of the budget of a rural community for the purposes of paragraph 190.084(5)(b) and prescribing terms and conditions for the purposes of that paragraph;\n\n(k)\nrespecting the establishment and management of and contributions to operating reserve funds and capital reserve funds under section 189 and the purposes and amounts of such funds;\n\n(k.1)\nrespecting the establishment and management of and contributions to operating reserve funds and capital reserve funds under section 90 or 190.085 and the purposes and amounts of such funds;\n\n(k.2)\nrespecting agreements under subsection 111.2(3), including the sharing of the cost and other matters related to the construction, ownership or operation of a generation facility and the use or sale of the electricity generated;\n\n(k.3)\nrespecting the establishment and management of and contributions to an operating reserve fund and a capital reserve fund under section 111.5 and the amounts of each fund;\n\n(l)\nextending the powers of municipalities incorporated under this Act, by municipal charter or by private or special act;\n\n(m)\ndetermining the portion of water costs which may be charged against fire protection service; and\n\n(n)\ngenerally for the better administration of the Act.\n\n192(2)Repealed: 1982, c.43, s.10\n\n1966, c.20, s.190; 1968, c.41, s.45; 1973, c.60, s.12; 1978, c.41, s.8; 1979, c.47, s.14; 1982, c.43, s.10; 1984, c.9, s.2; 1987, c.6, s.68; 1988, c.A-2.1, s.17; 1990, c.61, s.89; 1996, c.45, s.4; 2003, c.27, s.62; 2005, c.7, s.49; 2008, c.11, s.21; 2008, c.28, s.2\n\nWATER AND SEWERAGE SYSTEMS\nOUTSIDE MUNICIPALITIES",
+      "operativeSourceText": "Regulations\n\n192(1)The Lieutenant-Governor in Council may make regulations to give effect to this Act and, without restricting the generality of the foregoing, may make regulations\n\n(a)\nprescribing a scale of maximum fees for licences required by by-laws of municipalities when such maximum fees are not prescribed by this Act;\n\n(a.1)\nprescribing the maximum rate at which a municipality may charge interest on debts owing to the municipality;\n\n(a.2)\nprescribing those matters to be included in the procedural by-law of a municipality or rural community;\n\n(a.3)\nrespecting the sharing of services by an agreement under subsection 7(4), including the sharing of the cost and other matters related to the operation of shared services;\n\n(b)\nprescribing forms necessary for the administration of this Act;\n\n(c)\nprescribing punishment on conviction for the violation of any regulation including fines not exceeding the maximum fine that may be imposed for commission of an offence punishable under Part II of the Provincial Offences Procedure Act as a category D offence;\n\n(d)\nprescribing the powers and duties of persons engaged or employed in the administration or enforcement of this Act;\n\n(e)\nprescribing the forms and procedures for accounting and formulating of financial statements in municipalities and rural communities;\n\n(f)\nprescribing the day on or before which a municipality or rural community shall prepare and submit an estimate of the money required for the operation of the municipality or rural community;\n\n(g)\nproviding for regular and spot audits of municipal accounts;\n\n(g.1)\nprescribing financial records or documents of a municipality that shall be open for inspection or examination by members of the public;\n\n(h)\nproviding for the regulating and licensing of operators of theatres as defined by the Theatres, Cinematographs and Amusements Act immediately before the commencement of the Admission and Amusement Tax Act;\n\n(h.1)\nprescribing bodies for the purposes of the definition “local board” in section 90.1;\n\n(i)\nrespecting the disclosure of interest of a member of a council with any person having dealings with the municipality;\n\n(j)\nprescribing a scale of fees for presiding officers, poll clerks, constables and other officers necessary for the conduct of an election;\n\n(j.1)\nprescribing the percentage of the budget of a municipality for the purposes of paragraph 89(5)(b) and prescribing terms and conditions relating thereto;\n\n(j.2)\nprescribing the percentage of the budget of a rural community for the purposes of paragraph 190.084(5)(b) and prescribing terms and conditions for the purposes of that paragraph;\n\n(k)\nrespecting the establishment and management of and contributions to operating reserve funds and capital reserve funds under section 189 and the purposes and amounts of such funds;\n\n(k.1)\nrespecting the establishment and management of and contributions to operating reserve funds and capital reserve funds under section 90 or 190.085 and the purposes and amounts of such funds;\n\n(k.2)\nrespecting agreements under subsection 111.2(3), including the sharing of the cost and other matters related to the construction, ownership or operation of a generation facility and the use or sale of the electricity generated;\n\n(k.3)\nrespecting the establishment and management of and contributions to an operating reserve fund and a capital reserve fund under section 111.5 and the amounts of each fund;\n\n(l)\nextending the powers of municipalities incorporated under this Act, by municipal charter or by private or special act;\n\n(m)\ndetermining the portion of water costs which may be charged against fire protection service; and\n\n(n)\ngenerally for the better administration of the Act.\n\n192(2)Repealed: 1982, c.43, s.10\n\n\nWATER AND SEWERAGE SYSTEMS\nOUTSIDE MUNICIPALITIES",
+      "context": {
+        "previous": {
+          "sourceKey": "section:191.1",
+          "sectionLabel": "191.1",
+          "heading": "Regulations may be retroactive and vary in areas",
+          "text": "Regulations may be retroactive and vary in areas\n\n191.1Regulations made under section 191, with respect to garbage and refuse collection and disposal, may\n\n(a)\nbe made retroactive to November 9, 1966, or any other later date, and\n\n(b)\nvary in different areas of the Province.\n\n2002, c.6, s.7\n\nREGULATIONS",
+          "operativeText": "Regulations may be retroactive and vary in areas\n\n191.1Regulations made under section 191, with respect to garbage and refuse collection and disposal, may\n\n(a)\nbe made retroactive to November 9, 1966, or any other later date, and\n\n(b)\nvary in different areas of the Province.",
+          "sourceHash": "4b54dc27a0f3487dd23aa10dc0f1a546bef5f87e039d7e383dde753ddf8c2126",
+          "contextRole": "previous"
+        },
+        "next": {
+          "sourceKey": "section:193",
+          "sectionLabel": "193",
+          "heading": "Water and sewerage systems outside municipalities",
+          "text": "Water and sewerage systems outside municipalities\n\n193(1)Where a water or sanitary sewerage system or both have vested in the Minister under section 55 of the Community Planning Act, the Minister shall operate the system on a user-charge basis and may, where both systems have vested, establish separate or joint rates therefor.\n\n193(2)Subsections (4), (5), (6), (8), (9), (10), (14) and (15) of section 189 apply mutatis mutandis to the operation of a system under this section.\n\n193(2.1)Notwithstanding subsection (2), the owner of land within the subdivision upon which there is no building connected with the system shall pay a charge to be determined by the Minister, such charge to be as near as possible to what the user-charge would be if there was a building on the land connected with the system; and for purposes of this section such charge shall be deemed to be a user-charge.\n\n193(3)A user-charge levied under this section is a debt due the Crown.\n\n193(4)The Minister may\n\n(a)\nconvey a system described in subsection (1) to a municipality, the boundaries of which are extended to include the subdivision; and\n\n(b)\notherwise transfer or alienate a system.\n\n1972, c.60, s.13; 1973, c.60, s.13; 1981, c.52, s.18; 1986, c.8, s.83; 1987, c.6, s.68; 1989, c.55, s.39; 1992, c.2, s.40; 1998, c.41, s.78; 2003, c.27, s.63\n\nWATER AND SANITARY\nSEWERAGE SYSTEMS\n\n1976, c.40, s.9",
+          "operativeText": "Water and sewerage systems outside municipalities\n\n193(1)Where a water or sanitary sewerage system or both have vested in the Minister under section 55 of the Community Planning Act, the Minister shall operate the system on a user-charge basis and may, where both systems have vested, establish separate or joint rates therefor.\n\n193(2)Subsections (4), (5), (6), (8), (9), (10), (14) and (15) of section 189 apply mutatis mutandis to the operation of a system under this section.\n\n193(2.1)Notwithstanding subsection (2), the owner of land within the subdivision upon which there is no building connected with the system shall pay a charge to be determined by the Minister, such charge to be as near as possible to what the user-charge would be if there was a building on the land connected with the system; and for purposes of this section such charge shall be deemed to be a user-charge.\n\n193(3)A user-charge levied under this section is a debt due the Crown.\n\n193(4)The Minister may\n\n(a)\nconvey a system described in subsection (1) to a municipality, the boundaries of which are extended to include the subdivision; and\n\n(b)\notherwise transfer or alienate a system.\n\n\nWATER AND SANITARY\nSEWERAGE SYSTEMS",
+          "sourceHash": "afd7b7aeddf92cc943006c065e8762c614e743a7523f57c93e0f8bb387a0372a",
+          "contextRole": "next"
+        },
+        "relevantDefinitions": [
+          {
+            "sourceKey": "section:1",
+            "sectionLabel": "1",
+            "heading": "Definitions",
+            "text": "Definitions\n\n1In this Act\n“clerk” means a municipal clerk appointed under section 74;(secrétaire)\n\n“committee of council” means a committee provided for or created by a municipality under the authority of subsection 4(3) or under the authority of a municipal charter or a private or special Act;(comité du conseil)\n\n“council” means the mayor and councillors of a municipality;(conseil)\n\n“councillor” means a member of a council other than a mayor;(conseiller)\n\n“credit union” means a credit union as defined in the Credit Unions Act;(caisse populaire)\n\n“local service district tax base” means the amount computed on or before October 15 or as soon thereafter as is practicable of the year previous to the year in respect of which the community funding and equalization grant under the Community Funding Act is determined as(assiette fiscal de district de services locaux)\n\n(a)\nthe total assessed value of all real property liable to taxation under the Assessment Act in a local service district, excluding real property referred to in paragraph (b.1) of the definition “real property” under the Assessment Act;\n\n(b)\nthe assessed value of all real property in a local service district owned by the Crown in right of New Brunswick;\n\n(c)\nthe assessed value of real property in a local service district owned by the Crown in right of Canada; and\n\n(d)\none-half of the assessed value of any real property in a local service district referred to in paragraphs (a), (b) and (c) that is “non-residential property” as defined under section 1 of the Assessment Act;\n\n“member of a council” means any person elected to a council;(membre d’un conseil)\n\n“member of a rural community council” means any person elected to a rural community council;(membre d’un conseil d’une communauté rurale)\n\n“Minister” means the M",
+            "operativeText": "Definitions\n\n1In this Act\n“clerk” means a municipal clerk appointed under section 74;(secrétaire)\n\n“committee of council” means a committee provided for or created by a municipality under the authority of subsection 4(3) or under the authority of a municipal charter or a private or special Act;(comité du conseil)\n\n“council” means the mayor and councillors of a municipality;(conseil)\n\n“councillor” means a member of a council other than a mayor;(conseiller)\n\n“credit union” means a credit union as defined in the Credit Unions Act;(caisse populaire)\n\n“local service district tax base” means the amount computed on or before October 15 or as soon thereafter as is practicable of the year previous to the year in respect of which the community funding and equalization grant under the Community Funding Act is determined as(assiette fiscal de district de services locaux)\n\n(a)\nthe total assessed value of all real property liable to taxation under the Assessment Act in a local service district, excluding real property referred to in paragraph (b.1) of the definition “real property” under the Assessment Act;\n\n(b)\nthe assessed value of all real property in a local service district owned by the Crown in right of New Brunswick;\n\n(c)\nthe assessed value of real property in a local service district owned by the Crown in right of Canada; and\n\n(d)\none-half of the assessed value of any real property in a local service district referred to in paragraphs (a), (b) and (c) that is “non-residential property” as defined under section 1 of the Assessment Act;\n\n“member of a council” means any person elected to a council;(membre d’un conseil)\n\n“member of a rural community council” means any person elected to a rural community council;(membre d’un conseil d’une communauté rurale)\n\n“Minister” means the M",
+            "sourceHash": "726295bb99acbeb86eecc7385a57d1abec9c8ce2908e641dd12a12e7f8bcb0b7",
+            "contextRole": "definition"
+          },
+          {
+            "sourceKey": "section:23.01",
+            "sectionLabel": "23.01",
+            "heading": "Definition of service for purposes of sections 23.1 to 27.01",
+            "text": "Definition of service for purposes of sections 23.1 to 27.01\n\n23.01In sections 23.1 to 27.01,\n“service” means a service contained in the First Schedule and includes a facility used as a recreational facility or a community services facility, whether the facility used as a recreational facility or a community services facility is located within a local service district or not but does not include the sale of gas and provision of customer services as defined in the Gas Distribution Act, 1999.\n\n1996, c.77, s.1; 1999, c.G-2.11, s.103; 2005, c.7, s.49",
+            "operativeText": "Definition of service for purposes of sections 23.1 to 27.01\n\n23.01In sections 23.1 to 27.01,\n“service” means a service contained in the First Schedule and includes a facility used as a recreational facility or a community services facility, whether the facility used as a recreational facility or a community services facility is located within a local service district or not but does not include the sale of gas and provision of customer services as defined in the Gas Distribution Act, 1999.",
+            "sourceHash": "90cf0278f07f13e6d267d608cd1b3e68292c0e11038827921dc79d22b4188aa6",
+            "contextRole": "definition"
+          },
+          {
+            "sourceKey": "section:90.1",
+            "sectionLabel": "90.1",
+            "heading": "Definitions",
+            "text": "Definitions\n\n90.1In sections 90.1 to 90.91\n“charitable organization” means a registered Canadian charitable organization under the Income Tax Act (Canada);(œuvre de bienfaisance)\n\n“clerk” includes, in the case of a local board, the secretary of the local board;(secrétaire)\n\n“controlling interest” means beneficial ownership of, or direct or indirect control or direction over, voting shares of a public company carrying more than ten per cent of the voting rights attached to all voting shares of the company for the time being issued;(intérêt majoritaire)\n\n“employ” means an employment relationship characterized by the payment of wages, salary or other regular remuneration and does not include a relationship compensated on a fee for services basis;(emploi)\n\n“family associate” means a spouse, parent, child, brother or sister;(proche famille)\n\n“local board” means(commission locale)\n\n(a)\na body whose entire membership is appointed under the authority of a council but does not include an industrial commission or its board of directors,\n\n(b)\na water or wastewater commission constituted under section 15.2 of the Clean Environment Act, and\n\n(c)\nRepealed: 2012, c.44, s.11\n\n(d)\nRepealed: 2012, c.44, s.11\n\n(e)\nany body prescribed by regulation;\n\n“member” means a member of a municipal council or a local board;(membre)\n\n“private company” means a company whose securities are not offered to the public;(compagnie privée)\n\n“public company” means a company whose securities are offered to the public;(compagnie publique)\n\n“senior appointed officer” means a person employed or appointed by a municipality or a local board who fulfills the responsibilities of any of the following:(fonctionnaire supérieure nommé)\n\n(a)\na chief administrative officer, or the person who has the primary responsibility ",
+            "operativeText": "Definitions\n\n90.1In sections 90.1 to 90.91\n“charitable organization” means a registered Canadian charitable organization under the Income Tax Act (Canada);(œuvre de bienfaisance)\n\n“clerk” includes, in the case of a local board, the secretary of the local board;(secrétaire)\n\n“controlling interest” means beneficial ownership of, or direct or indirect control or direction over, voting shares of a public company carrying more than ten per cent of the voting rights attached to all voting shares of the company for the time being issued;(intérêt majoritaire)\n\n“employ” means an employment relationship characterized by the payment of wages, salary or other regular remuneration and does not include a relationship compensated on a fee for services basis;(emploi)\n\n“family associate” means a spouse, parent, child, brother or sister;(proche famille)\n\n“local board” means(commission locale)\n\n(a)\na body whose entire membership is appointed under the authority of a council but does not include an industrial commission or its board of directors,\n\n(b)\na water or wastewater commission constituted under section 15.2 of the Clean Environment Act, and\n\n(c)\nRepealed: 2012, c.44, s.11\n\n(d)\nRepealed: 2012, c.44, s.11\n\n(e)\nany body prescribed by regulation;\n\n“member” means a member of a municipal council or a local board;(membre)\n\n“private company” means a company whose securities are not offered to the public;(compagnie privée)\n\n“public company” means a company whose securities are offered to the public;(compagnie publique)\n\n“senior appointed officer” means a person employed or appointed by a municipality or a local board who fulfills the responsibilities of any of the following:(fonctionnaire supérieure nommé)\n\n(a)\na chief administrative officer, or the person who has the primary responsibility ",
+            "sourceHash": "52ba21ab77da4aae918337b419cf594a58bdc902b7b96180afa1fc7dab44939b",
+            "contextRole": "definition"
+          }
+        ],
+        "directlyReferencedProvisions": [
+          {
+            "sourceKey": "section:7",
+            "sectionLabel": "7",
+            "heading": "Provision of services by municipality",
+            "text": "Provision of services by municipality\n\n7(1)A municipality may provide any of the services contained in the First Schedule.\n\n7(2)Subject to the Police Act, a municipality shall provide the service of police protection.\n\n7(3)Where a municipality carries out any of the powers or provides any of the services under this Act it\n\n(a)\nshall administer,\n\n(b)\nshall pay the costs of, and\n\n(c)\nsubject to the Motor Vehicle Act may make by-laws with respect to,\n\nsuch powers and services.\n\n7(4)Without restricting the generality of any powers given under this Act, a municipality in providing any service may\n\n(a)\nacquire land or an interest in land that is adjacent to the municipality and use the land to provide the service;\n\n(b)\nenter into an agreement with one or more municipalities or rural communities or with any person, including the Crown, whereby the cost and use of the service may be shared by the parties to the agreement;\n\n(c)\nenter into an agreement with one or more municipalities or rural communities or with any person, including the Crown, to provide for the joint acquisition, ownership, development, extension, management or operation of services that may be provided by municipalities under this Act; and\n\n(d)\nenter into an agreement with one or more municipalities or rural communities or with the owner of a sewerage or water works providing\n\n(i)\nfor the disposal or treatment of sewage, and\n\n(ii)\nfor payment of compensation for use of the sewerage or water works.\n\n7(5)Subject to any other law regulating the distribution of natural gas in the Province, a municipality may enter into an agreement with a distributor of natural gas respecting the use of the property of the municipality and any other matter associated with the construction or operation of a natural gas distribution",
+            "operativeText": "Provision of services by municipality\n\n7(1)A municipality may provide any of the services contained in the First Schedule.\n\n7(2)Subject to the Police Act, a municipality shall provide the service of police protection.\n\n7(3)Where a municipality carries out any of the powers or provides any of the services under this Act it\n\n(a)\nshall administer,\n\n(b)\nshall pay the costs of, and\n\n(c)\nsubject to the Motor Vehicle Act may make by-laws with respect to,\n\nsuch powers and services.\n\n7(4)Without restricting the generality of any powers given under this Act, a municipality in providing any service may\n\n(a)\nacquire land or an interest in land that is adjacent to the municipality and use the land to provide the service;\n\n(b)\nenter into an agreement with one or more municipalities or rural communities or with any person, including the Crown, whereby the cost and use of the service may be shared by the parties to the agreement;\n\n(c)\nenter into an agreement with one or more municipalities or rural communities or with any person, including the Crown, to provide for the joint acquisition, ownership, development, extension, management or operation of services that may be provided by municipalities under this Act; and\n\n(d)\nenter into an agreement with one or more municipalities or rural communities or with the owner of a sewerage or water works providing\n\n(i)\nfor the disposal or treatment of sewage, and\n\n(ii)\nfor payment of compensation for use of the sewerage or water works.\n\n7(5)Subject to any other law regulating the distribution of natural gas in the Province, a municipality may enter into an agreement with a distributor of natural gas respecting the use of the property of the municipality and any other matter associated with the construction or operation of a natural gas distribution",
+            "sourceHash": "071b93a5ee0ea9326e892460559491ac2abd8d5dca74a613ebed90898f4875da",
+            "contextRole": "direct-reference"
+          },
+          {
+            "sourceKey": "section:90",
+            "sectionLabel": "90",
+            "heading": "Capital and operating reserve funds",
+            "text": "Capital and operating reserve funds\n\n90A municipality may, in accordance with the regulations, establish, manage and contribute to\n\n(a)\nan operating reserve fund, and\n\n(b)\na capital reserve fund.\n\n1966, c.20, s.91; 1967, c.56, s.24; 1974, c.33 (Supp.), s.2; 1979, c.47, s.12; 1996, c.45, s.2\n\nGRANTS\n\n2003, c.27, s.35",
+            "operativeText": "Capital and operating reserve funds\n\n90A municipality may, in accordance with the regulations, establish, manage and contribute to\n\n(a)\nan operating reserve fund, and\n\n(b)\na capital reserve fund.\n\n\nGRANTS",
+            "sourceHash": "3d21171d95700cd4d6ecdecaa2d4b40d790c8ea2cf57b517089a929dec128d10",
+            "contextRole": "direct-reference"
+          },
+          {
+            "sourceKey": "section:189",
+            "sectionLabel": "189",
+            "heading": "Utility Commissions",
+            "text": "Utility Commissions\n\n189(1)Where under this Act a municipality provides\n\n(a)\nwater, or\n\n(b)\na sanitary sewerage system,\n\nthe municipality shall construct, operate and maintain such service or utility on a user-charge basis, which may be established on an amortized or any other basis as to the municipality shall seem fit, and may establish a separate or joint rate therefor.\n\n189(1.1)Notwithstanding sections 127 and 144 and notwithstanding that the provision of a water or sewerage service has been undertaken, has been deemed to have been undertaken or is purported to have been undertaken as a local improvement under this Act, a municipality may recover the cost of the work, or any portion thereof, on a user-charge basis under this section and the user-charge may be established on an amortized or any other basis as to the municipality shall seem fit.\n\n189(1.2)A municipality may establish, with respect to a user-charge under subsection (1.1), one or more classes of users depending on prior payments by the user in relation to the cost of the work and the user-charge may vary within each class.\n\n189(1.3)Where a user-charge under subsection (1.1) is based upon the frontage of the property in respect of which the service is provided, the provisions of section 130, with such changes as the context requires, shall apply to the calculation of the frontage.\n\n189(1.4)For the purposes of this section, “cost of the work” includes the items enumerated in section 121 regardless of whether a municipality has been reimbursed or subsidized in any manner for such items.\n\n189(2)Where before January 1, 1967, a municipality, or a commission established by a municipality, was providing electric power, that municipality or commission\n\n(a)\nmay continue to provide the service, and\n\n(b)\nif the serv",
+            "operativeText": "Utility Commissions\n\n189(1)Where under this Act a municipality provides\n\n(a)\nwater, or\n\n(b)\na sanitary sewerage system,\n\nthe municipality shall construct, operate and maintain such service or utility on a user-charge basis, which may be established on an amortized or any other basis as to the municipality shall seem fit, and may establish a separate or joint rate therefor.\n\n189(1.1)Notwithstanding sections 127 and 144 and notwithstanding that the provision of a water or sewerage service has been undertaken, has been deemed to have been undertaken or is purported to have been undertaken as a local improvement under this Act, a municipality may recover the cost of the work, or any portion thereof, on a user-charge basis under this section and the user-charge may be established on an amortized or any other basis as to the municipality shall seem fit.\n\n189(1.2)A municipality may establish, with respect to a user-charge under subsection (1.1), one or more classes of users depending on prior payments by the user in relation to the cost of the work and the user-charge may vary within each class.\n\n189(1.3)Where a user-charge under subsection (1.1) is based upon the frontage of the property in respect of which the service is provided, the provisions of section 130, with such changes as the context requires, shall apply to the calculation of the frontage.\n\n189(1.4)For the purposes of this section, “cost of the work” includes the items enumerated in section 121 regardless of whether a municipality has been reimbursed or subsidized in any manner for such items.\n\n189(2)Where before January 1, 1967, a municipality, or a commission established by a municipality, was providing electric power, that municipality or commission\n\n(a)\nmay continue to provide the service, and\n\n(b)\nif the serv",
+            "sourceHash": "2f0b73e8f8a6928fe1e389030ece7fec7d4088697478597043aacea7afa83ac7",
+            "contextRole": "direct-reference"
+          },
+          {
+            "sourceKey": "section:111",
+            "sectionLabel": "111",
+            "heading": "Joint project housing",
+            "text": "Joint project housing\n\n111(1)A municipality may enter into an agreement with the Province respecting joint projects for the acquisition and development of land for housing purposes and for the construction of houses for sale or rent.\n\n111(2)A municipality may enter into an agreement with Canada for the clearance, replanning, rehabilitation and modernization of blighted or substandard areas as provided for under the National Housing Act (Canada).\n\n111(3)The Lieutenant-Governor in Council may authorize a municipality that has entered into an agreement under subsection (1) or (2) to do all things to effect the agreement, and without restricting the generality of the foregoing, may authorize the municipality\n\n(a)\nto borrow upon its credit any money required to effect the agreement,\n\n(b)\nto obtain capital funds under the Municipal Capital Borrowing Act, and\n\n(c)\nto furnish any municipal services necessary for the project.\n\n111(4)This section applies with the necessary modifications to a rural community.\n\n1966, c.20, s.111; 2003, c.27, s.51; 2005, c.7, s.49\n\nGENERATION OF ELECTRICITY\n\n2008, c.28, s.1",
+            "operativeText": "Joint project housing\n\n111(1)A municipality may enter into an agreement with the Province respecting joint projects for the acquisition and development of land for housing purposes and for the construction of houses for sale or rent.\n\n111(2)A municipality may enter into an agreement with Canada for the clearance, replanning, rehabilitation and modernization of blighted or substandard areas as provided for under the National Housing Act (Canada).\n\n111(3)The Lieutenant-Governor in Council may authorize a municipality that has entered into an agreement under subsection (1) or (2) to do all things to effect the agreement, and without restricting the generality of the foregoing, may authorize the municipality\n\n(a)\nto borrow upon its credit any money required to effect the agreement,\n\n(b)\nto obtain capital funds under the Municipal Capital Borrowing Act, and\n\n(c)\nto furnish any municipal services necessary for the project.\n\n111(4)This section applies with the necessary modifications to a rural community.\n\n\nGENERATION OF ELECTRICITY",
+            "sourceHash": "72d9627f4a138e94c27be401fc3b5e6d4687f182059799dac10780982cccf604",
+            "contextRole": "direct-reference"
+          }
+        ],
+        "omittedContextWarnings": [
+          "DEFINITION_CONTEXT_TRUNCATED"
+        ]
+      },
+      "disposition": "split",
+      "confidence": "medium",
+      "reason": "Section 192 is a broad regulation-making provision with distinct clusters for Act administration and forms, municipal finance and reserve matters, elections and officials, and extension or service-allocation powers.",
+      "suggestedPriority": "P2",
+      "proposedGroups": [
+        {
+          "groupId": "group-1",
+          "titleSuggestion": "General regulation powers for administration, forms, offences, enforcement, and records",
+          "sourceKeys": [
+            "section:192"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:192",
+              "childLabels": [
+                "192(1)"
+              ]
+            }
+          ],
+          "reason": "Paragraphs 192(1)(b), (c), (d), (e), (g), (g.1), (h), (h.1), (i), and (n) support a study group about forms, penalties, administrators, accounting, audits, public records, theatre operators, local boards, interest disclosure and general administration.",
+          "approximateLearningGoal": "Recall the general administrative, form, offence, enforcement, audit, record, local-board and disclosure subjects for regulations under section 192."
+        },
+        {
+          "groupId": "group-2",
+          "titleSuggestion": "Regulation powers for fees, interest, shared services, budgets, borrowing, and reserves",
+          "sourceKeys": [
+            "section:192"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:192",
+              "childLabels": [
+                "192(1)"
+              ]
+            }
+          ],
+          "reason": "Paragraphs 192(1)(a), (a.1), (a.2), (a.3), (f), (j.1), (j.2), (k), (k.1), (k.2), and (k.3) concern financial and procedural regulation subjects, including fees, interest, procedural by-laws, shared services, estimates, borrowing percentages, reserve funds and generation-facility agreements.",
+          "approximateLearningGoal": "Identify the financial and procedural regulation subjects for fees, interest, shared services, budget dates, borrowing percentages, reserve funds and generation facilities."
+        },
+        {
+          "groupId": "group-3",
+          "titleSuggestion": "Election fees, municipal power extensions, and fire-protection water costs",
+          "sourceKeys": [
+            "section:192"
+          ],
+          "focusSelections": [
+            {
+              "sourceKey": "section:192",
+              "childLabels": [
+                "192(1)"
+              ]
+            }
+          ],
+          "reason": "Paragraphs 192(1)(j), (l), and (m) address election officer fees, extending municipal powers, and determining the portion of water costs charged against fire protection service.",
+          "approximateLearningGoal": "Recall the regulation powers for election officer fees, extending municipal powers, and allocating water costs to fire protection service."
+        }
+      ],
+      "warnings": [],
+      "conflictCodes": [
+        "MAP_CONFLICT"
+      ],
+      "reviewStatus": "validated",
+      "validationStatus": "warnings",
+      "validationMessages": [
+        "MAP_CONFLICT"
+      ],
+      "createdAt": "2026-08-24T16:57:15.374Z",
+      "updatedAt": "2026-08-24T16:57:15.374Z"
+    }
+  ]
+}

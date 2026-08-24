@@ -1,0 +1,20 @@
+{
+  "runId": "ai-map-4c12-full-corpus-v2",
+  "expectedJobs": 3692,
+  "resultLines": 816,
+  "completed": 816,
+  "missing": 2876,
+  "malformed": 0,
+  "stale": 0,
+  "duplicate": 0,
+  "invalid": 0,
+  "safelyReusedV1Results": 816,
+  "locallyAuthoredAcceptedResults": 0,
+  "totalAccepted": 816,
+  "failedAfterRetries": 0,
+  "schemaInvalid": 0,
+  "groundingInvalid": 0,
+  "warningValid": 16,
+  "valid": 800,
+  "completionPercentage": 22.1
+}

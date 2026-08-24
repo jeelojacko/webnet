@@ -1,0 +1,568 @@
+{
+  "schemaVersion": 1,
+  "v1RunId": "ai-map-4c1-full-corpus-v1",
+  "v2RunId": "ai-map-4c12-full-corpus-v2",
+  "totalEligibleTargets": 3692,
+  "rebuiltV2Targets": 3692,
+  "totalOriginalV1ChildLabels": 6852,
+  "totalCorrectedV2ChildLabels": 5083,
+  "jobsWhoseChildLabelsChanged": 461,
+  "labelsRemoved": 1769,
+  "labelsAdded": 0,
+  "changedJobsByDocument": {
+    "doc-archives-act": 7,
+    "doc-assessment-act": 17,
+    "doc-bituminous-shale-act": 1,
+    "doc-clean-environment-act": 31,
+    "doc-clean-water-act": 5,
+    "doc-community-planning-act": 7,
+    "doc-condominium-property-act": 3,
+    "doc-crown-lands-and-forests-act": 24,
+    "doc-evidence-act": 4,
+    "doc-expropriation-act": 2,
+    "doc-gas-distribution-act": 16,
+    "doc-highway-act": 10,
+    "doc-land-titles-act": 14,
+    "doc-limitation-of-actions-act": 4,
+    "doc-mining-act": 29,
+    "doc-municipalities-act": 77,
+    "doc-occupational-health-and-safety-act": 20,
+    "doc-oil-and-natural-gas-act": 10,
+    "doc-new-brunswick-land-surveyors-act": 105,
+    "doc-new-brunswick-land-surveyors-bylaws": 9,
+    "doc-official-languages-act": 3,
+    "doc-parks-act": 2,
+    "doc-partnerships-and-business-names-registration-act": 13,
+    "doc-probate-court-act": 1,
+    "doc-property-act": 1,
+    "doc-public-health-act": 19,
+    "doc-public-works-act": 1,
+    "doc-energy-and-utilities-board-act": 5,
+    "doc-registry-act": 7,
+    "doc-residential-property-tax-relief-act": 3,
+    "doc-standard-forms-of-conveyances-act": 2,
+    "doc-trespass-act": 2,
+    "doc-underground-storage-act": 1,
+    "doc-wills-act": 2,
+    "reg-community-planning-80-159": 1,
+    "reg-land-titles-83-130": 3
+  },
+  "changedJobsByDocumentAuditType": {
+    "act": 448,
+    "bylaw": 9,
+    "regulation": 4
+  },
+  "changedJobsByComponentType": {
+    "section": 461
+  },
+  "representativeExamples": [
+    {
+      "jobId": "map-f112b0e9e29422a6",
+      "targetKey": "doc-archives-act::section:10.1::10.1",
+      "documentId": "doc-archives-act",
+      "documentTitle": "Archives Act",
+      "auditType": "act",
+      "componentType": "section",
+      "removed": [
+        "10.1(1)",
+        "10.1(2)",
+        "10.1(3)",
+        "10.1(4)",
+        "10.1(5)",
+        "10.1(6)",
+        "10.1(7)",
+        "10.1(8)"
+      ],
+      "added": []
+    },
+    {
+      "jobId": "map-c63be268ebf9b65f",
+      "targetKey": "doc-archives-act::section:10.2::10.2",
+      "documentId": "doc-archives-act",
+      "documentTitle": "Archives Act",
+      "auditType": "act",
+      "componentType": "section",
+      "removed": [
+        "10.2(1)",
+        "10.2(2)",
+        "10.2(3)",
+        "10.2(4)",
+        "10.2(5)",
+        "10.2(6)",
+        "10.2(7)",
+        "10.2(8)",
+        "10.2(9)",
+        "10.2(10)"
+      ],
+      "added": []
+    },
+    {
+      "jobId": "map-ef8474eeffec972d",
+      "targetKey": "doc-archives-act::section:10.3::10.3",
+      "documentId": "doc-archives-act",
+      "documentTitle": "Archives Act",
+      "auditType": "act",
+      "componentType": "section",
+      "removed": [
+        "10.3(1)",
+        "10.3(2)",
+        "10.3(3)",
+        "10.3(4)"
+      ],
+      "added": []
+    },
+    {
+      "jobId": "map-fdc6d68d36e0e492",
+      "targetKey": "doc-archives-act::section:10.4::10.4",
+      "documentId": "doc-archives-act",
+      "documentTitle": "Archives Act",
+      "auditType": "act",
+      "componentType": "section",
+      "removed": [
+        "10.4(1)",
+        "10.4(2)",
+        "10.4(3)"
+      ],
+      "added": []
+    },
+    {
+      "jobId": "map-c8fbc39da4a26c04",
+      "targetKey": "doc-archives-act::section:10.6::10.6",
+      "documentId": "doc-archives-act",
+      "documentTitle": "Archives Act",
+      "auditType": "act",
+      "componentType": "section",
+      "removed": [
+        "10.6(1)",
+        "10.6(2)",
+        "10.6(3)"
+      ],
+      "added": []
+    },
+    {
+      "jobId": "map-6c55cc94f7fc83bd",
+      "targetKey": "doc-archives-act::section:10.7::10.7",
+      "documentId": "doc-archives-act",
+      "documentTitle": "Archives Act",
+      "auditType": "act",
+      "componentType": "section",
+      "removed": [
+        "10.7(1)",
+        "10.7(2)"
+      ],
+      "added": []
+    },
+    {
+      "jobId": "map-ae9602f8120c9f58",
+      "targetKey": "doc-archives-act::section:10.9::10.9",
+      "documentId": "doc-archives-act",
+      "documentTitle": "Archives Act",
+      "auditType": "act",
+      "componentType": "section",
+      "removed": [
+        "10.9(1)",
+        "10.9(2)",
+        "10.9(3)",
+        "10.9(4)",
+        "10.9(5)",
+        "10.9(6)",
+        "10.9(7)",
+        "10.9(8)"
+      ],
+      "added": []
+    },
+    {
+      "jobId": "map-eea90cafefa1cf7a",
+      "targetKey": "doc-assessment-act::section:4.1::4.1",
+      "documentId": "doc-assessment-act",
+      "documentTitle": "Assessment Act",
+      "auditType": "act",
+      "componentType": "section",
+      "removed": [
+        "4.1(1)",
+        "4.1(2)",
+        "4.1(3)",
+        "4.1(4)",
+        "4.1(5)",
+        "4.1(6)",
+        "4.1(7)",
+        "4.1(8)",
+        "4.1(9)",
+        "4.1(10)",
+        "4.1(11)",
+        "4.1(12)",
+        "4.1(13)",
+        "4.1(14)",
+        "4.1(15)",
+        "4.1(16)",
+        "4.1(17)",
+        "4.1(18)",
+        "4.1(19)",
+        "4.1(20)",
+        "4.1(21)",
+        "4.1(22)",
+        "4.1(23)",
+        "4.1(24)"
+      ],
+      "added": []
+    },
+    {
+      "jobId": "map-b96d5fa4bdebce4a",
+      "targetKey": "doc-assessment-act::section:7.1::7.1",
+      "documentId": "doc-assessment-act",
+      "documentTitle": "Assessment Act",
+      "auditType": "act",
+      "componentType": "section",
+      "removed": [
+        "7.1(1)",
+        "7.1(2)",
+        "7.1(3)",
+        "7.1(4)",
+        "7.1(5)",
+        "7.1(6)",
+        "7.1(7)",
+        "7.1(8)",
+        "7.1(9)"
+      ],
+      "added": []
+    },
+    {
+      "jobId": "map-8a420d59ab205b71",
+      "targetKey": "doc-assessment-act::section:7.2::7.2",
+      "documentId": "doc-assessment-act",
+      "documentTitle": "Assessment Act",
+      "auditType": "act",
+      "componentType": "section",
+      "removed": [
+        "7.2(1)",
+        "7.2(2)",
+        "7.2(3)",
+        "7.2(4)",
+        "7.2(5)",
+        "7.2(6)",
+        "7.2(7)",
+        "7.2(8)",
+        "7.2(9)"
+      ],
+      "added": []
+    },
+    {
+      "jobId": "map-384c9a18c5b7e250",
+      "targetKey": "doc-assessment-act::section:12.2::12.2",
+      "documentId": "doc-assessment-act",
+      "documentTitle": "Assessment Act",
+      "auditType": "act",
+      "componentType": "section",
+      "removed": [
+        "12.2(1)",
+        "12.2(2)"
+      ],
+      "added": []
+    },
+    {
+      "jobId": "map-b10252e7e2f2e9cc",
+      "targetKey": "doc-assessment-act::section:15.2::15.2",
+      "documentId": "doc-assessment-act",
+      "documentTitle": "Assessment Act",
+      "auditType": "act",
+      "componentType": "section",
+      "removed": [
+        "15.2(1)",
+        "15.2(2)",
+        "15.2(3)",
+        "15.2(4)",
+        "15.2(5)",
+        "15.2(6)",
+        "15.2(7)",
+        "15.2(8)",
+        "15.2(9)",
+        "15.2(10)",
+        "15.2(11)",
+        "15.2(12)",
+        "15.2(13)",
+        "15.2(14)",
+        "15.2(15)",
+        "15.2(16)",
+        "15.2(17)",
+        "15.2(18)",
+        "15.2(19)"
+      ],
+      "added": []
+    },
+    {
+      "jobId": "map-7ae41a2728f7e83b",
+      "targetKey": "doc-assessment-act::section:15.3::15.3",
+      "documentId": "doc-assessment-act",
+      "documentTitle": "Assessment Act",
+      "auditType": "act",
+      "componentType": "section",
+      "removed": [
+        "15.3(1)",
+        "15.3(2)",
+        "15.3(3)",
+        "15.3(4)",
+        "15.3(5)",
+        "15.3(6)",
+        "15.3(7)",
+        "15.3(8)",
+        "15.3(9)",
+        "15.3(10)",
+        "15.3(11)",
+        "15.3(12)",
+        "15.3(13)",
+        "15.3(14)",
+        "15.3(15)",
+        "15.3(16)",
+        "15.3(17)",
+        "15.3(18)",
+        "15.3(19)",
+        "15.3(20)"
+      ],
+      "added": []
+    },
+    {
+      "jobId": "map-7c09d9278bc1fedb",
+      "targetKey": "doc-assessment-act::section:15.31::15.31",
+      "documentId": "doc-assessment-act",
+      "documentTitle": "Assessment Act",
+      "auditType": "act",
+      "componentType": "section",
+      "removed": [
+        "15.31(1)",
+        "15.31(2)",
+        "15.31(3)",
+        "15.31(4)",
+        "15.31(5)",
+        "15.31(6)",
+        "15.31(7)",
+        "15.31(8)",
+        "15.31(9)",
+        "15.31(10)",
+        "15.31(11)",
+        "15.31(12)",
+        "15.31(13)",
+        "15.31(14)"
+      ],
+      "added": []
+    },
+    {
+      "jobId": "map-fd837d84034c0501",
+      "targetKey": "doc-assessment-act::section:15.4::15.4",
+      "documentId": "doc-assessment-act",
+      "documentTitle": "Assessment Act",
+      "auditType": "act",
+      "componentType": "section",
+      "removed": [
+        "15.4(1)",
+        "15.4(2)",
+        "15.4(3)",
+        "15.4(4)",
+        "15.4(5)"
+      ],
+      "added": []
+    },
+    {
+      "jobId": "map-f8dddf31f64e6fe0",
+      "targetKey": "doc-assessment-act::section:15.5::15.5",
+      "documentId": "doc-assessment-act",
+      "documentTitle": "Assessment Act",
+      "auditType": "act",
+      "componentType": "section",
+      "removed": [
+        "15.5(1)",
+        "15.5(2)",
+        "15.5(3)",
+        "15.5(4)",
+        "15.5(5)",
+        "15.5(6)",
+        "15.5(7)",
+        "15.5(8)"
+      ],
+      "added": []
+    },
+    {
+      "jobId": "map-dcfbf0822f42623a",
+      "targetKey": "doc-assessment-act::section:15.6::15.6",
+      "documentId": "doc-assessment-act",
+      "documentTitle": "Assessment Act",
+      "auditType": "act",
+      "componentType": "section",
+      "removed": [
+        "15.6(1)",
+        "15.6(2)",
+        "15.6(3)",
+        "15.6(4)"
+      ],
+      "added": []
+    },
+    {
+      "jobId": "map-e2a512bdb6aa93a9",
+      "targetKey": "doc-assessment-act::section:15.7::15.7",
+      "documentId": "doc-assessment-act",
+      "documentTitle": "Assessment Act",
+      "auditType": "act",
+      "componentType": "section",
+      "removed": [
+        "15.7(1)",
+        "15.7(2)",
+        "15.7(3)",
+        "15.7(4)",
+        "15.7(5)",
+        "15.7(6)"
+      ],
+      "added": []
+    },
+    {
+      "jobId": "map-033a4c8d75ac9e1f",
+      "targetKey": "doc-assessment-act::section:15.71::15.71",
+      "documentId": "doc-assessment-act",
+      "documentTitle": "Assessment Act",
+      "auditType": "act",
+      "componentType": "section",
+      "removed": [
+        "15.71(1)",
+        "15.71(2)",
+        "15.71(3)",
+        "15.71(4)",
+        "15.71(5)",
+        "15.71(6)"
+      ],
+      "added": []
+    },
+    {
+      "jobId": "map-71c13646cad30e4c",
+      "targetKey": "doc-assessment-act::section:15.72::15.72",
+      "documentId": "doc-assessment-act",
+      "documentTitle": "Assessment Act",
+      "auditType": "act",
+      "componentType": "section",
+      "removed": [
+        "15.72(1)",
+        "15.72(2)",
+        "15.72(3)",
+        "15.72(4)"
+      ],
+      "added": []
+    },
+    {
+      "jobId": "map-2e5d29e66935f7eb",
+      "targetKey": "doc-assessment-act::section:15.8::15.8",
+      "documentId": "doc-assessment-act",
+      "documentTitle": "Assessment Act",
+      "auditType": "act",
+      "componentType": "section",
+      "removed": [
+        "15.8(1)",
+        "15.8(2)",
+        "15.8(3)",
+        "15.8(4)",
+        "15.8(5)",
+        "15.8(6)",
+        "15.8(7)"
+      ],
+      "added": []
+    },
+    {
+      "jobId": "map-69b6ad662af01506",
+      "targetKey": "doc-assessment-act::section:17.1::17.1",
+      "documentId": "doc-assessment-act",
+      "documentTitle": "Assessment Act",
+      "auditType": "act",
+      "componentType": "section",
+      "removed": [
+        "17.1(1)",
+        "17.1(2)",
+        "17.1(3)",
+        "17.1(4)",
+        "17.1(5)"
+      ],
+      "added": []
+    },
+    {
+      "jobId": "map-229f513d550c3a26",
+      "targetKey": "doc-assessment-act::section:22.1::22.1",
+      "documentId": "doc-assessment-act",
+      "documentTitle": "Assessment Act",
+      "auditType": "act",
+      "componentType": "section",
+      "removed": [
+        "22.1(1)",
+        "22.1(2)"
+      ],
+      "added": []
+    },
+    {
+      "jobId": "map-0ef063a0aeb3204e",
+      "targetKey": "doc-assessment-act::section:29.1::29.1",
+      "documentId": "doc-assessment-act",
+      "documentTitle": "Assessment Act",
+      "auditType": "act",
+      "componentType": "section",
+      "removed": [
+        "29.1(1)",
+        "29.1(2)",
+        "29.1(3)",
+        "29.1(4)"
+      ],
+      "added": []
+    },
+    {
+      "jobId": "map-5caaf5726c3bbaa9",
+      "targetKey": "doc-bituminous-shale-act::section:17.1::17.1",
+      "documentId": "doc-bituminous-shale-act",
+      "documentTitle": "Bituminous Shale Act",
+      "auditType": "act",
+      "componentType": "section",
+      "removed": [
+        "17.1(1)",
+        "17.1(2)",
+        "17.1(3)"
+      ],
+      "added": []
+    }
+  ],
+  "remainingSuspiciousPatterns": [],
+  "regressionAnchors": [
+    {
+      "sourceKey": "section:18(2)",
+      "jobId": "map-d5572eace39dcd1d",
+      "childLabels": []
+    },
+    {
+      "sourceKey": "section:31(1)",
+      "jobId": "map-88bd632a668ff221",
+      "childLabels": []
+    },
+    {
+      "sourceKey": "section:2.2.6",
+      "jobId": "map-8ed8d550bccba072",
+      "childLabels": []
+    },
+    {
+      "sourceKey": "section:8.2.4.1",
+      "jobId": "map-063baff28541459d",
+      "childLabels": []
+    }
+  ],
+  "preparationVerification": {
+    "schemaVersion": 1,
+    "valid": true,
+    "issues": [],
+    "totalSourceComponents": 3758,
+    "eligibleTargets": 3692,
+    "excludedComponents": 66,
+    "accountingBalances": true,
+    "duplicateTargets": [],
+    "duplicateJobIds": [],
+    "missingEligibleTargets": [],
+    "unexpectedTargets": [],
+    "missingSourceHashes": [],
+    "oversizedUnhandledJobs": [],
+    "requiredScheduleTargetsPresent": true,
+    "surveysScheduleAInDirectReferenceContext": true,
+    "communityPlanningScheduleAInDirectReferenceContext": true,
+    "placeholderFormTargets": []
+  },
+  "eligibleSchedules": 19,
+  "sourceComponentIdentitiesUnchanged": true
+}

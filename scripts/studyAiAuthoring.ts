@@ -5,6 +5,7 @@ import type { NbLawContentPackage, NbLawDocumentComponent } from '../src/study/c
 import type {
   AiAuthoringRun,
   AiStoredUnitProposal,
+  AiSourceContext,
   AiStudyMapProposal,
   AiStudyMapJob,
   AiStudyMapResult,
@@ -25,6 +26,11 @@ import {
   validateAiStudyMapResult,
   validateAiStudyUnitProposal,
 } from '../src/study/ai/studyAiValidation';
+import {
+  STUDY_MAP_V3_RESULT_SCHEMA,
+  canonicalJson,
+} from '../src/study/ai/studyAiResultContract';
+import { authoringInputFingerprint } from './studyAiFingerprint';
 import {
   DEFAULT_FULL_CORPUS_BATCH_POLICY,
   FULL_CORPUS_STRATEGY_VERSION,
@@ -172,12 +178,30 @@ type JsonlReadResult<T> = {
   malformed: Array<{ file: string; lineNumber: number; rawHash: string; error: string }>;
 };
 
+type MapSamplingReport = {
+  runId: string;
+  strategy: string;
+  seed: number;
+  requestedSample: number;
+  selectedJobs: number;
+  batchCount: number;
+  batchingPolicy: unknown;
+  manualIncludes: readonly string[];
+  phase4b1RequiredIncludesApplied: boolean;
+  phase4b1RequiredIncludes: readonly string[];
+  strategyVersion?: string;
+  actsRepresented?: number;
+  regulationsRepresented?: number;
+  documentDistribution?: Record<string, number>;
+};
+
 const readJsonlDetailed = <T>(path: string): JsonlReadResult<T> => {
   const rows: JsonlReadResult<T>['rows'] = [];
   const malformed: JsonlReadResult<T>['malformed'] = [];
   readFileSync(path, 'utf8')
     .split(/\r?\n/)
-    .forEach((line, index) => {
+    .forEach((rawLine, index) => {
+      const line = index === 0 ? rawLine.replace(/^\uFEFF/, '') : rawLine;
       if (!line.trim()) return;
       try {
         rows.push({
@@ -273,22 +297,34 @@ const sourceFocusOptionsFromComponent = (component: NbLawDocumentComponent): AiS
   {
     sourceKey: component.sourceKey,
     label: component.label,
-    childLabels: component.componentType === 'section' ? component.subsections.map((subsection) => subsection.label) : undefined,
+    childLabels: structuralChildLabelsFromComponent(component),
     definedTerms: definitionTerms(component),
   },
 ];
 
+const structuralChildLabelsFromComponent = (component: NbLawDocumentComponent): string[] | undefined => {
+  if (component.componentType !== 'section') return undefined;
+  if (component.subsections.length === 0) return undefined;
+  if (!/^\d+[A-Za-z]?$/.test(component.label)) return undefined;
+  const escapedParent = component.label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const directChildPattern = new RegExp(`^${escapedParent}\\([^()]+\\)$`);
+  const labels = component.subsections
+    .map((subsection) => subsection.label)
+    .filter((label) => directChildPattern.test(label));
+  return labels.length > 0 ? labels : undefined;
+};
+
 const contextFromComponent = (component: NbLawDocumentComponent | undefined, role?: 'previous' | 'next' | 'definition' | 'direct-reference') =>
   component
-    ? {
+    ? ({
         sourceKey: component.sourceKey,
         sectionLabel: component.label,
         heading: component.heading,
         text: component.text.slice(0, CONTEXT_TEXT_LIMIT),
         operativeText: cleanAiSourceText(component.text).operativeSourceText.slice(0, CONTEXT_TEXT_LIMIT),
         sourceHash: component.contentHash,
-        contextRole: role,
-      }
+        ...(role ? { contextRole: role } : {}),
+      } satisfies AiSourceContext)
     : undefined;
 
 const definitionTerms = (component: NbLawDocumentComponent): string[] => {
@@ -301,7 +337,7 @@ const definitionTerms = (component: NbLawDocumentComponent): string[] => {
 const resolveRelevantDefinitions = (
   target: NbLawDocumentComponent,
   components: NbLawDocumentComponent[],
-): { contexts: ReturnType<typeof contextFromComponent>[]; warnings: string[] } => {
+): { contexts: AiSourceContext[]; warnings: string[] } => {
   const definitionSections = components.filter(
     (component) => /definition/i.test(`${component.heading ?? ''} ${component.label}`) || /\bmeans\b/i.test(component.text),
   );
@@ -326,7 +362,7 @@ const resolveRelevantDefinitions = (
 const resolveDirectReferences = (
   target: NbLawDocumentComponent,
   components: NbLawDocumentComponent[],
-): { contexts: ReturnType<typeof contextFromComponent>[]; warnings: string[] } => {
+): { contexts: AiSourceContext[]; warnings: string[] } => {
   const byLabel = new Map(components.map((component) => [component.label.toLowerCase(), component]));
   const bySupplementalLabel = new Map(
     components
@@ -346,7 +382,7 @@ const resolveDirectReferences = (
   const referencedComponents = [
     ...sectionLabels.map((label) => byLabel.get(label.toLowerCase())),
     ...supplementalLabels.map((label) => bySupplementalLabel.get(label)),
-  ].filter((component): component is NbLawDocumentComponent => Boolean(component) && component.sourceKey !== target.sourceKey);
+  ].filter((component): component is NbLawDocumentComponent => component !== undefined && component.sourceKey !== target.sourceKey);
   const contexts = Array.from(new Map(referencedComponents.map((component) => [component.sourceKey, component])).values())
     .slice(0, DIRECT_REFERENCE_LIMIT)
     .map((component) => contextFromComponent(component, 'direct-reference'))
@@ -428,7 +464,11 @@ const buildMapJob = ({
       ],
     },
   };
-  return { ...base, inputHash: hashText(JSON.stringify(base)) };
+  return {
+    ...base,
+    inputHash: hashText(canonicalJson(base)),
+    authoringInputFingerprint: authoringInputFingerprint(base),
+  };
 };
 
 const allEligibleMapJobs = (pkg: NbLawContentPackage, runId: string): AiStudyMapJob[] =>
@@ -848,7 +888,7 @@ const commandPrepareMap = (options: Record<string, string | boolean>): void => {
       '',
     ].join('\n'),
   );
-  const samplingReport = {
+  const samplingReport: MapSamplingReport = {
     runId,
     strategy,
     seed,
@@ -1886,16 +1926,21 @@ const commandHelp = (): void => {
   );
 };
 
-const { command, options } = parseArgs();
-if (command === 'prepare-map') commandPrepareMap(options);
-else if (command === 'prepare-units') commandPrepareUnitJobs(options);
-else if (command === 'status') commandStatus(options);
-else if (command === 'validate-results') commandValidateResults(options);
-else if (command === 'validate-unit-proposals') commandValidateUnitProposals(options);
-else if (command === 'pilot-report') commandPilotReport(options);
-else commandHelp();
+if (process.argv[1]?.endsWith('studyAiAuthoring.ts')) {
+  const { command, options } = parseArgs();
+  if (command === 'prepare-map') commandPrepareMap(options);
+  else if (command === 'prepare-units') commandPrepareUnitJobs(options);
+  else if (command === 'status') commandStatus(options);
+  else if (command === 'validate-results') commandValidateResults(options);
+  else if (command === 'validate-unit-proposals') commandValidateUnitProposals(options);
+  else if (command === 'pilot-report') commandPilotReport(options);
+  else commandHelp();
+}
 
 export const __studyAiAuthoringTest = {
   validateAiStudyMapJob,
   basename,
+  sourceFocusOptionsFromComponent,
+  structuralChildLabelsFromComponent,
+  authoringInputFingerprint,
 };

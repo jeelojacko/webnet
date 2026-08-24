@@ -1,0 +1,17 @@
+{
+  "runId": "ai-map-4c12-full-corpus-v2",
+  "strategy": "full-corpus",
+  "seed": 42,
+  "requestedSample": 0,
+  "selectedJobs": 3692,
+  "batchCount": 220,
+  "batchingPolicy": {
+    "maxJobsPerBatch": 18,
+    "maxInputCharactersPerBatch": 120000
+  },
+  "manualIncludes": [],
+  "phase4b1RequiredIncludesApplied": false,
+  "phase4b1RequiredIncludes": [],
+  "strategyVersion": "full-corpus-v1-size-batched",
+  "sampleSize": 3692
+}

@@ -1,3 +1,9 @@
+- [x] Study Phase 4C.1.3 Study Map infrastructure repair (August 2026): repair child-label preparation, fail-closed V3 validation/schema, deterministic V2 preparation/reuse/regeneration artifacts, local OpenAI-compatible runner scaffolding, local comparison tooling/docs, focused tests, required validation, commit, push, and stop before any local or external authoring.
+  - [x] Replace prose-derived child labels with parsed structural child labels only.
+  - [x] Add canonical Study Map V3 result schema and fail-closed validation before grounding.
+  - [x] Prepare `ai-map-4c12-full-corpus-v2` deterministically with audit, reuse, regeneration, status, and validation artifacts.
+  - [x] Add local OpenAI-compatible runner with strict structured output, retry/resume/provenance, mock tests, and no real model calls.
+  - [x] Add the local-model comparison manifest/report tooling and local Qwen workflow docs.
 - [ ] Study Phase 4C.1.2 full-corpus Study Map V3 external execution (August 2026): execute all 3,692 prepared `ai-map-4c1-full-corpus-v1` jobs through genuine external Codex reasoning using disjoint sub-agent batch ownership, validate/report the full run, generate review queues and clean sample for the human semantic audit gate, run required checks, commit, push, and stop before Unit Authoring.
   - [x] Execute canary batches 001-010 and verify mechanical integrity before continuing.
   - [ ] Execute remaining batches 011-220 with disjoint batch ownership and resumability.

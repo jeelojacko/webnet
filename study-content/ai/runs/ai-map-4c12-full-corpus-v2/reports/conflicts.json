@@ -1,0 +1,40 @@
+{
+  "runId": "ai-map-4c12-full-corpus-v2",
+  "conflicts": [
+    {
+      "proposalId": "ai-map-4c12-full-corpus-v2:map-1fa5a6239a1f7144",
+      "jobId": "map-1fa5a6239a1f7144",
+      "conflicts": [
+        "MAP_CONFLICT"
+      ]
+    },
+    {
+      "proposalId": "ai-map-4c12-full-corpus-v2:map-208559fbf2dbeffa",
+      "jobId": "map-208559fbf2dbeffa",
+      "conflicts": [
+        "MAP_CONFLICT"
+      ]
+    },
+    {
+      "proposalId": "ai-map-4c12-full-corpus-v2:map-f0addd2670f48902",
+      "jobId": "map-f0addd2670f48902",
+      "conflicts": [
+        "MAP_CONFLICT"
+      ]
+    }
+  ],
+  "duplicateFocusGroups": [
+    [
+      "doc-community-planning-act::section:1::{\"sourceKey\":\"section:1\",\"childLabels\":[\"1(1)\"]}",
+      2
+    ],
+    [
+      "doc-mining-act::section:68::{\"sourceKey\":\"section:68\",\"childLabels\":[\"68(1)\"]}",
+      2
+    ],
+    [
+      "doc-municipalities-act::section:192::{\"sourceKey\":\"section:192\",\"childLabels\":[\"192(1)\"]}",
+      3
+    ]
+  ]
+}

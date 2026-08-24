@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "runId": "ai-map-4c12-full-corpus-v2",
+  "status": {
+    "runId": "ai-map-4c12-full-corpus-v2",
+    "expectedJobs": 3692,
+    "resultLines": 816,
+    "completed": 816,
+    "missing": 2876,
+    "malformed": 0,
+    "stale": 0,
+    "duplicate": 0,
+    "invalid": 0
+  },
+  "proposalStatusCounts": {
+    "valid": 753,
+    "warning-valid": 63
+  },
+  "dispositionCounts": {
+    "standalone": 506,
+    "split": 290,
+    "skip": 11,
+    "reference-only": 7,
+    "needs-human-review": 2
+  },
+  "confidenceCounts": {
+    "high": 768,
+    "medium": 46,
+    "low": 2
+  },
+  "conflictCounts": {
+    "MAP_CONFLICT": 3
+  },
+  "validationIssueCounts": {
+    "POSSIBLE_TRIVIAL_STANDALONE": 14,
+    "LOW_CONFIDENCE": 2
+  },
+  "groundingWarnings": 0,
+  "contextLeakage": 0,
+  "definedTermGroundingFailures": 0,
+  "childLabelGroundingFailures": 0,
+  "evidenceGroundingFailures": 0,
+  "sourceHashFailures": 0
+}

@@ -1,0 +1,568 @@
+{
+  "schemaVersion": 1,
+  "v2RunId": "ai-map-4c12-full-corpus-v2",
+  "size": 24,
+  "categoryDistribution": {
+    "permission": 19,
+    "procedural rule": 10,
+    "regulation-making power": 15,
+    "duty": 16,
+    "filing requirement": 2,
+    "legal effect": 3,
+    "cross-reference-heavy provision": 16,
+    "moderately broad provision": 1,
+    "offence": 2,
+    "prohibition": 1,
+    "surveying-specific provision": 1,
+    "notice": 2,
+    "deadline": 2
+  },
+  "jobs": [
+    {
+      "v2JobId": "map-2373fab8f7ea504a",
+      "document": {
+        "documentId": "doc-agricultural-land-protection-and-development-act",
+        "title": "Agricultural Land Protection\nand Development Act",
+        "citation": "Chapter A-5.11",
+        "type": "act"
+      },
+      "target": "2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "auditType": "act",
+      "complexityCategory": [
+        "permission",
+        "procedural rule",
+        "regulation-making power"
+      ],
+      "reasonSelected": "permission, procedural rule, regulation-making power",
+      "v1KnownGoodResultLocation": "ai-map-4c1-full-corpus-v1/results/batch-001.results.jsonl",
+      "v1ResultIdentity": "ai-map-4c1-full-corpus-v1:map-2373fab8f7ea504a",
+      "v2Fingerprint": "9cc2811c94ef1885f753258e671fe99593e729c98d5a6a7e509e54ba32cde916"
+    },
+    {
+      "v2JobId": "map-ee86a107fa30d5df",
+      "document": {
+        "documentId": "doc-agricultural-land-protection-and-development-act",
+        "title": "Agricultural Land Protection\nand Development Act",
+        "citation": "Chapter A-5.11",
+        "type": "act"
+      },
+      "target": "3",
+      "sourceKey": "section:3",
+      "componentType": "section",
+      "auditType": "act",
+      "complexityCategory": [
+        "duty",
+        "filing requirement",
+        "procedural rule",
+        "legal effect",
+        "regulation-making power",
+        "cross-reference-heavy provision"
+      ],
+      "reasonSelected": "duty, filing requirement, procedural rule, legal effect, regulation-making power, cross-reference-heavy provision",
+      "v1KnownGoodResultLocation": "ai-map-4c1-full-corpus-v1/results/batch-001.results.jsonl",
+      "v1ResultIdentity": "ai-map-4c1-full-corpus-v1:map-ee86a107fa30d5df",
+      "v2Fingerprint": "b112dd3135aa5c6233ae03dcd08915f51680180f4ad67b24a399bfaedcfb72a0"
+    },
+    {
+      "v2JobId": "map-dc39a6e07fe4a076",
+      "document": {
+        "documentId": "doc-agricultural-land-protection-and-development-act",
+        "title": "Agricultural Land Protection\nand Development Act",
+        "citation": "Chapter A-5.11",
+        "type": "act"
+      },
+      "target": "6",
+      "sourceKey": "section:6",
+      "componentType": "section",
+      "auditType": "act",
+      "complexityCategory": [
+        "permission",
+        "regulation-making power",
+        "cross-reference-heavy provision"
+      ],
+      "reasonSelected": "permission, regulation-making power, cross-reference-heavy provision",
+      "v1KnownGoodResultLocation": "ai-map-4c1-full-corpus-v1/results/batch-001.results.jsonl",
+      "v1ResultIdentity": "ai-map-4c1-full-corpus-v1:map-dc39a6e07fe4a076",
+      "v2Fingerprint": "e912e54266788a30b02e45be476b6fb364df2d6486d3dd2f2a7b170cc42dba14"
+    },
+    {
+      "v2JobId": "map-68f23ed566e61bf3",
+      "document": {
+        "documentId": "doc-agricultural-land-protection-and-development-act",
+        "title": "Agricultural Land Protection\nand Development Act",
+        "citation": "Chapter A-5.11",
+        "type": "act"
+      },
+      "target": "12",
+      "sourceKey": "section:12",
+      "componentType": "section",
+      "auditType": "act",
+      "complexityCategory": [
+        "duty",
+        "permission",
+        "procedural rule",
+        "cross-reference-heavy provision"
+      ],
+      "reasonSelected": "duty, permission, procedural rule, cross-reference-heavy provision",
+      "v1KnownGoodResultLocation": "ai-map-4c1-full-corpus-v1/results/batch-001.results.jsonl",
+      "v1ResultIdentity": "ai-map-4c1-full-corpus-v1:map-68f23ed566e61bf3",
+      "v2Fingerprint": "74bc977e63ddb2a0101c2d5befeb0fb51e3da3180ca321cf4df5b8a5117bf712"
+    },
+    {
+      "v2JobId": "map-645a6dc5c4d63ed9",
+      "document": {
+        "documentId": "doc-agricultural-land-protection-and-development-act",
+        "title": "Agricultural Land Protection\nand Development Act",
+        "citation": "Chapter A-5.11",
+        "type": "act"
+      },
+      "target": "15",
+      "sourceKey": "section:15",
+      "componentType": "section",
+      "auditType": "act",
+      "complexityCategory": [
+        "duty",
+        "permission",
+        "procedural rule",
+        "legal effect",
+        "cross-reference-heavy provision",
+        "moderately broad provision"
+      ],
+      "reasonSelected": "duty, permission, procedural rule, legal effect, cross-reference-heavy provision, moderately broad provision",
+      "v1KnownGoodResultLocation": "ai-map-4c1-full-corpus-v1/results/batch-001.results.jsonl",
+      "v1ResultIdentity": "ai-map-4c1-full-corpus-v1:map-645a6dc5c4d63ed9",
+      "v2Fingerprint": "98f96301abb2e6a5a1d1bf06a0d76fe21407ec26ef940987018ceee4cb2cfb7e"
+    },
+    {
+      "v2JobId": "map-bc835380193b2297",
+      "document": {
+        "documentId": "doc-agricultural-land-protection-and-development-act",
+        "title": "Agricultural Land Protection\nand Development Act",
+        "citation": "Chapter A-5.11",
+        "type": "act"
+      },
+      "target": "17",
+      "sourceKey": "section:17",
+      "componentType": "section",
+      "auditType": "act",
+      "complexityCategory": [
+        "duty",
+        "permission",
+        "cross-reference-heavy provision"
+      ],
+      "reasonSelected": "duty, permission, cross-reference-heavy provision",
+      "v1KnownGoodResultLocation": "ai-map-4c1-full-corpus-v1/results/batch-001.results.jsonl",
+      "v1ResultIdentity": "ai-map-4c1-full-corpus-v1:map-bc835380193b2297",
+      "v2Fingerprint": "e36b32a2f2fc0ffa4a90aa001bba02ee33d0aa8b8b12a9f32201f6bded41d5a2"
+    },
+    {
+      "v2JobId": "map-1427ed72d84e3991",
+      "document": {
+        "documentId": "doc-agricultural-land-protection-and-development-act",
+        "title": "Agricultural Land Protection\nand Development Act",
+        "citation": "Chapter A-5.11",
+        "type": "act"
+      },
+      "target": "18",
+      "sourceKey": "section:18",
+      "componentType": "section",
+      "auditType": "act",
+      "complexityCategory": [
+        "procedural rule",
+        "offence",
+        "regulation-making power",
+        "cross-reference-heavy provision"
+      ],
+      "reasonSelected": "procedural rule, offence, regulation-making power, cross-reference-heavy provision",
+      "v1KnownGoodResultLocation": "ai-map-4c1-full-corpus-v1/results/batch-001.results.jsonl",
+      "v1ResultIdentity": "ai-map-4c1-full-corpus-v1:map-1427ed72d84e3991",
+      "v2Fingerprint": "42af9ce5bcdc4c27a696ce99ffb94c6b9c1a939b5d9caf2d5a7db1e8f62fbb47"
+    },
+    {
+      "v2JobId": "map-b40a24846d0cb9f0",
+      "document": {
+        "documentId": "doc-agricultural-land-protection-and-development-act",
+        "title": "Agricultural Land Protection\nand Development Act",
+        "citation": "Chapter A-5.11",
+        "type": "act"
+      },
+      "target": "19",
+      "sourceKey": "section:19",
+      "componentType": "section",
+      "auditType": "act",
+      "complexityCategory": [
+        "permission",
+        "regulation-making power"
+      ],
+      "reasonSelected": "permission, regulation-making power",
+      "v1KnownGoodResultLocation": "ai-map-4c1-full-corpus-v1/results/batch-002.results.jsonl",
+      "v1ResultIdentity": "ai-map-4c1-full-corpus-v1:map-b40a24846d0cb9f0",
+      "v2Fingerprint": "609cc0dc0af353afc196763f1dedf2376909db35a12e7148db9b9488c360b5db"
+    },
+    {
+      "v2JobId": "map-d3a8ff5a7c1bb219",
+      "document": {
+        "documentId": "doc-air-space-act",
+        "title": "Air Space Act",
+        "citation": "2011, c.109",
+        "type": "act"
+      },
+      "target": "5",
+      "sourceKey": "section:5",
+      "componentType": "section",
+      "auditType": "act",
+      "complexityCategory": [
+        "duty",
+        "prohibition",
+        "filing requirement",
+        "regulation-making power",
+        "cross-reference-heavy provision",
+        "surveying-specific provision"
+      ],
+      "reasonSelected": "duty, prohibition, filing requirement, regulation-making power, cross-reference-heavy provision, surveying-specific provision",
+      "v1KnownGoodResultLocation": "ai-map-4c1-full-corpus-v1/results/batch-002.results.jsonl",
+      "v1ResultIdentity": "ai-map-4c1-full-corpus-v1:map-d3a8ff5a7c1bb219",
+      "v2Fingerprint": "ccee7e5aba162121e866dd9d1f0bd51b4928292edfc6cca300cbfd29d2841a98"
+    },
+    {
+      "v2JobId": "map-0512fef88bedebfc",
+      "document": {
+        "documentId": "doc-air-space-act",
+        "title": "Air Space Act",
+        "citation": "2011, c.109",
+        "type": "act"
+      },
+      "target": "6",
+      "sourceKey": "section:6",
+      "componentType": "section",
+      "auditType": "act",
+      "complexityCategory": [
+        "duty",
+        "permission"
+      ],
+      "reasonSelected": "duty, permission",
+      "v1KnownGoodResultLocation": "ai-map-4c1-full-corpus-v1/results/batch-002.results.jsonl",
+      "v1ResultIdentity": "ai-map-4c1-full-corpus-v1:map-0512fef88bedebfc",
+      "v2Fingerprint": "fab8e088a7d9b042ef26755ee948ed58e5e8c8472d845ce66956c458c8a2f461"
+    },
+    {
+      "v2JobId": "map-0e48f2e8ac930064",
+      "document": {
+        "documentId": "doc-aquaculture-act",
+        "title": "Aquaculture Act",
+        "citation": "Chapter 2019, c.40",
+        "type": "act"
+      },
+      "target": "2",
+      "sourceKey": "section:2",
+      "componentType": "section",
+      "auditType": "act",
+      "complexityCategory": [
+        "duty",
+        "procedural rule",
+        "regulation-making power",
+        "cross-reference-heavy provision"
+      ],
+      "reasonSelected": "duty, procedural rule, regulation-making power, cross-reference-heavy provision",
+      "v1KnownGoodResultLocation": "ai-map-4c1-full-corpus-v1/results/batch-002.results.jsonl",
+      "v1ResultIdentity": "ai-map-4c1-full-corpus-v1:map-0e48f2e8ac930064",
+      "v2Fingerprint": "f964619f5b935f84c306021a4c3cea04162e0035072d17f3bc025dd71a6e7e9f"
+    },
+    {
+      "v2JobId": "map-aa0ad1ab641700f3",
+      "document": {
+        "documentId": "doc-aquaculture-act",
+        "title": "Aquaculture Act",
+        "citation": "Chapter 2019, c.40",
+        "type": "act"
+      },
+      "target": "4",
+      "sourceKey": "section:4",
+      "componentType": "section",
+      "auditType": "act",
+      "complexityCategory": [
+        "permission",
+        "cross-reference-heavy provision"
+      ],
+      "reasonSelected": "permission, cross-reference-heavy provision",
+      "v1KnownGoodResultLocation": "ai-map-4c1-full-corpus-v1/results/batch-003.results.jsonl",
+      "v1ResultIdentity": "ai-map-4c1-full-corpus-v1:map-aa0ad1ab641700f3",
+      "v2Fingerprint": "ab090a318727ee1cf3cdac958b54200c478923aa626ce2c9d6beed9c3d137793"
+    },
+    {
+      "v2JobId": "map-c10976d9fdca2fd7",
+      "document": {
+        "documentId": "doc-aquaculture-act",
+        "title": "Aquaculture Act",
+        "citation": "Chapter 2019, c.40",
+        "type": "act"
+      },
+      "target": "5",
+      "sourceKey": "section:5",
+      "componentType": "section",
+      "auditType": "act",
+      "complexityCategory": [
+        "duty",
+        "permission"
+      ],
+      "reasonSelected": "duty, permission",
+      "v1KnownGoodResultLocation": "ai-map-4c1-full-corpus-v1/results/batch-003.results.jsonl",
+      "v1ResultIdentity": "ai-map-4c1-full-corpus-v1:map-c10976d9fdca2fd7",
+      "v2Fingerprint": "c7a749583198d9ebd811635743e94a6fe27bb798e6ea622d31fd996dceb22169"
+    },
+    {
+      "v2JobId": "map-ddc4f36cf2e5ccbf",
+      "document": {
+        "documentId": "doc-aquaculture-act",
+        "title": "Aquaculture Act",
+        "citation": "Chapter 2019, c.40",
+        "type": "act"
+      },
+      "target": "6",
+      "sourceKey": "section:6",
+      "componentType": "section",
+      "auditType": "act",
+      "complexityCategory": [
+        "duty",
+        "permission",
+        "procedural rule",
+        "regulation-making power",
+        "cross-reference-heavy provision"
+      ],
+      "reasonSelected": "duty, permission, procedural rule, regulation-making power, cross-reference-heavy provision",
+      "v1KnownGoodResultLocation": "ai-map-4c1-full-corpus-v1/results/batch-003.results.jsonl",
+      "v1ResultIdentity": "ai-map-4c1-full-corpus-v1:map-ddc4f36cf2e5ccbf",
+      "v2Fingerprint": "4f459c58218777f72d9376aeeb39f878518241e73623952a25d294e8037f67fc"
+    },
+    {
+      "v2JobId": "map-dd82620b77541724",
+      "document": {
+        "documentId": "doc-aquaculture-act",
+        "title": "Aquaculture Act",
+        "citation": "Chapter 2019, c.40",
+        "type": "act"
+      },
+      "target": "7",
+      "sourceKey": "section:7",
+      "componentType": "section",
+      "auditType": "act",
+      "complexityCategory": [
+        "duty",
+        "permission",
+        "notice",
+        "regulation-making power",
+        "cross-reference-heavy provision"
+      ],
+      "reasonSelected": "duty, permission, notice, regulation-making power, cross-reference-heavy provision",
+      "v1KnownGoodResultLocation": "ai-map-4c1-full-corpus-v1/results/batch-003.results.jsonl",
+      "v1ResultIdentity": "ai-map-4c1-full-corpus-v1:map-dd82620b77541724",
+      "v2Fingerprint": "6b3c08f573a2a3680558168594cce8866cd8598df46118c0c3e732c46c8ea31a"
+    },
+    {
+      "v2JobId": "map-92b261ca708989f1",
+      "document": {
+        "documentId": "doc-aquaculture-act",
+        "title": "Aquaculture Act",
+        "citation": "Chapter 2019, c.40",
+        "type": "act"
+      },
+      "target": "8",
+      "sourceKey": "section:8",
+      "componentType": "section",
+      "auditType": "act",
+      "complexityCategory": [
+        "duty",
+        "permission",
+        "deadline",
+        "notice",
+        "procedural rule",
+        "cross-reference-heavy provision"
+      ],
+      "reasonSelected": "duty, permission, deadline, notice, procedural rule, cross-reference-heavy provision",
+      "v1KnownGoodResultLocation": "ai-map-4c1-full-corpus-v1/results/batch-003.results.jsonl",
+      "v1ResultIdentity": "ai-map-4c1-full-corpus-v1:map-92b261ca708989f1",
+      "v2Fingerprint": "f964f37c1e5e13f40068d466a4eb0c3e618c1c5630abaa17e17bb93d7d605478"
+    },
+    {
+      "v2JobId": "map-cc58d2422ba66b2a",
+      "document": {
+        "documentId": "doc-aquaculture-act",
+        "title": "Aquaculture Act",
+        "citation": "Chapter 2019, c.40",
+        "type": "act"
+      },
+      "target": "9",
+      "sourceKey": "section:9",
+      "componentType": "section",
+      "auditType": "act",
+      "complexityCategory": [
+        "permission",
+        "legal effect",
+        "cross-reference-heavy provision"
+      ],
+      "reasonSelected": "permission, legal effect, cross-reference-heavy provision",
+      "v1KnownGoodResultLocation": "ai-map-4c1-full-corpus-v1/results/batch-003.results.jsonl",
+      "v1ResultIdentity": "ai-map-4c1-full-corpus-v1:map-cc58d2422ba66b2a",
+      "v2Fingerprint": "b5a553bfab8c2e370f66a2cec85a8c2434ca20e9496d67ee51159085880ac5d1"
+    },
+    {
+      "v2JobId": "map-923d0b5586e16ffc",
+      "document": {
+        "documentId": "doc-aquaculture-act",
+        "title": "Aquaculture Act",
+        "citation": "Chapter 2019, c.40",
+        "type": "act"
+      },
+      "target": "10",
+      "sourceKey": "section:10",
+      "componentType": "section",
+      "auditType": "act",
+      "complexityCategory": [
+        "duty",
+        "permission",
+        "regulation-making power"
+      ],
+      "reasonSelected": "duty, permission, regulation-making power",
+      "v1KnownGoodResultLocation": "ai-map-4c1-full-corpus-v1/results/batch-003.results.jsonl",
+      "v1ResultIdentity": "ai-map-4c1-full-corpus-v1:map-923d0b5586e16ffc",
+      "v2Fingerprint": "8d8ee1ccac2bf071594d31572004e4123d55fff519f6dc02b2bc1ecb0c556d95"
+    },
+    {
+      "v2JobId": "map-fa3abaeed516d3c9",
+      "document": {
+        "documentId": "doc-aquaculture-act",
+        "title": "Aquaculture Act",
+        "citation": "Chapter 2019, c.40",
+        "type": "act"
+      },
+      "target": "11",
+      "sourceKey": "section:11",
+      "componentType": "section",
+      "auditType": "act",
+      "complexityCategory": [
+        "duty",
+        "permission",
+        "deadline",
+        "regulation-making power"
+      ],
+      "reasonSelected": "duty, permission, deadline, regulation-making power",
+      "v1KnownGoodResultLocation": "ai-map-4c1-full-corpus-v1/results/batch-003.results.jsonl",
+      "v1ResultIdentity": "ai-map-4c1-full-corpus-v1:map-fa3abaeed516d3c9",
+      "v2Fingerprint": "7f434e12a01262e5440978458d9e763e78a527e72b0260f74101891918a659af"
+    },
+    {
+      "v2JobId": "map-7d18a4e3d158315a",
+      "document": {
+        "documentId": "doc-aquaculture-act",
+        "title": "Aquaculture Act",
+        "citation": "Chapter 2019, c.40",
+        "type": "act"
+      },
+      "target": "12",
+      "sourceKey": "section:12",
+      "componentType": "section",
+      "auditType": "act",
+      "complexityCategory": [
+        "duty",
+        "regulation-making power"
+      ],
+      "reasonSelected": "duty, regulation-making power",
+      "v1KnownGoodResultLocation": "ai-map-4c1-full-corpus-v1/results/batch-003.results.jsonl",
+      "v1ResultIdentity": "ai-map-4c1-full-corpus-v1:map-7d18a4e3d158315a",
+      "v2Fingerprint": "9445e576b071980e9622012853e8b2a93c6d2e8bca6ef58b610e8bc25c9d206c"
+    },
+    {
+      "v2JobId": "map-3b1ec9e3b54c36bf",
+      "document": {
+        "documentId": "doc-aquaculture-act",
+        "title": "Aquaculture Act",
+        "citation": "Chapter 2019, c.40",
+        "type": "act"
+      },
+      "target": "13",
+      "sourceKey": "section:13",
+      "componentType": "section",
+      "auditType": "act",
+      "complexityCategory": [
+        "permission",
+        "regulation-making power",
+        "cross-reference-heavy provision"
+      ],
+      "reasonSelected": "permission, regulation-making power, cross-reference-heavy provision",
+      "v1KnownGoodResultLocation": "ai-map-4c1-full-corpus-v1/results/batch-003.results.jsonl",
+      "v1ResultIdentity": "ai-map-4c1-full-corpus-v1:map-3b1ec9e3b54c36bf",
+      "v2Fingerprint": "d21e07c950f7bb1767a21a6f57b20b4ca1a4ce231815b089cd0a97f30913259d"
+    },
+    {
+      "v2JobId": "map-19f3c701f28461a7",
+      "document": {
+        "documentId": "doc-aquaculture-act",
+        "title": "Aquaculture Act",
+        "citation": "Chapter 2019, c.40",
+        "type": "act"
+      },
+      "target": "16",
+      "sourceKey": "section:16",
+      "componentType": "section",
+      "auditType": "act",
+      "complexityCategory": [
+        "duty",
+        "permission",
+        "procedural rule",
+        "offence",
+        "regulation-making power",
+        "cross-reference-heavy provision"
+      ],
+      "reasonSelected": "duty, permission, procedural rule, offence, regulation-making power, cross-reference-heavy provision",
+      "v1KnownGoodResultLocation": "ai-map-4c1-full-corpus-v1/results/batch-003.results.jsonl",
+      "v1ResultIdentity": "ai-map-4c1-full-corpus-v1:map-19f3c701f28461a7",
+      "v2Fingerprint": "b901463a63c173fa4581e72882a09706c0b77395cfb9cc373d5e4f3ccf620ce9"
+    },
+    {
+      "v2JobId": "map-9da96ea2557938cb",
+      "document": {
+        "documentId": "doc-aquaculture-act",
+        "title": "Aquaculture Act",
+        "citation": "Chapter 2019, c.40",
+        "type": "act"
+      },
+      "target": "21",
+      "sourceKey": "section:21",
+      "componentType": "section",
+      "auditType": "act",
+      "complexityCategory": [
+        "duty",
+        "permission",
+        "procedural rule",
+        "cross-reference-heavy provision"
+      ],
+      "reasonSelected": "duty, permission, procedural rule, cross-reference-heavy provision",
+      "v1KnownGoodResultLocation": "ai-map-4c1-full-corpus-v1/results/batch-004.results.jsonl",
+      "v1ResultIdentity": "ai-map-4c1-full-corpus-v1:map-9da96ea2557938cb",
+      "v2Fingerprint": "38ca89bcd729013d3e4518d758ce3235943b8d776292f9a70598bd9bed142868"
+    },
+    {
+      "v2JobId": "map-e185818c152f7db6",
+      "document": {
+        "documentId": "doc-aquaculture-act",
+        "title": "Aquaculture Act",
+        "citation": "Chapter 2019, c.40",
+        "type": "act"
+      },
+      "target": "23",
+      "sourceKey": "section:23",
+      "componentType": "section",
+      "auditType": "act",
+      "complexityCategory": [
+        "permission",
+        "regulation-making power"
+      ],
+      "reasonSelected": "permission, regulation-making power",
+      "v1KnownGoodResultLocation": "ai-map-4c1-full-corpus-v1/results/batch-004.results.jsonl",
+      "v1ResultIdentity": "ai-map-4c1-full-corpus-v1:map-e185818c152f7db6",
+      "v2Fingerprint": "42e3a23f2a93d057f42249ad56da2b4427b5c07e509fe83e75f9200dc31e6631"
+    }
+  ]
+}

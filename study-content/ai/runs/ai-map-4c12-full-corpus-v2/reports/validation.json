@@ -1,0 +1,10 @@
+{
+  "runId": "ai-map-4c12-full-corpus-v2",
+  "jobs": 3692,
+  "results": 816,
+  "invalid": 0,
+  "malformed": [],
+  "duplicateResults": 0,
+  "issues": [],
+  "mapConflicts": 3
+}

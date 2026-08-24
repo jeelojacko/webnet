@@ -4,6 +4,7 @@ export type AiAuthoringProviderKind =
   | 'external-codex'
   | 'external-chatgpt'
   | 'openai-api'
+  | 'local-openai-compatible'
   | 'manual-import';
 
 export type AiAuthoringJobType = 'study-map' | 'unit-authoring';
@@ -118,6 +119,7 @@ export type AiStudyMapJob = {
   promptSpecVersion: string;
   corpusContentHash: string;
   inputHash: string;
+  authoringInputFingerprint?: string;
   document: AiSourceDocumentSummary;
   target: {
     sourceKeys: string[];
@@ -205,6 +207,7 @@ export type AiStudyMapResult = {
   runId: string;
   corpusContentHash: string;
   inputHash?: string;
+  authoringInputFingerprint?: string;
   promptSpecVersion?: string;
   disposition: AiStudyDisposition;
   confidence: AiConfidence;

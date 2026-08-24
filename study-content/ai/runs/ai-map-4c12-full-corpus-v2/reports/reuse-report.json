@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "v1RunId": "ai-map-4c1-full-corpus-v1",
+  "v2RunId": "ai-map-4c12-full-corpus-v2",
+  "totalV2Jobs": 3692,
+  "totalV1ResultRecordsFound": 2492,
+  "totalV1ResultsThatParse": 2492,
+  "totalSchemaValidV1Results": 2192,
+  "totalGroundingValidV1Results": 2104,
+  "reusableV1Results": 816,
+  "reusableWarningValidResults": 16,
+  "totalRegenerationRequired": 2876,
+  "totalV2JobsNeverAuthoredInV1": 1200,
+  "regenerationReasons": {
+    "authoring-input-changed": 1288,
+    "v1-grounding-invalid": 88,
+    "v1-schema-invalid": 300,
+    "missing-v1-result": 1200
+  },
+  "malformedV1Lines": []
+}

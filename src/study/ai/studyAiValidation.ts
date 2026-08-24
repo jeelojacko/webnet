@@ -22,12 +22,10 @@ import {
   significantLegalSupportTerms,
   sourceSectionFromKey,
 } from './studyAiUnitFidelity';
+import { validateStudyMapV3ResultContract } from './studyAiResultContract';
 
-const DISPOSITIONS = new Set(['standalone', 'combine', 'split', 'reference-only', 'skip', 'needs-human-review']);
 const CONFIDENCES = new Set(['high', 'medium', 'low']);
-const PRIORITIES = new Set(['P1', 'P2', 'P3', 'P4']);
 const SOURCE_STATUSES = new Set(['current', 'repealed', 'historical']);
-const WARNING_CODE_PATTERN = /^[A-Z][A-Z0-9_]+$/;
 const REFERENCE_ONLY_REASON_CODES = new Set([
   'VERY_SHORT_REFERENCE_ONLY',
   'SHORT_CONTEXT_REFERENCE_ONLY',
@@ -163,28 +161,11 @@ export const validateAiStudyMapResult = (
   const issues: AiValidationIssue[] = [];
   if (!isRecord(value)) return { valid: false, issues: [{ code: 'SCHEMA_INVALID', severity: 'error', message: 'Map result must be an object.' }] };
   const jobId = stringValue(value.jobId) ? value.jobId : undefined;
-  if (value.schemaVersion !== 1) addIssue(issues, { code: 'SCHEMA_VERSION', jobId, message: 'Study Map result schemaVersion must be 1.' });
-  if (!nonEmptyString(value.jobId)) addIssue(issues, { code: 'JOB_ID_REQUIRED', message: 'jobId is required.' });
-  if (!nonEmptyString(value.runId)) addIssue(issues, { code: 'RUN_ID_REQUIRED', jobId, message: 'runId is required.' });
-  if (!DISPOSITIONS.has(String(value.disposition))) addIssue(issues, { code: 'INVALID_DISPOSITION', jobId, message: 'Invalid Study Map disposition.' });
-  if (!CONFIDENCES.has(String(value.confidence))) addIssue(issues, { code: 'INVALID_CONFIDENCE', jobId, message: 'Invalid Study Map confidence.' });
-  if (!nonEmptyString(value.reason)) addIssue(issues, { code: 'REASON_REQUIRED', jobId, message: 'reason is required.' });
-  if (typeof value.suggestedPriority !== 'undefined' && !PRIORITIES.has(String(value.suggestedPriority))) {
-    addIssue(issues, { code: 'INVALID_SUGGESTED_PRIORITY', jobId, message: 'suggestedPriority must be P1, P2, P3, P4, or absent.' });
-  }
+  issues.push(...validateStudyMapV3ResultContract(value));
   if (typeof value.reason === 'string' && REFERENCE_ONLY_REASON_CODES.has(value.reason.trim())) {
     addIssue(issues, { code: 'WARNING_CODE_IN_REASON', jobId, message: 'Machine warning codes must be placed in warnings, not reason.' });
   }
-  if (!Array.isArray(value.proposedGroups)) addIssue(issues, { code: 'GROUPS_REQUIRED', jobId, message: 'proposedGroups must be an array.' });
-  if (!Array.isArray(value.warnings)) addIssue(issues, { code: 'WARNINGS_REQUIRED', jobId, message: 'warnings must be an array.' });
-  if (Array.isArray(value.warnings)) {
-    value.warnings.forEach((warning) => {
-      if (typeof warning !== 'string' || !WARNING_CODE_PATTERN.test(warning)) {
-        addIssue(issues, { code: 'INVALID_WARNING_CODE', jobId, message: 'warnings must contain machine-readable uppercase codes.' });
-      }
-    });
-  }
-  if (Array.isArray(value.proposedGroups)) {
+  if (!issues.some((issue) => issue.severity === 'error') && Array.isArray(value.proposedGroups)) {
     value.proposedGroups.forEach((group) => validateMapGroup(group, value, job, issues));
   }
   if (job) {
