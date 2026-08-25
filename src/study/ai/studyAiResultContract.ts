@@ -15,6 +15,7 @@ export const STUDY_MAP_V3_RESULT_SCHEMA = {
     'jobId',
     'runId',
     'corpusContentHash',
+    'promptSpecVersion',
     'disposition',
     'confidence',
     'reason',

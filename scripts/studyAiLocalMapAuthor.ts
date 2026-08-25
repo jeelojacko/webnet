@@ -19,9 +19,14 @@ type RunnerOptions = {
   resume: boolean;
   concurrency: number;
   maxRetries: number;
+  timeoutMs?: number;
+  reasoningEffort?: string;
   dryRun: boolean;
   unsafeUnstructured: boolean;
+  log?: (_message: string) => void;
 };
+
+const DEFAULT_LOCAL_AUTHOR_TIMEOUT_MS = 600_000;
 
 type RequestInitLike = {
   method: string;
@@ -32,8 +37,9 @@ type RequestInitLike = {
 
 type FetchLike = (_input: string, _init: RequestInitLike) => Promise<Pick<Response, 'ok' | 'status' | 'json' | 'text'>>;
 
-const parseArgs = (): Record<string, string | boolean> => {
-  const [, , ...rawArgs] = process.argv;
+const parseArgs = (): Record<string, string | boolean> => parseRawArgs(process.argv.slice(2));
+
+const parseRawArgs = (rawArgs: string[]): Record<string, string | boolean> => {
   const options: Record<string, string | boolean> = {};
   for (let index = 0; index < rawArgs.length; index += 1) {
     const arg = rawArgs[index];
@@ -48,6 +54,52 @@ const parseArgs = (): Record<string, string | boolean> => {
   }
   return options;
 };
+
+const parseTimeoutMs = (value: unknown, source: string): number => {
+  if (typeof value !== 'string') throw new Error(`${source} must be a positive integer number of milliseconds.`);
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed <= 0) throw new Error(`${source} must be a positive integer number of milliseconds.`);
+  return parsed;
+};
+
+const timeoutMsFrom = (args: Record<string, string | boolean>, env: Record<string, string | undefined>): number => {
+  if (args['timeout-ms'] !== undefined) return parseTimeoutMs(args['timeout-ms'], '--timeout-ms');
+  if (env.STUDY_AI_TIMEOUT_MS !== undefined) return parseTimeoutMs(env.STUDY_AI_TIMEOUT_MS, 'STUDY_AI_TIMEOUT_MS');
+  return DEFAULT_LOCAL_AUTHOR_TIMEOUT_MS;
+};
+
+const reasoningEffortFrom = (
+  args: Record<string, string | boolean>,
+  env: Record<string, string | undefined>,
+): string | undefined => {
+  if (args['reasoning-effort'] !== undefined) {
+    if (typeof args['reasoning-effort'] !== 'string' || args['reasoning-effort'].trim().length === 0) {
+      throw new Error('--reasoning-effort must be a non-empty string.');
+    }
+    return args['reasoning-effort'];
+  }
+  return env.STUDY_AI_REASONING_EFFORT?.trim() ? env.STUDY_AI_REASONING_EFFORT : undefined;
+};
+
+const optionsFromArgs = (
+  args: Record<string, string | boolean>,
+  env: Record<string, string | undefined> = process.env,
+): RunnerOptions => ({
+  runId: String(args.run ?? ''),
+  model: String(args.model ?? env.STUDY_AI_MODEL ?? ''),
+  baseUrl: String(args['base-url'] ?? env.STUDY_AI_BASE_URL ?? 'http://127.0.0.1:1234/v1'),
+  apiKey: args['api-key'] ? String(args['api-key']) : env.STUDY_AI_API_KEY,
+  comparisonSet: args['comparison-set'] ? String(args['comparison-set']) : undefined,
+  jobId: args.job ? String(args.job) : undefined,
+  batch: args.batch ? String(args.batch) : undefined,
+  resume: Boolean(args.resume),
+  concurrency: Number(args.concurrency ?? 1),
+  maxRetries: Number(args['max-retries'] ?? 2),
+  timeoutMs: timeoutMsFrom(args, env),
+  reasoningEffort: reasoningEffortFrom(args, env),
+  dryRun: Boolean(args['dry-run']),
+  unsafeUnstructured: Boolean(args['unsafe-unstructured']),
+});
 
 const readJson = <T>(path: string): T => JSON.parse(readFileSync(path, 'utf8')) as T;
 const writeJson = (path: string, value: unknown): void => writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`);
@@ -120,10 +172,14 @@ const promptForJob = (job: AiStudyMapJob): Array<{ role: 'system' | 'user'; cont
 ];
 
 const requestBody = (job: AiStudyMapJob, options: RunnerOptions, retryNote?: string): unknown => {
+  const base = {
+    model: options.model,
+    messages: retryNote ? [...promptForJob(job), { role: 'user' as const, content: retryNote }] : promptForJob(job),
+    ...(options.reasoningEffort ? { reasoning_effort: options.reasoningEffort } : {}),
+  };
   if (!options.unsafeUnstructured) {
     return {
-      model: options.model,
-      messages: retryNote ? [...promptForJob(job), { role: 'user', content: retryNote }] : promptForJob(job),
+      ...base,
       response_format: {
         type: 'json_schema',
         json_schema: {
@@ -135,8 +191,7 @@ const requestBody = (job: AiStudyMapJob, options: RunnerOptions, retryNote?: str
     };
   }
   return {
-    model: options.model,
-    messages: retryNote ? [...promptForJob(job), { role: 'user', content: retryNote }] : promptForJob(job),
+    ...base,
     response_format: { type: 'json_object' },
   };
 };
@@ -173,6 +228,15 @@ const recordFailure = (runId: string, jobId: string, attempt: number, raw: unkno
   writeJson(join(dir, `attempt-${attempt}.validation.json`), validation);
 };
 
+const elapsedMs = (startedAt: number): number => Date.now() - startedAt;
+
+const transportFailureMessage = (error: unknown): string => error instanceof Error ? error.message : String(error);
+
+const transportFailureArtifact = (message: string): { failureKind: 'transport/provider'; message: string } => ({
+  failureKind: 'transport/provider',
+  message,
+});
+
 export const runLocalMapAuthoring = async (
   options: RunnerOptions,
   fetchImpl: FetchLike = fetch,
@@ -180,13 +244,16 @@ export const runLocalMapAuthoring = async (
   if (!options.unsafeUnstructured && !STUDY_MAP_V3_RESULT_SCHEMA) throw new Error('Structured output schema is required.');
   if (options.concurrency !== 1) throw new Error('Only concurrency 1 is supported for local map authoring.');
   const jobs = selectJobs(options);
+  const log = options.log ?? console.log;
+  const timeoutMs = options.timeoutMs ?? DEFAULT_LOCAL_AUTHOR_TIMEOUT_MS;
   mkdirSync(join(RUNS_DIR, options.runId, 'results'), { recursive: true });
   const accepted = readJsonl<AiStudyMapResult>(resultPath(options.runId));
   const acceptedIds = options.resume ? new Set(accepted.map((result) => result.jobId)) : acceptedJobIds(options.runId);
   let skipped = 0;
   let failed = 0;
   let acceptedCount = 0;
-  for (const job of jobs) {
+  for (const [jobIndex, job] of jobs.entries()) {
+    log(`[${jobIndex + 1}/${jobs.length}] ${job.jobId}`);
     if (acceptedIds.has(job.jobId)) {
       skipped += 1;
       continue;
@@ -196,7 +263,11 @@ export const runLocalMapAuthoring = async (
     let written = false;
     for (let attempt = 1; attempt <= options.maxRetries + 1; attempt += 1) {
       const body = requestBody(job, options, retryNote);
+      const attemptLimit = options.maxRetries + 1;
+      log(`attempt ${attempt}/${attemptLimit} started`);
       let raw: unknown;
+      let transportError: string | undefined;
+      const attemptStartedAt = Date.now();
       try {
         const response = await fetchImpl(`${options.baseUrl.replace(/\/$/, '')}/chat/completions`, {
           method: 'POST',
@@ -205,8 +276,9 @@ export const runLocalMapAuthoring = async (
             ...(options.apiKey ? { Authorization: `Bearer ${options.apiKey}` } : {}),
           },
           body: JSON.stringify(body),
-          signal: AbortSignal.timeout(180_000),
+          signal: AbortSignal.timeout(timeoutMs),
         });
+        log(`HTTP response arrived after ${elapsedMs(attemptStartedAt)} ms`);
         if (!response.ok) {
           const text = await response.text();
           if (!options.unsafeUnstructured && /schema|response_format|json_schema/i.test(text)) {
@@ -216,9 +288,14 @@ export const runLocalMapAuthoring = async (
         }
         raw = await parseModelContent(response);
       } catch (error) {
-        raw = { error: error instanceof Error ? error.message : String(error) };
+        transportError = transportFailureMessage(error);
+        raw = transportFailureArtifact(transportError);
+        log(`transport/provider failure after ${elapsedMs(attemptStartedAt)} ms: ${transportError}`);
       }
-      const validation = validateLocalResult(raw, job);
+      const validation: { result?: AiStudyMapResult; issues: string[] } = transportError
+        ? { issues: [] }
+        : validateLocalResult(raw, job);
+      if (!transportError) log(`validation ${validation.result ? 'accepted' : 'rejected'}`);
       const provenance = {
         providerKind: 'local-openai-compatible',
         modelId: options.model,
@@ -241,30 +318,27 @@ export const runLocalMapAuthoring = async (
         written = true;
         break;
       }
-      recordFailure(options.runId, job.jobId, attempt, raw, { ...provenance, issues: validation.issues });
-      retryNote = 'The previous response failed validation. Regenerate the entire response as one JSON object that exactly matches the supplied schema and job identity.';
+      recordFailure(options.runId, job.jobId, attempt, raw, {
+        ...provenance,
+        ...(transportError ? { failureKind: 'transport/provider', errorMessage: transportError } : {}),
+        issues: validation.issues,
+      });
+      retryNote = transportError
+        ? undefined
+        : 'The previous response failed validation. Regenerate the entire response as one JSON object that exactly matches the supplied schema and job identity.';
     }
     if (!written) failed += 1;
   }
   return { accepted: acceptedCount, failed, skipped, dryRunJobs: options.dryRun ? jobs.length - skipped : 0 };
 };
 
+export const __studyAiLocalMapAuthorTest = {
+  optionsFromArgs,
+  parseRawArgs,
+};
+
 const main = async (): Promise<void> => {
-  const args = parseArgs();
-  const options: RunnerOptions = {
-    runId: String(args.run ?? ''),
-    model: String(args.model ?? process.env.STUDY_AI_MODEL ?? ''),
-    baseUrl: String(args['base-url'] ?? process.env.STUDY_AI_BASE_URL ?? 'http://127.0.0.1:1234/v1'),
-    apiKey: args['api-key'] ? String(args['api-key']) : process.env.STUDY_AI_API_KEY,
-    comparisonSet: args['comparison-set'] ? String(args['comparison-set']) : undefined,
-    jobId: args.job ? String(args.job) : undefined,
-    batch: args.batch ? String(args.batch) : undefined,
-    resume: Boolean(args.resume),
-    concurrency: Number(args.concurrency ?? 1),
-    maxRetries: Number(args['max-retries'] ?? 2),
-    dryRun: Boolean(args['dry-run']),
-    unsafeUnstructured: Boolean(args['unsafe-unstructured']),
-  };
+  const options = optionsFromArgs(parseArgs());
   if (!options.runId || !options.model) throw new Error('--run and --model/STUDY_AI_MODEL are required.');
   const result = await runLocalMapAuthoring(options);
   console.log(JSON.stringify(result, null, 2));

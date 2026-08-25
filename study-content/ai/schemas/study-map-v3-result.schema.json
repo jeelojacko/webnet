@@ -9,6 +9,7 @@
     "jobId",
     "runId",
     "corpusContentHash",
+    "promptSpecVersion",
     "disposition",
     "confidence",
     "reason",

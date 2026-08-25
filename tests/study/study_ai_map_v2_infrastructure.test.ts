@@ -2,8 +2,9 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { __studyAiAuthoringTest } from '../../scripts/studyAiAuthoring';
-import { runLocalMapAuthoring } from '../../scripts/studyAiLocalMapAuthor';
+import { __studyAiLocalMapAuthorTest, runLocalMapAuthoring } from '../../scripts/studyAiLocalMapAuthor';
 import { validateAiStudyMapResult } from '../../src/study/ai/studyAiValidation';
+import { STUDY_MAP_V3_RESULT_SCHEMA } from '../../src/study/ai/studyAiResultContract';
 import { authoringInputFingerprint } from '../../scripts/studyAiFingerprint';
 import type { AiStudyMapJob, AiStudyMapResult } from '../../src/study/ai/studyAiTypes';
 import type { NbLawContentPackage, NbLawDocumentComponent } from '../../src/study/content/nbLawTypes';
@@ -107,6 +108,11 @@ describe('Study Map V2 infrastructure repairs', () => {
     expect(__studyAiAuthoringTest.sourceFocusOptionsFromComponent(corpusComponent(pkg, 'doc-community-planning-act', 'schedule:schedule-a'))?.[0]?.sourceKey).toBe('schedule:schedule-a');
   });
 
+  it('requires promptSpecVersion in the strict Study Map V3 result schema', () => {
+    expect(STUDY_MAP_V3_RESULT_SCHEMA.properties.promptSpecVersion).toEqual({ type: 'string', minLength: 1 });
+    expect(STUDY_MAP_V3_RESULT_SCHEMA.required).toContain('promptSpecVersion');
+  });
+
   it('fails closed on malformed Study Map V3 result shapes before grounding', () => {
     const job = jobFixture();
     const invalidCases = [
@@ -124,6 +130,74 @@ describe('Study Map V2 infrastructure repairs', () => {
       const report = validateAiStudyMapResult(value, job);
       expect(report.valid).toBe(false);
       expect(report.issues.map((issue) => issue.code)).not.toContain('FOCUS_EVIDENCE_NOT_IN_SOURCE');
+    });
+  });
+
+  it('parses local author timeout from CLI, env fallback, and default', () => {
+    expect(__studyAiLocalMapAuthorTest.optionsFromArgs({ run: 'run-1', model: 'model-1', 'timeout-ms': '1234' }, {}).timeoutMs).toBe(1234);
+    expect(__studyAiLocalMapAuthorTest.optionsFromArgs({ run: 'run-1', model: 'model-1' }, { STUDY_AI_TIMEOUT_MS: '2345' }).timeoutMs).toBe(2345);
+    expect(__studyAiLocalMapAuthorTest.optionsFromArgs({ run: 'run-1', model: 'model-1' }, {}).timeoutMs).toBe(600_000);
+    expect(() => __studyAiLocalMapAuthorTest.optionsFromArgs({ run: 'run-1', model: 'model-1', 'timeout-ms': '0' }, {})).toThrow('--timeout-ms');
+    expect(__studyAiLocalMapAuthorTest.parseRawArgs(['--run', 'run-1', '--model', 'model-1', '--timeout-ms'])['timeout-ms']).toBe(true);
+    expect(() =>
+      __studyAiLocalMapAuthorTest.optionsFromArgs(
+        __studyAiLocalMapAuthorTest.parseRawArgs(['--run', 'run-1', '--model', 'model-1', '--timeout-ms']),
+        {},
+      ),
+    ).toThrow('--timeout-ms');
+    expect(() => __studyAiLocalMapAuthorTest.optionsFromArgs({ run: 'run-1', model: 'model-1', 'timeout-ms': true }, {})).toThrow('--timeout-ms');
+  });
+
+  it('parses local author reasoning effort from CLI, env fallback, and default', () => {
+    expect(__studyAiLocalMapAuthorTest.optionsFromArgs({ run: 'run-1', model: 'model-1', 'reasoning-effort': 'none' }, {}).reasoningEffort).toBe('none');
+    expect(__studyAiLocalMapAuthorTest.optionsFromArgs({ run: 'run-1', model: 'model-1' }, { STUDY_AI_REASONING_EFFORT: 'none' }).reasoningEffort).toBe('none');
+    expect(__studyAiLocalMapAuthorTest.optionsFromArgs({ run: 'run-1', model: 'model-1' }, {}).reasoningEffort).toBeUndefined();
+    expect(() =>
+      __studyAiLocalMapAuthorTest.optionsFromArgs(
+        __studyAiLocalMapAuthorTest.parseRawArgs(['--run', 'run-1', '--model', 'model-1', '--reasoning-effort']),
+        {},
+      ),
+    ).toThrow('--reasoning-effort');
+  });
+
+  it('sends optional reasoning effort without changing strict JSON Schema response format', async () => {
+    const job = jobFixture();
+    writeJobRun(job);
+    const bodies: unknown[] = [];
+    const fetchMock: Parameters<typeof runLocalMapAuthoring>[1] = async (_input, init) => {
+      bodies.push(JSON.parse(init.body));
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ choices: [{ message: { content: JSON.stringify(resultFixture(job)) } }] }),
+        text: async () => '',
+      };
+    };
+
+    await runLocalMapAuthoring({
+      ...__studyAiLocalMapAuthorTest.optionsFromArgs({ run: job.runId, model: 'mock-model' }, {}),
+      baseUrl: 'http://mock/v1',
+      resume: true,
+      maxRetries: 0,
+    }, fetchMock);
+
+    rmSync(join('study-content', 'ai', 'runs', job.runId), { recursive: true, force: true });
+    writeJobRun(job);
+
+    await runLocalMapAuthoring({
+      ...__studyAiLocalMapAuthorTest.optionsFromArgs({ run: job.runId, model: 'mock-model', 'reasoning-effort': 'none' }, {}),
+      baseUrl: 'http://mock/v1',
+      resume: true,
+      maxRetries: 0,
+    }, fetchMock);
+
+    expect(bodies).toHaveLength(2);
+    expect(bodies[0]).not.toHaveProperty('reasoning_effort');
+    expect(bodies[1]).toHaveProperty('reasoning_effort', 'none');
+    bodies.forEach((body) => {
+      expect(body).toHaveProperty('response_format.type', 'json_schema');
+      expect(body).toHaveProperty('response_format.json_schema.strict', true);
+      expect(body).toHaveProperty('response_format.json_schema.schema', STUDY_MAP_V3_RESULT_SCHEMA);
     });
   });
 
@@ -182,9 +256,11 @@ describe('Study Map V2 infrastructure repairs', () => {
     expect(readFileSync(join('study-content', 'ai', 'runs', job.runId, 'results', 'local-map.results.jsonl'), 'utf8').trim().split(/\r?\n/)).toHaveLength(1);
   });
 
-  it('fails closed when structured output is rejected by the provider', async () => {
+  it('records transport/provider failures separately and retries without schema-validation issues', async () => {
     const job = jobFixture();
     writeJobRun(job);
+    let calls = 0;
+    const logs: string[] = [];
 
     const result = await runLocalMapAuthoring({
       runId: job.runId,
@@ -192,20 +268,39 @@ describe('Study Map V2 infrastructure repairs', () => {
       baseUrl: 'http://mock/v1',
       resume: true,
       concurrency: 1,
-      maxRetries: 0,
+      maxRetries: 1,
+      timeoutMs: 50,
       dryRun: false,
       unsafeUnstructured: false,
-    }, async () => ({
-      ok: false,
-      status: 400,
-      json: async () => ({}),
-      text: async () => 'json_schema response_format unsupported',
-    }));
+      log: (message) => logs.push(message),
+    }, async () => {
+      calls += 1;
+      if (calls === 1) throw new Error('provider timeout');
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ choices: [{ message: { content: JSON.stringify(resultFixture(job)) } }] }),
+        text: async () => '',
+      };
+    });
 
-    expect(result.accepted).toBe(0);
-    expect(result.failed).toBe(1);
-    expect(existsSync(join('study-content', 'ai', 'runs', job.runId, 'results', 'local-map.results.jsonl'))).toBe(false);
-    expect(existsSync(join('study-content', 'ai', 'runs', job.runId, 'local-failures', job.jobId, 'attempt-1.validation.json'))).toBe(true);
+    const rawFailure = JSON.parse(readFileSync(join('study-content', 'ai', 'runs', job.runId, 'local-failures', job.jobId, 'attempt-1.raw.json'), 'utf8')) as { failureKind: string; message: string };
+    const validationFailure = JSON.parse(readFileSync(join('study-content', 'ai', 'runs', job.runId, 'local-failures', job.jobId, 'attempt-1.validation.json'), 'utf8')) as { failureKind: string; errorMessage: string; issues: string[] };
+
+    expect(result.accepted).toBe(1);
+    expect(result.failed).toBe(0);
+    expect(calls).toBe(2);
+    expect(rawFailure).toEqual({ failureKind: 'transport/provider', message: 'provider timeout' });
+    expect(validationFailure.failureKind).toBe('transport/provider');
+    expect(validationFailure.errorMessage).toBe('provider timeout');
+    expect(validationFailure.issues).toEqual([]);
+    expect(logs).toContain('[1/1] map-test-local');
+    expect(logs).toContain('attempt 1/2 started');
+    expect(logs).toContain('attempt 2/2 started');
+    expect(logs.some((line) => /^transport\/provider failure after \d+ ms: provider timeout$/.test(line))).toBe(true);
+    expect(logs.some((line) => /^HTTP response arrived after \d+ ms$/.test(line))).toBe(true);
+    expect(logs).not.toContain('validation rejected');
+    expect(logs).toContain('validation accepted');
   });
 
   it('rejects wrong local result identity outside canonical output', async () => {
