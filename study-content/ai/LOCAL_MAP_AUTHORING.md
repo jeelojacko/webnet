@@ -36,11 +36,24 @@ Validate outputs:
 npm run study:ai:validate-results -- --run ai-map-4c12-full-corpus-v2
 ```
 
-Generate side-by-side comparison reports for human review with:
+Generate a single-job side-by-side comparison report for human review with:
 
 ```bash
 npm run study:ai:local-compare -- --job <job-json> --known-good <v1-result-json> --local <local-result-json> --out <comparison-report-json>
 ```
+
+Generate the deterministic whole-comparison-set batch report with:
+
+```bash
+npm run study:ai:local-compare -- \
+  --comparison-set study-content/ai/runs/ai-map-4c12-full-corpus-v2/reports/local-model-comparison-set.json \
+  --local-results study-content/ai/runs/ai-map-4c12-full-corpus-v2/results/local-map.results.jsonl \
+  --v2-run ai-map-4c12-full-corpus-v2 \
+  --v1-run ai-map-4c1-full-corpus-v1 \
+  --out study-content/ai/runs/ai-map-4c12-full-corpus-v2/reports/local-model-comparison-report.json
+```
+
+Batch mode resolves each comparison-set job from the V2 run `jobs/*.jobs.jsonl` files, the known-good V1 result from the entry's `v1KnownGoodResultLocation` matched by `jobId`, and the local result from the local results JSONL matched by `jobId`. Jobs without a local result are reported as `local` status `missing-or-rejected`; jobs missing from the V2 run are reported as status `v2-job-missing`. The report includes per-job deterministic structure/validation facts (disposition, confidence, suggested priority, schema validity, validation issues, context leakage, group/child-label coverage, mismatch and candidate flags) plus aggregate counts and rates over the comparison set. The top-level report includes `comparisonSetSize`, `knownGoodFound`, `localAcceptedFound`, `localMissingOrRejected`, `dispositionExactMatch`, `suggestedPriorityExactMatch` (with `bothPresent`), `groupCountExactMatch`, `childLabelCoverageExactMatch`, `contextLeakageJobCount`, `localInvalidCount`, `falseSkipCandidates`, `falseIncludeCandidates`, and `perJob`. It makes no model calls, never repairs or rewrites results, and never changes which local results are accepted.
 
 Human review must compare local output against the authoritative source, known-good V1 output, and Study Map V3 requirements. Schema validity alone is not approval.
 

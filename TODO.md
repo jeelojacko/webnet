@@ -1,3 +1,7 @@
+- [x] Study local Map comparison batch-mode tooling (August 2026): extend `scripts/studyAiLocalMapCompare.ts` with deterministic 24-job batch comparison, help/missing-argument handling, focused infrastructure tests, and required focused validation. No model calls, no Study Map authoring, no schema/validator/grounding semantics changes, and no commit.
+  - [x] Preserve single-job CLI mode and report shape; add `--help` and missing-argument usage errors without reading `undefined` paths.
+  - [x] Add deterministic batch mode over the 24-job comparison set with V2 job lookup, V1 known-good lookup by `v1KnownGoodResultLocation` + `jobId`, local lookup by `jobId`, per-job facts/flags, and aggregate counts/rates.
+  - [x] Add focused tests in `tests/study/study_ai_local_map_compare.test.ts` and document batch usage in `study-content/ai/LOCAL_MAP_AUTHORING.md`.
 - [x] Study Phase 4C.1.3 Study Map infrastructure repair (August 2026): repair child-label preparation, fail-closed V3 validation/schema, deterministic V2 preparation/reuse/regeneration artifacts, local OpenAI-compatible runner scaffolding, local comparison tooling/docs, focused tests, required validation, commit, push, and stop before any local or external authoring.
   - [x] Replace prose-derived child labels with parsed structural child labels only.
   - [x] Add canonical Study Map V3 result schema and fail-closed validation before grounding.

@@ -124,3 +124,19 @@ For parity-sensitive work, also run:
 ## Keep this file small
 - Put feature inventories, phased rollout notes, parity details, and long behavior histories in `docs/`, not here.
 - Add nested `AGENTS.md` files only where local rules genuinely differ from repo-wide rules.
+## Local Qwen Long-Run Policy
+
+For Qwen scout/worker runs:
+
+- A "needs attention: no observed activity for 120s" signal is not by itself a failure.
+- Inspect subagent status before interrupting.
+- If the child is in compaction or llama.cpp is actively generating, continue waiting.
+- Allow up to 8 minutes for a local compaction pass before treating it as stalled.
+- Only stop immediately for an actual provider error, context overflow, malformed result, process failure, or repeated length failure.
+
+For worker edits:
+
+- Prefer incremental edit/patch operations.
+- Do not rewrite an existing large file in a single write tool call.
+- Keep individual write/edit payloads bounded.
+- Do not spend large output budgets restating source code or reasoning.
