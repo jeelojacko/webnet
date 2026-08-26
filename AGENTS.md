@@ -1,9 +1,11 @@
 # AGENTS.md - WebNet
 
 ## Project
+
 WebNet is a browser-based least-squares adjustment application for mixed survey observations. It emphasizes industry-style workflows, deterministic output, parity validation, and browser-first usability.
 
 ## Read these first
+
 - `README.md` for setup and user-facing project overview.
 - `TODO.md` for the active implementation checklist.
 - `docs/ARCHITECTURE.md` for module layout and data flow.
@@ -12,6 +14,7 @@ WebNet is a browser-based least-squares adjustment application for mixed survey 
 - `docs/IMPORT_WORKFLOW.md` for external-import and staged-review behavior.
 
 ## Repo-wide rules
+
 - Keep calculations normalized to meters and radians internally.
 - Perform unit conversion only at parse, override, import/export, or display boundaries.
 - Keep station IDs and observation IDs as strings.
@@ -20,6 +23,7 @@ WebNet is a browser-based least-squares adjustment application for mixed survey 
 - Avoid changing output wording, row inclusion, ordering, or rounding unless the task requires it and regression coverage is updated.
 
 ## TypeScript file structure rules
+
 - Keep files small and focused:
   - Target 150-400 lines per normal `.ts` or `.tsx` file.
   - Treat 600 lines as a warning.
@@ -75,17 +79,21 @@ WebNet is a browser-based least-squares adjustment application for mixed survey 
   - Do not create vague files like `helpers.ts`, `misc.ts`, or `utils2.ts`; use specific names.
 
 ## Architecture routing
+
 - Parser and solver core behavior lives under `src/engine/`.
 - UI shell, report, map, modal, and operator workflows live under `src/components/` and `src/hooks/`.
 - Fixture-backed behavioral contracts live under `tests/`.
 - When a task is about current supported behavior, parity notes, or staged workflows, consult `docs/` first before inferring from scattered test names.
 
 ## Naming and wording
+
 - Use generic wording such as `industry standard software` or `industry software` unless exact naming is required for file-format or interoperability behavior.
 - Keep `manual/` local-only. Do not commit `manual/` contents.
 
 ## Commands
+
 Run after each completed batch:
+
 - `npm install`
 - `npm run lint`
 - `npm run typecheck`
@@ -93,15 +101,18 @@ Run after each completed batch:
 - `npm run build`
 
 For parity-sensitive work, also run:
+
 - `npm run parity:industry-reference`
 
 ## Done when
+
 - Relevant focused tests are added or updated.
 - Lint, typecheck, tests, and build pass.
 - `TODO.md`, `README.md`, and the relevant docs/AGENTS files are updated when workflow, architecture, or user-visible behavior changed.
 - If parser, solver, listing, export, import, or parity behavior changed, update the matching document under `docs/`. Keeping them organized.
 
 ## README rule
+
 - Keep `README.md` focused on onboarding and navigation:
   - what the project is
   - how to run it
@@ -122,8 +133,10 @@ For parity-sensitive work, also run:
 - For parity-sensitive work, do not keep changes that worsen the reference diff unless fixture, test, and doc updates clearly justify it.
 
 ## Keep this file small
+
 - Put feature inventories, phased rollout notes, parity details, and long behavior histories in `docs/`, not here.
 - Add nested `AGENTS.md` files only where local rules genuinely differ from repo-wide rules.
+
 ## Local Qwen Long-Run Policy
 
 For Qwen scout/worker runs:
@@ -140,3 +153,58 @@ For worker edits:
 - Do not rewrite an existing large file in a single write tool call.
 - Keep individual write/edit payloads bounded.
 - Do not spend large output budgets restating source code or reasoning.
+
+## Pi Tool / Extension Routing
+
+Use installed tools when they materially improve the task; do not invoke tools merely because they are available.
+
+Preferred routing:
+
+- Repository discovery/search:
+  Prefer FFF tools for fast file/content discovery when available.
+  Use normal read/grep/find when the target is already known or the simpler tool is sufficient.
+
+- Clarification:
+  Use the structured ask-user-question tool when an unresolved user decision materially affects implementation.
+  Do not guess or silently choose consequential alternatives.
+
+- Session work tracking:
+  Use rpiv-todo for short-lived execution steps within the current Pi task/session.
+  TODO.md remains the durable Webnet project roadmap.
+
+- Web/current documentation:
+  Use pi-web-access/research tools when current external information is required.
+  Prefer official/primary documentation where possible.
+
+- MCP:
+  Use pi-mcp-adapter as the normal MCP access path.
+  Do not independently duplicate MCP server functionality when the adapter already exposes it.
+
+- Memory:
+  Hermes memory is for durable project decisions, conventions, and useful prior-session facts.
+  Do not store transient implementation details, generated output, or obvious repository state as durable memory.
+
+- Code quality:
+  Use pi-lens for structural/LSP/type feedback when useful.
+  Use pi-simplify after an implementation when simplification is appropriate, not during every edit.
+  Ponytail is opt-in; do not enable it automatically.
+
+- Planning/review:
+  Plannotator and BigPowers skills are optional aids for substantial planning/review work.
+  Do not introduce a heavyweight workflow for small or already well-scoped tasks.
+
+- Subagents:
+  Scout = reconnaissance.
+  Worker = implementation.
+  Reviewer = independent verification.
+  Oracle = second opinion on risky decisions.
+  Preserve the existing model routing and fail-closed policy.
+
+### Subagent acceptance / review rules
+
+- `acceptance.level` is an achieved result reported by Pi, not a requestable setting.
+- Never pass `acceptance.level` when launching `reviewer`, `oracle`, `scout`, or other read-only agents.
+- For an ordinary read-only reviewer mission, omit `acceptance` entirely.
+- When a writer/worker result requires independent review, request that review on the writer using Pi's `acceptance.review.required` mechanism, then orchestrate a separate fresh `reviewer` mission.
+- Do not treat `checked`, `attested`, or similar achieved acceptance statuses as invocation parameters.
+- A rejected invocation caused by incorrect acceptance configuration is an orchestration error, not a model/provider failure. Correct the invocation and retry it.
