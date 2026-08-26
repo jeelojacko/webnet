@@ -76,3 +76,33 @@ Use `--resume` after interruptions. Never manually copy rejected generations int
 - Retries each failed job up to two times after the initial attempt by default.
 - Skips already accepted jobs on resume and rewrites canonical JSONL atomically to avoid duplicate lines.
 - Stores non-secret provenance for accepted and rejected attempts.
+
+## Skip Critic Execution Layer
+
+`src/study/ai/studyAiSkipCriticExecutor.ts` is a runner-owned execution/provenance layer that wraps the single-attempt `runSkipCriticInference(...)`. It is standalone infrastructure: it is not yet wired into a `study:ai:*` CLI command and does not change the normal author workflow. It exists so Skip Critic runs are durable, resumable, and auditable.
+
+Public API (module entry points):
+
+```ts
+runSkipCriticJob(job, options, transport = fetch, timestamp)
+runSkipCriticJobs(jobs, options, transport = fetch, timestamp)
+```
+
+Options extend the runner options (`model`, `baseUrl`, `apiHeaderName`, `timeoutMs`, `apiKey`, `temperature`, `maxTokens`, `requireStructuredOutput`) and add:
+
+- `runsDir` (default `study-content/ai/runs`) — the run directory that owns the critic namespace.
+- `maxRetries` (default `2`) — bounded retry policy; total attempts = `maxRetries + 1`. Every attempt is a fresh inference with no repair, applied to both transport/provider failures and invalid model results.
+
+Artifacts live in a critic-only namespace under the run directory so they can never collide with normal Study Map author outputs:
+
+```text
+study-content/ai/runs/<run-id>/critic/skip-critic.results.jsonl
+study-content/ai/runs/<run-id>/critic/<jobId>.provenance.json
+study-content/ai/runs/<run-id>/critic/failures/<jobId>/attempt-<n>.raw.json
+study-content/ai/runs/<run-id>/critic/failures/<jobId>/attempt-<n>.validation.json
+study-content/ai/runs/<run-id>/critic/<jobId>.terminal-failure.json
+```
+
+Resume is fail-safe: a job is skipped only when a stored result row AND a provenance file with `status: "success"` exist, the identity tuple (runId, jobId, corpusContentHash, inputHash, authoringInputFingerprint, promptSpecVersion) matches the current job, and the stored result still validates against the job's permitted evidence. Missing, malformed, identity-mismatched, or terminal-failure state is re-executed. A terminal failure is never reused or reinterpreted as success, and there is no silent fallback to `skip-supported`/`uncertain`. The model-authored `SkipCriticResult` is persisted verbatim with no runner identity, provenance, or attempt fields added to it.
+
+The model is not called in tests: the executor is exercised through a scripted transport over `mkdtempSync` temp directories, and a corrupt/incomplete results file is treated as incomplete state (re-executed and rewritten atomically) rather than success.
