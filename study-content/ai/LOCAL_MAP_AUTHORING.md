@@ -13,7 +13,7 @@ This workflow is for a later phase when a local OpenAI-compatible server is avai
 curl http://127.0.0.1:1234/v1/models
 ```
 
-5. Set local configuration:
+1. Set local configuration:
 
 ```bash
 set STUDY_AI_BASE_URL=http://127.0.0.1:1234/v1
@@ -84,8 +84,8 @@ Use `--resume` after interruptions. Never manually copy rejected generations int
 Public API (module entry points):
 
 ```ts
-runSkipCriticJob(job, options, transport = fetch, timestamp)
-runSkipCriticJobs(jobs, options, transport = fetch, timestamp)
+runSkipCriticJob(job, options, (transport = fetch), timestamp);
+runSkipCriticJobs(jobs, options, (transport = fetch), timestamp);
 ```
 
 Options extend the runner options (`model`, `baseUrl`, `apiHeaderName`, `timeoutMs`, `apiKey`, `temperature`, `maxTokens`, `requireStructuredOutput`) and add:

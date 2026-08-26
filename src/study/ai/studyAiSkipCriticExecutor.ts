@@ -17,14 +17,7 @@
 // identity, provenance, or attempt fields are added to it.
 
 import { createHash } from 'node:crypto';
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  renameSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { AiStudyMapJob } from './studyAiTypes';
 import {
@@ -34,10 +27,7 @@ import {
   type SkipCriticTransport,
 } from './studyAiSkipCriticRunner';
 import { SKIP_CRITIC_RESULT_SCHEMA } from './studyAiSkipCriticContract';
-import {
-  authoringInputFingerprintPayload,
-  canonicalJson,
-} from './studyAiResultContract';
+import { authoringInputFingerprintPayload, canonicalJson } from './studyAiResultContract';
 import { SKIP_CRITIC_SYSTEM_PROMPT, buildSkipCriticInput } from './studyAiSkipCriticInput';
 import { validateSkipCriticResult } from './studyAiSkipCriticValidation';
 import type { SkipCriticResult } from './studyAiSkipCriticTypes';
@@ -162,19 +152,15 @@ const writeJsonAtomic = (path: string, value: unknown): void => {
 
 // Critic-only namespace under the run directory so critic artifacts can never
 // be confused with (or overwrite) normal Study Map author outputs.
-const criticDir = (runsDir: string, runId: string): string =>
-  join(runsDir, runId, 'critic');
+const criticDir = (runsDir: string, runId: string): string => join(runsDir, runId, 'critic');
 const criticResultsPath = (runsDir: string, runId: string): string =>
   join(criticDir(runsDir, runId), 'skip-critic.results.jsonl');
 const criticProvenancePath = (runsDir: string, runId: string, jobId: string): string =>
   join(criticDir(runsDir, runId), `${jobId}.provenance.json`);
 const criticFailureDir = (runsDir: string, runId: string, jobId: string): string =>
   join(criticDir(runsDir, runId), 'failures', jobId);
-const criticTerminalFailurePath = (
-  runsDir: string,
-  runId: string,
-  jobId: string,
-): string => join(criticDir(runsDir, runId), `${jobId}.terminal-failure.json`);
+const criticTerminalFailurePath = (runsDir: string, runId: string, jobId: string): string =>
+  join(criticDir(runsDir, runId), `${jobId}.terminal-failure.json`);
 
 const failureClassification = (
   outcome: Extract<SkipCriticRunnerOutcome, { status: 'invalid-result' | 'transport-failure' }>,
@@ -232,11 +218,8 @@ const completedResult = (
   return report.valid ? (result as SkipCriticResult) : undefined;
 };
 
-const previouslyTerminalFailed = (
-  runsDir: string,
-  runId: string,
-  jobId: string,
-): boolean => existsSync(criticTerminalFailurePath(runsDir, runId, jobId));
+const previouslyTerminalFailed = (runsDir: string, runId: string, jobId: string): boolean =>
+  existsSync(criticTerminalFailurePath(runsDir, runId, jobId));
 
 const recordAttemptFailure = (
   runsDir: string,
@@ -370,10 +353,8 @@ export const runSkipCriticJobs = async (
   return {
     total: jobs.length,
     success: reports.filter((report) => report.outcome.status === 'success').length,
-    reused: reports.filter(
-      (report) =>
-        report.outcome.status === 'success' && report.outcome.reused,
-    ).length,
+    reused: reports.filter((report) => report.outcome.status === 'success' && report.outcome.reused)
+      .length,
     failed: reports.filter((report) => report.outcome.status === 'failed').length,
     reports,
   };

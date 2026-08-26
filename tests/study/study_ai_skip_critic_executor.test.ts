@@ -3,11 +3,11 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import type { AiStudyMapJob } from '../../src/study/ai/studyAiTypes';
-import {
-  runSkipCriticJob,
-  runSkipCriticJobs,
-} from '../../src/study/ai/studyAiSkipCriticExecutor';
-import type { SkipCriticTransport, SkipCriticTransportResponse } from '../../src/study/ai/studyAiSkipCriticRunner';
+import { runSkipCriticJob, runSkipCriticJobs } from '../../src/study/ai/studyAiSkipCriticExecutor';
+import type {
+  SkipCriticTransport,
+  SkipCriticTransportResponse,
+} from '../../src/study/ai/studyAiSkipCriticRunner';
 import type { SkipCriticResult } from '../../src/study/ai/studyAiSkipCriticTypes';
 
 const jobFixture = (overrides: Partial<AiStudyMapJob> = {}): AiStudyMapJob => {
@@ -70,9 +70,7 @@ const completedResponse = (content: unknown): SkipCriticTransportResponse => ({
   text: async () => '',
 });
 
-type ScriptedStep =
-  | { kind: 'result'; content?: unknown }
-  | { kind: 'throw'; message: string };
+type ScriptedStep = { kind: 'result'; content?: unknown } | { kind: 'throw'; message: string };
 
 const scriptedTransport = (steps: ScriptedStep[]) => {
   const calls: { url: string; body: string }[] = [];
@@ -105,8 +103,22 @@ const criticProvenancePath = (runsDir: string): string =>
 const criticTerminalFailurePath = (runsDir: string): string =>
   join(runsDir, 'critic-exec-run', 'critic', 'critic-exec-job.terminal-failure.json');
 const criticFailureAttemptPaths = (runsDir: string, attempt: number): [string, string] => [
-  join(runsDir, 'critic-exec-run', 'critic', 'failures', 'critic-exec-job', `attempt-${attempt}.raw.json`),
-  join(runsDir, 'critic-exec-run', 'critic', 'failures', 'critic-exec-job', `attempt-${attempt}.validation.json`),
+  join(
+    runsDir,
+    'critic-exec-run',
+    'critic',
+    'failures',
+    'critic-exec-job',
+    `attempt-${attempt}.raw.json`,
+  ),
+  join(
+    runsDir,
+    'critic-exec-run',
+    'critic',
+    'failures',
+    'critic-exec-job',
+    `attempt-${attempt}.validation.json`,
+  ),
 ];
 const normalResultsPath = (runsDir: string): string =>
   join(runsDir, 'critic-exec-run', 'results', 'local-map.results.jsonl');
@@ -131,7 +143,12 @@ describe('Skip Critic V1 executor: artifacts and provenance', () => {
   it('persists result and provenance on an accepted result', async () => {
     const runsDir = makeRunDir();
     const { transport, count } = scriptedTransport([{ kind: 'result' }]);
-    const report = await runSkipCriticJob(jobFixture(), { ...options, runsDir: runsDir }, transport, () => TIMESTAMP);
+    const report = await runSkipCriticJob(
+      jobFixture(),
+      { ...options, runsDir: runsDir },
+      transport,
+      () => TIMESTAMP,
+    );
     expect(count()).toBe(1);
     expect(report.outcome).toEqual({
       status: 'success',
@@ -159,7 +176,12 @@ describe('Skip Critic V1 executor: artifacts and provenance', () => {
   it('keeps the model-authored result free of runner metadata', async () => {
     const runsDir = makeRunDir();
     const { transport } = scriptedTransport([{ kind: 'result' }]);
-    await runSkipCriticJob(jobFixture(), { ...options, runsDir: runsDir }, transport, () => TIMESTAMP);
+    await runSkipCriticJob(
+      jobFixture(),
+      { ...options, runsDir: runsDir },
+      transport,
+      () => TIMESTAMP,
+    );
     const stored = jsonlRows(runsDir)[0].result as Record<string, unknown>;
     expect(Object.keys(stored).sort()).toEqual([
       'confidence',
@@ -178,7 +200,12 @@ describe('Skip Critic V1 executor: artifacts and provenance', () => {
   it('records stable job/input/model identity in provenance', async () => {
     const runsDir = makeRunDir();
     const { transport } = scriptedTransport([{ kind: 'result' }]);
-    await runSkipCriticJob(jobFixture(), { ...options, runsDir: runsDir }, transport, () => TIMESTAMP);
+    await runSkipCriticJob(
+      jobFixture(),
+      { ...options, runsDir: runsDir },
+      transport,
+      () => TIMESTAMP,
+    );
     const provenance = readJson<Record<string, unknown>>(criticProvenancePath(runsDir));
     expect(provenance.runId).toBe('critic-exec-run');
     expect(provenance.jobId).toBe('critic-exec-job');
@@ -217,15 +244,20 @@ describe('Skip Critic V1 executor: artifacts and provenance', () => {
     const runsDir = makeRunDir();
     const normalResults = normalResultsPath(runsDir);
     const normalProvenance = normalProvenancePath(runsDir);
-  writeFile(
+    writeFile(
       normalResults,
       `${JSON.stringify({ schemaVersion: 1, jobId: 'critic-exec-job', disposition: 'skip' })}\n`,
     );
-  writeFile(normalProvenance, `${JSON.stringify({ modelId: 'normal-author-model' })}\n`);
+    writeFile(normalProvenance, `${JSON.stringify({ modelId: 'normal-author-model' })}\n`);
     const beforeResults = readFileSync(normalResults, 'utf8');
     const beforeProvenance = readFileSync(normalProvenance, 'utf8');
     const { transport } = scriptedTransport([{ kind: 'result' }]);
-    await runSkipCriticJob(jobFixture(), { ...options, runsDir: runsDir }, transport, () => TIMESTAMP);
+    await runSkipCriticJob(
+      jobFixture(),
+      { ...options, runsDir: runsDir },
+      transport,
+      () => TIMESTAMP,
+    );
     expect(readFileSync(normalResults, 'utf8')).toBe(beforeResults);
     expect(readFileSync(normalProvenance, 'utf8')).toBe(beforeProvenance);
   });
@@ -235,7 +267,12 @@ describe('Skip Critic V1 executor: resume', () => {
   it('reuses a valid completed result without another transport call', async () => {
     const runsDir = makeRunDir();
     const first = scriptedTransport([{ kind: 'result' }]);
-    await runSkipCriticJob(jobFixture(), { ...options, runsDir: runsDir }, first.transport, () => TIMESTAMP);
+    await runSkipCriticJob(
+      jobFixture(),
+      { ...options, runsDir: runsDir },
+      first.transport,
+      () => TIMESTAMP,
+    );
     const second = scriptedTransport([{ kind: 'result' }]);
     const report = await runSkipCriticJob(
       jobFixture(),
@@ -255,7 +292,12 @@ describe('Skip Critic V1 executor: resume', () => {
   it('makes zero model calls when resuming a valid completed job via the batch API', async () => {
     const runsDir = makeRunDir();
     const first = scriptedTransport([{ kind: 'result' }]);
-    await runSkipCriticJobs([jobFixture()], { ...options, runsDir: runsDir }, first.transport, () => TIMESTAMP);
+    await runSkipCriticJobs(
+      [jobFixture()],
+      { ...options, runsDir: runsDir },
+      first.transport,
+      () => TIMESTAMP,
+    );
     const second = scriptedTransport([{ kind: 'result' }]);
     const summary = await runSkipCriticJobs(
       [jobFixture()],
@@ -264,18 +306,29 @@ describe('Skip Critic V1 executor: resume', () => {
       () => TIMESTAMP,
     );
     expect(second.count()).toBe(0);
-    expect(summary).toEqual({ total: 1, success: 1, reused: 1, failed: 0, reports: summary.reports });
+    expect(summary).toEqual({
+      total: 1,
+      success: 1,
+      reused: 1,
+      failed: 0,
+      reports: summary.reports,
+    });
     expect(summary.reports[0].outcome.status).toBe('success');
   });
 
   it('does not reuse a result row missing provenance', async () => {
     const runsDir = makeRunDir();
-  writeFile(
+    writeFile(
       criticResultsPath(runsDir),
       `${JSON.stringify({ jobId: 'critic-exec-job', result: acceptedResult })}\n`,
     );
     const { transport, count } = scriptedTransport([{ kind: 'result' }]);
-    const report = await runSkipCriticJob(jobFixture(), { ...options, runsDir: runsDir }, transport, () => TIMESTAMP);
+    const report = await runSkipCriticJob(
+      jobFixture(),
+      { ...options, runsDir: runsDir },
+      transport,
+      () => TIMESTAMP,
+    );
     expect(count()).toBe(1);
     expect(report.outcome.status).toBe('success');
     if (report.outcome.status === 'success') expect(report.outcome.reused).toBe(false);
@@ -283,9 +336,14 @@ describe('Skip Critic V1 executor: resume', () => {
 
   it('does not reuse a malformed result artifact as success', async () => {
     const runsDir = makeRunDir();
-  writeFile(criticResultsPath(runsDir), 'not-json-at-all');
+    writeFile(criticResultsPath(runsDir), 'not-json-at-all');
     const { transport, count } = scriptedTransport([{ kind: 'result' }]);
-    const report = await runSkipCriticJob(jobFixture(), { ...options, runsDir: runsDir }, transport, () => TIMESTAMP);
+    const report = await runSkipCriticJob(
+      jobFixture(),
+      { ...options, runsDir: runsDir },
+      transport,
+      () => TIMESTAMP,
+    );
     expect(count()).toBe(1);
     expect(report.outcome.status).toBe('success');
     if (report.outcome.status === 'success') expect(report.outcome.reused).toBe(false);
@@ -293,25 +351,43 @@ describe('Skip Critic V1 executor: resume', () => {
 
   it('does not reuse a result row whose stored result fails validation', async () => {
     const runsDir = makeRunDir();
-    const invalid = resultFixture({ decision: 'skip-supported', detectedStudyValue: [
-      { category: 'duty', sourceKey: 'section:99', childLabels: ['x'], summary: 's' },
-    ] });
-  writeFile(
+    const invalid = resultFixture({
+      decision: 'skip-supported',
+      detectedStudyValue: [
+        { category: 'duty', sourceKey: 'section:99', childLabels: ['x'], summary: 's' },
+      ],
+    });
+    writeFile(
       criticResultsPath(runsDir),
       `${JSON.stringify({ jobId: 'critic-exec-job', result: invalid })}\n`,
     );
     const { transport, count } = scriptedTransport([{ kind: 'result' }]);
-    await runSkipCriticJob(jobFixture(), { ...options, runsDir: runsDir }, transport, () => TIMESTAMP);
+    await runSkipCriticJob(
+      jobFixture(),
+      { ...options, runsDir: runsDir },
+      transport,
+      () => TIMESTAMP,
+    );
     expect(count()).toBe(1);
   });
 
   it('does not reuse when the job/input identity mismatches', async () => {
     const runsDir = makeRunDir();
     const first = scriptedTransport([{ kind: 'result' }]);
-    await runSkipCriticJob(jobFixture(), { ...options, runsDir: runsDir }, first.transport, () => TIMESTAMP);
+    await runSkipCriticJob(
+      jobFixture(),
+      { ...options, runsDir: runsDir },
+      first.transport,
+      () => TIMESTAMP,
+    );
     const changed = jobFixture({ corpusContentHash: 'other-corpus-hash' });
     const second = scriptedTransport([{ kind: 'result' }]);
-    const report = await runSkipCriticJob(changed, { ...options, runsDir: runsDir }, second.transport, () => TIMESTAMP);
+    const report = await runSkipCriticJob(
+      changed,
+      { ...options, runsDir: runsDir },
+      second.transport,
+      () => TIMESTAMP,
+    );
     expect(second.count()).toBe(1);
     expect(report.outcome.status).toBe('success');
     if (report.outcome.status === 'success') expect(report.outcome.reused).toBe(false);
@@ -320,7 +396,12 @@ describe('Skip Critic V1 executor: resume', () => {
   it('does not treat an interrupted state (provenance without result row) as complete', async () => {
     const runsDir = makeRunDir();
     const done = scriptedTransport([{ kind: 'result' }]);
-    await runSkipCriticJob(jobFixture(), { ...options, runsDir: runsDir }, done.transport, () => TIMESTAMP);
+    await runSkipCriticJob(
+      jobFixture(),
+      { ...options, runsDir: runsDir },
+      done.transport,
+      () => TIMESTAMP,
+    );
     // Simulate an interrupt: the results file is gone but the provenance remains.
     rmSync(criticResultsPath(runsDir));
     const second = scriptedTransport([{ kind: 'result' }]);
@@ -358,7 +439,9 @@ describe('Skip Critic V1 executor: bounded retry and terminal failure', () => {
     }
     const [rawPath, validationPath] = criticFailureAttemptPaths(runsDir, 1);
     expect(readFileSync(rawPath, 'utf8')).toContain('connection refused');
-    expect(readJson<{ attempt: number; failure: { kind: string; message: string } }>(validationPath)).toEqual({
+    expect(
+      readJson<{ attempt: number; failure: { kind: string; message: string } }>(validationPath),
+    ).toEqual({
       schemaVersion: 1,
       artifactKind: 'skip-critic-v1-attempt-failure',
       attempt: 1,
@@ -372,7 +455,12 @@ describe('Skip Critic V1 executor: bounded retry and terminal failure', () => {
       { kind: 'throw', message: 'connection reset' },
       { kind: 'result' },
     ]);
-    await runSkipCriticJob(jobFixture(), { ...options, runsDir: runsDir, maxRetries: 2 }, transport, () => TIMESTAMP);
+    await runSkipCriticJob(
+      jobFixture(),
+      { ...options, runsDir: runsDir, maxRetries: 2 },
+      transport,
+      () => TIMESTAMP,
+    );
     const rows = jsonlRows(runsDir);
     expect(rows[0].result).toEqual(acceptedResult);
     const provenance = readJson<{ attempts: number; maxAttempts: number; status: string }>(
@@ -386,7 +474,9 @@ describe('Skip Critic V1 executor: bounded retry and terminal failure', () => {
 
   it('terminates explicitly on repeated transport failure and writes no fabricated result', async () => {
     const runsDir = makeRunDir();
-    const { transport, count } = scriptedTransport([{ kind: 'throw', message: 'connection refused' }]);
+    const { transport, count } = scriptedTransport([
+      { kind: 'throw', message: 'connection refused' },
+    ]);
     const report = await runSkipCriticJob(
       jobFixture(),
       { ...options, runsDir: runsDir, maxRetries: 1 },
@@ -485,9 +575,14 @@ describe('Skip Critic V1 executor: bounded retry and terminal failure', () => {
 
   it('records a pre-existing terminal failure in the report without failing on it', async () => {
     const runsDir = makeRunDir();
-  writeFile(criticTerminalFailurePath(runsDir), JSON.stringify({ status: 'failed' }));
+    writeFile(criticTerminalFailurePath(runsDir), JSON.stringify({ status: 'failed' }));
     const { transport } = scriptedTransport([{ kind: 'result' }]);
-    const report = await runSkipCriticJob(jobFixture(), { ...options, runsDir: runsDir }, transport, () => TIMESTAMP);
+    const report = await runSkipCriticJob(
+      jobFixture(),
+      { ...options, runsDir: runsDir },
+      transport,
+      () => TIMESTAMP,
+    );
     expect(report.previouslyTerminalFailed).toBe(true);
     expect(report.outcome.status).toBe('success');
     expect(existsSync(criticTerminalFailurePath(runsDir))).toBe(false);
