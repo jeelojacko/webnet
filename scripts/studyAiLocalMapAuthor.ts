@@ -8,6 +8,35 @@ import { authoringInputFingerprint } from './studyAiFingerprint';
 
 const RUNS_DIR = 'study-content/ai/runs';
 
+const RUNNER_OWNED_RESULT_IDENTITY: ReadonlySet<string> = new Set([
+  'schemaVersion',
+  'jobId',
+  'runId',
+  'corpusContentHash',
+  'inputHash',
+  'authoringInputFingerprint',
+  'promptSpecVersion',
+]);
+
+// Local response schema the model fills: semantic fields only. The runner
+// injects the runner-owned identity fields before validation, so the schema
+// sent to a local model omits them.
+export const STUDY_MAP_V3_LOCAL_RESULT_SCHEMA: Record<string, unknown> = {
+  $schema: STUDY_MAP_V3_RESULT_SCHEMA.$schema,
+  $id: 'https://webnet.local/schemas/study-map-v3-local-author-result.schema.json',
+  title: 'Study Map V3 Local Author Result',
+  type: 'object',
+  additionalProperties: false,
+  properties: Object.fromEntries(
+    Object.entries(STUDY_MAP_V3_RESULT_SCHEMA.properties).filter(
+      ([field]) => !RUNNER_OWNED_RESULT_IDENTITY.has(field),
+    ),
+  ),
+  required: STUDY_MAP_V3_RESULT_SCHEMA.required.filter(
+    (field) => !RUNNER_OWNED_RESULT_IDENTITY.has(field),
+  ),
+};
+
 type ConfigSource = 'cli' | 'env' | 'default' | 'omitted-request' | 'unknown';
 type ResolvedConfigValue<T> = { value: T; source: ConfigSource };
 type OmittedSamplerValue = ResolvedConfigValue<null>;
@@ -20,7 +49,7 @@ type StudyMapRequestBody = {
   response_format:
     | {
         type: 'json_schema';
-        json_schema: { name: string; strict: true; schema: typeof STUDY_MAP_V3_RESULT_SCHEMA };
+        json_schema: { name: string; strict: true; schema: Record<string, unknown> };
       }
     | { type: 'json_object' };
 };
@@ -259,26 +288,15 @@ const promptForJob = (job: AiStudyMapJob): ChatMessage[] => [
       'You are a Study Map V3 authoring assistant.',
       'Use only the supplied official source as authoritative.',
       'Context is for understanding only and is not evidence unless its sourceKey is included in a proposed group.',
+      'A provision has useful independent study value when the target source itself creates or changes any legal duty, permission, procedure, prerequisite, consequence, remedy, payment/cost rule, review path, or official power, even if it operates within a larger statutory scheme or relates to surrounding sections.',
       "Choose the disposition from the source's study value first: map substantive legal duties, powers, procedures, rights, prohibitions, criteria, or effects as standalone/split; use skip only for material with no useful independent study value.",
       'Administrative, procedural, institutional, government-directed, short, or single-section provisions are not skip reasons by themselves.',
-      'The requiredResultIdentity values in the user message are input metadata to copy into the matching output identity fields; requiredResultIdentity is not an output field and must not affect the semantic disposition decision.',
       'Return exactly one JSON object matching the supplied Study Map V3 schema.',
     ].join('\n'),
   },
   {
     role: 'user',
-    content: JSON.stringify({
-      job,
-      requiredResultIdentity: {
-        schemaVersion: 1,
-        jobId: job.jobId,
-        runId: job.runId,
-        corpusContentHash: job.corpusContentHash,
-        inputHash: job.inputHash,
-        promptSpecVersion: job.promptSpecVersion,
-        authoringInputFingerprint: authoringInputFingerprint(job),
-      },
-    }),
+    content: JSON.stringify({ job }),
   },
 ];
 
@@ -300,9 +318,9 @@ const requestBody = (
       response_format: {
         type: 'json_schema',
         json_schema: {
-          name: 'study_map_v3_result',
+          name: 'study_map_v3_local_result',
           strict: true,
-          schema: STUDY_MAP_V3_RESULT_SCHEMA,
+          schema: STUDY_MAP_V3_LOCAL_RESULT_SCHEMA,
         },
       },
     };
@@ -325,23 +343,32 @@ const parseModelContent = async (response: Pick<Response, 'json'>): Promise<Json
   return parseJson<JsonValue>(content, 'provider response content');
 };
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+// Identity fields are runner-owned: any identity values the model returned
+// are overwritten with the job's canonical identity before validation.
+const withRunnerIdentity = (value: Record<string, unknown>, job: AiStudyMapJob): AiStudyMapResult =>
+  ({
+    ...(value as Partial<AiStudyMapResult>),
+    schemaVersion: 1,
+    jobId: job.jobId,
+    runId: job.runId,
+    corpusContentHash: job.corpusContentHash,
+    inputHash: job.inputHash,
+    authoringInputFingerprint: authoringInputFingerprint(job),
+    promptSpecVersion: job.promptSpecVersion,
+  }) as AiStudyMapResult;
+
 const validateLocalResult = (
   value: unknown,
   job: AiStudyMapJob,
 ): { result?: AiStudyMapResult; issues: string[] } => {
-  const report = validateAiStudyMapResult(value, job);
-  const result = value as Partial<AiStudyMapResult>;
+  if (!isRecord(value)) return { issues: ['RESULT_INVALID: Local result must be a JSON object.'] };
+  const result = withRunnerIdentity(value, job);
+  const report = validateAiStudyMapResult(result, job);
   const issues = report.issues.map((issue) => `${issue.code}: ${issue.message}`);
-  if (
-    result.authoringInputFingerprint &&
-    result.authoringInputFingerprint !== authoringInputFingerprint(job)
-  ) {
-    issues.push('AUTHORING_FINGERPRINT_MISMATCH: Result fingerprint does not match the job.');
-  }
-  return report.valid &&
-    issues.length === report.issues.filter((issue) => issue.severity === 'warning').length
-    ? { result: value as AiStudyMapResult, issues }
-    : { issues };
+  return report.valid ? { result, issues } : { issues };
 };
 
 const failureDir = (runId: string, jobId: string): string =>
@@ -414,7 +441,7 @@ const resolvedInferenceConfig = (
     structuredOutput: {
       mode: structuredOutputMode,
       strict: !options.unsafeUnstructured,
-      responseSchemaSha256: hashText(JSON.stringify(STUDY_MAP_V3_RESULT_SCHEMA)),
+      responseSchemaSha256: hashText(JSON.stringify(STUDY_MAP_V3_LOCAL_RESULT_SCHEMA)),
     },
     prompts: {
       systemPromptSha256: hashText(systemPrompt),
@@ -427,7 +454,7 @@ export const runLocalMapAuthoring = async (
   options: RunnerOptions,
   fetchImpl: FetchLike = fetch,
 ): Promise<{ accepted: number; failed: number; skipped: number; dryRunJobs: number }> => {
-  if (!options.unsafeUnstructured && !STUDY_MAP_V3_RESULT_SCHEMA)
+  if (!options.unsafeUnstructured && !STUDY_MAP_V3_LOCAL_RESULT_SCHEMA)
     throw new Error('Structured output schema is required.');
   if (options.concurrency !== 1)
     throw new Error('Only concurrency 1 is supported for local map authoring.');
@@ -507,10 +534,7 @@ export const runLocalMapAuthoring = async (
         accepted: Boolean(validation.result),
       };
       if (validation.result) {
-        accepted.push({
-          ...validation.result,
-          authoringInputFingerprint: authoringInputFingerprint(job),
-        });
+        accepted.push(validation.result);
         writeJsonlAtomic(resultPath(options.runId), accepted);
         writeJson(
           join(RUNS_DIR, options.runId, 'results', `${job.jobId}.provenance.json`),
@@ -530,7 +554,7 @@ export const runLocalMapAuthoring = async (
       });
       retryNote = transportError
         ? undefined
-        : 'The previous response failed validation. Regenerate the entire response as one JSON object that exactly matches the supplied schema and job identity.';
+        : 'The previous response failed validation. Regenerate the entire response as one JSON object that exactly matches the supplied schema.';
     }
     if (!written) failed += 1;
   }

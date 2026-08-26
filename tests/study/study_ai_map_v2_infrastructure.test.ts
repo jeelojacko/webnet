@@ -5,6 +5,7 @@ import { __studyAiAuthoringTest } from '../../scripts/studyAiAuthoring';
 import {
   __studyAiLocalMapAuthorTest,
   runLocalMapAuthoring,
+  STUDY_MAP_V3_LOCAL_RESULT_SCHEMA,
 } from '../../scripts/studyAiLocalMapAuthor';
 import { validateAiStudyMapResult } from '../../src/study/ai/studyAiValidation';
 import { STUDY_MAP_V3_RESULT_SCHEMA } from '../../src/study/ai/studyAiResultContract';
@@ -357,8 +358,42 @@ describe('Study Map V2 infrastructure repairs', () => {
     bodies.forEach((body) => {
       expect(body).toHaveProperty('response_format.type', 'json_schema');
       expect(body).toHaveProperty('response_format.json_schema.strict', true);
-      expect(body).toHaveProperty('response_format.json_schema.schema', STUDY_MAP_V3_RESULT_SCHEMA);
+      expect(body).toHaveProperty(
+        'response_format.json_schema.schema',
+        STUDY_MAP_V3_LOCAL_RESULT_SCHEMA,
+      );
     });
+  });
+
+  it('sends a local result schema without runner-owned identity fields', () => {
+    expect(STUDY_MAP_V3_LOCAL_RESULT_SCHEMA.required).toEqual([
+      'disposition',
+      'confidence',
+      'reason',
+      'proposedGroups',
+      'warnings',
+    ]);
+    expect(STUDY_MAP_V3_LOCAL_RESULT_SCHEMA.additionalProperties).toBe(false);
+    const properties = STUDY_MAP_V3_LOCAL_RESULT_SCHEMA.properties as Record<string, unknown>;
+    for (const field of [
+      'schemaVersion',
+      'jobId',
+      'runId',
+      'corpusContentHash',
+      'inputHash',
+      'authoringInputFingerprint',
+      'promptSpecVersion',
+    ]) {
+      expect(properties).not.toHaveProperty(field);
+    }
+    expect(Object.keys(properties).sort()).toEqual([
+      'confidence',
+      'disposition',
+      'proposedGroups',
+      'reason',
+      'suggestedPriority',
+      'warnings',
+    ]);
   });
 
   it('records resolved inference config provenance for accepted and rejected attempts', async () => {
@@ -689,7 +724,7 @@ describe('Study Map V2 infrastructure repairs', () => {
     expect(logs).toContain('validation accepted');
   });
 
-  it('rejects wrong local result identity outside canonical output', async () => {
+  it('normalizes wrong local result identity to runner-owned job identity', async () => {
     const job = jobFixture();
     writeJobRun(job);
 
@@ -709,19 +744,31 @@ describe('Study Map V2 infrastructure repairs', () => {
         status: 200,
         json: async () => ({
           choices: [
-            { message: { content: JSON.stringify({ ...resultFixture(job), jobId: 'wrong-job' }) } },
+            {
+              message: {
+                content: JSON.stringify({
+                  ...resultFixture(job),
+                  jobId: 'wrong-job',
+                  runId: 'wrong-run',
+                  authoringInputFingerprint: 'wrong-fingerprint',
+                }),
+              },
+            },
           ],
         }),
         text: async () => '',
       }),
     );
 
-    expect(result.accepted).toBe(0);
-    expect(result.failed).toBe(1);
-    expect(
-      existsSync(
-        join('study-content', 'ai', 'runs', job.runId, 'results', 'local-map.results.jsonl'),
-      ),
-    ).toBe(false);
+    expect(result.accepted).toBe(1);
+    expect(result.failed).toBe(0);
+    const line = readFileSync(
+      join('study-content', 'ai', 'runs', job.runId, 'results', 'local-map.results.jsonl'),
+      'utf8',
+    )
+      .split('\n')
+      .filter((entry) => entry)
+      .pop() as string;
+    expect(JSON.parse(line)).toEqual(resultFixture(job));
   });
 });
