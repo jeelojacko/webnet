@@ -154,6 +154,27 @@ For worker edits:
 - Keep individual write/edit payloads bounded.
 - Do not spend large output budgets restating source code or reasoning.
 
+### Local Qwen context discipline
+
+When the active model is local Qwen:
+
+- Treat context-window headroom as a hard resource.
+- Prefer Context Mode tools for repo exploration or commands that may produce
+  substantial output.
+- Prefer `ctx_batch_execute` when several inspection/test commands can be
+  performed together without returning their full raw output.
+- Prefer targeted search/ranges over repeatedly reading entire files.
+- Do not reconstruct or re-explain architecture that is already established.
+- Do not narrate lengthy implementation plans before performing bounded work.
+- Work on one atomic implementation objective at a time.
+- After completing an atomic objective, run its checks and stop rather than
+  automatically beginning another large phase.
+- If the session has recently compacted, trust the preserved task state and
+  inspect only what is necessary to resume; do not reconstruct the entire
+  project history.
+- Preserve unfinished edits, current failures, pending checks, blockers, and
+  the exact next action when summarizing state.
+
 ## Pi Tool / Extension Routing
 
 Use installed tools when they materially improve the task; do not invoke tools merely because they are available.
