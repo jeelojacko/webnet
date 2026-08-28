@@ -201,7 +201,7 @@ Preferred routing:
   pi-mcp-adapter is removed; re-add it with `pi install npm:pi-mcp-adapter` only if another MCP server is needed.
 
 - Memory:
-  Hermes memory is for durable project decisions, conventions, and useful prior-session facts.
+  Durable per-session memory lives in observational-memory (`.memory/<session>/` topic files + `JOURNEY.md`); cross-session recall goes through `ctx_search` (context-mode).
   Do not store transient implementation details, generated output, or obvious repository state as durable memory.
 
 - Code quality:
