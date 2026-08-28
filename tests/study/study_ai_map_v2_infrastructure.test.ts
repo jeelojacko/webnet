@@ -1111,6 +1111,24 @@ describe('Study Map V2 infrastructure repairs', () => {
     ).toHaveLength(1);
   });
 
+  it('validates resume results against job identity, not the run directory name', () => {
+    const { validateExistingResults } = __studyAiLocalMapAuthorTest;
+    const job = jobFixture();
+    const result = resultFixture(job);
+    const warmOptions = { runId: 'ai-warm-started-run-dir' } as Parameters<
+      typeof validateExistingResults
+    >[2];
+    // Warm start: results keep the source run's runId (the job's prepared identity).
+    expect(() => validateExistingResults([result], [job], warmOptions)).not.toThrow();
+    // A result whose runId matches neither the job nor this run is foreign.
+    const foreign = { ...result, runId: 'ai-some-other-run' };
+    expect(() => validateExistingResults([foreign], [job], warmOptions)).toThrow(/runId/);
+    // A result with no matching job file is still rejected.
+    expect(() => validateExistingResults([result], [], warmOptions)).toThrow(
+      /no matching job file/,
+    );
+  });
+
   it('recovers from a provider failure within the same semantic attempt', async () => {
     const job = jobFixture();
     writeJobRun(job);

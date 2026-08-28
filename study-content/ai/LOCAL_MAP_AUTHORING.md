@@ -100,6 +100,8 @@ npm run study:ai:local-map -- \
 
 The first resumed start creates `reports/local-run-metadata.json` for this pre-existing run; later starts validate against it. Keep the same `--comparison-set` path and model, and re-run the same command after any further interruption.
 
+The accepted results in this run keep the source run's `runId` (`ai-map-4c12-full-corpus-v2`) because its job files were prepared under that run; resume validation compares each result's `runId` against its job file (see `reports/warm-start-note.json`).
+
 ## Full Regeneration Later
 
 Only after human approval of the comparison set, run the full regeneration queue:
@@ -121,7 +123,7 @@ Use `--resume` after interruptions. Never manually copy rejected generations int
 - Treats provider failures (connection resets, HTTP errors, timeouts, malformed or missing responses) as a separate class from semantic failures: each is classified (`PROVIDER_SOCKET_ERROR`, `PROVIDER_HTTP_ERROR`, `PROVIDER_TIMEOUT`, `PROVIDER_RESPONSE_ERROR`, `PROVIDER_RECOVERY_TIMEOUT`), polled against `GET <base-url>/models` until healthy (defaults: 300000 ms budget, 5000 ms poll; configurable with `--provider-recovery-timeout-ms` and `--provider-recovery-poll-ms`), and retried within the same semantic attempt up to `--max-provider-attempts` (default 3). Provider failures never consume semantic retries.
 - Aborts the run (non-zero exit, all accepted results preserved) when the provider is still unhealthy after the recovery budget, exhausts the max provider attempts, or rejects structured output; re-run with `--resume` to continue from the preserved results.
 - Skips already accepted jobs on resume and rewrites canonical JSONL atomically to avoid duplicate lines.
-- Validates run identity fail-closed on every start: `reports/local-run-metadata.json` (model, comparison-set path/hash, batch job-file hashes; created on first start of a pre-existing run) and accepted-result integrity (duplicate job IDs, matching `runId`, jobs still present in the selected batch files, matching `authoringInputFingerprint`) must match.
+- Validates run identity fail-closed on every start: `reports/local-run-metadata.json` (model, comparison-set path/hash, batch job-file hashes; created on first start of a pre-existing run) and accepted-result integrity (no duplicate job IDs, result `runId` matching the job file's prepared `runId` — warm-started run directories keep the source run identity — jobs still present in the selected batch files, matching `authoringInputFingerprint`) must match.
 - Appends every provider event to `reports/provider-events.jsonl` and writes numbered per-job `transport/provider` failure artifacts under `local-failures/<jobId>/` alongside semantic validation failures; all JSONL reads in the toolchain are UTF-8 BOM tolerant.
 - `-h`/`--help` prints the full flag reference without requiring `--run` or `--model`.
 - Stores non-secret provenance for accepted and rejected attempts.

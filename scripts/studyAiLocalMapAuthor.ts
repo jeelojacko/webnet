@@ -430,8 +430,10 @@ const validateRunMetadata = (options: RunnerOptions, identity: RunIdentity): voi
 };
 
 /**
- * --resume integrity checks on every previously accepted result: run identity,
- * no duplicate rows, and the result fingerprint must match the job file hash.
+ * --resume integrity checks on every previously accepted result: no duplicate
+ * rows, the result runId must match the job file's prepared run identity
+ * (warm-started run directories keep the source run's identity on purpose),
+ * and the result fingerprint must match the job file hash.
  */
 const validateExistingResults = (
   accepted: AiStudyMapResult[],
@@ -447,14 +449,14 @@ const validateExistingResults = (
         `Refusing to run ${options.runId}: duplicate accepted result for ${result.jobId} in ${resultPath(options.runId)}.`,
       );
     seen.add(result.jobId);
-    if (result.runId !== options.runId)
-      throw new Error(
-        `Refusing to run ${options.runId}: accepted result for ${result.jobId} has runId ${result.runId}.`,
-      );
     const job = jobById.get(result.jobId);
     if (!job)
       throw new Error(
         `Refusing to run ${options.runId}: accepted result for ${result.jobId} has no matching job file.`,
+      );
+    if (result.runId !== job.runId)
+      throw new Error(
+        `Refusing to run ${options.runId}: accepted result for ${result.jobId} has runId ${result.runId}, but its job file belongs to run ${job.runId}.`,
       );
     const expectedFingerprint = authoringInputFingerprint(job);
     if (result.authoringInputFingerprint !== expectedFingerprint)
@@ -914,6 +916,7 @@ export const runLocalMapAuthoring = async (
 export const __studyAiLocalMapAuthorTest = {
   optionsFromArgs,
   parseRawArgs,
+  validateExistingResults,
 };
 
 export const LOCAL_MAP_AUTHOR_HELP = `studyAiLocalMapAuthor.ts — Study Map V3 local authoring runner
