@@ -178,7 +178,8 @@ const validateMapGroup = (
     if (groupRequiresFocus(job)) {
       const childLabels = Array.isArray(selection.childLabels) ? selection.childLabels : [];
       const definedTerms = Array.isArray(selection.definedTerms) ? selection.definedTerms : [];
-      const hasEvidence = Array.isArray(selection.evidenceText) && selection.evidenceText.length > 0;
+      const hasEvidence =
+        Array.isArray(selection.evidenceText) && selection.evidenceText.length > 0;
       const trigger = nonEmptyString(selection.sourceKey) ? selection.sourceKey : undefined;
       if (childLabels.length === 0 && definedTerms.length === 0 && !hasEvidence)
         addIssue(issues, {
@@ -195,7 +196,8 @@ const validateMapGroup = (
           severity: 'warning',
           jobId,
           trigger,
-          message: 'Broad focus selection has no evidenceText identifying the key operative phrases.',
+          message:
+            'Broad focus selection has no evidenceText identifying the key operative phrases.',
         });
     }
   });
@@ -210,7 +212,10 @@ const validateMapGroup = (
 
 const OPAQUE_WARNING_CODE = /^[A-Z]{1,2}\d+$/;
 
-const checkMapResultConsistency = (value: Record<string, unknown>, issues: AiValidationIssue[]): void => {
+const checkMapResultConsistency = (
+  value: Record<string, unknown>,
+  issues: AiValidationIssue[],
+): void => {
   const jobId = stringValue(value.jobId) ? value.jobId : undefined;
   const proposedGroups = Array.isArray(value.proposedGroups) ? value.proposedGroups : undefined;
   const groupCount = proposedGroups?.length ?? 0;

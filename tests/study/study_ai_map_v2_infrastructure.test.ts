@@ -257,9 +257,7 @@ describe('Study Map V2 infrastructure repairs', () => {
       job,
     );
     expect(standaloneWithTwo.valid).toBe(false);
-    expect(standaloneWithTwo.issues.map((issue) => issue.code)).toContain(
-      'STANDALONE_GROUP_COUNT',
-    );
+    expect(standaloneWithTwo.issues.map((issue) => issue.code)).toContain('STANDALONE_GROUP_COUNT');
 
     const referenceOnlyWithGroup = validateAiStudyMapResult(
       {
@@ -400,10 +398,7 @@ describe('Study Map V2 infrastructure repairs', () => {
 
     await runLocalMapAuthoring(
       {
-        ...__studyAiLocalMapAuthorTest.optionsFromArgs(
-          { run: job.runId, model: 'mock-model' },
-          {},
-        ),
+        ...__studyAiLocalMapAuthorTest.optionsFromArgs({ run: job.runId, model: 'mock-model' }, {}),
         baseUrl: 'http://mock/v1',
         resume: true,
         maxRetries: 0,
@@ -451,10 +446,7 @@ describe('Study Map V2 infrastructure repairs', () => {
 
     await runLocalMapAuthoring(
       {
-        ...__studyAiLocalMapAuthorTest.optionsFromArgs(
-          { run: job.runId, model: 'mock-model' },
-          {},
-        ),
+        ...__studyAiLocalMapAuthorTest.optionsFromArgs({ run: job.runId, model: 'mock-model' }, {}),
         baseUrl: 'http://mock/v1',
         resume: true,
         maxRetries: 1,

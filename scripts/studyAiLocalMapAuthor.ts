@@ -294,8 +294,7 @@ export const STUDY_MAP_V3_SPEC_PATH = 'study-content/ai/specs/study-map-v3.md';
  * same prompt spec as the external provider workflow (fail closed when missing).
  */
 export const loadStudyMapV3Spec = (specPath: string = STUDY_MAP_V3_SPEC_PATH): string => {
-  if (!existsSync(specPath))
-    throw new Error(`Study Map V3 spec not found at ${specPath}.`);
+  if (!existsSync(specPath)) throw new Error(`Study Map V3 spec not found at ${specPath}.`);
   const text = readFileSync(specPath, 'utf8');
   if (!text.trim()) throw new Error(`Study Map V3 spec is empty at ${specPath}.`);
   return text;
@@ -392,8 +391,7 @@ const validateLocalResult = (
   value: unknown,
   job: AiStudyMapJob,
 ): { result?: AiStudyMapResult; issues: string[]; report?: AiValidationReport } => {
-  if (!isRecord(value))
-    return { issues: ['RESULT_INVALID: Local result must be a JSON object.'] };
+  if (!isRecord(value)) return { issues: ['RESULT_INVALID: Local result must be a JSON object.'] };
   const result = withRunnerIdentity(value, job);
   const report = validateAiStudyMapResult(result, job);
   const issues = report.issues.map((issue) => `${issue.code}: ${issue.message}`);
@@ -542,8 +540,11 @@ export const runLocalMapAuthoring = async (
           `transport/provider failure after ${elapsedMs(attemptStartedAt)} ms: ${transportError}`,
         );
       }
-      const validation: { result?: AiStudyMapResult; issues: string[]; report?: AiValidationReport } =
-        transportError ? { issues: [] } : validateLocalResult(raw, job);
+      const validation: {
+        result?: AiStudyMapResult;
+        issues: string[];
+        report?: AiValidationReport;
+      } = transportError ? { issues: [] } : validateLocalResult(raw, job);
       if (!transportError) log(`validation ${validation.result ? 'accepted' : 'rejected'}`);
       const provenance = {
         providerKind: 'local-openai-compatible',
