@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { __studyAiAuthoringTest } from '../../scripts/studyAiAuthoring';
 import {
   __studyAiLocalMapAuthorTest,
+  buildValidationRetryNote,
   loadStudyMapV3Spec,
   runLocalMapAuthoring,
   STUDY_MAP_V3_LOCAL_RESULT_SCHEMA,
@@ -307,6 +308,41 @@ describe('Study Map V2 infrastructure repairs', () => {
     expect(skipNoPriority.valid).toBe(true);
   });
 
+  it('warns on structured field labels embedded in prose fields without rejecting ordinary prose', () => {
+    const job = jobFixture();
+    const leaked = {
+      ...resultFixture(job),
+      proposedGroups: [
+        {
+          ...resultFixture(job).proposedGroups[0],
+          approximateLearningGoal: 'Know that notice filing is required. SuggestedPriority: P2.',
+        },
+      ],
+    };
+    const report = validateAiStudyMapResult(leaked, job);
+    expect(report.valid).toBe(true);
+    expect(report.issues.map((issue) => issue.code)).toContain('STRUCTURED_FIELD_LABEL_LEAKAGE');
+
+    const clean = resultFixture(job);
+    expect(validateAiStudyMapResult(clean, job).issues.map((issue) => issue.code)).not.toContain(
+      'STRUCTURED_FIELD_LABEL_LEAKAGE',
+    );
+
+    const ordinaryProse = {
+      ...clean,
+      reason: 'The duty is of moderate priority and the grouping is sound.',
+      proposedGroups: [
+        {
+          ...clean.proposedGroups[0],
+          reason: 'The filing requirement is the operative focus of the source.',
+        },
+      ],
+    };
+    expect(
+      validateAiStudyMapResult(ordinaryProse, job).issues.map((issue) => issue.code),
+    ).not.toContain('STRUCTURED_FIELD_LABEL_LEAKAGE');
+  });
+
   it('blocks overlapping split focus and accepts disjoint split focus', () => {
     const job = jobFixture();
     const base = resultFixture(job);
@@ -460,6 +496,154 @@ describe('Study Map V2 infrastructure repairs', () => {
       .find((content) => content.includes('STANDALONE_GROUP_COUNT'));
     expect(retryMessage).toBeDefined();
     expect(retryMessage).toContain('failed validation');
+  });
+
+  it('retries a missing suggestedPriority against the previous invalid response and accepts the corrected result', async () => {
+    const job = jobFixture();
+    writeJobRun(job);
+    const invalid = { ...resultFixture(job) };
+    delete invalid.suggestedPriority;
+    const bodies: unknown[] = [];
+    let calls = 0;
+    const fetchMock: Parameters<typeof runLocalMapAuthoring>[1] = async (_input, init) => {
+      calls += 1;
+      bodies.push(JSON.parse(init.body));
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          choices: [
+            { message: { content: JSON.stringify(calls === 1 ? invalid : resultFixture(job)) } },
+          ],
+        }),
+        text: async () => '',
+      };
+    };
+
+    const result = await runLocalMapAuthoring(
+      {
+        ...__studyAiLocalMapAuthorTest.optionsFromArgs({ run: job.runId, model: 'mock-model' }, {}),
+        baseUrl: 'http://mock/v1',
+        resume: true,
+        maxRetries: 1,
+      },
+      fetchMock,
+    );
+
+    expect(result.accepted).toBe(1);
+    expect(result.failed).toBe(0);
+    expect(calls).toBe(2);
+
+    const retryMessage = (bodies[1] as { messages: Array<{ content: string }> }).messages
+      .map((message) => message.content)
+      .find((content) => content.includes('SUGGESTED_PRIORITY_REQUIRED'));
+    expect(retryMessage).toBeDefined();
+    expect(retryMessage).toContain('Correct the previous response');
+    expect(retryMessage).toContain('Preserve valid semantic decisions');
+    expect(retryMessage).toContain('exactly one of P1, P2, P3, or P4');
+    // The bounded previous response is echoed so the valid semantic content
+    // does not have to be regenerated; the missing field was absent there.
+    expect(retryMessage).toContain('Previous invalid response (JSON only):');
+    expect(retryMessage).toContain('"groupId":"group-1"');
+    expect(retryMessage).not.toContain('"suggestedPriority"');
+
+    const line = readFileSync(
+      join('study-content', 'ai', 'runs', job.runId, 'results', 'local-map.results.jsonl'),
+      'utf8',
+    ).trim();
+    expect(JSON.parse(line)).toEqual(resultFixture(job));
+  });
+
+  it('restates a repeated validation error as mandatory before the next retry', async () => {
+    const job = jobFixture();
+    writeJobRun(job);
+    const invalid = { ...resultFixture(job) };
+    delete invalid.suggestedPriority;
+    const bodies: unknown[] = [];
+    let calls = 0;
+    const fetchMock: Parameters<typeof runLocalMapAuthoring>[1] = async (_input, init) => {
+      calls += 1;
+      bodies.push(JSON.parse(init.body));
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          choices: [
+            { message: { content: JSON.stringify(calls < 3 ? invalid : resultFixture(job)) } },
+          ],
+        }),
+        text: async () => '',
+      };
+    };
+
+    const result = await runLocalMapAuthoring(
+      {
+        ...__studyAiLocalMapAuthorTest.optionsFromArgs({ run: job.runId, model: 'mock-model' }, {}),
+        baseUrl: 'http://mock/v1',
+        resume: true,
+        maxRetries: 2,
+      },
+      fetchMock,
+    );
+
+    expect(result.accepted).toBe(1);
+    expect(calls).toBe(3);
+    const retryNote = (body: unknown) =>
+      (body as { messages: Array<{ content: string }> }).messages
+        .map((message) => message.content)
+        .find((content) => content.includes('SUGGESTED_PRIORITY_REQUIRED'));
+    expect(retryNote(bodies[1] as unknown)).not.toContain('previous attempt also produced');
+    expect(retryNote(bodies[2] as unknown)).toContain(
+      'previous attempt also produced SUGGESTED_PRIORITY_REQUIRED',
+    );
+    expect(retryNote(bodies[2] as unknown)).toContain('mandatory for this result');
+  });
+
+  it('keeps max-retry semantics: an always-invalid result exhausts initial plus maxRetries attempts', async () => {
+    const job = jobFixture();
+    writeJobRun(job);
+    const invalid = { ...resultFixture(job), confidence: 'certain' };
+    let calls = 0;
+
+    const result = await runLocalMapAuthoring(
+      {
+        ...__studyAiLocalMapAuthorTest.optionsFromArgs({ run: job.runId, model: 'mock-model' }, {}),
+        baseUrl: 'http://mock/v1',
+        resume: true,
+        maxRetries: 1,
+      },
+      async () => {
+        calls += 1;
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            choices: [{ message: { content: JSON.stringify(invalid) } }],
+          }),
+          text: async () => '',
+        };
+      },
+    );
+
+    expect(result.accepted).toBe(0);
+    expect(result.failed).toBe(1);
+    expect(calls).toBe(2);
+  });
+
+  it('bounds pathological previous responses in validation retry notes', () => {
+    const issue = {
+      code: 'SUGGESTED_PRIORITY_REQUIRED',
+      severity: 'error' as const,
+      message: 'suggestedPriority is required when proposedGroups is non-empty.',
+    };
+    const noteAllowance = 13_000; // 12k response cap + bounded note overhead
+    const bounded = buildValidationRetryNote([issue], { reason: 'a'.repeat(50_000) });
+    expect(bounded.length).toBeLessThan(noteAllowance);
+    expect(bounded).toContain('truncated for retry context');
+
+    const small = buildValidationRetryNote([issue], { reason: 'A focused filing duty.' });
+    expect(small).not.toContain('truncated for retry context');
+    expect(small).toContain('{"reason":"A focused filing duty."}');
   });
 
   it('parses local author timeout from CLI, env fallback, and default', () => {

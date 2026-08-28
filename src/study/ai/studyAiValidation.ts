@@ -212,6 +212,26 @@ const validateMapGroup = (
 
 const OPAQUE_WARNING_CODE = /^[A-Z]{1,2}\d+$/;
 
+// Narrow label vocabulary: only unmistakable "label:" embeddings of structured
+// result fields. Ordinary prose words without the colon are never flagged.
+const STRUCTURED_FIELD_LABEL_LEAKAGE = /\b(?:suggestedPriority|confidence|disposition|warnings|groupId)\s*:/i;
+
+const flagProseLabelLeakage = (
+  issues: AiValidationIssue[],
+  field: string,
+  text: unknown,
+  jobId: string | undefined,
+): void => {
+  if (typeof text !== 'string' || !STRUCTURED_FIELD_LABEL_LEAKAGE.test(text)) return;
+  addIssue(issues, {
+    code: 'STRUCTURED_FIELD_LABEL_LEAKAGE',
+    severity: 'warning',
+    jobId,
+    trigger: field,
+    message: `Prose field ${field} embeds a structured result label; move structured values to their own JSON fields.`,
+  });
+};
+
 const checkMapResultConsistency = (
   value: Record<string, unknown>,
   issues: AiValidationIssue[],
@@ -243,6 +263,13 @@ const checkMapResultConsistency = (
       jobId,
       message: 'suggestedPriority is required when proposedGroups is non-empty.',
     });
+  flagProseLabelLeakage(issues, 'reason', value.reason, jobId);
+  proposedGroups?.forEach((group) => {
+    if (!isRecord(group)) return;
+    ['titleSuggestion', 'reason', 'approximateLearningGoal'].forEach((field) =>
+      flagProseLabelLeakage(issues, `proposedGroups.${field}`, group[field], jobId),
+    );
+  });
   if (Array.isArray(value.warnings))
     value.warnings.forEach((warning) => {
       if (OPAQUE_WARNING_CODE.test(String(warning)))

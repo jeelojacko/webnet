@@ -74,7 +74,7 @@ Use `--resume` after interruptions. Never manually copy rejected generations int
 - Defaults to concurrency `1`.
 - Requires strict JSON Schema structured output in production mode.
 - Fails closed if the provider rejects structured output.
-- Retries each failed job up to two times after the initial attempt by default; retry feedback includes the exact validation issue codes and messages so the model can fix them.
+- Retries each failed job up to two times after the initial attempt by default. Retry feedback keeps the canonical spec and original job, then appends a bounded JSON-only echo of the previous invalid response, the exact validation issue codes/messages, concise per-code fixes for deterministic requirements (for example `SUGGESTED_PRIORITY_REQUIRED`), an explicit mandatory restatement when the same error repeats, and the instruction to correct the previous response while preserving valid semantic decisions. Priority is never assigned or defaulted deterministically; the model still chooses it.
 - Skips already accepted jobs on resume and rewrites canonical JSONL atomically to avoid duplicate lines.
 - Stores non-secret provenance for accepted and rejected attempts.
 

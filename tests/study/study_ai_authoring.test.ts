@@ -674,6 +674,13 @@ describe('AI authoring schemas and validation', () => {
     expect(mapSpec).toContain('supplied corpus defines the authoring scope');
     expect(mapSpec).toContain('operativeSourceText');
     expect(mapSpec).toContain('is primarily for verification and provenance');
+    expect(mapSpec).toContain(
+      'Do not invent abbreviations, acronyms, defined terms, or shorthand',
+    );
+
+    // Output hygiene: no prompt/calibration leakage or structured labels in prose.
+    expect(mapSpec).toContain('Calibration examples are instructions for your reasoning only');
+    expect(mapSpec).toContain('Do not embed structured result labels');
 
     // P1-P4 priority calibration.
     expect(mapSpec).toContain('P1: highest-value recall material');
