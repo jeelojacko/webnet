@@ -205,7 +205,7 @@ Preferred routing:
   Do not store transient implementation details, generated output, or obvious repository state as durable memory.
 
 - Code quality:
-  Use pi-lens for structural/LSP/type feedback when useful.
+  Use `npm run lint` and `npm run typecheck` for static feedback.
   Use pi-simplify after an implementation when simplification is appropriate, not during every edit.
   Ponytail is opt-in; do not enable it automatically.
 
