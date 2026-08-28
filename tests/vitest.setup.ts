@@ -35,6 +35,7 @@ if (jsdomWindow?.localStorage) {
 
   afterAll(() => {
     if (originalStorage) Object.defineProperty(globalThis, 'localStorage', originalStorage);
-    if (originalSessionStorage) Object.defineProperty(globalThis, 'sessionStorage', originalSessionStorage);
+    if (originalSessionStorage)
+      Object.defineProperty(globalThis, 'sessionStorage', originalSessionStorage);
   });
 }

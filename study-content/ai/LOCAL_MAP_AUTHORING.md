@@ -57,6 +57,33 @@ Batch mode resolves each comparison-set job from the V2 run `jobs/*.jobs.jsonl` 
 
 Human review must compare local output against the authoritative source, known-good V1 output, and Study Map V3 requirements. Schema validity alone is not approval.
 
+## Stratified 200-job validation sample and run audit
+
+A larger, reproducible comparison set for validating local-model output is built by the seeded stratified sampler (no model calls):
+
+```bash
+npx tsx scripts/studyAiBuildStratifiedMapSample.ts \
+  --run ai-map-4c12-full-corpus-v2 \
+  --size 200 \
+  --seed 20260828 \
+  --out study-content/ai/runs/ai-map-4c12-full-corpus-v2/reports/stratified-200-seed-20260828.json
+```
+
+Behavior: per-document quotas are automatic (`floor(size/docs)` plus remainder distributed in documentId order; `--per-document N` overrides as a base quota); shortfalls are redistributed round-robin to documents with headroom; selection within a document is coverage-first (jobs adding new complexity/structural strata are taken before rank fill); the sample SHA-256 fingerprints the selected job list, and the JSON/MD are byte-identical for the same seed. Every job carries its V1 known-good mapping (`v1JobId`, `v1KnownGoodResultLocation`, `v1ResultIdentity`) computed from document + source keys + section labels. Coverage of the multi-label complexity categories and structural strata (both defined in `scripts/studyAiMapStrata.ts`) is recorded, and any corpus stratum with zero selected jobs is written to `unmetCoverageNotes`.
+
+After a local run completes, audit it deterministically against the comparison set:
+
+```bash
+npx tsx scripts/studyAiAuditMapRun.ts \
+  --run <local-run-id> \
+  --comparison-set <comparison-set.json> \
+  --review-size 40
+```
+
+Writes `reports/map-run-audit.json`, `reports/map-run-audit.md`, and `reports/semantic-review-bundle.jsonl` into the audited run directory. Reports reliability (acceptance, first-try vs retried, per-error-code failed attempts and per-job recovery rate, retry-introduced-different-error and repeated-identical-error counts), per-stratum acceptance, structure (disposition/confidence/priority mix, group counts, final re-validation issues), concision (word-count stats vs ~40/30/60 thresholds), output-hygiene pattern findings (prompt/calibration/instruction/AI-identity references), and a descriptive V1 comparison (V1 is a pedagogical comparator only, never an accuracy ground truth). The review bundle orders jobs by tier (permanent failures first, then low confidence, multi-attempt, warning, needs-human-review, reference-only/skip, multi-group, P1, large-input, medium-confidence, clean) capped by `--review-size`.
+
+Integrity problems (malformed lines, duplicate results, jobs outside the comparison set, base-run gaps, authoring-fingerprint mismatch) fail the audit with a non-zero exit code.
+
 ## Full Regeneration Later
 
 Only after human approval of the comparison set, run the full regeneration queue:

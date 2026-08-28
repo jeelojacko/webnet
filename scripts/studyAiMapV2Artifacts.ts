@@ -8,6 +8,7 @@ import {
   canonicalJson,
 } from '../src/study/ai/studyAiResultContract';
 import { authoringInputFingerprint } from './studyAiFingerprint';
+import { categoryForJob } from './studyAiMapStrata';
 import {
   buildMapValidationReport,
   buildRunStatusReport,
@@ -85,31 +86,6 @@ const writeJsonl = (path: string, rows: unknown[]): void =>
 const batchNumberFromFile = (file: string): string => /batch-(\d+)\.results\.jsonl$/.exec(file)?.[1] ?? '';
 
 const resultIdentity = (result: AiStudyMapResult): string => `${result.runId}:${result.jobId}`;
-
-const categoryForJob = (job: AiStudyMapJob): string[] => {
-  const text = `${job.target.heading ?? ''} ${job.target.operativeSourceText}`.toLowerCase();
-  const categories: string[] = [];
-  [
-    ['duty', /\bshall\b|\bmust\b|required/],
-    ['permission', /\bmay\b|\bpermit/],
-    ['prohibition', /\bshall not\b|\bmust not\b|prohibited/],
-    ['deadline', /\bwithin\b|\b\d+\s+days?\b/],
-    ['notice', /\bnotice\b|\bnotify\b/],
-    ['filing requirement', /\bfile\b|\bfiling\b|\bregister\b|\bregistration\b/],
-    ['procedural rule', /\bprocedure\b|\bhearing\b|\bapplication\b/],
-    ['offence', /\boffence\b|\bfine\b|\bpenalty\b/],
-    ['legal effect', /\bdeemed\b|\beffect\b|\bvoid\b|\bbinding\b/],
-    ['regulation-making power', /\bregulations?\b/],
-    ['definitions', /\bdefinitions?\b|\bmeans\b/],
-    ['cross-reference-heavy provision', /\bsection\b|\bsubsection\b|\bparagraph\b/],
-    ['moderately broad provision', text.length > 1800 ? /./ : /a^/],
-    ['schedule', job.target.componentType === 'schedule' ? /./ : /a^/],
-    ['surveying-specific provision', /\bsurvey\b|\bsurveyor\b|\bboundary\b|\bplan\b/],
-  ].forEach(([name, pattern]) => {
-    if ((pattern as RegExp).test(text)) categories.push(String(name));
-  });
-  return categories.length > 0 ? categories : ['general'];
-};
 
 const main = (): void => {
   const pkg = readJson<NbLawContentPackage>(DEFAULT_PACKAGE);
