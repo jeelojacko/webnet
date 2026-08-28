@@ -326,8 +326,7 @@ const RETRY_INSTRUCTIONS: Record<string, string> = {
     'Make sibling group focus selections disjoint for the duplicated source focus.',
   DUPLICATE_FOCUS_DEFINED_TERM:
     'Make sibling group focus selections disjoint for the duplicated source focus.',
-  OPAQUE_WARNING_CODE:
-    'Replace opaque warning codes with a self-describing SCREAMING_SNAKE code.',
+  OPAQUE_WARNING_CODE: 'Replace opaque warning codes with a self-describing SCREAMING_SNAKE code.',
 };
 
 /** Ordinary Study Map responses fit easily; cap only pathological invalid responses. */
@@ -373,17 +372,15 @@ export const buildValidationRetryNote = (
     .map((issue) => `${issue.code}: ${issue.message}`)
     .join(' ');
   lines.push('', `The previous response failed validation with: ${body}`);
-  const fixes = errors
-    .slice(0, 8)
-    .map((issue) => {
-      const instruction = RETRY_INSTRUCTIONS[issue.code];
-      const repeated = previousErrorCodes.includes(issue.code)
-        ? ` The previous attempt also produced ${issue.code}; this requirement is mandatory for this result.`
-        : '';
-      return instruction
-        ? `- ${issue.code}: ${instruction}${repeated}`
-        : `- ${issue.code}: ${issue.message}${repeated}`;
-    });
+  const fixes = errors.slice(0, 8).map((issue) => {
+    const instruction = RETRY_INSTRUCTIONS[issue.code];
+    const repeated = previousErrorCodes.includes(issue.code)
+      ? ` The previous attempt also produced ${issue.code}; this requirement is mandatory for this result.`
+      : '';
+    return instruction
+      ? `- ${issue.code}: ${instruction}${repeated}`
+      : `- ${issue.code}: ${issue.message}${repeated}`;
+  });
   lines.push('', 'Required fixes (the semantic correction itself is yours to make):', ...fixes);
   return lines.join('\n');
 };

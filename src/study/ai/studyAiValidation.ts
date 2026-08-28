@@ -214,7 +214,8 @@ const OPAQUE_WARNING_CODE = /^[A-Z]{1,2}\d+$/;
 
 // Narrow label vocabulary: only unmistakable "label:" embeddings of structured
 // result fields. Ordinary prose words without the colon are never flagged.
-const STRUCTURED_FIELD_LABEL_LEAKAGE = /\b(?:suggestedPriority|confidence|disposition|warnings|groupId)\s*:/i;
+const STRUCTURED_FIELD_LABEL_LEAKAGE =
+  /\b(?:suggestedPriority|confidence|disposition|warnings|groupId)\s*:/i;
 
 const flagProseLabelLeakage = (
   issues: AiValidationIssue[],
