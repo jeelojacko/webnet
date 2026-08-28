@@ -683,9 +683,7 @@ describe('AI authoring schemas and validation', () => {
 
     // Confidence calibration.
     expect(mapSpec).toContain('Allowed confidence values: high, medium, low');
-    expect(mapSpec).toContain(
-      'another grouping could plausibly be preferable',
-    );
+    expect(mapSpec).toContain('another grouping could plausibly be preferable');
     expect(mapSpec).toContain('Do not use high merely because the provision is easy to parse');
     expect(mapSpec).toContain('not confidence that the source text was understood');
 
@@ -695,7 +693,9 @@ describe('AI authoring schemas and validation', () => {
     expect(mapSpec).toContain(
       'a statutory mechanism may still contain multiple independently recallable StudyUnits',
     );
-    expect(mapSpec).toContain('smallest useful set of StudyUnits, not the smallest possible number');
+    expect(mapSpec).toContain(
+      'smallest useful set of StudyUnits, not the smallest possible number',
+    );
     expect(mapSpec).toContain('A change in actor or modality is evidence');
 
     // Concision targets (authoring targets, not blocking validation).
