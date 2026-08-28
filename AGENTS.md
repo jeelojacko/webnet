@@ -186,11 +186,10 @@ Preferred routing:
   Use normal read/grep/find when the target is already known or the simpler tool is sufficient.
 
 - Clarification:
-  Use the structured ask-user-question tool when an unresolved user decision materially affects implementation.
+  Use the structured ask_user_question tool (global TUI extension at ~/.pi/agent/extensions/ask-user-question.ts) when an unresolved user decision materially affects implementation.
   Do not guess or silently choose consequential alternatives.
 
-- Session work tracking:
-  Use rpiv-todo for short-lived execution steps within the current Pi task/session.
+- Work tracking:
   TODO.md remains the durable Webnet project roadmap.
 
 - Web/current documentation:
@@ -198,8 +197,8 @@ Preferred routing:
   Prefer official/primary documentation where possible.
 
 - MCP:
-  Use pi-mcp-adapter as the normal MCP access path.
-  Do not independently duplicate MCP server functionality when the adapter already exposes it.
+  MCP access goes through the context-mode native bridge (the `ctx_*` tools).
+  pi-mcp-adapter is removed; re-add it with `pi install npm:pi-mcp-adapter` only if another MCP server is needed.
 
 - Memory:
   Hermes memory is for durable project decisions, conventions, and useful prior-session facts.
@@ -211,7 +210,7 @@ Preferred routing:
   Ponytail is opt-in; do not enable it automatically.
 
 - Planning/review:
-  Plannotator and BigPowers skills are optional aids for substantial planning/review work.
+  The Plannotator skill is an optional aid for substantial planning/review work.
   Do not introduce a heavyweight workflow for small or already well-scoped tasks.
 
 - Subagents:
