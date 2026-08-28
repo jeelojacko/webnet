@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { __studyAiAuthoringTest } from '../../scripts/studyAiAuthoring';
 import {
   __studyAiLocalMapAuthorTest,
+  loadStudyMapV3Spec,
   runLocalMapAuthoring,
   STUDY_MAP_V3_LOCAL_RESULT_SCHEMA,
 } from '../../scripts/studyAiLocalMapAuthor';
@@ -222,10 +223,251 @@ describe('Study Map V2 infrastructure repairs', () => {
     expect(validateAiStudyMapResult(base, job).valid).toBe(true);
     expect(
       validateAiStudyMapResult(
-        { ...base, disposition: 'split', reason: 'The source covers two distinct duties.' },
+        {
+          ...base,
+          disposition: 'split',
+          reason: 'The source covers two distinct duties.',
+          proposedGroups: [
+            base.proposedGroups[0],
+            { ...base.proposedGroups[0], groupId: 'group-2' },
+          ],
+        },
         job,
       ).valid,
     ).toBe(true);
+    const splitWithOneGroup = validateAiStudyMapResult(
+      { ...base, disposition: 'split', reason: 'The source covers two distinct duties.' },
+      job,
+    );
+    expect(splitWithOneGroup.valid).toBe(false);
+    expect(splitWithOneGroup.issues.map((issue) => issue.code)).toContain('SPLIT_GROUP_COUNT');
+  });
+
+  it('enforces disposition/group-count consistency and required suggestedPriority', () => {
+    const job = jobFixture();
+    const base = resultFixture(job);
+    const group = (id: string, focus?: unknown) => ({
+      ...base.proposedGroups[0],
+      groupId: id,
+      ...(focus !== undefined ? { focusSelections: [focus] } : {}),
+    });
+
+    const standaloneWithTwo = validateAiStudyMapResult(
+      { ...base, proposedGroups: [base.proposedGroups[0], group('group-2')] },
+      job,
+    );
+    expect(standaloneWithTwo.valid).toBe(false);
+    expect(standaloneWithTwo.issues.map((issue) => issue.code)).toContain(
+      'STANDALONE_GROUP_COUNT',
+    );
+
+    const referenceOnlyWithGroup = validateAiStudyMapResult(
+      {
+        ...base,
+        disposition: 'reference-only',
+        suggestedPriority: undefined,
+        proposedGroups: [base.proposedGroups[0]],
+      },
+      job,
+    );
+    expect(referenceOnlyWithGroup.valid).toBe(false);
+    expect(referenceOnlyWithGroup.issues.map((issue) => issue.code)).toContain(
+      'REFERENCE_ONLY_WITH_GROUPS',
+    );
+
+    const groupsWithoutPriority = validateAiStudyMapResult(
+      { ...base, suggestedPriority: undefined },
+      job,
+    );
+    expect(groupsWithoutPriority.valid).toBe(false);
+    expect(groupsWithoutPriority.issues.map((issue) => issue.code)).toContain(
+      'SUGGESTED_PRIORITY_REQUIRED',
+    );
+
+    const referenceOnlyNoPriority = validateAiStudyMapResult(
+      {
+        ...base,
+        disposition: 'reference-only',
+        reason: 'The provision is citation-only.',
+        suggestedPriority: undefined,
+        proposedGroups: [],
+      },
+      job,
+    );
+    expect(referenceOnlyNoPriority.valid).toBe(true);
+
+    const skipNoPriority = validateAiStudyMapResult(
+      {
+        ...base,
+        disposition: 'skip',
+        reason: 'The source has no substantive learning goal.',
+        suggestedPriority: undefined,
+        proposedGroups: [],
+      },
+      job,
+    );
+    expect(skipNoPriority.valid).toBe(true);
+  });
+
+  it('blocks overlapping split focus and accepts disjoint split focus', () => {
+    const job = jobFixture();
+    const base = resultFixture(job);
+    const splitOf = (focusA: unknown, focusB: unknown) => ({
+      ...base,
+      disposition: 'split',
+      reason: 'The source covers two distinct duties.',
+      proposedGroups: [
+        { ...base.proposedGroups[0], groupId: 'group-1', focusSelections: [focusA] },
+        {
+          ...base.proposedGroups[0],
+          groupId: 'group-2',
+          focusSelections: [focusB],
+        },
+      ],
+    });
+
+    const overlapping = validateAiStudyMapResult(
+      splitOf(
+        { sourceKey: 'section:10', childLabels: ['10(1)', '10(2)'] },
+        { sourceKey: 'section:10', childLabels: ['10(2)', '10(3)'] },
+      ),
+      job,
+    );
+    expect(overlapping.valid).toBe(false);
+    expect(overlapping.issues.map((issue) => issue.code)).toContain('DUPLICATE_FOCUS_CHILD_LABEL');
+
+    const overlappingTerm = validateAiStudyMapResult(
+      splitOf(
+        { sourceKey: 'section:10', definedTerms: ['notice'] },
+        { sourceKey: 'section:10', definedTerms: ['notice', 'person'] },
+      ),
+      job,
+    );
+    expect(overlappingTerm.valid).toBe(false);
+    expect(overlappingTerm.issues.map((issue) => issue.code)).toContain(
+      'DUPLICATE_FOCUS_DEFINED_TERM',
+    );
+
+    const disjoint = validateAiStudyMapResult(
+      splitOf(
+        { sourceKey: 'section:10', childLabels: ['10(1)'] },
+        { sourceKey: 'section:10', childLabels: ['10(2)'] },
+      ),
+      job,
+    );
+    expect(disjoint.valid).toBe(true);
+  });
+
+  it('rejects opaque machine warning codes from the local model', () => {
+    const job = jobFixture();
+    const base = resultFixture(job);
+
+    ['G1', 'S5001', 'AB12'].forEach((opaque) => {
+      const report = validateAiStudyMapResult({ ...base, warnings: [opaque] }, job);
+      expect(report.valid).toBe(false);
+      expect(report.issues.map((issue) => issue.code)).toContain('OPAQUE_WARNING_CODE');
+    });
+
+    const descriptive = validateAiStudyMapResult(
+      { ...base, warnings: ['TARGET_PARSE_LOOKS_DAMAGED'] },
+      job,
+    );
+    expect(descriptive.valid).toBe(true);
+  });
+
+  it('loads the canonical Study Map V3 spec and fails closed when missing', () => {
+    expect(loadStudyMapV3Spec()).toContain('curriculum mapping, not legal analysis');
+    expect(() => loadStudyMapV3Spec('study-content/ai/specs/does-not-exist.md')).toThrow(
+      /spec not found/,
+    );
+  });
+
+  it('sends the canonical Study Map V3 spec in the local runner system prompt', async () => {
+    const job = jobFixture();
+    writeJobRun(job);
+    const bodies: unknown[] = [];
+    const fetchMock: Parameters<typeof runLocalMapAuthoring>[1] = async (_input, init) => {
+      bodies.push(JSON.parse(init.body));
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          choices: [{ message: { content: JSON.stringify(resultFixture(job)) } }],
+        }),
+        text: async () => '',
+      };
+    };
+
+    await runLocalMapAuthoring(
+      {
+        ...__studyAiLocalMapAuthorTest.optionsFromArgs(
+          { run: job.runId, model: 'mock-model' },
+          {},
+        ),
+        baseUrl: 'http://mock/v1',
+        resume: true,
+        maxRetries: 0,
+      },
+      fetchMock,
+    );
+
+    const system = (bodies[0] as { messages: Array<{ content: string }> }).messages[0].content;
+    expect(system).toContain('## Disposition, group count, and focus');
+    expect(system).toContain('curriculum mapping, not legal analysis');
+    expect(system).toContain('useful independent study value');
+    expect(system).toContain('Allowed confidence values: high, medium, low.');
+    expect(system).toContain('RUNNER NOTES (local run only)');
+    expect(system.length).toBeGreaterThan(loadStudyMapV3Spec().length);
+  });
+
+  it('feeds failed validation issues back into the retry prompt', async () => {
+    const job = jobFixture();
+    writeJobRun(job);
+    const bodies: unknown[] = [];
+    let calls = 0;
+    const fetchMock: Parameters<typeof runLocalMapAuthoring>[1] = async (_input, init) => {
+      calls += 1;
+      bodies.push(JSON.parse(init.body));
+      const invalid = {
+        ...resultFixture(job),
+        proposedGroups: [
+          resultFixture(job).proposedGroups[0],
+          { ...resultFixture(job).proposedGroups[0], groupId: 'group-2' },
+        ],
+      };
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          choices: [
+            {
+              message: { content: JSON.stringify(calls === 1 ? invalid : resultFixture(job)) },
+            },
+          ],
+        }),
+        text: async () => '',
+      };
+    };
+
+    await runLocalMapAuthoring(
+      {
+        ...__studyAiLocalMapAuthorTest.optionsFromArgs(
+          { run: job.runId, model: 'mock-model' },
+          {},
+        ),
+        baseUrl: 'http://mock/v1',
+        resume: true,
+        maxRetries: 1,
+      },
+      fetchMock,
+    );
+
+    expect(bodies).toHaveLength(2);
+    const retryMessage = (bodies[1] as { messages: Array<{ content: string }> }).messages
+      .map((message) => message.content)
+      .find((content) => content.includes('STANDALONE_GROUP_COUNT'));
+    expect(retryMessage).toBeDefined();
+    expect(retryMessage).toContain('failed validation');
   });
 
   it('parses local author timeout from CLI, env fallback, and default', () => {

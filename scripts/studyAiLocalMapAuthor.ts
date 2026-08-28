@@ -1,7 +1,12 @@
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { AiStudyMapJob, AiStudyMapResult } from '../src/study/ai/studyAiTypes';
+import type {
+  AiStudyMapJob,
+  AiStudyMapResult,
+  AiValidationIssue,
+  AiValidationReport,
+} from '../src/study/ai/studyAiTypes';
 import { validateAiStudyMapResult } from '../src/study/ai/studyAiValidation';
 import { STUDY_MAP_V3_RESULT_SCHEMA } from '../src/study/ai/studyAiResultContract';
 import { authoringInputFingerprint } from './studyAiFingerprint';
@@ -281,24 +286,47 @@ const resultPath = (runId: string): string =>
 const acceptedJobIds = (runId: string): Set<string> =>
   new Set(readJsonl<AiStudyMapResult>(resultPath(runId)).map((result) => result.jobId));
 
-const promptForJob = (job: AiStudyMapJob): ChatMessage[] => [
-  {
-    role: 'system',
-    content: [
-      'You are a Study Map V3 authoring assistant.',
-      'Use only the supplied official source as authoritative.',
-      'Context is for understanding only and is not evidence unless its sourceKey is included in a proposed group.',
-      'A provision has useful independent study value when the target source itself creates or changes any legal duty, permission, procedure, prerequisite, consequence, remedy, payment/cost rule, review path, or official power, even if it operates within a larger statutory scheme or relates to surrounding sections.',
-      "Choose the disposition from the source's study value first: map substantive legal duties, powers, procedures, rights, prohibitions, criteria, or effects as standalone/split; use skip only for material with no useful independent study value.",
-      'Administrative, procedural, institutional, government-directed, short, or single-section provisions are not skip reasons by themselves.',
-      'Return exactly one JSON object matching the supplied Study Map V3 schema.',
-    ].join('\n'),
-  },
-  {
-    role: 'user',
-    content: JSON.stringify({ job }),
-  },
+/** Path of the canonical Study Map V3 spec; local runner and external providers share it. */
+export const STUDY_MAP_V3_SPEC_PATH = 'study-content/ai/specs/study-map-v3.md';
+
+/**
+ * Load the canonical Study Map V3 spec at runtime so the local model receives the
+ * same prompt spec as the external provider workflow (fail closed when missing).
+ */
+export const loadStudyMapV3Spec = (specPath: string = STUDY_MAP_V3_SPEC_PATH): string => {
+  if (!existsSync(specPath))
+    throw new Error(`Study Map V3 spec not found at ${specPath}.`);
+  const text = readFileSync(specPath, 'utf8');
+  if (!text.trim()) throw new Error(`Study Map V3 spec is empty at ${specPath}.`);
+  return text;
+};
+
+const RUNNER_NOTES = [
+  'RUNNER NOTES (local run only):',
+  '- Return only the semantic result fields: disposition, confidence, reason, suggestedPriority, proposedGroups, and warnings.',
+  '- The runner injects runner-owned identity fields (schemaVersion, jobId, runId, corpusContentHash, inputHash, authoringInputFingerprint, promptSpecVersion); do not include them.',
+  '- Return exactly one JSON object matching the supplied Study Map V3 schema.',
+].join('\n');
+
+const promptForJob = (job: AiStudyMapJob, spec = loadStudyMapV3Spec()): ChatMessage[] => [
+  { role: 'system', content: `${spec.trimEnd()}\n\n${RUNNER_NOTES}` },
+  { role: 'user', content: JSON.stringify({ job }) },
 ];
+
+/**
+ * Build retry feedback from the failed validation so the model sees the exact
+ * machine codes and messages to fix, not a generic "failed" note.
+ */
+export const buildValidationRetryNote = (issues: readonly AiValidationIssue[]): string => {
+  const errors = issues.filter((issue) => issue.severity === 'error');
+  if (errors.length === 0)
+    return 'The previous response failed validation. Regenerate the entire response as one JSON object that exactly matches the supplied schema.';
+  const body = errors
+    .slice(0, 8)
+    .map((issue) => `${issue.code}: ${issue.message}`)
+    .join(' ');
+  return `The previous response failed validation with: ${body}. Fix these specific issues and regenerate the entire response as one JSON object that exactly matches the supplied schema.`;
+};
 
 const requestBody = (
   job: AiStudyMapJob,
@@ -363,12 +391,13 @@ const withRunnerIdentity = (value: Record<string, unknown>, job: AiStudyMapJob):
 const validateLocalResult = (
   value: unknown,
   job: AiStudyMapJob,
-): { result?: AiStudyMapResult; issues: string[] } => {
-  if (!isRecord(value)) return { issues: ['RESULT_INVALID: Local result must be a JSON object.'] };
+): { result?: AiStudyMapResult; issues: string[]; report?: AiValidationReport } => {
+  if (!isRecord(value))
+    return { issues: ['RESULT_INVALID: Local result must be a JSON object.'] };
   const result = withRunnerIdentity(value, job);
   const report = validateAiStudyMapResult(result, job);
   const issues = report.issues.map((issue) => `${issue.code}: ${issue.message}`);
-  return report.valid ? { result, issues } : { issues };
+  return report.valid ? { result, issues, report } : { issues, report };
 };
 
 const failureDir = (runId: string, jobId: string): string =>
@@ -513,9 +542,8 @@ export const runLocalMapAuthoring = async (
           `transport/provider failure after ${elapsedMs(attemptStartedAt)} ms: ${transportError}`,
         );
       }
-      const validation: { result?: AiStudyMapResult; issues: string[] } = transportError
-        ? { issues: [] }
-        : validateLocalResult(raw, job);
+      const validation: { result?: AiStudyMapResult; issues: string[]; report?: AiValidationReport } =
+        transportError ? { issues: [] } : validateLocalResult(raw, job);
       if (!transportError) log(`validation ${validation.result ? 'accepted' : 'rejected'}`);
       const provenance = {
         providerKind: 'local-openai-compatible',
@@ -554,7 +582,7 @@ export const runLocalMapAuthoring = async (
       });
       retryNote = transportError
         ? undefined
-        : 'The previous response failed validation. Regenerate the entire response as one JSON object that exactly matches the supplied schema.';
+        : buildValidationRetryNote(validation.report?.issues ?? []);
     }
     if (!written) failed += 1;
   }

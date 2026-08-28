@@ -175,6 +175,29 @@ const validateMapGroup = (
         jobId,
         message: 'evidenceText must be string array when present.',
       });
+    if (groupRequiresFocus(job)) {
+      const childLabels = Array.isArray(selection.childLabels) ? selection.childLabels : [];
+      const definedTerms = Array.isArray(selection.definedTerms) ? selection.definedTerms : [];
+      const hasEvidence = Array.isArray(selection.evidenceText) && selection.evidenceText.length > 0;
+      const trigger = nonEmptyString(selection.sourceKey) ? selection.sourceKey : undefined;
+      if (childLabels.length === 0 && definedTerms.length === 0 && !hasEvidence)
+        addIssue(issues, {
+          code: 'FOCUS_SELECTION_UNBOUNDED',
+          severity: 'warning',
+          jobId,
+          trigger,
+          message:
+            'focusSelection covers the entire source; add childLabels, definedTerms, or evidenceText to identify the key focus.',
+        });
+      else if (childLabels.length >= 4 && !hasEvidence)
+        addIssue(issues, {
+          code: 'BROAD_FOCUS_WITHOUT_EVIDENCE',
+          severity: 'warning',
+          jobId,
+          trigger,
+          message: 'Broad focus selection has no evidenceText identifying the key operative phrases.',
+        });
+    }
   });
   if (
     job &&
@@ -183,6 +206,88 @@ const validateMapGroup = (
   ) {
     validateStudyMapGroupGrounding(group as AiProposedSourceGroup, job, issues);
   }
+};
+
+const OPAQUE_WARNING_CODE = /^[A-Z]{1,2}\d+$/;
+
+const checkMapResultConsistency = (value: Record<string, unknown>, issues: AiValidationIssue[]): void => {
+  const jobId = stringValue(value.jobId) ? value.jobId : undefined;
+  const proposedGroups = Array.isArray(value.proposedGroups) ? value.proposedGroups : undefined;
+  const groupCount = proposedGroups?.length ?? 0;
+  if (value.disposition === 'standalone' && groupCount !== 1)
+    addIssue(issues, {
+      code: 'STANDALONE_GROUP_COUNT',
+      jobId,
+      message: `standalone results require exactly one proposed group, not ${groupCount}.`,
+    });
+  if (value.disposition === 'split' && groupCount < 2)
+    addIssue(issues, {
+      code: 'SPLIT_GROUP_COUNT',
+      jobId,
+      message: `split results require at least two proposed groups, not ${groupCount}.`,
+    });
+  if (value.disposition === 'reference-only' && groupCount > 0)
+    addIssue(issues, {
+      code: 'REFERENCE_ONLY_WITH_GROUPS',
+      jobId,
+      message: `reference-only results must have zero proposed groups, not ${groupCount}.`,
+    });
+  if (groupCount > 0 && value.suggestedPriority === undefined)
+    addIssue(issues, {
+      code: 'SUGGESTED_PRIORITY_REQUIRED',
+      jobId,
+      message: 'suggestedPriority is required when proposedGroups is non-empty.',
+    });
+  if (Array.isArray(value.warnings))
+    value.warnings.forEach((warning) => {
+      if (OPAQUE_WARNING_CODE.test(String(warning)))
+        addIssue(issues, {
+          code: 'OPAQUE_WARNING_CODE',
+          jobId,
+          trigger: String(warning),
+          message: `Opaque warning code is not self-describing: ${warning}.`,
+        });
+    });
+  if (proposedGroups) checkDuplicateFocusCoverage(proposedGroups, jobId, issues);
+};
+
+const checkDuplicateFocusCoverage = (
+  groups: readonly unknown[],
+  jobId: string | undefined,
+  issues: AiValidationIssue[],
+): void => {
+  const owners = new Map<string, Set<string>>();
+  groups.forEach((group) => {
+    if (!isRecord(group)) return;
+    const groupId = nonEmptyString(group.groupId) ? group.groupId : '(missing)';
+    (Array.isArray(group.focusSelections) ? group.focusSelections : []).forEach((selection) => {
+      if (!isRecord(selection)) return;
+      const sourceKey = nonEmptyString(selection.sourceKey) ? selection.sourceKey : '(missing)';
+      (Array.isArray(selection.childLabels) ? selection.childLabels : []).forEach((label) => {
+        const key = `childLabel\u0000${sourceKey}\u0000${normalizeText(String(label))}`;
+        const set = owners.get(key) ?? new Set<string>();
+        set.add(groupId);
+        owners.set(key, set);
+      });
+      (Array.isArray(selection.definedTerms) ? selection.definedTerms : []).forEach((term) => {
+        const key = `definedTerm\u0000${sourceKey}\u0000${normalizeText(String(term))}`;
+        const set = owners.get(key) ?? new Set<string>();
+        set.add(groupId);
+        owners.set(key, set);
+      });
+    });
+  });
+  owners.forEach((groupIds, key) => {
+    if (groupIds.size < 2) return;
+    const [kind, sourceKey, label] = key.split('\u0000');
+    addIssue(issues, {
+      code: kind === 'childLabel' ? 'DUPLICATE_FOCUS_CHILD_LABEL' : 'DUPLICATE_FOCUS_DEFINED_TERM',
+      jobId,
+      sourceKey,
+      trigger: label,
+      message: `${kind} is assigned to more than one proposed group for source ${sourceKey}: ${label}.`,
+    });
+  });
 };
 
 export const validateAiStudyMapJob = (value: unknown): AiValidationReport => {
@@ -277,6 +382,7 @@ export const validateAiStudyMapResult = (
     };
   const jobId = stringValue(value.jobId) ? value.jobId : undefined;
   issues.push(...validateStudyMapV3ResultContract(value));
+  checkMapResultConsistency(value, issues);
   if (typeof value.reason === 'string' && REFERENCE_ONLY_REASON_CODES.has(value.reason.trim())) {
     addIssue(issues, {
       code: 'WARNING_CODE_IN_REASON',

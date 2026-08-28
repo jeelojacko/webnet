@@ -70,10 +70,11 @@ Use `--resume` after interruptions. Never manually copy rejected generations int
 ## Runner Behavior
 
 - Uses one model request per Study Map job.
+- The system prompt is the canonical `study-content/ai/specs/study-map-v3.md` (loaded at run start, fail-closed if missing or empty) plus short runner-specific notes; the runner never carries a separate drifting copy of the Map prompt spec.
 - Defaults to concurrency `1`.
 - Requires strict JSON Schema structured output in production mode.
 - Fails closed if the provider rejects structured output.
-- Retries each failed job up to two times after the initial attempt by default.
+- Retries each failed job up to two times after the initial attempt by default; retry feedback includes the exact validation issue codes and messages so the model can fix them.
 - Skips already accepted jobs on resume and rewrites canonical JSONL atomically to avoid duplicate lines.
 - Stores non-secret provenance for accepted and rejected attempts.
 
