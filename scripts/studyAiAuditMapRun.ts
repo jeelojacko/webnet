@@ -18,6 +18,7 @@ import type { AiStudyMapJob, AiStudyMapResult } from '../src/study/ai/studyAiTyp
 import { validateAiStudyMapResult } from '../src/study/ai/studyAiValidation';
 import {
   collectJobAuditRecords,
+  loadProviderEvents,
   loadProvenanceSummary,
   loadRunAttempts,
   loadRunResults,
@@ -25,6 +26,7 @@ import {
   type ComparisonSet,
   type NormalizedIssue,
 } from './studyAiAuditMapRunCore';
+import { stripUtf8Bom } from './studyAiProviderFailures';
 import {
   buildReviewBundleEntry,
   computeConcision,
@@ -33,10 +35,32 @@ import {
   computeReliability,
   computeStructureMetrics,
   computeV1Comparison,
+  countBy,
   selectReviewBundle,
 } from './studyAiAuditMapRunMetrics';
 
 const RUNS_DIR = 'study-content/ai/runs';
+
+export const AUDIT_MAP_RUN_HELP = `Local Study Map run auditor.
+
+Usage:
+  npx tsx scripts/studyAiAuditMapRun.ts --run <runId> --comparison-set <path> [--review-size <n>]
+
+Options:
+  --run <runId>          Local run id under study-content/ai/runs (or a path).
+  --comparison-set <p>   Path to the stratified comparison-set JSON.
+  --review-size <n>      Review bundle cap (default 40, positive integer).
+  -h, --help             Show this help.
+
+Writes into the audited run's reports/:
+  map-run-audit.json, map-run-audit.md, semantic-review-bundle.jsonl
+
+Reliability separates semantic failures (model output rejected by validation)
+from provider interruptions (transport/HTTP/timeout failures). Provider
+attempts never consume semantic retries, and provider-incomplete jobs are
+excluded from the semantic review bundle. Provider telemetry, when present,
+is read from reports/provider-events.jsonl and summarized in the report; older
+runs without that file are noted rather than failed.`;
 
 const parseArgs = (argv: string[]) => {
   const valueFor = (name: string): string | undefined => {
@@ -48,7 +72,8 @@ const parseArgs = (argv: string[]) => {
   const reviewSize = Number(valueFor('review-size') ?? '40');
   if (!run) throw new Error('pass --run <runId>');
   if (!comparisonSet) throw new Error('pass --comparison-set <path>');
-  if (!Number.isInteger(reviewSize) || reviewSize <= 0) throw new Error('--review-size must be a positive integer');
+  if (!Number.isInteger(reviewSize) || reviewSize <= 0)
+    throw new Error('--review-size must be a positive integer');
   return { run, comparisonSet, reviewSize };
 };
 
@@ -58,9 +83,11 @@ const loadBaseJobs = (baseRunId: string): Map<string, AiStudyMapJob> => {
     .filter((file) => file.endsWith('.jobs.jsonl'))
     .sort()
     .flatMap((file) =>
-      (readFileSync(join(jobsDir, file), 'utf8').split(/\r?\n/).filter((line) => line.trim() !== '') as unknown[]).map(
-        (line) => JSON.parse(line as string) as AiStudyMapJob,
-      ),
+      (
+        readFileSync(join(jobsDir, file), 'utf8')
+          .split(/\r?\n/)
+          .filter((line) => line.trim() !== '') as unknown[]
+      ).map((line) => JSON.parse(line as string) as AiStudyMapJob),
     );
   return new Map(jobs.map((job) => [job.jobId, job]));
 };
@@ -68,20 +95,23 @@ const loadBaseJobs = (baseRunId: string): Map<string, AiStudyMapJob> => {
 const resolveRunPath = (run: string): string =>
   run.includes('/') || run.startsWith('.') ? run : join(RUNS_DIR, run);
 
-const loadV1Results = (setJobs: Array<{ v1JobId?: string | null; v1KnownGoodResultLocation?: string | null }>): Map<string, AiStudyMapResult> => {
+const loadV1Results = (
+  setJobs: Array<{ v1JobId?: string | null; v1KnownGoodResultLocation?: string | null }>,
+): Map<string, AiStudyMapResult> => {
   const byFile = new Map<string, AiStudyMapResult[]>();
   for (const setJob of setJobs) {
     if (!setJob.v1JobId || !setJob.v1KnownGoodResultLocation) continue;
     const location = setJob.v1KnownGoodResultLocation;
     if (!byFile.has(location)) {
-      const path = location.startsWith('study-content/') || location.startsWith('.')
-        ? location
-        : join(RUNS_DIR, location);
+      const path =
+        location.startsWith('study-content/') || location.startsWith('.')
+          ? location
+          : join(RUNS_DIR, location);
       if (!existsSync(path)) continue;
       const rows = readFileSync(path, 'utf8')
         .split(/\r?\n/)
         .filter((line) => line.trim() !== '')
-        .map((line) => JSON.parse(line) as AiStudyMapResult);
+        .map((line) => JSON.parse(stripUtf8Bom(line)) as AiStudyMapResult);
       byFile.set(location, rows);
     }
   }
@@ -93,7 +123,10 @@ const loadV1Results = (setJobs: Array<{ v1JobId?: string | null; v1KnownGoodResu
   return byJobId;
 };
 
-const renderMarkdown = (audit: Record<string, unknown>, meta: { run: string; comparisonSet: string; reviewSize: number }): string => {
+const renderMarkdown = (
+  audit: Record<string, unknown>,
+  meta: { run: string; comparisonSet: string; reviewSize: number },
+): string => {
   const reliability = audit.reliability as Record<string, unknown>;
   const structure = audit.structure as Record<string, unknown>;
   const concision = audit.concision as Record<string, unknown>;
@@ -117,23 +150,45 @@ const renderMarkdown = (audit: Record<string, unknown>, meta: { run: string; com
   section('Reliability');
   lines.push(
     `- accepted: ${String(reliability.accepted)}/${String(reliability.selectedJobs)} (rate ${String(reliability.acceptanceRate)})`,
-    `- first-try accepted: ${String(reliability.firstTryAccepted)}; accepted after retry: ${String(reliability.acceptedAfterRetry)}`,
-    `- permanently failed: ${String(reliability.permanentlyFailed)}`,
-    `- total attempts: ${String(reliability.totalAttempts)} (extra attempts: ${String(reliability.extraAttempts)})`,
+    `- first-try accepted: ${String(reliability.firstTryAccepted)}; first-semantic-attempt accepted: ${String(reliability.firstSemanticAttemptAccepted)}; accepted after retry: ${String(reliability.acceptedAfterRetry)}`,
+    `- permanently failed: ${String(reliability.permanentlyFailed)} = ${String(reliability.semanticPermanentFailures)} semantic + ${String(reliability.providerIncompleteJobs)} provider-incomplete`,
+    `- total attempts: ${String(reliability.totalAttempts)} (extra attempts: ${String(reliability.extraAttempts)}; semantic: ${String(reliability.semanticAttemptsTotal)}, provider: ${String(reliability.providerAttemptsTotal)})`,
     `- retry introduced a different error: ${String(reliability.retryIntroducedDifferentErrorCount)} job(s)`,
     `- repeated identical error across attempts: ${String(reliability.repeatedIdenticalErrorCount)} job(s)`,
   );
+  const provider = audit.provider as Record<string, unknown> | undefined;
+  if (provider !== undefined) {
+    lines.push(
+      '',
+      `Provider reliability (from reports/provider-events.jsonl):`,
+    );
+    lines.push(`- telemetry present: ${String(provider.telemetryPresent)}; malformed lines: ${String(provider.malformedLines)}`);
+    lines.push(`- provider events: ${String(provider.events)}; recovered: ${String(provider.recovered)}; run-aborted: ${String(provider.runAborted)}`);
+    const providerByCode = provider.byCode as Record<string, number> | undefined;
+    if (providerByCode) table(providerByCode);
+    if (typeof provider.note === 'string') lines.push(`- note: ${provider.note}`);
+  }
   const perCode = reliability.perErrorCode as Array<Record<string, unknown>>;
   if (perCode.length > 0) {
-    lines.push('', '| error code | failed attempts | recovered jobs | recovery rate |', '| --- | ---: | ---: | ---: |');
+    lines.push(
+      '',
+      '| error code | failed attempts | recovered jobs | recovery rate |',
+      '| --- | ---: | ---: | ---: |',
+    );
     for (const entry of perCode) {
-      lines.push(`| \`${String(entry.code)}\` | ${String(entry.failedAttempts)} | ${String(entry.recoveredJobs)} | ${String(entry.recoveryRate)} |`);
+      lines.push(
+        `| \`${String(entry.code)}\` | ${String(entry.failedAttempts)} | ${String(entry.recoveredJobs)} | ${String(entry.recoveryRate)} |`,
+      );
     }
   }
   if ((reliability.permanentlyFailedJobs as unknown[]).length > 0) {
     lines.push('', 'Permanent failures:', '');
     for (const entry of reliability.permanentlyFailedJobs as Array<Record<string, unknown>>) {
-      lines.push(`- \`${String(entry.jobId)}\` after ${String(entry.attempts)} attempts: ${(entry.issueCodes as string[]).join(', ')}`);
+      const codes = (entry.issueCodes as string[]).join(', ') || 'no semantic validation codes';
+      lines.push(
+        `- \`${String(entry.jobId)}\` [${String(entry.origin)}] after ${String(entry.attempts)} attempts ` +
+          `(${String(entry.semanticAttempts)} semantic / ${String(entry.providerAttempts)} provider): ${codes}`,
+      );
     }
   }
   section('Structure');
@@ -147,7 +202,7 @@ const renderMarkdown = (audit: Record<string, unknown>, meta: { run: string; com
     '',
     `- final validation errors: ${String(finalValidation.errors)}`,
     `- broad-focus warnings: ${String(finalValidation.broadFocusWarnings)}; unbounded-focus warnings: ${String(finalValidation.unboundedFocusWarnings)}; structured-field leakage warnings: ${String(finalValidation.structuredFieldLeakageWarnings)}`,
-    `- total groups: ${String(structure.totalGroups)}; group count stats: ${(structure.groupCount as Record<string, number>)[ 'median' ] ?? 'n/a'} median`,
+    `- total groups: ${String(structure.totalGroups)}; group count stats: ${(structure.groupCount as Record<string, number>)['median'] ?? 'n/a'} median`,
   );
   section('Concision');
   const concisionBlock = (label: string, block: Record<string, unknown>): void => {
@@ -157,12 +212,17 @@ const renderMarkdown = (audit: Record<string, unknown>, meta: { run: string; com
   };
   concisionBlock('reason words', concision.reason as Record<string, unknown>);
   concisionBlock('group reason words', concision.groupReason as Record<string, unknown>);
-  concisionBlock('learning goal words', concision.approximateLearningGoal as Record<string, unknown>);
+  concisionBlock(
+    'learning goal words',
+    concision.approximateLearningGoal as Record<string, unknown>,
+  );
   section('Hygiene');
   const hygiene = audit.hygiene as Array<Record<string, unknown>>;
   if (hygiene.length === 0) lines.push('No hygiene findings.');
   for (const finding of hygiene) {
-    lines.push(`- \`${String(finding.jobId)}\` ${String(finding.field)} [${String(finding.pattern)}]: ${String(finding.snippet)}`);
+    lines.push(
+      `- \`${String(finding.jobId)}\` ${String(finding.field)} [${String(finding.pattern)}]: ${String(finding.snippet)}`,
+    );
   }
   section('V1 comparison (descriptive only)');
   lines.push(`- ${String(v1.note)}`);
@@ -171,13 +231,23 @@ const renderMarkdown = (audit: Record<string, unknown>, meta: { run: string; com
     `- group count same/diff: ${String(v1.groupCountSame)}/${String(v1.groupCountDiff)}; confidence same/diff: ${String(v1.confidenceSame)}/${String(v1.confidenceDiff)}`,
   );
   section('Review bundle');
-  lines.push(`- entries: ${String(audit.reviewBundleEntries)} (size cap ${meta.reviewSize})`, '- see `semantic-review-bundle.jsonl` (same directory)');
-  lines.push('', 'Files: `map-run-audit.json`, `map-run-audit.md`, `semantic-review-bundle.jsonl`.');
+  lines.push(
+    `- entries: ${String(audit.reviewBundleEntries)} (size cap ${meta.reviewSize})`,
+    '- see `semantic-review-bundle.jsonl` (same directory)',
+  );
+  lines.push(
+    '',
+    'Files: `map-run-audit.json`, `map-run-audit.md`, `semantic-review-bundle.jsonl`.',
+  );
   return `${lines.join('\n')}\n`;
 };
 
 const main = (): void => {
   const argv = process.argv.slice(2);
+  if (argv.includes('--help') || argv.includes('-h')) {
+    console.log(AUDIT_MAP_RUN_HELP);
+    return;
+  }
   const args = parseArgs(argv);
   const runDir = resolveRunPath(args.run);
   const comparisonSet = JSON.parse(readFileSync(args.comparisonSet, 'utf8')) as ComparisonSet;
@@ -187,14 +257,17 @@ const main = (): void => {
 
   const results = loadRunResults(runDir);
   const attempts = loadRunAttempts(runDir);
-  const problems: string[] = [...results.malformed.map((entry) => `malformed result line: ${entry}`)];
+  const problems: string[] = [
+    ...results.malformed.map((entry) => `malformed result line: ${entry}`),
+  ];
   for (const jobId of results.duplicates) problems.push(`duplicate result for ${jobId}`);
   for (const entry of attempts.malformed) problems.push(`malformed failure record: ${entry}`);
 
   const missingBaseJobs = comparisonSet.jobs
     .map((entry) => entry.v2JobId)
     .filter((jobId) => !baseJobs.has(jobId));
-  for (const jobId of missingBaseJobs) problems.push(`selected job missing from base run ${baseRunId}: ${jobId}`);
+  for (const jobId of missingBaseJobs)
+    problems.push(`selected job missing from base run ${baseRunId}: ${jobId}`);
 
   const { records, problems: collectionProblems } = collectJobAuditRecords({
     comparisonSet,
@@ -218,10 +291,14 @@ const main = (): void => {
   for (const record of records) {
     if (record.result === null) continue;
     const report = validateAiStudyMapResult(record.result, baseJobs.get(record.jobId));
-    finalValidation.set(record.jobId, report.issues.map((issue) => normalizeIssue(issue)));
+    finalValidation.set(
+      record.jobId,
+      report.issues.map((issue) => normalizeIssue(issue)),
+    );
   }
 
   const v1Results = loadV1Results(comparisonSet.jobs);
+  const providerTelemetry = loadProviderEvents(runDir);
   const reliability = computeReliability(records);
   const structure = computeStructureMetrics(records, finalValidation);
   const concision = computeConcision(records);
@@ -244,7 +321,9 @@ const main = (): void => {
         const setJob = comparisonSet.jobs.find((entry) => entry.v2JobId === selection.record.jobId);
         return setJob?.v1JobId ? (v1Results.get(setJob.v1JobId) ?? null) : null;
       })(),
-      v1Location: comparisonSet.jobs.find((entry) => entry.v2JobId === selection.record.jobId)?.v1KnownGoodResultLocation ?? null,
+      v1Location:
+        comparisonSet.jobs.find((entry) => entry.v2JobId === selection.record.jobId)
+          ?.v1KnownGoodResultLocation ?? null,
     }),
   );
 
@@ -257,6 +336,17 @@ const main = (): void => {
     comparisonSetPath: args.comparisonSet,
     sampleSha256: comparisonSet.sampleSha256 ?? null,
     reliability,
+    provider: {
+      telemetryPresent: providerTelemetry.present,
+      malformedLines: providerTelemetry.malformed,
+      events: providerTelemetry.events.length,
+      byCode: countBy(providerTelemetry.events.map((event) => event.code)),
+      recovered: providerTelemetry.events.filter((event) => event.recovered).length,
+      runAborted: providerTelemetry.events.filter((event) => event.runAborted).length,
+      note: providerTelemetry.present
+        ? undefined
+        : 'No reports/provider-events.jsonl for this run (run predates provider telemetry or had no provider failures).',
+    },
     perStratum: computePerStratum(records),
     structure,
     concision,
@@ -267,7 +357,9 @@ const main = (): void => {
   writeFileSync(join(reportsDir, 'map-run-audit.json'), `${JSON.stringify(audit, null, 2)}\n`);
   writeFileSync(
     join(reportsDir, 'semantic-review-bundle.jsonl'),
-    bundleEntries.length > 0 ? `${bundleEntries.map((entry) => JSON.stringify(entry)).join('\n')}\n` : '',
+    bundleEntries.length > 0
+      ? `${bundleEntries.map((entry) => JSON.stringify(entry)).join('\n')}\n`
+      : '',
   );
   writeFileSync(join(reportsDir, 'map-run-audit.md'), renderMarkdown(audit, args));
   console.log(
@@ -286,4 +378,5 @@ export const __studyAiAuditMapRunTest = {
   resolveRunPath,
   loadV1Results,
   renderMarkdown,
+  AUDIT_MAP_RUN_HELP,
 };

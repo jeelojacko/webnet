@@ -11,6 +11,9 @@
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { basename, isAbsolute, join } from 'node:path';
+
+const RUNS_DIR = 'study-content/ai/runs';
+import { classifyProviderFailure, stripUtf8Bom } from './studyAiProviderFailures';
 import type { AiStudyMapJob, AiStudyMapResult } from '../src/study/ai/studyAiTypes';
 import { categoryForJob, structuralStrataForJob } from './studyAiMapStrata';
 
@@ -20,12 +23,29 @@ export type NormalizedIssue = {
   message: string;
 };
 
+export type ProviderEvent = {
+  runId: string;
+  jobId: string;
+  semanticAttempt: number;
+  providerAttempt: number;
+  timestamp: string;
+  code: string;
+  message: string;
+  httpStatus?: number;
+  baseUrl: string;
+  recovered: boolean;
+  waitedMs: number;
+  runAborted?: boolean;
+};
+
 export type AttemptRecord = {
   attempt: number;
   issueCodes: string[];
   issues: NormalizedIssue[];
   timestamp?: string;
   rawHash?: string;
+  provider: boolean;
+  providerCode?: string;
 };
 
 export type JobAuditRecord = {
@@ -42,6 +62,9 @@ export type JobAuditRecord = {
   repeatedIdenticalError: boolean;
   permanentFailureAttempt: AttemptRecord | null;
   provenance: { modelId?: string; attempt?: number; structuredOutputMode?: string } | null;
+  semanticAttempts: number;
+  providerAttempts: number;
+  firstSemanticAttemptAccepted: boolean;
 };
 
 export type ComparisonSetJob = {
@@ -89,7 +112,9 @@ export const normalizeIssue = (entry: unknown): NormalizedIssue => {
 const readJsonSafe = (path: string): Record<string, unknown> | null => {
   try {
     const parsed: unknown = JSON.parse(readFileSync(path, 'utf8'));
-    return typeof parsed === 'object' && parsed !== null ? (parsed as Record<string, unknown>) : null;
+    return typeof parsed === 'object' && parsed !== null
+      ? (parsed as Record<string, unknown>)
+      : null;
   } catch {
     return null;
   }
@@ -133,13 +158,23 @@ export const collectJobAuditRecords = (args: {
     ) {
       problems.push(`result authoringInputFingerprint mismatch for ${jobId}`);
     }
-    const attempts = [...(args.attemptsByJob.get(jobId) ?? [])].sort((a, b) => a.attempt - b.attempt);
+    const attempts = [...(args.attemptsByJob.get(jobId) ?? [])].sort(
+      (a, b) => a.attempt - b.attempt,
+    );
+    const semanticAttempts = attempts.filter((a) => !a.provider).length;
+    const providerAttempts = attempts.filter((a) => a.provider).length;
+    const semanticAttemptRecords = attempts.filter((a) => !a.provider);
+    const permanentFailureAttempt =
+      result === null && semanticAttemptRecords.length > 0
+        ? semanticAttemptRecords[semanticAttemptRecords.length - 1]
+        : null;
     const codeSignatures = attempts.map((attempt) => [...attempt.issueCodes].sort().join('|'));
     let retryIntroducedDifferentError = false;
     let repeatedIdenticalError = false;
     for (let i = 1; i < codeSignatures.length; i += 1) {
       if (codeSignatures[i] !== codeSignatures[i - 1]) retryIntroducedDifferentError = true;
-      if (codeSignatures[i] === codeSignatures[i - 1] && codeSignatures[i] !== '') repeatedIdenticalError = true;
+      if (codeSignatures[i] === codeSignatures[i - 1] && codeSignatures[i] !== '')
+        repeatedIdenticalError = true;
     }
     const totalAttempts = attempts.length + (result !== null ? 1 : 0);
     records.push({
@@ -154,8 +189,11 @@ export const collectJobAuditRecords = (args: {
       firstTryAccepted: result !== null && attempts.length === 0,
       retryIntroducedDifferentError,
       repeatedIdenticalError,
-      permanentFailureAttempt: result === null && attempts.length > 0 ? attempts[attempts.length - 1] : null,
+      permanentFailureAttempt,
       provenance: null,
+      semanticAttempts,
+      providerAttempts,
+      firstSemanticAttemptAccepted: result !== null && semanticAttempts === 0,
     });
   }
   const selectedIds = new Set(args.comparisonSet.jobs.map((entry) => entry.v2JobId));
@@ -173,7 +211,9 @@ export const collectJobAuditRecords = (args: {
 };
 
 /** Load accepted results for a run directory: one jsonl file per batch. */
-export const loadRunResults = (runDir: string): {
+export const loadRunResults = (
+  runDir: string,
+): {
   resultsByJob: Map<string, AiStudyMapResult>;
   lines: number;
   malformed: string[];
@@ -191,7 +231,7 @@ export const loadRunResults = (runDir: string): {
   for (const file of files) {
     const raw = readFileSync(join(resultsDir, file), 'utf8');
     raw.split(/\r?\n/).forEach((line, index) => {
-      const stripped = index === 0 ? line.replace(/^\uFEFF/, '') : line;
+      const stripped = index === 0 ? stripUtf8Bom(line) : line;
       if (!stripped.trim()) return;
       line = stripped;
       lines += 1;
@@ -202,7 +242,11 @@ export const loadRunResults = (runDir: string): {
         malformed.push(`${basename(file)}:${index + 1}`);
         return;
       }
-      if (typeof parsed !== 'object' || parsed === null || typeof (parsed as { jobId?: unknown }).jobId !== 'string') {
+      if (
+        typeof parsed !== 'object' ||
+        parsed === null ||
+        typeof (parsed as { jobId?: unknown }).jobId !== 'string'
+      ) {
         malformed.push(`${basename(file)}:${index + 1}`);
         return;
       }
@@ -215,7 +259,9 @@ export const loadRunResults = (runDir: string): {
 };
 
 /** Load local-failures attempt records for a run directory. */
-export const loadRunAttempts = (runDir: string): {
+export const loadRunAttempts = (
+  runDir: string,
+): {
   attemptsByJob: Map<string, AttemptRecord[]>;
   malformed: string[];
 } => {
@@ -237,20 +283,34 @@ export const loadRunAttempts = (runDir: string): {
         continue;
       }
       const issues = Array.isArray(data.issues) ? data.issues.map(normalizeIssue) : [];
+      const provider = typeof data.failureKind === 'string' && data.failureKind === 'transport/provider';
+      const providerCode =
+        typeof data.failureCode === 'string'
+          ? data.failureCode
+          : classifyProviderFailure(new Error(String(data.errorMessage ?? ''))).code;
       attempts.push({
         attempt,
         issueCodes: issues.map((issue) => issue.code),
         issues,
         timestamp: typeof data.timestamp === 'string' ? data.timestamp : undefined,
         rawHash: typeof data.rawHash === 'string' ? data.rawHash : undefined,
+        provider,
+        providerCode,
       });
     }
-    if (attempts.length > 0) attemptsByJob.set(jobId.name, attempts.sort((a, b) => a.attempt - b.attempt));
+    if (attempts.length > 0)
+      attemptsByJob.set(
+        jobId.name,
+        attempts.sort((a, b) => a.attempt - b.attempt),
+      );
   }
   return { attemptsByJob, malformed };
 };
 
-export const loadProvenanceSummary = (runDir: string, jobId: string): JobAuditRecord['provenance'] => {
+export const loadProvenanceSummary = (
+  runDir: string,
+  jobId: string,
+): JobAuditRecord['provenance'] => {
   const path = join(runDir, 'results', `${jobId}.provenance.json`);
   if (!existsSync(path)) return null;
   const data = readJsonSafe(path);
@@ -258,9 +318,79 @@ export const loadProvenanceSummary = (runDir: string, jobId: string): JobAuditRe
   return {
     modelId: typeof data.modelId === 'string' ? data.modelId : undefined,
     attempt: typeof data.attempt === 'number' ? data.attempt : undefined,
-    structuredOutputMode: typeof data.structuredOutputMode === 'string' ? data.structuredOutputMode : undefined,
+    structuredOutputMode:
+      typeof data.structuredOutputMode === 'string' ? data.structuredOutputMode : undefined,
   };
 };
 
 export const resolveRunDir = (runId: string, runsDir: string): string =>
   isAbsolute(runId) ? runId : join(runsDir, runId);
+
+/**
+ * Load provider-events.jsonl telemetry for a run directory.
+ * BOM-safe; tolerates a missing file; counts malformed JSON lines.
+ */
+export const loadProviderEvents = (
+  runDir: string,
+): {
+  present: boolean;
+  events: ProviderEvent[];
+  malformed: number;
+} => {
+  const eventsPath = join(runDir, 'reports', 'provider-events.jsonl');
+  if (!existsSync(eventsPath)) return { present: false, events: [], malformed: 0 };
+  const raw = readFileSync(eventsPath, 'utf8');
+  const lines = raw.split(/\r?\n/);
+  const events: ProviderEvent[] = [];
+  let malformed = 0;
+  for (const line of lines) {
+    const stripped = stripUtf8Bom(line);
+    if (!stripped.trim()) continue;
+    try {
+      const parsed: unknown = JSON.parse(stripped);
+      if (typeof parsed !== 'object' || parsed === null) {
+        malformed += 1;
+        continue;
+      }
+      const record = parsed as Record<string, unknown>;
+      if (typeof record.runId !== 'string' || typeof record.jobId !== 'string') {
+        malformed += 1;
+        continue;
+      }
+      events.push({
+        runId: record.runId as string,
+        jobId: record.jobId as string,
+        semanticAttempt: Number(record.semanticAttempt) || 0,
+        providerAttempt: Number(record.providerAttempt) || 0,
+        timestamp: typeof record.timestamp === 'string' ? record.timestamp : '',
+        code: typeof record.code === 'string' ? record.code : '',
+        message: typeof record.message === 'string' ? record.message : '',
+        httpStatus: typeof record.httpStatus === 'number' ? record.httpStatus : undefined,
+        baseUrl: typeof record.baseUrl === 'string' ? record.baseUrl : '',
+        recovered: record.recovered === true,
+        waitedMs: Number(record.waitedMs) || 0,
+        runAborted: typeof record.runAborted === 'boolean' ? record.runAborted : undefined,
+      });
+    } catch {
+      malformed += 1;
+    }
+  }
+  return { present: true, events, malformed };
+};
+
+/**
+ * Classify a non-accepted job by its failure origin.
+ * Accepted jobs return 'none'.
+ */
+export const failureOrigin = (record: JobAuditRecord): 'provider' | 'semantic' | 'mixed' | 'none' => {
+  if (record.accepted) return 'none';
+  // No semantic attempts means no semantic failure evidence exists: the job
+  // either failed only against the provider or the run was interrupted
+  // before it was reached — both are provider-side incompleteness.
+  if (record.semanticAttempts === 0) return 'provider';
+  if (record.providerAttempts === 0) return 'semantic';
+  return 'mixed';
+};
+
+export const resolveRunPath = (runId: string): string =>
+  runId.includes('/') || runId.startsWith('.') ? runId : join(RUNS_DIR, runId);

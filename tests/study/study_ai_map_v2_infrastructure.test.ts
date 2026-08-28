@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 import { join } from 'node:path';
 import { __studyAiAuthoringTest } from '../../scripts/studyAiAuthoring';
 import {
+  LOCAL_MAP_AUTHOR_HELP,
   __studyAiLocalMapAuthorTest,
   buildValidationRetryNote,
   loadStudyMapV3Spec,
@@ -108,6 +109,56 @@ const writeJobRun = (job: AiStudyMapJob): void => {
   writeFileSync(join(runDir, 'jobs', 'batch-001.jobs.jsonl'), `${JSON.stringify(job)}\n`);
   writeFileSync(join(runDir, 'reports', 'batch-manifest.json'), '{"batchCount":1}\n');
 };
+
+const runDirFor = (job: AiStudyMapJob): string =>
+  join('study-content', 'ai', 'runs', job.runId);
+const resultsFileFor = (job: AiStudyMapJob): string =>
+  join(runDirFor(job), 'results', 'local-map.results.jsonl');
+const failuresDirFor = (job: AiStudyMapJob): string =>
+  join(runDirFor(job), 'local-failures', job.jobId);
+
+const readProviderEvents = (runId: string): Array<Record<string, unknown>> => {
+  const path = join('study-content', 'ai', 'runs', runId, 'reports', 'provider-events.jsonl');
+  if (!existsSync(path)) return [];
+  return readFileSync(path, 'utf8')
+    .trim()
+    .split(/\r?\n/)
+    .filter((line) => line)
+    .map((line) => JSON.parse(line) as Record<string, unknown>);
+};
+
+const successResponseFor = (job: AiStudyMapJob) => ({
+  ok: true,
+  status: 200,
+  json: async () => ({
+    choices: [{ message: { content: JSON.stringify(resultFixture(job)) } }],
+  }),
+  text: async () => '',
+});
+
+const healthyModelsResponse = {
+  ok: true,
+  status: 200,
+  json: async () => ({ data: [] }),
+  text: async () => '',
+};
+
+type LocalAuthorTestOptions = Partial<Parameters<typeof runLocalMapAuthoring>[0]>;
+
+const localAuthorOptions = (job: AiStudyMapJob, extra: LocalAuthorTestOptions = {}) => ({
+  runId: job.runId,
+  model: 'mock-model',
+  baseUrl: 'http://mock/v1',
+  resume: true,
+  concurrency: 1,
+  maxRetries: 1,
+  timeoutMs: 50,
+  providerRecoveryTimeoutMs: 100,
+  providerRecoveryPollMs: 5,
+  dryRun: false,
+  unsafeUnstructured: false,
+  ...extra,
+});
 
 describe('Study Map V2 infrastructure repairs', () => {
   it('keeps only parsed direct structural child labels and preserves definition terms', () => {
@@ -421,7 +472,7 @@ describe('Study Map V2 infrastructure repairs', () => {
     writeJobRun(job);
     const bodies: unknown[] = [];
     const fetchMock: Parameters<typeof runLocalMapAuthoring>[1] = async (_input, init) => {
-      bodies.push(JSON.parse(init.body));
+      bodies.push(JSON.parse(init.body ?? ''));
       return {
         ok: true,
         status: 200,
@@ -458,7 +509,7 @@ describe('Study Map V2 infrastructure repairs', () => {
     let calls = 0;
     const fetchMock: Parameters<typeof runLocalMapAuthoring>[1] = async (_input, init) => {
       calls += 1;
-      bodies.push(JSON.parse(init.body));
+      bodies.push(JSON.parse(init.body ?? ''));
       const invalid = {
         ...resultFixture(job),
         proposedGroups: [
@@ -507,7 +558,7 @@ describe('Study Map V2 infrastructure repairs', () => {
     let calls = 0;
     const fetchMock: Parameters<typeof runLocalMapAuthoring>[1] = async (_input, init) => {
       calls += 1;
-      bodies.push(JSON.parse(init.body));
+      bodies.push(JSON.parse(init.body ?? ''));
       return {
         ok: true,
         status: 200,
@@ -531,7 +582,7 @@ describe('Study Map V2 infrastructure repairs', () => {
     );
 
     expect(result.accepted).toBe(1);
-    expect(result.failed).toBe(0);
+    expect(result.semanticFailed).toBe(0);
     expect(calls).toBe(2);
 
     const retryMessage = (bodies[1] as { messages: Array<{ content: string }> }).messages
@@ -563,7 +614,7 @@ describe('Study Map V2 infrastructure repairs', () => {
     let calls = 0;
     const fetchMock: Parameters<typeof runLocalMapAuthoring>[1] = async (_input, init) => {
       calls += 1;
-      bodies.push(JSON.parse(init.body));
+      bodies.push(JSON.parse(init.body ?? ''));
       return {
         ok: true,
         status: 200,
@@ -626,7 +677,7 @@ describe('Study Map V2 infrastructure repairs', () => {
     );
 
     expect(result.accepted).toBe(0);
-    expect(result.failed).toBe(1);
+    expect(result.semanticFailed).toBe(1);
     expect(calls).toBe(2);
   });
 
@@ -733,7 +784,7 @@ describe('Study Map V2 infrastructure repairs', () => {
     writeJobRun(job);
     const bodies: unknown[] = [];
     const fetchMock: Parameters<typeof runLocalMapAuthoring>[1] = async (_input, init) => {
-      bodies.push(JSON.parse(init.body));
+      bodies.push(JSON.parse(init.body ?? ''));
       return {
         ok: true,
         status: 200,
@@ -999,7 +1050,7 @@ describe('Study Map V2 infrastructure repairs', () => {
     );
 
     expect(result.accepted).toBe(1);
-    expect(result.failed).toBe(0);
+    expect(result.semanticFailed).toBe(0);
     expect(calls).toBe(2);
     expect(
       readFileSync(
@@ -1060,86 +1111,270 @@ describe('Study Map V2 infrastructure repairs', () => {
     ).toHaveLength(1);
   });
 
-  it('records transport/provider failures separately and retries without schema-validation issues', async () => {
+  it('recovers from a provider failure within the same semantic attempt', async () => {
     const job = jobFixture();
     writeJobRun(job);
-    let calls = 0;
+    let chatCalls = 0;
+    let healthCalls = 0;
     const logs: string[] = [];
 
     const result = await runLocalMapAuthoring(
-      {
-        runId: job.runId,
-        model: 'mock-model',
-        baseUrl: 'http://mock/v1',
-        resume: true,
-        concurrency: 1,
-        maxRetries: 1,
-        timeoutMs: 50,
-        dryRun: false,
-        unsafeUnstructured: false,
-        log: (message) => logs.push(message),
-      },
-      async () => {
-        calls += 1;
-        if (calls === 1) throw new Error('provider timeout');
-        return {
-          ok: true,
-          status: 200,
-          json: async () => ({
-            choices: [{ message: { content: JSON.stringify(resultFixture(job)) } }],
-          }),
-          text: async () => '',
-        };
+      localAuthorOptions(job, { log: (message) => logs.push(message) }),
+      async (input) => {
+        if (input.endsWith('/models')) {
+          healthCalls += 1;
+          return healthyModelsResponse;
+        }
+        chatCalls += 1;
+        if (chatCalls === 1) throw new Error('provider timeout');
+        return successResponseFor(job);
       },
     );
 
     const rawFailure = JSON.parse(
-      readFileSync(
-        join(
-          'study-content',
-          'ai',
-          'runs',
-          job.runId,
-          'local-failures',
-          job.jobId,
-          'attempt-1.raw.json',
-        ),
-        'utf8',
-      ),
-    ) as { failureKind: string; message: string };
+      readFileSync(join(failuresDirFor(job), 'attempt-1.raw.json'), 'utf8'),
+    ) as Record<string, unknown>;
     const validationFailure = JSON.parse(
-      readFileSync(
-        join(
-          'study-content',
-          'ai',
-          'runs',
-          job.runId,
-          'local-failures',
-          job.jobId,
-          'attempt-1.validation.json',
-        ),
-        'utf8',
-      ),
-    ) as { failureKind: string; errorMessage: string; issues: string[] };
+      readFileSync(join(failuresDirFor(job), 'attempt-1.validation.json'), 'utf8'),
+    ) as Record<string, unknown>;
 
     expect(result.accepted).toBe(1);
-    expect(result.failed).toBe(0);
-    expect(calls).toBe(2);
-    expect(rawFailure).toEqual({ failureKind: 'transport/provider', message: 'provider timeout' });
+    expect(result.semanticFailed).toBe(0);
+    expect(result.providerIncomplete).toBe(0);
+    expect(result.providerAbort).toBeUndefined();
+    expect(chatCalls).toBe(2);
+    expect(healthCalls).toBe(1);
+    expect(rawFailure).toEqual({
+      failureKind: 'transport/provider',
+      failureCode: 'PROVIDER_TIMEOUT',
+      message: 'provider timeout',
+    });
     expect(validationFailure.failureKind).toBe('transport/provider');
+    expect(validationFailure.failureCode).toBe('PROVIDER_TIMEOUT');
     expect(validationFailure.errorMessage).toBe('provider timeout');
     expect(validationFailure.issues).toEqual([]);
+    const events = readProviderEvents(job.runId);
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      jobId: job.jobId,
+      semanticAttempt: 1,
+      providerAttempt: 1,
+      code: 'PROVIDER_TIMEOUT',
+      message: 'provider timeout',
+      baseUrl: 'http://mock/v1',
+      recovered: true,
+    });
     expect(logs).toContain('[1/1] map-test-local');
     expect(logs).toContain('attempt 1/2 started');
-    expect(logs).toContain('attempt 2/2 started');
+    expect(logs).not.toContain('attempt 2/2 started');
     expect(
       logs.some((line) =>
-        /^transport\/provider failure after \d+ ms: provider timeout$/.test(line),
+        /^provider failure \(PROVIDER_TIMEOUT\) after \d+ ms: provider timeout$/.test(line),
       ),
     ).toBe(true);
     expect(logs.some((line) => /^HTTP response arrived after \d+ ms$/.test(line))).toBe(true);
-    expect(logs).not.toContain('validation rejected');
     expect(logs).toContain('validation accepted');
+  });
+
+  it('aborts the run when provider health does not recover within the timeout', async () => {
+    const job = jobFixture();
+    writeJobRun(job);
+    const logs: string[] = [];
+
+    const result = await runLocalMapAuthoring(
+      localAuthorOptions(job, {
+        providerRecoveryTimeoutMs: 20,
+        log: (message) => logs.push(message),
+      }),
+      async (input) => {
+        if (input.endsWith('/models')) throw new Error('connect refused');
+        throw new Error('fetch failed');
+      },
+    );
+
+    expect(result.accepted).toBe(0);
+    expect(result.semanticFailed).toBe(0);
+    expect(result.providerIncomplete).toBe(1);
+    expect(result.providerAbort).toEqual(
+      expect.objectContaining({ jobId: job.jobId, code: 'PROVIDER_RECOVERY_TIMEOUT' }),
+    );
+    const events = readProviderEvents(job.runId);
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      code: 'PROVIDER_SOCKET_ERROR',
+      recovered: false,
+      runAborted: true,
+    });
+    expect(existsSync(join(failuresDirFor(job), 'attempt-1.raw.json'))).toBe(true);
+    expect(logs.some((line) => line.startsWith('RUN INCOMPLETE: '))).toBe(true);
+  });
+
+  it('aborts the run after the maximum provider attempts when the chat call keeps failing', async () => {
+    const job = jobFixture();
+    writeJobRun(job);
+    let chatCalls = 0;
+
+    const result = await runLocalMapAuthoring(
+      localAuthorOptions(job, { maxProviderAttempts: 2 }),
+      async (input) => {
+        if (input.endsWith('/models')) return healthyModelsResponse;
+        chatCalls += 1;
+        throw new Error('fetch failed');
+      },
+    );
+
+    expect(chatCalls).toBe(2);
+    expect(result.accepted).toBe(0);
+    expect(result.providerIncomplete).toBe(1);
+    expect(result.providerAbort).toEqual(
+      expect.objectContaining({ jobId: job.jobId, code: 'PROVIDER_SOCKET_ERROR' }),
+    );
+    const events = readProviderEvents(job.runId);
+    expect(events.map((event) => [event.providerAttempt, event.recovered])).toEqual([
+      [1, true],
+      [2, false],
+    ]);
+    expect(existsSync(join(failuresDirFor(job), 'attempt-2.raw.json'))).toBe(true);
+  });
+
+  it('aborts immediately when the provider rejects the structured output contract', async () => {
+    const job = jobFixture();
+    writeJobRun(job);
+
+    const result = await runLocalMapAuthoring(
+      localAuthorOptions(job),
+      async () => ({
+        ok: false,
+        status: 400,
+        json: async () => ({}),
+        text: async () => 'JSON Schema response_format is not supported by this server',
+      }),
+    );
+
+    expect(result.accepted).toBe(0);
+    expect(result.providerIncomplete).toBe(1);
+    expect(result.providerAbort).toEqual(
+      expect.objectContaining({
+        jobId: job.jobId,
+        code: 'PROVIDER_HTTP_ERROR',
+        message: expect.stringContaining('Structured output is the safe default'),
+      }),
+    );
+    const events = readProviderEvents(job.runId);
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({ code: 'PROVIDER_HTTP_ERROR', runAborted: true });
+    expect(existsSync(join(failuresDirFor(job), 'attempt-1.raw.json'))).toBe(true);
+  });
+
+  it('continues failure artifact numbering after pre-existing attempt artifacts', async () => {
+    const job = jobFixture();
+    writeJobRun(job);
+    const jobFailuresDir = failuresDirFor(job);
+    mkdirSync(jobFailuresDir, { recursive: true });
+    const prior = (index: number, message: string) => {
+      writeFileSync(
+        join(jobFailuresDir, `attempt-${index}.raw.json`),
+        `${JSON.stringify({
+          failureKind: 'transport/provider',
+          failureCode: 'PROVIDER_SOCKET_ERROR',
+          message,
+        })}\n`,
+      );
+      writeFileSync(
+        join(jobFailuresDir, `attempt-${index}.validation.json`),
+        `${JSON.stringify({
+          failureKind: 'transport/provider',
+          failureCode: 'PROVIDER_SOCKET_ERROR',
+          errorMessage: message,
+          issues: [],
+        })}\n`,
+      );
+    };
+    prior(1, 'earlier crash');
+    prior(2, 'earlier crash 2');
+
+    let chatCalls = 0;
+    const result = await runLocalMapAuthoring(
+      localAuthorOptions(job),
+      async (input) => {
+        if (input.endsWith('/models')) return healthyModelsResponse;
+        chatCalls += 1;
+        if (chatCalls === 1) throw new Error('fetch failed');
+        return successResponseFor(job);
+      },
+    );
+
+    expect(result.accepted).toBe(1);
+    expect(chatCalls).toBe(2);
+    expect(existsSync(join(jobFailuresDir, 'attempt-3.raw.json'))).toBe(true);
+    const newArtifact = JSON.parse(
+      readFileSync(join(jobFailuresDir, 'attempt-3.validation.json'), 'utf8'),
+    ) as Record<string, unknown>;
+    expect(newArtifact.failureCode).toBe('PROVIDER_SOCKET_ERROR');
+    expect(newArtifact.failureKind).toBe('transport/provider');
+  });
+
+  it('refuses to resume when the recorded model identity no longer matches', async () => {
+    const job = jobFixture();
+    writeJobRun(job);
+    await runLocalMapAuthoring(localAuthorOptions(job), async () => successResponseFor(job));
+    const metadataPath = join(runDirFor(job), 'reports', 'local-run-metadata.json');
+    const metadata = JSON.parse(readFileSync(metadataPath, 'utf8')) as { model: string };
+    metadata.model = 'other-model';
+    writeFileSync(metadataPath, `${JSON.stringify(metadata, null, 2)}\n`);
+
+    await expect(
+      runLocalMapAuthoring(localAuthorOptions(job), async () => successResponseFor(job)),
+    ).rejects.toThrow('metadata model other-model does not match current model mock-model');
+  });
+
+  it('refuses to resume when the comparison set identity changed', async () => {
+    const job = jobFixture();
+    writeJobRun(job);
+    await runLocalMapAuthoring(localAuthorOptions(job), async () => successResponseFor(job));
+    const setPath = join(runDirFor(job), 'reports', 'comparison-set.json');
+    writeFileSync(setPath, `${JSON.stringify({ jobs: [{ v2JobId: job.jobId }] })}\n`);
+
+    await expect(
+      runLocalMapAuthoring(
+        localAuthorOptions(job, { comparisonSet: setPath }),
+        async () => successResponseFor(job),
+      ),
+    ).rejects.toThrow('comparison set');
+  });
+
+  it('refuses to resume when the result file contains a duplicate accepted job', async () => {
+    const job = jobFixture();
+    writeJobRun(job);
+    await runLocalMapAuthoring(localAuthorOptions(job), async () => successResponseFor(job));
+    const line = readFileSync(resultsFileFor(job), 'utf8').trim();
+    writeFileSync(resultsFileFor(job), `${line}\n${line}\n`);
+
+    await expect(
+      runLocalMapAuthoring(localAuthorOptions(job), async () => successResponseFor(job)),
+    ).rejects.toThrow('duplicate accepted result');
+  });
+
+  it('refuses to resume when an accepted result fingerprint no longer matches its job', async () => {
+    const job = jobFixture();
+    writeJobRun(job);
+    await runLocalMapAuthoring(localAuthorOptions(job), async () => successResponseFor(job));
+    const tampered = JSON.parse(readFileSync(resultsFileFor(job), 'utf8').trim());
+    tampered.authoringInputFingerprint = 'tampered';
+    writeFileSync(resultsFileFor(job), `${JSON.stringify(tampered)}\n`);
+
+    await expect(
+      runLocalMapAuthoring(localAuthorOptions(job), async () => successResponseFor(job)),
+    ).rejects.toThrow('fingerprint tampered does not match job hash');
+  });
+
+  it('documents provider recovery, resume, and telemetry in the CLI help', () => {
+    expect(LOCAL_MAP_AUTHOR_HELP).toContain('--resume');
+    expect(LOCAL_MAP_AUTHOR_HELP).toContain('--max-provider-attempts');
+    expect(LOCAL_MAP_AUTHOR_HELP).toContain('--provider-recovery-timeout-ms');
+    expect(LOCAL_MAP_AUTHOR_HELP).toContain('provider-events.jsonl');
+    expect(LOCAL_MAP_AUTHOR_HELP).toContain('local-run-metadata.json');
+    expect(LOCAL_MAP_AUTHOR_HELP).toContain('never consume --max-retries');
   });
 
   it('normalizes wrong local result identity to runner-owned job identity', async () => {
@@ -1179,7 +1414,7 @@ describe('Study Map V2 infrastructure repairs', () => {
     );
 
     expect(result.accepted).toBe(1);
-    expect(result.failed).toBe(0);
+    expect(result.semanticFailed).toBe(0);
     const line = readFileSync(
       join('study-content', 'ai', 'runs', job.runId, 'results', 'local-map.results.jsonl'),
       'utf8',

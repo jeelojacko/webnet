@@ -5,6 +5,7 @@
  */
 
 import type { AiStudyMapJob, AiStudyMapResult } from '../src/study/ai/studyAiTypes';
+import { failureOrigin } from './studyAiAuditMapRunCore';
 import type { ComparisonSetJob, JobAuditRecord, NormalizedIssue } from './studyAiAuditMapRunCore';
 
 export const wordCount = (text: string): number => {
@@ -13,11 +14,14 @@ export const wordCount = (text: string): number => {
 };
 
 /** Nearest-rank stats; mean rounded to 2 decimals. Empty input => zeros. */
-export const wordStats = (values: number[]): { mean: number; median: number; p95: number; max: number } => {
+export const wordStats = (
+  values: number[],
+): { mean: number; median: number; p95: number; max: number } => {
   if (values.length === 0) return { mean: 0, median: 0, p95: 0, max: 0 };
   const sorted = [...values].sort((a, b) => a - b);
   const sum = sorted.reduce((acc, value) => acc + value, 0);
-  const at = (rank: number): number => sorted[Math.min(sorted.length - 1, Math.max(0, Math.ceil(rank * sorted.length) - 1))];
+  const at = (rank: number): number =>
+    sorted[Math.min(sorted.length - 1, Math.max(0, Math.ceil(rank * sorted.length) - 1))];
   return {
     mean: Number((sum / sorted.length).toFixed(2)),
     median: at(0.5),
@@ -35,8 +39,17 @@ export const countBy = (values: string[]): Record<string, number> =>
 export const computeReliability = (records: JobAuditRecord[]) => {
   const accepted = records.filter((record) => record.accepted);
   const permanentlyFailed = records.filter((record) => !record.accepted);
+  // Jobs with no semantic attempt on record failed at the provider/transport
+  // layer (or were never reached); they are infrastructure-incomplete, not
+  // semantic failures. Both counts are reported alongside the legacy total.
+  const semanticFailedJobs = permanentlyFailed.filter((record) => record.semanticAttempts > 0);
+  const providerIncompleteJobs = permanentlyFailed.filter((record) => record.semanticAttempts === 0);
   const totalAttempts = records.reduce((sum, record) => sum + record.totalAttempts, 0);
-  // attempts = count of failed attempt records carrying the code;
+  const semanticAttemptsTotal = records.reduce((sum, record) => sum + record.semanticAttempts, 0);
+  const providerAttemptsTotal = records.reduce((sum, record) => sum + record.providerAttempts, 0);
+  // attempts = count of failed semantic attempt records carrying the code;
+  // provider attempts carry no validation codes and are excluded so the
+  // per-code distribution stays purely semantic.
   // affected/recovered = distinct jobs, for a per-job recovery rate.
   const perCode = new Map<string, { attempts: number; affected: number; recovered: number }>();
   const bump = (code: string): void => {
@@ -47,6 +60,7 @@ export const computeReliability = (records: JobAuditRecord[]) => {
   for (const record of records) {
     const codesInRecord = new Set<string>();
     for (const attempt of record.attempts) {
+      if (attempt.provider) continue;
       for (const code of attempt.issueCodes) {
         bump(code);
         codesInRecord.add(code);
@@ -71,18 +85,34 @@ export const computeReliability = (records: JobAuditRecord[]) => {
     selectedJobs: records.length,
     accepted: accepted.length,
     permanentlyFailed: permanentlyFailed.length,
+    // Provider reliability is separate from semantic reliability: jobs with
+    // no semantic attempts are provider-incomplete, not semantic failures.
+    semanticPermanentFailures: semanticFailedJobs.length,
+    providerIncompleteJobs: providerIncompleteJobs.length,
     acceptanceRate: records.length > 0 ? Number((accepted.length / records.length).toFixed(3)) : 0,
     firstTryAccepted: records.filter((record) => record.firstTryAccepted).length,
-    acceptedAfterRetry: accepted.length - records.filter((record) => record.firstTryAccepted).length,
+    firstSemanticAttemptAccepted: records.filter((record) => record.firstSemanticAttemptAccepted)
+      .length,
+    acceptedAfterRetry:
+      accepted.length - records.filter((record) => record.firstTryAccepted).length,
     totalAttempts,
+    semanticAttemptsTotal,
+    providerAttemptsTotal,
     extraAttempts: totalAttempts - records.length,
-    retryIntroducedDifferentErrorCount: records.filter((record) => record.retryIntroducedDifferentError).length,
+    retryIntroducedDifferentErrorCount: records.filter(
+      (record) => record.retryIntroducedDifferentError,
+    ).length,
     repeatedIdenticalErrorCount: records.filter((record) => record.repeatedIdenticalError).length,
     permanentlyFailedJobs: permanentlyFailed.map((record) => ({
       jobId: record.jobId,
       documentId: record.documentId,
+      origin: failureOrigin(record),
       attempts: record.totalAttempts,
-      issueCodes: [...new Set(record.attempts.flatMap((attempt) => attempt.issueCodes))].sort(),
+      semanticAttempts: record.semanticAttempts,
+      providerAttempts: record.providerAttempts,
+      issueCodes: [...new Set(record.attempts
+        .filter((attempt) => !attempt.provider)
+        .flatMap((attempt) => attempt.issueCodes))].sort(),
     })),
     perErrorCode: errorCodes,
   };
@@ -117,18 +147,23 @@ export const computeStructureMetrics = (
   records: JobAuditRecord[],
   finalValidation: Map<string, NormalizedIssue[]>,
 ) => {
-  const results = records.map((record) => record.result).filter((value): value is AiStudyMapResult => value !== null);
+  const results = records
+    .map((record) => record.result)
+    .filter((value): value is AiStudyMapResult => value !== null);
   const dispositions = countBy(results.map((result) => result.disposition));
   const confidence = countBy(results.map((result) => result.confidence));
   const priorities = countBy(results.map((result) => result.suggestedPriority ?? 'none'));
   const groupCounts = results.map((result) => result.proposedGroups.length);
   const groupCountStats = wordStats(groupCounts);
   const warningCodes = countBy(
-    [...finalValidation.values()].flat().filter((issue) => issue.severity === 'warning').map((issue) => issue.code),
+    [...finalValidation.values()]
+      .flat()
+      .filter((issue) => issue.severity === 'warning')
+      .map((issue) => issue.code),
   );
-  const finalValidationErrors = [...finalValidation.values()]
-    .filter((issues) => issues.some((issue) => issue.severity === 'error'))
-    .length;
+  const finalValidationErrors = [...finalValidation.values()].filter((issues) =>
+    issues.some((issue) => issue.severity === 'error'),
+  ).length;
   return {
     acceptedResults: results.length,
     dispositions,
@@ -138,7 +173,11 @@ export const computeStructureMetrics = (
     groupCount: groupCountStats,
     averageWarningsPerResult:
       results.length > 0
-        ? Number((results.reduce((sum, result) => sum + result.warnings.length, 0) / results.length).toFixed(3))
+        ? Number(
+            (
+              results.reduce((sum, result) => sum + result.warnings.length, 0) / results.length
+            ).toFixed(3),
+          )
         : 0,
     finalValidation: {
       errors: finalValidationErrors,
@@ -151,16 +190,30 @@ export const computeStructureMetrics = (
 };
 
 export const computeConcision = (records: JobAuditRecord[]) => {
-  const results = records.map((record) => record.result).filter((value): value is AiStudyMapResult => value !== null);
+  const results = records
+    .map((record) => record.result)
+    .filter((value): value is AiStudyMapResult => value !== null);
   const reasons = results.map((result) => wordCount(result.reason));
-  const groupReasons = results.flatMap((result) => result.proposedGroups.map((group) => wordCount(group.reason)));
-  const goals = results.flatMap((result) => result.proposedGroups.map((group) => wordCount(group.approximateLearningGoal)));
-  const titles = results.flatMap((result) => result.proposedGroups.map((group) => group.titleSuggestion.length));
+  const groupReasons = results.flatMap((result) =>
+    result.proposedGroups.map((group) => wordCount(group.reason)),
+  );
+  const goals = results.flatMap((result) =>
+    result.proposedGroups.map((group) => wordCount(group.approximateLearningGoal)),
+  );
+  const titles = results.flatMap((result) =>
+    result.proposedGroups.map((group) => group.titleSuggestion.length),
+  );
   return {
     thresholds: { reasonWords: 40, groupReasonWords: 30, learningGoalWords: 60 },
     reason: { ...wordStats(reasons), overThreshold: reasons.filter((value) => value > 40).length },
-    groupReason: { ...wordStats(groupReasons), overThreshold: groupReasons.filter((value) => value > 30).length },
-    approximateLearningGoal: { ...wordStats(goals), overThreshold: goals.filter((value) => value > 60).length },
+    groupReason: {
+      ...wordStats(groupReasons),
+      overThreshold: groupReasons.filter((value) => value > 30).length,
+    },
+    approximateLearningGoal: {
+      ...wordStats(goals),
+      overThreshold: goals.filter((value) => value > 60).length,
+    },
     titleLengthChars: wordStats(titles),
   };
 };
@@ -169,7 +222,10 @@ const HYGIENE_PATTERNS: ReadonlyArray<{ label: string; pattern: RegExp }> = [
   { label: 'calibration-pattern-reference', pattern: /calibration\s+(pattern|example)/i },
   { label: 'prompt-reference', pattern: /\bthe prompt\b/i },
   { label: 'instructions-reference', pattern: /\bthese instructions\b/i },
-  { label: 'ai-identity-reference', pattern: /\b(?:as\s+(?:an?\s+)?(?:ai|llm)\b|artificial\s+intelligence\b|language\s+model\b)/i },
+  {
+    label: 'ai-identity-reference',
+    pattern: /\b(?:as\s+(?:an?\s+)?(?:ai|llm)\b|artificial\s+intelligence\b|language\s+model\b)/i,
+  },
 ];
 
 const snippetAround = (text: string, index: number): string => {
@@ -197,7 +253,12 @@ export const computeHygiene = (records: JobAuditRecord[]) => {
       for (const { label, pattern } of HYGIENE_PATTERNS) {
         const match = pattern.exec(text);
         if (match !== null) {
-          findings.push({ jobId: record.jobId, field, pattern: label, snippet: snippetAround(text, match.index) });
+          findings.push({
+            jobId: record.jobId,
+            field,
+            pattern: label,
+            snippet: snippetAround(text, match.index),
+          });
         }
       }
     }
@@ -233,11 +294,16 @@ export const computeV1Comparison = (
     }
     const v2 = record.result as AiStudyMapResult;
     const v1 = v1Result;
-    const priorityComparable = v1.suggestedPriority !== undefined && v2.suggestedPriority !== undefined;
+    const priorityComparable =
+      v1.suggestedPriority !== undefined && v2.suggestedPriority !== undefined;
     comparable.push({
       jobId: record.jobId,
       v1JobId: setJob.v1JobId,
-      disposition: { v1: v1.disposition, v2: v2.disposition, same: v1.disposition === v2.disposition },
+      disposition: {
+        v1: v1.disposition,
+        v2: v2.disposition,
+        same: v1.disposition === v2.disposition,
+      },
       groupCount: {
         v1: v1.proposedGroups.length,
         v2: v2.proposedGroups.length,
@@ -263,8 +329,12 @@ export const computeV1Comparison = (
     groupCountDiff: comparable.filter((entry) => !entry.groupCount.same).length,
     confidenceSame: comparable.filter((entry) => entry.confidence.same).length,
     confidenceDiff: comparable.filter((entry) => !entry.confidence.same).length,
-    prioritySame: comparable.filter((entry) => entry.priority.comparable && entry.priority.same === true).length,
-    priorityDiff: comparable.filter((entry) => entry.priority.comparable && entry.priority.same === false).length,
+    prioritySame: comparable.filter(
+      (entry) => entry.priority.comparable && entry.priority.same === true,
+    ).length,
+    priorityDiff: comparable.filter(
+      (entry) => entry.priority.comparable && entry.priority.same === false,
+    ).length,
     priorityNotComparable: comparable.filter((entry) => !entry.priority.comparable).length,
     perJob: comparable,
   };
@@ -279,14 +349,16 @@ export const reviewTierFor = (
   const result = record.result as AiStudyMapResult;
   if (result.confidence === 'low') return { tier: 1, label: 'low-confidence' };
   if (record.totalAttempts >= 2) return { tier: 2, label: 'multi-attempt' };
-  if ((finalIssues ?? []).some((issue) => issue.severity === 'warning')) return { tier: 3, label: 'final-warning' };
+  if ((finalIssues ?? []).some((issue) => issue.severity === 'warning'))
+    return { tier: 3, label: 'final-warning' };
   if (result.disposition === 'needs-human-review') return { tier: 4, label: 'needs-human-review' };
   if (result.disposition === 'reference-only' || result.disposition === 'skip') {
     return { tier: 5, label: 'reference-only-or-skip' };
   }
   if (result.proposedGroups.length >= 3) return { tier: 6, label: 'multi-group' };
   if (result.suggestedPriority === 'P1') return { tier: 7, label: 'priority-p1' };
-  if (record.structuralStrata.includes('large-operative-section')) return { tier: 8, label: 'large-input' };
+  if (record.structuralStrata.includes('large-operative-section'))
+    return { tier: 8, label: 'large-input' };
   if (result.confidence === 'medium') return { tier: 9, label: 'medium-confidence' };
   return { tier: 10, label: 'clean' };
 };
@@ -303,6 +375,9 @@ export const selectReviewBundle = (
 ): Array<{ record: JobAuditRecord; tier: number; tierLabel: string }> => {
   const byTier = new Map<number, JobAuditRecord[]>();
   for (const record of records) {
+    // Provider-incomplete jobs have no semantic content to review; they are
+    // reported by the reliability metrics instead of the semantic bundle.
+    if (!record.accepted && record.semanticAttempts === 0) continue;
     const { tier } = reviewTierFor(record, finalValidation.get(record.jobId));
     const list = byTier.get(tier) ?? [];
     list.push(record);
@@ -313,7 +388,10 @@ export const selectReviewBundle = (
   for (const tier of tiers) {
     if (selected.length >= reviewSize) break;
     const tierRecords = byTier.get(tier) as JobAuditRecord[];
-    const tierLabel = reviewTierFor(tierRecords[0], finalValidation.get(tierRecords[0]?.jobId)).label;
+    const tierLabel = reviewTierFor(
+      tierRecords[0],
+      finalValidation.get(tierRecords[0]?.jobId),
+    ).label;
     const byDoc = new Map<string, JobAuditRecord[]>();
     for (const record of byTier.get(tier) as JobAuditRecord[]) {
       const key = record.documentId ?? '';
@@ -379,9 +457,11 @@ export const buildReviewBundleEntry = (args: {
       ? {
           previous: context.previous ? truncate(context.previous.text) : null,
           next: context.next ? truncate(context.next.text) : null,
-          relevantDefinitions: (context.relevantDefinitions ?? []).map((entry) => truncate(entry.text)),
-          directlyReferencedProvisions: (context.directlyReferencedProvisions ?? []).map(
-            (entry) => truncate(entry.text),
+          relevantDefinitions: (context.relevantDefinitions ?? []).map((entry) =>
+            truncate(entry.text),
+          ),
+          directlyReferencedProvisions: (context.directlyReferencedProvisions ?? []).map((entry) =>
+            truncate(entry.text),
           ),
           omittedContextWarnings: context.omittedContextWarnings ?? [],
         }
@@ -391,17 +471,24 @@ export const buildReviewBundleEntry = (args: {
     approximateInputSize: job?.target.approximateInputSize ?? null,
     complexityCategory: record.categories,
     structuralStrata: record.structuralStrata,
+    failureOrigin: failureOrigin(record),
+    semanticAttempts: record.semanticAttempts,
+    providerAttempts: record.providerAttempts,
     attemptCount: record.totalAttempts,
     retryIntroducedDifferentError: record.retryIntroducedDifferentError,
     attempts: record.attempts.map((attempt) => ({
       attempt: attempt.attempt,
+      provider: attempt.provider,
       issueCodes: attempt.issueCodes,
       issues: attempt.issues,
     })),
     finalValidationIssues: args.finalIssues ?? [],
     finalResult: record.result,
     permanentFailure: record.permanentFailureAttempt
-      ? { attempt: record.permanentFailureAttempt.attempt, issueCodes: record.permanentFailureAttempt.issueCodes }
+      ? {
+          attempt: record.permanentFailureAttempt.attempt,
+          issueCodes: record.permanentFailureAttempt.issueCodes,
+        }
       : null,
     v1:
       setJob?.v1JobId !== undefined && setJob.v1JobId !== null

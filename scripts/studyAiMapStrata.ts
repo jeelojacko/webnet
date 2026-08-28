@@ -45,7 +45,10 @@ export const categoryForJob = (job: AiStudyMapJob): string[] => {
 
 /** Total child-label fan-out across a job's source focus options. */
 export const childLabelCount = (job: AiStudyMapJob): number =>
-  (job.target.sourceFocusOptions ?? []).reduce((count, option) => count + (option.childLabels?.length ?? 0), 0);
+  (job.target.sourceFocusOptions ?? []).reduce(
+    (count, option) => count + (option.childLabels?.length ?? 0),
+    0,
+  );
 
 /**
  * Deterministic structural strata labels. Stable identifiers, not prose;

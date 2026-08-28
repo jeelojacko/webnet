@@ -82,7 +82,23 @@ npx tsx scripts/studyAiAuditMapRun.ts \
 
 Writes `reports/map-run-audit.json`, `reports/map-run-audit.md`, and `reports/semantic-review-bundle.jsonl` into the audited run directory. Reports reliability (acceptance, first-try vs retried, per-error-code failed attempts and per-job recovery rate, retry-introduced-different-error and repeated-identical-error counts), per-stratum acceptance, structure (disposition/confidence/priority mix, group counts, final re-validation issues), concision (word-count stats vs ~40/30/60 thresholds), output-hygiene pattern findings (prompt/calibration/instruction/AI-identity references), and a descriptive V1 comparison (V1 is a pedagogical comparator only, never an accuracy ground truth). The review bundle orders jobs by tier (permanent failures first, then low confidence, multi-attempt, warning, needs-human-review, reference-only/skip, multi-group, P1, large-input, medium-confidence, clean) capped by `--review-size`.
 
+Reliability also splits permanent failures by origin: `semanticPermanentFailures` (at least one semantic attempt, never converged), `providerFailureJobs` (at least one provider failure), and `providerIncompleteJobs` (interrupted before any semantic attempt). Per-error-code counts include only semantic attempts, so provider failures no longer pollute error-code recovery statistics. When `reports/provider-events.jsonl` exists, the audit embeds it as `providerEvents` in `map-run-audit.json` (runs created before provider telemetry report `olderRunsHaveProviderTelemetry: false`), and the markdown gains a Provider reliability subsection with per-code counts and recovered-vs-aborted totals. The review bundle excludes non-accepted jobs with zero semantic attempts (pure provider-incomplete jobs); semantic and mixed failures remain, and bundle attempts carry `provider` and `providerCode` fields.
+
 Integrity problems (malformed lines, duplicate results, jobs outside the comparison set, base-run gaps, authoring-fingerprint mismatch) fail the audit with a non-zero exit code.
+
+### Resuming the interrupted stratified run
+
+The stratified 200-job local run of 2026-08-28 was interrupted by local provider failures before completion (30 of 200 jobs accepted; every recorded failure artifact is `transport/provider`, mostly connection drops from the local server). Resume it with its original comparison set:
+
+```bash
+npm run study:ai:local-map -- \
+  --run ai-map-4c12-full-corpus-v2-local-qwen-smaller-106k-strat200-v1-20260828-082317 \
+  --model Qwen3.8-27B-UD-IQ4_XS \
+  --comparison-set study-content/ai/runs/ai-map-4c12-full-corpus-v2-local-qwen-smaller-106k-strat200-v1-20260828-082317/reports/stratified-200-comparison-set.json \
+  --resume
+```
+
+The first resumed start creates `reports/local-run-metadata.json` for this pre-existing run; later starts validate against it. Keep the same `--comparison-set` path and model, and re-run the same command after any further interruption.
 
 ## Full Regeneration Later
 
@@ -100,9 +116,14 @@ Use `--resume` after interruptions. Never manually copy rejected generations int
 - The system prompt is the canonical `study-content/ai/specs/study-map-v3.md` (loaded at run start, fail-closed if missing or empty) plus short runner-specific notes; the runner never carries a separate drifting copy of the Map prompt spec.
 - Defaults to concurrency `1`.
 - Requires strict JSON Schema structured output in production mode.
-- Fails closed if the provider rejects structured output.
-- Retries each failed job up to two times after the initial attempt by default. Retry feedback keeps the canonical spec and original job, then appends a bounded JSON-only echo of the previous invalid response, the exact validation issue codes/messages, concise per-code fixes for deterministic requirements (for example `SUGGESTED_PRIORITY_REQUIRED`), an explicit mandatory restatement when the same error repeats, and the instruction to correct the previous response while preserving valid semantic decisions. Priority is never assigned or defaulted deterministically; the model still chooses it.
+- Fails closed and aborts the run if the provider rejects structured output.
+- Retries each semantically failed job up to two times after the initial attempt by default. Retry feedback keeps the canonical spec and original job, then appends a bounded JSON-only echo of the previous invalid response, the exact validation issue codes/messages, concise per-code fixes for deterministic requirements (for example `SUGGESTED_PRIORITY_REQUIRED`), an explicit mandatory restatement when the same error repeats, and the instruction to correct the previous response while preserving valid semantic decisions. Priority is never assigned or defaulted deterministically; the model still chooses it.
+- Treats provider failures (connection resets, HTTP errors, timeouts, malformed or missing responses) as a separate class from semantic failures: each is classified (`PROVIDER_SOCKET_ERROR`, `PROVIDER_HTTP_ERROR`, `PROVIDER_TIMEOUT`, `PROVIDER_RESPONSE_ERROR`, `PROVIDER_RECOVERY_TIMEOUT`), polled against `GET <base-url>/models` until healthy (defaults: 300000 ms budget, 5000 ms poll; configurable with `--provider-recovery-timeout-ms` and `--provider-recovery-poll-ms`), and retried within the same semantic attempt up to `--max-provider-attempts` (default 3). Provider failures never consume semantic retries.
+- Aborts the run (non-zero exit, all accepted results preserved) when the provider is still unhealthy after the recovery budget, exhausts the max provider attempts, or rejects structured output; re-run with `--resume` to continue from the preserved results.
 - Skips already accepted jobs on resume and rewrites canonical JSONL atomically to avoid duplicate lines.
+- Validates run identity fail-closed on every start: `reports/local-run-metadata.json` (model, comparison-set path/hash, batch job-file hashes; created on first start of a pre-existing run) and accepted-result integrity (duplicate job IDs, matching `runId`, jobs still present in the selected batch files, matching `authoringInputFingerprint`) must match.
+- Appends every provider event to `reports/provider-events.jsonl` and writes numbered per-job `transport/provider` failure artifacts under `local-failures/<jobId>/` alongside semantic validation failures; all JSONL reads in the toolchain are UTF-8 BOM tolerant.
+- `-h`/`--help` prints the full flag reference without requiring `--run` or `--model`.
 - Stores non-secret provenance for accepted and rejected attempts.
 
 ## Skip Critic Execution Layer

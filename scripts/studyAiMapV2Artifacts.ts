@@ -1,12 +1,17 @@
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
-import type { AiStudyMapJob, AiStudyMapResult, AiValidationIssue } from '../src/study/ai/studyAiTypes';
-import { mapResultToProposal, reconcileAiStudyMapProposals, validateAiStudyMapResult } from '../src/study/ai/studyAiValidation';
+import type {
+  AiStudyMapJob,
+  AiStudyMapResult,
+  AiValidationIssue,
+} from '../src/study/ai/studyAiTypes';
 import {
-  STUDY_MAP_V3_RESULT_SCHEMA,
-  canonicalJson,
-} from '../src/study/ai/studyAiResultContract';
+  mapResultToProposal,
+  reconcileAiStudyMapProposals,
+  validateAiStudyMapResult,
+} from '../src/study/ai/studyAiValidation';
+import { STUDY_MAP_V3_RESULT_SCHEMA, canonicalJson } from '../src/study/ai/studyAiResultContract';
 import { authoringInputFingerprint } from './studyAiFingerprint';
 import { categoryForJob } from './studyAiMapStrata';
 import {
@@ -23,7 +28,8 @@ const V2_RUN = 'ai-map-4c12-full-corpus-v2';
 
 const hashText = (value: string): string => createHash('sha256').update(value).digest('hex');
 const readJson = <T>(path: string): T => JSON.parse(readFileSync(path, 'utf8')) as T;
-const writeJson = (path: string, value: unknown): void => writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`);
+const writeJson = (path: string, value: unknown): void =>
+  writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`);
 const countBy = (values: string[]): Record<string, number> =>
   values.reduce<Record<string, number>>((acc, value) => {
     acc[value] = (acc[value] ?? 0) + 1;
@@ -33,23 +39,32 @@ const countBy = (values: string[]): Record<string, number> =>
 type JsonlLine<T> = { file: string; lineNumber: number; rawHash: string; value: T };
 type MalformedLine = { file: string; lineNumber: number; rawHash: string; error: string };
 
-const readJsonlDetailed = <T>(path: string): { rows: JsonlLine<T>[]; malformed: MalformedLine[] } => {
+const readJsonlDetailed = <T>(
+  path: string,
+): { rows: JsonlLine<T>[]; malformed: MalformedLine[] } => {
   const rows: JsonlLine<T>[] = [];
   const malformed: MalformedLine[] = [];
-  readFileSync(path, 'utf8').split(/\r?\n/).forEach((rawLine, index) => {
-    const line = index === 0 ? rawLine.replace(/^\uFEFF/, '') : rawLine;
-    if (!line.trim()) return;
-    try {
-      rows.push({ file: basename(path), lineNumber: index + 1, rawHash: hashText(line), value: JSON.parse(line) as T });
-    } catch (error) {
-      malformed.push({
-        file: basename(path),
-        lineNumber: index + 1,
-        rawHash: hashText(line),
-        error: error instanceof Error ? error.message : String(error),
-      });
-    }
-  });
+  readFileSync(path, 'utf8')
+    .split(/\r?\n/)
+    .forEach((rawLine, index) => {
+      const line = index === 0 ? rawLine.replace(/^\uFEFF/, '') : rawLine;
+      if (!line.trim()) return;
+      try {
+        rows.push({
+          file: basename(path),
+          lineNumber: index + 1,
+          rawHash: hashText(line),
+          value: JSON.parse(line) as T,
+        });
+      } catch (error) {
+        malformed.push({
+          file: basename(path),
+          lineNumber: index + 1,
+          rawHash: hashText(line),
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    });
   return { rows, malformed };
 };
 
@@ -61,7 +76,9 @@ const loadJobs = (runId: string): AiStudyMapJob[] =>
     .sort()
     .flatMap((file) => readJsonl<AiStudyMapJob>(join(RUNS_DIR, runId, 'jobs', file)));
 
-const loadResults = (runId: string): { rows: JsonlLine<AiStudyMapResult>[]; malformed: MalformedLine[] } => {
+const loadResults = (
+  runId: string,
+): { rows: JsonlLine<AiStudyMapResult>[]; malformed: MalformedLine[] } => {
   const resultsDir = join(RUNS_DIR, runId, 'results');
   if (!existsSync(resultsDir)) return { rows: [], malformed: [] };
   const parsed = readdirSync(resultsDir)
@@ -81,9 +98,13 @@ const childLabels = (job: AiStudyMapJob): string[] =>
   (job.target.sourceFocusOptions ?? []).flatMap((option) => option.childLabels ?? []);
 
 const writeJsonl = (path: string, rows: unknown[]): void =>
-  writeFileSync(path, rows.length > 0 ? `${rows.map((row) => JSON.stringify(row)).join('\n')}\n` : '');
+  writeFileSync(
+    path,
+    rows.length > 0 ? `${rows.map((row) => JSON.stringify(row)).join('\n')}\n` : '',
+  );
 
-const batchNumberFromFile = (file: string): string => /batch-(\d+)\.results\.jsonl$/.exec(file)?.[1] ?? '';
+const batchNumberFromFile = (file: string): string =>
+  /batch-(\d+)\.results\.jsonl$/.exec(file)?.[1] ?? '';
 
 const resultIdentity = (result: AiStudyMapResult): string => `${result.runId}:${result.jobId}`;
 
@@ -107,21 +128,25 @@ const main = (): void => {
     const newLabels = childLabels(job);
     return canonicalJson(oldLabels) === canonicalJson(newLabels)
       ? []
-      : [{
-          jobId: job.jobId,
-          targetKey: targetKey(job),
-          documentId: job.document.documentId,
-          documentTitle: job.document.title,
-          auditType: job.document.type,
-          componentType: job.target.componentType,
-          removed: oldLabels.filter((label) => !newLabels.includes(label)),
-          added: newLabels.filter((label) => !oldLabels.includes(label)),
-        }];
+      : [
+          {
+            jobId: job.jobId,
+            targetKey: targetKey(job),
+            documentId: job.document.documentId,
+            documentTitle: job.document.title,
+            auditType: job.document.type,
+            componentType: job.target.componentType,
+            removed: oldLabels.filter((label) => !newLabels.includes(label)),
+            added: newLabels.filter((label) => !oldLabels.includes(label)),
+          },
+        ];
   });
-  const anchors = ['section:18(2)', 'section:31(1)', 'section:2.2.6', 'section:8.2.4.1'].map((sourceKey) => {
-    const job = v2Jobs.find((entry) => entry.target.sourceKeys.includes(sourceKey));
-    return { sourceKey, jobId: job?.jobId, childLabels: job ? childLabels(job) : [] };
-  });
+  const anchors = ['section:18(2)', 'section:31(1)', 'section:2.2.6', 'section:8.2.4.1'].map(
+    (sourceKey) => {
+      const job = v2Jobs.find((entry) => entry.target.sourceKeys.includes(sourceKey));
+      return { sourceKey, jobId: job?.jobId, childLabels: job ? childLabels(job) : [] };
+    },
+  );
   const preparationVerification = verifyFullCorpusPreparation({
     pkg,
     jobs: v2Jobs,
@@ -140,16 +165,25 @@ const main = (): void => {
     labelsAdded: changedJobs.reduce((sum, entry) => sum + entry.added.length, 0),
     changedJobsByDocument: countBy(changedJobs.map((entry) => entry.documentId)),
     changedJobsByDocumentAuditType: countBy(changedJobs.map((entry) => entry.auditType)),
-    changedJobsByComponentType: countBy(changedJobs.map((entry) => entry.componentType ?? 'unknown')),
+    changedJobsByComponentType: countBy(
+      changedJobs.map((entry) => entry.componentType ?? 'unknown'),
+    ),
     representativeExamples: changedJobs.slice(0, 25),
     remainingSuspiciousPatterns: v2Jobs
-      .flatMap((job) => childLabels(job).map((label) => ({ jobId: job.jobId, target: job.target.sectionLabels[0], label })))
+      .flatMap((job) =>
+        childLabels(job).map((label) => ({
+          jobId: job.jobId,
+          target: job.target.sectionLabels[0],
+          label,
+        })),
+      )
       .filter((entry) => /\(\d+\)\(\d+\)$|\.\d+\(\d+\)$/.test(entry.label))
       .slice(0, 50),
     regressionAnchors: anchors,
     preparationVerification,
     eligibleSchedules: v2Jobs.filter((job) => job.target.componentType === 'schedule').length,
-    sourceComponentIdentitiesUnchanged: v1Jobs.length === v2Jobs.length && v1Jobs.every((job) => v2ByTarget.has(targetKey(job))),
+    sourceComponentIdentitiesUnchanged:
+      v1Jobs.length === v2Jobs.length && v1Jobs.every((job) => v2ByTarget.has(targetKey(job))),
   });
 
   const v1Results = loadResults(V1_RUN);
@@ -200,7 +234,16 @@ const main = (): void => {
       return;
     }
     const v1Report = validateAiStudyMapResult(row.value, v1Job);
-    const schemaErrors = v1Report.issues.filter((entry) => entry.severity === 'error' && !entry.code.includes('GROUND') && !entry.code.includes('EVIDENCE') && !entry.code.includes('SOURCE') && !entry.code.includes('HASH') && !entry.code.includes('CHILD') && !entry.code.includes('TERM'));
+    const schemaErrors = v1Report.issues.filter(
+      (entry) =>
+        entry.severity === 'error' &&
+        !entry.code.includes('GROUND') &&
+        !entry.code.includes('EVIDENCE') &&
+        !entry.code.includes('SOURCE') &&
+        !entry.code.includes('HASH') &&
+        !entry.code.includes('CHILD') &&
+        !entry.code.includes('TERM'),
+    );
     if (schemaErrors.length === 0) stats.totalSchemaValidV1Results += 1;
     if (!v1Report.valid) {
       const reason = schemaErrors.length > 0 ? 'v1-schema-invalid' : 'v1-grounding-invalid';
@@ -224,7 +267,9 @@ const main = (): void => {
       corpusContentHash: v2Job.corpusContentHash,
     };
     reusable.push(rebound);
-    const warnings = v1Report.issues.filter((entry) => entry.severity === 'warning').map((entry) => entry.code);
+    const warnings = v1Report.issues
+      .filter((entry) => entry.severity === 'warning')
+      .map((entry) => entry.code);
     if (warnings.length > 0) stats.reusableWarningValidResults += 1;
     reuseManifest.push({
       v2RunId: V2_RUN,
@@ -243,7 +288,8 @@ const main = (): void => {
   });
   stats.reusableV1Results = reusable.length;
   stats.totalRegenerationRequired = regenerationQueue.length;
-  const malformedByJobReason = v1Results.malformed.length > 0 ? { 'v1-json-malformed-lines': v1Results.malformed.length } : {};
+  const malformedByJobReason =
+    v1Results.malformed.length > 0 ? { 'v1-json-malformed-lines': v1Results.malformed.length } : {};
   writeJsonl(join(resultsDir, 'batch-001.results.jsonl'), reusable);
   writeJson(join(reportsDir, 'reuse-manifest.json'), reuseManifest);
   writeJson(join(reportsDir, 'regeneration-queue.json'), {
@@ -275,8 +321,12 @@ const main = (): void => {
     jobs: v2Jobs,
     results: reusable,
     malformed: [],
-    invalidJobIds: validationIssues.filter((entry) => entry.severity === 'error').map((entry) => entry.jobId ?? ''),
-    staleJobIds: validationIssues.filter((entry) => entry.code === 'STALE_PROPOSAL' || entry.code === 'INPUT_HASH_MISMATCH').map((entry) => entry.jobId ?? ''),
+    invalidJobIds: validationIssues
+      .filter((entry) => entry.severity === 'error')
+      .map((entry) => entry.jobId ?? ''),
+    staleJobIds: validationIssues
+      .filter((entry) => entry.code === 'STALE_PROPOSAL' || entry.code === 'INPUT_HASH_MISMATCH')
+      .map((entry) => entry.jobId ?? ''),
   });
   const v2Status = {
     ...status,
@@ -286,23 +336,31 @@ const main = (): void => {
     failedAfterRetries: 0,
     schemaInvalid: 0,
     groundingInvalid: 0,
-    warningValid: validationIssues.some((entry) => entry.severity === 'warning') ? stats.reusableWarningValidResults : 0,
+    warningValid: validationIssues.some((entry) => entry.severity === 'warning')
+      ? stats.reusableWarningValidResults
+      : 0,
     valid: reusable.length - stats.reusableWarningValidResults,
-    completionPercentage: v2Jobs.length > 0 ? Number(((reusable.length / v2Jobs.length) * 100).toFixed(2)) : 0,
+    completionPercentage:
+      v2Jobs.length > 0 ? Number(((reusable.length / v2Jobs.length) * 100).toFixed(2)) : 0,
   };
   writeJson(join(reportsDir, 'v2-status-report.json'), v2Status);
-  writeJson(join(reportsDir, 'v2-validation-report.json'), buildMapValidationReport({
-    runId: V2_RUN,
-    status,
-    proposals: reconcileAiStudyMapProposals(proposals),
-    issues: validationIssues,
-  }));
+  writeJson(
+    join(reportsDir, 'v2-validation-report.json'),
+    buildMapValidationReport({
+      runId: V2_RUN,
+      status,
+      proposals: reconcileAiStudyMapProposals(proposals),
+      issues: validationIssues,
+    }),
+  );
 
   const selected: unknown[] = [];
   const covered = new Set<string>();
   for (const result of reusable) {
     const job = v2Jobs.find((entry) => entry.jobId === result.jobId);
-    const manifest = reuseManifest.find((entry) => (entry as { v2JobId?: string }).v2JobId === result.jobId) as { v1SourceBatch?: string; v1SourceResultIdentity?: string } | undefined;
+    const manifest = reuseManifest.find(
+      (entry) => (entry as { v2JobId?: string }).v2JobId === result.jobId,
+    ) as { v1SourceBatch?: string; v1SourceResultIdentity?: string } | undefined;
     if (!job) continue;
     const categories = categoryForJob(job);
     if (selected.length >= 24 && categories.every((category) => covered.has(category))) continue;
@@ -326,10 +384,14 @@ const main = (): void => {
     schemaVersion: 1,
     v2RunId: V2_RUN,
     size: selected.length,
-    categoryDistribution: countBy(selected.flatMap((entry) => (entry as { complexityCategory: string[] }).complexityCategory)),
+    categoryDistribution: countBy(
+      selected.flatMap((entry) => (entry as { complexityCategory: string[] }).complexityCategory),
+    ),
     jobs: selected,
   });
-  console.log(`Wrote V2 artifacts for ${V2_RUN}: ${reusable.length} reused, ${regenerationQueue.length} queued.`);
+  console.log(
+    `Wrote V2 artifacts for ${V2_RUN}: ${reusable.length} reused, ${regenerationQueue.length} queued.`,
+  );
 };
 
 main();

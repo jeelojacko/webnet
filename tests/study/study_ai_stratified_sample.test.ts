@@ -43,10 +43,18 @@ const options = (size: number, seed = 'seed-a'): SampleOptions => ({
 });
 
 const corpus = (): AiStudyMapJob[] => [
-  makeJob('doc-a', 1, 'Every surveyor shall file the plan of survey within thirty days of completion.'),
+  makeJob(
+    'doc-a',
+    1,
+    'Every surveyor shall file the plan of survey within thirty days of completion.',
+  ),
   makeJob('doc-a', 2, 'A person may apply for a licence under this section.'),
   makeJob('doc-a', 3, 'No person shall remove a survey monument.'),
-  makeJob('doc-a', 4, 'The minister may, by order, regulate the practice of surveying in the manner set out in this schedule, which applies throughout.'),
+  makeJob(
+    'doc-a',
+    4,
+    'The minister may, by order, regulate the practice of surveying in the manner set out in this schedule, which applies throughout.',
+  ),
   makeJob('doc-b', 1, 'The board may issue a notice of refusal stating reasons.'),
   makeJob('doc-b', 2, 'A fee prescribed by the regulations is payable on application.'),
   makeJob('doc-b', 3, 'Subsection 3(1) is repealed.'),
@@ -73,7 +81,9 @@ describe('buildStratifiedSample', () => {
 
   it('changes the sample when the seed changes (when the corpus is larger than the sample)', () => {
     const jobs = corpus().concat(
-      Array.from({ length: 12 }, (_, i) => makeJob('doc-d', i + 1, `Additional operative provision ${i} with enough text to matter.`)),
+      Array.from({ length: 12 }, (_, i) =>
+        makeJob('doc-d', i + 1, `Additional operative provision ${i} with enough text to matter.`),
+      ),
     );
     const first = buildStratifiedSample(jobs, options(10, 'seed-a'));
     const second = buildStratifiedSample(jobs, options(10, 'seed-b'));
@@ -93,7 +103,9 @@ describe('buildStratifiedSample', () => {
     // doc-c is capped at 1, so its unfilled share is redistributed elsewhere.
     const plan = result.documents.find((doc) => doc.documentId === 'doc-c');
     expect(plan?.finalQuota).toBe(1);
-    expect(result.documents.filter((doc) => doc.topUp > 0).reduce((sum, doc) => sum + doc.topUp, 0)).toBeGreaterThan(0);
+    expect(
+      result.documents.filter((doc) => doc.topUp > 0).reduce((sum, doc) => sum + doc.topUp, 0),
+    ).toBeGreaterThan(0);
     expect(result.unmetCoverageNotes.some((note) => note.includes('absorbed'))).toBe(true);
   });
 
@@ -153,14 +165,19 @@ describe('attachV1Mapping', () => {
     };
     const index = {
       jobs: new Map<string, AiStudyMapJob>([
-        [`${job.document.documentId}::${job.target.sourceKeys.join('|')}::${job.target.sectionLabels.join('|')}`, v1Job],
+        [
+          `${job.document.documentId}::${job.target.sourceKeys.join('|')}::${job.target.sectionLabels.join('|')}`,
+          v1Job,
+        ],
       ]),
       resultByJob: new Map([[v1Job.jobId, { file: 'batch-001.results.jsonl', value: v1Result }]]),
     };
     const mapping = attachV1Mapping(selected, index as never);
     const hit = mapping[0];
     expect(hit.v1JobId).toBe(v1Job.jobId);
-    expect(hit.v1KnownGoodResultLocation).toBe('ai-map-4c1-full-corpus-v1/results/batch-001.results.jsonl');
+    expect(hit.v1KnownGoodResultLocation).toBe(
+      'ai-map-4c1-full-corpus-v1/results/batch-001.results.jsonl',
+    );
     expect(hit.v1ResultIdentity).toBe('ai-map-4c1-full-corpus-v1:' + v1Job.jobId);
   });
 });

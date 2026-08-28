@@ -21,6 +21,7 @@ import type { AiStudyMapJob, AiStudyMapResult } from '../src/study/ai/studyAiTyp
 import { canonicalJson } from '../src/study/ai/studyAiResultContract';
 import { authoringInputFingerprint } from './studyAiFingerprint';
 import { categoryForJob, structuralStrataForJob } from './studyAiMapStrata';
+import { stripUtf8Bom } from './studyAiProviderFailures';
 
 const RUNS_DIR = 'study-content/ai/runs';
 const V1_RUN = 'ai-map-4c1-full-corpus-v1';
@@ -28,7 +29,11 @@ const SELECTION_ALGORITHM = 'study-map-stratified-sampler-v1';
 
 const hashText = (value: string): string => createHash('sha256').update(value).digest('hex');
 const readJsonl = (path: string): unknown[] =>
-  readFileSync(path, 'utf8').split(/\r?\n/).map((line, index) => (index === 0 ? line.replace(/^\uFEFF/, '') : line)).filter((line) => line.trim() !== '').map((line) => JSON.parse(line));
+  readFileSync(path, 'utf8')
+    .split(/\r?\n/)
+    .map((line) => stripUtf8Bom(line))
+    .filter((line) => line.trim() !== '')
+    .map((line) => JSON.parse(line));
 const writeJsonFile = (path: string, value: unknown): void =>
   writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`);
 
@@ -84,7 +89,7 @@ const sortByRank = (jobs: AiStudyMapJob[], options: SampleOptions): AiStudyMapJo
   [...jobs].sort((a, b) => {
     const rankA = jobRank(options, a.jobId);
     const rankB = jobRank(options, b.jobId);
-    return rankA === rankB ? (a.jobId < b.jobId ? -1 : 1) : (rankA < rankB ? -1 : 1);
+    return rankA === rankB ? (a.jobId < b.jobId ? -1 : 1) : rankA < rankB ? -1 : 1;
   });
 
 const countBy = (values: string[]): Record<string, number> =>
@@ -212,7 +217,10 @@ const selectForDocument = (
   return selected;
 };
 
-export const buildStratifiedSample = (jobs: AiStudyMapJob[], options: SampleOptions): SampleResult => {
+export const buildStratifiedSample = (
+  jobs: AiStudyMapJob[],
+  options: SampleOptions,
+): SampleResult => {
   if (options.size <= 0 || options.perDocument < 0) {
     throw new Error('size must be positive; per-document quota must be non-negative (0 = auto)');
   }
@@ -230,12 +238,16 @@ export const buildStratifiedSample = (jobs: AiStudyMapJob[], options: SampleOpti
   const categoryCoverage = countBy(selected.flatMap((entry) => entry.categories));
   for (const label of Object.keys(corpusStructural)) {
     if ((structuralCoverage[label] ?? 0) === 0) {
-      unmet.push(`structural stratum ${label} has ${corpusStructural[label]} eligible jobs but 0 selected (quota-limited)`);
+      unmet.push(
+        `structural stratum ${label} has ${corpusStructural[label]} eligible jobs but 0 selected (quota-limited)`,
+      );
     }
   }
   for (const label of Object.keys(corpusCategories)) {
     if ((categoryCoverage[label] ?? 0) === 0) {
-      unmet.push(`category ${label} has ${corpusCategories[label]} eligible jobs but 0 selected (quota-limited)`);
+      unmet.push(
+        `category ${label} has ${corpusCategories[label]} eligible jobs but 0 selected (quota-limited)`,
+      );
     }
   }
   const finalNotes = [
@@ -244,9 +256,7 @@ export const buildStratifiedSample = (jobs: AiStudyMapJob[], options: SampleOpti
       .filter((doc) => doc.topUp > 0)
       .map((doc) => `document ${doc.documentId} absorbed ${doc.topUp} redistributed job(s)`),
   ];
-  const sampleSha256 = hashText(
-    canonicalJson(selected.map((entry) => entry.job.jobId)),
-  );
+  const sampleSha256 = hashText(canonicalJson(selected.map((entry) => entry.job.jobId)));
   return {
     options,
     selectionAlgorithm: SELECTION_ALGORITHM,
@@ -275,13 +285,20 @@ const loadV1Index = (): V1Index | null => {
         .flatMap((file) => readJsonl(join(jobsDir, file)) as AiStudyMapJob[])
     : [];
   const resultByJob = new Map<string, { file: string; value: AiStudyMapResult }>();
-  for (const file of readdirSync(resultsDir).filter((f) => f.endsWith('.results.jsonl')).sort()) {
+  for (const file of readdirSync(resultsDir)
+    .filter((f) => f.endsWith('.results.jsonl'))
+    .sort()) {
     for (const value of readJsonl(join(resultsDir, file)) as AiStudyMapResult[]) {
       resultByJob.set(value.jobId, { file, value });
     }
   }
   return {
-    jobs: new Map(jobs.map((job) => [`${job.document.documentId}::${job.target.sourceKeys.join('|')}::${job.target.sectionLabels.join('|')}`, job])),
+    jobs: new Map(
+      jobs.map((job) => [
+        `${job.document.documentId}::${job.target.sourceKeys.join('|')}::${job.target.sectionLabels.join('|')}`,
+        job,
+      ]),
+    ),
     resultByJob,
   };
 };
@@ -292,13 +309,18 @@ const v1TargetKey = (job: AiStudyMapJob): string =>
 export const attachV1Mapping = (
   selected: SelectedJob[],
   v1: V1Index | null,
-): Array<{ v1JobId: string | null; v1KnownGoodResultLocation: string | null; v1ResultIdentity: string | null }> =>
+): Array<{
+  v1JobId: string | null;
+  v1KnownGoodResultLocation: string | null;
+  v1ResultIdentity: string | null;
+}> =>
   selected.map((entry) => {
     if (!v1) return { v1JobId: null, v1KnownGoodResultLocation: null, v1ResultIdentity: null };
     const v1Job = v1.jobs.get(v1TargetKey(entry.job));
     if (!v1Job) return { v1JobId: null, v1KnownGoodResultLocation: null, v1ResultIdentity: null };
     const row = v1.resultByJob.get(v1Job.jobId);
-    if (!row) return { v1JobId: v1Job.jobId, v1KnownGoodResultLocation: null, v1ResultIdentity: null };
+    if (!row)
+      return { v1JobId: v1Job.jobId, v1KnownGoodResultLocation: null, v1ResultIdentity: null };
     return {
       v1JobId: v1Job.jobId,
       v1KnownGoodResultLocation: `${V1_RUN}/results/${row.file}`,
@@ -308,7 +330,11 @@ export const attachV1Mapping = (
 
 export const buildComparisonSetDocument = (
   sample: SampleResult,
-  v1Mapping: Array<{ v1JobId: string | null; v1KnownGoodResultLocation: string | null; v1ResultIdentity: string | null }>,
+  v1Mapping: Array<{
+    v1JobId: string | null;
+    v1KnownGoodResultLocation: string | null;
+    v1ResultIdentity: string | null;
+  }>,
 ): Record<string, unknown> => ({
   schemaVersion: 1,
   kind: 'study-map-stratified-comparison-set',
@@ -365,21 +391,24 @@ const renderMarkdown = (doc: Record<string, unknown>, runLabel: string): string 
     `- v1 run: \`${String(doc.v1Run)}\``,
   );
   header('Per-document balance');
-  lines.push('| document | type | eligible | initial quota | final quota | top-up |', '| --- | --- | ---: | ---: | ---: | ---: |');
+  lines.push(
+    '| document | type | eligible | initial quota | final quota | top-up |',
+    '| --- | --- | ---: | ---: | ---: | ---: |',
+  );
   for (const entry of doc.documentDistribution as Array<Record<string, unknown>>) {
     lines.push(
       `| ${String(entry.documentId)} | ${String(entry.type)} | ${String(entry.eligible)} | ${String(entry.initialQuota)} | ${String(entry.finalQuota)} | ${String(entry.topUp)} |`,
     );
   }
   header('Category coverage');
-  for (const [label, count] of Object.entries(doc.categoryCoverage as Record<string, number>).sort((a, b) =>
-    a[0] < b[0] ? -1 : 1,
+  for (const [label, count] of Object.entries(doc.categoryCoverage as Record<string, number>).sort(
+    (a, b) => (a[0] < b[0] ? -1 : 1),
   )) {
     lines.push(`- \`${label}\`: ${count}`);
   }
   header('Structural coverage');
-  const structural = Object.entries(doc.structuralCoverage as Record<string, number>).sort((a, b) =>
-    a[0] < b[0] ? -1 : 1,
+  const structural = Object.entries(doc.structuralCoverage as Record<string, number>).sort(
+    (a, b) => (a[0] < b[0] ? -1 : 1),
   );
   if (structural.length === 0) lines.push('(none)');
   for (const [label, count] of structural) lines.push(`- \`${label}\`: ${count}`);
@@ -412,8 +441,29 @@ const parseArgs = (argv: string[]): SampleOptions => {
   return options;
 };
 
+export const STRATIFIED_SAMPLER_HELP = `Deterministic stratified comparison-set sampler.
+
+Usage:
+  npx tsx scripts/studyAiBuildStratifiedMapSample.ts --out <path> [--run <baseRunId>] [--seed <seed>] [--size <n>] [--per-document <n>]
+
+Options:
+  --out <path>           Output comparison-set JSON path (required; parent dir must exist).
+  --run <baseRunId>      Base run id under study-content/ai/runs (default ai-map-4c12-full-corpus-v2).
+  --seed <seed>          Selection seed (default 20260828).
+  --size <n>             Requested sample size (default 200).
+  --per-document <n>     Explicit per-document quota; 0 = auto (default 0).
+  -h, --help             Show this help.
+
+Selection is deterministic: per-document quotas with redistribution, then
+coverage-first then rank-fill. Writes a JSON comparison set plus a .md summary.
+`;
+
 const main = (): void => {
   const argv = process.argv.slice(2);
+  if (argv.includes('--help') || argv.includes('-h')) {
+    console.log(STRATIFIED_SAMPLER_HELP);
+    return;
+  }
   const outPath = resolve(argv[argv.indexOf('--out') + 1] ?? '');
   if (!outPath || !existsSync(dirname(outPath))) {
     throw new Error('pass --out <path> (parent directory must exist)');
@@ -448,4 +498,5 @@ export const __studyAiBuildStratifiedMapSampleTest = {
   SELECTION_ALGORITHM,
   V1_RUN,
   hashText,
+  STRATIFIED_SAMPLER_HELP,
 };
