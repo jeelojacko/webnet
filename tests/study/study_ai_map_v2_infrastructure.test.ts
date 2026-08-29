@@ -258,6 +258,7 @@ describe('Study Map V2 infrastructure repairs', () => {
       ...base,
       disposition: 'skip',
       reason: 'The source has no substantive learning goal.',
+      suggestedPriority: undefined,
       proposedGroups: Array.from({ length: groupCount }, (_, index) => ({
         ...base.proposedGroups[0],
         groupId: `group-${index + 1}`,
@@ -357,6 +358,67 @@ describe('Study Map V2 infrastructure repairs', () => {
       job,
     );
     expect(skipNoPriority.valid).toBe(true);
+
+    const skipWithNullPriority = validateAiStudyMapResult(
+      {
+        ...base,
+        disposition: 'skip',
+        reason: 'The source has no substantive learning goal.',
+        suggestedPriority: null,
+        proposedGroups: [],
+      },
+      job,
+    );
+    expect(skipWithNullPriority.valid).toBe(true);
+
+    const zeroGroupWithPriority = validateAiStudyMapResult(
+      {
+        ...base,
+        disposition: 'reference-only',
+        reason: 'The provision is citation-only.',
+        suggestedPriority: 'P3',
+        proposedGroups: [],
+      },
+      job,
+    );
+    expect(zeroGroupWithPriority.valid).toBe(false);
+    expect(zeroGroupWithPriority.issues.map((issue) => issue.code)).toContain(
+      'SUGGESTED_PRIORITY_FORBIDDEN_WITHOUT_GROUPS',
+    );
+
+    const groupsWithNullPriority = validateAiStudyMapResult(
+      { ...base, suggestedPriority: null },
+      job,
+    );
+    expect(groupsWithNullPriority.valid).toBe(false);
+    expect(groupsWithNullPriority.issues.map((issue) => issue.code)).toContain(
+      'SUGGESTED_PRIORITY_REQUIRED',
+    );
+  });
+
+  it('canonicalizes suggestedPriority serialization in runner-stamped results', () => {
+    const job = jobFixture();
+    const zeroGroupRaw: Record<string, unknown> = {
+      disposition: 'skip',
+      confidence: 'high',
+      reason: 'The source has no substantive learning goal.',
+      proposedGroups: [],
+      warnings: [],
+    };
+    const stampedZero = __studyAiLocalMapAuthorTest.withRunnerIdentity(zeroGroupRaw, job);
+    expect(stampedZero.suggestedPriority).toBeNull();
+    expect(JSON.parse(JSON.stringify(stampedZero))).toHaveProperty('suggestedPriority', null);
+
+    const groupedRaw: Record<string, unknown> = {
+      disposition: 'standalone',
+      confidence: 'high',
+      reason: 'The source contains one focused filing duty.',
+      suggestedPriority: 'P2',
+      proposedGroups: resultFixture().proposedGroups,
+      warnings: [],
+    };
+    const stampedGrouped = __studyAiLocalMapAuthorTest.withRunnerIdentity(groupedRaw, job);
+    expect(stampedGrouped.suggestedPriority).toBe('P2');
   });
 
   it('warns on structured field labels embedded in prose fields without rejecting ordinary prose', () => {

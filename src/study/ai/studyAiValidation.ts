@@ -258,11 +258,17 @@ const checkMapResultConsistency = (
       jobId,
       message: `reference-only results must have zero proposed groups, not ${groupCount}.`,
     });
-  if (groupCount > 0 && value.suggestedPriority === undefined)
+  if (groupCount > 0 && (value.suggestedPriority === undefined || value.suggestedPriority === null))
     addIssue(issues, {
       code: 'SUGGESTED_PRIORITY_REQUIRED',
       jobId,
-      message: 'suggestedPriority is required when proposedGroups is non-empty.',
+      message: 'suggestedPriority must be a model-chosen P1-P4 when proposedGroups is non-empty.',
+    });
+  if (groupCount === 0 && typeof value.suggestedPriority === 'string')
+    addIssue(issues, {
+      code: 'SUGGESTED_PRIORITY_FORBIDDEN_WITHOUT_GROUPS',
+      jobId,
+      message: 'Zero-group results must serialize suggestedPriority as null, not a P level.',
     });
   flagProseLabelLeakage(issues, 'reason', value.reason, jobId);
   proposedGroups?.forEach((group) => {

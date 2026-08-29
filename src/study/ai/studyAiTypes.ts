@@ -212,7 +212,7 @@ export type AiStudyMapResult = {
   disposition: AiStudyDisposition;
   confidence: AiConfidence;
   reason: string;
-  suggestedPriority?: AiSuggestedPriority;
+  suggestedPriority?: AiSuggestedPriority | null;
   proposedGroups: AiProposedSourceGroup[];
   warnings: string[];
 };
@@ -298,7 +298,7 @@ export type AiStudyUnitProposal = {
   mapDisposition?: AiStudyDisposition;
   mapReason?: string;
   approximateLearningGoal?: string;
-  suggestedPriority?: AiSuggestedPriority;
+  suggestedPriority?: AiSuggestedPriority | null;
   authoringStatus?: 'generated' | 'needs-map-revision';
   mapRevisionSuggestion?: AiMapRevisionSuggestion;
   confidence: AiConfidence;
@@ -340,7 +340,7 @@ export type AiStudyMapProposal = {
   disposition: AiStudyDisposition;
   confidence: AiConfidence;
   reason: string;
-  suggestedPriority?: AiSuggestedPriority;
+  suggestedPriority?: AiSuggestedPriority | null;
   proposedGroups: AiProposedSourceGroup[];
   warnings: string[];
   conflictCodes: string[];
@@ -388,7 +388,7 @@ export type AiValidationReport = {
 };
 
 export const aiPriorityToStudyPriority = (
-  priority: AiSuggestedPriority | undefined,
+  priority: AiSuggestedPriority | null | undefined,
 ): StudyPriority => {
   if (priority === 'P1') return 1;
   if (priority === 'P2') return 2;

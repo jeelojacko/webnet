@@ -168,7 +168,12 @@ export const collectJobAuditRecords = (args: {
       result === null && semanticAttemptRecords.length > 0
         ? semanticAttemptRecords[semanticAttemptRecords.length - 1]
         : null;
-    const codeSignatures = attempts.map((attempt) => [...attempt.issueCodes].sort().join('|'));
+    // Provider attempts carry no semantic validation codes; including them
+    // would manufacture spurious "different error" transitions at every
+    // provider/semantic boundary. Retry dynamics are a semantic metric.
+    const codeSignatures = attempts
+      .filter((attempt) => !attempt.provider)
+      .map((attempt) => [...attempt.issueCodes].sort().join('|'));
     let retryIntroducedDifferentError = false;
     let repeatedIdenticalError = false;
     for (let i = 1; i < codeSignatures.length; i += 1) {

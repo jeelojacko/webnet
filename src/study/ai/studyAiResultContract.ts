@@ -33,6 +33,9 @@ export const STUDY_MAP_V3_RESULT_SCHEMA = {
     disposition: { enum: dispositions },
     confidence: { enum: confidences },
     reason: { type: 'string', minLength: 1 },
+    // Model-facing schema: enum-only because the local provider's strict structured
+    // output cannot emit null. Zero-group results omit the field and the runner
+    // canonicalizes the serialized value to null (see studyAiLocalMapAuthor.ts).
     suggestedPriority: { enum: priorities },
     proposedGroups: {
       type: 'array',
@@ -122,8 +125,8 @@ export const validateStudyMapV3ResultContract = (value: unknown): AiValidationIs
   if (!dispositions.includes(value.disposition as never)) issues.push(issue('INVALID_DISPOSITION', 'Invalid Study Map disposition.', jobId));
   if (!confidences.includes(value.confidence as never)) issues.push(issue('INVALID_CONFIDENCE', 'Invalid Study Map confidence.', jobId));
   if (!nonEmptyString(value.reason)) issues.push(issue('REASON_REQUIRED', 'reason is required.', jobId));
-  if (value.suggestedPriority !== undefined && !priorities.includes(value.suggestedPriority as never)) {
-    issues.push(issue('INVALID_SUGGESTED_PRIORITY', 'suggestedPriority must be P1, P2, P3, P4, or absent.', jobId));
+  if (value.suggestedPriority !== undefined && value.suggestedPriority !== null && !priorities.includes(value.suggestedPriority as never)) {
+    issues.push(issue('INVALID_SUGGESTED_PRIORITY', 'suggestedPriority must be P1, P2, P3, P4, null, or absent.', jobId));
   }
   if (!Array.isArray(value.proposedGroups)) {
     issues.push(issue('GROUPS_REQUIRED', 'proposedGroups must be an array.', jobId));

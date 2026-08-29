@@ -249,6 +249,63 @@ describe('AI authoring schemas and validation', () => {
     });
   });
 
+  it('applies the canonical suggestedPriority contract for grouped and zero-group results', () => {
+    const job = mapJob();
+    const base = {
+      schemaVersion: 1 as const,
+      jobId: job.jobId,
+      runId: job.runId,
+      corpusContentHash: job.corpusContentHash,
+      inputHash: job.inputHash,
+      promptSpecVersion: job.promptSpecVersion,
+      confidence: 'medium' as const,
+      reason: 'Contextual cross-reference material with limited standalone value.',
+    };
+
+    const zeroGroup = (suggestedPriority: AiStudyMapResult['suggestedPriority']): AiStudyMapResult => ({
+      ...base,
+      disposition: 'reference-only',
+      suggestedPriority,
+      proposedGroups: [],
+      warnings: [],
+    });
+
+    const zeroGroupCodes = validateAiStudyMapResult(zeroGroup(null), job).issues.map(
+      (issue) => issue.code,
+    );
+    expect(zeroGroupCodes).not.toContain('SUGGESTED_PRIORITY_FORBIDDEN_WITHOUT_GROUPS');
+    expect(zeroGroupCodes).not.toContain('INVALID_SUGGESTED_PRIORITY');
+
+    const forbiddenCodes = validateAiStudyMapResult(zeroGroup('P2'), job).issues.map(
+      (issue) => issue.code,
+    );
+    expect(forbiddenCodes).toContain('SUGGESTED_PRIORITY_FORBIDDEN_WITHOUT_GROUPS');
+
+    const grouped = (suggestedPriority: AiStudyMapResult['suggestedPriority']): AiStudyMapResult => ({
+      ...base,
+      disposition: 'standalone',
+      suggestedPriority,
+      proposedGroups: [
+        {
+          groupId: 'group-1',
+          titleSuggestion: 'Cross-reference destination',
+          sourceKeys: job.target.sourceKeys,
+          focusSelections: [{ sourceKey: job.target.sourceKeys[0] }],
+          reason: 'Covers the operative cross-reference content in the target section.',
+          approximateLearningGoal: 'Recall where the cross-reference points.',
+        },
+      ],
+      warnings: [],
+    });
+
+    expect(
+      validateAiStudyMapResult(grouped(undefined), job).issues.map((issue) => issue.code),
+    ).toContain('SUGGESTED_PRIORITY_REQUIRED');
+    expect(
+      validateAiStudyMapResult(grouped(null), job).issues.map((issue) => issue.code),
+    ).toContain('SUGGESTED_PRIORITY_REQUIRED');
+  });
+
   it('blocks Study Map focus evidence sourced only from next context', () => {
     const job = {
       ...mapJob(),
@@ -308,6 +365,101 @@ describe('AI authoring schemas and validation', () => {
     expect(report.valid).toBe(false);
     expect(codes).toContain('FOCUS_EVIDENCE_NOT_IN_SOURCE');
     expect(codes).toContain('GROUP_TOPIC_NOT_GROUNDED');
+  });
+
+  const groundingJob = (): AiStudyMapJob => ({
+    ...mapJob(),
+    target: {
+      ...mapJob().target,
+      sourceKeys: ['section:1'],
+      sectionLabels: ['1'],
+      exactSourceText:
+        'Definitions and interpretation\n\n1(1)\u201cboard\u201d means the board of directors of a corporation.\n\n1(2) A person\u2019s objection must be delivered in writing before the deadline for a unit the owner occupies.',
+      operativeSourceText:
+        'Definitions and interpretation\n\n1(1)\u201cboard\u201d means the board of directors of a corporation.\n\n1(2) A person\u2019s objection must be delivered in writing before the deadline for a unit the owner occupies.',
+      sourceHashes: { 'section:1': 'hash-section-1' },
+      sourceFocusOptions: [{ sourceKey: 'section:1', label: '1', childLabels: ['1(1)', '1(2)'] }],
+    },
+    context: {
+      relevantDefinitions: [
+        {
+          sourceKey: 'section:1',
+          sectionLabel: '1',
+          text: 'Definitions and interpretation\n\n1(1)\u201cboard\u201d means the board of directors of',
+          operativeText:
+            'Definitions and interpretation\n\n1(1)\u201cboard\u201d means the board of directors of',
+          sourceHash: 'hash-section-1',
+          contextRole: 'definition',
+        },
+      ],
+      omittedContextWarnings: [],
+    },
+  });
+
+  const groundingResult = (evidenceText: string[]): AiStudyMapResult => ({
+    schemaVersion: 1,
+    jobId: 'map-1',
+    runId: 'run-1',
+    corpusContentHash: 'corpus-hash',
+    inputHash: 'input-hash',
+    promptSpecVersion: 'study-map-v3',
+    disposition: 'standalone',
+    confidence: 'high',
+    reason: 'Definitions and objection procedure are the operative content.',
+    suggestedPriority: 'P2',
+    proposedGroups: [
+      {
+        groupId: 'group-1',
+        titleSuggestion: 'Board definition and objection deadline',
+        sourceKeys: ['section:1'],
+        focusSelections: [{ sourceKey: 'section:1', evidenceText }],
+        reason: 'One definition and one procedure.',
+        approximateLearningGoal: 'Recall the board definition and objection delivery rule.',
+      },
+    ],
+    warnings: [],
+  });
+
+  it('keeps the target source text intact when a context entry reuses the target sourceKey', () => {
+    const job = groundingJob();
+    const tailEvidence = groundingResult(['before the deadline for a unit the owner occupies']);
+    const codes = validateAiStudyMapResult(tailEvidence, job).issues.map(
+      (issue) => issue.code,
+    );
+
+    expect(codes).not.toContain('FOCUS_EVIDENCE_NOT_IN_SOURCE');
+  });
+
+  it('grounds evidence across curly quotes, apostrophes, and irregular whitespace', () => {
+    const job = groundingJob();
+    const result = groundingResult([
+      'board means the board of directors of a corporation',
+      'A person\u00a0\u00a0\u2019s objection\n must be delivered in writing',
+    ]);
+
+    expect(validateAiStudyMapResult(result, job).issues.map((issue) => issue.code)).not.toContain(
+      'FOCUS_EVIDENCE_NOT_IN_SOURCE',
+    );
+  });
+
+  it('rejects paraphrased, word-omitted, and mid-token Study Map evidence', () => {
+    const job = groundingJob();
+    const paraphrase = validateAiStudyMapResult(
+      groundingResult(['the board consists of directors of the corporation']),
+      job,
+    ).issues.map((issue) => issue.code);
+    const omitted = validateAiStudyMapResult(
+      groundingResult(['objection must be delivered in writing before deadline']),
+      job,
+    ).issues.map((issue) => issue.code);
+    const midToken = validateAiStudyMapResult(
+      groundingResult(['nit the owner occupies']),
+      job,
+    ).issues.map((issue) => issue.code);
+
+    expect(paraphrase).toContain('FOCUS_EVIDENCE_NOT_IN_SOURCE');
+    expect(omitted).toContain('FOCUS_EVIDENCE_NOT_IN_SOURCE');
+    expect(midToken).toContain('FOCUS_EVIDENCE_NOT_IN_SOURCE');
   });
 
   it('blocks Study Map topics sourced only from previous context', () => {

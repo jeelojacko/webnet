@@ -149,8 +149,10 @@ const renderMarkdown = (
   };
   section('Reliability');
   lines.push(
-    `- accepted: ${String(reliability.accepted)}/${String(reliability.selectedJobs)} (rate ${String(reliability.acceptanceRate)})`,
-    `- first-try accepted: ${String(reliability.firstTryAccepted)}; first-semantic-attempt accepted: ${String(reliability.firstSemanticAttemptAccepted)}; accepted after retry: ${String(reliability.acceptedAfterRetry)}`,
+    `- accepted: ${String(reliability.acceptedJobs)}/${String(reliability.selectedJobs)} (rate ${String(reliability.acceptanceRate)})`,
+    `- first-try accepted: ${String(reliability.firstTryAccepted)}; first-semantic-attempt accepted: ${String(reliability.firstSemanticAttemptAccepted)}`,
+    `- semantic: retry jobs ${String(reliability.semanticRetryJobs)}; accepted after semantic retry ${String(reliability.acceptedAfterSemanticRetry)}; recovery rate ${String(reliability.semanticRecoveryRate)}`,
+    `- provider: accepted after provider recovery ${String(reliability.acceptedAfterProviderRecovery)}`,
     `- permanently failed: ${String(reliability.permanentlyFailed)} = ${String(reliability.semanticPermanentFailures)} semantic + ${String(reliability.providerIncompleteJobs)} provider-incomplete`,
     `- total attempts: ${String(reliability.totalAttempts)} (extra attempts: ${String(reliability.extraAttempts)}; semantic: ${String(reliability.semanticAttemptsTotal)}, provider: ${String(reliability.providerAttemptsTotal)})`,
     `- retry introduced a different error: ${String(reliability.retryIntroducedDifferentErrorCount)} job(s)`,
@@ -229,6 +231,7 @@ const renderMarkdown = (
   lines.push(
     `- comparable: ${String(v1.comparable)}; disposition same/diff: ${String(v1.dispositionSame)}/${String(v1.dispositionDiff)}`,
     `- group count same/diff: ${String(v1.groupCountSame)}/${String(v1.groupCountDiff)}; confidence same/diff: ${String(v1.confidenceSame)}/${String(v1.confidenceDiff)}`,
+    '- full comparable V1 rows: `reports/v1-comparable-results.jsonl` (same comparability predicate, deterministic order)',
   );
   section('Review bundle');
   lines.push(
@@ -237,7 +240,7 @@ const renderMarkdown = (
   );
   lines.push(
     '',
-    'Files: `map-run-audit.json`, `map-run-audit.md`, `semantic-review-bundle.jsonl`.',
+    'Files: `map-run-audit.json`, `map-run-audit.md`, `semantic-review-bundle.jsonl`, `v1-comparable-results.jsonl`.',
   );
   return `${lines.join('\n')}\n`;
 };
@@ -361,9 +364,25 @@ const main = (): void => {
       ? `${bundleEntries.map((entry) => JSON.stringify(entry)).join('\n')}\n`
       : '',
   );
+  // Self-contained comparator export: the FULL V1 result rows for every
+  // comparable job (accepted V2 + V1-mapped), in comparison-set order, so a
+  // reviewer never has to open the legacy V1 run directory to diff a bundle
+  // entry. Mirrors the comparability predicate in computeV1Comparison.
+  const v1ComparableRows: string[] = [];
+  for (const setJob of comparisonSet.jobs) {
+    const record = records.find((entry) => entry.jobId === setJob.v2JobId);
+    if (record === undefined || !record.accepted || !setJob.v1JobId) continue;
+    const v1 = v1Results.get(setJob.v1JobId);
+    if (v1 === undefined) continue;
+    v1ComparableRows.push(JSON.stringify(v1));
+  }
+  writeFileSync(
+    join(reportsDir, 'v1-comparable-results.jsonl'),
+    v1ComparableRows.length > 0 ? `${v1ComparableRows.join('\n')}\n` : '',
+  );
   writeFileSync(join(reportsDir, 'map-run-audit.md'), renderMarkdown(audit, args));
   console.log(
-    `Wrote audit reports to ${reportsDir}: ${reliability.accepted}/${reliability.selectedJobs} accepted, ` +
+    `Wrote audit reports to ${reportsDir}: ${reliability.acceptedJobs}/${reliability.selectedJobs} accepted, ` +
       `${reliability.permanentlyFailed} permanent failures, ${bundleEntries.length} review-bundle entries.`,
   );
 };

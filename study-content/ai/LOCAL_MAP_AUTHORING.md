@@ -80,9 +80,9 @@ npx tsx scripts/studyAiAuditMapRun.ts \
   --review-size 40
 ```
 
-Writes `reports/map-run-audit.json`, `reports/map-run-audit.md`, and `reports/semantic-review-bundle.jsonl` into the audited run directory. Reports reliability (acceptance, first-try vs retried, per-error-code failed attempts and per-job recovery rate, retry-introduced-different-error and repeated-identical-error counts), per-stratum acceptance, structure (disposition/confidence/priority mix, group counts, final re-validation issues), concision (word-count stats vs ~40/30/60 thresholds), output-hygiene pattern findings (prompt/calibration/instruction/AI-identity references), and a descriptive V1 comparison (V1 is a pedagogical comparator only, never an accuracy ground truth). The review bundle orders jobs by tier (permanent failures first, then low confidence, multi-attempt, warning, needs-human-review, reference-only/skip, multi-group, P1, large-input, medium-confidence, clean) capped by `--review-size`.
+Writes `reports/map-run-audit.json`, `reports/map-run-audit.md`, `reports/semantic-review-bundle.jsonl`, and `reports/v1-comparable-results.jsonl` (the FULL V1 result rows for every comparable job, so bundle entries can be diffed without opening the legacy V1 run directory) into the audited run directory. Reports reliability (acceptance, semantic-first-try acceptance, semantic-vs-provider recovery, per-error-code failed attempts and per-job recovery rate, retry-introduced-different-error and repeated-identical-error counts), per-stratum acceptance, structure (disposition/confidence/priority mix, group counts, final re-validation issues), concision (word-count stats vs ~40/30/60 thresholds), output-hygiene pattern findings (prompt/calibration/instruction/AI-identity references), and a descriptive V1 comparison (V1 is a pedagogical comparator only, never an accuracy ground truth). The review bundle orders jobs by tier (permanent-failure, semantic-retry, low-confidence, needs-human-review, final-warning, priority-p1, multi-group, configured risk strata, provider-recovery, clean controls) capped by `--review-size`; every entry records `reviewTier`, `reasonSelectedForReview`, semantic/provider attempt counts, and final confidence/warnings.
 
-Reliability also splits permanent failures by origin: `semanticPermanentFailures` (at least one semantic attempt, never converged), `providerFailureJobs` (at least one provider failure), and `providerIncompleteJobs` (interrupted before any semantic attempt). Per-error-code counts include only semantic attempts, so provider failures no longer pollute error-code recovery statistics. When `reports/provider-events.jsonl` exists, the audit embeds it as `providerEvents` in `map-run-audit.json` (runs created before provider telemetry report `olderRunsHaveProviderTelemetry: false`), and the markdown gains a Provider reliability subsection with per-code counts and recovered-vs-aborted totals. The review bundle excludes non-accepted jobs with zero semantic attempts (pure provider-incomplete jobs); semantic and mixed failures remain, and bundle attempts carry `provider` and `providerCode` fields.
+Reliability separates semantic reliability from provider/transport reliability. `acceptedJobs` is the accepted count; `firstSemanticAttemptAccepted` counts jobs accepted on their first semantic attempt; `acceptedAfterSemanticRetry` counts jobs accepted on a later semantic attempt (genuine semantic recovery); `acceptedAfterProviderRecovery` counts accepted jobs whose attempt history includes at least one provider failure (transport recovery, not semantic recovery); `semanticRetryJobs`/`semanticRecoveryRate` summarize genuine retry recovery. Permanent failures split by origin: `semanticPermanentFailures` (at least one semantic attempt, never converged) and `providerIncompleteJobs` (interrupted before any semantic attempt); each permanently failed job lists `origin` (`none`/`provider`/`semantic`/`mixed`) with semantic vs provider attempt counts. Per-error-code counts and the retry-introduced-different-error / repeated-identical-error comparisons include only semantic attempts, so provider attempts (which carry no semantic error codes) no longer distort error-code recovery statistics or error-transition signatures. When `reports/provider-events.jsonl` exists, the audit embeds it as `providerEvents` in `map-run-audit.json` (runs created before provider telemetry report `olderRunsHaveProviderTelemetry: false`), and the markdown gains a Provider reliability subsection with per-code counts and recovered-vs-aborted totals. The review bundle excludes non-accepted jobs with zero semantic attempts (pure provider-incomplete jobs); semantic and mixed failures remain, and bundle attempts carry `provider` and `providerCode` fields.
 
 Integrity problems (malformed lines, duplicate results, jobs outside the comparison set, base-run gaps, authoring-fingerprint mismatch) fail the audit with a non-zero exit code.
 
@@ -101,6 +101,46 @@ npm run study:ai:local-map -- \
 The first resumed start creates `reports/local-run-metadata.json` for this pre-existing run; later starts validate against it. Keep the same `--comparison-set` path and model, and re-run the same command after any further interruption.
 
 The accepted results in this run keep the source run's `runId` (`ai-map-4c12-full-corpus-v2`) because its job files were prepared under that run; resume validation compares each result's `runId` against its job file (see `reports/warm-start-note.json`).
+
+### Gate A result and source-text grounding fix (2026-08-28)
+
+The stratified 200-job Gate A run completed at 196/200 accepted with four permanent semantic failures and zero provider-incomplete jobs. Re-validation with the fixed validator (below) cleared two of the four recorded failures as validator false negatives; the other two are genuine model errors that need fresh generation.
+
+Root cause of the false negatives: `sourceTextByKey` in `src/study/ai/studyAiGrounding.ts` mapped every target `sourceKey` to the full `target.operativeSourceText`, and then context entries could overwrite the same key. A `relevantDefinitions` context entry reusing the target's own `sourceKey` carried only a bounded (~1800 character) excerpt, so evidence beyond that prefix failed `FOCUS_EVIDENCE_NOT_IN_SOURCE` (and long-form `DEFINED_TERM_NOT_IN_FOCUS_SOURCE` patterns failed the same way). Fix: target-owned keys always keep the authoritative full text; context entries only populate keys the target does not already own. A regression test locks the clobber case.
+
+Evidence/defined-term matching is normalized before comparison (`normalizeForPhrase` in `studyAiGrounding.ts`): curly quotes and apostrophes are folded to straight forms, every non-letter/non-number character becomes a single space, whitespace collapses, and the text is trimmed and lowercased. Containment is then checked as a **contiguous whole-token sequence** (`tokensContain`), not as a raw substring: typographic punctuation, apostrophe style, and irregular whitespace are tolerated, but mid-token matches (for example `nit the` inside `unit the`) are rejected, and paraphrases or legally significant omissions still fail grounding. Paraphrase/omission/mid-token rejections are locked by focused tests.
+
+Deterministic re-validation of the four saved final attempts against the fixed validator: the Condominium s.1 and Highway s.44.1 attempts now pass with zero grounding issues; the Ownership of Minerals s.3 attempt still fails with three genuine `FOCUS_EVIDENCE_NOT_IN_SOURCE` citation errors (evidence from 3(1)(a)–(d) cited under child label 3(2)); the Quarriable Substances s.13 attempt still fails with genuine `SPLIT_GROUP_COUNT`/`SUGGESTED_PRIORITY_REQUIRED` structural errors. The historical run directory is immutable; fresh generation for the affected jobs goes through the post-Gate-A regression set below.
+
+### Post-Gate-A regression set
+
+A fixed, named regression population (no sampling, no inference) is built deterministically by `scripts/studyAiBuildRegressionSet.ts`:
+
+```bash
+npx tsx scripts/studyAiBuildRegressionSet.ts \
+  --base-run ai-map-4c12-full-corpus-v2 \
+  --v1-run ai-map-4c1-full-corpus-v1 \
+  --out study-content/ai/runs/ai-map-4c12-full-corpus-v2/reports/post-gate-a-regression-set.json
+```
+
+The set (order is significant and fingerprinted in `sampleSha256`) contains:
+
+- the four Gate A permanent-failure jobs (Condominium s.1, Highway s.44.1, Ownership of Minerals s.3, Quarriable Substances s.13) — the first two exercise the clobber fix; the latter two require fresh model generation;
+- Clean Water Act s.13.1 (11-subsection density) and Limitation of Actions Act s.33 (consequential-amendment handling);
+- Devolution of Estates Act s.21 (short provision — source-discipline wording) and Bituminous Shale Act s.27 (dense provision — actor narrowing);
+- Regulation 83-130 s.7 (short source — input-boundary/truncation behavior);
+- Gas Distribution Act s.4 (source contains the `LGiC` acronym — invented-acronym discipline) plus Gas Distribution Act s.12 as a clean same-document control.
+
+The builder performs no model calls and writes byte-identical JSON for the same base run. To execute it against the local model later, start a fresh run directory prepared from the base corpus and pass this comparison set:
+
+```bash
+npm run study:ai:local-map -- \
+  --run <new-run-id> \
+  --model <local-model-id> \
+  --comparison-set study-content/ai/runs/ai-map-4c12-full-corpus-v2/reports/post-gate-a-regression-set.json
+```
+
+Audit the result with `scripts/studyAiAuditMapRun.ts --comparison-set <that file>`; the set's `reasonSelected` values (`regression:<label>`) preserve each job's purpose in audit and review-bundle output.
 
 ## Full Regeneration Later
 

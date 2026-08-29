@@ -540,8 +540,9 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 // Identity fields are runner-owned: any identity values the model returned
 // are overwritten with the job's canonical identity before validation.
-const withRunnerIdentity = (value: Record<string, unknown>, job: AiStudyMapJob): AiStudyMapResult =>
-  ({
+const withRunnerIdentity = (value: Record<string, unknown>, job: AiStudyMapJob): AiStudyMapResult => {
+  const groupCount = Array.isArray(value.proposedGroups) ? value.proposedGroups.length : 0;
+  return {
     ...(value as Partial<AiStudyMapResult>),
     schemaVersion: 1,
     jobId: job.jobId,
@@ -550,7 +551,15 @@ const withRunnerIdentity = (value: Record<string, unknown>, job: AiStudyMapJob):
     inputHash: job.inputHash,
     authoringInputFingerprint: authoringInputFingerprint(job),
     promptSpecVersion: job.promptSpecVersion,
-  }) as AiStudyMapResult;
+    // Canonical serialization: suggestedPriority is always present in stored results —
+    // P1-P4 chosen by the model for grouped results, or exactly null when there are no
+    // groups. This completes serialization only; it never infers a P level. Grouped
+    // results with a missing/null priority still fail SUGGESTED_PRIORITY_REQUIRED.
+    ...(groupCount === 0 && value.suggestedPriority === undefined
+      ? { suggestedPriority: null }
+      : {}),
+  } as AiStudyMapResult;
+};
 
 const validateLocalResult = (
   value: unknown,
@@ -917,6 +926,7 @@ export const __studyAiLocalMapAuthorTest = {
   optionsFromArgs,
   parseRawArgs,
   validateExistingResults,
+  withRunnerIdentity,
 };
 
 export const LOCAL_MAP_AUTHOR_HELP = `studyAiLocalMapAuthor.ts — Study Map V3 local authoring runner

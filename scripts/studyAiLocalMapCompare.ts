@@ -294,7 +294,7 @@ const jobFlags = (knownGoodSide: ComparisonSideSummary | undefined, localSide: C
     groupCountMismatch: knownGoodSide.groupCount !== localSide.groupCount,
     childLabelCoverageMismatch: !sameStringLists(knownGoodSide.childLabelCoverage, localSide.childLabelCoverage),
     priorityMismatch:
-      knownGoodSide.suggestedPriority === undefined || localSide.suggestedPriority === undefined
+      knownGoodSide.suggestedPriority == null || localSide.suggestedPriority == null
         ? null
         : knownGoodSide.suggestedPriority !== localSide.suggestedPriority,
     contextLeakage,
@@ -329,7 +329,7 @@ const priorityPairList = (entries: PerJobComparison[]) =>
   entries.flatMap((entry) => {
     const knownGood = sideOf(entry, 'knownGood');
     const local = sideOf(entry, 'local');
-    if (knownGood?.suggestedPriority === undefined || local?.suggestedPriority === undefined) return [];
+    if (knownGood?.suggestedPriority == null || local?.suggestedPriority == null) return [];
     return [{ jobId: entry.jobId, knownGood: knownGood.suggestedPriority, local: local.suggestedPriority }];
   });
 

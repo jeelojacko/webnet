@@ -70,6 +70,7 @@ const resultFixture = (job: AiStudyMapJob, overrides: Partial<AiStudyMapResult> 
 
 const skipResultFixture = (job: AiStudyMapJob): AiStudyMapResult => ({
   ...resultFixture(job, { disposition: 'skip', reason: 'No focused learning material in the source.' }),
+  suggestedPriority: null,
   proposedGroups: [],
 });
 
@@ -266,7 +267,7 @@ describe('Study Map local comparison batch mode', () => {
       dispositionMismatch: true,
       groupCountMismatch: true,
       childLabelCoverageMismatch: true,
-      priorityMismatch: false,
+      priorityMismatch: null,
       contextLeakage: { knownGood: false, local: false },
       falseSkipCandidate: true,
       falseIncludeCandidate: false,
@@ -311,14 +312,14 @@ describe('Study Map local comparison batch mode', () => {
       { disposition: 'standalone', count: 2, rate: 0.4 },
     ]);
     expect(report.aggregates.suggestedPriority).toEqual({
-      bothPresent: { count: 3, rate: 0.6 },
-      match: { count: 3, rate: 1 },
-      distribution: [{ priority: 'P2', count: 3, rate: 1 }],
+      bothPresent: { count: 1, rate: 0.2 },
+      match: { count: 1, rate: 1 },
+      distribution: [{ priority: 'P2', count: 1, rate: 1 }],
     });
     expect(report.aggregates.groupCount.knownGood).toEqual({ total: 2, average: 0.5 });
     expect(report.aggregates.groupCount.local).toEqual({ total: 2, average: 0.6667 });
     expect(report.dispositionExactMatch).toEqual({ count: 1, rate: 0.2 });
-    expect(report.suggestedPriorityExactMatch).toEqual({ count: 3, rate: 1, bothPresent: 3 });
+    expect(report.suggestedPriorityExactMatch).toEqual({ count: 1, rate: 1, bothPresent: 1 });
     expect(report.groupCountExactMatch).toEqual({ count: 1, rate: 0.2 });
     expect(report.childLabelCoverageExactMatch).toEqual({ count: 1, rate: 0.2 });
     expect(report.contextLeakageJobCount).toEqual({ knownGood: 0, local: 1 });

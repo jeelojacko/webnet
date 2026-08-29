@@ -119,6 +119,32 @@ const normalizeForPhrase = (value: string): string =>
     .trim()
     .toLowerCase();
 
+const normalizeForPhraseTokens = (value: string): string[] => {
+  const normalized = normalizeForPhrase(value);
+  return normalized.length > 0 ? normalized.split(' ') : [];
+};
+
+// Contiguous token-sequence containment. Matching on whole tokens (rather
+// than raw substring containment) keeps punctuation/whitespace/case tolerant
+// while preventing mid-token matches such as "nit the" inside "unit the".
+const tokensContain = (sourceTokens: string[], needleTokens: string[]): boolean => {
+  if (needleTokens.length === 0) return false;
+  if (needleTokens.length === 1) return sourceTokens.includes(needleTokens[0]);
+  const first = needleTokens[0];
+  for (let i = 0; i + needleTokens.length <= sourceTokens.length; i++) {
+    if (sourceTokens[i] !== first) continue;
+    let matches = true;
+    for (let j = 1; j < needleTokens.length; j++) {
+      if (sourceTokens[i + j] !== needleTokens[j]) {
+        matches = false;
+        break;
+      }
+    }
+    if (matches) return true;
+  }
+  return false;
+};
+
 const stem = (term: string): string => {
   if (term.endsWith('ies') && term.length > 5) return `${term.slice(0, -3)}y`;
   if (term.endsWith('ing') && term.length > 6) return term.slice(0, -3);
@@ -162,8 +188,15 @@ const sourceTextByKey = (job: AiStudyMapJob): Map<string, string> => {
   job.target.sourceKeys.forEach((sourceKey) => {
     sources.set(sourceKey, job.target.operativeSourceText);
   });
+  // Context excerpts are bounded/truncated; they must never replace the
+  // authoritative target source text, even when a context entry reuses a
+  // target sourceKey (observed with relevantDefinitions pointing at the
+  // target section itself).
   contextEntries(job).forEach((context) => {
-    sources.set(context.sourceKey, context.operativeText ?? context.text);
+    const text = context.operativeText ?? context.text;
+    if (text && !sources.has(context.sourceKey)) {
+      sources.set(context.sourceKey, text);
+    }
   });
   return sources;
 };
@@ -185,9 +218,9 @@ const hasSpecificTopicSuffix = (title: string): boolean =>
   /\b(?:of|for|by|re|respecting|under|to)\s+[\p{L}][\p{L}-]{3,}/iu.test(title);
 
 const evidenceSupported = (sourceText: string, evidence: string): boolean => {
-  const normalizedEvidence = normalizeForPhrase(evidence);
-  if (!normalizedEvidence) return false;
-  return normalizeForPhrase(sourceText).includes(normalizedEvidence);
+  const evidenceTokens = normalizeForPhraseTokens(evidence);
+  if (evidenceTokens.length === 0) return false;
+  return tokensContain(normalizeForPhraseTokens(sourceText), evidenceTokens);
 };
 
 const definedTermPattern = (term: string): RegExp => {

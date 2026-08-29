@@ -217,11 +217,14 @@ describe('computeReliability', () => {
     });
     const summary = computeReliability([clean, retried, failed]);
     expect(summary.selectedJobs).toBe(3);
-    expect(summary.accepted).toBe(2);
+    expect(summary.acceptedJobs).toBe(2);
     expect(summary.permanentlyFailed).toBe(1);
     expect(summary.acceptanceRate).toBeCloseTo(2 / 3, 3);
     expect(summary.firstTryAccepted).toBe(1);
-    expect(summary.acceptedAfterRetry).toBe(1);
+    expect(summary.acceptedAfterSemanticRetry).toBe(1);
+    expect(summary.acceptedAfterProviderRecovery).toBe(0);
+    expect(summary.semanticRetryJobs).toBe(2);
+    expect(summary.semanticRecoveryRate).toBeCloseTo(0.5, 3);
     expect(summary.totalAttempts).toBe(5);
     expect(summary.extraAttempts).toBe(2);
     const code = summary.perErrorCode.find((entry) => entry.code === 'SUGGESTED_PRIORITY_REQUIRED');
@@ -318,20 +321,45 @@ describe('review tiers and bundle selection', () => {
   it('assigns tiers in strict priority order', () => {
     const failed = makeRecord('map-failed', { totalAttempts: 2, attempts: [attempt(1, ['CODE'])] });
     expect(reviewTierFor(failed, undefined)).toEqual({ tier: 0, label: 'permanent-failure' });
-    const low = acceptedRecord('map-low', { confidence: 'low' });
-    expect(reviewTierFor(low, undefined)).toEqual({ tier: 1, label: 'low-confidence' });
+    // Genuine semantic retries outrank content-based tiers.
     const retried = acceptedRecord('map-retried');
-    retried.totalAttempts = 2;
-    expect(reviewTierFor(retried, undefined)).toEqual({ tier: 2, label: 'multi-attempt' });
+    retried.totalAttempts = 3;
+    retried.semanticAttempts = 2;
+    expect(reviewTierFor(retried, undefined)).toEqual({ tier: 1, label: 'semantic-retry' });
+    const low = acceptedRecord('map-low', { confidence: 'low' });
+    expect(reviewTierFor(low, undefined)).toEqual({ tier: 2, label: 'low-confidence' });
+    const needsHuman = acceptedRecord('map-human', { disposition: 'needs-human-review' });
+    expect(reviewTierFor(needsHuman, undefined)).toEqual({
+      tier: 3,
+      label: 'needs-human-review',
+    });
     const warned = acceptedRecord('map-warned');
     expect(
       reviewTierFor(warned, [normalizeIssue({ code: 'X', severity: 'warning', message: 'w' })]),
     ).toEqual({
-      tier: 3,
+      tier: 4,
       label: 'final-warning',
     });
+    const p1 = acceptedRecord('map-p1', { suggestedPriority: 'P1' });
+    expect(reviewTierFor(p1, undefined)).toEqual({ tier: 5, label: 'priority-p1' });
+    // A provider-only retry is NOT a semantic retry: the first (and only)
+    // semantic attempt was already clean, so the job lands in the trailing
+    // informational provider-recovery tier instead.
+    const providerRecovered = acceptedRecord('map-provider-recovered');
+    providerRecovered.totalAttempts = 2;
+    providerRecovered.providerAttempts = 1;
+    expect(reviewTierFor(providerRecovered, undefined)).toEqual({
+      tier: 8,
+      label: 'provider-recovery',
+    });
+    const risk = acceptedRecord('map-risk');
+    risk.structuralStrata = ['many-child-labels'];
+    expect(reviewTierFor(risk, undefined)).toEqual({
+      tier: 7,
+      label: 'many-child-labels',
+    });
     const clean = acceptedRecord('map-clean');
-    expect(reviewTierFor(clean, undefined)).toEqual({ tier: 10, label: 'clean' });
+    expect(reviewTierFor(clean, undefined)).toEqual({ tier: 9, label: 'clean' });
   });
 
   it('fills the bundle tier by tier', () => {
@@ -351,7 +379,7 @@ describe('review tiers and bundle selection', () => {
       'map-low-1',
       'map-clean-1',
     ]);
-    expect(selection.map((entry) => entry.tier)).toEqual([0, 1, 10]);
+    expect(selection.map((entry) => entry.tier)).toEqual([0, 2, 9]);
   });
 });
 

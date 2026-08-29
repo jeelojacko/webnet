@@ -83,7 +83,7 @@ export const computeReliability = (records: JobAuditRecord[]) => {
     }));
   return {
     selectedJobs: records.length,
-    accepted: accepted.length,
+    acceptedJobs: accepted.length,
     permanentlyFailed: permanentlyFailed.length,
     // Provider reliability is separate from semantic reliability: jobs with
     // no semantic attempts are provider-incomplete, not semantic failures.
@@ -93,8 +93,22 @@ export const computeReliability = (records: JobAuditRecord[]) => {
     firstTryAccepted: records.filter((record) => record.firstTryAccepted).length,
     firstSemanticAttemptAccepted: records.filter((record) => record.firstSemanticAttemptAccepted)
       .length,
-    acceptedAfterRetry:
-      accepted.length - records.filter((record) => record.firstTryAccepted).length,
+    // "Accepted after retry" was ambiguous (provider retries look identical to
+    // semantic retries in a combined count); the split below keeps the two
+    // recovery paths separately accountable.
+    acceptedAfterSemanticRetry: accepted.filter((record) => record.semanticAttempts > 0).length,
+    acceptedAfterProviderRecovery: accepted.filter((record) => record.providerAttempts > 0).length,
+    semanticRetryJobs: records.filter((record) => record.semanticAttempts > 0).length,
+    // Of the jobs that needed at least one semantic retry, how many eventually
+    // produced an accepted result.
+    semanticRecoveryRate: (() => {
+      const retried = records.filter((record) => record.semanticAttempts > 0).length;
+      return retried > 0
+        ? Number(
+            (accepted.filter((record) => record.semanticAttempts > 0).length / retried).toFixed(3),
+          )
+        : 0;
+    })(),
     totalAttempts,
     semanticAttemptsTotal,
     providerAttemptsTotal,
@@ -295,7 +309,7 @@ export const computeV1Comparison = (
     const v2 = record.result as AiStudyMapResult;
     const v1 = v1Result;
     const priorityComparable =
-      v1.suggestedPriority !== undefined && v2.suggestedPriority !== undefined;
+      v1.suggestedPriority != null && v2.suggestedPriority != null;
     comparable.push({
       jobId: record.jobId,
       v1JobId: setJob.v1JobId,
@@ -311,8 +325,8 @@ export const computeV1Comparison = (
       },
       confidence: { v1: v1.confidence, v2: v2.confidence, same: v1.confidence === v2.confidence },
       priority: {
-        v1: v1.suggestedPriority,
-        v2: v2.suggestedPriority,
+        v1: v1.suggestedPriority ?? undefined,
+        v2: v2.suggestedPriority ?? undefined,
         same: priorityComparable ? v1.suggestedPriority === v2.suggestedPriority : undefined,
         comparable: priorityComparable,
       },
@@ -341,26 +355,95 @@ export const computeV1Comparison = (
 };
 
 /** Review tiers in priority order; index 0 fills first. */
+/**
+ * Structural/risk strata that justify extra human review on top of the
+ * semantic tiers. Kept as a stable list so bundle composition is auditable.
+ */
+const RISK_STRATA = [
+  'cross-reference-heavy provision',
+  'surveying-specific provision',
+  'large-operative-section',
+  'many-child-labels',
+  'definitions-context',
+  'direct-reference-context',
+  'omitted-context-warnings',
+  'deadline',
+  'filing requirement',
+  'prohibition',
+  'procedural rule',
+  'regulation-making power',
+  'short-simple-provision',
+] as const;
+
 export const reviewTierFor = (
   record: JobAuditRecord,
   finalIssues: NormalizedIssue[] | undefined,
 ): { tier: number; label: string } => {
   if (!record.accepted) return { tier: 0, label: 'permanent-failure' };
+  // Genuine semantic retries only: a job whose retries were all provider
+  // failures has no semantic reliability question for a human to review.
+  if (record.semanticAttempts > 0) return { tier: 1, label: 'semantic-retry' };
   const result = record.result as AiStudyMapResult;
-  if (result.confidence === 'low') return { tier: 1, label: 'low-confidence' };
-  if (record.totalAttempts >= 2) return { tier: 2, label: 'multi-attempt' };
+  if (result.confidence === 'low') return { tier: 2, label: 'low-confidence' };
+  if (result.disposition === 'needs-human-review') return { tier: 3, label: 'needs-human-review' };
   if ((finalIssues ?? []).some((issue) => issue.severity === 'warning'))
-    return { tier: 3, label: 'final-warning' };
-  if (result.disposition === 'needs-human-review') return { tier: 4, label: 'needs-human-review' };
-  if (result.disposition === 'reference-only' || result.disposition === 'skip') {
-    return { tier: 5, label: 'reference-only-or-skip' };
-  }
+    return { tier: 4, label: 'final-warning' };
+  if (result.suggestedPriority === 'P1') return { tier: 5, label: 'priority-p1' };
   if (result.proposedGroups.length >= 3) return { tier: 6, label: 'multi-group' };
-  if (result.suggestedPriority === 'P1') return { tier: 7, label: 'priority-p1' };
-  if (record.structuralStrata.includes('large-operative-section'))
-    return { tier: 8, label: 'large-input' };
-  if (result.confidence === 'medium') return { tier: 9, label: 'medium-confidence' };
-  return { tier: 10, label: 'clean' };
+  const risk = [...record.structuralStrata, ...record.categories].find((label) =>
+    (RISK_STRATA as readonly string[]).includes(label),
+  );
+  if (risk !== undefined) return { tier: 7, label: risk };
+  // Provider recovery is informational for humans: the semantic content was
+  // first-try clean, so it is reviewed only after every semantic tier is done.
+  if (record.providerAttempts > 0) return { tier: 8, label: 'provider-recovery' };
+  return { tier: 9, label: 'clean' };
+};
+
+/**
+ * Deterministic human-readable reason a record was selected into the review
+ * bundle. Stored on each bundle entry so a reviewer does not have to re-derive
+ * the trigger from attempt metadata.
+ */
+export const reviewReasonFor = (
+  record: JobAuditRecord,
+  tierLabel: string,
+  finalIssues: NormalizedIssue[] | undefined,
+): string => {
+  if (tierLabel === 'permanent-failure') {
+    // Dedupe: attempt records repeat a code once per offending issue.
+    const codes = record.permanentFailureAttempt
+      ? [...new Set(record.permanentFailureAttempt.issueCodes)].sort().join(', ')
+      : '';
+    return codes
+      ? `last semantic attempt failed with ${codes}`
+      : 'no semantic validation codes recorded';
+  }
+  switch (tierLabel) {
+    case 'semantic-retry':
+      return `semantic-retry: ${record.semanticAttempts} semantic attempt(s) failed before acceptance`;
+    case 'low-confidence':
+      return 'final result confidence is low';
+    case 'needs-human-review':
+      return 'final disposition is needs-human-review';
+    case 'final-warning':
+      return `final validation warning(s): ${
+        (finalIssues ?? [])
+          .filter((issue) => issue.severity === 'warning')
+          .map((issue) => issue.code)
+          .join(', ')
+      }`;
+    case 'priority-p1':
+      return 'final suggested priority is P1';
+    case 'multi-group':
+      return `final result proposes ${(record.result as AiStudyMapResult).proposedGroups.length} groups`;
+    case 'provider-recovery':
+      return `provider recovered after ${record.providerAttempts} provider failure(s)`;
+    case 'clean':
+      return 'clean control selected for disposition/stratum diversity';
+    default:
+      return `risk stratum: ${tierLabel}`;
+  }
 };
 
 /**
@@ -392,9 +475,14 @@ export const selectReviewBundle = (
       tierRecords[0],
       finalValidation.get(tierRecords[0]?.jobId),
     ).label;
+    // Clean controls are interleaved by disposition so the tail of the bundle
+    // still covers standalone/split/reference-only/skip diversity; every other
+    // tier interleaves by document.
+    const keyFor = (record: JobAuditRecord): string =>
+      tier === 9 ? String((record.result as AiStudyMapResult).disposition) : (record.documentId ?? '');
     const byDoc = new Map<string, JobAuditRecord[]>();
     for (const record of byTier.get(tier) as JobAuditRecord[]) {
-      const key = record.documentId ?? '';
+      const key = keyFor(record);
       const list = byDoc.get(key) ?? [];
       list.push(record);
       byDoc.set(key, list);
@@ -442,7 +530,10 @@ export const buildReviewBundleEntry = (args: {
     schemaVersion: 1,
     kind: 'study-map-semantic-review',
     jobId: record.jobId,
+    // Review metadata: label plus the deterministic trigger, so a reviewer
+    // does not have to re-derive the selection reason from attempt metadata.
     reviewTier: record.accepted ? args.tierLabel : 'permanent-failure',
+    reviewReason: reviewReasonFor(record, record.accepted ? args.tierLabel : 'permanent-failure', args.finalIssues),
     document: job?.document ?? setJob?.document ?? null,
     target: job
       ? {
@@ -472,8 +563,20 @@ export const buildReviewBundleEntry = (args: {
     complexityCategory: record.categories,
     structuralStrata: record.structuralStrata,
     failureOrigin: failureOrigin(record),
-    semanticAttempts: record.semanticAttempts,
+    reasonSelectedForReview: reviewReasonFor(record, args.tierLabel, args.finalIssues),
+    // semanticAttempts = semantic generations made (failed ones + the accepted
+    // one when the job succeeded); semanticInvalidAttempts = failed ones.
+    semanticAttempts: record.semanticAttempts + (record.accepted ? 1 : 0),
+    semanticInvalidAttempts: record.semanticAttempts,
     providerAttempts: record.providerAttempts,
+    providerFailureEvents: record.providerAttempts,
+    // A provider failure is only a recovery in hindsight of a job that
+    // ultimately produced an accepted result.
+    providerRecoveryEvents: record.accepted ? record.providerAttempts : 0,
+    finalConfidence: record.result !== null ? (record.result as AiStudyMapResult).confidence : null,
+    finalWarnings: (args.finalIssues ?? [])
+      .filter((issue) => issue.severity === 'warning')
+      .map((issue) => ({ code: issue.code, message: issue.message })),
     attemptCount: record.totalAttempts,
     retryIntroducedDifferentError: record.retryIntroducedDifferentError,
     attempts: record.attempts.map((attempt) => ({
