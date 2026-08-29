@@ -110,7 +110,20 @@ Root cause of the false negatives: `sourceTextByKey` in `src/study/ai/studyAiGro
 
 Evidence/defined-term matching is normalized before comparison (`normalizeForPhrase` in `studyAiGrounding.ts`): curly quotes and apostrophes are folded to straight forms, every non-letter/non-number character becomes a single space, whitespace collapses, and the text is trimmed and lowercased. Containment is then checked as a **contiguous whole-token sequence** (`tokensContain`), not as a raw substring: typographic punctuation, apostrophe style, and irregular whitespace are tolerated, but mid-token matches (for example `nit the` inside `unit the`) are rejected, and paraphrases or legally significant omissions still fail grounding. Paraphrase/omission/mid-token rejections are locked by focused tests.
 
-Deterministic re-validation of the four saved final attempts against the fixed validator: the Condominium s.1 and Highway s.44.1 attempts now pass with zero grounding issues; the Ownership of Minerals s.3 attempt still fails with three genuine `FOCUS_EVIDENCE_NOT_IN_SOURCE` citation errors (evidence from 3(1)(a)–(d) cited under child label 3(2)); the Quarriable Substances s.13 attempt still fails with genuine `SPLIT_GROUP_COUNT`/`SUGGESTED_PRIORITY_REQUIRED` structural errors. The historical run directory is immutable; fresh generation for the affected jobs goes through the post-Gate-A regression set below.
+Deterministic re-validation of the four saved final attempts against the fixed validator: the Condominium s.1 and Highway s.44.1 attempts now pass with zero grounding issues; the Ownership of Minerals s.3 attempt still fails with three genuine `FOCUS_EVIDENCE_NOT_IN_SOURCE` citation errors (evidence from 3(1)(a)–(d) cited under child label 3(2)); the Quarriable Substances s.13 attempt still fails with genuine `SPLIT_GROUP_COUNT`/`SUGGESTED_PRIORITY_REQUIRED` structural errors.
+
+### Deterministic result recovery (2026-08-29)
+
+Saved rejection attempts are immutable evidence and canonical results are append-only, so a validator bug that invalidated previously rejected attempts is repaired with a separate deterministic CLI (`scripts/studyAiRecoverMapResult.ts`, no model inference) instead of re-running the model:
+
+```bash
+npm run study:ai:recover-result -- \
+  --run <run-id> \
+  --job <job-id> [--job <job-id> ...] \
+  [--attempt <n>] [--dry-run]
+```
+
+For each requested job it revalidates the saved `local-failures/<jobId>/attempt-N` raw responses against the current canonical validator and the prepared job (identity, `authoringInputFingerprint`, raw hash), selects the highest-numbered validating attempt (or an explicit `--attempt`), appends the normalized result to the canonical `results/*.jsonl`, and writes `results/<jobId>.provenance.json` with `accepted: true`, the original attempt, `recovery.sourceAttempt`, `recovery.reason`, and `recoveredVia: study:ai:recover-result`. Jobs that already have an accepted result are refused, historical attempt artifacts are preserved unchanged, and `--dry-run` validates without writing. This closed the Gate A run at **198/200**: `map-3f89b1579eed6e71` (Condominium s.1) and `map-562652e92d734a71` (Highway s.44.1) were recovered from saved attempt 6 without new inference, leaving only the two genuine model failures (Ownership of Minerals s.3, Quarriable Substances s.13); the regenerated audit reports 0.99 acceptance and zero provider-incomplete jobs. Fresh generation for the remaining genuine failures goes through the post-Gate-A regression set below.
 
 ### Post-Gate-A regression set
 
@@ -118,7 +131,7 @@ A fixed, named regression population (no sampling, no inference) is built determ
 
 ```bash
 npx tsx scripts/studyAiBuildRegressionSet.ts \
-  --base-run ai-map-4c12-full-corpus-v2 \
+  --base-run ai-map-2026-08-29T12-23-57-891Z \
   --v1-run ai-map-4c1-full-corpus-v1 \
   --out study-content/ai/runs/ai-map-4c12-full-corpus-v2/reports/post-gate-a-regression-set.json
 ```
@@ -128,7 +141,7 @@ The set (order is significant and fingerprinted in `sampleSha256`) contains:
 - the four Gate A permanent-failure jobs (Condominium s.1, Highway s.44.1, Ownership of Minerals s.3, Quarriable Substances s.13) — the first two exercise the clobber fix; the latter two require fresh model generation;
 - Clean Water Act s.13.1 (11-subsection density) and Limitation of Actions Act s.33 (consequential-amendment handling);
 - Devolution of Estates Act s.21 (short provision — source-discipline wording) and Bituminous Shale Act s.27 (dense provision — actor narrowing);
-- Regulation 83-130 s.7 (short source — input-boundary/truncation behavior);
+- Regulation 83-130 s.7 (short source — input-boundary/truncation behavior). Because job IDs are content-addressed over the job payload, the 2026-08-29 corpus repair that restored the full s.7 text (ending `…in Form 3.`) changed this one job ID from `map-6425c3270b73132a` to `map-196dd23bfe5fb2b8`; the set is therefore built from `ai-map-2026-08-29T12-23-57-891Z`, the full-corpus job set re-prepared from the repaired content package. All ten other job IDs are unchanged.
 - Gas Distribution Act s.4 (source contains the `LGiC` acronym — invented-acronym discipline) plus Gas Distribution Act s.12 as a clean same-document control.
 
 The builder performs no model calls and writes byte-identical JSON for the same base run. To execute it against the local model later, start a fresh run directory prepared from the base corpus and pass this comparison set:

@@ -29,7 +29,7 @@ import { waitForProviderHealth } from './studyAiProviderRecovery';
 
 export { buildValidationRetryNote } from './studyAiLocalMapAuthorRetry';
 
-const RUNS_DIR = 'study-content/ai/runs';
+export const RUNS_DIR = 'study-content/ai/runs';
 
 const RUNNER_OWNED_RESULT_IDENTITY: ReadonlySet<string> = new Set([
   'schemaVersion',
@@ -296,11 +296,12 @@ const parseJson = <T>(text: string, source: string): T => {
   }
 };
 
-const readJson = <T>(path: string): T => parseJson<T>(readFileSync(path, 'utf8'), path);
-const writeJson = (path: string, value: unknown): void =>
+export const readJson = <T>(path: string): T => parseJson<T>(readFileSync(path, 'utf8'), path);
+export const writeJson = (path: string, value: unknown): void =>
   writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`);
-const hashText = (value: string): string => createHash('sha256').update(value).digest('hex');
-const readJsonl = <T>(path: string): T[] =>
+export const hashText = (value: string): string =>
+  createHash('sha256').update(value).digest('hex');
+export const readJsonl = <T>(path: string): T[] =>
   existsSync(path)
     ? readFileSync(path, 'utf8')
         .split(/\r?\n/)
@@ -308,7 +309,7 @@ const readJsonl = <T>(path: string): T[] =>
         .map((line, index) => parseJson<T>(stripUtf8Bom(line), `${path}:${index + 1}`))
     : [];
 
-const writeJsonlAtomic = (path: string, rows: unknown[]): void => {
+export const writeJsonlAtomic = (path: string, rows: unknown[]): void => {
   const tempPath = `${path}.tmp`;
   writeFileSync(
     tempPath,
@@ -317,21 +318,29 @@ const writeJsonlAtomic = (path: string, rows: unknown[]): void => {
   renameSync(tempPath, path);
 };
 
-const jobsDirFor = (runId: string): string => join(RUNS_DIR, runId, 'jobs');
+const jobsDirFor = (runsDir: string, runId: string): string => join(runsDir, runId, 'jobs');
 
-const batchJobFiles = (runId: string, batch?: string): string[] => {
-  if (batch) return [join(jobsDirFor(runId), `batch-${batch.padStart(3, '0')}.jobs.jsonl`)];
+export const batchJobFiles = (
+  runId: string,
+  batch?: string,
+  runsDir: string = RUNS_DIR,
+): string[] => {
+  if (batch) return [join(jobsDirFor(runsDir, runId), `batch-${batch.padStart(3, '0')}.jobs.jsonl`)];
   const manifest = readJson<{ batchCount: number }>(
-    join(RUNS_DIR, runId, 'reports', 'batch-manifest.json'),
+    join(runsDir, runId, 'reports', 'batch-manifest.json'),
   );
   return Array.from(
     { length: manifest.batchCount },
-    (_, index) => join(jobsDirFor(runId), `batch-${String(index + 1).padStart(3, '0')}.jobs.jsonl`),
+    (_, index) =>
+      join(jobsDirFor(runsDir, runId), `batch-${String(index + 1).padStart(3, '0')}.jobs.jsonl`),
   );
 };
 
-const loadBatchJobs = (runId: string, batch?: string): AiStudyMapJob[] =>
-  batchJobFiles(runId, batch).flatMap((file) => readJsonl<AiStudyMapJob>(file));
+export const loadBatchJobs = (
+  runId: string,
+  batch?: string,
+  runsDir: string = RUNS_DIR,
+): AiStudyMapJob[] => batchJobFiles(runId, batch, runsDir).flatMap((file) => readJsonl<AiStudyMapJob>(file));
 
 const applySelection = (allJobs: AiStudyMapJob[], options: RunnerOptions): AiStudyMapJob[] => {
   const selectedIds = options.comparisonSet
@@ -348,7 +357,7 @@ const applySelection = (allJobs: AiStudyMapJob[], options: RunnerOptions): AiStu
   );
 };
 
-const resultPath = (runId: string): string =>
+export const resultPath = (runId: string): string =>
   join(RUNS_DIR, runId, 'results', 'local-map.results.jsonl');
 
 const runMetadataPath = (runId: string): string =>
@@ -420,7 +429,7 @@ const validateRunMetadata = (options: RunnerOptions, identity: RunIdentity): voi
       `Refusing to run ${options.runId}: comparison set hash ${identity.comparisonSetSha256} does not match metadata ${metadata.comparisonSetSha256}.`,
     );
   for (const [name, expected] of Object.entries(metadata.jobsFileSha256)) {
-    const file = join(jobsDirFor(options.runId), name);
+    const file = join(jobsDirFor(RUNS_DIR, options.runId), name);
     const actual = existsSync(file) ? hashText(readFileSync(file, 'utf8')) : null;
     if (actual !== expected)
       throw new Error(
@@ -561,7 +570,7 @@ const withRunnerIdentity = (value: Record<string, unknown>, job: AiStudyMapJob):
   } as AiStudyMapResult;
 };
 
-const validateLocalResult = (
+export const validateLocalResult = (
   value: unknown,
   job: AiStudyMapJob,
 ): { result?: AiStudyMapResult; issues: string[]; report?: AiValidationReport } => {
