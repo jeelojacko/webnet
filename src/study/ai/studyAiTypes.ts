@@ -97,6 +97,7 @@ export type AiSourceContentFlags = {
   citationOnly?: boolean;
   transitional?: boolean;
   consequentialAmendment?: boolean;
+  staticGeographicBoundaryDescription?: boolean;
 };
 
 export type AiSourceMetadata = {

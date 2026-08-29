@@ -12,11 +12,13 @@ import {
 import { __studyAiAuditMapRunTest } from '../../scripts/studyAiAuditMapRun';
 import { __studyAiBuildStratifiedMapSampleTest } from '../../scripts/studyAiBuildStratifiedMapSample';
 import {
+  buildReviewBundleEntry,
   computeConcision,
   computeHygiene,
   computePerStratum,
   computeReliability,
   computeV1Comparison,
+  reviewReasonFor,
   reviewTierFor,
   selectReviewBundle,
   wordStats,
@@ -568,6 +570,116 @@ describe('auditor and sampler CLI contracts', () => {
       expect([...byJobId.keys()].sort()).toEqual(['v1-bom', 'v1-plain']);
     } finally {
       rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('selectReviewBundle per-record labeling for tier-7 risk strata', () => {
+  const finalValidation = new Map<string, ReturnType<typeof normalizeIssue>[]>([]);
+
+  const riskStratumRecord = (
+    jobId: string,
+    structuralStrata: string[],
+    categories: string[],
+  ): JobAuditRecord =>
+    makeRecord(jobId, {
+      result: makeResult(jobId, {
+        suggestedPriority: 'P3',
+        proposedGroups: [makeGroup(jobId)],
+      }),
+      structuralStrata,
+      categories,
+      totalAttempts: 1,
+      accepted: true,
+      firstTryAccepted: true,
+      firstSemanticAttemptAccepted: true,
+    });
+
+  const riskStratumRecords = (): JobAuditRecord[] => [
+    riskStratumRecord('map-regulation', [], ['regulation-making power']),
+    riskStratumRecord('map-prohibition', ['prohibition'], []),
+    riskStratumRecord('map-definitions', ['definitions-context'], []),
+  ];
+
+  it('assigns each tier-7 record its own risk label', () => {
+    const regulation = riskStratumRecord('map-regulation', [], ['regulation-making power']);
+    const prohibition = riskStratumRecord('map-prohibition', ['prohibition'], []);
+    const definitions = riskStratumRecord('map-definitions', ['definitions-context'], []);
+    const records = [regulation, prohibition, definitions];
+    const selection = selectReviewBundle(records, 10, finalValidation);
+    expect(selection).toHaveLength(3);
+    const labels = selection.map((entry) => entry.tierLabel);
+    expect(new Set(labels).size).toBe(3);
+    for (const entry of selection) {
+      const own = reviewTierFor(entry.record, finalValidation.get(entry.record.jobId));
+      expect(entry.tier).toBe(7);
+      expect(entry.tierLabel).toBe(own.label);
+      const built = buildReviewBundleEntry({
+        record: entry.record,
+        tier: entry.tier,
+        tierLabel: entry.tierLabel,
+        job: null,
+        setJob: null,
+        finalIssues: finalValidation.get(entry.record.jobId),
+        v1Result: null,
+        v1Location: null,
+      });
+      expect(built.reviewTier).toBe(entry.tierLabel);
+      expect(built.reasonSelectedForReview).toBe(`risk stratum: ${entry.tierLabel}`);
+    }
+  });
+
+  it('clean records remain clean', () => {
+    const clean1 = acceptedRecord('map-clean-1', { disposition: 'standalone' });
+    const clean2 = acceptedRecord('map-clean-2', { disposition: 'skip', suggestedPriority: 'P2' });
+    const selection = selectReviewBundle([clean1, clean2, ...riskStratumRecords()], 10, finalValidation);
+    const cleanEntries = selection.filter(
+      (entry) => entry.record.jobId === 'map-clean-1' || entry.record.jobId === 'map-clean-2',
+    );
+    expect(cleanEntries).toHaveLength(2);
+    for (const entry of cleanEntries) {
+      expect(entry.tier).toBe(9);
+      expect(entry.tierLabel).toBe('clean');
+      const built = buildReviewBundleEntry({
+        record: entry.record,
+        tier: entry.tier,
+        tierLabel: entry.tierLabel,
+        job: null,
+        setJob: null,
+        finalIssues: finalValidation.get(entry.record.jobId),
+        v1Result: null,
+        v1Location: null,
+      });
+      expect(built.reviewTier).toBe('clean');
+      expect(built.reasonSelectedForReview).toBe('clean control selected for disposition/stratum diversity');
+    }
+  });
+
+  it('full-size review returns every record truthfully labeled', () => {
+    const regulation = riskStratumRecord('map-regulation', [], ['regulation-making power']);
+    const prohibition = riskStratumRecord('map-prohibition', ['prohibition'], []);
+    const definitions = riskStratumRecord('map-definitions', ['definitions-context'], []);
+    const lowConf = acceptedRecord('map-low', { confidence: 'low' });
+    const clean = acceptedRecord('map-clean', { disposition: 'standalone' });
+    const records = [regulation, prohibition, definitions, lowConf, clean];
+    const selection = selectReviewBundle(records, 100, finalValidation);
+    expect(selection).toHaveLength(records.length);
+    for (const entry of selection) {
+      const own = reviewTierFor(entry.record, finalValidation.get(entry.record.jobId));
+      expect(entry.tier).toBe(own.tier);
+      expect(entry.tierLabel).toBe(own.label);
+      const built = buildReviewBundleEntry({
+        record: entry.record,
+        tier: entry.tier,
+        tierLabel: entry.tierLabel,
+        job: null,
+        setJob: null,
+        finalIssues: finalValidation.get(entry.record.jobId),
+        v1Result: null,
+        v1Location: null,
+      });
+      expect(built.reviewTier).toBe(own.label);
+      expect(built.reasonSelectedForReview).toBe(reviewReasonFor(entry.record, own.label, finalValidation.get(entry.record.jobId)));
     }
   });
 });

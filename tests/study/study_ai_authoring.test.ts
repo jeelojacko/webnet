@@ -21,6 +21,9 @@ import type {
 } from '../../src/study/ai/studyAiTypes';
 import { batchMapJobsByEstimatedSize } from '../../scripts/studyAiFullCorpusMap';
 import {
+  __studyAiAuthoringTest,
+} from '../../scripts/studyAiAuthoring';
+import {
   buildCorpusInventoryReport,
   classifyComponentEligibility,
   documentReportingType,
@@ -903,6 +906,11 @@ describe('AI authoring schemas and validation', () => {
     // Output hygiene: no prompt/calibration leakage or structured labels in prose.
     expect(mapSpec).toContain('Calibration examples are instructions for your reasoning only');
     expect(mapSpec).toContain('Do not embed structured result labels');
+
+    // Static geographic boundary descriptions are reference-only by default.
+    expect(mapSpec).toContain('Static geographic boundary descriptions');
+    expect(mapSpec).toContain('staticGeographicBoundaryDescription');
+    expect(mapSpec).toContain('land-surveyor registration, licensing, and practice rules');
 
     // P1-P4 priority calibration.
     expect(mapSpec).toContain('P1: highest-value recall material');
@@ -1922,3 +1930,108 @@ describe('AI proposal lifecycle and StudyUnit mapping', () => {
     expect(restored.units.at(-1)?.aiAuthoring?.proposalId).toBe(proposal.proposalId);
   });
 });
+
+describe('AI authoring content flags', () => {
+  const authoring = () => __studyAiAuthoringTest;
+
+  it('classifies bare repeal stubs as repeal-only and mixed provisions as containing repealed subprovisions', () => {
+    const { isRepealOnlyText, contentFlagsFromComponent } = authoring();
+
+    // reg-land-titles-83-130 section:8 (jobId map-7c5c826deff79d15): full real text verbatim.
+    const reg8 = '8Repealed: 2000-38\n2000-38';
+    expect(isRepealOnlyText(reg8)).toBe(true);
+    const flags8 = contentFlagsFromComponent({ text: reg8 } as never)!;
+    expect(flags8.repealOnly).toBe(true);
+    expect(flags8.containsRepealedSubprovision).toBe(false);
+
+    // reg-land-titles-83-130 section:10 (jobId map-97da9b45be9f1d85): verbatim slice from the
+    // beginning, ending at the 'Repealed:' subprovision marker.
+    const reg10 =
+      '10(1)A debenture which contains a mortgage or other charge of registered land shall be in Form 56 and the heading is part of the form.\n\n10(2)The holder of a debenture who wishes to register the debenture against registered land shall file an application with the registrar in Form 57.\n\n10(3)Repealed: 2000-38';
+    expect(isRepealOnlyText(reg10)).toBe(false);
+    const flags10 = contentFlagsFromComponent({ text: reg10 } as never)!;
+    expect(flags10.repealOnly).toBe(false);
+    expect(flags10.containsRepealedSubprovision).toBe(true);
+
+    // reg-land-titles-83-130 section:15 (jobId map-abdb8773e58aa2de): verbatim slice ending
+    // at the 'Repealed:' subprovision marker.
+    const reg15 =
+      '15(1)The registrar shall receive survey plans of registered land which comply with the requirements of the Act and regulations upon payment of the prescribed fee.\n\n15(2)Repealed: 2000-38';
+    expect(isRepealOnlyText(reg15)).toBe(false);
+    const flags15 = contentFlagsFromComponent({ text: reg15 } as never)!;
+    expect(flags15.repealOnly).toBe(false);
+    expect(flags15.containsRepealedSubprovision).toBe(true);
+
+    // registry act section:15.1 (jobId map-8dce01c6b87c5882): full real text verbatim.
+    const reg151 =
+      '15.1Repealed: 2008, c.20, s.4\n1980, c.47, s.1; 1989, c.N-5.01, s.38; 1998, c.12, s.18; 2008, c.20, s.4';
+    expect(isRepealOnlyText(reg151)).toBe(true);
+    const flags151 = contentFlagsFromComponent({ text: reg151 } as never)!;
+    expect(flags151.repealOnly).toBe(true);
+    expect(flags151.containsRepealedSubprovision).toBe(false);
+
+    // registry act section:50 (jobId map-c78b434562a0b8a9): verbatim slice ending at the
+    // 'Repealed:' subprovision marker.
+    const reg50 =
+      'Registration of original instrument, annexed plan, instrument conveying parcel\n\n50(1)Except as otherwise provided by this Act or any other law of the Province, all instruments that may be registered under this Act shall be registered upon the production to the registrar of the original instrument, when but one is executed; or, when such instrument is in two or more original parts, upon the production of one such part.\n\n50(2)Where an instrument to be registered is in two or more original parts, and two or more of such original parts are produced together to the registrar at the time of registration, he shall register one of such parts and endorse thereon the certificate and endorsement by this Act provided to be endorsed upon the registry of such instrument, and he shall also, at the request of the person registering, and on being paid the fee for such certificate, make a like endorsement and certificate upon the other original part so presented; and any original so certified and endorsed may be received in evidence in any court in like manner, and with the same effect, as if it were the only original presented for registry and registered.\n\n50(2.1)Repealed: 2008, c.20, s.6';
+    expect(isRepealOnlyText(reg50)).toBe(false);
+    const flags50 = contentFlagsFromComponent({ text: reg50 } as never)!;
+    expect(flags50.repealOnly).toBe(false);
+    expect(flags50.containsRepealedSubprovision).toBe(true);
+  });
+
+  it('classifies headed repeal stubs as repeal-only and headed live repeal provisions as current', () => {
+    const { contentFlagsFromComponent, sourceStatusFromComponent } = authoring();
+
+    // Devolution of Estates Act section:33 (jobId map-8e49ad6f7094b15b): fully repealed
+    // section whose text embeds its heading; the body is the bare '33Repealed:' stub.
+    const dev33 = {
+      text: 'Right to dower or curtesy\n\n33Repealed: 2006, c.18, s.2\nR.S., c.62, s.32; 2006, c.18, s.2',
+      heading: 'Right to dower or curtesy',
+    } as never;
+    const dev33Flags = contentFlagsFromComponent(dev33)!;
+    expect(dev33Flags.repealOnly).toBe(true);
+    expect(dev33Flags.containsRepealedSubprovision).toBe(false);
+    expect(sourceStatusFromComponent(dev33)).toBe('repealed');
+
+    // ALPDA section:10 (jobId map-a69ca10a80667d9f): heading, a bare 'Repealed:' line,
+    // amendment history, then the '10Repealed:' stub with citations. Fully repealed.
+    const alpda10 = {
+      text: 'Registered agricultural land\n\nRepealed: 2017, c.20, s.2\n\n2017, c.20, s.2\n\n10Repealed: 2017, c.20, s.2\n1998, c.41, s.5; 2000, c.26, s.13; 2005, c.7, s.1; 2006, c.16, s.7; 2012, c.39, s.10; 2017, c.20, s.2',
+      heading: 'Registered agricultural land',
+    } as never;
+    const alpda10Flags = contentFlagsFromComponent(alpda10)!;
+    expect(alpda10Flags.repealOnly).toBe(true);
+    expect(alpda10Flags.containsRepealedSubprovision).toBe(false);
+    expect(sourceStatusFromComponent(alpda10)).toBe('repealed');
+
+    // Aquaculture Act section:97: LIVE repeal provision under a heading; the section
+    // itself repeals a regulation and must stay current with a repealed subprovision note.
+    const aqua97 = {
+      text: 'Repeal of New Brunswick Regulation 91-158 under the Aquaculture Act\n\n97New Brunswick Regulation 91-158 under the Aquaculture Act is repealed.',
+      heading: 'Repeal of New Brunswick Regulation 91-158 under the Aquaculture Act',
+    } as never;
+    const aqua97Flags = contentFlagsFromComponent(aqua97)!;
+    expect(aqua97Flags.repealOnly).toBe(false);
+    expect(aqua97Flags.containsRepealedSubprovision).toBe(true);
+    expect(sourceStatusFromComponent(aqua97)).toBe('current');
+  });
+
+  it('flags static geographic boundary descriptions', () => {
+    const { contentFlagsFromComponent } = authoring();
+
+    // Territorial Division Act section:19 (jobId map-30a62b622ff6bca5): verbatim slice
+    // containing 'bounded as follows'.
+    const td19 =
+      'Divisions of Charlotte County\n\n19CHARLOTTE COUNTY is divided into the several divisions hereinafter named and bounded as follows:\n\n(a)\nCAMPOBELLO PARISH.- Being the island';
+    const flags19 = contentFlagsFromComponent({ text: td19 } as never)!;
+    expect(flags19.staticGeographicBoundaryDescription).toBe(true);
+
+    // Surveys Act section:14 (jobId map-022de9af0c2cc613): full real text verbatim.
+    const surveys14 =
+      'Offences and penalties\n\n14(1)A person who violates or fails to comply with any provision of the regulations commits an offence punishable under Part 2 of the Provincial Offences Procedure Act as a category B offence.\n\n14(2)A person who obstructs the Director of Surveys or any surveyor appointed by the Director of Surveys in the establishment or maintenance of coordinate monuments commits an offence punishable under Part 2 of the Provincial Offences Procedure Act as a category E offence.\n\n14(3)A person who obstructs the Director of Surveys, a surveyor, a surveyor’s assistant or any person authorized by Service New Brunswick in making a survey or tying to a coordinate monument under this Act commits an offence punishable under Part 2 of the Provincial Offences Procedure Act as a category E offence.\n\nR.S.1973, c.S-17, s.12, s.13, s.14; 1989, c.N-5.01, s.40; 1990, c.61, s.135; 1998, c.12, s.20; 1999, c.4, s.14, s.15';
+    const flagsSurveys14 = contentFlagsFromComponent({ text: surveys14 } as never)!;
+    expect(flagsSurveys14.staticGeographicBoundaryDescription).toBe(false);
+  });
+});
+

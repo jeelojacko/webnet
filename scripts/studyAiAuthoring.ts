@@ -305,14 +305,32 @@ const cleanAiSourceText = (
   };
 };
 
+// A provision is repeal-only when the whole text is a bare repeal stub: an optional
+// short provision label made of DIGITS, dots, parentheses, hyphens and spaces only
+// (never letters, so the prefix cannot span past the first label token into
+// operative text), followed by optional spaces and then 'Repealed:' or
+// 'Repealed.' (case-insensitive). e.g. '10.', '15.1', '(3)', '10(3)', '10. (3)'.
 const isRepealOnlyText = (text: string): boolean =>
-  /^\s*(?:[A-Za-z0-9().\s-]+)?Repealed(?::|\.)/i.test(text.trim());
+  /^\s*(?:[0-9().\s-]+)?Repealed(?::|\.)/i.test(text.trim());
+
+// Component text may embed the section heading as its first line (e.g.
+// 'Right to dower or curtesy\n\n33Repealed: 2006, c.18, s.2'). For body
+// classification, strip the leading heading (when `heading` is set and the
+// trimmed text starts with it) so isRepealOnlyText only sees provision text.
+const componentBodyText = (component: NbLawDocumentComponent): string => {
+  const text = component.text.trim();
+  const heading = component.heading?.trim();
+  if (heading && text.startsWith(heading)) {
+    return text.slice(heading.length).trim();
+  }
+  return text;
+};
 
 const sourceStatusFromComponent = (
   component: NbLawDocumentComponent,
 ): 'current' | 'repealed' | 'historical' => {
   const normalized = component.text.toLowerCase();
-  if (isRepealOnlyText(component.text)) return 'repealed';
+  if (isRepealOnlyText(componentBodyText(component))) return 'repealed';
   if (/\bhistorical\b/.test(normalized)) return 'historical';
   return 'current';
 };
@@ -341,10 +359,11 @@ const contentFlagsFromComponent = (
 ): AiStudyMapJob['target']['contentFlags'] => {
   const text = component.text;
   const normalized = text.toLowerCase();
+  const repealBody = componentBodyText(component);
   const citationOnly = /\bmay be cited as\b/i.test(text) && text.length < 700;
   return {
-    containsRepealedSubprovision: /\brepealed\b/i.test(text) && !isRepealOnlyText(text),
-    repealOnly: isRepealOnlyText(text),
+    containsRepealedSubprovision: /\brepealed\b/i.test(text) && !isRepealOnlyText(repealBody),
+    repealOnly: isRepealOnlyText(repealBody),
     commencementOnly:
       !citationOnly &&
       /\bcomes? into force\b|\bfixed by proclamation\b/i.test(text) &&
@@ -352,6 +371,7 @@ const contentFlagsFromComponent = (
     citationOnly,
     transitional: /\btransitional\b/i.test(normalized),
     consequentialAmendment: isConsequentialAmendmentText(text),
+    staticGeographicBoundaryDescription: /\bbounded\s+as\s+follows\b/i.test(text),
   };
 };
 
@@ -2182,4 +2202,7 @@ export const __studyAiAuthoringTest = {
   structuralChildLabelsFromComponent,
   authoringInputFingerprint,
   isConsequentialAmendmentText,
+  isRepealOnlyText,
+  sourceStatusFromComponent,
+  contentFlagsFromComponent,
 };

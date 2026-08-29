@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { __studyAiGroundingTest } from '../../src/study/ai/studyAiGrounding';
 
-const { splitGluedClauseNumbers, normalizeForPhraseTokens, evidenceSupported } =
-  __studyAiGroundingTest;
+const {
+  splitGluedClauseNumbers,
+  normalizeForPhraseTokens,
+  hasOmissionMarker,
+  matchSplitEvidence,
+  evidenceSupported,
+} = __studyAiGroundingTest;
 
 // Exact saved REGULATION 83-130 s.7 attempt-1 material (revalidated in place; no
 // run history is rewritten). The model cited the operative sentence without the
@@ -75,5 +80,105 @@ describe('Study Map evidence grounding normalization', () => {
     expect(evidenceSupported(source, "A person's objection must be delivered in writing")).toBe(
       true,
     );
+  });
+});
+
+// Exact REGULATION 83-130 s.24(11) source text from the saved ai-map run
+// (batch-143, job map-daf65fa0b0594df6): the operative text contains the OCR
+// whitespace artifact "a r easonable time". The model's cleaned evidence quotes
+// the same sentence with "a reasonable time"; the exact whole-token path cannot
+// match ('r' and 'easonable' are separate source tokens), so the split-tolerant
+// fallback must accept it.
+const S24_11_SOURCE =
+  '24(11) Documents and things put in evidence at a hearing\n' +
+  'of the Discipline Committee shall, upon the request of the\n' +
+  'party who produced them, be returned by the Committee\n' +
+  'within a r easonable time after the matter in issue has been\n' +
+  'finally determined.';
+const S24_11_EVIDENCE =
+  'Documents and things put in evidence at a hearing of the Discipline Committee shall, upon the request of the party who produced them, be returned by the Committee within a reasonable time after the matter in issue has been finally determined.';
+
+describe('Study Map evidence grounding split tolerance (fallback)', () => {
+  it('matches a single source word split by an OCR whitespace artifact', () => {
+    expect(
+      matchSplitEvidence(
+        normalizeForPhraseTokens('within a r easonable time after the matter'),
+        normalizeForPhraseTokens('within a reasonable time'),
+      ),
+    ).toBe(true);
+  });
+
+  it('matches the real s.24(11) corpus case via evidenceSupported', () => {
+    expect(evidenceSupported(S24_11_SOURCE, S24_11_EVIDENCE)).toBe(true);
+  });
+
+  it('matches the exact s.24(11) fragment that triggered the fallback', () => {
+    expect(evidenceSupported(S24_11_SOURCE, 'within a reasonable time after the matter in issue')).toBe(
+      true,
+    );
+  });
+
+  it('matches evidence across multiple split source words and hyphenation', () => {
+    expect(
+      evidenceSupported(
+        'the As sociation adopts these By-laws within a r easonable time',
+        'the Association adopts these By-laws within a reasonable time',
+      ),
+    ).toBe(true);
+  });
+
+  it('does not let the fallback accept a missing word', () => {
+    expect(evidenceSupported('reasonable care is required', 'reasonable care required')).toBe(false);
+    expect(evidenceSupported(S24_11_SOURCE, 'within a reasonable after the matter')).toBe(false);
+  });
+
+  it('does not let the fallback accept an extra word', () => {
+    expect(evidenceSupported('reasonable care is required', 'reasonable care is indeed required')).toBe(
+      false,
+    );
+  });
+
+  it('does not let the fallback accept a substituted word', () => {
+    expect(evidenceSupported('reasonable care is required', 'reasonable cure is required')).toBe(false);
+    expect(evidenceSupported('unit the', 'nit the')).toBe(false);
+    expect(evidenceSupported(S24_11_SOURCE, 'within a reasonable period after the matter')).toBe(false);
+  });
+
+  it('never accepts ellipsis/omission evidence, even when the split would otherwise align', () => {
+    expect(evidenceSupported('reasonable care is required', 'reasonable care ... required')).toBe(false);
+    expect(evidenceSupported('reasonable care is required', 'reasonable care \u2026 required')).toBe(false);
+    expect(evidenceSupported('reasonable care is required', 'reasonable care .. required')).toBe(false);
+  });
+
+  it('keeps the omission guard fallback-only: single dots still pass via the primary path', () => {
+    expect(evidenceSupported('see section 5.2 for details', 'see section 5.2 for details')).toBe(true);
+  });
+
+  it('rejects substring and mid-word token splits', () => {
+    expect(evidenceSupported('reasonable care is required', 'reason')).toBe(false);
+    expect(
+      matchSplitEvidence(normalizeForPhraseTokens('reasonable care'), normalizeForPhraseTokens('reas onable')),
+    ).toBe(false);
+    expect(
+      matchSplitEvidence(normalizeForPhraseTokens('ab c'), normalizeForPhraseTokens('a bc')),
+    ).toBe(false);
+  });
+
+  it('rejects evidence longer than the source and boundary-aligned substitutions', () => {
+    expect(evidenceSupported('reasonable care', 'reasonable care is required')).toBe(false);
+    expect(matchSplitEvidence(normalizeForPhraseTokens('land'), normalizeForPhraseTokens('title'))).toBe(
+      false,
+    );
+    expect(
+      matchSplitEvidence(normalizeForPhraseTokens('ab cd'), normalizeForPhraseTokens('ac bd')),
+    ).toBe(false);
+  });
+
+  it('flags raw ellipsis markers directly', () => {
+    expect(hasOmissionMarker('reasonable care ... required')).toBe(true);
+    expect(hasOmissionMarker('reasonable care \u2026 required')).toBe(true);
+    expect(hasOmissionMarker('a..b')).toBe(true);
+    expect(hasOmissionMarker('section 5.2 of the Act')).toBe(false);
+    expect(hasOmissionMarker('plain evidence without dots')).toBe(false);
   });
 });

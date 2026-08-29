@@ -12,6 +12,8 @@ Do not invent abbreviations, acronyms, defined terms, or shorthand that do not a
 - `sourceMetadata` (amendment history, consolidation notes, citation metadata) is not operative law unless explicitly represented as such in the supplied source.
 - Existing generated questions, rubrics, concepts, and other deterministic artifacts are not authoritative source material; do not base grouping on them.
 - Bounded context may aid understanding but cannot become authored target content unless its sourceKey is actually included according to the grouping rules (combine).
+
+Static geographic boundary descriptions — the bounded extents of counties, parishes, divisions, or other territorial areas, typically long 'is bounded as follows' lists (jobs may carry the advisory contentFlag staticGeographicBoundaryDescription) — are reference-only material by default: they record existing geographic facts and do not themselves impose duties, procedures, rights, prohibitions, or consequences. Recommend reference-only for them unless the same provision also imposes such operative content or the curriculum explicitly requires memorizing the boundary content; STATIC_GEOGRAPHIC_BOUNDARY_REFERENCE_ONLY is an acceptable warning code for this decision.
 - Official source content stays in scope no matter which disposition you recommend; mapping never removes source material from the official corpus.
 
 ## Disposition, group count, and focus
@@ -88,7 +90,7 @@ Do not use high merely because the provision is easy to parse. Do not force arti
 
 suggestedPriority (P1 = highest study priority through P4 = lowest) is always present. It must be one of P1, P2, P3, P4 whenever proposedGroups is non-empty, and it must be exactly null whenever proposedGroups is empty (skip, reference-only, and needs-human-review results). Never infer or default a priority from context; the value is explicit.
 
-- P1: highest-value recall material, including directly relevant professional/exam rules, survey authority and duties, boundaries, land registration, monuments, property descriptions, subdivision, core procedural requirements, and other highly important substantive rules.
+- P1: highest-value recall material, including directly relevant professional/exam rules, core New Brunswick land-surveyor registration, licensing, and practice rules, survey authority and duties, boundaries, land registration, monuments, property descriptions, subdivision, core procedural requirements, and other highly important substantive rules.
 - P2: important supporting legal rules likely useful on the exam or in practice.
 - P3: useful contextual or secondary substantive material.
 - P4: low-priority, administrative, peripheral, or mostly reference-oriented material that still has enough independent study value to justify a StudyUnit.

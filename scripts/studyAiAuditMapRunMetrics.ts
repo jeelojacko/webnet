@@ -470,11 +470,6 @@ export const selectReviewBundle = (
   const tiers = [...byTier.keys()].sort((a, b) => a - b);
   for (const tier of tiers) {
     if (selected.length >= reviewSize) break;
-    const tierRecords = byTier.get(tier) as JobAuditRecord[];
-    const tierLabel = reviewTierFor(
-      tierRecords[0],
-      finalValidation.get(tierRecords[0]?.jobId),
-    ).label;
     // Clean controls are interleaved by disposition so the tail of the bundle
     // still covers standalone/split/reference-only/skip diversity; every other
     // tier interleaves by document.
@@ -509,6 +504,7 @@ export const selectReviewBundle = (
     }
     for (const record of roundRobin) {
       if (selected.length >= reviewSize) break;
+      const tierLabel = reviewTierFor(record, finalValidation.get(record.jobId)).label;
       selected.push({ record, tier, tierLabel });
     }
   }

@@ -157,6 +157,50 @@ const tokensContain = (sourceTokens: string[], needleTokens: string[]): boolean 
   return false;
 };
 
+// Ellipsis/omission markers in the RAW evidence. Used only by the fallback matcher
+// (never pre-empting the exact whole-token containment check, which already tolerates
+// '.' characters by normalization): '\u2026' and two-or-more consecutive dots signal
+// that the model elided source words, so no split-tolerant match may be accepted.
+// A single dot ("section 5.2") is a legitimate clause separator and does not trigger.
+const hasOmissionMarker = (rawEvidence: string): boolean =>
+  rawEvidence.includes('\u2026') || /\.\./.test(rawEvidence);
+
+// Split-tolerant fallback matcher. Accepts evidence whose normalized tokens equal the
+// exact concatenation of whole source words, tolerating whitespace-split OCR artifacts
+// ("a r easonable time" -> "reasonable"). Every evidence-token boundary AND the final
+// end must land on a source-word boundary, so mid-word splits ("reason" inside
+// "reasonable") and word substitutions ("nit" vs "unit", "land" vs "title") are
+// rejected. Positions are forced by cumulative token lengths once a start word is
+// chosen, so each candidate start is a deterministic walk (no backtracking, no
+// O(n^3) rescans); the final exact concatenation check rejects same-length
+// substitutions that happen to align on boundaries ("care" vs "cure").
+const matchSplitEvidence = (sourceWords: string[], evidenceTokens: string[]): boolean => {
+  if (evidenceTokens.length === 0) return false;
+  const bounds: number[] = [0];
+  for (const word of sourceWords) bounds.push(bounds[bounds.length - 1] + word.length);
+  const boundaryIndex = new Map<number, number>();
+  bounds.forEach((position, index) => boundaryIndex.set(position, index));
+  const lastBound = bounds[bounds.length - 1];
+  const expected = evidenceTokens.join('');
+  for (let start = 0; start < sourceWords.length; start++) {
+    if (bounds[start] + expected.length > lastBound) continue;
+    let position = bounds[start];
+    let aligned = true;
+    for (const token of evidenceTokens) {
+      position += token.length;
+      if (!boundaryIndex.has(position)) {
+        aligned = false;
+        break;
+      }
+    }
+    if (!aligned) continue;
+    const end = boundaryIndex.get(position) ?? start;
+    if (sourceWords.slice(start, end).join('') !== expected) continue;
+    return true;
+  }
+  return false;
+};
+
 const stem = (term: string): string => {
   if (term.endsWith('ies') && term.length > 5) return `${term.slice(0, -3)}y`;
   if (term.endsWith('ing') && term.length > 6) return term.slice(0, -3);
@@ -232,7 +276,13 @@ const hasSpecificTopicSuffix = (title: string): boolean =>
 const evidenceSupported = (sourceText: string, evidence: string): boolean => {
   const evidenceTokens = normalizeForPhraseTokens(evidence);
   if (evidenceTokens.length === 0) return false;
-  return tokensContain(normalizeForPhraseTokens(sourceText), evidenceTokens);
+  const sourceTokens = normalizeForPhraseTokens(sourceText);
+  // Exact whole-token containment remains the primary path (unchanged).
+  if (tokensContain(sourceTokens, evidenceTokens)) return true;
+  // Split tolerance is strictly a fallback: never accept elided evidence, and never
+  // relax matching for evidence the exact path already rejected without a split.
+  if (hasOmissionMarker(evidence)) return false;
+  return matchSplitEvidence(sourceTokens, evidenceTokens);
 };
 
 const childLabelPattern = (label: string): RegExp => {
@@ -401,5 +451,7 @@ export const validateStudyMapGroupGrounding = (
 export const __studyAiGroundingTest = {
   splitGluedClauseNumbers,
   normalizeForPhraseTokens,
+  hasOmissionMarker,
+  matchSplitEvidence,
   evidenceSupported,
 };

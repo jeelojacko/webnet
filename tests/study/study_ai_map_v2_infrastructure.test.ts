@@ -160,6 +160,8 @@ const localAuthorOptions = (job: AiStudyMapJob, extra: LocalAuthorTestOptions = 
   ...extra,
 });
 
+const leakedGateBReason = "Section 20 is a short, self-contained cost-allocation rule: a default duty on applicants (joint and several if multiple) and a linked Registrar General discretion to redirect costs, explicitly connected by 'subject to subsection (2).','suggestedPriority\":\"P3\",\"proposedGroups\":[{\"groupId\":\"s20-cost-allocation\",\"titleSuggestion\":\"Costs, charges, and expenses under the Boundaries Confirmation Act\",\"sourceKeys\":[\"section:20\"],\"focusSelections\":[{\"sourceKey\":\"section:20\",\"childLabels\":[\"20(1)\",\"20(2)\"],\"definedTerms\":[],\"evidenceText\":[\"all costs, charges or expenses of and incidental to an application under this Act, including costs of administration within Service New Brunswick, shall be the liability of and paid by the applicant or, if there are two or more applicants, shall be the joint and several liability of and shall be paid by those applicants\",\"The Registrar General, if considering it to be appropriate in the circumstances, may order that any or all costs, charges and expenses incurred or payable in relation to any proceeding under this Act, including a proceeding initiated by the Registrar General under section 8 and including costs of administration within Service New Brunswick, be paid in whole or in part by or to any party to the proceeding or be paid in whole or in part from the Fund.\"]}],\"reason\":\"Both subsections form one interdependent cost-allocation rule linked by the 'subject to subsection (2)' cross-reference.\",\"approximateLearningGoal\":\"State the default cost-bearing duty of applicants (including joint and several liability) and the circumstances under which the Registrar General may redirect costs to any party or to the Fund.\"}],\"warnings\":[]}";
+
 describe('Study Map V2 infrastructure repairs', () => {
   it('keeps only parsed direct structural child labels and preserves definition terms', () => {
     const pkg = readCorpusPackage();
@@ -1615,5 +1617,81 @@ it('keeps exact statutory wording in the regression corpus anchors', () => {
       .filter((entry) => entry)
       .pop() as string;
     expect(JSON.parse(line)).toEqual(resultFixture(job));
+  });
+
+  it('hard-fails canonical V3 schema names leaking into the top-level reason', () => {
+    const job = jobFixture();
+    const leaked = { ...resultFixture(job), reason: leakedGateBReason };
+    const report = validateAiStudyMapResult(leaked, job);
+    expect(report.valid).toBe(false);
+    const issues = report.issues.filter((issue) => issue.code === 'STRUCTURED_SCHEMA_LEAKAGE');
+    expect(issues).toHaveLength(1);
+    expect(issues[0].severity).toBe('error');
+    expect(issues[0].trigger).toBe('reason');
+    expect(issues[0].message).toContain('reason');
+    expect(issues[0].message).toContain('suggestedPriority');
+    expect(issues[0].message).toContain('proposedGroups');
+    expect(issues[0].message).toContain('groupId');
+    expect(issues[0].message).toContain('warnings');
+  });
+
+  it('hard-fails a group titleSuggestion that embeds a canonical schema name', () => {
+    const job = jobFixture();
+    const leaked = {
+      ...resultFixture(job),
+      proposedGroups: [
+        {
+          ...resultFixture(job).proposedGroups[0],
+          titleSuggestion: 'Costs under section 20 suggestedPriority P3',
+        },
+      ],
+    };
+    const report = validateAiStudyMapResult(leaked, job);
+    expect(report.valid).toBe(false);
+    const issues = report.issues.filter((issue) => issue.code === 'STRUCTURED_SCHEMA_LEAKAGE');
+    expect(issues).toHaveLength(1);
+    expect(issues[0].severity).toBe('error');
+    expect(issues[0].trigger).toBe('proposedGroups.titleSuggestion');
+    expect(issues[0].message).toContain('suggestedPriority');
+  });
+
+  it('does not flag ordinary English prose that merely mentions "warnings"', () => {
+    const job = jobFixture();
+    const clean = {
+      ...resultFixture(job),
+      reason: 'The section lists the warnings a surveyor should note before filing.',
+    };
+    const report = validateAiStudyMapResult(clean, job);
+    expect(report.valid).toBe(true);
+    expect(report.issues.map((issue) => issue.code)).not.toContain(
+      'STRUCTURED_SCHEMA_LEAKAGE',
+    );
+  });
+
+  it('hard-fails a warnings entry that is not a machine-readable code (e.g. leaks a schema name)', () => {
+    const job = jobFixture();
+    const leaked = {
+      ...resultFixture(job),
+      warnings: [
+        'Section 20 focus evidenceText references a definition the target does not carry',
+      ],
+    };
+    const report = validateAiStudyMapResult(leaked, job);
+    expect(report.valid).toBe(false);
+    const invalidCode = report.issues.find((issue) => issue.code === 'INVALID_WARNING_CODE');
+    expect(invalidCode?.severity).toBe('error');
+  });
+
+  it('does not flag split-word matches such as "job id"', () => {
+    const job = jobFixture();
+    const clean = {
+      ...resultFixture(job),
+      reason: 'Each job id is printed on the plan of survey.',
+    };
+    const report = validateAiStudyMapResult(clean, job);
+    expect(report.valid).toBe(true);
+    expect(report.issues.map((issue) => issue.code)).not.toContain(
+      'STRUCTURED_SCHEMA_LEAKAGE',
+    );
   });
 });

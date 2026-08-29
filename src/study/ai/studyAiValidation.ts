@@ -233,6 +233,91 @@ const flagProseLabelLeakage = (
   });
 };
 
+// Canonical Study Map V3 schema field names. Any raw occurrence of a name that
+// contains an uppercase letter inside a prose field is a hard error. The single
+// all-lowercase name `warnings` is only an error when it appears as a compound
+// token or inside JSON-key context, so ordinary prose usage stays safe.
+const STRUCTURED_SCHEMA_CANONICAL_NAMES: readonly string[] = [
+  'schemaVersion',
+  'jobId',
+  'runId',
+  'suggestedPriority',
+  'proposedGroups',
+  'groupId',
+  'titleSuggestion',
+  'sourceKeys',
+  'focusSelections',
+  'childLabels',
+  'definedTerms',
+  'evidenceText',
+  'approximateLearningGoal',
+  'warnings',
+  'authoringInputFingerprint',
+  'corpusContentHash',
+  'inputHash',
+  'promptSpecVersion',
+];
+
+const findCanonicalNameOccurrences = (text: string, name: string): Array<{ start: number; end: number }> => {
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const occurrences: Array<{ start: number; end: number }> = [];
+  const re = new RegExp(`\\b${escaped}\\b`, 'g');
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(text)) !== null) {
+    occurrences.push({ start: match.index, end: match.index + name.length });
+  }
+  return occurrences;
+};
+
+// JSON-key context for the all-lowercase name `warnings`: immediately preceded
+// by `"`, or immediately followed (ignoring spaces) by `:`. Ordinary prose such
+// as "The plan carries two warnings." must never trigger.
+const isJsonKeyContext = (text: string, start: number, end: number): boolean => {
+  const prev = start > 0 ? text[start - 1] : '';
+  if (prev === '"') return true;
+  let j = end;
+  while (j < text.length && text[j] === ' ') j += 1;
+  return j < text.length && text[j] === ':';
+};
+
+const flagStructuredSchemaLeakage = (
+  issues: AiValidationIssue[],
+  field: string,
+  text: unknown,
+  jobId: string | undefined,
+): void => {
+  if (typeof text !== 'string' || text.length === 0) return;
+  const found: string[] = [];
+  let hasCompoundName = false;
+  for (const name of STRUCTURED_SCHEMA_CANONICAL_NAMES) {
+    if (!/[A-Z]/.test(name)) continue;
+    if (findCanonicalNameOccurrences(text, name).length > 0) {
+      found.push(name);
+      hasCompoundName = true;
+    }
+  }
+  // The all-lowercase name `warnings` only leaks in JSON-key context, or when
+  // corroborated by a compound-name leak in the same field; plain English
+  // usage ("two warnings.") is not a leak.
+  const warningsOccurrences = findCanonicalNameOccurrences(text, 'warnings');
+  if (
+    warningsOccurrences.length > 0 &&
+    (hasCompoundName ||
+      warningsOccurrences.some((occurrence) => isJsonKeyContext(text, occurrence.start, occurrence.end)))
+  ) {
+    found.push('warnings');
+  }
+  if (found.length === 0) return;
+  found.sort((left, right) => left.localeCompare(right));
+  addIssue(issues, {
+    code: 'STRUCTURED_SCHEMA_LEAKAGE',
+    severity: 'error',
+    jobId,
+    trigger: field,
+    message: `Prose field ${field} leaks canonical structured schema names (${found.join(', ')}). Move structured values to their own JSON fields.`,
+  });
+};
+
 const checkMapResultConsistency = (
   value: Record<string, unknown>,
   issues: AiValidationIssue[],
@@ -271,11 +356,13 @@ const checkMapResultConsistency = (
       message: 'Zero-group results must serialize suggestedPriority as null, not a P level.',
     });
   flagProseLabelLeakage(issues, 'reason', value.reason, jobId);
+  flagStructuredSchemaLeakage(issues, 'reason', value.reason, jobId);
   proposedGroups?.forEach((group) => {
     if (!isRecord(group)) return;
-    ['titleSuggestion', 'reason', 'approximateLearningGoal'].forEach((field) =>
-      flagProseLabelLeakage(issues, `proposedGroups.${field}`, group[field], jobId),
-    );
+    ['titleSuggestion', 'reason', 'approximateLearningGoal'].forEach((field) => {
+      flagProseLabelLeakage(issues, `proposedGroups.${field}`, group[field], jobId);
+      flagStructuredSchemaLeakage(issues, `proposedGroups.${field}`, group[field], jobId);
+    });
   });
   if (Array.isArray(value.warnings))
     value.warnings.forEach((warning) => {
