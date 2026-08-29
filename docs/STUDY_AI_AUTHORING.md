@@ -188,7 +188,7 @@ Additional blocking Study Map grounding errors include:
 - `FOCUS_EVIDENCE_NOT_IN_SOURCE` when focus evidence is not present in the operative authoring source for that focus source key.
 - `FOCUS_CHILD_LABEL_NOT_IN_SOURCE` when a selected child label is not available under the focus source.
 - `FOCUS_CHILD_LABEL_NOT_USABLE` when a selected child is repeal-only.
-- `DEFINED_TERM_NOT_IN_FOCUS_SOURCE` when a supplied defined term is not defined in the focus source.
+- `DEFINED_TERM_NOT_IN_FOCUS_SOURCE` when a supplied defined term is not defined in the focus source. Defined-term recognition is one canonical module (`src/study/ai/studyAiDefinitions.ts`) shared by extraction and this validation, so both recognize the same `means`/`includes` verbs and `includes`-style terms never round-trip as a spurious failure.
 - `GROUP_TOPIC_NOT_GROUNDED` when high-risk topic leakage such as priority, appeal, delegation, or transitional concepts is grounded only in non-authoring context.
 
 ## Coverage

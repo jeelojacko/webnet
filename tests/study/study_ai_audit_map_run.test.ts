@@ -381,6 +381,57 @@ describe('review tiers and bundle selection', () => {
     ]);
     expect(selection.map((entry) => entry.tier)).toEqual([0, 2, 9]);
   });
+
+  it('includes every eligible record when review-size has headroom', () => {
+    const records = [
+      acceptedRecord('map-clean-1'),
+      acceptedRecord('map-clean-2', { disposition: 'skip' }),
+      acceptedRecord('map-low-1', { confidence: 'low' }),
+      makeRecord('map-failed-1', {
+        totalAttempts: 1,
+        attempts: [attempt(1, ['CODE'])],
+        semanticAttempts: 1,
+      }),
+    ];
+    const selection = selectReviewBundle(records, 10, finalValidation);
+    expect(selection.map((entry) => entry.record.jobId)).toEqual([
+      'map-failed-1',
+      'map-low-1',
+      'map-clean-2',
+      'map-clean-1',
+    ]);
+    expect(selection.map((entry) => entry.tier)).toEqual([0, 2, 9, 9]);
+  });
+
+  it('drains deep same-document queues when review-size has headroom', () => {
+    // Regression: the round-robin budget must be captured up front, otherwise
+    // deep same-document queues are silently truncated even with headroom.
+    const deep: JobAuditRecord[] = [];
+    for (let index = 0; index < 6; index += 1) {
+      const jobId = `map-doc-a-${index}`;
+      deep.push(
+        makeRecord(jobId, {
+          documentId: 'doc-deep',
+          result: makeResult(jobId),
+          totalAttempts: 1,
+          accepted: true,
+          firstTryAccepted: true,
+          firstSemanticAttemptAccepted: true,
+        }),
+      );
+    }
+    const selection = selectReviewBundle([...deep, acceptedRecord('map-doc-b')], 20, finalValidation);
+    expect(selection.map((entry) => entry.record.jobId).sort()).toEqual([
+      'map-doc-a-0',
+      'map-doc-a-1',
+      'map-doc-a-2',
+      'map-doc-a-3',
+      'map-doc-a-4',
+      'map-doc-a-5',
+      'map-doc-b',
+    ]);
+    expect(selection.map((entry) => entry.tier)).toEqual([9, 9, 9, 9, 9, 9, 9]);
+  });
 });
 
 describe('failureOrigin', () => {

@@ -702,6 +702,74 @@ describe('AI authoring schemas and validation', () => {
     expect(codes).toContain('DEFINED_TERM_NOT_IN_FOCUS_SOURCE');
   });
 
+  it('accepts includes-style defined terms that the corpus defines', () => {
+    const pkg = readCorpusPackage();
+    const fixture = (
+      documentId: string,
+      sourceKey: string,
+      terms: string[],
+    ): { job: AiStudyMapJob; result: AiStudyMapResult } => {
+      const { component } = corpusComponent(pkg, documentId, sourceKey);
+      const job: AiStudyMapJob = {
+        ...mapJob(),
+        target: {
+          ...mapJob().target,
+          sourceKeys: [sourceKey],
+          sectionLabels: [component.label],
+          heading: component.heading,
+          exactSourceText: component.text,
+          operativeSourceText: component.text,
+          sourceHashes: { [sourceKey]: component.contentHash },
+          sourceFocusOptions: [
+            {
+              sourceKey,
+              label: component.label,
+              definedTerms: terms,
+            },
+          ],
+        },
+      };
+      const result: AiStudyMapResult = {
+        schemaVersion: 1,
+        jobId: job.jobId,
+        runId: job.runId,
+        corpusContentHash: job.corpusContentHash,
+        inputHash: job.inputHash,
+        promptSpecVersion: job.promptSpecVersion,
+        disposition: 'standalone',
+        confidence: 'high',
+        reason: 'Definition grouping.',
+        suggestedPriority: 'P2',
+        proposedGroups: [
+          {
+            groupId: 'group-1',
+            titleSuggestion: terms.join(' and '),
+            sourceKeys: [sourceKey],
+            focusSelections: [{ sourceKey, definedTerms: terms }],
+            reason: 'Definition grouping.',
+            approximateLearningGoal: `Recall the ${terms.join(' and ')} definitions.`,
+          },
+        ],
+        warnings: [],
+      };
+      return { job, result };
+    };
+
+    // NB statutes also introduce terms with "includes"; the validator must
+    // accept exactly what the corpus defines.
+    const condominium = fixture('doc-condominium-property-act', 'section:1', ['claim', 'land']);
+    expect(validateAiStudyMapResult(condominium.result, condominium.job).valid).toBe(true);
+
+    const highway = fixture('doc-highway-act', 'section:44.1', ['highway']);
+    expect(validateAiStudyMapResult(highway.result, highway.job).valid).toBe(true);
+
+    // A term the focus source does not define is still rejected.
+    const bogus = fixture('doc-condominium-property-act', 'section:1', ['claim', 'nonexistentterm']);
+    expect(
+      validateAiStudyMapResult(bogus.result, bogus.job).issues.map((issue) => issue.code),
+    ).toContain('DEFINED_TERM_NOT_IN_FOCUS_SOURCE');
+  });
+
   it('validates grounding evidence against authoritative source text', () => {
     expect(
       validateAiStudyUnitProposal({

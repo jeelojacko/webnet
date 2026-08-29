@@ -490,7 +490,12 @@ export const selectReviewBundle = (
     const docs = [...byDoc.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1));
     const queues = docs.map(([, list]) => [...list].sort((a, b) => (a.jobId < b.jobId ? -1 : 1)));
     const roundRobin: JobAuditRecord[] = [];
-    while (roundRobin.length < queues.reduce((sum, queue) => sum + queue.length, 0)) {
+    // Budget and total are captured once: recomputing the queue sum inside the
+    // while condition shrinks by exactly what round-robin drains, so entries
+    // were dropped even when review-size had headroom for the whole tier.
+    const tierBudget = reviewSize - selected.length;
+    const tierTotal = queues.reduce((sum, queue) => sum + queue.length, 0);
+    while (roundRobin.length < Math.min(tierBudget, tierTotal)) {
       let added = false;
       for (const queue of queues) {
         const next = queue.shift();
@@ -498,7 +503,7 @@ export const selectReviewBundle = (
           roundRobin.push(next);
           added = true;
         }
-        if (roundRobin.length >= reviewSize - selected.length) break;
+        if (roundRobin.length >= tierBudget) break;
       }
       if (!added) break;
     }

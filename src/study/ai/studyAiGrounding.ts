@@ -4,6 +4,7 @@ import type {
   AiStudyMapJob,
   AiValidationIssue,
 } from './studyAiTypes';
+import { definedTermPattern } from './studyAiDefinitions';
 
 const STOP_WORDS = new Set([
   'act',
@@ -232,11 +233,6 @@ const evidenceSupported = (sourceText: string, evidence: string): boolean => {
   const evidenceTokens = normalizeForPhraseTokens(evidence);
   if (evidenceTokens.length === 0) return false;
   return tokensContain(normalizeForPhraseTokens(sourceText), evidenceTokens);
-};
-
-const definedTermPattern = (term: string): RegExp => {
-  const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return new RegExp(`["“]?${escaped}["”]?\\s*(?:,\\s*)?(?:unless[^,.;]+,\\s*)?means\\b`, 'iu');
 };
 
 const childLabelPattern = (label: string): RegExp => {

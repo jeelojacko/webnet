@@ -27,6 +27,7 @@ import {
   validateAiStudyUnitProposal,
 } from '../src/study/ai/studyAiValidation';
 import { STUDY_MAP_V3_RESULT_SCHEMA, canonicalJson } from '../src/study/ai/studyAiResultContract';
+import { extractDefinedTerms } from '../src/study/ai/studyAiDefinitions';
 import { authoringInputFingerprint } from './studyAiFingerprint';
 import {
   DEFAULT_FULL_CORPUS_BATCH_POLICY,
@@ -361,7 +362,7 @@ const sourceFocusOptionsFromComponent = (
     sourceKey: component.sourceKey,
     label: component.label,
     childLabels: structuralChildLabelsFromComponent(component),
-    definedTerms: definitionTerms(component),
+    definedTerms: extractDefinedTerms(component.text),
   },
 ];
 
@@ -404,19 +405,6 @@ const contextFromComponent = (
       } satisfies AiSourceContext)
     : undefined;
 
-// NB statute definitions introduce a quoted term followed by a definition verb. The two
-// standard verbs are "means" and "includes" (e.g. s. 44.1: "highway" includes ...). Match
-// both so term lists are complete; the quoted-term capture and its length bound are left
-// unchanged (do not loosen definition boundaries).
-const DEFINITION_TERM_PATTERN = /["“]([^"”]{2,80})["”]\s+(?:means|includes)\b/gi;
-
-const definitionTerms = (component: NbLawDocumentComponent): string[] => {
-  const terms = Array.from(component.text.matchAll(DEFINITION_TERM_PATTERN)).map(
-    (match) => match[1].trim(),
-  );
-  return Array.from(new Set(terms));
-};
-
 const resolveRelevantDefinitions = (
   target: NbLawDocumentComponent,
   components: NbLawDocumentComponent[],
@@ -429,7 +417,7 @@ const resolveRelevantDefinitions = (
   const targetText = target.text.toLowerCase();
   const contexts = definitionSections
     .flatMap((component) =>
-      definitionTerms(component)
+      extractDefinedTerms(component.text)
         .filter((term) => targetText.includes(term.toLowerCase()))
         .slice(0, 8)
         .map(() => contextFromComponent(component, 'definition')),

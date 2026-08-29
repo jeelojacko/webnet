@@ -600,6 +600,11 @@ describe('Study Map V2 infrastructure repairs', () => {
     // The skip guidance uses neutral wording, not "obsolete transitional material".
     expect(spec).not.toContain('obsolete transitional material');
     expect(spec).toContain('purely transitional or historic-applicability material');
+    // The Devolution s.21 clause is pinned as a temporal boundary, not proof of
+    // obsolescence or non-operation.
+    expect(spec).toContain(
+      '"applies only in cases of death after May 1, 1951" states a temporal boundary',
+    );
   });
 
   it('guards statutory actor/institution names against invented shorthand', () => {
@@ -610,6 +615,20 @@ describe('Study Map V2 infrastructure repairs', () => {
     expect(spec).toContain('never compressed to hyphenated single letters');
     expect(spec).toContain('Lieutenant-Governor in Council');
     expect(spec).toContain('L-G in C');
+    // The guard pins the exact canonical phrasing, not just the two names.
+    expect(spec).toContain(
+      '"Lieutenant-Governor in Council" is never shortened to "L-G in C"',
+    );
+  });
+
+it('keeps exact statutory wording in the regression corpus anchors', () => {
+    const pkg = readCorpusPackage();
+    const minerals = corpusComponent(pkg, 'doc-ownership-of-minerals-act', 'section:3');
+    const devolution = corpusComponent(pkg, 'doc-devolution-of-estates-act', 'section:21');
+    // The actor wording the spec guardrail protects lives in the corpus itself.
+    expect(minerals.text).toContain('Lieutenant-Governor in Council');
+    // The Devolution clause is a temporal boundary: an old date, not obsolescence.
+    expect(devolution.text).toContain('applies only in cases of death after May 1, 1951');
   });
 
   it('sends the canonical Study Map V3 spec in the local runner system prompt', async () => {
