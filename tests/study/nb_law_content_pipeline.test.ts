@@ -126,6 +126,47 @@ describe('NB law normalization', () => {
     expect(boundariesReg.components.some((component) => component.sourceKey === 'form:form-1')).toBe(true);
   });
 
+  it('keeps inline form references inside sections when form entries are one-line labels', async () => {
+    const entry = pilotManifest.documents.find((document) => document.id === 'reg-boundaries-95-166');
+    if (!entry) throw new Error('Missing reg-boundaries-95-166 manifest entry.');
+    const html = `<html><body><div class="card-body history current conso" id="mainContent-document">
+<div xmlns="http://www.w3.org/1999/xhtml"><div class="regulation-id"><div>NEW BRUNSWICK</div><div class="long-title-regulation">REGULATION 95-166</div></div>
+<div class="regulation-id-enabling"><div>under the</div><div><a href="/en/document/cs/2012-c.101">Boundaries Confirmation Act</a></div></div>
+<div class="Border" id="se:7"><div class="body Section"><div class="body section"><span class="label"><span class="label bold mr-20pt"><a class="linkOtherLang" data-code="se:7">7</a></span>The certificate referred to in paragraph 11(2)(b) of the Act shall be a Certificate of Title in Form 3.</span></div></div></div>
+<div class="Border" id="se:8"><div class="body Section"><div class="body section"><span class="label"><span class="label bold mr-20pt"><a class="linkOtherLang" data-code="se:8">8</a></span>Repealed: 2000-38.</span></div></div></div>
+2000-38
+SCHEDULE A
+Form 1
+Form 3
+Form 4
+</div></div></body></html>`;
+    const document = normalizeNbLawDocument({
+      entry,
+      html,
+      sourceUrl: buildNbLawSourceUrl(entry, pilotManifest.sourceBaseUrl),
+      fetchDate: '2026-08-05T00:00:00.000Z',
+      contentHash: hashTextSha256(html),
+    });
+    const section7 = document.sections.find((section) => section.sourceKey === 'section:7');
+    expect(section7?.text).toBe(
+      '7The certificate referred to in paragraph 11(2)(b) of the Act shall be a Certificate of Title in Form 3.',
+    );
+    const form3 = document.components.find((component) => component.sourceKey === 'form:form-3');
+    expect(form3?.componentType).toBe('form');
+    expect(form3?.text).toBe('Form 3');
+    const section8 = document.sections.find((section) => section.sourceKey === 'section:8');
+    expect(section8?.text).not.toContain('SCHEDULE A');
+    expect(section8?.text ?? '').toMatch(/^8Repealed: 2000-38\./);
+    expect(document.components.map((component) => component.sourceKey)).toEqual([
+      'section:7',
+      'section:8',
+      'schedule:schedule-a',
+      'form:form-1',
+      'form:form-3',
+      'form:form-4',
+    ]);
+  });
+
   it('extracts consolidation dates across pilot markup variants', async () => {
     await expect(normalizeFixture('doc-registry-act')).resolves.toMatchObject({
       consolidatedTo: 'December 13, 2024',

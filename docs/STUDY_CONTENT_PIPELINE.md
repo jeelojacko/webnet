@@ -87,6 +87,8 @@ study-content/reports/nb-sit-source-review-queue.md
 
 Component hashes are deterministic SHA-256 hashes of normalized component text. Corpus metadata also records manifest hash, corpus content hash, fetch pipeline version, normalizer version, and package schema version. Generated timestamps are report/package metadata and are excluded from component hashes.
 
+Supplemental components (schedules, forms) are located at their exact matched text offsets, and both section-text trimming and component ordering use those recorded offsets. Earlier code re-derived supplemental positions with a first-occurrence `indexOf` on the component label text, so one-line form entries such as `Form 3` anchored at an earlier inline mention inside a section (for example Regulation 83-130 s.7, `…Certificate of Title in Form 3.`) and truncated the section mid-sentence; the 2026-08-29 fix carries the exact offsets through normalization, restores the previously truncated section tails in Regulation 83-130 (sections 7, 10, 11, 19.1, 19.2, 20, 21.1), and is locked by a regression test. Because prepared Map job IDs are content-addressed over the job payload, repaired section text changes the affected job IDs and requires re-preparing jobs from the rebuilt package (`study:corpus:build`) — the per-document `sourceHash` and corpus-level content hash are raw-fetch hashes and do not change.
+
 PDF raw hashes are SHA-256 hashes of the PDF bytes. The Node-only corpus pipeline uses `pdfjs-dist` for positioned embedded PDF text extraction so bilingual side-by-side sources can select the English column; this dependency is isolated to development-side source ingestion and is not used by normal browser Study runtime.
 
 Legacy-source reporting is written to:

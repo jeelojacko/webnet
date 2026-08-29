@@ -33,7 +33,7 @@ const REGRESSION_JOBS: Array<{ jobId: string; label: string }> = [
   { jobId: 'map-58f1b0aaaa8b8304', label: 'coverage-fatal-accidents-amendments-s33' },
   { jobId: 'map-5e9676e19700f457', label: 'wording-devolution-part-ii-application-s21' },
   { jobId: 'map-392f73706a5a4c29', label: 'actor-narrowing-bituminous-shale-enforcement-s27' },
-  { jobId: 'map-6425c3270b73132a', label: 'truncation-reg-83-130-s7' },
+  { jobId: 'map-196dd23bfe5fb2b8', label: 'truncation-reg-83-130-s7' },
   { jobId: 'map-405adff8d1dea7a9', label: 'acronym-lgic-gas-distribution-s4' },
   { jobId: 'map-039fba57591b50bf', label: 'control-gas-distribution-s12' },
 ];

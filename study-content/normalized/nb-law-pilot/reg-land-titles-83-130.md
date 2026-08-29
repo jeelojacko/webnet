@@ -125,13 +125,8 @@ Source key: section:6
 
 Source key: section:7
 
-7The certificate referred to in paragraph 11(2)(b) of the Act shall be a Certificate of Title in
-
-### Form 3
-
-Source key: form:form-3
-
-Form 3
+7The certificate referred to in paragraph 11(2)(b) of the Act shall be a Certificate of Title in Form 3.
+2000-38
 
 ### 8
 
@@ -152,43 +147,23 @@ Source key: section:9
 
 Source key: section:10
 
-10(1)A debenture which contains a mortgage or other charge of registered land shall be in
+10(1)A debenture which contains a mortgage or other charge of registered land shall be in Form 56 and the heading is part of the form.
 
-### Form 56
+10(2)The holder of a debenture who wishes to register the debenture against registered land shall file an application with the registrar in Form 57.
 
-Source key: form:form-56
+10(3)Repealed: 2000-38
 
-Form 56
+10(4)A registered debenture may be discharged as to all or any of the registered land charged by the registration of a Discharge of Debenture or Partial Discharge of Debenture in Form 58.
 
-### Form 57
+10(5)The holder of a debenture which contains a floating charge may (by itself or through its agent or a receiver) give notice that the charge has crystallized by registering a Notice of Crystallization of Debenture in Form 59 against any parcel with respect to which the debenture has been registered.
 
-Source key: form:form-57
-
-Form 57
-
-### Form 58
-
-Source key: form:form-58
-
-Form 58
-
-### Form 59
-
-Source key: form:form-59
-
-Form 59
+84-136; 2000-38
 
 ### 11
 
 Source key: section:11
 
-11The registrar shall make a notation of any rectification of the title register by registering a Notation of Title Register Rectification in
-
-### Form 52
-
-Source key: form:form-52
-
-Form 52
+11The registrar shall make a notation of any rectification of the title register by registering a Notation of Title Register Rectification in Form 52.
 
 ### 12
 
@@ -327,31 +302,15 @@ Source key: section:19
 
 Source key: section:19.1
 
-19.1Where an instrument is executed by an individual representing an unincorporated organization, the instrument shall be accompanied by an Affidavit of Execution in
-
-### Form 43
-
-Source key: form:form-43
-
-Form 43
-
-### Form 43.1
-
-Source key: form:form-43.1
-
-Form 43.1
+19.1Where an instrument is executed by an individual representing an unincorporated organization, the instrument shall be accompanied by an Affidavit of Execution in Form 43.1.
+2000-38
 
 ### 19.2
 
 Source key: section:19.2
 
-19.2Where an instrument is accompanied by a Certificate of Execution in
-
-### Form 44
-
-Source key: form:form-44
-
-Form 44
+19.2Where an instrument is accompanied by a Certificate of Execution in Form 44, the notary public who signs the Certificate of Execution shall sign the instrument next to the signature of the party for whom the notary is providing the Certificate of Execution, with the notary’s name printed legibly underneath his or her signature.
+2000-38
 
 ### 19.3
 
@@ -385,19 +344,40 @@ Source key: section:20
 
 20(6)Information required to be included in a form set out in Schedule A may be attached as a schedule thereto.
 
-20(7)In a transfer which is made subject to restrictions, either of the following paragraphs may be added to
+20(7)In a transfer which is made subject to restrictions, either of the following paragraphs may be added to Form 13 to include the restrictions by reference:
 
-### Form 1
+To the intent that the burden of this covenant run with the parcel being transferred, the transferor and the transferee respectively covenant and agree with each other and, as to the transferee, with the owner or owners of any other parcel to which is attached the benefit of the restrictions set out below, that the transferee and the successors in title of the transferee will comply with the restrictions:
 
-Source key: form:form-1
+Restrictions: insert number or set out in Schedule E
 
-Form 1
+OR
 
-### Form 13
+To the intent that the burden of this covenant run with the parcel being transferred to the benefit of the parcel described in the restrictive covenant below, the transferee covenants and agrees with the transferor that the transferee and the successors in title of the transferee will comply with the restrictions:
 
-Source key: form:form-13
+Restrictions: insert number or set out in Schedule E
 
-Form 13
+20(8)For the purposes of subsection (7), restrictions that are used in the second restrictive convenant shall include a description of the parcel being benefited as a part of its description.
+
+20(9)The forms set out in Schedule A, except Forms 1, 9, 10 and 47, may be modified as required to provide for application to more than one parcel of land.
+
+20(10)In Forms 1, 9, 10 and 47, the name of an owner shall be specified both according to the Naming Conventions Regulation - Land Titles Act and as shown on the instrument by which that owner acquired an interest in that land.
+
+20(11)Subsection (10) does not apply where the owner or the owner’s agent submits an application for registration of title to land before the commencement of this subsection.
+
+20(12)In Form 1,
+
+(a)
+both registered and unregistered encumbrances shall be indicated,
+
+(b)
+a leasehold interest shall be shown with the lessor as the owner and the lessee as an encumbrance, and
+
+(c)
+a life estate shall be shown with the remainderman as the owner and the life tenant as an encumbrance.
+
+20(13)In Forms 1 and 2, “public utility” means a public utility as defined in subsection 87(8) of the Community Planning Act.
+
+84-136; 2000-38; 2008-20; 2017, c.20, s.89
 
 ### 20.1
 
@@ -454,49 +434,18 @@ specify any interest to benefit or burden the parcel, or
 specify any conditions or covenants to which the transfer is subject, unless there is designated in the appropriate place in the transfer the numbers that have been assigned to those conditions or covenants by the Registrar General;
 
 (b)
-mortgages (
+mortgages (Form 15) and collateral mortgages (Form 15.1) where there is no restriction as to the interest being mortgaged;
 
-### Form 15
+(c)
+discharges of mortgages (Form 17) where the entirety of the parcel is being discharged from a mortgage;
 
-Source key: form:form-15
+(d)
+assignments (Form 23) if there is no restriction as to the interest being assigned; and
 
-Form 15
+(e)
+applications of survivor (Form 48) and applications of survivors (Form 48.1).
 
-### Form 15.1
-
-Source key: form:form-15.1
-
-Form 15.1
-
-### Form 17
-
-Source key: form:form-17
-
-Form 17
-
-### Form 2
-
-Source key: form:form-2
-
-Form 2
-
-### Form 23
-
-Source key: form:form-23
-
-Form 23
-
-### Form 48
-
-Source key: form:form-48
-
-Form 48
-
-### Form 48.1
-
-Source key: form:form-48.1
-
-Form 48.1
+2008-19; 2013-35
 
 ### 21.2
 
@@ -929,6 +878,24 @@ COVENANT ON A TRANSFER
 
 84-136; 87-51; 2000-37; 2008-20; 2019-34
 
+### Form 1
+
+Source key: form:form-1
+
+Form 1
+
+### Form 2
+
+Source key: form:form-2
+
+Form 2
+
+### Form 3
+
+Source key: form:form-3
+
+Form 3
+
 ### Form 4.1
 
 Source key: form:form-4.1
@@ -965,6 +932,12 @@ Source key: form:form-12
 
 Form 12
 
+### Form 13
+
+Source key: form:form-13
+
+Form 13
+
 ### Form 13.2
 
 Source key: form:form-13.2
@@ -983,11 +956,29 @@ Source key: form:form-14
 
 Form 14
 
+### Form 15
+
+Source key: form:form-15
+
+Form 15
+
+### Form 15.1
+
+Source key: form:form-15.1
+
+Form 15.1
+
 ### Form 16
 
 Source key: form:form-16
 
 Form 16
+
+### Form 17
+
+Source key: form:form-17
+
+Form 17
 
 ### Form 18
 
@@ -1018,6 +1009,12 @@ Form 21
 Source key: form:form-22
 
 Form 22
+
+### Form 23
+
+Source key: form:form-23
+
+Form 23
 
 ### Form 24
 
@@ -1139,6 +1136,24 @@ Source key: form:form-41
 
 Form 41
 
+### Form 43
+
+Source key: form:form-43
+
+Form 43
+
+### Form 43.1
+
+Source key: form:form-43.1
+
+Form 43.1
+
+### Form 44
+
+Source key: form:form-44
+
+Form 44
+
 ### Form 45
 
 Source key: form:form-45
@@ -1150,6 +1165,18 @@ Form 45
 Source key: form:form-47
 
 Form 47
+
+### Form 48
+
+Source key: form:form-48
+
+Form 48
+
+### Form 48.1
+
+Source key: form:form-48.1
+
+Form 48.1
 
 ### Form 49
 
@@ -1169,6 +1196,12 @@ Source key: form:form-51
 
 Form 51
 
+### Form 52
+
+Source key: form:form-52
+
+Form 52
+
 ### Form 53
 
 Source key: form:form-53
@@ -1186,6 +1219,30 @@ Form 54
 Source key: form:form-55
 
 Form 55
+
+### Form 56
+
+Source key: form:form-56
+
+Form 56
+
+### Form 57
+
+Source key: form:form-57
+
+Form 57
+
+### Form 58
+
+Source key: form:form-58
+
+Form 58
+
+### Form 59
+
+Source key: form:form-59
+
+Form 59
 
 ### Form 61
 

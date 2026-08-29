@@ -15,7 +15,7 @@
     }
   ],
   "sourceUrl": "https://laws.gnb.ca/en/document/cr/83-130",
-  "fetchDate": "2026-08-05T17:33:49.393Z",
+  "fetchDate": "2026-08-05T17:34:16.741Z",
   "consolidatedTo": "April 1, 2025",
   "contentHash": "2c8cd9166d6c909b371fe4fd97b459a4ff5f382f4f58ff1dbc1be51d7bf7e689",
   "tableOfContents": [
@@ -55,11 +55,6 @@
       "label": "7"
     },
     {
-      "id": "form-form-3",
-      "sourceKey": "form:form-3",
-      "label": "Form 3"
-    },
-    {
       "id": "section-8",
       "sourceKey": "section:8",
       "label": "8"
@@ -75,34 +70,9 @@
       "label": "10"
     },
     {
-      "id": "form-form-56",
-      "sourceKey": "form:form-56",
-      "label": "Form 56"
-    },
-    {
-      "id": "form-form-57",
-      "sourceKey": "form:form-57",
-      "label": "Form 57"
-    },
-    {
-      "id": "form-form-58",
-      "sourceKey": "form:form-58",
-      "label": "Form 58"
-    },
-    {
-      "id": "form-form-59",
-      "sourceKey": "form:form-59",
-      "label": "Form 59"
-    },
-    {
       "id": "section-11",
       "sourceKey": "section:11",
       "label": "11"
-    },
-    {
-      "id": "form-form-52",
-      "sourceKey": "form:form-52",
-      "label": "Form 52"
     },
     {
       "id": "section-12",
@@ -170,24 +140,9 @@
       "label": "19.1"
     },
     {
-      "id": "form-form-43",
-      "sourceKey": "form:form-43",
-      "label": "Form 43"
-    },
-    {
-      "id": "form-form-43.1",
-      "sourceKey": "form:form-43.1",
-      "label": "Form 43.1"
-    },
-    {
       "id": "section-19.2",
       "sourceKey": "section:19.2",
       "label": "19.2"
-    },
-    {
-      "id": "form-form-44",
-      "sourceKey": "form:form-44",
-      "label": "Form 44"
     },
     {
       "id": "section-19.3",
@@ -205,16 +160,6 @@
       "label": "20"
     },
     {
-      "id": "form-form-1",
-      "sourceKey": "form:form-1",
-      "label": "Form 1"
-    },
-    {
-      "id": "form-form-13",
-      "sourceKey": "form:form-13",
-      "label": "Form 13"
-    },
-    {
       "id": "section-20.1",
       "sourceKey": "section:20.1",
       "label": "20.1"
@@ -228,41 +173,6 @@
       "id": "section-21.1",
       "sourceKey": "section:21.1",
       "label": "21.1"
-    },
-    {
-      "id": "form-form-15",
-      "sourceKey": "form:form-15",
-      "label": "Form 15"
-    },
-    {
-      "id": "form-form-15.1",
-      "sourceKey": "form:form-15.1",
-      "label": "Form 15.1"
-    },
-    {
-      "id": "form-form-17",
-      "sourceKey": "form:form-17",
-      "label": "Form 17"
-    },
-    {
-      "id": "form-form-2",
-      "sourceKey": "form:form-2",
-      "label": "Form 2"
-    },
-    {
-      "id": "form-form-23",
-      "sourceKey": "form:form-23",
-      "label": "Form 23"
-    },
-    {
-      "id": "form-form-48",
-      "sourceKey": "form:form-48",
-      "label": "Form 48"
-    },
-    {
-      "id": "form-form-48.1",
-      "sourceKey": "form:form-48.1",
-      "label": "Form 48.1"
     },
     {
       "id": "section-21.2",
@@ -315,6 +225,21 @@
       "label": "SCHEDULE A"
     },
     {
+      "id": "form-form-1",
+      "sourceKey": "form:form-1",
+      "label": "Form 1"
+    },
+    {
+      "id": "form-form-2",
+      "sourceKey": "form:form-2",
+      "label": "Form 2"
+    },
+    {
+      "id": "form-form-3",
+      "sourceKey": "form:form-3",
+      "label": "Form 3"
+    },
+    {
       "id": "form-form-4.1",
       "sourceKey": "form:form-4.1",
       "label": "Form 4.1"
@@ -345,6 +270,11 @@
       "label": "Form 12"
     },
     {
+      "id": "form-form-13",
+      "sourceKey": "form:form-13",
+      "label": "Form 13"
+    },
+    {
       "id": "form-form-13.2",
       "sourceKey": "form:form-13.2",
       "label": "Form 13.2"
@@ -360,9 +290,24 @@
       "label": "Form 14"
     },
     {
+      "id": "form-form-15",
+      "sourceKey": "form:form-15",
+      "label": "Form 15"
+    },
+    {
+      "id": "form-form-15.1",
+      "sourceKey": "form:form-15.1",
+      "label": "Form 15.1"
+    },
+    {
       "id": "form-form-16",
       "sourceKey": "form:form-16",
       "label": "Form 16"
+    },
+    {
+      "id": "form-form-17",
+      "sourceKey": "form:form-17",
+      "label": "Form 17"
     },
     {
       "id": "form-form-18",
@@ -388,6 +333,11 @@
       "id": "form-form-22",
       "sourceKey": "form:form-22",
       "label": "Form 22"
+    },
+    {
+      "id": "form-form-23",
+      "sourceKey": "form:form-23",
+      "label": "Form 23"
     },
     {
       "id": "form-form-24",
@@ -490,6 +440,21 @@
       "label": "Form 41"
     },
     {
+      "id": "form-form-43",
+      "sourceKey": "form:form-43",
+      "label": "Form 43"
+    },
+    {
+      "id": "form-form-43.1",
+      "sourceKey": "form:form-43.1",
+      "label": "Form 43.1"
+    },
+    {
+      "id": "form-form-44",
+      "sourceKey": "form:form-44",
+      "label": "Form 44"
+    },
+    {
       "id": "form-form-45",
       "sourceKey": "form:form-45",
       "label": "Form 45"
@@ -498,6 +463,16 @@
       "id": "form-form-47",
       "sourceKey": "form:form-47",
       "label": "Form 47"
+    },
+    {
+      "id": "form-form-48",
+      "sourceKey": "form:form-48",
+      "label": "Form 48"
+    },
+    {
+      "id": "form-form-48.1",
+      "sourceKey": "form:form-48.1",
+      "label": "Form 48.1"
     },
     {
       "id": "form-form-49",
@@ -515,6 +490,11 @@
       "label": "Form 51"
     },
     {
+      "id": "form-form-52",
+      "sourceKey": "form:form-52",
+      "label": "Form 52"
+    },
+    {
       "id": "form-form-53",
       "sourceKey": "form:form-53",
       "label": "Form 53"
@@ -528,6 +508,26 @@
       "id": "form-form-55",
       "sourceKey": "form:form-55",
       "label": "Form 55"
+    },
+    {
+      "id": "form-form-56",
+      "sourceKey": "form:form-56",
+      "label": "Form 56"
+    },
+    {
+      "id": "form-form-57",
+      "sourceKey": "form:form-57",
+      "label": "Form 57"
+    },
+    {
+      "id": "form-form-58",
+      "sourceKey": "form:form-58",
+      "label": "Form 58"
+    },
+    {
+      "id": "form-form-59",
+      "sourceKey": "form:form-59",
+      "label": "Form 59"
     },
     {
       "id": "form-form-61",
@@ -716,17 +716,9 @@
       "sourceKey": "section:7",
       "componentType": "section",
       "label": "7",
-      "text": "7The certificate referred to in paragraph 11(2)(b) of the Act shall be a Certificate of Title in",
+      "text": "7The certificate referred to in paragraph 11(2)(b) of the Act shall be a Certificate of Title in Form 3.\n2000-38",
       "subsections": [],
-      "contentHash": "74f2ee4e9e13de1f837ab782b240152fb4b1da4f9e187308f321ff8a9a473875"
-    },
-    {
-      "id": "form-form-3",
-      "sourceKey": "form:form-3",
-      "componentType": "form",
-      "label": "Form 3",
-      "text": "Form 3",
-      "contentHash": "a431f5c505f85ba2a27da06e088e95cba610fa38658c79046cde2cebcadc960a"
+      "contentHash": "414b72d6328284b45768f1b9eb6a8ad422da16db626edb41d1b0ee5d2e0f9992"
     },
     {
       "id": "section-8",
@@ -766,7 +758,7 @@
       "sourceKey": "section:10",
       "componentType": "section",
       "label": "10",
-      "text": "10(1)A debenture which contains a mortgage or other charge of registered land shall be in",
+      "text": "10(1)A debenture which contains a mortgage or other charge of registered land shall be in Form 56 and the heading is part of the form.\n\n10(2)The holder of a debenture who wishes to register the debenture against registered land shall file an application with the registrar in Form 57.\n\n10(3)Repealed: 2000-38\n\n10(4)A registered debenture may be discharged as to all or any of the registered land charged by the registration of a Discharge of Debenture or Partial Discharge of Debenture in Form 58.\n\n10(5)The holder of a debenture which contains a floating charge may (by itself or through its agent or a receiver) give notice that the charge has crystallized by registering a Notice of Crystallization of Debenture in Form 59 against any parcel with respect to which the debenture has been registered.\n\n84-136; 2000-38",
       "subsections": [
         {
           "id": "10-subsection-1",
@@ -804,56 +796,16 @@
           "contentHash": "f53a5758d15474c597f0bfc1b898d9fdb5c4a6bf2af1152983ce49abcccca078"
         }
       ],
-      "contentHash": "0e94a46f8d984294ea3598dfa0b683f5116e4d503c4abd255a2f9bc16da33f78"
-    },
-    {
-      "id": "form-form-56",
-      "sourceKey": "form:form-56",
-      "componentType": "form",
-      "label": "Form 56",
-      "text": "Form 56",
-      "contentHash": "69f4016f1bd43034a85ff952bad573ad26c5b8acba7b0623a3bf42b34b285820"
-    },
-    {
-      "id": "form-form-57",
-      "sourceKey": "form:form-57",
-      "componentType": "form",
-      "label": "Form 57",
-      "text": "Form 57",
-      "contentHash": "f0d53ce972168d6aebfabecd86a31627de4d43d8778a8c7d51d65b96f85f830c"
-    },
-    {
-      "id": "form-form-58",
-      "sourceKey": "form:form-58",
-      "componentType": "form",
-      "label": "Form 58",
-      "text": "Form 58",
-      "contentHash": "c2f9e098427acd983abda2d39d8248b0fe95e70806c2208d1d1927ff4e073739"
-    },
-    {
-      "id": "form-form-59",
-      "sourceKey": "form:form-59",
-      "componentType": "form",
-      "label": "Form 59",
-      "text": "Form 59",
-      "contentHash": "c75750e42e86a89d09d39708605f31e4fa74a5eea10569547d55c2df1b749ef7"
+      "contentHash": "98b5f4d43763eaa535d27e0d929c64e64b119ab2461a779dcd325ae78043ff40"
     },
     {
       "id": "section-11",
       "sourceKey": "section:11",
       "componentType": "section",
       "label": "11",
-      "text": "11The registrar shall make a notation of any rectification of the title register by registering a Notation of Title Register Rectification in",
+      "text": "11The registrar shall make a notation of any rectification of the title register by registering a Notation of Title Register Rectification in Form 52.",
       "subsections": [],
-      "contentHash": "d085bb5aa6fb4aff5f8c9360663dfddb4edcdbf43ef672eb34578b25ccaf02ed"
-    },
-    {
-      "id": "form-form-52",
-      "sourceKey": "form:form-52",
-      "componentType": "form",
-      "label": "Form 52",
-      "text": "Form 52",
-      "contentHash": "636febd7ec02415a797862687ead4899ebdcff3777b08139ac92a27c8484495f"
+      "contentHash": "8cb31f2a27580f1edd5ae947c960d969de0898f3dd6ecd02f0828f564574e007"
     },
     {
       "id": "section-12",
@@ -1115,42 +1067,18 @@
       "sourceKey": "section:19.1",
       "componentType": "section",
       "label": "19.1",
-      "text": "19.1Where an instrument is executed by an individual representing an unincorporated organization, the instrument shall be accompanied by an Affidavit of Execution in",
+      "text": "19.1Where an instrument is executed by an individual representing an unincorporated organization, the instrument shall be accompanied by an Affidavit of Execution in Form 43.1.\n2000-38",
       "subsections": [],
-      "contentHash": "d225b4f854b9d31912b13b077bdcf8ba665c53615dcd531c7cafd20c6dbaa773"
-    },
-    {
-      "id": "form-form-43",
-      "sourceKey": "form:form-43",
-      "componentType": "form",
-      "label": "Form 43",
-      "text": "Form 43",
-      "contentHash": "d60e4aa87db84ea37457a3a2c3e24664fb7495d28f9cab7824a5124b6fbf9539"
-    },
-    {
-      "id": "form-form-43.1",
-      "sourceKey": "form:form-43.1",
-      "componentType": "form",
-      "label": "Form 43.1",
-      "text": "Form 43.1",
-      "contentHash": "fa0034bd1d237aea781b23096dc7bc9e2d495c7d8ffd62f1d8af60cd8e55deea"
+      "contentHash": "89fc967c452b17b1739be1c3db6d5cfacdb5abb8a1768b0f7603dd940961b7e8"
     },
     {
       "id": "section-19.2",
       "sourceKey": "section:19.2",
       "componentType": "section",
       "label": "19.2",
-      "text": "19.2Where an instrument is accompanied by a Certificate of Execution in",
+      "text": "19.2Where an instrument is accompanied by a Certificate of Execution in Form 44, the notary public who signs the Certificate of Execution shall sign the instrument next to the signature of the party for whom the notary is providing the Certificate of Execution, with the notary’s name printed legibly underneath his or her signature.\n2000-38",
       "subsections": [],
-      "contentHash": "f6109c40a8d7d3ad0527f4fe4d3065fd18929ec1e43a43f76830007bc2b86059"
-    },
-    {
-      "id": "form-form-44",
-      "sourceKey": "form:form-44",
-      "componentType": "form",
-      "label": "Form 44",
-      "text": "Form 44",
-      "contentHash": "48588e2691f2f0f77eea91b8ecbbdc24b71f3c7687d0f9d87c4fe77c2fdc8fe8"
+      "contentHash": "8e832ce263692bd3f91e4234a403caaf366570fb472a0fc672490530eda3d266"
     },
     {
       "id": "section-19.3",
@@ -1175,7 +1103,7 @@
       "sourceKey": "section:20",
       "componentType": "section",
       "label": "20",
-      "text": "20(1)The forms prescribed for the purposes of the Act are those set out in Schedule A, and the heading is part of the form.\n\n20(2)Directions printed in italics are not part of a form.\n\n20(3)Words and directions which are underscored are not part of a form and are inserted for guidance.\n\n20(3.1)Footnotes are not part of a form and are inserted for guidance.\n\n20(4)Parts of a form that are enclosed in parentheses are optional.\n\n20(5)The forms set out in Schedule A may be modified as required to provide for execution by more than one person.\n\n20(6)Information required to be included in a form set out in Schedule A may be attached as a schedule thereto.\n\n20(7)In a transfer which is made subject to restrictions, either of the following paragraphs may be added to",
+      "text": "20(1)The forms prescribed for the purposes of the Act are those set out in Schedule A, and the heading is part of the form.\n\n20(2)Directions printed in italics are not part of a form.\n\n20(3)Words and directions which are underscored are not part of a form and are inserted for guidance.\n\n20(3.1)Footnotes are not part of a form and are inserted for guidance.\n\n20(4)Parts of a form that are enclosed in parentheses are optional.\n\n20(5)The forms set out in Schedule A may be modified as required to provide for execution by more than one person.\n\n20(6)Information required to be included in a form set out in Schedule A may be attached as a schedule thereto.\n\n20(7)In a transfer which is made subject to restrictions, either of the following paragraphs may be added to Form 13 to include the restrictions by reference:\n\nTo the intent that the burden of this covenant run with the parcel being transferred, the transferor and the transferee respectively covenant and agree with each other and, as to the transferee, with the owner or owners of any other parcel to which is attached the benefit of the restrictions set out below, that the transferee and the successors in title of the transferee will comply with the restrictions:\n\nRestrictions: insert number or set out in Schedule E\n\nOR\n\nTo the intent that the burden of this covenant run with the parcel being transferred to the benefit of the parcel described in the restrictive covenant below, the transferee covenants and agrees with the transferor that the transferee and the successors in title of the transferee will comply with the restrictions:\n\nRestrictions: insert number or set out in Schedule E\n\n20(8)For the purposes of subsection (7), restrictions that are used in the second restrictive convenant shall include a description of the parcel being benefited as a part of its description.\n\n20(9)The forms set out in Schedule A, except Forms 1, 9, 10 and 47, may be modified as required to provide for application to more than one parcel of land.\n\n20(10)In Forms 1, 9, 10 and 47, the name of an owner shall be specified both according to the Naming Conventions Regulation - Land Titles Act and as shown on the instrument by which that owner acquired an interest in that land.\n\n20(11)Subsection (10) does not apply where the owner or the owner’s agent submits an application for registration of title to land before the commencement of this subsection.\n\n20(12)In Form 1,\n\n(a)\nboth registered and unregistered encumbrances shall be indicated,\n\n(b)\na leasehold interest shall be shown with the lessor as the owner and the lessee as an encumbrance, and\n\n(c)\na life estate shall be shown with the remainderman as the owner and the life tenant as an encumbrance.\n\n20(13)In Forms 1 and 2, “public utility” means a public utility as defined in subsection 87(8) of the Community Planning Act.\n\n84-136; 2000-38; 2008-20; 2017, c.20, s.89",
       "subsections": [
         {
           "id": "20-subsection-1",
@@ -1276,23 +1204,7 @@
           "contentHash": "243cdbb97b81d46da77d4ffd4234598e06e3315f36cc528467044e8c96022616"
         }
       ],
-      "contentHash": "fcb8fdb0c99c9803db997a40f57c5fe7a6ad3ff54318836c9dbd4332e338d6e4"
-    },
-    {
-      "id": "form-form-1",
-      "sourceKey": "form:form-1",
-      "componentType": "form",
-      "label": "Form 1",
-      "text": "Form 1",
-      "contentHash": "98749a3e13a39e07f768c16fc3c66d5a99480763e0c6c846357b29cfe2ecc437"
-    },
-    {
-      "id": "form-form-13",
-      "sourceKey": "form:form-13",
-      "componentType": "form",
-      "label": "Form 13",
-      "text": "Form 13",
-      "contentHash": "40339df2003f01079036e109cfd65095bb68b827f3f745fc91e32104c87b86b0"
+      "contentHash": "bb75830f4b9df1a53427ecc92d678308d8ddc4c59ad28a830b744cb2dfb7d309"
     },
     {
       "id": "section-20.1",
@@ -1382,65 +1294,9 @@
       "sourceKey": "section:21.1",
       "componentType": "section",
       "label": "21.1",
-      "text": "21.1The following instruments are designated for the purposes of subsection 17.1(1) of the Act:\n\n(a)\ntransfers (Form 13), except those that\n\n(i)\nspecify any limitation of title, right or interest that is being transferred,\n\n(ii)\nspecify any interest to benefit or burden the parcel, or\n\n(iii)\nspecify any conditions or covenants to which the transfer is subject, unless there is designated in the appropriate place in the transfer the numbers that have been assigned to those conditions or covenants by the Registrar General;\n\n(b)\nmortgages (",
+      "text": "21.1The following instruments are designated for the purposes of subsection 17.1(1) of the Act:\n\n(a)\ntransfers (Form 13), except those that\n\n(i)\nspecify any limitation of title, right or interest that is being transferred,\n\n(ii)\nspecify any interest to benefit or burden the parcel, or\n\n(iii)\nspecify any conditions or covenants to which the transfer is subject, unless there is designated in the appropriate place in the transfer the numbers that have been assigned to those conditions or covenants by the Registrar General;\n\n(b)\nmortgages (Form 15) and collateral mortgages (Form 15.1) where there is no restriction as to the interest being mortgaged;\n\n(c)\ndischarges of mortgages (Form 17) where the entirety of the parcel is being discharged from a mortgage;\n\n(d)\nassignments (Form 23) if there is no restriction as to the interest being assigned; and\n\n(e)\napplications of survivor (Form 48) and applications of survivors (Form 48.1).\n\n2008-19; 2013-35",
       "subsections": [],
-      "contentHash": "b3bab78ac99f6076226edbfe8275dc67093d0995f29a0ca11affb31d026e4cf4"
-    },
-    {
-      "id": "form-form-15",
-      "sourceKey": "form:form-15",
-      "componentType": "form",
-      "label": "Form 15",
-      "text": "Form 15",
-      "contentHash": "068af892ebcfb0a57e1926e13b6be5f9649ae4f16af450b5ae682ce371393a26"
-    },
-    {
-      "id": "form-form-15.1",
-      "sourceKey": "form:form-15.1",
-      "componentType": "form",
-      "label": "Form 15.1",
-      "text": "Form 15.1",
-      "contentHash": "bc265b115218627e88c4a45a553fcfa11d7e9d7a59c4e45d9fd4604c41d87e6c"
-    },
-    {
-      "id": "form-form-17",
-      "sourceKey": "form:form-17",
-      "componentType": "form",
-      "label": "Form 17",
-      "text": "Form 17",
-      "contentHash": "11805fc6874e33a9ed50689b5ad3fe6bed47ddab0a4ec426fce020b6385bbd3e"
-    },
-    {
-      "id": "form-form-2",
-      "sourceKey": "form:form-2",
-      "componentType": "form",
-      "label": "Form 2",
-      "text": "Form 2",
-      "contentHash": "529080387d3839cedadb38edd62175b3ef73da6a60c25ad1be970aa4508d6c73"
-    },
-    {
-      "id": "form-form-23",
-      "sourceKey": "form:form-23",
-      "componentType": "form",
-      "label": "Form 23",
-      "text": "Form 23",
-      "contentHash": "27c8522d1d6c1406fcfd8975a37331265d684aac307aa82b057a2272c5bd9ef2"
-    },
-    {
-      "id": "form-form-48",
-      "sourceKey": "form:form-48",
-      "componentType": "form",
-      "label": "Form 48",
-      "text": "Form 48",
-      "contentHash": "2d8d28be397d1197680a3eacfb21cdd56ed29a9a2f5ae22bbb07b3b7fb319961"
-    },
-    {
-      "id": "form-form-48.1",
-      "sourceKey": "form:form-48.1",
-      "componentType": "form",
-      "label": "Form 48.1",
-      "text": "Form 48.1",
-      "contentHash": "5e71991640315cc29d83aa6b6cd89f0fc5b081b4f597addb9adb88afc1e8482d"
+      "contentHash": "6030ed2129aa143a6841a830f452fb1c013efb09ab2e243706896731b350a3dc"
     },
     {
       "id": "section-21.2",
@@ -1547,6 +1403,30 @@
       "contentHash": "f679242724ca85af5df9ad312488695f2323ae0534895725328ea720fd9e861e"
     },
     {
+      "id": "form-form-1",
+      "sourceKey": "form:form-1",
+      "componentType": "form",
+      "label": "Form 1",
+      "text": "Form 1",
+      "contentHash": "98749a3e13a39e07f768c16fc3c66d5a99480763e0c6c846357b29cfe2ecc437"
+    },
+    {
+      "id": "form-form-2",
+      "sourceKey": "form:form-2",
+      "componentType": "form",
+      "label": "Form 2",
+      "text": "Form 2",
+      "contentHash": "529080387d3839cedadb38edd62175b3ef73da6a60c25ad1be970aa4508d6c73"
+    },
+    {
+      "id": "form-form-3",
+      "sourceKey": "form:form-3",
+      "componentType": "form",
+      "label": "Form 3",
+      "text": "Form 3",
+      "contentHash": "a431f5c505f85ba2a27da06e088e95cba610fa38658c79046cde2cebcadc960a"
+    },
+    {
       "id": "form-form-4.1",
       "sourceKey": "form:form-4.1",
       "componentType": "form",
@@ -1595,6 +1475,14 @@
       "contentHash": "8a0939e7e44222610d4cd2dd66528ad8fdc4ba1793d86f21a86e41e43b59c89d"
     },
     {
+      "id": "form-form-13",
+      "sourceKey": "form:form-13",
+      "componentType": "form",
+      "label": "Form 13",
+      "text": "Form 13",
+      "contentHash": "40339df2003f01079036e109cfd65095bb68b827f3f745fc91e32104c87b86b0"
+    },
+    {
       "id": "form-form-13.2",
       "sourceKey": "form:form-13.2",
       "componentType": "form",
@@ -1619,12 +1507,36 @@
       "contentHash": "d71a515d15d7983a7b1deabeae3821e5552c708c5128bb47fc99068e5fe5876e"
     },
     {
+      "id": "form-form-15",
+      "sourceKey": "form:form-15",
+      "componentType": "form",
+      "label": "Form 15",
+      "text": "Form 15",
+      "contentHash": "068af892ebcfb0a57e1926e13b6be5f9649ae4f16af450b5ae682ce371393a26"
+    },
+    {
+      "id": "form-form-15.1",
+      "sourceKey": "form:form-15.1",
+      "componentType": "form",
+      "label": "Form 15.1",
+      "text": "Form 15.1",
+      "contentHash": "bc265b115218627e88c4a45a553fcfa11d7e9d7a59c4e45d9fd4604c41d87e6c"
+    },
+    {
       "id": "form-form-16",
       "sourceKey": "form:form-16",
       "componentType": "form",
       "label": "Form 16",
       "text": "Form 16",
       "contentHash": "476b99ab2ba551c310bd35168acf24cf8d19c5a30000890114cef7e182e42e00"
+    },
+    {
+      "id": "form-form-17",
+      "sourceKey": "form:form-17",
+      "componentType": "form",
+      "label": "Form 17",
+      "text": "Form 17",
+      "contentHash": "11805fc6874e33a9ed50689b5ad3fe6bed47ddab0a4ec426fce020b6385bbd3e"
     },
     {
       "id": "form-form-18",
@@ -1665,6 +1577,14 @@
       "label": "Form 22",
       "text": "Form 22",
       "contentHash": "e22060b9d2249aea15e86bb1d4c46eec7be6e7b18d9911946b10e49fdc51a531"
+    },
+    {
+      "id": "form-form-23",
+      "sourceKey": "form:form-23",
+      "componentType": "form",
+      "label": "Form 23",
+      "text": "Form 23",
+      "contentHash": "27c8522d1d6c1406fcfd8975a37331265d684aac307aa82b057a2272c5bd9ef2"
     },
     {
       "id": "form-form-24",
@@ -1827,6 +1747,30 @@
       "contentHash": "2afc1fa40a22b6c9d90941dee64c6bb792a6ed7cae50483afad88216e14946ea"
     },
     {
+      "id": "form-form-43",
+      "sourceKey": "form:form-43",
+      "componentType": "form",
+      "label": "Form 43",
+      "text": "Form 43",
+      "contentHash": "d60e4aa87db84ea37457a3a2c3e24664fb7495d28f9cab7824a5124b6fbf9539"
+    },
+    {
+      "id": "form-form-43.1",
+      "sourceKey": "form:form-43.1",
+      "componentType": "form",
+      "label": "Form 43.1",
+      "text": "Form 43.1",
+      "contentHash": "fa0034bd1d237aea781b23096dc7bc9e2d495c7d8ffd62f1d8af60cd8e55deea"
+    },
+    {
+      "id": "form-form-44",
+      "sourceKey": "form:form-44",
+      "componentType": "form",
+      "label": "Form 44",
+      "text": "Form 44",
+      "contentHash": "48588e2691f2f0f77eea91b8ecbbdc24b71f3c7687d0f9d87c4fe77c2fdc8fe8"
+    },
+    {
       "id": "form-form-45",
       "sourceKey": "form:form-45",
       "componentType": "form",
@@ -1841,6 +1785,22 @@
       "label": "Form 47",
       "text": "Form 47",
       "contentHash": "9609cddd355262a449284f60fc4c4115d751453927bbd8b4242cce203640b62f"
+    },
+    {
+      "id": "form-form-48",
+      "sourceKey": "form:form-48",
+      "componentType": "form",
+      "label": "Form 48",
+      "text": "Form 48",
+      "contentHash": "2d8d28be397d1197680a3eacfb21cdd56ed29a9a2f5ae22bbb07b3b7fb319961"
+    },
+    {
+      "id": "form-form-48.1",
+      "sourceKey": "form:form-48.1",
+      "componentType": "form",
+      "label": "Form 48.1",
+      "text": "Form 48.1",
+      "contentHash": "5e71991640315cc29d83aa6b6cd89f0fc5b081b4f597addb9adb88afc1e8482d"
     },
     {
       "id": "form-form-49",
@@ -1867,6 +1827,14 @@
       "contentHash": "6b981102561f4b3a945665164df4470a7585fcb8221ffe71856a9ed7d465ddce"
     },
     {
+      "id": "form-form-52",
+      "sourceKey": "form:form-52",
+      "componentType": "form",
+      "label": "Form 52",
+      "text": "Form 52",
+      "contentHash": "636febd7ec02415a797862687ead4899ebdcff3777b08139ac92a27c8484495f"
+    },
+    {
       "id": "form-form-53",
       "sourceKey": "form:form-53",
       "componentType": "form",
@@ -1889,6 +1857,38 @@
       "label": "Form 55",
       "text": "Form 55",
       "contentHash": "ce39f57392c9101bed9ff738af5f542cc74898327224f967ff36061b5e95f882"
+    },
+    {
+      "id": "form-form-56",
+      "sourceKey": "form:form-56",
+      "componentType": "form",
+      "label": "Form 56",
+      "text": "Form 56",
+      "contentHash": "69f4016f1bd43034a85ff952bad573ad26c5b8acba7b0623a3bf42b34b285820"
+    },
+    {
+      "id": "form-form-57",
+      "sourceKey": "form:form-57",
+      "componentType": "form",
+      "label": "Form 57",
+      "text": "Form 57",
+      "contentHash": "f0d53ce972168d6aebfabecd86a31627de4d43d8778a8c7d51d65b96f85f830c"
+    },
+    {
+      "id": "form-form-58",
+      "sourceKey": "form:form-58",
+      "componentType": "form",
+      "label": "Form 58",
+      "text": "Form 58",
+      "contentHash": "c2f9e098427acd983abda2d39d8248b0fe95e70806c2208d1d1927ff4e073739"
+    },
+    {
+      "id": "form-form-59",
+      "sourceKey": "form:form-59",
+      "componentType": "form",
+      "label": "Form 59",
+      "text": "Form 59",
+      "contentHash": "c75750e42e86a89d09d39708605f31e4fa74a5eea10569547d55c2df1b749ef7"
     },
     {
       "id": "form-form-61",
@@ -2092,9 +2092,9 @@
       "sourceKey": "section:7",
       "componentType": "section",
       "label": "7",
-      "text": "7The certificate referred to in paragraph 11(2)(b) of the Act shall be a Certificate of Title in",
+      "text": "7The certificate referred to in paragraph 11(2)(b) of the Act shall be a Certificate of Title in Form 3.\n2000-38",
       "subsections": [],
-      "contentHash": "74f2ee4e9e13de1f837ab782b240152fb4b1da4f9e187308f321ff8a9a473875"
+      "contentHash": "414b72d6328284b45768f1b9eb6a8ad422da16db626edb41d1b0ee5d2e0f9992"
     },
     {
       "id": "section-8",
@@ -2134,7 +2134,7 @@
       "sourceKey": "section:10",
       "componentType": "section",
       "label": "10",
-      "text": "10(1)A debenture which contains a mortgage or other charge of registered land shall be in",
+      "text": "10(1)A debenture which contains a mortgage or other charge of registered land shall be in Form 56 and the heading is part of the form.\n\n10(2)The holder of a debenture who wishes to register the debenture against registered land shall file an application with the registrar in Form 57.\n\n10(3)Repealed: 2000-38\n\n10(4)A registered debenture may be discharged as to all or any of the registered land charged by the registration of a Discharge of Debenture or Partial Discharge of Debenture in Form 58.\n\n10(5)The holder of a debenture which contains a floating charge may (by itself or through its agent or a receiver) give notice that the charge has crystallized by registering a Notice of Crystallization of Debenture in Form 59 against any parcel with respect to which the debenture has been registered.\n\n84-136; 2000-38",
       "subsections": [
         {
           "id": "10-subsection-1",
@@ -2172,16 +2172,16 @@
           "contentHash": "f53a5758d15474c597f0bfc1b898d9fdb5c4a6bf2af1152983ce49abcccca078"
         }
       ],
-      "contentHash": "0e94a46f8d984294ea3598dfa0b683f5116e4d503c4abd255a2f9bc16da33f78"
+      "contentHash": "98b5f4d43763eaa535d27e0d929c64e64b119ab2461a779dcd325ae78043ff40"
     },
     {
       "id": "section-11",
       "sourceKey": "section:11",
       "componentType": "section",
       "label": "11",
-      "text": "11The registrar shall make a notation of any rectification of the title register by registering a Notation of Title Register Rectification in",
+      "text": "11The registrar shall make a notation of any rectification of the title register by registering a Notation of Title Register Rectification in Form 52.",
       "subsections": [],
-      "contentHash": "d085bb5aa6fb4aff5f8c9360663dfddb4edcdbf43ef672eb34578b25ccaf02ed"
+      "contentHash": "8cb31f2a27580f1edd5ae947c960d969de0898f3dd6ecd02f0828f564574e007"
     },
     {
       "id": "section-12",
@@ -2443,18 +2443,18 @@
       "sourceKey": "section:19.1",
       "componentType": "section",
       "label": "19.1",
-      "text": "19.1Where an instrument is executed by an individual representing an unincorporated organization, the instrument shall be accompanied by an Affidavit of Execution in",
+      "text": "19.1Where an instrument is executed by an individual representing an unincorporated organization, the instrument shall be accompanied by an Affidavit of Execution in Form 43.1.\n2000-38",
       "subsections": [],
-      "contentHash": "d225b4f854b9d31912b13b077bdcf8ba665c53615dcd531c7cafd20c6dbaa773"
+      "contentHash": "89fc967c452b17b1739be1c3db6d5cfacdb5abb8a1768b0f7603dd940961b7e8"
     },
     {
       "id": "section-19.2",
       "sourceKey": "section:19.2",
       "componentType": "section",
       "label": "19.2",
-      "text": "19.2Where an instrument is accompanied by a Certificate of Execution in",
+      "text": "19.2Where an instrument is accompanied by a Certificate of Execution in Form 44, the notary public who signs the Certificate of Execution shall sign the instrument next to the signature of the party for whom the notary is providing the Certificate of Execution, with the notary’s name printed legibly underneath his or her signature.\n2000-38",
       "subsections": [],
-      "contentHash": "f6109c40a8d7d3ad0527f4fe4d3065fd18929ec1e43a43f76830007bc2b86059"
+      "contentHash": "8e832ce263692bd3f91e4234a403caaf366570fb472a0fc672490530eda3d266"
     },
     {
       "id": "section-19.3",
@@ -2479,7 +2479,7 @@
       "sourceKey": "section:20",
       "componentType": "section",
       "label": "20",
-      "text": "20(1)The forms prescribed for the purposes of the Act are those set out in Schedule A, and the heading is part of the form.\n\n20(2)Directions printed in italics are not part of a form.\n\n20(3)Words and directions which are underscored are not part of a form and are inserted for guidance.\n\n20(3.1)Footnotes are not part of a form and are inserted for guidance.\n\n20(4)Parts of a form that are enclosed in parentheses are optional.\n\n20(5)The forms set out in Schedule A may be modified as required to provide for execution by more than one person.\n\n20(6)Information required to be included in a form set out in Schedule A may be attached as a schedule thereto.\n\n20(7)In a transfer which is made subject to restrictions, either of the following paragraphs may be added to",
+      "text": "20(1)The forms prescribed for the purposes of the Act are those set out in Schedule A, and the heading is part of the form.\n\n20(2)Directions printed in italics are not part of a form.\n\n20(3)Words and directions which are underscored are not part of a form and are inserted for guidance.\n\n20(3.1)Footnotes are not part of a form and are inserted for guidance.\n\n20(4)Parts of a form that are enclosed in parentheses are optional.\n\n20(5)The forms set out in Schedule A may be modified as required to provide for execution by more than one person.\n\n20(6)Information required to be included in a form set out in Schedule A may be attached as a schedule thereto.\n\n20(7)In a transfer which is made subject to restrictions, either of the following paragraphs may be added to Form 13 to include the restrictions by reference:\n\nTo the intent that the burden of this covenant run with the parcel being transferred, the transferor and the transferee respectively covenant and agree with each other and, as to the transferee, with the owner or owners of any other parcel to which is attached the benefit of the restrictions set out below, that the transferee and the successors in title of the transferee will comply with the restrictions:\n\nRestrictions: insert number or set out in Schedule E\n\nOR\n\nTo the intent that the burden of this covenant run with the parcel being transferred to the benefit of the parcel described in the restrictive covenant below, the transferee covenants and agrees with the transferor that the transferee and the successors in title of the transferee will comply with the restrictions:\n\nRestrictions: insert number or set out in Schedule E\n\n20(8)For the purposes of subsection (7), restrictions that are used in the second restrictive convenant shall include a description of the parcel being benefited as a part of its description.\n\n20(9)The forms set out in Schedule A, except Forms 1, 9, 10 and 47, may be modified as required to provide for application to more than one parcel of land.\n\n20(10)In Forms 1, 9, 10 and 47, the name of an owner shall be specified both according to the Naming Conventions Regulation - Land Titles Act and as shown on the instrument by which that owner acquired an interest in that land.\n\n20(11)Subsection (10) does not apply where the owner or the owner’s agent submits an application for registration of title to land before the commencement of this subsection.\n\n20(12)In Form 1,\n\n(a)\nboth registered and unregistered encumbrances shall be indicated,\n\n(b)\na leasehold interest shall be shown with the lessor as the owner and the lessee as an encumbrance, and\n\n(c)\na life estate shall be shown with the remainderman as the owner and the life tenant as an encumbrance.\n\n20(13)In Forms 1 and 2, “public utility” means a public utility as defined in subsection 87(8) of the Community Planning Act.\n\n84-136; 2000-38; 2008-20; 2017, c.20, s.89",
       "subsections": [
         {
           "id": "20-subsection-1",
@@ -2580,7 +2580,7 @@
           "contentHash": "243cdbb97b81d46da77d4ffd4234598e06e3315f36cc528467044e8c96022616"
         }
       ],
-      "contentHash": "fcb8fdb0c99c9803db997a40f57c5fe7a6ad3ff54318836c9dbd4332e338d6e4"
+      "contentHash": "bb75830f4b9df1a53427ecc92d678308d8ddc4c59ad28a830b744cb2dfb7d309"
     },
     {
       "id": "section-20.1",
@@ -2670,9 +2670,9 @@
       "sourceKey": "section:21.1",
       "componentType": "section",
       "label": "21.1",
-      "text": "21.1The following instruments are designated for the purposes of subsection 17.1(1) of the Act:\n\n(a)\ntransfers (Form 13), except those that\n\n(i)\nspecify any limitation of title, right or interest that is being transferred,\n\n(ii)\nspecify any interest to benefit or burden the parcel, or\n\n(iii)\nspecify any conditions or covenants to which the transfer is subject, unless there is designated in the appropriate place in the transfer the numbers that have been assigned to those conditions or covenants by the Registrar General;\n\n(b)\nmortgages (",
+      "text": "21.1The following instruments are designated for the purposes of subsection 17.1(1) of the Act:\n\n(a)\ntransfers (Form 13), except those that\n\n(i)\nspecify any limitation of title, right or interest that is being transferred,\n\n(ii)\nspecify any interest to benefit or burden the parcel, or\n\n(iii)\nspecify any conditions or covenants to which the transfer is subject, unless there is designated in the appropriate place in the transfer the numbers that have been assigned to those conditions or covenants by the Registrar General;\n\n(b)\nmortgages (Form 15) and collateral mortgages (Form 15.1) where there is no restriction as to the interest being mortgaged;\n\n(c)\ndischarges of mortgages (Form 17) where the entirety of the parcel is being discharged from a mortgage;\n\n(d)\nassignments (Form 23) if there is no restriction as to the interest being assigned; and\n\n(e)\napplications of survivor (Form 48) and applications of survivors (Form 48.1).\n\n2008-19; 2013-35",
       "subsections": [],
-      "contentHash": "b3bab78ac99f6076226edbfe8275dc67093d0995f29a0ca11affb31d026e4cf4"
+      "contentHash": "6030ed2129aa143a6841a830f452fb1c013efb09ab2e243706896731b350a3dc"
     },
     {
       "id": "section-21.2",

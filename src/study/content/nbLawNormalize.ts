@@ -253,8 +253,12 @@ const collectSupplementalStarts = (text: string) =>
     .sort((a, b) => a.index - b.index)
     .filter((start, index, all) => all.findIndex((entry) => entry.index === start.index) === index);
 
-const normalizeSupplementalComponents = (mainHtml: string): NbLawSupplementalComponent[] => {
-  const text = htmlToText(mainHtml);
+interface SupplementalPlacement {
+  component: NbLawSupplementalComponent;
+  textIndex: number;
+}
+
+const buildSupplementalPlacements = (text: string): SupplementalPlacement[] => {
   const starts = collectSupplementalStarts(text);
   const sourceKeyCounts = new Map<string, number>();
   return starts.map((start, index) => {
@@ -264,7 +268,7 @@ const normalizeSupplementalComponents = (mainHtml: string): NbLawSupplementalCom
     const count = (sourceKeyCounts.get(baseSourceKey) ?? 0) + 1;
     sourceKeyCounts.set(baseSourceKey, count);
     const sourceKey = count === 1 ? baseSourceKey : `${baseSourceKey}#${count}`;
-    return {
+    const component: NbLawSupplementalComponent = {
       id: sourceKey.replace(/[^a-z0-9.]+/gi, '-'),
       sourceKey,
       componentType: start.componentType,
@@ -272,10 +276,17 @@ const normalizeSupplementalComponents = (mainHtml: string): NbLawSupplementalCom
       text: componentText,
       contentHash: hashTextSha256(componentText),
     };
+    return { component, textIndex: start.index };
   });
 };
 
-const compareComponentOrder = (mainText: string, component: NbLawDocumentComponent): number => {
+const componentTextIndex = (
+  mainText: string,
+  placements: SupplementalPlacement[],
+  component: NbLawDocumentComponent,
+): number => {
+  const placement = placements.find((entry) => entry.component === component);
+  if (placement) return placement.textIndex;
   const index = mainText.indexOf(component.text.slice(0, Math.min(60, component.text.length)));
   return index >= 0 ? index : Number.MAX_SAFE_INTEGER;
 };
@@ -283,14 +294,15 @@ const compareComponentOrder = (mainText: string, component: NbLawDocumentCompone
 const normalizeComponents = (mainHtml: string, notes: string[]): NbLawDocumentComponent[] => {
   const mainText = htmlToText(mainHtml);
   const sections = normalizeSections(mainHtml, notes);
-  const supplemental = normalizeSupplementalComponents(mainHtml);
-  const supplementalStarts = new Map(supplemental.map((component) => [component.label, mainText.indexOf(component.text)]));
+  const supplementalPlacements = buildSupplementalPlacements(mainText);
+  const supplementalBoundaries = supplementalPlacements
+    .map((entry) => entry.textIndex)
+    .sort((a, b) => a - b);
   const trimmedSections = sections.map((section) => {
     const sectionStart = mainText.indexOf(section.text.slice(0, Math.min(60, section.text.length)));
-    const nextSupplementalStart = [...supplementalStarts.values()]
-      .filter((index) => index >= 0 && index > sectionStart)
-      .sort((a, b) => a - b)[0];
-    if (nextSupplementalStart === undefined || sectionStart < 0) return section;
+    if (sectionStart < 0) return section;
+    const nextSupplementalStart = supplementalBoundaries.find((index) => index > sectionStart);
+    if (nextSupplementalStart === undefined) return section;
     const localCut = nextSupplementalStart - sectionStart;
     if (localCut <= 0 || localCut >= section.text.length) return section;
     const text = section.text.slice(0, localCut).trim();
@@ -300,8 +312,12 @@ const normalizeComponents = (mainHtml: string, notes: string[]): NbLawDocumentCo
       contentHash: hashTextSha256(text),
     };
   });
-  return [...trimmedSections, ...supplemental].sort(
-    (a, b) => compareComponentOrder(mainText, a) - compareComponentOrder(mainText, b),
+  const components: NbLawDocumentComponent[] = [
+    ...trimmedSections,
+    ...supplementalPlacements.map((entry) => entry.component),
+  ];
+  return components.sort(
+    (a, b) => componentTextIndex(mainText, supplementalPlacements, a) - componentTextIndex(mainText, supplementalPlacements, b),
   );
 };
 
