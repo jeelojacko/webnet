@@ -811,8 +811,12 @@ describe('AI authoring schemas and validation', () => {
       'may not appear in more than one proposed group for the same sourceKey',
     );
     expect(mapSpec).toContain(
-      'suggestedPriority (P1 = highest study priority through P4 = lowest) is required',
+      'suggestedPriority (P1 = highest study priority through P4 = lowest) is always present',
     );
+    expect(mapSpec).toContain(
+      'must be exactly null whenever proposedGroups is empty',
+    );
+    expect(mapSpec).toContain('Never infer or default a priority from context');
     expect(mapSpec).toContain('Never use short opaque codes such as G1 or S5001');
 
     // Complete disposition vocabulary, including skip.

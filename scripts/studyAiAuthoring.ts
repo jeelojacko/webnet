@@ -316,6 +316,25 @@ const sourceStatusFromComponent = (
   return 'current';
 };
 
+// Explicit amendment-machinery phrasing: the provision itself amends, repeals,
+// strikes out, or substitutes text (as opposed to merely granting power to do so).
+const CONSEQUENTIAL_AMENDMENT_MACHINERY =
+  /\b(?:is|are)\s+(?:amended|repealed|stricken|struck\s*out|deleted|substituted)\b|\bstruck\s*out\b|\bby\s+substituting\b/i;
+
+// The amendment must target a distinct instrument/provision: a named Act, the
+// parent "the Act", or a specific section. This keeps ordinary cross-references
+// (which name sections but carry no amendment machinery) out of scope.
+const CONSEQUENTIAL_AMENDMENT_TARGET =
+  /\b(?:the\s+)?[A-Z][A-Za-z]+(?:\s+[A-Z][A-Za-z]+)*\s+Act\b|\bof\s+the\s+Act\b|\bthe\s+Act\b|\bsection\s+\d+\b/i;
+
+// A provision is a consequential amendment when its operative effect is to amend,
+// repeal, or substitute text in another provision/instrument rather than to state
+// its own independent legal rule. This is advisory content metadata: it signals the
+// model to strongly prefer skip/reference-only, but it never by itself forbids
+// mapping content that is independently operative.
+export const isConsequentialAmendmentText = (text: string): boolean =>
+  CONSEQUENTIAL_AMENDMENT_MACHINERY.test(text) && CONSEQUENTIAL_AMENDMENT_TARGET.test(text);
+
 const contentFlagsFromComponent = (
   component: NbLawDocumentComponent,
 ): AiStudyMapJob['target']['contentFlags'] => {
@@ -331,6 +350,7 @@ const contentFlagsFromComponent = (
       text.length < 700,
     citationOnly,
     transitional: /\btransitional\b/i.test(normalized),
+    consequentialAmendment: isConsequentialAmendmentText(text),
   };
 };
 
@@ -345,6 +365,12 @@ const sourceFocusOptionsFromComponent = (
   },
 ];
 
+// Exposes only the section's directly-parsed subsection labels, e.g. "33(1)" for
+// section "33". Inline lettered parts (such as the (a)/(b)/(c) amendment clauses
+// nested inside "33(3)") and embedded labels that belong to an amended instrument
+// (e.g. Fatal Accidents Act "8(3.1)") are amendment wording, not structural
+// subsections of this section, so they are intentionally NOT exposed. Downstream
+// grounding validation therefore correctly rejects a group focused on those labels.
 const structuralChildLabelsFromComponent = (
   component: NbLawDocumentComponent,
 ): string[] | undefined => {
@@ -378,8 +404,14 @@ const contextFromComponent = (
       } satisfies AiSourceContext)
     : undefined;
 
+// NB statute definitions introduce a quoted term followed by a definition verb. The two
+// standard verbs are "means" and "includes" (e.g. s. 44.1: "highway" includes ...). Match
+// both so term lists are complete; the quoted-term capture and its length bound are left
+// unchanged (do not loosen definition boundaries).
+const DEFINITION_TERM_PATTERN = /["“]([^"”]{2,80})["”]\s+(?:means|includes)\b/gi;
+
 const definitionTerms = (component: NbLawDocumentComponent): string[] => {
-  const terms = Array.from(component.text.matchAll(/["“]([^"”]{2,80})["”]\s+means/gi)).map(
+  const terms = Array.from(component.text.matchAll(DEFINITION_TERM_PATTERN)).map(
     (match) => match[1].trim(),
   );
   return Array.from(new Set(terms));
@@ -2161,4 +2193,5 @@ export const __studyAiAuthoringTest = {
   sourceFocusOptionsFromComponent,
   structuralChildLabelsFromComponent,
   authoringInputFingerprint,
+  isConsequentialAmendmentText,
 };

@@ -199,6 +199,61 @@ describe('Study Map V2 infrastructure repairs', () => {
     ).toBe('schedule:schedule-a');
   });
 
+  it('exposes "highway" in Highway Act s.44.1 defined terms (includes verb + multi-paragraph definition)', () => {
+    const pkg = readCorpusPackage();
+    const definedTerms =
+      __studyAiAuthoringTest.sourceFocusOptionsFromComponent(
+        corpusComponent(pkg, 'doc-highway-act', 'section:44.1'),
+      )?.[0]?.definedTerms ?? [];
+    // "highway" is introduced with "includes" (not "means") and spans (a)/(b) exclusions;
+    // the extractor must still surface it alongside the "means" terms, in document order.
+    expect(definedTerms).toEqual([
+      'exemption',
+      'highway',
+      'person',
+      'roadway',
+      'usage agreement',
+    ]);
+  });
+
+  it('flags consequential-amendment machinery (Limitation of Actions Act s.33) without flagging ordinary provisions', () => {
+    const pkg = readCorpusPackage();
+    const s33 = corpusComponent(pkg, 'doc-limitation-of-actions-act', 'section:33');
+    const highway44 = corpusComponent(pkg, 'doc-highway-act', 'section:44.1');
+    // Positive: s.33 amends/repeals/substitutes text in the Fatal Accidents Act,
+    // so it is amendment machinery, not an independent operative rule.
+    expect(__studyAiAuthoringTest.isConsequentialAmendmentText(s33.text)).toBe(true);
+    // Negative: an ordinary operative definition provision with cross-references
+    // but no amendment machinery is not a consequential amendment.
+    expect(__studyAiAuthoringTest.isConsequentialAmendmentText(highway44.text)).toBe(false);
+    // Negative: a pure self-repeal is repealOnly territory, not consequential.
+    expect(__studyAiAuthoringTest.isConsequentialAmendmentText('18 Repealed.')).toBe(false);
+    // Negative: a cross-reference that names a section but carries no amendment
+    // machinery (no "is amended/repealed/substituted/struck out") stays unflagged.
+    expect(
+      __studyAiAuthoringTest.isConsequentialAmendmentText(
+        'A person shall comply with section 12 of the Act before proceeding.',
+      ),
+    ).toBe(false);
+  });
+
+  it('exposes only top-level subsection labels for Limitation of Actions Act s.33, not inline amendment letters or amended-Act labels', () => {
+    const pkg = readCorpusPackage();
+    const s33 = corpusComponent(pkg, 'doc-limitation-of-actions-act', 'section:33');
+    // s.33 is consequential-amendment machinery with three parsed subsections.
+    // The inline (a)/(b)/(c) clauses nested inside 33(3) and the embedded Fatal
+    // Accidents Act labels (8(3.1), 8(4), 5(4)) are amendment wording, not
+    // structural subsections of s.33, so they must NOT be exposed as focus child
+    // labels. Grounding validation therefore correctly rejects a group focused on
+    // them; the fix is to treat the provision as skip/reference-only (Task 4), not
+    // to loosen label validation.
+    const childLabels = focusChildLabels(s33);
+    expect(childLabels).toEqual(['33(1)', '33(2)', '33(3)']);
+    for (const absent of ['33(3)(a)', '33(3)(b)', '33(3)(c)', '8(3.1)', '8(4)', '5(4)']) {
+      expect(childLabels).not.toContain(absent);
+    }
+  });
+
   it('requires promptSpecVersion in the strict Study Map V3 result schema', () => {
     expect(STUDY_MAP_V3_RESULT_SCHEMA.properties.promptSpecVersion).toEqual({
       type: 'string',
@@ -527,6 +582,34 @@ describe('Study Map V2 infrastructure repairs', () => {
     expect(() => loadStudyMapV3Spec('study-content/ai/specs/does-not-exist.md')).toThrow(
       /spec not found/,
     );
+  });
+
+  it('guards historic-applicability source discipline in the Study Map V3 spec', () => {
+    const spec = loadStudyMapV3Spec();
+    // A historical date or applicability clause alone must not establish obsolescence.
+    expect(spec).toContain('obsolescence, non-operation, "has no current legal rule"');
+    expect(spec).toContain(
+      'it does not prove the provision is obsolete or inoperative',
+    );
+    // Neutral rationale vocabulary and the established warning code.
+    expect(spec).toContain('historic temporal applicability, an old cutoff date, low independent recall value');
+    expect(spec).toContain('Prefer the warning code HISTORIC_TEMPORAL_APPLICABILITY over any "obsolete" wording');
+    expect(spec).toContain(
+      'COMMENCEMENT_OR_CITATION_REFERENCE_ONLY, or HISTORIC_TEMPORAL_APPLICABILITY for transitional/historic-applicability material',
+    );
+    // The skip guidance uses neutral wording, not "obsolete transitional material".
+    expect(spec).not.toContain('obsolete transitional material');
+    expect(spec).toContain('purely transitional or historic-applicability material');
+  });
+
+  it('guards statutory actor/institution names against invented shorthand', () => {
+    const spec = loadStudyMapV3Spec();
+    expect(spec).toContain(
+      'Statutory actor names and institution names are written exactly as the source writes them',
+    );
+    expect(spec).toContain('never compressed to hyphenated single letters');
+    expect(spec).toContain('Lieutenant-Governor in Council');
+    expect(spec).toContain('L-G in C');
   });
 
   it('sends the canonical Study Map V3 spec in the local runner system prompt', async () => {
@@ -901,6 +984,7 @@ describe('Study Map V2 infrastructure repairs', () => {
       'disposition',
       'confidence',
       'reason',
+      'suggestedPriority',
       'proposedGroups',
       'warnings',
     ]);
@@ -925,6 +1009,15 @@ describe('Study Map V2 infrastructure repairs', () => {
       'suggestedPriority',
       'warnings',
     ]);
+  });
+
+  it('structurally requires a nullable suggestedPriority (P1-P4 or null) in the local schema', () => {
+    expect(STUDY_MAP_V3_LOCAL_RESULT_SCHEMA.required).toContain('suggestedPriority');
+    const properties = STUDY_MAP_V3_LOCAL_RESULT_SCHEMA.properties as Record<
+      string,
+      { enum?: unknown[] }
+    >;
+    expect(properties.suggestedPriority?.enum).toEqual(['P1', 'P2', 'P3', 'P4', null]);
   });
 
   it('records resolved inference config provenance for accepted and rejected attempts', async () => {

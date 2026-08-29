@@ -19,6 +19,7 @@ export const STUDY_MAP_V3_RESULT_SCHEMA = {
     'disposition',
     'confidence',
     'reason',
+    'suggestedPriority',
     'proposedGroups',
     'warnings',
   ],
@@ -33,10 +34,13 @@ export const STUDY_MAP_V3_RESULT_SCHEMA = {
     disposition: { enum: dispositions },
     confidence: { enum: confidences },
     reason: { type: 'string', minLength: 1 },
-    // Model-facing schema: enum-only because the local provider's strict structured
-    // output cannot emit null. Zero-group results omit the field and the runner
-    // canonicalizes the serialized value to null (see studyAiLocalMapAuthor.ts).
-    suggestedPriority: { enum: priorities },
+    // Always-emitted and nullable: the model must supply a P1-P4 for grouped results
+    // and exactly null for zero-group results. This llama.cpp build's strict
+    // json_schema converter renders enum [P1..P4, null] as ("P1"|"P2"|"P3"|"P4"|null),
+    // so the key is structurally required and can no longer be omitted. The runner
+    // still enforces group<->priority consistency and never infers a P level (see
+    // withRunnerIdentity and validateAiStudyMapResult).
+    suggestedPriority: { enum: [...priorities, null] },
     proposedGroups: {
       type: 'array',
       items: {

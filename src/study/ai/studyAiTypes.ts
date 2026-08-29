@@ -96,6 +96,7 @@ export type AiSourceContentFlags = {
   commencementOnly?: boolean;
   citationOnly?: boolean;
   transitional?: boolean;
+  consequentialAmendment?: boolean;
 };
 
 export type AiSourceMetadata = {

@@ -110,10 +110,21 @@ const normalize = (value: string): string =>
     .trim()
     .toLowerCase();
 
+// Split a token-initial clause number off the letter that follows it so glued
+// structural labels ("7The", "13.1(4)The", "11(2)(b)Of") compare identically whether
+// the model or the source writes a space after the number. Only splits when the number
+// begins the alphanumeric run (start of string or preceded by a non-alphanumeric), so
+// ordinary identifiers like "Section7" or "form3" are left untouched. Applied symmetrically
+// to both evidence and source; matching remains exact whole-token containment (no fuzziness).
+const splitGluedClauseNumbers = (value: string): string =>
+  value.replace(/(?<![\p{L}\p{N}])(\d[\d.]*(?:\([0-9A-Za-z.]+\))*)(?=\p{L})/gu, '$1 ');
+
 const normalizeForPhrase = (value: string): string =>
-  value
-    .replace(/[“”]/g, '"')
-    .replace(/[‘’]/g, "'")
+  splitGluedClauseNumbers(
+    value
+      .replace(/[“”]/g, '"')
+      .replace(/[‘’]/g, "'"),
+  )
     .replace(/[^\p{L}\p{N}]+/gu, ' ')
     .replace(/\s+/g, ' ')
     .trim()
@@ -386,4 +397,13 @@ export const validateStudyMapGroupGrounding = (
   validateGroupSchemaGrounding(group, job, issues);
   validateFocusSelectionGrounding(group, job, issues);
   validateGroupTopicGrounding(group, job, issues);
+};
+
+// Test-only hooks: unit tests exercise the deterministic evidence normalizer directly
+// (glued clause-number splitting, whole-token containment, substitution rejection)
+// without building a full authoring job.
+export const __studyAiGroundingTest = {
+  splitGluedClauseNumbers,
+  normalizeForPhraseTokens,
+  evidenceSupported,
 };
