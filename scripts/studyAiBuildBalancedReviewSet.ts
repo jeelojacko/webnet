@@ -39,7 +39,7 @@ export const CORE_SURVEYING_DOCS = [
   'reg-surveys-84-76',
 ];
 
-const BROAD_FOCUS_CODES = new Set([
+export const BROAD_FOCUS_CODES = new Set([
   'BROAD_ENUMERATION_SINGLE_CONCEPT',
   'BROAD_FOCUS_WITHOUT_EVIDENCE',
   'LARGE_SECTION_TARGET',
