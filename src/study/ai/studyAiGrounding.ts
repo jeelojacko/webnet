@@ -381,9 +381,17 @@ const validateFocusSelectionGrounding = (
       }
     });
     selection.evidenceText?.forEach((evidence) => {
-      const childTexts = (selection.childLabels ?? [])
-        .map((label) => extractChildText(sourceText, childLabels, label))
-        .filter((text): text is string => Boolean(text));
+      // Ad-hoc (model-supplied) child labels are structural boundaries only
+      // when the authoritative source-focus option actually advertises child
+      // labels. Without advertised labels, narrowing would slice away the
+      // parent/lead-in rule that precedes "(a)" and reject verbatim operative
+      // text; evidence stays grounded against the complete source text.
+      const childTexts =
+        childLabels.length === 0
+          ? []
+          : (selection.childLabels ?? [])
+              .map((label) => extractChildText(sourceText, childLabels, label))
+              .filter((text): text is string => Boolean(text));
       const groundingText = childTexts.length > 0 ? childTexts.join('\n\n') : sourceText;
       if (!evidenceSupported(groundingText, evidence)) {
         addIssue(issues, {

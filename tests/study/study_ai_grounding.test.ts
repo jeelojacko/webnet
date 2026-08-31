@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { __studyAiGroundingTest } from '../../src/study/ai/studyAiGrounding';
+import { __studyAiGroundingTest, validateStudyMapGroupGrounding } from '../../src/study/ai/studyAiGrounding';
+import type {
+  AiMapFocusSelection,
+  AiProposedSourceGroup,
+  AiStudyMapJob,
+  AiValidationIssue,
+} from '../../src/study/ai/studyAiTypes';
 
 const {
   splitGluedClauseNumbers,
@@ -180,5 +186,136 @@ describe('Study Map evidence grounding split tolerance (fallback)', () => {
     expect(hasOmissionMarker('a..b')).toBe(true);
     expect(hasOmissionMarker('section 5.2 of the Act')).toBe(false);
     expect(hasOmissionMarker('plain evidence without dots')).toBe(false);
+  });
+});
+
+// Production regression fixtures (post-3692-run audit):
+// Mining Act s.34 pattern — enumerated children preceded by a parent lead-in rule,
+// where the authoritative source-focus option advertises NO child labels. The
+// model's ad-hoc (a)/(b) labels must not slice the lead-in out of the grounding
+// text. Strict-side fixture — Community Planning Act s.1 pattern — the
+// authoritative option DOES advertise child labels, so cross-child evidence
+// (definitions from 1(1) quoted under 1(2)) must remain invalid.
+const PROSPECTOR_SOURCE =
+  'Upon demand, a prospector shall produce and exhibit his licence to\n' +
+  '(a) the officer of the Crown making the demand; and\n' +
+  '(b) the owner of surface rights to land upon which the prospector has entered.';
+const DEFINITIONS_SOURCE =
+  'In this Act,\n' +
+  '1(1) unless the context otherwise indicates, \u201cCommissioner\u201d means the Commissioner appointed under the Act; and\n' +
+  '1(2) \u201cmunicipal plan\u201d means the municipal plan adopted under section 13.';
+
+const makeGroundingJob = (
+  sourceKey: string,
+  operativeSourceText: string,
+  advertisedChildLabels: string[],
+): AiStudyMapJob => ({
+  schemaVersion: 1,
+  jobId: 'map-grounding-test',
+  runId: 'run-grounding-test',
+  promptSpecVersion: 'study-map-v3',
+  corpusContentHash: 'a'.repeat(64),
+  inputHash: 'b'.repeat(64),
+  document: { documentId: 'doc-test', title: 'Test Act', type: 'act' },
+  target: {
+    sourceKeys: [sourceKey],
+    sectionLabels: ['34'],
+    exactSourceText: operativeSourceText,
+    operativeSourceText,
+    sourceMetadata: {},
+    sourceStatus: 'current',
+    approximateInputSize: {
+      exactCharacters: operativeSourceText.length,
+      operativeCharacters: operativeSourceText.length,
+      largeSection: false,
+    },
+    sourceFocusOptions: [{ sourceKey, label: '34', childLabels: advertisedChildLabels }],
+    sourceHashes: { [sourceKey]: 'c'.repeat(64) },
+  },
+  context: {},
+});
+
+const makeGroundingGroup = (
+  sourceKey: string,
+  selections: AiMapFocusSelection[],
+): AiProposedSourceGroup => ({
+  groupId: 'g1',
+  titleSuggestion: 'Licence production requirements',
+  sourceKeys: [sourceKey],
+  focusSelections: selections,
+  reason: 'The rule sets out who may demand and inspect the licence.',
+  approximateLearningGoal: 'Recall who may demand the licence and when it must be produced.',
+});
+
+const groundingCodes = (
+  group: AiProposedSourceGroup,
+  job: AiStudyMapJob,
+): string[] => {
+  const issues: AiValidationIssue[] = [];
+  validateStudyMapGroupGrounding(group, job, issues);
+  return issues.map((issue) => issue.code);
+};
+
+describe('focus grounding without advertised child labels', () => {
+  it('accepts the parent lead-in quoted under ad-hoc (a)/(b) labels (Mining Act s.34 pattern)', () => {
+    const job = makeGroundingJob('section:34', PROSPECTOR_SOURCE, []);
+    const group = makeGroundingGroup('section:34', [
+      {
+        sourceKey: 'section:34',
+        childLabels: ['(a)', '(b)'],
+        evidenceText: ['Upon demand, a prospector shall produce and exhibit his licence to'],
+      },
+    ]);
+    expect(groundingCodes(group, job)).not.toContain('FOCUS_EVIDENCE_NOT_IN_SOURCE');
+  });
+
+  it('still requires verbatim evidence even without advertised labels', () => {
+    const job = makeGroundingJob('section:34', PROSPECTOR_SOURCE, []);
+    const group = makeGroundingGroup('section:34', [
+      {
+        sourceKey: 'section:34',
+        childLabels: ['(a)', '(b)'],
+        evidenceText: ['a prospector must carry his licence at all times'],
+      },
+    ]);
+    expect(groundingCodes(group, job)).toContain('FOCUS_EVIDENCE_NOT_IN_SOURCE');
+  });
+});
+
+describe('focus grounding with advertised child labels (strict side preserved)', () => {
+  it('keeps child-specific grounding: 1(1) definitions quoted under 1(2) stay invalid (CPA s.1 pattern)', () => {
+    const job = makeGroundingJob('section:1', DEFINITIONS_SOURCE, ['1(1)', '1(2)']);
+    const group = makeGroundingGroup('section:1', [
+      {
+        sourceKey: 'section:1',
+        childLabels: ['1(2)'],
+        evidenceText: ['\u201cCommissioner\u201d means the Commissioner appointed under the Act'],
+      },
+    ]);
+    expect(groundingCodes(group, job)).toContain('FOCUS_EVIDENCE_NOT_IN_SOURCE');
+  });
+
+  it('accepts evidence inside the selected authoritative child', () => {
+    const job = makeGroundingJob('section:1', DEFINITIONS_SOURCE, ['1(1)', '1(2)']);
+    const group = makeGroundingGroup('section:1', [
+      {
+        sourceKey: 'section:1',
+        childLabels: ['1(2)'],
+        evidenceText: ['\u201cmunicipal plan\u201d means the municipal plan adopted under section 13'],
+      },
+    ]);
+    expect(groundingCodes(group, job)).not.toContain('FOCUS_EVIDENCE_NOT_IN_SOURCE');
+  });
+
+  it('keeps rejecting selection of a child label the source does not advertise', () => {
+    const job = makeGroundingJob('section:1', DEFINITIONS_SOURCE, ['1(1)', '1(2)']);
+    const group = makeGroundingGroup('section:1', [
+      {
+        sourceKey: 'section:1',
+        childLabels: ['1(3)'],
+        evidenceText: ['\u201cmunicipal plan\u201d means the municipal plan adopted under section 13'],
+      },
+    ]);
+    expect(groundingCodes(group, job)).toContain('FOCUS_CHILD_LABEL_NOT_IN_SOURCE');
   });
 });

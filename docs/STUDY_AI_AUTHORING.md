@@ -191,6 +191,8 @@ Additional blocking Study Map grounding errors include:
 - `DEFINED_TERM_NOT_IN_FOCUS_SOURCE` when a supplied defined term is not defined in the focus source. Defined-term recognition is one canonical module (`src/study/ai/studyAiDefinitions.ts`) shared by extraction and this validation, so both recognize the same `means`/`includes` verbs and `includes`-style terms never round-trip as a spurious failure.
 - `GROUP_TOPIC_NOT_GROUNDED` when high-risk topic leakage such as priority, appeal, delegation, or transitional concepts is grounded only in non-authoring context.
 
+Focus-selection grounding is narrowed by child labels **only when the authoritative `sourceFocusOptions` entry provides non-empty `childLabels`**; then `evidenceText` must fall inside the text of the selected children. When the authoritative entry's child-label list is empty (for example a parent lead-in with enumerated clauses the parser did not promote to structural child labels), model-supplied ad-hoc `childLabels` do **not** narrow grounding and evidence is checked against the complete authoritative source text. In both modes every model-supplied child label must still be an authoritative label (`FOCUS_CHILD_LABEL_NOT_IN_SOURCE`) and remain usable (not repeal-only). This repaired the 15 production false negatives on parent lead-in text while preserving the genuine wrong-child rejections (Community Planning Act s.1/s.75, Gas Distribution Act s.52, OHS Act s.9).
+
 ## Coverage
 
 Unit proposals may include `sourceCoverage` entries keyed by sourceKey. Child labels can be marked:
@@ -288,6 +290,10 @@ npm run study:ai:prepare-map -- --run <run-id> --strategy full-corpus --max-jobs
 ```
 
 Oversized provisions are isolated in their own batch. Completed valid results are resumable by job ID; reruns can leave existing valid JSONL lines untouched and fill missing batches.
+
+### Canonical local full-corpus state (2026-08-31)
+
+Run `ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342` (local Qwen3.8-27B-UD-IQ4_XS) is the canonical local production run over all 3,692 prepared jobs: **3,683 accepted, 9 permanent semantic failures, 0 provider-incomplete** (regenerated `reports/map-run-audit.json` after model-free recovery of the 15 grounding false-negative jobs from saved attempt 3). The nine permanent failures are Assessment Act s.15.3, Community Planning Act s.1 and s.75, Gas Distribution Act s.52, Mining Act s.68, Municipalities Act s.100, Occupational Health and Safety Act s.9, Property Act s.44, and Registry Act s.44; the derived runner-consumable retry set is `reports/final-production-retry-9-20260831.json` under the same run directory.
 
 Preparation writes:
 
@@ -601,6 +607,28 @@ Result JSONL is parsed line by line. Malformed or partial lines produce `MALFORM
 - Stale
 - Remaining
 - Duplicate results
+
+## Local Run Recovery, Promotion, and Review Sets
+
+Deterministic, model-free utilities for post-run cleanup and comparison. They read and append to run artifacts only; they never call a model, never rewrite historical failure artifacts, and never overwrite accepted results.
+
+```bash
+# Revalidate saved local-failure attempts and promote the highest valid one
+npm run study:ai:recover-result -- --run <run-id> --job <job-id> [--job ...] [--dry-run]
+
+# Derive the final retry set: canonical base jobs minus currently accepted results
+npx tsx scripts/studyAiBuildFinalRetrySet.ts [--base-run <run-id>] [--date YYYYMMDD] [--dry-run]
+
+# Promote accepted result rows between runs (identity/fingerprint verified)
+npx tsx scripts/studyAiPromoteMapResult.ts --from-run <run-id> --to-run <run-id> --job <job-id> [--job ...] [--dry-run]
+
+# Deterministic balanced production review bundle (default 250 entries)
+npx tsx scripts/studyAiBuildBalancedReviewSet.ts [--run <run-id>] [--date YYYYMMDD] [--total <n>] [--dry-run]
+```
+
+- `studyAiBuildFinalRetrySet.ts` fail-closes on base-run corruption, duplicate job IDs, missing prepared jobs, fingerprint mismatches, or a remainder that is not exactly the pinned nine permanent failures; it emits `reports/final-production-retry-9-<date>.json` + `.md` (jobId-ordered, with document/section identity, `authoringInputFingerprint`, and final failure issue codes) and reports the output file SHA-256. The 2026-08-31 artifact is `final-production-retry-9-20260831.json` (SHA-256 `04bcefa4daa275abd8c019d42c47b17f8fc70dae942e8ffa042b06cdc2f13cb9`).
+- `studyAiPromoteMapResult.ts` verifies that the job is prepared identically (`authoringInputFingerprint`) in both runs, that the source result row's identity fields (`jobId`, `corpusContentHash`, `inputHash`, `authoringInputFingerprint`) match the target job, refuses same-run promotion, refuses to overwrite existing target results or existing target provenance (no duplicate rows), preserves source artifacts and local-failure history, appends the row atomically with the source row's `runId` preserved (the auditor keys on `jobId`), and writes per-job promotion provenance under the target run. Dry-run validates everything without writing.
+- `studyAiBuildBalancedReviewSet.ts` selects a fixed-stratum bundle (core NB surveying/licensing laws; clean high-confidence standalone and split controls; medium confidence; skip / reference-only / combine dispositions; large multi-group splits; P1/P2 priorities; broad-focus warnings; capped recovered-retries) plus a document-diversity top-up filling the remainder of `--total` (default 250). Jobs are jobId-deterministic, earlier strata win ties, and the retry stratum is capped (quota 16) so retries cannot dominate. Output: `reports/balanced-review-set-<date>.json` + `.md` (2026-08-31: 250 entries, 61 documents, SHA-256 `c716d32cac86641c4f826e9fd6c1b9c46c86ef0e98c55fe9cf8a1b13c3febd1c`, byte-identical reruns).
 
 ## Commands
 
