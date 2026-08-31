@@ -35,6 +35,7 @@
     "study:ai:local-map": "tsx scripts/studyAiLocalMapAuthor.ts",
     "study:ai:local-compare": "tsx scripts/studyAiLocalMapCompare.ts",
     "study:ai:recover-result": "tsx scripts/studyAiRecoverMapResult.ts",
+    "study:ai:adjudicate-result": "tsx scripts/studyAiAdjudicateMapResult.ts",
     "study:ai:validate-unit-proposals": "tsx scripts/studyAiAuthoring.ts validate-unit-proposals",
     "study:ai:pilot-report": "tsx scripts/studyAiAuthoring.ts pilot-report",
     "crs:report:canada": "tsx scripts/reportCanadianCrsCatalog.ts",
