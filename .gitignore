@@ -27,3 +27,23 @@ test-results
 *.sw?
 manual/
 Working/
+
+# Local agent / Study AI working state
+.memory/
+temp/study-ai-*/
+
+# Study AI local-Qwen / production run artifacts.
+# Historical committed run fixtures remain tracked; these patterns cover the
+# newer local inference/calibration runs that are intentionally not source data.
+study-content/ai/runs/ai-map-2026-*/
+study-content/ai/runs/ai-map-4c12-full-corpus-v2-local-qwen*/
+
+# Local execution artifacts added to the canonical 4c12 prepared run
+study-content/ai/runs/ai-map-4c12-full-corpus-v2/local-failures/
+study-content/ai/runs/ai-map-4c12-full-corpus-v2/results/local-map.results.jsonl
+study-content/ai/runs/ai-map-4c12-full-corpus-v2/results/*.provenance.json
+
+# Local calibration/evaluation reports on the canonical 4c12 run
+study-content/ai/runs/ai-map-4c12-full-corpus-v2/reports/post-gate-a-regression-set.json
+study-content/ai/runs/ai-map-4c12-full-corpus-v2/reports/stratified-200-seed-20260828.json
+study-content/ai/runs/ai-map-4c12-full-corpus-v2/reports/stratified-200-seed-20260828.md
