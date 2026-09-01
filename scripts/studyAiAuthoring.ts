@@ -305,13 +305,165 @@ const cleanAiSourceText = (
   };
 };
 
-// A provision is repeal-only when the whole text is a bare repeal stub: an optional
-// short provision label made of DIGITS, dots, parentheses, hyphens and spaces only
-// (never letters, so the prefix cannot span past the first label token into
-// operative text), followed by optional spaces and then 'Repealed:' or
-// 'Repealed.' (case-insensitive). e.g. '10.', '15.1', '(3)', '10(3)', '10. (3)'.
+// Whole-source repeal detection.
+//
+// A component is repeal-only ONLY when its entire body is a repeal stub plus
+// citation/history metadata. A mixed provision whose FIRST subsection is
+// repealed but which continues with live text (e.g.
+// '2(1)Repealed: 2003, c.14, s.2\n2(2)This Act does not apply...') is NOT
+// repeal-only and must remain scannable. The classification is line-based:
+//   - the first non-blank line must be a repeal stub;
+//   - every other line must be blank, a repeal stub, a citation/history
+//     line, a structural heading, or a leaked structural label;
+//   - any substantive law text (sentence-case words) makes the body 'mixed';
+//   - short lines that are neither parseable metadata nor clearly structural
+//     are 'ambiguous' and keep the body OUT of the repeal-only bucket
+//     (fail closed).
+
+/** Session/supplement qualifiers attached to a year or chapter: '(Supp.)', '(2nd Sess.)'. */
+const CITE_SESSION_SRC = '(?:\\s*\\(\\s*(?:Supp\\.|\\d{1,2}(?:st|nd|rd|th)?\\s*Sess\\.)\\s*\\))?';
+
+/** One citation unit: [year-range|RS][session] [, c.X|cc.X][session] [, s.|art. N...]. */
+const CITE_UNIT_RE = new RegExp(
+  `^(?:R\\.S\\.|(?:19|20)\\d{2}(?:\\s*[-\\u2013]\\s*(?:19|20)?\\d{2,3})?)${CITE_SESSION_SRC}(?:\\s*,\\s*CC?S?\\.[A-Za-z0-9][\\w./-]*${CITE_SESSION_SRC})*(?:\\s*,\\s*(?:s|art)\\.\\s*[0-9][0-9A-Z.,\\s]*)?\\.?$`,
+  'i',
+);
+/** A line that is only a section-reference list, e.g. 's.5, 6'. */
+const CITE_SECTIONS_ONLY_RE = /^s\.\s*[0-9][0-9A-Z.,\s]*$/i;
+
+const isCitationUnit = (value: string): boolean =>
+  CITE_UNIT_RE.test(value) || CITE_SECTIONS_ONLY_RE.test(value);
+
+/** A citation/history line: 'O.'-optional units joined by ';' or 'and also'. */
+const isCitationLine = (value: string): boolean => {
+  const parts = value
+    .replace(/^O\.{1,2}\s*/i, '')
+    .split(';')
+    .map((part) => part.trim().replace(/\.$/, ''))
+    .filter(Boolean);
+  return (
+    parts.length > 0 &&
+    parts.every((part) =>
+      part
+        .split(/\s+and\s+(?:also\s+)?/i)
+        .map((unit) => unit.trim())
+        .filter(Boolean)
+        .every(isCitationUnit),
+    )
+  );
+};
+
+const REPEALED_DATE_TAIL_RE =
+  /^(?:(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\.?\s+\d{1,4}(?:,?\s+\d{2,4})?|\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{2,4}|\d{4})\s*\.?$/i;
+
+const REPEALED_PREFIX_RE = /^(?:[0-9().\s-]+)?Repealed\b/i;
+
+/**
+ * 'Repealed', 'Repealed: 2003, c.14, s.2', '2(1)Repealed: ...',
+ * 'Repealed January 2006' — the tail must be empty, a citation/history
+ * string, or a bare date; anything else is not a stub (fail closed).
+ */
+const isRepealStubLine = (line: string): boolean => {
+  const t = line.trim();
+  const prefix = REPEALED_PREFIX_RE.exec(t);
+  if (!prefix) return false;
+  const rest = t.slice(prefix[0].length).replace(/^[\s:.]+/, '').trim();
+  return rest === '' || REPEALED_DATE_TAIL_RE.test(rest) || isCitationLine(rest);
+};
+
+/** Leaked next-structure labels left behind by normalization: '3', '21.2', 'IV', 'C'. */
+const isStructuralLabelLine = (line: string): boolean => {
+  const t = line.trim();
+  return (
+    /^[0-9]+(?:\.[0-9]+)*$/.test(t) || // leaked next number: '3', '21.2'
+    /^[IVXLCDM]{2,7}$/.test(t) || // leaked part number: 'IV', 'IX'
+    /^[A-Z]{1,2}\.?$/.test(t) // leaked part marker: 'C', 'B.'
+  );
+};
+
+/** All-caps section/part heading line, e.g. 'GAS STORAGE', 'REAL PROPERTY ASSESSMENT NOTICE'. */
+const isAllCapsHeadingLine = (line: string): boolean => {
+  const t = line.trim();
+  return t.length >= 4 && t.length <= 80 && /^[A-Z][A-Z0-9 ,&'()\-./]*$/.test(t);
+};
+
+/** Words that may stay lowercase in a title-case heading. */
+const TITLE_CASE_SMALL_WORDS = new Set([
+  'a', 'an', 'and', 'as', 'at', 'but', 'by', 'for', 'from',
+  'in', 'of', 'on', 'or', 'the', 'to', 'with',
+]);
+
+/** Title-case leaked heading, e.g. 'Fraction or Gore', 'Deferred Widening By-laws'. */
+const isTitleCaseHeadingLine = (line: string): boolean => {
+  const t = line.trim();
+  if (t.length < 4 || t.length > 80) return false;
+  const words = t.split(/\s+/).filter(Boolean);
+  if (words.length < 2 || words.length > 12) return false;
+  let capitalized = 0;
+  for (const word of words) {
+    const core = word.replace(/^[^A-Za-z]*/, '').replace(/[^A-Za-z-]+$/, '');
+    if (!/[A-Za-z]/.test(word)) continue;
+    if (TITLE_CASE_SMALL_WORDS.has(core.toLowerCase()) || core.length <= 2) continue;
+    if (!/^[A-Z]/.test(core)) return false;
+    capitalized += 1;
+  }
+  return capitalized >= 2;
+};
+
+/** Consolidation footnote, e.g. 'N.B. This Act is consolidated to June 16, 2023.' */
+const isConsolidationNoteLine = (line: string): boolean => /^N\.B\.\s/i.test(line.trim());
+
+type RepealLineKind =
+  | 'blank'
+  | 'stub'
+  | 'citation'
+  | 'heading'
+  | 'label'
+  | 'note'
+  | 'substantive'
+  | 'ambiguous';
+
+const classifyRepealLine = (line: string): RepealLineKind => {
+  const t = line.trim();
+  if (t === '') return 'blank';
+  if (isRepealStubLine(t)) return 'stub';
+  if (isCitationLine(t)) return 'citation';
+  if (isAllCapsHeadingLine(t)) return 'heading';
+  if (isTitleCaseHeadingLine(t)) return 'heading';
+  if (isStructuralLabelLine(t)) return 'label';
+  if (isConsolidationNoteLine(t)) return 'note';
+  const words = t.split(/\s+/).filter(Boolean);
+  // Sentence-case law text is substantive; anything short and unparseable is
+  // ambiguous and fails closed (never assumed to be metadata).
+  return t.length >= 40 || words.length >= 3 ? 'substantive' : 'ambiguous';
+};
+
+export interface RepealOnlyClassification {
+  /** 'whole': confirmed whole-source repeal; 'mixed': live text present;
+   *  'ambiguous': unparseable/unknown lines, fail closed. */
+  outcome: 'whole' | 'mixed' | 'ambiguous';
+  lineKinds: Partial<Record<RepealLineKind, number>>;
+}
+
+export const classifyRepealOnly = (body: string): RepealOnlyClassification => {
+  const kinds = body.split(/\r?\n/).map(classifyRepealLine);
+  const lineKinds: Partial<Record<RepealLineKind, number>> = {};
+  for (const kind of kinds) lineKinds[kind] = (lineKinds[kind] ?? 0) + 1;
+  const firstContent = kinds.find((kind) => kind !== 'blank');
+  const outcome: RepealOnlyClassification['outcome'] =
+    lineKinds.substantive
+      ? 'mixed'
+      : lineKinds.ambiguous
+        ? 'ambiguous'
+        : firstContent === 'stub'
+          ? 'whole'
+          : 'ambiguous';
+  return { outcome, lineKinds };
+};
+
+/** True only when the ENTIRE body is a repeal stub plus citation/history metadata. */
 const isRepealOnlyText = (text: string): boolean =>
-  /^\s*(?:[0-9().\s-]+)?Repealed(?::|\.)/i.test(text.trim());
+  classifyRepealOnly(text).outcome === 'whole';
 
 // Component text may embed the section heading as its first line (e.g.
 // 'Right to dower or curtesy\n\n33Repealed: 2006, c.18, s.2'). For body

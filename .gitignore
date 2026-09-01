@@ -37,6 +37,7 @@ temp/study-ai-*/
 # newer local inference/calibration runs that are intentionally not source data.
 study-content/ai/runs/ai-map-2026-*/
 study-content/ai/runs/ai-map-4c12-full-corpus-v2-local-qwen*/
+study-content/ai/runs/repeal-rebase-20260901-src/
 
 # Local execution artifacts added to the canonical 4c12 prepared run
 study-content/ai/runs/ai-map-4c12-full-corpus-v2/local-failures/

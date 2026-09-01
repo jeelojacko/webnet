@@ -2017,6 +2017,67 @@ describe('AI authoring content flags', () => {
     expect(sourceStatusFromComponent(aqua97)).toBe('current');
   });
 
+  it('classifies date-tail stubs and all-repealed-child provisions as repeal-only', () => {
+    const { isRepealOnlyText, contentFlagsFromComponent, sourceStatusFromComponent } = authoring();
+
+    // Municipal bylaw provision (jobId map-4907cf4a742b9f7e): bare date-tail stub under a
+    // 'Repealed' heading; every line is a repeal stub, so the target is fully repealed.
+    const bylaws12 = {
+      text: '12.1.4 Repealed\nRepealed January 2006',
+      heading: 'Repealed',
+    } as never;
+    expect(isRepealOnlyText('12.1.4 Repealed\nRepealed January 2006')).toBe(true);
+    const bylaws12Flags = contentFlagsFromComponent(bylaws12)!;
+    expect(bylaws12Flags.repealOnly).toBe(true);
+    expect(bylaws12Flags.containsRepealedSubprovision).toBe(false);
+    expect(sourceStatusFromComponent(bylaws12)).toBe('repealed');
+
+    // Every subsection repealed: each line is a labeled repeal stub, so the whole
+    // provision is repeal-only even though no line starts with bare 'Repealed'.
+    const allRepealedChildren = '5(1)Repealed: 2000-38\n5(2)Repealed: 2000-38';
+    expect(isRepealOnlyText(allRepealedChildren)).toBe(true);
+    const childrenFlags = contentFlagsFromComponent({ text: allRepealedChildren } as never)!;
+    expect(childrenFlags.repealOnly).toBe(true);
+    expect(childrenFlags.containsRepealedSubprovision).toBe(false);
+    expect(sourceStatusFromComponent({ text: allRepealedChildren } as never)).toBe('repealed');
+  });
+
+  it('keeps mixed labeled provisions and live repeal-referencing text current', () => {
+    const { isRepealOnlyText, contentFlagsFromComponent, sourceStatusFromComponent } = authoring();
+
+    // Partnerships and Business Names Registration Act section:2 (jobId
+    // map-11fc0137f38dd967): the regression case. Subsection 2(1) is a labeled repeal
+    // stub but 2(2) is live operative text; the provision must stay current with a
+    // repealed-subprovision note, not be misclassified as a whole repeal.
+    const partners2Text =
+      'Application of Act\n\n2(1)Repealed: 2003, c.14, s.2\n\n2(2)This Act does not apply to a limited partnership under the provisions of the Limited Partnership Act.\n\nR.S., c.168, s.2; 1980, c.39, s.4; 1986, c.62, s.4; 2003, c.14, s.2';
+    const partners2 = { text: partners2Text, heading: 'Application of Act' } as never;
+    expect(isRepealOnlyText(partners2Text)).toBe(false);
+    const partners2Flags = contentFlagsFromComponent(partners2)!;
+    expect(partners2Flags.repealOnly).toBe(false);
+    expect(partners2Flags.containsRepealedSubprovision).toBe(true);
+    expect(sourceStatusFromComponent(partners2)).toBe('current');
+
+    // Live amendment-machinery provision: references a repealed schedule but is itself
+    // operative text and must stay current.
+    const scheduleRepeal = '2(1)Schedule 1 is repealed and the following schedule is added:';
+    expect(isRepealOnlyText(scheduleRepeal)).toBe(false);
+    const scheduleFlags = contentFlagsFromComponent({ text: scheduleRepeal } as never)!;
+    expect(scheduleFlags.repealOnly).toBe(false);
+    expect(scheduleFlags.containsRepealedSubprovision).toBe(true);
+    expect(sourceStatusFromComponent({ text: scheduleRepeal } as never)).toBe('current');
+
+    // Live transitional provision: substantive text mentioning repealed readings must
+    // not collapse to repeal-only.
+    const transitional =
+      '3(1)The transitional provisions in Schedule 2 continue to apply as if the Act as it read immediately before it was repealed had not been repealed.';
+    expect(isRepealOnlyText(transitional)).toBe(false);
+    const transitionalFlags = contentFlagsFromComponent({ text: transitional } as never)!;
+    expect(transitionalFlags.repealOnly).toBe(false);
+    expect(transitionalFlags.containsRepealedSubprovision).toBe(true);
+    expect(sourceStatusFromComponent({ text: transitional } as never)).toBe('current');
+  });
+
   it('flags static geographic boundary descriptions', () => {
     const { contentFlagsFromComponent } = authoring();
 

@@ -667,10 +667,11 @@ an accepted-results run with four parts:
   transitional/historic provisions stay in the scan.
 - **Pinned anchors.** Four named cases pin the audit's behavior: `map-19c48590a1b233de`
   (Clean Water Act s.40, official-power, expected detected suspect),
-  `map-11fc0137f38dd967` (Partnerships and Business Names Registration Act s.2, expected
-  **excluded by repeal metadata** — the negative case is validated like the positive ones),
+  `map-11fc0137f38dd967` (Partnerships and Business Names Registration Act s.2, a mixed
+  live/repealed target — s.2(1) is a labeled repeal stub, s.2(2) is live — expected
+  **detected** as an operative-scope suspect after the 2026-09-01 repeal-metadata repair),
   `map-21050fd5c7830508` (Service New Brunswick Act s.69, operative-scope, expected
-detected suspect), and `map-d1fadd2dfd0ce395` (Aquaculture Act s.90, broad standalone,
+  detected suspect), and `map-d1fadd2dfd0ce395` (Aquaculture Act s.90, broad standalone,
   expected detected). `allPinnedAnchorsFound` must stay true.
 - **P1 export.** Every accepted P1 row with provenance (original/recovered/promoted),
   failure attempts, and balanced-set membership, bucketed into `core-surveying-licensing`
@@ -682,11 +683,27 @@ detected suspect), and `map-d1fadd2dfd0ce395` (Aquaculture Act s.90, broad stand
   or the pinned broad anchor even without a trigger, plus comparable large multi-group
   splits.
 
-Canonical 20260831 outputs (`reports/post-qc-semantic-audit-20260831.json` + `.md`):
-guards `staticGeographicExcluded=31`, `repealMetadataExcluded=301`,
-`fullyRepealedExcluded=1`, `consequentialAmendmentExcluded=114`,
-`scannedZeroGroupTotal=724`; 26 suspects; P1 total 311 (90 core / 74 cadastral / 147
-adjacent); 36 broad standalone suspects; all pinned anchors found.
+Canonical 20260831 outputs (`reports/post-qc-semantic-audit-20260831.json` + `.md`),
+after the 2026-09-01 repeal-metadata repair: guards `staticGeographicExcluded=31`,
+`repealMetadataExcluded=300`, `fullyRepealedExcluded=1`,
+`consequentialAmendmentExcluded=114`, `scannedZeroGroupTotal=724`; 28 suspects (26 plus
+Partnerships Act s.2 and Clean Water Act s.13, both operative-scope, which the strict
+repeal classifier reclassified as mixed live/repealed); P1 total 311 (90 core / 74
+cadastral / 147 adjacent); 36 broad standalone suspects; all pinned anchors found.
+
+The 2026-09-01 repair (`scripts/studyAiRepealIntegrityAudit.ts` +
+`scripts/studyAiRepealRebaseResults.ts`; report `reports/repeal-metadata-integrity-20260901.json`):
+- Reclassified the 303 previously repeal-flagged jobs with the strict line-based repeal
+  classifier: 298 confirmed whole-repeal, 5 mixed live/repealed, 0 ambiguous, plus 2
+  previously unflagged bylaw targets confirmed whole-repeal.
+- Flipped metadata on 7 jobs (5 repealed→current with `containsRepealedSubprovision`,
+  2 current→repealed), recomputed their `inputHash` and `authoringInputFingerprint`, and
+  rewrote 7 batch files atomically; all other 3,685 job rows are byte-identical.
+- Rebased the 7 affected accepted result rows via the adjudication path (semantic
+  payloads unchanged, runner-owned identity fields re-injected from the repaired jobs)
+  through a synthetic source run (`repeal-rebase-20260901-src`) with explicitly labeled
+  reconstructed attempt artifacts. Final result set: 3,692 rows, `study:ai:validate-results`
+  clean.
 
 ### Post-QC human review bundles
 

@@ -604,10 +604,9 @@ export const PINNED_ANCHORS: PinnedAnchorExpectation[] = [
   {
     jobId: 'map-11fc0137f38dd967',
     label:
-      'Partnerships Act s.2 — repealed/repeal-only target (expected excluded by the repeal-metadata guard)',
+      'Partnerships Act s.2 — mixed live/repealed target (2(1) repealed, 2(2) live); operative-scope after the 2026-09-01 repeal-metadata repair',
     kind: 'suspect',
     category: 'operative-scope',
-    expect: 'excluded-repeal-metadata',
   },
   {
     jobId: 'map-21050fd5c7830508',
