@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "reviewType": "post-qc-map-semantic-review",
+  "runId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+  "decisions": [
+    {
+      "jobId": "map-0000000000000000",
+      "priorityDecision": "keep",
+      "newPriority": null,
+      "groupingDecision": "keep",
+      "notes": "Replace with real jobIds. priorityDecision: keep|change (newPriority P1-P4 required when change, null when keep). groupingDecision: keep|split|combine|reference-only|skip|needs-human-review. Priority-only changes are adjudicable; any grouping change requires a complete corrected Map result artifact. This preview CLI never modifies canonical results."
+    }
+  ]
+}

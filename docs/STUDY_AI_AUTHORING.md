@@ -627,12 +627,112 @@ npm run study:ai:adjudicate-result -- --run <production-run-id> --job <job-id> -
 
 # Deterministic balanced production review bundle (default 250 entries)
 npx tsx scripts/studyAiBuildBalancedReviewSet.ts [--run <run-id>] [--date YYYYMMDD] [--total <n>] [--dry-run]
+
+# Post-QC semantic audit of a completed, fully-accepted run
+npm run study:ai:post-qc-audit -- --run <run-id> [--date YYYYMMDD] [--dry-run]
+
+# Post-QC human review bundles (adjacent P1 + broad-group), byte-deterministic, self-hashing
+npm run study:ai:post-qc-bundles -- --run <run-id> [--date YYYYMMDD] [--dry-run]
+
+# Post-QC human review decisions: validate + preview only, never mutates canonical results
+npm run study:ai:review-map-post-qc -- --run <run-id> --decisions <decisions.json> [--dry-run]
 ```
 
 - `studyAiBuildFinalRetrySet.ts` fail-closes on base-run corruption, duplicate job IDs, missing prepared jobs, fingerprint mismatches, or a remainder that is not exactly the pinned nine permanent failures; it emits `reports/final-production-retry-9-<date>.json` + `.md` (jobId-ordered, with document/section identity, `authoringInputFingerprint`, and final failure issue codes) and reports the output file SHA-256. The 2026-08-31 artifact is `final-production-retry-9-20260831.json` (SHA-256 `04bcefa4daa275abd8c019d42c47b17f8fc70dae942e8ffa042b06cdc2f13cb9`).
 - `studyAiPromoteMapResult.ts` verifies that the job is prepared identically (`authoringInputFingerprint`) in both runs, that the source result row's identity fields (`jobId`, `corpusContentHash`, `inputHash`, `authoringInputFingerprint`) match the target job, refuses same-run promotion, refuses to overwrite existing target results or existing target provenance (no duplicate rows), preserves source artifacts and local-failure history, appends the row atomically with the source row's `runId` preserved (the auditor keys on `jobId`), and writes per-job promotion provenance under the target run. Dry-run validates everything without writing.
 - `studyAiAdjudicateMapResult.ts` (`study:ai:adjudicate-result`) is the human-adjudication path for permanent failures whose saved attempts were semantically sound but structurally ungrounded. It takes a human-corrected plain model-output JSON (no runner identity fields; they are injected by the ordinary `validateLocalResult` path), verifies the production and source prepared jobs carry identical `authoringInputFingerprint` and matching identity fields, confirms the referenced `local-failures/<job-id>/attempt-N` raw/validation artifacts exist in the source run and that the recorded raw hash still matches, refuses jobs that already have an accepted result or provenance, and appends the canonical row atomically with per-job provenance recording `adjudication.humanAdjudicated = true`, `sourceRun`, `sourceAttempt`, `sourceRawHash`, `correctedOutputHash`, `resultRowHash`, `preAdjudicationIssues`, `adjudicationReason = final-production-tail-human-adjudication`, `adjudicatedVia = study:ai:adjudicate-result`, and `adjudicatedAt`. Historical failure artifacts in both runs stay untouched. Used on 2026-08-31 to close the final four production gaps (`map-1c37c940368bec16` Municipalities Act s.100 from attempt 2; `map-1fa5a6239a1f7144` Community Planning Act s.1, `map-208559fbf2dbeffa` Mining Act s.68, and `map-56bae66370b899b1` Community Planning Act s.75 from attempt 3, each with focus-metadata corrections only), taking production to 3,692/3,692 accepted with zero permanent failures. Focused unit tests in `tests/study/study_ai_adjudicate_map_result.test.ts` (10 cases).
 - `studyAiBuildBalancedReviewSet.ts` selects a fixed-stratum bundle (core NB surveying/licensing laws; clean high-confidence standalone and split controls; medium confidence; skip / reference-only / combine dispositions; large multi-group splits; P1/P2 priorities; broad-focus warnings; capped recovered-retries) plus a document-diversity top-up filling the remainder of `--total` (default 250). Jobs are jobId-deterministic, earlier strata win ties, and the retry stratum is capped (quota 16) so retries cannot dominate. Output: `reports/balanced-review-set-<date>.json` + `.md` (2026-08-31: 250 entries, 61 documents, SHA-256 `c716d32cac86641c4f826e9fd6c1b9c46c86ef0e98c55fe9cf8a1b13c3febd1c`, byte-identical reruns).
+
+## Post-QC Semantic Audit and Human Review Preparation (2026-08-31)
+
+After the final production-tail adjudication (3,692/3,692 accepted), the canonical run
+`ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342` is frozen for human
+semantic review of the remaining risk buckets. Everything below is deterministic and
+model-free, and read-only with respect to canonical results: it writes only reports under
+the run's `reports/` directory (gitignored run artifacts).
+
+### Post-QC semantic audit
+
+`scripts/studyAiAuditPostProductionSemantics.ts` (`npm run study:ai:post-qc-audit`) audits
+an accepted-results run with four parts:
+
+- **Zero-group scan.** Every accepted zero-group result (skip / reference-only) is checked
+  for operative legal content the model dispositioned out. Guards, in order: static
+  geographic boundary description targets; **canonical repeal metadata**
+  (`target.sourceStatus === 'repealed'` or `target.contentFlags.repealOnly === true`);
+  full repeal markers in the text; and `consequentialAmendment` targets. The repeal-metadata
+  guard reads authoritative job metadata rather than text shape, so whole-source repeals are
+  excluded even when the text still carries operative-looking wording. Live sections that
+  merely contain repealed children (`containsRepealedSubprovision`) and non-repealed
+  transitional/historic provisions stay in the scan.
+- **Pinned anchors.** Four named cases pin the audit's behavior: `map-19c48590a1b233de`
+  (Clean Water Act s.40, official-power, expected detected suspect),
+  `map-11fc0137f38dd967` (Partnerships and Business Names Registration Act s.2, expected
+  **excluded by repeal metadata** — the negative case is validated like the positive ones),
+  `map-21050fd5c7830508` (Service New Brunswick Act s.69, operative-scope, expected
+detected suspect), and `map-d1fadd2dfd0ce395` (Aquaculture Act s.90, broad standalone,
+  expected detected). `allPinnedAnchorsFound` must stay true.
+- **P1 export.** Every accepted P1 row with provenance (original/recovered/promoted),
+  failure attempts, and balanced-set membership, bucketed into `core-surveying-licensing`
+  (the `CORE_SURVEYING_DOCS` set, which as of 2026-08-31 includes
+  `doc-new-brunswick-land-surveyors-bylaws`), `cadastral-property-registration-planning`
+  (explicit allowlist), and `adjacent-general-law`. Buckets order review priority only;
+  `suggestedPriority` is never mutated.
+- **Broad standalone + large splits.** Standalone results carrying broad-focus warnings,
+  or the pinned broad anchor even without a trigger, plus comparable large multi-group
+  splits.
+
+Canonical 20260831 outputs (`reports/post-qc-semantic-audit-20260831.json` + `.md`):
+guards `staticGeographicExcluded=31`, `repealMetadataExcluded=301`,
+`fullyRepealedExcluded=1`, `consequentialAmendmentExcluded=114`,
+`scannedZeroGroupTotal=724`; 26 suspects; P1 total 311 (90 core / 74 cadastral / 147
+adjacent); 36 broad standalone suspects; all pinned anchors found.
+
+### Post-QC human review bundles
+
+`scripts/studyAiPostQcReviewBundles.ts` (`npm run study:ai:post-qc-bundles`) builds two
+byte-deterministic, self-hashing (SHA-256 over the JSON payload) review bundles from the
+audit, prepared jobs, and accepted results:
+
+- `reports/post-qc-adjacent-p1-review-<date>.json` + `.md` — every P1 row in the
+  `adjacent-general-law` bucket (20260831: 147 rows / 29 documents) with the complete
+  exact source text, focus selections (child labels, defined terms, evidence text),
+  disposition/confidence/reason, group titles, warnings, provenance, failure-attempt
+  history, and balanced-set context.
+- `reports/post-qc-broad-group-review-<date>.json` + `.md` — all broad standalone
+  suspects with comparable large splits grouped by document. Each row is marked
+  high-risk when it is one of the pinned jobs (`map-10ff468d35d10873`,
+  `map-48b1a91a069cabde`, `map-d747c4a97d7161d3`, `map-4fc0f66dd77ce286`,
+  `map-d1fadd2dfd0ce395`) or when it trips the deterministic rules (≥ 3 broad triggers, or
+  ≥ 6000 operative characters). 20260831: 36 rows, 6 high-risk.
+
+Both regenerate byte-identical; `summary.jsonSha256` self-excludes (the hash is computed
+with the field blanked).
+
+### Post-QC review decisions (human-in-the-loop)
+
+`src/study/ai/studyAiReviewDecision.ts` defines the human review-decision schema
+(`schemaVersion: 1`, `reviewType: "post-qc-map-semantic-review"`): per job, the reviewer
+chooses a `priorityDecision` (`keep` | `change` + `newPriority`) and a `groupingDecision`
+(`keep` | `split` | `combine` | `reference-only` | `skip` | `needs-human-review`). The
+parser rejects fabricated job IDs (must be `map-` + 16 hex digits), duplicates, and
+inconsistent fields, changing nothing.
+
+`scripts/studyAiReviewMapPostQc.ts` (`npm run study:ai:review-map-post-qc`) validates a
+decisions file against an accepted run (run identity, known job IDs, priority/grouping
+consistency) and classifies each decision:
+
+- `keep` + `keep` → **no-change**;
+- priority change with unchanged grouping → **priority-only-adjudicable** (executable via
+  `study:ai:adjudicate-result` by re-emitting the same groups under the new priority);
+- any grouping change → **requires-corrected-map-result**: a full corrected Map result
+  artifact must be authored and flow through the ordinary adjudication path — the decision
+  file alone can never synthesize grouping.
+
+The CLI is preview-only: `--dry-run` prints the classification, a normal invocation writes
+`reports/review-decision-preview.json` under the run, and any parse/classification issue
+exits 1 without writing. It never modifies `results/`, provenance, or failure artifacts.
+Template: `study-content/ai/review/post-qc-map-review-decision.template.json`.
 
 ## Commands
 

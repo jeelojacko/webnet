@@ -47,9 +47,7 @@ const anchorSection = (audit: PostQcSemanticAudit): string[] =>
       row(
         `\`${a.jobId}\``,
         a.label,
-        a.expectedKind === 'zero-group-suspect'
-          ? `suspect / ${a.expectedCategory ?? 'any'}`
-          : a.expectedKind,
+        `${a.expectation === 'excluded-repeal-metadata' ? 'excluded by repeal-metadata guard' : 'detected'}${a.expectedKind === 'zero-group-suspect' ? ` / ${a.expectedCategory ?? 'any'}` : ''}`,
         a.found ? 'yes' : '**MISSING**',
         a.detail,
       ),
@@ -66,6 +64,7 @@ const guardSection = (audit: PostQcSemanticAudit): string[] => {
     '| --- | --- |',
     row('scanned zero-group total', String(g.scannedZeroGroupTotal)),
     row('static-geographic-boundary-description', String(g.staticGeographicExcluded)),
+    row("repeal metadata (sourceStatus = 'repealed' or contentFlags.repealOnly)", String(g.repealMetadataExcluded)),
     row('fully-repealed (unlabelled standalone Repealed marker line)', String(g.fullyRepealedExcluded)),
     row('consequential-amendment (effect belongs to receiving instrument)', String(g.consequentialAmendmentExcluded)),
     '',
@@ -249,7 +248,7 @@ const methodology = (): string[] => [
   '- **C1 official-power:** heading is `Regulations`/`Regulation` or text contains a delegated-power phrase (may make regulations; Lieutenant-Governor in Council may; Minister may; Board may; Council may; may prescribe; may order; may approve; may authorize) **and** the model reason mentions regulation/delegation/power/authority.',
   '- **C2 operative-scope families:** act-scope-exclusion (does/do/shall/will not apply|extend, not extend or apply, extends or applies to, not applicable, inapplicable); this-act-applies; section-applies (section/subsection N applies / does not apply / shall apply, incl. "and" joins); applies-with-modifications.',
   '- **C3 operative-crossref:** operative text ≤ 1200 chars, contains a section/subsection/paragraph/schedule reference within 150 chars of a strict legal-effect verb (deemed; continues to apply/have effect/be in force; ceases to…; validates; supersedes; prevails; exempt; binding on / shall bind).',
-  '- **Guards (deterministic):** staticGeographicBoundaryDescription, full-repeal marker, consequentialAmendment → excluded; transitional → kept and flagged.',
+  '- **Guards (deterministic):** staticGeographicBoundaryDescription → excluded; canonical repeal metadata (sourceStatus = \'repealed\' or contentFlags.repealOnly) → excluded (the repeal guard — live sections that merely contain repealed children, and non-repealed transitional/historic provisions, are still scanned); full-repeal marker; consequentialAmendment → excluded; transitional → kept and flagged.',
   '- **Comparables:** accepted results with ≥1 proposed group whose masked text matches the same family; up to 5 example jobIds (jobId order) plus totals and disposition mix.',
   '- **P1 buckets:** core-surveying-licensing = builder CORE_SURVEYING_DOCS; cadastral-property-registration-planning = explicit allowlist (community-planning act+regulation, condominium-property, marital-property, easements, expropriation, real-property-transfer-tax, standard-forms-of-conveyances, crown-grant-restrictions); everything else = adjacent-general-law.',
   '- **Provenance:** promoted = accepted in the production-retry9 sibling run; recovered = has a local-failures directory; else original.',

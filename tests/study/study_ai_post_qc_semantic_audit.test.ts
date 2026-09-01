@@ -347,6 +347,80 @@ describe('post-QC semantic audit — guards', () => {
     expect(audit.guards.fullyRepealedExcluded).toBe(1);
     expect(audit.suspects).toHaveLength(0);
   });
+
+  it('excludes whole-source repealed targets before stub masking', () => {
+    const job = makeJob('map-ae00000000000001', 'doc-old-partnerships-act', {
+      sectionLabels: ['2'],
+      sourceStatus: 'repealed',
+      exactSourceText: SCOPE_TEXT,
+    });
+    const result = makeResult(job.jobId, { reason: 'Scope exclusion.' });
+    const audit = runAudit([job], [result]);
+    expect(audit.guards.scannedZeroGroupTotal).toBe(1);
+    expect(audit.guards.repealMetadataExcluded).toBe(1);
+    expect(audit.suspects).toHaveLength(0);
+  });
+
+  it('excludes repealOnly-flagged targets even when sourceStatus is current', () => {
+    const job = makeJob('map-ae00000000000002', 'doc-clean-water-act', {
+      sectionLabels: ['13'],
+      contentFlags: { repealOnly: true },
+      exactSourceText: SCOPE_TEXT,
+    });
+    const result = makeResult(job.jobId, { reason: 'Scope exclusion.' });
+    const audit = runAudit([job], [result]);
+    expect(audit.guards.repealMetadataExcluded).toBe(1);
+    expect(audit.suspects).toHaveLength(0);
+  });
+
+  it('keeps live sections containing repealed children scannable', () => {
+    const job = makeJob('map-ae00000000000003', 'doc-live-act', {
+      sectionLabels: ['4'],
+      sourceStatus: 'current',
+      contentFlags: { containsRepealedSubprovision: true },
+      exactSourceText: SCOPE_TEXT,
+    });
+    const result = makeResult(job.jobId, { reason: 'Scope exclusion.' });
+    const audit = runAudit([job], [result]);
+    expect(audit.guards.repealMetadataExcluded).toBe(0);
+    expect(audit.suspects).toHaveLength(1);
+    expect(audit.suspects[0]?.jobId).toBe(job.jobId);
+  });
+
+  it('keeps non-repealed transitional historical provisions scannable', () => {
+    const job = makeJob('map-ae00000000000004', 'doc-transitional-act', {
+      sectionLabels: ['77'],
+      sourceStatus: 'historical',
+      contentFlags: { transitional: true },
+      exactSourceText: SCOPE_TEXT,
+    });
+    const result = makeResult(job.jobId, { reason: 'Scope exclusion.' });
+    const audit = runAudit([job], [result]);
+    expect(audit.guards.repealMetadataExcluded).toBe(0);
+    expect(audit.suspects).toHaveLength(1);
+  });
+
+  it('mixed live/repealed: only the live scope target becomes a suspect', () => {
+    const liveJob = makeJob('map-ae00000000000005', 'doc-live-act', {
+      sectionLabels: ['9'],
+      exactSourceText: SCOPE_TEXT,
+    });
+    const repealedJob = makeJob('map-ae00000000000006', 'doc-repealed-act', {
+      sectionLabels: ['9'],
+      sourceStatus: 'repealed',
+      exactSourceText: SCOPE_TEXT,
+    });
+    const audit = runAudit(
+      [liveJob, repealedJob],
+      [
+        makeResult(liveJob.jobId, { reason: 'Scope exclusion.' }),
+        makeResult(repealedJob.jobId, { reason: 'Scope exclusion.' }),
+      ],
+    );
+    expect(audit.guards.scannedZeroGroupTotal).toBe(2);
+    expect(audit.guards.repealMetadataExcluded).toBe(1);
+    expect(audit.suspects.map((s) => s.jobId)).toEqual([liveJob.jobId]);
+  });
 });
 
 /* ---------------------------------------------------------------------
@@ -424,6 +498,9 @@ describe('post-QC semantic audit — deterministic ordering', () => {
 describe('post-QC semantic audit — P1 relevance buckets', () => {
   it('classifies core surveying, cadastral, and adjacent documents', () => {
     expect(relevanceBucket('doc-surveys-act')).toBe('core-surveying-licensing');
+    expect(relevanceBucket('doc-new-brunswick-land-surveyors-bylaws')).toBe(
+      'core-surveying-licensing',
+    );
     expect(relevanceBucket('doc-expropriation-act')).toBe(
       'cadastral-property-registration-planning',
     );

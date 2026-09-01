@@ -25,11 +25,16 @@ export const DEFAULT_RUN =
 export const DEFAULT_TOTAL = 250;
 export const SET_DATE = '20260831';
 
-/** Core NB surveying / land-registration / licensing instrument set. */
+/**
+ * Core NB surveying / land-registration / licensing instrument set.
+ * The Association of New Brunswick Land Surveyors Bylaws are part of the core
+ * NB surveying/licensing curriculum alongside the Land Surveyors Act.
+ */
 export const CORE_SURVEYING_DOCS = [
   'doc-boundaries-confirmation-act',
   'doc-land-titles-act',
   'doc-new-brunswick-land-surveyors-act',
+  'doc-new-brunswick-land-surveyors-bylaws',
   'doc-property-act',
   'doc-registry-act',
   'doc-surveys-act',

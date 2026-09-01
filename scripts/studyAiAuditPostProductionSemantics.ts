@@ -15,6 +15,9 @@
  *
  * Deterministic guards (documented, no inference):
  *   - results flagged staticGeographicBoundaryDescription are excluded
+ *   - targets whose canonical metadata says sourceStatus 'repealed' or
+ *     contentFlags.repealOnly are excluded (repeal-metadata guard). Live
+ *     sections containing repealed children are still scanned.
  *   - fully-repealed provisions (unlabelled standalone `Repealed:` marker)
  *     are excluded; labelled repeal stubs are masked out of matching text
  *   - results flagged consequentialAmendment are excluded (their operative
@@ -28,8 +31,10 @@
  *   - balanced-set retry accounting: recovered-retries stratum quota vs
  *     total retry history in the final set (stratum cap is NOT a global
  *     retry cap)
- *   - pinned anchor validation (expected detection of the four review
- *     anchors; the generic rules themselves never special-case job IDs)
+ *   - pinned anchor validation (expected detection of the review anchors,
+ *     including one anchor that must be correctly *excluded* by the
+ *     repeal-metadata guard; the generic rules themselves never
+ *     special-case job IDs)
  *
  * Determinism: input-order independent (all lists sorted by documentId /
  * jobId), no wall clock, no randomness.
@@ -289,6 +294,8 @@ export interface BroadStandaloneRow {
   paragraphLabelLineCount: number;
   warnings: string[];
   triggers: string[];
+  provenance: 'original' | 'recovered' | 'promoted';
+  failureAttempts: number;
 }
 
 export interface LargeSplitRow {
@@ -322,6 +329,7 @@ export interface PinnedAnchorCheck {
   label: string;
   expectedKind: 'zero-group-suspect' | 'broad-standalone';
   expectedCategory: AuditCategory | null;
+  expectation: 'detected' | 'excluded-repeal-metadata';
   found: boolean;
   detail: string;
 }
@@ -352,6 +360,7 @@ export interface PostQcSemanticAudit {
   };
   guards: {
     staticGeographicExcluded: number;
+    repealMetadataExcluded: number;
     fullyRepealedExcluded: number;
     consequentialAmendmentExcluded: number;
     scannedZeroGroupTotal: number;
@@ -576,6 +585,13 @@ export interface PinnedAnchorExpectation {
   label: string;
   kind: 'suspect' | 'broad-standalone';
   category?: AuditCategory;
+  /**
+   * 'excluded-repeal-metadata' anchors assert the negative case: the target
+   * must be held out of suspect detection by the repeal-metadata guard
+   * (sourceStatus 'repealed' or contentFlags.repealOnly), which pins the
+   * guard itself. Default is 'detected'.
+   */
+  expect?: 'detected' | 'excluded-repeal-metadata';
 }
 
 export const PINNED_ANCHORS: PinnedAnchorExpectation[] = [
@@ -587,9 +603,11 @@ export const PINNED_ANCHORS: PinnedAnchorExpectation[] = [
   },
   {
     jobId: 'map-11fc0137f38dd967',
-    label: 'Partnerships Act s.2 — human-review scope rule',
+    label:
+      'Partnerships Act s.2 — repealed/repeal-only target (expected excluded by the repeal-metadata guard)',
     kind: 'suspect',
     category: 'operative-scope',
+    expect: 'excluded-repeal-metadata',
   },
   {
     jobId: 'map-21050fd5c7830508',
@@ -648,6 +666,7 @@ export const buildPostQcSemanticAudit = (input: PostQcAuditInput): PostQcSemanti
   // Zero-group suspects with guards.
   const guards = {
     staticGeographicExcluded: 0,
+    repealMetadataExcluded: 0,
     fullyRepealedExcluded: 0,
     consequentialAmendmentExcluded: 0,
     scannedZeroGroupTotal: 0,
@@ -664,6 +683,13 @@ export const buildPostQcSemanticAudit = (input: PostQcAuditInput): PostQcSemanti
     const flags = job.target.contentFlags ?? {};
     if (flags.staticGeographicBoundaryDescription === true) {
       guards.staticGeographicExcluded += 1;
+      continue;
+    }
+    // Repeal-metadata guard: the canonical source metadata, not the text,
+    // identifies fully repealed targets. Live sections that merely contain
+    // repealed children (containsRepealedSubprovision) stay in the scan.
+    if (job.target.sourceStatus === 'repealed' || flags.repealOnly === true) {
+      guards.repealMetadataExcluded += 1;
       continue;
     }
     const mask = maskRepealStubs(job.target.exactSourceText);
@@ -763,6 +789,8 @@ export const buildPostQcSemanticAudit = (input: PostQcAuditInput): PostQcSemanti
         paragraphLabelLineCount: paraLines,
         warnings: [...result.warnings],
         triggers,
+        provenance: provenanceFor(result.jobId),
+        failureAttempts: input.failureAttemptCounts.get(result.jobId) ?? 0,
       });
     }
     if (
@@ -862,9 +890,40 @@ export const buildPostQcSemanticAudit = (input: PostQcAuditInput): PostQcSemanti
   const suspectByJob = new Map(suspects.map((s) => [s.jobId, s]));
   const broadByJob = new Map(standaloneSuspects.map((s) => [s.jobId, s]));
   const anchoredStandaloneIds = new Set(standaloneSuspects.map((s) => s.jobId));
-  const anchoredBroadAnchor =
-    pinnedAnchorRow('map-d1fadd2dfd0ce395', known, jobsById, anchoredStandaloneIds);
+  const anchoredBroadAnchor = pinnedAnchorRow(
+    'map-d1fadd2dfd0ce395',
+    known,
+    jobsById,
+    anchoredStandaloneIds,
+    provenanceFor,
+    input.failureAttemptCounts,
+  );
+  const zeroGroupIds = new Set(zeroGroup.map((r) => r.jobId));
   const pinnedChecks: PinnedAnchorCheck[] = PINNED_ANCHORS.map((anchor) => {
+    const expectation: PinnedAnchorCheck['expectation'] =
+      anchor.expect ?? 'detected';
+    if (anchor.kind === 'suspect' && expectation === 'excluded-repeal-metadata') {
+      const job = jobsById.get(anchor.jobId);
+      const correctlyExcluded =
+        job !== undefined &&
+        zeroGroupIds.has(anchor.jobId) &&
+        (job.target.sourceStatus === 'repealed' ||
+          job.target.contentFlags?.repealOnly === true) &&
+        !suspectByJob.has(anchor.jobId);
+      return {
+        jobId: anchor.jobId,
+        label: anchor.label,
+        expectedKind: 'zero-group-suspect',
+        expectedCategory: anchor.category ?? null,
+        expectation,
+        found: correctlyExcluded,
+        detail: correctlyExcluded
+          ? 'correctly excluded by the repeal-metadata guard'
+          : suspectByJob.has(anchor.jobId)
+            ? 'FAILED: detected as a suspect although repeal metadata applies'
+            : 'not a zero-group result with repeal metadata as expected',
+      };
+    }
     if (anchor.kind === 'suspect') {
       const suspect = suspectByJob.get(anchor.jobId);
       const found =
@@ -876,6 +935,7 @@ export const buildPostQcSemanticAudit = (input: PostQcAuditInput): PostQcSemanti
         label: anchor.label,
         expectedKind: 'zero-group-suspect',
         expectedCategory: anchor.category ?? null,
+        expectation,
         found: found,
         detail: found
           ? `detected primary=${suspect!.primaryCategory} categories=${suspect!.matchedCategories
@@ -892,6 +952,7 @@ export const buildPostQcSemanticAudit = (input: PostQcAuditInput): PostQcSemanti
       label: anchor.label,
       expectedKind: 'broad-standalone',
       expectedCategory: null,
+      expectation,
       found: broad !== null,
       detail: broad
         ? `detected triggers=${broad.triggers.join(',')}`
@@ -938,6 +999,8 @@ const pinnedAnchorRow = (
   known: AiStudyMapResult[],
   jobsById: Map<string, AiStudyMapJob>,
   standaloneIds: Set<string>,
+  provenanceFor: (_jobId: string) => 'original' | 'recovered' | 'promoted',
+  failureAttemptCounts: Map<string, number>,
 ): BroadStandaloneRow | null => {
   if (!standaloneIds.has(jobId)) return null;
   const result = known.find((r) => r.jobId === jobId);
@@ -956,6 +1019,8 @@ const pinnedAnchorRow = (
     paragraphLabelLineCount: 0,
     warnings: [...result.warnings],
     triggers: ['pinned-anchor'],
+    provenance: provenanceFor(jobId),
+    failureAttempts: failureAttemptCounts.get(jobId) ?? 0,
   };
 };
 
@@ -979,7 +1044,7 @@ const parseArgs = (argv: string[]): Record<string, string> => {
   return out;
 };
 
-const loadJobs = (runDir: string): AiStudyMapJob[] => {
+export const loadJobs = (runDir: string): AiStudyMapJob[] => {
   const jobsDir = join(runDir, 'jobs');
   const files = readdirSync(jobsDir)
     .filter((f) => /^batch-\d{3}\.jobs\.jsonl$/.test(f))
@@ -987,7 +1052,7 @@ const loadJobs = (runDir: string): AiStudyMapJob[] => {
   return files.flatMap((f) => readJsonl<AiStudyMapJob>(join(jobsDir, f)));
 };
 
-const loadResults = (runDir: string): AiStudyMapResult[] => {
+export const loadResults = (runDir: string): AiStudyMapResult[] => {
   const dir = join(runDir, 'results');
   const files = readdirSync(dir)
     .filter((f) => f.endsWith('.jsonl'))
@@ -995,7 +1060,7 @@ const loadResults = (runDir: string): AiStudyMapResult[] => {
   return files.flatMap((f) => readJsonl<AiStudyMapResult>(join(dir, f)));
 };
 
-const loadBalancedSet = (path: string): BalancedSetFile | null => {
+export const loadBalancedSet = (path: string): BalancedSetFile | null => {
   if (!existsSync(path)) return null;
   const raw = JSON.parse(stripBom(readFileSync(path, 'utf8'))) as {
     size?: number;
