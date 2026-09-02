@@ -1,0 +1,4403 @@
+{
+  "schemaVersion": 1,
+  "kind": "frozen-unit-calibration-80",
+  "dateTag": "20260902",
+  "seedTag": "20260902",
+  "runId": "ai-units-2026-09-02-frozen-map-cal80-v4",
+  "generatedAt": "2026-09-02T00:00:00.000Z",
+  "promptSpecVersion": "unit-authoring-v4",
+  "sourceMapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+  "preflightRunId": "ai-units-2026-09-02-frozen-map-v4-preflight",
+  "counts": {
+    "jobCount": 80,
+    "pinCount": 20,
+    "retryRepresentatives": 9,
+    "anchorTaggedJobs": 7,
+    "correctionJobIds": 8
+  },
+  "selectionMethod": {
+    "order": "pins (freeze-correction list order, unit jobId within a parent) → retry representatives (fixed target list) → regression anchors (fixed target list) → fill pick order",
+    "algorithm": "Deterministic; seed/tag 20260902; NO RNG — pure sorted passes. Pins are hard. Retry/regression targets resolve through the corpus package (document title + component label → sourceKey) to the frozen proposals whose targetSourceKeys include that sourceKey, then to the first approved-group unit job of the parent by jobId; a job already selected for another set is reused so tags stack and the job counts once. The fill scans the remaining pool in stable jobId order for the priority under target and takes the job with the best (domain-deficit desc, domain rank asc, not-yet-covered feature gain desc, stable index asc) score.",
+    "phases": [
+      "1. grouping-adjudication pins (tag final-map-grouping-adjudication)",
+      "2. retry-nine representatives (tag map-retry-history)",
+      "3. regression anchors (tag unit-v4-regression-anchor)",
+      "4. deterministic fill to the priority targets (selection reason fill-coverage / fill-priority)"
+    ]
+  },
+  "inputArtifacts": {
+    "preflightRunJson": "9c95152b5ca687a5fe6a1628d909930b3fa7e8f31b9a1a1a9acd5c3bbcea79e3",
+    "preflightBatchFiles": [
+      {
+        "file": "jobs/batch-001.jobs.jsonl",
+        "sha256": "e940930f31f0f4cbe6866d8dbc7fa03a498bc3132351beaffcff1942263118a1"
+      },
+      {
+        "file": "jobs/batch-002.jobs.jsonl",
+        "sha256": "390f54e39c69ac81dfeb974d08c6ebeaedac7880a4689a27c9397a80279789d4"
+      },
+      {
+        "file": "jobs/batch-003.jobs.jsonl",
+        "sha256": "2bd7a7c1f66386557a631c02a24a0ab5a5d8aa0213bcdb36166391269cbf929c"
+      },
+      {
+        "file": "jobs/batch-004.jobs.jsonl",
+        "sha256": "501eb515aa0ed47d11fd91beca813b905dc16eb3cbaed695e5071398119383e3"
+      },
+      {
+        "file": "jobs/batch-005.jobs.jsonl",
+        "sha256": "2814456c954a46237153559dfde1085f25b59e81102301292a1f714e55a06947"
+      },
+      {
+        "file": "jobs/batch-006.jobs.jsonl",
+        "sha256": "60665f1e22adcce312faf4456b31eb20f673d19c22e4c687317d197ab25007ea"
+      },
+      {
+        "file": "jobs/batch-007.jobs.jsonl",
+        "sha256": "3005376d7314c85b7eb06df6b11e4407d85e3b5356c0a61d51a36bac7f39ed68"
+      },
+      {
+        "file": "jobs/batch-008.jobs.jsonl",
+        "sha256": "28a541fa5b6f3c960987c3291be8f09c43ed0f969791e440826b38cb1d7be986"
+      },
+      {
+        "file": "jobs/batch-009.jobs.jsonl",
+        "sha256": "63a4de2f5399e59438948fe4fdb263ff987221209df323e150b7e13588146ad2"
+      },
+      {
+        "file": "jobs/batch-010.jobs.jsonl",
+        "sha256": "fbf9c6dfd4df4117c3383a5d248b75fbc29fd3eab008505c8e3a6c2ece7ce222"
+      },
+      {
+        "file": "jobs/batch-011.jobs.jsonl",
+        "sha256": "84ee3decab1ecc9e43141a0c3b6fd5b706892a2c4ae4cb41ee051e84531633ea"
+      },
+      {
+        "file": "jobs/batch-012.jobs.jsonl",
+        "sha256": "c63fc15e3990cc2c5fb42bea8b5d67a82ff17e5e81d29683da8809ad09fe0154"
+      },
+      {
+        "file": "jobs/batch-013.jobs.jsonl",
+        "sha256": "e2504f434b9a1dc03bc0297fc311317012caba16a3ffd1e7ad7f361122ca4a09"
+      },
+      {
+        "file": "jobs/batch-014.jobs.jsonl",
+        "sha256": "31ea300ddaf154b6748bc967369b3a8dc94f4bc8202b3d53823caecba5ed8575"
+      },
+      {
+        "file": "jobs/batch-015.jobs.jsonl",
+        "sha256": "33d11d74a19013553f021443cf1f95a923a0d91d139cd5e5b6e049366cbaa535"
+      },
+      {
+        "file": "jobs/batch-016.jobs.jsonl",
+        "sha256": "50c51a949b76716da3e824049583e4ecb52df3192ea87e56e83f49682c1c5d50"
+      },
+      {
+        "file": "jobs/batch-017.jobs.jsonl",
+        "sha256": "7eed0bf76be2873f624d3e1ffa2a69e0c218ee898c4473f6c7de6e192f3f591a"
+      },
+      {
+        "file": "jobs/batch-018.jobs.jsonl",
+        "sha256": "26541689b82bbdf39b18cf2eb6b74241ada9271397adb12ca74819d9dfc58ecc"
+      },
+      {
+        "file": "jobs/batch-019.jobs.jsonl",
+        "sha256": "a307235fe66bf2ab27b079566c21ddb1f7aaf589359e672f9da2ed9f1911bcdc"
+      },
+      {
+        "file": "jobs/batch-020.jobs.jsonl",
+        "sha256": "83cbdf662e0ea63c7bf39e9dbf4ff51a09f35bfe8c5a0bac3f940d3752f8d6f3"
+      },
+      {
+        "file": "jobs/batch-021.jobs.jsonl",
+        "sha256": "0f80da90cab0f9b04963a20d309d767b645ece8e2c11d87051a6b385c7c7003f"
+      },
+      {
+        "file": "jobs/batch-022.jobs.jsonl",
+        "sha256": "535131867eb482cea4a483d1aa28f2934532a7fbd5512fd89d61bc9332b94aaf"
+      },
+      {
+        "file": "jobs/batch-023.jobs.jsonl",
+        "sha256": "3231398e75a4001f9a0e5d68c77982819b2a8c3581c164c3b9a0ab5238e15cc5"
+      },
+      {
+        "file": "jobs/batch-024.jobs.jsonl",
+        "sha256": "6fbe60786aefea4186eec8fbfe31d715e6fae186264b184b448c61f959c86340"
+      },
+      {
+        "file": "jobs/batch-025.jobs.jsonl",
+        "sha256": "94d6e3e8e823a3a5f8ea5a13f5ecc22b62879ff71f641a7d3b892dd2c02b15d2"
+      },
+      {
+        "file": "jobs/batch-026.jobs.jsonl",
+        "sha256": "5ad44dea709e848205dc44a19b3c784745b3145ccf6dbff6c8b19f006791f182"
+      },
+      {
+        "file": "jobs/batch-027.jobs.jsonl",
+        "sha256": "9af64be5dfc4c990ead277d2035c6d1fc960ce99ffff6780aabfdcc7fb004459"
+      },
+      {
+        "file": "jobs/batch-028.jobs.jsonl",
+        "sha256": "2ceeae32ebbc7d6abae95a2a8a28a146c69934eb309dc6504419bf85aed170fb"
+      },
+      {
+        "file": "jobs/batch-029.jobs.jsonl",
+        "sha256": "b4ae96827e6664ea56aae061328525ca1552461ca0578b96ec74cf954e245f15"
+      },
+      {
+        "file": "jobs/batch-030.jobs.jsonl",
+        "sha256": "4f1ebb5573f87521773b1fd7c37870a1a7c260506c9939c7c3ca6594c7fe09e0"
+      },
+      {
+        "file": "jobs/batch-031.jobs.jsonl",
+        "sha256": "5f341f05766212428eedad6a797f31f7901022e6df955d8c346607fa58d3c503"
+      },
+      {
+        "file": "jobs/batch-032.jobs.jsonl",
+        "sha256": "f0923f34ebdd6668f897548c1ed31a675126cb5cd079481e981f0b45987a3acb"
+      },
+      {
+        "file": "jobs/batch-033.jobs.jsonl",
+        "sha256": "b0de9fdb0acbc7e6a78f5fab57988ac358e63c78b630adb6466def49f8d4a5a8"
+      },
+      {
+        "file": "jobs/batch-034.jobs.jsonl",
+        "sha256": "d6bba2146254ad41f04754a9323a17ae5b8ccee48d72a8b3361f25d288ec24e8"
+      },
+      {
+        "file": "jobs/batch-035.jobs.jsonl",
+        "sha256": "589d1f2c73d67127c16cf5a02b98f07e08eb5e4ccc9325c955f25efee754f1cd"
+      },
+      {
+        "file": "jobs/batch-036.jobs.jsonl",
+        "sha256": "b69f89ef86856ea3dea902279e05910a58c863341bed20e64443a223f3091084"
+      },
+      {
+        "file": "jobs/batch-037.jobs.jsonl",
+        "sha256": "2d3c3942316d4b62e907162f9f6958f49035934ebd72bb6d638e3536911c6c4a"
+      },
+      {
+        "file": "jobs/batch-038.jobs.jsonl",
+        "sha256": "fd0706b23cc3fd140b212fbcac34166dc612d985b25254d8f7aec691578c2b61"
+      },
+      {
+        "file": "jobs/batch-039.jobs.jsonl",
+        "sha256": "916801b2f96c53d510878530bb31464f0bbd06b8331195f1c275de279e60b4d6"
+      },
+      {
+        "file": "jobs/batch-040.jobs.jsonl",
+        "sha256": "bbf81a221dbaa7ca3aa843a1ee123a130dce67627fe14a16457a32ed8e34279a"
+      },
+      {
+        "file": "jobs/batch-041.jobs.jsonl",
+        "sha256": "388934b356c6b7a73c0c1acaeb91849747681116e194899cb1a4d26ca93aaa5f"
+      },
+      {
+        "file": "jobs/batch-042.jobs.jsonl",
+        "sha256": "d2258d71c23f60df0e8aa052312e3b61745a3b4f2797fa2c62e514ff4e038cff"
+      },
+      {
+        "file": "jobs/batch-043.jobs.jsonl",
+        "sha256": "0307f522d0d3a498c11fa92ab60d3ddbad4835bdc962b8094266ca1655a77e8b"
+      },
+      {
+        "file": "jobs/batch-044.jobs.jsonl",
+        "sha256": "513e4c9153c754308353153dc60f674141a9da32fb20c2e569d4e9ef3caee9f4"
+      },
+      {
+        "file": "jobs/batch-045.jobs.jsonl",
+        "sha256": "6db069c542d638c0ac0c9eb527c1321350a3b3a3824b202fbdc0df02091a2c60"
+      },
+      {
+        "file": "jobs/batch-046.jobs.jsonl",
+        "sha256": "ee811d8fd112ec9e6d2dc556766275a8d14a66464f402835e6109dafa8031e35"
+      },
+      {
+        "file": "jobs/batch-047.jobs.jsonl",
+        "sha256": "aee6bc2dda64c2f5835a28f4a2c91b8e87dfda3ca93f5839d1d6d3d3b39e89f9"
+      },
+      {
+        "file": "jobs/batch-048.jobs.jsonl",
+        "sha256": "cfb43639682720372293d5aecee55d148e80eedea129bdea226f36f2ff5fd080"
+      },
+      {
+        "file": "jobs/batch-049.jobs.jsonl",
+        "sha256": "553eeecfd9a316cadef7a0078f597e02484198d6058ba70c6f73c15cffb7e269"
+      },
+      {
+        "file": "jobs/batch-050.jobs.jsonl",
+        "sha256": "2855401c5a6b82f9926c9a79fbe6168a91c103d7339a9bb27f62e0a2d66d6190"
+      },
+      {
+        "file": "jobs/batch-051.jobs.jsonl",
+        "sha256": "bc3a5061ea8199ed92ef4d90bb4036196ca3937e66d3d8b42b4a88a6eea0b110"
+      },
+      {
+        "file": "jobs/batch-052.jobs.jsonl",
+        "sha256": "f7391d1350c616c90f9e3efc1fd5215de76b2d8d8e019df998918ea219886daf"
+      },
+      {
+        "file": "jobs/batch-053.jobs.jsonl",
+        "sha256": "99f3cf6c3e8785302debf5e278f0c1b470ebd859b26a2d84897da64b3ede23c4"
+      },
+      {
+        "file": "jobs/batch-054.jobs.jsonl",
+        "sha256": "c35b1e42971167c4195bff54b9815ba8dfdc0b874583d4c73662146300ffce1f"
+      },
+      {
+        "file": "jobs/batch-055.jobs.jsonl",
+        "sha256": "69ffe51f4c0e596cfaa3bc15c619411fd22d288c92862e598d0337388688f350"
+      },
+      {
+        "file": "jobs/batch-056.jobs.jsonl",
+        "sha256": "40cb580170c783e9ed50a1fc294b8368125ab3062b34e09e2034ba1c0f21a91d"
+      },
+      {
+        "file": "jobs/batch-057.jobs.jsonl",
+        "sha256": "587f7e096dee7dc38f7577276e6ccc4c780cb40b6fbc8875bb96f3e650bf8578"
+      },
+      {
+        "file": "jobs/batch-058.jobs.jsonl",
+        "sha256": "487a703434a1261979c5f1950cd82d07d121d87d53b6bb57ed2f93f4d00adf8f"
+      },
+      {
+        "file": "jobs/batch-059.jobs.jsonl",
+        "sha256": "4208b09cfe00c6f90865217bbf85a5215e650c53081612973790c4607db6ca10"
+      },
+      {
+        "file": "jobs/batch-060.jobs.jsonl",
+        "sha256": "45e86b0bb600915cbb168e5206378c4b81f9d7dd8e4151b5d85deab528458b89"
+      },
+      {
+        "file": "jobs/batch-061.jobs.jsonl",
+        "sha256": "9f56a85bdddc80c758a09e0defe547d662ccf03792a3aabfa581ee5c37a883af"
+      },
+      {
+        "file": "jobs/batch-062.jobs.jsonl",
+        "sha256": "a43d510fb68966b71975bda7a8ce9302c644d0b6d803c2ffa2fad13bf91f0732"
+      },
+      {
+        "file": "jobs/batch-063.jobs.jsonl",
+        "sha256": "6cc17a85f83527c3a5ec64960f5ce3237b5d07fce6286a25a536992c38dd3044"
+      },
+      {
+        "file": "jobs/batch-064.jobs.jsonl",
+        "sha256": "0effdbabe9a02c2ac22a628d74b2774ec9d5b930c3d1a1bea862bb5f5ea35916"
+      },
+      {
+        "file": "jobs/batch-065.jobs.jsonl",
+        "sha256": "bfe802f5db65f797e4de60837a1d13f71e5fe9460968f5ea035810eb3833599c"
+      },
+      {
+        "file": "jobs/batch-066.jobs.jsonl",
+        "sha256": "0a8f5dba401d2161182a621bc381d553c5fe55ecbfcf8d047ff6851f2bdc5596"
+      },
+      {
+        "file": "jobs/batch-067.jobs.jsonl",
+        "sha256": "be964ef3bf0d311bdad778c42f2f0fb10ef96d7ce6d3beedb91ed66ae11deac8"
+      },
+      {
+        "file": "jobs/batch-068.jobs.jsonl",
+        "sha256": "04ed502995e7feda48fd4864ef425f01a7de24c26793727c876d5e53fa23be1b"
+      },
+      {
+        "file": "jobs/batch-069.jobs.jsonl",
+        "sha256": "53ce7894303b8b38709601986c76e2473fc60f6181deb1454ba892318c8f034b"
+      },
+      {
+        "file": "jobs/batch-070.jobs.jsonl",
+        "sha256": "47937562b72a6dfa1ec84d3f90f895ac93095bbebf271fadcf5bb041f3d411fe"
+      },
+      {
+        "file": "jobs/batch-071.jobs.jsonl",
+        "sha256": "713b48cea2d0ac6f6adbf1b9c88a6918bef6b2d5e759d0cf0078867ff7a7924c"
+      },
+      {
+        "file": "jobs/batch-072.jobs.jsonl",
+        "sha256": "13a3c61cb2a3a0bab9583c069116d907cbe33358901b5304d50a7c361859138a"
+      },
+      {
+        "file": "jobs/batch-073.jobs.jsonl",
+        "sha256": "097c90dcb8c413ed5ea6d0f84b1ccf622ebf5ac830a4540673c671550d650c3f"
+      },
+      {
+        "file": "jobs/batch-074.jobs.jsonl",
+        "sha256": "8bb7a50a1caf529434959d3016891644337c40054f9ba8f062e3edcac8e68e94"
+      },
+      {
+        "file": "jobs/batch-075.jobs.jsonl",
+        "sha256": "343beaae3f0557b1a37bd1ed1e33455e2b50c95927cd039358f803e594569eaf"
+      },
+      {
+        "file": "jobs/batch-076.jobs.jsonl",
+        "sha256": "c33f5a656413740a74b7a9dc1e7189335b79440f2d1ac22e82bdc0b25a6b2910"
+      },
+      {
+        "file": "jobs/batch-077.jobs.jsonl",
+        "sha256": "f573490949d5d4de3d3a9231c50d007d4d7a9dea8afcee903e493a43b0b81eea"
+      },
+      {
+        "file": "jobs/batch-078.jobs.jsonl",
+        "sha256": "641afa6fbe9adafbcef0a9f3e6cf8f39b9558138d4bfa73cb505325d1b937049"
+      },
+      {
+        "file": "jobs/batch-079.jobs.jsonl",
+        "sha256": "1ac89ae6036f01de6c89c184996db4e7204f3cc08b3e6322cb8f42d0638565e3"
+      },
+      {
+        "file": "jobs/batch-080.jobs.jsonl",
+        "sha256": "dad6846c381a9c413dbd2bf59ddf82c21efd70d3e81749f561f293dcd6bbfb75"
+      },
+      {
+        "file": "jobs/batch-081.jobs.jsonl",
+        "sha256": "5e0274cf86bb3a8490b4e291f5de5c6469ed53dc4b863fbe558ca3c59bc6fdd4"
+      },
+      {
+        "file": "jobs/batch-082.jobs.jsonl",
+        "sha256": "b420db5a1b7e65e6cd4e1310dcdfe66b16c3192c5ce876abfaca0550e5ba7f33"
+      },
+      {
+        "file": "jobs/batch-083.jobs.jsonl",
+        "sha256": "847edc625b6179d4e8b4339d93fbeba22f3b4bcff897291b0a5d5411467e9487"
+      },
+      {
+        "file": "jobs/batch-084.jobs.jsonl",
+        "sha256": "5b758ba0e1c8e9551342b57d95034323bc8a112240d3a7d8d75f95fc76551486"
+      },
+      {
+        "file": "jobs/batch-085.jobs.jsonl",
+        "sha256": "7c8870e60011f5aec30aa67f4e740f39116e4d2f4707bdfab0a0f249effef4b6"
+      },
+      {
+        "file": "jobs/batch-086.jobs.jsonl",
+        "sha256": "0723d6664184ecb028cc9cbaab927145fafc8157fdd1f3d0f95aac9ece38dd42"
+      },
+      {
+        "file": "jobs/batch-087.jobs.jsonl",
+        "sha256": "f9f8efe3cdd1af3e54a965bc0af4f5a93684896f0f2266d08177cd8a81e9052a"
+      },
+      {
+        "file": "jobs/batch-088.jobs.jsonl",
+        "sha256": "f0db62ff95873e798e94ed1526a55eba609a7d8302d50e6e11430d6541f3a240"
+      },
+      {
+        "file": "jobs/batch-089.jobs.jsonl",
+        "sha256": "5d675e9bd37d1c5f1691ec0e24dc91cc488ff8a4612101a5be936424657c7b17"
+      },
+      {
+        "file": "jobs/batch-090.jobs.jsonl",
+        "sha256": "002cdcb8ca95f9d1e31001d325f29a0204d25126bad33ec32969c4dc3c633c59"
+      },
+      {
+        "file": "jobs/batch-091.jobs.jsonl",
+        "sha256": "bd314bf3d00cfc7297493fef9cb4559b0333c2337ab5f2ddddf5a6aaffbf09c2"
+      },
+      {
+        "file": "jobs/batch-092.jobs.jsonl",
+        "sha256": "b5e7949f1420b86a241f4400aceb6a1d6d6b2cd537f442f12de835b6a7a0b77b"
+      },
+      {
+        "file": "jobs/batch-093.jobs.jsonl",
+        "sha256": "0d7b83e684be72a040ee164e8044ebf5c5563ef498729667bc188f1288de4647"
+      },
+      {
+        "file": "jobs/batch-094.jobs.jsonl",
+        "sha256": "851fca17b3762e905eba10687742c30de8edc2d82c96fe4abc0d07a0c43f569f"
+      },
+      {
+        "file": "jobs/batch-095.jobs.jsonl",
+        "sha256": "477b176c50ff1ea5243c524626736e2663e8758d61291ba839d515c6d4a9c72f"
+      },
+      {
+        "file": "jobs/batch-096.jobs.jsonl",
+        "sha256": "35bd8efcc30e8deb6576f9f592980c6efa847324c1244ab98e8982b4fbadc09b"
+      },
+      {
+        "file": "jobs/batch-097.jobs.jsonl",
+        "sha256": "cfb020346f9457352418aa9c201bce11642f86131e66b57cc300a9d765d319fd"
+      },
+      {
+        "file": "jobs/batch-098.jobs.jsonl",
+        "sha256": "47945ad134b494f354d1c7c8a35cc8e88fc97985a5b33f0df45667f6e67a014c"
+      },
+      {
+        "file": "jobs/batch-099.jobs.jsonl",
+        "sha256": "470b6ac5a10176ee2b4d2f76118790d42be81e1937cbb49d3729f409e2107250"
+      },
+      {
+        "file": "jobs/batch-100.jobs.jsonl",
+        "sha256": "336003486e65d746329e6bccd2546efdef144fb42287cd11f3a13895052a243d"
+      },
+      {
+        "file": "jobs/batch-101.jobs.jsonl",
+        "sha256": "bb5ae05bfb529160a24474514e24c7fc3b588d0f7cf63a0cbca9447c56c80055"
+      },
+      {
+        "file": "jobs/batch-102.jobs.jsonl",
+        "sha256": "d148af3ae6ddd3dd69c62cbf1440f41079ac71b4d6ef29d2a6b150cee4674b76"
+      },
+      {
+        "file": "jobs/batch-103.jobs.jsonl",
+        "sha256": "a3f88647f6f0a3370be1507cccc21efc821ba92cc36704b9d691ba6906b62fe0"
+      },
+      {
+        "file": "jobs/batch-104.jobs.jsonl",
+        "sha256": "a8a1d34704faffcb52770fc7b9cbad39a1fbf026a769bb548bf3b8369232bc1b"
+      },
+      {
+        "file": "jobs/batch-105.jobs.jsonl",
+        "sha256": "9ffba7faccdb15bcb9ae0cde35535caf28862d31a0240817010fab128d4028dc"
+      },
+      {
+        "file": "jobs/batch-106.jobs.jsonl",
+        "sha256": "dfc62d90480ca6eac55cd717c3eb7587508c60085a84106b24465d1621e993e6"
+      },
+      {
+        "file": "jobs/batch-107.jobs.jsonl",
+        "sha256": "2d3804263dd1fa4b2c7376e60e3aa07f0be3d0f5b24e91a03c3ebfbdcc988e48"
+      },
+      {
+        "file": "jobs/batch-108.jobs.jsonl",
+        "sha256": "1852c0734c5d1ef0b1e2b6b4d289b38bc0f12999fb208b6330f3e61c284e2265"
+      },
+      {
+        "file": "jobs/batch-109.jobs.jsonl",
+        "sha256": "1274b9cad00fae247e788e9f88e3d541f3f7924aefdbcdb6e8c2ddddfe797399"
+      },
+      {
+        "file": "jobs/batch-110.jobs.jsonl",
+        "sha256": "79284ec3808ac35c86b31defe3bb8a9d9f889ac4ffce5f8ad4b7c9181df36dce"
+      },
+      {
+        "file": "jobs/batch-111.jobs.jsonl",
+        "sha256": "a24f65d20fce640a4b81efface9a1f1c3bca67dcb69b87a0849b7a8ec5b77746"
+      },
+      {
+        "file": "jobs/batch-112.jobs.jsonl",
+        "sha256": "f6dd098d9c39ab270bc4794cb342c4abec2f229960af5dd325a7db1d4baff795"
+      },
+      {
+        "file": "jobs/batch-113.jobs.jsonl",
+        "sha256": "6e34061b5885791a940a7b074d54be5d0b5d39b420aa973c0a8c60da5fd25484"
+      },
+      {
+        "file": "jobs/batch-114.jobs.jsonl",
+        "sha256": "13fe808194951ab739100a2186942c7b2692431e3d4775124fc8427c581fade5"
+      },
+      {
+        "file": "jobs/batch-115.jobs.jsonl",
+        "sha256": "f08ecaefdb3220cb027e4e7ab77115cef08e0896463fb3e35d50f2b0065ce230"
+      },
+      {
+        "file": "jobs/batch-116.jobs.jsonl",
+        "sha256": "ce6e9a7435ec83f9b24d30acbf8a94aa133e3db780f10b65a56d5e1c562b5603"
+      },
+      {
+        "file": "jobs/batch-117.jobs.jsonl",
+        "sha256": "9fb0e412fd455c7ca63cbcee6abf383b9ce11bdd83df23ba3880f11e289509cc"
+      },
+      {
+        "file": "jobs/batch-118.jobs.jsonl",
+        "sha256": "7acfaff3ceb6e763d5374d232c38378923e56df5cc146adb1346d29808f885b3"
+      },
+      {
+        "file": "jobs/batch-119.jobs.jsonl",
+        "sha256": "3a4da66fc78d20c0c1c2c5e55a84e403a3d7c8c3766acd7af1728744a06b0359"
+      },
+      {
+        "file": "jobs/batch-120.jobs.jsonl",
+        "sha256": "2867feee2b6f1096316ef2fc2b25a3a20afbdfce9477ef03d113cf8fd254bed3"
+      },
+      {
+        "file": "jobs/batch-121.jobs.jsonl",
+        "sha256": "3f876beae86b5d5d49acae4e7129036c29716d8b5ebe785e769ab34c03617021"
+      },
+      {
+        "file": "jobs/batch-122.jobs.jsonl",
+        "sha256": "a02bd2ecd5fc0115b9d89e7df985861830fd669fb58a133a6c02daee2c842e9a"
+      },
+      {
+        "file": "jobs/batch-123.jobs.jsonl",
+        "sha256": "4d0e87600102a97d8bd924b64e46bd2a02e702bbf0ebab52fdd0977592e737d1"
+      },
+      {
+        "file": "jobs/batch-124.jobs.jsonl",
+        "sha256": "2dab69c07380913f502126d52d78bf796a61f681bae5f495368727460978ee2d"
+      },
+      {
+        "file": "jobs/batch-125.jobs.jsonl",
+        "sha256": "4bea2b8947ef2e6ac7d6f7a80eb130fc92287c44d687c452b30a471ce910738c"
+      },
+      {
+        "file": "jobs/batch-126.jobs.jsonl",
+        "sha256": "ecdd28216b29e060b72af8883f4eaf705c72bcd6e24bdc6f73ca652469cf71b8"
+      },
+      {
+        "file": "jobs/batch-127.jobs.jsonl",
+        "sha256": "fdbceae3d0fd35abda6c1f919f9df706d7df4c9ae8fa0c7848a8ddc00596f192"
+      },
+      {
+        "file": "jobs/batch-128.jobs.jsonl",
+        "sha256": "3fff27816cd636fb158d0294a98fdce6db4fa8f0df98c4ac4452ade16547fe12"
+      },
+      {
+        "file": "jobs/batch-129.jobs.jsonl",
+        "sha256": "a27317ab7e43e83bc3c334bc5b8a1483d9be26bec949a14182aa3774f62c8ef0"
+      },
+      {
+        "file": "jobs/batch-130.jobs.jsonl",
+        "sha256": "d0d283a8ac1425449cc738250003fdf16c8f2c299fdc8bf0147830b3fdf3f8e9"
+      },
+      {
+        "file": "jobs/batch-131.jobs.jsonl",
+        "sha256": "6986da44f308108b767c73b64b4c5ebb548a2a5c38f69d79b1aa7c94eae15a0f"
+      },
+      {
+        "file": "jobs/batch-132.jobs.jsonl",
+        "sha256": "5e9dc153d0f8d18a6fbfd64aa36cbae3f30536a91a881272a395866890ace76e"
+      },
+      {
+        "file": "jobs/batch-133.jobs.jsonl",
+        "sha256": "066cf8a9d836f8d7da2c9ee0436dbd72b5bb701f835a1102ff8f5f5b244ac7e9"
+      },
+      {
+        "file": "jobs/batch-134.jobs.jsonl",
+        "sha256": "0c5f3389026d3e67b0a0fc57b7155bf267cb2b4a2e4eeb5b08ab6e04d5929e59"
+      },
+      {
+        "file": "jobs/batch-135.jobs.jsonl",
+        "sha256": "862ebb75c0b11dda1e4ee9081176455cc9bcbecfb8f0ea897e9b78922166f071"
+      },
+      {
+        "file": "jobs/batch-136.jobs.jsonl",
+        "sha256": "48762fdfdcc215902434c19b6506049c6cab351a4403a97304e6ef482e6dd038"
+      },
+      {
+        "file": "jobs/batch-137.jobs.jsonl",
+        "sha256": "05f6b9887f7eab6a8b16b7facd7f32f8eef6523393e508d46b99b8f37d5bb97b"
+      },
+      {
+        "file": "jobs/batch-138.jobs.jsonl",
+        "sha256": "d36274b081b099c53548f8306fd33e22edb5f9a31480e7da83d271b992b2bd99"
+      },
+      {
+        "file": "jobs/batch-139.jobs.jsonl",
+        "sha256": "10008ade7e79efd001886b8a88872e97467970d2268da7d47160dc3beb31cc22"
+      },
+      {
+        "file": "jobs/batch-140.jobs.jsonl",
+        "sha256": "9024b707e82fe26e1adeccfa8fa52e12d559fbed339e04c0d2b993f12bc755f9"
+      },
+      {
+        "file": "jobs/batch-141.jobs.jsonl",
+        "sha256": "5b268cb295ed13b9a288c7d3eb4c12fc1ce7e84b455e67434006da0408ecb858"
+      },
+      {
+        "file": "jobs/batch-142.jobs.jsonl",
+        "sha256": "9814ba80aeb8e3377380c16d9ce91299e7a8c1277bfa0ef907cd7a2c692d6a0a"
+      },
+      {
+        "file": "jobs/batch-143.jobs.jsonl",
+        "sha256": "61cf119ceb7cfe71f23397f78001efadf7043360b1156e488c2550931124c12e"
+      },
+      {
+        "file": "jobs/batch-144.jobs.jsonl",
+        "sha256": "4d59904f635839220f6a2ac4072245bb5405253a15d7bbb1867439e329fa591a"
+      },
+      {
+        "file": "jobs/batch-145.jobs.jsonl",
+        "sha256": "8684a01ff985b12c51c132c012a5ea55f33800c9609c120638cb0b8899c1217e"
+      },
+      {
+        "file": "jobs/batch-146.jobs.jsonl",
+        "sha256": "195e9842a68ada63de4da470f35221c1f29976f4c25fe057cad7da2bdb680c44"
+      },
+      {
+        "file": "jobs/batch-147.jobs.jsonl",
+        "sha256": "e5ddd9550a7cb869d311167d49f8349df531af33dc2b589638772561fcc4d920"
+      },
+      {
+        "file": "jobs/batch-148.jobs.jsonl",
+        "sha256": "e943565292178c4d6bfdd8bcb55ec302e8cb4c0756adc9f1a3ee46a4204912c9"
+      },
+      {
+        "file": "jobs/batch-149.jobs.jsonl",
+        "sha256": "da84dab63258b66e64ed71e8058a7ebbda33c99fbafae43eabfa7863f35c5d7b"
+      },
+      {
+        "file": "jobs/batch-150.jobs.jsonl",
+        "sha256": "3f5acaf1bbf91b952ee0f98751a1fa2119455a565b045b157ac7eb8e1c88d3f0"
+      },
+      {
+        "file": "jobs/batch-151.jobs.jsonl",
+        "sha256": "3b83943c4a5a2a0c0982917c7311e731dd87fcd1ff86db526d198f10aa0108fb"
+      },
+      {
+        "file": "jobs/batch-152.jobs.jsonl",
+        "sha256": "0651d68f41aa3417d3f4bafdfe0dd603c59345789c6099bb9ee90b301475c862"
+      },
+      {
+        "file": "jobs/batch-153.jobs.jsonl",
+        "sha256": "06ac7bbafe2dabcfc4101b5956dd17dc6b7ad1ac724aafe4289020447cb07a96"
+      },
+      {
+        "file": "jobs/batch-154.jobs.jsonl",
+        "sha256": "9c2a789d13ce99b78e4baa06ea9fd574065cd391a644f482288df437b804ee8a"
+      },
+      {
+        "file": "jobs/batch-155.jobs.jsonl",
+        "sha256": "2471f152cfea9ea14727b1aa04282c1b10bbeb37fe659914e59657333274c4ff"
+      },
+      {
+        "file": "jobs/batch-156.jobs.jsonl",
+        "sha256": "70ac139d11e890275de33975d9fa7e4516eab830f8b910e80a791bd3124a7739"
+      },
+      {
+        "file": "jobs/batch-157.jobs.jsonl",
+        "sha256": "32a530fe87a238329a56431e490ff38bc8a1c21040e3934167a77f5e99981d4d"
+      },
+      {
+        "file": "jobs/batch-158.jobs.jsonl",
+        "sha256": "91ca45f49682fd2de2911c3a37d8f5674b5379fb297b09eb7c840f82c7e9da42"
+      },
+      {
+        "file": "jobs/batch-159.jobs.jsonl",
+        "sha256": "5977bd0e54285241eb9c9717bde7f4ebb13851613532f72f6d6fd24d224c2764"
+      },
+      {
+        "file": "jobs/batch-160.jobs.jsonl",
+        "sha256": "3eabdc28e20faaf04e3ce645860e93c2289ddf59054524456e9f2d7d989ee025"
+      },
+      {
+        "file": "jobs/batch-161.jobs.jsonl",
+        "sha256": "d48edf4d6120a68a30d1e0222c4c773a0983a5f3f8912e6ac3713a8168e27c12"
+      },
+      {
+        "file": "jobs/batch-162.jobs.jsonl",
+        "sha256": "6b72ae7ca5110599aabd04b72abb7955b0bb10cdc36bb97a0256ccb0e0ab8105"
+      },
+      {
+        "file": "jobs/batch-163.jobs.jsonl",
+        "sha256": "b328a32a8f28130b3bdc61e0657b86d88e5a192cf6f6e870d92b7993d5f282a2"
+      },
+      {
+        "file": "jobs/batch-164.jobs.jsonl",
+        "sha256": "08e0a7b52822f6b128ef899aaa4fd35f8b7da9d7641b74188128b6857b4da34a"
+      },
+      {
+        "file": "jobs/batch-165.jobs.jsonl",
+        "sha256": "a9e33ee8332a78cd5bbb216899353f8d7cc879c75d95812aaf2f2453d59e615e"
+      },
+      {
+        "file": "jobs/batch-166.jobs.jsonl",
+        "sha256": "349195c9f9acbcb30c5ac7a4bbcb98167a28c62f490ee1c35760e5e95a36d252"
+      },
+      {
+        "file": "jobs/batch-167.jobs.jsonl",
+        "sha256": "69b8ad43bd798c61e1f8cc893c1b51c3693a4c666d1b1a441fddb46f59ca1d92"
+      },
+      {
+        "file": "jobs/batch-168.jobs.jsonl",
+        "sha256": "d44b92fc5e375711ac7a8b84e3b84eb75ea16fad86226078ec4bc7c5d43c10b6"
+      },
+      {
+        "file": "jobs/batch-169.jobs.jsonl",
+        "sha256": "4d4e05f3700a973cfff52ef23bdb6b459c39888c184eb92fe0c66260661e9154"
+      },
+      {
+        "file": "jobs/batch-170.jobs.jsonl",
+        "sha256": "b6be522621a200880ac0c882f8a86b91cd505a8196df2002bb4c29067f743924"
+      },
+      {
+        "file": "jobs/batch-171.jobs.jsonl",
+        "sha256": "83f3142b9b327814827db9c0eed1aa148f67d97a29915936f2f9d66a9110a8ff"
+      },
+      {
+        "file": "jobs/batch-172.jobs.jsonl",
+        "sha256": "d1a41363d9049611fe9b5fe6aed20f39551b83c487d1b6f74d32ce1a3598d8a2"
+      },
+      {
+        "file": "jobs/batch-173.jobs.jsonl",
+        "sha256": "f2722b7daff32a01b1ec1d7ab4cd80274297eb86a6ed59d49a0845307c3fcb9a"
+      },
+      {
+        "file": "jobs/batch-174.jobs.jsonl",
+        "sha256": "6aaaeac00c1e155d55ef9d455ff1dba33419c29b0af401ee4fa0db5353f5d911"
+      },
+      {
+        "file": "jobs/batch-175.jobs.jsonl",
+        "sha256": "a66686588a89db6fb4c251d27af036b39d7fb41810f4dabdd5f5f3995b509988"
+      },
+      {
+        "file": "jobs/batch-176.jobs.jsonl",
+        "sha256": "b89cc2c77386178b661cce9f34e2af5a86ed05fdd1cb2b154d7e4eba5a54289d"
+      },
+      {
+        "file": "jobs/batch-177.jobs.jsonl",
+        "sha256": "16fa86e079a1fe98d650f5903d8a8d7c90d77702eee36d8f7f8bd137d60eda32"
+      },
+      {
+        "file": "jobs/batch-178.jobs.jsonl",
+        "sha256": "5f073af905ae5ed7277ab2938af9dc6988de6ae77b6000f857ff771db0bbbf54"
+      },
+      {
+        "file": "jobs/batch-179.jobs.jsonl",
+        "sha256": "1ffc3ff18723530af0747a56ddec68fe6b2cecac69d9941ce495e76574be1b78"
+      },
+      {
+        "file": "jobs/batch-180.jobs.jsonl",
+        "sha256": "c972c5656537bc0b3b997d5dac3481972bc3717b49ccc26caced815bf7a7127d"
+      },
+      {
+        "file": "jobs/batch-181.jobs.jsonl",
+        "sha256": "e37ec7a62e0e24836a25bdb25cae45c6c1eb9abf7c4fba272607730425ac1593"
+      },
+      {
+        "file": "jobs/batch-182.jobs.jsonl",
+        "sha256": "58a83c93837f85191ce18d2e2a5110203accb8aece5f121e471da8f03323ad18"
+      },
+      {
+        "file": "jobs/batch-183.jobs.jsonl",
+        "sha256": "6dbb347703e5535e7f2431c7b595276cc0eb1d2a3f142a62048f57a00f6965c4"
+      },
+      {
+        "file": "jobs/batch-184.jobs.jsonl",
+        "sha256": "5c66ea850205097833ecd600fc69deff0ecba99d88a9cf8b551cfa63fb78c368"
+      },
+      {
+        "file": "jobs/batch-185.jobs.jsonl",
+        "sha256": "f0d297e3c1ccc9c936cd501c8565fde65afbd27d071c8c9d00b05b004bfdd16b"
+      },
+      {
+        "file": "jobs/batch-186.jobs.jsonl",
+        "sha256": "c5b5ce4c791bbe8be4dd4d34b41f1722a9a6c6d38ec17324a1afe22d5068370b"
+      },
+      {
+        "file": "jobs/batch-187.jobs.jsonl",
+        "sha256": "c1bc86b15d179e69e6bb9de216ac58728cbb77de76b84ef312dcad1ce22d3220"
+      },
+      {
+        "file": "jobs/batch-188.jobs.jsonl",
+        "sha256": "215286955ac8d84af5a35c8caa8f1acfd7f4f81b464d0843cfae986883d9b90f"
+      },
+      {
+        "file": "jobs/batch-189.jobs.jsonl",
+        "sha256": "1a259e29821c901d0e519e6102b6b3c74bbdeba9c3dc78e90151c00edec989f6"
+      },
+      {
+        "file": "jobs/batch-190.jobs.jsonl",
+        "sha256": "c91d474644616264f4493911320645402735e355b43526954ccc81cfae571d1f"
+      },
+      {
+        "file": "jobs/batch-191.jobs.jsonl",
+        "sha256": "b31ea65bb01d15865b3ba9453e9909f63cd3f45b2d56ae0a828fd102cb748562"
+      },
+      {
+        "file": "jobs/batch-192.jobs.jsonl",
+        "sha256": "8e27cfd763fd71ca13996e4e792a7e4cb26100eca4deb5b8f918452a352b2950"
+      },
+      {
+        "file": "jobs/batch-193.jobs.jsonl",
+        "sha256": "ae48d28f3bccef1a210b644b413d834f48ce1a30e60f036b96310e123ba155bc"
+      },
+      {
+        "file": "jobs/batch-194.jobs.jsonl",
+        "sha256": "a16b9695864de392fc8b490df4af9a896acd850ddd715cc52a681d8d0e124a84"
+      },
+      {
+        "file": "jobs/batch-195.jobs.jsonl",
+        "sha256": "894536d0946c08ba85112da7e1bc7f5f7a6cfa89084fa0bee67e3a569f699ba5"
+      },
+      {
+        "file": "jobs/batch-196.jobs.jsonl",
+        "sha256": "8509b8e0af3a333d3d74459ee36461145393c2785017cd626fdb3b51c0070df0"
+      },
+      {
+        "file": "jobs/batch-197.jobs.jsonl",
+        "sha256": "a1e5cf913b6f1c2a989524c8ecf720e01f5d10c5a10157bd880769e0fcb4cceb"
+      },
+      {
+        "file": "jobs/batch-198.jobs.jsonl",
+        "sha256": "bc314e91fc3487e2aab9a55e0013e2939b76f0b239440dc981b84e58217baf32"
+      },
+      {
+        "file": "jobs/batch-199.jobs.jsonl",
+        "sha256": "d583d4c607ff1870809d7deac3a8423454fe68e5b8955b3dff2df844783fc800"
+      },
+      {
+        "file": "jobs/batch-200.jobs.jsonl",
+        "sha256": "c8110d433ff7cf156270b2243e42eb74e60748f0842528fc34a03b3db6800aba"
+      },
+      {
+        "file": "jobs/batch-201.jobs.jsonl",
+        "sha256": "a5efa62b3f51cf528efa561682eec44beaabd3c1ab0500323e44d2bd8bc16e36"
+      },
+      {
+        "file": "jobs/batch-202.jobs.jsonl",
+        "sha256": "c97131adcd997f875ebfb120ac33cf6fb76a507caca7a6c1b5fbb624783e2c7a"
+      },
+      {
+        "file": "jobs/batch-203.jobs.jsonl",
+        "sha256": "bddb4e615db146ab503a0749805c68c3439c968cfbd7c10f88f65f8b9d76eddd"
+      },
+      {
+        "file": "jobs/batch-204.jobs.jsonl",
+        "sha256": "858d5dd86c126fee56622977c0808ff0a9a3c86733c333034c6bac8a3e051447"
+      },
+      {
+        "file": "jobs/batch-205.jobs.jsonl",
+        "sha256": "c18fe137db8154b9e6a421f87dce8d71312b2edb4267f1c45607e826bf780b5c"
+      },
+      {
+        "file": "jobs/batch-206.jobs.jsonl",
+        "sha256": "28e08578e230c4cd7974ad3d84d55d26cbf06cf1a833d2a34cc87e3a1f66eb5b"
+      },
+      {
+        "file": "jobs/batch-207.jobs.jsonl",
+        "sha256": "7fa935cbb9810112239a5d0e650cc64f49d443a3b149808065b6f1f0fc5fdd77"
+      },
+      {
+        "file": "jobs/batch-208.jobs.jsonl",
+        "sha256": "0b7e7a46acbabb66e5681c3ee729940f4288838988184bb4c361f84475369d12"
+      },
+      {
+        "file": "jobs/batch-209.jobs.jsonl",
+        "sha256": "4e08bf8171dfeb12757dd79885566016e6c7a0b124b0c28da0be10f62a97bc28"
+      },
+      {
+        "file": "jobs/batch-210.jobs.jsonl",
+        "sha256": "e9abd3e90dd5e03e1e38927216c2e575645d4d24796c852d6bfa1c4cd0e210af"
+      },
+      {
+        "file": "jobs/batch-211.jobs.jsonl",
+        "sha256": "b92ea443816c3877476e55b6be26294c83db2ac54551afd19620c74b46cb159d"
+      },
+      {
+        "file": "jobs/batch-212.jobs.jsonl",
+        "sha256": "82062d1eadabd79531f3a37b93a3849cd775b25a4a6614f444fe8258d7f30a27"
+      },
+      {
+        "file": "jobs/batch-213.jobs.jsonl",
+        "sha256": "2cdf986585e5498d3726b8e123359f136ce4078d8ddae7cd835f6174709541bd"
+      }
+    ],
+    "preflightBatchDigest": "263c44df1d0a5b88658cb38187cf7c0db3270c21cdf4af3b42fb5755882bac07",
+    "corpusPackagePath": "study-content/packages/nb-sit-statute-corpus.content-package.json",
+    "corpusPackageId": "nb-sit-statute-corpus-2026-08-29",
+    "corpusPackageSha256": "ae93a1e75b814dd0463e065a5f8b3eeb9e035adc9054d442fab132cfdaa4b56b",
+    "frozenProposalsSha256": "b2726e8eae321a8d3a104520def8f0ab20abcf925ffdc1f4f2949ed0c7ff194e",
+    "frozenResultsSha256": "c38147c5605dcd62a2cb42b963b7fe402de7cba538d5cda4a040a56b066d3a69"
+  },
+  "pins": [
+    "unit-40730d04faf14076",
+    "unit-f1d3de4004dd0d17",
+    "unit-02c1922ab2c2961a",
+    "unit-9ceefa172c31deea",
+    "unit-d9b1e53de714665c",
+    "unit-1d069dae182e4d4a",
+    "unit-ad5f94891873617a",
+    "unit-e9fe22342cc56c8a",
+    "unit-ea7e4c75c7a425ce",
+    "unit-892e38efffb31976",
+    "unit-b176ebe94507fd17",
+    "unit-9aa4dea732c4bc43",
+    "unit-de14b7aae121ea5a",
+    "unit-df983b36ee36be82",
+    "unit-2f3e7edff1d80df7",
+    "unit-15fa5c5ac251dfa1",
+    "unit-6a94737b69e069ce",
+    "unit-fdccd69202d3a203",
+    "unit-ade0ea76fa6d04ef",
+    "unit-dc58323956b9fd42"
+  ],
+  "retryTargetCoverage": [
+    {
+      "targetId": "Assessment Act s.15.3",
+      "unitJobId": "unit-047b933c1567c5dd"
+    },
+    {
+      "targetId": "Community Planning Act s.1",
+      "unitJobId": "unit-2e7e67eb0f35fe35"
+    },
+    {
+      "targetId": "Community Planning Act s.75",
+      "unitJobId": "unit-019c765ae138d8b5"
+    },
+    {
+      "targetId": "Gas Distribution Act s.52",
+      "unitJobId": "unit-143fc780953799e6"
+    },
+    {
+      "targetId": "Mining Act s.68",
+      "unitJobId": "unit-2eedbe7a21cb2c32"
+    },
+    {
+      "targetId": "Municipalities Act s.100",
+      "unitJobId": "unit-023c1a4ddb31e2c5"
+    },
+    {
+      "targetId": "Occupational Health and Safety Act s.9",
+      "unitJobId": "unit-5fadda40929f11f0"
+    },
+    {
+      "targetId": "Property Act s.44",
+      "unitJobId": "unit-5d2a9f36002162d0"
+    },
+    {
+      "targetId": "Registry Act s.44",
+      "unitJobId": "unit-c7dc47a1735eb69d"
+    }
+  ],
+  "anchorTargetCoverage": [
+    {
+      "targetId": "Boundaries Confirmation Act s.10",
+      "unitJobId": "unit-09121fea0dce567b"
+    },
+    {
+      "targetId": "Surveys Act s.1",
+      "unitJobId": "unit-e60f2ed653e5363a"
+    },
+    {
+      "targetId": "Land Titles Act s.18",
+      "unitJobId": "unit-21c62d64fd32c92f"
+    },
+    {
+      "targetId": "Registry Act s.19",
+      "unitJobId": "unit-806dcd5f7b8ca4e8"
+    },
+    {
+      "targetId": "Regulation 95-166 s.3",
+      "unitJobId": "unit-24d4ce03d041f274"
+    },
+    {
+      "targetId": "Community Planning Act s.125",
+      "unitJobId": "unit-00066425d3dd3645"
+    },
+    {
+      "targetId": "Occupational Health and Safety Act s.9",
+      "unitJobId": "unit-5fadda40929f11f0"
+    }
+  ],
+  "notes": [
+    {
+      "code": "pin-zero-jobs",
+      "message": "Grouping-correction map job(s) with zero unit jobs (expected for a skip correction, e.g. Service NB Act s.56): map-d747c4a97d7161d3."
+    }
+  ],
+  "distributions": {
+    "priority": {
+      "target": {
+        "P1": 24,
+        "P2": 28,
+        "P3": 20,
+        "P4": 8
+      },
+      "actual": {
+        "P3": 20,
+        "P2": 28,
+        "P4": 8,
+        "P1": 24
+      }
+    },
+    "domain": {
+      "target": {
+        "core": 34,
+        "cadastral": 28,
+        "adjacent": 18
+      },
+      "actual": {
+        "core": 34,
+        "adjacent": 18,
+        "cadastral": 28
+      }
+    },
+    "provenanceMix": {
+      "final-QC-adjudicated": 20,
+      "human-adjudicated": 3,
+      "original": 50,
+      "recovered": 1,
+      "retry-promoted": 6
+    },
+    "sizeBuckets": {
+      "large": 15,
+      "medium": 35,
+      "small": 30
+    },
+    "focusStyles": {
+      "multiple": 2,
+      "single": 78
+    },
+    "featureCoverage": {
+      "broad-group-risk": 5,
+      "combine": 2,
+      "concept-deadline": 9,
+      "concept-duty": 56,
+      "concept-enumeration": 19,
+      "concept-fee": 18,
+      "concept-filing": 22,
+      "concept-legal-effect": 18,
+      "concept-power": 28,
+      "concept-procedure": 32,
+      "concept-prohibition": 13,
+      "concept-regulation-power": 41,
+      "definition-context": 76,
+      "direct-reference": 45,
+      "focus-multiple": 2,
+      "focus-none": 0,
+      "focus-single": 78,
+      "multi-source": 2,
+      "parent-combine": 2,
+      "parent-split": 53,
+      "parent-standalone": 25,
+      "prov-final-QC-adjudicated": 20,
+      "prov-human-adjudicated": 3,
+      "prov-original": 50,
+      "prov-recovered": 1,
+      "prov-retry-promoted": 6,
+      "repealed-mix": 0,
+      "size-large": 15,
+      "size-medium": 35,
+      "size-small": 30
+    },
+    "combine": {
+      "combineJobs": 2,
+      "multiSourceJobs": 2,
+      "maxSourceKeys": 2
+    }
+  },
+  "deviations": [
+    {
+      "dimension": "priority",
+      "target": {
+        "P1": 24,
+        "P2": 28,
+        "P3": 20,
+        "P4": 8
+      },
+      "actual": {
+        "P3": 20,
+        "P2": 28,
+        "P4": 8,
+        "P1": 24
+      },
+      "exact": true,
+      "explanation": "Targets met exactly. Phase composition: 20 grouping-adjudication pins (P2=2, P3=15, P4=3 — the freeze corrections skew P3), 9 retry representatives (P1=3, P2=5, P3=1), 6 additional regression anchors (P1=3, P2=3; the OH&S s.9 anchor stacks on the retry representative and is counted once), and 45 deterministic fill jobs (P1=18, P2=18, P3=4, P4=5). No priority was modified: every selected frozenMapPriority equals its frozen proposal suggestedPriority."
+    },
+    {
+      "dimension": "domain",
+      "target": {
+        "core": 34,
+        "cadastral": 28,
+        "adjacent": 18
+      },
+      "actual": {
+        "core": 34,
+        "adjacent": 18,
+        "cadastral": 28
+      },
+      "exact": true,
+      "explanation": "Approximate targets met exactly. By phase the 80 jobs are core=9 (pins 3, retry 3, anchors 3), cadastral=9 (pins 5, retry 3, anchor 1), adjacent=17 (pins 12, retry 3, anchors 2); the priority fill topped each domain up to its target by preferring the most under-target domain inside every priority pass. Domain classification is a deterministic title-keyword table: core surveying/licensing titles (Surveys, NB Land Surveyors, Boundaries Confirmation, Territorial Division, Land Titles, Registry, Standard Forms of Conveyances, Crown Grant Restrictions, Regs 84-76/83-130/84-190/95-166), cadastral property/registration/planning titles (assessment, planning, municipal, property, condominium, easements, air space, crown lands, escheats, devolution/wills, expropriation, minerals, quarriable, trespass, transfer tax, tax relief, highway, parks, limitation of actions), everything else adjacent."
+    }
+  ],
+  "validation": {
+    "checkedJobs": 80,
+    "issuesTotal": 0,
+    "sampleIssues": []
+  },
+  "runLayout": {
+    "runDir": "study-content/ai/runs/ai-units-2026-09-02-frozen-map-cal80-v4",
+    "batchSize": 8,
+    "batchCount": 10,
+    "batchSizes": {
+      "8": 10
+    },
+    "batchFiles": [
+      {
+        "file": "jobs/batch-001.jobs.jsonl",
+        "sha256": "1ac12b4ad36b83b1ece9991be0a372a4653e1bfcec848c9ad45c9302c9b7a8b9"
+      },
+      {
+        "file": "jobs/batch-002.jobs.jsonl",
+        "sha256": "10806fb78b80932cb0f9fedad42b4fd310ef373fecf46a1369ed673cc1a1b83a"
+      },
+      {
+        "file": "jobs/batch-003.jobs.jsonl",
+        "sha256": "fd5bdf43488199afe3439a324b83cc2ccf5adf66b192804462795248d32adfd0"
+      },
+      {
+        "file": "jobs/batch-004.jobs.jsonl",
+        "sha256": "54954b5ee02471ccbdc2977a2a09878c563e58564c545f04ef5bfbe9ab2f39f7"
+      },
+      {
+        "file": "jobs/batch-005.jobs.jsonl",
+        "sha256": "58eef9121b317d5d0b95c940639c8e78d6aa773c922649605f237d9d06a722a7"
+      },
+      {
+        "file": "jobs/batch-006.jobs.jsonl",
+        "sha256": "d831930a579cb23490a3d1c6d228153a7e10669a863f204730b2981a450288dc"
+      },
+      {
+        "file": "jobs/batch-007.jobs.jsonl",
+        "sha256": "76c3c364fc2c165df5246a0882b6aa387d232ffe70da91d14b8d76ffe2dbc1ce"
+      },
+      {
+        "file": "jobs/batch-008.jobs.jsonl",
+        "sha256": "db039aac5bb11995d6d4849c55a9cef9fdcd1e8c56c227e856c85d56687cd85f"
+      },
+      {
+        "file": "jobs/batch-009.jobs.jsonl",
+        "sha256": "53d3b897e02c273873c0b9561f496bc1a8c647babe5ed9eaf04a960ccf54bda5"
+      },
+      {
+        "file": "jobs/batch-010.jobs.jsonl",
+        "sha256": "cd61445429f05cba567553e1a6809575519d9c5bfbc63ee468c6fe35fe0801b5"
+      }
+    ],
+    "runJsonSha256": "28070b348becdc4fa921f3b168501427fc1c141487e5e56b384c8e3565807210",
+    "unitJobReportSha256": "c34123ceb5dcabff473c73ab79a72f72c7dd6c080c9ae0121abb243f8a6f1457"
+  },
+  "jobs": [
+    {
+      "index": 1,
+      "unitJobId": "unit-40730d04faf14076",
+      "mapJobId": "map-10ff468d35d10873",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-10ff468d35d10873",
+      "documentId": "doc-registry-act",
+      "documentTitle": "Registry Act",
+      "sections": [
+        "71"
+      ],
+      "priority": "P3",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "core",
+      "groupTitle": "Instrument form requirements and registrar acceptance discretion (ss. 71(2)-(3))",
+      "groupGoal": "State the instrument-form compliance requirement in subsection (2) and the registrar discretion under subsection (3) to accept a non-compliant instrument.",
+      "sourceKeys": [
+        "section:71"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 2959,
+      "sizeBucket": "medium",
+      "focusStyle": "single",
+      "provenance": "final-QC-adjudicated",
+      "tags": [
+        "concept-duty",
+        "concept-filing",
+        "concept-power",
+        "concept-procedure",
+        "concept-regulation-power",
+        "definition-context",
+        "direct-reference",
+        "final-map-grouping-adjudication",
+        "focus-single",
+        "parent-split",
+        "prov-final-QC-adjudicated",
+        "size-medium"
+      ],
+      "selectionReason": "pin",
+      "correction": true,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 2,
+      "unitJobId": "unit-f1d3de4004dd0d17",
+      "mapJobId": "map-10ff468d35d10873",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-10ff468d35d10873",
+      "documentId": "doc-registry-act",
+      "documentTitle": "Registry Act",
+      "sections": [
+        "71"
+      ],
+      "priority": "P3",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "core",
+      "groupTitle": "Registry administration regulation-making power (s. 71(1))",
+      "groupGoal": "Explain what the Lieutenant-Governor in Council may regulate for the administration of the registry office under subsection (1), including records, reports, surety, office location…",
+      "sourceKeys": [
+        "section:71"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 2959,
+      "sizeBucket": "medium",
+      "focusStyle": "single",
+      "provenance": "final-QC-adjudicated",
+      "tags": [
+        "concept-duty",
+        "concept-filing",
+        "concept-power",
+        "concept-procedure",
+        "concept-regulation-power",
+        "definition-context",
+        "direct-reference",
+        "final-map-grouping-adjudication",
+        "focus-single",
+        "parent-split",
+        "prov-final-QC-adjudicated",
+        "size-medium"
+      ],
+      "selectionReason": "pin",
+      "correction": true,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 3,
+      "unitJobId": "unit-02c1922ab2c2961a",
+      "mapJobId": "map-19c48590a1b233de",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-19c48590a1b233de",
+      "documentId": "doc-clean-water-act",
+      "documentTitle": "Clean Water Act",
+      "sections": [
+        "40"
+      ],
+      "priority": "P3",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "adjacent",
+      "groupTitle": "Release, handling and disposal of contaminants and wastes",
+      "groupGoal": "Explain how regulations may control contaminants and wastes and the withdrawal, use, storage and handling of water, including standards and tests for measuring contaminants.",
+      "sourceKeys": [
+        "section:40"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 8934,
+      "sizeBucket": "large",
+      "focusStyle": "single",
+      "provenance": "final-QC-adjudicated",
+      "tags": [
+        "concept-procedure",
+        "concept-regulation-power",
+        "definition-context",
+        "direct-reference",
+        "final-map-grouping-adjudication",
+        "focus-single",
+        "parent-split",
+        "prov-final-QC-adjudicated",
+        "size-large"
+      ],
+      "selectionReason": "pin",
+      "correction": true,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 4,
+      "unitJobId": "unit-9ceefa172c31deea",
+      "mapJobId": "map-19c48590a1b233de",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-19c48590a1b233de",
+      "documentId": "doc-clean-water-act",
+      "documentTitle": "Clean Water Act",
+      "sections": [
+        "40"
+      ],
+      "priority": "P3",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "adjacent",
+      "groupTitle": "Costs, claims, fees and inspectors",
+      "groupGoal": "Summarize the administrative powers, including cost recovery, claims, appeals, fees and conditions on registrations and licences, and the duties of inspectors.",
+      "sourceKeys": [
+        "section:40"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 8934,
+      "sizeBucket": "large",
+      "focusStyle": "single",
+      "provenance": "final-QC-adjudicated",
+      "tags": [
+        "concept-fee",
+        "concept-power",
+        "concept-procedure",
+        "concept-regulation-power",
+        "definition-context",
+        "direct-reference",
+        "final-map-grouping-adjudication",
+        "focus-single",
+        "parent-split",
+        "prov-final-QC-adjudicated",
+        "size-large"
+      ],
+      "selectionReason": "pin",
+      "correction": true,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 5,
+      "unitJobId": "unit-d9b1e53de714665c",
+      "mapJobId": "map-19c48590a1b233de",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-19c48590a1b233de",
+      "documentId": "doc-clean-water-act",
+      "documentTitle": "Clean Water Act",
+      "sections": [
+        "40"
+      ],
+      "priority": "P3",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "adjacent",
+      "groupTitle": "Water classification of a watercourse",
+      "groupGoal": "Describe the elements of the water-classification regime, including criteria and standards, exclusion, protection from impairment, and the review panel.",
+      "sourceKeys": [
+        "section:40"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 8934,
+      "sizeBucket": "large",
+      "focusStyle": "single",
+      "provenance": "final-QC-adjudicated",
+      "tags": [
+        "concept-procedure",
+        "concept-regulation-power",
+        "definition-context",
+        "direct-reference",
+        "final-map-grouping-adjudication",
+        "focus-single",
+        "parent-split",
+        "prov-final-QC-adjudicated",
+        "size-large"
+      ],
+      "selectionReason": "pin",
+      "correction": true,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 6,
+      "unitJobId": "unit-1d069dae182e4d4a",
+      "mapJobId": "map-445b7c242fa7ca8e",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-445b7c242fa7ca8e",
+      "documentId": "doc-clean-water-act",
+      "documentTitle": "Clean Water Act",
+      "sections": [
+        "13"
+      ],
+      "priority": "P3",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "adjacent",
+      "groupTitle": "Response to a possible future significant health risk",
+      "groupGoal": "Explain when an order may be made for a possible future risk and what the order must aim to ensure.",
+      "sourceKeys": [
+        "section:13"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 5551,
+      "sizeBucket": "medium",
+      "focusStyle": "single",
+      "provenance": "final-QC-adjudicated",
+      "tags": [
+        "concept-duty",
+        "concept-power",
+        "concept-prohibition",
+        "definition-context",
+        "direct-reference",
+        "final-map-grouping-adjudication",
+        "focus-single",
+        "parent-split",
+        "prov-final-QC-adjudicated",
+        "size-medium"
+      ],
+      "selectionReason": "pin",
+      "correction": true,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 7,
+      "unitJobId": "unit-ad5f94891873617a",
+      "mapJobId": "map-445b7c242fa7ca8e",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-445b7c242fa7ca8e",
+      "documentId": "doc-clean-water-act",
+      "documentTitle": "Clean Water Act",
+      "sections": [
+        "13"
+      ],
+      "priority": "P3",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "adjacent",
+      "groupTitle": "Response to a current significant health risk",
+      "groupGoal": "Describe the required and optional orders where the risk is current, distinguishing the source case from the point-of-consumption case.",
+      "sourceKeys": [
+        "section:13"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 5551,
+      "sizeBucket": "medium",
+      "focusStyle": "single",
+      "provenance": "final-QC-adjudicated",
+      "tags": [
+        "concept-duty",
+        "concept-power",
+        "concept-prohibition",
+        "definition-context",
+        "direct-reference",
+        "final-map-grouping-adjudication",
+        "focus-single",
+        "parent-split",
+        "prov-final-QC-adjudicated",
+        "size-medium"
+      ],
+      "selectionReason": "pin",
+      "correction": true,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 8,
+      "unitJobId": "unit-e9fe22342cc56c8a",
+      "mapJobId": "map-445b7c242fa7ca8e",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-445b7c242fa7ca8e",
+      "documentId": "doc-clean-water-act",
+      "documentTitle": "Clean Water Act",
+      "sections": [
+        "13"
+      ],
+      "priority": "P3",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "adjacent",
+      "groupTitle": "Private well notice and application of order provisions",
+      "groupGoal": "State the private-well notice duty, the liability limitation, and which order provisions apply to an order made under the section.",
+      "sourceKeys": [
+        "section:13"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 5551,
+      "sizeBucket": "medium",
+      "focusStyle": "single",
+      "provenance": "final-QC-adjudicated",
+      "tags": [
+        "concept-duty",
+        "concept-power",
+        "concept-procedure",
+        "concept-prohibition",
+        "definition-context",
+        "direct-reference",
+        "final-map-grouping-adjudication",
+        "focus-single",
+        "parent-split",
+        "prov-final-QC-adjudicated",
+        "size-medium"
+      ],
+      "selectionReason": "pin",
+      "correction": true,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 9,
+      "unitJobId": "unit-ea7e4c75c7a425ce",
+      "mapJobId": "map-445b7c242fa7ca8e",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-445b7c242fa7ca8e",
+      "documentId": "doc-clean-water-act",
+      "documentTitle": "Clean Water Act",
+      "sections": [
+        "13"
+      ],
+      "priority": "P3",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "adjacent",
+      "groupTitle": "No person shall supply water posing a significant health risk",
+      "groupGoal": "State the prohibition, the systems and sources it covers, and the exception for private wells.",
+      "sourceKeys": [
+        "section:13"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 5551,
+      "sizeBucket": "medium",
+      "focusStyle": "single",
+      "provenance": "final-QC-adjudicated",
+      "tags": [
+        "concept-duty",
+        "concept-power",
+        "concept-prohibition",
+        "definition-context",
+        "direct-reference",
+        "final-map-grouping-adjudication",
+        "focus-single",
+        "parent-split",
+        "prov-final-QC-adjudicated",
+        "size-medium"
+      ],
+      "selectionReason": "pin",
+      "correction": true,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 10,
+      "unitJobId": "unit-892e38efffb31976",
+      "mapJobId": "map-48b1a91a069cabde",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-48b1a91a069cabde",
+      "documentId": "doc-trespass-act",
+      "documentTitle": "Trespass Act",
+      "sections": [
+        "1"
+      ],
+      "priority": "P2",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "cadastral",
+      "groupTitle": "Land, shore and watercourse definitions",
+      "groupGoal": "Define the land and water feature terms and state the physical boundaries each one describes.",
+      "sourceKeys": [
+        "section:1"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 4159,
+      "sizeBucket": "medium",
+      "focusStyle": "single",
+      "provenance": "final-QC-adjudicated",
+      "tags": [
+        "concept-deadline",
+        "definition-context",
+        "direct-reference",
+        "final-map-grouping-adjudication",
+        "focus-single",
+        "parent-split",
+        "prov-final-QC-adjudicated",
+        "size-medium"
+      ],
+      "selectionReason": "pin",
+      "correction": true,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 11,
+      "unitJobId": "unit-b176ebe94507fd17",
+      "mapJobId": "map-48b1a91a069cabde",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-48b1a91a069cabde",
+      "documentId": "doc-trespass-act",
+      "documentTitle": "Trespass Act",
+      "sections": [
+        "1"
+      ],
+      "priority": "P2",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "cadastral",
+      "groupTitle": "Trespass, actor and enforcement definitions",
+      "groupGoal": "Define the core offence and enforcement terms and explain who or what each one covers.",
+      "sourceKeys": [
+        "section:1"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 4159,
+      "sizeBucket": "medium",
+      "focusStyle": "single",
+      "provenance": "final-QC-adjudicated",
+      "tags": [
+        "concept-deadline",
+        "definition-context",
+        "direct-reference",
+        "final-map-grouping-adjudication",
+        "focus-single",
+        "parent-split",
+        "prov-final-QC-adjudicated",
+        "size-medium"
+      ],
+      "selectionReason": "pin",
+      "correction": true,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 12,
+      "unitJobId": "unit-9aa4dea732c4bc43",
+      "mapJobId": "map-52353c0c8b64b6d3",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-52353c0c8b64b6d3",
+      "documentId": "doc-crown-lands-and-forests-act",
+      "documentTitle": "Crown Lands and Forests Act",
+      "sections": [
+        "95"
+      ],
+      "priority": "P3",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "cadastral",
+      "groupTitle": "Administration, advisory board and fees",
+      "groupGoal": "Summarize the administrative regulatory subjects, including the Advisory Board, forest roads and signs, auctions, forest protection, fees and forms.",
+      "sourceKeys": [
+        "section:95"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 6641,
+      "sizeBucket": "large",
+      "focusStyle": "single",
+      "provenance": "final-QC-adjudicated",
+      "tags": [
+        "concept-duty",
+        "concept-fee",
+        "concept-power",
+        "concept-regulation-power",
+        "definition-context",
+        "direct-reference",
+        "final-map-grouping-adjudication",
+        "focus-single",
+        "parent-split",
+        "prov-final-QC-adjudicated",
+        "size-large"
+      ],
+      "selectionReason": "pin",
+      "correction": true,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 13,
+      "unitJobId": "unit-de14b7aae121ea5a",
+      "mapJobId": "map-52353c0c8b64b6d3",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-52353c0c8b64b6d3",
+      "documentId": "doc-crown-lands-and-forests-act",
+      "documentTitle": "Crown Lands and Forests Act",
+      "sections": [
+        "95"
+      ],
+      "priority": "P3",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "cadastral",
+      "groupTitle": "Surveys, tenure and access to Crown Lands",
+      "groupGoal": "Explain the regulatory subjects concerning surveys, lease classes, rights-of-way, licences of occupation and access to Crown Lands.",
+      "sourceKeys": [
+        "section:95"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 6641,
+      "sizeBucket": "large",
+      "focusStyle": "single",
+      "provenance": "final-QC-adjudicated",
+      "tags": [
+        "concept-duty",
+        "concept-power",
+        "concept-regulation-power",
+        "definition-context",
+        "direct-reference",
+        "final-map-grouping-adjudication",
+        "focus-single",
+        "parent-split",
+        "prov-final-QC-adjudicated",
+        "size-large"
+      ],
+      "selectionReason": "pin",
+      "correction": true,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 14,
+      "unitJobId": "unit-df983b36ee36be82",
+      "mapJobId": "map-52353c0c8b64b6d3",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-52353c0c8b64b6d3",
+      "documentId": "doc-crown-lands-and-forests-act",
+      "documentTitle": "Crown Lands and Forests Act",
+      "sections": [
+        "95"
+      ],
+      "priority": "P3",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "cadastral",
+      "groupTitle": "Forest management, harvesting and royalties",
+      "groupGoal": "Describe how regulations may govern forest management agreements, audits and penalties, harvesting, timber charges and royalties, and the retroactivity of royalty regulations.",
+      "sourceKeys": [
+        "section:95"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 6641,
+      "sizeBucket": "large",
+      "focusStyle": "single",
+      "provenance": "final-QC-adjudicated",
+      "tags": [
+        "concept-duty",
+        "concept-fee",
+        "concept-power",
+        "concept-regulation-power",
+        "definition-context",
+        "direct-reference",
+        "final-map-grouping-adjudication",
+        "focus-single",
+        "parent-split",
+        "prov-final-QC-adjudicated",
+        "size-large"
+      ],
+      "selectionReason": "pin",
+      "correction": true,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 15,
+      "unitJobId": "unit-2f3e7edff1d80df7",
+      "mapJobId": "map-7c48e28797b91624",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-7c48e28797b91624",
+      "documentId": "doc-registry-act",
+      "documentTitle": "Registry Act",
+      "sections": [
+        "66"
+      ],
+      "priority": "P3",
+      "disposition": "standalone",
+      "parentKind": "standalone",
+      "domain": "core",
+      "groupTitle": "Retaining registry office fees and the dismissal penalty",
+      "groupGoal": "State who is barred from retaining registry office fees and the penalty for a violation.",
+      "sourceKeys": [
+        "section:66"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 449,
+      "sizeBucket": "small",
+      "focusStyle": "single",
+      "provenance": "final-QC-adjudicated",
+      "tags": [
+        "concept-duty",
+        "concept-fee",
+        "concept-power",
+        "definition-context",
+        "final-map-grouping-adjudication",
+        "focus-single",
+        "parent-standalone",
+        "prov-final-QC-adjudicated",
+        "size-small"
+      ],
+      "selectionReason": "pin",
+      "correction": true,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 16,
+      "unitJobId": "unit-15fa5c5ac251dfa1",
+      "mapJobId": "map-8860d90d22aae7ed",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-8860d90d22aae7ed",
+      "documentId": "doc-public-health-act",
+      "documentTitle": "Public Health Act",
+      "sections": [
+        "68"
+      ],
+      "priority": "P4",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "adjacent",
+      "groupTitle": "Health regions, inspectors and notifiable disease regulations",
+      "groupGoal": "Summarize the regulatory subjects for health regions, inspectors, notifiable disease reporting and control, and related licences, fees and service rules.",
+      "sourceKeys": [
+        "section:68"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 8585,
+      "sizeBucket": "large",
+      "focusStyle": "single",
+      "provenance": "final-QC-adjudicated",
+      "tags": [
+        "concept-fee",
+        "concept-regulation-power",
+        "definition-context",
+        "direct-reference",
+        "final-map-grouping-adjudication",
+        "focus-single",
+        "parent-split",
+        "prov-final-QC-adjudicated",
+        "size-large"
+      ],
+      "selectionReason": "pin",
+      "correction": true,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 17,
+      "unitJobId": "unit-6a94737b69e069ce",
+      "mapJobId": "map-8860d90d22aae7ed",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-8860d90d22aae7ed",
+      "documentId": "doc-public-health-act",
+      "documentTitle": "Public Health Act",
+      "sections": [
+        "68"
+      ],
+      "priority": "P4",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "adjacent",
+      "groupTitle": "Water supply, water circulation and sewage regulations",
+      "groupGoal": "Describe the regulatory subjects for water supply and circulation systems and on-site sewage disposal systems.",
+      "sourceKeys": [
+        "section:68"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 8585,
+      "sizeBucket": "large",
+      "focusStyle": "single",
+      "provenance": "final-QC-adjudicated",
+      "tags": [
+        "concept-regulation-power",
+        "definition-context",
+        "direct-reference",
+        "final-map-grouping-adjudication",
+        "focus-single",
+        "parent-split",
+        "prov-final-QC-adjudicated",
+        "size-large"
+      ],
+      "selectionReason": "pin",
+      "correction": true,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 18,
+      "unitJobId": "unit-fdccd69202d3a203",
+      "mapJobId": "map-8860d90d22aae7ed",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-8860d90d22aae7ed",
+      "documentId": "doc-public-health-act",
+      "documentTitle": "Public Health Act",
+      "sections": [
+        "68"
+      ],
+      "priority": "P4",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "adjacent",
+      "groupTitle": "Food premises and food safety regulations",
+      "groupGoal": "Summarize the regulatory subjects for food premises, food handling, food standards and food labelling.",
+      "sourceKeys": [
+        "section:68"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 8585,
+      "sizeBucket": "large",
+      "focusStyle": "single",
+      "provenance": "final-QC-adjudicated",
+      "tags": [
+        "concept-regulation-power",
+        "definition-context",
+        "direct-reference",
+        "final-map-grouping-adjudication",
+        "focus-single",
+        "parent-split",
+        "prov-final-QC-adjudicated",
+        "size-large"
+      ],
+      "selectionReason": "pin",
+      "correction": true,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 19,
+      "unitJobId": "unit-ade0ea76fa6d04ef",
+      "mapJobId": "map-d1fadd2dfd0ce395",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-d1fadd2dfd0ce395",
+      "documentId": "doc-aquaculture-act",
+      "documentTitle": "Aquaculture Act",
+      "sections": [
+        "90"
+      ],
+      "priority": "P3",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "adjacent",
+      "groupTitle": "Incorporation by reference and application mechanics",
+      "groupGoal": "Explain how an aquaculture regulation may incorporate standards by reference and how it may vary by person, matter, activity, time or place.",
+      "sourceKeys": [
+        "section:90"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 4785,
+      "sizeBucket": "medium",
+      "focusStyle": "single",
+      "provenance": "final-QC-adjudicated",
+      "tags": [
+        "concept-duty",
+        "concept-fee",
+        "concept-power",
+        "concept-procedure",
+        "concept-regulation-power",
+        "definition-context",
+        "direct-reference",
+        "final-map-grouping-adjudication",
+        "focus-single",
+        "parent-split",
+        "prov-final-QC-adjudicated",
+        "size-medium"
+      ],
+      "selectionReason": "pin",
+      "correction": true,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 20,
+      "unitJobId": "unit-dc58323956b9fd42",
+      "mapJobId": "map-d1fadd2dfd0ce395",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-d1fadd2dfd0ce395",
+      "documentId": "doc-aquaculture-act",
+      "documentTitle": "Aquaculture Act",
+      "sections": [
+        "90"
+      ],
+      "priority": "P3",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "adjacent",
+      "groupTitle": "Aquaculture regulatory subjects",
+      "groupGoal": "Summarize the range of aquaculture regulatory subjects and identify the key institutions and standards they address.",
+      "sourceKeys": [
+        "section:90"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 4785,
+      "sizeBucket": "medium",
+      "focusStyle": "single",
+      "provenance": "final-QC-adjudicated",
+      "tags": [
+        "broad-group-risk",
+        "concept-duty",
+        "concept-fee",
+        "concept-power",
+        "concept-procedure",
+        "concept-regulation-power",
+        "definition-context",
+        "direct-reference",
+        "final-map-grouping-adjudication",
+        "focus-single",
+        "parent-split",
+        "prov-final-QC-adjudicated",
+        "size-medium"
+      ],
+      "selectionReason": "pin",
+      "correction": true,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 21,
+      "unitJobId": "unit-047b933c1567c5dd",
+      "mapJobId": "map-7ae41a2728f7e83b",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-7ae41a2728f7e83b",
+      "documentId": "doc-assessment-act",
+      "documentTitle": "Assessment Act",
+      "sections": [
+        "15.3"
+      ],
+      "priority": "P2",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "cadastral",
+      "groupTitle": "Phased assessment calculation formula",
+      "groupGoal": "Recall the four-year phased assessment formula: year-one base valuation plus pre-project improvements, then A + 25%(B−A), A + 50%(C−A), and A + 75%(D−A) for years two, three, and f…",
+      "sourceKeys": [
+        "section:15.3"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 6460,
+      "sizeBucket": "large",
+      "focusStyle": "single",
+      "provenance": "retry-promoted",
+      "tags": [
+        "concept-enumeration",
+        "concept-procedure",
+        "concept-regulation-power",
+        "definition-context",
+        "direct-reference",
+        "focus-single",
+        "map-retry-history",
+        "parent-split",
+        "prov-retry-promoted",
+        "size-large"
+      ],
+      "selectionReason": "retry",
+      "correction": false,
+      "retry": true,
+      "regression": false,
+      "retryTargetId": "Assessment Act s.15.3"
+    },
+    {
+      "index": 22,
+      "unitJobId": "unit-2e7e67eb0f35fe35",
+      "mapJobId": "map-1fa5a6239a1f7144",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-1fa5a6239a1f7144",
+      "documentId": "doc-community-planning-act",
+      "documentTitle": "Community Planning Act",
+      "sections": [
+        "1"
+      ],
+      "priority": "P1",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "cadastral",
+      "groupTitle": "Definition of \"development\"",
+      "groupGoal": "Identify the four categories of activity that constitute \"development\" under s. 1(1) and the specific exclusions for utility infrastructure and Pipeline Act pipelines.",
+      "sourceKeys": [
+        "section:1"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 6578,
+      "sizeBucket": "large",
+      "focusStyle": "single",
+      "provenance": "retry-promoted",
+      "tags": [
+        "concept-enumeration",
+        "concept-regulation-power",
+        "definition-context",
+        "direct-reference",
+        "focus-single",
+        "map-retry-history",
+        "parent-split",
+        "prov-retry-promoted",
+        "size-large"
+      ],
+      "selectionReason": "retry",
+      "correction": false,
+      "retry": true,
+      "regression": false,
+      "retryTargetId": "Community Planning Act s.1"
+    },
+    {
+      "index": 23,
+      "unitJobId": "unit-019c765ae138d8b5",
+      "mapJobId": "map-56bae66370b899b1",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-56bae66370b899b1",
+      "documentId": "doc-community-planning-act",
+      "documentTitle": "Community Planning Act",
+      "sections": [
+        "75"
+      ],
+      "priority": "P1",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "cadastral",
+      "groupTitle": "Facilities requirements and development-officer approval conditions",
+      "groupGoal": "Recall the facilities a by-law may require, the two-part approval condition in (j) (council opinion on services plus agreement with deposit or performance bond), and the two non-ap…",
+      "sourceKeys": [
+        "section:75"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 6532,
+      "sizeBucket": "large",
+      "focusStyle": "single",
+      "provenance": "retry-promoted",
+      "tags": [
+        "concept-duty",
+        "concept-enumeration",
+        "concept-fee",
+        "concept-filing",
+        "concept-power",
+        "definition-context",
+        "direct-reference",
+        "focus-single",
+        "map-retry-history",
+        "parent-split",
+        "prov-retry-promoted",
+        "size-large"
+      ],
+      "selectionReason": "retry",
+      "correction": false,
+      "retry": true,
+      "regression": false,
+      "retryTargetId": "Community Planning Act s.75"
+    },
+    {
+      "index": 24,
+      "unitJobId": "unit-143fc780953799e6",
+      "mapJobId": "map-33a01d563229d6dd",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-33a01d563229d6dd",
+      "documentId": "doc-gas-distribution-act",
+      "documentTitle": "Gas Distribution Act, 1999",
+      "sections": [
+        "52"
+      ],
+      "priority": "P3",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "adjacent",
+      "groupTitle": "Rate-setting prohibition and Board authority",
+      "groupGoal": "Recall the prohibition on distributor charges without a Board order, the Board's power to approve or fix just and reasonable rates (or fix its own if satisfied the applied rates ar…",
+      "sourceKeys": [
+        "section:52"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 2653,
+      "sizeBucket": "medium",
+      "focusStyle": "single",
+      "provenance": "human-adjudicated",
+      "tags": [
+        "concept-duty",
+        "concept-enumeration",
+        "concept-fee",
+        "concept-power",
+        "concept-procedure",
+        "concept-prohibition",
+        "concept-regulation-power",
+        "definition-context",
+        "focus-single",
+        "map-retry-history",
+        "parent-split",
+        "prov-human-adjudicated",
+        "size-medium"
+      ],
+      "selectionReason": "retry",
+      "correction": false,
+      "retry": true,
+      "regression": false,
+      "retryTargetId": "Gas Distribution Act s.52"
+    },
+    {
+      "index": 25,
+      "unitJobId": "unit-2eedbe7a21cb2c32",
+      "mapJobId": "map-208559fbf2dbeffa",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-208559fbf2dbeffa",
+      "documentId": "doc-mining-act",
+      "documentTitle": "Mining Act",
+      "sections": [
+        "68"
+      ],
+      "priority": "P2",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "adjacent",
+      "groupTitle": "Boundary survey requirement and exception for previously surveyed boundaries",
+      "groupGoal": "State the boundary-survey requirement for a mining lease (survey per sections 90–95, Ministerial approval, Recorder filing) and the exception where prior surveys exist, including w…",
+      "sourceKeys": [
+        "section:68"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 5872,
+      "sizeBucket": "medium",
+      "focusStyle": "single",
+      "provenance": "human-adjudicated",
+      "tags": [
+        "concept-duty",
+        "concept-enumeration",
+        "concept-filing",
+        "concept-procedure",
+        "concept-regulation-power",
+        "definition-context",
+        "direct-reference",
+        "focus-single",
+        "map-retry-history",
+        "parent-split",
+        "prov-human-adjudicated",
+        "size-medium"
+      ],
+      "selectionReason": "retry",
+      "correction": false,
+      "retry": true,
+      "regression": false,
+      "retryTargetId": "Mining Act s.68"
+    },
+    {
+      "index": 26,
+      "unitJobId": "unit-023c1a4ddb31e2c5",
+      "mapJobId": "map-1c37c940368bec16",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-1c37c940368bec16",
+      "documentId": "doc-municipalities-act",
+      "documentTitle": "Municipalities Act",
+      "sections": [
+        "100"
+      ],
+      "priority": "P2",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "cadastral",
+      "groupTitle": "Licence fee on conviction deemed part of fine",
+      "groupGoal": "Explain that on conviction for unlicensed activity under a by-law, the judge may order the unpaid licence fee in addition to the fine, and that the fee is deemed to form part of th…",
+      "sourceKeys": [
+        "section:100"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 1970,
+      "sizeBucket": "small",
+      "focusStyle": "single",
+      "provenance": "retry-promoted",
+      "tags": [
+        "concept-duty",
+        "concept-fee",
+        "concept-legal-effect",
+        "concept-power",
+        "concept-procedure",
+        "concept-regulation-power",
+        "definition-context",
+        "direct-reference",
+        "focus-single",
+        "map-retry-history",
+        "parent-split",
+        "prov-retry-promoted",
+        "size-small"
+      ],
+      "selectionReason": "retry",
+      "correction": false,
+      "retry": true,
+      "regression": false,
+      "retryTargetId": "Municipalities Act s.100"
+    },
+    {
+      "index": 27,
+      "unitJobId": "unit-5fadda40929f11f0",
+      "mapJobId": "map-59704851a9e697bf",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-59704851a9e697bf",
+      "documentId": "doc-occupational-health-and-safety-act",
+      "documentTitle": "Occupational Health and Safety Act",
+      "sections": [
+        "9"
+      ],
+      "priority": "P2",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "adjacent",
+      "groupTitle": "Specific operational duties of the employer",
+      "groupGoal": "Recall the employer's specific duties under section 9(2), including maintaining equipment, monthly workplace inspection, hazard communication, information/instruction/training, com…",
+      "sourceKeys": [
+        "section:9"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 3286,
+      "sizeBucket": "medium",
+      "focusStyle": "single",
+      "provenance": "human-adjudicated",
+      "tags": [
+        "concept-duty",
+        "concept-enumeration",
+        "concept-regulation-power",
+        "definition-context",
+        "focus-single",
+        "map-retry-history",
+        "parent-split",
+        "prov-human-adjudicated",
+        "size-medium",
+        "unit-v4-regression-anchor"
+      ],
+      "selectionReason": "retry",
+      "correction": false,
+      "retry": true,
+      "regression": true,
+      "retryTargetId": "Occupational Health and Safety Act s.9",
+      "anchorTargetId": "Occupational Health and Safety Act s.9"
+    },
+    {
+      "index": 28,
+      "unitJobId": "unit-5d2a9f36002162d0",
+      "mapJobId": "map-6c9e861025a7bfa4",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-6c9e861025a7bfa4",
+      "documentId": "doc-property-act",
+      "documentTitle": "Property Act",
+      "sections": [
+        "44"
+      ],
+      "priority": "P1",
+      "disposition": "standalone",
+      "parentKind": "standalone",
+      "domain": "cadastral",
+      "groupTitle": "Mortgagee's Statutory Powers under Deed Mortgage (s.44)",
+      "groupGoal": "Recall the mortgagee's statutory powers of sale and fire insurance, their triggering conditions, methods, ancillary rights, and how the mortgage deed may vary or extend those power…",
+      "sourceKeys": [
+        "section:44"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 2217,
+      "sizeBucket": "medium",
+      "focusStyle": "single",
+      "provenance": "retry-promoted",
+      "tags": [
+        "concept-duty",
+        "concept-enumeration",
+        "concept-fee",
+        "concept-legal-effect",
+        "concept-power",
+        "definition-context",
+        "direct-reference",
+        "focus-single",
+        "map-retry-history",
+        "parent-standalone",
+        "prov-retry-promoted",
+        "size-medium"
+      ],
+      "selectionReason": "retry",
+      "correction": false,
+      "retry": true,
+      "regression": false,
+      "retryTargetId": "Property Act s.44"
+    },
+    {
+      "index": 29,
+      "unitJobId": "unit-c7dc47a1735eb69d",
+      "mapJobId": "map-845a5dc610f4fb39",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-845a5dc610f4fb39",
+      "documentId": "doc-registry-act",
+      "documentTitle": "Registry Act",
+      "sections": [
+        "44"
+      ],
+      "priority": "P2",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "core",
+      "groupTitle": "Out-of-Province Instrument Execution and Certification",
+      "groupGoal": "Identify the persons authorized to take out-of-province acknowledgments and proofs of instrument execution and the associated certification or authentication requirements for each …",
+      "sourceKeys": [
+        "section:44"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 3623,
+      "sizeBucket": "medium",
+      "focusStyle": "single",
+      "provenance": "retry-promoted",
+      "tags": [
+        "concept-duty",
+        "concept-fee",
+        "definition-context",
+        "focus-single",
+        "map-retry-history",
+        "parent-split",
+        "prov-retry-promoted",
+        "size-medium"
+      ],
+      "selectionReason": "retry",
+      "correction": false,
+      "retry": true,
+      "regression": false,
+      "retryTargetId": "Registry Act s.44"
+    },
+    {
+      "index": 30,
+      "unitJobId": "unit-09121fea0dce567b",
+      "mapJobId": "map-324db09e5f0e12de",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-324db09e5f0e12de",
+      "documentId": "doc-boundaries-confirmation-act",
+      "documentTitle": "Boundaries Confirmation Act",
+      "sections": [
+        "10"
+      ],
+      "priority": "P2",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "core",
+      "groupTitle": "Hearing parties and notice of hearing",
+      "groupGoal": "Identify the categories of parties to a hearing under subsection 10(4) and the required contents of the notice of hearing under subsections 10(5) and 10(6).",
+      "sourceKeys": [
+        "section:10"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 2232,
+      "sizeBucket": "medium",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-deadline",
+        "concept-duty",
+        "concept-enumeration",
+        "concept-procedure",
+        "concept-regulation-power",
+        "definition-context",
+        "direct-reference",
+        "focus-single",
+        "parent-split",
+        "prov-original",
+        "size-medium",
+        "unit-v4-regression-anchor"
+      ],
+      "selectionReason": "anchor",
+      "correction": false,
+      "retry": false,
+      "regression": true,
+      "anchorTargetId": "Boundaries Confirmation Act s.10"
+    },
+    {
+      "index": 31,
+      "unitJobId": "unit-e60f2ed653e5363a",
+      "mapJobId": "map-8b1cf0e7aa43d3bc",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-8b1cf0e7aa43d3bc",
+      "documentId": "doc-surveys-act",
+      "documentTitle": "Surveys Act",
+      "sections": [
+        "1"
+      ],
+      "priority": "P2",
+      "disposition": "standalone",
+      "parentKind": "standalone",
+      "domain": "core",
+      "groupTitle": "Definitions in the Surveys Act",
+      "groupGoal": "State the Act's defined meanings for surveyor, legal monument, coordinate monument, corner, survey, and coordinate survey system.",
+      "sourceKeys": [
+        "section:1"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 676,
+      "sizeBucket": "small",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "definition-context",
+        "direct-reference",
+        "focus-single",
+        "parent-standalone",
+        "prov-original",
+        "size-small",
+        "unit-v4-regression-anchor"
+      ],
+      "selectionReason": "anchor",
+      "correction": false,
+      "retry": false,
+      "regression": true,
+      "anchorTargetId": "Surveys Act s.1"
+    },
+    {
+      "index": 32,
+      "unitJobId": "unit-21c62d64fd32c92f",
+      "mapJobId": "map-921478a7044024bd",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-921478a7044024bd",
+      "documentId": "doc-land-titles-act",
+      "documentTitle": "Land Titles Act",
+      "sections": [
+        "18"
+      ],
+      "priority": "P1",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "core",
+      "groupTitle": "Cancelling and issuing certificates of registered ownership",
+      "groupGoal": "Recall the triggering registration events under subsection (5) and the registrar's two-part duty to cancel the existing certificate and issue a new one, including the requirement f…",
+      "sourceKeys": [
+        "section:18"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 3564,
+      "sizeBucket": "medium",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-duty",
+        "concept-enumeration",
+        "concept-fee",
+        "concept-filing",
+        "definition-context",
+        "direct-reference",
+        "focus-single",
+        "parent-split",
+        "prov-original",
+        "size-medium",
+        "unit-v4-regression-anchor"
+      ],
+      "selectionReason": "anchor",
+      "correction": false,
+      "retry": false,
+      "regression": true,
+      "anchorTargetId": "Land Titles Act s.18"
+    },
+    {
+      "index": 33,
+      "unitJobId": "unit-806dcd5f7b8ca4e8",
+      "mapJobId": "map-17219353deb3fd8b",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-17219353deb3fd8b",
+      "documentId": "doc-registry-act",
+      "documentTitle": "Registry Act",
+      "sections": [
+        "19"
+      ],
+      "priority": "P1",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "core",
+      "groupTitle": "Protective registration period for wills",
+      "groupGoal": "State the registration timeframes for a will depending on whether the testator died within or without the Province and the legal effect of registration within those periods.",
+      "sourceKeys": [
+        "section:19"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 3151,
+      "sizeBucket": "medium",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-duty",
+        "concept-filing",
+        "concept-legal-effect",
+        "definition-context",
+        "focus-single",
+        "parent-split",
+        "prov-original",
+        "size-medium",
+        "unit-v4-regression-anchor"
+      ],
+      "selectionReason": "anchor",
+      "correction": false,
+      "retry": false,
+      "regression": true,
+      "anchorTargetId": "Registry Act s.19"
+    },
+    {
+      "index": 34,
+      "unitJobId": "unit-24d4ce03d041f274",
+      "mapJobId": "map-ed3f74e6ccd6099c",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-ed3f74e6ccd6099c",
+      "documentId": "reg-boundaries-95-166",
+      "documentTitle": "REGULATION 95-166",
+      "sections": [
+        "3"
+      ],
+      "priority": "P1",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "core",
+      "groupTitle": "Surveyor's Report Required Contents",
+      "groupGoal": "Identify the four required components of the surveyor's report under paragraph 3(3)(a), including the explanation for accepting or rejecting alternative boundary evidence.",
+      "sourceKeys": [
+        "section:3"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 2675,
+      "sizeBucket": "medium",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-duty",
+        "concept-legal-effect",
+        "concept-procedure",
+        "concept-regulation-power",
+        "definition-context",
+        "direct-reference",
+        "focus-single",
+        "parent-split",
+        "prov-original",
+        "size-medium",
+        "unit-v4-regression-anchor"
+      ],
+      "selectionReason": "anchor",
+      "correction": false,
+      "retry": false,
+      "regression": true,
+      "anchorTargetId": "Regulation 95-166 s.3"
+    },
+    {
+      "index": 35,
+      "unitJobId": "unit-00066425d3dd3645",
+      "mapJobId": "map-33ecdfe080193d4f",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-33ecdfe080193d4f",
+      "documentId": "doc-community-planning-act",
+      "documentTitle": "Community Planning Act",
+      "sections": [
+        "125"
+      ],
+      "priority": "P2",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "cadastral",
+      "groupTitle": "Zoning regulation effect and deemed powers (s.125(8)–(9))",
+      "groupGoal": "Identify who acts as development officer under a zoning regulation and which specific zoning powers (use variances, section 55/56 powers, fee routing, Minister re-zoning) are veste…",
+      "sourceKeys": [
+        "section:125"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 11628,
+      "sizeBucket": "large",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-fee",
+        "concept-legal-effect",
+        "concept-power",
+        "concept-procedure",
+        "concept-regulation-power",
+        "definition-context",
+        "direct-reference",
+        "focus-single",
+        "parent-split",
+        "prov-original",
+        "size-large",
+        "unit-v4-regression-anchor"
+      ],
+      "selectionReason": "anchor",
+      "correction": false,
+      "retry": false,
+      "regression": true,
+      "anchorTargetId": "Community Planning Act s.125"
+    },
+    {
+      "index": 36,
+      "unitJobId": "unit-79f54c297756d4aa",
+      "mapJobId": "map-e10048dceb53e1e7",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-e10048dceb53e1e7",
+      "documentId": "doc-new-brunswick-land-surveyors-act",
+      "documentTitle": "New Brunswick Land Surveyors Act, 1986",
+      "sections": [
+        "26"
+      ],
+      "priority": "P1",
+      "disposition": "standalone",
+      "parentKind": "standalone",
+      "domain": "core",
+      "groupTitle": "Offence and penalties for unregistered practice as a land surveyor (s. 26)",
+      "groupGoal": "State who is subject to section 26, the four prohibited acts in (a)–(d), and the penalty tiers for a first offence versus a subsequent offence including the imprisonment and failur…",
+      "sourceKeys": [
+        "section:26"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 1060,
+      "sizeBucket": "small",
+      "focusStyle": "single",
+      "provenance": "recovered",
+      "tags": [
+        "concept-filing",
+        "definition-context",
+        "focus-single",
+        "parent-standalone",
+        "prov-recovered",
+        "size-small"
+      ],
+      "selectionReason": "fill-coverage",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 37,
+      "unitJobId": "unit-a795aa5cbc9d3ee6",
+      "mapJobId": "map-732a1274562ce704",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-732a1274562ce704",
+      "documentId": "doc-new-brunswick-land-surveyors-act",
+      "documentTitle": "New Brunswick Land Surveyors Act, 1986",
+      "sections": [
+        "16(2)",
+        "17(1)"
+      ],
+      "priority": "P2",
+      "disposition": "combine",
+      "parentKind": "combine",
+      "domain": "core",
+      "groupTitle": "Practice by partnerships, associations of persons, and corporations",
+      "groupGoal": "Identify which entities may be permitted to practice land surveying and the Council authorization required for them to do so.",
+      "sourceKeys": [
+        "section:16(2)",
+        "section:17(1)"
+      ],
+      "sourceKeyCount": 2,
+      "exactSourceCharacters": 398,
+      "sizeBucket": "small",
+      "focusStyle": "multiple",
+      "provenance": "original",
+      "tags": [
+        "combine",
+        "definition-context",
+        "focus-multiple",
+        "multi-source",
+        "parent-combine",
+        "prov-original",
+        "size-small"
+      ],
+      "selectionReason": "fill-coverage",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 38,
+      "unitJobId": "unit-02657c4c14328d82",
+      "mapJobId": "map-7581d56f4d904234",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-7581d56f4d904234",
+      "documentId": "doc-registry-act",
+      "documentTitle": "Registry Act",
+      "sections": [
+        "43"
+      ],
+      "priority": "P3",
+      "disposition": "standalone",
+      "parentKind": "standalone",
+      "domain": "core",
+      "groupTitle": "Sufficient evidence of due execution: court and corporate seals",
+      "groupGoal": "Recall the evidentiary requirements for a court-sealed instrument (seal alone suffices) and a corporate-sealed instrument (seal, officer signature, and affidavit content) to consti…",
+      "sourceKeys": [
+        "section:43"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 1193,
+      "sizeBucket": "small",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-filing",
+        "definition-context",
+        "focus-single",
+        "parent-standalone",
+        "prov-original",
+        "size-small"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 39,
+      "unitJobId": "unit-009ff72aba3f0d45",
+      "mapJobId": "map-45d0804200b86c22",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-45d0804200b86c22",
+      "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+      "documentTitle": "Association of New Brunswick Land Surveyors Bylaws",
+      "sections": [
+        "6.5.1",
+        "6.5.2"
+      ],
+      "priority": "P4",
+      "disposition": "combine",
+      "parentKind": "combine",
+      "domain": "core",
+      "groupTitle": "Legislative Review Committee: Establishment, Responsibilities, and Annual Report",
+      "groupGoal": "Recall that the Legislative Review Committee must have at least two members, its three review and advisory responsibilities, and its duty to submit an annual report to the Executiv…",
+      "sourceKeys": [
+        "section:6.5.1",
+        "section:6.5.2"
+      ],
+      "sourceKeyCount": 2,
+      "exactSourceCharacters": 657,
+      "sizeBucket": "small",
+      "focusStyle": "multiple",
+      "provenance": "original",
+      "tags": [
+        "combine",
+        "concept-duty",
+        "definition-context",
+        "focus-multiple",
+        "multi-source",
+        "parent-combine",
+        "prov-original",
+        "size-small"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 40,
+      "unitJobId": "unit-0070dd224c8bb7a5",
+      "mapJobId": "map-998845fa0f9ac720",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-998845fa0f9ac720",
+      "documentId": "doc-land-titles-act",
+      "documentTitle": "Land Titles Act",
+      "sections": [
+        "80"
+      ],
+      "priority": "P1",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "core",
+      "groupTitle": "Registration and assurance fees payable to the registrar",
+      "groupGoal": "State the fees the registrar must receive before acting, the additional assurance fee for indemnification claims, the electronic payment method, and the Crown-transfer exemption fr…",
+      "sourceKeys": [
+        "section:80"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 3079,
+      "sizeBucket": "medium",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-duty",
+        "concept-fee",
+        "concept-filing",
+        "concept-procedure",
+        "concept-regulation-power",
+        "definition-context",
+        "direct-reference",
+        "focus-single",
+        "parent-split",
+        "prov-original",
+        "size-medium"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 41,
+      "unitJobId": "unit-0167053e440a24d5",
+      "mapJobId": "map-17a5d43b18134aae",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-17a5d43b18134aae",
+      "documentId": "doc-registry-act",
+      "documentTitle": "Registry Act",
+      "sections": [
+        "36"
+      ],
+      "priority": "P2",
+      "disposition": "standalone",
+      "parentKind": "standalone",
+      "domain": "core",
+      "groupTitle": "Prohibitions on parties and witness requirement for affidavits of execution",
+      "groupGoal": "State the two things a party to an instrument is prohibited from doing in the execution/acknowledgment process and the prerequisite a witness must satisfy before their affidavit or…",
+      "sourceKeys": [
+        "section:36"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 552,
+      "sizeBucket": "small",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-duty",
+        "concept-procedure",
+        "definition-context",
+        "focus-single",
+        "parent-standalone",
+        "prov-original",
+        "size-small"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 42,
+      "unitJobId": "unit-02dbce06a699d0b3",
+      "mapJobId": "map-0a6a8b4749036fee",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-0a6a8b4749036fee",
+      "documentId": "doc-registry-act",
+      "documentTitle": "Registry Act",
+      "sections": [
+        "42"
+      ],
+      "priority": "P3",
+      "disposition": "standalone",
+      "parentKind": "standalone",
+      "domain": "core",
+      "groupTitle": "No separate verification of seal or signing officer required for registration",
+      "groupGoal": "State the circumstances under which no proof verifying the seal or the signature and office of the person before whom an acknowledgment or affidavit is made is required for registr…",
+      "sourceKeys": [
+        "section:42"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 501,
+      "sizeBucket": "small",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-filing",
+        "focus-single",
+        "parent-standalone",
+        "prov-original",
+        "size-small"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 43,
+      "unitJobId": "unit-022c7285b5e97c06",
+      "mapJobId": "map-de33ef5221c93b71",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-de33ef5221c93b71",
+      "documentId": "doc-new-brunswick-land-surveyors-act",
+      "documentTitle": "New Brunswick Land Surveyors Act, 1986",
+      "sections": [
+        "11(3)"
+      ],
+      "priority": "P4",
+      "disposition": "standalone",
+      "parentKind": "standalone",
+      "domain": "core",
+      "groupTitle": "AGM Election Terms and Council Replacement Mechanism",
+      "groupGoal": "State the term lengths for the Association's officers and executive council members elected at the AGM and explain how replacement members are elected for unexpired terms upon vaca…",
+      "sourceKeys": [
+        "section:11(3)"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 501,
+      "sizeBucket": "small",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-duty",
+        "definition-context",
+        "focus-single",
+        "parent-standalone",
+        "prov-original",
+        "size-small"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 44,
+      "unitJobId": "unit-03718a2726419ffc",
+      "mapJobId": "map-998845fa0f9ac720",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-998845fa0f9ac720",
+      "documentId": "doc-land-titles-act",
+      "documentTitle": "Land Titles Act",
+      "sections": [
+        "80"
+      ],
+      "priority": "P1",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "core",
+      "groupTitle": "Accounting for received monies and indemnification funding",
+      "groupGoal": "Identify the registrar's duty to account for monies received and the two-tier funding source from which indemnification is paid.",
+      "sourceKeys": [
+        "section:80"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 3079,
+      "sizeBucket": "medium",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-duty",
+        "concept-fee",
+        "concept-filing",
+        "concept-procedure",
+        "concept-regulation-power",
+        "definition-context",
+        "direct-reference",
+        "focus-single",
+        "parent-split",
+        "prov-original",
+        "size-medium"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 45,
+      "unitJobId": "unit-00786855a793bc06",
+      "mapJobId": "map-99a4d4ea287cc40e",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-99a4d4ea287cc40e",
+      "documentId": "doc-crown-lands-and-forests-act",
+      "documentTitle": "Crown Lands and Forests Act",
+      "sections": [
+        "71.2"
+      ],
+      "priority": "P2",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "cadastral",
+      "groupTitle": "Minister's enforcement entry and compliance actions",
+      "groupGoal": "Identify the conditions triggering the Minister's enforcement entry, the scope of force permitted, and the enumerated specific actions under subsection (2) for effecting compliance…",
+      "sourceKeys": [
+        "section:71.2"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 3662,
+      "sizeBucket": "medium",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-enumeration",
+        "concept-legal-effect",
+        "concept-regulation-power",
+        "definition-context",
+        "direct-reference",
+        "focus-single",
+        "parent-split",
+        "prov-original",
+        "size-medium"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 46,
+      "unitJobId": "unit-0445d8337e77a7c6",
+      "mapJobId": "map-f8234a7a5d8e8f08",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-f8234a7a5d8e8f08",
+      "documentId": "doc-new-brunswick-land-surveyors-act",
+      "documentTitle": "New Brunswick Land Surveyors Act, 1986",
+      "sections": [
+        "24(1)"
+      ],
+      "priority": "P3",
+      "disposition": "standalone",
+      "parentKind": "standalone",
+      "domain": "core",
+      "groupTitle": "Parties to Discipline Committee Proceedings",
+      "groupGoal": "State who are the parties to proceedings before the Discipline Committee under the Land Surveyors Act.",
+      "sourceKeys": [
+        "section:24(1)"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 191,
+      "sizeBucket": "small",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "definition-context",
+        "focus-single",
+        "parent-standalone",
+        "prov-original",
+        "size-small"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 47,
+      "unitJobId": "unit-057a72bc46425aef",
+      "mapJobId": "map-fbf4d5014cd592ac",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-fbf4d5014cd592ac",
+      "documentId": "doc-municipalities-act",
+      "documentTitle": "Municipalities Act",
+      "sections": [
+        "184"
+      ],
+      "priority": "P4",
+      "disposition": "standalone",
+      "parentKind": "standalone",
+      "domain": "cadastral",
+      "groupTitle": "Municipal power to enter public beach development agreements",
+      "groupGoal": "Identify the permissive power section 184 gives a municipality to enter agreements with any person to develop a public beach.",
+      "sourceKeys": [
+        "section:184"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 120,
+      "sizeBucket": "small",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-power",
+        "definition-context",
+        "focus-single",
+        "parent-standalone",
+        "prov-original",
+        "size-small"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 48,
+      "unitJobId": "unit-0421d4fe4b51ed92",
+      "mapJobId": "map-1d9736bd2c01e88f",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-1d9736bd2c01e88f",
+      "documentId": "doc-boundaries-confirmation-act",
+      "documentTitle": "Boundaries Confirmation Act",
+      "sections": [
+        "1"
+      ],
+      "priority": "P1",
+      "disposition": "standalone",
+      "parentKind": "standalone",
+      "domain": "core",
+      "groupTitle": "Boundaries Confirmation Act – Defined Terms",
+      "groupGoal": "Recall the statutory definitions of boundary, monument, parcel, surveyor, applicant, and Registrar General as they apply under the Boundaries Confirmation Act.",
+      "sourceKeys": [
+        "section:1"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 2187,
+      "sizeBucket": "medium",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "broad-group-risk",
+        "concept-enumeration",
+        "concept-power",
+        "concept-procedure",
+        "concept-regulation-power",
+        "definition-context",
+        "direct-reference",
+        "focus-single",
+        "parent-standalone",
+        "prov-original",
+        "size-medium"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 49,
+      "unitJobId": "unit-00cb6e97353458dc",
+      "mapJobId": "map-6292ef0055044003",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-6292ef0055044003",
+      "documentId": "doc-assessment-act",
+      "documentTitle": "Assessment Act",
+      "sections": [
+        "28"
+      ],
+      "priority": "P2",
+      "disposition": "standalone",
+      "parentKind": "standalone",
+      "domain": "cadastral",
+      "groupTitle": "Local government or other taxing authority appeal to the Board (s. 28)",
+      "groupGoal": "Identify the trigger event, the 21-day deadline, and the scope of a local government's or other taxing authority's right to appeal an assessment to the Board under section 28.",
+      "sourceKeys": [
+        "section:28"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 560,
+      "sizeBucket": "small",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-deadline",
+        "definition-context",
+        "direct-reference",
+        "focus-single",
+        "parent-standalone",
+        "prov-original",
+        "size-small"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 50,
+      "unitJobId": "unit-046240c47aa8f95b",
+      "mapJobId": "map-2ddab4acd8b9726d",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-2ddab4acd8b9726d",
+      "documentId": "doc-registry-act",
+      "documentTitle": "Registry Act",
+      "sections": [
+        "13.2"
+      ],
+      "priority": "P3",
+      "disposition": "standalone",
+      "parentKind": "standalone",
+      "domain": "core",
+      "groupTitle": "Electronic Information Storage System Equivalence Rules",
+      "groupGoal": "Recall the rules under section 13.2 by which an electronic information storage system is deemed to satisfy traditional registry-book entry requirements, including the specific mech…",
+      "sourceKeys": [
+        "section:13.2"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 1899,
+      "sizeBucket": "small",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-duty",
+        "concept-legal-effect",
+        "concept-regulation-power",
+        "definition-context",
+        "focus-single",
+        "parent-standalone",
+        "prov-original",
+        "size-small"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 51,
+      "unitJobId": "unit-09ba9569396ef78b",
+      "mapJobId": "map-79f0cf7fcf4e7e2d",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-79f0cf7fcf4e7e2d",
+      "documentId": "doc-municipalities-act",
+      "documentTitle": "Municipalities Act",
+      "sections": [
+        "140"
+      ],
+      "priority": "P4",
+      "disposition": "standalone",
+      "parentKind": "standalone",
+      "domain": "cadastral",
+      "groupTitle": "Clerk's duty to endorse precept on assessment roll",
+      "groupGoal": "State the clerk's duty to endorse a precept on the assessment roll and identify the source of the required precept form.",
+      "sourceKeys": [
+        "section:140"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 155,
+      "sizeBucket": "small",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-duty",
+        "concept-regulation-power",
+        "definition-context",
+        "focus-single",
+        "parent-standalone",
+        "prov-original",
+        "size-small"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 52,
+      "unitJobId": "unit-04cf30345017df39",
+      "mapJobId": "map-6f3493bf2052b252",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-6f3493bf2052b252",
+      "documentId": "reg-boundaries-95-166",
+      "documentTitle": "REGULATION 95-166",
+      "sections": [
+        "6"
+      ],
+      "priority": "P1",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "core",
+      "groupTitle": "General Hearing Procedure Rights",
+      "groupGoal": "Identify the evidence, cross-examination, and counsel-representation rights available to the Registrar General and all parties at a boundary confirmation hearing.",
+      "sourceKeys": [
+        "section:6"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 885,
+      "sizeBucket": "small",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "broad-group-risk",
+        "concept-duty",
+        "concept-filing",
+        "concept-procedure",
+        "concept-regulation-power",
+        "definition-context",
+        "focus-single",
+        "parent-split",
+        "prov-original",
+        "size-small"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 53,
+      "unitJobId": "unit-010c9353d8180812",
+      "mapJobId": "map-285dd6b255a2a5dd",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-285dd6b255a2a5dd",
+      "documentId": "doc-expropriation-act",
+      "documentTitle": "Expropriation Act",
+      "sections": [
+        "31"
+      ],
+      "priority": "P2",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "cadastral",
+      "groupTitle": "Court power to consolidate proceedings",
+      "groupGoal": "State the two conditions the Court must be satisfied with before exercising its power to consolidate proceedings under section 31(4).",
+      "sourceKeys": [
+        "section:31"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 2193,
+      "sizeBucket": "medium",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-duty",
+        "concept-power",
+        "definition-context",
+        "direct-reference",
+        "focus-single",
+        "parent-split",
+        "prov-original",
+        "size-medium"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 54,
+      "unitJobId": "unit-06587c365a55bf49",
+      "mapJobId": "map-d58e8838004da028",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-d58e8838004da028",
+      "documentId": "doc-land-titles-act",
+      "documentTitle": "Land Titles Act",
+      "sections": [
+        "7"
+      ],
+      "priority": "P4",
+      "disposition": "standalone",
+      "parentKind": "standalone",
+      "domain": "core",
+      "groupTitle": "Seal of office requirement",
+      "groupGoal": "Identify who is required to have a seal of office under the Land Titles Act and which body approves the form of that seal.",
+      "sourceKeys": [
+        "section:7"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 199,
+      "sizeBucket": "small",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-duty",
+        "definition-context",
+        "focus-single",
+        "parent-standalone",
+        "prov-original",
+        "size-small"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 55,
+      "unitJobId": "unit-00100b7505527849",
+      "mapJobId": "map-6a05ab870be51872",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-6a05ab870be51872",
+      "documentId": "doc-expropriation-act",
+      "documentTitle": "Expropriation Act",
+      "sections": [
+        "5"
+      ],
+      "priority": "P1",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "cadastral",
+      "groupTitle": "Compensation for damage caused by entry",
+      "groupGoal": "Recall the obligation of a person entering under s. 5(1) to make full compensation for any damages to land or other property caused by activities done under that subsection.",
+      "sourceKeys": [
+        "section:5"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 1670,
+      "sizeBucket": "small",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-duty",
+        "concept-power",
+        "concept-procedure",
+        "definition-context",
+        "focus-single",
+        "parent-split",
+        "prov-original",
+        "size-small"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 56,
+      "unitJobId": "unit-02c520678fcbb6c2",
+      "mapJobId": "map-5b05b76871256470",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-5b05b76871256470",
+      "documentId": "doc-registry-act",
+      "documentTitle": "Registry Act",
+      "sections": [
+        "65"
+      ],
+      "priority": "P2",
+      "disposition": "standalone",
+      "parentKind": "standalone",
+      "domain": "core",
+      "groupTitle": "Fee payment as precondition to compulsory registration",
+      "groupGoal": "State the condition that must be satisfied before the registrar can be compelled to register an instrument under the Registry Act.",
+      "sourceKeys": [
+        "section:65"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 163,
+      "sizeBucket": "small",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-duty",
+        "concept-fee",
+        "concept-filing",
+        "concept-prohibition",
+        "definition-context",
+        "focus-single",
+        "parent-standalone",
+        "prov-original",
+        "size-small"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 57,
+      "unitJobId": "unit-043b932fc33b70cc",
+      "mapJobId": "map-267e60d22e5467cd",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-267e60d22e5467cd",
+      "documentId": "doc-condominium-property-act",
+      "documentTitle": "Condominium Property Act",
+      "sections": [
+        "6"
+      ],
+      "priority": "P1",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "cadastral",
+      "groupTitle": "Division of units into classes",
+      "groupGoal": "Explain how a declaration may divide units into two or more classes and the effect on the application of subsection (2) provisions to those classes.",
+      "sourceKeys": [
+        "section:6"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 3307,
+      "sizeBucket": "medium",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-duty",
+        "concept-enumeration",
+        "concept-legal-effect",
+        "concept-procedure",
+        "concept-regulation-power",
+        "definition-context",
+        "direct-reference",
+        "focus-single",
+        "parent-split",
+        "prov-original",
+        "size-medium"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 58,
+      "unitJobId": "unit-03de3fc357cb57a5",
+      "mapJobId": "map-f426ebbd626257e0",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-f426ebbd626257e0",
+      "documentId": "reg-land-titles-83-130",
+      "documentTitle": "REGULATION 83-130",
+      "sections": [
+        "19.4"
+      ],
+      "priority": "P2",
+      "disposition": "standalone",
+      "parentKind": "standalone",
+      "domain": "core",
+      "groupTitle": "Abbreviated judgment requirement for mixed-content judgment registrations",
+      "groupGoal": "State when an abbreviated judgment issued under the Rules of Court must be annexed to a section 40 registration application and identify the Registrar General exception.",
+      "sourceKeys": [
+        "section:19.4"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 419,
+      "sizeBucket": "small",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "broad-group-risk",
+        "concept-duty",
+        "concept-filing",
+        "concept-procedure",
+        "concept-regulation-power",
+        "definition-context",
+        "focus-single",
+        "parent-standalone",
+        "prov-original",
+        "size-small"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 59,
+      "unitJobId": "unit-0449049d27b547c9",
+      "mapJobId": "map-3bbdc581fd0daa33",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-3bbdc581fd0daa33",
+      "documentId": "doc-community-planning-act",
+      "documentTitle": "Community Planning Act",
+      "sections": [
+        "88"
+      ],
+      "priority": "P1",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "cadastral",
+      "groupTitle": "Factors for Advisory Committee or Regional Service Commission Street Location Recommendation",
+      "groupGoal": "List the four categories of factors an advisory committee or regional service commission must consider when recommending street locations under subsection (4)(a).",
+      "sourceKeys": [
+        "section:88"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 3449,
+      "sizeBucket": "medium",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-duty",
+        "concept-enumeration",
+        "concept-filing",
+        "concept-prohibition",
+        "definition-context",
+        "direct-reference",
+        "focus-single",
+        "parent-split",
+        "prov-original",
+        "size-medium"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 60,
+      "unitJobId": "unit-049d27943f637422",
+      "mapJobId": "map-460ae38c7b732209",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-460ae38c7b732209",
+      "documentId": "reg-land-titles-83-130",
+      "documentTitle": "REGULATION 83-130",
+      "sections": [
+        "SCHEDULE D"
+      ],
+      "priority": "P2",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "core",
+      "groupTitle": "Payment Default, Forfeiture, and Bankruptcy Triggers",
+      "groupGoal": "Recall the lessor's right to pay a defaulted amount and recover it as rent with incidental remedies, and the triggers (execution, assignment for creditors, bankruptcy, insolvency) …",
+      "sourceKeys": [
+        "schedule:schedule-d"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 13563,
+      "sizeBucket": "large",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-duty",
+        "concept-prohibition",
+        "concept-regulation-power",
+        "definition-context",
+        "focus-single",
+        "parent-split",
+        "prov-original",
+        "size-large"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 61,
+      "unitJobId": "unit-05d777e3d32ca761",
+      "mapJobId": "map-fd9321585990ed84",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-fd9321585990ed84",
+      "documentId": "doc-expropriation-act",
+      "documentTitle": "Expropriation Act",
+      "sections": [
+        "17"
+      ],
+      "priority": "P1",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "cadastral",
+      "groupTitle": "Officer's costs direction to expropriating authority",
+      "groupGoal": "State the circumstances under which the Officer may direct a costs payment, the maximum amount, the eligible recipient, and who is obligated to pay.",
+      "sourceKeys": [
+        "section:17"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 3244,
+      "sizeBucket": "medium",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-duty",
+        "concept-enumeration",
+        "concept-filing",
+        "concept-power",
+        "concept-procedure",
+        "concept-regulation-power",
+        "definition-context",
+        "direct-reference",
+        "focus-single",
+        "parent-split",
+        "prov-original",
+        "size-medium"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 62,
+      "unitJobId": "unit-05aad567930a651b",
+      "mapJobId": "map-5ea4684f006291d9",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-5ea4684f006291d9",
+      "documentId": "doc-land-titles-act",
+      "documentTitle": "Land Titles Act",
+      "sections": [
+        "74"
+      ],
+      "priority": "P2",
+      "disposition": "standalone",
+      "parentKind": "standalone",
+      "domain": "core",
+      "groupTitle": "Award of indemnity: Registrar General determination, conditions, and court fallback",
+      "groupGoal": "Recall the Registrar General's power to determine and award indemnity subject to Service New Brunswick approval and claimant consent, the separate expense award available whether o…",
+      "sourceKeys": [
+        "section:74"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 767,
+      "sizeBucket": "small",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "broad-group-risk",
+        "concept-power",
+        "concept-procedure",
+        "definition-context",
+        "focus-single",
+        "parent-standalone",
+        "prov-original",
+        "size-small"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 63,
+      "unitJobId": "unit-07fded70d557bb42",
+      "mapJobId": "map-0ec8abfa2d5f299b",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-0ec8abfa2d5f299b",
+      "documentId": "doc-expropriation-act",
+      "documentTitle": "Expropriation Act",
+      "sections": [
+        "10"
+      ],
+      "priority": "P1",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "cadastral",
+      "groupTitle": "Duty to arrange public hearing and effect of withdrawal of all objections",
+      "groupGoal": "State the conditions under which the Officer must arrange a public hearing for a proposed expropriation and the consequences when all satisfied notices of objection are withdrawn a…",
+      "sourceKeys": [
+        "section:10"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 3938,
+      "sizeBucket": "medium",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-deadline",
+        "concept-duty",
+        "concept-filing",
+        "concept-legal-effect",
+        "concept-procedure",
+        "concept-prohibition",
+        "concept-regulation-power",
+        "definition-context",
+        "direct-reference",
+        "focus-single",
+        "parent-split",
+        "prov-original",
+        "size-medium"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 64,
+      "unitJobId": "unit-05e06222bdb9d406",
+      "mapJobId": "map-460ae38c7b732209",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-460ae38c7b732209",
+      "documentId": "reg-land-titles-83-130",
+      "documentTitle": "REGULATION 83-130",
+      "sections": [
+        "SCHEDULE D"
+      ],
+      "priority": "P2",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "core",
+      "groupTitle": "Transfer Restrictions and End-of-Lease Obligations",
+      "groupGoal": "Recall the consent requirement (not to be unreasonably withheld) for assignment or subletting, the vacant-possession obligation, the lessor's right of entry to show premises to pro…",
+      "sourceKeys": [
+        "schedule:schedule-d"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 13563,
+      "sizeBucket": "large",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-duty",
+        "concept-prohibition",
+        "concept-regulation-power",
+        "definition-context",
+        "focus-single",
+        "parent-split",
+        "prov-original",
+        "size-large"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 65,
+      "unitJobId": "unit-08d0057dc07a46d5",
+      "mapJobId": "map-298e24e3ce6fbc17",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-298e24e3ce6fbc17",
+      "documentId": "doc-community-planning-act",
+      "documentTitle": "Community Planning Act",
+      "sections": [
+        "84"
+      ],
+      "priority": "P1",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "cadastral",
+      "groupTitle": "Required contents of a subdivision plan",
+      "groupGoal": "Identify the items a subdivision plan must set out under s. 84(3) and the boundary representation requirements (azimuths, distances, radii, central angles, arcs) under s. 84(4).",
+      "sourceKeys": [
+        "section:84"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 5198,
+      "sizeBucket": "medium",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-duty",
+        "concept-enumeration",
+        "concept-filing",
+        "concept-procedure",
+        "definition-context",
+        "direct-reference",
+        "focus-single",
+        "parent-split",
+        "prov-original",
+        "size-medium"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 66,
+      "unitJobId": "unit-064dc209bd43e63c",
+      "mapJobId": "map-7407f66d1a12e248",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-7407f66d1a12e248",
+      "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+      "documentTitle": "Association of New Brunswick Land Surveyors Bylaws",
+      "sections": [
+        "2.2.2"
+      ],
+      "priority": "P2",
+      "disposition": "standalone",
+      "parentKind": "standalone",
+      "domain": "core",
+      "groupTitle": "Reapplication after resignation in good standing or classification change",
+      "groupGoal": "Identify the reapplication procedure available to a previously registered surveyor who resigned in good standing or changed classification.",
+      "sourceKeys": [
+        "section:2.2.2"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 175,
+      "sizeBucket": "small",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-procedure",
+        "concept-regulation-power",
+        "focus-single",
+        "parent-standalone",
+        "prov-original",
+        "size-small"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 67,
+      "unitJobId": "unit-092be74ad4e22fc6",
+      "mapJobId": "map-2c4459d4c8917a78",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-2c4459d4c8917a78",
+      "documentId": "doc-community-planning-act",
+      "documentTitle": "Community Planning Act",
+      "sections": [
+        "96"
+      ],
+      "priority": "P1",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "cadastral",
+      "groupTitle": "Mandatory contents of the incentive or bonus zoning by-law",
+      "groupGoal": "List the four mandatory elements that an incentive or bonus zoning agreement by-law must contain.",
+      "sourceKeys": [
+        "section:96"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 3290,
+      "sizeBucket": "medium",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-deadline",
+        "concept-duty",
+        "concept-enumeration",
+        "concept-legal-effect",
+        "concept-procedure",
+        "concept-regulation-power",
+        "definition-context",
+        "direct-reference",
+        "focus-single",
+        "parent-split",
+        "prov-original",
+        "size-medium"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 68,
+      "unitJobId": "unit-07144e70868a71ec",
+      "mapJobId": "map-964b5866d3b841db",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-964b5866d3b841db",
+      "documentId": "doc-registry-act",
+      "documentTitle": "Registry Act",
+      "sections": [
+        "26"
+      ],
+      "priority": "P2",
+      "disposition": "standalone",
+      "parentKind": "standalone",
+      "domain": "core",
+      "groupTitle": "Registration of probated and sealed will documents without further proof",
+      "groupGoal": "Identify which probate-related documents may be registered in a county registry office without further proof under s. 26(1) and 26(2), and state the sealing requirement for foreign…",
+      "sourceKeys": [
+        "section:26"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 1261,
+      "sizeBucket": "small",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-duty",
+        "concept-filing",
+        "concept-legal-effect",
+        "definition-context",
+        "focus-single",
+        "parent-standalone",
+        "prov-original",
+        "size-small"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 69,
+      "unitJobId": "unit-0c0bbda20e7199b5",
+      "mapJobId": "map-486e6189da2b84e9",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-486e6189da2b84e9",
+      "documentId": "doc-condominium-property-act",
+      "documentTitle": "Condominium Property Act",
+      "sections": [
+        "44"
+      ],
+      "priority": "P1",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "cadastral",
+      "groupTitle": "Consent threshold and Director's correction power for description amendments",
+      "groupGoal": "Recall the 60% common-element consent threshold for amending a registered description, the Director's independent power to correct clerical errors without board consent, and that s…",
+      "sourceKeys": [
+        "section:44"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 1477,
+      "sizeBucket": "small",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-deadline",
+        "concept-duty",
+        "concept-enumeration",
+        "concept-fee",
+        "concept-filing",
+        "concept-legal-effect",
+        "concept-power",
+        "concept-procedure",
+        "definition-context",
+        "direct-reference",
+        "focus-single",
+        "parent-split",
+        "prov-original",
+        "size-small"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 70,
+      "unitJobId": "unit-07fa6fc1208594ca",
+      "mapJobId": "map-d5572eace39dcd1d",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-d5572eace39dcd1d",
+      "documentId": "doc-new-brunswick-land-surveyors-act",
+      "documentTitle": "New Brunswick Land Surveyors Act, 1986",
+      "sections": [
+        "18(2)"
+      ],
+      "priority": "P2",
+      "disposition": "standalone",
+      "parentKind": "standalone",
+      "domain": "core",
+      "groupTitle": "Conditions for entering a name in the register",
+      "groupGoal": "State the two conditions in section 18(2) that must be met before a name may be entered in the land surveyors' register.",
+      "sourceKeys": [
+        "section:18(2)"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 216,
+      "sizeBucket": "small",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-duty",
+        "definition-context",
+        "focus-single",
+        "parent-standalone",
+        "prov-original",
+        "size-small"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 71,
+      "unitJobId": "unit-0de35b1dafe93ecb",
+      "mapJobId": "map-5cb84fb8436e4444",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-5cb84fb8436e4444",
+      "documentId": "doc-expropriation-act",
+      "documentTitle": "Expropriation Act",
+      "sections": [
+        "37"
+      ],
+      "priority": "P1",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "cadastral",
+      "groupTitle": "Additional 5% compensation for Lieutenant-Governor in Council-ordered surrender of possession",
+      "groupGoal": "State the additional compensation the expropriating authority must pay when the Lieutenant-Governor in Council orders an owner in occupation to surrender physical possession under …",
+      "sourceKeys": [
+        "section:37"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 2770,
+      "sizeBucket": "medium",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-deadline",
+        "concept-duty",
+        "concept-filing",
+        "concept-legal-effect",
+        "concept-prohibition",
+        "concept-regulation-power",
+        "definition-context",
+        "direct-reference",
+        "focus-single",
+        "parent-split",
+        "prov-original",
+        "size-medium"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 72,
+      "unitJobId": "unit-08f6d682936a16dc",
+      "mapJobId": "map-fa6ff1eacf5c5aa1",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-fa6ff1eacf5c5aa1",
+      "documentId": "doc-new-brunswick-land-surveyors-act",
+      "documentTitle": "New Brunswick Land Surveyors Act, 1986",
+      "sections": [
+        "12(2)"
+      ],
+      "priority": "P2",
+      "disposition": "standalone",
+      "parentKind": "standalone",
+      "domain": "core",
+      "groupTitle": "Composition and term of the Board of Examiners",
+      "groupGoal": "State the composition of the Board of Examiners, the appointing body, the initial term of office, and the reappointment rule under section 12(2).",
+      "sourceKeys": [
+        "section:12(2)"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 194,
+      "sizeBucket": "small",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-duty",
+        "definition-context",
+        "focus-single",
+        "parent-standalone",
+        "prov-original",
+        "size-small"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 73,
+      "unitJobId": "unit-0f35a3d73578f1dc",
+      "mapJobId": "map-d2c5c2910af871b4",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-d2c5c2910af871b4",
+      "documentId": "doc-easements-act",
+      "documentTitle": "Easements Act",
+      "sections": [
+        "1"
+      ],
+      "priority": "P1",
+      "disposition": "standalone",
+      "parentKind": "standalone",
+      "domain": "cadastral",
+      "groupTitle": "Prescriptive protection for claims to profits or benefits (30-year and 60-year thresholds)",
+      "groupGoal": "State the 30-year and 60-year prescriptive thresholds for a claim to a profit or benefit, the limitation on defeating a 30-year claim by showing it did not exist from time immemori…",
+      "sourceKeys": [
+        "section:1"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 885,
+      "sizeBucket": "small",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-duty",
+        "concept-legal-effect",
+        "focus-single",
+        "parent-standalone",
+        "prov-original",
+        "size-small"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 74,
+      "unitJobId": "unit-01074d54d55e4fde",
+      "mapJobId": "map-c82c87d6ebfdd492",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-c82c87d6ebfdd492",
+      "documentId": "doc-evidence-act",
+      "documentTitle": "Evidence Act",
+      "sections": [
+        "50"
+      ],
+      "priority": "P2",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "adjacent",
+      "groupTitle": "Pre-offer notice requirements and adverse-party protections",
+      "groupGoal": "Identify the notice, copy, inspection, and naming obligations the offering party must satisfy before tendering the report, and the adverse party's right to cross-examine informants…",
+      "sourceKeys": [
+        "section:50"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 2030,
+      "sizeBucket": "medium",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-duty",
+        "concept-legal-effect",
+        "definition-context",
+        "focus-single",
+        "parent-split",
+        "prov-original",
+        "size-medium"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 75,
+      "unitJobId": "unit-04e2ecadf458dfc2",
+      "mapJobId": "map-d24505862b4066d9",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-d24505862b4066d9",
+      "documentId": "doc-land-titles-act",
+      "documentTitle": "Land Titles Act",
+      "sections": [
+        "73"
+      ],
+      "priority": "P1",
+      "disposition": "standalone",
+      "parentKind": "standalone",
+      "domain": "core",
+      "groupTitle": "Indemnification on rectification – entitlement, exceptions, and forged dispositions",
+      "groupGoal": "Recall the four categories of damage that trigger the right to indemnification, the six statutory exceptions to indemnification, and the deeming rule applying to a good faith purch…",
+      "sourceKeys": [
+        "section:73"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 1903,
+      "sizeBucket": "small",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-duty",
+        "concept-enumeration",
+        "concept-legal-effect",
+        "concept-power",
+        "definition-context",
+        "focus-single",
+        "parent-standalone",
+        "prov-original",
+        "size-small"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 76,
+      "unitJobId": "unit-01114cfaf3709c7d",
+      "mapJobId": "map-270ca8083fd27233",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-270ca8083fd27233",
+      "documentId": "doc-property-act",
+      "documentTitle": "Property Act",
+      "sections": [
+        "38.1"
+      ],
+      "priority": "P2",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "cadastral",
+      "groupTitle": "Grounds for court-ordered mortgage discharge",
+      "groupGoal": "Identify the circumstances under which the court may order payment into court and discharge a mortgage where the mortgagee cannot be found, has died without probate, or a discharge…",
+      "sourceKeys": [
+        "section:38.1"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 2405,
+      "sizeBucket": "medium",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-duty",
+        "concept-power",
+        "concept-procedure",
+        "definition-context",
+        "focus-single",
+        "parent-split",
+        "prov-original",
+        "size-medium"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 77,
+      "unitJobId": "unit-38731a2761d264ad",
+      "mapJobId": "map-d3c96ee92cf49d6f",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-d3c96ee92cf49d6f",
+      "documentId": "reg-community-planning-80-159",
+      "documentTitle": "REGULATION 80-159",
+      "sections": [
+        "6"
+      ],
+      "priority": "P1",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "adjacent",
+      "groupTitle": "Block Size Limits and Crescent/Cul-de-Sac Exception",
+      "groupGoal": "State the maximum and minimum block length, the minimum block depth, and the conditions under which a block may exceed the maximum length.",
+      "sourceKeys": [
+        "section:6"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 2033,
+      "sizeBucket": "medium",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-duty",
+        "concept-prohibition",
+        "concept-regulation-power",
+        "definition-context",
+        "focus-single",
+        "parent-split",
+        "prov-original",
+        "size-medium"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 78,
+      "unitJobId": "unit-098b09224e6386c2",
+      "mapJobId": "map-ec01df68e68fdc5b",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-ec01df68e68fdc5b",
+      "documentId": "doc-land-titles-act",
+      "documentTitle": "Land Titles Act",
+      "sections": [
+        "40"
+      ],
+      "priority": "P2",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "core",
+      "groupTitle": "Non-severance of joint tenancy by judgment registration",
+      "groupGoal": "State that registration of a judgment against registered land does not have the effect of severing a joint tenancy.",
+      "sourceKeys": [
+        "section:40"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 1451,
+      "sizeBucket": "small",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-duty",
+        "concept-enumeration",
+        "concept-filing",
+        "concept-legal-effect",
+        "concept-procedure",
+        "concept-prohibition",
+        "concept-regulation-power",
+        "definition-context",
+        "focus-single",
+        "parent-split",
+        "prov-original",
+        "size-small"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 79,
+      "unitJobId": "unit-0ff46d399379a99b",
+      "mapJobId": "map-67b0b4e5f3e4fd8e",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-67b0b4e5f3e4fd8e",
+      "documentId": "doc-expropriation-act",
+      "documentTitle": "Expropriation Act",
+      "sections": [
+        "1"
+      ],
+      "priority": "P1",
+      "disposition": "split",
+      "parentKind": "split",
+      "domain": "cadastral",
+      "groupTitle": "Injurious affection – taking and non-taking scenarios",
+      "groupGoal": "Distinguish the elements of injurious affection in a partial-taking scenario from a non-taking scenario, and state the deeming rule for when part of an owner's land is treated as t…",
+      "sourceKeys": [
+        "section:1"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 4236,
+      "sizeBucket": "medium",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-deadline",
+        "concept-regulation-power",
+        "definition-context",
+        "direct-reference",
+        "focus-single",
+        "parent-split",
+        "prov-original",
+        "size-medium"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    },
+    {
+      "index": 80,
+      "unitJobId": "unit-01093fbff98ef4eb",
+      "mapJobId": "map-fb12fe325a229e35",
+      "sourceMapProposalId": "ai-map-2026-08-29T12-23-57-891Z:map-fb12fe325a229e35",
+      "documentId": "doc-executors-and-trustees-act",
+      "documentTitle": "Executors and Trustees Act",
+      "sections": [
+        "14"
+      ],
+      "priority": "P2",
+      "disposition": "standalone",
+      "parentKind": "standalone",
+      "domain": "adjacent",
+      "groupTitle": "Effect of discovering a later or valid will on prior acts and recovery rights",
+      "groupGoal": "State that acts done under a prior grant remain valid when a later or valid will is discovered, and identify the new personal representative's recovery rights from the acting execu…",
+      "sourceKeys": [
+        "section:14"
+      ],
+      "sourceKeyCount": 1,
+      "exactSourceCharacters": 1584,
+      "sizeBucket": "small",
+      "focusStyle": "single",
+      "provenance": "original",
+      "tags": [
+        "concept-duty",
+        "concept-legal-effect",
+        "concept-power",
+        "focus-single",
+        "parent-standalone",
+        "prov-original",
+        "size-small"
+      ],
+      "selectionReason": "fill-priority",
+      "correction": false,
+      "retry": false,
+      "regression": false
+    }
+  ]
+}

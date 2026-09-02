@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "kind": "frozen-unit-calibration-launch",
+  "dateTag": "20260902",
+  "runId": "ai-units-2026-09-02-frozen-map-cal80-v4",
+  "jobCount": 80,
+  "promptSpecVersion": "unit-authoring-v4",
+  "sourceMapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+  "preflightRunId": "ai-units-2026-09-02-frozen-map-v4-preflight",
+  "corpusContentHash": "5dc991611b320de87981ba35ded9a99f0951569e732e2bacb35c6d21b3c7e3a1",
+  "generatedAt": "2026-09-02T00:00:00.000Z",
+  "nextPhaseProvider": "local-openai-compatible",
+  "outputSchema": {
+    "expectedResultFiles": [
+      "results/batch-001.results.jsonl",
+      "results/batch-002.results.jsonl",
+      "results/batch-003.results.jsonl",
+      "results/batch-004.results.jsonl",
+      "results/batch-005.results.jsonl",
+      "results/batch-006.results.jsonl",
+      "results/batch-007.results.jsonl",
+      "results/batch-008.results.jsonl",
+      "results/batch-009.results.jsonl",
+      "results/batch-010.results.jsonl"
+    ],
+    "preservation": [
+      "one result JSON object per line per completed job in results/batch-NNN.results.jsonl",
+      "preserve jobId, runId, inputHash, corpusContentHash, promptSpecVersion",
+      "write only to the matching results file for the requested job batch"
+    ],
+    "strict": [
+      "no markdown code fences, no commentary in JSONL",
+      "resume by skipping jobIds that already have valid result lines",
+      "never rewrite valid existing result lines unless explicitly told to regenerate them"
+    ]
+  },
+  "output": {
+    "dir": "study-content/ai/runs/ai-units-2026-09-02-frozen-map-cal80-v4/",
+    "inputBatchFiles": [
+      {
+        "file": "jobs/batch-001.jobs.jsonl",
+        "sha256": "1ac12b4ad36b83b1ece9991be0a372a4653e1bfcec848c9ad45c9302c9b7a8b9"
+      },
+      {
+        "file": "jobs/batch-002.jobs.jsonl",
+        "sha256": "10806fb78b80932cb0f9fedad42b4fd310ef373fecf46a1369ed673cc1a1b83a"
+      },
+      {
+        "file": "jobs/batch-003.jobs.jsonl",
+        "sha256": "fd5bdf43488199afe3439a324b83cc2ccf5adf66b192804462795248d32adfd0"
+      },
+      {
+        "file": "jobs/batch-004.jobs.jsonl",
+        "sha256": "54954b5ee02471ccbdc2977a2a09878c563e58564c545f04ef5bfbe9ab2f39f7"
+      },
+      {
+        "file": "jobs/batch-005.jobs.jsonl",
+        "sha256": "58eef9121b317d5d0b95c940639c8e78d6aa773c922649605f237d9d06a722a7"
+      },
+      {
+        "file": "jobs/batch-006.jobs.jsonl",
+        "sha256": "d831930a579cb23490a3d1c6d228153a7e10669a863f204730b2981a450288dc"
+      },
+      {
+        "file": "jobs/batch-007.jobs.jsonl",
+        "sha256": "76c3c364fc2c165df5246a0882b6aa387d232ffe70da91d14b8d76ffe2dbc1ce"
+      },
+      {
+        "file": "jobs/batch-008.jobs.jsonl",
+        "sha256": "db039aac5bb11995d6d4849c55a9cef9fdcd1e8c56c227e856c85d56687cd85f"
+      },
+      {
+        "file": "jobs/batch-009.jobs.jsonl",
+        "sha256": "53d3b897e02c273873c0b9561f496bc1a8c647babe5ed9eaf04a960ccf54bda5"
+      },
+      {
+        "file": "jobs/batch-010.jobs.jsonl",
+        "sha256": "cd61445429f05cba567553e1a6809575519d9c5bfbc63ee468c6fe35fe0801b5"
+      }
+    ],
+    "expectedResultFiles": [
+      {
+        "file": "results/batch-001.results.jsonl",
+        "sha256": null
+      },
+      {
+        "file": "results/batch-002.results.jsonl",
+        "sha256": null
+      },
+      {
+        "file": "results/batch-003.results.jsonl",
+        "sha256": null
+      },
+      {
+        "file": "results/batch-004.results.jsonl",
+        "sha256": null
+      },
+      {
+        "file": "results/batch-005.results.jsonl",
+        "sha256": null
+      },
+      {
+        "file": "results/batch-006.results.jsonl",
+        "sha256": null
+      },
+      {
+        "file": "results/batch-007.results.jsonl",
+        "sha256": null
+      },
+      {
+        "file": "results/batch-008.results.jsonl",
+        "sha256": null
+      },
+      {
+        "file": "results/batch-009.results.jsonl",
+        "sha256": null
+      },
+      {
+        "file": "results/batch-010.results.jsonl",
+        "sha256": null
+      }
+    ],
+    "runJsonSha256": "28070b348becdc4fa921f3b168501427fc1c141487e5e56b384c8e3565807210",
+    "unitJobReportSha256": "c34123ceb5dcabff473c73ab79a72f72c7dd6c080c9ae0121abb243f8a6f1457"
+  },
+  "referencedArtifacts": {
+    "selectionReportJson": {
+      "file": "reports/unit-calibration-80-20260902.json",
+      "sha256": "29f22490720b6e1ac08913e36a50439ba98ca8ffb0a63aa82184e91855d964c0"
+    },
+    "reviewPackMd": {
+      "file": "reports/unit-calibration-80-review-pack-20260902.md",
+      "sha256": "f36acc8988783eee5f97badccf8be3cd106ce5072fe8264928df5a91573734b5"
+    }
+  }
+}

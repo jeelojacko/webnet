@@ -36,6 +36,7 @@ temp/study-ai-*/
 # Historical committed run fixtures remain tracked; these patterns cover the
 # newer local inference/calibration runs that are intentionally not source data.
 study-content/ai/runs/ai-map-2026-*/
+study-content/ai/runs/ai-units-2026-09-02-*/
 study-content/ai/runs/ai-map-4c12-full-corpus-v2-local-qwen*/
 study-content/ai/runs/repeal-rebase-20260901-src/
 study-content/ai/runs/final-map-qc-adjudications-20260901-src/

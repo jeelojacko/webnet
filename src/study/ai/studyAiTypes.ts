@@ -163,6 +163,9 @@ export type AiUnitAuthoringJob = {
   sourceMapRunId: string;
   sourceMapProposalId: string;
   corpusContentHash: string;
+  /** Frozen-map priority stamped by the frozen bridge (deterministic);
+   *  absent on existing prepared fixtures. */
+  frozenMapPriority?: AiSuggestedPriority;
   inputHash: string;
   document: AiSourceDocumentSummary;
   approvedGroup: AiProposedSourceGroup;

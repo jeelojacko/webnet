@@ -343,7 +343,7 @@ splits, all four pinned anchors found (Clean Water Act s.40 and Aquaculture Act 
 now pinned as `resolved-grouped`). Tracked freeze report:
 `reports/study-map-final-freeze-20260901.json` + `.md`.
 
-### Study Unit Bridge — freeze gate, equivalence audit, and frozen-map group inventory (2026-09-02)
+### Study Unit Bridge — freeze gate, equivalence audit, frozen-map group inventory, and unit preflight (2026-09-02)
 
 New deterministic, no-inference bridge tooling for authoring Study Units from the frozen
 Study Map (pure logic in `src/study/ai/`, dispatcher in `scripts/studyUnitBridge.ts`):
@@ -374,6 +374,78 @@ Study Map (pure logic in `src/study/ai/`, dispatcher in `scripts/studyUnitBridge
   (standalone 2,309 / split 1,929 / combine 13) histograms;
   `finalGroupingAdjudicationRows` = 20. Report: `reports/frozen-map-unit-group-inventory-20260902.json`
   + `.md` (deterministic, no wall-clock; cross-record SHA-256s).
+
+- `npx tsx scripts/studyUnitBridge.ts preflight` — `runFrozenUnitPreflight` runs the
+  deterministic preflight in one call: freeze gate + equivalence audit (steps 1-2, any
+  issue aborts fail-closed), frozen eligibility over `reports/map-proposals.json`
+  (skip/reference-only ⇒ 0 jobs; invalid/not-validated, rejected review states, and
+  unresolvable documents/groups abort; grouped canonical rows are treated as approved
+  under the freeze final authority with every bypass recorded — 149 `needs-review` rows
+  accepted, 10 warning-level `MAP_CONFLICT` rows retained), job build via the shared
+  `buildUnitAuthoringJob` (runId `ai-units-2026-09-02-frozen-map-v4-preflight`,
+  `frozenMapPriority` stamped from `proposal.suggestedPriority`, batch size 20,
+  `generatedAt` fixed `2026-09-02T00:00:00.000Z`), cardinality invariants (expected =
+  Σ groups over eligible proposals; hard assertions on job count, jobId uniqueness,
+  one job per (proposalId, groupIndex), no non-eligible/zero-group jobs), per-job
+  validation via `validateAiUnitAuthoringJob` (any issue aborts with the first 20), and
+  the prepared run write (status `prepared`, 0 completed/0 invalid) to
+  `study-content/ai/runs/<runId>/`. Real-run result: 3,692 results / 2,971 grouped /
+  721 zero-group / 4,251 groups = exactly 4,251 jobs, 0 validation issues, 213 batch
+  files, priority P1 382 / P2 2,236 / P3 1,312 / P4 321, provenance final-QC 20 /
+  human 414 / retry-promoted 22 / recovered 14 / original 3,781, standalone 2,309 /
+  split 1,929 / combine 13. Writes `reports/unit-authoring-preflight-20260902.json`
+  + `.md` (deterministic: byte-identical reruns verified against a scratch re-run).
+  `studyAiUnitJobValidation.ts` = per-job validator (identity hashes, frozen source
+  identity, group/priority fidelity, source resolution + no dropped combine sources,
+  focus child-label/defined-term membership, evidence grounding as a normalized
+  substring of the exact source union, zero-group protection);
+  `studyAiUnitPreflightReport.ts` = deterministic aggregation + report content.
+
+- `npx tsx scripts/studyUnitBridge.ts calibrate` — `runUnitCalibration` selects
+  exactly 80 unit jobs from the prepared preflight job set deterministically
+  (seed/tag `20260902`; no RNG — sorted deterministic passes). Selection phases:
+  (1) hard pins = all 20 unit jobs of the eight final-map grouping-correction
+  parents (tag `final-map-grouping-adjudication`; the ninth correction, Service
+  New Brunswick Act s.56, is a skip and contributes 0 jobs — recorded as a note,
+  not a failure); (2) retry-9 representatives — ≥1 job for each of the nine
+  resolvable frozen retry targets (tag `map-retry-history`, all 9 covered);
+  (3) regression anchors — the seven final-frozen-lineage anchors (tag
+  `unit-v4-regression-anchor`; the OH&S Act s.9 anchor stacks on an already-pinned
+  retry job and is counted once); (4) deterministic fill toward the target
+  distributions. Inherited priority is never re-decided or modified: actual
+  priority = target P1 24 / P2 28 / P3 20 / P4 8; actual domain = target core
+  34 / cadastral 28 / adjacent 18 (exact hit, no deviation). The 80 selected jobs
+  are rewritten into sibling run `ai-units-2026-09-02-frozen-map-cal80-v4` via
+  `rewriteUnitJobForRun` (jobIds preserved, inputHash recomputed for the new
+  runId, all 80 revalidated with 0 issues), written `prepared` (0 completed / 0
+  invalid), batch size 8 → 10 batch files, fixed
+  `generatedAt 2026-09-02T00:00:00.000Z`, prompt `unit-authoring-v4`, corpus
+  hash identical to the preflight run. Reports:
+  `reports/unit-calibration-80-20260902.json` + `.md` (selection, pins, retry/
+  anchor coverage, actual-vs-target distributions, validation summary —
+  byte-identical reruns), `reports/unit-calibration-80-review-pack-20260902.md`
+  (one row per selected job: index, unit + parent map IDs, document/section,
+  priority, disposition, group title/goal/foci, source count/size, provenance,
+  reason, correction/retry/regression flags, tags — no raw source text), and
+  `reports/unit-calibration-80-launch-manifest-20260902.json` (runId, jobCount
+  80, prompt spec + expected result-file plan, SHA-256 of all 10 batch files, of
+  `run.json`, of `unit-job-report.json`, and of the selection report + review
+  pack; corpusContentHash; intended next-phase provider
+  `local-openai-compatible` — the manifest invokes no model and changes no
+  runtime settings).
+- Priority-inheritance invariant: every frozen-bridge unit job carries
+  `frozenMapPriority` copied verbatim from `proposal.suggestedPriority`. The
+  per-job validator rejects any job whose priority differs from the frozen
+  proposal value, and the Unit Authoring v4 authoring boundary is semantically
+  unchanged (no prompt version bump, no model-visible change); the field is
+  additive job metadata that binds each job to its frozen map decision.
+- Next phase (not yet executed): run the 80-job calibration per the launch
+  manifest through the `local-openai-compatible` (local Qwen) provider,
+  validate results, and iterate on any generic Unit Authoring v4 spec/validator
+  defects. The full-corpus preflight is prepared work, not approved generation:
+  if the Unit Authoring prompt spec ever changes, the full job set is
+  regenerated at the new prompt version before production. The preflight run
+  stays `prepared` (0 completed / 0 invalid) until inference begins.
 
 ## Phase 4B.1.1 Targeted Map Pilot
 
