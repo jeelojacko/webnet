@@ -21,6 +21,8 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import type {
   AiProposedSourceGroup,
+  AiSourceContentFlags,
+  AiSourceStatus,
   AiStudyMapProposal,
   AiSuggestedPriority,
   AiUnitAuthoringJob,
@@ -41,7 +43,7 @@ import {
   selectCalibrationJobs,
   type UnitCalibrationSelection,
 } from '../../src/study/ai/studyAiUnitCalibration';
-import { classifyDomainByDocumentTitle } from '../../src/study/ai/studyAiUnitCalibrationFeatures';
+import { buildUnitCalibrationJobTags, classifyDomainByDocumentTitle } from '../../src/study/ai/studyAiUnitCalibrationFeatures';
 import { runUnitCalibration80, type UnitCalibration80Success } from '../../src/study/ai/studyAiUnitCalibrationRun';
 import { buildUnitCalibration80Report } from '../../src/study/ai/studyAiUnitCalibrationReport';
 import { readJsonFile } from '../../src/study/ai/studyAiMapFreezeGate';
@@ -67,6 +69,8 @@ type UnitJobSpec = {
   goal?: string;
   focusCount?: number;
   keyPrefix?: string;
+  sourceStatuses?: Record<string, AiSourceStatus>;
+  contentFlags?: Record<string, AiSourceContentFlags | undefined>;
 };
 
 /** Minimal but complete unit job for the pure selection tests. */
@@ -104,8 +108,9 @@ const makeUnitJob = (spec: UnitJobSpec): AiUnitAuthoringJob => {
     approximateLearningGoal: group.approximateLearningGoal,
     group,
     sourceHashes: Object.fromEntries(sourceKeys.map((key) => [key, `hash-${key}`])),
-    sourceStatuses: Object.fromEntries(sourceKeys.map((key) => [key, 'current'])),
-    contentFlagsBySourceKey: Object.fromEntries(sourceKeys.map((key) => [key, {}])),
+    sourceStatuses: spec.sourceStatuses ?? Object.fromEntries(sourceKeys.map((key) => [key, 'current'])),
+    contentFlagsBySourceKey:
+      spec.contentFlags ?? Object.fromEntries(sourceKeys.map((key) => [key, {}])),
     exactSourceText: `Source text of ${sourceKeys.join(',')} for ${groupId}.`,
     operativeSourceText: `Operative source text of ${sourceKeys.join(',')} for ${groupId}.`,
     sourceMetadata: {},
@@ -365,6 +370,61 @@ describe('selectCalibrationJobs (synthetic pool)', () => {
     expect(classifyDomainByDocumentTitle('Registry Act')).toBe('core');
     expect(classifyDomainByDocumentTitle('Assessment Act')).toBe('cadastral');
     expect(classifyDomainByDocumentTitle('Public Health Act')).toBe('adjacent');
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * repealed-mix tag semantics                                         *
+ * ------------------------------------------------------------------ */
+
+describe('buildUnitCalibrationJobTags (repealed-mix semantics)', () => {
+  const tagJob = (
+    index: number,
+    overrides: Pick<UnitJobSpec, 'sourceKeys' | 'sourceStatuses' | 'contentFlags'>,
+  ): AiUnitAuthoringJob =>
+    makeUnitJob({
+      parentJobId: `map-tag-${index}`,
+      documentId: 'doc-adj',
+      documentTitle: 'Public Health Act',
+      priority: 'P1',
+      sourceKeys: overrides.sourceKeys ?? ['k1'],
+      sourceStatuses: overrides.sourceStatuses,
+      contentFlags: overrides.contentFlags,
+    });
+
+  it("tags 'repealed-mix' when a content flag has containsRepealedSubprovision true (all-live statuses)", () => {
+    const job = tagJob(1, {
+      sourceKeys: ['k1', 'k2'],
+      contentFlags: { k1: { containsRepealedSubprovision: true }, k2: { containsRepealedSubprovision: false } },
+    });
+    expect(buildUnitCalibrationJobTags(job)).toContain('repealed-mix');
+  });
+
+  it("still tags via the status-mix branch when flags are false or absent (current + repealed sources)", () => {
+    const flagMixed = tagJob(2, {
+      sourceKeys: ['k1', 'k2'],
+      sourceStatuses: { k1: 'current', k2: 'repealed' },
+      contentFlags: { k1: { containsRepealedSubprovision: false }, k2: { containsRepealedSubprovision: false } },
+    });
+    const flagAbsent = tagJob(3, {
+      sourceKeys: ['k1', 'k2'],
+      sourceStatuses: { k1: 'historical', k2: 'current' },
+    });
+    expect(buildUnitCalibrationJobTags(flagMixed)).toContain('repealed-mix');
+    expect(buildUnitCalibrationJobTags(flagAbsent)).toContain('repealed-mix');
+  });
+
+  it('does not tag when neither a status mix nor a repealed-subprovision flag is present', () => {
+    const flagFalse = tagJob(4, {
+      sourceKeys: ['k1'],
+      contentFlags: { k1: { containsRepealedSubprovision: false } },
+    });
+    const plain = tagJob(5, { sourceKeys: ['k1'] });
+    const tags = buildUnitCalibrationJobTags(flagFalse);
+    expect(tags).not.toContain('repealed-mix');
+    expect(buildUnitCalibrationJobTags(plain)).not.toContain('repealed-mix');
+    expect(tags).toContain('parent-split');
+    expect(tags).toContain('focus-single');
   });
 });
 

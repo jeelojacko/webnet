@@ -142,6 +142,12 @@ export const unionTags = (...tagLists: readonly (readonly string[])[]): string[]
  * from the job payload alone (title/goal keywords + the first 2,000
  * characters of operative source text for the concept table). Provenance and
  * selection tags are appended by the caller.
+ *
+ * `repealed-mix` means the group mixes live and repealed material: either a
+ * wholly repealed/historical source sits next to live ones (a
+ * `sourceStatuses` mix of `current` with `repealed`/`historical`), or a live
+ * source contains repealed subprovisions (any `contentFlagsBySourceKey`
+ * entry with `containsRepealedSubprovision: true`).
  */
 export const buildUnitCalibrationJobTags = (job: AiUnitAuthoringJob): string[] => {
   const group = job.approvedGroup;
@@ -156,7 +162,12 @@ export const buildUnitCalibrationJobTags = (job: AiUnitAuthoringJob): string[] =
   if ((job.context.directlyReferencedProvisions ?? []).length > 0) tags.push('direct-reference');
   if ((job.context.relevantDefinitions ?? []).length > 0) tags.push('definition-context');
   const statuses = new Set(Object.values(job.sourceStatuses ?? {}));
-  if (statuses.has('current') && (statuses.has('repealed') || statuses.has('historical'))) {
+  const mixesSourceStatuses =
+    statuses.has('current') && (statuses.has('repealed') || statuses.has('historical'));
+  const containsRepealedSubprovision = Object.values(job.contentFlagsBySourceKey ?? {}).some(
+    (flags) => flags?.containsRepealedSubprovision === true,
+  );
+  if (mixesSourceStatuses || containsRepealedSubprovision) {
     tags.push('repealed-mix');
   }
   const conceptText = `${normalizeTitle(job.document.title)} ${group.titleSuggestion ?? ''} ${

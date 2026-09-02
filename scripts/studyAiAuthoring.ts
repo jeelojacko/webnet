@@ -11,7 +11,8 @@ import type {
   AiStudyUnitProposal,
   AiUnitAuthoringJob,
 } from '../src/study/ai/studyAiTypes';
-import type { ImportedLegalComponent, ImportedLegalDocument } from '../src/study/studyTypes';
+import type { ImportedLegalDocument } from '../src/study/studyTypes';
+import { componentToImported } from '../src/study/ai/studyAiUnitSourceComponents';
 import {
   generateReferenceAnswer,
   generateStudyQuestion,
@@ -1659,22 +1660,6 @@ const readJsonOrJsonl = <T>(path: string): T[] => {
   if (text.startsWith('[')) return JSON.parse(text) as T[];
   return readJsonl<T>(path);
 };
-
-const componentToImported = (
-  document: NbLawContentPackage['documents'][number],
-  component: NbLawDocumentComponent,
-): ImportedLegalComponent => ({
-  documentId: document.id,
-  id: component.id,
-  sourceKey: component.sourceKey,
-  componentType: component.componentType,
-  label: component.label,
-  heading: component.heading,
-  text: component.text,
-  contentHash: component.contentHash,
-  subsections: component.componentType === 'section' ? component.subsections : undefined,
-  extractionStatus: 'complete',
-});
 
 const deterministicComparison = (
   pkg: NbLawContentPackage,

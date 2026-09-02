@@ -1054,7 +1054,7 @@
       "prov-original": 50,
       "prov-recovered": 1,
       "prov-retry-promoted": 6,
-      "repealed-mix": 0,
+      "repealed-mix": 16,
       "size-large": 15,
       "size-medium": 35,
       "size-small": 30
@@ -1276,6 +1276,7 @@
         "focus-single",
         "parent-split",
         "prov-final-QC-adjudicated",
+        "repealed-mix",
         "size-large"
       ],
       "selectionReason": "pin",
@@ -1318,6 +1319,7 @@
         "focus-single",
         "parent-split",
         "prov-final-QC-adjudicated",
+        "repealed-mix",
         "size-large"
       ],
       "selectionReason": "pin",
@@ -1358,6 +1360,7 @@
         "focus-single",
         "parent-split",
         "prov-final-QC-adjudicated",
+        "repealed-mix",
         "size-large"
       ],
       "selectionReason": "pin",
@@ -1399,6 +1402,7 @@
         "focus-single",
         "parent-split",
         "prov-final-QC-adjudicated",
+        "repealed-mix",
         "size-medium"
       ],
       "selectionReason": "pin",
@@ -1440,6 +1444,7 @@
         "focus-single",
         "parent-split",
         "prov-final-QC-adjudicated",
+        "repealed-mix",
         "size-medium"
       ],
       "selectionReason": "pin",
@@ -1482,6 +1487,7 @@
         "focus-single",
         "parent-split",
         "prov-final-QC-adjudicated",
+        "repealed-mix",
         "size-medium"
       ],
       "selectionReason": "pin",
@@ -1523,6 +1529,7 @@
         "focus-single",
         "parent-split",
         "prov-final-QC-adjudicated",
+        "repealed-mix",
         "size-medium"
       ],
       "selectionReason": "pin",
@@ -1766,6 +1773,7 @@
         "focus-single",
         "parent-standalone",
         "prov-final-QC-adjudicated",
+        "repealed-mix",
         "size-small"
       ],
       "selectionReason": "pin",
@@ -1806,6 +1814,7 @@
         "focus-single",
         "parent-split",
         "prov-final-QC-adjudicated",
+        "repealed-mix",
         "size-large"
       ],
       "selectionReason": "pin",
@@ -1845,6 +1854,7 @@
         "focus-single",
         "parent-split",
         "prov-final-QC-adjudicated",
+        "repealed-mix",
         "size-large"
       ],
       "selectionReason": "pin",
@@ -1884,6 +1894,7 @@
         "focus-single",
         "parent-split",
         "prov-final-QC-adjudicated",
+        "repealed-mix",
         "size-large"
       ],
       "selectionReason": "pin",
@@ -2053,6 +2064,7 @@
         "map-retry-history",
         "parent-split",
         "prov-retry-promoted",
+        "repealed-mix",
         "size-large"
       ],
       "selectionReason": "retry",
@@ -2358,6 +2370,7 @@
         "map-retry-history",
         "parent-split",
         "prov-retry-promoted",
+        "repealed-mix",
         "size-medium"
       ],
       "selectionReason": "retry",
@@ -2483,6 +2496,7 @@
         "focus-single",
         "parent-split",
         "prov-original",
+        "repealed-mix",
         "size-medium",
         "unit-v4-regression-anchor"
       ],
@@ -2524,6 +2538,7 @@
         "focus-single",
         "parent-split",
         "prov-original",
+        "repealed-mix",
         "size-medium",
         "unit-v4-regression-anchor"
       ],
@@ -4354,6 +4369,7 @@
         "focus-single",
         "parent-split",
         "prov-original",
+        "repealed-mix",
         "size-medium"
       ],
       "selectionReason": "fill-priority",

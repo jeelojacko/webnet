@@ -300,10 +300,24 @@ const renderInputArtifacts = (report: UnitCalibration80Report): string[] => [
 
 export const renderUnitCalibration80ReportMd = (report: UnitCalibration80Report): string => {
   const dist = report.distributions;
+  const coverage = dist.featureCoverage;
+  const zeroFeatures = sortedKeys(coverage).filter((feature) => (coverage[feature] ?? 0) === 0);
   const featureNote = [
-    'Feature coverage counts the selected jobs carrying each tag. `focus-none` (group without any focus selection) and `repealed-mix` ' +
-      '(live + repealed sources in one group) are zero because the whole prepared preflight pool contains no such jobs: every one of the 4,251 ' +
-      'prepared jobs has at least one focus selection, and no frozen group mixes live/repealed source statuses. All other features are covered.',
+    'Feature coverage counts the selected jobs carrying each tag.',
+    ...(zeroFeatures.length > 0
+      ? [
+          `${zeroFeatures
+            .map((feature) =>
+              feature === 'focus-none'
+                ? '`focus-none` (group without any focus selection) is zero because the whole prepared preflight pool contains no such jobs: every one of the 4,251 prepared jobs has at least one focus selection'
+                : `\`${feature}\``,
+            )
+            .join('; ')}.`,
+        ]
+      : ['Every coverage feature is present on at least one selected job.']),
+    `\`repealed-mix\` (a group mixes live and repealed material: either a wholly repealed/historical source sits next to live ones — a \`sourceStatuses\` mix of \`current\` with \`repealed\`/\`historical\` — or a live source contains repealed subprovisions — any \`contentFlagsBySourceKey\` entry with \`containsRepealedSubprovision: true\`) is covered by ${
+      coverage['repealed-mix'] ?? 0
+    } of the ${report.counts.jobCount} selected jobs.`,
   ];
   return mdLines([
     `# Frozen Map → Unit Authoring Calibration-80 — ${report.dateTag}`,

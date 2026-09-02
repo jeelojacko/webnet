@@ -126,11 +126,11 @@
   "referencedArtifacts": {
     "selectionReportJson": {
       "file": "reports/unit-calibration-80-20260902.json",
-      "sha256": "29f22490720b6e1ac08913e36a50439ba98ca8ffb0a63aa82184e91855d964c0"
+      "sha256": "ccbfb158cf383a35f4b32712b120a1ae897270e13361e702b1fb153e1c681306"
     },
     "reviewPackMd": {
       "file": "reports/unit-calibration-80-review-pack-20260902.md",
-      "sha256": "f36acc8988783eee5f97badccf8be3cd106ce5072fe8264928df5a91573734b5"
+      "sha256": "741bcef6e39e2fcd6e2e90495d0036adac426d7479db0c2f04b3bc3e6af38199"
     }
   }
 }

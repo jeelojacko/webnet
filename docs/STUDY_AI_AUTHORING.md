@@ -439,13 +439,55 @@ Study Map (pure logic in `src/study/ai/`, dispatcher in `scripts/studyUnitBridge
   proposal value, and the Unit Authoring v4 authoring boundary is semantically
   unchanged (no prompt version bump, no model-visible change); the field is
   additive job metadata that binds each job to its frozen map decision.
-- Next phase (not yet executed): run the 80-job calibration per the launch
-  manifest through the `local-openai-compatible` (local Qwen) provider,
-  validate results, and iterate on any generic Unit Authoring v4 spec/validator
-  defects. The full-corpus preflight is prepared work, not approved generation:
-  if the Unit Authoring prompt spec ever changes, the full job set is
-  regenerated at the new prompt version before production. The preflight run
-  stays `prepared` (0 completed / 0 invalid) until inference begins.
+- Calibration-80 local-Qwen execution (2026-09-02): the 80-job calibration was
+  executed through the `local-openai-compatible` provider
+  (Qwen3.8-27B-UD-IQ4_XS @ `http://127.0.0.1:8080/v1`, concurrency 1,
+  strict-json-schema) by the new fail-closed runner
+  `scripts/studyAiLocalUnitAuthor.ts` (`study:ai:local-unit`). The runner
+  accepts only `unit-authoring` runs (map runs rejected), stamps all
+  identity/provenance fields itself — `schemaVersion`, `proposalId`, `runId`,
+  `corpusContentHash`, source identity/hashes, approved-group echoes, and
+  `suggestedPriority` copied from `frozenMapPriority` — so the model can never
+  set identity or priority; every response is validated against the strict
+  local schema and the canonical `AiStudyUnitProposal` validator with
+  corpus-grounded components; bounded validator-grounded retries carry issue
+  codes into the retry prompt; provider failures use the shared recovery path;
+  accepted rows, provenance, numbered failure artifacts, and run metadata are
+  written atomically and revalidated on resume (any identity/priority/inputHash
+  mismatch aborts).
+- Execution outcome: **80/80 accepted, 0 semantic failures, 0
+  provider-incomplete**; 15 rejected semantic attempts, all recovered within
+  the attempt budget. Worst case `unit-07fa6fc1208594ca` (Land Surveyors Act,
+  s.18(2)): 4 rejections because the model normalized the corpus OCR artifacts
+  `by - laws` / `Registr ar` inside quoted evidence; the accepted attempt
+  quoted them verbatim. Distributions match the frozen selection exactly: P1 24
+  / P2 28 / P3 20 / P4 8; statuses 45 generated / 35 needs-map-revision;
+  canonical re-validation 28 valid / 52 warning / 0 invalid (171
+  warning-severity issues, 0 errors).
+- Deterministic post-inference audit + human-review bundle
+  (`scripts/studyAiAuditUnitCalibration.ts`, `study:ai:audit-unit-calibration`;
+  read-only over the run dir, fixed 2026-09-02 generatedAt, byte-identical
+  reruns): `reports/unit-calibration-80-result-audit-20260902.{json,md}`
+  (completion, gap accounting vs the selection, identity/priority checks,
+  histograms, named subsets, findings), `reports/unit-calibration-80-human-review-20260902.{json,md}`
+  (all 80 jobs, risk-ordered), `reports/unit-calibration-80-regression-anchors-20260902.md`
+  (7/7 resolved and accepted, incl. stacked OH&S s.9), and
+  `reports/unit-calibration-80-final-qc-20260902.md` (20 units under the 8
+  correction parents).
+- Post-calibration findings (measured, not fixed — classified for human
+  review; Unit Authoring v4 prompt/spec **unchanged**, validator **not**
+  loosened, frozen Study Map **not** modified, full-corpus unit generation **not**
+  started, full preflight regeneration **not** needed because the prompt
+  version did not change): (1) model verbatim-evidence miss on
+  OCR-corrupted source (recovered by validator-grounded retry); (2) 27
+  generated-status proposals carry an advisory `mapRevisionSuggestion`
+  (schema-legal gray zone); (3) 21 needs-map-revision proposals lack the
+  `MAP_GROUP_TOO_BROAD_FOR_GOOD_UNIT` warning (several for non-breadth
+  reasons); (4) 5 needs-map-revision proposals lack a
+  `mapRevisionSuggestion`. **Human semantic review is PENDING and full
+  production is NOT authorized.** The full-corpus preflight remains prepared
+  work: if the Unit Authoring prompt spec ever changes, the full job set is
+  regenerated at the new prompt version before production.
 
 ## Phase 4B.1.1 Targeted Map Pilot
 

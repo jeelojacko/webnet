@@ -1,0 +1,2187 @@
+{
+  "schemaVersion": 1,
+  "kind": "unit-calibration-result-audit",
+  "dateTag": "20260902",
+  "runId": "ai-units-2026-09-02-frozen-map-cal80-v4",
+  "generatedAt": "2026-09-02T00:00:00.000Z",
+  "promptSpecVersion": "unit-authoring-v4",
+  "sourceMapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+  "inputs": {
+    "runDirPath": "/home/jacko/Code/webnet/study-content/ai/runs/ai-units-2026-09-02-frozen-map-cal80-v4",
+    "selectionReportPath": "/home/jacko/Code/webnet/reports/unit-calibration-80-20260902.json",
+    "selectionReportSha256": "ccbfb158cf383a35f4b32712b120a1ae897270e13361e702b1fb153e1c681306",
+    "runJsonSha256": "28070b348becdc4fa921f3b168501427fc1c141487e5e56b384c8e3565807210",
+    "metadataSha256": "fd073009a489fcdde75deac9c3e2631f2504621d91729dd74b835f23bd0f798f",
+    "resultsJsonlSha256": "ef827469c24d15a778f90f674b4069df40c78e0545c8e0e8b6ab929cbe368f7c",
+    "packageSha256": "ae93a1e75b814dd0463e065a5f8b3eeb9e035adc9054d442fab132cfdaa4b56b",
+    "specSha256": "ecbb97301866b900ff82e8cbd632f9af65f6f3a7929c2b283939329fd27a683b",
+    "batchFiles": [
+      {
+        "file": "batch-001.jobs.jsonl",
+        "sha256": "1ac12b4ad36b83b1ece9991be0a372a4653e1bfcec848c9ad45c9302c9b7a8b9"
+      },
+      {
+        "file": "batch-002.jobs.jsonl",
+        "sha256": "10806fb78b80932cb0f9fedad42b4fd310ef373fecf46a1369ed673cc1a1b83a"
+      },
+      {
+        "file": "batch-003.jobs.jsonl",
+        "sha256": "fd5bdf43488199afe3439a324b83cc2ccf5adf66b192804462795248d32adfd0"
+      },
+      {
+        "file": "batch-004.jobs.jsonl",
+        "sha256": "54954b5ee02471ccbdc2977a2a09878c563e58564c545f04ef5bfbe9ab2f39f7"
+      },
+      {
+        "file": "batch-005.jobs.jsonl",
+        "sha256": "58eef9121b317d5d0b95c940639c8e78d6aa773c922649605f237d9d06a722a7"
+      },
+      {
+        "file": "batch-006.jobs.jsonl",
+        "sha256": "d831930a579cb23490a3d1c6d228153a7e10669a863f204730b2981a450288dc"
+      },
+      {
+        "file": "batch-007.jobs.jsonl",
+        "sha256": "76c3c364fc2c165df5246a0882b6aa387d232ffe70da91d14b8d76ffe2dbc1ce"
+      },
+      {
+        "file": "batch-008.jobs.jsonl",
+        "sha256": "db039aac5bb11995d6d4849c55a9cef9fdcd1e8c56c227e856c85d56687cd85f"
+      },
+      {
+        "file": "batch-009.jobs.jsonl",
+        "sha256": "53d3b897e02c273873c0b9561f496bc1a8c647babe5ed9eaf04a960ccf54bda5"
+      },
+      {
+        "file": "batch-010.jobs.jsonl",
+        "sha256": "cd61445429f05cba567553e1a6809575519d9c5bfbc63ee468c6fe35fe0801b5"
+      }
+    ],
+    "jobsFileSha256FromMetadata": {
+      "batch-001.jobs.jsonl": "1ac12b4ad36b83b1ece9991be0a372a4653e1bfcec848c9ad45c9302c9b7a8b9",
+      "batch-002.jobs.jsonl": "10806fb78b80932cb0f9fedad42b4fd310ef373fecf46a1369ed673cc1a1b83a",
+      "batch-003.jobs.jsonl": "fd5bdf43488199afe3439a324b83cc2ccf5adf66b192804462795248d32adfd0",
+      "batch-004.jobs.jsonl": "54954b5ee02471ccbdc2977a2a09878c563e58564c545f04ef5bfbe9ab2f39f7",
+      "batch-005.jobs.jsonl": "58eef9121b317d5d0b95c940639c8e78d6aa773c922649605f237d9d06a722a7",
+      "batch-006.jobs.jsonl": "d831930a579cb23490a3d1c6d228153a7e10669a863f204730b2981a450288dc",
+      "batch-007.jobs.jsonl": "76c3c364fc2c165df5246a0882b6aa387d232ffe70da91d14b8d76ffe2dbc1ce",
+      "batch-008.jobs.jsonl": "db039aac5bb11995d6d4849c55a9cef9fdcd1e8c56c227e856c85d56687cd85f",
+      "batch-009.jobs.jsonl": "53d3b897e02c273873c0b9561f496bc1a8c647babe5ed9eaf04a960ccf54bda5",
+      "batch-010.jobs.jsonl": "cd61445429f05cba567553e1a6809575519d9c5bfbc63ee468c6fe35fe0801b5"
+    },
+    "metadataJobIdsMatchSelection": true,
+    "metadataJobCount": 80,
+    "selectionJobCount": 80
+  },
+  "completion": {
+    "expected": 80,
+    "accepted": 80,
+    "semanticFailed": 0,
+    "providerIncomplete": 0,
+    "nothing": 0,
+    "perBatch": [
+      {
+        "batch": 1,
+        "expected": 8,
+        "accepted": 8,
+        "semanticFailed": 0,
+        "providerIncomplete": 0,
+        "nothing": 0
+      },
+      {
+        "batch": 2,
+        "expected": 8,
+        "accepted": 8,
+        "semanticFailed": 0,
+        "providerIncomplete": 0,
+        "nothing": 0
+      },
+      {
+        "batch": 3,
+        "expected": 8,
+        "accepted": 8,
+        "semanticFailed": 0,
+        "providerIncomplete": 0,
+        "nothing": 0
+      },
+      {
+        "batch": 4,
+        "expected": 8,
+        "accepted": 8,
+        "semanticFailed": 0,
+        "providerIncomplete": 0,
+        "nothing": 0
+      },
+      {
+        "batch": 5,
+        "expected": 8,
+        "accepted": 8,
+        "semanticFailed": 0,
+        "providerIncomplete": 0,
+        "nothing": 0
+      },
+      {
+        "batch": 6,
+        "expected": 8,
+        "accepted": 8,
+        "semanticFailed": 0,
+        "providerIncomplete": 0,
+        "nothing": 0
+      },
+      {
+        "batch": 7,
+        "expected": 8,
+        "accepted": 8,
+        "semanticFailed": 0,
+        "providerIncomplete": 0,
+        "nothing": 0
+      },
+      {
+        "batch": 8,
+        "expected": 8,
+        "accepted": 8,
+        "semanticFailed": 0,
+        "providerIncomplete": 0,
+        "nothing": 0
+      },
+      {
+        "batch": 9,
+        "expected": 8,
+        "accepted": 8,
+        "semanticFailed": 0,
+        "providerIncomplete": 0,
+        "nothing": 0
+      },
+      {
+        "batch": 10,
+        "expected": 8,
+        "accepted": 8,
+        "semanticFailed": 0,
+        "providerIncomplete": 0,
+        "nothing": 0
+      }
+    ]
+  },
+  "gap": {
+    "priority": {
+      "target": {
+        "P1": 24,
+        "P2": 28,
+        "P3": 20,
+        "P4": 8
+      },
+      "rows": [
+        {
+          "priority": "P1",
+          "target": 24,
+          "selected": 24,
+          "accepted": 24,
+          "semanticFailed": 0,
+          "providerIncomplete": 0,
+          "nothing": 0,
+          "gap": 0
+        },
+        {
+          "priority": "P2",
+          "target": 28,
+          "selected": 28,
+          "accepted": 28,
+          "semanticFailed": 0,
+          "providerIncomplete": 0,
+          "nothing": 0,
+          "gap": 0
+        },
+        {
+          "priority": "P3",
+          "target": 20,
+          "selected": 20,
+          "accepted": 20,
+          "semanticFailed": 0,
+          "providerIncomplete": 0,
+          "nothing": 0,
+          "gap": 0
+        },
+        {
+          "priority": "P4",
+          "target": 8,
+          "selected": 8,
+          "accepted": 8,
+          "semanticFailed": 0,
+          "providerIncomplete": 0,
+          "nothing": 0,
+          "gap": 0
+        }
+      ],
+      "exact": true,
+      "note": "Per priority the frozen selection distribution must equal the number of selected job rows found in the run (accepted + semanticFailed + providerIncomplete + nothing); a nonzero gap means a selected job has no row at all (never attempted)."
+    }
+  },
+  "auditErrors": [],
+  "auditFindings": [
+    {
+      "code": "ADVISORY_MAP_REVISION_SUGGESTION_ON_GENERATED",
+      "count": 27,
+      "jobIds": [
+        "unit-00786855a793bc06",
+        "unit-01114cfaf3709c7d",
+        "unit-022c7285b5e97c06",
+        "unit-03718a2726419ffc",
+        "unit-04e2ecadf458dfc2",
+        "unit-057a72bc46425aef",
+        "unit-05aad567930a651b",
+        "unit-05e06222bdb9d406",
+        "unit-064dc209bd43e63c",
+        "unit-07144e70868a71ec",
+        "unit-07fded70d557bb42",
+        "unit-08d0057dc07a46d5",
+        "unit-09121fea0dce567b",
+        "unit-098b09224e6386c2",
+        "unit-0c0bbda20e7199b5",
+        "unit-0ff46d399379a99b",
+        "unit-24d4ce03d041f274",
+        "unit-2eedbe7a21cb2c32",
+        "unit-38731a2761d264ad",
+        "unit-40730d04faf14076",
+        "unit-9aa4dea732c4bc43",
+        "unit-a795aa5cbc9d3ee6",
+        "unit-ad5f94891873617a",
+        "unit-ade0ea76fa6d04ef",
+        "unit-de14b7aae121ea5a",
+        "unit-e9fe22342cc56c8a",
+        "unit-f1d3de4004dd0d17"
+      ],
+      "note": "mapRevisionSuggestion present on a generated-status proposal (advisory; expected data)."
+    },
+    {
+      "code": "NEEDS_MAP_REVISION_WITHOUT_BROAD_WARNING",
+      "count": 21,
+      "jobIds": [
+        "unit-00066425d3dd3645",
+        "unit-0070dd224c8bb7a5",
+        "unit-009ff72aba3f0d45",
+        "unit-00cb6e97353458dc",
+        "unit-023c1a4ddb31e2c5",
+        "unit-02c1922ab2c2961a",
+        "unit-02c520678fcbb6c2",
+        "unit-0445d8337e77a7c6",
+        "unit-046240c47aa8f95b",
+        "unit-047b933c1567c5dd",
+        "unit-06587c365a55bf49",
+        "unit-07fa6fc1208594ca",
+        "unit-092be74ad4e22fc6",
+        "unit-0de35b1dafe93ecb",
+        "unit-15fa5c5ac251dfa1",
+        "unit-2f3e7edff1d80df7",
+        "unit-79f54c297756d4aa",
+        "unit-b176ebe94507fd17",
+        "unit-c7dc47a1735eb69d",
+        "unit-e60f2ed653e5363a",
+        "unit-ea7e4c75c7a425ce"
+      ],
+      "note": "authoringStatus needs-map-revision but MAP_GROUP_TOO_BROAD_FOR_GOOD_UNIT warning absent."
+    },
+    {
+      "code": "NEEDS_MAP_REVISION_WITHOUT_SUGGESTION",
+      "count": 5,
+      "jobIds": [
+        "unit-00cb6e97353458dc",
+        "unit-02c520678fcbb6c2",
+        "unit-046240c47aa8f95b",
+        "unit-047b933c1567c5dd",
+        "unit-092be74ad4e22fc6"
+      ],
+      "note": "authoringStatus needs-map-revision but mapRevisionSuggestion absent (spec pair rule)."
+    }
+  ],
+  "identity": {
+    "checkedProposals": 80,
+    "errors": [],
+    "suggestedPriorityMatches": 80,
+    "suggestedPriorityMismatches": []
+  },
+  "validation": {
+    "revalidated": 80,
+    "valid": 28,
+    "warnings": 52,
+    "invalid": 0,
+    "issueCodeCounts": {
+      "UNSUPPORTED_NUMERIC_OR_REFERENCE": 27,
+      "UNCOVERED_SUBSTANTIVE_SOURCE": 37,
+      "APPROVED_FOCUS_NOT_COVERED": 49,
+      "MAIN_QUESTION_TOO_LONG": 22,
+      "GUIDED_QUESTION_TOO_LONG": 18,
+      "ANSWER_APPEARS_TRUNCATED": 13,
+      "POSSIBLE_MODALITY_MISMATCH": 3,
+      "DEFINITION_ANSWER_MISSING_TERM_MEANING": 2
+    },
+    "issueSeverityCounts": {
+      "error": 0,
+      "warning": 171
+    },
+    "notRevalidated": 0
+  },
+  "overlaps": {
+    "checked": 80,
+    "sourceOverlaps": 23,
+    "jobsWithOverlap": [
+      "unit-0070dd224c8bb7a5",
+      "unit-02c1922ab2c2961a",
+      "unit-03718a2726419ffc",
+      "unit-049d27943f637422",
+      "unit-05e06222bdb9d406",
+      "unit-15fa5c5ac251dfa1",
+      "unit-1d069dae182e4d4a",
+      "unit-40730d04faf14076",
+      "unit-6a94737b69e069ce",
+      "unit-892e38efffb31976",
+      "unit-9aa4dea732c4bc43",
+      "unit-9ceefa172c31deea",
+      "unit-ad5f94891873617a",
+      "unit-ade0ea76fa6d04ef",
+      "unit-b176ebe94507fd17",
+      "unit-d9b1e53de714665c",
+      "unit-dc58323956b9fd42",
+      "unit-de14b7aae121ea5a",
+      "unit-df983b36ee36be82",
+      "unit-e9fe22342cc56c8a",
+      "unit-ea7e4c75c7a425ce",
+      "unit-f1d3de4004dd0d17",
+      "unit-fdccd69202d3a203"
+    ]
+  },
+  "distributions": {
+    "authoringStatus": {
+      "needs-map-revision": 35,
+      "generated": 45
+    },
+    "suggestedPriority": {
+      "P2": 28,
+      "P1": 24,
+      "P4": 8,
+      "P3": 20
+    },
+    "confidence": {
+      "medium": 1,
+      "high": 79
+    },
+    "warnings": {
+      "MAP_GROUP_TOO_BROAD_FOR_GOOD_UNIT": 14,
+      "OUTSIDE_APPROVED_FOCUS": 2
+    },
+    "objectives": {
+      "1": 12,
+      "2": 26,
+      "3": 24,
+      "4": 17,
+      "5": 1
+    },
+    "sevenPlusObjectives": [],
+    "domains": {
+      "cadastral": 28,
+      "core": 34,
+      "adjacent": 18
+    },
+    "focusStyles": {
+      "single": 78,
+      "multiple": 2
+    },
+    "mapDisposition": {
+      "split": 53,
+      "combine": 2,
+      "standalone": 25
+    },
+    "parentKind": {
+      "split": 53,
+      "combine": 2,
+      "standalone": 25
+    },
+    "sourceCounts": {
+      "1": 78,
+      "2": 2
+    },
+    "sizeBuckets": {
+      "large": 15,
+      "small": 30,
+      "medium": 35
+    },
+    "provenance": {
+      "original": 50,
+      "retry-promoted": 6,
+      "final-QC-adjudicated": 20,
+      "human-adjudicated": 3,
+      "recovered": 1
+    },
+    "attemptsUsed": {
+      "1": 68,
+      "2": 11,
+      "5": 1
+    },
+    "issueCodesAcrossAttempts": {
+      "EVIDENCE_NOT_FOUND": 14,
+      "OUTSIDE_APPROVED_FOCUS": 14,
+      "MAP_REVISION_SUGGESTION_REQUIRED": 4,
+      "ANSWER_APPEARS_TRUNCATED": 2,
+      "POSSIBLE_MODALITY_MISMATCH": 4,
+      "APPROVED_FOCUS_NOT_COVERED": 7,
+      "UNCOVERED_SUBSTANTIVE_SOURCE": 5,
+      "MAIN_QUESTION_TOO_LONG": 2,
+      "UNSUPPORTED_NUMERIC_OR_REFERENCE": 10
+    },
+    "providerEventReferences": {
+      "0": 80
+    }
+  },
+  "perJob": [
+    {
+      "jobId": "unit-00066425d3dd3645",
+      "batch": 5,
+      "runIndex": 34,
+      "status": "accepted",
+      "priority": "P2",
+      "authoringStatus": "needs-map-revision",
+      "suggestedPriority": "P2",
+      "objectiveCount": 4,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "APPROVED_FOCUS_NOT_COVERED",
+        "APPROVED_FOCUS_NOT_COVERED",
+        "GUIDED_QUESTION_TOO_LONG",
+        "GUIDED_QUESTION_TOO_LONG",
+        "MAIN_QUESTION_TOO_LONG",
+        "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-00100b7505527849",
+      "batch": 7,
+      "runIndex": 54,
+      "status": "accepted",
+      "priority": "P1",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P1",
+      "objectiveCount": 1,
+      "validationStatus": "valid",
+      "issueCodes": [],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-0070dd224c8bb7a5",
+      "batch": 5,
+      "runIndex": 39,
+      "status": "accepted",
+      "priority": "P1",
+      "authoringStatus": "needs-map-revision",
+      "suggestedPriority": "P1",
+      "objectiveCount": 3,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "GUIDED_QUESTION_TOO_LONG",
+        "MAIN_QUESTION_TOO_LONG"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-00786855a793bc06",
+      "batch": 6,
+      "runIndex": 44,
+      "status": "accepted",
+      "priority": "P2",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P2",
+      "objectiveCount": 2,
+      "validationStatus": "valid",
+      "issueCodes": [],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-009ff72aba3f0d45",
+      "batch": 5,
+      "runIndex": 38,
+      "status": "accepted",
+      "priority": "P4",
+      "authoringStatus": "needs-map-revision",
+      "suggestedPriority": "P4",
+      "objectiveCount": 3,
+      "validationStatus": "valid",
+      "issueCodes": [],
+      "rejectedSemanticAttempts": 1,
+      "attemptsUsed": 2,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-00cb6e97353458dc",
+      "batch": 7,
+      "runIndex": 48,
+      "status": "accepted",
+      "priority": "P2",
+      "authoringStatus": "needs-map-revision",
+      "suggestedPriority": "P2",
+      "objectiveCount": 2,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "ANSWER_APPEARS_TRUNCATED",
+        "ANSWER_APPEARS_TRUNCATED"
+      ],
+      "rejectedSemanticAttempts": 1,
+      "attemptsUsed": 2,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-01074d54d55e4fde",
+      "batch": 10,
+      "runIndex": 73,
+      "status": "accepted",
+      "priority": "P2",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P2",
+      "objectiveCount": 2,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "APPROVED_FOCUS_NOT_COVERED",
+        "APPROVED_FOCUS_NOT_COVERED",
+        "GUIDED_QUESTION_TOO_LONG",
+        "MAIN_QUESTION_TOO_LONG",
+        "POSSIBLE_MODALITY_MISMATCH",
+        "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "UNCOVERED_SUBSTANTIVE_SOURCE"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-01093fbff98ef4eb",
+      "batch": 10,
+      "runIndex": 79,
+      "status": "accepted",
+      "priority": "P2",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P2",
+      "objectiveCount": 3,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "APPROVED_FOCUS_NOT_COVERED",
+        "GUIDED_QUESTION_TOO_LONG",
+        "MAIN_QUESTION_TOO_LONG"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-010c9353d8180812",
+      "batch": 7,
+      "runIndex": 52,
+      "status": "accepted",
+      "priority": "P2",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P2",
+      "objectiveCount": 1,
+      "validationStatus": "valid",
+      "issueCodes": [],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-01114cfaf3709c7d",
+      "batch": 10,
+      "runIndex": 75,
+      "status": "accepted",
+      "priority": "P2",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P2",
+      "objectiveCount": 2,
+      "validationStatus": "valid",
+      "issueCodes": [],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-0167053e440a24d5",
+      "batch": 6,
+      "runIndex": 40,
+      "status": "accepted",
+      "priority": "P2",
+      "authoringStatus": "needs-map-revision",
+      "suggestedPriority": "P2",
+      "objectiveCount": 3,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "APPROVED_FOCUS_NOT_COVERED",
+        "APPROVED_FOCUS_NOT_COVERED",
+        "APPROVED_FOCUS_NOT_COVERED",
+        "MAIN_QUESTION_TOO_LONG",
+        "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "UNCOVERED_SUBSTANTIVE_SOURCE"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-019c765ae138d8b5",
+      "batch": 3,
+      "runIndex": 22,
+      "status": "accepted",
+      "priority": "P1",
+      "authoringStatus": "needs-map-revision",
+      "suggestedPriority": "P1",
+      "objectiveCount": 3,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "MAIN_QUESTION_TOO_LONG"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-022c7285b5e97c06",
+      "batch": 6,
+      "runIndex": 42,
+      "status": "accepted",
+      "priority": "P4",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P4",
+      "objectiveCount": 2,
+      "validationStatus": "valid",
+      "issueCodes": [],
+      "rejectedSemanticAttempts": 1,
+      "attemptsUsed": 2,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-023c1a4ddb31e2c5",
+      "batch": 4,
+      "runIndex": 25,
+      "status": "accepted",
+      "priority": "P2",
+      "authoringStatus": "needs-map-revision",
+      "suggestedPriority": "P2",
+      "objectiveCount": 2,
+      "validationStatus": "valid",
+      "issueCodes": [],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-02657c4c14328d82",
+      "batch": 5,
+      "runIndex": 37,
+      "status": "accepted",
+      "priority": "P3",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P3",
+      "objectiveCount": 3,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "APPROVED_FOCUS_NOT_COVERED",
+        "APPROVED_FOCUS_NOT_COVERED",
+        "APPROVED_FOCUS_NOT_COVERED",
+        "MAIN_QUESTION_TOO_LONG",
+        "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "UNCOVERED_SUBSTANTIVE_SOURCE"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-02c1922ab2c2961a",
+      "batch": 1,
+      "runIndex": 2,
+      "status": "accepted",
+      "priority": "P3",
+      "authoringStatus": "needs-map-revision",
+      "suggestedPriority": "P3",
+      "objectiveCount": 3,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "MAIN_QUESTION_TOO_LONG"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-02c520678fcbb6c2",
+      "batch": 7,
+      "runIndex": 55,
+      "status": "accepted",
+      "priority": "P2",
+      "authoringStatus": "needs-map-revision",
+      "suggestedPriority": "P2",
+      "objectiveCount": 1,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "ANSWER_APPEARS_TRUNCATED",
+        "ANSWER_APPEARS_TRUNCATED"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-02dbce06a699d0b3",
+      "batch": 6,
+      "runIndex": 41,
+      "status": "accepted",
+      "priority": "P3",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P3",
+      "objectiveCount": 2,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "ANSWER_APPEARS_TRUNCATED"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-03718a2726419ffc",
+      "batch": 6,
+      "runIndex": 43,
+      "status": "accepted",
+      "priority": "P1",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P1",
+      "objectiveCount": 2,
+      "validationStatus": "valid",
+      "issueCodes": [],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-03de3fc357cb57a5",
+      "batch": 8,
+      "runIndex": 57,
+      "status": "accepted",
+      "priority": "P2",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P2",
+      "objectiveCount": 1,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "ANSWER_APPEARS_TRUNCATED",
+        "GUIDED_QUESTION_TOO_LONG"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-0421d4fe4b51ed92",
+      "batch": 6,
+      "runIndex": 47,
+      "status": "accepted",
+      "priority": "P1",
+      "authoringStatus": "needs-map-revision",
+      "suggestedPriority": "P1",
+      "objectiveCount": 4,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "MAIN_QUESTION_TOO_LONG"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-043b932fc33b70cc",
+      "batch": 8,
+      "runIndex": 56,
+      "status": "accepted",
+      "priority": "P1",
+      "authoringStatus": "needs-map-revision",
+      "suggestedPriority": "P1",
+      "objectiveCount": 2,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "APPROVED_FOCUS_NOT_COVERED",
+        "APPROVED_FOCUS_NOT_COVERED",
+        "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "UNCOVERED_SUBSTANTIVE_SOURCE"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-0445d8337e77a7c6",
+      "batch": 6,
+      "runIndex": 45,
+      "status": "accepted",
+      "priority": "P3",
+      "authoringStatus": "needs-map-revision",
+      "suggestedPriority": "P3",
+      "objectiveCount": 1,
+      "validationStatus": "valid",
+      "issueCodes": [],
+      "rejectedSemanticAttempts": 1,
+      "attemptsUsed": 2,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-0449049d27b547c9",
+      "batch": 8,
+      "runIndex": 58,
+      "status": "accepted",
+      "priority": "P1",
+      "authoringStatus": "needs-map-revision",
+      "suggestedPriority": "P1",
+      "objectiveCount": 2,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "APPROVED_FOCUS_NOT_COVERED",
+        "UNCOVERED_SUBSTANTIVE_SOURCE"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-046240c47aa8f95b",
+      "batch": 7,
+      "runIndex": 49,
+      "status": "accepted",
+      "priority": "P3",
+      "authoringStatus": "needs-map-revision",
+      "suggestedPriority": "P3",
+      "objectiveCount": 3,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "APPROVED_FOCUS_NOT_COVERED",
+        "GUIDED_QUESTION_TOO_LONG",
+        "MAIN_QUESTION_TOO_LONG",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-047b933c1567c5dd",
+      "batch": 3,
+      "runIndex": 20,
+      "status": "accepted",
+      "priority": "P2",
+      "authoringStatus": "needs-map-revision",
+      "suggestedPriority": "P2",
+      "objectiveCount": 3,
+      "validationStatus": "valid",
+      "issueCodes": [],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-049d27943f637422",
+      "batch": 8,
+      "runIndex": 59,
+      "status": "accepted",
+      "priority": "P2",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P2",
+      "objectiveCount": 3,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "APPROVED_FOCUS_NOT_COVERED",
+        "APPROVED_FOCUS_NOT_COVERED",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-04cf30345017df39",
+      "batch": 7,
+      "runIndex": 51,
+      "status": "accepted",
+      "priority": "P1",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P1",
+      "objectiveCount": 2,
+      "validationStatus": "valid",
+      "issueCodes": [],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-04e2ecadf458dfc2",
+      "batch": 10,
+      "runIndex": 74,
+      "status": "accepted",
+      "priority": "P1",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P1",
+      "objectiveCount": 3,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "GUIDED_QUESTION_TOO_LONG",
+        "MAIN_QUESTION_TOO_LONG"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-057a72bc46425aef",
+      "batch": 6,
+      "runIndex": 46,
+      "status": "accepted",
+      "priority": "P4",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P4",
+      "objectiveCount": 1,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "ANSWER_APPEARS_TRUNCATED"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-05aad567930a651b",
+      "batch": 8,
+      "runIndex": 61,
+      "status": "accepted",
+      "priority": "P2",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P2",
+      "objectiveCount": 3,
+      "validationStatus": "valid",
+      "issueCodes": [],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-05d777e3d32ca761",
+      "batch": 8,
+      "runIndex": 60,
+      "status": "accepted",
+      "priority": "P1",
+      "authoringStatus": "needs-map-revision",
+      "suggestedPriority": "P1",
+      "objectiveCount": 2,
+      "validationStatus": "valid",
+      "issueCodes": [],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-05e06222bdb9d406",
+      "batch": 8,
+      "runIndex": 63,
+      "status": "accepted",
+      "priority": "P2",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P2",
+      "objectiveCount": 4,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "APPROVED_FOCUS_NOT_COVERED",
+        "APPROVED_FOCUS_NOT_COVERED",
+        "APPROVED_FOCUS_NOT_COVERED",
+        "APPROVED_FOCUS_NOT_COVERED",
+        "GUIDED_QUESTION_TOO_LONG",
+        "GUIDED_QUESTION_TOO_LONG",
+        "GUIDED_QUESTION_TOO_LONG",
+        "MAIN_QUESTION_TOO_LONG"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-064dc209bd43e63c",
+      "batch": 9,
+      "runIndex": 65,
+      "status": "accepted",
+      "priority": "P2",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P2",
+      "objectiveCount": 2,
+      "validationStatus": "valid",
+      "issueCodes": [],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-06587c365a55bf49",
+      "batch": 7,
+      "runIndex": 53,
+      "status": "accepted",
+      "priority": "P4",
+      "authoringStatus": "needs-map-revision",
+      "suggestedPriority": "P4",
+      "objectiveCount": 2,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "ANSWER_APPEARS_TRUNCATED",
+        "ANSWER_APPEARS_TRUNCATED"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-07144e70868a71ec",
+      "batch": 9,
+      "runIndex": 67,
+      "status": "accepted",
+      "priority": "P2",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P2",
+      "objectiveCount": 2,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "GUIDED_QUESTION_TOO_LONG",
+        "GUIDED_QUESTION_TOO_LONG",
+        "MAIN_QUESTION_TOO_LONG"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-07fa6fc1208594ca",
+      "batch": 9,
+      "runIndex": 69,
+      "status": "accepted",
+      "priority": "P2",
+      "authoringStatus": "needs-map-revision",
+      "suggestedPriority": "P2",
+      "objectiveCount": 1,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "APPROVED_FOCUS_NOT_COVERED"
+      ],
+      "rejectedSemanticAttempts": 4,
+      "attemptsUsed": 5,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-07fded70d557bb42",
+      "batch": 8,
+      "runIndex": 62,
+      "status": "accepted",
+      "priority": "P1",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P1",
+      "objectiveCount": 2,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "GUIDED_QUESTION_TOO_LONG",
+        "MAIN_QUESTION_TOO_LONG"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-08d0057dc07a46d5",
+      "batch": 9,
+      "runIndex": 64,
+      "status": "accepted",
+      "priority": "P1",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P1",
+      "objectiveCount": 4,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "APPROVED_FOCUS_NOT_COVERED",
+        "APPROVED_FOCUS_NOT_COVERED",
+        "GUIDED_QUESTION_TOO_LONG",
+        "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "UNCOVERED_SUBSTANTIVE_SOURCE"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-08f6d682936a16dc",
+      "batch": 9,
+      "runIndex": 71,
+      "status": "accepted",
+      "priority": "P2",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P2",
+      "objectiveCount": 1,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "APPROVED_FOCUS_NOT_COVERED"
+      ],
+      "rejectedSemanticAttempts": 1,
+      "attemptsUsed": 2,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-09121fea0dce567b",
+      "batch": 4,
+      "runIndex": 29,
+      "status": "accepted",
+      "priority": "P2",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P2",
+      "objectiveCount": 3,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "APPROVED_FOCUS_NOT_COVERED",
+        "APPROVED_FOCUS_NOT_COVERED",
+        "APPROVED_FOCUS_NOT_COVERED",
+        "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "UNCOVERED_SUBSTANTIVE_SOURCE"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-092be74ad4e22fc6",
+      "batch": 9,
+      "runIndex": 66,
+      "status": "accepted",
+      "priority": "P1",
+      "authoringStatus": "needs-map-revision",
+      "suggestedPriority": "P1",
+      "objectiveCount": 1,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-098b09224e6386c2",
+      "batch": 10,
+      "runIndex": 77,
+      "status": "accepted",
+      "priority": "P2",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P2",
+      "objectiveCount": 1,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-09ba9569396ef78b",
+      "batch": 7,
+      "runIndex": 50,
+      "status": "accepted",
+      "priority": "P4",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P4",
+      "objectiveCount": 1,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "ANSWER_APPEARS_TRUNCATED"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-0c0bbda20e7199b5",
+      "batch": 9,
+      "runIndex": 68,
+      "status": "accepted",
+      "priority": "P1",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P1",
+      "objectiveCount": 3,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "APPROVED_FOCUS_NOT_COVERED",
+        "APPROVED_FOCUS_NOT_COVERED",
+        "APPROVED_FOCUS_NOT_COVERED",
+        "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "UNCOVERED_SUBSTANTIVE_SOURCE"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-0de35b1dafe93ecb",
+      "batch": 9,
+      "runIndex": 70,
+      "status": "accepted",
+      "priority": "P1",
+      "authoringStatus": "needs-map-revision",
+      "suggestedPriority": "P1",
+      "objectiveCount": 1,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "GUIDED_QUESTION_TOO_LONG"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-0f35a3d73578f1dc",
+      "batch": 10,
+      "runIndex": 72,
+      "status": "accepted",
+      "priority": "P1",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P1",
+      "objectiveCount": 2,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "APPROVED_FOCUS_NOT_COVERED",
+        "APPROVED_FOCUS_NOT_COVERED",
+        "GUIDED_QUESTION_TOO_LONG",
+        "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "UNCOVERED_SUBSTANTIVE_SOURCE"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-0ff46d399379a99b",
+      "batch": 10,
+      "runIndex": 78,
+      "status": "accepted",
+      "priority": "P1",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P1",
+      "objectiveCount": 3,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "DEFINITION_ANSWER_MISSING_TERM_MEANING",
+        "DEFINITION_ANSWER_MISSING_TERM_MEANING"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-143fc780953799e6",
+      "batch": 3,
+      "runIndex": 23,
+      "status": "accepted",
+      "priority": "P3",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P3",
+      "objectiveCount": 4,
+      "validationStatus": "valid",
+      "issueCodes": [],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-15fa5c5ac251dfa1",
+      "batch": 2,
+      "runIndex": 15,
+      "status": "accepted",
+      "priority": "P4",
+      "authoringStatus": "needs-map-revision",
+      "suggestedPriority": "P4",
+      "objectiveCount": 3,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "ANSWER_APPEARS_TRUNCATED",
+        "ANSWER_APPEARS_TRUNCATED",
+        "ANSWER_APPEARS_TRUNCATED",
+        "MAIN_QUESTION_TOO_LONG",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-1d069dae182e4d4a",
+      "batch": 1,
+      "runIndex": 5,
+      "status": "accepted",
+      "priority": "P3",
+      "authoringStatus": "needs-map-revision",
+      "suggestedPriority": "P3",
+      "objectiveCount": 2,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "APPROVED_FOCUS_NOT_COVERED",
+        "POSSIBLE_MODALITY_MISMATCH",
+        "UNCOVERED_SUBSTANTIVE_SOURCE"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-21c62d64fd32c92f",
+      "batch": 4,
+      "runIndex": 31,
+      "status": "accepted",
+      "priority": "P1",
+      "authoringStatus": "needs-map-revision",
+      "suggestedPriority": "P1",
+      "objectiveCount": 3,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "APPROVED_FOCUS_NOT_COVERED",
+        "UNCOVERED_SUBSTANTIVE_SOURCE"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-24d4ce03d041f274",
+      "batch": 5,
+      "runIndex": 33,
+      "status": "accepted",
+      "priority": "P1",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P1",
+      "objectiveCount": 2,
+      "validationStatus": "valid",
+      "issueCodes": [],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-2e7e67eb0f35fe35",
+      "batch": 3,
+      "runIndex": 21,
+      "status": "accepted",
+      "priority": "P1",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P1",
+      "objectiveCount": 4,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "POSSIBLE_MODALITY_MISMATCH"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-2eedbe7a21cb2c32",
+      "batch": 4,
+      "runIndex": 24,
+      "status": "accepted",
+      "priority": "P2",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P2",
+      "objectiveCount": 2,
+      "validationStatus": "valid",
+      "issueCodes": [],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-2f3e7edff1d80df7",
+      "batch": 2,
+      "runIndex": 14,
+      "status": "accepted",
+      "priority": "P3",
+      "authoringStatus": "needs-map-revision",
+      "suggestedPriority": "P3",
+      "objectiveCount": 2,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "MAIN_QUESTION_TOO_LONG"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-38731a2761d264ad",
+      "batch": 10,
+      "runIndex": 76,
+      "status": "accepted",
+      "priority": "P1",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P1",
+      "objectiveCount": 2,
+      "validationStatus": "valid",
+      "issueCodes": [],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-40730d04faf14076",
+      "batch": 1,
+      "runIndex": 0,
+      "status": "accepted",
+      "priority": "P3",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P3",
+      "objectiveCount": 2,
+      "validationStatus": "valid",
+      "issueCodes": [],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-5d2a9f36002162d0",
+      "batch": 4,
+      "runIndex": 27,
+      "status": "accepted",
+      "priority": "P1",
+      "authoringStatus": "needs-map-revision",
+      "suggestedPriority": "P1",
+      "objectiveCount": 4,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "APPROVED_FOCUS_NOT_COVERED",
+        "APPROVED_FOCUS_NOT_COVERED",
+        "APPROVED_FOCUS_NOT_COVERED",
+        "APPROVED_FOCUS_NOT_COVERED",
+        "APPROVED_FOCUS_NOT_COVERED",
+        "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "UNCOVERED_SUBSTANTIVE_SOURCE"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-5fadda40929f11f0",
+      "batch": 4,
+      "runIndex": 26,
+      "status": "accepted",
+      "priority": "P2",
+      "authoringStatus": "needs-map-revision",
+      "suggestedPriority": "P2",
+      "objectiveCount": 5,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "APPROVED_FOCUS_NOT_COVERED",
+        "MAIN_QUESTION_TOO_LONG",
+        "UNCOVERED_SUBSTANTIVE_SOURCE"
+      ],
+      "rejectedSemanticAttempts": 1,
+      "attemptsUsed": 2,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-6a94737b69e069ce",
+      "batch": 3,
+      "runIndex": 16,
+      "status": "accepted",
+      "priority": "P4",
+      "authoringStatus": "needs-map-revision",
+      "suggestedPriority": "P4",
+      "objectiveCount": 4,
+      "validationStatus": "valid",
+      "issueCodes": [],
+      "rejectedSemanticAttempts": 1,
+      "attemptsUsed": 2,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-79f54c297756d4aa",
+      "batch": 5,
+      "runIndex": 35,
+      "status": "accepted",
+      "priority": "P1",
+      "authoringStatus": "needs-map-revision",
+      "suggestedPriority": "P1",
+      "objectiveCount": 3,
+      "validationStatus": "valid",
+      "issueCodes": [],
+      "rejectedSemanticAttempts": 1,
+      "attemptsUsed": 2,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-806dcd5f7b8ca4e8",
+      "batch": 5,
+      "runIndex": 32,
+      "status": "accepted",
+      "priority": "P1",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P1",
+      "objectiveCount": 2,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "APPROVED_FOCUS_NOT_COVERED",
+        "UNCOVERED_SUBSTANTIVE_SOURCE"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-892e38efffb31976",
+      "batch": 2,
+      "runIndex": 9,
+      "status": "accepted",
+      "priority": "P2",
+      "authoringStatus": "needs-map-revision",
+      "suggestedPriority": "P2",
+      "objectiveCount": 4,
+      "validationStatus": "valid",
+      "issueCodes": [],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-9aa4dea732c4bc43",
+      "batch": 2,
+      "runIndex": 11,
+      "status": "accepted",
+      "priority": "P3",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P3",
+      "objectiveCount": 4,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "MAIN_QUESTION_TOO_LONG"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-9ceefa172c31deea",
+      "batch": 1,
+      "runIndex": 3,
+      "status": "accepted",
+      "priority": "P3",
+      "authoringStatus": "needs-map-revision",
+      "suggestedPriority": "P3",
+      "objectiveCount": 4,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "MAIN_QUESTION_TOO_LONG"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-a795aa5cbc9d3ee6",
+      "batch": 5,
+      "runIndex": 36,
+      "status": "accepted",
+      "priority": "P2",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P2",
+      "objectiveCount": 2,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "APPROVED_FOCUS_NOT_COVERED",
+        "APPROVED_FOCUS_NOT_COVERED"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-ad5f94891873617a",
+      "batch": 1,
+      "runIndex": 6,
+      "status": "accepted",
+      "priority": "P3",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P3",
+      "objectiveCount": 4,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "APPROVED_FOCUS_NOT_COVERED",
+        "APPROVED_FOCUS_NOT_COVERED",
+        "MAIN_QUESTION_TOO_LONG",
+        "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "UNCOVERED_SUBSTANTIVE_SOURCE"
+      ],
+      "rejectedSemanticAttempts": 1,
+      "attemptsUsed": 2,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-ade0ea76fa6d04ef",
+      "batch": 3,
+      "runIndex": 18,
+      "status": "accepted",
+      "priority": "P3",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P3",
+      "objectiveCount": 3,
+      "validationStatus": "valid",
+      "issueCodes": [],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-b176ebe94507fd17",
+      "batch": 2,
+      "runIndex": 10,
+      "status": "accepted",
+      "priority": "P2",
+      "authoringStatus": "needs-map-revision",
+      "suggestedPriority": "P2",
+      "objectiveCount": 4,
+      "validationStatus": "valid",
+      "issueCodes": [],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-c7dc47a1735eb69d",
+      "batch": 4,
+      "runIndex": 28,
+      "status": "accepted",
+      "priority": "P2",
+      "authoringStatus": "needs-map-revision",
+      "suggestedPriority": "P2",
+      "objectiveCount": 3,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "GUIDED_QUESTION_TOO_LONG",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-d9b1e53de714665c",
+      "batch": 1,
+      "runIndex": 4,
+      "status": "accepted",
+      "priority": "P3",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P3",
+      "objectiveCount": 4,
+      "validationStatus": "valid",
+      "issueCodes": [],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-dc58323956b9fd42",
+      "batch": 3,
+      "runIndex": 19,
+      "status": "accepted",
+      "priority": "P3",
+      "authoringStatus": "needs-map-revision",
+      "suggestedPriority": "P3",
+      "objectiveCount": 4,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "APPROVED_FOCUS_NOT_COVERED",
+        "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE"
+      ],
+      "rejectedSemanticAttempts": 1,
+      "attemptsUsed": 2,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-de14b7aae121ea5a",
+      "batch": 2,
+      "runIndex": 12,
+      "status": "accepted",
+      "priority": "P3",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P3",
+      "objectiveCount": 3,
+      "validationStatus": "valid",
+      "issueCodes": [],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-df983b36ee36be82",
+      "batch": 2,
+      "runIndex": 13,
+      "status": "accepted",
+      "priority": "P3",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P3",
+      "objectiveCount": 4,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "MAIN_QUESTION_TOO_LONG"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-e60f2ed653e5363a",
+      "batch": 4,
+      "runIndex": 30,
+      "status": "accepted",
+      "priority": "P2",
+      "authoringStatus": "needs-map-revision",
+      "suggestedPriority": "P2",
+      "objectiveCount": 3,
+      "validationStatus": "valid",
+      "issueCodes": [],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-e9fe22342cc56c8a",
+      "batch": 1,
+      "runIndex": 7,
+      "status": "accepted",
+      "priority": "P3",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P3",
+      "objectiveCount": 3,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "MAIN_QUESTION_TOO_LONG"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-ea7e4c75c7a425ce",
+      "batch": 2,
+      "runIndex": 8,
+      "status": "accepted",
+      "priority": "P3",
+      "authoringStatus": "needs-map-revision",
+      "suggestedPriority": "P3",
+      "objectiveCount": 2,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "APPROVED_FOCUS_NOT_COVERED",
+        "UNCOVERED_SUBSTANTIVE_SOURCE"
+      ],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-f1d3de4004dd0d17",
+      "batch": 1,
+      "runIndex": 1,
+      "status": "accepted",
+      "priority": "P3",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P3",
+      "objectiveCount": 4,
+      "validationStatus": "warnings",
+      "issueCodes": [
+        "APPROVED_FOCUS_NOT_COVERED",
+        "UNCOVERED_SUBSTANTIVE_SOURCE"
+      ],
+      "rejectedSemanticAttempts": 1,
+      "attemptsUsed": 2,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    },
+    {
+      "jobId": "unit-fdccd69202d3a203",
+      "batch": 3,
+      "runIndex": 17,
+      "status": "accepted",
+      "priority": "P4",
+      "authoringStatus": "generated",
+      "suggestedPriority": "P4",
+      "objectiveCount": 3,
+      "validationStatus": "valid",
+      "issueCodes": [],
+      "rejectedSemanticAttempts": 0,
+      "attemptsUsed": 1,
+      "providerEventCount": 0,
+      "identityErrorCount": 0
+    }
+  ],
+  "subsets": {
+    "finalQc": {
+      "count": 20,
+      "parents": [
+        {
+          "parentId": "map-10ff468d35d10873",
+          "mapJobId": "map-10ff468d35d10873",
+          "documentTitle": "Registry Act",
+          "sections": [
+            "71"
+          ],
+          "unitJobIds": [
+            "unit-40730d04faf14076",
+            "unit-f1d3de4004dd0d17"
+          ],
+          "count": 2
+        },
+        {
+          "parentId": "map-19c48590a1b233de",
+          "mapJobId": "map-19c48590a1b233de",
+          "documentTitle": "Clean Water Act",
+          "sections": [
+            "40"
+          ],
+          "unitJobIds": [
+            "unit-02c1922ab2c2961a",
+            "unit-9ceefa172c31deea",
+            "unit-d9b1e53de714665c"
+          ],
+          "count": 3
+        },
+        {
+          "parentId": "map-445b7c242fa7ca8e",
+          "mapJobId": "map-445b7c242fa7ca8e",
+          "documentTitle": "Clean Water Act",
+          "sections": [
+            "13"
+          ],
+          "unitJobIds": [
+            "unit-1d069dae182e4d4a",
+            "unit-ad5f94891873617a",
+            "unit-e9fe22342cc56c8a",
+            "unit-ea7e4c75c7a425ce"
+          ],
+          "count": 4
+        },
+        {
+          "parentId": "map-48b1a91a069cabde",
+          "mapJobId": "map-48b1a91a069cabde",
+          "documentTitle": "Trespass Act",
+          "sections": [
+            "1"
+          ],
+          "unitJobIds": [
+            "unit-892e38efffb31976",
+            "unit-b176ebe94507fd17"
+          ],
+          "count": 2
+        },
+        {
+          "parentId": "map-52353c0c8b64b6d3",
+          "mapJobId": "map-52353c0c8b64b6d3",
+          "documentTitle": "Crown Lands and Forests Act",
+          "sections": [
+            "95"
+          ],
+          "unitJobIds": [
+            "unit-9aa4dea732c4bc43",
+            "unit-de14b7aae121ea5a",
+            "unit-df983b36ee36be82"
+          ],
+          "count": 3
+        },
+        {
+          "parentId": "map-7c48e28797b91624",
+          "mapJobId": "map-7c48e28797b91624",
+          "documentTitle": "Registry Act",
+          "sections": [
+            "66"
+          ],
+          "unitJobIds": [
+            "unit-2f3e7edff1d80df7"
+          ],
+          "count": 1
+        },
+        {
+          "parentId": "map-8860d90d22aae7ed",
+          "mapJobId": "map-8860d90d22aae7ed",
+          "documentTitle": "Public Health Act",
+          "sections": [
+            "68"
+          ],
+          "unitJobIds": [
+            "unit-15fa5c5ac251dfa1",
+            "unit-6a94737b69e069ce",
+            "unit-fdccd69202d3a203"
+          ],
+          "count": 3
+        },
+        {
+          "parentId": "map-d1fadd2dfd0ce395",
+          "mapJobId": "map-d1fadd2dfd0ce395",
+          "documentTitle": "Aquaculture Act",
+          "sections": [
+            "90"
+          ],
+          "unitJobIds": [
+            "unit-ade0ea76fa6d04ef",
+            "unit-dc58323956b9fd42"
+          ],
+          "count": 2
+        }
+      ],
+      "unitJobIds": [
+        "unit-02c1922ab2c2961a",
+        "unit-15fa5c5ac251dfa1",
+        "unit-1d069dae182e4d4a",
+        "unit-2f3e7edff1d80df7",
+        "unit-40730d04faf14076",
+        "unit-6a94737b69e069ce",
+        "unit-892e38efffb31976",
+        "unit-9aa4dea732c4bc43",
+        "unit-9ceefa172c31deea",
+        "unit-ad5f94891873617a",
+        "unit-ade0ea76fa6d04ef",
+        "unit-b176ebe94507fd17",
+        "unit-d9b1e53de714665c",
+        "unit-dc58323956b9fd42",
+        "unit-de14b7aae121ea5a",
+        "unit-df983b36ee36be82",
+        "unit-e9fe22342cc56c8a",
+        "unit-ea7e4c75c7a425ce",
+        "unit-f1d3de4004dd0d17",
+        "unit-fdccd69202d3a203"
+      ]
+    },
+    "regressionAnchors": {
+      "count": 7,
+      "rows": [
+        {
+          "targetId": "Boundaries Confirmation Act s.10",
+          "unitJobId": "unit-09121fea0dce567b",
+          "outcome": "accepted"
+        },
+        {
+          "targetId": "Surveys Act s.1",
+          "unitJobId": "unit-e60f2ed653e5363a",
+          "outcome": "accepted"
+        },
+        {
+          "targetId": "Land Titles Act s.18",
+          "unitJobId": "unit-21c62d64fd32c92f",
+          "outcome": "accepted"
+        },
+        {
+          "targetId": "Registry Act s.19",
+          "unitJobId": "unit-806dcd5f7b8ca4e8",
+          "outcome": "accepted"
+        },
+        {
+          "targetId": "Regulation 95-166 s.3",
+          "unitJobId": "unit-24d4ce03d041f274",
+          "outcome": "accepted"
+        },
+        {
+          "targetId": "Community Planning Act s.125",
+          "unitJobId": "unit-00066425d3dd3645",
+          "outcome": "accepted"
+        },
+        {
+          "targetId": "Occupational Health and Safety Act s.9",
+          "unitJobId": "unit-5fadda40929f11f0",
+          "outcome": "accepted"
+        }
+      ]
+    },
+    "retryNine": {
+      "count": 9,
+      "rows": [
+        {
+          "targetId": "Assessment Act s.15.3",
+          "unitJobId": "unit-047b933c1567c5dd",
+          "outcome": "accepted"
+        },
+        {
+          "targetId": "Community Planning Act s.1",
+          "unitJobId": "unit-2e7e67eb0f35fe35",
+          "outcome": "accepted"
+        },
+        {
+          "targetId": "Community Planning Act s.75",
+          "unitJobId": "unit-019c765ae138d8b5",
+          "outcome": "accepted"
+        },
+        {
+          "targetId": "Gas Distribution Act s.52",
+          "unitJobId": "unit-143fc780953799e6",
+          "outcome": "accepted"
+        },
+        {
+          "targetId": "Mining Act s.68",
+          "unitJobId": "unit-2eedbe7a21cb2c32",
+          "outcome": "accepted"
+        },
+        {
+          "targetId": "Municipalities Act s.100",
+          "unitJobId": "unit-023c1a4ddb31e2c5",
+          "outcome": "accepted"
+        },
+        {
+          "targetId": "Occupational Health and Safety Act s.9",
+          "unitJobId": "unit-5fadda40929f11f0",
+          "outcome": "accepted"
+        },
+        {
+          "targetId": "Property Act s.44",
+          "unitJobId": "unit-5d2a9f36002162d0",
+          "outcome": "accepted"
+        },
+        {
+          "targetId": "Registry Act s.44",
+          "unitJobId": "unit-c7dc47a1735eb69d",
+          "outcome": "accepted"
+        }
+      ]
+    },
+    "containsRepealedSubprovision": {
+      "count": 16,
+      "unitJobIds": [
+        "unit-02c1922ab2c2961a",
+        "unit-0ff46d399379a99b",
+        "unit-15fa5c5ac251dfa1",
+        "unit-1d069dae182e4d4a",
+        "unit-21c62d64fd32c92f",
+        "unit-2e7e67eb0f35fe35",
+        "unit-2f3e7edff1d80df7",
+        "unit-6a94737b69e069ce",
+        "unit-806dcd5f7b8ca4e8",
+        "unit-9ceefa172c31deea",
+        "unit-ad5f94891873617a",
+        "unit-c7dc47a1735eb69d",
+        "unit-d9b1e53de714665c",
+        "unit-e9fe22342cc56c8a",
+        "unit-ea7e4c75c7a425ce",
+        "unit-fdccd69202d3a203"
+      ]
+    }
+  }
+}
