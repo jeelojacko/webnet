@@ -343,6 +343,38 @@ splits, all four pinned anchors found (Clean Water Act s.40 and Aquaculture Act 
 now pinned as `resolved-grouped`). Tracked freeze report:
 `reports/study-map-final-freeze-20260901.json` + `.md`.
 
+### Study Unit Bridge — freeze gate, equivalence audit, and frozen-map group inventory (2026-09-02)
+
+New deterministic, no-inference bridge tooling for authoring Study Units from the frozen
+Study Map (pure logic in `src/study/ai/`, dispatcher in `scripts/studyUnitBridge.ts`):
+
+- `npx tsx scripts/studyUnitBridge.ts verify-freeze` — `verifyFrozenStudyMap` fails
+  closed on any mismatch against the tracked freeze report (runId, 3,692 result rows,
+  0 recorded invalid, 0 adjudication failures, pinned anchors found, recomputed
+  SHA-256 of the decision file and of `<runDir>/reports/map-proposals.json`, exact
+  recount of the priority distribution, the nine `groupingCorrections` jobIds, plus
+  schema-presence checks over every canonical result row) and carries the computed
+  canonical-results SHA-256. `auditMapProposalEquivalence` then joins all 3,692 rows ↔
+  3,692 proposals (`id = "<runId>:<jobId>"`) ↔ 3,692 prepared jobs: runId / jobId /
+  corpusContentHash / document / target sourceKeys & sectionLabels identity, and for
+  grouped rows full deep equality of `disposition` / `suggestedPriority` / `reason` /
+  `proposedGroups` (zero-group rows must keep empty groups + null priority). Exit 1 on
+  any issue; real-run verification: 0 issues, 0 mismatches.
+- `npx tsx scripts/studyUnitBridge.ts inventory` — provenance classifier over
+  `results/<mapJobId>.provenance.json` sidecars (classes: `final-QC-adjudicated` 9 =
+  grouping-adjudication reason; `human-adjudicated` 140 = other rows with
+  `adjudication.humanAdjudicated`; `retry-promoted` 6 = promotion block or a reference
+  to the retry-9 run `ai-map-2026-08-29T12-23-57-891Z-production-retry9-20260831-084717`;
+  `recovered` 14 = recovery block; `original` 3,523 = plain accepted) and
+  `buildFrozenMapGroupInventory` emits one deterministic row per (grouped result,
+  proposedGroup): 2,971 grouped results / 721 zero-group / 4,251 groups, ordered by
+  corpus document order → prepared-job section order → groupId, with row-level
+  priority (P1 382 / P2 2,236 / P3 1,312 / P4 321), provenance (final-QC 20 /
+  human 414 / retry-promoted 22 / recovered 14 / original 3,781), and parentKind
+  (standalone 2,309 / split 1,929 / combine 13) histograms;
+  `finalGroupingAdjudicationRows` = 20. Report: `reports/frozen-map-unit-group-inventory-20260902.json`
+  + `.md` (deterministic, no wall-clock; cross-record SHA-256s).
+
 ## Phase 4B.1.1 Targeted Map Pilot
 
 The remediation pilot uses a fixed targeted sample of 24 provisions that cover the known Study Map failure modes from the 100-job pilot: definition leakage, split granularity, mixed repealed subprovisions, repeal-only provisions, regulation-making provisions, citation/reference-only provisions, and substantive provisions previously misclassified as trivial.
