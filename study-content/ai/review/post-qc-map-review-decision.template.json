@@ -8,7 +8,7 @@
       "priorityDecision": "keep",
       "newPriority": null,
       "groupingDecision": "keep",
-      "notes": "Replace with real jobIds. priorityDecision: keep|change (newPriority P1-P4 required when change, null when keep). groupingDecision: keep|split|combine|reference-only|skip|needs-human-review. Priority-only changes are adjudicable; any grouping change requires a complete corrected Map result artifact. This preview CLI never modifies canonical results."
+      "notes": "Replace with real jobIds. priorityDecision: keep|change (newPriority P1-P4 required when change, null when keep). groupingDecision: keep|split|standalone|combine|reference-only|skip|needs-human-review. Priority-only changes are adjudicable; any grouping change requires a complete corrected Map result artifact. This preview CLI never modifies canonical results."
     }
   ]
 }

@@ -329,7 +329,7 @@ export interface PinnedAnchorCheck {
   label: string;
   expectedKind: 'zero-group-suspect' | 'broad-standalone';
   expectedCategory: AuditCategory | null;
-  expectation: 'detected' | 'excluded-repeal-metadata';
+  expectation: 'detected' | 'excluded-repeal-metadata' | 'resolved-grouped';
   found: boolean;
   detail: string;
 }
@@ -589,17 +589,23 @@ export interface PinnedAnchorExpectation {
    * 'excluded-repeal-metadata' anchors assert the negative case: the target
    * must be held out of suspect detection by the repeal-metadata guard
    * (sourceStatus 'repealed' or contentFlags.repealOnly), which pins the
-   * guard itself. Default is 'detected'.
+   * guard itself.
+   * 'resolved-grouped' anchors pin the post-QC human adjudications: the
+   * target must now be a grouped result and must no longer be detected by
+   * the suspect/broad-standalone scans.
+   * Default is 'detected'.
    */
-  expect?: 'detected' | 'excluded-repeal-metadata';
+  expect?: 'detected' | 'excluded-repeal-metadata' | 'resolved-grouped';
 }
 
 export const PINNED_ANCHORS: PinnedAnchorExpectation[] = [
   {
     jobId: 'map-19c48590a1b233de',
-    label: 'Clean Water Act s.40 — known-clear official-power miss',
+    label:
+      'Clean Water Act s.40 — official-power miss resolved by the final post-QC human review (split, P3)',
     kind: 'suspect',
     category: 'official-power',
+    expect: 'resolved-grouped',
   },
   {
     jobId: 'map-11fc0137f38dd967',
@@ -616,8 +622,10 @@ export const PINNED_ANCHORS: PinnedAnchorExpectation[] = [
   },
   {
     jobId: 'map-d1fadd2dfd0ce395',
-    label: 'Aquaculture Act s.90 — broad-review anchor',
+    label:
+      'Aquaculture Act s.90 — broad-review anchor resolved by the final post-QC human review (split)',
     kind: 'broad-standalone',
+    expect: 'resolved-grouped',
   },
 ];
 
@@ -901,6 +909,26 @@ export const buildPostQcSemanticAudit = (input: PostQcAuditInput): PostQcSemanti
   const pinnedChecks: PinnedAnchorCheck[] = PINNED_ANCHORS.map((anchor) => {
     const expectation: PinnedAnchorCheck['expectation'] =
       anchor.expect ?? 'detected';
+    if (expectation === 'resolved-grouped') {
+      const result = known.find((r) => r.jobId === anchor.jobId);
+      const grouped =
+        result !== undefined && result.proposedGroups.length > 0;
+      const broadRow = broadByJob.get(anchor.jobId) ?? anchoredBroadAnchor;
+      const stillDetected = suspectByJob.has(anchor.jobId) || broadRow !== null;
+      return {
+        jobId: anchor.jobId,
+        label: anchor.label,
+        expectedKind: anchor.kind === 'suspect' ? 'zero-group-suspect' : 'broad-standalone',
+        expectedCategory: anchor.category ?? null,
+        expectation,
+        found: grouped && !stillDetected,
+        detail: grouped
+          ? stillDetected
+            ? 'grouped, but still detected by the suspect/broad scan'
+            : 'resolved: grouped result, no longer detected by the scans'
+          : 'not a grouped result as expected',
+      };
+    }
     if (anchor.kind === 'suspect' && expectation === 'excluded-repeal-metadata') {
       const job = jobsById.get(anchor.jobId);
       const correctlyExcluded =

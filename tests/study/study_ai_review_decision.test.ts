@@ -165,7 +165,7 @@ describe('classifyMapReviewDecisions', () => {
   });
 
   it('classifies grouping changes as requiring a corrected Map result', () => {
-    for (const groupingDecision of ['split', 'combine', 'reference-only', 'skip'] as const) {
+    for (const groupingDecision of ['split', 'standalone', 'combine', 'reference-only', 'skip'] as const) {
       const file = validFile([
         { ...keepKeep('map-0000000000000002'), groupingDecision },
       ]);

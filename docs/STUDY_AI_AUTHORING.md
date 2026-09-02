@@ -331,6 +331,18 @@ completion-report.json/md
 
 Coverage gaps are keyed by `documentId::sourceKey` because legal source keys such as `section:1` repeat across documents. Review-bundle entries retain the selected record's own risk-stratum tier label (computed per record from its final validation state), never a single label taken from the first record of a stratum. Queue C clean/high-confidence proposals do not become approved Map content automatically; they are sampled for human semantic audit.
 
+### Final frozen state (2026-09-01)
+
+After the final post-QC human adjudication (below), the run is frozen at
+**3,692/3,692 accepted** with 144 human-adjudicated rows (135 priority-only rebases + 9
+grouping corrections) and 0 invalid under `study:ai:validate-results`. Final priority
+distribution: P1 175 / P2 1,458 / P3 1,054 / P4 284 / null 721. Regenerated post-QC
+reports (same 20260831 report family, rerun after adjudication): 25 zero-group suspects,
+P1 175 (90 core / 74 cadastral / 11 adjacent), 31 broad standalone suspects, 138 large
+splits, all four pinned anchors found (Clean Water Act s.40 and Aquaculture Act s.90 are
+now pinned as `resolved-grouped`). Tracked freeze report:
+`reports/study-map-final-freeze-20260901.json` + `.md`.
+
 ## Phase 4B.1.1 Targeted Map Pilot
 
 The remediation pilot uses a fixed targeted sample of 24 provisions that cover the known Study Map failure modes from the 100-job pilot: definition leakage, split granularity, mixed repealed subprovisions, repeal-only provisions, regulation-making provisions, citation/reference-only provisions, and substantive provisions previously misclassified as trivial.
@@ -635,6 +647,9 @@ npm run study:ai:post-qc-audit -- --run <run-id> [--date YYYYMMDD] [--dry-run]
 npm run study:ai:post-qc-bundles -- --run <run-id> [--date YYYYMMDD] [--dry-run]
 
 # Post-QC human review decisions: validate + preview only, never mutates canonical results
+
+# Final post-QC human adjudication batch (decision-file driven, dry-run by default)
+npm run study:ai:final-map-qc -- --run <run-id> --decisions <decisions.json> [--execute]
 npm run study:ai:review-map-post-qc -- --run <run-id> --decisions <decisions.json> [--dry-run]
 ```
 
@@ -731,8 +746,8 @@ with the field blanked).
 `src/study/ai/studyAiReviewDecision.ts` defines the human review-decision schema
 (`schemaVersion: 1`, `reviewType: "post-qc-map-semantic-review"`): per job, the reviewer
 chooses a `priorityDecision` (`keep` | `change` + `newPriority`) and a `groupingDecision`
-(`keep` | `split` | `combine` | `reference-only` | `skip` | `needs-human-review`). The
-parser rejects fabricated job IDs (must be `map-` + 16 hex digits), duplicates, and
+(`keep` | `split` | `standalone` | `combine` | `reference-only` | `skip` |
+`needs-human-review`). The parser rejects fabricated job IDs (must be `map-` + 16 hex digits), duplicates, and
 inconsistent fields, changing nothing.
 
 `scripts/studyAiReviewMapPostQc.ts` (`npm run study:ai:review-map-post-qc`) validates a
@@ -750,6 +765,51 @@ The CLI is preview-only: `--dry-run` prints the classification, a normal invocat
 `reports/review-decision-preview.json` under the run, and any parse/classification issue
 exits 1 without writing. It never modifies `results/`, provenance, or failure artifacts.
 Template: `study-content/ai/review/post-qc-map-review-decision.template.json`.
+
+### Final post-QC human adjudication and freeze (2026-09-01)
+
+The verified FINAL-CANDIDATE decision file
+(`temp/study-ai-final-map-review/chatgpt-post-qc-map-review-decisions-FINAL-CANDIDATE.json`,
+SHA-256 `f31f8012d941871e745932e6501f7cd4a3192bca25f7c6178db65e2a94b946d8`) classified 211
+decisions: 67 no-change, 135 priority-only-adjudicable, 9 requires-corrected-map-result,
+0 invalid. The `groupingDecision` vocabulary gained `standalone` (the corrected artifact
+carries exactly one proposed group) alongside `keep` / `split` / `combine` /
+`reference-only` / `skip` / `needs-human-review`.
+
+The nine grouping decisions were authored as full corrected Map result artifacts under
+`temp/study-ai-final-map-review/corrections/<jobId>.json` (human-authored and grounded; each
+validated through the ordinary `validateLocalResult` path with zero issues): Registry Act
+s.71 (split P3, 2 groups), Clean Water Act s.40 (split P3, 3 groups), Clean Water Act s.13
+(split P3, 4 groups, repealed s.13(1) excluded), Trespass Act s.1 (split P2, 2 groups),
+Crown Lands and Forests Act s.95 (split P3, 3 groups), Registry Act s.66 (standalone P3,
+repealed s.66(1) excluded), Public Health Act s.68 (split P4, 3 groups), Aquaculture Act
+s.90 (split P3, 2 groups), Service New Brunswick Act s.56 (skip, priority null, 0 groups).
+
+`scripts/studyAiFinalMapQcAdjudications.ts` (`npm run study:ai:final-map-qc`) applies all
+144 decisions deterministically and model-free, dry-run by default (`--execute` required):
+
+- verifies the decision-file SHA-256, then parses and classifies fail-closed (0 invalid
+  required; correction files must exactly match the grouping-change job set);
+- snapshots the 144 pre-adjudication result rows + provenance under the run's
+  `reports/final-map-qc-snapshot-20260901/`;
+- builds the labeled synthetic source run `final-map-qc-adjudications-20260901-src`
+  (production jobs reused verbatim; reconstructed `local-failures` attempt artifacts with
+  recorded `rawHash` and explicit reconstruction metadata);
+- priority-only payloads are the accepted row minus runner-owned identity fields with
+  `suggestedPriority` replaced; grouping payloads are the correction artifacts;
+- every job is adjudicated through the ordinary `adjudicateMapResult` path with reason
+  `post-qc-final-human-priority-adjudication` or `post-qc-final-human-grouping-adjudication`,
+  recording `decisionFileSha256` in provenance (the utility gained optional
+  `adjudicationReason` / `decisionFileSha256` options; CLI defaults are unchanged);
+- verifies 3,692 total rows, exactly one row per affected job at the expected final
+  priority, and byte-identical unaffected rows, failing closed otherwise.
+
+Outcome: 144/144 adjudicated; 3,692 rows / 0 invalid; the regenerated post-QC audit
+reports 25 zero-group suspects, P1 175 (90/74/11), 31 broad standalone suspects, 138 large
+splits, and all four pinned anchors — with `map-19c48590a1b233de` (Clean Water Act s.40)
+and `map-d1fadd2dfd0ce395` (Aquaculture Act s.90) repinned from expected-detected to
+`resolved-grouped` (grouped and no longer detected by the scans). The freeze is recorded in
+the tracked `reports/study-map-final-freeze-20260901.json` + `.md`.
 
 ## Commands
 

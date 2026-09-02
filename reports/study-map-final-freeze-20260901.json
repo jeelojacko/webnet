@@ -1,0 +1,276 @@
+{
+  "schemaVersion": 1,
+  "kind": "study-map-final-freeze-report",
+  "runId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+  "dateTag": "20260901",
+  "generatedAt": "2026-09-02T00:38:16.484Z",
+  "summary": "Final post-QC human adjudications applied to the canonical local-Qwen Study Map production run: 135 priority-only rebases and 9 grouping corrections driven by the verified FINAL-CANDIDATE decision file, adjudicated through the standard adjudication path with per-job provenance, then fully revalidated.",
+  "inputs": {
+    "decisionFile": "temp/study-ai-final-map-review/chatgpt-post-qc-map-review-decisions-FINAL-CANDIDATE.json",
+    "decisionFileSha256": "f31f8012d941871e745932e6501f7cd4a3192bca25f7c6178db65e2a94b946d8",
+    "correctionsDir": "temp/study-ai-final-map-review/corrections",
+    "sourceRun": "final-map-qc-adjudications-20260901-src",
+    "snapshot": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342/reports/final-map-qc-snapshot-20260901"
+  },
+  "decisionSummary": {
+    "total": 211,
+    "noChange": 67,
+    "priorityOnlyAdjudicable": 135,
+    "requiresCorrectedMapResult": 9,
+    "invalid": 0
+  },
+  "adjudication": {
+    "plannedJobs": 144,
+    "adjudicated": 144,
+    "failed": 0,
+    "verification": {
+      "resultRowsTotal": 3692,
+      "resultRowsInvalid": 0,
+      "oneRowPerAffectedJob": true,
+      "unaffectedRowsByteIdentical": true,
+      "validatorCommand": "npx tsx scripts/studyAiAuthoring.ts validate-results --run ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "validatorOutput": "Validated 3692 results for ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342; invalid 0"
+    }
+  },
+  "groupingCorrections": [
+    {
+      "jobId": "map-10ff468d35d10873",
+      "document": "Registry Act",
+      "section": "71",
+      "decision": {
+        "grouping": "split",
+        "priorityDecision": "keep",
+        "newPriority": null,
+        "notes": "Split Registry Act s.71 into regulation-making subjects under 71(1) and the distinct instrument-form compliance / registrar-discretion rule in 71(2)-(3)."
+      },
+      "final": {
+        "disposition": "split",
+        "suggestedPriority": "P3",
+        "proposedGroups": 2
+      },
+      "adjudicationReason": "post-qc-final-human-grouping-adjudication",
+      "decisionFileSha256": "f31f8012d941871e745932e6501f7cd4a3192bca25f7c6178db65e2a94b946d8"
+    },
+    {
+      "jobId": "map-19c48590a1b233de",
+      "document": "Clean Water Act",
+      "section": "40",
+      "decision": {
+        "grouping": "split",
+        "priorityDecision": "change",
+        "newPriority": "P3",
+        "notes": "CHANGE from reference-only to split. Study Map v3 expressly treats official powers as independent study value; Clean Water Act s.40 is a large regulation-making power and should be mapped, probably at P3."
+      },
+      "final": {
+        "disposition": "split",
+        "suggestedPriority": "P3",
+        "proposedGroups": 3
+      },
+      "adjudicationReason": "post-qc-final-human-grouping-adjudication",
+      "decisionFileSha256": "f31f8012d941871e745932e6501f7cd4a3192bca25f7c6178db65e2a94b946d8"
+    },
+    {
+      "jobId": "map-445b7c242fa7ca8e",
+      "document": "Clean Water Act",
+      "section": "13",
+      "decision": {
+        "grouping": "split",
+        "priorityDecision": "change",
+        "newPriority": "P3",
+        "notes": "Clean Water Act s.13 was incorrectly skipped because bad repeal metadata said the whole section was repealed. After repair, 13(2)-(8) are live substantive rules. Split into coherent recall groups covering the supply prohibition; current significant-health-risk response; future-risk response; and private-well/procedural consequences. Suggested priority P3."
+      },
+      "final": {
+        "disposition": "split",
+        "suggestedPriority": "P3",
+        "proposedGroups": 4
+      },
+      "adjudicationReason": "post-qc-final-human-grouping-adjudication",
+      "decisionFileSha256": "f31f8012d941871e745932e6501f7cd4a3192bca25f7c6178db65e2a94b946d8"
+    },
+    {
+      "jobId": "map-48b1a91a069cabde",
+      "document": "Trespass Act",
+      "section": "1",
+      "decision": {
+        "grouping": "split",
+        "priorityDecision": "change",
+        "newPriority": "P2",
+        "notes": "Split Trespass Act s.1 definitions into core trespass/actor/vehicle terms and land/shore/marsh/high-water-mark/watercourse terms; the current all-definitions unit is too broad."
+      },
+      "final": {
+        "disposition": "split",
+        "suggestedPriority": "P2",
+        "proposedGroups": 2
+      },
+      "adjudicationReason": "post-qc-final-human-grouping-adjudication",
+      "decisionFileSha256": "f31f8012d941871e745932e6501f7cd4a3192bca25f7c6178db65e2a94b946d8"
+    },
+    {
+      "jobId": "map-52353c0c8b64b6d3",
+      "document": "Crown Lands and Forests Act",
+      "section": "95",
+      "decision": {
+        "grouping": "split",
+        "priorityDecision": "keep",
+        "newPriority": null,
+        "notes": "Split Crown Lands and Forests Act s.95 into thematic regulation-power groups: Crown land surveys/tenure/access; forest management/harvest/royalty (with 95(2)); and remaining administration/advisory/fees."
+      },
+      "final": {
+        "disposition": "split",
+        "suggestedPriority": "P3",
+        "proposedGroups": 3
+      },
+      "adjudicationReason": "post-qc-final-human-grouping-adjudication",
+      "decisionFileSha256": "f31f8012d941871e745932e6501f7cd4a3192bca25f7c6178db65e2a94b946d8"
+    },
+    {
+      "jobId": "map-7c48e28797b91624",
+      "document": "Registry Act",
+      "section": "66",
+      "decision": {
+        "grouping": "standalone",
+        "priorityDecision": "change",
+        "newPriority": "P3",
+        "notes": "Registry Act s.66 was incorrectly skipped because bad repeal metadata marked the whole section repealed. Section 66(1) is repealed, but 66(2)-(3) are live: registry-office employees may not retain fees for personal use, and violation results in dismissal. Re-author as one standalone StudyUnit at P3."
+      },
+      "final": {
+        "disposition": "standalone",
+        "suggestedPriority": "P3",
+        "proposedGroups": 1
+      },
+      "adjudicationReason": "post-qc-final-human-grouping-adjudication",
+      "decisionFileSha256": "f31f8012d941871e745932e6501f7cd4a3192bca25f7c6178db65e2a94b946d8"
+    },
+    {
+      "jobId": "map-8860d90d22aae7ed",
+      "document": "Public Health Act",
+      "section": "68",
+      "decision": {
+        "grouping": "split",
+        "priorityDecision": "change",
+        "newPriority": "P4",
+        "notes": "CHANGE from reference-only to split. Study Map v3 expressly treats official powers as independent study value; Public Health Act s.68 is a large regulation-making power and should be mapped, but is peripheral here, so P4 is appropriate."
+      },
+      "final": {
+        "disposition": "split",
+        "suggestedPriority": "P4",
+        "proposedGroups": 3
+      },
+      "adjudicationReason": "post-qc-final-human-grouping-adjudication",
+      "decisionFileSha256": "f31f8012d941871e745932e6501f7cd4a3192bca25f7c6178db65e2a94b946d8"
+    },
+    {
+      "jobId": "map-d1fadd2dfd0ce395",
+      "document": "Aquaculture Act",
+      "section": "90",
+      "decision": {
+        "grouping": "split",
+        "priorityDecision": "keep",
+        "newPriority": null,
+        "notes": "Split Aquaculture Act s.90: the long subject-matter list in 90(1) should not share one recall unit with the distinct incorporation-by-reference and variation/application mechanics in 90(2)-(4)."
+      },
+      "final": {
+        "disposition": "split",
+        "suggestedPriority": "P3",
+        "proposedGroups": 2
+      },
+      "adjudicationReason": "post-qc-final-human-grouping-adjudication",
+      "decisionFileSha256": "f31f8012d941871e745932e6501f7cd4a3192bca25f7c6178db65e2a94b946d8"
+    },
+    {
+      "jobId": "map-d747c4a97d7161d3",
+      "document": "Service New Brunswick Act",
+      "section": "56",
+      "decision": {
+        "grouping": "skip",
+        "priorityDecision": "keep",
+        "newPriority": null,
+        "notes": "Skip Service New Brunswick Act s.56. It is a transitional institutional dissolution/wind-up package with very low independent recall value."
+      },
+      "final": {
+        "disposition": "skip",
+        "suggestedPriority": null,
+        "proposedGroups": 0
+      },
+      "adjudicationReason": "post-qc-final-human-grouping-adjudication",
+      "decisionFileSha256": "f31f8012d941871e745932e6501f7cd4a3192bca25f7c6178db65e2a94b946d8"
+    }
+  ],
+  "finalState": {
+    "resultRows": 3692,
+    "priorityDistribution": {
+      "P3": 1054,
+      "P2": 1458,
+      "P4": 284,
+      "null": 721,
+      "P1": 175
+    },
+    "pinnedAnchors": {
+      "allFound": true,
+      "checks": [
+        {
+          "jobId": "map-19c48590a1b233de",
+          "expectation": "resolved-grouped",
+          "found": true
+        },
+        {
+          "jobId": "map-11fc0137f38dd967",
+          "expectation": "detected",
+          "found": true
+        },
+        {
+          "jobId": "map-21050fd5c7830508",
+          "expectation": "detected",
+          "found": true
+        },
+        {
+          "jobId": "map-d1fadd2dfd0ce395",
+          "expectation": "resolved-grouped",
+          "found": true
+        }
+      ]
+    }
+  },
+  "postQcAudit": {
+    "file": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342/reports/post-qc-semantic-audit-20260831.json",
+    "sha256": "19c8ca793e38ca4e3a0006be8e990c0f23690c63cb475b5367ae320c40135de1",
+    "suspects": 25,
+    "p1": {
+      "total": 175,
+      "byBucket": {
+        "core-surveying-licensing": 90,
+        "cadastral-property-registration-planning": 74,
+        "adjacent-general-law": 11
+      }
+    },
+    "broadStandalone": 31,
+    "largeSplits": 138,
+    "allPinnedAnchorsFound": true
+  },
+  "regeneratedReports": [
+    {
+      "file": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342/reports/post-qc-semantic-audit-20260831.json",
+      "sha256": "19c8ca793e38ca4e3a0006be8e990c0f23690c63cb475b5367ae320c40135de1"
+    },
+    {
+      "file": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342/reports/post-qc-adjacent-p1-review-20260831.json",
+      "sha256": "b91888eeeb0cc1494b6268d59ab5c4a04f9e4dbde3e9adffc72eb1d6fc040d6c"
+    },
+    {
+      "file": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342/reports/post-qc-broad-group-review-20260831.json",
+      "sha256": "c9b127a5ecacb7c025302d1b73d6867e502c12214f57922676dd28bc647c4ca7"
+    },
+    {
+      "file": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342/reports/review-decision-preview.json",
+      "sha256": "2f9cea7cf064d4095c72801596ac144dd34c94b78580bf444de8fd38138301a0"
+    },
+    {
+      "file": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342/reports/map-proposals.json",
+      "sha256": "b2726e8eae321a8d3a104520def8f0ab20abcf925ffdc1f4f2949ed0c7ff194e"
+    },
+    {
+      "file": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342/reports/validation.json",
+      "sha256": "fc3c74f6bf6510628dd98ef9ea08b4cb5819b94cf2d3c8aebda911d9cc6004a9"
+    }
+  ]
+}

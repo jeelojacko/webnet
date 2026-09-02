@@ -39,6 +39,7 @@
     "study:ai:post-qc-audit": "tsx scripts/studyAiAuditPostProductionSemantics.ts",
     "study:ai:post-qc-bundles": "tsx scripts/studyAiPostQcReviewBundles.ts",
     "study:ai:review-map-post-qc": "tsx scripts/studyAiReviewMapPostQc.ts",
+    "study:ai:final-map-qc": "tsx scripts/studyAiFinalMapQcAdjudications.ts",
     "study:ai:validate-unit-proposals": "tsx scripts/studyAiAuthoring.ts validate-unit-proposals",
     "study:ai:pilot-report": "tsx scripts/studyAiAuthoring.ts pilot-report",
     "crs:report:canada": "tsx scripts/reportCanadianCrsCatalog.ts",

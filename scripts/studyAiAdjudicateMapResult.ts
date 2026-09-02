@@ -49,7 +49,17 @@ export type AdjudicateMapResultOptions = {
   adjudicatedAt?: string;
   /** Root for run directories; defaults to the repository RUNS_DIR. */
   runsDir?: string;
+  /**
+   * Provenance label for the adjudication; defaults to the original
+   * 'final-production-tail-human-adjudication' label so existing callers keep
+   * byte-identical provenance.
+   */
+  adjudicationReason?: string;
+  /** SHA-256 of the human decision file that drives this adjudication, when any. */
+  decisionFileSha256?: string;
 };
+
+export const DEFAULT_ADJUDICATION_REASON = 'final-production-tail-human-adjudication';
 
 export type AdjudicateMapResultOutcome = {
   jobId: string;
@@ -102,8 +112,23 @@ const adjudicationProvenance = (
   correctedOutputHash: string,
   result: AiStudyMapResult,
   adjudicatedAt: string,
+  adjudicationReason: string,
+  decisionFileSha256: string | null,
 ): Record<string, unknown> => {
   const { issues, ...base } = validation;
+  const adjudication: Record<string, unknown> = {
+    humanAdjudicated: true,
+    sourceRun: sourceRunId,
+    sourceAttempt,
+    sourceRawHash,
+    correctedOutputHash,
+    resultRowHash: hashText(JSON.stringify(result)),
+    preAdjudicationIssues: Array.isArray(issues) ? issues : [],
+    adjudicationReason,
+    adjudicatedVia: 'study:ai:adjudicate-result',
+    adjudicatedAt,
+  };
+  if (decisionFileSha256 !== null) adjudication.decisionFileSha256 = decisionFileSha256;
   return {
     ...base,
     jobId: job.jobId,
@@ -111,18 +136,7 @@ const adjudicationProvenance = (
     authoringInputFingerprint: authoringInputFingerprint(job),
     rawHash: sourceRawHash,
     accepted: true,
-    adjudication: {
-      humanAdjudicated: true,
-      sourceRun: sourceRunId,
-      sourceAttempt,
-      sourceRawHash,
-      correctedOutputHash,
-      resultRowHash: hashText(JSON.stringify(result)),
-      preAdjudicationIssues: Array.isArray(issues) ? issues : [],
-      adjudicationReason: 'final-production-tail-human-adjudication',
-      adjudicatedVia: 'study:ai:adjudicate-result',
-      adjudicatedAt,
-    },
+    adjudication,
   };
 };
 
@@ -222,6 +236,8 @@ const adjudicateOne = (
       correctedOutputHash,
       result,
       options.adjudicatedAt ?? new Date().toISOString(),
+      options.adjudicationReason ?? DEFAULT_ADJUDICATION_REASON,
+      options.decisionFileSha256 ?? null,
     ),
   );
   outcome.status = 'adjudicated';

@@ -8,8 +8,8 @@
  * the grouping:
  *
  *   priorityDecision: 'keep' | 'change'   (with newPriority P1-P4 when change)
- *   groupingDecision: 'keep' | 'split' | 'combine' | 'reference-only' |
- *                     'skip' | 'needs-human-review'
+ *   groupingDecision: 'keep' | 'split' | 'standalone' | 'combine' |
+ *                     'reference-only' | 'skip' | 'needs-human-review'
  *
  * Classification (preview only — canonical results are never modified):
  *
@@ -34,6 +34,7 @@ export type PriorityDecision = 'keep' | 'change';
 export type GroupingDecision =
   | 'keep'
   | 'split'
+  | 'standalone'
   | 'combine'
   | 'reference-only'
   | 'skip'
@@ -49,6 +50,7 @@ const PRIORITY_DECISION_VALUES: PriorityDecision[] = ['keep', 'change'];
 const GROUPING_DECISION_VALUES: GroupingDecision[] = [
   'keep',
   'split',
+  'standalone',
   'combine',
   'reference-only',
   'skip',
