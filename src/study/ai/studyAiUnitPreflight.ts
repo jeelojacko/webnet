@@ -72,6 +72,19 @@ export const FROZEN_UNIT_PREFLIGHT_BATCH_SIZE = 20;
 export const FROZEN_UNIT_PREFLIGHT_PROVIDER_KIND = 'local-openai-compatible' as const;
 export const FROZEN_UNIT_JOB_TYPE = 'unit-authoring' as const;
 
+/**
+ * Report filename version tag for preflight-family outputs: '' under the
+ * default v4 spec (so v4 artifacts keep their exact historical names) and
+ * the spec suffix (e.g. 'v5') for newer specs so a v5 preflight emits
+ * `unit-authoring-preflight-v5-<dateTag>.*` instead of overwriting v4
+ * artifacts.
+ */
+export const unitAuthoringReportVersionTag = (promptSpecVersion: string): string => {
+  if (promptSpecVersion === FROZEN_UNIT_PROMPT_SPEC_VERSION) return '';
+  const suffix = promptSpecVersion.replace(/^unit-authoring-/, '');
+  return suffix !== promptSpecVersion ? suffix : '';
+};
+
 export type FrozenUnitPreflightOptions = {
   /** Freeze report path (default: tracked reports/study-map-final-freeze-*.json). */
   freezeReportPath?: string;
@@ -90,6 +103,9 @@ export type FrozenUnitPreflightOptions = {
   /** Fixed run.json createdAt/updatedAt (no wall-clock). */
   generatedAt?: string;
   dateTag?: string;
+  /** Unit authoring prompt spec version stamped on jobs / run.json / reports
+   *  (default FROZEN_UNIT_PROMPT_SPEC_VERSION, 'unit-authoring-v4'). */
+  promptSpecVersion?: string;
   /** Freeze-gate expectations (defaults to the frozen constants; synthetic
    *  fixtures override them). */
   expectedResultRows?: number;
@@ -287,6 +303,7 @@ export const runFrozenUnitPreflight = (
   const batchSize = opts.batchSize ?? FROZEN_UNIT_PREFLIGHT_BATCH_SIZE;
   const generatedAt = opts.generatedAt ?? FROZEN_UNIT_PREFLIGHT_GENERATED_AT;
   const dateTag = opts.dateTag ?? FROZEN_UNIT_PREFLIGHT_DATE_TAG;
+  const promptSpecVersion = opts.promptSpecVersion ?? FROZEN_UNIT_PROMPT_SPEC_VERSION;
 
   // Step 1: freeze gate (fail closed).
   const gate = verifyFrozenStudyMap({
@@ -377,7 +394,7 @@ export const runFrozenUnitPreflight = (
           group,
           package: packageObject,
           runId,
-          promptSpecVersion: FROZEN_UNIT_PROMPT_SPEC_VERSION,
+          promptSpecVersion,
           corpusContentHash,
           sourceMapRunId: FROZEN_MAP_RUN_ID,
           withFrozenPriority: true,
@@ -405,7 +422,7 @@ export const runFrozenUnitPreflight = (
         runId,
         jobType: FROZEN_UNIT_JOB_TYPE,
         providerKind: FROZEN_UNIT_PREFLIGHT_PROVIDER_KIND,
-        promptSpecVersion: FROZEN_UNIT_PROMPT_SPEC_VERSION,
+        promptSpecVersion,
       },
       sourceMapRunId: FROZEN_MAP_RUN_ID,
       proposal: entry.proposal,
@@ -437,7 +454,7 @@ export const runFrozenUnitPreflight = (
     meta: {
       runId,
       sourceMapRunId: FROZEN_MAP_RUN_ID,
-      promptSpecVersion: FROZEN_UNIT_PROMPT_SPEC_VERSION,
+      promptSpecVersion,
       createdAt: generatedAt,
       updatedAt: generatedAt,
       corpusContentHash,
@@ -459,7 +476,7 @@ export const runFrozenUnitPreflight = (
     runId,
     generatedAt,
     sourceMapRunId: FROZEN_MAP_RUN_ID,
-    promptSpecVersion: FROZEN_UNIT_PROMPT_SPEC_VERSION,
+    promptSpecVersion,
     batchSize,
     runDir: newRunDir,
     corpusPackagePath,

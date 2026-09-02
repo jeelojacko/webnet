@@ -22,6 +22,7 @@ import {
   sourceSectionFromKey,
 } from './studyAiUnitFidelity';
 import { validateStudyMapV3ResultContract } from './studyAiResultContract';
+import { validateUnitRevisionContractV5 } from './studyAiUnitRevisionContract';
 
 const CONFIDENCES = new Set(['high', 'medium', 'low']);
 const SOURCE_STATUSES = new Set(['current', 'repealed', 'historical']);
@@ -1186,8 +1187,13 @@ const validateMapRevisionSuggestion = (
   sourceComponents: ImportedLegalComponent[],
   issues: AiValidationIssue[],
 ): void => {
+  const version = proposal.generationMetadata.promptSpecVersion;
+  if (version === 'unit-authoring-v5') {
+    validateUnitRevisionContractV5(proposal, issues, sourceComponents);
+    return;
+  }
+  if (version !== 'unit-authoring-v4') return;
   if (!proposal.warnings?.includes('MAP_GROUP_TOO_BROAD_FOR_GOOD_UNIT')) return;
-  if (proposal.generationMetadata.promptSpecVersion !== 'unit-authoring-v4') return;
   if (proposal.authoringStatus !== 'needs-map-revision') {
     addIssue(issues, {
       code: 'BROAD_GROUP_MUST_NEED_MAP_REVISION',

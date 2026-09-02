@@ -9,6 +9,8 @@ import {
   LOCAL_UNIT_AUTHOR_HELP,
   UNIT_AUTHORING_V4_SPEC_PATH,
   UNIT_AUTHORING_V4_SPEC_VERSION,
+  UNIT_AUTHORING_V5_SPEC_PATH,
+  UNIT_AUTHORING_V5_SPEC_VERSION,
   runLocalUnitAuthoring,
   optionsFromArgs,
   hashText,
@@ -650,5 +652,104 @@ describe('study_ai_local_unit_author configuration', () => {
     expect(LOCAL_UNIT_AUTHOR_HELP).toContain(LOCAL_UNIT_RESULTS_FILE);
     expect(LOCAL_UNIT_AUTHOR_HELP).toContain('unit-authoring-v4');
     expect(UNIT_AUTHORING_V4_SPEC_PATH).toBe('study-content/ai/specs/unit-authoring-v4.md');
+  });
+});
+
+type ChatRequestBody = { messages: Array<{ role: string; content: string }> };
+
+/** sha256 of the v4 system prompt as composed before v5 support (byte pin). */
+const LEGACY_V4_SYSTEM_PROMPT_SHA256 =
+  '7b0360e62d285282d7bf87d428628be629ffb8d73823d1e1dbcd58ffe4dff51c';
+
+const specSha256Of = (path: string): string => hashText(readFileSync(path, 'utf8'));
+
+describe('study_ai_local_unit_author v5 support', () => {
+  it('accepts a synthetic unit-authoring-v5 run end to end and pins v5 spec provenance', async () => {
+    const fixture = useFixture();
+    writePackage(fixture);
+    const job = {
+      ...unitJobFor(RUN_ID, SOURCE_71),
+      jobId: 'unit-test-v5-1',
+      promptSpecVersion: UNIT_AUTHORING_V5_SPEC_VERSION,
+    };
+    writeUnitRun(fixture, [job], { promptSpecVersion: UNIT_AUTHORING_V5_SPEC_VERSION });
+    const bodies: ChatRequestBody[] = [];
+    const fetchMock: FetchLike = async (_input, init) => {
+      bodies.push(JSON.parse(init.body ?? '{}') as ChatRequestBody);
+      return chatResponseFor(job);
+    };
+    const result = await runLocalUnitAuthoring(unitOptions(fixture), fetchMock);
+    expect(result).toMatchObject({ accepted: 1, semanticFailed: 0, skipped: 0, providerIncomplete: 0 });
+
+    const system = bodies[0]?.messages.find((message) => message.role === 'system')?.content ?? '';
+    const v5Sha = specSha256Of(UNIT_AUTHORING_V5_SPEC_PATH);
+    const v4Sha = specSha256Of(UNIT_AUTHORING_V4_SPEC_PATH);
+    expect(system).toContain(UNIT_AUTHORING_V5_SPEC_PATH);
+    expect(system).toContain(v5Sha);
+    expect(system).not.toContain(v4Sha);
+
+    const [stored] = readResults(fixture);
+    expect((stored.generationMetadata as Record<string, unknown>).promptSpecVersion).toBe(
+      UNIT_AUTHORING_V5_SPEC_VERSION,
+    );
+    const metadata = JSON.parse(
+      readFileSync(join(fixture.runDir, 'reports', 'local-run-metadata.json'), 'utf8'),
+    ) as Record<string, unknown>;
+    expect(metadata.promptSpecVersion).toBe(UNIT_AUTHORING_V5_SPEC_VERSION);
+    expect(metadata.promptSha256).toBe(v5Sha);
+    expect(UNIT_AUTHORING_V5_SPEC_PATH).toBe('study-content/ai/specs/unit-authoring-v5.md');
+  });
+
+  it('keeps the v4 system prompt byte-identical (legacy prompt sha pinned)', async () => {
+    const fixture = useFixture();
+    writePackage(fixture);
+    const job = unitJobFor(RUN_ID, SOURCE_71);
+    writeUnitRun(fixture, [job]);
+    const bodies: ChatRequestBody[] = [];
+    const fetchMock: FetchLike = async (_input, init) => {
+      bodies.push(JSON.parse(init.body ?? '{}') as ChatRequestBody);
+      return chatResponseFor(job);
+    };
+    const result = await runLocalUnitAuthoring(unitOptions(fixture), fetchMock);
+    expect(result.accepted).toBe(1);
+    const system = bodies[0]?.messages.find((message) => message.role === 'system')?.content ?? '';
+    expect(system.length).toBeGreaterThan(0);
+    expect(hashText(system)).toBe(LEGACY_V4_SYSTEM_PROMPT_SHA256);
+  });
+
+  it('fails closed on an unsupported run promptSpecVersion, naming the offending value', async () => {
+    const fixture = useFixture();
+    writePackage(fixture);
+    writeUnitRun(fixture, [unitJobFor(RUN_ID, SOURCE_71)], {
+      promptSpecVersion: 'unit-authoring-v6',
+    });
+    const neverFetch: FetchLike = async () => {
+      throw new Error('provider must not be called');
+    };
+    const error = await runLocalUnitAuthoring(unitOptions(fixture, { dryRun: true }), neverFetch)
+      .then(() => null)
+      .catch((caught: unknown) => caught as Error);
+    expect(error?.message).toContain('unit-authoring-v6');
+    expect(error?.message).toContain('unit-authoring-v4 | unit-authoring-v5');
+  });
+
+  it('fails closed when a v5 run carries a v4 job, naming the offending job', async () => {
+    const fixture = useFixture();
+    writePackage(fixture);
+    const v4Job = unitJobFor(RUN_ID, SOURCE_71);
+    writeUnitRun(fixture, [v4Job], { promptSpecVersion: UNIT_AUTHORING_V5_SPEC_VERSION });
+    const neverFetch: FetchLike = async () => {
+      throw new Error('provider must not be called');
+    };
+    const error = await runLocalUnitAuthoring(unitOptions(fixture, { dryRun: true }), neverFetch)
+      .then(() => null)
+      .catch((caught: unknown) => caught as Error);
+    expect(error?.message).toContain(JOB_71);
+    expect(error?.message).toContain('unit-authoring-v4');
+    expect(error?.message).toContain('unit-authoring-v5');
+  });
+
+  it('documents both supported spec versions in the help text', () => {
+    expect(LOCAL_UNIT_AUTHOR_HELP).toContain('unit-authoring-v4 | unit-authoring-v5');
   });
 });

@@ -27,12 +27,18 @@ import {
 } from '../src/study/ai/studyAiUnitInventory';
 import {
   runFrozenUnitPreflight,
+  unitAuthoringReportVersionTag,
   type FrozenUnitPreflightOptions,
 } from '../src/study/ai/studyAiUnitPreflight';
 import {
   buildUnitAuthoringPreflightReport,
   renderUnitAuthoringPreflightReportMd,
 } from '../src/study/ai/studyAiUnitPreflightReport';
+import {
+  buildCal80V5Run,
+  type BuildCal80V5RunOptions,
+} from '../src/study/ai/studyAiUnitCalibrationV5';
+import { renderV4V5CrosswalkReportMd } from '../src/study/ai/studyAiUnitCalibrationV5Report';
 import {
   runUnitCalibration80,
   type RunUnitCalibration80Options,
@@ -109,9 +115,8 @@ const writeText = (path: string, value: string): void => {
 const commandPreflight = (options: Record<string, string>): number => {
   const preflightOptions: FrozenUnitPreflightOptions = {};
   if (options['run-dir-root']) preflightOptions.runDirRoot = options['run-dir-root'];
-  if (options['reports-dir']) {
-    // reports-dir is consumed by the report writer below, not the module.
-  }
+  if (options['run-id']) preflightOptions.runId = options['run-id'];
+  if (options['spec-version']) preflightOptions.promptSpecVersion = options['spec-version'];
   const reportsDir = options['reports-dir'] ?? 'reports';
   const result = runFrozenUnitPreflight(preflightOptions);
   if (!result.ok) {
@@ -128,8 +133,10 @@ const commandPreflight = (options: Record<string, string>): number => {
     return EXIT_FAILURE;
   }
   const report = buildUnitAuthoringPreflightReport(result);
-  const jsonPath = join(reportsDir, `unit-authoring-preflight-${report.dateTag}.json`);
-  const mdPath = join(reportsDir, `unit-authoring-preflight-${report.dateTag}.md`);
+  const versionTag = unitAuthoringReportVersionTag(report.promptSpecVersion);
+  const reportTag = versionTag === '' ? '' : `-${versionTag}`;
+  const jsonPath = join(reportsDir, `unit-authoring-preflight${reportTag}-${report.dateTag}.json`);
+  const mdPath = join(reportsDir, `unit-authoring-preflight${reportTag}-${report.dateTag}.md`);
   writeJson(jsonPath, report);
   writeText(mdPath, renderUnitAuthoringPreflightReportMd(report));
   const summary = {
@@ -214,6 +221,58 @@ const commandCalibrate = (options: Record<string, string>): number => {
   return EXIT_OK;
 };
 
+const commandCalibrateV5 = (options: Record<string, string>): number => {
+  const reportsDir = options['reports-dir'] ?? 'reports';
+  const calibrationOptions: BuildCal80V5RunOptions = {};
+  if (options['v4-run-dir']) calibrationOptions.v4RunDir = options['v4-run-dir'];
+  if (options['v5-preflight-run-dir'])
+    calibrationOptions.v5PreflightRunDir = options['v5-preflight-run-dir'];
+  if (options['run-dir-root']) calibrationOptions.runDirRoot = options['run-dir-root'];
+  if (options['run-id']) calibrationOptions.runId = options['run-id'];
+  try {
+    const result = buildCal80V5Run(calibrationOptions);
+    const crosswalk = result.crosswalk;
+    const jsonPath = join(reportsDir, `unit-calibration-v4-v5-crosswalk-${crosswalk.dateTag}.json`);
+    const mdPath = join(reportsDir, `unit-calibration-v4-v5-crosswalk-${crosswalk.dateTag}.md`);
+    writeJson(jsonPath, crosswalk);
+    writeText(mdPath, renderV4V5CrosswalkReportMd(crosswalk));
+    const summary = {
+      command: 'calibrate-v5',
+      ok: true,
+      runId: result.runId,
+      v4RunId: result.v4RunId,
+      v5PreflightRunId: result.v5PreflightRunId,
+      sourceMapRunId: result.sourceMapRunId,
+      promptSpecVersion: result.promptSpecVersion,
+      dateTag: result.dateTag,
+      batchSize: result.batchSize,
+      cohort: result.cohort,
+      priority: result.priorityDistribution,
+      specShas: result.specShas,
+      validation: result.validation,
+      runLayout: {
+        batchCount: result.layout.batchCount,
+        batchSizes: result.layout.batchSizes,
+        runJsonSha256: result.layout.runJsonSha256,
+        unitJobReportSha256: result.layout.unitJobReportSha256,
+      },
+      wroteRunDir: result.runDir,
+      wroteJson: jsonPath,
+      wroteMd: mdPath,
+    };
+    process.stdout.write(`${JSON.stringify(summary, null, 2)}\n`);
+    return EXIT_OK;
+  } catch (error) {
+    const summary = {
+      command: 'calibrate-v5',
+      ok: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
+    process.stdout.write(`${JSON.stringify(summary, null, 2)}\n`);
+    return EXIT_FAILURE;
+  }
+};
+
 const usage = (): string =>
   [
     'Usage: npx tsx scripts/studyUnitBridge.ts <command> [options]',
@@ -225,10 +284,22 @@ const usage = (): string =>
     '                  validate) and write the prepared run + deterministic reports',
     '  calibrate       select the deterministic calibration-80 from the preflight jobs,',
     '                  write the sibling prepared run (batch size 8) + reports',
+    '  calibrate-v5    build the cal80-v5 sibling run from the cal80-v4 cohort + v5',
+    '                  preflight jobs and write the prepared run + V4/V5 crosswalk reports',
     '',
-    'Options (preflight / calibrate):',
-    '  --run-dir-root <dir>   root for the prepared run directory (default study-content/ai/runs)',
-    '  --reports-dir <dir>    report output directory (default reports)',
+    'Options (preflight / calibrate / calibrate-v5):',
+    '  --run-dir-root <dir>        root for the prepared run directory (default study-content/ai/runs)',
+    '  --reports-dir <dir>         report output directory (default reports)',
+    '',
+    'Options (preflight):',
+    '  --spec-version <version>    unit authoring prompt spec version (default unit-authoring-v4;',
+    '                              e.g. unit-authoring-v5 emits unit-authoring-preflight-v5-<dateTag>.*)',
+    '  --run-id <runId>            prepared run id (default ai-units-2026-09-02-frozen-map-v4-preflight)',
+    '',
+    'Options (calibrate-v5):',
+    '  --v4-run-dir <dir>          cal80-v4 run dir (default study-content/ai/runs/ai-units-2026-09-02-frozen-map-cal80-v4)',
+    '  --v5-preflight-run-dir <dir> v5 preflight run dir (default study-content/ai/runs/ai-units-2026-09-02-frozen-map-v5-preflight)',
+    '  --run-id <runId>            sibling run id (default ai-units-2026-09-02-frozen-map-cal80-v5)',
   ].join('\n');
 
 const parseOptions = (args: readonly string[]): { command: string; options: Record<string, string> } => {
@@ -254,6 +325,7 @@ const main = (): void => {
   else if (command === 'inventory') exitCode = commandInventory();
   else if (command === 'preflight') exitCode = commandPreflight(options);
   else if (command === 'calibrate') exitCode = commandCalibrate(options);
+  else if (command === 'calibrate-v5') exitCode = commandCalibrateV5(options);
   else {
     process.stderr.write(`${usage()}\n`);
     exitCode = EXIT_USAGE;

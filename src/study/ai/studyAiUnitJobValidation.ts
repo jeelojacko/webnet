@@ -410,7 +410,14 @@ export const validateAiUnitAuthoringJob = (
   const { run, proposal } = ctx;
   const where = `job ${job.jobId} (proposal ${proposal.id} group[${ctx.groupIndex}])`;
 
-  // Run/identity constants carried by the prepared run.
+  // Run/identity constants carried by the prepared run. The run-level spec is
+  // a guardrail against authoring under an unknown prompt spec (not a repeat
+  // of the per-job PROMPT_SPEC_VERSION_MISMATCH check below), so any
+  // supported spec version passes.
+  const SUPPORTED_PROMPT_SPEC_VERSIONS: ReadonlySet<string> = new Set([
+    'unit-authoring-v4',
+    'unit-authoring-v5',
+  ]);
   if (run.jobType !== 'unit-authoring') {
     issues.push(`RUN_JOB_TYPE_MISMATCH: expected unit-authoring run meta, got ${run.jobType}.`);
   }
@@ -419,9 +426,9 @@ export const validateAiUnitAuthoringJob = (
       `RUN_PROVIDER_KIND_MISMATCH: expected local-openai-compatible run meta, got ${run.providerKind}.`,
     );
   }
-  if (run.promptSpecVersion !== 'unit-authoring-v4') {
+  if (!SUPPORTED_PROMPT_SPEC_VERSIONS.has(run.promptSpecVersion)) {
     issues.push(
-      `RUN_PROMPT_SPEC_MISMATCH: expected prompt spec unit-authoring-v4, got ${run.promptSpecVersion}.`,
+      `RUN_PROMPT_SPEC_MISMATCH: expected a supported unit-authoring prompt spec version (unit-authoring-v4, unit-authoring-v5), got ${run.promptSpecVersion}.`,
     );
   }
 

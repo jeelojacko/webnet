@@ -489,6 +489,59 @@ Study Map (pure logic in `src/study/ai/`, dispatcher in `scripts/studyUnitBridge
   work: if the Unit Authoring prompt spec ever changes, the full job set is
   regenerated at the new prompt version before production.
 
+### Calibration-80 V5 sibling run and V4/V5 comparison (2026-09-02)
+
+- V5 sibling execution: the same 80 frozen selection jobs rewritten into
+  `ai-units-2026-09-02-frozen-map-cal80-v5` (`unit-authoring-v5` spec sha256
+  `8987b7da…`, v5 jobIds differ from v4 by design; unit-authoring-v4 prompt
+  bytes unchanged). Executed through the same `local-openai-compatible`
+  runner (Qwen3.8-27B-UD-IQ4_XS @ `http://127.0.0.1:8080/v1`, concurrency 1,
+  strict-json-schema) across an interrupted run plus `--resume`. Canonical
+  results: **80/80 accepted, 0 semantic-failed, 0 provider-incomplete**; 69
+  rejected semantic attempts (worst `unit-332a2ef669d3f464`, 5 rejections).
+  Authoring statuses: **80 generated / 0 needs-map-revision** — every one of
+  the 35 V4 needs-map-revision rows resolved to `generated` under the V5
+  contract. Canonical revalidation: 62 warning-severity issues / 0 errors.
+- Authoritative mapping: `reports/unit-calibration-v4-v5-crosswalk-20260902.{json,md}`
+  (80 rows, seq order, v4JobId/v5JobId pairs by (sourceMapProposalId,
+  groupId), matched 80 / unmatched 0).
+- Deterministic V4/V5 comparison + side-by-side human review (WV5; no AI, no
+  wall clock, no RNG):
+  `src/study/ai/studyAiUnitCalibrationCompare.{types,utils,load,markdown,ts}`
+  (builders; pure helpers incl. the 5-phrase contradiction detector,
+  revision-consistency flags and the six-tier ordering; fail-closed loader
+  reusing the calibration-80 audit loader untouched for both run dirs) and
+  `scripts/studyAiCompareUnitCalibrations.ts`. Produces
+  `reports/unit-calibration-v4-v5-comparison-20260902.{json,md}` (perRun,
+  status-transition matrix, revisionConsistencyV5 target-zero buckets, warning
+  histogram with the 86-warning coverage reconciliation recomputed 49/37 and
+  matched, question-length over-target counts, objective histogram, 7 anchor
+  verdicts, OCR case, named subsets) and
+  `reports/unit-calibration-v4-v5-human-review-20260902.{json,md}` (all 80
+  rows risk-ordered by tier then seq; per row seq/tier/v4JobId/v5JobId/docs/
+  title/P plus unit-only v4/v5 fields and V5 mapRevisionSuggestion + canonical
+  validation issue refs; no raw source text). Fail-closed loader: crosswalk
+  exactly 80 rows with strict seq 1..80, every crosswalk job id present in its
+  run's jobs (missing ids named), no orphan results/failure artifacts, exactly
+  one OCR probe row; byte-identical reruns (sha256 verified across two CLI
+  runs).
+- Headline numbers: status matrix `generated→generated` 45 /
+  `needs-map-revision→generated` 35; V5 revision-consistency buckets all
+  zero; warning totals v4 171 / v5 62; over-target questions main>240 22→0
+  and guided>220 18→0 (v4→v5), main-question means 213.06→164.2 chars;
+  objective histograms 1..5 on both runs; OCR triple true on both corpus
+  artifact strings with a v5 objective split (`by - laws` in
+  `obj-18-2-authorization`, `Registr ar` in
+  `obj-18-2-evidence-entitlement`); anchors 7 → 4 status-change / 3 stable;
+  human-review tiers T3 status-change 35, T5 named 17, T6 remainder 28
+  (T1/T2/T4 0).
+- Tests: `tests/study/study_ai_unit_calibration_compare.test.ts` (phrase
+  detector, revision flags, one-job-per-tier, matrix pseudo-status,
+  over-target counters, OCR objective ids, temp-dir two-run fixtures with a
+  3-row crosswalk, fail-closed missing-job naming, byte determinism).
+- **Human V4/V5 semantic review of the risk-ordered pack remains PENDING;
+  commit/push not authorized in this batch.**
+
 ## Phase 4B.1.1 Targeted Map Pilot
 
 The remediation pilot uses a fixed targeted sample of 24 provisions that cover the known Study Map failure modes from the 100-job pilot: definition leakage, split granularity, mixed repealed subprovisions, repeal-only provisions, regulation-making provisions, citation/reference-only provisions, and substantive provisions previously misclassified as trivial.

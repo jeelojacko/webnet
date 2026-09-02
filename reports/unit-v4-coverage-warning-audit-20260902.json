@@ -1,0 +1,4141 @@
+{
+  "audit": "unit-v4-coverage-warning-audit",
+  "dateTag": "20260902",
+  "generatedAt": "2026-09-02T00:00:00.000Z",
+  "runId": "ai-units-2026-09-02-frozen-map-cal80-v4",
+  "runSha256": "28070b348becdc4fa921f3b168501427fc1c141487e5e56b384c8e3565807210",
+  "proposalsAudited": 80,
+  "expectedTotals": {
+    "APPROVED_FOCUS_NOT_COVERED": 49,
+    "UNCOVERED_SUBSTANTIVE_SOURCE": 37,
+    "total": 86
+  },
+  "actualTotals": {
+    "APPROVED_FOCUS_NOT_COVERED": 49,
+    "UNCOVERED_SUBSTANTIVE_SOURCE": 37,
+    "total": 86
+  },
+  "classificationTotals": {
+    "A": 49,
+    "B": 0,
+    "C": 37
+  },
+  "perCodeClassification": {
+    "APPROVED_FOCUS_NOT_COVERED": {
+      "A": 12,
+      "B": 0,
+      "C": 37
+    },
+    "UNCOVERED_SUBSTANTIVE_SOURCE": {
+      "A": 37,
+      "B": 0,
+      "C": 0
+    }
+  },
+  "instances": [
+    {
+      "jobId": "unit-00066425d3dd3645",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:125",
+      "category": "child-label",
+      "label": "125(8)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": true
+      },
+      "classification": "C",
+      "classificationBasis": "duplicate presentation of the same omission: an UNCOVERED_SUBSTANTIVE_SOURCE instance exists for the same (section:125, 125(8))",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:125"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:125",
+            "childLabels": [
+              "125(8)",
+              "125(9)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "125(8)",
+          "125(9)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [
+        "obj-1"
+      ],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [
+          "obj-1"
+        ],
+        "note": "evidence/excerpt text of objectives referencing section:125 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-00066425d3dd3645",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:125",
+      "category": "child-label",
+      "label": "125(9)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": true
+      },
+      "classification": "C",
+      "classificationBasis": "duplicate presentation of the same omission: an UNCOVERED_SUBSTANTIVE_SOURCE instance exists for the same (section:125, 125(9))",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:125"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:125",
+            "childLabels": [
+              "125(8)",
+              "125(9)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "125(8)",
+          "125(9)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "coverage-declared",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "subsection text length 1507 > 400; teaching ids fall back to the declared coverage objectiveIds"
+      }
+    },
+    {
+      "jobId": "unit-00066425d3dd3645",
+      "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+      "sourceKey": "section:125",
+      "category": "child-label",
+      "label": "125(8)",
+      "approved": true,
+      "twin": {
+        "code": "APPROVED_FOCUS_NOT_COVERED",
+        "present": true
+      },
+      "classification": "A",
+      "classificationBasis": "primary diagnostic: the approved childLabel has no coverage child entry, which the approved-focus checker also presents (APPROVED_FOCUS_NOT_COVERED twin)",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:125"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:125",
+            "childLabels": [
+              "125(8)",
+              "125(9)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "125(8)",
+          "125(9)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [
+        "obj-1"
+      ],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [
+          "obj-1"
+        ],
+        "note": "evidence/excerpt text of objectives referencing section:125 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-00066425d3dd3645",
+      "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+      "sourceKey": "section:125",
+      "category": "child-label",
+      "label": "125(9)",
+      "approved": true,
+      "twin": {
+        "code": "APPROVED_FOCUS_NOT_COVERED",
+        "present": true
+      },
+      "classification": "A",
+      "classificationBasis": "primary diagnostic: the approved childLabel has no coverage child entry, which the approved-focus checker also presents (APPROVED_FOCUS_NOT_COVERED twin)",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:125"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:125",
+            "childLabels": [
+              "125(8)",
+              "125(9)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "125(8)",
+          "125(9)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "coverage-declared",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "subsection text length 1507 > 400; teaching ids fall back to the declared coverage objectiveIds"
+      }
+    },
+    {
+      "jobId": "unit-01074d54d55e4fde",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:50",
+      "category": "child-label",
+      "label": "50(2)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": true
+      },
+      "classification": "C",
+      "classificationBasis": "duplicate presentation of the same omission: an UNCOVERED_SUBSTANTIVE_SOURCE instance exists for the same (section:50, 50(2))",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:50"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:50",
+            "childLabels": [
+              "50(2)",
+              "50(3)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "50(2)",
+          "50(3)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "coverage-declared",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "subsection text length 739 > 400; teaching ids fall back to the declared coverage objectiveIds"
+      }
+    },
+    {
+      "jobId": "unit-01074d54d55e4fde",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:50",
+      "category": "child-label",
+      "label": "50(3)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": true
+      },
+      "classification": "C",
+      "classificationBasis": "duplicate presentation of the same omission: an UNCOVERED_SUBSTANTIVE_SOURCE instance exists for the same (section:50, 50(3))",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:50"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:50",
+            "childLabels": [
+              "50(2)",
+              "50(3)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "50(2)",
+          "50(3)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "coverage-declared",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "subsection text length 425 > 400; teaching ids fall back to the declared coverage objectiveIds"
+      }
+    },
+    {
+      "jobId": "unit-01074d54d55e4fde",
+      "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+      "sourceKey": "section:50",
+      "category": "child-label",
+      "label": "50(2)",
+      "approved": true,
+      "twin": {
+        "code": "APPROVED_FOCUS_NOT_COVERED",
+        "present": true
+      },
+      "classification": "A",
+      "classificationBasis": "primary diagnostic: the approved childLabel has no coverage child entry, which the approved-focus checker also presents (APPROVED_FOCUS_NOT_COVERED twin)",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:50"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:50",
+            "childLabels": [
+              "50(2)",
+              "50(3)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "50(2)",
+          "50(3)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "coverage-declared",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "subsection text length 739 > 400; teaching ids fall back to the declared coverage objectiveIds"
+      }
+    },
+    {
+      "jobId": "unit-01074d54d55e4fde",
+      "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+      "sourceKey": "section:50",
+      "category": "child-label",
+      "label": "50(3)",
+      "approved": true,
+      "twin": {
+        "code": "APPROVED_FOCUS_NOT_COVERED",
+        "present": true
+      },
+      "classification": "A",
+      "classificationBasis": "primary diagnostic: the approved childLabel has no coverage child entry, which the approved-focus checker also presents (APPROVED_FOCUS_NOT_COVERED twin)",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:50"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:50",
+            "childLabels": [
+              "50(2)",
+              "50(3)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "50(2)",
+          "50(3)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "coverage-declared",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "subsection text length 425 > 400; teaching ids fall back to the declared coverage objectiveIds"
+      }
+    },
+    {
+      "jobId": "unit-01093fbff98ef4eb",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:14",
+      "category": "child-label",
+      "label": "14",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": false
+      },
+      "classification": "A",
+      "classificationBasis": "no coverage child entry exists for the approved childLabel and it is not among the source's in-scope subsections, so only the approved-focus checker can flag it",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:14"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:14",
+            "childLabels": [
+              "14"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "14"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "none",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "label is not a subsection of the source component; no evidence-containment probe possible"
+      }
+    },
+    {
+      "jobId": "unit-0167053e440a24d5",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:36",
+      "category": "child-label",
+      "label": "36(1)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": true
+      },
+      "classification": "C",
+      "classificationBasis": "duplicate presentation of the same omission: an UNCOVERED_SUBSTANTIVE_SOURCE instance exists for the same (section:36, 36(1))",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:36"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:36",
+            "childLabels": [
+              "36(1)",
+              "36(2)",
+              "36(3)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "36(1)",
+          "36(2)",
+          "36(3)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "evidence/excerpt text of objectives referencing section:36 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-0167053e440a24d5",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:36",
+      "category": "child-label",
+      "label": "36(2)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": true
+      },
+      "classification": "C",
+      "classificationBasis": "duplicate presentation of the same omission: an UNCOVERED_SUBSTANTIVE_SOURCE instance exists for the same (section:36, 36(2))",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:36"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:36",
+            "childLabels": [
+              "36(1)",
+              "36(2)",
+              "36(3)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "36(1)",
+          "36(2)",
+          "36(3)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "evidence/excerpt text of objectives referencing section:36 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-0167053e440a24d5",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:36",
+      "category": "child-label",
+      "label": "36(3)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": true
+      },
+      "classification": "C",
+      "classificationBasis": "duplicate presentation of the same omission: an UNCOVERED_SUBSTANTIVE_SOURCE instance exists for the same (section:36, 36(3))",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:36"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:36",
+            "childLabels": [
+              "36(1)",
+              "36(2)",
+              "36(3)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "36(1)",
+          "36(2)",
+          "36(3)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "evidence/excerpt text of objectives referencing section:36 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-0167053e440a24d5",
+      "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+      "sourceKey": "section:36",
+      "category": "child-label",
+      "label": "36(1)",
+      "approved": true,
+      "twin": {
+        "code": "APPROVED_FOCUS_NOT_COVERED",
+        "present": true
+      },
+      "classification": "A",
+      "classificationBasis": "primary diagnostic: the approved childLabel has no coverage child entry, which the approved-focus checker also presents (APPROVED_FOCUS_NOT_COVERED twin)",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:36"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:36",
+            "childLabels": [
+              "36(1)",
+              "36(2)",
+              "36(3)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "36(1)",
+          "36(2)",
+          "36(3)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "evidence/excerpt text of objectives referencing section:36 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-0167053e440a24d5",
+      "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+      "sourceKey": "section:36",
+      "category": "child-label",
+      "label": "36(2)",
+      "approved": true,
+      "twin": {
+        "code": "APPROVED_FOCUS_NOT_COVERED",
+        "present": true
+      },
+      "classification": "A",
+      "classificationBasis": "primary diagnostic: the approved childLabel has no coverage child entry, which the approved-focus checker also presents (APPROVED_FOCUS_NOT_COVERED twin)",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:36"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:36",
+            "childLabels": [
+              "36(1)",
+              "36(2)",
+              "36(3)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "36(1)",
+          "36(2)",
+          "36(3)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "evidence/excerpt text of objectives referencing section:36 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-0167053e440a24d5",
+      "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+      "sourceKey": "section:36",
+      "category": "child-label",
+      "label": "36(3)",
+      "approved": true,
+      "twin": {
+        "code": "APPROVED_FOCUS_NOT_COVERED",
+        "present": true
+      },
+      "classification": "A",
+      "classificationBasis": "primary diagnostic: the approved childLabel has no coverage child entry, which the approved-focus checker also presents (APPROVED_FOCUS_NOT_COVERED twin)",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:36"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:36",
+            "childLabels": [
+              "36(1)",
+              "36(2)",
+              "36(3)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "36(1)",
+          "36(2)",
+          "36(3)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "evidence/excerpt text of objectives referencing section:36 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-02657c4c14328d82",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:43",
+      "category": "child-label",
+      "label": "43(1)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": true
+      },
+      "classification": "C",
+      "classificationBasis": "duplicate presentation of the same omission: an UNCOVERED_SUBSTANTIVE_SOURCE instance exists for the same (section:43, 43(1))",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:43"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:43",
+            "childLabels": [
+              "43(1)",
+              "43(2)",
+              "43(3)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "43(1)",
+          "43(2)",
+          "43(3)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "evidence/excerpt text of objectives referencing section:43 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-02657c4c14328d82",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:43",
+      "category": "child-label",
+      "label": "43(2)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": true
+      },
+      "classification": "C",
+      "classificationBasis": "duplicate presentation of the same omission: an UNCOVERED_SUBSTANTIVE_SOURCE instance exists for the same (section:43, 43(2))",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:43"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:43",
+            "childLabels": [
+              "43(1)",
+              "43(2)",
+              "43(3)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "43(1)",
+          "43(2)",
+          "43(3)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "coverage-declared",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "subsection text length 598 > 400; teaching ids fall back to the declared coverage objectiveIds"
+      }
+    },
+    {
+      "jobId": "unit-02657c4c14328d82",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:43",
+      "category": "child-label",
+      "label": "43(3)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": true
+      },
+      "classification": "C",
+      "classificationBasis": "duplicate presentation of the same omission: an UNCOVERED_SUBSTANTIVE_SOURCE instance exists for the same (section:43, 43(3))",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:43"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:43",
+            "childLabels": [
+              "43(1)",
+              "43(2)",
+              "43(3)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "43(1)",
+          "43(2)",
+          "43(3)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "evidence/excerpt text of objectives referencing section:43 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-02657c4c14328d82",
+      "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+      "sourceKey": "section:43",
+      "category": "child-label",
+      "label": "43(1)",
+      "approved": true,
+      "twin": {
+        "code": "APPROVED_FOCUS_NOT_COVERED",
+        "present": true
+      },
+      "classification": "A",
+      "classificationBasis": "primary diagnostic: the approved childLabel has no coverage child entry, which the approved-focus checker also presents (APPROVED_FOCUS_NOT_COVERED twin)",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:43"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:43",
+            "childLabels": [
+              "43(1)",
+              "43(2)",
+              "43(3)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "43(1)",
+          "43(2)",
+          "43(3)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "evidence/excerpt text of objectives referencing section:43 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-02657c4c14328d82",
+      "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+      "sourceKey": "section:43",
+      "category": "child-label",
+      "label": "43(2)",
+      "approved": true,
+      "twin": {
+        "code": "APPROVED_FOCUS_NOT_COVERED",
+        "present": true
+      },
+      "classification": "A",
+      "classificationBasis": "primary diagnostic: the approved childLabel has no coverage child entry, which the approved-focus checker also presents (APPROVED_FOCUS_NOT_COVERED twin)",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:43"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:43",
+            "childLabels": [
+              "43(1)",
+              "43(2)",
+              "43(3)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "43(1)",
+          "43(2)",
+          "43(3)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "coverage-declared",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "subsection text length 598 > 400; teaching ids fall back to the declared coverage objectiveIds"
+      }
+    },
+    {
+      "jobId": "unit-02657c4c14328d82",
+      "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+      "sourceKey": "section:43",
+      "category": "child-label",
+      "label": "43(3)",
+      "approved": true,
+      "twin": {
+        "code": "APPROVED_FOCUS_NOT_COVERED",
+        "present": true
+      },
+      "classification": "A",
+      "classificationBasis": "primary diagnostic: the approved childLabel has no coverage child entry, which the approved-focus checker also presents (APPROVED_FOCUS_NOT_COVERED twin)",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:43"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:43",
+            "childLabels": [
+              "43(1)",
+              "43(2)",
+              "43(3)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "43(1)",
+          "43(2)",
+          "43(3)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "evidence/excerpt text of objectives referencing section:43 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-043b932fc33b70cc",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:6",
+      "category": "child-label",
+      "label": "6(3)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": true
+      },
+      "classification": "C",
+      "classificationBasis": "duplicate presentation of the same omission: an UNCOVERED_SUBSTANTIVE_SOURCE instance exists for the same (section:6, 6(3))",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:6"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:6",
+            "childLabels": [
+              "6(3)",
+              "6(4)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "6(3)",
+          "6(4)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "evidence/excerpt text of objectives referencing section:6 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-043b932fc33b70cc",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:6",
+      "category": "child-label",
+      "label": "6(4)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": true
+      },
+      "classification": "C",
+      "classificationBasis": "duplicate presentation of the same omission: an UNCOVERED_SUBSTANTIVE_SOURCE instance exists for the same (section:6, 6(4))",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:6"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:6",
+            "childLabels": [
+              "6(3)",
+              "6(4)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "6(3)",
+          "6(4)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "evidence/excerpt text of objectives referencing section:6 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-043b932fc33b70cc",
+      "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+      "sourceKey": "section:6",
+      "category": "child-label",
+      "label": "6(3)",
+      "approved": true,
+      "twin": {
+        "code": "APPROVED_FOCUS_NOT_COVERED",
+        "present": true
+      },
+      "classification": "A",
+      "classificationBasis": "primary diagnostic: the approved childLabel has no coverage child entry, which the approved-focus checker also presents (APPROVED_FOCUS_NOT_COVERED twin)",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:6"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:6",
+            "childLabels": [
+              "6(3)",
+              "6(4)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "6(3)",
+          "6(4)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "evidence/excerpt text of objectives referencing section:6 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-043b932fc33b70cc",
+      "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+      "sourceKey": "section:6",
+      "category": "child-label",
+      "label": "6(4)",
+      "approved": true,
+      "twin": {
+        "code": "APPROVED_FOCUS_NOT_COVERED",
+        "present": true
+      },
+      "classification": "A",
+      "classificationBasis": "primary diagnostic: the approved childLabel has no coverage child entry, which the approved-focus checker also presents (APPROVED_FOCUS_NOT_COVERED twin)",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:6"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:6",
+            "childLabels": [
+              "6(3)",
+              "6(4)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "6(3)",
+          "6(4)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "evidence/excerpt text of objectives referencing section:6 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-0449049d27b547c9",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:88",
+      "category": "child-label",
+      "label": "88(8)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": true
+      },
+      "classification": "C",
+      "classificationBasis": "duplicate presentation of the same omission: an UNCOVERED_SUBSTANTIVE_SOURCE instance exists for the same (section:88, 88(8))",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:88"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:88",
+            "childLabels": [
+              "88(8)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "88(8)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "coverage-declared",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "subsection text length 627 > 400; teaching ids fall back to the declared coverage objectiveIds"
+      }
+    },
+    {
+      "jobId": "unit-0449049d27b547c9",
+      "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+      "sourceKey": "section:88",
+      "category": "child-label",
+      "label": "88(8)",
+      "approved": true,
+      "twin": {
+        "code": "APPROVED_FOCUS_NOT_COVERED",
+        "present": true
+      },
+      "classification": "A",
+      "classificationBasis": "primary diagnostic: the approved childLabel has no coverage child entry, which the approved-focus checker also presents (APPROVED_FOCUS_NOT_COVERED twin)",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:88"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:88",
+            "childLabels": [
+              "88(8)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "88(8)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "coverage-declared",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "subsection text length 627 > 400; teaching ids fall back to the declared coverage objectiveIds"
+      }
+    },
+    {
+      "jobId": "unit-046240c47aa8f95b",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:13.2",
+      "category": "child-label",
+      "label": "13.2",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": false
+      },
+      "classification": "A",
+      "classificationBasis": "no coverage child entry exists for the approved childLabel and it is not among the source's in-scope subsections, so only the approved-focus checker can flag it",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:13.2"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:13.2",
+            "childLabels": [
+              "13.2"
+            ],
+            "definedTerms": [
+              "entry"
+            ]
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "13.2"
+        ],
+        "definedTerms": [
+          "entry"
+        ]
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "none",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "label is not a subsection of the source component; no evidence-containment probe possible"
+      }
+    },
+    {
+      "jobId": "unit-049d27943f637422",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "schedule:schedule-d",
+      "category": "child-label",
+      "label": "26",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": false
+      },
+      "classification": "A",
+      "classificationBasis": "no coverage child entry exists for the approved childLabel and it is not among the source's in-scope subsections, so only the approved-focus checker can flag it",
+      "approvedGroup": {
+        "sourceKeys": [
+          "schedule:schedule-d"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "schedule:schedule-d",
+            "childLabels": [
+              "26",
+              "27"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "26",
+          "27"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "none",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "label is not a subsection of the source component; no evidence-containment probe possible"
+      }
+    },
+    {
+      "jobId": "unit-049d27943f637422",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "schedule:schedule-d",
+      "category": "child-label",
+      "label": "27",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": false
+      },
+      "classification": "A",
+      "classificationBasis": "no coverage child entry exists for the approved childLabel and it is not among the source's in-scope subsections, so only the approved-focus checker can flag it",
+      "approvedGroup": {
+        "sourceKeys": [
+          "schedule:schedule-d"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "schedule:schedule-d",
+            "childLabels": [
+              "26",
+              "27"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "26",
+          "27"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "none",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "label is not a subsection of the source component; no evidence-containment probe possible"
+      }
+    },
+    {
+      "jobId": "unit-05e06222bdb9d406",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "schedule:schedule-d",
+      "category": "child-label",
+      "label": "16",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": false
+      },
+      "classification": "A",
+      "classificationBasis": "no coverage child entry exists for the approved childLabel and it is not among the source's in-scope subsections, so only the approved-focus checker can flag it",
+      "approvedGroup": {
+        "sourceKeys": [
+          "schedule:schedule-d"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "schedule:schedule-d",
+            "childLabels": [
+              "16",
+              "18",
+              "19",
+              "32"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "16",
+          "18",
+          "19",
+          "32"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "none",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "label is not a subsection of the source component; no evidence-containment probe possible"
+      }
+    },
+    {
+      "jobId": "unit-05e06222bdb9d406",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "schedule:schedule-d",
+      "category": "child-label",
+      "label": "18",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": false
+      },
+      "classification": "A",
+      "classificationBasis": "no coverage child entry exists for the approved childLabel and it is not among the source's in-scope subsections, so only the approved-focus checker can flag it",
+      "approvedGroup": {
+        "sourceKeys": [
+          "schedule:schedule-d"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "schedule:schedule-d",
+            "childLabels": [
+              "16",
+              "18",
+              "19",
+              "32"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "16",
+          "18",
+          "19",
+          "32"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "none",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "label is not a subsection of the source component; no evidence-containment probe possible"
+      }
+    },
+    {
+      "jobId": "unit-05e06222bdb9d406",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "schedule:schedule-d",
+      "category": "child-label",
+      "label": "19",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": false
+      },
+      "classification": "A",
+      "classificationBasis": "no coverage child entry exists for the approved childLabel and it is not among the source's in-scope subsections, so only the approved-focus checker can flag it",
+      "approvedGroup": {
+        "sourceKeys": [
+          "schedule:schedule-d"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "schedule:schedule-d",
+            "childLabels": [
+              "16",
+              "18",
+              "19",
+              "32"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "16",
+          "18",
+          "19",
+          "32"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "none",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "label is not a subsection of the source component; no evidence-containment probe possible"
+      }
+    },
+    {
+      "jobId": "unit-05e06222bdb9d406",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "schedule:schedule-d",
+      "category": "child-label",
+      "label": "32",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": false
+      },
+      "classification": "A",
+      "classificationBasis": "no coverage child entry exists for the approved childLabel and it is not among the source's in-scope subsections, so only the approved-focus checker can flag it",
+      "approvedGroup": {
+        "sourceKeys": [
+          "schedule:schedule-d"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "schedule:schedule-d",
+            "childLabels": [
+              "16",
+              "18",
+              "19",
+              "32"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "16",
+          "18",
+          "19",
+          "32"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "none",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "label is not a subsection of the source component; no evidence-containment probe possible"
+      }
+    },
+    {
+      "jobId": "unit-07fa6fc1208594ca",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:18(2)",
+      "category": "child-label",
+      "label": "18(2)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": false
+      },
+      "classification": "A",
+      "classificationBasis": "no coverage child entry exists for the approved childLabel and it is not among the source's in-scope subsections, so only the approved-focus checker can flag it",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:18(2)"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:18(2)",
+            "childLabels": [
+              "18(2)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "18(2)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "none",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "label is not a subsection of the source component; no evidence-containment probe possible"
+      }
+    },
+    {
+      "jobId": "unit-08d0057dc07a46d5",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:84",
+      "category": "child-label",
+      "label": "84(3)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": true
+      },
+      "classification": "C",
+      "classificationBasis": "duplicate presentation of the same omission: an UNCOVERED_SUBSTANTIVE_SOURCE instance exists for the same (section:84, 84(3))",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:84"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:84",
+            "childLabels": [
+              "84(3)",
+              "84(4)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "84(3)",
+          "84(4)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "coverage-declared",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "subsection text length 2724 > 400; teaching ids fall back to the declared coverage objectiveIds"
+      }
+    },
+    {
+      "jobId": "unit-08d0057dc07a46d5",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:84",
+      "category": "child-label",
+      "label": "84(4)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": true
+      },
+      "classification": "C",
+      "classificationBasis": "duplicate presentation of the same omission: an UNCOVERED_SUBSTANTIVE_SOURCE instance exists for the same (section:84, 84(4))",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:84"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:84",
+            "childLabels": [
+              "84(3)",
+              "84(4)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "84(3)",
+          "84(4)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [
+        "obj-boundary-representation"
+      ],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [
+          "obj-boundary-representation"
+        ],
+        "note": "evidence/excerpt text of objectives referencing section:84 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-08d0057dc07a46d5",
+      "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+      "sourceKey": "section:84",
+      "category": "child-label",
+      "label": "84(3)",
+      "approved": true,
+      "twin": {
+        "code": "APPROVED_FOCUS_NOT_COVERED",
+        "present": true
+      },
+      "classification": "A",
+      "classificationBasis": "primary diagnostic: the approved childLabel has no coverage child entry, which the approved-focus checker also presents (APPROVED_FOCUS_NOT_COVERED twin)",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:84"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:84",
+            "childLabels": [
+              "84(3)",
+              "84(4)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "84(3)",
+          "84(4)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "coverage-declared",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "subsection text length 2724 > 400; teaching ids fall back to the declared coverage objectiveIds"
+      }
+    },
+    {
+      "jobId": "unit-08d0057dc07a46d5",
+      "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+      "sourceKey": "section:84",
+      "category": "child-label",
+      "label": "84(4)",
+      "approved": true,
+      "twin": {
+        "code": "APPROVED_FOCUS_NOT_COVERED",
+        "present": true
+      },
+      "classification": "A",
+      "classificationBasis": "primary diagnostic: the approved childLabel has no coverage child entry, which the approved-focus checker also presents (APPROVED_FOCUS_NOT_COVERED twin)",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:84"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:84",
+            "childLabels": [
+              "84(3)",
+              "84(4)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "84(3)",
+          "84(4)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [
+        "obj-boundary-representation"
+      ],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [
+          "obj-boundary-representation"
+        ],
+        "note": "evidence/excerpt text of objectives referencing section:84 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-08f6d682936a16dc",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:12(2)",
+      "category": "child-label",
+      "label": "12(2)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": false
+      },
+      "classification": "A",
+      "classificationBasis": "no coverage child entry exists for the approved childLabel and it is not among the source's in-scope subsections, so only the approved-focus checker can flag it",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:12(2)"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:12(2)",
+            "childLabels": [
+              "12(2)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "12(2)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "none",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "label is not a subsection of the source component; no evidence-containment probe possible"
+      }
+    },
+    {
+      "jobId": "unit-09121fea0dce567b",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:10",
+      "category": "child-label",
+      "label": "10(4)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": true
+      },
+      "classification": "C",
+      "classificationBasis": "duplicate presentation of the same omission: an UNCOVERED_SUBSTANTIVE_SOURCE instance exists for the same (section:10, 10(4))",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:10"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:10",
+            "childLabels": [
+              "10(4)",
+              "10(5)",
+              "10(6)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "10(4)",
+          "10(5)",
+          "10(6)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [
+        "obj-10-4-parties"
+      ],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [
+          "obj-10-4-parties"
+        ],
+        "note": "evidence/excerpt text of objectives referencing section:10 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-09121fea0dce567b",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:10",
+      "category": "child-label",
+      "label": "10(5)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": true
+      },
+      "classification": "C",
+      "classificationBasis": "duplicate presentation of the same omission: an UNCOVERED_SUBSTANTIVE_SOURCE instance exists for the same (section:10, 10(5))",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:10"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:10",
+            "childLabels": [
+              "10(4)",
+              "10(5)",
+              "10(6)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "10(4)",
+          "10(5)",
+          "10(6)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [
+        "obj-10-5-notice-duty"
+      ],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [
+          "obj-10-5-notice-duty"
+        ],
+        "note": "evidence/excerpt text of objectives referencing section:10 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-09121fea0dce567b",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:10",
+      "category": "child-label",
+      "label": "10(6)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": true
+      },
+      "classification": "C",
+      "classificationBasis": "duplicate presentation of the same omission: an UNCOVERED_SUBSTANTIVE_SOURCE instance exists for the same (section:10, 10(6))",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:10"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:10",
+            "childLabels": [
+              "10(4)",
+              "10(5)",
+              "10(6)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "10(4)",
+          "10(5)",
+          "10(6)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "coverage-declared",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "subsection text length 476 > 400; teaching ids fall back to the declared coverage objectiveIds"
+      }
+    },
+    {
+      "jobId": "unit-09121fea0dce567b",
+      "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+      "sourceKey": "section:10",
+      "category": "child-label",
+      "label": "10(4)",
+      "approved": true,
+      "twin": {
+        "code": "APPROVED_FOCUS_NOT_COVERED",
+        "present": true
+      },
+      "classification": "A",
+      "classificationBasis": "primary diagnostic: the approved childLabel has no coverage child entry, which the approved-focus checker also presents (APPROVED_FOCUS_NOT_COVERED twin)",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:10"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:10",
+            "childLabels": [
+              "10(4)",
+              "10(5)",
+              "10(6)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "10(4)",
+          "10(5)",
+          "10(6)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [
+        "obj-10-4-parties"
+      ],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [
+          "obj-10-4-parties"
+        ],
+        "note": "evidence/excerpt text of objectives referencing section:10 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-09121fea0dce567b",
+      "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+      "sourceKey": "section:10",
+      "category": "child-label",
+      "label": "10(5)",
+      "approved": true,
+      "twin": {
+        "code": "APPROVED_FOCUS_NOT_COVERED",
+        "present": true
+      },
+      "classification": "A",
+      "classificationBasis": "primary diagnostic: the approved childLabel has no coverage child entry, which the approved-focus checker also presents (APPROVED_FOCUS_NOT_COVERED twin)",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:10"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:10",
+            "childLabels": [
+              "10(4)",
+              "10(5)",
+              "10(6)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "10(4)",
+          "10(5)",
+          "10(6)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [
+        "obj-10-5-notice-duty"
+      ],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [
+          "obj-10-5-notice-duty"
+        ],
+        "note": "evidence/excerpt text of objectives referencing section:10 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-09121fea0dce567b",
+      "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+      "sourceKey": "section:10",
+      "category": "child-label",
+      "label": "10(6)",
+      "approved": true,
+      "twin": {
+        "code": "APPROVED_FOCUS_NOT_COVERED",
+        "present": true
+      },
+      "classification": "A",
+      "classificationBasis": "primary diagnostic: the approved childLabel has no coverage child entry, which the approved-focus checker also presents (APPROVED_FOCUS_NOT_COVERED twin)",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:10"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:10",
+            "childLabels": [
+              "10(4)",
+              "10(5)",
+              "10(6)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "10(4)",
+          "10(5)",
+          "10(6)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "coverage-declared",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "subsection text length 476 > 400; teaching ids fall back to the declared coverage objectiveIds"
+      }
+    },
+    {
+      "jobId": "unit-0c0bbda20e7199b5",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:44",
+      "category": "child-label",
+      "label": "44(1)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": true
+      },
+      "classification": "C",
+      "classificationBasis": "duplicate presentation of the same omission: an UNCOVERED_SUBSTANTIVE_SOURCE instance exists for the same (section:44, 44(1))",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:44"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:44",
+            "childLabels": [
+              "44(1)",
+              "44(2)",
+              "44(3)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "44(1)",
+          "44(2)",
+          "44(3)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "evidence/excerpt text of objectives referencing section:44 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-0c0bbda20e7199b5",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:44",
+      "category": "child-label",
+      "label": "44(2)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": true
+      },
+      "classification": "C",
+      "classificationBasis": "duplicate presentation of the same omission: an UNCOVERED_SUBSTANTIVE_SOURCE instance exists for the same (section:44, 44(2))",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:44"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:44",
+            "childLabels": [
+              "44(1)",
+              "44(2)",
+              "44(3)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "44(1)",
+          "44(2)",
+          "44(3)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "evidence/excerpt text of objectives referencing section:44 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-0c0bbda20e7199b5",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:44",
+      "category": "child-label",
+      "label": "44(3)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": true
+      },
+      "classification": "C",
+      "classificationBasis": "duplicate presentation of the same omission: an UNCOVERED_SUBSTANTIVE_SOURCE instance exists for the same (section:44, 44(3))",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:44"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:44",
+            "childLabels": [
+              "44(1)",
+              "44(2)",
+              "44(3)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "44(1)",
+          "44(2)",
+          "44(3)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "evidence/excerpt text of objectives referencing section:44 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-0c0bbda20e7199b5",
+      "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+      "sourceKey": "section:44",
+      "category": "child-label",
+      "label": "44(1)",
+      "approved": true,
+      "twin": {
+        "code": "APPROVED_FOCUS_NOT_COVERED",
+        "present": true
+      },
+      "classification": "A",
+      "classificationBasis": "primary diagnostic: the approved childLabel has no coverage child entry, which the approved-focus checker also presents (APPROVED_FOCUS_NOT_COVERED twin)",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:44"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:44",
+            "childLabels": [
+              "44(1)",
+              "44(2)",
+              "44(3)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "44(1)",
+          "44(2)",
+          "44(3)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "evidence/excerpt text of objectives referencing section:44 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-0c0bbda20e7199b5",
+      "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+      "sourceKey": "section:44",
+      "category": "child-label",
+      "label": "44(2)",
+      "approved": true,
+      "twin": {
+        "code": "APPROVED_FOCUS_NOT_COVERED",
+        "present": true
+      },
+      "classification": "A",
+      "classificationBasis": "primary diagnostic: the approved childLabel has no coverage child entry, which the approved-focus checker also presents (APPROVED_FOCUS_NOT_COVERED twin)",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:44"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:44",
+            "childLabels": [
+              "44(1)",
+              "44(2)",
+              "44(3)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "44(1)",
+          "44(2)",
+          "44(3)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "evidence/excerpt text of objectives referencing section:44 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-0c0bbda20e7199b5",
+      "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+      "sourceKey": "section:44",
+      "category": "child-label",
+      "label": "44(3)",
+      "approved": true,
+      "twin": {
+        "code": "APPROVED_FOCUS_NOT_COVERED",
+        "present": true
+      },
+      "classification": "A",
+      "classificationBasis": "primary diagnostic: the approved childLabel has no coverage child entry, which the approved-focus checker also presents (APPROVED_FOCUS_NOT_COVERED twin)",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:44"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:44",
+            "childLabels": [
+              "44(1)",
+              "44(2)",
+              "44(3)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "44(1)",
+          "44(2)",
+          "44(3)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "evidence/excerpt text of objectives referencing section:44 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-0f35a3d73578f1dc",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:1",
+      "category": "child-label",
+      "label": "1(1)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": true
+      },
+      "classification": "C",
+      "classificationBasis": "duplicate presentation of the same omission: an UNCOVERED_SUBSTANTIVE_SOURCE instance exists for the same (section:1, 1(1))",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:1"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:1",
+            "childLabels": [
+              "1(1)",
+              "1(2)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "1(1)",
+          "1(2)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "coverage-declared",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "subsection text length 545 > 400; teaching ids fall back to the declared coverage objectiveIds"
+      }
+    },
+    {
+      "jobId": "unit-0f35a3d73578f1dc",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:1",
+      "category": "child-label",
+      "label": "1(2)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": true
+      },
+      "classification": "C",
+      "classificationBasis": "duplicate presentation of the same omission: an UNCOVERED_SUBSTANTIVE_SOURCE instance exists for the same (section:1, 1(2))",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:1"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:1",
+            "childLabels": [
+              "1(1)",
+              "1(2)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "1(1)",
+          "1(2)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "evidence/excerpt text of objectives referencing section:1 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-0f35a3d73578f1dc",
+      "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+      "sourceKey": "section:1",
+      "category": "child-label",
+      "label": "1(1)",
+      "approved": true,
+      "twin": {
+        "code": "APPROVED_FOCUS_NOT_COVERED",
+        "present": true
+      },
+      "classification": "A",
+      "classificationBasis": "primary diagnostic: the approved childLabel has no coverage child entry, which the approved-focus checker also presents (APPROVED_FOCUS_NOT_COVERED twin)",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:1"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:1",
+            "childLabels": [
+              "1(1)",
+              "1(2)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "1(1)",
+          "1(2)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "coverage-declared",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "subsection text length 545 > 400; teaching ids fall back to the declared coverage objectiveIds"
+      }
+    },
+    {
+      "jobId": "unit-0f35a3d73578f1dc",
+      "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+      "sourceKey": "section:1",
+      "category": "child-label",
+      "label": "1(2)",
+      "approved": true,
+      "twin": {
+        "code": "APPROVED_FOCUS_NOT_COVERED",
+        "present": true
+      },
+      "classification": "A",
+      "classificationBasis": "primary diagnostic: the approved childLabel has no coverage child entry, which the approved-focus checker also presents (APPROVED_FOCUS_NOT_COVERED twin)",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:1"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:1",
+            "childLabels": [
+              "1(1)",
+              "1(2)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "1(1)",
+          "1(2)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "evidence/excerpt text of objectives referencing section:1 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-1d069dae182e4d4a",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:13",
+      "category": "child-label",
+      "label": "13(5)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": true
+      },
+      "classification": "C",
+      "classificationBasis": "duplicate presentation of the same omission: an UNCOVERED_SUBSTANTIVE_SOURCE instance exists for the same (section:13, 13(5))",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:13"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:13",
+            "childLabels": [
+              "13(5)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "13(5)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "coverage-declared",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "subsection text length 1090 > 400; teaching ids fall back to the declared coverage objectiveIds"
+      }
+    },
+    {
+      "jobId": "unit-1d069dae182e4d4a",
+      "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+      "sourceKey": "section:13",
+      "category": "child-label",
+      "label": "13(5)",
+      "approved": true,
+      "twin": {
+        "code": "APPROVED_FOCUS_NOT_COVERED",
+        "present": true
+      },
+      "classification": "A",
+      "classificationBasis": "primary diagnostic: the approved childLabel has no coverage child entry, which the approved-focus checker also presents (APPROVED_FOCUS_NOT_COVERED twin)",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:13"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:13",
+            "childLabels": [
+              "13(5)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "13(5)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "coverage-declared",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "subsection text length 1090 > 400; teaching ids fall back to the declared coverage objectiveIds"
+      }
+    },
+    {
+      "jobId": "unit-21c62d64fd32c92f",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:18",
+      "category": "child-label",
+      "label": "18(5)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": true
+      },
+      "classification": "C",
+      "classificationBasis": "duplicate presentation of the same omission: an UNCOVERED_SUBSTANTIVE_SOURCE instance exists for the same (section:18, 18(5))",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:18"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:18",
+            "childLabels": [
+              "18(5)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "18(5)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "coverage-declared",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "subsection text length 632 > 400; teaching ids fall back to the declared coverage objectiveIds"
+      }
+    },
+    {
+      "jobId": "unit-21c62d64fd32c92f",
+      "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+      "sourceKey": "section:18",
+      "category": "child-label",
+      "label": "18(5)",
+      "approved": true,
+      "twin": {
+        "code": "APPROVED_FOCUS_NOT_COVERED",
+        "present": true
+      },
+      "classification": "A",
+      "classificationBasis": "primary diagnostic: the approved childLabel has no coverage child entry, which the approved-focus checker also presents (APPROVED_FOCUS_NOT_COVERED twin)",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:18"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:18",
+            "childLabels": [
+              "18(5)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "18(5)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "coverage-declared",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "subsection text length 632 > 400; teaching ids fall back to the declared coverage objectiveIds"
+      }
+    },
+    {
+      "jobId": "unit-5d2a9f36002162d0",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:44",
+      "category": "child-label",
+      "label": "44(1)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": true
+      },
+      "classification": "C",
+      "classificationBasis": "duplicate presentation of the same omission: an UNCOVERED_SUBSTANTIVE_SOURCE instance exists for the same (section:44, 44(1))",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:44"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:44",
+            "childLabels": [
+              "44(1)",
+              "44(2)",
+              "44(3)",
+              "44(4)",
+              "44(5)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "44(1)",
+          "44(2)",
+          "44(3)",
+          "44(4)",
+          "44(5)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "coverage-declared",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "subsection text length 1235 > 400; teaching ids fall back to the declared coverage objectiveIds"
+      }
+    },
+    {
+      "jobId": "unit-5d2a9f36002162d0",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:44",
+      "category": "child-label",
+      "label": "44(2)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": true
+      },
+      "classification": "C",
+      "classificationBasis": "duplicate presentation of the same omission: an UNCOVERED_SUBSTANTIVE_SOURCE instance exists for the same (section:44, 44(2))",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:44"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:44",
+            "childLabels": [
+              "44(1)",
+              "44(2)",
+              "44(3)",
+              "44(4)",
+              "44(5)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "44(1)",
+          "44(2)",
+          "44(3)",
+          "44(4)",
+          "44(5)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "coverage-declared",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "subsection text length 420 > 400; teaching ids fall back to the declared coverage objectiveIds"
+      }
+    },
+    {
+      "jobId": "unit-5d2a9f36002162d0",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:44",
+      "category": "child-label",
+      "label": "44(3)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": true
+      },
+      "classification": "C",
+      "classificationBasis": "duplicate presentation of the same omission: an UNCOVERED_SUBSTANTIVE_SOURCE instance exists for the same (section:44, 44(3))",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:44"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:44",
+            "childLabels": [
+              "44(1)",
+              "44(2)",
+              "44(3)",
+              "44(4)",
+              "44(5)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "44(1)",
+          "44(2)",
+          "44(3)",
+          "44(4)",
+          "44(5)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [
+        "obj-44-23-deed-variation-savings"
+      ],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [
+          "obj-44-23-deed-variation-savings"
+        ],
+        "note": "evidence/excerpt text of objectives referencing section:44 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-5d2a9f36002162d0",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:44",
+      "category": "child-label",
+      "label": "44(4)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": true
+      },
+      "classification": "C",
+      "classificationBasis": "duplicate presentation of the same omission: an UNCOVERED_SUBSTANTIVE_SOURCE instance exists for the same (section:44, 44(4))",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:44"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:44",
+            "childLabels": [
+              "44(1)",
+              "44(2)",
+              "44(3)",
+              "44(4)",
+              "44(5)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "44(1)",
+          "44(2)",
+          "44(3)",
+          "44(4)",
+          "44(5)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [
+        "obj-44-45-buy-in-definitions"
+      ],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [
+          "obj-44-45-buy-in-definitions"
+        ],
+        "note": "evidence/excerpt text of objectives referencing section:44 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-5d2a9f36002162d0",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:44",
+      "category": "child-label",
+      "label": "44(5)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": true
+      },
+      "classification": "C",
+      "classificationBasis": "duplicate presentation of the same omission: an UNCOVERED_SUBSTANTIVE_SOURCE instance exists for the same (section:44, 44(5))",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:44"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:44",
+            "childLabels": [
+              "44(1)",
+              "44(2)",
+              "44(3)",
+              "44(4)",
+              "44(5)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "44(1)",
+          "44(2)",
+          "44(3)",
+          "44(4)",
+          "44(5)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "evidence/excerpt text of objectives referencing section:44 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-5d2a9f36002162d0",
+      "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+      "sourceKey": "section:44",
+      "category": "child-label",
+      "label": "44(1)",
+      "approved": true,
+      "twin": {
+        "code": "APPROVED_FOCUS_NOT_COVERED",
+        "present": true
+      },
+      "classification": "A",
+      "classificationBasis": "primary diagnostic: the approved childLabel has no coverage child entry, which the approved-focus checker also presents (APPROVED_FOCUS_NOT_COVERED twin)",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:44"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:44",
+            "childLabels": [
+              "44(1)",
+              "44(2)",
+              "44(3)",
+              "44(4)",
+              "44(5)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "44(1)",
+          "44(2)",
+          "44(3)",
+          "44(4)",
+          "44(5)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "coverage-declared",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "subsection text length 1235 > 400; teaching ids fall back to the declared coverage objectiveIds"
+      }
+    },
+    {
+      "jobId": "unit-5d2a9f36002162d0",
+      "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+      "sourceKey": "section:44",
+      "category": "child-label",
+      "label": "44(2)",
+      "approved": true,
+      "twin": {
+        "code": "APPROVED_FOCUS_NOT_COVERED",
+        "present": true
+      },
+      "classification": "A",
+      "classificationBasis": "primary diagnostic: the approved childLabel has no coverage child entry, which the approved-focus checker also presents (APPROVED_FOCUS_NOT_COVERED twin)",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:44"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:44",
+            "childLabels": [
+              "44(1)",
+              "44(2)",
+              "44(3)",
+              "44(4)",
+              "44(5)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "44(1)",
+          "44(2)",
+          "44(3)",
+          "44(4)",
+          "44(5)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "coverage-declared",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "subsection text length 420 > 400; teaching ids fall back to the declared coverage objectiveIds"
+      }
+    },
+    {
+      "jobId": "unit-5d2a9f36002162d0",
+      "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+      "sourceKey": "section:44",
+      "category": "child-label",
+      "label": "44(3)",
+      "approved": true,
+      "twin": {
+        "code": "APPROVED_FOCUS_NOT_COVERED",
+        "present": true
+      },
+      "classification": "A",
+      "classificationBasis": "primary diagnostic: the approved childLabel has no coverage child entry, which the approved-focus checker also presents (APPROVED_FOCUS_NOT_COVERED twin)",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:44"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:44",
+            "childLabels": [
+              "44(1)",
+              "44(2)",
+              "44(3)",
+              "44(4)",
+              "44(5)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "44(1)",
+          "44(2)",
+          "44(3)",
+          "44(4)",
+          "44(5)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [
+        "obj-44-23-deed-variation-savings"
+      ],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [
+          "obj-44-23-deed-variation-savings"
+        ],
+        "note": "evidence/excerpt text of objectives referencing section:44 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-5d2a9f36002162d0",
+      "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+      "sourceKey": "section:44",
+      "category": "child-label",
+      "label": "44(4)",
+      "approved": true,
+      "twin": {
+        "code": "APPROVED_FOCUS_NOT_COVERED",
+        "present": true
+      },
+      "classification": "A",
+      "classificationBasis": "primary diagnostic: the approved childLabel has no coverage child entry, which the approved-focus checker also presents (APPROVED_FOCUS_NOT_COVERED twin)",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:44"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:44",
+            "childLabels": [
+              "44(1)",
+              "44(2)",
+              "44(3)",
+              "44(4)",
+              "44(5)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "44(1)",
+          "44(2)",
+          "44(3)",
+          "44(4)",
+          "44(5)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [
+        "obj-44-45-buy-in-definitions"
+      ],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [
+          "obj-44-45-buy-in-definitions"
+        ],
+        "note": "evidence/excerpt text of objectives referencing section:44 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-5d2a9f36002162d0",
+      "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+      "sourceKey": "section:44",
+      "category": "child-label",
+      "label": "44(5)",
+      "approved": true,
+      "twin": {
+        "code": "APPROVED_FOCUS_NOT_COVERED",
+        "present": true
+      },
+      "classification": "A",
+      "classificationBasis": "primary diagnostic: the approved childLabel has no coverage child entry, which the approved-focus checker also presents (APPROVED_FOCUS_NOT_COVERED twin)",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:44"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:44",
+            "childLabels": [
+              "44(1)",
+              "44(2)",
+              "44(3)",
+              "44(4)",
+              "44(5)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "44(1)",
+          "44(2)",
+          "44(3)",
+          "44(4)",
+          "44(5)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "evidence/excerpt text of objectives referencing section:44 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-5fadda40929f11f0",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:9",
+      "category": "child-label",
+      "label": "9(2)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": true
+      },
+      "classification": "C",
+      "classificationBasis": "duplicate presentation of the same omission: an UNCOVERED_SUBSTANTIVE_SOURCE instance exists for the same (section:9, 9(2))",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:9"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:9",
+            "childLabels": [
+              "9(2)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "9(2)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "coverage-declared",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "subsection text length 2515 > 400; teaching ids fall back to the declared coverage objectiveIds"
+      }
+    },
+    {
+      "jobId": "unit-5fadda40929f11f0",
+      "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+      "sourceKey": "section:9",
+      "category": "child-label",
+      "label": "9(2)",
+      "approved": true,
+      "twin": {
+        "code": "APPROVED_FOCUS_NOT_COVERED",
+        "present": true
+      },
+      "classification": "A",
+      "classificationBasis": "primary diagnostic: the approved childLabel has no coverage child entry, which the approved-focus checker also presents (APPROVED_FOCUS_NOT_COVERED twin)",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:9"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:9",
+            "childLabels": [
+              "9(2)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "9(2)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "coverage-declared",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "subsection text length 2515 > 400; teaching ids fall back to the declared coverage objectiveIds"
+      }
+    },
+    {
+      "jobId": "unit-806dcd5f7b8ca4e8",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:19",
+      "category": "child-label",
+      "label": "19(5)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": true
+      },
+      "classification": "C",
+      "classificationBasis": "duplicate presentation of the same omission: an UNCOVERED_SUBSTANTIVE_SOURCE instance exists for the same (section:19, 19(5))",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:19"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:19",
+            "childLabels": [
+              "19(5)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "19(5)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "evidence/excerpt text of objectives referencing section:19 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-806dcd5f7b8ca4e8",
+      "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+      "sourceKey": "section:19",
+      "category": "child-label",
+      "label": "19(5)",
+      "approved": true,
+      "twin": {
+        "code": "APPROVED_FOCUS_NOT_COVERED",
+        "present": true
+      },
+      "classification": "A",
+      "classificationBasis": "primary diagnostic: the approved childLabel has no coverage child entry, which the approved-focus checker also presents (APPROVED_FOCUS_NOT_COVERED twin)",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:19"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:19",
+            "childLabels": [
+              "19(5)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "19(5)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "evidence/excerpt text of objectives referencing section:19 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-a795aa5cbc9d3ee6",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:16(2)",
+      "category": "child-label",
+      "label": "16(2)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": false
+      },
+      "classification": "A",
+      "classificationBasis": "no coverage child entry exists for the approved childLabel and it is not among the source's in-scope subsections, so only the approved-focus checker can flag it",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:16(2)",
+          "section:17(1)"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:16(2)",
+            "childLabels": [
+              "16(2)"
+            ],
+            "definedTerms": []
+          },
+          {
+            "sourceKey": "section:17(1)",
+            "childLabels": [
+              "17(1)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "16(2)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "none",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "label is not a subsection of the source component; no evidence-containment probe possible"
+      }
+    },
+    {
+      "jobId": "unit-a795aa5cbc9d3ee6",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:17(1)",
+      "category": "child-label",
+      "label": "17(1)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": false
+      },
+      "classification": "A",
+      "classificationBasis": "no coverage child entry exists for the approved childLabel and it is not among the source's in-scope subsections, so only the approved-focus checker can flag it",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:16(2)",
+          "section:17(1)"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:16(2)",
+            "childLabels": [
+              "16(2)"
+            ],
+            "definedTerms": []
+          },
+          {
+            "sourceKey": "section:17(1)",
+            "childLabels": [
+              "17(1)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "17(1)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "none",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "label is not a subsection of the source component; no evidence-containment probe possible"
+      }
+    },
+    {
+      "jobId": "unit-ad5f94891873617a",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:13",
+      "category": "child-label",
+      "label": "13(3)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": true
+      },
+      "classification": "C",
+      "classificationBasis": "duplicate presentation of the same omission: an UNCOVERED_SUBSTANTIVE_SOURCE instance exists for the same (section:13, 13(3))",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:13"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:13",
+            "childLabels": [
+              "13(3)",
+              "13(4)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "13(3)",
+          "13(4)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "coverage-declared",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "subsection text length 1381 > 400; teaching ids fall back to the declared coverage objectiveIds"
+      }
+    },
+    {
+      "jobId": "unit-ad5f94891873617a",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:13",
+      "category": "child-label",
+      "label": "13(4)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": true
+      },
+      "classification": "C",
+      "classificationBasis": "duplicate presentation of the same omission: an UNCOVERED_SUBSTANTIVE_SOURCE instance exists for the same (section:13, 13(4))",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:13"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:13",
+            "childLabels": [
+              "13(3)",
+              "13(4)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "13(3)",
+          "13(4)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "coverage-declared",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "subsection text length 1738 > 400; teaching ids fall back to the declared coverage objectiveIds"
+      }
+    },
+    {
+      "jobId": "unit-ad5f94891873617a",
+      "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+      "sourceKey": "section:13",
+      "category": "child-label",
+      "label": "13(3)",
+      "approved": true,
+      "twin": {
+        "code": "APPROVED_FOCUS_NOT_COVERED",
+        "present": true
+      },
+      "classification": "A",
+      "classificationBasis": "primary diagnostic: the approved childLabel has no coverage child entry, which the approved-focus checker also presents (APPROVED_FOCUS_NOT_COVERED twin)",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:13"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:13",
+            "childLabels": [
+              "13(3)",
+              "13(4)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "13(3)",
+          "13(4)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "coverage-declared",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "subsection text length 1381 > 400; teaching ids fall back to the declared coverage objectiveIds"
+      }
+    },
+    {
+      "jobId": "unit-ad5f94891873617a",
+      "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+      "sourceKey": "section:13",
+      "category": "child-label",
+      "label": "13(4)",
+      "approved": true,
+      "twin": {
+        "code": "APPROVED_FOCUS_NOT_COVERED",
+        "present": true
+      },
+      "classification": "A",
+      "classificationBasis": "primary diagnostic: the approved childLabel has no coverage child entry, which the approved-focus checker also presents (APPROVED_FOCUS_NOT_COVERED twin)",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:13"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:13",
+            "childLabels": [
+              "13(3)",
+              "13(4)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "13(3)",
+          "13(4)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "coverage-declared",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "subsection text length 1738 > 400; teaching ids fall back to the declared coverage objectiveIds"
+      }
+    },
+    {
+      "jobId": "unit-dc58323956b9fd42",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:90",
+      "category": "child-label",
+      "label": "90(1)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": true
+      },
+      "classification": "C",
+      "classificationBasis": "duplicate presentation of the same omission: an UNCOVERED_SUBSTANTIVE_SOURCE instance exists for the same (section:90, 90(1))",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:90"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:90",
+            "childLabels": [
+              "90(1)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "90(1)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "coverage-declared",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "subsection text length 3994 > 400; teaching ids fall back to the declared coverage objectiveIds"
+      }
+    },
+    {
+      "jobId": "unit-dc58323956b9fd42",
+      "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+      "sourceKey": "section:90",
+      "category": "child-label",
+      "label": "90(1)",
+      "approved": true,
+      "twin": {
+        "code": "APPROVED_FOCUS_NOT_COVERED",
+        "present": true
+      },
+      "classification": "A",
+      "classificationBasis": "primary diagnostic: the approved childLabel has no coverage child entry, which the approved-focus checker also presents (APPROVED_FOCUS_NOT_COVERED twin)",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:90"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:90",
+            "childLabels": [
+              "90(1)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "90(1)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "coverage-declared",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "subsection text length 3994 > 400; teaching ids fall back to the declared coverage objectiveIds"
+      }
+    },
+    {
+      "jobId": "unit-ea7e4c75c7a425ce",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:13",
+      "category": "child-label",
+      "label": "13(2)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": true
+      },
+      "classification": "C",
+      "classificationBasis": "duplicate presentation of the same omission: an UNCOVERED_SUBSTANTIVE_SOURCE instance exists for the same (section:13, 13(2))",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:13"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:13",
+            "childLabels": [
+              "13(2)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "13(2)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "evidence/excerpt text of objectives referencing section:13 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-ea7e4c75c7a425ce",
+      "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+      "sourceKey": "section:13",
+      "category": "child-label",
+      "label": "13(2)",
+      "approved": true,
+      "twin": {
+        "code": "APPROVED_FOCUS_NOT_COVERED",
+        "present": true
+      },
+      "classification": "A",
+      "classificationBasis": "primary diagnostic: the approved childLabel has no coverage child entry, which the approved-focus checker also presents (APPROVED_FOCUS_NOT_COVERED twin)",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:13"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:13",
+            "childLabels": [
+              "13(2)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "13(2)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "evidence-containment",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "evidence/excerpt text of objectives referencing section:13 contains the normalized subsection text (<= 400 chars)"
+      }
+    },
+    {
+      "jobId": "unit-f1d3de4004dd0d17",
+      "code": "APPROVED_FOCUS_NOT_COVERED",
+      "sourceKey": "section:71",
+      "category": "child-label",
+      "label": "71(1)",
+      "approved": true,
+      "twin": {
+        "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "present": true
+      },
+      "classification": "C",
+      "classificationBasis": "duplicate presentation of the same omission: an UNCOVERED_SUBSTANTIVE_SOURCE instance exists for the same (section:71, 71(1))",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:71"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:71",
+            "childLabels": [
+              "71(1)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "71(1)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "coverage-declared",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "subsection text length 2073 > 400; teaching ids fall back to the declared coverage objectiveIds"
+      }
+    },
+    {
+      "jobId": "unit-f1d3de4004dd0d17",
+      "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+      "sourceKey": "section:71",
+      "category": "child-label",
+      "label": "71(1)",
+      "approved": true,
+      "twin": {
+        "code": "APPROVED_FOCUS_NOT_COVERED",
+        "present": true
+      },
+      "classification": "A",
+      "classificationBasis": "primary diagnostic: the approved childLabel has no coverage child entry, which the approved-focus checker also presents (APPROVED_FOCUS_NOT_COVERED twin)",
+      "approvedGroup": {
+        "sourceKeys": [
+          "section:71"
+        ],
+        "focusSelections": [
+          {
+            "sourceKey": "section:71",
+            "childLabels": [
+              "71(1)"
+            ],
+            "definedTerms": []
+          }
+        ]
+      },
+      "selectedFocusItems": {
+        "childLabels": [
+          "71(1)"
+        ],
+        "definedTerms": []
+      },
+      "sourceCoverageEntry": null,
+      "objectiveIds": [],
+      "substantiveAssessment": {
+        "method": "coverage-declared",
+        "coverageStatus": null,
+        "coverageReason": null,
+        "declaredObjectiveIds": [],
+        "teachingObjectiveIds": [],
+        "note": "subsection text length 2073 > 400; teaching ids fall back to the declared coverage objectiveIds"
+      }
+    }
+  ]
+}

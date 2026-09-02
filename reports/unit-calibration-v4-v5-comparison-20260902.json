@@ -1,0 +1,659 @@
+{
+  "schemaVersion": 1,
+  "kind": "unit-calibration-v4-v5-comparison",
+  "dateTag": "20260902",
+  "generatedAt": "2026-09-02T00:00:00.000Z",
+  "cohortSize": 80,
+  "crosswalkSha256": "ca5d0c62671319c6b44b7f0ee8816dc938b6732696be617ae1cf887f8b215fea",
+  "specShas": {
+    "v4": "ecbb97301866b900ff82e8cbd632f9af65f6f3a7929c2b283939329fd27a683b",
+    "v5": "8987b7daf346c61e312f2c381752049944d6316f655829f697e0283a858169bd"
+  },
+  "perRun": {
+    "v4": {
+      "runId": "ai-units-2026-09-02-frozen-map-cal80-v4",
+      "model": "Qwen3.8-27B-UD-IQ4_XS",
+      "endpoint": "http://127.0.0.1:8080/v1",
+      "concurrency": 1,
+      "promptSpecVersion": "unit-authoring-v4",
+      "specSha256": "ecbb97301866b900ff82e8cbd632f9af65f6f3a7929c2b283939329fd27a683b",
+      "jobsTotal": 80,
+      "accepted": 80,
+      "semanticFailed": 0,
+      "providerIncomplete": 0,
+      "nothing": 0,
+      "totalRejectedAttemptFiles": 15,
+      "rejectedSemanticAttempts": 15,
+      "providerAttempts": 0,
+      "worstRetryJob": {
+        "jobId": "unit-07fa6fc1208594ca",
+        "rejectedAttemptFiles": 4
+      }
+    },
+    "v5": {
+      "runId": "ai-units-2026-09-02-frozen-map-cal80-v5",
+      "model": "Qwen3.8-27B-UD-IQ4_XS",
+      "endpoint": "http://127.0.0.1:8080/v1",
+      "concurrency": 1,
+      "promptSpecVersion": "unit-authoring-v5",
+      "specSha256": "8987b7daf346c61e312f2c381752049944d6316f655829f697e0283a858169bd",
+      "jobsTotal": 80,
+      "accepted": 80,
+      "semanticFailed": 0,
+      "providerIncomplete": 0,
+      "nothing": 0,
+      "totalRejectedAttemptFiles": 69,
+      "rejectedSemanticAttempts": 69,
+      "providerAttempts": 0,
+      "worstRetryJob": {
+        "jobId": "unit-332a2ef669d3f464",
+        "rejectedAttemptFiles": 5
+      }
+    }
+  },
+  "statusTransitionMatrix": {
+    "v4Statuses": [
+      "generated",
+      "needs-map-revision"
+    ],
+    "v5Statuses": [
+      "generated"
+    ],
+    "counts": {
+      "generated": {
+        "generated": 45
+      },
+      "needs-map-revision": {
+        "generated": 35
+      }
+    },
+    "total": 80
+  },
+  "revisionConsistencyV5": {
+    "generatedWithBroadWarning": {
+      "count": 0,
+      "jobIds": []
+    },
+    "generatedWithSuggestion": {
+      "count": 0,
+      "jobIds": []
+    },
+    "needsRevisionWithoutBroadWarning": {
+      "count": 0,
+      "jobIds": []
+    },
+    "needsRevisionWithoutSuggestion": {
+      "count": 0,
+      "jobIds": []
+    },
+    "needsRevisionWithContradictoryReason": {
+      "count": 0,
+      "jobIds": []
+    }
+  },
+  "warnings": {
+    "codes": [
+      "ANSWER_APPEARS_TRUNCATED",
+      "APPROVED_FOCUS_NOT_COVERED",
+      "DEFINITION_ANSWER_MISSING_TERM_MEANING",
+      "GUIDED_QUESTION_TOO_LONG",
+      "MAIN_QUESTION_TOO_LONG",
+      "POSSIBLE_MODALITY_MISMATCH",
+      "UNCOVERED_SUBSTANTIVE_SOURCE",
+      "UNSUPPORTED_NUMERIC_OR_REFERENCE"
+    ],
+    "v4": {
+      "ANSWER_APPEARS_TRUNCATED": 13,
+      "APPROVED_FOCUS_NOT_COVERED": 49,
+      "DEFINITION_ANSWER_MISSING_TERM_MEANING": 2,
+      "GUIDED_QUESTION_TOO_LONG": 18,
+      "MAIN_QUESTION_TOO_LONG": 22,
+      "POSSIBLE_MODALITY_MISMATCH": 3,
+      "UNCOVERED_SUBSTANTIVE_SOURCE": 37,
+      "UNSUPPORTED_NUMERIC_OR_REFERENCE": 27
+    },
+    "v5": {
+      "ANSWER_APPEARS_TRUNCATED": 15,
+      "APPROVED_FOCUS_NOT_COVERED": 16,
+      "DEFINITION_ANSWER_MISSING_TERM_MEANING": 2,
+      "POSSIBLE_MODALITY_MISMATCH": 6,
+      "UNCOVERED_SUBSTANTIVE_SOURCE": 10,
+      "UNSUPPORTED_NUMERIC_OR_REFERENCE": 13
+    },
+    "v4Total": 171,
+    "v5Total": 62,
+    "v4CoverageReconciliation": {
+      "expected": {
+        "APPROVED_FOCUS_NOT_COVERED": 49,
+        "UNCOVERED_SUBSTANTIVE_SOURCE": 37,
+        "total": 86
+      },
+      "recomputed": {
+        "APPROVED_FOCUS_NOT_COVERED": 49,
+        "UNCOVERED_SUBSTANTIVE_SOURCE": 37,
+        "total": 86
+      },
+      "matched": true,
+      "note": "V4 canonical-revalidation warning instances for the two coverage codes, recomputed over the accepted V4 proposals; must match the frozen prior audit (49 APPROVED_FOCUS_NOT_COVERED / 37 UNCOVERED_SUBSTANTIVE_SOURCE = 86)."
+    }
+  },
+  "questions": {
+    "v4": {
+      "count": 80,
+      "meanLengthChars": 213.06,
+      "overMain180": 56,
+      "overMain240": 22,
+      "overGuided160": 90,
+      "overGuided220": 18
+    },
+    "v5": {
+      "count": 80,
+      "meanLengthChars": 164.2,
+      "overMain180": 24,
+      "overMain240": 0,
+      "overGuided160": 28,
+      "overGuided220": 0
+    }
+  },
+  "objectives": {
+    "v4": {
+      "1": 12,
+      "2": 26,
+      "3": 24,
+      "4": 17,
+      "5": 1
+    },
+    "v5": {
+      "1": 7,
+      "2": 33,
+      "3": 16,
+      "4": 22,
+      "5": 2
+    }
+  },
+  "anchors": [
+    {
+      "seq": 27,
+      "v4JobId": "unit-5fadda40929f11f0",
+      "v5JobId": "unit-99bdb6cd6f15f777",
+      "v4Status": "needs-map-revision",
+      "v5Status": "generated",
+      "v4Warnings": [
+        "MAP_GROUP_TOO_BROAD_FOR_GOOD_UNIT"
+      ],
+      "v5Warnings": [],
+      "verdict": "status-change"
+    },
+    {
+      "seq": 30,
+      "v4JobId": "unit-09121fea0dce567b",
+      "v5JobId": "unit-addc04e113bb4ae1",
+      "v4Status": "generated",
+      "v5Status": "generated",
+      "v4Warnings": [],
+      "v5Warnings": [],
+      "verdict": "stable"
+    },
+    {
+      "seq": 31,
+      "v4JobId": "unit-e60f2ed653e5363a",
+      "v5JobId": "unit-c9285cd7f533a2ab",
+      "v4Status": "needs-map-revision",
+      "v5Status": "generated",
+      "v4Warnings": [],
+      "v5Warnings": [],
+      "verdict": "status-change"
+    },
+    {
+      "seq": 32,
+      "v4JobId": "unit-21c62d64fd32c92f",
+      "v5JobId": "unit-5eefb3ed8c3ce251",
+      "v4Status": "needs-map-revision",
+      "v5Status": "generated",
+      "v4Warnings": [
+        "MAP_GROUP_TOO_BROAD_FOR_GOOD_UNIT"
+      ],
+      "v5Warnings": [],
+      "verdict": "status-change"
+    },
+    {
+      "seq": 33,
+      "v4JobId": "unit-806dcd5f7b8ca4e8",
+      "v5JobId": "unit-bfebe45a58764cbf",
+      "v4Status": "generated",
+      "v5Status": "generated",
+      "v4Warnings": [],
+      "v5Warnings": [],
+      "verdict": "stable"
+    },
+    {
+      "seq": 34,
+      "v4JobId": "unit-24d4ce03d041f274",
+      "v5JobId": "unit-061b46bb0538188c",
+      "v4Status": "generated",
+      "v5Status": "generated",
+      "v4Warnings": [],
+      "v5Warnings": [],
+      "verdict": "stable"
+    },
+    {
+      "seq": 35,
+      "v4JobId": "unit-00066425d3dd3645",
+      "v5JobId": "unit-dc047ee16ef0e408",
+      "v4Status": "needs-map-revision",
+      "v5Status": "generated",
+      "v4Warnings": [],
+      "v5Warnings": [],
+      "verdict": "status-change"
+    }
+  ],
+  "ocrCase": {
+    "seq": 70,
+    "v4JobId": "unit-07fa6fc1208594ca",
+    "v5JobId": "unit-0344f31b1107b2dc",
+    "groupId": "g-18-2-registration-entry-conditions",
+    "titleSuggestion": "Conditions for entering a name in the register",
+    "byLaws": {
+      "v4JobExactSourceText": true,
+      "v4EvidenceUnion": true,
+      "v5EvidenceUnion": true,
+      "v5ObjectiveIds": [
+        "obj-18-2-authorization"
+      ]
+    },
+    "registrar": {
+      "v4JobExactSourceText": true,
+      "v4EvidenceUnion": true,
+      "v5EvidenceUnion": true,
+      "v5ObjectiveIds": [
+        "obj-18-2-evidence-entitlement"
+      ]
+    }
+  },
+  "namedSubsets": {
+    "finalQc20": {
+      "count": 20,
+      "rows": [
+        {
+          "seq": 1,
+          "v4JobId": "unit-40730d04faf14076",
+          "v5JobId": "unit-e3f6eb223f9c6b22",
+          "v4Status": "generated",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 2,
+          "v4JobId": "unit-f1d3de4004dd0d17",
+          "v5JobId": "unit-f463819104abd315",
+          "v4Status": "generated",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 3,
+          "v4JobId": "unit-02c1922ab2c2961a",
+          "v5JobId": "unit-5ba258431f90f343",
+          "v4Status": "needs-map-revision",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 4,
+          "v4JobId": "unit-9ceefa172c31deea",
+          "v5JobId": "unit-fcc8bb2c8653b95d",
+          "v4Status": "needs-map-revision",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 5,
+          "v4JobId": "unit-d9b1e53de714665c",
+          "v5JobId": "unit-d4b1280dd51c16a3",
+          "v4Status": "generated",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 6,
+          "v4JobId": "unit-1d069dae182e4d4a",
+          "v5JobId": "unit-332a2ef669d3f464",
+          "v4Status": "needs-map-revision",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 7,
+          "v4JobId": "unit-ad5f94891873617a",
+          "v5JobId": "unit-6f65dea4a13630e9",
+          "v4Status": "generated",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 8,
+          "v4JobId": "unit-e9fe22342cc56c8a",
+          "v5JobId": "unit-44a5e5a34f069c1d",
+          "v4Status": "generated",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 9,
+          "v4JobId": "unit-ea7e4c75c7a425ce",
+          "v5JobId": "unit-79cacfaeddf74f82",
+          "v4Status": "needs-map-revision",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 10,
+          "v4JobId": "unit-892e38efffb31976",
+          "v5JobId": "unit-6480451b3fe42be2",
+          "v4Status": "needs-map-revision",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 11,
+          "v4JobId": "unit-b176ebe94507fd17",
+          "v5JobId": "unit-c562d9132d24d3e6",
+          "v4Status": "needs-map-revision",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 12,
+          "v4JobId": "unit-9aa4dea732c4bc43",
+          "v5JobId": "unit-db1eb97629092cb5",
+          "v4Status": "generated",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 13,
+          "v4JobId": "unit-de14b7aae121ea5a",
+          "v5JobId": "unit-9ff278807624e3ae",
+          "v4Status": "generated",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 14,
+          "v4JobId": "unit-df983b36ee36be82",
+          "v5JobId": "unit-23337f055c22b192",
+          "v4Status": "generated",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 15,
+          "v4JobId": "unit-2f3e7edff1d80df7",
+          "v5JobId": "unit-6e340018655584a7",
+          "v4Status": "needs-map-revision",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 16,
+          "v4JobId": "unit-15fa5c5ac251dfa1",
+          "v5JobId": "unit-d0fd18f6457af793",
+          "v4Status": "needs-map-revision",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 17,
+          "v4JobId": "unit-6a94737b69e069ce",
+          "v5JobId": "unit-e944b3a49f4b9bac",
+          "v4Status": "needs-map-revision",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 18,
+          "v4JobId": "unit-fdccd69202d3a203",
+          "v5JobId": "unit-d1742361c5ae3778",
+          "v4Status": "generated",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 19,
+          "v4JobId": "unit-ade0ea76fa6d04ef",
+          "v5JobId": "unit-bc439b485e0a8ce3",
+          "v4Status": "generated",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 20,
+          "v4JobId": "unit-dc58323956b9fd42",
+          "v5JobId": "unit-f91b57371792a0bb",
+          "v4Status": "needs-map-revision",
+          "v5Status": "generated"
+        }
+      ]
+    },
+    "anchors7": {
+      "count": 7,
+      "rows": [
+        {
+          "seq": 27,
+          "v4JobId": "unit-5fadda40929f11f0",
+          "v5JobId": "unit-99bdb6cd6f15f777",
+          "v4Status": "needs-map-revision",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 30,
+          "v4JobId": "unit-09121fea0dce567b",
+          "v5JobId": "unit-addc04e113bb4ae1",
+          "v4Status": "generated",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 31,
+          "v4JobId": "unit-e60f2ed653e5363a",
+          "v5JobId": "unit-c9285cd7f533a2ab",
+          "v4Status": "needs-map-revision",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 32,
+          "v4JobId": "unit-21c62d64fd32c92f",
+          "v5JobId": "unit-5eefb3ed8c3ce251",
+          "v4Status": "needs-map-revision",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 33,
+          "v4JobId": "unit-806dcd5f7b8ca4e8",
+          "v5JobId": "unit-bfebe45a58764cbf",
+          "v4Status": "generated",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 34,
+          "v4JobId": "unit-24d4ce03d041f274",
+          "v5JobId": "unit-061b46bb0538188c",
+          "v4Status": "generated",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 35,
+          "v4JobId": "unit-00066425d3dd3645",
+          "v5JobId": "unit-dc047ee16ef0e408",
+          "v4Status": "needs-map-revision",
+          "v5Status": "generated"
+        }
+      ]
+    },
+    "retry9": {
+      "count": 9,
+      "rows": [
+        {
+          "seq": 21,
+          "v4JobId": "unit-047b933c1567c5dd",
+          "v5JobId": "unit-ab80c5ba40812a83",
+          "v4Status": "needs-map-revision",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 22,
+          "v4JobId": "unit-2e7e67eb0f35fe35",
+          "v5JobId": "unit-3e12091103f6ec16",
+          "v4Status": "generated",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 23,
+          "v4JobId": "unit-019c765ae138d8b5",
+          "v5JobId": "unit-1778139a242e733a",
+          "v4Status": "needs-map-revision",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 24,
+          "v4JobId": "unit-143fc780953799e6",
+          "v5JobId": "unit-aca8067647cbf88f",
+          "v4Status": "generated",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 25,
+          "v4JobId": "unit-2eedbe7a21cb2c32",
+          "v5JobId": "unit-da8aeea638cab3fd",
+          "v4Status": "generated",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 26,
+          "v4JobId": "unit-023c1a4ddb31e2c5",
+          "v5JobId": "unit-9444b4424f6fa00b",
+          "v4Status": "needs-map-revision",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 27,
+          "v4JobId": "unit-5fadda40929f11f0",
+          "v5JobId": "unit-99bdb6cd6f15f777",
+          "v4Status": "needs-map-revision",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 28,
+          "v4JobId": "unit-5d2a9f36002162d0",
+          "v5JobId": "unit-71e27c24590d3242",
+          "v4Status": "needs-map-revision",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 29,
+          "v4JobId": "unit-c7dc47a1735eb69d",
+          "v5JobId": "unit-90ab6499b6928ad2",
+          "v4Status": "needs-map-revision",
+          "v5Status": "generated"
+        }
+      ]
+    },
+    "repealedMix16": {
+      "count": 16,
+      "rows": [
+        {
+          "seq": 3,
+          "v4JobId": "unit-02c1922ab2c2961a",
+          "v5JobId": "unit-5ba258431f90f343",
+          "v4Status": "needs-map-revision",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 4,
+          "v4JobId": "unit-9ceefa172c31deea",
+          "v5JobId": "unit-fcc8bb2c8653b95d",
+          "v4Status": "needs-map-revision",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 5,
+          "v4JobId": "unit-d9b1e53de714665c",
+          "v5JobId": "unit-d4b1280dd51c16a3",
+          "v4Status": "generated",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 6,
+          "v4JobId": "unit-1d069dae182e4d4a",
+          "v5JobId": "unit-332a2ef669d3f464",
+          "v4Status": "needs-map-revision",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 7,
+          "v4JobId": "unit-ad5f94891873617a",
+          "v5JobId": "unit-6f65dea4a13630e9",
+          "v4Status": "generated",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 8,
+          "v4JobId": "unit-e9fe22342cc56c8a",
+          "v5JobId": "unit-44a5e5a34f069c1d",
+          "v4Status": "generated",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 9,
+          "v4JobId": "unit-ea7e4c75c7a425ce",
+          "v5JobId": "unit-79cacfaeddf74f82",
+          "v4Status": "needs-map-revision",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 15,
+          "v4JobId": "unit-2f3e7edff1d80df7",
+          "v5JobId": "unit-6e340018655584a7",
+          "v4Status": "needs-map-revision",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 16,
+          "v4JobId": "unit-15fa5c5ac251dfa1",
+          "v5JobId": "unit-d0fd18f6457af793",
+          "v4Status": "needs-map-revision",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 17,
+          "v4JobId": "unit-6a94737b69e069ce",
+          "v5JobId": "unit-e944b3a49f4b9bac",
+          "v4Status": "needs-map-revision",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 18,
+          "v4JobId": "unit-fdccd69202d3a203",
+          "v5JobId": "unit-d1742361c5ae3778",
+          "v4Status": "generated",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 22,
+          "v4JobId": "unit-2e7e67eb0f35fe35",
+          "v5JobId": "unit-3e12091103f6ec16",
+          "v4Status": "generated",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 29,
+          "v4JobId": "unit-c7dc47a1735eb69d",
+          "v5JobId": "unit-90ab6499b6928ad2",
+          "v4Status": "needs-map-revision",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 32,
+          "v4JobId": "unit-21c62d64fd32c92f",
+          "v5JobId": "unit-5eefb3ed8c3ce251",
+          "v4Status": "needs-map-revision",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 33,
+          "v4JobId": "unit-806dcd5f7b8ca4e8",
+          "v5JobId": "unit-bfebe45a58764cbf",
+          "v4Status": "generated",
+          "v5Status": "generated"
+        },
+        {
+          "seq": 79,
+          "v4JobId": "unit-0ff46d399379a99b",
+          "v5JobId": "unit-c3d97c72d0c68c39",
+          "v4Status": "generated",
+          "v5Status": "generated"
+        }
+      ]
+    }
+  }
+}

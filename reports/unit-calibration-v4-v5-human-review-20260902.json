@@ -1,0 +1,2659 @@
+{
+  "schemaVersion": 1,
+  "kind": "unit-calibration-v4-v5-human-review",
+  "dateTag": "20260902",
+  "generatedAt": "2026-09-02T00:00:00.000Z",
+  "v4RunId": "ai-units-2026-09-02-frozen-map-cal80-v4",
+  "v5RunId": "ai-units-2026-09-02-frozen-map-cal80-v5",
+  "cohortSize": 80,
+  "summary": {
+    "tierCounts": {
+      "3": 35,
+      "5": 17,
+      "6": 28
+    },
+    "statusTransitions": {
+      "generated -> generated": 45,
+      "needs-map-revision -> generated": 35
+    },
+    "revisionConsistency": {
+      "generatedWithBroadWarning": 0,
+      "generatedWithSuggestion": 0,
+      "needsRevisionWithoutBroadWarning": 0,
+      "needsRevisionWithoutSuggestion": 0,
+      "needsRevisionWithContradictoryReason": 0
+    },
+    "ocrCase": {
+      "v4JobExactSourceText": true,
+      "v4EvidenceUnion": true,
+      "v5EvidenceUnion": true
+    }
+  },
+  "rows": [
+    {
+      "seq": 3,
+      "tier": 3,
+      "v4JobId": "unit-02c1922ab2c2961a",
+      "v5JobId": "unit-5ba258431f90f343",
+      "documentIds": [
+        "section:40"
+      ],
+      "titleSuggestion": "Release, handling and disposal of contaminants and wastes",
+      "frozenMapPriority": "P3",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "needs-map-revision",
+        "warnings": [],
+        "objectiveCount": 3,
+        "attemptCount": 1,
+        "mainQuestion": "Under the Clean Water Act, what matters may the Lieutenant-Governor in Council regulate under section 40 concerning the release and handling of contaminants and wastes in water, the withdrawal and use of water, and the measurement of contaminants or waste in or upon water?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 3,
+        "attemptCount": 2,
+        "mainQuestion": "What may the Lieutenant-Governor in Council regulate under Clean Water Act s. 40 concerning contaminants in water, the withdrawal and use of water, and standards for measuring contaminants?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": [
+          {
+            "code": "ANSWER_APPEARS_TRUNCATED",
+            "severity": "warning"
+          },
+          {
+            "code": "ANSWER_APPEARS_TRUNCATED",
+            "severity": "warning"
+          },
+          {
+            "code": "ANSWER_APPEARS_TRUNCATED",
+            "severity": "warning"
+          }
+        ]
+      }
+    },
+    {
+      "seq": 4,
+      "tier": 3,
+      "v4JobId": "unit-9ceefa172c31deea",
+      "v5JobId": "unit-fcc8bb2c8653b95d",
+      "documentIds": [
+        "section:40"
+      ],
+      "titleSuggestion": "Costs, claims, fees and inspectors",
+      "frozenMapPriority": "P3",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "needs-map-revision",
+        "warnings": [
+          "MAP_GROUP_TOO_BROAD_FOR_GOOD_UNIT"
+        ],
+        "objectiveCount": 4,
+        "attemptCount": 1,
+        "mainQuestion": "Under the Clean Water Act, what administrative matters may the Lieutenant-Governor in Council address by regulation under section 40 with respect to cost recovery, the handling of claims, fees on registrations and licences, and the work of inspectors and analysts?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 4,
+        "attemptCount": 2,
+        "mainQuestion": "Under section 40 of the Clean Water Act, what matters may the Lieutenant-Governor in Council regulate concerning cost recovery, claims, registration and permit fees, and the duties of inspectors and analysts?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 6,
+      "tier": 3,
+      "v4JobId": "unit-1d069dae182e4d4a",
+      "v5JobId": "unit-332a2ef669d3f464",
+      "documentIds": [
+        "section:13"
+      ],
+      "titleSuggestion": "Response to a possible future significant health risk",
+      "frozenMapPriority": "P3",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "needs-map-revision",
+        "warnings": [
+          "MAP_GROUP_TOO_BROAD_FOR_GOOD_UNIT"
+        ],
+        "objectiveCount": 2,
+        "attemptCount": 1,
+        "mainQuestion": "What may the Minister or the Minister of Health do under s. 13(5) of the Clean Water Act where water may in the circumstances pose a significant health risk in the future, and what must any resulting order or measures aim to ensure?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 3,
+        "attemptCount": 6,
+        "mainQuestion": "When water may pose a future significant health risk, what order may a Minister make under the Clean Water Act and what must it ensure?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": [
+          {
+            "code": "POSSIBLE_MODALITY_MISMATCH",
+            "severity": "warning"
+          },
+          {
+            "code": "POSSIBLE_MODALITY_MISMATCH",
+            "severity": "warning"
+          }
+        ]
+      }
+    },
+    {
+      "seq": 9,
+      "tier": 3,
+      "v4JobId": "unit-ea7e4c75c7a425ce",
+      "v5JobId": "unit-79cacfaeddf74f82",
+      "documentIds": [
+        "section:13"
+      ],
+      "titleSuggestion": "No person shall supply water posing a significant health risk",
+      "frozenMapPriority": "P3",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "needs-map-revision",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 1,
+        "mainQuestion": "Under s.13(2) of the Clean Water Act, what conduct is prohibited with respect to water that poses a significant health risk, which water sources are covered by the prohibition, and which source is excepted?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 2,
+        "mainQuestion": "What does the Clean Water Act prohibit regarding the supply of water that poses a significant health risk, and what exception does it provide?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 10,
+      "tier": 3,
+      "v4JobId": "unit-892e38efffb31976",
+      "v5JobId": "unit-6480451b3fe42be2",
+      "documentIds": [
+        "section:1"
+      ],
+      "titleSuggestion": "Land, shore and watercourse definitions",
+      "frozenMapPriority": "P2",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "needs-map-revision",
+        "warnings": [
+          "MAP_GROUP_TOO_BROAD_FOR_GOOD_UNIT"
+        ],
+        "objectiveCount": 4,
+        "attemptCount": 1,
+        "mainQuestion": "How does the Trespass Act define the land and water features—forest land, freshwater and saltwater marshes, lake and ocean shore areas, sand dunes, and watercourses—that determine where the Act's protections reach?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 4,
+        "attemptCount": 2,
+        "mainQuestion": "What physical features and boundaries do the Trespass Act's definitions of forest land, freshwater marsh, saltwater marsh, lake shore area, ocean shore area, sand dune, and watercourse each establish?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 11,
+      "tier": 3,
+      "v4JobId": "unit-b176ebe94507fd17",
+      "v5JobId": "unit-c562d9132d24d3e6",
+      "documentIds": [
+        "section:1"
+      ],
+      "titleSuggestion": "Trespass, actor and enforcement definitions",
+      "frozenMapPriority": "P2",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "needs-map-revision",
+        "warnings": [],
+        "objectiveCount": 4,
+        "attemptCount": 1,
+        "mainQuestion": "What are the Trespass Act's definitions of trespass, premises, authorized person, driver, motor vehicle, and peace officer, and what does each term cover?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 4,
+        "attemptCount": 2,
+        "mainQuestion": "How does the Trespass Act define trespass, and what categories does it assign to premises, authorized persons, drivers, motor vehicles, and peace officers?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 15,
+      "tier": 3,
+      "v4JobId": "unit-2f3e7edff1d80df7",
+      "v5JobId": "unit-6e340018655584a7",
+      "documentIds": [
+        "section:66"
+      ],
+      "titleSuggestion": "Retaining registry office fees and the dismissal penalty",
+      "frozenMapPriority": "P3",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "needs-map-revision",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 1,
+        "mainQuestion": "Under section 66 of the Registry Act, which registry office personnel are barred from retaining for their own use fees received for work done or information furnished in connection with the registry office, and what penalty applies to a violation?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 1,
+        "mainQuestion": "Who is barred from retaining registry office fees for personal use, and what penalty applies for a violation?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 16,
+      "tier": 3,
+      "v4JobId": "unit-15fa5c5ac251dfa1",
+      "v5JobId": "unit-d0fd18f6457af793",
+      "documentIds": [
+        "section:68"
+      ],
+      "titleSuggestion": "Health regions, inspectors and notifiable disease regulations",
+      "frozenMapPriority": "P4",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "needs-map-revision",
+        "warnings": [
+          "OUTSIDE_APPROVED_FOCUS"
+        ],
+        "objectiveCount": 3,
+        "attemptCount": 1,
+        "mainQuestion": "Under section 68 of the Public Health Act, what may the Lieutenant-Governor in Council prescribe by regulation regarding the duties and functions of inspectors, the reporting and control of notifiable diseases, and the giving or serving of orders, notices, or documents?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 4,
+        "attemptCount": 1,
+        "mainQuestion": "What four regulatory subjects does Public Health Act section 68 allow the Lieutenant-Governor in Council to address by regulation?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": [
+          {
+            "code": "ANSWER_APPEARS_TRUNCATED",
+            "severity": "warning"
+          }
+        ]
+      }
+    },
+    {
+      "seq": 17,
+      "tier": 3,
+      "v4JobId": "unit-6a94737b69e069ce",
+      "v5JobId": "unit-e944b3a49f4b9bac",
+      "documentIds": [
+        "section:68"
+      ],
+      "titleSuggestion": "Water supply, water circulation and sewage regulations",
+      "frozenMapPriority": "P4",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "needs-map-revision",
+        "warnings": [
+          "MAP_GROUP_TOO_BROAD_FOR_GOOD_UNIT"
+        ],
+        "objectiveCount": 4,
+        "attemptCount": 2,
+        "mainQuestion": "What water and sewage-related subjects may the Lieutenant-Governor in Council address by regulation under the Public Health Act?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 4,
+        "attemptCount": 2,
+        "mainQuestion": "What water supply, water circulation and sewage matters may the Lieutenant-Governor in Council address by regulation under section 68 of the Public Health Act?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 20,
+      "tier": 3,
+      "v4JobId": "unit-dc58323956b9fd42",
+      "v5JobId": "unit-f91b57371792a0bb",
+      "documentIds": [
+        "section:90"
+      ],
+      "titleSuggestion": "Aquaculture regulatory subjects",
+      "frozenMapPriority": "P3",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "needs-map-revision",
+        "warnings": [
+          "MAP_GROUP_TOO_BROAD_FOR_GOOD_UNIT"
+        ],
+        "objectiveCount": 4,
+        "attemptCount": 2,
+        "mainQuestion": "What may the Lieutenant-Governor in Council regulate under the Aquaculture Act regarding exemptions, aquaculture product standards, containment, and reportable conditions?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 4,
+        "attemptCount": 1,
+        "mainQuestion": "What regulatory subjects may the Lieutenant-Governor in Council address in regulations under Aquaculture Act s. 90(1), and what residual power does paragraph (jj) confer?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 21,
+      "tier": 3,
+      "v4JobId": "unit-047b933c1567c5dd",
+      "v5JobId": "unit-ab80c5ba40812a83",
+      "documentIds": [
+        "section:15.3"
+      ],
+      "titleSuggestion": "Phased assessment calculation formula",
+      "frozenMapPriority": "P2",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "needs-map-revision",
+        "warnings": [],
+        "objectiveCount": 3,
+        "attemptCount": 1,
+        "mainQuestion": "How is the assessment on a heritage property calculated in each of the four years following the base year under section 15.3(2) of the Assessment Act?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 2,
+        "mainQuestion": "How is the assessment on a heritage property calculated over the four years following the base year under section 15.3(2) of the Assessment Act?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 23,
+      "tier": 3,
+      "v4JobId": "unit-019c765ae138d8b5",
+      "v5JobId": "unit-1778139a242e733a",
+      "documentIds": [
+        "section:75"
+      ],
+      "titleSuggestion": "Facilities requirements and development-officer approval conditions",
+      "frozenMapPriority": "P1",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "needs-map-revision",
+        "warnings": [
+          "MAP_GROUP_TOO_BROAD_FOR_GOOD_UNIT"
+        ],
+        "objectiveCount": 3,
+        "attemptCount": 1,
+        "mainQuestion": "Under a Community Planning Act subdivision by-law, what facilities may a council require of a person subdividing land, what two-part condition in the council's opinion gates the development officer's approval of a subdivision plan, and on what two grounds must the development officer refuse approval when joined by the advisory committee or regional service commission?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 3,
+        "attemptCount": 2,
+        "mainQuestion": "What facilities may a subdivision by-law require, and what conditions and refusal grounds may it impose on the development officer's approval of a subdivision plan?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 26,
+      "tier": 3,
+      "v4JobId": "unit-023c1a4ddb31e2c5",
+      "v5JobId": "unit-9444b4424f6fa00b",
+      "documentIds": [
+        "section:100"
+      ],
+      "titleSuggestion": "Licence fee on conviction deemed part of fine",
+      "frozenMapPriority": "P2",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "needs-map-revision",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 1,
+        "mainQuestion": "When a person is convicted of doing something without a by-law licence, what may the judge of the Provincial Court order regarding the uncollected licence fee, and what is the legal character of that fee once ordered?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 2,
+        "mainQuestion": "Under the Municipalities Act, what may a Provincial Court judge order when a person is convicted of acting without a licence required by a by-law, and how is that fee treated legally?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 27,
+      "tier": 3,
+      "v4JobId": "unit-5fadda40929f11f0",
+      "v5JobId": "unit-99bdb6cd6f15f777",
+      "documentIds": [
+        "section:9"
+      ],
+      "titleSuggestion": "Specific operational duties of the employer",
+      "frozenMapPriority": "P2",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "needs-map-revision",
+        "warnings": [
+          "MAP_GROUP_TOO_BROAD_FOR_GOOD_UNIT"
+        ],
+        "objectiveCount": 5,
+        "attemptCount": 2,
+        "mainQuestion": "What specific operational duties must an employer fulfill under the Occupational Health and Safety Act regarding workplace maintenance and inspection, hazard communication and employee education, supervision, protective equipment, and co-operation with health and safety bodies?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 4,
+        "attemptCount": 3,
+        "mainQuestion": "What specific operational duties does section 9(2) of the Occupational Health and Safety Act impose on an employer, and how does the preamble to that subsection qualify its relationship to the general duties in subsection (1)?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 28,
+      "tier": 3,
+      "v4JobId": "unit-5d2a9f36002162d0",
+      "v5JobId": "unit-71e27c24590d3242",
+      "documentIds": [
+        "section:44"
+      ],
+      "titleSuggestion": "Mortgagee's Statutory Powers under Deed Mortgage (s.44)",
+      "frozenMapPriority": "P1",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "needs-map-revision",
+        "warnings": [
+          "MAP_GROUP_TOO_BROAD_FOR_GOOD_UNIT"
+        ],
+        "objectiveCount": 4,
+        "attemptCount": 1,
+        "mainQuestion": "What powers of sale and fire insurance does the Property Act give a mortgagee under a deed mortgage, when may each be exercised, and how may the mortgage deed vary those powers?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 4,
+        "attemptCount": 2,
+        "mainQuestion": "What statutory powers does a mortgagee receive where the mortgage is made by deed under s. 44 of the Property Act, and how may the mortgage deed vary or limit those powers?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 29,
+      "tier": 3,
+      "v4JobId": "unit-c7dc47a1735eb69d",
+      "v5JobId": "unit-90ab6499b6928ad2",
+      "documentIds": [
+        "section:44"
+      ],
+      "titleSuggestion": "Out-of-Province Instrument Execution and Certification",
+      "frozenMapPriority": "P2",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "needs-map-revision",
+        "warnings": [],
+        "objectiveCount": 3,
+        "attemptCount": 1,
+        "mainQuestion": "Under the Registry Act, who is authorized to take acknowledgments and proofs of instrument execution out of the Province of New Brunswick, and what certification or authentication requirements attach to each category?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 1,
+        "mainQuestion": "Who may take an acknowledgment or proof of an instrument's execution out of the Province under the Registry Act, and what certification or authentication is required for each?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": [
+          {
+            "code": "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+            "severity": "warning"
+          },
+          {
+            "code": "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+            "severity": "warning"
+          }
+        ]
+      }
+    },
+    {
+      "seq": 31,
+      "tier": 3,
+      "v4JobId": "unit-e60f2ed653e5363a",
+      "v5JobId": "unit-c9285cd7f533a2ab",
+      "documentIds": [
+        "section:1"
+      ],
+      "titleSuggestion": "Definitions in the Surveys Act",
+      "frozenMapPriority": "P2",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "needs-map-revision",
+        "warnings": [],
+        "objectiveCount": 3,
+        "attemptCount": 1,
+        "mainQuestion": "What do the Surveys Act define as a surveyor, a survey, a legal monument, a corner, a coordinate monument, and a coordinate survey system?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 3,
+        "attemptCount": 2,
+        "mainQuestion": "State the meaning the Surveys Act assigns to each of the six defined terms: surveyor, legal monument, coordinate monument, coordinate survey system, corner, and survey.",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 32,
+      "tier": 3,
+      "v4JobId": "unit-21c62d64fd32c92f",
+      "v5JobId": "unit-5eefb3ed8c3ce251",
+      "documentIds": [
+        "section:18"
+      ],
+      "titleSuggestion": "Cancelling and issuing certificates of registered ownership",
+      "frozenMapPriority": "P1",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "needs-map-revision",
+        "warnings": [
+          "MAP_GROUP_TOO_BROAD_FOR_GOOD_UNIT"
+        ],
+        "objectiveCount": 3,
+        "attemptCount": 1,
+        "mainQuestion": "Under section 18(5) of the Land Titles Act, what is the registrar's duty to cancel and reissue a certificate of registered ownership when a specified registration event occurs, and how does that duty apply to subdivisions?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 2,
+        "mainQuestion": "Under section 18(5) of the Land Titles Act, what registration events trigger the registrar's duty to cancel and reissue a certificate of registered ownership, and what is that duty?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": [
+          {
+            "code": "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+            "severity": "warning"
+          }
+        ]
+      }
+    },
+    {
+      "seq": 35,
+      "tier": 3,
+      "v4JobId": "unit-00066425d3dd3645",
+      "v5JobId": "unit-dc047ee16ef0e408",
+      "documentIds": [
+        "section:125"
+      ],
+      "titleSuggestion": "Zoning regulation effect and deemed powers (s.125(8)–(9))",
+      "frozenMapPriority": "P2",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "needs-map-revision",
+        "warnings": [],
+        "objectiveCount": 4,
+        "attemptCount": 1,
+        "mainQuestion": "When a planning regulation under section 125 of the Community Planning Act is in effect, who acts as development officer, and what zoning powers—relating to particular land uses, proposed uses and variances, prescribed fees, and the Minister's re-zoning authority—are vested in or deemed vested in the regional service commission?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 4,
+        "attemptCount": 2,
+        "mainQuestion": "Under s.125(8) and (9), who is the development officer when a planning regulation is in effect, and what zoning powers are deemed vested in or may be vested in the regional service commission?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 36,
+      "tier": 3,
+      "v4JobId": "unit-79f54c297756d4aa",
+      "v5JobId": "unit-331f33e0d3cf5b61",
+      "documentIds": [
+        "section:26"
+      ],
+      "titleSuggestion": "Offence and penalties for unregistered practice as a land surveyor (s. 26)",
+      "frozenMapPriority": "P1",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "needs-map-revision",
+        "warnings": [],
+        "objectiveCount": 3,
+        "attemptCount": 2,
+        "mainQuestion": "What acts constitute an offence for a person not registered as a land surveyor under the New Brunswick Land Surveyors Act, 1986, and what tiered penalties does the Act prescribe?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 3,
+        "attemptCount": 3,
+        "mainQuestion": "What four acts constitute an offence under section 26 of the New Brunswick Land Surveyors Act, and what penalties apply for a first and a subsequent offence?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 39,
+      "tier": 3,
+      "v4JobId": "unit-009ff72aba3f0d45",
+      "v5JobId": "unit-aef7b1dd69abc34d",
+      "documentIds": [
+        "section:6.5.1",
+        "section:6.5.2"
+      ],
+      "titleSuggestion": "Legislative Review Committee: Establishment, Responsibilities, and Annual Report",
+      "frozenMapPriority": "P4",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "needs-map-revision",
+        "warnings": [],
+        "objectiveCount": 3,
+        "attemptCount": 2,
+        "mainQuestion": "What is the composition of the Legislative Review Committee, what are its three responsibilities, and by what date must it submit its annual report to the Executive Council under the ANBLS Bylaws?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 3,
+        "attemptCount": 1,
+        "mainQuestion": "What are the composition, three enumerated responsibilities, and annual reporting deadline of the Legislative Review Committee under the ANBLS Bylaws?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": [
+          {
+            "code": "APPROVED_FOCUS_NOT_COVERED",
+            "severity": "warning"
+          },
+          {
+            "code": "APPROVED_FOCUS_NOT_COVERED",
+            "severity": "warning"
+          },
+          {
+            "code": "APPROVED_FOCUS_NOT_COVERED",
+            "severity": "warning"
+          },
+          {
+            "code": "APPROVED_FOCUS_NOT_COVERED",
+            "severity": "warning"
+          },
+          {
+            "code": "APPROVED_FOCUS_NOT_COVERED",
+            "severity": "warning"
+          }
+        ]
+      }
+    },
+    {
+      "seq": 40,
+      "tier": 3,
+      "v4JobId": "unit-0070dd224c8bb7a5",
+      "v5JobId": "unit-29643f0abdec17e2",
+      "documentIds": [
+        "section:80"
+      ],
+      "titleSuggestion": "Registration and assurance fees payable to the registrar",
+      "frozenMapPriority": "P1",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "needs-map-revision",
+        "warnings": [],
+        "objectiveCount": 3,
+        "attemptCount": 1,
+        "mainQuestion": "Under the Land Titles Act, what prescribed fee must the registrar receive before registering an instrument or performing a duty, what additional assurance fee is required for indemnification claims, and between which Crown entities is that assurance fee not payable?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 4,
+        "attemptCount": 1,
+        "mainQuestion": "What fees must be paid to the registrar under section 80 of the Land Titles Act, and when is the assurance fee not payable?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 41,
+      "tier": 3,
+      "v4JobId": "unit-0167053e440a24d5",
+      "v5JobId": "unit-06c54db68969cc17",
+      "documentIds": [
+        "section:36"
+      ],
+      "titleSuggestion": "Prohibitions on parties and witness requirement for affidavits of execution",
+      "frozenMapPriority": "P2",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "needs-map-revision",
+        "warnings": [
+          "MAP_GROUP_TOO_BROAD_FOR_GOOD_UNIT",
+          "OUTSIDE_APPROVED_FOCUS"
+        ],
+        "objectiveCount": 3,
+        "attemptCount": 1,
+        "mainQuestion": "Under section 36 of the Registry Act, what two things is a party to an instrument prohibited from doing in the execution and acknowledgment process, what must a witness have done before an affidavit or proof of execution may be taken from that witness, and to which instruments does the section apply?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 3,
+        "attemptCount": 1,
+        "mainQuestion": "What is a party to an instrument prohibited from doing, and what must a witness have done before an affidavit or proof of execution may be taken from them?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": [
+          {
+            "code": "APPROVED_FOCUS_NOT_COVERED",
+            "severity": "warning"
+          },
+          {
+            "code": "APPROVED_FOCUS_NOT_COVERED",
+            "severity": "warning"
+          },
+          {
+            "code": "APPROVED_FOCUS_NOT_COVERED",
+            "severity": "warning"
+          },
+          {
+            "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+            "severity": "warning"
+          },
+          {
+            "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+            "severity": "warning"
+          },
+          {
+            "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+            "severity": "warning"
+          }
+        ]
+      }
+    },
+    {
+      "seq": 46,
+      "tier": 3,
+      "v4JobId": "unit-0445d8337e77a7c6",
+      "v5JobId": "unit-d6fe427cdddb2678",
+      "documentIds": [
+        "section:24(1)"
+      ],
+      "titleSuggestion": "Parties to Discipline Committee Proceedings",
+      "frozenMapPriority": "P3",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "needs-map-revision",
+        "warnings": [],
+        "objectiveCount": 1,
+        "attemptCount": 2,
+        "mainQuestion": "Under the New Brunswick Land Surveyors Act, who are the parties to proceedings before the Discipline Committee?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 1,
+        "attemptCount": 2,
+        "mainQuestion": "Who are the parties to proceedings before the Discipline Committee under the Land Surveyors Act?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 48,
+      "tier": 3,
+      "v4JobId": "unit-0421d4fe4b51ed92",
+      "v5JobId": "unit-f821944f8d8fad87",
+      "documentIds": [
+        "section:1"
+      ],
+      "titleSuggestion": "Boundaries Confirmation Act – Defined Terms",
+      "frozenMapPriority": "P1",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "needs-map-revision",
+        "warnings": [
+          "MAP_GROUP_TOO_BROAD_FOR_GOOD_UNIT"
+        ],
+        "objectiveCount": 4,
+        "attemptCount": 1,
+        "mainQuestion": "Under the Boundaries Confirmation Act, what do the terms boundary, parcel, monument, surveyor, applicant, Registrar General, and Deputy Registrar General mean, and how are the air space terms, plan of survey, and Fund incorporated by reference?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 4,
+        "attemptCount": 2,
+        "mainQuestion": "How does section 1 of the Boundaries Confirmation Act define the surveying terms, statutory actors, and cross-referenced instruments that govern the boundaries confirmation process?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 49,
+      "tier": 3,
+      "v4JobId": "unit-00cb6e97353458dc",
+      "v5JobId": "unit-c1d2d8aa37da6862",
+      "documentIds": [
+        "section:28"
+      ],
+      "titleSuggestion": "Local government or other taxing authority appeal to the Board (s. 28)",
+      "frozenMapPriority": "P2",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "needs-map-revision",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 2,
+        "mainQuestion": "After the Director mails a notice to a local government or other taxing authority under subsection 25(5) of the Assessment Act, what may the authority do in response, within what time, and for what scope of assessment?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 3,
+        "mainQuestion": "What are the trigger, deadline, and scope of a local government's or other taxing authority's right to appeal an assessment to the Board under section 28 of the Assessment Act?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": [
+          {
+            "code": "ANSWER_APPEARS_TRUNCATED",
+            "severity": "warning"
+          },
+          {
+            "code": "ANSWER_APPEARS_TRUNCATED",
+            "severity": "warning"
+          }
+        ]
+      }
+    },
+    {
+      "seq": 50,
+      "tier": 3,
+      "v4JobId": "unit-046240c47aa8f95b",
+      "v5JobId": "unit-10ea21c46affc7c5",
+      "documentIds": [
+        "section:13.2"
+      ],
+      "titleSuggestion": "Electronic Information Storage System Equivalence Rules",
+      "frozenMapPriority": "P3",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "needs-map-revision",
+        "warnings": [],
+        "objectiveCount": 3,
+        "attemptCount": 1,
+        "mainQuestion": "Under section 13.2 of the Registry Act, how is a requirement to make an entry in the registry book deemed to be met when the instrument or document is kept in an electronic information storage system, and what special mechanism applies to margin entries?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 4,
+        "attemptCount": 2,
+        "mainQuestion": "What rules does section 13.2 of the Registry Act establish for satisfying registry-book entry requirements through an electronic information storage system?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": [
+          {
+            "code": "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+            "severity": "warning"
+          }
+        ]
+      }
+    },
+    {
+      "seq": 54,
+      "tier": 3,
+      "v4JobId": "unit-06587c365a55bf49",
+      "v5JobId": "unit-373539bbe31a52a0",
+      "documentIds": [
+        "section:7"
+      ],
+      "titleSuggestion": "Seal of office requirement",
+      "frozenMapPriority": "P4",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "needs-map-revision",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 1,
+        "mainQuestion": "Under the Land Titles Act, who is required to hold a seal of office and which body must approve the form of that seal?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 1,
+        "attemptCount": 2,
+        "mainQuestion": "Under the Land Titles Act, who is required to have a seal of office, and what body must approve the form of that seal?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": [
+          {
+            "code": "ANSWER_APPEARS_TRUNCATED",
+            "severity": "warning"
+          },
+          {
+            "code": "ANSWER_APPEARS_TRUNCATED",
+            "severity": "warning"
+          },
+          {
+            "code": "APPROVED_FOCUS_NOT_COVERED",
+            "severity": "warning"
+          }
+        ]
+      }
+    },
+    {
+      "seq": 56,
+      "tier": 3,
+      "v4JobId": "unit-02c520678fcbb6c2",
+      "v5JobId": "unit-6f829d029f76db6e",
+      "documentIds": [
+        "section:65"
+      ],
+      "titleSuggestion": "Fee payment as precondition to compulsory registration",
+      "frozenMapPriority": "P2",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "needs-map-revision",
+        "warnings": [],
+        "objectiveCount": 1,
+        "attemptCount": 1,
+        "mainQuestion": "What condition must be satisfied before a registrar can be compelled to register an instrument under the Registry Act?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 1,
+        "attemptCount": 1,
+        "mainQuestion": "What condition must be satisfied before the registrar can be compelled to register an instrument under the Registry Act?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": [
+          {
+            "code": "ANSWER_APPEARS_TRUNCATED",
+            "severity": "warning"
+          },
+          {
+            "code": "ANSWER_APPEARS_TRUNCATED",
+            "severity": "warning"
+          }
+        ]
+      }
+    },
+    {
+      "seq": 57,
+      "tier": 3,
+      "v4JobId": "unit-043b932fc33b70cc",
+      "v5JobId": "unit-a8250bc79883184c",
+      "documentIds": [
+        "section:6"
+      ],
+      "titleSuggestion": "Division of units into classes",
+      "frozenMapPriority": "P1",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "needs-map-revision",
+        "warnings": [
+          "MAP_GROUP_TOO_BROAD_FOR_GOOD_UNIT"
+        ],
+        "objectiveCount": 2,
+        "attemptCount": 1,
+        "mainQuestion": "How may a condominium declaration divide its units into classes, and what flexibility does that division give the declaration in structuring and applying its subsection (2) provisions?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 2,
+        "mainQuestion": "What may a declaration provide about dividing units into classes, and what flexibility does class division create for applying subsection (2) provisions?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 59,
+      "tier": 3,
+      "v4JobId": "unit-0449049d27b547c9",
+      "v5JobId": "unit-46404e08436c89a4",
+      "documentIds": [
+        "section:88"
+      ],
+      "titleSuggestion": "Factors for Advisory Committee or Regional Service Commission Street Location Recommendation",
+      "frozenMapPriority": "P1",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "needs-map-revision",
+        "warnings": [
+          "MAP_GROUP_TOO_BROAD_FOR_GOOD_UNIT"
+        ],
+        "objectiveCount": 2,
+        "attemptCount": 1,
+        "mainQuestion": "What four categories of factors must an advisory committee or regional service commission give consideration to when recommending street locations under section 88 of the Community Planning Act?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 1,
+        "mainQuestion": "When recommending street locations under s.88(4)(a), what four categories of factors must an advisory committee or regional service commission consider under the Community Planning Act?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 61,
+      "tier": 3,
+      "v4JobId": "unit-05d777e3d32ca761",
+      "v5JobId": "unit-2588ae34a152982f",
+      "documentIds": [
+        "section:17"
+      ],
+      "titleSuggestion": "Officer's costs direction to expropriating authority",
+      "frozenMapPriority": "P1",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "needs-map-revision",
+        "warnings": [
+          "MAP_GROUP_TOO_BROAD_FOR_GOOD_UNIT"
+        ],
+        "objectiveCount": 2,
+        "attemptCount": 1,
+        "mainQuestion": "In the Expropriation Act, what costs may the Officer direct an expropriating authority to pay a landowner who appeared on a hearing of objection, and what obligation does the expropriating authority bear once the direction is made?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 2,
+        "mainQuestion": "What costs direction may the Officer make to an expropriating authority for a landowner who appeared at a hearing of objection, and what are the amount cap and payment obligation?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 67,
+      "tier": 3,
+      "v4JobId": "unit-092be74ad4e22fc6",
+      "v5JobId": "unit-857a98ccd36e41e4",
+      "documentIds": [
+        "section:96"
+      ],
+      "titleSuggestion": "Mandatory contents of the incentive or bonus zoning by-law",
+      "frozenMapPriority": "P1",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "needs-map-revision",
+        "warnings": [],
+        "objectiveCount": 1,
+        "attemptCount": 1,
+        "mainQuestion": "What four matters must an incentive or bonus zoning agreement by-law identify or set out under the Community Planning Act?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 1,
+        "attemptCount": 1,
+        "mainQuestion": "What four matters must an incentive or bonus zoning agreement by-law address under section 96(2) of the Community Planning Act?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 70,
+      "tier": 3,
+      "v4JobId": "unit-07fa6fc1208594ca",
+      "v5JobId": "unit-0344f31b1107b2dc",
+      "documentIds": [
+        "section:18(2)"
+      ],
+      "titleSuggestion": "Conditions for entering a name in the register",
+      "frozenMapPriority": "P2",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "needs-map-revision",
+        "warnings": [],
+        "objectiveCount": 1,
+        "attemptCount": 5,
+        "mainQuestion": "Under the New Brunswick Land Surveyors Act, what conditions must be met before a name may be entered in the land surveyors' register?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 2,
+        "mainQuestion": "What two conditions must be met before a name may be entered in the land surveyors' register under section 18(2) of the New Brunswick Land Surveyors Act?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 71,
+      "tier": 3,
+      "v4JobId": "unit-0de35b1dafe93ecb",
+      "v5JobId": "unit-25db06191c729425",
+      "documentIds": [
+        "section:37"
+      ],
+      "titleSuggestion": "Additional 5% compensation for Lieutenant-Governor in Council-ordered surrender of possession",
+      "frozenMapPriority": "P1",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "needs-map-revision",
+        "warnings": [],
+        "objectiveCount": 1,
+        "attemptCount": 1,
+        "mainQuestion": "What additional compensation must the expropriating authority pay an owner in occupation when the Lieutenant-Governor in Council orders surrender of physical possession of expropriated land under subsection 22(3)?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 2,
+        "mainQuestion": "What additional compensation must the expropriating authority pay when the Lieutenant-Governor in Council orders an owner to surrender physical possession of expropriated land under section 37(4) of the Expropriation Act?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 1,
+      "tier": 5,
+      "v4JobId": "unit-40730d04faf14076",
+      "v5JobId": "unit-e3f6eb223f9c6b22",
+      "documentIds": [
+        "section:71"
+      ],
+      "titleSuggestion": "Instrument form requirements and registrar acceptance discretion (ss. 71(2)-(3))",
+      "frozenMapPriority": "P3",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 1,
+        "mainQuestion": "Under the Registry Act, what matters may the Lieutenant-Governor in Council regulate about the form of registrable instruments, and under what condition may a registrar accept an instrument that does not comply with those regulations?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 2,
+        "mainQuestion": "What may the Lieutenant-Governor in Council regulate about the form of registrable instruments, and under what condition may a registrar still accept a non-compliant instrument?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 2,
+      "tier": 5,
+      "v4JobId": "unit-f1d3de4004dd0d17",
+      "v5JobId": "unit-f463819104abd315",
+      "documentIds": [
+        "section:71"
+      ],
+      "titleSuggestion": "Registry administration regulation-making power (s. 71(1))",
+      "frozenMapPriority": "P3",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 4,
+        "attemptCount": 2,
+        "mainQuestion": "For which aspects of registry office administration may the Lieutenant-Governor in Council make regulations under s. 71(1) of the Registry Act?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 4,
+        "attemptCount": 1,
+        "mainQuestion": "What matters may the Lieutenant-Governor in Council regulate for the administration of the registry office under section 71(1) of the Registry Act?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": [
+          {
+            "code": "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+            "severity": "warning"
+          }
+        ]
+      }
+    },
+    {
+      "seq": 5,
+      "tier": 5,
+      "v4JobId": "unit-d9b1e53de714665c",
+      "v5JobId": "unit-d4b1280dd51c16a3",
+      "documentIds": [
+        "section:40"
+      ],
+      "titleSuggestion": "Water classification of a watercourse",
+      "frozenMapPriority": "P3",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 4,
+        "attemptCount": 1,
+        "mainQuestion": "What regulatory matters may the Lieutenant-Governor in Council address by regulation to establish and operate a water classification system for watercourses?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 4,
+        "attemptCount": 2,
+        "mainQuestion": "What may the Lieutenant-Governor in Council regulate under the Clean Water Act to establish and operate a water classification system for watercourses?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 7,
+      "tier": 5,
+      "v4JobId": "unit-ad5f94891873617a",
+      "v5JobId": "unit-6f65dea4a13630e9",
+      "documentIds": [
+        "section:13"
+      ],
+      "titleSuggestion": "Response to a current significant health risk",
+      "frozenMapPriority": "P3",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 4,
+        "attemptCount": 2,
+        "mainQuestion": "Under the Clean Water Act, what orders must the Minister or the Minister of Health make, and what may they order the owner to do, when a contaminant makes water in a well or supply system a significant health risk at the source or at the point of consumption?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 4,
+        "attemptCount": 2,
+        "mainQuestion": "What orders must or may be made under Clean Water Act sections 13(3) and 13(4) when water poses a current significant health risk at the source or at the point of consumption?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 8,
+      "tier": 5,
+      "v4JobId": "unit-e9fe22342cc56c8a",
+      "v5JobId": "unit-44a5e5a34f069c1d",
+      "documentIds": [
+        "section:13"
+      ],
+      "titleSuggestion": "Private well notice and application of order provisions",
+      "frozenMapPriority": "P3",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 3,
+        "attemptCount": 1,
+        "mainQuestion": "What notice must the Minister of Health give the owner of a private well that poses a significant health risk, what liability protection follows from that notice, and which order-provision sections apply to an order made under section 13 of the Clean Water Act?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 3,
+        "attemptCount": 2,
+        "mainQuestion": "What notice must the Minister of Health give to a private well owner who faces a significant health risk, what liability limitation follows, and which order sections apply to an order made under section 13 of the Clean Water Act?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 12,
+      "tier": 5,
+      "v4JobId": "unit-9aa4dea732c4bc43",
+      "v5JobId": "unit-db1eb97629092cb5",
+      "documentIds": [
+        "section:95"
+      ],
+      "titleSuggestion": "Administration, advisory board and fees",
+      "frozenMapPriority": "P3",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 4,
+        "attemptCount": 1,
+        "mainQuestion": "What may the Lieutenant-Governor in Council regulate under the Crown Lands and Forests Act in respect of the Advisory Board's duties and procedures, the conduct of public auctions, calls for tenders and calls for proposals, fees for Crown instruments and timber sales, and the general development and administration of Crown Lands and forests?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 4,
+        "attemptCount": 1,
+        "mainQuestion": "What may the Lieutenant-Governor in Council regulate under section 95 regarding the Advisory Board, public auctions and tenders, fees for Crown instruments, and the general administration of the Act?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 13,
+      "tier": 5,
+      "v4JobId": "unit-de14b7aae121ea5a",
+      "v5JobId": "unit-9ff278807624e3ae",
+      "documentIds": [
+        "section:95"
+      ],
+      "titleSuggestion": "Surveys, tenure and access to Crown Lands",
+      "frozenMapPriority": "P3",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 3,
+        "attemptCount": 1,
+        "mainQuestion": "What may the Lieutenant-Governor in Council regulate under section 95(1) of the Crown Lands and Forests Act with respect to surveys of Crown Lands, classes of leases, rights-of-way or easements, and public access to Crown Lands?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 4,
+        "attemptCount": 2,
+        "mainQuestion": "What regulatory matters concerning surveys, lease classes, rights-of-way, and access to Crown Lands may the Lieutenant-Governor in Council address under section 95 of the Crown Lands and Forests Act?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 14,
+      "tier": 5,
+      "v4JobId": "unit-df983b36ee36be82",
+      "v5JobId": "unit-23337f055c22b192",
+      "documentIds": [
+        "section:95"
+      ],
+      "titleSuggestion": "Forest management, harvesting and royalties",
+      "frozenMapPriority": "P3",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 4,
+        "attemptCount": 1,
+        "mainQuestion": "Under section 95 of the Crown Lands and Forests Act, what may the Lieutenant-Governor in Council regulate concerning the manner and form of forest management instruments, the harvesting and removal of timber from Crown Lands, and timber royalties, and what retroactivity does subsection (2) allow for a royalty regulation made before July 1?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 4,
+        "attemptCount": 1,
+        "mainQuestion": "What forest management, harvesting, and royalty matters may the Lieutenant-Governor in Council regulate under section 95, and when may a royalty regulation operate retroactively?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 18,
+      "tier": 5,
+      "v4JobId": "unit-fdccd69202d3a203",
+      "v5JobId": "unit-d1742361c5ae3778",
+      "documentIds": [
+        "section:68"
+      ],
+      "titleSuggestion": "Food premises and food safety regulations",
+      "frozenMapPriority": "P4",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 3,
+        "attemptCount": 1,
+        "mainQuestion": "What regulatory subjects may the Lieutenant-Governor in Council address through regulations under section 68 of the Public Health Act regarding food premises, food handling, food standards, and food labelling?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 4,
+        "attemptCount": 2,
+        "mainQuestion": "What matters relating to food premises and food safety may the Lieutenant-Governor in Council regulate under section 68?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 19,
+      "tier": 5,
+      "v4JobId": "unit-ade0ea76fa6d04ef",
+      "v5JobId": "unit-bc439b485e0a8ce3",
+      "documentIds": [
+        "section:90"
+      ],
+      "titleSuggestion": "Incorporation by reference and application mechanics",
+      "frozenMapPriority": "P3",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 3,
+        "attemptCount": 1,
+        "mainQuestion": "How may a regulation under the Aquaculture Act incorporate external codes or standards, vary its application to different persons, matters, or activities, and limit its scope as to time, place, or specificity?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 3,
+        "attemptCount": 3,
+        "mainQuestion": "How may an aquaculture regulation incorporate external standards by reference, and how may its application be varied by person, matter, time, or place under section 90 of the Aquaculture Act?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 22,
+      "tier": 5,
+      "v4JobId": "unit-2e7e67eb0f35fe35",
+      "v5JobId": "unit-3e12091103f6ec16",
+      "documentIds": [
+        "section:1"
+      ],
+      "titleSuggestion": "Definition of \"development\"",
+      "frozenMapPriority": "P1",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 4,
+        "attemptCount": 1,
+        "mainQuestion": "Under the Community Planning Act, what activities constitute \"development,\" and what specific exclusions apply to utility infrastructure and Pipeline Act pipelines?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 2,
+        "mainQuestion": "What are the four categories of activity that constitute \"development\" under section 1(1) of the Community Planning Act, and what specific exclusions and exceptions apply?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": [
+          {
+            "code": "DEFINITION_ANSWER_MISSING_TERM_MEANING",
+            "severity": "warning"
+          },
+          {
+            "code": "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+            "severity": "warning"
+          }
+        ]
+      }
+    },
+    {
+      "seq": 24,
+      "tier": 5,
+      "v4JobId": "unit-143fc780953799e6",
+      "v5JobId": "unit-aca8067647cbf88f",
+      "documentIds": [
+        "section:52"
+      ],
+      "titleSuggestion": "Rate-setting prohibition and Board authority",
+      "frozenMapPriority": "P3",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 4,
+        "attemptCount": 1,
+        "mainQuestion": "How does the Gas Distribution Act restrict gas distributor charges and define the Board's power to approve, fix, or substitute gas distribution rates?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 5,
+        "attemptCount": 2,
+        "mainQuestion": "Under the Gas Distribution Act, what must a gas distributor do before charging for distribution, and what rate-setting powers does the Board hold over distributors and their customers?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 25,
+      "tier": 5,
+      "v4JobId": "unit-2eedbe7a21cb2c32",
+      "v5JobId": "unit-da8aeea638cab3fd",
+      "documentIds": [
+        "section:68"
+      ],
+      "titleSuggestion": "Boundary survey requirement and exception for previously surveyed boundaries",
+      "frozenMapPriority": "P2",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 1,
+        "mainQuestion": "What boundary-survey condition must be satisfied before the Minister can grant a mining lease, and how does a previously approved and filed survey change the obligation?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 1,
+        "mainQuestion": "What boundary-survey condition must be met before a mining lease can be granted, and when is a new survey of those boundaries not required?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 30,
+      "tier": 5,
+      "v4JobId": "unit-09121fea0dce567b",
+      "v5JobId": "unit-addc04e113bb4ae1",
+      "documentIds": [
+        "section:10"
+      ],
+      "titleSuggestion": "Hearing parties and notice of hearing",
+      "frozenMapPriority": "P2",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 3,
+        "attemptCount": 1,
+        "mainQuestion": "In a boundary confirmation hearing under the Boundaries Confirmation Act, who are the parties to the hearing, whom must the Registrar General send the notice of hearing to, and what information must that notice contain?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 3,
+        "attemptCount": 2,
+        "mainQuestion": "Under the Boundaries Confirmation Act, who are the parties to a section 10 hearing and what must the Registrar General's notice of hearing contain?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": [
+          {
+            "code": "APPROVED_FOCUS_NOT_COVERED",
+            "severity": "warning"
+          },
+          {
+            "code": "APPROVED_FOCUS_NOT_COVERED",
+            "severity": "warning"
+          },
+          {
+            "code": "APPROVED_FOCUS_NOT_COVERED",
+            "severity": "warning"
+          },
+          {
+            "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+            "severity": "warning"
+          },
+          {
+            "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+            "severity": "warning"
+          },
+          {
+            "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+            "severity": "warning"
+          }
+        ]
+      }
+    },
+    {
+      "seq": 33,
+      "tier": 5,
+      "v4JobId": "unit-806dcd5f7b8ca4e8",
+      "v5JobId": "unit-bfebe45a58764cbf",
+      "documentIds": [
+        "section:19"
+      ],
+      "titleSuggestion": "Protective registration period for wills",
+      "frozenMapPriority": "P1",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 1,
+        "mainQuestion": "How long does the Registry Act allow for registering a will depending on where the testator died, and what validity does registration within that period confer as against subsequent parties?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 3,
+        "mainQuestion": "What timeframes does s.19(5) of the Registry Act set for registering a will depending on the testator's place of death, and what is the effect of timely registration?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 34,
+      "tier": 5,
+      "v4JobId": "unit-24d4ce03d041f274",
+      "v5JobId": "unit-061b46bb0538188c",
+      "documentIds": [
+        "section:3"
+      ],
+      "titleSuggestion": "Surveyor's Report Required Contents",
+      "frozenMapPriority": "P1",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 1,
+        "mainQuestion": "What four components must a surveyor's report contain when submitted with a boundary confirmation application under REGULATION 95-166?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 2,
+        "mainQuestion": "What four elements must a surveyor's report contain under section 3(4) of Regulation 95-166?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 79,
+      "tier": 5,
+      "v4JobId": "unit-0ff46d399379a99b",
+      "v5JobId": "unit-c3d97c72d0c68c39",
+      "documentIds": [
+        "section:1"
+      ],
+      "titleSuggestion": "Injurious affection – taking and non-taking scenarios",
+      "frozenMapPriority": "P1",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 3,
+        "attemptCount": 1,
+        "mainQuestion": "Under the Expropriation Act, what are the two distinct scenarios that constitute 'injurious affection' to land, and under what circumstances is part of an owner's land deemed to have been taken for purposes of that definition?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 3,
+        "attemptCount": 1,
+        "mainQuestion": "What elements constitute injurious affection under the Expropriation Act in the taking and non-taking scenarios, and when is part of an owner's land deemed taken?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": [
+          {
+            "code": "DEFINITION_ANSWER_MISSING_TERM_MEANING",
+            "severity": "warning"
+          }
+        ]
+      }
+    },
+    {
+      "seq": 37,
+      "tier": 6,
+      "v4JobId": "unit-a795aa5cbc9d3ee6",
+      "v5JobId": "unit-4a0b1236f21e2add",
+      "documentIds": [
+        "section:16(2)",
+        "section:17(1)"
+      ],
+      "titleSuggestion": "Practice by partnerships, associations of persons, and corporations",
+      "frozenMapPriority": "P2",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 1,
+        "mainQuestion": "What types of non-individual entities may be permitted to practice land surveying under the New Brunswick Land Surveyors Act, and what may Council authorize members of the Association to do with respect to those entities?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 2,
+        "mainQuestion": "Under the New Brunswick Land Surveyors Act, which non-individual entities may practice land surveying, and what role does the Council play in authorizing them?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 38,
+      "tier": 6,
+      "v4JobId": "unit-02657c4c14328d82",
+      "v5JobId": "unit-051f5db2729fd7b5",
+      "documentIds": [
+        "section:43"
+      ],
+      "titleSuggestion": "Sufficient evidence of due execution: court and corporate seals",
+      "frozenMapPriority": "P3",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 3,
+        "attemptCount": 1,
+        "mainQuestion": "For the purpose of registration, what constitutes sufficient evidence of due execution when an instrument bears the seal of a court of record or the seal of a corporation, and what carve-out does the Registry Act preserve for sheriff's conveyances?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 3,
+        "attemptCount": 2,
+        "mainQuestion": "What evidence suffices to prove due execution for registration when an instrument bears a court of record seal or a corporate seal, and what carve-out applies to sheriff's conveyances?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 42,
+      "tier": 6,
+      "v4JobId": "unit-02dbce06a699d0b3",
+      "v5JobId": "unit-c42303371eff91ee",
+      "documentIds": [
+        "section:42"
+      ],
+      "titleSuggestion": "No separate verification of seal or signing officer required for registration",
+      "frozenMapPriority": "P3",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 1,
+        "mainQuestion": "For the purpose of registration under the Registry Act, what verification of a seal or of the signature and office of the person before whom an acknowledgment or affidavit is made is not required, and what exception does the Act reserve?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 2,
+        "mainQuestion": "What does the Registry Act dispense with regarding proof of seal and verification of the signing officer for registration of acknowledgments and affidavits?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": [
+          {
+            "code": "ANSWER_APPEARS_TRUNCATED",
+            "severity": "warning"
+          }
+        ]
+      }
+    },
+    {
+      "seq": 43,
+      "tier": 6,
+      "v4JobId": "unit-022c7285b5e97c06",
+      "v5JobId": "unit-7071b6becf15d8dd",
+      "documentIds": [
+        "section:11(3)"
+      ],
+      "titleSuggestion": "AGM Election Terms and Council Replacement Mechanism",
+      "frozenMapPriority": "P4",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 2,
+        "mainQuestion": "What terms of office apply to the officers and executive council members of the Association of New Brunswick Land Surveyors elected at the annual general meeting, and how are replacement members elected?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 3,
+        "mainQuestion": "At the AGM of the Association of New Brunswick Land Surveyors, what terms are prescribed for elected officers and executive council members, and how are replacement council members elected?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 44,
+      "tier": 6,
+      "v4JobId": "unit-03718a2726419ffc",
+      "v5JobId": "unit-762098496a0f61e2",
+      "documentIds": [
+        "section:80"
+      ],
+      "titleSuggestion": "Accounting for received monies and indemnification funding",
+      "frozenMapPriority": "P1",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 1,
+        "mainQuestion": "What accounting and remittance duty does the Land Titles Act impose on each registrar regarding monies received, and from which sources must indemnification payments be made when the dedicated fund is insufficient or absent?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 3,
+        "attemptCount": 1,
+        "mainQuestion": "What accounting and payment duty does section 80(7) of the Land Titles Act impose on each registrar, and from what sources are indemnification payments made under subsections 80(8) and 80(9)?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 45,
+      "tier": 6,
+      "v4JobId": "unit-00786855a793bc06",
+      "v5JobId": "unit-d5879f27382ec6c0",
+      "documentIds": [
+        "section:71.2"
+      ],
+      "titleSuggestion": "Minister's enforcement entry and compliance actions",
+      "frozenMapPriority": "P2",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 1,
+        "mainQuestion": "What enforcement entry powers and specific compliance actions does the Minister have under section 71.2 of the Crown Lands and Forests Act when a person fails to comply with an order to comply?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 2,
+        "mainQuestion": "What enforcement power and specific actions does the Minister have under the Crown Lands and Forests Act when a person fails or refuses to comply with an order to comply?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 47,
+      "tier": 6,
+      "v4JobId": "unit-057a72bc46425aef",
+      "v5JobId": "unit-7558538d3d98f4ec",
+      "documentIds": [
+        "section:184"
+      ],
+      "titleSuggestion": "Municipal power to enter public beach development agreements",
+      "frozenMapPriority": "P4",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 1,
+        "attemptCount": 1,
+        "mainQuestion": "Under section 184 of the Municipalities Act, what agreement-making power does a municipality have regarding the development of a public beach, and with whom may it exercise that power?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 1,
+        "attemptCount": 2,
+        "mainQuestion": "What may a municipality do under section 184 of the Municipalities Act regarding public beach development?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": [
+          {
+            "code": "ANSWER_APPEARS_TRUNCATED",
+            "severity": "warning"
+          },
+          {
+            "code": "ANSWER_APPEARS_TRUNCATED",
+            "severity": "warning"
+          }
+        ]
+      }
+    },
+    {
+      "seq": 51,
+      "tier": 6,
+      "v4JobId": "unit-09ba9569396ef78b",
+      "v5JobId": "unit-672a50b20e2100c7",
+      "documentIds": [
+        "section:140"
+      ],
+      "titleSuggestion": "Clerk's duty to endorse precept on assessment roll",
+      "frozenMapPriority": "P4",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 1,
+        "attemptCount": 1,
+        "mainQuestion": "Under the Municipalities Act, what must the clerk do with the precept on the assessment roll, and what determines the form of that precept?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 1,
+        "attemptCount": 2,
+        "mainQuestion": "Under section 140 of the Municipalities Act, what must the clerk endorse on the local improvement assessment roll, and what determines the required form?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": [
+          {
+            "code": "ANSWER_APPEARS_TRUNCATED",
+            "severity": "warning"
+          },
+          {
+            "code": "ANSWER_APPEARS_TRUNCATED",
+            "severity": "warning"
+          }
+        ]
+      }
+    },
+    {
+      "seq": 52,
+      "tier": 6,
+      "v4JobId": "unit-04cf30345017df39",
+      "v5JobId": "unit-2b35539363c4ca36",
+      "documentIds": [
+        "section:6"
+      ],
+      "titleSuggestion": "General Hearing Procedure Rights",
+      "frozenMapPriority": "P1",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 1,
+        "mainQuestion": "What rights do the Registrar General and other parties have to introduce evidence, cross-examine witnesses, and be represented by counsel at a boundary confirmation hearing under Regulation 95-166?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 1,
+        "mainQuestion": "What evidence, cross-examination, and counsel-representation rights do the Registrar General and parties have at a boundary confirmation hearing under Regulation 95-166?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 53,
+      "tier": 6,
+      "v4JobId": "unit-010c9353d8180812",
+      "v5JobId": "unit-43ca148646a95bb4",
+      "documentIds": [
+        "section:31"
+      ],
+      "titleSuggestion": "Court power to consolidate proceedings",
+      "frozenMapPriority": "P2",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 1,
+        "attemptCount": 1,
+        "mainQuestion": "Under the Expropriation Act, what may the Court do with proceedings, and what two conditions must it be of the opinion are met before doing so?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 1,
+        "mainQuestion": "Under section 31(4) of the Expropriation Act, what may the Court do with any proceedings, and what two opinions must it hold before exercising that power?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": [
+          {
+            "code": "POSSIBLE_MODALITY_MISMATCH",
+            "severity": "warning"
+          }
+        ]
+      }
+    },
+    {
+      "seq": 55,
+      "tier": 6,
+      "v4JobId": "unit-00100b7505527849",
+      "v5JobId": "unit-35ce7d7fd6dd7714",
+      "documentIds": [
+        "section:5"
+      ],
+      "titleSuggestion": "Compensation for damage caused by entry",
+      "frozenMapPriority": "P1",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 1,
+        "attemptCount": 1,
+        "mainQuestion": "What compensation duty does the Expropriation Act impose on a person who enters land under the section 5(1) entry power?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 2,
+        "mainQuestion": "What compensation duty does Expropriation Act s. 5(3) impose on a person who enters land under s. 5(1), and what is the scope of damages covered?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 58,
+      "tier": 6,
+      "v4JobId": "unit-03de3fc357cb57a5",
+      "v5JobId": "unit-edcb2e0c1740d2e0",
+      "documentIds": [
+        "section:19.4"
+      ],
+      "titleSuggestion": "Abbreviated judgment requirement for mixed-content judgment registrations",
+      "frozenMapPriority": "P2",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 1,
+        "attemptCount": 1,
+        "mainQuestion": "When a section 40 registration application involves a judgment that partly affects an interest in or title to land or requires payment of money and partly does not, what form must the annexed judgment take, and who may order otherwise?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 3,
+        "mainQuestion": "What form must a mixed-content judgment take when annexed to a section 40 registration application under regulation 83-130, s. 19.4?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 60,
+      "tier": 6,
+      "v4JobId": "unit-049d27943f637422",
+      "v5JobId": "unit-4a8d142480162fe3",
+      "documentIds": [
+        "schedule:schedule-d"
+      ],
+      "titleSuggestion": "Payment Default, Forfeiture, and Bankruptcy Triggers",
+      "frozenMapPriority": "P2",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 3,
+        "attemptCount": 1,
+        "mainQuestion": "What may the lessor do under Schedule D when the lessee is in payment default, and what events accelerate four months' rent and allow the lessor to forfeit and re-enter the demised premises?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 1,
+        "mainQuestion": "What may a lessor recover from a lessee in payment default under Schedule D, and which events make four months' rent immediately due with forfeiture and re-entry rights?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": [
+          {
+            "code": "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+            "severity": "warning"
+          }
+        ]
+      }
+    },
+    {
+      "seq": 62,
+      "tier": 6,
+      "v4JobId": "unit-05aad567930a651b",
+      "v5JobId": "unit-10af6382f13ceccb",
+      "documentIds": [
+        "section:74"
+      ],
+      "titleSuggestion": "Award of indemnity: Registrar General determination, conditions, and court fallback",
+      "frozenMapPriority": "P2",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 3,
+        "attemptCount": 1,
+        "mainQuestion": "Under section 74 of the Land Titles Act, what may the Registrar General do upon a claimant's application, what conditions limit an indemnity award, and what recourse does the claimant have if no award is made?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 3,
+        "attemptCount": 1,
+        "mainQuestion": "What are the Registrar General's powers under section 74 of the Land Titles Act, and when may a claimant apply to the court for an indemnity award?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": [
+          {
+            "code": "APPROVED_FOCUS_NOT_COVERED",
+            "severity": "warning"
+          },
+          {
+            "code": "APPROVED_FOCUS_NOT_COVERED",
+            "severity": "warning"
+          },
+          {
+            "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+            "severity": "warning"
+          },
+          {
+            "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+            "severity": "warning"
+          }
+        ]
+      }
+    },
+    {
+      "seq": 63,
+      "tier": 6,
+      "v4JobId": "unit-07fded70d557bb42",
+      "v5JobId": "unit-1eb95397b16fee29",
+      "documentIds": [
+        "section:10"
+      ],
+      "titleSuggestion": "Duty to arrange public hearing and effect of withdrawal of all objections",
+      "frozenMapPriority": "P1",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 1,
+        "mainQuestion": "Under section 10 of the Expropriation Act, what conditions require the Officer to arrange a public hearing for a proposed expropriation, and what is the effect on that hearing when every satisfied notice of objection is withdrawn after the hearing has been arranged?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 2,
+        "mainQuestion": "When must the Officer arrange a public hearing for a proposed expropriation, and what must the Officer do when all satisfied objections are withdrawn after a hearing has been arranged?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 64,
+      "tier": 6,
+      "v4JobId": "unit-05e06222bdb9d406",
+      "v5JobId": "unit-4a5095dd82b864af",
+      "documentIds": [
+        "schedule:schedule-d"
+      ],
+      "titleSuggestion": "Transfer Restrictions and End-of-Lease Obligations",
+      "frozenMapPriority": "P2",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 4,
+        "attemptCount": 1,
+        "mainQuestion": "Under Schedule D of Regulation 83-130, what consent must a lessee obtain before assigning or subletting the demised premises, what possession must the lessee deliver at the end of the lease, on what terms may the lessor enter to show the premises to prospective tenants and purchasers, and what trade fixtures may the lessee remove at termination?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 4,
+        "attemptCount": 2,
+        "mainQuestion": "What do Schedule D's statutory lease covenants require regarding the lessee's transfer of the demised premises, delivery of vacant possession, the lessor's entry to show the premises, and removal of fixtures at or before termination?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 65,
+      "tier": 6,
+      "v4JobId": "unit-08d0057dc07a46d5",
+      "v5JobId": "unit-819e6b3baa157e85",
+      "documentIds": [
+        "section:84"
+      ],
+      "titleSuggestion": "Required contents of a subdivision plan",
+      "frozenMapPriority": "P1",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 4,
+        "attemptCount": 1,
+        "mainQuestion": "What items must a subdivision plan set out under the Community Planning Act, and what boundary measurements are required for streets and parcels?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 5,
+        "attemptCount": 2,
+        "mainQuestion": "What items must a subdivision plan set out under s. 84(3), and what boundary data must be shown for circular curves under s. 84(4)?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": [
+          {
+            "code": "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+            "severity": "warning"
+          },
+          {
+            "code": "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+            "severity": "warning"
+          },
+          {
+            "code": "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+            "severity": "warning"
+          },
+          {
+            "code": "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+            "severity": "warning"
+          },
+          {
+            "code": "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+            "severity": "warning"
+          },
+          {
+            "code": "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+            "severity": "warning"
+          }
+        ]
+      }
+    },
+    {
+      "seq": 66,
+      "tier": 6,
+      "v4JobId": "unit-064dc209bd43e63c",
+      "v5JobId": "unit-9b9c904f7abb2dd1",
+      "documentIds": [
+        "section:2.2.2"
+      ],
+      "titleSuggestion": "Reapplication after resignation in good standing or classification change",
+      "frozenMapPriority": "P2",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 1,
+        "mainQuestion": "Under the Association of New Brunswick Land Surveyors Bylaws, what reapplication pathway is available to a previously registered surveyor who has resigned in good standing or changed classification?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 2,
+        "mainQuestion": "Under section 2.2.2 of the ANBLS Bylaws, what conditions allow a previously registered surveyor to reapply, and what procedure governs the reapplication?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": [
+          {
+            "code": "POSSIBLE_MODALITY_MISMATCH",
+            "severity": "warning"
+          }
+        ]
+      }
+    },
+    {
+      "seq": 68,
+      "tier": 6,
+      "v4JobId": "unit-07144e70868a71ec",
+      "v5JobId": "unit-7e2875b9ce2c697e",
+      "documentIds": [
+        "section:26"
+      ],
+      "titleSuggestion": "Registration of probated and sealed will documents without further proof",
+      "frozenMapPriority": "P2",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 1,
+        "mainQuestion": "Which probate-related documents may be registered in a New Brunswick county registry office without further proof under section 26 of the Registry Act, and what sealing condition must be satisfied for foreign probate documents under subsection (2)?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 2,
+        "mainQuestion": "Under section 26 of the Registry Act, what probate-related documents may be registered in a county registry office without further proof, and what sealing condition applies to foreign probate documents?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 69,
+      "tier": 6,
+      "v4JobId": "unit-0c0bbda20e7199b5",
+      "v5JobId": "unit-3b4bf8fc454f19b9",
+      "documentIds": [
+        "section:44"
+      ],
+      "titleSuggestion": "Consent threshold and Director's correction power for description amendments",
+      "frozenMapPriority": "P1",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 3,
+        "attemptCount": 1,
+        "mainQuestion": "What consent is required to amend a registered condominium description, and how does the Director's independent power to correct clerical errors bypass that requirement and the normal registration-submission steps?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 3,
+        "attemptCount": 2,
+        "mainQuestion": "How does the Condominium Property Act regulate the consent required to amend a registered description, and what independent correction power does the Director hold?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 72,
+      "tier": 6,
+      "v4JobId": "unit-08f6d682936a16dc",
+      "v5JobId": "unit-5abf688ab972bffc",
+      "documentIds": [
+        "section:12(2)"
+      ],
+      "titleSuggestion": "Composition and term of the Board of Examiners",
+      "frozenMapPriority": "P2",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 1,
+        "attemptCount": 2,
+        "mainQuestion": "Under the New Brunswick Land Surveyors Act, how is the Board of Examiners constituted, who appoints its additional members, and what term and reappointment rules apply to those members?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 2,
+        "mainQuestion": "What are the composition, appointing authority, term of office, and reappointment rules for the Board of Examiners under section 12(2) of the New Brunswick Land Surveyors Act?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 73,
+      "tier": 6,
+      "v4JobId": "unit-0f35a3d73578f1dc",
+      "v5JobId": "unit-9bdb6067e6efb48a",
+      "documentIds": [
+        "section:1"
+      ],
+      "titleSuggestion": "Prescriptive protection for claims to profits or benefits (30-year and 60-year thresholds)",
+      "frozenMapPriority": "P1",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 1,
+        "mainQuestion": "How does section 1 of the Easements Act protect a claim to a profit or benefit taken or enjoyed from Crown or privately owned land, and at what durations of uninterrupted enjoyment does that protection escalate?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 2,
+        "mainQuestion": "What thresholds of uninterrupted taking and enjoyment protect a claim to a profit or benefit from Crown or private land under the Easements Act, and what limits attach to each threshold?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 74,
+      "tier": 6,
+      "v4JobId": "unit-01074d54d55e4fde",
+      "v5JobId": "unit-80309b578879a269",
+      "documentIds": [
+        "section:50"
+      ],
+      "titleSuggestion": "Pre-offer notice requirements and adverse-party protections",
+      "frozenMapPriority": "P2",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 1,
+        "mainQuestion": "Under section 50 of the Evidence Act, what procedural steps must the offering party complete before tendering a written report or finding of facts, and what protection does the adverse party retain if a person who supplied information to the report cannot be called to testify?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 4,
+        "attemptCount": 1,
+        "mainQuestion": "Under s. 50(2), what pre-offer notice and disclosure duties apply to a party tendering an expert report in evidence, and what cross-examination and unavailability rights does s. 50(3) give the adverse party?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": [
+          {
+            "code": "APPROVED_FOCUS_NOT_COVERED",
+            "severity": "warning"
+          },
+          {
+            "code": "APPROVED_FOCUS_NOT_COVERED",
+            "severity": "warning"
+          },
+          {
+            "code": "POSSIBLE_MODALITY_MISMATCH",
+            "severity": "warning"
+          },
+          {
+            "code": "POSSIBLE_MODALITY_MISMATCH",
+            "severity": "warning"
+          },
+          {
+            "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+            "severity": "warning"
+          },
+          {
+            "code": "UNCOVERED_SUBSTANTIVE_SOURCE",
+            "severity": "warning"
+          }
+        ]
+      }
+    },
+    {
+      "seq": 75,
+      "tier": 6,
+      "v4JobId": "unit-04e2ecadf458dfc2",
+      "v5JobId": "unit-433e77a5dad8ceb1",
+      "documentIds": [
+        "section:73"
+      ],
+      "titleSuggestion": "Indemnification on rectification – entitlement, exceptions, and forged dispositions",
+      "frozenMapPriority": "P1",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 3,
+        "attemptCount": 1,
+        "mainQuestion": "Under section 73 of the Land Titles Act, what categories of damage entitle a person to indemnification, in which six cases is indemnification withheld, and how does the Act treat a good-faith purchaser under a forged disposition when the title register is rectified?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 4,
+        "attemptCount": 2,
+        "mainQuestion": "Under Land Titles Act s.73, what damage triggers the right to indemnification, what six exceptions limit it, and how does the s.73(2) deeming rule apply to a forged disposition?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 76,
+      "tier": 6,
+      "v4JobId": "unit-01114cfaf3709c7d",
+      "v5JobId": "unit-14777ad1e4786447",
+      "documentIds": [
+        "section:38.1"
+      ],
+      "titleSuggestion": "Grounds for court-ordered mortgage discharge",
+      "frozenMapPriority": "P2",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 1,
+        "mainQuestion": "Under what circumstances may a court, on application, permit payment into court and order a mortgage discharged under Property Act s. 38.1, and what distinct grounds apply where all money due on the mortgage has already been paid?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 1,
+        "mainQuestion": "Under what circumstances may a court order a mortgage discharged, whether the mortgagor seeks to redeem or the money due has already been paid?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 77,
+      "tier": 6,
+      "v4JobId": "unit-38731a2761d264ad",
+      "v5JobId": "unit-cbd8f515a08077d2",
+      "documentIds": [
+        "section:6"
+      ],
+      "titleSuggestion": "Block Size Limits and Crescent/Cul-de-Sac Exception",
+      "frozenMapPriority": "P1",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 1,
+        "mainQuestion": "What are the required length range and minimum depth for a block in a proposed subdivision under Regulation 80-159, and under what conditions may a block exceed the maximum length?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 2,
+        "attemptCount": 2,
+        "mainQuestion": "What length and depth limits apply to a block under section 6 of Regulation 80-159, and when may a block exceed the maximum length?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 78,
+      "tier": 6,
+      "v4JobId": "unit-098b09224e6386c2",
+      "v5JobId": "unit-7131c6fd16823e70",
+      "documentIds": [
+        "section:40"
+      ],
+      "titleSuggestion": "Non-severance of joint tenancy by judgment registration",
+      "frozenMapPriority": "P2",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 1,
+        "attemptCount": 1,
+        "mainQuestion": "Under the Land Titles Act, what is the effect of registering a judgment on a joint tenancy?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 1,
+        "attemptCount": 2,
+        "mainQuestion": "What does the Land Titles Act provide about the effect of registering a judgment on a joint tenancy in registered land?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    },
+    {
+      "seq": 80,
+      "tier": 6,
+      "v4JobId": "unit-01093fbff98ef4eb",
+      "v5JobId": "unit-1a102fb69ea9b08b",
+      "documentIds": [
+        "section:14"
+      ],
+      "titleSuggestion": "Effect of discovering a later or valid will on prior acts and recovery rights",
+      "frozenMapPriority": "P2",
+      "v4": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 3,
+        "attemptCount": 1,
+        "mainQuestion": "Under the Executors and Trustees Act, when a court has admitted a will to probate or made a grant of administration and it later appears that a different or superseding will existed or that the probated will was invalid or not duly executed, what is the legal status of acts already done under that grant, and what recovery rights does the new personal representative have against the acting executor and against persons who erroneously received portions of the estate?"
+      },
+      "v5": {
+        "outcome": "accepted",
+        "authoringStatus": "generated",
+        "warnings": [],
+        "objectiveCount": 3,
+        "attemptCount": 2,
+        "mainQuestion": "When a later or valid will is discovered after a grant of probate or administration, what is the legal effect on prior acts and what may the new personal representative recover under section 14 of the Executors and Trustees Act?",
+        "mapRevisionSuggestion": null,
+        "validationIssues": []
+      }
+    }
+  ]
+}

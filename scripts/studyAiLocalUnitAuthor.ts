@@ -32,8 +32,20 @@ import { waitForProviderHealth, type FetchLike } from './studyAiProviderRecovery
 
 export { hashText, readJson, readJsonl, writeJson, writeJsonlAtomic };
 
-export const UNIT_AUTHORING_V4_SPEC_PATH = 'study-content/ai/specs/unit-authoring-v4.md';
+export const SUPPORTED_UNIT_SPEC_VERSIONS = {
+  'unit-authoring-v4': 'study-content/ai/specs/unit-authoring-v4.md',
+  'unit-authoring-v5': 'study-content/ai/specs/unit-authoring-v5.md',
+} as const;
+export type UnitSpecVersion = keyof typeof SUPPORTED_UNIT_SPEC_VERSIONS;
 export const UNIT_AUTHORING_V4_SPEC_VERSION = 'unit-authoring-v4';
+export const UNIT_AUTHORING_V5_SPEC_VERSION = 'unit-authoring-v5';
+export const UNIT_AUTHORING_V4_SPEC_PATH = SUPPORTED_UNIT_SPEC_VERSIONS[UNIT_AUTHORING_V4_SPEC_VERSION];
+export const UNIT_AUTHORING_V5_SPEC_PATH = SUPPORTED_UNIT_SPEC_VERSIONS[UNIT_AUTHORING_V5_SPEC_VERSION];
+const SUPPORTED_UNIT_SPEC_VERSIONS_TEXT = Object.keys(SUPPORTED_UNIT_SPEC_VERSIONS).join(' | ');
+
+const isSupportedUnitSpecVersion = (value: unknown): value is UnitSpecVersion =>
+  typeof value === 'string' &&
+  Object.prototype.hasOwnProperty.call(SUPPORTED_UNIT_SPEC_VERSIONS, value);
 export const DEFAULT_UNIT_AUTHORING_PACKAGE =
   'study-content/packages/nb-sit-statute-corpus.content-package.json';
 export const LOCAL_UNIT_RESULTS_FILE = 'local-unit.results.jsonl';
@@ -151,7 +163,7 @@ type ProviderCallContext = {
   fetchImpl: FetchLike;
   log: (_message: string) => void;
   body: UnitRequestBody;
-  spec: string;
+  spec: ResolvedUnitAuthoringSpec;
   semanticAttempt: number;
   nextArtifactNumber: () => number;
 };
@@ -271,8 +283,24 @@ export const loadUnitAuthoringV4Spec = (specPath: string = UNIT_AUTHORING_V4_SPE
   return text;
 };
 
+export type ResolvedUnitAuthoringSpec = {
+  version: UnitSpecVersion;
+  path: string;
+  text: string;
+  sha256: string;
+};
+
+/** Resolve a supported spec version to its file text and sha256 (fail-closed). */
+export const loadUnitAuthoringSpec = (version: UnitSpecVersion): ResolvedUnitAuthoringSpec => {
+  const path = SUPPORTED_UNIT_SPEC_VERSIONS[version];
+  if (!existsSync(path)) throw new Error(`Unit Authoring ${version} spec not found at ${path}.`);
+  const text = readFileSync(path, 'utf8');
+  if (!text.trim()) throw new Error(`Unit Authoring ${version} spec is empty at ${path}.`);
+  return { version, path, text, sha256: hashText(text) };
+};
+
 /** Fail-closed gate: run.json must be a prepared unit-authoring run identity. */
-const assertRunJson = (options: RunnerOptions, runsDir: string): void => {
+const assertRunJson = (options: RunnerOptions, runsDir: string): UnitSpecVersion => {
   const path = join(runDirOf(runsDir, options.runId), 'run.json');
   if (!existsSync(path)) throw new Error(`Refusing to run ${options.runId}: no run.json found at ${path}.`);
   const run = readJson<Record<string, unknown>>(path);
@@ -285,9 +313,9 @@ const assertRunJson = (options: RunnerOptions, runsDir: string): void => {
     throw new Error(
       `Refusing to run ${options.runId}: run.json providerKind is ${quote(run.providerKind)}; only 'local-openai-compatible' is supported by this runner.`,
     );
-  if (run.promptSpecVersion !== UNIT_AUTHORING_V4_SPEC_VERSION)
+  if (!isSupportedUnitSpecVersion(run.promptSpecVersion))
     throw new Error(
-      `Refusing to run ${options.runId}: run.json promptSpecVersion is ${quote(run.promptSpecVersion)}; this runner executes only ${UNIT_AUTHORING_V4_SPEC_VERSION}.`,
+      `Refusing to run ${options.runId}: run.json promptSpecVersion is ${quote(run.promptSpecVersion)}; this runner executes only ${SUPPORTED_UNIT_SPEC_VERSIONS_TEXT}.`,
     );
   if (run.runId !== options.runId)
     throw new Error(
@@ -295,6 +323,7 @@ const assertRunJson = (options: RunnerOptions, runsDir: string): void => {
     );
   if (typeof run.corpusContentHash !== 'string' || run.corpusContentHash.trim().length === 0)
     throw new Error(`Refusing to run ${options.runId}: run.json corpusContentHash is missing.`);
+  return run.promptSpecVersion;
 };
 
 const loadContentPackage = (path: string): NbLawContentPackage => {
@@ -341,12 +370,21 @@ const isPlainObject = (value: unknown): boolean =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
 /** Every job the runner will author must carry the unit-job authoring shape. */
-const assertUnitJobShape = (job: AiUnitAuthoringJob, options: RunnerOptions, file: string): void => {
+const assertUnitJobShape = (
+  job: AiUnitAuthoringJob,
+  options: RunnerOptions,
+  expectedVersion: UnitSpecVersion,
+  file: string,
+): void => {
   const id = typeof job.jobId === 'string' && job.jobId ? job.jobId : '<missing jobId>';
   const where = `job ${id} in ${file}`;
   if (job.runId !== options.runId)
     throw new Error(
       `Refusing to run ${options.runId}: ${where} belongs to run ${job.runId ?? '<missing>'}; expected ${options.runId}.`,
+    );
+  if (job.promptSpecVersion !== expectedVersion)
+    throw new Error(
+      `Refusing to run ${options.runId}: ${where} promptSpecVersion ${JSON.stringify(job.promptSpecVersion ?? null)} does not match the run's ${JSON.stringify(expectedVersion)}.`,
     );
   if (!isPlainObject(job.approvedGroup) || !Array.isArray(job.approvedGroup.sourceKeys))
     throw new Error(
@@ -364,7 +402,12 @@ const assertUnitJobShape = (job: AiUnitAuthoringJob, options: RunnerOptions, fil
     throw new Error(`Refusing to run ${options.runId}: ${where} is missing corpusContentHash.`);
 };
 
-const gateUnitJobs = (jobs: AiUnitAuthoringJob[], options: RunnerOptions, runsDir: string): void => {
+const gateUnitJobs = (
+  jobs: AiUnitAuthoringJob[],
+  options: RunnerOptions,
+  runsDir: string,
+  expectedVersion: UnitSpecVersion,
+): void => {
   const fileByJob = new Map<string, string>();
   unitBatchJobFiles(options.runId, options.batch, runsDir).forEach((file) => {
     readJsonl<{ jobId?: unknown }>(file).forEach((row) => {
@@ -372,7 +415,9 @@ const gateUnitJobs = (jobs: AiUnitAuthoringJob[], options: RunnerOptions, runsDi
         fileByJob.set(row.jobId, file);
     });
   });
-  jobs.forEach((job) => assertUnitJobShape(job, options, fileByJob.get(job.jobId) ?? '<unknown>'));
+  jobs.forEach((job) =>
+    assertUnitJobShape(job, options, expectedVersion, fileByJob.get(job.jobId) ?? '<unknown>'),
+  );
 };
 
 const applySelection = (allJobs: AiUnitAuthoringJob[], options: RunnerOptions): AiUnitAuthoringJob[] => {
@@ -419,6 +464,7 @@ const validateRunMetadata = (
   options: RunnerOptions,
   identity: RunIdentity,
   promptSha256: string,
+  promptSpecVersion: string,
   runsDir: string,
   writeIfMissing: boolean,
 ): void => {
@@ -432,7 +478,7 @@ const validateRunMetadata = (
       model: options.model,
       baseUrl: options.baseUrl,
       packagePath: options.package,
-      promptSpecVersion: UNIT_AUTHORING_V4_SPEC_VERSION,
+      promptSpecVersion,
       promptSha256,
       batch: options.batch ?? null,
       concurrency: options.concurrency,
@@ -455,7 +501,7 @@ const validateRunMetadata = (
     refuse(`baseUrl ${quote(metadata.baseUrl)} does not match current baseUrl ${quote(options.baseUrl)}`);
   if (metadata.packagePath !== options.package)
     refuse(`content package ${quote(metadata.packagePath)} does not match current package ${quote(options.package)}`);
-  if (metadata.promptSpecVersion !== UNIT_AUTHORING_V4_SPEC_VERSION || metadata.promptSha256 !== promptSha256)
+  if (metadata.promptSpecVersion !== promptSpecVersion || metadata.promptSha256 !== promptSha256)
     refuse('prompt spec identity does not match the current spec');
   if (metadata.batch !== (options.batch ?? null))
     refuse(`batch selection ${quote(metadata.batch)} does not match current ${quote(options.batch ?? null)}`);
@@ -522,24 +568,39 @@ const validateExistingResults = (
   }
 };
 
-const RUNNER_NOTES = [
+const RUNNER_NOTES_LINES = [
   'RUNNER NOTES (local run only):',
   '- The approvedGroup in the job is the AUTHORING SCOPE; author only within approvedGroup.sourceKeys and its focus.',
   '- suggestedPriority is decided by the frozen Map run and is not yours to set; the runner stamps it.',
   '- Return only the semantic result fields: title, mainQuestion, studySummary, objectives, relatedSourceKeys, studyNotes, sourceCoverage, authoringStatus, mapRevisionSuggestion, confidence, and warnings.',
   '- The runner injects runner-owned identity fields (schemaVersion, proposalId, runId, corpusContentHash, sourceDocumentId, sourceKeys, sourceHashes, approvedGroup, mapDisposition, mapReason, approximateLearningGoal, suggestedPriority, generationMetadata); do not include them.',
-  '- Return exactly one JSON object matching the supplied unit-authoring-v4 schema.',
-].join('\n');
+];
 
-const promptForJob = (job: AiUnitAuthoringJob, spec: string): ChatMessage[] => [
-  { role: 'system', content: `${spec.trimEnd()}\n\n${RUNNER_NOTES}` },
+/** Version-labeled runner notes; for unit-authoring-v4 the bytes are unchanged. */
+const runnerNotesFor = (version: string): string =>
+  `${RUNNER_NOTES_LINES.join('\n')}\n- Return exactly one JSON object matching the supplied ${version} schema.`;
+
+/**
+ * V5+ prompt suffix pinning the resolved spec path, version label, and sha256
+ * in the model context. Empty for v4 so the v4 system prompt stays byte-identical.
+ */
+const specProvenanceSuffix = (spec: ResolvedUnitAuthoringSpec): string =>
+  spec.version === UNIT_AUTHORING_V4_SPEC_VERSION
+    ? ''
+    : `\n\nAuthoring spec file: ${spec.path} (${spec.version}; sha256 ${spec.sha256}).`;
+
+const promptForJob = (job: AiUnitAuthoringJob, spec: ResolvedUnitAuthoringSpec): ChatMessage[] => [
+  {
+    role: 'system',
+    content: `${spec.text.trimEnd()}\n\n${runnerNotesFor(spec.version)}${specProvenanceSuffix(spec)}`,
+  },
   { role: 'user', content: JSON.stringify({ job }) },
 ];
 
 const requestBody = (
   job: AiUnitAuthoringJob,
   options: RunnerOptions,
-  spec: string,
+  spec: ResolvedUnitAuthoringSpec,
   retryNote?: string,
 ): UnitRequestBody => {
   const base = {
@@ -682,7 +743,7 @@ const resolvedInferenceConfig = (
   job: AiUnitAuthoringJob,
   options: RunnerOptions,
   timeoutMs: number,
-  spec: string,
+  spec: ResolvedUnitAuthoringSpec,
 ): ResolvedInferenceConfig => {
   const systemPrompt = promptForJob(job, spec)[0]?.content ?? '';
   const mode = options.unsafeUnstructured ? 'unsafe-json-object' : 'strict-json-schema';
@@ -732,7 +793,7 @@ const provenanceFor = (
   attempt: number,
   raw: unknown,
   accepted: boolean,
-  spec: string,
+  spec: ResolvedUnitAuthoringSpec,
 ): Record<string, unknown> => ({
   providerKind: 'local-openai-compatible',
   modelId: options.model,
@@ -928,13 +989,12 @@ export const runLocalUnitAuthoring = async (
   const chatUrl = `${options.baseUrl.replace(/\/$/, '')}/chat/completions`;
 
   // Fail-closed gates before any provider call and before any write.
-  const spec = loadUnitAuthoringV4Spec();
-  const promptSha256 = hashText(spec);
   const pkg = loadContentPackage(options.package);
-  assertRunJson(options, runsDir);
+  const runSpecVersion = assertRunJson(options, runsDir);
+  const spec = loadUnitAuthoringSpec(runSpecVersion);
   const allRunJobs = loadUnitJobs(options.runId, undefined, runsDir);
   const jobs = options.batch ? loadUnitJobs(options.runId, options.batch, runsDir) : allRunJobs;
-  gateUnitJobs(jobs, options, runsDir);
+  gateUnitJobs(jobs, options, runsDir, runSpecVersion);
   const selectedJobs = applySelection(jobs, options);
   const identity = loadRunIdentity(options, runsDir);
 
@@ -942,10 +1002,10 @@ export const runLocalUnitAuthoring = async (
     await providerModelPreflight(options, fetchImpl, log);
 
   if (options.dryRun) {
-    validateRunMetadata(options, identity, promptSha256, runsDir, false);
+    validateRunMetadata(options, identity, spec.sha256, spec.version, runsDir, false);
   } else {
     mkdirSync(join(runDirOf(runsDir, options.runId), 'results'), { recursive: true });
-    validateRunMetadata(options, identity, promptSha256, runsDir, true);
+    validateRunMetadata(options, identity, spec.sha256, spec.version, runsDir, true);
   }
 
   const accepted = readJsonl<AiStudyUnitProposal>(resultsPath(runsDir, options.runId));
@@ -1028,15 +1088,15 @@ export const runLocalUnitAuthoring = async (
       baseUrl: options.baseUrl,
       batch: options.batch ?? null,
       package: options.package,
-      promptSpecVersion: UNIT_AUTHORING_V4_SPEC_VERSION,
-      promptSha256,
+      promptSpecVersion: spec.version,
+      promptSha256: spec.sha256,
       selectedJobs: result.dryRunJobs,
       firstJobIds: selectedJobs.map((job) => job.jobId).slice(0, 5),
     },
   };
 };
 
-export const LOCAL_UNIT_AUTHOR_HELP = `studyAiLocalUnitAuthor.ts — Unit Authoring V4 local runner
+export const LOCAL_UNIT_AUTHOR_HELP = `studyAiLocalUnitAuthor.ts — Unit Authoring local runner (supports ${SUPPORTED_UNIT_SPEC_VERSIONS_TEXT})
 
 Usage:
   npx tsx scripts/studyAiLocalUnitAuthor.ts --run <run-id> --model <model> [options]
@@ -1067,12 +1127,13 @@ Options:
 
 Run gate (fail closed, before any provider call and before any write):
   run.json must exist with jobType 'unit-authoring' (map runs are rejected),
-  providerKind 'local-openai-compatible', promptSpecVersion 'unit-authoring-v4',
-  runId matching --run, and a corpusContentHash. Every loaded job must carry the
-  unit-job authoring shape (approvedGroup, exactSourceText, frozenMapPriority).
-  The unit-authoring-v4 spec file must exist. When reports/local-run-metadata.json
-  exists, model, base URL, content package, prompt hash, batch selection, and job
-  identity must match what wrote it.
+  providerKind 'local-openai-compatible', promptSpecVersion one of
+  ${SUPPORTED_UNIT_SPEC_VERSIONS_TEXT}, runId matching --run, and a
+  corpusContentHash. Every loaded job must carry the unit-job authoring shape
+  (approvedGroup, exactSourceText, frozenMapPriority) and the run's
+  promptSpecVersion. The spec file for the run's version must exist. When
+  reports/local-run-metadata.json exists, model, base URL, content package,
+  prompt hash, batch selection, and job identity must match what wrote it.
 
 Resume: accepted rows in results/local-unit.results.jsonl are skipped only after
   the persisted proposal matches its job (proposalId, runId, corpusContentHash,

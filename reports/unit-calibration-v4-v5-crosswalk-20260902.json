@@ -1,0 +1,1377 @@
+{
+  "report": "unit-calibration-v4-v5-crosswalk",
+  "dateTag": "20260902",
+  "v4RunId": "ai-units-2026-09-02-frozen-map-cal80-v4",
+  "v5RunId": "ai-units-2026-09-02-frozen-map-cal80-v5",
+  "specShas": {
+    "v4": "ecbb97301866b900ff82e8cbd632f9af65f6f3a7929c2b283939329fd27a683b",
+    "v5": "8987b7daf346c61e312f2c381752049944d6316f655829f697e0283a858169bd"
+  },
+  "cohortSize": 80,
+  "matched": 80,
+  "unmatched": 0,
+  "rows": [
+    {
+      "seq": 1,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-10ff468d35d10873",
+      "groupId": "section-71-instrument-form",
+      "v4JobId": "unit-40730d04faf14076",
+      "v5JobId": "unit-e3f6eb223f9c6b22",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:71"
+      ],
+      "titleSuggestion": "Instrument form requirements and registrar acceptance discretion (ss. 71(2)-(3))",
+      "frozenMapPriority": "P3",
+      "v4InputHash": "529a9b768986359282aaf4f72fbdf0c80e783331c17becd956bcc4cb4531a3c2",
+      "v5InputHash": "68f3606a3bcaa63b1afbf35b5f01c74b252cc74ac1f5851e588bb5a23fa932b9",
+      "semanticMatch": true
+    },
+    {
+      "seq": 2,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-10ff468d35d10873",
+      "groupId": "section-71-regulatory-power",
+      "v4JobId": "unit-f1d3de4004dd0d17",
+      "v5JobId": "unit-f463819104abd315",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:71"
+      ],
+      "titleSuggestion": "Registry administration regulation-making power (s. 71(1))",
+      "frozenMapPriority": "P3",
+      "v4InputHash": "60b7457554ed093f2ffac49fe767b84ee856d2533ab3d8bddec08ab127e5eb8e",
+      "v5InputHash": "fa1eee0ef5c2034676f790da5102b01243b663d674e1f24642f4a316b3fe1160",
+      "semanticMatch": true
+    },
+    {
+      "seq": 3,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-19c48590a1b233de",
+      "groupId": "section-40-contaminants-water-use",
+      "v4JobId": "unit-02c1922ab2c2961a",
+      "v5JobId": "unit-5ba258431f90f343",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:40"
+      ],
+      "titleSuggestion": "Release, handling and disposal of contaminants and wastes",
+      "frozenMapPriority": "P3",
+      "v4InputHash": "13a5921883a391778c9b903f1b625ada4d7bf57d4731dcf1b16446c027886a2b",
+      "v5InputHash": "2630a06783b5d1e4100dd044a25fe7a8e4dcef8546a357c46810d6ae70754f56",
+      "semanticMatch": true
+    },
+    {
+      "seq": 4,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-19c48590a1b233de",
+      "groupId": "section-40-administration",
+      "v4JobId": "unit-9ceefa172c31deea",
+      "v5JobId": "unit-fcc8bb2c8653b95d",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:40"
+      ],
+      "titleSuggestion": "Costs, claims, fees and inspectors",
+      "frozenMapPriority": "P3",
+      "v4InputHash": "8c259f9c42371486b9c59214b04845ac612d19391066d95dc94e8068b17e0f42",
+      "v5InputHash": "e7f9dad9f99a4fcff24d7329a50d08895703c27c9a9d815357245fe259cf7268",
+      "semanticMatch": true
+    },
+    {
+      "seq": 5,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-19c48590a1b233de",
+      "groupId": "section-40-water-classification",
+      "v4JobId": "unit-d9b1e53de714665c",
+      "v5JobId": "unit-d4b1280dd51c16a3",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:40"
+      ],
+      "titleSuggestion": "Water classification of a watercourse",
+      "frozenMapPriority": "P3",
+      "v4InputHash": "8c2ee22ff152de00a3ba638c9dd0a6dbbeacd966fcbf0c9e445ce83dbaf7649f",
+      "v5InputHash": "5295d4fc49edcddad87607adf7e5c32e5f12d3ecbe3e5f02ed5a5b7d8e2b69fa",
+      "semanticMatch": true
+    },
+    {
+      "seq": 6,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-445b7c242fa7ca8e",
+      "groupId": "section-13-future-risk",
+      "v4JobId": "unit-1d069dae182e4d4a",
+      "v5JobId": "unit-332a2ef669d3f464",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:13"
+      ],
+      "titleSuggestion": "Response to a possible future significant health risk",
+      "frozenMapPriority": "P3",
+      "v4InputHash": "11e9385d7ded6b93b7a42413cd5eda9ca14173a1365b635a9c9e957c8da8f1b5",
+      "v5InputHash": "88e7764840bc64abece7c4093d80254cf1f1f564257fc5135cd5ac9255cd7abc",
+      "semanticMatch": true
+    },
+    {
+      "seq": 7,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-445b7c242fa7ca8e",
+      "groupId": "section-13-current-risk-orders",
+      "v4JobId": "unit-ad5f94891873617a",
+      "v5JobId": "unit-6f65dea4a13630e9",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:13"
+      ],
+      "titleSuggestion": "Response to a current significant health risk",
+      "frozenMapPriority": "P3",
+      "v4InputHash": "3d4cf1d1be5304caab1ee0f2c2972c877a318c5753f583f8de9eed66de0fd411",
+      "v5InputHash": "313e3257ab09979d8afec513b23598743b30241aedae4c2472000a9f993c7c30",
+      "semanticMatch": true
+    },
+    {
+      "seq": 8,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-445b7c242fa7ca8e",
+      "groupId": "section-13-private-well-notice",
+      "v4JobId": "unit-e9fe22342cc56c8a",
+      "v5JobId": "unit-44a5e5a34f069c1d",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:13"
+      ],
+      "titleSuggestion": "Private well notice and application of order provisions",
+      "frozenMapPriority": "P3",
+      "v4InputHash": "37c49fc9a2a9714c3fc5770b56263f21c47d315229713bd418bed438cd85f58a",
+      "v5InputHash": "1290d551214f1c7907068f1f83f2ff5dd41498cde4a34664bf2065ff491f952b",
+      "semanticMatch": true
+    },
+    {
+      "seq": 9,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-445b7c242fa7ca8e",
+      "groupId": "section-13-supply-prohibition",
+      "v4JobId": "unit-ea7e4c75c7a425ce",
+      "v5JobId": "unit-79cacfaeddf74f82",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:13"
+      ],
+      "titleSuggestion": "No person shall supply water posing a significant health risk",
+      "frozenMapPriority": "P3",
+      "v4InputHash": "315efdd4853f6449b8bc44260561fe158cdef175dcd26b4aa598950e2195310a",
+      "v5InputHash": "2a2d824d82519a80014fc22fd2ed28794b0f5221f9682b2ad4fdb2f3945a30ac",
+      "semanticMatch": true
+    },
+    {
+      "seq": 10,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-48b1a91a069cabde",
+      "groupId": "section-1-land-water-terms",
+      "v4JobId": "unit-892e38efffb31976",
+      "v5JobId": "unit-6480451b3fe42be2",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:1"
+      ],
+      "titleSuggestion": "Land, shore and watercourse definitions",
+      "frozenMapPriority": "P2",
+      "v4InputHash": "db4d535a77bedb4c20c1314f9d5c22da0ef3f70af19617c11604e3738a250f95",
+      "v5InputHash": "4b2dc092d5df5b778f18e422ec0cfbc2f71a557636e9ad93c0fe2e53c3d07283",
+      "semanticMatch": true
+    },
+    {
+      "seq": 11,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-48b1a91a069cabde",
+      "groupId": "section-1-core-terms",
+      "v4JobId": "unit-b176ebe94507fd17",
+      "v5JobId": "unit-c562d9132d24d3e6",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:1"
+      ],
+      "titleSuggestion": "Trespass, actor and enforcement definitions",
+      "frozenMapPriority": "P2",
+      "v4InputHash": "63eaaf240ad983d5eb14bb0fecb8ed53bd71e69f203091bac4fe233f3bb3c043",
+      "v5InputHash": "36524e518c10b6a6e9a439cb15c99722341192988cefc0848f4b248b5c75c589",
+      "semanticMatch": true
+    },
+    {
+      "seq": 12,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-52353c0c8b64b6d3",
+      "groupId": "section-95-administration-fees",
+      "v4JobId": "unit-9aa4dea732c4bc43",
+      "v5JobId": "unit-db1eb97629092cb5",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:95"
+      ],
+      "titleSuggestion": "Administration, advisory board and fees",
+      "frozenMapPriority": "P3",
+      "v4InputHash": "875368aca3e53bef911bf4541ede2c83df49dfec215bd1477310393b0ad1a760",
+      "v5InputHash": "38dd7756d162f377b5e95c365c20ee86c26724b033b2be8493a71c98eadb311e",
+      "semanticMatch": true
+    },
+    {
+      "seq": 13,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-52353c0c8b64b6d3",
+      "groupId": "section-95-surveys-tenure-access",
+      "v4JobId": "unit-de14b7aae121ea5a",
+      "v5JobId": "unit-9ff278807624e3ae",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:95"
+      ],
+      "titleSuggestion": "Surveys, tenure and access to Crown Lands",
+      "frozenMapPriority": "P3",
+      "v4InputHash": "dfd14535f22053923f6a65fd2a5ac305ecc58f50d6f4038feb81990fa179fc47",
+      "v5InputHash": "7aa145a972c8e2ced0a77857bb9dc477f765e0a67c3ea06b832a27cf419ce89b",
+      "semanticMatch": true
+    },
+    {
+      "seq": 14,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-52353c0c8b64b6d3",
+      "groupId": "section-95-forest-harvest-royalties",
+      "v4JobId": "unit-df983b36ee36be82",
+      "v5JobId": "unit-23337f055c22b192",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:95"
+      ],
+      "titleSuggestion": "Forest management, harvesting and royalties",
+      "frozenMapPriority": "P3",
+      "v4InputHash": "1f3af59937bac23f5c4440bf6da8baa6f12de7c3a620559cc52936b1db662db6",
+      "v5InputHash": "13c4b1e9eeb1b6c8bd64246481d0a58b274a78d1b6ea9fbf58f07fd985144b35",
+      "semanticMatch": true
+    },
+    {
+      "seq": 15,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-7c48e28797b91624",
+      "groupId": "section-66-fee-retention",
+      "v4JobId": "unit-2f3e7edff1d80df7",
+      "v5JobId": "unit-6e340018655584a7",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:66"
+      ],
+      "titleSuggestion": "Retaining registry office fees and the dismissal penalty",
+      "frozenMapPriority": "P3",
+      "v4InputHash": "c8b07b707d558e46aa23b8d1c930f50c8f7035304616690e470b9656fe162f8e",
+      "v5InputHash": "45f467e8a8fca7da78fa879e261baba1cf533cc845154608dc567943a6e045d8",
+      "semanticMatch": true
+    },
+    {
+      "seq": 16,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-8860d90d22aae7ed",
+      "groupId": "section-68-health-administration",
+      "v4JobId": "unit-15fa5c5ac251dfa1",
+      "v5JobId": "unit-d0fd18f6457af793",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:68"
+      ],
+      "titleSuggestion": "Health regions, inspectors and notifiable disease regulations",
+      "frozenMapPriority": "P4",
+      "v4InputHash": "f9accaeea2db5080e0f8ffccd46dd0325dbaf8f4b4b2efcd2eede211a8a72dbc",
+      "v5InputHash": "ec3e5ac5299c418064334db5ab07b922f8975d2e345de7b3171cb4b14e90f447",
+      "semanticMatch": true
+    },
+    {
+      "seq": 17,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-8860d90d22aae7ed",
+      "groupId": "section-68-water-sewage",
+      "v4JobId": "unit-6a94737b69e069ce",
+      "v5JobId": "unit-e944b3a49f4b9bac",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:68"
+      ],
+      "titleSuggestion": "Water supply, water circulation and sewage regulations",
+      "frozenMapPriority": "P4",
+      "v4InputHash": "54f61b5db4481d725ae6fe9edd7a1c96c6be80baf29ad279aeaf775f58b7554d",
+      "v5InputHash": "311cc9bc11becd8a8b4e24f8edabace106d1790b369a088001abd2c628e9ba83",
+      "semanticMatch": true
+    },
+    {
+      "seq": 18,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-8860d90d22aae7ed",
+      "groupId": "section-68-food-premises",
+      "v4JobId": "unit-fdccd69202d3a203",
+      "v5JobId": "unit-d1742361c5ae3778",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:68"
+      ],
+      "titleSuggestion": "Food premises and food safety regulations",
+      "frozenMapPriority": "P4",
+      "v4InputHash": "9539269a60556e1dc33d31bee471929ae843257de162c6543078cc5052425c8b",
+      "v5InputHash": "6330b6cabe55680f78be1f7bd23f027b9ae27aee2296a1bc5f4f128a6a87353d",
+      "semanticMatch": true
+    },
+    {
+      "seq": 19,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-d1fadd2dfd0ce395",
+      "groupId": "section-90-regulation-mechanics",
+      "v4JobId": "unit-ade0ea76fa6d04ef",
+      "v5JobId": "unit-bc439b485e0a8ce3",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:90"
+      ],
+      "titleSuggestion": "Incorporation by reference and application mechanics",
+      "frozenMapPriority": "P3",
+      "v4InputHash": "32da450c3e7e982bf6dcdc64e876f77a795a0d8cf7af9fe6a290b317fbdaf4c0",
+      "v5InputHash": "574a10736ef72ddcbeebac784a9f50585487ee29137d3d20c381bd6064021960",
+      "semanticMatch": true
+    },
+    {
+      "seq": 20,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-d1fadd2dfd0ce395",
+      "groupId": "section-90-regulatory-subjects",
+      "v4JobId": "unit-dc58323956b9fd42",
+      "v5JobId": "unit-f91b57371792a0bb",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:90"
+      ],
+      "titleSuggestion": "Aquaculture regulatory subjects",
+      "frozenMapPriority": "P3",
+      "v4InputHash": "01b7bcc7aace766085500e407133cc38c69e401a83ced5b3212caed8d18a1989",
+      "v5InputHash": "8d8cf18a369d2f90c4e08dfdc9298ceae3122a6ec2f1fece06a1f3c2c4bf80a8",
+      "semanticMatch": true
+    },
+    {
+      "seq": 21,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-7ae41a2728f7e83b",
+      "groupId": "su-15.3-assessment-formula",
+      "v4JobId": "unit-047b933c1567c5dd",
+      "v5JobId": "unit-ab80c5ba40812a83",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:15.3"
+      ],
+      "titleSuggestion": "Phased assessment calculation formula",
+      "frozenMapPriority": "P2",
+      "v4InputHash": "4ea01d946625b2ffa758e692865aa0bc04113446cb0d1fe5824d7c49a04494ab",
+      "v5InputHash": "912a2b0abb74a21eb3d4a1c7b2b9d7c9607ca6c7d4d43a21549fbfa18472f51b",
+      "semanticMatch": true
+    },
+    {
+      "seq": 22,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-1fa5a6239a1f7144",
+      "groupId": "g1",
+      "v4JobId": "unit-2e7e67eb0f35fe35",
+      "v5JobId": "unit-3e12091103f6ec16",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:1"
+      ],
+      "titleSuggestion": "Definition of \"development\"",
+      "frozenMapPriority": "P1",
+      "v4InputHash": "e78ada46216d56d781974ccf6099c57a98fd03a6288224543663a1075b1debfb",
+      "v5InputHash": "767bfc1d4d40b02f6489fbb359df7ba3199bb505f8f9e017b5539100d0511122",
+      "semanticMatch": true
+    },
+    {
+      "seq": 23,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-56bae66370b899b1",
+      "groupId": "s75-approval-conditions",
+      "v4JobId": "unit-019c765ae138d8b5",
+      "v5JobId": "unit-1778139a242e733a",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:75"
+      ],
+      "titleSuggestion": "Facilities requirements and development-officer approval conditions",
+      "frozenMapPriority": "P1",
+      "v4InputHash": "0e40431654d54651c1961d52d0d82d43ecb94657499c2d2aa5cc5a902be91052",
+      "v5InputHash": "9edbfcf037504aa719623a6ca4f822567b665d7638ddbca51d45878da5c2d2f0",
+      "semanticMatch": true
+    },
+    {
+      "seq": 24,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-33a01d563229d6dd",
+      "groupId": "g1",
+      "v4JobId": "unit-143fc780953799e6",
+      "v5JobId": "unit-aca8067647cbf88f",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:52"
+      ],
+      "titleSuggestion": "Rate-setting prohibition and Board authority",
+      "frozenMapPriority": "P3",
+      "v4InputHash": "958cb23dd860efaf2bdc36ef636f0ca321e484315c4ad837e86f5209c752e7cc",
+      "v5InputHash": "c058609611314cedd55e3c9895e18a754a2ac89ad9a6192a39b3b2e4fcd9d68c",
+      "semanticMatch": true
+    },
+    {
+      "seq": 25,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-208559fbf2dbeffa",
+      "groupId": "s68-g5",
+      "v4JobId": "unit-2eedbe7a21cb2c32",
+      "v5JobId": "unit-da8aeea638cab3fd",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:68"
+      ],
+      "titleSuggestion": "Boundary survey requirement and exception for previously surveyed boundaries",
+      "frozenMapPriority": "P2",
+      "v4InputHash": "d5288cf47ca4bb7cfd2d5599d2a3d1a2389d9ac969cf6e4808392db401bd6524",
+      "v5InputHash": "ddc0da0f946670a3ff792d5b69322035874024911e50b4d6f3dd22d9fc2fa099",
+      "semanticMatch": true
+    },
+    {
+      "seq": 26,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-1c37c940368bec16",
+      "groupId": "s100-g2",
+      "v4JobId": "unit-023c1a4ddb31e2c5",
+      "v5JobId": "unit-9444b4424f6fa00b",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:100"
+      ],
+      "titleSuggestion": "Licence fee on conviction deemed part of fine",
+      "frozenMapPriority": "P2",
+      "v4InputHash": "6dcb15d370aabc5c29c5345d07dc71755f74cfe335e07c3a93ac3a9f95726c3c",
+      "v5InputHash": "3417455de74a366b792285b8906ef8310262eefaec2c39d28133f4ab1015d0c0",
+      "semanticMatch": true
+    },
+    {
+      "seq": 27,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-59704851a9e697bf",
+      "groupId": "s9-2-specific-operational-duties",
+      "v4JobId": "unit-5fadda40929f11f0",
+      "v5JobId": "unit-99bdb6cd6f15f777",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:9"
+      ],
+      "titleSuggestion": "Specific operational duties of the employer",
+      "frozenMapPriority": "P2",
+      "v4InputHash": "fd6ad5edd65600b88eb428130af20abe2ea71c2d1ef1ad248429521d12669a51",
+      "v5InputHash": "6e41c68a296f2cb74bb51f7c527f2607136d64847af858515815b12ec88bcda1",
+      "semanticMatch": true
+    },
+    {
+      "seq": 28,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-6c9e861025a7bfa4",
+      "groupId": "su-44-mortgagee-powers",
+      "v4JobId": "unit-5d2a9f36002162d0",
+      "v5JobId": "unit-71e27c24590d3242",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:44"
+      ],
+      "titleSuggestion": "Mortgagee's Statutory Powers under Deed Mortgage (s.44)",
+      "frozenMapPriority": "P1",
+      "v4InputHash": "3dd6d302d01f891282407eb33125c9fbee521920b1acf8d5782d3e19f385b83d",
+      "v5InputHash": "3f11be976f9fa5e30fed5ff2f37e69b72e9fba97288cf44b685225b8cf74f4e3",
+      "semanticMatch": true
+    },
+    {
+      "seq": 29,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-845a5dc610f4fb39",
+      "groupId": "s44-out-of-province-execution",
+      "v4JobId": "unit-c7dc47a1735eb69d",
+      "v5JobId": "unit-90ab6499b6928ad2",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:44"
+      ],
+      "titleSuggestion": "Out-of-Province Instrument Execution and Certification",
+      "frozenMapPriority": "P2",
+      "v4InputHash": "fbc1810ccedf461538b1283ad4eb4a81166a16f618d2ec9222f144166e563ff7",
+      "v5InputHash": "1861f3ecf5d3d569ecb9bbb921ff2fcb6f7b3feb66715c1eaab4d74f17a8c398",
+      "semanticMatch": true
+    },
+    {
+      "seq": 30,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-324db09e5f0e12de",
+      "groupId": "s10-hearing-parties-notice",
+      "v4JobId": "unit-09121fea0dce567b",
+      "v5JobId": "unit-addc04e113bb4ae1",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:10"
+      ],
+      "titleSuggestion": "Hearing parties and notice of hearing",
+      "frozenMapPriority": "P2",
+      "v4InputHash": "6f8780c603e7e4e0a65d7a0e2d6772cb79ba4f9e97092ff7efc33b8d1ec9b02b",
+      "v5InputHash": "3693041d5ff6dc1215af8953961ba31009ffcf32d99f73c0adb9457e66480dd1",
+      "semanticMatch": true
+    },
+    {
+      "seq": 31,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-8b1cf0e7aa43d3bc",
+      "groupId": "g1",
+      "v4JobId": "unit-e60f2ed653e5363a",
+      "v5JobId": "unit-c9285cd7f533a2ab",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:1"
+      ],
+      "titleSuggestion": "Definitions in the Surveys Act",
+      "frozenMapPriority": "P2",
+      "v4InputHash": "56a06c44cde0c34d8c14d5762542a7615f2aba70226792f13ec943bfdb28b86d",
+      "v5InputHash": "52069b7127a3d442687ccad7635b3fd3718e69661b988f87e7196bdc07a2f9ce",
+      "semanticMatch": true
+    },
+    {
+      "seq": 32,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-921478a7044024bd",
+      "groupId": "s18-certificates",
+      "v4JobId": "unit-21c62d64fd32c92f",
+      "v5JobId": "unit-5eefb3ed8c3ce251",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:18"
+      ],
+      "titleSuggestion": "Cancelling and issuing certificates of registered ownership",
+      "frozenMapPriority": "P1",
+      "v4InputHash": "5e5ed302927bd64b78e370365376c623c77cf499db215b2f6d9ce6f591354df3",
+      "v5InputHash": "e1007aacd03c435bd764f894ca5ba904b3a0e8461d52507dfc5a9e784484d54e",
+      "semanticMatch": true
+    },
+    {
+      "seq": 33,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-17219353deb3fd8b",
+      "groupId": "s19-will-registration-period",
+      "v4JobId": "unit-806dcd5f7b8ca4e8",
+      "v5JobId": "unit-bfebe45a58764cbf",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:19"
+      ],
+      "titleSuggestion": "Protective registration period for wills",
+      "frozenMapPriority": "P1",
+      "v4InputHash": "7e002bc4995c0fa414ba62124da48ecdddf56f6fff77cdac631a14f0b3b2e438",
+      "v5InputHash": "8bffa5da23c8c9331b8aea38c27a1c6e011be82b75147675c78d71318b4f5ee5",
+      "semanticMatch": true
+    },
+    {
+      "seq": 34,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-ed3f74e6ccd6099c",
+      "groupId": "s3-report-contents",
+      "v4JobId": "unit-24d4ce03d041f274",
+      "v5JobId": "unit-061b46bb0538188c",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:3"
+      ],
+      "titleSuggestion": "Surveyor's Report Required Contents",
+      "frozenMapPriority": "P1",
+      "v4InputHash": "e4d4d7ff5126ebd22ba2b33dd0c0ca0fac0ccc418cc229f9eb942bbad1b37a73",
+      "v5InputHash": "a0789f591cabf252d052344d711ceffce094a5a49e157b73d8118cf8b58854f1",
+      "semanticMatch": true
+    },
+    {
+      "seq": 35,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-33ecdfe080193d4f",
+      "groupId": "s125-4",
+      "v4JobId": "unit-00066425d3dd3645",
+      "v5JobId": "unit-dc047ee16ef0e408",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:125"
+      ],
+      "titleSuggestion": "Zoning regulation effect and deemed powers (s.125(8)–(9))",
+      "frozenMapPriority": "P2",
+      "v4InputHash": "caaa78b85527b5e8aa242370e0cba71c9d807e7859d269c1653b163be6bed3b8",
+      "v5InputHash": "e18d0589fa49219e6fb0af7607f3ef1b8b6e357750ff733fc55a6f53315df311",
+      "semanticMatch": true
+    },
+    {
+      "seq": 36,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-e10048dceb53e1e7",
+      "groupId": "s26-offence-unregistered-practice",
+      "v4JobId": "unit-79f54c297756d4aa",
+      "v5JobId": "unit-331f33e0d3cf5b61",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:26"
+      ],
+      "titleSuggestion": "Offence and penalties for unregistered practice as a land surveyor (s. 26)",
+      "frozenMapPriority": "P1",
+      "v4InputHash": "606b53bcdfe6b95a94355a6a85f1fd22925d28941005f1ce6d60a8b15698176f",
+      "v5InputHash": "e30d26c67fb03622f64e28009c72a8afb5eb24c44da08d4fdacfadb814127206",
+      "semanticMatch": true
+    },
+    {
+      "seq": 37,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-732a1274562ce704",
+      "groupId": "g1",
+      "v4JobId": "unit-a795aa5cbc9d3ee6",
+      "v5JobId": "unit-4a0b1236f21e2add",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:16(2)",
+        "section:17(1)"
+      ],
+      "titleSuggestion": "Practice by partnerships, associations of persons, and corporations",
+      "frozenMapPriority": "P2",
+      "v4InputHash": "f5c4a48fd1c7df9021a0afec4dad5b435ac61fd7c09432e6e4b6ae3be329df52",
+      "v5InputHash": "bc3f3a13cb2faea444b877fb20a560c441a121e8614fb2eef22c45ecdffb707e",
+      "semanticMatch": true
+    },
+    {
+      "seq": 38,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-7581d56f4d904234",
+      "groupId": "g-43-seals",
+      "v4JobId": "unit-02657c4c14328d82",
+      "v5JobId": "unit-051f5db2729fd7b5",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:43"
+      ],
+      "titleSuggestion": "Sufficient evidence of due execution: court and corporate seals",
+      "frozenMapPriority": "P3",
+      "v4InputHash": "bae0037961a6c4e31db3e904f87922f0a4bc04a58d02208f40181c006c5560ab",
+      "v5InputHash": "f6b2540f06de968e36b7eabffe1358b2dc69884895dca287584fde3635e3f2f0",
+      "semanticMatch": true
+    },
+    {
+      "seq": 39,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-45d0804200b86c22",
+      "groupId": "LRC-65-combined",
+      "v4JobId": "unit-009ff72aba3f0d45",
+      "v5JobId": "unit-aef7b1dd69abc34d",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:6.5.1",
+        "section:6.5.2"
+      ],
+      "titleSuggestion": "Legislative Review Committee: Establishment, Responsibilities, and Annual Report",
+      "frozenMapPriority": "P4",
+      "v4InputHash": "256d96feb08c08720250d0c4e29a44d28b00ce045f95a0f0585bdf31b41cb231",
+      "v5InputHash": "6ada61499c98bfbf79a6f296287ec2c58cbb39cb2af42a8386ff7afbec8a3433",
+      "semanticMatch": true
+    },
+    {
+      "seq": 40,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-998845fa0f9ac720",
+      "groupId": "s80-fees",
+      "v4JobId": "unit-0070dd224c8bb7a5",
+      "v5JobId": "unit-29643f0abdec17e2",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:80"
+      ],
+      "titleSuggestion": "Registration and assurance fees payable to the registrar",
+      "frozenMapPriority": "P1",
+      "v4InputHash": "4b1ebd62db667743d248c2fc3f6d076fd82475fa941f9a7b9c5ebcffd94049eb",
+      "v5InputHash": "2d71bc4a89131d155ac5499af4c087c5aa0a98a3a284764d642c5a9806124516",
+      "semanticMatch": true
+    },
+    {
+      "seq": 41,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-17a5d43b18134aae",
+      "groupId": "s36-execution-acknowledgment-rules",
+      "v4JobId": "unit-0167053e440a24d5",
+      "v5JobId": "unit-06c54db68969cc17",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:36"
+      ],
+      "titleSuggestion": "Prohibitions on parties and witness requirement for affidavits of execution",
+      "frozenMapPriority": "P2",
+      "v4InputHash": "bd279d950822db97ea891c3a0febde9ba2d044209cf3949370c0165e0c5c1f79",
+      "v5InputHash": "19c27aed771b056c0e63d0ce100b3f800235356cc59b3b8c4d2f8e73cc78f4d3",
+      "semanticMatch": true
+    },
+    {
+      "seq": 42,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-0a6a8b4749036fee",
+      "groupId": "s42-no-verification-required",
+      "v4JobId": "unit-02dbce06a699d0b3",
+      "v5JobId": "unit-c42303371eff91ee",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:42"
+      ],
+      "titleSuggestion": "No separate verification of seal or signing officer required for registration",
+      "frozenMapPriority": "P3",
+      "v4InputHash": "777f9b147bed928eab71c2364ae93051b5a76f41c38715020ffcd6269b4c49c6",
+      "v5InputHash": "bda8c3f14e9d28f5212417f39ae8908b8cb18b66023a36d37a8086897fe46feb",
+      "semanticMatch": true
+    },
+    {
+      "seq": 43,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-de33ef5221c93b71",
+      "groupId": "s11-3-terms-and-replacement",
+      "v4JobId": "unit-022c7285b5e97c06",
+      "v5JobId": "unit-7071b6becf15d8dd",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:11(3)"
+      ],
+      "titleSuggestion": "AGM Election Terms and Council Replacement Mechanism",
+      "frozenMapPriority": "P4",
+      "v4InputHash": "8dd564ba99d2b683b867301be8662d37f70926910f4c42c2d128e08ea21e1aa0",
+      "v5InputHash": "d59d69f661be8b99387b69c9aca5394d455cfedee28a56a013ecaa06e8a224a6",
+      "semanticMatch": true
+    },
+    {
+      "seq": 44,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-998845fa0f9ac720",
+      "groupId": "s80-accounting-indemnity",
+      "v4JobId": "unit-03718a2726419ffc",
+      "v5JobId": "unit-762098496a0f61e2",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:80"
+      ],
+      "titleSuggestion": "Accounting for received monies and indemnification funding",
+      "frozenMapPriority": "P1",
+      "v4InputHash": "bcbf3604270e33d4de068b63230cbeb40e15a30e5df2765a42d428b23c388e60",
+      "v5InputHash": "f7f3d08d2a1030bf4f7e5955241f33d3f14199adbe6c07d340043b3c69af2d70",
+      "semanticMatch": true
+    },
+    {
+      "seq": 45,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-99a4d4ea287cc40e",
+      "groupId": "s71.2-enforcement-actions",
+      "v4JobId": "unit-00786855a793bc06",
+      "v5JobId": "unit-d5879f27382ec6c0",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:71.2"
+      ],
+      "titleSuggestion": "Minister's enforcement entry and compliance actions",
+      "frozenMapPriority": "P2",
+      "v4InputHash": "57de491063a513961ba9a81315432f9bb6cd61be42417fd28f3077fa28b30403",
+      "v5InputHash": "3904eaad6580ecc0f7c6199b307c10fb1f58dc13235e879809126bde7efc538f",
+      "semanticMatch": true
+    },
+    {
+      "seq": 46,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-f8234a7a5d8e8f08",
+      "groupId": "g1",
+      "v4JobId": "unit-0445d8337e77a7c6",
+      "v5JobId": "unit-d6fe427cdddb2678",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:24(1)"
+      ],
+      "titleSuggestion": "Parties to Discipline Committee Proceedings",
+      "frozenMapPriority": "P3",
+      "v4InputHash": "e69c0367028f65c47ede05a0e7f17ac112da6bed3e5886957dbd5f0c897ff2f3",
+      "v5InputHash": "b4985ce1f3bd1947b1997aab9dda63529bd1872e55ecc4d8f0736808a1a8ff9d",
+      "semanticMatch": true
+    },
+    {
+      "seq": 47,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-fbf4d5014cd592ac",
+      "groupId": "s184-public-beach-agreements",
+      "v4JobId": "unit-057a72bc46425aef",
+      "v5JobId": "unit-7558538d3d98f4ec",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:184"
+      ],
+      "titleSuggestion": "Municipal power to enter public beach development agreements",
+      "frozenMapPriority": "P4",
+      "v4InputHash": "72b1548b722a68077fca541f1946114e69ee47309e4a3ba136fcd9d206a7f4c9",
+      "v5InputHash": "4f07a168c4943b4269db99f0201a718e5d71507c455827429710cc3a75ed2c3a",
+      "semanticMatch": true
+    },
+    {
+      "seq": 48,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-1d9736bd2c01e88f",
+      "groupId": "sm-v3-sec1-defs",
+      "v4JobId": "unit-0421d4fe4b51ed92",
+      "v5JobId": "unit-f821944f8d8fad87",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:1"
+      ],
+      "titleSuggestion": "Boundaries Confirmation Act – Defined Terms",
+      "frozenMapPriority": "P1",
+      "v4InputHash": "10bc0fc8e5bbbcd0a95731923d5a8973df30ecfdbaae8d14398a4251a5e130c3",
+      "v5InputHash": "5a42af921e0810c6c584e0b626b5ea31d04288ff03fb9da8a1a2109ab2496a4b",
+      "semanticMatch": true
+    },
+    {
+      "seq": 49,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-6292ef0055044003",
+      "groupId": "s28-local-govt-appeal",
+      "v4JobId": "unit-00cb6e97353458dc",
+      "v5JobId": "unit-c1d2d8aa37da6862",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:28"
+      ],
+      "titleSuggestion": "Local government or other taxing authority appeal to the Board (s. 28)",
+      "frozenMapPriority": "P2",
+      "v4InputHash": "92fac755f91a4065772d107b3a9ed9bf50754d0dacc36edec9df0132c7bbfa4a",
+      "v5InputHash": "67bfdfe8eeec4fda67b4c8830b31cd280230650f38bfdddef1a16badae2d09d1",
+      "semanticMatch": true
+    },
+    {
+      "seq": 50,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-2ddab4acd8b9726d",
+      "groupId": "13.2-electronic-storage-equivalence",
+      "v4JobId": "unit-046240c47aa8f95b",
+      "v5JobId": "unit-10ea21c46affc7c5",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:13.2"
+      ],
+      "titleSuggestion": "Electronic Information Storage System Equivalence Rules",
+      "frozenMapPriority": "P3",
+      "v4InputHash": "6609abc8245e3724348aa98fe79625c8121de498fa52785e9c3730f37f182b38",
+      "v5InputHash": "0403f27b23881e21c0c16aaaf64f1e83d821383387449ba2dfaeb9a263aed8aa",
+      "semanticMatch": true
+    },
+    {
+      "seq": 51,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-79f0cf7fcf4e7e2d",
+      "groupId": "s140-endorse-precept",
+      "v4JobId": "unit-09ba9569396ef78b",
+      "v5JobId": "unit-672a50b20e2100c7",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:140"
+      ],
+      "titleSuggestion": "Clerk's duty to endorse precept on assessment roll",
+      "frozenMapPriority": "P4",
+      "v4InputHash": "a6061f7459ce68d4b4c332b5e91c856c02cd255f981d57ca37e6d2acae013e93",
+      "v5InputHash": "f146d5ab9214a97048b0fe6ef79adedc97d786a3e1ac0296170f1aee951ce3eb",
+      "semanticMatch": true
+    },
+    {
+      "seq": 52,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-6f3493bf2052b252",
+      "groupId": "s6-hearing-rights",
+      "v4JobId": "unit-04cf30345017df39",
+      "v5JobId": "unit-2b35539363c4ca36",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:6"
+      ],
+      "titleSuggestion": "General Hearing Procedure Rights",
+      "frozenMapPriority": "P1",
+      "v4InputHash": "96d4f51bddaf7af6127bef5de432079fb480f3b2cbfa8cd5623788f6b20fea45",
+      "v5InputHash": "9f548d9fff4e031f797a45f5e1d5e6b451e605c57a40b689f25e2f320b16ff93",
+      "semanticMatch": true
+    },
+    {
+      "seq": 53,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-285dd6b255a2a5dd",
+      "groupId": "s31-consolidation",
+      "v4JobId": "unit-010c9353d8180812",
+      "v5JobId": "unit-43ca148646a95bb4",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:31"
+      ],
+      "titleSuggestion": "Court power to consolidate proceedings",
+      "frozenMapPriority": "P2",
+      "v4InputHash": "22137a5030dcb8ad7fb240548942119898be86a4396ee74c7ebb37e01cff9598",
+      "v5InputHash": "7564034c5a8d7900395821939ba65a85676870666bf575cdd654a11f02089238",
+      "semanticMatch": true
+    },
+    {
+      "seq": 54,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-d58e8838004da028",
+      "groupId": "s7-seal-office",
+      "v4JobId": "unit-06587c365a55bf49",
+      "v5JobId": "unit-373539bbe31a52a0",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:7"
+      ],
+      "titleSuggestion": "Seal of office requirement",
+      "frozenMapPriority": "P4",
+      "v4InputHash": "adfaee1839120af99c19cfd40ee41ced5e29cc75470c82084760e06b54217370",
+      "v5InputHash": "2215db9afe044ab983b6fd2d3e0c52ef53cce6f777ed450cb6d14c9489a3cdc8",
+      "semanticMatch": true
+    },
+    {
+      "seq": 55,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-6a05ab870be51872",
+      "groupId": "s5-compensation-damage",
+      "v4JobId": "unit-00100b7505527849",
+      "v5JobId": "unit-35ce7d7fd6dd7714",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:5"
+      ],
+      "titleSuggestion": "Compensation for damage caused by entry",
+      "frozenMapPriority": "P1",
+      "v4InputHash": "23a3995c790028f9941b3f0888a003bfaeb34fa5a71cf48743b74796ab0904cc",
+      "v5InputHash": "a886f9d77db79f8556f6d2765f099c0e13c1946a011c69a0ac23aef6ff2806d7",
+      "semanticMatch": true
+    },
+    {
+      "seq": 56,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-5b05b76871256470",
+      "groupId": "s65-fee-prerequisite",
+      "v4JobId": "unit-02c520678fcbb6c2",
+      "v5JobId": "unit-6f829d029f76db6e",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:65"
+      ],
+      "titleSuggestion": "Fee payment as precondition to compulsory registration",
+      "frozenMapPriority": "P2",
+      "v4InputHash": "6d9eb9f2959232beb1eb58131f9d09702ec4d269607180df069de48daaf475df",
+      "v5InputHash": "df399d379d48215e6b3d7dc315c1daa6d81517650cef690ea6976a60633ccb5e",
+      "semanticMatch": true
+    },
+    {
+      "seq": 57,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-267e60d22e5467cd",
+      "groupId": "g2",
+      "v4JobId": "unit-043b932fc33b70cc",
+      "v5JobId": "unit-a8250bc79883184c",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:6"
+      ],
+      "titleSuggestion": "Division of units into classes",
+      "frozenMapPriority": "P1",
+      "v4InputHash": "e8d2fec1d9b22cafc155b298837da6d077b10f883126e401e4546e946204098c",
+      "v5InputHash": "16218f02b2d63e7b91c3bb3e4c436db8f9e8fb3af448fefa53f4784f2fc2a138",
+      "semanticMatch": true
+    },
+    {
+      "seq": 58,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-f426ebbd626257e0",
+      "groupId": "g1",
+      "v4JobId": "unit-03de3fc357cb57a5",
+      "v5JobId": "unit-edcb2e0c1740d2e0",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:19.4"
+      ],
+      "titleSuggestion": "Abbreviated judgment requirement for mixed-content judgment registrations",
+      "frozenMapPriority": "P2",
+      "v4InputHash": "be35aecdcb3facef583d530dc92deb76f89659e3c035c546c82f8f9a6b9c7ed2",
+      "v5InputHash": "bcce8930471f26f434ac14ffe31a18b8e8c2fcae22effe6d49f438aefee018b0",
+      "semanticMatch": true
+    },
+    {
+      "seq": 59,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-3bbdc581fd0daa33",
+      "groupId": "s88-recommendation-factors",
+      "v4JobId": "unit-0449049d27b547c9",
+      "v5JobId": "unit-46404e08436c89a4",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:88"
+      ],
+      "titleSuggestion": "Factors for Advisory Committee or Regional Service Commission Street Location Recommendation",
+      "frozenMapPriority": "P1",
+      "v4InputHash": "c60b413d93755fc27e9d910376cd449a37ba4f346b991eb686a6c99d2d93ec23",
+      "v5InputHash": "9441f5593c3f0dec42761801dcab30d385ef28fd342566ca8cf02d33abdf07b1",
+      "semanticMatch": true
+    },
+    {
+      "seq": 60,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-460ae38c7b732209",
+      "groupId": "grp-lease-default-forfeiture",
+      "v4JobId": "unit-049d27943f637422",
+      "v5JobId": "unit-4a8d142480162fe3",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "schedule:schedule-d"
+      ],
+      "titleSuggestion": "Payment Default, Forfeiture, and Bankruptcy Triggers",
+      "frozenMapPriority": "P2",
+      "v4InputHash": "d9ee337107f62a394e0f914fc9168a3fa2a7b9d468903504c16e6ee18b7eb45e",
+      "v5InputHash": "7a49160f1039f1c67400f34a9a0e6769f1620ae599816c99ef0f2555316a18f2",
+      "semanticMatch": true
+    },
+    {
+      "seq": 61,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-fd9321585990ed84",
+      "groupId": "s17-3-costs-direction",
+      "v4JobId": "unit-05d777e3d32ca761",
+      "v5JobId": "unit-2588ae34a152982f",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:17"
+      ],
+      "titleSuggestion": "Officer's costs direction to expropriating authority",
+      "frozenMapPriority": "P1",
+      "v4InputHash": "fdf0233e671de82af5d9b0792014e072f22022e04516f9570c98afbca12f88df",
+      "v5InputHash": "94044869a9227317566131deed12e73052d3d125f15e3acbabc233472c47892b",
+      "semanticMatch": true
+    },
+    {
+      "seq": 62,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-5ea4684f006291d9",
+      "groupId": "s74-award-of-indemnity",
+      "v4JobId": "unit-05aad567930a651b",
+      "v5JobId": "unit-10af6382f13ceccb",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:74"
+      ],
+      "titleSuggestion": "Award of indemnity: Registrar General determination, conditions, and court fallback",
+      "frozenMapPriority": "P2",
+      "v4InputHash": "320991f45d344247a0448e4db3b683c9d4f93b84a46d2b8eb4fb12bebdd5e1b2",
+      "v5InputHash": "bc4eda28c96a7878995aaeae465ab1f6d0053ad7afc8252665985b746e289a40",
+      "semanticMatch": true
+    },
+    {
+      "seq": 63,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-0ec8abfa2d5f299b",
+      "groupId": "s10-hearing-arrangement",
+      "v4JobId": "unit-07fded70d557bb42",
+      "v5JobId": "unit-1eb95397b16fee29",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:10"
+      ],
+      "titleSuggestion": "Duty to arrange public hearing and effect of withdrawal of all objections",
+      "frozenMapPriority": "P1",
+      "v4InputHash": "80c24f66f9839457ca5637a6276b86de54344e91d04908d62a798bb46ddc2410",
+      "v5InputHash": "c697f4e44ef74ffb27ea48bb6e0a1929a437c9bab3e88fcf573f5acd793708f8",
+      "semanticMatch": true
+    },
+    {
+      "seq": 64,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-460ae38c7b732209",
+      "groupId": "grp-lease-transfer-possession",
+      "v4JobId": "unit-05e06222bdb9d406",
+      "v5JobId": "unit-4a5095dd82b864af",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "schedule:schedule-d"
+      ],
+      "titleSuggestion": "Transfer Restrictions and End-of-Lease Obligations",
+      "frozenMapPriority": "P2",
+      "v4InputHash": "c818177e93c905846fdff8a157955170efa4ccbebffeee8babb97461b08fc9cd",
+      "v5InputHash": "8a5e69f9bc1a4de32b266453d1bd1fdd25f70cf0dec07f23d9c1d6555d00f07b",
+      "semanticMatch": true
+    },
+    {
+      "seq": 65,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-298e24e3ce6fbc17",
+      "groupId": "sec84-required-contents",
+      "v4JobId": "unit-08d0057dc07a46d5",
+      "v5JobId": "unit-819e6b3baa157e85",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:84"
+      ],
+      "titleSuggestion": "Required contents of a subdivision plan",
+      "frozenMapPriority": "P1",
+      "v4InputHash": "4b54dad2debd3e9cfa2b175ff39ebd31ec3348690b6238e2d86b4210922aec96",
+      "v5InputHash": "a6ba6c3a375ed1bb6abe2af95574f5884c593a637b0db940678a135593167723",
+      "semanticMatch": true
+    },
+    {
+      "seq": 66,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-7407f66d1a12e248",
+      "groupId": "2.2.2-reapplication",
+      "v4JobId": "unit-064dc209bd43e63c",
+      "v5JobId": "unit-9b9c904f7abb2dd1",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:2.2.2"
+      ],
+      "titleSuggestion": "Reapplication after resignation in good standing or classification change",
+      "frozenMapPriority": "P2",
+      "v4InputHash": "dd396eafd723c534de77378bca768882910b51c00474b578785848ae7f678678",
+      "v5InputHash": "c8dfc4d7af1a5bb0b505639e9f38da417aa53be726d6032e93d3316ecd7ebcd6",
+      "semanticMatch": true
+    },
+    {
+      "seq": 67,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-2c4459d4c8917a78",
+      "groupId": "s96-mandatory-contents",
+      "v4JobId": "unit-092be74ad4e22fc6",
+      "v5JobId": "unit-857a98ccd36e41e4",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:96"
+      ],
+      "titleSuggestion": "Mandatory contents of the incentive or bonus zoning by-law",
+      "frozenMapPriority": "P1",
+      "v4InputHash": "3a6c01d839f92413a5248c61995356dacf53955a916f03308fdfc0b11ad74220",
+      "v5InputHash": "e61004749068753afa4452d604950af6fcf6845cf9915a1257f21457d8c2be73",
+      "semanticMatch": true
+    },
+    {
+      "seq": 68,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-964b5866d3b841db",
+      "groupId": "s26-probate-registration",
+      "v4JobId": "unit-07144e70868a71ec",
+      "v5JobId": "unit-7e2875b9ce2c697e",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:26"
+      ],
+      "titleSuggestion": "Registration of probated and sealed will documents without further proof",
+      "frozenMapPriority": "P2",
+      "v4InputHash": "3f18e2f6c9d77efb3111625f09b6565eb0647fbb791548a206fffb5f07bddceb",
+      "v5InputHash": "836df69c01ffed0868461f5c2b5a671ace3e17605885eb683a412f5ce1baa6cb",
+      "semanticMatch": true
+    },
+    {
+      "seq": 69,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-486e6189da2b84e9",
+      "groupId": "g1",
+      "v4JobId": "unit-0c0bbda20e7199b5",
+      "v5JobId": "unit-3b4bf8fc454f19b9",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:44"
+      ],
+      "titleSuggestion": "Consent threshold and Director's correction power for description amendments",
+      "frozenMapPriority": "P1",
+      "v4InputHash": "cce4c2e9eda3184e5bb0ecb9897ed5f37342704165b12d95ccea9452f5b5d0ed",
+      "v5InputHash": "b72080b3693d6cbfb800f463ba4769c4dc8624181d2702812fb0d34245e28c87",
+      "semanticMatch": true
+    },
+    {
+      "seq": 70,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-d5572eace39dcd1d",
+      "groupId": "g-18-2-registration-entry-conditions",
+      "v4JobId": "unit-07fa6fc1208594ca",
+      "v5JobId": "unit-0344f31b1107b2dc",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:18(2)"
+      ],
+      "titleSuggestion": "Conditions for entering a name in the register",
+      "frozenMapPriority": "P2",
+      "v4InputHash": "a11f2254abf0a57f099807212aa2327860d3ab7e60a85e794a8d2b4144b2f827",
+      "v5InputHash": "503f7a3f7e20d653e7b43ac9d774695f9e1e01073ab663bddb6658f1f249da17",
+      "semanticMatch": true
+    },
+    {
+      "seq": 71,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-5cb84fb8436e4444",
+      "groupId": "s37-4-five-percent-premium",
+      "v4JobId": "unit-0de35b1dafe93ecb",
+      "v5JobId": "unit-25db06191c729425",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:37"
+      ],
+      "titleSuggestion": "Additional 5% compensation for Lieutenant-Governor in Council-ordered surrender of possession",
+      "frozenMapPriority": "P1",
+      "v4InputHash": "236a014ebb6e4f598266fe5f18008ae6971e2c76c6f6f70776382fedf0e34357",
+      "v5InputHash": "d2f037b242602d2291cf47db15cba2607737b32eb8742ca47d61a818903cb206",
+      "semanticMatch": true
+    },
+    {
+      "seq": 72,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-fa6ff1eacf5c5aa1",
+      "groupId": "s12-2-board-composition",
+      "v4JobId": "unit-08f6d682936a16dc",
+      "v5JobId": "unit-5abf688ab972bffc",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:12(2)"
+      ],
+      "titleSuggestion": "Composition and term of the Board of Examiners",
+      "frozenMapPriority": "P2",
+      "v4InputHash": "67a7d02d284cc8d1c5d8103cdbc637e5049ea544cf7f3bcc637d040b037a9b92",
+      "v5InputHash": "673d344bfc1e89e346487007c032c31b0379c5ecb8bd1b0b2e8cde7e4c494c30",
+      "semanticMatch": true
+    },
+    {
+      "seq": 73,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-d2c5c2910af871b4",
+      "groupId": "s1-profit-benefit-prescriptive-protection",
+      "v4JobId": "unit-0f35a3d73578f1dc",
+      "v5JobId": "unit-9bdb6067e6efb48a",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:1"
+      ],
+      "titleSuggestion": "Prescriptive protection for claims to profits or benefits (30-year and 60-year thresholds)",
+      "frozenMapPriority": "P1",
+      "v4InputHash": "357d5be69a685053379881d8cb1a6afe6f0e087b2ac5f24307b807ff72843bb0",
+      "v5InputHash": "d90a84b7180d3240d71471980b303c24dfeb92754460407455a8e66506c729bd",
+      "semanticMatch": true
+    },
+    {
+      "seq": 74,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-c82c87d6ebfdd492",
+      "groupId": "s50-procedure-and-rights",
+      "v4JobId": "unit-01074d54d55e4fde",
+      "v5JobId": "unit-80309b578879a269",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:50"
+      ],
+      "titleSuggestion": "Pre-offer notice requirements and adverse-party protections",
+      "frozenMapPriority": "P2",
+      "v4InputHash": "5b014c36868d6531d09944fc870feae0f6563ea4f2dfbf99ff642f37ec6f95c4",
+      "v5InputHash": "469fc58fdc07c483518a7965e52439ae18bc23cebd12fd6923de6b96bed79efb",
+      "semanticMatch": true
+    },
+    {
+      "seq": 75,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-d24505862b4066d9",
+      "groupId": "s73-indemnification-rectification",
+      "v4JobId": "unit-04e2ecadf458dfc2",
+      "v5JobId": "unit-433e77a5dad8ceb1",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:73"
+      ],
+      "titleSuggestion": "Indemnification on rectification – entitlement, exceptions, and forged dispositions",
+      "frozenMapPriority": "P1",
+      "v4InputHash": "c90dc7d30171aa0a69b916b7216dc43453e20ed34c3bacc602ac64311afafe63",
+      "v5InputHash": "0e120a58bfc7f2355831ccb65be7c73d214fb851a29e20c389004b6bd5921e34",
+      "semanticMatch": true
+    },
+    {
+      "seq": 76,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-270ca8083fd27233",
+      "groupId": "grp-38-1-groundss",
+      "v4JobId": "unit-01114cfaf3709c7d",
+      "v5JobId": "unit-14777ad1e4786447",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:38.1"
+      ],
+      "titleSuggestion": "Grounds for court-ordered mortgage discharge",
+      "frozenMapPriority": "P2",
+      "v4InputHash": "ca1606743c07d3b451874fc725bbd9b497df6d4cc9b8001d0d0309a453ccdb19",
+      "v5InputHash": "e3b1effa3f215c860c009af36bd8631862e605cd50a41a78302e0cc32a92f3bd",
+      "semanticMatch": true
+    },
+    {
+      "seq": 77,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-d3c96ee92cf49d6f",
+      "groupId": "g3",
+      "v4JobId": "unit-38731a2761d264ad",
+      "v5JobId": "unit-cbd8f515a08077d2",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:6"
+      ],
+      "titleSuggestion": "Block Size Limits and Crescent/Cul-de-Sac Exception",
+      "frozenMapPriority": "P1",
+      "v4InputHash": "1c09a2f6a97da206ccf3feb1e5bcd8c9d31c5074f1d9528d99db3d2616f5e66b",
+      "v5InputHash": "ed66dc77dc328af1ef63354416903c269a7a18f995f1d5781d9f1abb67a52baf",
+      "semanticMatch": true
+    },
+    {
+      "seq": 78,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-ec01df68e68fdc5b",
+      "groupId": "s40-joint-tenancy-non-severance",
+      "v4JobId": "unit-098b09224e6386c2",
+      "v5JobId": "unit-7131c6fd16823e70",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:40"
+      ],
+      "titleSuggestion": "Non-severance of joint tenancy by judgment registration",
+      "frozenMapPriority": "P2",
+      "v4InputHash": "33e38ecb5851e762ae6cbaf5c3dd60604378270f880e59d9ac90ee2e1f02b3c2",
+      "v5InputHash": "39450897566d1cab1ac73c552db4afd2678e7886f8910287eda4e9622ef71961",
+      "semanticMatch": true
+    },
+    {
+      "seq": 79,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-67b0b4e5f3e4fd8e",
+      "groupId": "grp-1",
+      "v4JobId": "unit-0ff46d399379a99b",
+      "v5JobId": "unit-c3d97c72d0c68c39",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:1"
+      ],
+      "titleSuggestion": "Injurious affection – taking and non-taking scenarios",
+      "frozenMapPriority": "P1",
+      "v4InputHash": "47ba6a97caa45d0e8a60dcf01a46326f52429ea4f2ae542cdba3a524405f2752",
+      "v5InputHash": "7464986231708209fa15a82adee1bbb21b34e203a1da0714b010da7eded907b7",
+      "semanticMatch": true
+    },
+    {
+      "seq": 80,
+      "proposalId": "ai-map-2026-08-29T12-23-57-891Z:map-fb12fe325a229e35",
+      "groupId": "s14-later-will-discovery",
+      "v4JobId": "unit-01093fbff98ef4eb",
+      "v5JobId": "unit-1a102fb69ea9b08b",
+      "jobIdChanged": true,
+      "mapRunId": "ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342",
+      "documentIds": [
+        "section:14"
+      ],
+      "titleSuggestion": "Effect of discovering a later or valid will on prior acts and recovery rights",
+      "frozenMapPriority": "P2",
+      "v4InputHash": "9b68061cfc4d444f30b6efd9ecc9b73262ea1709b35ce18ffa4ecc6e077934d0",
+      "v5InputHash": "c8528a51c6c8b9418ab2237e6b853b0e97db885cf869fcd2411f96af75a3185e",
+      "semanticMatch": true
+    }
+  ]
+}

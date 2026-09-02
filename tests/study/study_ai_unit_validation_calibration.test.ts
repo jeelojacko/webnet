@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { validateAiStudyUnitProposal } from '../../src/study/ai/studyAiValidation';
-import type { AiStudyUnitProposal } from '../../src/study/ai/studyAiTypes';
+import type { AiMapRevisionSuggestion, AiStudyUnitProposal } from '../../src/study/ai/studyAiTypes';
 import type { ImportedLegalComponent } from '../../src/study/studyTypes';
 
 const component = ({
@@ -334,5 +334,406 @@ describe('AI Unit Authoring validation calibration', () => {
     };
 
     expect(codesFor(broad, [source])).toContain('MAP_REVISION_UNSUPPORTED_CONCEPT');
+  });
+});
+
+describe('unit-authoring-v5 revision contract', () => {
+  const V5_KEYS = ['section:10', 'section:11', 'section:12'];
+  const NEW_REVISION_CODES = [
+    'GENERATED_UNIT_HAS_BROAD_GROUP_WARNING',
+    'GENERATED_UNIT_HAS_REVISION_SUGGESTION',
+    'MAP_REVISION_STATUS_REQUIRES_BROAD_WARNING',
+    'MAP_REVISION_RATIONALE_CONTRADICTORY',
+    'MAP_REVISION_OUTSIDE_APPROVED_FOCUS',
+  ];
+  const COHERENT_REASON =
+    'The approved focus spans distinct legal propositions that cannot form one coherent unit.';
+  const BROAD = 'MAP_GROUP_TOO_BROAD_FOR_GOOD_UNIT';
+
+  const v5Sources: ImportedLegalComponent[] = [
+    component({
+      sourceKey: 'section:10',
+      label: '10',
+      text: '10(1) A person shall file an instrument with the Registrar General. 10(2) The Registrar General may reject an incomplete instrument.',
+    }),
+    component({
+      sourceKey: 'section:11',
+      label: '11',
+      text: '11 In this Act, "registered instrument" means an instrument registered under this Act.',
+    }),
+    component({
+      sourceKey: 'section:12',
+      label: '12',
+      text: '12 Land vested in the Crown shall be held for public purposes.',
+    }),
+  ];
+
+  const revisionProposal = ({
+    promptSpecVersion = 'unit-authoring-v5',
+    authoringStatus = 'generated',
+    warnings = [],
+    suggestion,
+    approvedFocusSelections = [
+      { sourceKey: 'section:10', childLabels: ['10(1)', '10(2)'] },
+      { sourceKey: 'section:11', definedTerms: ['registered instrument'] },
+      { sourceKey: 'section:12' },
+    ],
+  }: {
+    promptSpecVersion?: string;
+    authoringStatus?: 'generated' | 'needs-map-revision';
+    warnings?: string[];
+    suggestion?: AiMapRevisionSuggestion;
+    approvedFocusSelections?: Array<{
+      sourceKey: string;
+      childLabels?: string[];
+      definedTerms?: string[];
+    }>;
+  }): AiStudyUnitProposal => ({
+    schemaVersion: 1,
+    proposalId: 'proposal-v5-revision',
+    runId: 'run-v5-revision',
+    corpusContentHash: 'corpus-hash',
+    sourceDocumentId: 'doc-test',
+    sourceKeys: V5_KEYS,
+    sourceHashes: {
+      'section:10': 'hash-section:10',
+      'section:11': 'hash-section:11',
+      'section:12': 'hash-section:12',
+    },
+    approvedGroup: {
+      groupId: 'group-v5',
+      titleSuggestion: 'Registered instruments and Crown land',
+      sourceKeys: V5_KEYS,
+      focusSelections: approvedFocusSelections,
+      reason: 'Approved focus.',
+      approximateLearningGoal: 'Recall the registration and Crown land rules.',
+    },
+    title: 'Registered instruments and Crown land',
+    mainQuestion: 'What filing duty applies to instruments and how is Crown land held?',
+    studySummary: 'An instrument must be filed and Crown land held for public purposes.',
+    objectives: [
+      {
+        id: 'obj-1',
+        type: 'procedure',
+        objective: 'Recall the instrument filing duty.',
+        guidedQuestion: 'How is an instrument submitted for registration?',
+        studyAnswer: 'A person shall file an instrument with the Registrar General.',
+        required: true,
+        sourceKeys: ['section:10'],
+        evidence: [
+          {
+            sourceKey: 'section:10',
+            evidenceText: 'A person shall file an instrument with the Registrar General.',
+          },
+        ],
+        confidence: 'high',
+      },
+      {
+        id: 'obj-2',
+        type: 'definition',
+        objective: 'Recall the meaning of registered instrument.',
+        guidedQuestion: 'What does "registered instrument" mean under the Act?',
+        studyAnswer: 'A registered instrument is an instrument registered under this Act.',
+        required: true,
+        sourceKeys: ['section:11'],
+        evidence: [
+          {
+            sourceKey: 'section:11',
+            evidenceText: '"registered instrument" means an instrument registered under this Act.',
+          },
+        ],
+        confidence: 'high',
+      },
+      {
+        id: 'obj-3',
+        type: 'legal-effect',
+        objective: 'Recall the Crown land holding rule.',
+        guidedQuestion: 'How must land vested in the Crown be held?',
+        studyAnswer: 'Land vested in the Crown is held for public purposes.',
+        required: true,
+        sourceKeys: ['section:12'],
+        evidence: [
+          {
+            sourceKey: 'section:12',
+            evidenceText: 'Land vested in the Crown shall be held for public purposes.',
+          },
+        ],
+        confidence: 'high',
+      },
+    ],
+    confidence: 'high',
+    warnings,
+    authoringStatus,
+    mapRevisionSuggestion: suggestion,
+    generationMetadata: {
+      providerKind: 'external-codex',
+      promptSpecVersion,
+      generatedAt: '2026-09-02T10:00:00.000Z',
+    },
+  });
+
+  const validSuggestion = (reason: string): AiMapRevisionSuggestion => ({
+    reason,
+    proposedGroups: [
+      {
+        title: 'Instrument filing rule',
+        sourceKeys: ['section:10'],
+        focusSelections: [{ sourceKey: 'section:10', childLabels: ['10(1)'] }],
+        approximateLearningGoal: 'Recall when an instrument must be filed.',
+      },
+      {
+        title: 'Definition and Crown land',
+        sourceKeys: ['section:11', 'section:12'],
+        focusSelections: [
+          { sourceKey: 'section:11', definedTerms: ['registered instrument'] },
+          { sourceKey: 'section:12' },
+        ],
+        approximateLearningGoal: 'Recall the definition and the Crown land holding rule.',
+      },
+    ],
+  });
+
+  const newCodePresent = (proposal: AiStudyUnitProposal, code: string): boolean =>
+    validateAiStudyUnitProposal({ proposal, sourceComponents: v5Sources }).issues.some(
+      (issue) => issue.code === code,
+    );
+
+  it('allows a generated unit with no broad warning and no suggestion', () => {
+    NEW_REVISION_CODES.forEach((code) => {
+      expect(newCodePresent(revisionProposal({}), code)).toBe(false);
+    });
+  });
+
+  it('rejects a generated unit that carries the broad-group warning', () => {
+    const proposal = revisionProposal({ warnings: [BROAD] });
+    expect(newCodePresent(proposal, 'GENERATED_UNIT_HAS_BROAD_GROUP_WARNING')).toBe(true);
+    expect(newCodePresent(proposal, 'GENERATED_UNIT_HAS_REVISION_SUGGESTION')).toBe(false);
+  });
+
+  it('rejects a generated unit that includes a mapRevisionSuggestion', () => {
+    const proposal = revisionProposal({ suggestion: validSuggestion(COHERENT_REASON) });
+    expect(newCodePresent(proposal, 'GENERATED_UNIT_HAS_REVISION_SUGGESTION')).toBe(true);
+    expect(newCodePresent(proposal, 'GENERATED_UNIT_HAS_BROAD_GROUP_WARNING')).toBe(false);
+  });
+
+  it('requires the broad-group warning for needs-map-revision status', () => {
+    const proposal = revisionProposal({
+      authoringStatus: 'needs-map-revision',
+      suggestion: validSuggestion(COHERENT_REASON),
+    });
+    expect(newCodePresent(proposal, 'MAP_REVISION_STATUS_REQUIRES_BROAD_WARNING')).toBe(true);
+  });
+
+  it('stops needs-map-revision checks when no suggestion is provided', () => {
+    const proposal = revisionProposal({ authoringStatus: 'needs-map-revision', warnings: [BROAD] });
+    const codes = codesFor(proposal, v5Sources);
+    expect(codes).toContain('MAP_REVISION_SUGGESTION_REQUIRED');
+    expect(codes).not.toContain('MAP_REVISION_GROUP_INVALID');
+    expect(codes).not.toContain('MAP_REVISION_OUTSIDE_SOURCE');
+    expect(codes).not.toContain('MAP_REVISION_OUTSIDE_APPROVED_FOCUS');
+    expect(codes).not.toContain('MAP_REVISION_RATIONALE_CONTRADICTORY');
+    expect(codes).not.toContain('MAP_REVISION_UNSUPPORTED_CONCEPT');
+  });
+
+  it('accepts a valid needs-map-revision triplet inside the approved focus', () => {
+    const proposal = revisionProposal({
+      authoringStatus: 'needs-map-revision',
+      warnings: [BROAD],
+      suggestion: validSuggestion(COHERENT_REASON),
+    });
+    const codes = codesFor(proposal, v5Sources);
+    NEW_REVISION_CODES.forEach((code) => expect(codes).not.toContain(code));
+    expect(codes).not.toContain('MAP_REVISION_SUGGESTION_REQUIRED');
+    expect(codes).not.toContain('MAP_REVISION_GROUP_INVALID');
+    expect(codes).not.toContain('MAP_REVISION_OUTSIDE_SOURCE');
+    expect(codes).not.toContain('MAP_REVISION_UNSUPPORTED_CONCEPT');
+  });
+
+  it('flags a needs-map-revision reason that says no revision is needed', () => {
+    const proposal = revisionProposal({
+      authoringStatus: 'needs-map-revision',
+      warnings: [BROAD],
+      suggestion: validSuggestion(
+        'The approved focus covers one coherent topic. No revision needed, the unit is appropriately scoped.',
+      ),
+    });
+    const issue = validateAiStudyUnitProposal({
+      proposal,
+      sourceComponents: v5Sources,
+    }).issues.find((entry) => entry.code === 'MAP_REVISION_RATIONALE_CONTRADICTORY');
+    expect(issue).toBeDefined();
+    expect(issue?.message).toContain('"no revision needed"');
+    expect(issue?.severity).toBe('error');
+  });
+
+  it('rejects a suggested childLabel outside the approved selection', () => {
+    const proposal = revisionProposal({
+      authoringStatus: 'needs-map-revision',
+      warnings: [BROAD],
+      suggestion: {
+        reason: COHERENT_REASON,
+        proposedGroups: [
+          {
+            title: 'Whole instrument rules',
+            sourceKeys: ['section:10'],
+            focusSelections: [{ sourceKey: 'section:10', childLabels: ['10(1)', '10(9)'] }],
+            approximateLearningGoal: 'Recall all instrument rules.',
+          },
+          {
+            title: 'Definition and Crown land',
+            sourceKeys: ['section:11', 'section:12'],
+            focusSelections: [
+              { sourceKey: 'section:11', definedTerms: ['registered instrument'] },
+              { sourceKey: 'section:12' },
+            ],
+            approximateLearningGoal: 'Recall the definition and the Crown land holding rule.',
+          },
+        ],
+      },
+    });
+    const issue = validateAiStudyUnitProposal({
+      proposal,
+      sourceComponents: v5Sources,
+    }).issues.find((entry) => entry.code === 'MAP_REVISION_OUTSIDE_APPROVED_FOCUS');
+    expect(issue).toBeDefined();
+    expect(issue?.message).toContain('10(9) is not in the approved focus selection for section:10');
+  });
+
+  it('rejects a selection whose sourceKey has no approved focus entry', () => {
+    const proposal = revisionProposal({
+      authoringStatus: 'needs-map-revision',
+      warnings: [BROAD],
+      approvedFocusSelections: [
+        { sourceKey: 'section:10', childLabels: ['10(1)', '10(2)'] },
+        { sourceKey: 'section:11', definedTerms: ['registered instrument'] },
+      ],
+      suggestion: {
+        reason: COHERENT_REASON,
+        proposedGroups: [
+          {
+            title: 'Instrument filing rule',
+            sourceKeys: ['section:10'],
+            focusSelections: [{ sourceKey: 'section:10', childLabels: ['10(1)'] }],
+            approximateLearningGoal: 'Recall when an instrument must be filed.',
+          },
+          {
+            title: 'Crown land holding',
+            sourceKeys: ['section:12'],
+            focusSelections: [{ sourceKey: 'section:12' }],
+            approximateLearningGoal: 'Recall the Crown land holding rule.',
+          },
+        ],
+      },
+    });
+    const issue = validateAiStudyUnitProposal({
+      proposal,
+      sourceComponents: v5Sources,
+    }).issues.find((entry) => entry.code === 'MAP_REVISION_OUTSIDE_APPROVED_FOCUS');
+    expect(issue).toBeDefined();
+    expect(issue?.message).toContain('section:12 is not an approved focus selection');
+  });
+
+  it('rejects a suggested selection that widens beyond approved childLabels', () => {
+    const proposal = revisionProposal({
+      authoringStatus: 'needs-map-revision',
+      warnings: [BROAD],
+      suggestion: {
+        reason: COHERENT_REASON,
+        proposedGroups: [
+          {
+            title: 'Whole section instrument rule',
+            sourceKeys: ['section:10'],
+            focusSelections: [{ sourceKey: 'section:10' }],
+            approximateLearningGoal: 'Recall all instrument rules in section 10.',
+          },
+          {
+            title: 'Definition and Crown land',
+            sourceKeys: ['section:11', 'section:12'],
+            focusSelections: [
+              { sourceKey: 'section:11', definedTerms: ['registered instrument'] },
+              { sourceKey: 'section:12' },
+            ],
+            approximateLearningGoal: 'Recall the definition and the Crown land holding rule.',
+          },
+        ],
+      },
+    });
+    const issue = validateAiStudyUnitProposal({
+      proposal,
+      sourceComponents: v5Sources,
+    }).issues.find((entry) => entry.code === 'MAP_REVISION_OUTSIDE_APPROVED_FOCUS');
+    expect(issue).toBeDefined();
+    expect(issue?.message).toContain('widens section:10 beyond the approved childLabels');
+  });
+
+  it('rejects a suggested definedTerm outside the approved selection', () => {
+    const proposal = revisionProposal({
+      authoringStatus: 'needs-map-revision',
+      warnings: [BROAD],
+      suggestion: {
+        reason: COHERENT_REASON,
+        proposedGroups: [
+          {
+            title: 'Definition split',
+            sourceKeys: ['section:11'],
+            focusSelections: [{ sourceKey: 'section:11', definedTerms: ['surveyor'] }],
+            approximateLearningGoal: 'Recall the surveyor definition.',
+          },
+          {
+            title: 'Instrument filing rule',
+            sourceKeys: ['section:10'],
+            focusSelections: [{ sourceKey: 'section:10', childLabels: ['10(1)'] }],
+            approximateLearningGoal: 'Recall when an instrument must be filed.',
+          },
+        ],
+      },
+    });
+    const issue = validateAiStudyUnitProposal({
+      proposal,
+      sourceComponents: v5Sources,
+    }).issues.find((entry) => entry.code === 'MAP_REVISION_OUTSIDE_APPROVED_FOCUS');
+    expect(issue).toBeDefined();
+    expect(issue?.message).toContain(
+      'surveyor is not in the approved focus selection for section:11',
+    );
+  });
+
+  it('keeps the v4 broad-group contract unchanged for identical fixtures', () => {
+    const generated = revisionProposal({
+      promptSpecVersion: 'unit-authoring-v4',
+      warnings: [BROAD],
+    });
+    const generatedIssues = validateAiStudyUnitProposal({
+      proposal: generated,
+      sourceComponents: v5Sources,
+    }).issues;
+    const statusWarning = generatedIssues.find(
+      (entry) => entry.code === 'BROAD_GROUP_MUST_NEED_MAP_REVISION',
+    );
+    expect(statusWarning).toBeDefined();
+    expect(statusWarning?.severity).toBe('warning');
+    expect(generatedIssues.some((entry) => entry.code === 'MAP_REVISION_SUGGESTION_REQUIRED')).toBe(
+      true,
+    );
+    NEW_REVISION_CODES.forEach((code) =>
+      expect(generatedIssues.some((entry) => entry.code === code)).toBe(false),
+    );
+
+    const needsRevision = revisionProposal({
+      promptSpecVersion: 'unit-authoring-v4',
+      authoringStatus: 'needs-map-revision',
+      warnings: [BROAD],
+      suggestion: validSuggestion(COHERENT_REASON),
+    });
+    const needsIssues = validateAiStudyUnitProposal({
+      proposal: needsRevision,
+      sourceComponents: v5Sources,
+    }).issues;
+    NEW_REVISION_CODES.forEach((code) =>
+      expect(needsIssues.some((entry) => entry.code === code)).toBe(false),
+    );
+    expect(needsIssues.some((entry) => entry.code === 'MAP_REVISION_SUGGESTION_REQUIRED')).toBe(
+      false,
+    );
   });
 });
