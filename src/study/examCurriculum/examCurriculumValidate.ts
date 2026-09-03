@@ -41,8 +41,37 @@ const known = (values: readonly string[], value: string): boolean => values.incl
 
 const depths = (unit: ExamCurriculumUnit): Set<ExamLearningDepth> => new Set(unit.learningDepths);
 
+const payloadCount = (unit: ExamCurriculumUnit): number =>
+  unit.recognitionCues.length +
+  unit.coreUnderstanding.length +
+  unit.mustRecall.length +
+  unit.mustLocate.length;
+
 const validateOrientationUnit = (unit: ExamCurriculumUnit, errors: ExamCurriculumValidationIssue[]): void => {
   const unitDepths = depths(unit);
+  if (unit.tier === 'D') {
+    // Tier-D units are awareness-only: they must at least target recognition
+    // and carry one study target; understanding is not required (D-MUNI-01
+    // adds it where the legacy/repealed status itself is the point).
+    if (!unitDepths.has('recognize')) {
+      errors.push({
+        level: 'error',
+        unitId: unit.id,
+        code: 'orientation-missing-depth',
+        message: 'Tier-D document_orientation unit must target learning depth "recognize"',
+      });
+    }
+    if (payloadCount(unit) === 0) {
+      errors.push({
+        level: 'error',
+        unitId: unit.id,
+        code: 'orientation-missing-payload',
+        message:
+          'document_orientation unit must have at least one recognition cue, core-understanding point, or study target',
+      });
+    }
+    return;
+  }
   for (const required of ['recognize', 'understand'] as const) {
     if (!unitDepths.has(required)) {
       errors.push({
@@ -53,13 +82,11 @@ const validateOrientationUnit = (unit: ExamCurriculumUnit, errors: ExamCurriculu
       });
     }
   }
-  if (unit.tier === 'B') {
-    // Tier-B cards carry the exam goal in their title question and may omit
+  if (unit.tier === 'B' || unit.tier === 'C') {
+    // Tier-B/C cards carry the exam goal in their title question and may omit
     // recognition cues / core understanding per card; they must still carry
     // at least one educational payload field.
-    const payload =
-      unit.recognitionCues.length + unit.coreUnderstanding.length + unit.mustRecall.length + unit.mustLocate.length;
-    if (payload === 0) {
+    if (payloadCount(unit) === 0) {
       errors.push({
         level: 'error',
         unitId: unit.id,
@@ -195,9 +222,9 @@ export const validateExamCurriculumUnits = (
     if (unit.title.trim() === '') {
       errors.push({ level: 'error', unitId: unit.id, code: 'empty-title', message: 'title must not be empty' });
     }
-    // Tier-B cards state their exam goal as the card title; an empty
+    // Tier-B/C/D cards state their exam goal as the card title; an empty
     // examGoal is only an error where the tier requires a dedicated goal.
-    if (unit.examGoal.trim() === '' && unit.tier !== 'B') {
+    if (unit.examGoal.trim() === '' && unit.tier !== 'B' && unit.tier !== 'C' && unit.tier !== 'D') {
       errors.push({ level: 'error', unitId: unit.id, code: 'empty-exam-goal', message: 'examGoal must not be empty' });
     }
     for (const depth of unit.learningDepths) {

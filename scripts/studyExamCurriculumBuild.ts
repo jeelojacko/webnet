@@ -1,8 +1,8 @@
 // Exam Curriculum V1 — deterministic build script.
 //
 // Loads the authoritative nb-sit-statute corpus package, resolves the curated
-// Tier-A (51 units) + Tier-B (43 units) catalogs — 94 units total — against
-// it, validates the result, and writes:
+// Tier-A (51) + Tier-B (43) + Tier-C (21) + Tier-D (6) catalogs — 121 units
+// total — against it, validates the result, and writes:
 //   - study-content/exam-curriculum/nb-sit-exam-curriculum-v1.json (canonical manifest)
 //   - reports/exam-curriculum/build-<dateTag>.md  (human-readable report)
 //   - reports/exam-curriculum/build-<dateTag>.json (self-contained JSON report)
@@ -35,6 +35,16 @@ import {
   examCurriculumAllSpecs,
   examCurriculumTierBFamilies,
 } from '../src/study/examCurriculum/examCurriculumCatalogTierB';
+import {
+  EXAM_CURRICULUM_TIER_C_DOCUMENTS,
+  EXAM_CURRICULUM_TIER_C_EXPECTED_COUNTS,
+  EXAM_CURRICULUM_TIER_C_TOTAL,
+  EXAM_CURRICULUM_TIER_D_DOCUMENTS,
+  EXAM_CURRICULUM_TIER_D_EXPECTED_COUNTS,
+  EXAM_CURRICULUM_TIER_D_TOTAL,
+  examCurriculumTierCFamilies,
+  examCurriculumTierDFamilies,
+} from '../src/study/examCurriculum/examCurriculumCatalogTierCD';
 import { buildExamCurriculumCorpusView } from '../src/study/examCurriculum/examCurriculumResolve';
 import type {
   ExamCurriculumManifest,
@@ -83,8 +93,35 @@ const main = (): void => {
       throw new Error(`exam-curriculum: Tier-B family "${family.title}" has ${family.specs.length} specs, expected ${expected}`);
     }
   }
-  if (examCurriculumAllSpecs.length !== EXAM_CURRICULUM_TOTAL || examCurriculumAllSpecs.length !== 51 + EXAM_CURRICULUM_TIER_B_TOTAL) {
+  if (examCurriculumAllSpecs.length !== EXAM_CURRICULUM_TOTAL ||
+    examCurriculumAllSpecs.length !== 51 + EXAM_CURRICULUM_TIER_B_TOTAL + EXAM_CURRICULUM_TIER_C_TOTAL + EXAM_CURRICULUM_TIER_D_TOTAL) {
     throw new Error(`exam-curriculum: expected ${EXAM_CURRICULUM_TOTAL} cumulative specs, found ${examCurriculumAllSpecs.length}`);
+  }
+  // Tier-C catalog shape assertions — exactly 21 units across 21 documents.
+  if (examCurriculumTierCFamilies.length !== EXAM_CURRICULUM_TIER_C_TOTAL ||
+    examCurriculumTierCFamilies.reduce((n, f) => n + f.specs.length, 0) !== EXAM_CURRICULUM_TIER_C_TOTAL) {
+    throw new Error(
+      `exam-curriculum: expected ${EXAM_CURRICULUM_TIER_C_TOTAL} Tier-C families with one spec each`,
+    );
+  }
+  for (const family of examCurriculumTierCFamilies) {
+    const expected = EXAM_CURRICULUM_TIER_C_EXPECTED_COUNTS[family.title];
+    if (family.specs.length !== expected) {
+      throw new Error(`exam-curriculum: Tier-C family "${family.title}" has ${family.specs.length} specs, expected ${expected}`);
+    }
+  }
+  // Tier-D catalog shape assertions — exactly 6 units across 6 documents.
+  if (examCurriculumTierDFamilies.length !== EXAM_CURRICULUM_TIER_D_TOTAL ||
+    examCurriculumTierDFamilies.reduce((n, f) => n + f.specs.length, 0) !== EXAM_CURRICULUM_TIER_D_TOTAL) {
+    throw new Error(
+      `exam-curriculum: expected ${EXAM_CURRICULUM_TIER_D_TOTAL} Tier-D families with one spec each`,
+    );
+  }
+  for (const family of examCurriculumTierDFamilies) {
+    const expected = EXAM_CURRICULUM_TIER_D_EXPECTED_COUNTS[family.title];
+    if (family.specs.length !== expected) {
+      throw new Error(`exam-curriculum: Tier-D family "${family.title}" has ${family.specs.length} specs, expected ${expected}`);
+    }
   }
   for (const documentId of EXAM_CURRICULUM_TIER_A_DOCUMENTS) {
     if (!corpus.documents.some((d) => d.id === documentId)) {
@@ -94,6 +131,11 @@ const main = (): void => {
   for (const documentId of EXAM_CURRICULUM_TIER_B_DOCUMENTS) {
     if (!corpus.documents.some((d) => d.id === documentId)) {
       throw new Error(`exam-curriculum: corpus is missing Tier-B document "${documentId}"`);
+    }
+  }
+  for (const documentId of [...EXAM_CURRICULUM_TIER_C_DOCUMENTS, ...EXAM_CURRICULUM_TIER_D_DOCUMENTS]) {
+    if (!corpus.documents.some((d) => d.id === documentId)) {
+      throw new Error(`exam-curriculum: corpus is missing Tier-C/D document "${documentId}"`);
     }
   }
 
@@ -116,10 +158,12 @@ const main = (): void => {
     `${JSON.stringify(buildExamCurriculumJsonReport(manifest, validation, { dateTag }), null, 2)}\n`,
   );
 
-  console.log(`exam-curriculum: ${manifest.units.length} units resolved from ${corpus.packageId} (Tier A ${manifest.units.filter((u) => u.tier === 'A').length} + Tier B ${manifest.units.filter((u) => u.tier === 'B').length})`);
+  console.log(`exam-curriculum: ${manifest.units.length} units resolved from ${corpus.packageId} (Tier A ${manifest.units.filter((u) => u.tier === 'A').length} + Tier B ${manifest.units.filter((u) => u.tier === 'B').length} + Tier C ${manifest.units.filter((u) => u.tier === 'C').length} + Tier D ${manifest.units.filter((u) => u.tier === 'D').length})`);
   console.log(`exam-curriculum: contentHash=${manifest.contentHash}`);
   console.log(`exam-curriculum: tierAProjectionHash=${examCurriculumTierProjectionHash(manifest.units, 'A')}`);
   console.log(`exam-curriculum: tierBProjectionHash=${examCurriculumTierProjectionHash(manifest.units, 'B')}`);
+  console.log(`exam-curriculum: tierCProjectionHash=${examCurriculumTierProjectionHash(manifest.units, 'C')}`);
+  console.log(`exam-curriculum: tierDProjectionHash=${examCurriculumTierProjectionHash(manifest.units, 'D')}`);
   console.log(`exam-curriculum: validation errors=${validation.errors.length} warnings=${validation.warnings.length}`);
   const byTierDoc = new Map<string, number>();
   for (const unit of manifest.units) {

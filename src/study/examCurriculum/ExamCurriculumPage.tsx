@@ -16,6 +16,10 @@ import type {
 } from './examCurriculumTypes';
 import { EXAM_CURRICULUM_TIER_A_DOCUMENT_TITLES } from './examCurriculumCatalog';
 import { EXAM_CURRICULUM_TIER_B_DOCUMENT_TITLES } from './examCurriculumCatalogTierB';
+import {
+  EXAM_CURRICULUM_TIER_C_DOCUMENT_TITLES,
+  EXAM_CURRICULUM_TIER_D_DOCUMENT_TITLES,
+} from './examCurriculumCatalogTierCD';
 
 type ExamCurriculumPageProps = {
   onOpenProvision: (_documentId: string, _sourceKey: string) => void;
@@ -26,9 +30,12 @@ const manifest = examCurriculumManifestJson as unknown as ExamCurriculumManifest
 const DOCUMENT_TITLES: Record<string, string> = {
   ...EXAM_CURRICULUM_TIER_A_DOCUMENT_TITLES,
   ...EXAM_CURRICULUM_TIER_B_DOCUMENT_TITLES,
+  ...EXAM_CURRICULUM_TIER_C_DOCUMENT_TITLES,
+  ...EXAM_CURRICULUM_TIER_D_DOCUMENT_TITLES,
 };
 
-type TierFilter = 'all' | 'A' | 'B';
+type TierFilter = 'all' | 'A' | 'B' | 'C' | 'D';
+const FILTER_TIERS = ['A', 'B', 'C', 'D'] as const;
 
 const DEPTH_ORDER = ['recognize', 'understand', 'recall', 'retrieve'] as const;
 
@@ -173,7 +180,7 @@ const UnitCard = ({ unit, onOpenProvision }: { unit: ExamCurriculumUnit; onOpenP
 
 const ExamCurriculumPage = ({ onOpenProvision }: ExamCurriculumPageProps) => {
   const [tierFilter, setTierFilter] = useState<TierFilter>('all');
-  const tierCount = (tier: 'A' | 'B') => manifest.units.filter((u) => u.tier === tier).length;
+  const tierCount = (tier: (typeof FILTER_TIERS)[number]) => manifest.units.filter((u) => u.tier === tier).length;
   const visibleUnits = manifest.units.filter((unit) => tierFilter === 'all' || unit.tier === tierFilter);
   const groups: Array<{ documentId: string; units: ExamCurriculumUnit[] }> = [];
   for (const unit of visibleUnits) {
@@ -185,15 +192,14 @@ const ExamCurriculumPage = ({ onOpenProvision }: ExamCurriculumPageProps) => {
   const orientationCount = visibleUnits.filter((u) => u.unitType === 'document_orientation').length;
   const tierButtons: Array<{ key: TierFilter; label: string }> = [
     { key: 'all', label: `All (${manifest.units.length})` },
-    { key: 'A', label: `Tier A (${tierCount('A')})` },
-    { key: 'B', label: `Tier B (${tierCount('B')})` },
+    ...FILTER_TIERS.map((tier) => ({ key: tier, label: `Tier ${tier} (${tierCount(tier)})` })),
   ];
   return (
     <div className="space-y-5">
       <div>
         <div className="flex items-center gap-2">
           <GraduationCap className="text-emerald-400" size={20} />
-          <h2 className="text-xl font-semibold text-white">Exam Curriculum — Tier A + B</h2>
+          <h2 className="text-xl font-semibold text-white">Exam Curriculum — Tier A–D</h2>
         </div>
         <p className="mt-1 max-w-3xl text-sm text-slate-400">
           Open-book statute law exam curriculum. Units define what to recognize, understand, recall and locate;

@@ -91,6 +91,8 @@ export const examCurriculumManifestMetrics = (manifest: ExamCurriculumManifest) 
   tiers: {
     A: examCurriculumTierMetrics(manifest.units, 'A'),
     B: examCurriculumTierMetrics(manifest.units, 'B'),
+    C: examCurriculumTierMetrics(manifest.units, 'C'),
+    D: examCurriculumTierMetrics(manifest.units, 'D'),
   },
   unitsByType: countBy(manifest.units.map((u) => u.unitType)),
   unitsByDocument: countBy(manifest.units.map((u) => u.sourceDocumentIds[0] ?? '(none)')),
@@ -112,7 +114,7 @@ export const renderExamCurriculumMarkdown = (
 ): string => {
   const lines: string[] = [];
   const metrics = examCurriculumManifestMetrics(manifest);
-  lines.push(`# Exam Curriculum V1 — Tier A+B Build Report (${options.dateTag})`);
+  lines.push(`# Exam Curriculum V1 — Tier A-D Build Report (${options.dateTag})`);
   lines.push('');
   lines.push(`- Curriculum ID: ${manifest.curriculumId}`);
   lines.push(`- Architecture version: ${manifest.architectureVersion}`);
@@ -122,6 +124,8 @@ export const renderExamCurriculumMarkdown = (
   lines.push(`- Manifest content hash: \`${manifest.contentHash}\``);
   lines.push(`- Tier-A projection hash: \`${examCurriculumTierProjectionHash(manifest.units, 'A')}\``);
   lines.push(`- Tier-B projection hash: \`${examCurriculumTierProjectionHash(manifest.units, 'B')}\``);
+  lines.push(`- Tier-C projection hash: \`${examCurriculumTierProjectionHash(manifest.units, 'C')}\``);
+  lines.push(`- Tier-D projection hash: \`${examCurriculumTierProjectionHash(manifest.units, 'D')}\``);
   lines.push('');
   lines.push('## Summary');
   lines.push('');
@@ -142,7 +146,7 @@ export const renderExamCurriculumMarkdown = (
   lines.push('');
   lines.push('### Tier breakdown');
   lines.push('');
-  for (const tier of ['A', 'B'] as const) {
+  for (const tier of ['A', 'B', 'C', 'D'] as const) {
     const tierMetrics = metrics.tiers[tier];
     lines.push(
       `- Tier ${tier}: ${tierMetrics.totalUnits} units ` +
@@ -194,9 +198,9 @@ export const renderExamCurriculumMarkdown = (
       lines.push('- Core understanding:');
       for (const point of unit.coreUnderstanding) lines.push(`  - ${point}`);
     }
-    lines.push(`- **REMEMBER** (mustRecall): ${unit.mustRecall.length === 0 ? '(none)' : ''}`);
+    lines.push(`- **REMEMBER** (mustRecall):${unit.mustRecall.length === 0 ? ' (none)' : ''}`);
     for (const rule of unit.mustRecall) lines.push(`  - ${rule}`);
-    lines.push(`- **LOOK HERE** (mustLocate): ${unit.mustLocate.length === 0 ? '(none)' : ''}`);
+    lines.push(`- **LOOK HERE** (mustLocate):${unit.mustLocate.length === 0 ? ' (none)' : ''}`);
     for (const lookup of unit.mustLocate) {
       lines.push(`  - ${lookup.prompt} → ${lookup.documentId}${lookup.sourceKey ? ` :: ${lookup.sourceKey}` : ''}`);
     }
@@ -223,6 +227,8 @@ export const buildExamCurriculumJsonReport = (
   tierProjectionHashes: {
     A: examCurriculumTierProjectionHash(manifest.units, 'A'),
     B: examCurriculumTierProjectionHash(manifest.units, 'B'),
+    C: examCurriculumTierProjectionHash(manifest.units, 'C'),
+    D: examCurriculumTierProjectionHash(manifest.units, 'D'),
   },
   metrics: examCurriculumManifestMetrics(manifest),
   validation: {

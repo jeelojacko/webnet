@@ -1,19 +1,23 @@
 {
   "report": "exam-curriculum-build",
   "dateTag": "20260903",
-  "generatedAt": "2026-09-03T22:42:34.700Z",
+  "generatedAt": "2026-09-03T23:53:59.698Z",
   "sourcePackageId": "nb-sit-statute-corpus-2026-08-29",
   "sourceCorpusContentHash": "6f0442fc121eb0d2bcc9d3c1023c7a624e2cd4adf36922079bc3f6858fdcc32b",
-  "manifestContentHash": "5df443fac55e9bf8cbddfe0d5540816fab0ed43de2b73594f14150a472852ec4",
+  "manifestContentHash": "3ccef81091b90b2ef816f0e4bc8ff74d07af6436b8504dab6af589ba9822b693",
   "tierProjectionHashes": {
     "A": "07ae52f1e5e6276dd74a52172bb98cc54cdd136fdc5422ae27fbe3452c4af4a5",
-    "B": "149f725394a0cae0a91759370a62cc70463893d5a7cecc18cdf32c431b121d8a"
+    "B": "149f725394a0cae0a91759370a62cc70463893d5a7cecc18cdf32c431b121d8a",
+    "C": "6f9cd74e46cd66c01d6434117d0489951017f0aae4f6e423a39476cf68bbfad7",
+    "D": "f118e3624d653ba9964f126534bf5a6a360028e5ac867974e5a1094058046712"
   },
   "metrics": {
-    "totalUnits": 94,
+    "totalUnits": 121,
     "unitsByTier": {
       "A": 51,
-      "B": 43
+      "B": 43,
+      "C": 21,
+      "D": 6
     },
     "tiers": {
       "A": {
@@ -35,10 +39,28 @@
         "totalSourceAnchors": 716,
         "totalMustRecall": 27,
         "totalMustLocate": 140
+      },
+      "C": {
+        "totalUnits": 21,
+        "unitsByType": {
+          "document_orientation": 21
+        },
+        "totalSourceAnchors": 263,
+        "totalMustRecall": 6,
+        "totalMustLocate": 94
+      },
+      "D": {
+        "totalUnits": 6,
+        "unitsByType": {
+          "document_orientation": 6
+        },
+        "totalSourceAnchors": 47,
+        "totalMustRecall": 0,
+        "totalMustLocate": 12
       }
     },
     "unitsByType": {
-      "document_orientation": 30,
+      "document_orientation": 57,
       "core_concept": 64
     },
     "unitsByDocument": {
@@ -75,17 +97,44 @@
       "doc-real-property-transfer-tax-act": 1,
       "doc-standard-forms-of-conveyances-act": 1,
       "doc-territorial-division-act": 1,
-      "doc-trespass-act": 2
+      "doc-trespass-act": 2,
+      "doc-aquaculture-act": 1,
+      "doc-archives-act": 1,
+      "doc-bituminous-shale-act": 1,
+      "doc-clean-environment-act": 1,
+      "doc-crown-grant-restrictions-act": 1,
+      "doc-devolution-of-estates-act": 1,
+      "doc-electronic-transactions-act": 1,
+      "doc-escheats-and-forfeitures-act": 1,
+      "doc-executors-and-trustees-act": 1,
+      "doc-gas-distribution-act": 1,
+      "doc-marital-property-act": 1,
+      "doc-metric-conversion-act": 1,
+      "doc-occupational-health-and-safety-act": 1,
+      "doc-ownership-of-minerals-act": 1,
+      "doc-parks-act": 1,
+      "doc-probate-court-act": 1,
+      "doc-public-health-act": 1,
+      "doc-energy-and-utilities-board-act": 1,
+      "doc-service-new-brunswick-act": 1,
+      "doc-underground-storage-act": 1,
+      "doc-wills-act": 1,
+      "doc-assignments-and-preferences-act": 1,
+      "doc-municipalities-act": 1,
+      "doc-official-languages-act": 1,
+      "doc-partnerships-and-business-names-registration-act": 1,
+      "doc-public-records-act": 1,
+      "doc-residential-property-tax-relief-act": 1
     },
     "unitsByReviewWeight": {
       "high": 52,
-      "medium": 39,
-      "low": 3
+      "medium": 50,
+      "low": 19
     },
-    "totalSourceAnchors": 1458,
-    "totalMustRecall": 45,
-    "totalMustLocate": 252,
-    "unitsWithRecognizeDepth": 42
+    "totalSourceAnchors": 1768,
+    "totalMustRecall": 51,
+    "totalMustLocate": 358,
+    "unitsWithRecognizeDepth": 69
   },
   "validation": {
     "errors": [],
@@ -152,8 +201,8 @@
     "architectureVersion": "exam-curriculum-v1",
     "sourcePackageId": "nb-sit-statute-corpus-2026-08-29",
     "sourceCorpusContentHash": "6f0442fc121eb0d2bcc9d3c1023c7a624e2cd4adf36922079bc3f6858fdcc32b",
-    "createdAt": "2026-09-03T22:42:34.700Z",
-    "contentHash": "5df443fac55e9bf8cbddfe0d5540816fab0ed43de2b73594f14150a472852ec4",
+    "createdAt": "2026-09-03T23:53:59.698Z",
+    "contentHash": "3ccef81091b90b2ef816f0e4bc8ff74d07af6436b8504dab6af589ba9822b693",
     "units": [
       {
         "id": "A-NBLS-01",
@@ -12742,6 +12791,3379 @@
         ],
         "relatedUnitIds": [],
         "reviewWeight": "high",
+        "status": "planned"
+      },
+      {
+        "id": "C-AQUA-01",
+        "unitType": "document_orientation",
+        "tier": "C",
+        "title": "When should a surveyor think of the Aquaculture Act?",
+        "sourceDocumentIds": [
+          "doc-aquaculture-act"
+        ],
+        "sourceAnchors": [
+          {
+            "documentId": "doc-aquaculture-act",
+            "sourceKey": "section:1",
+            "label": "1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-aquaculture-act",
+            "sourceKey": "section:7",
+            "label": "7",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-aquaculture-act",
+            "sourceKey": "section:8",
+            "label": "8",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-aquaculture-act",
+            "sourceKey": "section:12",
+            "label": "12",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-aquaculture-act",
+            "sourceKey": "section:15",
+            "label": "15",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-aquaculture-act",
+            "sourceKey": "section:16",
+            "label": "16",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-aquaculture-act",
+            "sourceKey": "section:18",
+            "label": "18",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-aquaculture-act",
+            "sourceKey": "section:20",
+            "label": "20",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-aquaculture-act",
+            "sourceKey": "section:21",
+            "label": "21",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-aquaculture-act",
+            "sourceKey": "section:23",
+            "label": "23",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-aquaculture-act",
+            "sourceKey": "section:25",
+            "label": "25",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-aquaculture-act",
+            "sourceKey": "section:26",
+            "label": "26",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-aquaculture-act",
+            "sourceKey": "section:28",
+            "label": "28",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-aquaculture-act",
+            "sourceKey": "section:30",
+            "label": "30",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-aquaculture-act",
+            "sourceKey": "section:31",
+            "label": "31",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-aquaculture-act",
+            "sourceKey": "section:35",
+            "label": "35",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-aquaculture-act",
+            "sourceKey": "section:36",
+            "label": "36",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-aquaculture-act",
+            "sourceKey": "section:39",
+            "label": "39",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-aquaculture-act",
+            "sourceKey": "section:41",
+            "label": "41",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-aquaculture-act",
+            "sourceKey": "section:42",
+            "label": "42",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-aquaculture-act",
+            "sourceKey": "section:44",
+            "label": "44",
+            "role": "orientation"
+          }
+        ],
+        "learningDepths": [
+          "recognize",
+          "understand",
+          "retrieve"
+        ],
+        "examGoal": "",
+        "recognitionCues": [
+          "aquaculture site",
+          "aquaculture land",
+          "aquaculture lease",
+          "aquaculture permit or licence",
+          "aquaculture management area"
+        ],
+        "coreUnderstanding": [
+          "the Act governs aquaculture sites and aquaculture land, including their designation and management areas;",
+          "tenure for aquaculture activity is granted by way of leases, permits and licences;",
+          "recognize when aquaculture legislation may affect land or water-area work, including site, location and boundary issues."
+        ],
+        "mustRecall": [],
+        "mustLocate": [
+          {
+            "prompt": "aquaculture management areas",
+            "documentId": "doc-aquaculture-act",
+            "sourceKey": "section:7"
+          },
+          {
+            "prompt": "designation of aquaculture land",
+            "documentId": "doc-aquaculture-act",
+            "sourceKey": "section:8"
+          },
+          {
+            "prompt": "public registry of aquaculture interests",
+            "documentId": "doc-aquaculture-act",
+            "sourceKey": "section:12"
+          },
+          {
+            "prompt": "application for and grant of an aquaculture lease",
+            "documentId": "doc-aquaculture-act",
+            "sourceKey": "section:15"
+          },
+          {
+            "prompt": "application for an aquaculture permit",
+            "documentId": "doc-aquaculture-act",
+            "sourceKey": "section:25"
+          }
+        ],
+        "relatedUnitIds": [],
+        "reviewWeight": "low",
+        "status": "planned"
+      },
+      {
+        "id": "C-ARCH-01",
+        "unitType": "document_orientation",
+        "tier": "C",
+        "title": "Archives, historical public records and certified copies",
+        "sourceDocumentIds": [
+          "doc-archives-act"
+        ],
+        "sourceAnchors": [
+          {
+            "documentId": "doc-archives-act",
+            "sourceKey": "section:1",
+            "label": "1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-archives-act",
+            "sourceKey": "section:3",
+            "label": "3",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-archives-act",
+            "sourceKey": "section:5",
+            "label": "5",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-archives-act",
+            "sourceKey": "section:7",
+            "label": "7",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-archives-act",
+            "sourceKey": "section:8",
+            "label": "8",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-archives-act",
+            "sourceKey": "section:9",
+            "label": "9",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-archives-act",
+            "sourceKey": "section:10",
+            "label": "10",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-archives-act",
+            "sourceKey": "section:10.1",
+            "label": "10.1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-archives-act",
+            "sourceKey": "section:10.2",
+            "label": "10.2",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-archives-act",
+            "sourceKey": "section:10.3",
+            "label": "10.3",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-archives-act",
+            "sourceKey": "section:10.4",
+            "label": "10.4",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-archives-act",
+            "sourceKey": "section:10.5",
+            "label": "10.5",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-archives-act",
+            "sourceKey": "section:10.6",
+            "label": "10.6",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-archives-act",
+            "sourceKey": "section:10.7",
+            "label": "10.7",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-archives-act",
+            "sourceKey": "section:10.8",
+            "label": "10.8",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-archives-act",
+            "sourceKey": "section:10.9",
+            "label": "10.9",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-archives-act",
+            "sourceKey": "section:11",
+            "label": "11",
+            "role": "orientation"
+          }
+        ],
+        "learningDepths": [
+          "recognize",
+          "understand",
+          "retrieve"
+        ],
+        "examGoal": "",
+        "recognitionCues": [
+          "historical public records",
+          "Provincial Archivist",
+          "public inspection of archival records",
+          "certified copies of public records",
+          "records schedule"
+        ],
+        "coreUnderstanding": [
+          "the Act provides for archives and the duties of the Provincial Archivist over public records;",
+          "archival public records are generally open to public inspection, subject to restrictions and the request/review route;",
+          "the Provincial Archivist may certify copies of public records, and a certified copy is equivalent to the original record;",
+          "these routes matter to historical title, boundary and evidence research."
+        ],
+        "mustRecall": [],
+        "mustLocate": [
+          {
+            "prompt": "duties of the Provincial Archivist",
+            "documentId": "doc-archives-act",
+            "sourceKey": "section:5"
+          },
+          {
+            "prompt": "disposal/destruction controls through records schedules",
+            "documentId": "doc-archives-act",
+            "sourceKey": "section:7"
+          },
+          {
+            "prompt": "public inspection of archival public records",
+            "documentId": "doc-archives-act",
+            "sourceKey": "section:10"
+          },
+          {
+            "prompt": "request/review route for restricted records",
+            "documentId": "doc-archives-act",
+            "sourceKey": "section:10.1"
+          },
+          {
+            "prompt": "certified copies of public records",
+            "documentId": "doc-archives-act",
+            "sourceKey": "section:11"
+          }
+        ],
+        "relatedUnitIds": [
+          "D-PRA-01"
+        ],
+        "reviewWeight": "medium",
+        "status": "planned"
+      },
+      {
+        "id": "C-BSHALE-01",
+        "unitType": "document_orientation",
+        "tier": "C",
+        "title": "Bituminous shale rights, licences and land",
+        "sourceDocumentIds": [
+          "doc-bituminous-shale-act"
+        ],
+        "sourceAnchors": [
+          {
+            "documentId": "doc-bituminous-shale-act",
+            "sourceKey": "section:1",
+            "label": "1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-bituminous-shale-act",
+            "sourceKey": "section:4",
+            "label": "4",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-bituminous-shale-act",
+            "sourceKey": "section:9",
+            "label": "9",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-bituminous-shale-act",
+            "sourceKey": "section:10",
+            "label": "10",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-bituminous-shale-act",
+            "sourceKey": "section:11",
+            "label": "11",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-bituminous-shale-act",
+            "sourceKey": "section:13",
+            "label": "13",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-bituminous-shale-act",
+            "sourceKey": "section:14",
+            "label": "14",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-bituminous-shale-act",
+            "sourceKey": "section:17",
+            "label": "17",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-bituminous-shale-act",
+            "sourceKey": "section:17.1",
+            "label": "17.1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-bituminous-shale-act",
+            "sourceKey": "section:18",
+            "label": "18",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-bituminous-shale-act",
+            "sourceKey": "section:19",
+            "label": "19",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-bituminous-shale-act",
+            "sourceKey": "section:20",
+            "label": "20",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-bituminous-shale-act",
+            "sourceKey": "section:25",
+            "label": "25",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-bituminous-shale-act",
+            "sourceKey": "section:31",
+            "label": "31",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-bituminous-shale-act",
+            "sourceKey": "section:32",
+            "label": "32",
+            "role": "orientation"
+          }
+        ],
+        "learningDepths": [
+          "recognize",
+          "understand",
+          "retrieve"
+        ],
+        "examGoal": "",
+        "recognitionCues": [
+          "bituminous shale",
+          "licence to search",
+          "development permit",
+          "bituminous shale lease",
+          "right of entry for resource work"
+        ],
+        "coreUnderstanding": [
+          "the Act governs exploration for and development of bituminous shale as a Crown resource;",
+          "rights are held through licences to search, development permits and leases;",
+          "the Act provides entry and land-use rights (including a special order to enter and use land) and survey provisions;",
+          "recognize the Act when resource title, entry, or survey of shale lands is in issue."
+        ],
+        "mustRecall": [],
+        "mustLocate": [
+          {
+            "prompt": "Crown land administration of shale rights",
+            "documentId": "doc-bituminous-shale-act",
+            "sourceKey": "section:9"
+          },
+          {
+            "prompt": "right of entry and special order to enter and use land",
+            "documentId": "doc-bituminous-shale-act",
+            "sourceKey": "section:10"
+          },
+          {
+            "prompt": "licence to search and licence-area limits",
+            "documentId": "doc-bituminous-shale-act",
+            "sourceKey": "section:13"
+          },
+          {
+            "prompt": "development permits and conversion to lease",
+            "documentId": "doc-bituminous-shale-act",
+            "sourceKey": "section:17"
+          },
+          {
+            "prompt": "surveys of shale lands",
+            "documentId": "doc-bituminous-shale-act",
+            "sourceKey": "section:25"
+          }
+        ],
+        "relatedUnitIds": [],
+        "reviewWeight": "low",
+        "status": "planned"
+      },
+      {
+        "id": "C-CEA-01",
+        "unitType": "document_orientation",
+        "tier": "C",
+        "title": "Environmental orders, contaminated land and designated areas",
+        "sourceDocumentIds": [
+          "doc-clean-environment-act"
+        ],
+        "sourceAnchors": [
+          {
+            "documentId": "doc-clean-environment-act",
+            "sourceKey": "section:1",
+            "label": "1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-clean-environment-act",
+            "sourceKey": "section:4.3",
+            "label": "4.3",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-clean-environment-act",
+            "sourceKey": "section:4.31",
+            "label": "4.31",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-clean-environment-act",
+            "sourceKey": "section:5.01",
+            "label": "5.01",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-clean-environment-act",
+            "sourceKey": "section:5.1",
+            "label": "5.1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-clean-environment-act",
+            "sourceKey": "section:5.11",
+            "label": "5.11",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-clean-environment-act",
+            "sourceKey": "section:5.2",
+            "label": "5.2",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-clean-environment-act",
+            "sourceKey": "section:5.201",
+            "label": "5.201",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-clean-environment-act",
+            "sourceKey": "section:5.21",
+            "label": "5.21",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-clean-environment-act",
+            "sourceKey": "section:6.1",
+            "label": "6.1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-clean-environment-act",
+            "sourceKey": "section:6.2",
+            "label": "6.2",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-clean-environment-act",
+            "sourceKey": "section:6.3",
+            "label": "6.3",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-clean-environment-act",
+            "sourceKey": "section:6.4",
+            "label": "6.4",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-clean-environment-act",
+            "sourceKey": "section:6.5",
+            "label": "6.5",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-clean-environment-act",
+            "sourceKey": "section:12",
+            "label": "12",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-clean-environment-act",
+            "sourceKey": "section:14",
+            "label": "14",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-clean-environment-act",
+            "sourceKey": "section:14.1",
+            "label": "14.1",
+            "role": "orientation"
+          }
+        ],
+        "learningDepths": [
+          "recognize",
+          "understand",
+          "retrieve"
+        ],
+        "examGoal": "",
+        "recognitionCues": [
+          "contaminated site designation",
+          "environmental order",
+          "release of a contaminant",
+          "wetland or coastal designation order",
+          "lien on land for environmental costs"
+        ],
+        "coreUnderstanding": [
+          "the Minister may designate contaminated sites and act on contaminant releases;",
+          "environmental orders and cost-recovery powers (including a lien on land) attach to contaminated or affected land;",
+          "wetland and coastal designation orders impose restrictions tied to described areas of land;",
+          "affected land is identified through statutory descriptions, plans or parcel identifiers where the Act or orders use them."
+        ],
+        "mustRecall": [],
+        "mustLocate": [
+          {
+            "prompt": "contaminated-site designation",
+            "documentId": "doc-clean-environment-act",
+            "sourceKey": "section:4.31"
+          },
+          {
+            "prompt": "ministerial action and orders on contaminated land",
+            "documentId": "doc-clean-environment-act",
+            "sourceKey": "section:5.01"
+          },
+          {
+            "prompt": "lien on the land for environmental costs",
+            "documentId": "doc-clean-environment-act",
+            "sourceKey": "section:5.201"
+          },
+          {
+            "prompt": "restoration of land and premises",
+            "documentId": "doc-clean-environment-act",
+            "sourceKey": "section:5.21"
+          },
+          {
+            "prompt": "wetland / coastal designation orders",
+            "documentId": "doc-clean-environment-act",
+            "sourceKey": "section:6.1"
+          }
+        ],
+        "relatedUnitIds": [],
+        "reviewWeight": "medium",
+        "status": "planned"
+      },
+      {
+        "id": "C-CGR-01",
+        "unitType": "document_orientation",
+        "tier": "C",
+        "title": "Restrictions contained in historical Crown grants",
+        "sourceDocumentIds": [
+          "doc-crown-grant-restrictions-act"
+        ],
+        "sourceAnchors": [
+          {
+            "documentId": "doc-crown-grant-restrictions-act",
+            "sourceKey": "section:1",
+            "label": "1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-crown-grant-restrictions-act",
+            "sourceKey": "section:2",
+            "label": "2",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-crown-grant-restrictions-act",
+            "sourceKey": "section:3",
+            "label": "3",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-crown-grant-restrictions-act",
+            "sourceKey": "section:4",
+            "label": "4",
+            "role": "orientation"
+          }
+        ],
+        "learningDepths": [
+          "recognize",
+          "understand",
+          "recall",
+          "retrieve"
+        ],
+        "examGoal": "",
+        "recognitionCues": [
+          "historical Crown grant",
+          "quit-rent",
+          "restriction in a grant",
+          "release and waiver of grant restrictions",
+          "title research on old Crown grant language"
+        ],
+        "coreUnderstanding": [
+          "historical Crown grants sometimes carried restrictions (such as quit-rent, cultivation or settlement conditions);",
+          "the Act provides a statutory release and waiver of specified historical restrictions originating in Crown grants;",
+          "recognize this Act when old Crown grant language appears in title research."
+        ],
+        "mustRecall": [
+          "The Act provides statutory release/waiver of specified historical restrictions originating in Crown grants."
+        ],
+        "mustLocate": [
+          {
+            "prompt": "scope/application of the release and waiver",
+            "documentId": "doc-crown-grant-restrictions-act",
+            "sourceKey": "section:2"
+          },
+          {
+            "prompt": "restrictions released and waived (detailed categories)",
+            "documentId": "doc-crown-grant-restrictions-act",
+            "sourceKey": "section:4"
+          }
+        ],
+        "relatedUnitIds": [],
+        "reviewWeight": "medium",
+        "status": "planned"
+      },
+      {
+        "id": "C-DOE-01",
+        "unitType": "document_orientation",
+        "tier": "C",
+        "title": "Real property after death and the personal representative",
+        "sourceDocumentIds": [
+          "doc-devolution-of-estates-act"
+        ],
+        "sourceAnchors": [
+          {
+            "documentId": "doc-devolution-of-estates-act",
+            "sourceKey": "section:1",
+            "label": "1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-devolution-of-estates-act",
+            "sourceKey": "section:3",
+            "label": "3",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-devolution-of-estates-act",
+            "sourceKey": "section:5",
+            "label": "5",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-devolution-of-estates-act",
+            "sourceKey": "section:6",
+            "label": "6",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-devolution-of-estates-act",
+            "sourceKey": "section:8",
+            "label": "8",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-devolution-of-estates-act",
+            "sourceKey": "section:9",
+            "label": "9",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-devolution-of-estates-act",
+            "sourceKey": "section:10",
+            "label": "10",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-devolution-of-estates-act",
+            "sourceKey": "section:12",
+            "label": "12",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-devolution-of-estates-act",
+            "sourceKey": "section:13",
+            "label": "13",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-devolution-of-estates-act",
+            "sourceKey": "section:18",
+            "label": "18",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-devolution-of-estates-act",
+            "sourceKey": "section:19",
+            "label": "19",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-devolution-of-estates-act",
+            "sourceKey": "section:22",
+            "label": "22",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-devolution-of-estates-act",
+            "sourceKey": "section:24",
+            "label": "24",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-devolution-of-estates-act",
+            "sourceKey": "section:32",
+            "label": "32",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-devolution-of-estates-act",
+            "sourceKey": "section:38",
+            "label": "38",
+            "role": "orientation"
+          }
+        ],
+        "learningDepths": [
+          "recognize",
+          "understand",
+          "retrieve"
+        ],
+        "examGoal": "",
+        "recognitionCues": [
+          "devolution of real property on death",
+          "personal representative",
+          "executor or administrator dealing with land",
+          "registration of a will",
+          "intestacy"
+        ],
+        "coreUnderstanding": [
+          "the Act governs what happens to real property when its owner dies and the role of the personal representative;",
+          "the personal representative has powers to sell, convey, divide, lease or mortgage estate real property;",
+          "recognition when estate administration affects title to or dealings with land."
+        ],
+        "mustRecall": [],
+        "mustLocate": [
+          {
+            "prompt": "devolution of real and personal property",
+            "documentId": "doc-devolution-of-estates-act",
+            "sourceKey": "section:3"
+          },
+          {
+            "prompt": "powers of the personal representative over real property",
+            "documentId": "doc-devolution-of-estates-act",
+            "sourceKey": "section:5"
+          },
+          {
+            "prompt": "conveyance/sale of real property by the representative",
+            "documentId": "doc-devolution-of-estates-act",
+            "sourceKey": "section:8"
+          },
+          {
+            "prompt": "effect of registering a will on real property",
+            "documentId": "doc-devolution-of-estates-act",
+            "sourceKey": "section:18"
+          },
+          {
+            "prompt": "vesting of property not disposed of",
+            "documentId": "doc-devolution-of-estates-act",
+            "sourceKey": "section:19"
+          }
+        ],
+        "relatedUnitIds": [
+          "C-PROB-01",
+          "C-WILLS-01"
+        ],
+        "reviewWeight": "medium",
+        "status": "planned"
+      },
+      {
+        "id": "C-ETA-01",
+        "unitType": "document_orientation",
+        "tier": "C",
+        "title": "Electronic records, signatures and legal effect",
+        "sourceDocumentIds": [
+          "doc-electronic-transactions-act"
+        ],
+        "sourceAnchors": [
+          {
+            "documentId": "doc-electronic-transactions-act",
+            "sourceKey": "section:1",
+            "label": "1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-electronic-transactions-act",
+            "sourceKey": "section:3",
+            "label": "3",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-electronic-transactions-act",
+            "sourceKey": "section:4",
+            "label": "4",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-electronic-transactions-act",
+            "sourceKey": "section:5",
+            "label": "5",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-electronic-transactions-act",
+            "sourceKey": "section:7",
+            "label": "7",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-electronic-transactions-act",
+            "sourceKey": "section:8",
+            "label": "8",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-electronic-transactions-act",
+            "sourceKey": "section:10",
+            "label": "10",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-electronic-transactions-act",
+            "sourceKey": "section:11",
+            "label": "11",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-electronic-transactions-act",
+            "sourceKey": "section:12",
+            "label": "12",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-electronic-transactions-act",
+            "sourceKey": "section:13",
+            "label": "13",
+            "role": "orientation"
+          }
+        ],
+        "learningDepths": [
+          "recognize",
+          "understand",
+          "recall",
+          "retrieve"
+        ],
+        "examGoal": "",
+        "recognitionCues": [
+          "electronic record",
+          "electronic signature",
+          "information in writing",
+          "electronic original",
+          "retention of electronic information"
+        ],
+        "coreUnderstanding": [
+          "the Act addresses when electronic records satisfy writing, signature, original and retention requirements;",
+          "it does not require any person to use or accept electronic information;",
+          "recognize the Act wherever dealings or filings are effected electronically."
+        ],
+        "mustRecall": [
+          "Information is not denied legal effect merely because it is in electronic form, subject to the Act's scope and exceptions."
+        ],
+        "mustLocate": [
+          {
+            "prompt": "scope and exclusions (application)",
+            "documentId": "doc-electronic-transactions-act",
+            "sourceKey": "section:5"
+          },
+          {
+            "prompt": "legal effect of electronic information",
+            "documentId": "doc-electronic-transactions-act",
+            "sourceKey": "section:7"
+          },
+          {
+            "prompt": "satisfying a requirement for information in writing",
+            "documentId": "doc-electronic-transactions-act",
+            "sourceKey": "section:8"
+          },
+          {
+            "prompt": "electronic originals",
+            "documentId": "doc-electronic-transactions-act",
+            "sourceKey": "section:10"
+          },
+          {
+            "prompt": "electronic signatures",
+            "documentId": "doc-electronic-transactions-act",
+            "sourceKey": "section:11"
+          }
+        ],
+        "relatedUnitIds": [],
+        "reviewWeight": "low",
+        "status": "planned"
+      },
+      {
+        "id": "C-ESCH-01",
+        "unitType": "document_orientation",
+        "tier": "C",
+        "title": "Escheated and forfeited land",
+        "sourceDocumentIds": [
+          "doc-escheats-and-forfeitures-act"
+        ],
+        "sourceAnchors": [
+          {
+            "documentId": "doc-escheats-and-forfeitures-act",
+            "sourceKey": "section:1",
+            "label": "1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-escheats-and-forfeitures-act",
+            "sourceKey": "section:2",
+            "label": "2",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-escheats-and-forfeitures-act",
+            "sourceKey": "section:3",
+            "label": "3",
+            "role": "orientation"
+          }
+        ],
+        "learningDepths": [
+          "recognize",
+          "understand",
+          "retrieve"
+        ],
+        "examGoal": "",
+        "recognitionCues": [
+          "escheat",
+          "forfeiture",
+          "land vested in the Crown",
+          "grant of escheated lands",
+          "relief from forfeiture"
+        ],
+        "coreUnderstanding": [
+          "the Act deals with land that escheats or is forfeited to the Crown;",
+          "the Crown may grant or dispose of such lands, and relief from forfeiture is possible;",
+          "recognize the statute when ownership fails or property passes to the Crown through escheat or forfeiture."
+        ],
+        "mustRecall": [],
+        "mustLocate": [
+          {
+            "prompt": "Crown possession of escheated/forfeited lands",
+            "documentId": "doc-escheats-and-forfeitures-act",
+            "sourceKey": "section:1"
+          },
+          {
+            "prompt": "grant of escheated lands",
+            "documentId": "doc-escheats-and-forfeitures-act",
+            "sourceKey": "section:2"
+          },
+          {
+            "prompt": "relief from forfeiture",
+            "documentId": "doc-escheats-and-forfeitures-act",
+            "sourceKey": "section:3"
+          }
+        ],
+        "relatedUnitIds": [],
+        "reviewWeight": "low",
+        "status": "planned"
+      },
+      {
+        "id": "C-ETRUST-01",
+        "unitType": "document_orientation",
+        "tier": "C",
+        "title": "Executors, trustees and dealings with real property",
+        "sourceDocumentIds": [
+          "doc-executors-and-trustees-act"
+        ],
+        "sourceAnchors": [
+          {
+            "documentId": "doc-executors-and-trustees-act",
+            "sourceKey": "section:2",
+            "label": "2",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-executors-and-trustees-act",
+            "sourceKey": "section:3",
+            "label": "3",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-executors-and-trustees-act",
+            "sourceKey": "section:6",
+            "label": "6",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-executors-and-trustees-act",
+            "sourceKey": "section:7",
+            "label": "7",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-executors-and-trustees-act",
+            "sourceKey": "section:8",
+            "label": "8",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-executors-and-trustees-act",
+            "sourceKey": "section:9",
+            "label": "9",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-executors-and-trustees-act",
+            "sourceKey": "section:10",
+            "label": "10",
+            "role": "orientation"
+          }
+        ],
+        "learningDepths": [
+          "recognize",
+          "understand",
+          "retrieve"
+        ],
+        "examGoal": "",
+        "recognitionCues": [
+          "executor selling realty",
+          "administrator selling realty",
+          "sale of realty to satisfy a legacy",
+          "mortgage of estate realty",
+          "purchaser dealing with an estate"
+        ],
+        "coreUnderstanding": [
+          "the Act gives executors and administrators statutory powers to sell estate realty;",
+          "it also deals with sale of realty to satisfy legacies, powers of successors, and mortgaging realty;",
+          "purchasers of realty from an estate benefit from the Act's inquiry protections;",
+          "recognize when land is held in an estate or trust context."
+        ],
+        "mustRecall": [],
+        "mustLocate": [
+          {
+            "prompt": "sale of realty by an executor",
+            "documentId": "doc-executors-and-trustees-act",
+            "sourceKey": "section:2"
+          },
+          {
+            "prompt": "sale of realty by an administrator",
+            "documentId": "doc-executors-and-trustees-act",
+            "sourceKey": "section:3"
+          },
+          {
+            "prompt": "sale of realty to satisfy a legacy",
+            "documentId": "doc-executors-and-trustees-act",
+            "sourceKey": "section:6"
+          },
+          {
+            "prompt": "powers of executors to mortgage realty",
+            "documentId": "doc-executors-and-trustees-act",
+            "sourceKey": "section:8"
+          },
+          {
+            "prompt": "duty of inquiry of purchasers of estate realty",
+            "documentId": "doc-executors-and-trustees-act",
+            "sourceKey": "section:9"
+          }
+        ],
+        "relatedUnitIds": [
+          "C-DOE-01"
+        ],
+        "reviewWeight": "medium",
+        "status": "planned"
+      },
+      {
+        "id": "C-GAS-01",
+        "unitType": "document_orientation",
+        "tier": "C",
+        "title": "Gas distribution infrastructure and land",
+        "sourceDocumentIds": [
+          "doc-gas-distribution-act"
+        ],
+        "sourceAnchors": [
+          {
+            "documentId": "doc-gas-distribution-act",
+            "sourceKey": "section:1",
+            "label": "1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-gas-distribution-act",
+            "sourceKey": "section:3",
+            "label": "3",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-gas-distribution-act",
+            "sourceKey": "section:4",
+            "label": "4",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-gas-distribution-act",
+            "sourceKey": "section:5",
+            "label": "5",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-gas-distribution-act",
+            "sourceKey": "section:6",
+            "label": "6",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-gas-distribution-act",
+            "sourceKey": "section:6.01",
+            "label": "6.01",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-gas-distribution-act",
+            "sourceKey": "section:6.1",
+            "label": "6.1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-gas-distribution-act",
+            "sourceKey": "section:6.2",
+            "label": "6.2",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-gas-distribution-act",
+            "sourceKey": "section:7",
+            "label": "7",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-gas-distribution-act",
+            "sourceKey": "section:8",
+            "label": "8",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-gas-distribution-act",
+            "sourceKey": "section:14",
+            "label": "14",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-gas-distribution-act",
+            "sourceKey": "section:27",
+            "label": "27",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-gas-distribution-act",
+            "sourceKey": "section:47",
+            "label": "47",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-gas-distribution-act",
+            "sourceKey": "section:48",
+            "label": "48",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-gas-distribution-act",
+            "sourceKey": "section:49",
+            "label": "49",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-gas-distribution-act",
+            "sourceKey": "section:50",
+            "label": "50",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-gas-distribution-act",
+            "sourceKey": "section:57",
+            "label": "57",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-gas-distribution-act",
+            "sourceKey": "section:69",
+            "label": "69",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-gas-distribution-act",
+            "sourceKey": "section:71.1",
+            "label": "71.1",
+            "role": "orientation"
+          }
+        ],
+        "learningDepths": [
+          "recognize",
+          "understand",
+          "retrieve"
+        ],
+        "examGoal": "",
+        "recognitionCues": [
+          "gas distribution system",
+          "gas distributor franchise",
+          "underground storage facility for gas",
+          "safety and inspection of gas facilities",
+          "disposal or merger of a gas utility"
+        ],
+        "coreUnderstanding": [
+          "the Act governs who may distribute gas and the franchise/authorization framework;",
+          "a gas distribution system is a public utility and its disposal or sale requires statutory leave;",
+          "the Act regulates underground gas storage facilities, wells and related land/infrastructure;",
+          "recognize pipeline and utility situations where the Act may become relevant to land work."
+        ],
+        "mustRecall": [],
+        "mustLocate": [
+          {
+            "prompt": "who may distribute gas / franchise authorization",
+            "documentId": "doc-gas-distribution-act",
+            "sourceKey": "section:3"
+          },
+          {
+            "prompt": "statutory leave for disposal or sale of a gas utility",
+            "documentId": "doc-gas-distribution-act",
+            "sourceKey": "section:27"
+          },
+          {
+            "prompt": "prohibition/authorization of underground gas storage",
+            "documentId": "doc-gas-distribution-act",
+            "sourceKey": "section:47"
+          },
+          {
+            "prompt": "safety and inspection of facilities",
+            "documentId": "doc-gas-distribution-act",
+            "sourceKey": "section:57"
+          },
+          {
+            "prompt": "duties of gas distributors",
+            "documentId": "doc-gas-distribution-act",
+            "sourceKey": "section:69"
+          }
+        ],
+        "relatedUnitIds": [
+          "C-EUB-01",
+          "C-UGS-01"
+        ],
+        "reviewWeight": "low",
+        "status": "planned"
+      },
+      {
+        "id": "C-MAR-01",
+        "unitType": "document_orientation",
+        "tier": "C",
+        "title": "Marital property interests affecting land",
+        "sourceDocumentIds": [
+          "doc-marital-property-act"
+        ],
+        "sourceAnchors": [
+          {
+            "documentId": "doc-marital-property-act",
+            "sourceKey": "section:1",
+            "label": "1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-marital-property-act",
+            "sourceKey": "section:3",
+            "label": "3",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-marital-property-act",
+            "sourceKey": "section:4",
+            "label": "4",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-marital-property-act",
+            "sourceKey": "section:10",
+            "label": "10",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-marital-property-act",
+            "sourceKey": "section:16",
+            "label": "16",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-marital-property-act",
+            "sourceKey": "section:18",
+            "label": "18",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-marital-property-act",
+            "sourceKey": "section:19",
+            "label": "19",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-marital-property-act",
+            "sourceKey": "section:20",
+            "label": "20",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-marital-property-act",
+            "sourceKey": "section:21",
+            "label": "21",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-marital-property-act",
+            "sourceKey": "section:22",
+            "label": "22",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-marital-property-act",
+            "sourceKey": "section:44",
+            "label": "44",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-marital-property-act",
+            "sourceKey": "section:47",
+            "label": "47",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-marital-property-act",
+            "sourceKey": "section:48",
+            "label": "48",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-marital-property-act",
+            "sourceKey": "section:49",
+            "label": "49",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-marital-property-act",
+            "sourceKey": "section:50",
+            "label": "50",
+            "role": "orientation"
+          }
+        ],
+        "learningDepths": [
+          "recognize",
+          "understand",
+          "retrieve"
+        ],
+        "examGoal": "",
+        "recognitionCues": [
+          "marital home",
+          "spousal right to possession",
+          "division of marital property",
+          "registration of a marital-property order",
+          "dower"
+        ],
+        "coreUnderstanding": [
+          "the Act governs division of marital property and spousal rights, including rights respecting the marital home;",
+          "the marital home is specially described and protected against unilateral disposition;",
+          "court orders and statutory rights under the Act can affect and be registered against real property;",
+          "recognize when marriage or spousal rights may affect dealing with real property."
+        ],
+        "mustRecall": [],
+        "mustLocate": [
+          {
+            "prompt": "description and protection of the marital home",
+            "documentId": "doc-marital-property-act",
+            "sourceKey": "section:16"
+          },
+          {
+            "prompt": "spouses' equal rights to possession of the marital home",
+            "documentId": "doc-marital-property-act",
+            "sourceKey": "section:18"
+          },
+          {
+            "prompt": "disposition of an interest in the marital home",
+            "documentId": "doc-marital-property-act",
+            "sourceKey": "section:19"
+          },
+          {
+            "prompt": "orders registrable under the Registry Act",
+            "documentId": "doc-marital-property-act",
+            "sourceKey": "section:48"
+          },
+          {
+            "prompt": "abolition of dower",
+            "documentId": "doc-marital-property-act",
+            "sourceKey": "section:50"
+          }
+        ],
+        "relatedUnitIds": [],
+        "reviewWeight": "medium",
+        "status": "planned"
+      },
+      {
+        "id": "C-METRIC-01",
+        "unitType": "document_orientation",
+        "tier": "C",
+        "title": "Statutory metric conversion",
+        "sourceDocumentIds": [
+          "doc-metric-conversion-act"
+        ],
+        "sourceAnchors": [
+          {
+            "documentId": "doc-metric-conversion-act",
+            "sourceKey": "section:1",
+            "label": "1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-metric-conversion-act",
+            "sourceKey": "section:2",
+            "label": "2",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-metric-conversion-act",
+            "sourceKey": "section:3",
+            "label": "3",
+            "role": "orientation"
+          }
+        ],
+        "learningDepths": [
+          "recognize",
+          "understand",
+          "recall",
+          "retrieve"
+        ],
+        "examGoal": "",
+        "recognitionCues": [
+          "metric conversion",
+          "Canadian system of units",
+          "International System of Units (SI)",
+          "instrument designated for conversion"
+        ],
+        "coreUnderstanding": [
+          "the Act provides the mechanism to apply metric conversion to designated New Brunswick instruments;",
+          "designated Canadian-system measurements are treated by their prescribed SI equivalents;",
+          "recognize the Act when older Canadian-unit measurements appear in statutory or land documents."
+        ],
+        "mustRecall": [
+          "The Act provides the statutory mechanism for treating designated Canadian-system measurements as their prescribed SI equivalents."
+        ],
+        "mustLocate": [
+          {
+            "prompt": "definitions (Canadian system of units, SI)",
+            "documentId": "doc-metric-conversion-act",
+            "sourceKey": "section:1"
+          },
+          {
+            "prompt": "designation and conversion mechanism",
+            "documentId": "doc-metric-conversion-act",
+            "sourceKey": "section:2"
+          }
+        ],
+        "relatedUnitIds": [],
+        "reviewWeight": "low",
+        "status": "planned"
+      },
+      {
+        "id": "C-OHS-01",
+        "unitType": "document_orientation",
+        "tier": "C",
+        "title": "Survey field work and occupational safety",
+        "sourceDocumentIds": [
+          "doc-occupational-health-and-safety-act"
+        ],
+        "sourceAnchors": [
+          {
+            "documentId": "doc-occupational-health-and-safety-act",
+            "sourceKey": "section:1",
+            "label": "1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-occupational-health-and-safety-act",
+            "sourceKey": "section:1.1",
+            "label": "1.1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-occupational-health-and-safety-act",
+            "sourceKey": "section:8",
+            "label": "8",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-occupational-health-and-safety-act",
+            "sourceKey": "section:8.1",
+            "label": "8.1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-occupational-health-and-safety-act",
+            "sourceKey": "section:8.2",
+            "label": "8.2",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-occupational-health-and-safety-act",
+            "sourceKey": "section:9",
+            "label": "9",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-occupational-health-and-safety-act",
+            "sourceKey": "section:9.1",
+            "label": "9.1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-occupational-health-and-safety-act",
+            "sourceKey": "section:19",
+            "label": "19",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-occupational-health-and-safety-act",
+            "sourceKey": "section:20",
+            "label": "20",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-occupational-health-and-safety-act",
+            "sourceKey": "section:21",
+            "label": "21",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-occupational-health-and-safety-act",
+            "sourceKey": "section:22",
+            "label": "22",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-occupational-health-and-safety-act",
+            "sourceKey": "section:23",
+            "label": "23",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-occupational-health-and-safety-act",
+            "sourceKey": "section:24",
+            "label": "24",
+            "role": "orientation"
+          }
+        ],
+        "learningDepths": [
+          "recognize",
+          "understand",
+          "recall",
+          "retrieve"
+        ],
+        "examGoal": "",
+        "recognitionCues": [
+          "worksite safety policy and program",
+          "employer and employee duties",
+          "right to refuse dangerous work",
+          "reassignment after refusal",
+          "discriminatory action prohibited"
+        ],
+        "coreUnderstanding": [
+          "the Act sets employer/employee responsibilities for worksite health and safety, including safety policies and programs;",
+          "it protects an employee who refuses dangerous work and prohibits retaliation;",
+          "recognize the Act for field/worksite safety on survey and related operations."
+        ],
+        "mustRecall": [
+          "An employee has a statutory right to refuse an act where there are reasonable grounds to believe it is likely to endanger health or safety."
+        ],
+        "mustLocate": [
+          {
+            "prompt": "safety policy / program duties",
+            "documentId": "doc-occupational-health-and-safety-act",
+            "sourceKey": "section:8"
+          },
+          {
+            "prompt": "duties of the employer",
+            "documentId": "doc-occupational-health-and-safety-act",
+            "sourceKey": "section:9"
+          },
+          {
+            "prompt": "right to refuse dangerous work (procedure)",
+            "documentId": "doc-occupational-health-and-safety-act",
+            "sourceKey": "section:19"
+          },
+          {
+            "prompt": "reassignment and protection of the employee's right",
+            "documentId": "doc-occupational-health-and-safety-act",
+            "sourceKey": "section:21"
+          }
+        ],
+        "relatedUnitIds": [],
+        "reviewWeight": "medium",
+        "status": "planned"
+      },
+      {
+        "id": "C-OMIN-01",
+        "unitType": "document_orientation",
+        "tier": "C",
+        "title": "Separate ownership of minerals and the soil",
+        "sourceDocumentIds": [
+          "doc-ownership-of-minerals-act"
+        ],
+        "sourceAnchors": [
+          {
+            "documentId": "doc-ownership-of-minerals-act",
+            "sourceKey": "section:1",
+            "label": "1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-ownership-of-minerals-act",
+            "sourceKey": "section:2",
+            "label": "2",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-ownership-of-minerals-act",
+            "sourceKey": "section:3",
+            "label": "3",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-ownership-of-minerals-act",
+            "sourceKey": "section:4",
+            "label": "4",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-ownership-of-minerals-act",
+            "sourceKey": "section:5",
+            "label": "5",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-ownership-of-minerals-act",
+            "sourceKey": "section:6",
+            "label": "6",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-ownership-of-minerals-act",
+            "sourceKey": "section:7",
+            "label": "7",
+            "role": "orientation"
+          }
+        ],
+        "learningDepths": [
+          "recognize",
+          "understand",
+          "recall",
+          "retrieve"
+        ],
+        "examGoal": "",
+        "recognitionCues": [
+          "mineral ownership separate from the soil",
+          "minerals beneath the surface",
+          "order declaring minerals separate property",
+          "Crown land mineral agreements"
+        ],
+        "coreUnderstanding": [
+          "the Act lets Cabinet declare minerals beneath the surface to be property separate from the soil;",
+          "an order has effect as if embodied in an Act of the Legislature;",
+          "the distinction between mineral ownership and ownership of the soil/surface matters to land and title work."
+        ],
+        "mustRecall": [
+          "Minerals may constitute property separate from ownership of the soil."
+        ],
+        "mustLocate": [
+          {
+            "prompt": "definition of mineral (by reference to the Mining Act)",
+            "documentId": "doc-ownership-of-minerals-act",
+            "sourceKey": "section:1"
+          },
+          {
+            "prompt": "Cabinet orders declaring minerals separate property",
+            "documentId": "doc-ownership-of-minerals-act",
+            "sourceKey": "section:3"
+          },
+          {
+            "prompt": "effect of orders",
+            "documentId": "doc-ownership-of-minerals-act",
+            "sourceKey": "section:4"
+          },
+          {
+            "prompt": "Crown land agreements respecting minerals",
+            "documentId": "doc-ownership-of-minerals-act",
+            "sourceKey": "section:6"
+          }
+        ],
+        "relatedUnitIds": [
+          "B-MIN-01"
+        ],
+        "reviewWeight": "medium",
+        "status": "planned"
+      },
+      {
+        "id": "C-PARK-01",
+        "unitType": "document_orientation",
+        "tier": "C",
+        "title": "Provincial parks and interests or activities on park land",
+        "sourceDocumentIds": [
+          "doc-parks-act"
+        ],
+        "sourceAnchors": [
+          {
+            "documentId": "doc-parks-act",
+            "sourceKey": "section:1",
+            "label": "1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-parks-act",
+            "sourceKey": "section:2",
+            "label": "2",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-parks-act",
+            "sourceKey": "section:3",
+            "label": "3",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-parks-act",
+            "sourceKey": "section:4",
+            "label": "4",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-parks-act",
+            "sourceKey": "section:5",
+            "label": "5",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-parks-act",
+            "sourceKey": "section:5.1",
+            "label": "5.1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-parks-act",
+            "sourceKey": "section:8",
+            "label": "8",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-parks-act",
+            "sourceKey": "section:9",
+            "label": "9",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-parks-act",
+            "sourceKey": "section:11",
+            "label": "11",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-parks-act",
+            "sourceKey": "section:13",
+            "label": "13",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-parks-act",
+            "sourceKey": "section:17",
+            "label": "17",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-parks-act",
+            "sourceKey": "section:20",
+            "label": "20",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-parks-act",
+            "sourceKey": "section:22",
+            "label": "22",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-parks-act",
+            "sourceKey": "section:23",
+            "label": "23",
+            "role": "orientation"
+          }
+        ],
+        "learningDepths": [
+          "recognize",
+          "understand",
+          "retrieve"
+        ],
+        "examGoal": "",
+        "recognitionCues": [
+          "provincial park",
+          "lease, licence, privilege or concession in a park",
+          "use or occupancy of park land",
+          "park roads",
+          "prospecting or mining in parks"
+        ],
+        "coreUnderstanding": [
+          "the Act establishes provincial parks and the Minister's powers over park land;",
+          "interests in park land arise by grant of lease, licence, privilege or concession, with limits on use or occupancy;",
+          "entry can be restricted, roads can be opened or closed, and prospecting/mining is reserved against;",
+          "recognize park-land situations when land is within or adjoining a provincial park."
+        ],
+        "mustRecall": [],
+        "mustLocate": [
+          {
+            "prompt": "Minister's powers in relation to provincial parks",
+            "documentId": "doc-parks-act",
+            "sourceKey": "section:5"
+          },
+          {
+            "prompt": "granting of leases, licences, privileges or concessions",
+            "documentId": "doc-parks-act",
+            "sourceKey": "section:11"
+          },
+          {
+            "prompt": "limitations on use or occupancy",
+            "documentId": "doc-parks-act",
+            "sourceKey": "section:13"
+          },
+          {
+            "prompt": "opening or closing of roads",
+            "documentId": "doc-parks-act",
+            "sourceKey": "section:20"
+          },
+          {
+            "prompt": "prospecting and mining prohibition",
+            "documentId": "doc-parks-act",
+            "sourceKey": "section:22"
+          }
+        ],
+        "relatedUnitIds": [],
+        "reviewWeight": "low",
+        "status": "planned"
+      },
+      {
+        "id": "C-PROB-01",
+        "unitType": "document_orientation",
+        "tier": "C",
+        "title": "Probate records and authority over deceased estates",
+        "sourceDocumentIds": [
+          "doc-probate-court-act"
+        ],
+        "sourceAnchors": [
+          {
+            "documentId": "doc-probate-court-act",
+            "sourceKey": "section:1",
+            "label": "1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-probate-court-act",
+            "sourceKey": "section:2",
+            "label": "2",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-probate-court-act",
+            "sourceKey": "section:3",
+            "label": "3",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-probate-court-act",
+            "sourceKey": "section:15",
+            "label": "15",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-probate-court-act",
+            "sourceKey": "section:29",
+            "label": "29",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-probate-court-act",
+            "sourceKey": "section:30",
+            "label": "30",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-probate-court-act",
+            "sourceKey": "section:31",
+            "label": "31",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-probate-court-act",
+            "sourceKey": "section:32",
+            "label": "32",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-probate-court-act",
+            "sourceKey": "section:39",
+            "label": "39",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-probate-court-act",
+            "sourceKey": "section:44",
+            "label": "44",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-probate-court-act",
+            "sourceKey": "section:51",
+            "label": "51",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-probate-court-act",
+            "sourceKey": "section:53",
+            "label": "53",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-probate-court-act",
+            "sourceKey": "section:54",
+            "label": "54",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-probate-court-act",
+            "sourceKey": "section:55",
+            "label": "55",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-probate-court-act",
+            "sourceKey": "section:56",
+            "label": "56",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-probate-court-act",
+            "sourceKey": "section:73",
+            "label": "73",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-probate-court-act",
+            "sourceKey": "section:75",
+            "label": "75",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-probate-court-act",
+            "sourceKey": "section:75.1",
+            "label": "75.1",
+            "role": "orientation"
+          }
+        ],
+        "learningDepths": [
+          "recognize",
+          "understand",
+          "retrieve"
+        ],
+        "examGoal": "",
+        "recognitionCues": [
+          "probate",
+          "letters of administration",
+          "grant of probate",
+          "estate records",
+          "caveat"
+        ],
+        "coreUnderstanding": [
+          "the Act establishes the Probate Court and its jurisdiction over grants of probate and administration;",
+          "letters and grants evidence authority over a deceased person's estate, including real property;",
+          "the Court keeps estate records and provides official copies;",
+          "recognize where to look when ownership or authority to deal with land depends on an estate."
+        ],
+        "mustRecall": [],
+        "mustLocate": [
+          {
+            "prompt": "powers vested in the Probate Court",
+            "documentId": "doc-probate-court-act",
+            "sourceKey": "section:3"
+          },
+          {
+            "prompt": "filing and preservation of court documents",
+            "documentId": "doc-probate-court-act",
+            "sourceKey": "section:15"
+          },
+          {
+            "prompt": "effect of letters",
+            "documentId": "doc-probate-court-act",
+            "sourceKey": "section:31"
+          },
+          {
+            "prompt": "obtaining official copies",
+            "documentId": "doc-probate-court-act",
+            "sourceKey": "section:51"
+          },
+          {
+            "prompt": "appointment of an administrator",
+            "documentId": "doc-probate-court-act",
+            "sourceKey": "section:53"
+          },
+          {
+            "prompt": "fees and estate tax on grants",
+            "documentId": "doc-probate-court-act",
+            "sourceKey": "section:75.1"
+          }
+        ],
+        "relatedUnitIds": [
+          "C-DOE-01"
+        ],
+        "reviewWeight": "low",
+        "status": "planned"
+      },
+      {
+        "id": "C-PH-01",
+        "unitType": "document_orientation",
+        "tier": "C",
+        "title": "Public-health land issues and on-site sewage systems",
+        "sourceDocumentIds": [
+          "doc-public-health-act"
+        ],
+        "sourceAnchors": [
+          {
+            "documentId": "doc-public-health-act",
+            "sourceKey": "section:1",
+            "label": "1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-public-health-act",
+            "sourceKey": "section:21",
+            "label": "21",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-public-health-act",
+            "sourceKey": "section:23",
+            "label": "23",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-public-health-act",
+            "sourceKey": "section:24",
+            "label": "24",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-public-health-act",
+            "sourceKey": "section:24.01",
+            "label": "24.01",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-public-health-act",
+            "sourceKey": "section:24.02",
+            "label": "24.02",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-public-health-act",
+            "sourceKey": "section:24.1",
+            "label": "24.1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-public-health-act",
+            "sourceKey": "section:26",
+            "label": "26",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-public-health-act",
+            "sourceKey": "section:26.1",
+            "label": "26.1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-public-health-act",
+            "sourceKey": "section:43",
+            "label": "43",
+            "role": "orientation"
+          }
+        ],
+        "learningDepths": [
+          "recognize",
+          "understand",
+          "retrieve"
+        ],
+        "examGoal": "",
+        "recognitionCues": [
+          "on-site sewage disposal system",
+          "design and location approval",
+          "certificate of compliance",
+          "public water supply",
+          "rights of entry and inspection"
+        ],
+        "coreUnderstanding": [
+          "the Act's main land/survey connection is the on-site sewage regime: installation and use require Ministerial approval of the system's design and location;",
+          "related compliance provisions cover notice, orders and certificates of compliance;",
+          "the Act also provides for emergency appropriation of real property and rights of entry and inspection;",
+          "the Act's historical subdivision-assessment provision (former s.22) is repealed and must not be treated as current."
+        ],
+        "mustRecall": [],
+        "mustLocate": [
+          {
+            "prompt": "on-site sewage disposal systems",
+            "documentId": "doc-public-health-act",
+            "sourceKey": "section:23"
+          },
+          {
+            "prompt": "Ministerial approval of design and location",
+            "documentId": "doc-public-health-act",
+            "sourceKey": "section:24"
+          },
+          {
+            "prompt": "certificate of compliance",
+            "documentId": "doc-public-health-act",
+            "sourceKey": "section:24.1"
+          },
+          {
+            "prompt": "appropriation of real property in emergencies",
+            "documentId": "doc-public-health-act",
+            "sourceKey": "section:26"
+          },
+          {
+            "prompt": "rights of entry and inspections",
+            "documentId": "doc-public-health-act",
+            "sourceKey": "section:43"
+          }
+        ],
+        "relatedUnitIds": [],
+        "reviewWeight": "medium",
+        "status": "planned"
+      },
+      {
+        "id": "C-EUB-01",
+        "unitType": "document_orientation",
+        "tier": "C",
+        "title": "Utilities, pipelines and the Energy and Utilities Board",
+        "sourceDocumentIds": [
+          "doc-energy-and-utilities-board-act"
+        ],
+        "sourceAnchors": [
+          {
+            "documentId": "doc-energy-and-utilities-board-act",
+            "sourceKey": "section:1",
+            "label": "1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-energy-and-utilities-board-act",
+            "sourceKey": "section:1.1",
+            "label": "1.1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-energy-and-utilities-board-act",
+            "sourceKey": "section:23",
+            "label": "23",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-energy-and-utilities-board-act",
+            "sourceKey": "section:28",
+            "label": "28",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-energy-and-utilities-board-act",
+            "sourceKey": "section:29",
+            "label": "29",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-energy-and-utilities-board-act",
+            "sourceKey": "section:33",
+            "label": "33",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-energy-and-utilities-board-act",
+            "sourceKey": "section:39",
+            "label": "39",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-energy-and-utilities-board-act",
+            "sourceKey": "section:43",
+            "label": "43",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-energy-and-utilities-board-act",
+            "sourceKey": "section:52",
+            "label": "52",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-energy-and-utilities-board-act",
+            "sourceKey": "section:53",
+            "label": "53",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-energy-and-utilities-board-act",
+            "sourceKey": "section:54",
+            "label": "54",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-energy-and-utilities-board-act",
+            "sourceKey": "section:69",
+            "label": "69",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-energy-and-utilities-board-act",
+            "sourceKey": "section:70",
+            "label": "70",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-energy-and-utilities-board-act",
+            "sourceKey": "section:71",
+            "label": "71",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-energy-and-utilities-board-act",
+            "sourceKey": "section:77",
+            "label": "77",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-energy-and-utilities-board-act",
+            "sourceKey": "section:103",
+            "label": "103",
+            "role": "orientation"
+          }
+        ],
+        "learningDepths": [
+          "recognize",
+          "understand",
+          "retrieve"
+        ],
+        "examGoal": "",
+        "recognitionCues": [
+          "Energy and Utilities Board",
+          "public utility",
+          "pipeline",
+          "Board hearing or order",
+          "utility service territory"
+        ],
+        "coreUnderstanding": [
+          "the Act establishes the Energy and Utilities Board and its regulatory functions over public utilities;",
+          "the Board's jurisdiction covers utility/pipeline matters, including orders, evidence and supervision;",
+          "s.103 (repeal of the former Public Utilities Act) is retained only as a historical/navigation anchor;",
+          "recognize when land or infrastructure matters fall under Board authority."
+        ],
+        "mustRecall": [],
+        "mustLocate": [
+          {
+            "prompt": "duties and functions of the Board",
+            "documentId": "doc-energy-and-utilities-board-act",
+            "sourceKey": "section:23"
+          },
+          {
+            "prompt": "powers of the Board and members",
+            "documentId": "doc-energy-and-utilities-board-act",
+            "sourceKey": "section:28"
+          },
+          {
+            "prompt": "orders respecting applications",
+            "documentId": "doc-energy-and-utilities-board-act",
+            "sourceKey": "section:39"
+          },
+          {
+            "prompt": "supervision of public utilities",
+            "documentId": "doc-energy-and-utilities-board-act",
+            "sourceKey": "section:54"
+          },
+          {
+            "prompt": "extension, adequacy and discontinuance of service",
+            "documentId": "doc-energy-and-utilities-board-act",
+            "sourceKey": "section:69"
+          }
+        ],
+        "relatedUnitIds": [
+          "C-GAS-01"
+        ],
+        "reviewWeight": "low",
+        "status": "planned"
+      },
+      {
+        "id": "C-SNB-01",
+        "unitType": "document_orientation",
+        "tier": "C",
+        "title": "Service New Brunswick, geographic information and land administration",
+        "sourceDocumentIds": [
+          "doc-service-new-brunswick-act"
+        ],
+        "sourceAnchors": [
+          {
+            "documentId": "doc-service-new-brunswick-act",
+            "sourceKey": "section:1",
+            "label": "1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-service-new-brunswick-act",
+            "sourceKey": "section:3",
+            "label": "3",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-service-new-brunswick-act",
+            "sourceKey": "section:4",
+            "label": "4",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-service-new-brunswick-act",
+            "sourceKey": "section:24",
+            "label": "24",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-service-new-brunswick-act",
+            "sourceKey": "section:32",
+            "label": "32",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-service-new-brunswick-act",
+            "sourceKey": "section:41",
+            "label": "41",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-service-new-brunswick-act",
+            "sourceKey": "section:53",
+            "label": "53",
+            "role": "orientation"
+          }
+        ],
+        "learningDepths": [
+          "recognize",
+          "understand",
+          "retrieve"
+        ],
+        "examGoal": "",
+        "recognitionCues": [
+          "Service New Brunswick",
+          "geographic information standards",
+          "property assessment services",
+          "approved parcel identifier",
+          "real property transfer notice"
+        ],
+        "coreUnderstanding": [
+          "the Act sets out Service New Brunswick's objects and powers, including property assessment services;",
+          "SNB coordinates geographic information services and sets standards for geographic information in the Province;",
+          "s.53 uses approved parcel identifiers (as defined in the Land Titles Act) for notices respecting real property transferred and vested;",
+          "recognize SNB's institutional role in assessment, registry-related and geographic-information land administration."
+        ],
+        "mustRecall": [],
+        "mustLocate": [
+          {
+            "prompt": "objects and purposes",
+            "documentId": "doc-service-new-brunswick-act",
+            "sourceKey": "section:3"
+          },
+          {
+            "prompt": "geographic information standards role",
+            "documentId": "doc-service-new-brunswick-act",
+            "sourceKey": "section:32"
+          },
+          {
+            "prompt": "approved parcel identifier / transfer notice",
+            "documentId": "doc-service-new-brunswick-act",
+            "sourceKey": "section:53"
+          }
+        ],
+        "relatedUnitIds": [],
+        "reviewWeight": "medium",
+        "status": "planned"
+      },
+      {
+        "id": "C-UGS-01",
+        "unitType": "document_orientation",
+        "tier": "C",
+        "title": "Underground storage rights and statutory land descriptions",
+        "sourceDocumentIds": [
+          "doc-underground-storage-act"
+        ],
+        "sourceAnchors": [
+          {
+            "documentId": "doc-underground-storage-act",
+            "sourceKey": "section:1",
+            "label": "1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-underground-storage-act",
+            "sourceKey": "section:2",
+            "label": "2",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-underground-storage-act",
+            "sourceKey": "section:2.1",
+            "label": "2.1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-underground-storage-act",
+            "sourceKey": "section:4",
+            "label": "4",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-underground-storage-act",
+            "sourceKey": "section:6",
+            "label": "6",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-underground-storage-act",
+            "sourceKey": "section:7",
+            "label": "7",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-underground-storage-act",
+            "sourceKey": "section:8",
+            "label": "8",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-underground-storage-act",
+            "sourceKey": "section:9",
+            "label": "9",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-underground-storage-act",
+            "sourceKey": "section:10",
+            "label": "10",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-underground-storage-act",
+            "sourceKey": "section:11",
+            "label": "11",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-underground-storage-act",
+            "sourceKey": "section:12",
+            "label": "12",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-underground-storage-act",
+            "sourceKey": "section:12.1",
+            "label": "12.1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-underground-storage-act",
+            "sourceKey": "section:13",
+            "label": "13",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-underground-storage-act",
+            "sourceKey": "section:15",
+            "label": "15",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-underground-storage-act",
+            "sourceKey": "section:20",
+            "label": "20",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-underground-storage-act",
+            "sourceKey": "section:21",
+            "label": "21",
+            "role": "orientation"
+          }
+        ],
+        "learningDepths": [
+          "recognize",
+          "understand",
+          "recall",
+          "retrieve"
+        ],
+        "examGoal": "",
+        "recognitionCues": [
+          "underground storage facility",
+          "underground storage site",
+          "storage lease",
+          "storage exploration licence",
+          "land description by survey system"
+        ],
+        "coreUnderstanding": [
+          "a qualifying underground-storage site is statutorily treated as property separate from the soil and vested in the Crown;",
+          "the Act provides exploration licences, storage leases and construction permits for underground storage;",
+          "land areas in applications must be described by reference to the standard oil and natural gas survey system;",
+          "recognize the Act's land-description and survey framework for underground storage sites."
+        ],
+        "mustRecall": [
+          "A qualifying underground-storage site is statutorily treated as property separate from the soil and vested in the Crown."
+        ],
+        "mustLocate": [
+          {
+            "prompt": "declaration that sites are separate property vested in the Crown",
+            "documentId": "doc-underground-storage-act",
+            "sourceKey": "section:2.1"
+          },
+          {
+            "prompt": "description of land area by the oil and natural gas survey system",
+            "documentId": "doc-underground-storage-act",
+            "sourceKey": "section:4"
+          },
+          {
+            "prompt": "underground storage exploration licences",
+            "documentId": "doc-underground-storage-act",
+            "sourceKey": "section:6"
+          },
+          {
+            "prompt": "storage lease application/term",
+            "documentId": "doc-underground-storage-act",
+            "sourceKey": "section:11"
+          },
+          {
+            "prompt": "transference of licences, leases and permits",
+            "documentId": "doc-underground-storage-act",
+            "sourceKey": "section:15"
+          }
+        ],
+        "relatedUnitIds": [
+          "C-GAS-01"
+        ],
+        "reviewWeight": "medium",
+        "status": "planned"
+      },
+      {
+        "id": "C-WILLS-01",
+        "unitType": "document_orientation",
+        "tier": "C",
+        "title": "Wills affecting land and testamentary disposition",
+        "sourceDocumentIds": [
+          "doc-wills-act"
+        ],
+        "sourceAnchors": [
+          {
+            "documentId": "doc-wills-act",
+            "sourceKey": "section:1",
+            "label": "1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-wills-act",
+            "sourceKey": "section:2",
+            "label": "2",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-wills-act",
+            "sourceKey": "section:20",
+            "label": "20",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-wills-act",
+            "sourceKey": "section:23",
+            "label": "23",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-wills-act",
+            "sourceKey": "section:24",
+            "label": "24",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-wills-act",
+            "sourceKey": "section:25",
+            "label": "25",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-wills-act",
+            "sourceKey": "section:28",
+            "label": "28",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-wills-act",
+            "sourceKey": "section:29",
+            "label": "29",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-wills-act",
+            "sourceKey": "section:34",
+            "label": "34",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-wills-act",
+            "sourceKey": "section:35",
+            "label": "35",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-wills-act",
+            "sourceKey": "section:35.1",
+            "label": "35.1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-wills-act",
+            "sourceKey": "section:36",
+            "label": "36",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-wills-act",
+            "sourceKey": "section:37",
+            "label": "37",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-wills-act",
+            "sourceKey": "section:38",
+            "label": "38",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-wills-act",
+            "sourceKey": "section:39",
+            "label": "39",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-wills-act",
+            "sourceKey": "section:40",
+            "label": "40",
+            "role": "orientation"
+          }
+        ],
+        "learningDepths": [
+          "recognize",
+          "understand",
+          "retrieve"
+        ],
+        "examGoal": "",
+        "recognitionCues": [
+          "will",
+          "testamentary disposition of real property",
+          "devise",
+          "ademption",
+          "validity and effect of a will"
+        ],
+        "coreUnderstanding": [
+          "the Act defines a will and the power of a testator to dispose of real property by will;",
+          "it contains interpretive rules on what a devise carries and how wills affect land;",
+          "recognition when title depends on a will, and where to retrieve rules affecting validity and effect."
+        ],
+        "mustRecall": [],
+        "mustLocate": [
+          {
+            "prompt": "power of a testator to dispose by will",
+            "documentId": "doc-wills-act",
+            "sourceKey": "section:2"
+          },
+          {
+            "prompt": "ademption by subsequent conveyance",
+            "documentId": "doc-wills-act",
+            "sourceKey": "section:20"
+          },
+          {
+            "prompt": "devise passing the whole of the estate",
+            "documentId": "doc-wills-act",
+            "sourceKey": "section:25"
+          },
+          {
+            "prompt": "devise of mortgaged property",
+            "documentId": "doc-wills-act",
+            "sourceKey": "section:34"
+          },
+          {
+            "prompt": "formal requirements and validity of wills",
+            "documentId": "doc-wills-act",
+            "sourceKey": "section:37"
+          }
+        ],
+        "relatedUnitIds": [
+          "C-DOE-01",
+          "C-PROB-01"
+        ],
+        "reviewWeight": "low",
+        "status": "planned"
+      },
+      {
+        "id": "D-APA-01",
+        "unitType": "document_orientation",
+        "tier": "D",
+        "title": "Assignments and preferences — awareness",
+        "sourceDocumentIds": [
+          "doc-assignments-and-preferences-act"
+        ],
+        "sourceAnchors": [
+          {
+            "documentId": "doc-assignments-and-preferences-act",
+            "sourceKey": "section:1",
+            "label": "1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-assignments-and-preferences-act",
+            "sourceKey": "section:2",
+            "label": "2",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-assignments-and-preferences-act",
+            "sourceKey": "section:3",
+            "label": "3",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-assignments-and-preferences-act",
+            "sourceKey": "section:34",
+            "label": "34",
+            "role": "orientation"
+          }
+        ],
+        "learningDepths": [
+          "recognize",
+          "retrieve"
+        ],
+        "examGoal": "",
+        "recognitionCues": [
+          "assignment of property by a debtor",
+          "preference among creditors",
+          "valid assignment",
+          "Bankruptcy Act interaction"
+        ],
+        "coreUnderstanding": [
+          "the Act deals with assignments of a debtor's property and with preferences among creditors;",
+          "awareness is enough: recognize the name and context should an ownership record or conveyance reference a statutory assignment."
+        ],
+        "mustRecall": [],
+        "mustLocate": [
+          {
+            "prompt": "transfers of property as preferences",
+            "documentId": "doc-assignments-and-preferences-act",
+            "sourceKey": "section:2"
+          },
+          {
+            "prompt": "valid assignments",
+            "documentId": "doc-assignments-and-preferences-act",
+            "sourceKey": "section:3"
+          }
+        ],
+        "relatedUnitIds": [],
+        "reviewWeight": "low",
+        "status": "planned"
+      },
+      {
+        "id": "D-MUNI-01",
+        "unitType": "document_orientation",
+        "tier": "D",
+        "title": "Municipalities Act — legacy statute awareness",
+        "sourceDocumentIds": [
+          "doc-municipalities-act"
+        ],
+        "sourceAnchors": [
+          {
+            "documentId": "doc-municipalities-act",
+            "sourceKey": "section:1",
+            "label": "1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-municipalities-act",
+            "sourceKey": "section:2",
+            "label": "2",
+            "role": "orientation"
+          }
+        ],
+        "learningDepths": [
+          "recognize",
+          "understand",
+          "retrieve"
+        ],
+        "examGoal": "",
+        "recognitionCues": [
+          "municipalities",
+          "municipal incorporation",
+          "historical municipal documents",
+          "old municipal plans or title records"
+        ],
+        "coreUnderstanding": [
+          "the Municipalities Act is legacy/repealed legislation, not current municipal authority;",
+          "it may still appear in historical plans, title records, old municipal documents or older materials;",
+          "the candidate should recognize the name and its historical context and must not answer current municipal/local-government questions from this repealed Act."
+        ],
+        "mustRecall": [],
+        "mustLocate": [
+          {
+            "prompt": "definitions (historical context)",
+            "documentId": "doc-municipalities-act",
+            "sourceKey": "section:1"
+          }
+        ],
+        "relatedUnitIds": [],
+        "reviewWeight": "low",
+        "status": "planned"
+      },
+      {
+        "id": "D-OLA-01",
+        "unitType": "document_orientation",
+        "tier": "D",
+        "title": "Official Languages Act — document and service awareness",
+        "sourceDocumentIds": [
+          "doc-official-languages-act"
+        ],
+        "sourceAnchors": [
+          {
+            "documentId": "doc-official-languages-act",
+            "sourceKey": "section:1",
+            "label": "1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-official-languages-act",
+            "sourceKey": "section:1.1",
+            "label": "1.1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-official-languages-act",
+            "sourceKey": "section:14",
+            "label": "14",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-official-languages-act",
+            "sourceKey": "section:15",
+            "label": "15",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-official-languages-act",
+            "sourceKey": "section:27",
+            "label": "27",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-official-languages-act",
+            "sourceKey": "section:28",
+            "label": "28",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-official-languages-act",
+            "sourceKey": "section:28.1",
+            "label": "28.1",
+            "role": "orientation"
+          }
+        ],
+        "learningDepths": [
+          "recognize",
+          "retrieve"
+        ],
+        "examGoal": "",
+        "recognitionCues": [
+          "official languages",
+          "official documents",
+          "documents published under an Act of the Province",
+          "communications with government institutions"
+        ],
+        "coreUnderstanding": [
+          "the Act concerns the Province's official languages and language obligations for government institutions;",
+          "awareness matters when a land/registry document is issued in official-language form."
+        ],
+        "mustRecall": [],
+        "mustLocate": [
+          {
+            "prompt": "official documents",
+            "documentId": "doc-official-languages-act",
+            "sourceKey": "section:14"
+          },
+          {
+            "prompt": "obligations of government institutions",
+            "documentId": "doc-official-languages-act",
+            "sourceKey": "section:28"
+          }
+        ],
+        "relatedUnitIds": [],
+        "reviewWeight": "low",
+        "status": "planned"
+      },
+      {
+        "id": "D-PBNR-01",
+        "unitType": "document_orientation",
+        "tier": "D",
+        "title": "Partnerships and registered business names",
+        "sourceDocumentIds": [
+          "doc-partnerships-and-business-names-registration-act"
+        ],
+        "sourceAnchors": [
+          {
+            "documentId": "doc-partnerships-and-business-names-registration-act",
+            "sourceKey": "section:1",
+            "label": "1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-partnerships-and-business-names-registration-act",
+            "sourceKey": "section:1.01",
+            "label": "1.01",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-partnerships-and-business-names-registration-act",
+            "sourceKey": "section:1.1",
+            "label": "1.1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-partnerships-and-business-names-registration-act",
+            "sourceKey": "section:1.2",
+            "label": "1.2",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-partnerships-and-business-names-registration-act",
+            "sourceKey": "section:3",
+            "label": "3",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-partnerships-and-business-names-registration-act",
+            "sourceKey": "section:3.1",
+            "label": "3.1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-partnerships-and-business-names-registration-act",
+            "sourceKey": "section:3.2",
+            "label": "3.2",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-partnerships-and-business-names-registration-act",
+            "sourceKey": "section:6",
+            "label": "6",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-partnerships-and-business-names-registration-act",
+            "sourceKey": "section:10",
+            "label": "10",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-partnerships-and-business-names-registration-act",
+            "sourceKey": "section:12",
+            "label": "12",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-partnerships-and-business-names-registration-act",
+            "sourceKey": "section:12.01",
+            "label": "12.01",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-partnerships-and-business-names-registration-act",
+            "sourceKey": "section:12.011",
+            "label": "12.011",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-partnerships-and-business-names-registration-act",
+            "sourceKey": "section:12.02",
+            "label": "12.02",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-partnerships-and-business-names-registration-act",
+            "sourceKey": "section:12.03",
+            "label": "12.03",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-partnerships-and-business-names-registration-act",
+            "sourceKey": "section:12.1",
+            "label": "12.1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-partnerships-and-business-names-registration-act",
+            "sourceKey": "section:12.2",
+            "label": "12.2",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-partnerships-and-business-names-registration-act",
+            "sourceKey": "section:12.3",
+            "label": "12.3",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-partnerships-and-business-names-registration-act",
+            "sourceKey": "section:12.31",
+            "label": "12.31",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-partnerships-and-business-names-registration-act",
+            "sourceKey": "section:12.32",
+            "label": "12.32",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-partnerships-and-business-names-registration-act",
+            "sourceKey": "section:12.4",
+            "label": "12.4",
+            "role": "orientation"
+          }
+        ],
+        "learningDepths": [
+          "recognize",
+          "retrieve"
+        ],
+        "examGoal": "",
+        "recognitionCues": [
+          "partnership certificate",
+          "registered business name",
+          "register of certificates",
+          "partnership owning land"
+        ],
+        "coreUnderstanding": [
+          "the Act requires registration of partnership/business certificates and maintains a public register;",
+          "recognition only: where ownership or business identity context (for example a partnership named in a title) makes the registration regime relevant."
+        ],
+        "mustRecall": [],
+        "mustLocate": [
+          {
+            "prompt": "registration of a certificate",
+            "documentId": "doc-partnerships-and-business-names-registration-act",
+            "sourceKey": "section:6"
+          },
+          {
+            "prompt": "establishment and maintenance of the register",
+            "documentId": "doc-partnerships-and-business-names-registration-act",
+            "sourceKey": "section:10"
+          }
+        ],
+        "relatedUnitIds": [],
+        "reviewWeight": "low",
+        "status": "planned"
+      },
+      {
+        "id": "D-PRA-01",
+        "unitType": "document_orientation",
+        "tier": "D",
+        "title": "Ownership and preservation of public records",
+        "sourceDocumentIds": [
+          "doc-public-records-act"
+        ],
+        "sourceAnchors": [
+          {
+            "documentId": "doc-public-records-act",
+            "sourceKey": "section:1",
+            "label": "1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-public-records-act",
+            "sourceKey": "section:2",
+            "label": "2",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-public-records-act",
+            "sourceKey": "section:3",
+            "label": "3",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-public-records-act",
+            "sourceKey": "section:6",
+            "label": "6",
+            "role": "orientation"
+          }
+        ],
+        "learningDepths": [
+          "recognize",
+          "retrieve"
+        ],
+        "examGoal": "",
+        "recognitionCues": [
+          "public records",
+          "records vested in the Crown",
+          "wrongful withholding of public records",
+          "old public records"
+        ],
+        "coreUnderstanding": [
+          "the Act sets the current ownership/custody/preservation framework: public records vest in the Crown and wrongful withholding is addressed;",
+          "keep distinct from the Archives Act: Public Records Act = ownership/custody; Archives Act = historical archival access/research/certified copies."
+        ],
+        "mustRecall": [],
+        "mustLocate": [
+          {
+            "prompt": "public records vesting in the Crown",
+            "documentId": "doc-public-records-act",
+            "sourceKey": "section:1"
+          },
+          {
+            "prompt": "old public records vesting in the Crown",
+            "documentId": "doc-public-records-act",
+            "sourceKey": "section:6"
+          }
+        ],
+        "relatedUnitIds": [
+          "C-ARCH-01"
+        ],
+        "reviewWeight": "low",
+        "status": "planned"
+      },
+      {
+        "id": "D-RPTR-01",
+        "unitType": "document_orientation",
+        "tier": "D",
+        "title": "Residential property tax relief — awareness",
+        "sourceDocumentIds": [
+          "doc-residential-property-tax-relief-act"
+        ],
+        "sourceAnchors": [
+          {
+            "documentId": "doc-residential-property-tax-relief-act",
+            "sourceKey": "section:1",
+            "label": "1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-residential-property-tax-relief-act",
+            "sourceKey": "section:2",
+            "label": "2",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-residential-property-tax-relief-act",
+            "sourceKey": "section:2.1",
+            "label": "2.1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-residential-property-tax-relief-act",
+            "sourceKey": "section:2.2",
+            "label": "2.2",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-residential-property-tax-relief-act",
+            "sourceKey": "section:4",
+            "label": "4",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-residential-property-tax-relief-act",
+            "sourceKey": "section:4.1",
+            "label": "4.1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-residential-property-tax-relief-act",
+            "sourceKey": "section:6",
+            "label": "6",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-residential-property-tax-relief-act",
+            "sourceKey": "section:6.1",
+            "label": "6.1",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-residential-property-tax-relief-act",
+            "sourceKey": "section:10",
+            "label": "10",
+            "role": "orientation"
+          },
+          {
+            "documentId": "doc-residential-property-tax-relief-act",
+            "sourceKey": "section:11",
+            "label": "11",
+            "role": "orientation"
+          }
+        ],
+        "learningDepths": [
+          "recognize",
+          "retrieve"
+        ],
+        "examGoal": "",
+        "recognitionCues": [
+          "residential property tax credit",
+          "principal residence",
+          "one credit per year",
+          "review and appeal of a credit decision"
+        ],
+        "coreUnderstanding": [
+          "the Act provides a property tax relief credit for qualifying owner-occupied residential property;",
+          "awareness only: recognize when a residential property tax relief question arises and where to look;",
+          "do not memorize credit mechanics or amounts."
+        ],
+        "mustRecall": [],
+        "mustLocate": [
+          {
+            "prompt": "eligibility for the credit",
+            "documentId": "doc-residential-property-tax-relief-act",
+            "sourceKey": "section:2"
+          },
+          {
+            "prompt": "application for review",
+            "documentId": "doc-residential-property-tax-relief-act",
+            "sourceKey": "section:6"
+          },
+          {
+            "prompt": "administrative review/appeal",
+            "documentId": "doc-residential-property-tax-relief-act",
+            "sourceKey": "section:10"
+          }
+        ],
+        "relatedUnitIds": [
+          "B-ASMT-01"
+        ],
+        "reviewWeight": "low",
         "status": "planned"
       }
     ]
