@@ -16,10 +16,10 @@ const RETRY_INSTRUCTIONS: Record<string, string> = {
     'Make sibling group focus selections disjoint for the duplicated source focus.',
   OPAQUE_WARNING_CODE: 'Replace opaque warning codes with a self-describing SCREAMING_SNAKE code.',
   EVIDENCE_NOT_EXACT_VERBATIM:
-    'Copy each objective evidence character-for-character from exactSourceText; preserve spacing, OCR artifacts, hyphenation, punctuation, and capitalization.',
+    'Copy each objective evidence character-for-character from exactSourceText; preserve spacing, OCR artifacts, hyphenation, punctuation, and capitalization. Reproduce typographic Unicode exactly as supplied: curly apostrophes (U+2019), curly quotes (U+201C U+201D), never substitute straight ASCII quotes. When the error names a first-mismatch position, replace only that character with the named source code point; do not retype the rest of the quote.',
   SOURCE_COVERAGE_EXTRA_SOURCE: 'sourceCoverage may only contain sourceKeys from the approved group.',
   SOURCE_COVERAGE_EXTRA_LABEL:
-    'sourceCoverage childLabels must be exactly the selected childLabels; remove labels outside the approved focus.',
+    'sourceCoverage childLabels may only declare selected childLabels and approved definedTerms; remove every other label and never invent sublabels.',
   SOURCE_COVERAGE_DUPLICATE_LABEL: 'Declare each selected childLabel exactly once in sourceCoverage.',
   SOURCE_COVERAGE_MISSING_SELECTED_LABEL:
     'Add a sourceCoverage entry for every selected childLabel: covered with objectiveIds, or intentionally-omitted with a nonblank source-grounded reason.',

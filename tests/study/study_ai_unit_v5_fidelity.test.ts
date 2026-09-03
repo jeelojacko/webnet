@@ -3,6 +3,7 @@ import { validateAiStudyUnitProposal } from '../../src/study/ai/studyAiValidatio
 import { validateUnitV5Fidelity } from '../../src/study/ai/studyAiUnitV5Fidelity';
 import type {
   AiLearningObjective,
+  AiSourceCoverage,
   AiStudyNote,
   AiStudyUnitProposal,
   AiValidationIssue,
@@ -591,6 +592,312 @@ describe('V5 fidelity gate: muni184 source-derived note grounding', () => {
     });
     const issues = runGate(faulty, [muniComponent]);
     expect(codes(issues)).toContain('SOURCE_DERIVED_NOTE_UNGROUNDED');
+  });
+});
+
+describe('V5 fidelity gate: conditional and disjunctive polarity regressions', () => {
+  // Land Titles s.80(9)-style conditional consequence: "if no provision is
+  // made, then payments shall ..." is not a prohibition and a faithful
+  // answer restating the consequence must not be flagged.
+  const SUB_80_7 =
+    '80(7)Every registrar shall keep a correct account of all money received and paid by the registrar and shall pay all such money into an account or fund established for that purpose by or under another Act of the legislature.';
+  const SUB_80_8 =
+    '80(8)Any indemnity, cost or expense awarded under this Act and any interest on it shall be paid out of the account or fund established pursuant to subsection (7).';
+  const SUB_80_9 =
+    '80(9)If the account or fund established pursuant to subsection (8) is insufficient to make the payment required, or if no provision is made, then payments shall be paid out of the Consolidated Fund.';
+  const lt80Component = component({
+    sourceKey: 'section:80',
+    label: '80',
+    text: [SUB_80_7, SUB_80_8, SUB_80_9].join('\n\n'),
+    subsections: [
+      { label: '80(7)', text: SUB_80_7 },
+      { label: '80(8)', text: SUB_80_8 },
+      { label: '80(9)', text: SUB_80_9 },
+    ],
+  });
+  const lt80Group = {
+    groupId: 'lt-80',
+    titleSuggestion: 'Indemnification funding',
+    sourceKeys: ['section:80'],
+    focusSelections: [{ sourceKey: 'section:80', childLabels: ['80(7)', '80(8)', '80(9)'] }],
+    reason: 'Focused.',
+    approximateLearningGoal: 'Recall the funding sources for indemnification payments.',
+  };
+
+  it('does not flag a faithful conditional consequence ("if no provision is made, then payments shall ...")', () => {
+    const clean = proposal({
+      sourceKeys: ['section:80'],
+      approvedGroup: lt80Group,
+      sourceCoverage: [
+        {
+          sourceKey: 'section:80',
+          childLabels: [
+            { label: '80(7)', status: 'covered', objectiveIds: ['obj-backstop'] },
+            { label: '80(8)', status: 'covered', objectiveIds: ['obj-backstop'] },
+            { label: '80(9)', status: 'covered', objectiveIds: ['obj-backstop'] },
+          ],
+        },
+      ],
+      objectives: [
+        objective({
+          id: 'obj-backstop',
+          sourceKeys: ['section:80'],
+          evidence: [{ sourceKey: 'section:80', evidenceText: SUB_80_9.slice(0, 120) }],
+          studyAnswer:
+            'If the account or fund is insufficient to make the payment required, or if no provision is made, payments shall be paid out of the Consolidated Fund.',
+        }),
+      ],
+    });
+    const issues = runGate(clean, [lt80Component]);
+    expect(codes(issues)).toEqual([]);
+  });
+
+  // REG 83-130 Schedule D clause 32-style disjunction: "shall ... do no damage
+  // ... or shall make good ..." — the "or shall" clause is a separate duty.
+  const S32 =
+    '32. Fixtures includes any fixture that is the tenant\u2019s property and any other fixture the tenant has affixed to the premises, but the tenant may remove the fixtures at the end of the lease term provided that the tenant shall in such removal do no damage to the premises or shall make good any damage which he may occasion thereto.';
+  const regComponent = component({
+    sourceKey: 'schedule:schedule-d',
+    label: 'Schedule D',
+    text: S32,
+    subsections: [{ label: '32', text: S32 }],
+  });
+  const regGroup = {
+    groupId: 'reg-83-130-sd',
+    titleSuggestion: 'End-of-lease fixture removal',
+    sourceKeys: ['schedule:schedule-d'],
+    focusSelections: [{ sourceKey: 'schedule:schedule-d', childLabels: ['32'] }],
+    reason: 'Focused.',
+    approximateLearningGoal: 'Recall the fixture removal conditions.',
+  };
+  const regCoverage: AiSourceCoverage[] = [
+    {
+      sourceKey: 'schedule:schedule-d',
+      childLabels: [{ label: '32', status: 'covered', objectiveIds: ['obj-32'] }],
+    },
+  ];
+
+  it('does not flag a sentence quoted verbatim from the source, even with an embedded no...or shall', () => {
+    const clean = proposal({
+      sourceKeys: ['schedule:schedule-d'],
+      approvedGroup: regGroup,
+      sourceCoverage: regCoverage,
+      objectives: [
+        objective({
+          id: 'obj-32',
+          sourceKeys: ['schedule:schedule-d'],
+          evidence: [{ sourceKey: 'schedule:schedule-d', evidenceText: S32.slice(60, 220) }],
+          studyAnswer:
+            'The tenant shall in such removal do no damage to the premises or shall make good any damage which he may occasion thereto.',
+        }),
+      ],
+    });
+    const issues = runGate(clean, [regComponent]);
+    expect(codes(issues)).toEqual([]);
+  });
+
+  it('does not flag a paraphrase whose "or shall" clause is a separate duty, not a restatement', () => {
+    const clean = proposal({
+      sourceKeys: ['schedule:schedule-d'],
+      approvedGroup: regGroup,
+      sourceCoverage: regCoverage,
+      objectives: [
+        objective({
+          id: 'obj-32',
+          sourceKeys: ['schedule:schedule-d'],
+          evidence: [{ sourceKey: 'schedule:schedule-d', evidenceText: S32.slice(60, 220) }],
+          studyAnswer:
+            'At the end of the lease term, the tenant shall in such removal do no damage to the premises or shall make good any damage occasioned thereto.',
+        }),
+      ],
+    });
+    const issues = runGate(clean, [regComponent]);
+    expect(codes(issues)).toEqual([]);
+  });
+});
+
+describe('V5 fidelity gate: defined-term coverage', () => {
+  const S1 =
+    '1. In this Act "development" (aménagement) means (a) erecting, placing, relocating, removing or demolishing a structure, and (b) cutting or filling land by more than one metre.';
+  const cp1Component = component({ sourceKey: 'section:1', label: '1', text: S1 });
+  const group = {
+    groupId: 'cp-dev-term',
+    titleSuggestion: 'Defined term: development',
+    sourceKeys: ['section:1'],
+    focusSelections: [{ sourceKey: 'section:1', definedTerms: ['development'] }],
+    reason: 'Focused.',
+    approximateLearningGoal: 'Recall the defined term development.',
+  };
+  const devObjective = () =>
+    objective({
+      id: 'obj-dev',
+      sourceKeys: ['section:1'],
+      evidence: [{ sourceKey: 'section:1', evidenceText: S1.slice(0, 80) }],
+      studyAnswer:
+        '"development" means erecting, placing, relocating, removing or demolishing a structure, or cutting or filling land by more than one metre.',
+    });
+
+  it('accepts sourceCoverage that declares an approved definedTerm', () => {
+    const clean = proposal({
+      sourceKeys: ['section:1'],
+      approvedGroup: group,
+      sourceCoverage: [
+        {
+          sourceKey: 'section:1',
+          childLabels: [{ label: 'development', status: 'covered', objectiveIds: ['obj-dev'] }],
+        },
+      ],
+      objectives: [devObjective()],
+    });
+    const issues = runGate(clean, [cp1Component]);
+    expect(codes(issues)).toEqual([]);
+  });
+
+  it('still rejects invented sublabels of a definedTerm', () => {
+    const faulty = proposal({
+      sourceKeys: ['section:1'],
+      approvedGroup: group,
+      sourceCoverage: [
+        {
+          sourceKey: 'section:1',
+          childLabels: [
+            { label: 'development', status: 'covered', objectiveIds: ['obj-dev'] },
+            { label: 'development (a)', status: 'covered', objectiveIds: ['obj-dev'] },
+          ],
+        },
+      ],
+      objectives: [devObjective()],
+    });
+    const issues = runGate(faulty, [cp1Component]);
+    expect(codes(issues)).toContain('SOURCE_COVERAGE_EXTRA_LABEL');
+    expect(codes(issues)).not.toContain('SOURCE_COVERAGE_MISSING_SELECTED_LABEL');
+  });
+});
+
+describe('V5 fidelity gate: schedule focus reference leakage', () => {
+  const S16 = '16. The lessee shall not assign the premises or part of them without the consent of the lessor.';
+  const S18 = '18. The lessee shall surrender the premises in the same condition as when received, reasonable wear and tear excepted.';
+  const S19 = '19. The lessee shall permit the lessor to enter the premises to show them to prospective tenants.';
+  const S32L = '32. The lessee may remove fixtures at the end of the lease provided that the lessee leaves the premises undamaged.';
+  const scheduleComponent = component({
+    sourceKey: 'schedule:schedule-d',
+    label: 'Schedule D',
+    text: [S16, S18, S19, S32L].join('\n\n'),
+    subsections: [
+      { label: '16', text: S16 },
+      { label: '18', text: S18 },
+      { label: '19', text: S19 },
+      { label: '32', text: S32L },
+    ],
+  });
+  const schedGroup = {
+    groupId: 'reg-83-130-sd-focus',
+    titleSuggestion: 'Statutory lease covenants',
+    sourceKeys: ['schedule:schedule-d'],
+    focusSelections: [{ sourceKey: 'schedule:schedule-d', childLabels: ['16', '18', '19', '32'] }],
+    reason: 'Focused.',
+    approximateLearningGoal: 'Recall the statutory lease covenants.',
+  };
+  const schedCoverage: AiSourceCoverage[] = [
+    {
+      sourceKey: 'schedule:schedule-d',
+      childLabels: [
+        { label: '16', status: 'covered', objectiveIds: ['obj-covenants'] },
+        { label: '18', status: 'covered', objectiveIds: ['obj-covenants'] },
+        { label: '19', status: 'covered', objectiveIds: ['obj-covenants'] },
+        { label: '32', status: 'covered', objectiveIds: ['obj-covenants'] },
+      ],
+    },
+  ];
+  const covenantObjective = (answer: string) =>
+    objective({
+      id: 'obj-covenants',
+      sourceKeys: ['schedule:schedule-d'],
+      evidence: [
+        {
+          sourceKey: 'schedule:schedule-d',
+          evidenceText: 'The lessee shall not assign the premises or part of them without the consent of the lessor.',
+        },
+      ],
+      studyAnswer: answer,
+    });
+
+  it('accepts summary references to schedule clause labels inside the approved focus', () => {
+    const clean = proposal({
+      sourceKeys: ['schedule:schedule-d'],
+      approvedGroup: schedGroup,
+      sourceCoverage: schedCoverage,
+      studySummary:
+        'Clause 16 requires the lessor\u2019s consent to any assignment, clause 19 allows showings to prospective tenants, and clause 32 conditions fixture removal on leaving the premises undamaged.',
+      objectives: [
+        covenantObjective(
+          'The lessee shall not assign the premises without the lessor\u2019s consent, must surrender them in the condition received, and may remove fixtures at the end of the lease if the premises are left undamaged.',
+        ),
+      ],
+    });
+    const issues = runGate(clean, [scheduleComponent]);
+    expect(codes(issues)).toEqual([]);
+  });
+
+  it('still flags a summary reference to a schedule clause outside the approved focus', () => {
+    const faulty = proposal({
+      sourceKeys: ['schedule:schedule-d'],
+      approvedGroup: schedGroup,
+      sourceCoverage: schedCoverage,
+      studySummary:
+        'Clause 16 requires the lessor\u2019s consent to any assignment, while clause 21 limits the rent the lessor may set.',
+      objectives: [covenantObjective('The lessee shall not assign the premises without the lessor\u2019s consent.')],
+    });
+    const issues = runGate(faulty, [scheduleComponent]);
+    expect(codes(issues)).toContain('CONTEXT_REF_LEAKAGE');
+  });
+});
+
+describe('V5 fidelity gate: evidence divergence diagnostics', () => {
+  const S75K =
+    '75(1)(k)A plan of subdivision shall not be approved if, in the development officer\u2019s opinion, the subdivision is not suited to the purpose for which the land is zoned.';
+  const cp75Component = component({
+    sourceKey: 'section:75',
+    label: '75',
+    text: S75K,
+    subsections: [{ label: '75(1)(k)', text: S75K }],
+  });
+  const group = {
+    groupId: 'cp-75-1-k',
+    titleSuggestion: 'Non-approval grounds',
+    sourceKeys: ['section:75'],
+    focusSelections: [{ sourceKey: 'section:75', childLabels: ['75(1)(k)'] }],
+    reason: 'Focused.',
+    approximateLearningGoal: 'Recall the non-approval grounds.',
+  };
+
+  it('reports the first divergent code point when evidence normalizes a typographic character', () => {
+    const faulty = proposal({
+      sourceKeys: ['section:75'],
+      approvedGroup: group,
+      objectives: [
+        objective({
+          id: 'obj-k',
+          sourceKeys: ['section:75'],
+          evidence: [
+            {
+              sourceKey: 'section:75',
+              // Straight apostrophe where the source uses U+2019: the common
+              // local-model normalization that previously failed opaquely.
+              evidenceText:
+                '75(1)(k)A plan of subdivision shall not be approved if, in the development officer\'s opinion, the subdivision is not suited to the purpose for which the land is zoned.',
+            },
+          ],
+          studyAnswer: 'A plan of subdivision shall not be approved if it is not suited to the purpose for which the land is zoned.',
+        }),
+      ],
+    });
+    const issues = runGate(faulty, [cp75Component]);
+    const evidence = issues.filter((issue) => issue.code === 'EVIDENCE_NOT_EXACT_VERBATIM');
+    expect(evidence.length).toBe(1);
+    expect(evidence[0]?.message).toContain('First mismatch at evidence character');
+    expect(evidence[0]?.message).toContain('(U+2019)');
+    expect(evidence[0]?.message).toContain('(U+0027)');
   });
 });
 

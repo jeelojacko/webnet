@@ -105,6 +105,38 @@ const pushIssue = (
   });
 };
 
+// Describes a single character with its code point for retry feedback, so a
+// model can repair one normalized character (e.g. U+2019 -> U+0027) precisely.
+const describeCharCode = (ch: string): string => {
+  if (ch === ' ') return 'space (U+0020)';
+  if (ch === '\n') return 'newline (U+000A)';
+  if (ch === '\t') return 'tab (U+0009)';
+  const code = ch.codePointAt(0)?.toString(16).toUpperCase().padStart(4, '0') ?? '?';
+  return `'${ch}' (U+${code})`;
+};
+
+// Find where the evidence first diverges from its best-aligned source region.
+// Returns a short diagnostic suffix or undefined when the evidence does not
+// align with the source at all (a different passage, not a normalized copy).
+const firstDivergenceHint = (sourceText: string, evidence: string): string | undefined => {
+  if (evidence.length === 0 || evidence.length > sourceText.length) return undefined;
+  // P(k) = "first k chars occur in source" is monotone; find the largest k with P(k).
+  let lo = 0; // P(lo) holds
+  let hi = evidence.length; // P(hi) fails (caller verified the full text is absent)
+  while (hi - lo > 1) {
+    const mid = (lo + hi) >> 1;
+    if (sourceText.includes(evidence.slice(0, mid))) lo = mid;
+    else hi = mid;
+  }
+  if (lo < 20) return undefined; // no meaningful alignment to diagnose
+  const start = sourceText.lastIndexOf(evidence.slice(0, lo));
+  const sourceChar = sourceText.charAt(start + lo);
+  if (!sourceChar) {
+    return ' The aligned evidence runs past the end of the source passage; re-copy the quote from exactSourceText.';
+  }
+  return ` First mismatch at evidence character ${lo}: the source has ${describeCharCode(sourceChar)} but the evidence has ${describeCharCode(evidence.charAt(lo))}.`;
+};
+
 // 1. Evidence must be a verbatim character-for-character copy of the source.
 const checkEvidenceVerbatim = (
   proposal: AiStudyUnitProposal,
@@ -125,7 +157,7 @@ const checkEvidenceVerbatim = (
             objectiveId: objective.id,
             sourceKey,
             answerFragment: evidence.evidenceText,
-            message: `Objective evidence is not a verbatim substring of ${sourceKey}. Copy the exact text from exactSourceText without normalizing or paraphrasing.`,
+            message: `Objective evidence is not a verbatim substring of ${sourceKey}. Copy the exact text from exactSourceText without normalizing or paraphrasing.${firstDivergenceHint(sourceText, evidence.evidenceText) ?? ''}`,
           });
         }
       }
@@ -141,13 +173,26 @@ const checkSourceCoverageContract = (
 ): void => {
   const group = proposal.approvedGroup;
   if (!group) return;
+  // Required = selected childLabels (each must be declared exactly once).
+  // Allowed = selected childLabels plus approved definedTerms (definition
+  // groups select terms, not child labels; declaring a term is legitimate but
+  // never required, so terms are allowed but not checked for missingness).
   const selected = new Map<string, Set<string>>();
+  const allowed = new Map<string, Set<string>>();
   for (const selection of group.focusSelections ?? []) {
     const labels = selection.childLabels ?? [];
+    const terms = selection.definedTerms ?? [];
+    if (labels.length === 0 && terms.length === 0) continue;
+    const allowSet = allowed.get(selection.sourceKey) ?? new Set<string>();
+    for (const term of terms) allowSet.add(term);
+    allowed.set(selection.sourceKey, allowSet);
     if (labels.length === 0) continue;
-    const existing = selected.get(selection.sourceKey) ?? new Set<string>();
-    for (const label of labels) existing.add(label);
-    selected.set(selection.sourceKey, existing);
+    const requiredSet = selected.get(selection.sourceKey) ?? new Set<string>();
+    for (const label of labels) {
+      allowSet.add(label);
+      requiredSet.add(label);
+    }
+    selected.set(selection.sourceKey, requiredSet);
   }
   const objectiveIds = new Set((proposal.objectives ?? []).map((objective) => objective.id));
   const coverage = proposal.sourceCoverage ?? [];
@@ -174,12 +219,12 @@ const checkSourceCoverageContract = (
         continue;
       }
       seen.add(id);
-      if (!selected.get(entry.sourceKey)?.has(child.label)) {
+      if (!allowed.get(entry.sourceKey)?.has(child.label)) {
         pushIssue(issues, {
           code: 'SOURCE_COVERAGE_EXTRA_LABEL',
           proposalId: proposal.proposalId,
           sourceKey: entry.sourceKey,
-          message: `sourceCoverage includes childLabel ${child.label} which is not part of the approved focus for ${entry.sourceKey}.`,
+          message: `sourceCoverage includes childLabel ${child.label} which is not part of the approved focus for ${entry.sourceKey}; only selected childLabels and approved definedTerms may be declared.`,
         });
         continue;
       }
@@ -238,6 +283,25 @@ const checkSourceCoverageContract = (
 };
 
 // 3. A source prohibition must not come back as an affirmative duty.
+
+// "if no provision is made, then payments shall ..." is a conditional
+// consequence, not a prohibition: a conditional introducer precedes the "no"
+// within the same sentence and the no-to-shall span crosses a clause break
+// (comma) or a "then" consequence marker.
+const isConditionalConsequence = (sourceText: string, match: RegExpExecArray): boolean => {
+  let sentenceStart = 0;
+  for (let i = match.index - 1; i >= 0; i -= 1) {
+    const ch = sourceText.charAt(i);
+    if (ch === '.' || ch === '!' || ch === '?' || ch === '\n') {
+      sentenceStart = i + 1;
+      break;
+    }
+  }
+  const antecedent = sourceText.slice(sentenceStart, match.index);
+  if (!/\b(?:if|when|whenever|where|whether)\b/i.test(antecedent)) return false;
+  return /,/.test(match[2]) || /\bthen\b/i.test(match[2]);
+};
+
 const checkPolarityReversal = (
   proposal: AiStudyUnitProposal,
   components: ImportedLegalComponent[],
@@ -246,6 +310,7 @@ const checkPolarityReversal = (
   const group = proposal.approvedGroup;
   if (!group) return;
   const focusTexts = group.sourceKeys.map((key) => focusTextForSource(components, group, key));
+  const normalizedFocusTexts = focusTexts.map((text) => normalizeAiValidationText(text));
   for (const objective of proposal.objectives ?? []) {
     const answerText = [objective.objective, objective.guidedQuestion, objective.studyAnswer]
       .filter(Boolean)
@@ -260,6 +325,14 @@ const checkPolarityReversal = (
       // A faithful negative answer repeats the source negation.
       if (/^(no|neither)\b/i.test(sentence)) continue;
       if (/\b(?:is|are|was|were)\s+prohibited\b/i.test(sentence)) continue;
+      // A sentence quoted verbatim from the source cannot reverse its polarity.
+      const normalizedSentence = normalizeAiValidationText(sentence);
+      if (
+        normalizedSentence.length >= 20 &&
+        normalizedFocusTexts.some((text) => text.includes(normalizedSentence))
+      ) {
+        continue;
+      }
       for (const sourceText of focusTexts) {
         if (!sourceText) continue;
         const prohibited = /(?<![\w.])(no|neither)\b([^.;]{1,160}?)\b(shall|must)\b/gi;
@@ -271,6 +344,11 @@ const checkPolarityReversal = (
           const clauseEnd = tailText.search(/[.!?](?:\s|$)/);
           const clauseText = clauseEnd >= 0 ? tailText.slice(0, clauseEnd + 1) : tailText;
           if (/\b(unless|except)\b/i.test(clauseText)) continue;
+          // Disjunction: "do no damage ... or shall make good ..." — the span
+          // between "no" and "shall" ends in a coordinating conjunction, so the
+          // shall-clause is a separate duty, not a restatement of the act.
+          if (/\b(?:or|and)\s*$/i.test(actorText)) continue;
+          if (isConditionalConsequence(sourceText, match)) continue;
           const actorWords = contentWords(actorText);
           const sourceTerms = contentWords(clauseText);
           if (actorWords.length === 0 || sourceTerms.length < 3) continue;
@@ -278,8 +356,11 @@ const checkPolarityReversal = (
           if (overlapCount(actorWords, answerWords) < actorRequirement) continue;
           for (const duty of sentence.matchAll(/\b(?:shall|must)\b/g)) {
             const tail = sentence.slice(duty.index + duty[0].length, duty.index + duty[0].length + 140);
-            const head = tail.split(/\s+/).slice(0, 4).join(' ');
-            if (/^not\b/i.test(head)) continue;
+            // A duty carrying its own negation within its opening words ("shall do
+            // no damage") preserves the source polarity; it is a faithful negative
+            // duty, not a reversal.
+            const dutyWords = tail.split(/\s+/).slice(0, 8);
+            if (dutyWords.some((word) => /^(no|not|never|neither|without|nothing)\b/i.test(word))) continue;
             const overlap = overlapCount(contentWords(tail), sourceTerms);
             if (overlap >= Math.max(2, Math.ceil(sourceTerms.length * 0.5))) {
               pushIssue(issues, {
@@ -418,6 +499,11 @@ const checkSummaryReferenceLeakage = (
       allowed.add(refRoot(ref));
     }
   }
+  // Approved-focus labels are referable even when the source key carries no
+  // section root (e.g. schedule:schedule-d clause labels 16, 18, 19, 32).
+  for (const selection of group.focusSelections ?? []) {
+    for (const label of selection.childLabels ?? []) allowed.add(refRoot(label));
+  }
   const leaked = collectClaimReferences(summary).filter((ref) => !allowed.has(refRoot(ref)));
   if (leaked.length > 0) {
     pushIssue(issues, {
@@ -515,6 +601,10 @@ const checkStudyNotes = (
       const root = sectionRootOfKey(key);
       if (root) allowedRefs.add(refRoot(root));
       for (const ref of collectClaimReferences(stripCitationHistory(focusTextForSource(components, group, key) ?? ''))) allowedRefs.add(refRoot(ref));
+      for (const selection of group.focusSelections ?? []) {
+        if (selection.sourceKey !== key) continue;
+        for (const label of selection.childLabels ?? []) allowedRefs.add(refRoot(label));
+      }
     }
     const ungroundedRefs = noteRefs.filter((ref) => !allowedRefs.has(refRoot(ref)));
     const ungroundedTerms = LEGAL_TERMS.filter(
