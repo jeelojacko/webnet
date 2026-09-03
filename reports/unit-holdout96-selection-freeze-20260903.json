@@ -1,0 +1,957 @@
+{
+  "schemaVersion": 1,
+  "stamp": "20260903",
+  "runId": "ai-units-2026-09-02-frozen-map-holdout96-v5",
+  "sourceRunId": "ai-units-2026-09-02-frozen-map-v5-preflight",
+  "exclusionRunId": "ai-units-2026-09-02-frozen-map-cal80-v5",
+  "corpusContentHash": "5dc991611b320de87981ba35ded9a99f0951569e732e2bacb35c6d21b3c7e3a1",
+  "sourcePackageId": "nb-sit-statute-corpus-2026-08-29",
+  "target": 96,
+  "batchSize": 8,
+  "seed": "webnet-v5-blind-holdout96-20260903",
+  "eligibility": {
+    "sourceJobs": 4251,
+    "excludedCalibrationUnits": 80,
+    "excludedCalibrationJobIds": [
+      "unit-0344f31b1107b2dc",
+      "unit-051f5db2729fd7b5",
+      "unit-061b46bb0538188c",
+      "unit-06c54db68969cc17",
+      "unit-10af6382f13ceccb",
+      "unit-10ea21c46affc7c5",
+      "unit-14777ad1e4786447",
+      "unit-1778139a242e733a",
+      "unit-1a102fb69ea9b08b",
+      "unit-1eb95397b16fee29",
+      "unit-23337f055c22b192",
+      "unit-2588ae34a152982f",
+      "unit-25db06191c729425",
+      "unit-29643f0abdec17e2",
+      "unit-2b35539363c4ca36",
+      "unit-331f33e0d3cf5b61",
+      "unit-332a2ef669d3f464",
+      "unit-35ce7d7fd6dd7714",
+      "unit-373539bbe31a52a0",
+      "unit-3b4bf8fc454f19b9",
+      "unit-3e12091103f6ec16",
+      "unit-433e77a5dad8ceb1",
+      "unit-43ca148646a95bb4",
+      "unit-44a5e5a34f069c1d",
+      "unit-46404e08436c89a4",
+      "unit-4a0b1236f21e2add",
+      "unit-4a5095dd82b864af",
+      "unit-4a8d142480162fe3",
+      "unit-5abf688ab972bffc",
+      "unit-5ba258431f90f343",
+      "unit-5eefb3ed8c3ce251",
+      "unit-6480451b3fe42be2",
+      "unit-672a50b20e2100c7",
+      "unit-6e340018655584a7",
+      "unit-6f65dea4a13630e9",
+      "unit-6f829d029f76db6e",
+      "unit-7071b6becf15d8dd",
+      "unit-7131c6fd16823e70",
+      "unit-71e27c24590d3242",
+      "unit-7558538d3d98f4ec",
+      "unit-762098496a0f61e2",
+      "unit-79cacfaeddf74f82",
+      "unit-7e2875b9ce2c697e",
+      "unit-80309b578879a269",
+      "unit-819e6b3baa157e85",
+      "unit-857a98ccd36e41e4",
+      "unit-90ab6499b6928ad2",
+      "unit-9444b4424f6fa00b",
+      "unit-99bdb6cd6f15f777",
+      "unit-9b9c904f7abb2dd1",
+      "unit-9bdb6067e6efb48a",
+      "unit-9ff278807624e3ae",
+      "unit-a8250bc79883184c",
+      "unit-ab80c5ba40812a83",
+      "unit-aca8067647cbf88f",
+      "unit-addc04e113bb4ae1",
+      "unit-aef7b1dd69abc34d",
+      "unit-bc439b485e0a8ce3",
+      "unit-bfebe45a58764cbf",
+      "unit-c1d2d8aa37da6862",
+      "unit-c3d97c72d0c68c39",
+      "unit-c42303371eff91ee",
+      "unit-c562d9132d24d3e6",
+      "unit-c9285cd7f533a2ab",
+      "unit-cbd8f515a08077d2",
+      "unit-d0fd18f6457af793",
+      "unit-d1742361c5ae3778",
+      "unit-d4b1280dd51c16a3",
+      "unit-d5879f27382ec6c0",
+      "unit-d6fe427cdddb2678",
+      "unit-da8aeea638cab3fd",
+      "unit-db1eb97629092cb5",
+      "unit-dc047ee16ef0e408",
+      "unit-e3f6eb223f9c6b22",
+      "unit-e944b3a49f4b9bac",
+      "unit-edcb2e0c1740d2e0",
+      "unit-f463819104abd315",
+      "unit-f821944f8d8fad87",
+      "unit-f91b57371792a0bb",
+      "unit-fcc8bb2c8653b95d"
+    ],
+    "eligiblePopulation": 4171,
+    "blind": "no inference was ever run on ai-units-2026-09-02-frozen-map-v5-preflight (completedCount 0); the 80 calibration-80 units are excluded; selection depends only on job identity fields, not on any output."
+  },
+  "strata": [
+    {
+      "key": "P1|split",
+      "priority": "P1",
+      "disposition": "split",
+      "population": 277
+    },
+    {
+      "key": "P1|standalone",
+      "priority": "P1",
+      "disposition": "standalone",
+      "population": 81
+    },
+    {
+      "key": "P2|combine",
+      "priority": "P2",
+      "disposition": "combine",
+      "population": 3
+    },
+    {
+      "key": "P2|split",
+      "priority": "P2",
+      "disposition": "split",
+      "population": 1169
+    },
+    {
+      "key": "P2|standalone",
+      "priority": "P2",
+      "disposition": "standalone",
+      "population": 1036
+    },
+    {
+      "key": "P3|combine",
+      "priority": "P3",
+      "disposition": "combine",
+      "population": 5
+    },
+    {
+      "key": "P3|split",
+      "priority": "P3",
+      "disposition": "split",
+      "population": 380
+    },
+    {
+      "key": "P3|standalone",
+      "priority": "P3",
+      "disposition": "standalone",
+      "population": 907
+    },
+    {
+      "key": "P4|combine",
+      "priority": "P4",
+      "disposition": "combine",
+      "population": 3
+    },
+    {
+      "key": "P4|split",
+      "priority": "P4",
+      "disposition": "split",
+      "population": 50
+    },
+    {
+      "key": "P4|standalone",
+      "priority": "P4",
+      "disposition": "standalone",
+      "population": 260
+    }
+  ],
+  "allocation": {
+    "P1|split": 7,
+    "P1|standalone": 3,
+    "P2|combine": 1,
+    "P2|split": 25,
+    "P2|standalone": 22,
+    "P3|combine": 1,
+    "P3|split": 9,
+    "P3|standalone": 19,
+    "P4|combine": 1,
+    "P4|split": 2,
+    "P4|standalone": 6
+  },
+  "allocationRule": "min-1 floor per non-empty (priority|disposition) stratum, then largest-remainder proportional for the remaining seats (ties: remainder desc, stratum key asc); within-stratum order sha256(seed + \":\" + jobId) asc",
+  "selection": [
+    "unit-02904a51c4aa50d0",
+    "unit-03fc2741244ee016",
+    "unit-086cd6b54a8feb16",
+    "unit-1a13dcaee7434446",
+    "unit-1b19db208a7b4468",
+    "unit-223677c717262e89",
+    "unit-25de88af08ee9fd5",
+    "unit-29403245d275012b",
+    "unit-29c739f489de9afd",
+    "unit-2de08bdad6938825",
+    "unit-3ebf64ec22ab3d55",
+    "unit-4131294edeb6507b",
+    "unit-4180881b555ccabd",
+    "unit-446f6ddf48091481",
+    "unit-4481cc6d3847b23a",
+    "unit-44caaa0269142763",
+    "unit-47f874ea0ed396ff",
+    "unit-482593ad8a256b68",
+    "unit-4d03ce06817dede2",
+    "unit-4f8231b7dfb4f8b3",
+    "unit-51756812fbe968e4",
+    "unit-585485cc8e228632",
+    "unit-593c7c75b7bce979",
+    "unit-5ebedc84a3e31389",
+    "unit-5f0cf10eca19e319",
+    "unit-60131bd7ab6de98b",
+    "unit-624a04892cb8ebf7",
+    "unit-65ebbc87d639cb65",
+    "unit-6747f71654941811",
+    "unit-68c69f4917b1126d",
+    "unit-69c860ccfceba8f1",
+    "unit-6c34ceac4f996f2a",
+    "unit-6c559bf343378ba8",
+    "unit-6fa961032ee9e1cc",
+    "unit-71f71cccddf7f1c4",
+    "unit-723294934b783abf",
+    "unit-72c7fcdeafb8bafc",
+    "unit-7cb5ff1597a48464",
+    "unit-7e4b8a10124ce404",
+    "unit-7f600ee6e2781ee6",
+    "unit-8291105b6db2c2d4",
+    "unit-840983dafa97bdcc",
+    "unit-89be59263b04031d",
+    "unit-8ad9499ca8bdd882",
+    "unit-9188a2a5955830f1",
+    "unit-9568d65569b5840d",
+    "unit-98a9de2ca65195de",
+    "unit-9ff2fad0ec443a8f",
+    "unit-a700e45f6e48ef42",
+    "unit-a7078ac8837a58b9",
+    "unit-a7bec02c128add19",
+    "unit-a969e97d12c8b3ff",
+    "unit-ab6ef40a661b7047",
+    "unit-b5ef285daa09be2a",
+    "unit-b65770209ab59270",
+    "unit-c05bc22456084eb1",
+    "unit-c2a4506a3b6557c5",
+    "unit-c41de6f860f8632e",
+    "unit-c6142269f828c086",
+    "unit-c61e59cf64c15b1e",
+    "unit-c6759b8736144458",
+    "unit-c681b3e853fd0982",
+    "unit-c7e81ca1ea7e0bc6",
+    "unit-c807d65ed2808e79",
+    "unit-ca0a1ab883e7197f",
+    "unit-cae7f26760269d35",
+    "unit-cc8373eb1d7a726b",
+    "unit-cdaf5f6c25c40751",
+    "unit-cdd169e1b8e73416",
+    "unit-d1391910526dd3d2",
+    "unit-d3189c7e1d871dd0",
+    "unit-d377d86a4acd6785",
+    "unit-d41795e128bd5c04",
+    "unit-d62659fac2ee4b59",
+    "unit-d98ef5995777085e",
+    "unit-d9fca4afa62019ee",
+    "unit-db4c5d328f525342",
+    "unit-dbf05be4100e2f56",
+    "unit-dca9e8729ba200b7",
+    "unit-e053406d41f6ff95",
+    "unit-e26d65bb455e122a",
+    "unit-e3c92aa612716ea7",
+    "unit-e928212f96ca6f23",
+    "unit-e9de296678bcb224",
+    "unit-ebb6c996cbe6aba0",
+    "unit-ed6584b35ca2893f",
+    "unit-edc9098c47b8042d",
+    "unit-f3be09ef450f65aa",
+    "unit-f4310c1928ac6326",
+    "unit-fb73fd738893d2ba",
+    "unit-fbfaea6340750363",
+    "unit-fd9cc5020655d601",
+    "unit-fe165ac52337399b",
+    "unit-feca0d5390dc8003",
+    "unit-fed3550b0b3e689d",
+    "unit-ff33fb6f1302a755"
+  ],
+  "selectionSha256": "f0d5ce6b7bd6e2a4daf2b728deea090c0e33db5106de5f733ab0bcdb3c388e52",
+  "jobs": [
+    {
+      "jobId": "unit-02904a51c4aa50d0",
+      "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+      "priority": "P3",
+      "disposition": "standalone",
+      "inputHash": "cada5165c277c5a031d68014cd519e8980e8a4fe7320ada516968f127d1f3185"
+    },
+    {
+      "jobId": "unit-03fc2741244ee016",
+      "documentId": "doc-municipalities-act",
+      "priority": "P3",
+      "disposition": "split",
+      "inputHash": "e2d938b502f616a513030f021f15bc57f1bc549a2fb011a42a4b78ca08335dcd"
+    },
+    {
+      "jobId": "unit-086cd6b54a8feb16",
+      "documentId": "doc-crown-lands-and-forests-act",
+      "priority": "P2",
+      "disposition": "standalone",
+      "inputHash": "c073f57063560cf1cfd972872d84c899bfa71d868f3dd5581564645f1ba85e4d"
+    },
+    {
+      "jobId": "unit-1a13dcaee7434446",
+      "documentId": "reg-surveys-84-76",
+      "priority": "P1",
+      "disposition": "standalone",
+      "inputHash": "7fbf447776d619cc97e1e2bbcc9fba2801f5f1437a649d2f1f77f29347a7f597"
+    },
+    {
+      "jobId": "unit-1b19db208a7b4468",
+      "documentId": "doc-clean-environment-act",
+      "priority": "P2",
+      "disposition": "split",
+      "inputHash": "d7182e544625e68a37e66f4385db006c455da31e626e5a4d4481c03d20f6761f"
+    },
+    {
+      "jobId": "unit-223677c717262e89",
+      "documentId": "doc-probate-court-act",
+      "priority": "P2",
+      "disposition": "split",
+      "inputHash": "a7f9c4a2b18fed319aac412e2177e9e2c30783b75a2c4ad725489ef2b75330ca"
+    },
+    {
+      "jobId": "unit-25de88af08ee9fd5",
+      "documentId": "doc-public-health-act",
+      "priority": "P3",
+      "disposition": "standalone",
+      "inputHash": "87f34cd90cf0145ac2e38d02afb8ee315be6f3c6203923e13dc20496496d81cc"
+    },
+    {
+      "jobId": "unit-29403245d275012b",
+      "documentId": "doc-highway-act",
+      "priority": "P3",
+      "disposition": "split",
+      "inputHash": "b2b84c8e5f75afd0d7fc5245270467897838aa59603ba9d5b01d6186f3f4ff0e"
+    },
+    {
+      "jobId": "unit-29c739f489de9afd",
+      "documentId": "doc-municipalities-act",
+      "priority": "P4",
+      "disposition": "split",
+      "inputHash": "e86122c0861fe4e3b357df0914d817a21b502d5e3824c93af47740a5c83b62f3"
+    },
+    {
+      "jobId": "unit-2de08bdad6938825",
+      "documentId": "doc-probate-court-act",
+      "priority": "P4",
+      "disposition": "standalone",
+      "inputHash": "1b1c9e98e0d6b213356e6978782578c06031a786424dd57fd29ff3ad80ab9fce"
+    },
+    {
+      "jobId": "unit-3ebf64ec22ab3d55",
+      "documentId": "doc-devolution-of-estates-act",
+      "priority": "P2",
+      "disposition": "standalone",
+      "inputHash": "a68f2e831cd637bdfcfb7993c767d3505f606ea81e0809208ccefea3b286ec0c"
+    },
+    {
+      "jobId": "unit-4131294edeb6507b",
+      "documentId": "doc-mining-act",
+      "priority": "P2",
+      "disposition": "split",
+      "inputHash": "a3c91cf7c688a160d5f07d1a5ef55ef1d9c84739532278882e6639b84cee8ca9"
+    },
+    {
+      "jobId": "unit-4180881b555ccabd",
+      "documentId": "doc-standard-forms-of-conveyances-act",
+      "priority": "P3",
+      "disposition": "standalone",
+      "inputHash": "0754c48bb94169046997c507c0f7ac1b5de09cecfd6c8e794b3572ff7f2074da"
+    },
+    {
+      "jobId": "unit-446f6ddf48091481",
+      "documentId": "doc-occupational-health-and-safety-act",
+      "priority": "P2",
+      "disposition": "split",
+      "inputHash": "9b94f4b62a4ea95eae57f1026f793a48351b67c33112e343077669916e609e90"
+    },
+    {
+      "jobId": "unit-4481cc6d3847b23a",
+      "documentId": "doc-property-act",
+      "priority": "P3",
+      "disposition": "standalone",
+      "inputHash": "bd8228dffcdc8e76561110a82a5995edbe2b054569324392fc3603ec8816b83b"
+    },
+    {
+      "jobId": "unit-44caaa0269142763",
+      "documentId": "doc-assessment-act",
+      "priority": "P3",
+      "disposition": "standalone",
+      "inputHash": "ad47d810d6af96a34db4289e45169e80d85299d01a28e6ac27bc5e5d2b64ca9f"
+    },
+    {
+      "jobId": "unit-47f874ea0ed396ff",
+      "documentId": "doc-expropriation-act",
+      "priority": "P1",
+      "disposition": "split",
+      "inputHash": "b77442d810c5a305c8e3f2b43d9ddeca673106cc5c2eaf572b7940b1f52bead1"
+    },
+    {
+      "jobId": "unit-482593ad8a256b68",
+      "documentId": "doc-occupational-health-and-safety-act",
+      "priority": "P2",
+      "disposition": "standalone",
+      "inputHash": "806be83cdeeefe9fc5bd7fb0c59406065a232a60685f1e3ca216817322191101"
+    },
+    {
+      "jobId": "unit-4d03ce06817dede2",
+      "documentId": "doc-crown-lands-and-forests-act",
+      "priority": "P3",
+      "disposition": "standalone",
+      "inputHash": "16fdac0dbb93cdc1417b6606bdd94c4083e9b2b6201b0be2b2c3c3618d077257"
+    },
+    {
+      "jobId": "unit-4f8231b7dfb4f8b3",
+      "documentId": "doc-new-brunswick-land-surveyors-act",
+      "priority": "P4",
+      "disposition": "standalone",
+      "inputHash": "625537e2c0cc4dadfafc591ff086b2eda2df1d8f96bde784ef91c6c9669b195d"
+    },
+    {
+      "jobId": "unit-51756812fbe968e4",
+      "documentId": "doc-occupational-health-and-safety-act",
+      "priority": "P2",
+      "disposition": "standalone",
+      "inputHash": "c22831e4e3a305e666e9d2cf865c93a23f657bfe17c873c22f63738b756de37f"
+    },
+    {
+      "jobId": "unit-585485cc8e228632",
+      "documentId": "doc-condominium-property-act",
+      "priority": "P1",
+      "disposition": "split",
+      "inputHash": "f4676b8003b5adcea1818793031c5b26ffd2d847ec2624495d6e626ec4f5b394"
+    },
+    {
+      "jobId": "unit-593c7c75b7bce979",
+      "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+      "priority": "P3",
+      "disposition": "combine",
+      "inputHash": "317743b15c0a479c3c7ccce94d71890e0331db6c484cdcdbd66ffa0eca4079c4"
+    },
+    {
+      "jobId": "unit-5ebedc84a3e31389",
+      "documentId": "doc-aquaculture-act",
+      "priority": "P3",
+      "disposition": "standalone",
+      "inputHash": "2401be04507e104bd93f268d43336067992f07bfadc2228c4fb71bbc8ec47c34"
+    },
+    {
+      "jobId": "unit-5f0cf10eca19e319",
+      "documentId": "doc-evidence-act",
+      "priority": "P2",
+      "disposition": "split",
+      "inputHash": "0eb4adc57e8db683cdb1b989e9db5ed69dc5780e54ef2f553c7dd8b3e46d89c5"
+    },
+    {
+      "jobId": "unit-60131bd7ab6de98b",
+      "documentId": "doc-official-languages-act",
+      "priority": "P2",
+      "disposition": "combine",
+      "inputHash": "bbfd046b9ff58bbdd2e48737cfbb49076d56cc4c8bac2162544a37d4f0f12657"
+    },
+    {
+      "jobId": "unit-624a04892cb8ebf7",
+      "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+      "priority": "P4",
+      "disposition": "combine",
+      "inputHash": "808dc1a3fd9d8eaf4600a774a9b0ceeabfcdd9142a265d2eca973e97351b2320"
+    },
+    {
+      "jobId": "unit-65ebbc87d639cb65",
+      "documentId": "doc-clean-environment-act",
+      "priority": "P4",
+      "disposition": "standalone",
+      "inputHash": "995988c163e7d1ae3b916d7ee0eb20d0b8ca4080d976c3d043bb8f9d7f250d80"
+    },
+    {
+      "jobId": "unit-6747f71654941811",
+      "documentId": "doc-evidence-act",
+      "priority": "P3",
+      "disposition": "standalone",
+      "inputHash": "f401b488c4515fdae469917c62d61f094618e03dc667ed56585fc67d3ecdc57a"
+    },
+    {
+      "jobId": "unit-68c69f4917b1126d",
+      "documentId": "doc-energy-and-utilities-board-act",
+      "priority": "P2",
+      "disposition": "standalone",
+      "inputHash": "5fecf524b12ee2c9122ec1c99ace73bb716edc06fd7e00515c827e616848a7b5"
+    },
+    {
+      "jobId": "unit-69c860ccfceba8f1",
+      "documentId": "doc-mining-act",
+      "priority": "P2",
+      "disposition": "split",
+      "inputHash": "bf90b0c4752a2b46c0f82ec3bd47e35b16c099722eb2697c6a9a4d04bcfcf987"
+    },
+    {
+      "jobId": "unit-6c34ceac4f996f2a",
+      "documentId": "doc-highway-act",
+      "priority": "P3",
+      "disposition": "split",
+      "inputHash": "aeed2a69062afe64d1c64f93035b5f360498abd6643a509acd48479ed9dfa47e"
+    },
+    {
+      "jobId": "unit-6c559bf343378ba8",
+      "documentId": "doc-highway-act",
+      "priority": "P2",
+      "disposition": "standalone",
+      "inputHash": "b68d80aeb1313582fd61b0332a54ad40ca50fe8230ac046e61f28aa36955dad3"
+    },
+    {
+      "jobId": "unit-6fa961032ee9e1cc",
+      "documentId": "doc-expropriation-act",
+      "priority": "P1",
+      "disposition": "standalone",
+      "inputHash": "b8b741612e1f3f6c928d098afb5ecb001e49ef69aba5f60aa830ce1b456cdc3c"
+    },
+    {
+      "jobId": "unit-71f71cccddf7f1c4",
+      "documentId": "doc-registry-act",
+      "priority": "P3",
+      "disposition": "split",
+      "inputHash": "8379c1da208fca70cf29f07d9c3daad4f438aaa23faf6c00621e492591b0d9bb"
+    },
+    {
+      "jobId": "unit-723294934b783abf",
+      "documentId": "doc-condominium-property-act",
+      "priority": "P2",
+      "disposition": "split",
+      "inputHash": "88b676c06dff47c8666934e3cb61d3ff59b28541cc3645c83c4af688a1499a0a"
+    },
+    {
+      "jobId": "unit-72c7fcdeafb8bafc",
+      "documentId": "doc-archives-act",
+      "priority": "P2",
+      "disposition": "split",
+      "inputHash": "58b6c135ccacd02a34a5e4bc96f6735f8cf5cf56a3afe4a12e96ce7ff67953e5"
+    },
+    {
+      "jobId": "unit-7cb5ff1597a48464",
+      "documentId": "doc-archives-act",
+      "priority": "P3",
+      "disposition": "split",
+      "inputHash": "562190ad7ddbe45f9bcba118463af61222572954baedf0f8c19ae82d45d2fc6a"
+    },
+    {
+      "jobId": "unit-7e4b8a10124ce404",
+      "documentId": "doc-land-titles-act",
+      "priority": "P3",
+      "disposition": "standalone",
+      "inputHash": "825c6de7f94453de7667d4961b059b2ddf56d77bbb48214031de31a4d5612863"
+    },
+    {
+      "jobId": "unit-7f600ee6e2781ee6",
+      "documentId": "doc-energy-and-utilities-board-act",
+      "priority": "P3",
+      "disposition": "standalone",
+      "inputHash": "97c5950542e2b7459c52a5d27a1f53295e2f49322694487c865ec619abbdb786"
+    },
+    {
+      "jobId": "unit-8291105b6db2c2d4",
+      "documentId": "doc-partnerships-and-business-names-registration-act",
+      "priority": "P2",
+      "disposition": "standalone",
+      "inputHash": "29734e1eec72f8a92efb15ab37dd28ea75ce158000c3361bcbaa5cfb2db77918"
+    },
+    {
+      "jobId": "unit-840983dafa97bdcc",
+      "documentId": "doc-municipalities-act",
+      "priority": "P3",
+      "disposition": "standalone",
+      "inputHash": "d0b2f60fc2f02368267be58ec28349aede773b866734e04077f7d76a1bf6edfa"
+    },
+    {
+      "jobId": "unit-89be59263b04031d",
+      "documentId": "doc-evidence-act",
+      "priority": "P3",
+      "disposition": "standalone",
+      "inputHash": "00e08be42d9960d792a46d701e1b054d3b6a79de8b848a38ce28f732d1c48fac"
+    },
+    {
+      "jobId": "unit-8ad9499ca8bdd882",
+      "documentId": "doc-mining-act",
+      "priority": "P2",
+      "disposition": "standalone",
+      "inputHash": "637ad50eb146235e87fac7c4be1f0d4626a335031800572f3984aa919588c4c4"
+    },
+    {
+      "jobId": "unit-9188a2a5955830f1",
+      "documentId": "doc-municipalities-act",
+      "priority": "P3",
+      "disposition": "standalone",
+      "inputHash": "3d6fb98ad760200c27c2336e30ae6ac09bded5efa86a9878aee9d548ad365e2c"
+    },
+    {
+      "jobId": "unit-9568d65569b5840d",
+      "documentId": "doc-municipalities-act",
+      "priority": "P2",
+      "disposition": "split",
+      "inputHash": "470d8d92bdd032649cc181bc0f4a4fafd23e5a9ee9a4d8766aef6cba9c6b3fc9"
+    },
+    {
+      "jobId": "unit-98a9de2ca65195de",
+      "documentId": "doc-municipalities-act",
+      "priority": "P3",
+      "disposition": "split",
+      "inputHash": "b96fd256a195b8180b916a48d7861fea9b413af42db202f5d87671c9f326df36"
+    },
+    {
+      "jobId": "unit-9ff2fad0ec443a8f",
+      "documentId": "doc-crown-lands-and-forests-act",
+      "priority": "P2",
+      "disposition": "standalone",
+      "inputHash": "ca3052d703f66acebd025e43a711a99127b6c764c0ec8920306c01e30868f502"
+    },
+    {
+      "jobId": "unit-a700e45f6e48ef42",
+      "documentId": "doc-land-titles-act",
+      "priority": "P1",
+      "disposition": "split",
+      "inputHash": "32e869468a48befd70505238bbd8ca81378c599112d351746d412696c841aada"
+    },
+    {
+      "jobId": "unit-a7078ac8837a58b9",
+      "documentId": "doc-gas-distribution-act",
+      "priority": "P2",
+      "disposition": "split",
+      "inputHash": "5fa33111c145a19c064f9117af07d50eec80e0ec217f032596002768b8d9d0a2"
+    },
+    {
+      "jobId": "unit-a7bec02c128add19",
+      "documentId": "doc-official-languages-act",
+      "priority": "P2",
+      "disposition": "standalone",
+      "inputHash": "1856bf5b6487ab088c1910ce7a5bd68e62515aeb1a0abaa3444b7827d3f1038f"
+    },
+    {
+      "jobId": "unit-a969e97d12c8b3ff",
+      "documentId": "doc-oil-and-natural-gas-act",
+      "priority": "P3",
+      "disposition": "standalone",
+      "inputHash": "91416de3c7772f3d6329b914e9fe21a87ab4a0d5fcfb114022e4c30430ea3b4d"
+    },
+    {
+      "jobId": "unit-ab6ef40a661b7047",
+      "documentId": "doc-official-languages-act",
+      "priority": "P3",
+      "disposition": "standalone",
+      "inputHash": "bd0b37f4f1285314fe9ca1be768030513b7b1acf46299d6d09148be06db2eb0d"
+    },
+    {
+      "jobId": "unit-b5ef285daa09be2a",
+      "documentId": "doc-probate-court-act",
+      "priority": "P2",
+      "disposition": "split",
+      "inputHash": "a7712c31570acc246c1c21af7bce34b45bfcb01a06312cdd410303d04749a6ce"
+    },
+    {
+      "jobId": "unit-b65770209ab59270",
+      "documentId": "doc-registry-act",
+      "priority": "P3",
+      "disposition": "standalone",
+      "inputHash": "554de253db52d74e1aaa0e4fa07f09e064f3a6203dfce4643952941d5a3d8e15"
+    },
+    {
+      "jobId": "unit-c05bc22456084eb1",
+      "documentId": "doc-limitation-of-actions-act",
+      "priority": "P4",
+      "disposition": "standalone",
+      "inputHash": "3fcc696166e9882d6c51aae94384b46102cd8bdbe5e3feb0118fd0575f8e46d0"
+    },
+    {
+      "jobId": "unit-c2a4506a3b6557c5",
+      "documentId": "doc-community-planning-act",
+      "priority": "P1",
+      "disposition": "split",
+      "inputHash": "f40103b8d80220be2714a5c515d155c516bf44df2afad974849e4a3ae112ed9b"
+    },
+    {
+      "jobId": "unit-c41de6f860f8632e",
+      "documentId": "doc-ownership-of-minerals-act",
+      "priority": "P2",
+      "disposition": "split",
+      "inputHash": "5b9f14ae5a27544257496fd44c362a7bbdd4780f5b675e12c66552ebea11c9e7"
+    },
+    {
+      "jobId": "unit-c6142269f828c086",
+      "documentId": "doc-aquaculture-act",
+      "priority": "P3",
+      "disposition": "split",
+      "inputHash": "cec14e9d09dcd605514285cae9cfd8dc97257920c0c4121ad3111e35757792b0"
+    },
+    {
+      "jobId": "unit-c61e59cf64c15b1e",
+      "documentId": "doc-occupational-health-and-safety-act",
+      "priority": "P2",
+      "disposition": "standalone",
+      "inputHash": "531ddebf5413b7bc3e264ebdecade58b9bd2b88d6bc07644f2630e1b0a2c00ec"
+    },
+    {
+      "jobId": "unit-c6759b8736144458",
+      "documentId": "doc-registry-act",
+      "priority": "P2",
+      "disposition": "standalone",
+      "inputHash": "5fce7f333d55372fb7fdd3c8a7d9d0b812b9354df607da03bf464f2541c678ea"
+    },
+    {
+      "jobId": "unit-c681b3e853fd0982",
+      "documentId": "doc-community-planning-act",
+      "priority": "P3",
+      "disposition": "standalone",
+      "inputHash": "3de819d4ba35ad97192f08e067e5b0e08ccb96a88ff812f8a2e7bfb1133ad3dc"
+    },
+    {
+      "jobId": "unit-c7e81ca1ea7e0bc6",
+      "documentId": "doc-condominium-property-act",
+      "priority": "P2",
+      "disposition": "split",
+      "inputHash": "fc385fb704879fed03ba591394c2202aca266d4de13cae9abbb9219c6c008601"
+    },
+    {
+      "jobId": "unit-c807d65ed2808e79",
+      "documentId": "doc-gas-distribution-act",
+      "priority": "P2",
+      "disposition": "split",
+      "inputHash": "cef280a56cc2625bd1d8130c0fdf6caf480a8c8ab528555211fae644665f9f5e"
+    },
+    {
+      "jobId": "unit-ca0a1ab883e7197f",
+      "documentId": "doc-public-records-act",
+      "priority": "P2",
+      "disposition": "standalone",
+      "inputHash": "7572b64036cc29dbf104edd4593208734a176fa3f2b03d3451504d6dffbae25a"
+    },
+    {
+      "jobId": "unit-cae7f26760269d35",
+      "documentId": "doc-gas-distribution-act",
+      "priority": "P2",
+      "disposition": "split",
+      "inputHash": "6634c4741c1f16552af6e087829e003ed2d0fd290301694030e20047f2159f74"
+    },
+    {
+      "jobId": "unit-cc8373eb1d7a726b",
+      "documentId": "doc-municipalities-act",
+      "priority": "P2",
+      "disposition": "split",
+      "inputHash": "22d6020284251f8677c3d6e7581ae79da7e2a5b504c6833ee123d0f04d1189d9"
+    },
+    {
+      "jobId": "unit-cdaf5f6c25c40751",
+      "documentId": "doc-community-planning-act",
+      "priority": "P1",
+      "disposition": "split",
+      "inputHash": "b82052f0d14086c36a49acfc69ab155916b6f161da4d7a2b09b07ff941b7b8e6"
+    },
+    {
+      "jobId": "unit-cdd169e1b8e73416",
+      "documentId": "doc-probate-court-act",
+      "priority": "P2",
+      "disposition": "standalone",
+      "inputHash": "f68b65ac475ed6d856ccd1740c0a5037084677baa250bf45287944dfec7a9b00"
+    },
+    {
+      "jobId": "unit-d1391910526dd3d2",
+      "documentId": "reg-land-titles-83-130",
+      "priority": "P1",
+      "disposition": "split",
+      "inputHash": "32785d30ef5c2d50fd15408d0d647263fa5b2705249216de97dfe7090503f5fd"
+    },
+    {
+      "jobId": "unit-d3189c7e1d871dd0",
+      "documentId": "doc-official-languages-act",
+      "priority": "P2",
+      "disposition": "standalone",
+      "inputHash": "55b96126c91b42d64637e5094eab5062f7998a0ffa88be9d9d9de2516cff1f76"
+    },
+    {
+      "jobId": "unit-d377d86a4acd6785",
+      "documentId": "doc-property-act",
+      "priority": "P2",
+      "disposition": "standalone",
+      "inputHash": "ebb79e4f864bcb0bde0739cdf357c768b04e8a1335b035d8127d91f94453197a"
+    },
+    {
+      "jobId": "unit-d41795e128bd5c04",
+      "documentId": "doc-highway-act",
+      "priority": "P2",
+      "disposition": "standalone",
+      "inputHash": "324a65d852bdf5cb332fef0d1149a700fb637eff5e448406208bd1e2fc34c82b"
+    },
+    {
+      "jobId": "unit-d62659fac2ee4b59",
+      "documentId": "doc-energy-and-utilities-board-act",
+      "priority": "P2",
+      "disposition": "standalone",
+      "inputHash": "432349d7dfb7189fbb17e38889d2a99187eed9a102ca17cc9b2e4ab9d1e0863f"
+    },
+    {
+      "jobId": "unit-d98ef5995777085e",
+      "documentId": "doc-residential-property-tax-relief-act",
+      "priority": "P3",
+      "disposition": "split",
+      "inputHash": "490d58ebe8444617cb0f0fdb74393d51b61f8e0959b2f06c85c57d159644b9b7"
+    },
+    {
+      "jobId": "unit-d9fca4afa62019ee",
+      "documentId": "doc-community-planning-act",
+      "priority": "P2",
+      "disposition": "split",
+      "inputHash": "6377fe31b34e3043813e697ebdf87f1746ac366c0a11a442a980956d5455b25b"
+    },
+    {
+      "jobId": "unit-db4c5d328f525342",
+      "documentId": "doc-mining-act",
+      "priority": "P2",
+      "disposition": "standalone",
+      "inputHash": "a6009cd4009f3734db4669a942a2a3dc8ab3735ad32a17e8f9107958737ce0f7"
+    },
+    {
+      "jobId": "unit-dbf05be4100e2f56",
+      "documentId": "doc-condominium-property-act",
+      "priority": "P2",
+      "disposition": "split",
+      "inputHash": "9f0ef557f7aea427c22ff4b38580e31724bb26ade2ac75a4aef8f64438153581"
+    },
+    {
+      "jobId": "unit-dca9e8729ba200b7",
+      "documentId": "doc-quarriable-substances-act",
+      "priority": "P2",
+      "disposition": "split",
+      "inputHash": "5499abbb08e438e8b8801383673d8d2d0ce144139d1152a0dfe15a971080cbcd"
+    },
+    {
+      "jobId": "unit-e053406d41f6ff95",
+      "documentId": "doc-partnerships-and-business-names-registration-act",
+      "priority": "P4",
+      "disposition": "standalone",
+      "inputHash": "56ae9383bce6487393dde742bfae9ec83ff07b9856f47cfd7a48cd6db8dc46b5"
+    },
+    {
+      "jobId": "unit-e26d65bb455e122a",
+      "documentId": "doc-municipalities-act",
+      "priority": "P2",
+      "disposition": "split",
+      "inputHash": "a3e61e56f65e89d2a95946328579103132f68f31e60c3b0d3ab29351af6fa00d"
+    },
+    {
+      "jobId": "unit-e3c92aa612716ea7",
+      "documentId": "doc-community-planning-act",
+      "priority": "P3",
+      "disposition": "standalone",
+      "inputHash": "a4ec320a88830afe4e0716328727438b1dc4d019f435dfe6852ef65a86dcfbcd"
+    },
+    {
+      "jobId": "unit-e928212f96ca6f23",
+      "documentId": "doc-municipalities-act",
+      "priority": "P4",
+      "disposition": "standalone",
+      "inputHash": "473597b3fd58d2af4f6d533546abc41203606cfecaf4b94a544eea4432052799"
+    },
+    {
+      "jobId": "unit-e9de296678bcb224",
+      "documentId": "doc-highway-act",
+      "priority": "P2",
+      "disposition": "split",
+      "inputHash": "4344e3bd7e8285ce14e32bec070aa0e958868f79b8048c700eba68bd758e879b"
+    },
+    {
+      "jobId": "unit-ebb6c996cbe6aba0",
+      "documentId": "doc-gas-distribution-act",
+      "priority": "P2",
+      "disposition": "standalone",
+      "inputHash": "587a097f8a7c02ff0923a5892a225551cfa87d6f4a5d2cd2cf6438953405dff1"
+    },
+    {
+      "jobId": "unit-ed6584b35ca2893f",
+      "documentId": "doc-condominium-property-act",
+      "priority": "P1",
+      "disposition": "split",
+      "inputHash": "894fae261198027f93712115359cf9d04dbe517e4860cafac1ee59ac32529731"
+    },
+    {
+      "jobId": "unit-edc9098c47b8042d",
+      "documentId": "doc-limitation-of-actions-act",
+      "priority": "P1",
+      "disposition": "standalone",
+      "inputHash": "9408aa71313979fd03630e37478687ce607c9557754e173321d0bd4bd6d046c2"
+    },
+    {
+      "jobId": "unit-f3be09ef450f65aa",
+      "documentId": "doc-public-health-act",
+      "priority": "P4",
+      "disposition": "split",
+      "inputHash": "9c4ae612b736217ad49adc71424b74c0970192d5bd8d50724137b6bd9c4699ab"
+    },
+    {
+      "jobId": "unit-f4310c1928ac6326",
+      "documentId": "doc-escheats-and-forfeitures-act",
+      "priority": "P2",
+      "disposition": "standalone",
+      "inputHash": "32eefcee8480303a038750b593c5490c58bcc1efd31891b27953136735f1e3b5"
+    },
+    {
+      "jobId": "unit-fb73fd738893d2ba",
+      "documentId": "doc-oil-and-natural-gas-act",
+      "priority": "P2",
+      "disposition": "split",
+      "inputHash": "98b5640f8f05105dbf786fb77bc3ecf1c24adb023ff042e87dde0b5cf0f5805e"
+    },
+    {
+      "jobId": "unit-fbfaea6340750363",
+      "documentId": "doc-municipalities-act",
+      "priority": "P3",
+      "disposition": "split",
+      "inputHash": "6769a8a043e7aa9a9d7fc79eac2dfc0df4a8b7ed09cc5dee4a42e5111aad1490"
+    },
+    {
+      "jobId": "unit-fd9cc5020655d601",
+      "documentId": "doc-residential-property-tax-relief-act",
+      "priority": "P2",
+      "disposition": "split",
+      "inputHash": "b02eb05095f836dbfb8caf2f6951fc028976285bfcb6ec3c021fe043def64271"
+    },
+    {
+      "jobId": "unit-fe165ac52337399b",
+      "documentId": "doc-condominium-property-act",
+      "priority": "P2",
+      "disposition": "split",
+      "inputHash": "3fb5d0bbcc3afff2d0c651cfcb280a2fd790bbf05d14a8ee727dc3d473462e2f"
+    },
+    {
+      "jobId": "unit-feca0d5390dc8003",
+      "documentId": "doc-municipalities-act",
+      "priority": "P3",
+      "disposition": "standalone",
+      "inputHash": "e4b306113548ef144e67a6c151500294ce66c1ff7c8faf207c0a88d0128548f5"
+    },
+    {
+      "jobId": "unit-fed3550b0b3e689d",
+      "documentId": "doc-official-languages-act",
+      "priority": "P2",
+      "disposition": "standalone",
+      "inputHash": "09900204c083a7fcd8126816558da3a28b9705c9d05c11cf2b4ad58a1ed364d0"
+    },
+    {
+      "jobId": "unit-ff33fb6f1302a755",
+      "documentId": "doc-community-planning-act",
+      "priority": "P2",
+      "disposition": "split",
+      "inputHash": "b90b52317b4c28ef6945c20ea0fbcf28fb24485a2a924384b00b0284499153bd"
+    }
+  ],
+  "frozenAt": "2026-09-03T00:00:00.000Z",
+  "status": "prepared-not-executed"
+}
