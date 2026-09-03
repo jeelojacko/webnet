@@ -1,5 +1,5 @@
 import type React from 'react';
-import { BookOpen, ChevronLeft, ChevronRight, FileText, Home, Library, PencilLine, RotateCcw, Settings } from 'lucide-react';
+import { BookOpen, ChevronLeft, ChevronRight, FileText, GraduationCap, Home, Library, PencilLine, RotateCcw, Settings } from 'lucide-react';
 
 type StudyLayoutProps = {
   activePath: string;
@@ -12,6 +12,7 @@ type StudyLayoutProps = {
 const NAV_ITEMS = [
   { path: '/study', label: 'Dashboard', icon: Home },
   { path: '/study/library', label: 'Library', icon: Library },
+  { path: '/study/exam-curriculum', label: 'Exam Curriculum', icon: GraduationCap },
   { path: '/study/session', label: 'Session', icon: BookOpen },
   { path: '/study/authoring', label: 'Authoring', icon: PencilLine },
   { path: '/study/manage', label: 'Manage', icon: Settings },

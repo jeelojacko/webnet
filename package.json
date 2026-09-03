@@ -26,6 +26,7 @@
     "study:corpus:validate": "tsx scripts/studyCorpus.ts validate",
     "study:corpus:build": "tsx scripts/studyCorpus.ts build",
     "study:corpus:refresh": "tsx scripts/studyCorpus.ts refresh",
+    "study:exam-curriculum:build": "tsx scripts/studyExamCurriculumBuild.ts",
     "study:audit-generation": "tsx scripts/studyAuditGeneration.ts",
     "study:ai:prepare-map": "tsx scripts/studyAiAuthoring.ts prepare-map",
     "study:ai:prepare-units": "tsx scripts/studyAiAuthoring.ts prepare-units",

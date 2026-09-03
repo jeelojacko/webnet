@@ -1,0 +1,6353 @@
+{
+  "schemaVersion": 1,
+  "curriculumId": "nb-sit-statute-exam-curriculum-v1",
+  "architectureVersion": "exam-curriculum-v1",
+  "sourcePackageId": "nb-sit-statute-corpus-2026-08-29",
+  "sourceCorpusContentHash": "6f0442fc121eb0d2bcc9d3c1023c7a624e2cd4adf36922079bc3f6858fdcc32b",
+  "createdAt": "2026-09-03T21:08:59.056Z",
+  "contentHash": "9733a1ad7325bfbcc531abb374a5b5f932065835d6e17f2a04e79a28023aad1c",
+  "units": [
+    {
+      "id": "A-NBLS-01",
+      "unitType": "document_orientation",
+      "tier": "A",
+      "title": "What does the NBLS Act govern, and what counts as land surveying?",
+      "sourceDocumentIds": [
+        "doc-new-brunswick-land-surveyors-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:2",
+          "label": "2",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:5(1)",
+          "label": "5(1)",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:5(2)",
+          "label": "5(2)",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:6",
+          "label": "6",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:7(1)",
+          "label": "7(1)",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:7(2)",
+          "label": "7(2)",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:7(3)",
+          "label": "7(3)",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:8(1)",
+          "label": "8(1)",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:8(2)",
+          "label": "8(2)",
+          "role": "orientation"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "recall"
+      ],
+      "examGoal": "Recognize the professional statute and understand the statutory scope of the practice of land surveying and the Association.",
+      "recognitionCues": [
+        "statute governing the practice of land surveying in New Brunswick",
+        "professional/Association regulation of a surveying body"
+      ],
+      "coreUnderstanding": [
+        "statutory definition/scope of land surveying;",
+        "Association's purpose and regulatory role."
+      ],
+      "mustRecall": [
+        "legal-boundary determination is core practice;",
+        "locating things relative to boundaries can constitute practice;",
+        "watercourse boundary work and preparation of related plans/documents/advice fall within the statutory scope."
+      ],
+      "mustLocate": [],
+      "relatedUnitIds": [],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "A-NBLS-02",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "How does a person become authorized to practise?",
+      "sourceDocumentIds": [
+        "doc-new-brunswick-land-surveyors-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:12(1)",
+          "label": "12(1)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:12(2)",
+          "label": "12(2)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:12(3)",
+          "label": "12(3)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:13",
+          "label": "13",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:14",
+          "label": "14",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:15(1)",
+          "label": "15(1)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:15(2)",
+          "label": "15(2)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:15(3)",
+          "label": "15(3)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:15(4)",
+          "label": "15(4)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:16(1)",
+          "label": "16(1)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:16(2)",
+          "label": "16(2)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:17(1)",
+          "label": "17(1)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:17(2)",
+          "label": "17(2)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:17(3)",
+          "label": "17(3)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:17(4)",
+          "label": "17(4)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:17(5)",
+          "label": "17(5)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:17(6)",
+          "label": "17(6)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:17(7)",
+          "label": "17(7)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:17(8)",
+          "label": "17(8)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:17(9)",
+          "label": "17(9)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:18(1)",
+          "label": "18(1)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:18(2)",
+          "label": "18(2)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:18(3)",
+          "label": "18(3)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:18(4)",
+          "label": "18(4)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:18(5)",
+          "label": "18(5)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:19(1)",
+          "label": "19(1)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:19(2)",
+          "label": "19(2)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:19(3)",
+          "label": "19(3)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:19(4)",
+          "label": "19(4)",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Understand the qualification, Board of Examiners, registration and register framework.",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "qualification requirements for registration",
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:15(1)"
+        },
+        {
+          "prompt": "Board of Examiners composition and authority",
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:12(1)"
+        },
+        {
+          "prompt": "register of registrants and its publication",
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:18(1)"
+        },
+        {
+          "prompt": "fees and membership status provisions",
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:19(1)"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "A-NBLS-03",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "Who may practise, and how may firms practise?",
+      "sourceDocumentIds": [
+        "doc-new-brunswick-land-surveyors-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:16(1)",
+          "label": "16(1)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:16(2)",
+          "label": "16(2)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:17(1)",
+          "label": "17(1)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:17(2)",
+          "label": "17(2)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:17(3)",
+          "label": "17(3)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:17(4)",
+          "label": "17(4)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:17(5)",
+          "label": "17(5)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:17(6)",
+          "label": "17(6)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:17(7)",
+          "label": "17(7)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:17(8)",
+          "label": "17(8)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:17(9)",
+          "label": "17(9)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:28",
+          "label": "28",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:29(1)",
+          "label": "29(1)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:29(2)",
+          "label": "29(2)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:29(3)",
+          "label": "29(3)",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "understand",
+        "recall",
+        "retrieve"
+      ],
+      "examGoal": "Distinguish individual registration from organizational authorization to practise.",
+      "recognitionCues": [],
+      "coreUnderstanding": [
+        "distinction between individual registration and organizational authorization;",
+        "certificate-of-authorization framework;",
+        "unauthorized-practice consequences."
+      ],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "who may practise as a registered land surveyor",
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:16(1)"
+        },
+        {
+          "prompt": "authorization of partnerships and firms",
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:17(1)"
+        },
+        {
+          "prompt": "consequences of practicing without registration/authorization",
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:29(1)"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "A-NBLS-04",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "What responsibility attaches to a surveyor's professional work?",
+      "sourceDocumentIds": [
+        "doc-new-brunswick-land-surveyors-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:30(1)",
+          "label": "30(1)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:30(2)",
+          "label": "30(2)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:30",
+          "label": "30",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:31(1)",
+          "label": "31(1)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:31(2)",
+          "label": "31(2)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:32",
+          "label": "32",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:33",
+          "label": "33",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:34",
+          "label": "34",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:35",
+          "label": "35",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "understand",
+        "recall"
+      ],
+      "examGoal": "Understand the statutory responsibilities attached to survey plans, reports, records and opinions.",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [
+        "final professional survey plans/reports/opinions/documents intended to be relied upon require the responsible surveyor’s signature/seal where prescribed;",
+        "professional records/plans carry statutory responsibilities."
+      ],
+      "mustLocate": [],
+      "relatedUnitIds": [],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "A-NBLS-05",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "How do complaints, discipline and appeals work?",
+      "sourceDocumentIds": [
+        "doc-new-brunswick-land-surveyors-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:20(1)",
+          "label": "20(1)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:20(2)",
+          "label": "20(2)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:20(3)",
+          "label": "20(3)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:20(4)",
+          "label": "20(4)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:21(1)",
+          "label": "21(1)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:21(2)",
+          "label": "21(2)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:21(3)",
+          "label": "21(3)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:21(4)",
+          "label": "21(4)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:21(5)",
+          "label": "21(5)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:22(1)",
+          "label": "22(1)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:22(2)",
+          "label": "22(2)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:22(3)",
+          "label": "22(3)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:22(4)",
+          "label": "22(4)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:22(5)",
+          "label": "22(5)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:22(6)",
+          "label": "22(6)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:23(1)",
+          "label": "23(1)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:23(2)",
+          "label": "23(2)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:23(3)",
+          "label": "23(3)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:23(4)",
+          "label": "23(4)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:23(5)",
+          "label": "23(5)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:23(6)",
+          "label": "23(6)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:23(7)",
+          "label": "23(7)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:23(8)",
+          "label": "23(8)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:23(9)",
+          "label": "23(9)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:23(10)",
+          "label": "23(10)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:23(11)",
+          "label": "23(11)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:24(1)",
+          "label": "24(1)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:24(2)",
+          "label": "24(2)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:24(3)",
+          "label": "24(3)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:24(4)",
+          "label": "24(4)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:24(5)",
+          "label": "24(5)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:24(6)",
+          "label": "24(6)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:24(7)",
+          "label": "24(7)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:24(8)",
+          "label": "24(8)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:24(9)",
+          "label": "24(9)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:24(10)",
+          "label": "24(10)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:24(11)",
+          "label": "24(11)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:25(1)",
+          "label": "25(1)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:25(2)",
+          "label": "25(2)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:25(3)",
+          "label": "25(3)",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Understand the complaint, discipline and appeal structure without memorizing every procedural detail.",
+      "recognitionCues": [],
+      "coreUnderstanding": [
+        "complaint → investigation/committee → discipline/hearing → appeal structure."
+      ],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "constitution of the Complaints Committee",
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:20(1)"
+        },
+        {
+          "prompt": "discipline proceedings and available orders",
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:23(1)"
+        },
+        {
+          "prompt": "appeal of discipline committee decisions",
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:25(1)"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "A-NBLS-06",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "What enforcement and field authority does the Act provide?",
+      "sourceDocumentIds": [
+        "doc-new-brunswick-land-surveyors-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:26",
+          "label": "26",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:27",
+          "label": "27",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:28",
+          "label": "28",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:29(1)",
+          "label": "29(1)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:29(2)",
+          "label": "29(2)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:29(3)",
+          "label": "29(3)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:36",
+          "label": "36",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:37",
+          "label": "37",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:38(1)",
+          "label": "38(1)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:38(2)",
+          "label": "38(2)",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:38(3)",
+          "label": "38(3)",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Recognize the enforcement and field-authority provisions of the Act.",
+      "recognitionCues": [
+        "unauthorized practice offences",
+        "field access and property authority in surveying"
+      ],
+      "coreUnderstanding": [
+        "unauthorized practice/offences;",
+        "relevant field/property authority;",
+        "protections/limitations."
+      ],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "offences and penalties for unauthorized practice",
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:26"
+        },
+        {
+          "prompt": "civil liability protections for members and officers",
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:36"
+        },
+        {
+          "prompt": "field/property authority and entry to land",
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:38(1)"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "medium",
+      "status": "planned"
+    },
+    {
+      "id": "A-BYL-01",
+      "unitType": "document_orientation",
+      "tier": "A",
+      "title": "How are the ANBLS Bylaws organized and what do they add to the Act?",
+      "sourceDocumentIds": [
+        "doc-new-brunswick-land-surveyors-bylaws"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:1.1.1",
+          "label": "1.1.1",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:1.1.2",
+          "label": "1.1.2",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:1.1.3",
+          "label": "1.1.3",
+          "role": "orientation"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Orient to the Bylaws’ part structure and understand what the Bylaws add on top of the NBLS Act.",
+      "recognitionCues": [
+        "professional-association internal governance (membership, Council, committees, fees)",
+        "bylaw part-numbered structure (e.g. 2.1, 3.1, 6.5)"
+      ],
+      "coreUnderstanding": [
+        "the Bylaws operationalize the Association: membership, governance, practice standards and discipline details;",
+        "the Act sets out the statutory framework while the Bylaws govern internal Association life."
+      ],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "how the Bylaws are organized (arrangement/navigation)",
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:1.1.1"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "A-BYL-02",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "Membership classes, applications and registration",
+      "sourceDocumentIds": [
+        "doc-new-brunswick-land-surveyors-bylaws"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:2.1",
+          "label": "2.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:2.1.1",
+          "label": "2.1.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:2.1.2",
+          "label": "2.1.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:2.1.3",
+          "label": "2.1.3",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:2.1.4",
+          "label": "2.1.4",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:2.1.5",
+          "label": "2.1.5",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:2.1.6",
+          "label": "2.1.6",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:2.1.7",
+          "label": "2.1.7",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:2.1.8",
+          "label": "2.1.8",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:2.2",
+          "label": "2.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:2.2.1",
+          "label": "2.2.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:2.2.2",
+          "label": "2.2.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:2.2.3",
+          "label": "2.2.3",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:2.2.4",
+          "label": "2.2.4",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:2.2.5",
+          "label": "2.2.5",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:2.2.6",
+          "label": "2.2.6",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:2.2.7",
+          "label": "2.2.7",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:2.3",
+          "label": "2.3",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:2.3.1",
+          "label": "2.3.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:2.3.2",
+          "label": "2.3.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:2.3.3",
+          "label": "2.3.3",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:2.3.4",
+          "label": "2.3.4",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:2.3.5",
+          "label": "2.3.5",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:2.4",
+          "label": "2.4",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:2.4.1",
+          "label": "2.4.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:2.4.2",
+          "label": "2.4.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:2.4.3",
+          "label": "2.4.3",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:2.5",
+          "label": "2.5",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:2.5.1",
+          "label": "2.5.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:2.5.2",
+          "label": "2.5.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:2.5.3",
+          "label": "2.5.3",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:2.5.4",
+          "label": "2.5.4",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:2.5.5",
+          "label": "2.5.5",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Understand the membership classification and registration/application framework.",
+      "recognitionCues": [],
+      "coreUnderstanding": [
+        "member classifications;",
+        "SIT;",
+        "registration/application/status framework."
+      ],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "classes of membership and their conditions",
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws"
+        },
+        {
+          "prompt": "membership applications and registration of members",
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "A-BYL-03",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "Practice through partnerships, associations and corporations",
+      "sourceDocumentIds": [
+        "doc-new-brunswick-land-surveyors-bylaws"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:3",
+          "label": "3",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:3.1",
+          "label": "3.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:3.1.1",
+          "label": "3.1.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:3.1.2",
+          "label": "3.1.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:3.1.3",
+          "label": "3.1.3",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Understand how the Association governs practice by groups and organizations.",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "requirements for practice by partnerships, associations or corporations",
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "medium",
+      "status": "planned"
+    },
+    {
+      "id": "A-BYL-04",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "Who governs what inside ANBLS?",
+      "sourceDocumentIds": [
+        "doc-new-brunswick-land-surveyors-bylaws"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:5.1",
+          "label": "5.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:5.1.1",
+          "label": "5.1.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:5.1.2",
+          "label": "5.1.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:5.1.3",
+          "label": "5.1.3",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:5.1.4",
+          "label": "5.1.4",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:5.1.5",
+          "label": "5.1.5",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:5.1.6",
+          "label": "5.1.6",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:5.1.7",
+          "label": "5.1.7",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:5.1.8",
+          "label": "5.1.8",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:5.2",
+          "label": "5.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:5.2.1",
+          "label": "5.2.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:5.2.2",
+          "label": "5.2.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:5.3",
+          "label": "5.3",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:5.3.1",
+          "label": "5.3.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:5.3.2",
+          "label": "5.3.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:5.3.3",
+          "label": "5.3.3",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:5.3.4",
+          "label": "5.3.4",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:5.3.5",
+          "label": "5.3.5",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.1",
+          "label": "6.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.1.1",
+          "label": "6.1.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.1.2",
+          "label": "6.1.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.1.3",
+          "label": "6.1.3",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.2",
+          "label": "6.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.2.1",
+          "label": "6.2.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.2.2",
+          "label": "6.2.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.2.3",
+          "label": "6.2.3",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:1.6.3",
+          "label": "1.6.3",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.3.1",
+          "label": "6.3.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.3.2",
+          "label": "6.3.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:1.6.4",
+          "label": "1.6.4",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.5",
+          "label": "6.5",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.5.1",
+          "label": "6.5.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.5.2",
+          "label": "6.5.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.6",
+          "label": "6.6",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.7",
+          "label": "6.7",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.8",
+          "label": "6.8",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.9",
+          "label": "6.9",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.9.1",
+          "label": "6.9.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.9.2",
+          "label": "6.9.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.9.3",
+          "label": "6.9.3",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:1.6.10",
+          "label": "1.6.10",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.11",
+          "label": "6.11",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.12",
+          "label": "6.12",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.12.1",
+          "label": "6.12.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.12.2",
+          "label": "6.12.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.12.3",
+          "label": "6.12.3",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.12.4",
+          "label": "6.12.4",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.12.5",
+          "label": "6.12.5",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.12.6",
+          "label": "6.12.6",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Identify the proper decision-maker/body for a given Association matter.",
+      "recognitionCues": [
+        "governance bodies of a professional association",
+        "committee jurisdictions"
+      ],
+      "coreUnderstanding": [
+        "Council;",
+        "Registrar;",
+        "major committees;",
+        "identify the proper decision-maker/body."
+      ],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "Council powers and composition",
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws"
+        },
+        {
+          "prompt": "Registrar duties",
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws"
+        },
+        {
+          "prompt": "major committees and their jurisdictions",
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "medium",
+      "status": "planned"
+    },
+    {
+      "id": "A-BYL-05",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "Complaints, hearings and professional misconduct",
+      "sourceDocumentIds": [
+        "doc-new-brunswick-land-surveyors-bylaws"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:8.1",
+          "label": "8.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:8.1.1",
+          "label": "8.1.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:8.1.2",
+          "label": "8.1.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:8.2",
+          "label": "8.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:8.2.1",
+          "label": "8.2.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:8.2.2",
+          "label": "8.2.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:8.2.3",
+          "label": "8.2.3",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:8.2.4.1",
+          "label": "8.2.4.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:8.2.4.2",
+          "label": "8.2.4.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:8.2.5",
+          "label": "8.2.5",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:8.2.6",
+          "label": "8.2.6",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:8.2.7",
+          "label": "8.2.7",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:8.2.8",
+          "label": "8.2.8",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:8.2.9",
+          "label": "8.2.9",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:8.2.10",
+          "label": "8.2.10",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:8.3",
+          "label": "8.3",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:8.3.1",
+          "label": "8.3.1",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Understand the Bylaws’ complaints, hearings and misconduct framework.",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "complaint and hearing procedure",
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws"
+        },
+        {
+          "prompt": "professional misconduct standards and sanctions",
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "A-BYL-06",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "Quality assurance, plan validation, survey review, insurance and continuing education",
+      "sourceDocumentIds": [
+        "doc-new-brunswick-land-surveyors-bylaws"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.1.1",
+          "label": "11.1.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.1.2",
+          "label": "11.1.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.1.3",
+          "label": "11.1.3",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.1.4",
+          "label": "11.1.4",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.1.5",
+          "label": "11.1.5",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.1.6",
+          "label": "11.1.6",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.1.7",
+          "label": "11.1.7",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.2",
+          "label": "11.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.2.1",
+          "label": "11.2.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.2.2",
+          "label": "11.2.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.2.3",
+          "label": "11.2.3",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.2.4",
+          "label": "11.2.4",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.2.5",
+          "label": "11.2.5",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.2.6",
+          "label": "11.2.6",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.2.7",
+          "label": "11.2.7",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.2.8",
+          "label": "11.2.8",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.2.9",
+          "label": "11.2.9",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.3",
+          "label": "11.3",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.3.1",
+          "label": "11.3.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.3.2",
+          "label": "11.3.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.3.3",
+          "label": "11.3.3",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.3.4",
+          "label": "11.3.4",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.4",
+          "label": "11.4",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.4.1",
+          "label": "11.4.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.4.2",
+          "label": "11.4.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.4.3",
+          "label": "11.4.3",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:12.1.1",
+          "label": "12.1.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:12.1.2",
+          "label": "12.1.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:12.1.3",
+          "label": "12.1.3",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:12.1.4",
+          "label": "12.1.4",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:12.1.5",
+          "label": "12.1.5",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:12.1.6",
+          "label": "12.1.6",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:12.1.7",
+          "label": "12.1.7",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:12.1.8",
+          "label": "12.1.8",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:12.1.9",
+          "label": "12.1.9",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:12.1.10",
+          "label": "12.1.10",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:18.1.1",
+          "label": "18.1.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:18.1.2",
+          "label": "18.1.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:18.1.3",
+          "label": "18.1.3",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:18.1.4",
+          "label": "18.1.4",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:18.1.5",
+          "label": "18.1.5",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:18.1.6",
+          "label": "18.1.6",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:18.1.7",
+          "label": "18.1.7",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:18.1.8",
+          "label": "18.1.8",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:18.1.9",
+          "label": "18.1.9",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:18.1.10",
+          "label": "18.1.10",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:18.2",
+          "label": "18.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:18.2.1",
+          "label": "18.2.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:18.2.2",
+          "label": "18.2.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:18.2.3",
+          "label": "18.2.3",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:19.0",
+          "label": "19.0",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "understand",
+        "recall",
+        "retrieve"
+      ],
+      "examGoal": "Understand the Bylaws’ quality-assurance framework, including the plan-after-monumentation requirement and its general exception structure.",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [
+        "plans are to be based on monuments established in the field, subject to the general exception structure in the Bylaws."
+      ],
+      "mustLocate": [
+        {
+          "prompt": "quality assurance and plan validation requirements",
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws"
+        },
+        {
+          "prompt": "survey review requirements",
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws"
+        },
+        {
+          "prompt": "insurance requirements",
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws"
+        },
+        {
+          "prompt": "continuing education requirements",
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "A-BYL-07",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "Professional standards, seals and code of conduct",
+      "sourceDocumentIds": [
+        "doc-new-brunswick-land-surveyors-bylaws"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:7.1",
+          "label": "7.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:7.2",
+          "label": "7.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:10.1.1",
+          "label": "10.1.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:10.1.2",
+          "label": "10.1.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:10.1.3",
+          "label": "10.1.3",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:14.1.1",
+          "label": "14.1.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:14.1.2",
+          "label": "14.1.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:14.1.3",
+          "label": "14.1.3",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:14.1.4",
+          "label": "14.1.4",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:14.1.5",
+          "label": "14.1.5",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:14.1.6",
+          "label": "14.1.6",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:14.1.7",
+          "label": "14.1.7",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:14.1.8",
+          "label": "14.1.8",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:14.1.9",
+          "label": "14.1.9",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "understand",
+        "recall",
+        "retrieve"
+      ],
+      "examGoal": "Understand the Bylaws’ professional standards, seal and code-of-conduct provisions.",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "seal and seal-usage provisions",
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws"
+        },
+        {
+          "prompt": "code of conduct / professional standards",
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "A-SURV-01",
+      "unitType": "document_orientation",
+      "tier": "A",
+      "title": "What is the Surveys Act about?",
+      "sourceDocumentIds": [
+        "doc-surveys-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:1",
+          "label": "1",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:2",
+          "label": "2",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:3",
+          "label": "3",
+          "role": "orientation"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand"
+      ],
+      "examGoal": "Recognize the Surveys Act and understand the coordinate survey system, monuments and the Director of Surveys.",
+      "recognitionCues": [
+        "provincial statute on land surveying standards and monuments",
+        "coordinate survey system / Director of Surveys"
+      ],
+      "coreUnderstanding": [
+        "surveys;",
+        "legal monuments;",
+        "coordinate monuments;",
+        "coordinate survey system;",
+        "Director of Surveys."
+      ],
+      "mustRecall": [],
+      "mustLocate": [],
+      "relatedUnitIds": [],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "A-SURV-02",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "Coordinate survey systems and coordinate monuments",
+      "sourceDocumentIds": [
+        "doc-surveys-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:2",
+          "label": "2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:3",
+          "label": "3",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:4",
+          "label": "4",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:5",
+          "label": "5",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:6",
+          "label": "6",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Understand how the coordinate survey system and coordinate monuments work.",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "establishment of the provincial coordinate survey system",
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:2"
+        },
+        {
+          "prompt": "surveyor duties respecting the coordinate survey system",
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:4"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "A-SURV-03",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "What changes inside an integrated survey area?",
+      "sourceDocumentIds": [
+        "doc-surveys-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:5",
+          "label": "5",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:6",
+          "label": "6",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:7",
+          "label": "7",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:8",
+          "label": "8",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "understand",
+        "recall",
+        "retrieve"
+      ],
+      "examGoal": "Understand the requirements that change inside an integrated survey area.",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [
+        "relevant legal monuments established by the surveyor must be tied into the coordinate-monument framework where the Act requires;",
+        "subdivision work is explicitly included;",
+        "certification responsibility remains with the surveyor."
+      ],
+      "mustLocate": [
+        {
+          "prompt": "integrated survey area plan and duties",
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:7"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "A-SURV-04",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "Plan certification and lost legal monuments",
+      "sourceDocumentIds": [
+        "doc-surveys-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:8",
+          "label": "8",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:12",
+          "label": "12",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "understand",
+        "recall",
+        "retrieve"
+      ],
+      "examGoal": "Understand plan filing/certification in an integrated survey area and handling of lost legal monuments.",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "survey plan requirements in an integrated survey area",
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:8"
+        },
+        {
+          "prompt": "procedure for lost legal monuments",
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:12"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "A-SURV-05",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "Entry onto private property, offences and administration",
+      "sourceDocumentIds": [
+        "doc-surveys-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:13",
+          "label": "13",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:14",
+          "label": "14",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:14.1",
+          "label": "14.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:15",
+          "label": "15",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Recognize the entry, offence and administration provisions of the Surveys Act.",
+      "recognitionCues": [
+        "survey entry onto private property",
+        "offences and penalties in surveying statutes"
+      ],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "authority respecting private property",
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:13"
+        },
+        {
+          "prompt": "offences and penalties",
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:14"
+        },
+        {
+          "prompt": "administration and regulations",
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:14.1"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "medium",
+      "status": "planned"
+    },
+    {
+      "id": "A-SURVR-01",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "Control points, coordinate monuments and when lot monuments need not be planted",
+      "sourceDocumentIds": [
+        "reg-surveys-84-76"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "reg-surveys-84-76",
+          "sourceKey": "section:2",
+          "label": "2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-surveys-84-76",
+          "sourceKey": "section:3",
+          "label": "3",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-surveys-84-76",
+          "sourceKey": "section:4",
+          "label": "4",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-surveys-84-76",
+          "sourceKey": "section:5",
+          "label": "5",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Understand control points and coordinate monument requirements, and know where to look up numeric thresholds.",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "control point and coordinate monument requirements",
+          "documentId": "reg-surveys-84-76"
+        },
+        {
+          "prompt": "when lot monuments need not be planted",
+          "documentId": "reg-surveys-84-76"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "A-SURVR-02",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "What must accompany a plan submitted for approval?",
+      "sourceDocumentIds": [
+        "reg-surveys-84-76"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "reg-surveys-84-76",
+          "sourceKey": "section:6",
+          "label": "6",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-surveys-84-76",
+          "sourceKey": "section:7",
+          "label": "7",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Understand what must accompany a plan submitted for approval.",
+      "recognitionCues": [],
+      "coreUnderstanding": [
+        "plan;",
+        "field notes;",
+        "computations;",
+        "Director's standard-setting/approval framework."
+      ],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "contents required with a plan submission for approval",
+          "documentId": "reg-surveys-84-76"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "medium",
+      "status": "planned"
+    },
+    {
+      "id": "A-BCA-01",
+      "unitType": "document_orientation",
+      "tier": "A",
+      "title": "What problem does boundary confirmation solve?",
+      "sourceDocumentIds": [
+        "doc-boundaries-confirmation-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:1",
+          "label": "1",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:6",
+          "label": "6",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:7",
+          "label": "7",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:8",
+          "label": "8",
+          "role": "orientation"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand"
+      ],
+      "examGoal": "Recognize the Boundaries Confirmation Act and understand the problem it solves.",
+      "recognitionCues": [
+        "statute confirming disputed or uncertain boundaries",
+        "application/objection/hearing process for land boundaries"
+      ],
+      "coreUnderstanding": [
+        "boundary confirmation resolves disputes/uncertainties over land boundaries by a statutory decision process;",
+        "the confirmed boundary then carries legal effect."
+      ],
+      "mustRecall": [],
+      "mustLocate": [],
+      "relatedUnitIds": [],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "A-BCA-02",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "Application, notice, objections and parties",
+      "sourceDocumentIds": [
+        "doc-boundaries-confirmation-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:7",
+          "label": "7",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:9",
+          "label": "9",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:10",
+          "label": "10",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Understand the application, notice, objection and party framework.",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "application for confirmation of boundaries",
+          "documentId": "doc-boundaries-confirmation-act"
+        },
+        {
+          "prompt": "notice, objections and joining of parties",
+          "documentId": "doc-boundaries-confirmation-act"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "A-BCA-03",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "Hearing, order, appeal and certification",
+      "sourceDocumentIds": [
+        "doc-boundaries-confirmation-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:11",
+          "label": "11",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:12",
+          "label": "12",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:13",
+          "label": "13",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:14",
+          "label": "14",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Understand the hearing, order, appeal and certification steps.",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "hearing and order confirming boundaries",
+          "documentId": "doc-boundaries-confirmation-act"
+        },
+        {
+          "prompt": "appeal and certification of the order",
+          "documentId": "doc-boundaries-confirmation-act"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "A-BCA-04",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "What happens to the boundary after the decision?",
+      "sourceDocumentIds": [
+        "doc-boundaries-confirmation-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:15",
+          "label": "15",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:16",
+          "label": "16",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:17",
+          "label": "17",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:18",
+          "label": "18",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:19",
+          "label": "19",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:20",
+          "label": "20",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Understand the legal effect of a confirmation decision on the boundary.",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "effect of the confirmed boundary and enforcement",
+          "documentId": "doc-boundaries-confirmation-act"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "medium",
+      "status": "planned"
+    },
+    {
+      "id": "A-BCAR-01",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "What must accompany a boundary-confirmation application?",
+      "sourceDocumentIds": [
+        "reg-boundaries-95-166"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "reg-boundaries-95-166",
+          "sourceKey": "section:2",
+          "label": "2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-boundaries-95-166",
+          "sourceKey": "section:3",
+          "label": "3",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-boundaries-95-166",
+          "sourceKey": "section:4",
+          "label": "4",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-boundaries-95-166",
+          "sourceKey": "form:form-1",
+          "label": "Form 1",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "understand",
+        "recall",
+        "retrieve"
+      ],
+      "examGoal": "Understand the application package for boundary confirmation and what the surveyor’s report addresses.",
+      "recognitionCues": [],
+      "coreUnderstanding": [
+        "the application package can involve: current survey; field notes; surveyor’s report; instruments; affected owners/interests; supporting evidence.",
+        "the surveyor’s report addresses: issue; boundary history; evidence; reasoning for accepting/rejecting competing boundary evidence."
+      ],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "application contents for boundary confirmation",
+          "documentId": "reg-boundaries-95-166"
+        },
+        {
+          "prompt": "form of the application",
+          "documentId": "reg-boundaries-95-166",
+          "sourceKey": "form:form-1"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "A-BCAR-02",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "Evidence, hearings, filing, appeals and fees",
+      "sourceDocumentIds": [
+        "reg-boundaries-95-166"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "reg-boundaries-95-166",
+          "sourceKey": "section:5",
+          "label": "5",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-boundaries-95-166",
+          "sourceKey": "section:6",
+          "label": "6",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-boundaries-95-166",
+          "sourceKey": "section:7",
+          "label": "7",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-boundaries-95-166",
+          "sourceKey": "section:8",
+          "label": "8",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-boundaries-95-166",
+          "sourceKey": "section:9",
+          "label": "9",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-boundaries-95-166",
+          "sourceKey": "section:10",
+          "label": "10",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Understand the Regulation’s evidence, hearing, filing, appeal and fee provisions.",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "evidence and hearing requirements",
+          "documentId": "reg-boundaries-95-166"
+        },
+        {
+          "prompt": "filing, appeals and fees",
+          "documentId": "reg-boundaries-95-166"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "medium",
+      "status": "planned"
+    },
+    {
+      "id": "A-CPA-01",
+      "unitType": "document_orientation",
+      "tier": "A",
+      "title": "How does New Brunswick’s planning system fit together?",
+      "sourceDocumentIds": [
+        "doc-community-planning-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:1",
+          "label": "1",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:2",
+          "label": "2",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:3",
+          "label": "3",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:4",
+          "label": "4",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:5",
+          "label": "5",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:6",
+          "label": "6",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:7",
+          "label": "7",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:8",
+          "label": "8",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:9",
+          "label": "9",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:10",
+          "label": "10",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:11",
+          "label": "11",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:12",
+          "label": "12",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:13",
+          "label": "13",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:14",
+          "label": "14",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:15",
+          "label": "15",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:16",
+          "label": "16",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:17",
+          "label": "17",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:18",
+          "label": "18",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:18.1",
+          "label": "18.1",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:19",
+          "label": "19",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:20",
+          "label": "20",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:21",
+          "label": "21",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:22",
+          "label": "22",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:23",
+          "label": "23",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:24",
+          "label": "24",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:25",
+          "label": "25",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:26",
+          "label": "26",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:27",
+          "label": "27",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:28",
+          "label": "28",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:29",
+          "label": "29",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:30",
+          "label": "30",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:31",
+          "label": "31",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:32",
+          "label": "32",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:32.1",
+          "label": "32.1",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:33",
+          "label": "33",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:33.1",
+          "label": "33.1",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:34",
+          "label": "34",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:35",
+          "label": "35",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:36",
+          "label": "36",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:37",
+          "label": "37",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:38",
+          "label": "38",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:39",
+          "label": "39",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:40",
+          "label": "40",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:41",
+          "label": "41",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:42",
+          "label": "42",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:43",
+          "label": "43",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:44",
+          "label": "44",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:44.1",
+          "label": "44.1",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:44.2",
+          "label": "44.2",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:45",
+          "label": "45",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:46",
+          "label": "46",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:47",
+          "label": "47",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:48",
+          "label": "48",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:49",
+          "label": "49",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:50",
+          "label": "50",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:51",
+          "label": "51",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:51.1",
+          "label": "51.1",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:52",
+          "label": "52",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:52.1",
+          "label": "52.1",
+          "role": "orientation"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Recognize the Community Planning Act and understand how New Brunswick’s planning system fits together.",
+      "recognitionCues": [
+        "provincial planning/zoning legislation",
+        "provincial-planning authority / regional planning context"
+      ],
+      "coreUnderstanding": [
+        "the Act provides the provincial framework for planning, zoning and development control;",
+        "planning decisions involve provincial, regional/county and local-government layers."
+      ],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "definitions and structure of the planning framework",
+          "documentId": "doc-community-planning-act"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "medium",
+      "status": "planned"
+    },
+    {
+      "id": "A-CPA-02",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "Zoning, development, variances and street controls",
+      "sourceDocumentIds": [
+        "doc-community-planning-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:53",
+          "label": "53",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:54",
+          "label": "54",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:55",
+          "label": "55",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:56",
+          "label": "56",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:57",
+          "label": "57",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:58",
+          "label": "58",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:59",
+          "label": "59",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:60",
+          "label": "60",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:61",
+          "label": "61",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:61.1",
+          "label": "61.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:62",
+          "label": "62",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:63",
+          "label": "63",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:64",
+          "label": "64",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:65",
+          "label": "65",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:66",
+          "label": "66",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:67",
+          "label": "67",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:68",
+          "label": "68",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:69",
+          "label": "69",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:70",
+          "label": "70",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:71",
+          "label": "71",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:72",
+          "label": "72",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:73",
+          "label": "73",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Understand the zoning, development-control, variance and street-control provisions.",
+      "recognitionCues": [
+        "zoning by-law / development controls",
+        "variances (minor variances / exemptions) in planning law"
+      ],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "zoning and development control provisions",
+          "documentId": "doc-community-planning-act"
+        },
+        {
+          "prompt": "variances and exemptions",
+          "documentId": "doc-community-planning-act"
+        },
+        {
+          "prompt": "street controls",
+          "documentId": "doc-community-planning-act"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "medium",
+      "status": "planned"
+    },
+    {
+      "id": "A-CPA-03",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "How does the subdivision process start?",
+      "sourceDocumentIds": [
+        "doc-community-planning-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:74",
+          "label": "74",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:75",
+          "label": "75",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:76",
+          "label": "76",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:77",
+          "label": "77",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:78",
+          "label": "78",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:79",
+          "label": "79",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:80",
+          "label": "80",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:81",
+          "label": "81",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:82",
+          "label": "82",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Understand how the subdivision process starts.",
+      "recognitionCues": [],
+      "coreUnderstanding": [
+        "subdivision framework;",
+        "tentative plans;",
+        "exemptions;",
+        "development officer."
+      ],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "making of the subdivision by-law",
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:74"
+        },
+        {
+          "prompt": "exemptions for certain parcels or conveyances",
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:80"
+        },
+        {
+          "prompt": "tentative subdivision plan",
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:81"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "A-CPA-04",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "From approved tentative plan to registered subdivision plan",
+      "sourceDocumentIds": [
+        "doc-community-planning-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:83",
+          "label": "83",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:84",
+          "label": "84",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:85",
+          "label": "85",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:86",
+          "label": "86",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:87",
+          "label": "87",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:88",
+          "label": "88",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:89",
+          "label": "89",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:90",
+          "label": "90",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "understand",
+        "recall",
+        "retrieve"
+      ],
+      "examGoal": "Understand the path from approved tentative plan to registered subdivision plan.",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "application for approval of a subdivision plan",
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:84"
+        },
+        {
+          "prompt": "approval of a subdivision plan",
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:85"
+        },
+        {
+          "prompt": "filing of a subdivision plan",
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:86"
+        },
+        {
+          "prompt": "amendments to a subdivision plan",
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:89"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "A-CPA-05",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "What technical survey information belongs on a subdivision plan?",
+      "sourceDocumentIds": [
+        "doc-community-planning-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:83",
+          "label": "83",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:84",
+          "label": "84",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:85",
+          "label": "85",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:86",
+          "label": "86",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:87",
+          "label": "87",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:88",
+          "label": "88",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:89",
+          "label": "89",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "understand",
+        "recall",
+        "retrieve"
+      ],
+      "examGoal": "Understand what technical survey information belongs on a subdivision plan.",
+      "recognitionCues": [],
+      "coreUnderstanding": [
+        "monuments;",
+        "boundaries;",
+        "title-block information;",
+        "lots/streets;",
+        "easements/public-purpose land;",
+        "curve/boundary information."
+      ],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "information required in the subdivision plan application (especially s.84)",
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:84"
+        },
+        {
+          "prompt": "lay-out of streets and lots",
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:83"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "A-CPA-06",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "Who approves, varies, appeals and enforces planning decisions?",
+      "sourceDocumentIds": [
+        "doc-community-planning-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:108",
+          "label": "108",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:109",
+          "label": "109",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:110",
+          "label": "110",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:111",
+          "label": "111",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:112",
+          "label": "112",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:113",
+          "label": "113",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:114",
+          "label": "114",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:115",
+          "label": "115",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:116",
+          "label": "116",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:117",
+          "label": "117",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:118",
+          "label": "118",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:119",
+          "label": "119",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:120",
+          "label": "120",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:121",
+          "label": "121",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:122",
+          "label": "122",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:123",
+          "label": "123",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:124",
+          "label": "124",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:125",
+          "label": "125",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:126",
+          "label": "126",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:126.1",
+          "label": "126.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:127",
+          "label": "127",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:128",
+          "label": "128",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:129",
+          "label": "129",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:130",
+          "label": "130",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:131",
+          "label": "131",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:132",
+          "label": "132",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:133",
+          "label": "133",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:134",
+          "label": "134",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:135",
+          "label": "135",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:136",
+          "label": "136",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:137",
+          "label": "137",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:138",
+          "label": "138",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:139",
+          "label": "139",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:140",
+          "label": "140",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Identify who approves, varies, appeals and enforces planning decisions.",
+      "recognitionCues": [
+        "planning decision appeals (board/appeal body)",
+        "enforcement of planning and zoning decisions"
+      ],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "appeal body for planning decisions",
+          "documentId": "doc-community-planning-act"
+        },
+        {
+          "prompt": "enforcement and prosecution of planning violations",
+          "documentId": "doc-community-planning-act"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "medium",
+      "status": "planned"
+    },
+    {
+      "id": "A-CPAR-01",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "Provincial subdivision street, lot and access standards",
+      "sourceDocumentIds": [
+        "reg-community-planning-80-159"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "reg-community-planning-80-159",
+          "sourceKey": "section:2",
+          "label": "2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-community-planning-80-159",
+          "sourceKey": "section:3",
+          "label": "3",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-community-planning-80-159",
+          "sourceKey": "section:4",
+          "label": "4",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-community-planning-80-159",
+          "sourceKey": "section:5",
+          "label": "5",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-community-planning-80-159",
+          "sourceKey": "section:6",
+          "label": "6",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Understand the provincial subdivision street, lot and access standards, with numeric thresholds kept as lookup material.",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "street standards for subdivisions",
+          "documentId": "reg-community-planning-80-159"
+        },
+        {
+          "prompt": "lot standards for subdivisions",
+          "documentId": "reg-community-planning-80-159"
+        },
+        {
+          "prompt": "access requirements",
+          "documentId": "reg-community-planning-80-159"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "A-CPAR-02",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "When may or must a development officer approve a subdivision plan?",
+      "sourceDocumentIds": [
+        "reg-community-planning-80-159"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "reg-community-planning-80-159",
+          "sourceKey": "section:7",
+          "label": "7",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-community-planning-80-159",
+          "sourceKey": "section:7.1",
+          "label": "7.1",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Understand when a development officer may or must approve a subdivision plan.",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "development officer approval of subdivision plans",
+          "documentId": "reg-community-planning-80-159",
+          "sourceKey": "section:7"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "A-REG-01",
+      "unitType": "document_orientation",
+      "tier": "A",
+      "title": "What is the Registry system and when does the Registry Act matter?",
+      "sourceDocumentIds": [
+        "doc-registry-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:1",
+          "label": "1",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:1.1",
+          "label": "1.1",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:2",
+          "label": "2",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:3",
+          "label": "3",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:4",
+          "label": "4",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:5",
+          "label": "5",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:6",
+          "label": "6",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:7",
+          "label": "7",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:8",
+          "label": "8",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:9",
+          "label": "9",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:10",
+          "label": "10",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:11",
+          "label": "11",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:12",
+          "label": "12",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:13",
+          "label": "13",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:13.1",
+          "label": "13.1",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:13.2",
+          "label": "13.2",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:14",
+          "label": "14",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:15",
+          "label": "15",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:15.1",
+          "label": "15.1",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:16",
+          "label": "16",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:17",
+          "label": "17",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:18",
+          "label": "18",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19",
+          "label": "19",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19.01",
+          "label": "19.01",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19.02",
+          "label": "19.02",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19.03",
+          "label": "19.03",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19.04",
+          "label": "19.04",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19.05",
+          "label": "19.05",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19.1",
+          "label": "19.1",
+          "role": "orientation"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand"
+      ],
+      "examGoal": "Recognize the Registry system, understand when the Registry Act matters, and understand the distinction from Land Titles.",
+      "recognitionCues": [
+        "deeds-based / registry system of land registration",
+        "registry office, registrar and registration of instruments"
+      ],
+      "coreUnderstanding": [
+        "the Registry is a deeds-based system: instruments are registered in order and affect priority;",
+        "distinct from the Land Titles system, where registration vests and insures title."
+      ],
+      "mustRecall": [],
+      "mustLocate": [],
+      "relatedUnitIds": [],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "A-REG-02",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "What is registration supposed to accomplish?",
+      "sourceDocumentIds": [
+        "doc-registry-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19",
+          "label": "19",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19.01",
+          "label": "19.01",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19.02",
+          "label": "19.02",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19.03",
+          "label": "19.03",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19.04",
+          "label": "19.04",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19.05",
+          "label": "19.05",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19.1",
+          "label": "19.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:20",
+          "label": "20",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:21",
+          "label": "21",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:22",
+          "label": "22",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:23",
+          "label": "23",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:24",
+          "label": "24",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:25",
+          "label": "25",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:26",
+          "label": "26",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:27",
+          "label": "27",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:28",
+          "label": "28",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:29",
+          "label": "29",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:30",
+          "label": "30",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:31",
+          "label": "31",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:32",
+          "label": "32",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:33",
+          "label": "33",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:34",
+          "label": "34",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:35",
+          "label": "35",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "understand",
+        "recall",
+        "retrieve"
+      ],
+      "examGoal": "Understand what registration accomplishes, using the legal effect of registration as the conceptual anchor.",
+      "recognitionCues": [],
+      "coreUnderstanding": [
+        "legal effect of registration: priority and notice consequences for registered instruments."
+      ],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "registration of instruments",
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19"
+        },
+        {
+          "prompt": "contents of a conveyance",
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:20"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "A-REG-03",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "Execution, witnesses, affidavits, acknowledgments and proof",
+      "sourceDocumentIds": [
+        "doc-registry-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:36",
+          "label": "36",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:37",
+          "label": "37",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:38",
+          "label": "38",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:39",
+          "label": "39",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:40",
+          "label": "40",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:41",
+          "label": "41",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:42",
+          "label": "42",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:43",
+          "label": "43",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:44",
+          "label": "44",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:45",
+          "label": "45",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:46",
+          "label": "46",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:47",
+          "label": "47",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "understand",
+        "recall",
+        "retrieve"
+      ],
+      "examGoal": "Understand execution, witnessing, affidavit, acknowledgment and proof requirements.",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [
+        "a party to an instrument shall not witness another party’s execution;",
+        "a party shall not take the affidavit/acknowledgment of another party’s execution."
+      ],
+      "mustLocate": [
+        {
+          "prompt": "official/person lists for taking acknowledgments and proofs",
+          "documentId": "doc-registry-act"
+        },
+        {
+          "prompt": "out-of-province execution and proof details",
+          "documentId": "doc-registry-act"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "A-REG-04",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "Plans, Crown grants, mortgages, judgments and other land records",
+      "sourceDocumentIds": [
+        "doc-registry-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:48",
+          "label": "48",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:49",
+          "label": "49",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:50",
+          "label": "50",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:51",
+          "label": "51",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:52",
+          "label": "52",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:53",
+          "label": "53",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:54",
+          "label": "54",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:55",
+          "label": "55",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:56",
+          "label": "56",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:57",
+          "label": "57",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:58",
+          "label": "58",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:59",
+          "label": "59",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:60",
+          "label": "60",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:61",
+          "label": "61",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:62",
+          "label": "62",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:63",
+          "label": "63",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:64",
+          "label": "64",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Recognize the registry provisions covering plans, Crown grants, mortgages, judgments and other land records.",
+      "recognitionCues": [
+        "registered land records beyond conveyances (plans, Crown grants, mortgages, judgments)"
+      ],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "registration of plans",
+          "documentId": "doc-registry-act"
+        },
+        {
+          "prompt": "Crown grants",
+          "documentId": "doc-registry-act"
+        },
+        {
+          "prompt": "mortgages and judgments in the registry",
+          "documentId": "doc-registry-act"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "A-REG-05",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "Digital instruments and the surveyor/subscriber pathway",
+      "sourceDocumentIds": [
+        "doc-registry-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:13.2",
+          "label": "13.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19.01",
+          "label": "19.01",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19.02",
+          "label": "19.02",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19.03",
+          "label": "19.03",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19.04",
+          "label": "19.04",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19.05",
+          "label": "19.05",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:65.1",
+          "label": "65.1",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Understand digital/digitally-scanned instruments and the surveyor/subscriber pathway.",
+      "recognitionCues": [
+        "digital or digitally scanned instruments in the registry",
+        "subscriber/agreement pathway for electronic submission"
+      ],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "electronic information storage system",
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:13.2"
+        },
+        {
+          "prompt": "instruments that may be submitted as digitally scanned images",
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19.01"
+        },
+        {
+          "prompt": "effect of a digitally scanned image of an instrument",
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19.04"
+        },
+        {
+          "prompt": "subscriber or land surveyor agreement",
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19.05"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "medium",
+      "status": "planned"
+    },
+    {
+      "id": "A-REG-06",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "Registrar, records, searches, fees and regulation-making",
+      "sourceDocumentIds": [
+        "doc-registry-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:12",
+          "label": "12",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:13",
+          "label": "13",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:13.1",
+          "label": "13.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:13.2",
+          "label": "13.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:14",
+          "label": "14",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:15",
+          "label": "15",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:15.1",
+          "label": "15.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:16",
+          "label": "16",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:17",
+          "label": "17",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:18",
+          "label": "18",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:65",
+          "label": "65",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:65.1",
+          "label": "65.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:66",
+          "label": "66",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:66.1",
+          "label": "66.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:66.2",
+          "label": "66.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:67",
+          "label": "67",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:68",
+          "label": "68",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:69",
+          "label": "69",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:70",
+          "label": "70",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:71",
+          "label": "71",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Understand the registrar, registry records, searches, fees and regulation-making powers.",
+      "recognitionCues": [
+        "registrar / registry office administration",
+        "official searches and fees"
+      ],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "duties of the registrar",
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:12"
+        },
+        {
+          "prompt": "contents of the registry office and record production",
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:14"
+        },
+        {
+          "prompt": "powers of the Chief Registrar",
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:17"
+        },
+        {
+          "prompt": "fees and regulation-making",
+          "documentId": "doc-registry-act"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "medium",
+      "status": "planned"
+    },
+    {
+      "id": "A-REGR-01",
+      "unitType": "document_orientation",
+      "tier": "A",
+      "title": "Instrument formatting standards for Registry documents",
+      "sourceDocumentIds": [
+        "reg-registry-84-190"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "reg-registry-84-190",
+          "sourceKey": "section:1",
+          "label": "1",
+          "role": "orientation"
+        },
+        {
+          "documentId": "reg-registry-84-190",
+          "sourceKey": "section:2",
+          "label": "2",
+          "role": "orientation"
+        },
+        {
+          "documentId": "reg-registry-84-190",
+          "sourceKey": "section:3",
+          "label": "3",
+          "role": "orientation"
+        },
+        {
+          "documentId": "reg-registry-84-190",
+          "sourceKey": "section:4",
+          "label": "4",
+          "role": "orientation"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Recognize the Registry Regulation’s instrument formatting standards and understand what they standardize; keep exact margins/sizes/format rules as lookup material.",
+      "recognitionCues": [
+        "formatting standards for registry instruments",
+        "instrument size, margins and paper standards"
+      ],
+      "coreUnderstanding": [
+        "the Regulation standardizes how registry instruments are physically prepared (size, margins, format) so documents registered in the Registry are uniform;",
+        "exact numeric formatting rules are open-book lookup material, not memorization targets."
+      ],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "instrument size, margins and format rules",
+          "documentId": "reg-registry-84-190"
+        },
+        {
+          "prompt": "paper and preparation standards for registered documents",
+          "documentId": "reg-registry-84-190"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "low",
+      "status": "planned"
+    },
+    {
+      "id": "A-LTA-01",
+      "unitType": "document_orientation",
+      "tier": "A",
+      "title": "What is the Land Titles system and how is it different from Registry?",
+      "sourceDocumentIds": [
+        "doc-land-titles-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:1",
+          "label": "1",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:2",
+          "label": "2",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:2.1",
+          "label": "2.1",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:3",
+          "label": "3",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:4",
+          "label": "4",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:5",
+          "label": "5",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:6",
+          "label": "6",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:7",
+          "label": "7",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:8",
+          "label": "8",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:9",
+          "label": "9",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:10",
+          "label": "10",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:10.1",
+          "label": "10.1",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:10.2",
+          "label": "10.2",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:10.3",
+          "label": "10.3",
+          "role": "orientation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:10.4",
+          "label": "10.4",
+          "role": "orientation"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "recall"
+      ],
+      "examGoal": "Recognize the Land Titles system, understand how it works, and recall how it differs from the Registry system.",
+      "recognitionCues": [
+        "land titles / title insurance style registration of land",
+        "Registrar General and the title register"
+      ],
+      "coreUnderstanding": [
+        "the Land Titles system registers interests, not just instruments;",
+        "registration under Land Titles insures registered ownership, unlike deeds-based Registry."
+      ],
+      "mustRecall": [
+        "Land Titles registration is the primary evidence of registered ownership of the land."
+      ],
+      "mustLocate": [],
+      "relatedUnitIds": [],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "A-LTA-02",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "How does land enter the Land Titles system and what does registration do?",
+      "sourceDocumentIds": [
+        "doc-land-titles-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:11",
+          "label": "11",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:12",
+          "label": "12",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:13",
+          "label": "13",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:14",
+          "label": "14",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:14.1",
+          "label": "14.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:15",
+          "label": "15",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:16",
+          "label": "16",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17",
+          "label": "17",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17.1",
+          "label": "17.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17.11",
+          "label": "17.11",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17.2",
+          "label": "17.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17.3",
+          "label": "17.3",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17.4",
+          "label": "17.4",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17.5",
+          "label": "17.5",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17.6",
+          "label": "17.6",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17.7",
+          "label": "17.7",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17.8",
+          "label": "17.8",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:18",
+          "label": "18",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:19",
+          "label": "19",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:20",
+          "label": "20",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Understand how land enters the system and what registration accomplishes.",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "application to register land",
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:11"
+        },
+        {
+          "prompt": "registration necessary to pass an estate or interest",
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:15"
+        },
+        {
+          "prompt": "status of the registered owner",
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:16"
+        },
+        {
+          "prompt": "effect of registration on subsequent interests",
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "A-LTA-03",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "Transfers, easements, mortgages, leases, assignments and caveats",
+      "sourceDocumentIds": [
+        "doc-land-titles-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:21",
+          "label": "21",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:22",
+          "label": "22",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:23",
+          "label": "23",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:24",
+          "label": "24",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:25",
+          "label": "25",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:26",
+          "label": "26",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:26.1",
+          "label": "26.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:27",
+          "label": "27",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:28",
+          "label": "28",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:29",
+          "label": "29",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:30",
+          "label": "30",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:31",
+          "label": "31",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:32",
+          "label": "32",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:33",
+          "label": "33",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:34",
+          "label": "34",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:35",
+          "label": "35",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:36",
+          "label": "36",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:37",
+          "label": "37",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:38",
+          "label": "38",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Recognize and understand the core registered-interest mechanics.",
+      "recognitionCues": [
+        "registered interests: transfers, easements, mortgages, leases, caveats"
+      ],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "transfer of registered land",
+          "documentId": "doc-land-titles-act"
+        },
+        {
+          "prompt": "easements and leases in the title register",
+          "documentId": "doc-land-titles-act"
+        },
+        {
+          "prompt": "mortgages and assignments",
+          "documentId": "doc-land-titles-act"
+        },
+        {
+          "prompt": "caveats",
+          "documentId": "doc-land-titles-act"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "A-LTA-04",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "Parcel changes, judgments, expropriation, bankruptcy and transmission on death",
+      "sourceDocumentIds": [
+        "doc-land-titles-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:39",
+          "label": "39",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:40",
+          "label": "40",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:41",
+          "label": "41",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:41.1",
+          "label": "41.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:42",
+          "label": "42",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:43",
+          "label": "43",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:44",
+          "label": "44",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:45",
+          "label": "45",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:46",
+          "label": "46",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:47",
+          "label": "47",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:48",
+          "label": "48",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:48.1",
+          "label": "48.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:49",
+          "label": "49",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:50",
+          "label": "50",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:51",
+          "label": "51",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:52",
+          "label": "52",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:53",
+          "label": "53",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:54",
+          "label": "54",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:55",
+          "label": "55",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:56",
+          "label": "56",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:57",
+          "label": "57",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:58",
+          "label": "58",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:59",
+          "label": "59",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:60",
+          "label": "60",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:61",
+          "label": "61",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:62",
+          "label": "62",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:63",
+          "label": "63",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:64",
+          "label": "64",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:65",
+          "label": "65",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:66",
+          "label": "66",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:67",
+          "label": "67",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Recognize and understand parcel changes and the special transmission/compulsory-proceeding provisions.",
+      "recognitionCues": [
+        "parcel consolidation/division mechanics",
+        "registration on death, expropriation, bankruptcy"
+      ],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "changes to parcels and parcel identifiers",
+          "documentId": "doc-land-titles-act"
+        },
+        {
+          "prompt": "judgments and charges in the title register",
+          "documentId": "doc-land-titles-act"
+        },
+        {
+          "prompt": "expropriation and bankruptcy transmission",
+          "documentId": "doc-land-titles-act"
+        },
+        {
+          "prompt": "transmission of land on death",
+          "documentId": "doc-land-titles-act"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "medium",
+      "status": "planned"
+    },
+    {
+      "id": "A-LTA-05",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "When and how can the title register be rectified?",
+      "sourceDocumentIds": [
+        "doc-land-titles-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:68",
+          "label": "68",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:69",
+          "label": "69",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:70",
+          "label": "70",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:71",
+          "label": "71",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:72",
+          "label": "72",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Understand when and how the title register can be rectified.",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "rectification of the title register",
+          "documentId": "doc-land-titles-act"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "A-LTA-06",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "When does rectification or registration error lead to indemnification?",
+      "sourceDocumentIds": [
+        "doc-land-titles-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:73",
+          "label": "73",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:74",
+          "label": "74",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:75",
+          "label": "75",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:76",
+          "label": "76",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:76.01",
+          "label": "76.01",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:76.1",
+          "label": "76.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:77",
+          "label": "77",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:78",
+          "label": "78",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:79",
+          "label": "79",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:80",
+          "label": "80",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "understand",
+        "recall",
+        "retrieve"
+      ],
+      "examGoal": "Understand when rectification or a registration error leads to indemnification, as a conceptual chain rather than an enumerated list of exceptions.",
+      "recognitionCues": [],
+      "coreUnderstanding": [
+        "qualifying damage/error;",
+        "statutory entitlement;",
+        "exceptions;",
+        "award;",
+        "payment/funding."
+      ],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "indemnification entitlement and exceptions",
+          "documentId": "doc-land-titles-act"
+        },
+        {
+          "prompt": "award and payment of indemnification",
+          "documentId": "doc-land-titles-act"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "A-LTA-07",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "Affidavits, registered information and regulation structure",
+      "sourceDocumentIds": [
+        "doc-land-titles-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:81",
+          "label": "81",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:82",
+          "label": "82",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:83",
+          "label": "83",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:84",
+          "label": "84",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:85",
+          "label": "85",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:86",
+          "label": "86",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Recognize the affidavit, registered-information and regulation-structure provisions.",
+      "recognitionCues": [
+        "supporting provisions: affidavits, records and regulations"
+      ],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "affidavits and registered information",
+          "documentId": "doc-land-titles-act"
+        },
+        {
+          "prompt": "regulations under the Land Titles Act",
+          "documentId": "doc-land-titles-act"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "medium",
+      "status": "planned"
+    },
+    {
+      "id": "A-LTR-01",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "Land descriptions, survey plans and Land Titles administration",
+      "sourceDocumentIds": [
+        "reg-land-titles-83-130"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:2",
+          "label": "2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:3",
+          "label": "3",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:4",
+          "label": "4",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:5",
+          "label": "5",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:6",
+          "label": "6",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:7",
+          "label": "7",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:8",
+          "label": "8",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:9",
+          "label": "9",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:10",
+          "label": "10",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:11",
+          "label": "11",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:12",
+          "label": "12",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:13",
+          "label": "13",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:14",
+          "label": "14",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:14.1",
+          "label": "14.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:15",
+          "label": "15",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:16",
+          "label": "16",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Understand the Regulation’s land-description, survey-plan and administration provisions.",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "land description requirements",
+          "documentId": "reg-land-titles-83-130"
+        },
+        {
+          "prompt": "survey plan requirements",
+          "documentId": "reg-land-titles-83-130"
+        },
+        {
+          "prompt": "land titles administration under the Regulation",
+          "documentId": "reg-land-titles-83-130"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "A-LTR-02",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "Instrument execution, identity, format and electronic registration mechanics",
+      "sourceDocumentIds": [
+        "reg-land-titles-83-130"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:17",
+          "label": "17",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:18",
+          "label": "18",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:18.1",
+          "label": "18.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:18.2",
+          "label": "18.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:18.3",
+          "label": "18.3",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:19",
+          "label": "19",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:19.1",
+          "label": "19.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:19.2",
+          "label": "19.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:19.3",
+          "label": "19.3",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:19.4",
+          "label": "19.4",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:20",
+          "label": "20",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:20.1",
+          "label": "20.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:21",
+          "label": "21",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:21.1",
+          "label": "21.1",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:21.2",
+          "label": "21.2",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:21.21",
+          "label": "21.21",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:21.22",
+          "label": "21.22",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:21.3",
+          "label": "21.3",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:21.4",
+          "label": "21.4",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Understand instrument execution, identity, format and electronic registration mechanics.",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "execution and identity of instruments",
+          "documentId": "reg-land-titles-83-130"
+        },
+        {
+          "prompt": "instrument format requirements",
+          "documentId": "reg-land-titles-83-130"
+        },
+        {
+          "prompt": "electronic registration mechanics",
+          "documentId": "reg-land-titles-83-130"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "medium",
+      "status": "planned"
+    },
+    {
+      "id": "A-LTR-03",
+      "unitType": "core_concept",
+      "tier": "A",
+      "title": "Forms, fees, statutory mortgage covenants and statutory lease covenants",
+      "sourceDocumentIds": [
+        "reg-land-titles-83-130"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:22",
+          "label": "22",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:23",
+          "label": "23",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:24",
+          "label": "24",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "schedule:schedule-a",
+          "label": "SCHEDULE A",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "schedule:schedule-b",
+          "label": "SCHEDULE B",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "schedule:schedule-c",
+          "label": "SCHEDULE C",
+          "role": "core_rule"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "schedule:schedule-d",
+          "label": "SCHEDULE D",
+          "role": "core_rule"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Teach how to navigate the form/schedule system — do NOT enumerate dozens of forms into mustRecall.",
+      "recognitionCues": [
+        "land titles forms and schedules (fees, covenants)"
+      ],
+      "coreUnderstanding": [
+        "forms and schedules are navigational material: locate the right schedule/form rather than memorize all of them."
+      ],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "statutory fees",
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "schedule:schedule-a"
+        },
+        {
+          "prompt": "statutory mortgage covenants",
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "schedule:schedule-b"
+        },
+        {
+          "prompt": "statutory lease covenants",
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "schedule:schedule-c"
+        },
+        {
+          "prompt": "additional schedules",
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "schedule:schedule-d"
+        }
+      ],
+      "relatedUnitIds": [],
+      "reviewWeight": "medium",
+      "status": "planned"
+    }
+  ]
+}
