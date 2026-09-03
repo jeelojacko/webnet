@@ -53,6 +53,23 @@ const validateOrientationUnit = (unit: ExamCurriculumUnit, errors: ExamCurriculu
       });
     }
   }
+  if (unit.tier === 'B') {
+    // Tier-B cards carry the exam goal in their title question and may omit
+    // recognition cues / core understanding per card; they must still carry
+    // at least one educational payload field.
+    const payload =
+      unit.recognitionCues.length + unit.coreUnderstanding.length + unit.mustRecall.length + unit.mustLocate.length;
+    if (payload === 0) {
+      errors.push({
+        level: 'error',
+        unitId: unit.id,
+        code: 'orientation-missing-payload',
+        message:
+          'document_orientation unit must have at least one recognition cue, core-understanding point, or study target',
+      });
+    }
+    return;
+  }
   if (unit.recognitionCues.length === 0) {
     errors.push({
       level: 'error',
@@ -178,7 +195,9 @@ export const validateExamCurriculumUnits = (
     if (unit.title.trim() === '') {
       errors.push({ level: 'error', unitId: unit.id, code: 'empty-title', message: 'title must not be empty' });
     }
-    if (unit.examGoal.trim() === '') {
+    // Tier-B cards state their exam goal as the card title; an empty
+    // examGoal is only an error where the tier requires a dedicated goal.
+    if (unit.examGoal.trim() === '' && unit.tier !== 'B') {
       errors.push({ level: 'error', unitId: unit.id, code: 'empty-exam-goal', message: 'examGoal must not be empty' });
     }
     for (const depth of unit.learningDepths) {

@@ -88,11 +88,13 @@ export interface ExamCurriculumSectionRange {
   to?: string;
 }
 
-/** One Tier-A unit before corpus resolution (deterministic curation data). */
+/** One planned unit before corpus resolution (deterministic curation data). */
 export interface ExamCurriculumUnitSpec {
   id: string;
   title: string;
   unitType: Exclude<ExamUnitType, 'cross_document_navigation' | 'lookup_drill'>;
+  /** Tier of the unit; defaults to 'A' for the frozen Tier-A catalog. */
+  tier?: ExamCurriculumTier;
   documentId: string;
   /** Section ranges resolved against the corpus document. */
   ranges: ExamCurriculumSectionRange[];

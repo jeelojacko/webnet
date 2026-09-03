@@ -172,7 +172,7 @@ export const buildExamCurriculumUnitFromSpec = (
   return {
     id: spec.id,
     unitType: spec.unitType,
-    tier: 'A',
+    tier: spec.tier ?? 'A',
     title: spec.title,
     sourceDocumentIds: [doc.id],
     sourceAnchors: components.map((c) => ({

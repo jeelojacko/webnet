@@ -7,6 +7,7 @@
 // "Open source" reuses the existing statute reader deep-link.
 
 import type React from 'react';
+import { useState } from 'react';
 import { BookMarked, GraduationCap, MapPin } from 'lucide-react';
 import examCurriculumManifestJson from '../../../study-content/exam-curriculum/nb-sit-exam-curriculum-v1.json';
 import type {
@@ -14,12 +15,20 @@ import type {
   ExamCurriculumUnit,
 } from './examCurriculumTypes';
 import { EXAM_CURRICULUM_TIER_A_DOCUMENT_TITLES } from './examCurriculumCatalog';
+import { EXAM_CURRICULUM_TIER_B_DOCUMENT_TITLES } from './examCurriculumCatalogTierB';
 
 type ExamCurriculumPageProps = {
   onOpenProvision: (_documentId: string, _sourceKey: string) => void;
 };
 
 const manifest = examCurriculumManifestJson as unknown as ExamCurriculumManifest;
+
+const DOCUMENT_TITLES: Record<string, string> = {
+  ...EXAM_CURRICULUM_TIER_A_DOCUMENT_TITLES,
+  ...EXAM_CURRICULUM_TIER_B_DOCUMENT_TITLES,
+};
+
+type TierFilter = 'all' | 'A' | 'B';
 
 const DEPTH_ORDER = ['recognize', 'understand', 'recall', 'retrieve'] as const;
 
@@ -73,7 +82,7 @@ const UnitCard = ({ unit, onOpenProvision }: { unit: ExamCurriculumUnit; onOpenP
         <DepthBadges unit={unit} />
       </div>
       <h4 className="mt-2 text-sm font-semibold text-white">{unit.title}</h4>
-      <p className="mt-1 text-xs text-slate-400">{unit.examGoal}</p>
+      {unit.examGoal ? <p className="mt-1 text-xs text-slate-400">{unit.examGoal}</p> : null}
       {unit.recognitionCues.length > 0 && (
         <div className="mt-2 text-xs text-slate-300">
           <span className="font-semibold uppercase tracking-wide text-slate-500">Recognition cues</span>
@@ -163,20 +172,28 @@ const UnitCard = ({ unit, onOpenProvision }: { unit: ExamCurriculumUnit; onOpenP
 };
 
 const ExamCurriculumPage = ({ onOpenProvision }: ExamCurriculumPageProps) => {
+  const [tierFilter, setTierFilter] = useState<TierFilter>('all');
+  const tierCount = (tier: 'A' | 'B') => manifest.units.filter((u) => u.tier === tier).length;
+  const visibleUnits = manifest.units.filter((unit) => tierFilter === 'all' || unit.tier === tierFilter);
   const groups: Array<{ documentId: string; units: ExamCurriculumUnit[] }> = [];
-  for (const unit of manifest.units) {
+  for (const unit of visibleUnits) {
     const documentId = unit.sourceDocumentIds[0];
     const group = groups.find((g) => g.documentId === documentId);
     if (group) group.units.push(unit);
     else groups.push({ documentId, units: [unit] });
   }
-  const orientationCount = manifest.units.filter((u) => u.unitType === 'document_orientation').length;
+  const orientationCount = visibleUnits.filter((u) => u.unitType === 'document_orientation').length;
+  const tierButtons: Array<{ key: TierFilter; label: string }> = [
+    { key: 'all', label: `All (${manifest.units.length})` },
+    { key: 'A', label: `Tier A (${tierCount('A')})` },
+    { key: 'B', label: `Tier B (${tierCount('B')})` },
+  ];
   return (
     <div className="space-y-5">
       <div>
         <div className="flex items-center gap-2">
           <GraduationCap className="text-emerald-400" size={20} />
-          <h2 className="text-xl font-semibold text-white">Exam Curriculum — Tier A</h2>
+          <h2 className="text-xl font-semibold text-white">Exam Curriculum — Tier A + B</h2>
         </div>
         <p className="mt-1 max-w-3xl text-sm text-slate-400">
           Open-book statute law exam curriculum. Units define what to recognize, understand, recall and locate;
@@ -188,17 +205,28 @@ const ExamCurriculumPage = ({ onOpenProvision }: ExamCurriculumPageProps) => {
           {manifest.sourceCorpusContentHash.slice(0, 16)}… · hash {manifest.contentHash.slice(0, 16)}…
         </p>
         <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-300">
-          <span className="rounded bg-slate-800 px-2 py-1">{manifest.units.length} units</span>
+          {tierButtons.map((button) => (
+            <button
+              key={button.key}
+              type="button"
+              onClick={() => setTierFilter(button.key)}
+              className={`rounded px-2 py-1 ${
+                tierFilter === button.key ? 'bg-emerald-900 text-emerald-100' : 'bg-slate-800 hover:bg-slate-700'
+              }`}
+            >
+              {button.label}
+            </button>
+          ))}
           <span className="rounded bg-slate-800 px-2 py-1">{orientationCount} document_orientation</span>
           <span className="rounded bg-slate-800 px-2 py-1">
-            {manifest.units.length - orientationCount} core_concept
+            {visibleUnits.length - orientationCount} core_concept
           </span>
         </div>
       </div>
       {groups.map((group) => (
         <section key={group.documentId} className="space-y-2">
           <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-400">
-            {EXAM_CURRICULUM_TIER_A_DOCUMENT_TITLES[group.documentId] ?? group.documentId}
+            {DOCUMENT_TITLES[group.documentId] ?? group.documentId}
             <span className="ml-2 font-normal normal-case text-slate-600">
               {group.documentId} · {group.units.length} units
             </span>
