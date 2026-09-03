@@ -1,0 +1,436 @@
+{
+  "schemaVersion": 1,
+  "runId": "ai-units-2026-09-02-frozen-map-cal80-v5",
+  "validator": "validateAiStudyUnitProposal with unit-authoring-v5 fidelity gate (unit-authoring-v5 only)",
+  "cohortSize": 80,
+  "invalidUnits": 37,
+  "validUnits": 43,
+  "perCode": {
+    "CONTEXT_REF_LEAKAGE": 4,
+    "EVIDENCE_NOT_EXACT_VERBATIM": 37,
+    "LEGAL_MODALITY_REVERSAL": 1,
+    "POLARITY_REVERSAL": 4,
+    "SOURCE_COVERAGE_EXTRA_LABEL": 63,
+    "SOURCE_COVERAGE_MISSING_SELECTED_LABEL": 16,
+    "SOURCE_DERIVED_NOTE_UNGROUNDED": 4,
+    "STUDY_NOTE_OUTSIDE_APPROVED_SOURCE": 2,
+    "SUMMARY_ACTOR_OVERREACH": 3,
+    "UNSUPPORTED_LEGAL_EFFECT": 3
+  },
+  "namedRegressionFixtures": [
+    {
+      "name": "Registry 36 polarity inversion",
+      "proposalId": "unit-06c54db68969cc17",
+      "expectedCodes": [
+        "POLARITY_REVERSAL"
+      ],
+      "caught": true,
+      "actualCodes": [
+        "POLARITY_REVERSAL",
+        "SOURCE_COVERAGE_MISSING_SELECTED_LABEL",
+        "SOURCE_COVERAGE_MISSING_SELECTED_LABEL",
+        "SOURCE_COVERAGE_MISSING_SELECTED_LABEL"
+      ]
+    },
+    {
+      "name": "Clean Water 13(5) modality reversal",
+      "proposalId": "unit-332a2ef669d3f464",
+      "expectedCodes": [
+        "LEGAL_MODALITY_REVERSAL"
+      ],
+      "caught": true,
+      "actualCodes": [
+        "LEGAL_MODALITY_REVERSAL"
+      ]
+    },
+    {
+      "name": "Land Titles 73 unsupported legal effect",
+      "proposalId": "unit-433e77a5dad8ceb1",
+      "expectedCodes": [
+        "UNSUPPORTED_LEGAL_EFFECT"
+      ],
+      "caught": true,
+      "actualCodes": [
+        "UNSUPPORTED_LEGAL_EFFECT",
+        "UNSUPPORTED_LEGAL_EFFECT",
+        "UNSUPPORTED_LEGAL_EFFECT"
+      ]
+    },
+    {
+      "name": "Assessment 28 section 27 reference leakage",
+      "proposalId": "unit-c1d2d8aa37da6862",
+      "expectedCodes": [
+        "CONTEXT_REF_LEAKAGE"
+      ],
+      "caught": true,
+      "actualCodes": [
+        "CONTEXT_REF_LEAKAGE"
+      ]
+    },
+    {
+      "name": "ANBLS 2.2.2 adjacent-reference and duty leakage",
+      "proposalId": "unit-9b9c904f7abb2dd1",
+      "expectedCodes": [
+        "CONTEXT_REF_LEAKAGE",
+        "SUMMARY_ACTOR_OVERREACH",
+        "STUDY_NOTE_OUTSIDE_APPROVED_SOURCE",
+        "SOURCE_DERIVED_NOTE_UNGROUNDED"
+      ],
+      "caught": true,
+      "actualCodes": [
+        "CONTEXT_REF_LEAKAGE",
+        "SOURCE_DERIVED_NOTE_UNGROUNDED",
+        "STUDY_NOTE_OUTSIDE_APPROVED_SOURCE",
+        "STUDY_NOTE_OUTSIDE_APPROVED_SOURCE",
+        "SUMMARY_ACTOR_OVERREACH"
+      ]
+    },
+    {
+      "name": "Community Planning 84 surveyor/approval overreach",
+      "proposalId": "unit-819e6b3baa157e85",
+      "expectedCodes": [
+        "SUMMARY_ACTOR_OVERREACH"
+      ],
+      "caught": true,
+      "actualCodes": [
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "SUMMARY_ACTOR_OVERREACH"
+      ]
+    },
+    {
+      "name": "Municipalities 184 ungrounded actor note",
+      "proposalId": "unit-7558538d3d98f4ec",
+      "expectedCodes": [
+        "SOURCE_DERIVED_NOTE_UNGROUNDED"
+      ],
+      "caught": true,
+      "actualCodes": [
+        "SOURCE_DERIVED_NOTE_UNGROUNDED"
+      ]
+    }
+  ],
+  "units": [
+    {
+      "proposalId": "unit-0344f31b1107b2dc",
+      "errorCodes": [
+        "SUMMARY_ACTOR_OVERREACH"
+      ]
+    },
+    {
+      "proposalId": "unit-061b46bb0538188c",
+      "errorCodes": [
+        "EVIDENCE_NOT_EXACT_VERBATIM"
+      ]
+    },
+    {
+      "proposalId": "unit-06c54db68969cc17",
+      "errorCodes": [
+        "POLARITY_REVERSAL",
+        "SOURCE_COVERAGE_MISSING_SELECTED_LABEL",
+        "SOURCE_COVERAGE_MISSING_SELECTED_LABEL",
+        "SOURCE_COVERAGE_MISSING_SELECTED_LABEL"
+      ]
+    },
+    {
+      "proposalId": "unit-10af6382f13ceccb",
+      "errorCodes": [
+        "SOURCE_COVERAGE_MISSING_SELECTED_LABEL",
+        "SOURCE_COVERAGE_MISSING_SELECTED_LABEL"
+      ]
+    },
+    {
+      "proposalId": "unit-1778139a242e733a",
+      "errorCodes": [
+        "EVIDENCE_NOT_EXACT_VERBATIM"
+      ]
+    },
+    {
+      "proposalId": "unit-23337f055c22b192",
+      "errorCodes": [
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL"
+      ]
+    },
+    {
+      "proposalId": "unit-332a2ef669d3f464",
+      "errorCodes": [
+        "LEGAL_MODALITY_REVERSAL"
+      ]
+    },
+    {
+      "proposalId": "unit-373539bbe31a52a0",
+      "errorCodes": [
+        "SOURCE_COVERAGE_MISSING_SELECTED_LABEL"
+      ]
+    },
+    {
+      "proposalId": "unit-3e12091103f6ec16",
+      "errorCodes": [
+        "SOURCE_COVERAGE_EXTRA_LABEL"
+      ]
+    },
+    {
+      "proposalId": "unit-433e77a5dad8ceb1",
+      "errorCodes": [
+        "UNSUPPORTED_LEGAL_EFFECT",
+        "UNSUPPORTED_LEGAL_EFFECT",
+        "UNSUPPORTED_LEGAL_EFFECT"
+      ]
+    },
+    {
+      "proposalId": "unit-4a0b1236f21e2add",
+      "errorCodes": [
+        "EVIDENCE_NOT_EXACT_VERBATIM"
+      ]
+    },
+    {
+      "proposalId": "unit-4a5095dd82b864af",
+      "errorCodes": [
+        "CONTEXT_REF_LEAKAGE",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "POLARITY_REVERSAL",
+        "SOURCE_DERIVED_NOTE_UNGROUNDED"
+      ]
+    },
+    {
+      "proposalId": "unit-4a8d142480162fe3",
+      "errorCodes": [
+        "CONTEXT_REF_LEAKAGE",
+        "EVIDENCE_NOT_EXACT_VERBATIM"
+      ]
+    },
+    {
+      "proposalId": "unit-6480451b3fe42be2",
+      "errorCodes": [
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM"
+      ]
+    },
+    {
+      "proposalId": "unit-672a50b20e2100c7",
+      "errorCodes": [
+        "SOURCE_COVERAGE_EXTRA_LABEL"
+      ]
+    },
+    {
+      "proposalId": "unit-6f65dea4a13630e9",
+      "errorCodes": [
+        "EVIDENCE_NOT_EXACT_VERBATIM"
+      ]
+    },
+    {
+      "proposalId": "unit-71e27c24590d3242",
+      "errorCodes": [
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM"
+      ]
+    },
+    {
+      "proposalId": "unit-7558538d3d98f4ec",
+      "errorCodes": [
+        "SOURCE_DERIVED_NOTE_UNGROUNDED"
+      ]
+    },
+    {
+      "proposalId": "unit-762098496a0f61e2",
+      "errorCodes": [
+        "POLARITY_REVERSAL"
+      ]
+    },
+    {
+      "proposalId": "unit-80309b578879a269",
+      "errorCodes": [
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "SOURCE_COVERAGE_MISSING_SELECTED_LABEL",
+        "SOURCE_COVERAGE_MISSING_SELECTED_LABEL"
+      ]
+    },
+    {
+      "proposalId": "unit-819e6b3baa157e85",
+      "errorCodes": [
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "SUMMARY_ACTOR_OVERREACH"
+      ]
+    },
+    {
+      "proposalId": "unit-90ab6499b6928ad2",
+      "errorCodes": [
+        "EVIDENCE_NOT_EXACT_VERBATIM"
+      ]
+    },
+    {
+      "proposalId": "unit-99bdb6cd6f15f777",
+      "errorCodes": [
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM"
+      ]
+    },
+    {
+      "proposalId": "unit-9b9c904f7abb2dd1",
+      "errorCodes": [
+        "CONTEXT_REF_LEAKAGE",
+        "SOURCE_DERIVED_NOTE_UNGROUNDED",
+        "STUDY_NOTE_OUTSIDE_APPROVED_SOURCE",
+        "STUDY_NOTE_OUTSIDE_APPROVED_SOURCE",
+        "SUMMARY_ACTOR_OVERREACH"
+      ]
+    },
+    {
+      "proposalId": "unit-9bdb6067e6efb48a",
+      "errorCodes": [
+        "POLARITY_REVERSAL"
+      ]
+    },
+    {
+      "proposalId": "unit-9ff278807624e3ae",
+      "errorCodes": [
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL"
+      ]
+    },
+    {
+      "proposalId": "unit-addc04e113bb4ae1",
+      "errorCodes": [
+        "SOURCE_COVERAGE_MISSING_SELECTED_LABEL",
+        "SOURCE_COVERAGE_MISSING_SELECTED_LABEL",
+        "SOURCE_COVERAGE_MISSING_SELECTED_LABEL"
+      ]
+    },
+    {
+      "proposalId": "unit-aef7b1dd69abc34d",
+      "errorCodes": [
+        "SOURCE_COVERAGE_MISSING_SELECTED_LABEL",
+        "SOURCE_COVERAGE_MISSING_SELECTED_LABEL",
+        "SOURCE_COVERAGE_MISSING_SELECTED_LABEL",
+        "SOURCE_COVERAGE_MISSING_SELECTED_LABEL",
+        "SOURCE_COVERAGE_MISSING_SELECTED_LABEL"
+      ]
+    },
+    {
+      "proposalId": "unit-c1d2d8aa37da6862",
+      "errorCodes": [
+        "CONTEXT_REF_LEAKAGE"
+      ]
+    },
+    {
+      "proposalId": "unit-c42303371eff91ee",
+      "errorCodes": [
+        "SOURCE_COVERAGE_EXTRA_LABEL"
+      ]
+    },
+    {
+      "proposalId": "unit-c562d9132d24d3e6",
+      "errorCodes": [
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL"
+      ]
+    },
+    {
+      "proposalId": "unit-d1742361c5ae3778",
+      "errorCodes": [
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_DERIVED_NOTE_UNGROUNDED"
+      ]
+    },
+    {
+      "proposalId": "unit-d4b1280dd51c16a3",
+      "errorCodes": [
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL"
+      ]
+    },
+    {
+      "proposalId": "unit-d5879f27382ec6c0",
+      "errorCodes": [
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL"
+      ]
+    },
+    {
+      "proposalId": "unit-e944b3a49f4b9bac",
+      "errorCodes": [
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL"
+      ]
+    },
+    {
+      "proposalId": "unit-f821944f8d8fad87",
+      "errorCodes": [
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL"
+      ]
+    },
+    {
+      "proposalId": "unit-fcc8bb2c8653b95d",
+      "errorCodes": [
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL"
+      ]
+    }
+  ]
+}

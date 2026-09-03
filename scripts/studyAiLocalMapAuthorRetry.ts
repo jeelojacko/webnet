@@ -15,6 +15,37 @@ const RETRY_INSTRUCTIONS: Record<string, string> = {
   DUPLICATE_FOCUS_DEFINED_TERM:
     'Make sibling group focus selections disjoint for the duplicated source focus.',
   OPAQUE_WARNING_CODE: 'Replace opaque warning codes with a self-describing SCREAMING_SNAKE code.',
+  EVIDENCE_NOT_EXACT_VERBATIM:
+    'Copy each objective evidence character-for-character from exactSourceText; preserve spacing, OCR artifacts, hyphenation, punctuation, and capitalization.',
+  SOURCE_COVERAGE_EXTRA_SOURCE: 'sourceCoverage may only contain sourceKeys from the approved group.',
+  SOURCE_COVERAGE_EXTRA_LABEL:
+    'sourceCoverage childLabels must be exactly the selected childLabels; remove labels outside the approved focus.',
+  SOURCE_COVERAGE_DUPLICATE_LABEL: 'Declare each selected childLabel exactly once in sourceCoverage.',
+  SOURCE_COVERAGE_MISSING_SELECTED_LABEL:
+    'Add a sourceCoverage entry for every selected childLabel: covered with objectiveIds, or intentionally-omitted with a nonblank source-grounded reason.',
+  SOURCE_COVERAGE_INVALID_STATUS:
+    'Use status covered or intentionally-omitted for each selected childLabel; context-only and not-assessed are not valid for selected labels.',
+  SOURCE_COVERAGE_COVERED_WITHOUT_OBJECTIVES:
+    'Every covered childLabel must list the objectiveIds that teach it.',
+  SOURCE_COVERAGE_UNKNOWN_OBJECTIVE: 'sourceCoverage objectiveIds must reference existing objective ids.',
+  SOURCE_COVERAGE_OMISSION_WITHOUT_REASON:
+    'Every intentionally-omitted childLabel needs a nonblank source-grounded reason.',
+  POLARITY_REVERSAL:
+    'The source prohibits this act ("No ... shall"); state the prohibition, not an affirmative duty. Preserve the negation.',
+  LEGAL_MODALITY_REVERSAL:
+    'The source trigger is conditional or discretionary; keep the source condition and permissive modality, do not rewrite it as a mandatory duty.',
+  UNSUPPORTED_LEGAL_EFFECT:
+    'Remove legal-effect claims (e.g. that a rule bars or precludes recovery, or creates no standalone right) unless the exact wording appears in the approved source.',
+  CONTEXT_REF_LEAKAGE:
+    'The study summary must not reference provisions outside the approved focus; remove contrasts with other sections.',
+  SUMMARY_ACTOR_OVERREACH:
+    'The study summary assigns a duty to an actor the approved focus never names; remove or source-ground the actor.',
+  SUMMARY_APPROVAL_SEQUENCING:
+    'The study summary claims an approval step the approved focus does not contain; remove the sequencing claim.',
+  STUDY_NOTE_OUTSIDE_APPROVED_SOURCE:
+    'Study notes may only cite sourceKeys from the approved group.',
+  SOURCE_DERIVED_NOTE_UNGROUNDED:
+    'Source-derived notes must stay within their declared source text; remove references or legal terms not present there.',
 };
 
 /** Ordinary Study Map responses fit easily; cap only pathological invalid responses. */

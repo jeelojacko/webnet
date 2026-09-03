@@ -23,6 +23,7 @@ import {
 } from './studyAiUnitFidelity';
 import { validateStudyMapV3ResultContract } from './studyAiResultContract';
 import { validateUnitRevisionContractV5 } from './studyAiUnitRevisionContract';
+import { validateUnitV5Fidelity } from './studyAiUnitV5Fidelity';
 
 const CONFIDENCES = new Set(['high', 'medium', 'low']);
 const SOURCE_STATUSES = new Set(['current', 'repealed', 'historical']);
@@ -1450,6 +1451,9 @@ export const validateAiStudyUnitProposal = ({
   validateApprovedFocusCoverage(typed, typed.approvedGroup, issues);
   validateQuestionQuality(typed, issues);
   validateDuplicateAnswers(typed, issues);
+  if (typed.generationMetadata?.promptSpecVersion === 'unit-authoring-v5') {
+    validateUnitV5Fidelity(typed, sourceComponents, issues);
+  }
   return { valid: issues.every((issue) => issue.severity !== 'error'), issues };
 };
 

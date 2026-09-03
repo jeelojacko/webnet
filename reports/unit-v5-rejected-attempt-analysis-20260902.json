@@ -1,0 +1,830 @@
+{
+  "schemaVersion": 1,
+  "runId": "ai-units-2026-09-02-frozen-map-cal80-v5",
+  "note": "Semantic (non-JSON) rejected attempts recorded under local-failures/ during the interrupted canonical run plus --resume.",
+  "totalAttempts": 69,
+  "distinctJobs": 58,
+  "perCode": {
+    "ANSWER_APPEARS_TRUNCATED": 13,
+    "APPROVED_FOCUS_NOT_COVERED": 14,
+    "DEFINITION_ANSWER_MISSING_TERM_MEANING": 1,
+    "EVIDENCE_NOT_FOUND": 2,
+    "GENERATED_UNIT_HAS_REVISION_SUGGESTION": 69,
+    "OUTSIDE_APPROVED_FOCUS": 2,
+    "POSSIBLE_MODALITY_MISMATCH": 11,
+    "UNCOVERED_SUBSTANTIVE_SOURCE": 8,
+    "UNSUPPORTED_NUMERIC_OR_REFERENCE": 9
+  },
+  "attempts": [
+    {
+      "jobId": "unit-0344f31b1107b2dc",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-051f5db2729fd7b5",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-061b46bb0538188c",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-10ea21c46affc7c5",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion.",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE: Objective obj-1 answer includes unsupported numeric or legal-reference token \"section 13.2(1)\" for question \"What does 'entry' include under section 13.2 of the Registry Act?\"."
+      ]
+    },
+    {
+      "jobId": "unit-1778139a242e733a",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-1a102fb69ea9b08b",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-1eb95397b16fee29",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-2588ae34a152982f",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-25db06191c729425",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-331f33e0d3cf5b61",
+      "attempt": 1,
+      "codes": [
+        "APPROVED_FOCUS_NOT_COVERED",
+        "APPROVED_FOCUS_NOT_COVERED",
+        "APPROVED_FOCUS_NOT_COVERED",
+        "APPROVED_FOCUS_NOT_COVERED",
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion.",
+        "APPROVED_FOCUS_NOT_COVERED: Approved focus item is not covered or intentionally omitted: (a).",
+        "APPROVED_FOCUS_NOT_COVERED: Approved focus item is not covered or intentionally omitted: (b).",
+        "APPROVED_FOCUS_NOT_COVERED: Approved focus item is not covered or intentionally omitted: (c).",
+        "APPROVED_FOCUS_NOT_COVERED: Approved focus item is not covered or intentionally omitted: (d)."
+      ]
+    },
+    {
+      "jobId": "unit-331f33e0d3cf5b61",
+      "attempt": 2,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-332a2ef669d3f464",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION",
+        "POSSIBLE_MODALITY_MISMATCH",
+        "POSSIBLE_MODALITY_MISMATCH"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion.",
+        "POSSIBLE_MODALITY_MISMATCH: Objective obj-13-5-trigger may change legal modality for question \"Under s. 13(5), what finding or belief triggers the order power, which water systems does it cover, and what is the subject-to condition?\".",
+        "POSSIBLE_MODALITY_MISMATCH: Objective obj-13-5-aims may change legal modality for question \"What two results must an order under s. 13(5) aim to ensure for the possible future risk and the water?\"."
+      ]
+    },
+    {
+      "jobId": "unit-332a2ef669d3f464",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION",
+        "POSSIBLE_MODALITY_MISMATCH",
+        "POSSIBLE_MODALITY_MISMATCH"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion.",
+        "POSSIBLE_MODALITY_MISMATCH: Objective obj-13-5-trigger may change legal modality for question \"Under what circumstances may a Minister make an order under Clean Water Act section 13(5), and what limits apply?\".",
+        "POSSIBLE_MODALITY_MISMATCH: Objective obj-13-5-purpose may change legal modality for question \"What must an order under Clean Water Act section 13(5) aim to ensure?\"."
+      ]
+    },
+    {
+      "jobId": "unit-332a2ef669d3f464",
+      "attempt": 2,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION",
+        "POSSIBLE_MODALITY_MISMATCH",
+        "POSSIBLE_MODALITY_MISMATCH"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion.",
+        "POSSIBLE_MODALITY_MISMATCH: Objective obj-13-5-trigger may change legal modality for question \"Under s. 13(5), what finding or belief triggers the order power, which water systems does it cover, and what is the subject-to condition?\".",
+        "POSSIBLE_MODALITY_MISMATCH: Objective obj-13-5-aims may change legal modality for question \"What two results must an order under s. 13(5) aim to ensure for the possible future risk and the water?\"."
+      ]
+    },
+    {
+      "jobId": "unit-332a2ef669d3f464",
+      "attempt": 2,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION",
+        "POSSIBLE_MODALITY_MISMATCH",
+        "POSSIBLE_MODALITY_MISMATCH"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion.",
+        "POSSIBLE_MODALITY_MISMATCH: Objective obj-13-5-trigger may change legal modality for question \"Under what circumstances may a Minister make an order under Clean Water Act section 13(5), and what limits apply?\".",
+        "POSSIBLE_MODALITY_MISMATCH: Objective obj-13-5-purpose may change legal modality for question \"What must an order under Clean Water Act section 13(5) aim to ensure?\"."
+      ]
+    },
+    {
+      "jobId": "unit-332a2ef669d3f464",
+      "attempt": 3,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION",
+        "POSSIBLE_MODALITY_MISMATCH",
+        "POSSIBLE_MODALITY_MISMATCH"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion.",
+        "POSSIBLE_MODALITY_MISMATCH: Objective obj-13-5-trigger may change legal modality for question \"Under s. 13(5), what finding or belief triggers the order power, which water systems does it cover, and what is the subject-to condition?\".",
+        "POSSIBLE_MODALITY_MISMATCH: Objective obj-13-5-aims may change legal modality for question \"What two results must an order under s. 13(5) aim to ensure for the possible future risk and the water?\"."
+      ]
+    },
+    {
+      "jobId": "unit-35ce7d7fd6dd7714",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-373539bbe31a52a0",
+      "attempt": 1,
+      "codes": [
+        "ANSWER_APPEARS_TRUNCATED",
+        "ANSWER_APPEARS_TRUNCATED",
+        "APPROVED_FOCUS_NOT_COVERED",
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion.",
+        "ANSWER_APPEARS_TRUNCATED: Objective obj-1 answer appears truncated for question \"Who is required to have a seal of office under the Land Titles Act, and who approves the form of that seal?\".",
+        "ANSWER_APPEARS_TRUNCATED: Objective obj-1 evidence appears truncated for question \"Who is required to have a seal of office under the Land Titles Act, and who approves the form of that seal?\".",
+        "APPROVED_FOCUS_NOT_COVERED: Approved focus item is not covered or intentionally omitted: 7."
+      ]
+    },
+    {
+      "jobId": "unit-3b4bf8fc454f19b9",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-3e12091103f6ec16",
+      "attempt": 1,
+      "codes": [
+        "DEFINITION_ANSWER_MISSING_TERM_MEANING",
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion.",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE: Objective dev-categories answer includes unsupported numeric or legal-reference token \"section 1(1)\" for question \"What four categories of activity does the Community Planning Act define as \"development\" in section 1(1)?\".",
+        "DEFINITION_ANSWER_MISSING_TERM_MEANING: Objective dev-exclusions definition answer does not state the term-specific meaning for question \"What exclusions and exceptions are built into the definition of \"development\" in the Community Planning Act?\"."
+      ]
+    },
+    {
+      "jobId": "unit-433e77a5dad8ceb1",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-44a5e5a34f069c1d",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-4a0b1236f21e2add",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-4a5095dd82b864af",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-5abf688ab972bffc",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-5ba258431f90f343",
+      "attempt": 1,
+      "codes": [
+        "ANSWER_APPEARS_TRUNCATED",
+        "ANSWER_APPEARS_TRUNCATED",
+        "ANSWER_APPEARS_TRUNCATED",
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion.",
+        "ANSWER_APPEARS_TRUNCATED: Objective obj-40c-contaminants-release evidence appears truncated for question \"What matters may the Lieutenant-Governor in Council regulate under s. 40(c) of the Clean Water Act?\".",
+        "ANSWER_APPEARS_TRUNCATED: Objective obj-40d-water-use evidence appears truncated for question \"What matters may the Lieutenant-Governor in Council regulate under s. 40(d) of the Clean Water Act?\".",
+        "ANSWER_APPEARS_TRUNCATED: Objective obj-40j-standards-tests evidence appears truncated for question \"What matters may the Lieutenant-Governor in Council regulate under s. 40(j) of the Clean Water Act?\"."
+      ]
+    },
+    {
+      "jobId": "unit-5eefb3ed8c3ce251",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion.",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE: Objective obj-18-5-trigger answer includes unsupported numeric or legal-reference token \"section 18(5)\" for question \"Which registration events require the registrar to act under section 18(5) of the Land Titles Act?\"."
+      ]
+    },
+    {
+      "jobId": "unit-6480451b3fe42be2",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-672a50b20e2100c7",
+      "attempt": 1,
+      "codes": [
+        "ANSWER_APPEARS_TRUNCATED",
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion.",
+        "ANSWER_APPEARS_TRUNCATED: Objective obj-140-endorse-precept evidence appears truncated for question \"What does section 140 require the clerk to endorse on the local improvement assessment roll, and what sets the form of that endorsement?\"."
+      ]
+    },
+    {
+      "jobId": "unit-6f65dea4a13630e9",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-7071b6becf15d8dd",
+      "attempt": 1,
+      "codes": [
+        "APPROVED_FOCUS_NOT_COVERED",
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion.",
+        "APPROVED_FOCUS_NOT_COVERED: Approved focus item is not covered or intentionally omitted: 11(3)."
+      ]
+    },
+    {
+      "jobId": "unit-7071b6becf15d8dd",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-7131c6fd16823e70",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-71e27c24590d3242",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-7558538d3d98f4ec",
+      "attempt": 1,
+      "codes": [
+        "ANSWER_APPEARS_TRUNCATED",
+        "ANSWER_APPEARS_TRUNCATED",
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion.",
+        "ANSWER_APPEARS_TRUNCATED: Objective obj-184-beach-agreement answer appears truncated for question \"What agreements may a municipality enter under section 184, and with whom?\".",
+        "ANSWER_APPEARS_TRUNCATED: Objective obj-184-beach-agreement evidence appears truncated for question \"What agreements may a municipality enter under section 184, and with whom?\"."
+      ]
+    },
+    {
+      "jobId": "unit-79cacfaeddf74f82",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-7e2875b9ce2c697e",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-819e6b3baa157e85",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion.",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE: Objective obj-1 answer includes unsupported numeric or legal-reference token \"84(3)(a)\" for question \"What must appear in a subdivision plan's title block, and what owner and registration information does s. 84(3)(a) and (b) require?\".",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE: Objective obj-1 answer includes unsupported numeric or legal-reference token \"84(3)(b)\" for question \"What must appear in a subdivision plan's title block, and what owner and registration information does s. 84(3)(a) and (b) require?\".",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE: Objective obj-2 answer includes unsupported numeric or legal-reference token \"84(3)(c)\" for question \"What spatial reference points and boundary-marking requirements does s. 84(3)(c) through (e) impose on a subdivision plan?\".",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE: Objective obj-3 answer includes unsupported numeric or legal-reference token \"84(3)(f)\" for question \"How must a subdivision plan indicate land to be vested as streets, future streets, public purposes, and easements under s. 84(3)(f) through (i)?\".",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE: Objective obj-4 answer includes unsupported numeric or legal-reference token \"84(3)(k)\" for question \"What information about abutting streets, restrictive covenants, lot identification, survey monuments, deferred widening, building lines, and the key plan must a subdivision plan include under s. 84(3)(k) through (q)?\".",
+        "UNSUPPORTED_NUMERIC_OR_REFERENCE: Objective obj-5 answer includes unsupported numeric or legal-reference token \"84(3)(j)\" for question \"How must a subdivision plan show boundaries of streets and parcels, and what data is required for circular curves under s. 84(3)(j) and 84(4)?\"."
+      ]
+    },
+    {
+      "jobId": "unit-9444b4424f6fa00b",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-99bdb6cd6f15f777",
+      "attempt": 1,
+      "codes": [
+        "APPROVED_FOCUS_NOT_COVERED",
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION",
+        "UNCOVERED_SUBSTANTIVE_SOURCE"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion.",
+        "UNCOVERED_SUBSTANTIVE_SOURCE: No coverage status supplied for 9(2).",
+        "APPROVED_FOCUS_NOT_COVERED: Approved focus item is not covered or intentionally omitted: 9(2)."
+      ]
+    },
+    {
+      "jobId": "unit-99bdb6cd6f15f777",
+      "attempt": 2,
+      "codes": [
+        "APPROVED_FOCUS_NOT_COVERED",
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION",
+        "UNCOVERED_SUBSTANTIVE_SOURCE"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion.",
+        "UNCOVERED_SUBSTANTIVE_SOURCE: No coverage status supplied for 9(2).",
+        "APPROVED_FOCUS_NOT_COVERED: Approved focus item is not covered or intentionally omitted: 9(2)."
+      ]
+    },
+    {
+      "jobId": "unit-9b9c904f7abb2dd1",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION",
+        "POSSIBLE_MODALITY_MISMATCH"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion.",
+        "POSSIBLE_MODALITY_MISMATCH: Objective obj-2.2.2-procedure may change legal modality for question \"Under section 2.2.2, in what manner must an eligible reapplicant submit their application?\"."
+      ]
+    },
+    {
+      "jobId": "unit-9bdb6067e6efb48a",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-9ff278807624e3ae",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-a8250bc79883184c",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-ab80c5ba40812a83",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-aca8067647cbf88f",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-addc04e113bb4ae1",
+      "attempt": 1,
+      "codes": [
+        "APPROVED_FOCUS_NOT_COVERED",
+        "APPROVED_FOCUS_NOT_COVERED",
+        "APPROVED_FOCUS_NOT_COVERED",
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION",
+        "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "UNCOVERED_SUBSTANTIVE_SOURCE"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion.",
+        "UNCOVERED_SUBSTANTIVE_SOURCE: No coverage status supplied for 10(4).",
+        "UNCOVERED_SUBSTANTIVE_SOURCE: No coverage status supplied for 10(5).",
+        "UNCOVERED_SUBSTANTIVE_SOURCE: No coverage status supplied for 10(6).",
+        "APPROVED_FOCUS_NOT_COVERED: Approved focus item is not covered or intentionally omitted: 10(4).",
+        "APPROVED_FOCUS_NOT_COVERED: Approved focus item is not covered or intentionally omitted: 10(5).",
+        "APPROVED_FOCUS_NOT_COVERED: Approved focus item is not covered or intentionally omitted: 10(6)."
+      ]
+    },
+    {
+      "jobId": "unit-bc439b485e0a8ce3",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-bc439b485e0a8ce3",
+      "attempt": 2,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-bfebe45a58764cbf",
+      "attempt": 1,
+      "codes": [
+        "APPROVED_FOCUS_NOT_COVERED",
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION",
+        "UNCOVERED_SUBSTANTIVE_SOURCE"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion.",
+        "UNCOVERED_SUBSTANTIVE_SOURCE: No coverage status supplied for 19(5).",
+        "APPROVED_FOCUS_NOT_COVERED: Approved focus item is not covered or intentionally omitted: 19(5)."
+      ]
+    },
+    {
+      "jobId": "unit-bfebe45a58764cbf",
+      "attempt": 2,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-c1d2d8aa37da6862",
+      "attempt": 1,
+      "codes": [
+        "ANSWER_APPEARS_TRUNCATED",
+        "ANSWER_APPEARS_TRUNCATED",
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion.",
+        "ANSWER_APPEARS_TRUNCATED: Objective obj-28-trigger-deadline evidence appears truncated for question \"Within what timeframe after the Director mails a notice under subsection 25(5) may a local government or other taxing authority appeal to the Board under section 28?\".",
+        "ANSWER_APPEARS_TRUNCATED: Objective obj-28-scope evidence appears truncated for question \"For what purpose and with what geographic and review-related limitations may a local government or other taxing authority appeal to the Board under section 28?\"."
+      ]
+    },
+    {
+      "jobId": "unit-c1d2d8aa37da6862",
+      "attempt": 2,
+      "codes": [
+        "ANSWER_APPEARS_TRUNCATED",
+        "ANSWER_APPEARS_TRUNCATED",
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion.",
+        "ANSWER_APPEARS_TRUNCATED: Objective obj-28-trigger-deadline evidence appears truncated for question \"Within what timeframe after the Director mails a notice under subsection 25(5) may a local government or other taxing authority appeal to the Board under section 28?\".",
+        "ANSWER_APPEARS_TRUNCATED: Objective obj-28-scope evidence appears truncated for question \"For what purpose and with what geographic and review-related limitations may a local government or other taxing authority appeal to the Board under section 28?\"."
+      ]
+    },
+    {
+      "jobId": "unit-c42303371eff91ee",
+      "attempt": 1,
+      "codes": [
+        "ANSWER_APPEARS_TRUNCATED",
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion.",
+        "ANSWER_APPEARS_TRUNCATED: Objective obj-s42-seal evidence appears truncated for question \"What is not required for registration regarding the seal on an acknowledgment, affidavit, or other proof, and what exception limits this?\"."
+      ]
+    },
+    {
+      "jobId": "unit-c562d9132d24d3e6",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-c9285cd7f533a2ab",
+      "attempt": 1,
+      "codes": [
+        "EVIDENCE_NOT_FOUND",
+        "EVIDENCE_NOT_FOUND",
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION",
+        "OUTSIDE_APPROVED_FOCUS",
+        "OUTSIDE_APPROVED_FOCUS"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion.",
+        "EVIDENCE_NOT_FOUND: Evidence text was not found in the authoritative source.",
+        "OUTSIDE_APPROVED_FOCUS: Evidence text is not within the approved focus for this source.",
+        "EVIDENCE_NOT_FOUND: Evidence text was not found in the authoritative source.",
+        "OUTSIDE_APPROVED_FOCUS: Evidence text is not within the approved focus for this source."
+      ]
+    },
+    {
+      "jobId": "unit-cbd8f515a08077d2",
+      "attempt": 1,
+      "codes": [
+        "APPROVED_FOCUS_NOT_COVERED",
+        "APPROVED_FOCUS_NOT_COVERED",
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION",
+        "UNCOVERED_SUBSTANTIVE_SOURCE",
+        "UNCOVERED_SUBSTANTIVE_SOURCE"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion.",
+        "UNCOVERED_SUBSTANTIVE_SOURCE: No coverage status supplied for 6(5).",
+        "UNCOVERED_SUBSTANTIVE_SOURCE: No coverage status supplied for 6(6).",
+        "APPROVED_FOCUS_NOT_COVERED: Approved focus item is not covered or intentionally omitted: 6(5).",
+        "APPROVED_FOCUS_NOT_COVERED: Approved focus item is not covered or intentionally omitted: 6(6)."
+      ]
+    },
+    {
+      "jobId": "unit-d1742361c5ae3778",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-d4b1280dd51c16a3",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-d5879f27382ec6c0",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-d6fe427cdddb2678",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-dc047ee16ef0e408",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-e3f6eb223f9c6b22",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-e944b3a49f4b9bac",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-edcb2e0c1740d2e0",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-edcb2e0c1740d2e0",
+      "attempt": 2,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-f821944f8d8fad87",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    },
+    {
+      "jobId": "unit-fcc8bb2c8653b95d",
+      "attempt": 1,
+      "codes": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION"
+      ],
+      "messages": [
+        "GENERATED_UNIT_HAS_REVISION_SUGGESTION: A generated unit must not include mapRevisionSuggestion."
+      ]
+    }
+  ]
+}

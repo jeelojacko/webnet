@@ -539,8 +539,57 @@ Study Map (pure logic in `src/study/ai/`, dispatcher in `scripts/studyUnitBridge
   detector, revision flags, one-job-per-tier, matrix pseudo-status,
   over-target counters, OCR objective ids, temp-dir two-run fixtures with a
   3-row crosswalk, fail-closed missing-job naming, byte determinism).
-- **Human V4/V5 semantic review of the risk-ordered pack remains PENDING;
-  commit/push not authorized in this batch.**
+- Human V4/V5 semantic review (completed 2026-09-03) found defects the
+  canonical V5 validation (62 warnings / 0 errors) had let through: polarity
+  inversion (Registry 36), modality reversal (Clean Water 13(5)),
+  unsupported legal-effect claims (Land Titles 73), context/reference leakage
+  (Assessment 28, ANBLS 2.2.2), actor/approval overreach (Community Planning
+  84), ungrounded source-derived notes (Municipalities 184), non-verbatim
+  evidence excerpts, and sourceCoverage violations across the cohort.
+
+### V5 fidelity gate and post-human-QC revalidation (2026-09-03)
+
+- New V5-only fidelity gate `src/study/ai/studyAiUnitV5Fidelity.ts`
+  (`validateUnitV5Fidelity`), wired into `validateAiStudyUnitProposal` only
+  when `generationMetadata.promptSpecVersion === 'unit-authoring-v5'` (V4
+  behavior byte-identical; V5 prompt/spec bytes unchanged). All codes are
+  errors: `EVIDENCE_NOT_EXACT_VERBATIM` (character-for-character evidence
+  against the focused source text); strict selected-label sourceCoverage
+  contract (`SOURCE_COVERAGE_*` — every selected childLabel exactly once,
+  no extra sources/labels, covered ⇒ objectiveIds, intentionally-omitted ⇒
+  nonblank source-grounded reason); `POLARITY_REVERSAL` (sentence-level, so a
+  faithful "No … shall" restatement is not a reversal); `LEGAL_MODALITY_REVERSAL`
+  (conditional/discretionary trigger rewritten as a mandatory duty);
+  `UNSUPPORTED_LEGAL_EFFECT` (legal-effect claims absent from the source
+  wording); `CONTEXT_REF_LEAKAGE` (summary references outside the approved
+  focus); `SUMMARY_ACTOR_OVERREACH` / `SUMMARY_APPROVAL_SEQUENCING` (actor or
+  approval claims the approved focus does not support); `STUDY_NOTE_OUTSIDE_APPROVED_SOURCE`
+  and `SOURCE_DERIVED_NOTE_UNGROUNDED` (study-note source and grounding).
+  Retry instructions for every code added to
+  `scripts/studyAiLocalMapAuthorRetry.ts` (shared by the map and unit
+  runners).
+- Tests: `tests/study/study_ai_unit_v5_fidelity.test.ts` (17 cases: each gate
+  defect with its clean variant plus edge cases).
+- Deterministic no-inference revalidation of the 80 accepted canonical units
+  under the new gate: **37/80 invalid** (SOURCE_COVERAGE_EXTRA_LABEL ×63,
+  EVIDENCE_NOT_EXACT_VERBATIM ×37, SOURCE_COVERAGE_MISSING_SELECTED_LABEL ×16,
+  POLARITY_REVERSAL ×4, CONTEXT_REF_LEAKAGE ×4, SOURCE_DERIVED_NOTE_UNGROUNDED
+  ×4, SUMMARY_ACTOR_OVERREACH ×3, UNSUPPORTED_LEGAL_EFFECT ×3,
+  STUDY_NOTE_OUTSIDE_APPROVED_SOURCE ×2, LEGAL_MODALITY_REVERSAL ×1); all 7
+  named human-QC fixtures caught: `reports/unit-v5-post-human-qc-revalidation-20260902.{json,md}`.
+  Rejected-attempt analysis of the canonical run (69 attempts / 58 jobs):
+  `reports/unit-v5-rejected-attempt-analysis-20260902.{json,md}`.
+- Production gate: **not authorized** (`productionAuthorized: false`,
+  `studyMapReopenRecommended: false`) until the remediation1 run and its
+  human delta review complete: `reports/unit-v5-production-gate-20260902.{json,md}`.
+  Full 4,251-job production inference remains unauthorized.
+- Remediation1: prepared run
+  `ai-units-2026-09-02-frozen-map-cal80-v5-remediation1` — exactly the 37
+  newly-invalidated units (same frozen map, source hashes, priorities; jobs
+  rewritten via `rewriteUnitJobForRun`, batch 8), executed through the same
+  local runner with the V5 fidelity gate active. The remediation1 human-delta
+  report (`unit-v5-remediation1-human-delta-20260902`) follows the run and
+  its human review.
 
 ## Phase 4B.1.1 Targeted Map Pilot
 
