@@ -86,7 +86,9 @@ export const examCurriculumTierANblsSpecs: ExamCurriculumUnitSpec[] = [
         'certificate-of-authorization framework;',
         'unauthorized-practice consequences.',
       ],
-      mustRecall: [],
+      mustRecall: [
+        'Individual practice is tied to registration under the Act, while partnerships, associations and corporations practise through the Act\u2019s organizational-authorization framework.',
+      ],
       mustLocate: [
         { prompt: 'who may practise as a registered land surveyor', sectionLabel: '16' },
         { prompt: 'authorization of partnerships and firms', sectionLabel: '17' },
@@ -276,7 +278,7 @@ export const examCurriculumTierABylawsSpecs: ExamCurriculumUnitSpec[] = [
       recognitionCues: [],
       coreUnderstanding: [],
       mustRecall: [
-        'plans are to be based on monuments established in the field, subject to the general exception structure in the Bylaws.',
+        'When a survey results in monuments being placed, a Survey Plan must generally be prepared in accordance with the Standards Manual; the Bylaws provide an exception for monumentation complying with qualifying existing coordinated plans.',
       ],
       mustLocate: [
         { prompt: 'quality assurance and plan validation requirements' },
@@ -293,7 +295,7 @@ export const examCurriculumTierABylawsSpecs: ExamCurriculumUnitSpec[] = [
     'Professional standards, seals and code of conduct',
     [{ from: '7' }, { from: '10' }, { from: '14' }],
     {
-      learningDepths: ['understand', 'recall', 'retrieve'],
+      learningDepths: ['understand', 'retrieve'],
       examGoal: 'Understand the Bylaws\u2019 professional standards, seal and code-of-conduct provisions.',
       recognitionCues: [],
       coreUnderstanding: [],

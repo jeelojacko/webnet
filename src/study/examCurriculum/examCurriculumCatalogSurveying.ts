@@ -94,7 +94,7 @@ export const examCurriculumTierASurveysSpecs: ExamCurriculumUnitSpec[] = [
     'Plan certification and lost legal monuments',
     [{ from: '8' }, { from: '12' }],
     {
-      learningDepths: ['understand', 'recall', 'retrieve'],
+      learningDepths: ['understand', 'retrieve'],
       examGoal: 'Understand plan filing/certification in an integrated survey area and handling of lost legal monuments.',
       recognitionCues: [],
       coreUnderstanding: [],
@@ -266,7 +266,9 @@ export const examCurriculumTierABcaRegSpecs: ExamCurriculumUnitSpec[] = [
         'the application package can involve: current survey; field notes; surveyor\u2019s report; instruments; affected owners/interests; supporting evidence.',
         "the surveyor\u2019s report addresses: issue; boundary history; evidence; reasoning for accepting/rejecting competing boundary evidence.",
       ],
-      mustRecall: [],
+      mustRecall: [
+        'A boundary-confirmation surveyor\u2019s report addresses the issue to be determined, the history of the boundary, the evidence relied on, and the reasons for accepting or rejecting competing boundary evidence.',
+      ],
       mustLocate: [
         { prompt: 'application contents for boundary confirmation' },
         { prompt: 'form of the application', formLabel: 'Form 1' },

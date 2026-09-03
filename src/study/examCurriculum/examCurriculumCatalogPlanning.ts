@@ -109,7 +109,9 @@ export const examCurriculumTierACpaSpecs: ExamCurriculumUnitSpec[] = [
       examGoal: 'Understand the path from approved tentative plan to registered subdivision plan.',
       recognitionCues: [],
       coreUnderstanding: [],
-      mustRecall: [],
+      mustRecall: [
+        'An approved tentative-plan process proceeds into layout/preparation of the subdivision plan, submission for approval, approval, and filing/registration.',
+      ],
       mustLocate: [
         { prompt: 'application for approval of a subdivision plan', sectionLabel: '84' },
         { prompt: 'approval of a subdivision plan', sectionLabel: '85' },
@@ -136,7 +138,9 @@ export const examCurriculumTierACpaSpecs: ExamCurriculumUnitSpec[] = [
         'easements/public-purpose land;',
         'curve/boundary information.',
       ],
-      mustRecall: [],
+      mustRecall: [
+        'A subdivision plan contains core title/location information, survey and monument references, boundaries/lots/streets, relevant easements/public-purpose areas, and prescribed geometric boundary information.',
+      ],
       mustLocate: [
         { prompt: 'information required in the subdivision plan application (especially s.84)', sectionLabel: '84' },
         { prompt: 'lay-out of streets and lots', sectionLabel: '83' },
@@ -240,12 +244,15 @@ export const examCurriculumTierARegistrySpecs: ExamCurriculumUnitSpec[] = [
       examGoal: 'Understand what registration accomplishes, using the legal effect of registration as the conceptual anchor.',
       recognitionCues: [],
       coreUnderstanding: [
-        'legal effect of registration: priority and notice consequences for registered instruments.',
+        'legal effect of registration: a duly registered conveyance transfers the land described according to the intent of the conveyance (s.34).',
       ],
-      mustRecall: [],
+      mustRecall: [
+        'A duly registered conveyance has statutory effect to transfer the land described according to the intent of the conveyance (Registry Act s.34).',
+      ],
       mustLocate: [
         { prompt: 'registration of instruments', sectionLabel: '19' },
         { prompt: 'contents of a conveyance', sectionLabel: '20' },
+        { prompt: 'legal effect of a registered conveyance', sectionLabel: '34' },
       ],
       relatedUnitIds: [],
       reviewWeight: 'high',

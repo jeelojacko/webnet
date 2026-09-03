@@ -157,7 +157,9 @@ export const examCurriculumTierALandTitlesSpecs: ExamCurriculumUnitSpec[] = [
         'award;',
         'payment/funding.',
       ],
-      mustRecall: [],
+      mustRecall: [
+        'The Land Titles Act provides indemnification for specified damage arising from rectification or registration-related errors, subject to statutory exceptions.',
+      ],
       mustLocate: [
         { prompt: 'indemnification entitlement and exceptions' },
         { prompt: 'award and payment of indemnification' },
@@ -245,10 +247,10 @@ export const examCurriculumTierALandTitlesRegSpecs: ExamCurriculumUnitSpec[] = [
       ],
       mustRecall: [],
       mustLocate: [
-        { prompt: 'statutory fees', scheduleLabel: 'A' },
-        { prompt: 'statutory mortgage covenants', scheduleLabel: 'B' },
-        { prompt: 'statutory lease covenants', scheduleLabel: 'C' },
-        { prompt: 'additional schedules', scheduleLabel: 'D' },
+        { prompt: 'prescribed Land Titles forms', scheduleLabel: 'A' },
+        { prompt: 'prescribed fees', scheduleLabel: 'B' },
+        { prompt: 'statutory mortgage covenants', scheduleLabel: 'C' },
+        { prompt: 'statutory lease covenants', scheduleLabel: 'D' },
       ],
       relatedUnitIds: [],
       reviewWeight: 'medium',

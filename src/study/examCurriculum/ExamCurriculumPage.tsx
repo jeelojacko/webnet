@@ -154,7 +154,7 @@ const UnitCard = ({ unit, onOpenProvision }: { unit: ExamCurriculumUnit; onOpenP
                 />
               ))
             : (
-              <span className="px-1 text-[11px] text-slate-500">… {unit.sourceAnchors.length} resolved in manifest</span>
+              <span className="px-1 text-[11px] text-slate-500">Sources: {unit.sourceAnchors.length} provisions resolved (full list in canonical manifest)</span>
             )}
         </div>
       </div>

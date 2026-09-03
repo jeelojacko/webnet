@@ -324,3 +324,79 @@ describe('exam curriculum Tier-A build against the authoritative corpus', () => 
     expect(contentPackage['id']).toBe('nb-sit-statute-corpus-2026-08-29');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Tier-A semantic-regression facts (human-reviewed curation).
+// ---------------------------------------------------------------------------
+
+describe('Tier-A semantic-regression facts (human-reviewed curation)', () => {
+  const corpus = buildExamCurriculumCorpusView(contentPackageJson as never);
+  const manifest = buildExamCurriculumManifest(examCurriculumTierASpecs, corpus, '2026-09-03T00:00:00.000Z');
+  const unit = (id: string) => {
+    const u = manifest.units.find((x) => x.id === id);
+    if (!u) throw new Error('missing ' + id);
+    return u;
+  };
+
+  it('A-BYL-06 recalls the correct direction: survey -> monuments placed -> Survey Plan required', () => {
+    const u = unit('A-BYL-06');
+    // directionality: the reversed proposition must never be stated
+    for (const entry of u.mustRecall) {
+      expect(entry).not.toMatch(/plans are to be based on monuments/i);
+      expect(entry).not.toMatch(/based on monuments established in the field/i);
+    }
+    // and the curated required fact is present verbatim
+    expect(u.mustRecall).toContain(
+      'When a survey results in monuments being placed, a Survey Plan must generally be prepared in accordance with the Standards Manual; the Bylaws provide an exception for monumentation complying with qualifying existing coordinated plans.',
+    );
+    expect(u.learningDepths).toContain('recall');
+  });
+
+  it('A-LTR-03 maps schedules A/B/C/D to forms/fees/mortgage/lease exactly', () => {
+    const u = unit('A-LTR-03');
+    expect(
+      u.mustLocate.map((t) => ({
+        prompt: t.prompt,
+        // The resolved target carries the schedule pin as a sourceKey
+        // (e.g. "schedule:schedule-a"); recover the schedule letter so the
+        // prompt <-> letter pairing can be asserted key-strictly.
+        scheduleLabel: t.sourceKey ? t.sourceKey.replace('schedule:schedule-', '').toUpperCase() : '',
+      })),
+    ).toEqual([
+      { prompt: 'prescribed Land Titles forms', scheduleLabel: 'A' },
+      { prompt: 'prescribed fees', scheduleLabel: 'B' },
+      { prompt: 'statutory mortgage covenants', scheduleLabel: 'C' },
+      { prompt: 'statutory lease covenants', scheduleLabel: 'D' },
+    ]);
+    // no leftover 'additional schedules' description
+    expect(u.mustLocate.some((t) => /additional/i.test(t.prompt))).toBe(false);
+  });
+
+  it('A-REG-03 keeps the witnessing prohibitions in mustRecall', () => {
+    const u = unit('A-REG-03');
+    expect(u.mustRecall.some((e) => /shall not witness another/i.test(e))).toBe(true);
+    // The catalog text ends "another party\u2019s execution."; the regex stops
+    // before the curly apostrophe, which the catalog emits as an escape.
+    expect(u.mustRecall.some((e) => /shall not take the affidavit\/acknowledgment/i.test(e))).toBe(true);
+  });
+
+  it('A-SURV-03 integrated-area tying duty preserves its qualifying categories', () => {
+    const u = unit('A-SURV-03');
+    expect(u.mustRecall.some((e) => /tied into the coordinate-monument framework/i.test(e))).toBe(true);
+    expect(u.mustRecall.some((e) => /subdivision/i.test(e))).toBe(true);
+    expect(u.learningDepths).toContain('recall');
+  });
+
+  it('A-BYL-07 and A-SURV-04 no longer claim recall depth', () => {
+    expect(unit('A-BYL-07').learningDepths).not.toContain('recall');
+    expect(unit('A-SURV-04').learningDepths).not.toContain('recall');
+  });
+
+  it('recall-depth units in the advisory set now carry mustRecall', () => {
+    for (const id of ['A-NBLS-03', 'A-BCAR-01', 'A-CPA-04', 'A-CPA-05', 'A-REG-02', 'A-LTA-06', 'A-BYL-06']) {
+      const u = unit(id);
+      expect(u.learningDepths).toContain('recall');
+      expect(u.mustRecall.length).toBeGreaterThan(0);
+    }
+  });
+});

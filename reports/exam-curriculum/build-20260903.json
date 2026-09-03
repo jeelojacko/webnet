@@ -1,10 +1,10 @@
 {
   "report": "exam-curriculum-build",
   "dateTag": "20260903",
-  "generatedAt": "2026-09-03T21:08:59.056Z",
+  "generatedAt": "2026-09-03T21:24:06.079Z",
   "sourcePackageId": "nb-sit-statute-corpus-2026-08-29",
   "sourceCorpusContentHash": "6f0442fc121eb0d2bcc9d3c1023c7a624e2cd4adf36922079bc3f6858fdcc32b",
-  "manifestContentHash": "9733a1ad7325bfbcc531abb374a5b5f932065835d6e17f2a04e79a28023aad1c",
+  "manifestContentHash": "bcb92089b0d5d6fc21df73df4c4c62c03d6bffcdbd30695fd4a65f0887aa38f0",
   "metrics": {
     "totalUnits": 51,
     "unitsByType": {
@@ -31,19 +31,13 @@
       "low": 1
     },
     "totalSourceAnchors": 742,
-    "totalMustRecall": 12,
-    "totalMustLocate": 111,
+    "totalMustRecall": 18,
+    "totalMustLocate": 112,
     "unitsWithRecognizeDepth": 20
   },
   "validation": {
     "errors": [],
     "warnings": [
-      {
-        "level": "warning",
-        "unitId": "A-NBLS-03",
-        "code": "recall-target-only-in-mustlocate",
-        "message": "unit targets \"recall\" depth but has no mustRecall entries (rule may be misplaced in mustLocate)"
-      },
       {
         "level": "warning",
         "unitId": "A-BYL-04",
@@ -58,51 +52,9 @@
       },
       {
         "level": "warning",
-        "unitId": "A-BYL-07",
-        "code": "recall-target-only-in-mustlocate",
-        "message": "unit targets \"recall\" depth but has no mustRecall entries (rule may be misplaced in mustLocate)"
-      },
-      {
-        "level": "warning",
-        "unitId": "A-SURV-04",
-        "code": "recall-target-only-in-mustlocate",
-        "message": "unit targets \"recall\" depth but has no mustRecall entries (rule may be misplaced in mustLocate)"
-      },
-      {
-        "level": "warning",
-        "unitId": "A-BCAR-01",
-        "code": "recall-target-only-in-mustlocate",
-        "message": "unit targets \"recall\" depth but has no mustRecall entries (rule may be misplaced in mustLocate)"
-      },
-      {
-        "level": "warning",
         "unitId": "A-CPA-01",
         "code": "excessive-source-breadth",
         "message": "unit spans 59 source anchors — consider splitting or narrowing scope"
-      },
-      {
-        "level": "warning",
-        "unitId": "A-CPA-04",
-        "code": "recall-target-only-in-mustlocate",
-        "message": "unit targets \"recall\" depth but has no mustRecall entries (rule may be misplaced in mustLocate)"
-      },
-      {
-        "level": "warning",
-        "unitId": "A-CPA-05",
-        "code": "recall-target-only-in-mustlocate",
-        "message": "unit targets \"recall\" depth but has no mustRecall entries (rule may be misplaced in mustLocate)"
-      },
-      {
-        "level": "warning",
-        "unitId": "A-REG-02",
-        "code": "recall-target-only-in-mustlocate",
-        "message": "unit targets \"recall\" depth but has no mustRecall entries (rule may be misplaced in mustLocate)"
-      },
-      {
-        "level": "warning",
-        "unitId": "A-LTA-06",
-        "code": "recall-target-only-in-mustlocate",
-        "message": "unit targets \"recall\" depth but has no mustRecall entries (rule may be misplaced in mustLocate)"
       }
     ]
   },
@@ -112,8 +64,8 @@
     "architectureVersion": "exam-curriculum-v1",
     "sourcePackageId": "nb-sit-statute-corpus-2026-08-29",
     "sourceCorpusContentHash": "6f0442fc121eb0d2bcc9d3c1023c7a624e2cd4adf36922079bc3f6858fdcc32b",
-    "createdAt": "2026-09-03T21:08:59.056Z",
-    "contentHash": "9733a1ad7325bfbcc531abb374a5b5f932065835d6e17f2a04e79a28023aad1c",
+    "createdAt": "2026-09-03T21:24:06.079Z",
+    "contentHash": "bcb92089b0d5d6fc21df73df4c4c62c03d6bffcdbd30695fd4a65f0887aa38f0",
     "units": [
       {
         "id": "A-NBLS-01",
@@ -533,7 +485,9 @@
           "certificate-of-authorization framework;",
           "unauthorized-practice consequences."
         ],
-        "mustRecall": [],
+        "mustRecall": [
+          "Individual practice is tied to registration under the Act, while partnerships, associations and corporations practise through the Act’s organizational-authorization framework."
+        ],
         "mustLocate": [
           {
             "prompt": "who may practise as a registered land surveyor",
@@ -2173,7 +2127,7 @@
         "recognitionCues": [],
         "coreUnderstanding": [],
         "mustRecall": [
-          "plans are to be based on monuments established in the field, subject to the general exception structure in the Bylaws."
+          "When a survey results in monuments being placed, a Survey Plan must generally be prepared in accordance with the Standards Manual; the Bylaws provide an exception for monumentation complying with qualifying existing coordinated plans."
         ],
         "mustLocate": [
           {
@@ -2293,7 +2247,6 @@
         ],
         "learningDepths": [
           "understand",
-          "recall",
           "retrieve"
         ],
         "examGoal": "Understand the Bylaws’ professional standards, seal and code-of-conduct provisions.",
@@ -2510,7 +2463,6 @@
         ],
         "learningDepths": [
           "understand",
-          "recall",
           "retrieve"
         ],
         "examGoal": "Understand plan filing/certification in an integrated survey area and handling of lost legal monuments.",
@@ -2969,7 +2921,9 @@
           "the application package can involve: current survey; field notes; surveyor’s report; instruments; affected owners/interests; supporting evidence.",
           "the surveyor’s report addresses: issue; boundary history; evidence; reasoning for accepting/rejecting competing boundary evidence."
         ],
-        "mustRecall": [],
+        "mustRecall": [
+          "A boundary-confirmation surveyor’s report addresses the issue to be determined, the history of the boundary, the evidence relied on, and the reasons for accepting or rejecting competing boundary evidence."
+        ],
         "mustLocate": [
           {
             "prompt": "application contents for boundary confirmation",
@@ -3778,7 +3732,9 @@
         "examGoal": "Understand the path from approved tentative plan to registered subdivision plan.",
         "recognitionCues": [],
         "coreUnderstanding": [],
-        "mustRecall": [],
+        "mustRecall": [
+          "An approved tentative-plan process proceeds into layout/preparation of the subdivision plan, submission for approval, approval, and filing/registration."
+        ],
         "mustLocate": [
           {
             "prompt": "application for approval of a subdivision plan",
@@ -3872,7 +3828,9 @@
           "easements/public-purpose land;",
           "curve/boundary information."
         ],
-        "mustRecall": [],
+        "mustRecall": [
+          "A subdivision plan contains core title/location information, survey and monument references, boundaries/lots/streets, relevant easements/public-purpose areas, and prescribed geometric boundary information."
+        ],
         "mustLocate": [
           {
             "prompt": "information required in the subdivision plan application (especially s.84)",
@@ -4595,9 +4553,11 @@
         "examGoal": "Understand what registration accomplishes, using the legal effect of registration as the conceptual anchor.",
         "recognitionCues": [],
         "coreUnderstanding": [
-          "legal effect of registration: priority and notice consequences for registered instruments."
+          "legal effect of registration: a duly registered conveyance transfers the land described according to the intent of the conveyance (s.34)."
         ],
-        "mustRecall": [],
+        "mustRecall": [
+          "A duly registered conveyance has statutory effect to transfer the land described according to the intent of the conveyance (Registry Act s.34)."
+        ],
         "mustLocate": [
           {
             "prompt": "registration of instruments",
@@ -4608,6 +4568,11 @@
             "prompt": "contents of a conveyance",
             "documentId": "doc-registry-act",
             "sourceKey": "section:20"
+          },
+          {
+            "prompt": "legal effect of a registered conveyance",
+            "documentId": "doc-registry-act",
+            "sourceKey": "section:34"
           }
         ],
         "relatedUnitIds": [],
@@ -5998,7 +5963,9 @@
           "award;",
           "payment/funding."
         ],
-        "mustRecall": [],
+        "mustRecall": [
+          "The Land Titles Act provides indemnification for specified damage arising from rectification or registration-related errors, subject to statutory exceptions."
+        ],
         "mustLocate": [
           {
             "prompt": "indemnification entitlement and exceptions",
@@ -6433,22 +6400,22 @@
         "mustRecall": [],
         "mustLocate": [
           {
-            "prompt": "statutory fees",
+            "prompt": "prescribed Land Titles forms",
             "documentId": "reg-land-titles-83-130",
             "sourceKey": "schedule:schedule-a"
           },
           {
-            "prompt": "statutory mortgage covenants",
+            "prompt": "prescribed fees",
             "documentId": "reg-land-titles-83-130",
             "sourceKey": "schedule:schedule-b"
           },
           {
-            "prompt": "statutory lease covenants",
+            "prompt": "statutory mortgage covenants",
             "documentId": "reg-land-titles-83-130",
             "sourceKey": "schedule:schedule-c"
           },
           {
-            "prompt": "additional schedules",
+            "prompt": "statutory lease covenants",
             "documentId": "reg-land-titles-83-130",
             "sourceKey": "schedule:schedule-d"
           }
