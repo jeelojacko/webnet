@@ -642,13 +642,13 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
 /** Group-restricted sourceHashes (historical proposal shape maps sourceKey -> hash). */
-const groupSourceHashes = (job: AiUnitAuthoringJob): Record<string, string> => {
+export const groupSourceHashes = (job: AiUnitAuthoringJob): Record<string, string> => {
   const selected = new Set(job.approvedGroup.sourceKeys);
   return Object.fromEntries(Object.entries(job.sourceHashes).filter(([key]) => selected.has(key)));
 };
 
 /** Identity fields are runner-owned: model identity values are always overwritten. */
-const withRunnerIdentity = (
+export const withRunnerIdentity = (
   value: Record<string, unknown>,
   job: AiUnitAuthoringJob,
 ): AiStudyUnitProposal => ({

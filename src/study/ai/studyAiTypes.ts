@@ -274,6 +274,23 @@ export type AiStudyNote = {
   sourceKeys?: string[];
 };
 
+/**
+ * Provenance for result rows promoted through the human adjudication/recovery
+ * path (scripts/studyAiHumanUnitAdjudication.ts): a human corrected a rejected
+ * attempt deterministically, with no model inference, and the corrected row
+ * passed the complete V5 validation before being written.
+ */
+export type AiHumanAdjudicationProvenance = {
+  method: 'human-remediation';
+  reason: string;
+  changedFields: string[];
+  sourceAttempt: number;
+  modelInferenceUsed: boolean;
+  validatorErrorCount: number;
+  validatorWarningCount: number;
+  adjudicatedAt: string;
+};
+
 export type AiGenerationMetadata = {
   providerKind: AiAuthoringProviderKind;
   promptSpecVersion: string;
@@ -282,6 +299,8 @@ export type AiGenerationMetadata = {
   sourceJobInputHash?: string;
   rawResultFile?: string;
   rawResultFileHash?: string;
+  /** Set only on rows promoted by the human adjudication path. */
+  humanAdjudication?: AiHumanAdjudicationProvenance;
 };
 
 export type AiStudyUnitProposal = {

@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "kind": "human-unit-adjudication",
+  "runId": "ai-units-2026-09-02-frozen-map-cal80-v5-remediation1",
+  "jobId": "unit-762098496a0f61e2",
+  "sourceAttempt": 9,
+  "frozenPriority": "P1",
+  "method": "human-remediation",
+  "reason": "Repeated model omission of selected 80(8)/80(9) sourceCoverage labels across all 9 remediation1 attempts; attempt 9 is otherwise semantically acceptable and authored all three objectives (80(7), 80(8), 80(9)) correctly, serializing only 80(7) into sourceCoverage. Human supplied the complete selected-label coverage mapping the existing attempt-9 objectives; no model inference used.",
+  "changedFields": ["sourceCoverage"],
+  "replacement": {
+    "sourceCoverage": [
+      {
+        "sourceKey": "section:80",
+        "childLabels": [
+          {
+            "label": "80(7)",
+            "status": "covered",
+            "objectiveIds": ["obj-accounting-duty"]
+          },
+          {
+            "label": "80(8)",
+            "status": "covered",
+            "objectiveIds": ["obj-primary-indemnity-funding"]
+          },
+          {
+            "label": "80(9)",
+            "status": "covered",
+            "objectiveIds": ["obj-consolidated-fund-fallback"]
+          }
+        ]
+      }
+    ]
+  }
+}

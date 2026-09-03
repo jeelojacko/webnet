@@ -1,0 +1,2010 @@
+{
+  "schemaVersion": 1,
+  "sourceRun": "study-content/ai/runs/ai-units-2026-09-02-frozen-map-cal80-v5",
+  "remediationRun": "study-content/ai/runs/ai-units-2026-09-02-frozen-map-cal80-v5-remediation1",
+  "units": [
+    {
+      "proposalId": "unit-0344f31b1107b2dc",
+      "status": "repaired-valid",
+      "preErrorCodes": [
+        "SUMMARY_ACTOR_OVERREACH"
+      ],
+      "postErrorCodes": [],
+      "postWarningCount": 1,
+      "attemptsRejected": 2,
+      "changedScalars": [
+        "title",
+        "mainQuestion",
+        "studySummary"
+      ],
+      "objectivesAdded": [
+        "obj-18-2-registrar-evidence"
+      ],
+      "objectivesRemoved": [
+        "obj-18-2-evidence-entitlement"
+      ],
+      "objectivesChanged": [
+        "obj-18-2-authorization"
+      ],
+      "sourceCoverageChanged": true,
+      "studyNotesChanged": true,
+      "warningsChanged": false,
+      "postTitle": "Conditions for entering a name in the register under section 18(2)",
+      "postMainQuestion": "What two conditions must be satisfied before a name is entered in the register under section 18(2) of the Land Surveyors Act?",
+      "postStudySummary": "Section 18(2) establishes that no name shall be entered in the register other than as authorized by the Act or the by-laws, and unless proper evidence demonstrates that the person requesting to be registered is entitled. The provision operates as a prohibition qualified by two cumulative conditions: statutory or by-law authorization, and evidentiary satisfaction of entitlement. Neither condition alone permits entry.",
+      "postObjectives": [
+        {
+          "id": "obj-18-2-authorization",
+          "objective": "State the authorization condition that limits when a name may be entered in the register.",
+          "guidedQuestion": "What authorization is required before a name is entered in the register under section 18(2)?",
+          "studyAnswer": "Under section 18(2), no name shall be entered in the register other than as authorized by the Act or the by-laws."
+        },
+        {
+          "id": "obj-18-2-registrar-evidence",
+          "objective": "State the evidence standard that must be met before entering a name in the register.",
+          "guidedQuestion": "What evidence standard must be met before a name is entered in the register under section 18(2)?",
+          "studyAnswer": "Proper evidence must satisfy that the person requesting to be registered is entitled."
+        }
+      ]
+    },
+    {
+      "proposalId": "unit-061b46bb0538188c",
+      "status": "repaired-valid",
+      "preErrorCodes": [
+        "EVIDENCE_NOT_EXACT_VERBATIM"
+      ],
+      "postErrorCodes": [],
+      "postWarningCount": 0,
+      "attemptsRejected": 2,
+      "changedScalars": [
+        "title",
+        "mainQuestion",
+        "studySummary"
+      ],
+      "objectivesAdded": [
+        "obj-report-descriptions",
+        "obj-report-explanation"
+      ],
+      "objectivesRemoved": [
+        "obj-1",
+        "obj-2"
+      ],
+      "objectivesChanged": [],
+      "sourceCoverageChanged": true,
+      "studyNotesChanged": false,
+      "warningsChanged": false,
+      "postTitle": "Surveyor's Report Required Contents",
+      "postMainQuestion": "What four elements must a surveyor's report accompanying a boundary confirmation application contain under section 3(4) of Regulation 95-166?",
+      "postStudySummary": "Section 3(4) of Regulation 95-166 prescribes the mandatory contents of a surveyor's report submitted with a boundary confirmation application. The report must include three descriptions—the issue to be determined, the history of the boundary, and the evidence used to establish the boundary location as shown on the plan of survey—plus a fourth element requiring the surveyor to explain the reasons for accepting or rejecting the boundary location as shown on other plans of survey, other documentary evidence, or physical evidence of earlier or adjoining-landowner-accepted boundary lines.",
+      "postObjectives": [
+        {
+          "id": "obj-report-descriptions",
+          "objective": "Identify the three descriptive elements the surveyor's report must contain under section 3(4)(a)–(c).",
+          "guidedQuestion": "What three descriptions must a surveyor's report under section 3(4)(a)–(c) of Regulation 95-166 contain?",
+          "studyAnswer": "The surveyor's report shall contain a description of the issue to be determined, a description of the history of the boundary in question, and a description of the evidence used to establish the location of the boundary as shown on the plan of survey."
+        },
+        {
+          "id": "obj-report-explanation",
+          "objective": "State the explanation the surveyor's report must provide under section 3(4)(d) regarding alternative boundary evidence.",
+          "guidedQuestion": "What explanation must the surveyor's report provide under section 3(4)(d) of Regulation 95-166 regarding other boundary evidence?",
+          "studyAnswer": "The report shall contain an explanation of the reasons for accepting or rejecting the location of the boundary as shown on any other plans of survey, as indicated by any other documentary evidence or as indicated by any physical evidence of earlier boundary lines or boundary lines that have been accepted by adjoining landowners."
+        }
+      ]
+    },
+    {
+      "proposalId": "unit-06c54db68969cc17",
+      "status": "repaired-valid",
+      "preErrorCodes": [
+        "POLARITY_REVERSAL",
+        "SOURCE_COVERAGE_MISSING_SELECTED_LABEL",
+        "SOURCE_COVERAGE_MISSING_SELECTED_LABEL",
+        "SOURCE_COVERAGE_MISSING_SELECTED_LABEL"
+      ],
+      "postErrorCodes": [],
+      "postWarningCount": 0,
+      "attemptsRejected": 4,
+      "changedScalars": [
+        "mainQuestion",
+        "studySummary"
+      ],
+      "objectivesAdded": [
+        "obj-36-1-party-prohibitions",
+        "obj-36-2-witness-subscription",
+        "obj-36-3-temporal-scope"
+      ],
+      "objectivesRemoved": [
+        "obj-s36-party-prohibitions",
+        "obj-s36-temporal-scope",
+        "obj-s36-witness-subscription"
+      ],
+      "objectivesChanged": [],
+      "sourceCoverageChanged": true,
+      "studyNotesChanged": false,
+      "warningsChanged": false,
+      "postTitle": "Prohibitions on parties and witness requirement for affidavits of execution",
+      "postMainQuestion": "What is a party to an instrument prohibited from doing in the execution and acknowledgment process, and what must a witness have done before proof of execution may be taken from them?",
+      "postStudySummary": "Section 36 of the Registry Act sets two interdependent execution-integrity rules. First, no party to an instrument shall witness another party's execution of the instrument or take an affidavit or acknowledgment of that execution. Second, no affidavit or proof of the execution of an instrument shall be taken from a witness unless the witness has subscribed their signature to the instrument by hand as a witness to its due execution. These rules apply only in respect of instruments executed after the section comes into force.",
+      "postObjectives": [
+        {
+          "id": "obj-36-1-party-prohibitions",
+          "objective": "State the two things a party to an instrument is prohibited from doing in relation to another party's execution of the instrument.",
+          "guidedQuestion": "What two things is a party to an instrument prohibited from doing with respect to another party's execution of the instrument?",
+          "studyAnswer": "No party to an instrument shall (a) witness the execution of the instrument by another party, or (b) take an affidavit or acknowledgment of the execution of the instrument."
+        },
+        {
+          "id": "obj-36-2-witness-subscription",
+          "objective": "State the condition a witness must satisfy before an affidavit or proof of the execution of an instrument may be taken from that witness.",
+          "guidedQuestion": "What must a witness have done to the instrument before an affidavit or proof of its execution may be taken from that witness?",
+          "studyAnswer": "No affidavit or proof of the execution of an instrument shall be taken from a witness unless the witness has subscribed his signature to the instrument by hand as a witness to its due execution."
+        },
+        {
+          "id": "obj-36-3-temporal-scope",
+          "objective": "State the temporal limitation on the application of section 36 of the Registry Act.",
+          "guidedQuestion": "To which instruments does section 36 of the Registry Act apply?",
+          "studyAnswer": "This section only applies in respect of instruments executed after it comes into force."
+        }
+      ]
+    },
+    {
+      "proposalId": "unit-10af6382f13ceccb",
+      "status": "repaired-valid",
+      "preErrorCodes": [
+        "SOURCE_COVERAGE_MISSING_SELECTED_LABEL",
+        "SOURCE_COVERAGE_MISSING_SELECTED_LABEL"
+      ],
+      "postErrorCodes": [],
+      "postWarningCount": 0,
+      "attemptsRejected": 1,
+      "changedScalars": [
+        "mainQuestion",
+        "studySummary"
+      ],
+      "objectivesAdded": [
+        "obj-74-1-expenses",
+        "obj-74-1-indemnity-award",
+        "obj-74-2-court"
+      ],
+      "objectivesRemoved": [
+        "obj-s74-court-fallback",
+        "obj-s74-expense-award",
+        "obj-s74-rg-determination-and-award"
+      ],
+      "objectivesChanged": [],
+      "sourceCoverageChanged": true,
+      "studyNotesChanged": false,
+      "warningsChanged": false,
+      "postTitle": "Award of indemnity: Registrar General determination, conditions, and court fallback",
+      "postMainQuestion": "What conditions must be met for the Registrar General to award indemnity under the Land Titles Act, and when may a claimant apply to the court instead?",
+      "postStudySummary": "Section 74 of the Land Titles Act provides a two-stage pathway for obtaining an indemnity. Upon a claimant's application, the Registrar General may determine whether a right of indemnity has arisen; if so, the Registrar General may award indemnity only with the approval of Service New Brunswick and the claimant's consent. Separately, the Registrar General may award the claimant an amount for reasonable expenses of the application, whether or not a right of indemnity is found. If no award is made under the administrative process, the claimant may apply to the court for an award of indemnity, whether or not an administrative application was previously made.",
+      "postObjectives": [
+        {
+          "id": "obj-74-1-indemnity-award",
+          "objective": "Recall the conditions the Registrar General must satisfy before awarding a claimant an amount as indemnity under section 74(1).",
+          "guidedQuestion": "What conditions must be satisfied before the Registrar General may award a claimant an amount as indemnity under section 74(1) of the Land Titles Act?",
+          "studyAnswer": "Upon the application of a claimant, the Registrar General may determine whether or not a right of indemnity has arisen, and where he determines that such a right has arisen he may, with the approval of Service New Brunswick and with the consent of the claimant, award the claimant an amount as indemnity."
+        },
+        {
+          "id": "obj-74-1-expenses",
+          "objective": "Recall the Registrar General's separate power to award reasonable expenses under section 74(1) and that this award is independent of the indemnity determination.",
+          "guidedQuestion": "Under section 74(1), what may the Registrar General award the claimant in respect of expenses, and does that award depend on finding a right of indemnity?",
+          "studyAnswer": "The Registrar General may award the claimant an amount for the reasonable expenses the claimant has incurred in making the application, whether or not he determines that such a right has arisen."
+        },
+        {
+          "id": "obj-74-2-court",
+          "objective": "Recall the trigger for the claimant's right to apply to the court for an award of indemnity under section 74(2) and the independence of that right from any prior administrative application.",
+          "guidedQuestion": "Under section 74(2), when may a claimant apply to the court for an award of indemnity?",
+          "studyAnswer": "Where an award is not made pursuant to subsection (1), the claimant may, whether or not he has made an application under subsection (1), apply to the court for an award of indemnity."
+        }
+      ]
+    },
+    {
+      "proposalId": "unit-1778139a242e733a",
+      "status": "repaired-valid",
+      "preErrorCodes": [
+        "EVIDENCE_NOT_EXACT_VERBATIM"
+      ],
+      "postErrorCodes": [],
+      "postWarningCount": 0,
+      "attemptsRejected": 8,
+      "changedScalars": [
+        "title",
+        "mainQuestion",
+        "studySummary"
+      ],
+      "objectivesAdded": [
+        "obj-approval-conditions"
+      ],
+      "objectivesRemoved": [
+        "obj-approval-condition"
+      ],
+      "objectivesChanged": [
+        "obj-facilities",
+        "obj-non-approval-grounds"
+      ],
+      "sourceCoverageChanged": false,
+      "studyNotesChanged": true,
+      "warningsChanged": false,
+      "postTitle": "Facilities requirements and development-officer approval conditions under s. 75(1)(i)–(k)",
+      "postMainQuestion": "What facilities may a subdivision by-law require, and what approval conditions and non-approval grounds does s. 75(1) of the Community Planning Act allow it to impose on a development officer's subdivision plan approval?",
+      "postStudySummary": "Section 75(1) of the Community Planning Act permits a subdivision by-law to impose three interrelated gates on subdivision plan approval. Paragraph (i) authorizes the by-law to require the subdivider to provide or fund specific facilities (streets, curbing, sidewalks, culverts, drainage ditches, water and sewer lines, and others). Paragraph (j) conditions approval on the council's opinion that services will be available in the near future (or the subdivider has made satisfactory arrangements) and requires the subdivider to enter into an agreement with the council secured by a deposit or a performance bond. Paragraph (k) provides two independent non-approval grounds—land unsuitability for the intended purpose and prejudice to further or adjoining subdivision—each requiring concurrence of both the development officer and the advisory committee or regional service commission.",
+      "postObjectives": [
+        {
+          "id": "obj-facilities",
+          "objective": "Recall the facilities a subdivision by-law may require a person proposing to subdivide land to provide or contribute to under s. 75(1)(i).",
+          "guidedQuestion": "What facilities may a subdivision by-law require a person proposing to subdivide land to provide within the subdivision, or contribute to the cost of, under s. 75(1)(i)?",
+          "studyAnswer": "The by-law may require that a person proposing to subdivide land provides within the subdivision, or contributes to the cost of the subdivision to the extent required by the by-law, facilities including streets, curbing, sidewalks, culverts, drainage ditches, water and sewer lines and others that the by-law for that class of subdivision requires."
+        },
+        {
+          "id": "obj-approval-conditions",
+          "objective": "Recall the two-part condition in s. 75(1)(j) under which the development officer shall not approve a subdivision plan: the council's opinion on future serviceability and the agreement secured by deposit or performance bond.",
+          "guidedQuestion": "Under s. 75(1)(j), what must be true in the council's opinion before the development officer may approve a subdivision plan, and what financial security must the person proposing the subdivision provide?",
+          "studyAnswer": "The development officer shall not approve a subdivision plan unless, in the opinion of the council: (1) the council will be able in the near future to provide the proposed subdivision with streets, water and sewer lines, light, recreational areas or other facilities required by the by-law for that class of subdivision, or the person proposing the subdivision has made satisfactory arrangements for providing the facilities; and (2) the person proposing the subdivision has made satisfactory arrangements to enter into an agreement with the council to comply with the requirements of paragraph (i) and either (A) deposit with the local government a sum sufficient to cover the cost with respect to facilities that the by-law requires the person to pay, or (B) deliver to the local government a performance bond acceptable to the council in an amount sufficient to cover the cost referred to in clause (A)."
+        },
+        {
+          "id": "obj-non-approval-grounds",
+          "objective": "Recall the two non-approval grounds in s. 75(1)(k) requiring concurrence of the development officer and the advisory committee or regional service commission: land unsuitability and prejudice to further or adjoining subdivision.",
+          "guidedQuestion": "Under s. 75(1)(k), on what two grounds may a subdivision by-law provide that the development officer shall not approve a subdivision plan, and whose opinions must concur?",
+          "studyAnswer": "The by-law may provide that the development officer shall not approve a subdivision plan if, in the development officer's opinion and in the opinion of the advisory committee or regional service commission: (1) the land is not suited to the purpose for which it is intended or may not reasonably be expected to be used for that purpose within a reasonable time after the subdivision plan is approved; or (2) the proposed manner of subdividing will prejudice the possibility of further subdividing the land or the convenient subdividing of adjoining land."
+        }
+      ]
+    },
+    {
+      "proposalId": "unit-23337f055c22b192",
+      "status": "repaired-valid",
+      "preErrorCodes": [
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL"
+      ],
+      "postErrorCodes": [],
+      "postWarningCount": 0,
+      "attemptsRejected": 2,
+      "changedScalars": [
+        "title",
+        "mainQuestion",
+        "studySummary"
+      ],
+      "objectivesAdded": [
+        "obj-royalty-regulation-retroactivity",
+        "obj-timber-harvest-removal"
+      ],
+      "objectivesRemoved": [
+        "obj-harvesting-removal",
+        "obj-royalty-retroactivity"
+      ],
+      "objectivesChanged": [
+        "obj-forest-plans-form",
+        "obj-royalties-species-classes"
+      ],
+      "sourceCoverageChanged": true,
+      "studyNotesChanged": true,
+      "warningsChanged": false,
+      "postTitle": "Forest management, harvesting and royalties — regulatory powers under Crown Lands and Forests Act s. 95",
+      "postMainQuestion": "What may the Lieutenant-Governor in Council regulate under the Crown Lands and Forests Act regarding forest management agreements, timber harvesting, royalties, and the retroactive application of royalty regulations?",
+      "postStudySummary": "Crown Lands and Forests Act s. 95(1) grants the Lieutenant-Governor in Council a broad regulatory power over the Crown forest resource. Within the approved focus, four regulatory subjects stand out: (1) the manner and form of a forest management agreement, an industrial plan, a management plan and an operating plan; (2) the harvesting and removal of timber from Crown Lands; (3) royalties for timber harvested on Crown Lands, structured by species and classes; and (4) the retroactivity rule in s. 95(2), which permits a royalty regulation made under paragraph (1)(n) before July 1 of a year to be made retroactive to April 1 of the same year. All powers are permissive (\"may make regulations\"); the retroactivity provision is likewise permissive (\"may be made retroactive\").",
+      "postObjectives": [
+        {
+          "id": "obj-forest-plans-form",
+          "objective": "Identify the regulatory subject matter for the manner and form of forest management agreements and plans under s. 95(1)(d).",
+          "guidedQuestion": "What may the Lieutenant-Governor in Council regulate regarding the manner and form of forest management agreements, industrial plans, management plans, and operating plans?",
+          "studyAnswer": "The Lieutenant-Governor in Council may make regulations respecting the manner and form of a forest management agreement, an industrial plan, a management plan and an operating plan."
+        },
+        {
+          "id": "obj-timber-harvest-removal",
+          "objective": "Identify the regulatory subject matter for harvesting and removal of timber from Crown Lands under s. 95(1)(f).",
+          "guidedQuestion": "Under Crown Lands and Forests Act s. 95(1)(f), what may the Lieutenant-Governor in Council regulate concerning timber on Crown Lands?",
+          "studyAnswer": "The Lieutenant-Governor in Council may make regulations respecting the harvesting and removal of timber from Crown Lands."
+        },
+        {
+          "id": "obj-royalties-species-classes",
+          "objective": "Identify how royalties for timber on Crown Lands may be structured by regulation under s. 95(1)(n).",
+          "guidedQuestion": "How may royalties for timber harvested on Crown Lands be structured under Crown Lands and Forests Act s. 95(1)(n)?",
+          "studyAnswer": "Regulations may prescribe royalties for timber harvested on Crown Lands by species and classes."
+        },
+        {
+          "id": "obj-royalty-regulation-retroactivity",
+          "objective": "State the condition under which a royalty regulation may be made retroactive and the date to which it applies, per s. 95(2).",
+          "guidedQuestion": "Under what condition may a regulation made under Crown Lands and Forests Act s. 95(1)(n) be made retroactive, and to what date?",
+          "studyAnswer": "A regulation made under paragraph (1)(n) before July 1 of a year may be made retroactive to April 1 of the same year."
+        }
+      ]
+    },
+    {
+      "proposalId": "unit-332a2ef669d3f464",
+      "status": "repaired-valid",
+      "preErrorCodes": [
+        "LEGAL_MODALITY_REVERSAL"
+      ],
+      "postErrorCodes": [],
+      "postWarningCount": 1,
+      "attemptsRejected": 1,
+      "changedScalars": [
+        "title",
+        "mainQuestion",
+        "studySummary"
+      ],
+      "objectivesAdded": [
+        "obj-13-5-actors-purpose",
+        "obj-13-5-consumption-additional"
+      ],
+      "objectivesRemoved": [
+        "obj-13-5-purpose",
+        "obj-13-5-source-vs-consumption"
+      ],
+      "objectivesChanged": [
+        "obj-13-5-trigger"
+      ],
+      "sourceCoverageChanged": true,
+      "studyNotesChanged": false,
+      "warningsChanged": false,
+      "postTitle": "Response to a possible future significant health risk in water (s. 13(5))",
+      "postMainQuestion": "What may the Minister or Minister of Health order under section 13(5) of the Clean Water Act in response to a possible future significant health risk in water?",
+      "postStudySummary": "Section 13(5) of the Clean Water Act gives a discretionary order-making power when water in a well, public water supply system, or water supply system (other than a private well) may in the circumstances pose a significant health risk in the future. At the source, the Minister acts; at the point of consumption, the Minister of Health acts. In both cases the order must ensure the possible future risk is prevented, eliminated, minimized or otherwise appropriately dealt with and the quality of the water is improved if necessary. At the point of consumption the Minister of Health may additionally make orders described in subparagraph (4)(b)(i) or (ii) with the necessary modifications. The entire subsection is subject to subsection 12(3), which bars orders where Pesticides Control Act measures respecting the contaminant are already in place.",
+      "postObjectives": [
+        {
+          "id": "obj-13-5-trigger",
+          "objective": "Identify the trigger finding and the water systems covered by section 13(5).",
+          "guidedQuestion": "Under section 13(5) of the Clean Water Act, what finding by the Minister of Health triggers the power to make an order, and which water systems does it apply to?",
+          "studyAnswer": "Subject to subsection 12(3), the power is triggered when the Minister of Health determines upon testing or believes, on other reasonable and probable grounds, that water in a well, public water supply system or water supply system, except a private well, may in the circumstances pose a significant health risk in the future."
+        },
+        {
+          "id": "obj-13-5-actors-purpose",
+          "objective": "Identify which minister acts at each location and what the order must ensure.",
+          "guidedQuestion": "Under section 13(5), which minister acts when the possible future risk is at the source versus at the point of consumption, and what must the order ensure?",
+          "studyAnswer": "At the source, the Minister may make such order and take such measures as the Minister considers advisable and necessary. At the point of consumption, the Minister of Health may do the same. In both cases, the order must ensure that the possible future significant health risk is prevented, eliminated, minimized or otherwise appropriately dealt with and the quality of the water is improved if necessary."
+        },
+        {
+          "id": "obj-13-5-consumption-additional",
+          "objective": "Identify the additional order-making authority at the point of consumption under 13(5)(b).",
+          "guidedQuestion": "What additional orders may the Minister of Health make under section 13(5)(b) at the point of consumption beyond the general risk-management measures?",
+          "studyAnswer": "The Minister of Health may include the making of an order described in subparagraph (4)(b)(i) or (ii) with the necessary modifications."
+        }
+      ]
+    },
+    {
+      "proposalId": "unit-373539bbe31a52a0",
+      "status": "repaired-valid",
+      "preErrorCodes": [
+        "SOURCE_COVERAGE_MISSING_SELECTED_LABEL"
+      ],
+      "postErrorCodes": [],
+      "postWarningCount": 1,
+      "attemptsRejected": 1,
+      "changedScalars": [
+        "mainQuestion",
+        "studySummary"
+      ],
+      "objectivesAdded": [],
+      "objectivesRemoved": [],
+      "objectivesChanged": [
+        "obj-1"
+      ],
+      "sourceCoverageChanged": true,
+      "studyNotesChanged": false,
+      "warningsChanged": false,
+      "postTitle": "Seal of Office Requirement",
+      "postMainQuestion": "Who is required to have a seal of office under the Land Titles Act, and which body approves the form of that seal?",
+      "postStudySummary": "Section 7 of the Land Titles Act imposes a mandatory duty on the Registrar General and each registrar to have a seal of office. The form of the seal is not determined by the office holders themselves; it must be a form approved by Service New Brunswick.",
+      "postObjectives": [
+        {
+          "id": "obj-1",
+          "objective": "Identify the persons who must hold a seal of office and the approving body for the seal's form under section 7 of the Land Titles Act.",
+          "guidedQuestion": "Who must have a seal of office under the Land Titles Act, and which body must approve the form of that seal?",
+          "studyAnswer": "The Registrar General and each registrar shall have a seal of office in a form approved by Service New Brunswick."
+        }
+      ]
+    },
+    {
+      "proposalId": "unit-3e12091103f6ec16",
+      "status": "repaired-valid",
+      "preErrorCodes": [
+        "SOURCE_COVERAGE_EXTRA_LABEL"
+      ],
+      "postErrorCodes": [],
+      "postWarningCount": 0,
+      "attemptsRejected": 8,
+      "changedScalars": [
+        "mainQuestion",
+        "studySummary"
+      ],
+      "objectivesAdded": [
+        "obj-dev-a",
+        "obj-dev-b",
+        "obj-dev-c",
+        "obj-dev-d"
+      ],
+      "objectivesRemoved": [
+        "dev-categories",
+        "dev-exclusions"
+      ],
+      "objectivesChanged": [],
+      "sourceCoverageChanged": true,
+      "studyNotesChanged": true,
+      "warningsChanged": false,
+      "postTitle": "Definition of \"development\" under the Community Planning Act",
+      "postMainQuestion": "What four categories of activity constitute \"development\" under s. 1 of the Community Planning Act, and what specific infrastructure items are excluded?",
+      "postStudySummary": "Section 1 of the Community Planning Act defines \"development\" (aménagement) in four parts. Part (a) covers the erecting, placing, relocating, removing, demolishing, altering, repairing or replacing of a building or structure, excluding utility poles and wires, traffic control devices, and Pipeline Act pipelines, but carving back buildings and structures remote from a pipeline used for management, administration, housing/storing moveable equipment, or statutory notices. Part (b) captures a change in the purpose of land, a building or a structure, but only where the purpose is set out in a regional land use plan, municipal plan, rural plan, development scheme, zoning by-law or regulation. Part (c) covers any excavation of sand, gravel, clay, shale, limestone or other deposits for a part (a) development or for the sale or other commercial use of the excavated material. Part (d) covers making land by cutting or filling to a depth in excess of one metre, except for laying pipelines defined in the Pipeline Act, 2005.",
+      "postObjectives": [
+        {
+          "id": "obj-dev-a",
+          "objective": "Recall the building or structure activities that constitute development under s. 1(1)(a) and the exclusions and carve-back for Pipeline Act infrastructure.",
+          "guidedQuestion": "What building or structure activities constitute \"development\" under s. 1(1)(a), what is excluded, and what is carved back?",
+          "studyAnswer": "Development includes the erecting, placing, relocating, removing, demolishing, altering, repairing or replacing of a building or structure, other than utility poles and wires, traffic control devices and pipelines defined in the Pipeline Act, 2005, except for buildings and structures remote from a pipeline used for management and administration or housing or storing of moveable equipment or statutory notices."
+        },
+        {
+          "id": "obj-dev-b",
+          "objective": "Recall the condition under which a change in the purpose of land, a building or a structure constitutes development under s. 1(1)(b).",
+          "guidedQuestion": "Under what condition does a change in the purpose for which land, a building or a structure is used constitute \"development\"?",
+          "studyAnswer": "A change in the purpose for which land, a building or structure is used constitutes development if the purpose for which land, buildings and structures are used is set out in a regional land use plan, municipal plan, rural plan, development scheme, zoning by-law or regulation."
+        },
+        {
+          "id": "obj-dev-c",
+          "objective": "Recall when excavation of natural deposits constitutes development under s. 1(1)(c).",
+          "guidedQuestion": "When does the excavation of sand, gravel, clay, shale, limestone or other deposits constitute \"development\" under s. 1(1)(c)?",
+          "studyAnswer": "Any excavation of sand, gravel, clay, shale, limestone or other deposits constitutes development when carried out for a development mentioned in paragraph (a) or for purposes of the sale or other commercial use of the material excavated."
+        },
+        {
+          "id": "obj-dev-d",
+          "objective": "Recall the cutting or filling threshold that constitutes development under s. 1(1)(d) and the Pipeline Act exception.",
+          "guidedQuestion": "What depth of cutting or filling makes land modification constitute \"development,\" and what activity is excepted?",
+          "studyAnswer": "The making of land by cutting or filling to a depth in excess of one metre constitutes development, except in the case of laying pipelines defined in the Pipeline Act, 2005."
+        }
+      ]
+    },
+    {
+      "proposalId": "unit-433e77a5dad8ceb1",
+      "status": "repaired-valid",
+      "preErrorCodes": [
+        "UNSUPPORTED_LEGAL_EFFECT",
+        "UNSUPPORTED_LEGAL_EFFECT",
+        "UNSUPPORTED_LEGAL_EFFECT"
+      ],
+      "postErrorCodes": [],
+      "postWarningCount": 0,
+      "attemptsRejected": 1,
+      "changedScalars": [
+        "title",
+        "mainQuestion",
+        "studySummary"
+      ],
+      "objectivesAdded": [
+        "obj-73-entitlement-categories",
+        "obj-73-exceptions-fraud-negligence",
+        "obj-73-exceptions-remaining",
+        "obj-73-forged-disposition-deeming"
+      ],
+      "objectivesRemoved": [
+        "obj-73-deeming-forged",
+        "obj-73-entitlement",
+        "obj-73-exceptions-ab",
+        "obj-73-exceptions-cdef"
+      ],
+      "objectivesChanged": [],
+      "sourceCoverageChanged": true,
+      "studyNotesChanged": true,
+      "warningsChanged": false,
+      "postTitle": "Indemnification on Rectification – Entitlement, Exceptions, and Forged Dispositions (s. 73)",
+      "postMainQuestion": "What damage gives rise to indemnification on rectification under the Land Titles Act, what six exceptions apply, and how is a good faith purchaser under a forged disposition treated?",
+      "postStudySummary": "Section 73 of the Land Titles Act grants any person who suffers damage from four categories of events—rectification of the title register, an unrectified error or omission in the register, an error or omission in a certificate of registered ownership, or the loss or destruction of a document lodged at a land titles office—a right to indemnification. Six statutory exceptions defeat the claim: the claimant's own fraud or negligence; fraud or negligence of a prior title-source (unless title derives from a registered or protected valuable-consideration disposition); deprivation by the Act where a recovery action remains available; notice or knowledge of impending registrar action coupled with failure to pursue remedies; the owner's breach of trust; and the registrar's necessary delay. Subsection (2) provides that an owner claiming in good faith and for valuable consideration under a forged disposition is deemed, for the purposes of subsection (1), to have suffered damage by reason of the rectification.",
+      "postObjectives": [
+        {
+          "id": "obj-73-entitlement-categories",
+          "objective": "Recall the four categories of damage that give a person the right to indemnification on rectification under s. 73(1) of the Land Titles Act.",
+          "guidedQuestion": "What four categories of damage give a person the right to indemnification under the Land Titles Act?",
+          "studyAnswer": "A person who suffers damage by reason of (1) the rectification of the title register, (2) an error or omission in the title register which is not rectified, (3) an error or omission in a certificate of registered ownership, or (4) the loss or destruction of any document lodged at a land titles office for inspection or safe custody is entitled to be indemnified."
+        },
+        {
+          "id": "obj-73-exceptions-fraud-negligence",
+          "objective": "Recall exceptions (a) and (b) to indemnification: the claimant's own fraud or negligence, and fraud or negligence of a prior title-source subject to the valuable-consideration carve-out.",
+          "guidedQuestion": "How do the claimant's own fraud or negligence, or that of a person from whom the claimant derives title, limit indemnification under the Land Titles Act?",
+          "studyAnswer": "Indemnification does not lie where (a) the claimant has himself caused or substantially contributed to the damage by his fraud or negligence; or (b) the claimant derives title from a person who caused or substantially contributed to the damage by his fraud or negligence, unless title is derived under a disposition for valuable consideration that is registered or protected in the title register."
+        },
+        {
+          "id": "obj-73-exceptions-remaining",
+          "objective": "Recall exceptions (c) through (f) to indemnification: deprivation by the Act with available recovery, notice or knowledge of impending registrar action, breach of trust, and the registrar's necessary delay.",
+          "guidedQuestion": "What are the four remaining statutory exceptions to indemnification on rectification in the Land Titles Act, beyond the claimant's own fault?",
+          "studyAnswer": "Indemnification does not lie where (c) the claimant claims to have been deprived of any registered land or an interest or estate therein by the operation of the Act and is not barred by the Act from bringing an action for its recovery; (d) the claimant or the person through or under whom he claims was given notice, or not being given notice, had knowledge that the registrar was about to bring the land under the Act or was about to do the act causing the damage, and has failed to pursue his remedies under the Act; (e) the damage arises from the owner's breach of any trust; or (f) the damage is occasioned by the registrar's necessary delay in bringing land under the Act or in registering an instrument."
+        },
+        {
+          "id": "obj-73-forged-disposition-deeming",
+          "objective": "Recall the deeming rule in s. 73(2): a good faith purchaser for valuable consideration under a forged disposition is deemed to have suffered damage by reason of rectification, for the purposes of subsection (1).",
+          "guidedQuestion": "How does section 73(2) of the Land Titles Act treat an owner claiming in good faith and for valuable consideration under a forged disposition when the title register is rectified?",
+          "studyAnswer": "For the purposes of subsection (1), an owner of any registered land or encumbrance claiming in good faith and for valuable consideration under a forged disposition shall, where the title register is rectified, be deemed to have suffered damage by reason of such rectification."
+        }
+      ]
+    },
+    {
+      "proposalId": "unit-4a0b1236f21e2add",
+      "status": "repaired-valid",
+      "preErrorCodes": [
+        "EVIDENCE_NOT_EXACT_VERBATIM"
+      ],
+      "postErrorCodes": [],
+      "postWarningCount": 0,
+      "attemptsRejected": 1,
+      "changedScalars": [
+        "title",
+        "mainQuestion",
+        "studySummary"
+      ],
+      "objectivesAdded": [
+        "obj-16-2-entity-eligibility"
+      ],
+      "objectivesRemoved": [
+        "obj-16-2-eligible-entities"
+      ],
+      "objectivesChanged": [
+        "obj-17-1-council-authorization"
+      ],
+      "sourceCoverageChanged": true,
+      "studyNotesChanged": false,
+      "warningsChanged": false,
+      "postTitle": "Practice by partnerships, associations of persons, and corporations",
+      "postMainQuestion": "Under the New Brunswick Land Surveyors Act, how may a partnership, association of persons, or corporation be permitted to practice land surveying?",
+      "postStudySummary": "Sections 16(2) and 17(1) of the New Brunswick Land Surveyors Act establish the framework for non-individual entities to practice land surveying. A partnership, association of persons, or corporation may be permitted to practice, with the specific authorization mechanism vested in Council. Council may authorize members of the Association to form, enter into, belong to, or be employed by such an entity for the purpose of the practice of land surveying. The permission is discretionary (\"may be permitted\") rather than automatic, and is conditioned on Council authorization under section 17.",
+      "postObjectives": [
+        {
+          "id": "obj-16-2-entity-eligibility",
+          "objective": "Identify which entity types may be permitted to practice land surveying and the section that governs the permission",
+          "guidedQuestion": "Which types of entities may be permitted to practice land surveying, and under which section is that permission provided?",
+          "studyAnswer": "A partnership, association of persons, or a corporation may be permitted to practice land surveying as provided under section 17."
+        },
+        {
+          "id": "obj-17-1-council-authorization",
+          "objective": "Identify the specific actions Council may authorize members of the Association to take with respect to eligible entities",
+          "guidedQuestion": "What may Council authorize members of the Association to do with respect to a partnership, association of persons, or corporation?",
+          "studyAnswer": "Council may authorize members of the Association to form, enter into, belong to, or be employed by a partnership, association of persons, or corporation for the purpose of the practice of land surveying."
+        }
+      ]
+    },
+    {
+      "proposalId": "unit-4a5095dd82b864af",
+      "status": "repaired-valid",
+      "preErrorCodes": [
+        "CONTEXT_REF_LEAKAGE",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "POLARITY_REVERSAL",
+        "SOURCE_DERIVED_NOTE_UNGROUNDED"
+      ],
+      "postErrorCodes": [],
+      "postWarningCount": 0,
+      "attemptsRejected": 7,
+      "changedScalars": [
+        "title",
+        "mainQuestion",
+        "studySummary"
+      ],
+      "objectivesAdded": [
+        "obj-16-transfer-consent",
+        "obj-18-vacant-possession",
+        "obj-19-entry-showing",
+        "obj-32-fixture-removal"
+      ],
+      "objectivesRemoved": [
+        "obj-entry-to-show",
+        "obj-fixture-removal",
+        "obj-transfer-restriction",
+        "obj-vacant-possession"
+      ],
+      "objectivesChanged": [],
+      "sourceCoverageChanged": true,
+      "studyNotesChanged": true,
+      "warningsChanged": false,
+      "postTitle": "Transfer Restrictions and End-of-Lease Obligations in a New Brunswick Statutory Lease (Schedule D, Cls. 16, 18, 19, 32)",
+      "postMainQuestion": "Under Schedule D of Regulation 83-130, what transfer restrictions apply to the lessee and what obligations and removal rights attach at the end of a statutory lease?",
+      "postStudySummary": "Schedule D of Regulation 83-130 sets out the standard covenants for New Brunswick statutory leases. Clause 16 prohibits the lessee from assigning, transferring, subletting, or otherwise parting with possession of the demised premises (or any part) without the lessor's written consent, which must not be unreasonably withheld. Clause 18 requires the lessee to peaceably deliver vacant possession at the lease's expiration or earlier determination, in the condition the lease obliges the lessee to maintain. Clause 19 obliges the lessee to permit the lessor and the lessor's servants, agents, and employees to enter at reasonable times and after reasonable notice to show the premises to prospective tenants and purchasers. Clause 32 grants the lessee a positive right to remove trade or tenants' fixtures and the lessee's own articles at or before termination, provided the lessee does no damage in the removal or makes good any damage caused.",
+      "postObjectives": [
+        {
+          "id": "obj-16-transfer-consent",
+          "objective": "Recall the consent requirement and its limitation for transferring or subletting the demised premises under clause 16.",
+          "guidedQuestion": "Under Schedule D clause 16, what must the lessee obtain before assigning, transferring, subletting, or setting over the demised premises, and what limitation applies to that consent?",
+          "studyAnswer": "The lessee shall not, without the written consent of the lessor, which consent shall not be unreasonably withheld, assign, transfer, set over, sublet, or otherwise by any act or deed cause or permit the demised premises or any part thereof to be assigned, transferred, sublet, or set over unto any person or persons whomsoever."
+        },
+        {
+          "id": "obj-18-vacant-possession",
+          "objective": "Recall the lessee's obligation to deliver vacant possession at the end of the lease under clause 18.",
+          "guidedQuestion": "What must the lessee do with the demised premises upon the expiration or sooner determination of a statutory lease under Schedule D clause 18, and in what condition?",
+          "studyAnswer": "Upon the expiration or other sooner determination of the lease, the lessee shall peaceably deliver to the lessor vacant possession of the demised premises in the condition in which the lessee is by this lease required to maintain the demised premises."
+        },
+        {
+          "id": "obj-19-entry-showing",
+          "objective": "Recall the lessee's obligation to permit the lessor to enter and show the premises to prospective tenants and purchasers under clause 19.",
+          "guidedQuestion": "Under Schedule D clause 19, what must the lessee permit the lessor and the lessor's representatives to do, and under what timing and notice conditions?",
+          "studyAnswer": "The lessee shall permit the lessor, his servants, agents, and employees at reasonable times and after reasonable notice to enter the demised premises for the purpose of showing it to prospective tenants and purchasers."
+        },
+        {
+          "id": "obj-32-fixture-removal",
+          "objective": "Recall the lessee's right to remove trade or tenants' fixtures at or before termination and the damage-mitigation condition attached under clause 32.",
+          "guidedQuestion": "What may the lessee remove from the demised premises at or prior to termination under Schedule D clause 32, and what condition limits the manner of removal?",
+          "studyAnswer": "The lessee may take, remove, and carry away all fixtures, fittings, plant, machinery, utensils, shelving, counters, safes, or other articles placed in or on the premises in the nature of trade or tenants' fixtures, or other articles belonging to or brought upon the premises by the lessee, but the lessee shall in such removal do no damage to the premises or shall make good any damage which he may occasion thereto."
+        }
+      ]
+    },
+    {
+      "proposalId": "unit-4a8d142480162fe3",
+      "status": "repaired-valid",
+      "preErrorCodes": [
+        "CONTEXT_REF_LEAKAGE",
+        "EVIDENCE_NOT_EXACT_VERBATIM"
+      ],
+      "postErrorCodes": [],
+      "postWarningCount": 0,
+      "attemptsRejected": 2,
+      "changedScalars": [
+        "title",
+        "mainQuestion",
+        "studySummary"
+      ],
+      "objectivesAdded": [
+        "obj-27-consequences",
+        "obj-27-triggers"
+      ],
+      "objectivesRemoved": [
+        "obj-27-triggers-acceleration-forfeiture"
+      ],
+      "objectivesChanged": [
+        "obj-26-pay-recover"
+      ],
+      "sourceCoverageChanged": true,
+      "studyNotesChanged": true,
+      "warningsChanged": false,
+      "postTitle": "Payment Default, Forfeiture, and Bankruptcy Triggers in Statutory Lease Covenants",
+      "postMainQuestion": "Under Schedule D statutory lease covenants, what may the lessor do upon the lessee's payment default, and which events accelerate rent and permit the lessor to forfeit the lease and re-enter the premises?",
+      "postStudySummary": "Schedule D statutory lease covenants give the lessor two protective remedies for the lessee's financial default. Where the lessee is in default of payment of any amount required by the lease, the lessor may pay that amount on the lessee's behalf and recover it together with his reasonable expenses from the lessee as rent, with all remedies incidental thereto as if that amount and expenses were included in the rent reserved. If the lessee's rights under the lease are seized or taken in execution or attachment by a creditor, or the lessee makes an assignment for the benefit of creditors, becomes bankrupt or insolvent, or takes the benefit of any statute in force for bankrupt or insolvent debtors, then the current month's rent, including additional rent, and the next three month's rent, including additional rent, immediately become due and payable, and the lease and term shall, at the option of the lessor, become forfeited and void, with the lessor able to enter and repossess the demised premises in the manner prescribed by law.",
+      "postObjectives": [
+        {
+          "id": "obj-26-pay-recover",
+          "objective": "Recall the lessor's right under clause 26 to pay a defaulted amount and recover it as rent with incidental remedies",
+          "guidedQuestion": "Under Schedule D clause 26, what may the lessor do when the lessee defaults on a payment, and how is the amount recovered?",
+          "studyAnswer": "The lessor may pay the defaulted amount on the lessee's behalf and recover that amount together with his reasonable expenses from the lessee as rent, with all remedies incidental thereto, as if that amount and expenses were included in the rent hereby reserved."
+        },
+        {
+          "id": "obj-27-triggers",
+          "objective": "Recall the four events under clause 27 that trigger rent acceleration and forfeiture in a statutory lease",
+          "guidedQuestion": "Which four events trigger the consequences in Schedule D clause 27 of a statutory lease?",
+          "studyAnswer": "The rights of the lessee under the lease being at any time seized or taken in execution or attachment by any creditor of the lessee; the lessee making an assignment for the benefit of creditors; the lessee becoming bankrupt or insolvent; and the lessee taking the benefit of any statute that may be in force for bankrupt or insolvent debtors."
+        },
+        {
+          "id": "obj-27-consequences",
+          "objective": "Recall the rent-acceleration and forfeiture-and-re-entry consequences under clause 27 when a triggering event occurs",
+          "guidedQuestion": "What happens to rent and the lease term under Schedule D clause 27 once a triggering event occurs?",
+          "studyAnswer": "The current month's rent, including additional rent, and the next three month's rent, including additional rent, immediately become due and payable, and, in the manner prescribed by law, the lease and term shall, at the option of the lessor, become forfeited and void, and the lessor may enter into and upon the demised premises, or any part thereof in the name of the whole, by force or otherwise as he may see fit, to have again, repossess and enjoy, as of its former estate, anything herein contained to the contrary notwithstanding."
+        }
+      ]
+    },
+    {
+      "proposalId": "unit-6480451b3fe42be2",
+      "status": "repaired-valid",
+      "preErrorCodes": [
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM"
+      ],
+      "postErrorCodes": [],
+      "postWarningCount": 0,
+      "attemptsRejected": 7,
+      "changedScalars": [
+        "title",
+        "mainQuestion",
+        "studySummary"
+      ],
+      "objectivesAdded": [],
+      "objectivesRemoved": [],
+      "objectivesChanged": [
+        "obj-dune-watercourse",
+        "obj-forest-land",
+        "obj-marshes",
+        "obj-shore-areas"
+      ],
+      "sourceCoverageChanged": true,
+      "studyNotesChanged": true,
+      "warningsChanged": false,
+      "postTitle": "Land, Shore and Watercourse Definitions in the Trespass Act",
+      "postMainQuestion": "How does the Trespass Act define the physical boundaries of forest land, freshwater and saltwater marshes, lake and ocean shore areas, sand dunes, and watercourses?",
+      "postStudySummary": "Section 1 of the Trespass Act defines seven land and water feature terms that fix the physical scope to which the Act extends. Forest land covers unincorporated, uncultivated growing land (trees, shrubs, plants, grass) with roads, excluding public highways and the lands in subsection 5(1) or section 6. Freshwater and saltwater marshes are parallel wetland zones distinguished by their position: freshwater marshes lie between dry land and a lake, pond, river or stream with the water table near or above the surface; saltwater marshes lie between dry land and the ocean or an ocean inlet and are covered all or part of the time by salt water. Both are characterized by aquatic and grass-like vegetation. The lake shore area extends 25 m above and 25 m below the normal high water mark of any lake; the ocean shore area extends from the ordinary low tide mark to 300 m above the ordinary high tide mark of any ocean or ocean inlet. Each shore-area definition sweeps in any associated bed, bank, beach, shore, bar, flat, mudflat or sand dune whether or not it falls within the measured zone. A sand dune is a natural mound of loose sand, possibly vegetated, found along a lake or ocean shore. A watercourse is the full length and width of any open natural or artificial channel (river, creek, stream, spring, brook, lake, pond, reservoir, canal, ditch) and includes its bed, banks, sides and shoreline.",
+      "postObjectives": [
+        {
+          "id": "obj-forest-land",
+          "objective": "Define forest land and identify the exclusion it contains.",
+          "guidedQuestion": "What conditions must be met for land to qualify as forest land under the Trespass Act, and what lands does the definition exclude?",
+          "studyAnswer": "Forest land is any land lying outside the boundaries of a city or town and not cultivated for agricultural purposes on which trees of any stage of development (including seedlings or saplings from a plantation or arising from natural regeneration) and shrubs, plants or grass are growing, together with roads on the land other than public highways. It does not include the lands referred to in subsection 5(1) or section 6."
+        },
+        {
+          "id": "obj-marshes",
+          "objective": "Distinguish a freshwater marsh from a saltwater marsh by location, water conditions, and vegetation.",
+          "guidedQuestion": "How do the Trespass Act definitions distinguish a freshwater marsh from a saltwater marsh in terms of location and water conditions?",
+          "studyAnswer": "A freshwater marsh is an inland area lying between dry land and a lake, pond, river or stream, where the water table is ordinarily near or above the surface of the land and which is characterized by aquatic and grass-like vegetation. A saltwater marsh is an area lying between dry land and the ocean or an ocean inlet, that is covered all or part of the time by salt water and which is characterized by aquatic and grass-like vegetation."
+        },
+        {
+          "id": "obj-shore-areas",
+          "objective": "State the measurement references for the lake shore area and ocean shore area and identify the associated features each includes.",
+          "guidedQuestion": "How are the lake shore area and ocean shore area measured from their respective waterline references, and what associated features do they include?",
+          "studyAnswer": "A lake shore area is that portion of land lying within 25 m above and 25 m below the normal high water mark of any lake, and includes any bed, bank, beach, shore, bar, flat, mudflat or sand dune associated with the lake whether or not it lies within that portion of land. An ocean shore area is that portion of land lying within the ordinary low tide mark and 300 m above the ordinary high tide mark of any ocean or ocean inlet, and includes any bed, bank, beach, shore, bar, flat, mudflat or sand dune associated with the ocean or inlet whether or not it lies within that portion of land."
+        },
+        {
+          "id": "obj-dune-watercourse",
+          "objective": "Define sand dune and watercourse, noting the physical characteristics and spatial scope of each.",
+          "guidedQuestion": "How do the Trespass Act definitions of sand dune and watercourse each describe the physical feature and its spatial extent?",
+          "studyAnswer": "A sand dune is a natural mound of loose sand, which may be covered with grass or other vegetation, found along a lake or ocean shore. A watercourse is the full length and width of any river, creek, stream, spring, brook, lake, pond, reservoir, canal, ditch or other natural or artificial channel that is open to the air and includes the bed, banks, sides and shoreline."
+        }
+      ]
+    },
+    {
+      "proposalId": "unit-672a50b20e2100c7",
+      "status": "repaired-valid",
+      "preErrorCodes": [
+        "SOURCE_COVERAGE_EXTRA_LABEL"
+      ],
+      "postErrorCodes": [],
+      "postWarningCount": 2,
+      "attemptsRejected": 1,
+      "changedScalars": [
+        "title",
+        "mainQuestion",
+        "studySummary"
+      ],
+      "objectivesAdded": [
+        "obj-s140-duty",
+        "obj-s140-form"
+      ],
+      "objectivesRemoved": [
+        "obj-140-endorse-precept"
+      ],
+      "objectivesChanged": [],
+      "sourceCoverageChanged": true,
+      "studyNotesChanged": true,
+      "warningsChanged": false,
+      "postTitle": "Clerk's Duty to Endorse a Precept on the Local Improvement Assessment Roll",
+      "postMainQuestion": "Under section 140 of the Municipalities Act, what must the clerk endorse on the local improvement assessment roll, and what determines the form of the precept?",
+      "postStudySummary": "Section 140 of the Municipalities Act imposes a mandatory duty on the municipal clerk to endorse a precept on the local improvement assessment roll. The precept must be in the form prescribed by by-law, giving the municipality, through its by-law, the authority to set the specific format of the precept to be endorsed.",
+      "postObjectives": [
+        {
+          "id": "obj-s140-duty",
+          "objective": "Identify the clerk's mandatory duty under section 140 and the item to be endorsed on the assessment roll.",
+          "guidedQuestion": "What must the clerk do to the local improvement assessment roll under section 140 of the Municipalities Act?",
+          "studyAnswer": "The clerk shall endorse on the assessment roll a precept in the form prescribed by by-law."
+        },
+        {
+          "id": "obj-s140-form",
+          "objective": "Identify the source that determines the form of the precept endorsed by the clerk.",
+          "guidedQuestion": "Under section 140 of the Municipalities Act, what determines the form of the precept that the clerk endorses on the assessment roll?",
+          "studyAnswer": "The form of the precept is prescribed by by-law."
+        }
+      ]
+    },
+    {
+      "proposalId": "unit-6f65dea4a13630e9",
+      "status": "repaired-valid",
+      "preErrorCodes": [
+        "EVIDENCE_NOT_EXACT_VERBATIM"
+      ],
+      "postErrorCodes": [],
+      "postWarningCount": 0,
+      "attemptsRejected": 2,
+      "changedScalars": [
+        "title",
+        "mainQuestion",
+        "studySummary"
+      ],
+      "objectivesAdded": [
+        "obj-13-3-owner-orders",
+        "obj-13-3-trigger-mandatory",
+        "obj-13-4-owner-orders",
+        "obj-13-4-trigger-mandatory"
+      ],
+      "objectivesRemoved": [
+        "obj-13-3-mandatory",
+        "obj-13-3-optional",
+        "obj-13-4-mandatory",
+        "obj-13-4-optional"
+      ],
+      "objectivesChanged": [],
+      "sourceCoverageChanged": true,
+      "studyNotesChanged": false,
+      "warningsChanged": false,
+      "postTitle": "Orders for a current significant health risk: contaminant at the source or at the point of consumption",
+      "postMainQuestion": "What orders must or may be made, and by whom, when water poses a significant health risk at the source (s. 13(3)) or at the point of consumption (s. 13(4)) under the Clean Water Act?",
+      "postStudySummary": "Sections 13(3) and 13(4) of the Clean Water Act set out the government's mandatory and discretionary response when a contaminant makes water in a well, public water supply system, or water supply system (other than a private well) a significant health risk. Where the contaminant is at the source (s. 13(3)), the Minister acts; where it is at the point of consumption (s. 13(4)), the Minister of Health acts. Both subsections impose a mandatory (shall) duty to order closure or barring of access to the source, provision of water, and elimination of the risk if practicable. Both also grant discretion (may) to direct the owner, but the available owner-directed measures differ: the source case contemplates installing a new permanent well or providing an alternate source, while the point-of-consumption case adds consumer notice and temporary safe water at the owner's expense before ordering a new supply system.",
+      "postObjectives": [
+        {
+          "id": "obj-13-3-trigger-mandatory",
+          "objective": "Identify the trigger, acting minister, and three mandatory outcomes under s. 13(3) where a contaminant makes the water a significant health risk at the source.",
+          "guidedQuestion": "Under Clean Water Act s. 13(3), what triggers the Minister's mandatory orders when a contaminant is at the source, and what three outcomes must those orders ensure?",
+          "studyAnswer": "If the Minister of Health determines upon testing or believes on reasonable and probable grounds that water (other than a private well) poses a significant health risk because of a contaminant at the source, the Minister, subject to s. 12(3), shall make orders to ensure: (i) access to the source is closed or barred, temporarily or permanently; (ii) water is temporarily or permanently provided; and (iii) the risk is eliminated, if the Minister is satisfied after consulting with the Minister of Health that it would be possible and practicable to do so."
+        },
+        {
+          "id": "obj-13-3-owner-orders",
+          "objective": "Describe the optional owner-directed orders available to the Minister under s. 13(3)(b) when the risk at the source cannot be eliminated.",
+          "guidedQuestion": "What may the Minister order the owner to do under s. 13(3)(b) if it is impossible or impracticable to eliminate the significant health risk at the source?",
+          "studyAnswer": "The Minister may order the owner to (i) install a new permanent well or provide an alternate source that provides water of a quality and quantity at least equivalent to and as convenient as before the risk occurred, if the Minister is satisfied after consulting with the Minister of Health that it would be impossible or impracticable to eliminate the risk, and (ii) take such further measures as the Minister considers advisable and necessary."
+        },
+        {
+          "id": "obj-13-4-trigger-mandatory",
+          "objective": "Identify the acting minister and three mandatory outcomes under s. 13(4) where a contaminant makes the water a significant health risk at the point of consumption.",
+          "guidedQuestion": "Under Clean Water Act s. 13(4), who acts when a contaminant makes the water a significant health risk at the point of consumption, and what three outcomes must the mandatory orders ensure?",
+          "studyAnswer": "If the Minister of Health determines upon testing or believes on reasonable and probable grounds that water (other than a private well) poses a significant health risk because of a contaminant at the point of consumption, the Minister of Health, subject to s. 12(3), shall make orders to ensure: (i) access to the source is closed or barred, temporarily or permanently; (ii) water is temporarily or permanently provided; and (iii) the risk is eliminated, if satisfied that it would be possible and practicable to do so."
+        },
+        {
+          "id": "obj-13-4-owner-orders",
+          "objective": "Describe the four types of optional owner-directed orders the Minister of Health may make under s. 13(4)(b) for a contaminant at the point of consumption.",
+          "guidedQuestion": "What four types of owner-directed orders may the Minister of Health make under s. 13(4)(b) for a contaminant at the point of consumption?",
+          "studyAnswer": "The Minister of Health may order the owner to: (i) give notice to all consumers of the risk in accordance with the order's directions and time period; (ii) provide safe water temporarily, at the owner's expense, in amounts sufficient for consumers to meet their requirements until the risk is eliminated; (iii) install a new public water supply system or water supply system of equivalent quality, quantity, and convenience, if the Minister of Health is satisfied that elimination is impossible or impracticable; and (iv) take such further measures as the Minister of Health considers advisable and necessary."
+        }
+      ]
+    },
+    {
+      "proposalId": "unit-71e27c24590d3242",
+      "status": "repaired-valid",
+      "preErrorCodes": [
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM"
+      ],
+      "postErrorCodes": [],
+      "postWarningCount": 0,
+      "attemptsRejected": 4,
+      "changedScalars": [
+        "mainQuestion",
+        "studySummary"
+      ],
+      "objectivesAdded": [
+        "obj-44-buy-in-and-terms"
+      ],
+      "objectivesRemoved": [
+        "obj-44-definitions-cross-ref"
+      ],
+      "objectivesChanged": [
+        "obj-44-deed-variation-savings",
+        "obj-44-power-of-sale",
+        "obj-44-power-to-insure"
+      ],
+      "sourceCoverageChanged": true,
+      "studyNotesChanged": true,
+      "warningsChanged": false,
+      "postTitle": "Mortgagee's Statutory Powers under Deed Mortgage (s.44)",
+      "postMainQuestion": "What statutory powers does s.44 of the Property Act give a mortgagee under a deed mortgage, and how may the mortgage deed vary or limit them?",
+      "postStudySummary": "Section 44 confers two default statutory powers on a mortgagee where the mortgage is by deed: a power of sale (triggered when the mortgage money or interest is due) and a power to insure against fire (available any time after the deed date). The power of sale permits sale of the whole or part of the property by auction or private contract, with discretion over conditions, variation of contracts, buying in, and rescission. Insurance premiums rank as a charge on the property with the same priority as the mortgage money. The mortgage deed may vary or extend these powers, but the section yields to any contrary intention expressed in the deed. The buy-in-at-auction power is for the mortgagee's own benefit, and the key terms across ss.44–48 are defined by reference to s.40.",
+      "postObjectives": [
+        {
+          "id": "obj-44-power-of-sale",
+          "objective": "Recall the trigger, scope, method, and ancillary rights of the mortgagee's statutory power of sale under s.44(1)(a), and the limit that these powers extend no further than if conferred by the deed.",
+          "guidedQuestion": "What power of sale does s.44(1)(a) give a mortgagee under a deed mortgage, and when is it triggered?",
+          "studyAnswer": "Where the mortgage is made by deed, the mortgagee has by virtue of the Act a power, when the mortgage money or any interest thereon has become due, to sell (alone or concurring with another person) the whole or part of the mortgaged property, together or in lots, by public auction or private contract, subject to such conditions respecting title or evidence of title or other matter as the mortgagee thinks fit. The mortgagee may vary any contract for sale, buy in at auction, or rescind a contract for sale and resell, without being answerable for any loss occasioned. These powers extend to the like extent as if conferred by the mortgage deed, but not further."
+        },
+        {
+          "id": "obj-44-power-to-insure",
+          "objective": "Recall the mortgagee's statutory power to insure against fire under s.44(1)(b), its timing, scope, and the treatment of premiums as a charge on the mortgaged property.",
+          "guidedQuestion": "What fire insurance power does s.44(1)(b) give the mortgagee, and how are the premiums treated?",
+          "studyAnswer": "At any time after the date of the mortgage deed, the mortgagee may insure and keep insured against loss or damage by fire any building or property of an insurable nature forming part of the mortgaged property, whether affixed to the freehold or not. Premiums paid for such insurance are a charge on the mortgaged property in addition to the mortgage money, with the same priority, and with interest at the same rate, as the mortgage money."
+        },
+        {
+          "id": "obj-44-deed-variation-savings",
+          "objective": "Recall how the mortgage deed may vary or extend the s.44 powers under s.44(2), and the savings clause in s.44(3) that subordinates the section to the terms of the deed.",
+          "guidedQuestion": "How may a mortgage deed vary or extend the s.44 powers, and what savings limit the section's application?",
+          "studyAnswer": "The mortgage deed may vary or extend the powers in s.44 or any subsequent section regulating their exercise; as so varied or extended, they shall as far as may be operate in the like manner and with all the like incidents, effects and consequences as if such variations or extensions were contained in the Act. The section applies only if, and as far as, a contrary intention is not expressed in the mortgage deed, and has effect subject to the terms of the mortgage deed and the provisions therein contained."
+        },
+        {
+          "id": "obj-44-buy-in-and-terms",
+          "objective": "Recall the clarification in s.44(4) that the buy-in-at-auction power is for the mortgagee's own benefit and use, and the cross-reference in s.44(5) that ss.44–48 use the s.40 definitions of mortgage, mortgagor, and mortgagee.",
+          "guidedQuestion": "What does s.44(4) clarify about buying in at auction, and where do ss.44–48 take their defined terms?",
+          "studyAnswer": "The power to buy in at auction is a power to buy for the mortgagee's own benefit and to the mortgagee's own use. In sections 44, 45, 46, 47 and 48, the words “mortgage,” “mortgagor,” and “mortgagee,” shall respectively have the like meaning as defined in section 40."
+        }
+      ]
+    },
+    {
+      "proposalId": "unit-7558538d3d98f4ec",
+      "status": "repaired-valid",
+      "preErrorCodes": [
+        "SOURCE_DERIVED_NOTE_UNGROUNDED"
+      ],
+      "postErrorCodes": [],
+      "postWarningCount": 2,
+      "attemptsRejected": 1,
+      "changedScalars": [
+        "mainQuestion",
+        "studySummary"
+      ],
+      "objectivesAdded": [
+        "obj-1"
+      ],
+      "objectivesRemoved": [
+        "obj-184-beach-agreement"
+      ],
+      "objectivesChanged": [],
+      "sourceCoverageChanged": true,
+      "studyNotesChanged": true,
+      "warningsChanged": false,
+      "postTitle": "Municipal power to enter public beach development agreements",
+      "postMainQuestion": "What agreement power does section 184 of the Municipalities Act grant a municipality with respect to public beaches?",
+      "postStudySummary": "Section 184 of the Municipalities Act, under the Public beaches heading, confers a permissive power on a municipality to enter into agreements with any person for the purpose of developing a public beach. The provision is a single unconditioned statement of power: it is discretionary (\"may\"), the counterparty is unrestricted (\"any person\"), and the sole stated purpose is public beach development. No triggering event, approval, or further condition is attached to the exercise of the power.",
+      "postObjectives": [
+        {
+          "id": "obj-1",
+          "objective": "Identify the permissive agreement power section 184 gives a municipality and the scope of persons with whom it may act to develop a public beach.",
+          "guidedQuestion": "Under section 184 of the Municipalities Act, what may a municipality do with respect to a public beach, and with whom may it act?",
+          "studyAnswer": "A municipality may enter into agreements with any person to develop a public beach."
+        }
+      ]
+    },
+    {
+      "proposalId": "unit-762098496a0f61e2",
+      "status": "repaired-valid",
+      "preErrorCodes": [
+        "POLARITY_REVERSAL"
+      ],
+      "postErrorCodes": [],
+      "postWarningCount": 0,
+      "attemptsRejected": 9,
+      "changedScalars": [
+        "title",
+        "mainQuestion",
+        "studySummary"
+      ],
+      "objectivesAdded": [
+        "obj-accounting-duty",
+        "obj-consolidated-fund-fallback",
+        "obj-primary-indemnity-funding"
+      ],
+      "objectivesRemoved": [
+        "obj-80-7-accounting-duty",
+        "obj-80-8-primary-funding",
+        "obj-80-9-consolidated-fund-fallback"
+      ],
+      "objectivesChanged": [],
+      "sourceCoverageChanged": true,
+      "studyNotesChanged": true,
+      "warningsChanged": false,
+      "postTitle": "Registrar's Accounting Duty and Two-Tier Indemnification Funding Under Section 80",
+      "postMainQuestion": "How does section 80 of the Land Titles Act require the registrar to account for monies received, and what two-tier funding source applies to indemnification payments?",
+      "postStudySummary": "Section 80(7) imposes on each registrar a duty to keep a correct account of all sums of money received under the Act and to pay that money in the manner determined by Service New Brunswick. For indemnification, subsection (8) provides the primary funding source: the indemnity, costs, and expenses awarded to a person claiming indemnification must be paid out of any account or fund established for that purpose. Subsection (9) establishes the fallback: if that established fund is insufficient to make the required payment, or if no provision has been made, payments shall be paid out of the Consolidated Fund.",
+      "postObjectives": [
+        {
+          "id": "obj-accounting-duty",
+          "objective": "Recall the registrar's obligation to keep a correct account of all monies received under the Act and the requirement to pay that money in the manner determined by Service New Brunswick.",
+          "guidedQuestion": "What accounting and payment duties does section 80(7) impose on each registrar regarding monies received under the Land Titles Act?",
+          "studyAnswer": "Each registrar shall keep a correct account of all sums of money received by him under this Act and shall pay that money in such manner as may be determined by Service New Brunswick."
+        },
+        {
+          "id": "obj-primary-indemnity-funding",
+          "objective": "Identify the primary funding source from which indemnity, costs, and expenses awarded to a person claiming indemnification must be paid.",
+          "guidedQuestion": "From what source shall the indemnity, costs, and expenses awarded to a person claiming indemnification be paid under section 80(8)?",
+          "studyAnswer": "The indemnity, costs and expenses awarded to a person claiming indemnification pursuant to this Act shall be paid out of any account or fund established for this purpose."
+        },
+        {
+          "id": "obj-consolidated-fund-fallback",
+          "objective": "Recall the two triggers that require indemnification payments to be made out of the Consolidated Fund as a fallback when the established fund is inadequate or absent.",
+          "guidedQuestion": "Under what circumstances must indemnification payments be made out of the Consolidated Fund under section 80(9)?",
+          "studyAnswer": "If the account or fund established pursuant to subsection (8) is insufficient to make the payment required, or if no provision is made, then payments shall be paid out of the Consolidated Fund."
+        }
+      ]
+    },
+    {
+      "proposalId": "unit-80309b578879a269",
+      "status": "repaired-valid",
+      "preErrorCodes": [
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "SOURCE_COVERAGE_MISSING_SELECTED_LABEL",
+        "SOURCE_COVERAGE_MISSING_SELECTED_LABEL"
+      ],
+      "postErrorCodes": [],
+      "postWarningCount": 2,
+      "attemptsRejected": 1,
+      "changedScalars": [
+        "title",
+        "mainQuestion",
+        "studySummary"
+      ],
+      "objectivesAdded": [
+        "obj-50-2-preoffer-obligations",
+        "obj-50-3-adverse-party-rights"
+      ],
+      "objectivesRemoved": [
+        "obj-50-2-exception",
+        "obj-50-2-obligations",
+        "obj-50-3-cross-exam",
+        "obj-50-3-unavailability"
+      ],
+      "objectivesChanged": [],
+      "sourceCoverageChanged": true,
+      "studyNotesChanged": false,
+      "warningsChanged": false,
+      "postTitle": "Pre-offer notice requirements and adverse-party protections for expert reports",
+      "postMainQuestion": "What must a party do a reasonable time before offering an expert's written report in evidence, and what right does the adverse party have to examine the persons who furnished information for the report?",
+      "postStudySummary": "Section 50(2) of the Evidence Act sets out four pre-offer obligations that the party seeking to tender an expert's written report must satisfy: giving the adverse party notice of its intention to offer the report, providing a copy of the report or finding (or the portion relating to the controversy), affording the adverse party a reasonable opportunity to inspect and copy the underlying records and documents in the offering party's possession or control, and supplying the names of all persons who furnished facts on which the report was based. A court may admit the report despite non-compliance if it finds no substantial injustice would result. Section 50(3) then entitles the adverse party to call and cross-examine any person who furnished information for the report, while providing that the informant's unavailability does not render the report inadmissible unless the court finds substantial injustice would be done to the adverse party by its admission.",
+      "postObjectives": [
+        {
+          "id": "obj-50-2-preoffer-obligations",
+          "objective": "Recall the specific pre-offer obligations imposed on the party tendering an expert's written report under s. 50(2), including the exception for court-admitted reports despite non-compliance.",
+          "guidedQuestion": "What notice, copy, inspection, and naming duties must the offering party fulfil a reasonable time before tendering an expert's written report, and under what condition may the court admit the report despite non-compliance?",
+          "studyAnswer": "A reasonable time before offering the report in evidence, the offering party must: (1) give the adverse party notice of its intention to offer the report together with a copy of the report or finding (or so much thereof as may relate to the controversy); (2) afford the adverse party a reasonable opportunity to inspect and copy any records or other documents in the offering party's possession or control on which the report or finding was based; and (3) provide the names of all persons furnishing facts upon which the report or finding was based. The report may nonetheless be admitted if the court finds that no substantial injustice would result from the failure to give such notice."
+        },
+        {
+          "id": "obj-50-3-adverse-party-rights",
+          "objective": "Recall the adverse party's right to call and cross-examine informants for an expert report under s. 50(3), and the limited effect of an informant's unavailability on the report's admissibility.",
+          "guidedQuestion": "Under s. 50(3), what right does the adverse party have regarding persons who furnished information for an expert report, and does the informant's unavailability render the report inadmissible?",
+          "studyAnswer": "Any person who has furnished any information on which the report or finding is based may be called as a witness and cross-examined by the adverse party. The fact that the person's testimony is not obtainable does not render the report or finding inadmissible, unless the court finds that substantial injustice would be done to the adverse party by its admission."
+        }
+      ]
+    },
+    {
+      "proposalId": "unit-819e6b3baa157e85",
+      "status": "repaired-valid",
+      "preErrorCodes": [
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "SUMMARY_ACTOR_OVERREACH"
+      ],
+      "postErrorCodes": [],
+      "postWarningCount": 0,
+      "attemptsRejected": 1,
+      "changedScalars": [
+        "title",
+        "mainQuestion",
+        "studySummary"
+      ],
+      "objectivesAdded": [],
+      "objectivesRemoved": [
+        "obj-5"
+      ],
+      "objectivesChanged": [
+        "obj-1",
+        "obj-2",
+        "obj-3",
+        "obj-4"
+      ],
+      "sourceCoverageChanged": true,
+      "studyNotesChanged": true,
+      "warningsChanged": false,
+      "postTitle": "Required contents of a subdivision plan under s. 84(3)–(4)",
+      "postMainQuestion": "What information and markings must a subdivision plan set out under s. 84(3) of the Community Planning Act, and what boundary data must it show for circular curves under s. 84(4)?",
+      "postStudySummary": "Section 84(3) prescribes 17 items a subdivision plan must set out, organized here into four groups: (1) title-block particulars (subdivision name, street access name if required, location, scale and date), ownership and deed-registration details, and the north-point arrow; (2) survey references (distances to existing monuments, legal survey monuments), boundary markings (heavier black line for the approved portion, solid black lines for streets and parcels), abutting-street data, existing covenants/easements/rights-of-way, and lot/parcel identification; (3) public-purpose designations (streets with \"public\", future streets, land for public purposes, easements with purpose words) and regulatory lines (deferred-widening by-law boundaries, building lines or set-backs under s. 75(1)(h) or s. 131 agreements); and (4) the key-plan location requirement (scale ≥ 1:20 000, except where the diagram already indicates location to the development officer's satisfaction). Subsection 84(4) imposes a separate technical requirement: for circular curves, the plan must show azimuths, distances, radii, central angles, and arcs of the boundaries.",
+      "postObjectives": [
+        {
+          "id": "obj-1",
+          "objective": "Identify the title-block, ownership, and orientation items a subdivision plan must set out under s. 84(3)(a)–(c).",
+          "guidedQuestion": "What must the title block of a subdivision plan contain, and what ownership and orientation information is required under s. 84(3)(a)–(c)?",
+          "studyAnswer": "The title block must contain: (i) the name of the subdivision; (ii) if required by the development officer, the name of a street to which the subdivision has access; (iii) the local government or parish, and the county and province in which the land is located; and (iv) the scale and date of the survey. The plan must also set out the name of the owner of the land and the details of registration of the deed or deeds of the land, and the north point of the plan indicated by an arrow oriented other than toward the lower edge of the plan or extension of the plan."
+        },
+        {
+          "id": "obj-2",
+          "objective": "Identify the survey-reference, boundary-marking, and parcel-identification items required by s. 84(3)(d), (e), and (j)–(n).",
+          "guidedQuestion": "What survey references, boundary markings, and parcel-identification details must a subdivision plan show under s. 84(3)(d), (e), and (j)–(n)?",
+          "studyAnswer": "The plan must set out: the distances from, and the relation to, existing survey monuments and markers; the boundaries of that part of the plan to be approved marked by a black line of greater weight than all other lines on the diagram; the boundaries of streets and other parcels of land by means of solid black lines (subject to subsection (4)); the location, dimensions and names of streets abutting the subdivision; the nature, location and dimensions of an existing restrictive covenant, easement or right-of-way; any numbers and letters necessary to accurately identify each lot or other parcel of land and, if available, the civic number of the lot or parcel; and the location and description of legal survey monuments."
+        },
+        {
+          "id": "obj-3",
+          "objective": "Identify the public-purpose designations and regulatory building-line items required by s. 84(3)(f)–(i), (o), (p).",
+          "guidedQuestion": "How must a subdivision plan indicate streets, future streets, public-purpose land, easements, and regulatory building lines under s. 84(3)(f)–(i), (o), (p)?",
+          "studyAnswer": "The plan must indicate: (f) the area to be vested in the local government as streets, by the street names with the word \"public\" in smaller print immediately below each name, and if only a portion of the street is so indicated, a line drawn across and at right angles to the street at each terminus identified by an arrow; (g) the area to be vested as future streets, by the words \"future street\"; (h) the area to be conveyed as land for public purposes, by the words \"land for public purposes\"; (i) the area with respect to which easements are to be granted, by words describing the purpose of the easement; (o) any applicable proposed street boundary or building line established by a deferred widening by-law; and (p) a building line or set-back affecting the subdivision under paragraph 75(1)(h) or an agreement referred to in section 131."
+        },
+        {
+          "id": "obj-4",
+          "objective": "Identify the key-plan location requirement under s. 84(3)(q) and the circular-curve boundary data requirement under s. 84(4).",
+          "guidedQuestion": "When is a key plan required on a subdivision plan, and what boundary data must the plan show for circular curves under s. 84(3)(q) and 84(4)?",
+          "studyAnswer": "Except in the case of a subdivision plan of land in a local government that indicates, to the satisfaction of the development officer, the location of the subdivision on the diagram of the plan, the plan must show the location of the proposed subdivision in relation to existing streets or prominent natural features on a small key plan drawn to a scale having a ratio of not less than one to 20,000. With respect to the boundaries of streets and other parcels of land set out on the plan, the plan shall show azimuths and distances and the radii, central angles and arcs of the boundaries for circular curves."
+        }
+      ]
+    },
+    {
+      "proposalId": "unit-90ab6499b6928ad2",
+      "status": "repaired-valid",
+      "preErrorCodes": [
+        "EVIDENCE_NOT_EXACT_VERBATIM"
+      ],
+      "postErrorCodes": [],
+      "postWarningCount": 0,
+      "attemptsRejected": 2,
+      "changedScalars": [
+        "mainQuestion",
+        "studySummary"
+      ],
+      "objectivesAdded": [
+        "obj-1",
+        "obj-2",
+        "obj-3"
+      ],
+      "objectivesRemoved": [
+        "obj-ack-out-of-province",
+        "obj-proof-out-of-province"
+      ],
+      "objectivesChanged": [],
+      "sourceCoverageChanged": true,
+      "studyNotesChanged": true,
+      "warningsChanged": false,
+      "postTitle": "Out-of-Province Instrument Execution and Certification",
+      "postMainQuestion": "Who may take acknowledgments or proofs of instrument execution out of the Province under the Registry Act, and what certification or authentication requirements apply?",
+      "postStudySummary": "Section 44(1)(b) and (d) of the Registry Act authorize specific officials to take acknowledgments or proofs of instrument execution when execution occurs out of the Province. The acknowledgment list (nine categories) includes a notary public, municipal mayors or chief magistrates, judges of the Supreme Court of Judicature of Great Britain or Northern Ireland, Canadian and British diplomatic officials, a Canadian Government Trade Commissioner, Scottish judges or Lords of Session, judges of courts of supreme jurisdiction in British dominions or colonies, and Governors of States. The proof list (seven categories) adds a commissioner for taking affidavits under the Commissioners for taking Affidavits Act but omits the diplomatic and Trade Commissioner categories. Certification requirements differ by scenario: for acknowledgments, the handwriting and certificate of a Judge or Lord of Session must be authenticated under the seal of a notary public, and acknowledgments before diplomats or Governors must be certified under the official's hand and seal of office; for proofs, only the handwriting of a judge or Lord of Session requires notarized authentication.",
+      "postObjectives": [
+        {
+          "id": "obj-1",
+          "objective": "Identify the nine categories of persons before whom an acknowledgment of instrument execution may be taken when the execution is acknowledged out of the Province.",
+          "guidedQuestion": "Before whom may an acknowledgment of instrument execution be taken when it is acknowledged out of the Province?",
+          "studyAnswer": "A notary public (certified under his hand and official seal); the mayor or chief magistrate of any city, borough, municipality or town corporate (certified under the common or corporate seal or the seal of such mayor or chief magistrate); a judge of the Supreme Court of Judicature of Great Britain or Northern Ireland; a Canadian Minister, Ambassador, Consul, Vice-Consul, or Consular Agent; a Canadian Government Trade Commissioner or Assistant Canadian Government Trade Commissioner exercising his functions outside of Canada; a judge or Lord of Session in Scotland; a judge of a court of supreme jurisdiction in any British dominion, colony, province or dependency; a British Minister, Ambassador, Charge d'Affaires, Consul, Vice-Consul, Acting Consul, Pro-Consul, or Consular Agent of His Majesty exercising functions in any foreign place; or the Governor of any State."
+        },
+        {
+          "id": "obj-2",
+          "objective": "Identify the seven categories of persons before whom proof of instrument execution may be taken when the execution is proved out of the Province.",
+          "guidedQuestion": "Before whom may proof of instrument execution be taken when it is proved out of the Province?",
+          "studyAnswer": "A commissioner for taking affidavits and administering oaths under the Commissioners for taking Affidavits Act (including officials thereby authorized to take affidavits); a notary public (certified under his hand and official seal); the mayor or chief magistrate of any city, borough, municipality or town corporate (under the seal of such mayor or chief magistrate); a judge of the Supreme Court of Judicature of Great Britain or of Northern Ireland; a judge or Lord of Session in Scotland; a judge of a court of supreme jurisdiction in any British dominion, colony, province or dependency; or the Governor of any State."
+        },
+        {
+          "id": "obj-3",
+          "objective": "State the authentication and certification requirements that attach to out-of-province acknowledgments and proofs taken before Judges, Lords of Session, diplomats, or Governors.",
+          "guidedQuestion": "What authentication or certification is required for out-of-province acknowledgments and proofs taken before a Judge, Lord of Session, diplomat, or Governor?",
+          "studyAnswer": "For acknowledgments out of the Province: the handwriting and certificate of any Judge or Lord of Session must be authenticated under the seal of a notary public, and the taking of any acknowledgment before a Minister, Ambassador, Consul, Vice-Consul, Acting Consul, Pro-Consul, Consular Agent, or Governor must be certified under his hand and seal of office. For proofs out of the Province: the handwriting of any judge or Lord of Session must be authenticated under the seal of a notary public."
+        }
+      ]
+    },
+    {
+      "proposalId": "unit-99bdb6cd6f15f777",
+      "status": "repaired-valid",
+      "preErrorCodes": [
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM"
+      ],
+      "postErrorCodes": [],
+      "postWarningCount": 0,
+      "attemptsRejected": 1,
+      "changedScalars": [
+        "title",
+        "mainQuestion",
+        "studySummary"
+      ],
+      "objectivesAdded": [
+        "obj-1",
+        "obj-2",
+        "obj-3",
+        "obj-4"
+      ],
+      "objectivesRemoved": [
+        "obj-9-2-equip-cooperate",
+        "obj-9-2-hazard-info-train",
+        "obj-9-2-maintain-inspect",
+        "obj-9-2-supervision"
+      ],
+      "objectivesChanged": [],
+      "sourceCoverageChanged": true,
+      "studyNotesChanged": true,
+      "warningsChanged": false,
+      "postTitle": "Employer's specific operational duties under section 9(2)",
+      "postMainQuestion": "What specific operational duties does section 9(2) of the Occupational Health and Safety Act impose on every employer?",
+      "postStudySummary": "Section 9(2) enumerates concrete duties that elaborate the employer's general obligations under subsection (1). The employer must maintain work systems, tools, equipment, machines, devices, and materials in good condition at minimum risk; inspect the workplace at least monthly; acquaint employees with hazards; and provide the information, instruction, and training necessary for employee health and safety. The employer must also ensure competent and sufficient supervision, with supervisors possessing knowledge of six specified areas, provide and maintain regulatory protective equipment for employee use, and co-operate with any joint health and safety committee, health and safety representative, and any person responsible for enforcement under the Act and regulations.",
+      "postObjectives": [
+        {
+          "id": "obj-1",
+          "objective": "Recall the employer's duty to maintain work systems and equipment in good condition at minimum risk, and the requirement for monthly workplace inspection.",
+          "guidedQuestion": "How must an employer maintain work systems and equipment under section 9(2)(a), and how often must the place of employment be inspected?",
+          "studyAnswer": "The employer must ensure that the necessary systems of work, tools, equipment, machines, devices and materials are maintained in good condition and are of minimum risk to health and safety when used as directed by the supplier or in accordance with the directions supplied by the supplier. The employer must also ensure that the place of employment is inspected at least once a month to identify any risks to the health and safety of its employees."
+        },
+        {
+          "id": "obj-2",
+          "objective": "Recall the employer's duty to acquaint employees with workplace hazards and to provide the necessary information, instruction, and training for employee health and safety.",
+          "guidedQuestion": "Under section 9(2), what must an employer do to acquaint employees with hazards and ensure necessary information, instruction, and training are provided?",
+          "studyAnswer": "The employer must acquaint an employee with any hazard in connection with the use, handling, storage, disposal and transport of any tool, equipment, machine, device or biological, chemical or physical agent. The employer must also provide the information, the instruction, and the training that is necessary to ensure an employee's health and safety."
+        },
+        {
+          "id": "obj-3",
+          "objective": "Recall the supervision standards under section 9(2)(c.3) and (c.4), including the six matters supervisors must have sufficient knowledge of.",
+          "guidedQuestion": "What supervision standards must an employer ensure under section 9(2)(c.3) and (c.4), and what six matters must supervisors have sufficient knowledge of?",
+          "studyAnswer": "The employer must ensure that work at the place of employment is competently supervised and that supervisors have sufficient knowledge, with respect to matters within the scope of the supervisor's duties, of: (i) this Act and applicable regulations; (ii) any safety policy; (iii) any health and safety program; (iv) any health and safety procedures for hazards in connection with tools, equipment, machines, devices or biological, chemical or physical agents used by employees under the supervisor's supervision and direction; (v) any protective equipment required for those employees; and (vi) any other matters necessary to ensure employee health and safety. The employer must also ensure that work is sufficiently supervised."
+        },
+        {
+          "id": "obj-4",
+          "objective": "Recall the employer's duty to provide and maintain regulatory protective equipment and to co-operate with committees, representatives, and enforcement persons.",
+          "guidedQuestion": "What does section 9(2) require regarding protective equipment and the employer's co-operation with committees, representatives, and enforcement persons?",
+          "studyAnswer": "The employer must provide and maintain in good condition such protective equipment as is required by regulation and ensure that such equipment is used by an employee in the course of work. The employer must co-operate with a committee, where such a committee has been established, a health and safety representative, where such a representative has been elected or designated, and with any person responsible for the enforcement of this Act and the regulations."
+        }
+      ]
+    },
+    {
+      "proposalId": "unit-9b9c904f7abb2dd1",
+      "status": "repaired-valid",
+      "preErrorCodes": [
+        "CONTEXT_REF_LEAKAGE",
+        "SOURCE_DERIVED_NOTE_UNGROUNDED",
+        "STUDY_NOTE_OUTSIDE_APPROVED_SOURCE",
+        "STUDY_NOTE_OUTSIDE_APPROVED_SOURCE",
+        "SUMMARY_ACTOR_OVERREACH"
+      ],
+      "postErrorCodes": [],
+      "postWarningCount": 0,
+      "attemptsRejected": 1,
+      "changedScalars": [
+        "title",
+        "mainQuestion",
+        "studySummary"
+      ],
+      "objectivesAdded": [
+        "obj-2-2-2-eligibility",
+        "obj-2-2-2-procedure"
+      ],
+      "objectivesRemoved": [
+        "obj-2.2.2-eligibility",
+        "obj-2.2.2-procedure"
+      ],
+      "objectivesChanged": [],
+      "sourceCoverageChanged": true,
+      "studyNotesChanged": true,
+      "warningsChanged": false,
+      "postTitle": "Reapplication after resignation in good standing or classification change",
+      "postMainQuestion": "What reapplication pathway does the ANBLS Bylaws provide for a previously registered surveyor who resigned in good standing or changed classification?",
+      "postStudySummary": "Under ANBLS Bylaw 2.2.2, a previously registered surveyor who resigned in good standing or changed classification may reapply for registration. The reapplication follows the same procedure prescribed for new applicants, rather than a separate reinstatement process.",
+      "postObjectives": [
+        {
+          "id": "obj-2-2-2-eligibility",
+          "objective": "Identify which previously registered applicants are eligible to reapply under bylaw 2.2.2.",
+          "guidedQuestion": "Who is eligible to reapply under ANBLS Bylaw 2.2.2?",
+          "studyAnswer": "Applicants who have been previously registered but have resigned in good standing or have changed classification."
+        },
+        {
+          "id": "obj-2-2-2-procedure",
+          "objective": "Identify the procedure that applies to a reapplication under bylaw 2.2.2.",
+          "guidedQuestion": "What procedure governs a reapplication under ANBLS Bylaw 2.2.2?",
+          "studyAnswer": "The applicant may reapply in the manner prescribed for new applicants."
+        }
+      ]
+    },
+    {
+      "proposalId": "unit-9bdb6067e6efb48a",
+      "status": "repaired-valid",
+      "preErrorCodes": [
+        "POLARITY_REVERSAL"
+      ],
+      "postErrorCodes": [],
+      "postWarningCount": 0,
+      "attemptsRejected": 2,
+      "changedScalars": [
+        "mainQuestion",
+        "studySummary"
+      ],
+      "objectivesAdded": [
+        "obj-1-30yr-protection",
+        "obj-2-60yr-absolute-right"
+      ],
+      "objectivesRemoved": [
+        "obj-30yr-limitation",
+        "obj-60yr-absolute-right"
+      ],
+      "objectivesChanged": [],
+      "sourceCoverageChanged": true,
+      "studyNotesChanged": false,
+      "warningsChanged": false,
+      "postTitle": "Prescriptive protection for claims to profits or benefits (30-year and 60-year thresholds)",
+      "postMainQuestion": "What are the 30-year and 60-year prescriptive protections for a claim to a profit or benefit under the Easements Act, and what deed-or-writing exception limits the 60-year absolute right?",
+      "postStudySummary": "Section 1 of the Easements Act provides a two-tier prescriptive protection for claims to a profit or benefit taken or enjoyed from or on Crown or private land. After 30 years of uninterrupted actual taking or enjoyment, no claim shall be defeated or destroyed by the narrow showing that the profit or benefit did not exist from time immemorial; however, the claim remains defeasible by any other recognized means. After 60 years of uninterrupted enjoyment, the right is deemed absolute and indefeasible, subject to a single written-consent exception: if the taking or enjoyment was by a consent or agreement expressly made or given for that purpose by deed or writing, the absolute-and-indefeasible character does not attach.",
+      "postObjectives": [
+        {
+          "id": "obj-1-30yr-protection",
+          "objective": "State what showing is insufficient to defeat a claim to a profit or benefit after 30 years of uninterrupted enjoyment, and identify the other means of defeasance the Act preserves.",
+          "guidedQuestion": "What showing is insufficient to defeat a 30-year claim to a profit or benefit, and by what other means may the claim still be defeated?",
+          "studyAnswer": "No claim to a profit or benefit shall, if the profit or benefit has been actually taken or enjoyed by any person claiming right to it without interruption for the full period of 30 years, be defeated or destroyed by showing only that the profit or benefit did not exist from time immemorial but was first taken or enjoyed at a time before the period of 30 years; nevertheless the claim may be defeated in any other way by which it is now liable to be defeated."
+        },
+        {
+          "id": "obj-2-60yr-absolute-right",
+          "objective": "State the legal status a right to a profit or benefit attains after 60 years of uninterrupted enjoyment and the deed-or-writing consent exception to that status.",
+          "guidedQuestion": "After 60 years of uninterrupted enjoyment, what status is a right to a profit or benefit deemed to have, and under what written-consent condition is that status excluded?",
+          "studyAnswer": "If the profit or benefit has been so taken and enjoyed for the full period of 60 years, the right to it shall be deemed absolute and indefeasible, unless it appears that it was taken and enjoyed by some consent or agreement expressly made or given for that purpose by deed or writing."
+        }
+      ]
+    },
+    {
+      "proposalId": "unit-9ff278807624e3ae",
+      "status": "repaired-valid",
+      "preErrorCodes": [
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL"
+      ],
+      "postErrorCodes": [],
+      "postWarningCount": 0,
+      "attemptsRejected": 1,
+      "changedScalars": [
+        "title",
+        "mainQuestion",
+        "studySummary"
+      ],
+      "objectivesAdded": [
+        "obj-1-actor-power",
+        "obj-2-tenure-subjects",
+        "obj-3-access-regulation"
+      ],
+      "objectivesRemoved": [
+        "obj-access",
+        "obj-lease-classes",
+        "obj-right-of-way",
+        "obj-surveys"
+      ],
+      "objectivesChanged": [],
+      "sourceCoverageChanged": true,
+      "studyNotesChanged": true,
+      "warningsChanged": false,
+      "postTitle": "Surveys, Tenure and Access to Crown Lands – Regulatory Power",
+      "postMainQuestion": "Under section 95(1), what may the Lieutenant-Governor in Council regulate concerning surveys, lease classes, rights-of-way or easements, and access to Crown Lands?",
+      "postStudySummary": "Section 95(1) gives the Lieutenant-Governor in Council a permissive power (\"may make regulations\") over several Crown Lands management subjects. Within the approved focus, the regulation may address: (1) surveys of Crown Lands; (2) classes of leases with terms and conditions applicable to each class, including the lease period; (3) terms, conditions and reservations for rights-of-way or easements; and (4) prohibiting or regulating access to, entry upon, travel upon or use of Crown Lands, including issuing licences of occupation, permits, and imposing fees. The power is discretionary—\"may\" rather than \"shall\"—and all four subjects are matters the Lieutenant-Governor in Council is authorized, but not required, to regulate.",
+      "postObjectives": [
+        {
+          "id": "obj-1-actor-power",
+          "objective": "Identify the holder of the regulatory power and its permissive nature",
+          "guidedQuestion": "Who holds the regulatory power under section 95(1), and is the power mandatory or permissive?",
+          "studyAnswer": "The Lieutenant-Governor in Council may make regulations; the power is permissive, indicated by the word \"may\" rather than \"shall\" or \"must.\""
+        },
+        {
+          "id": "obj-2-tenure-subjects",
+          "objective": "Recall the regulatory subjects for surveys, lease classes, and rights-of-way or easements",
+          "guidedQuestion": "What matters concerning surveys, lease classes, and rights-of-way or easements may the Lieutenant-Governor in Council regulate under paragraphs (a), (b), and (c.1) of section 95(1)?",
+          "studyAnswer": "The Lieutenant-Governor in Council may make regulations: respecting surveys of Crown Lands; prescribing classes of leases of Crown Lands and terms and conditions applicable to each class, including the period for which a lease is granted; and prescribing the terms, conditions and reservations applicable to a right-of-way or easement with respect to Crown Lands."
+        },
+        {
+          "id": "obj-3-access-regulation",
+          "objective": "Recall the scope of the access-regulation power in paragraph (s)",
+          "guidedQuestion": "What may the Lieutenant-Governor in Council prohibit or regulate regarding access to Crown Lands under section 95(1)(s)?",
+          "studyAnswer": "The Lieutenant-Governor in Council may prohibit or regulate access to, entry upon, travel upon or use of Crown Lands, including the issuing of licences of occupation, the issuing of permits and the imposition of fees."
+        }
+      ]
+    },
+    {
+      "proposalId": "unit-addc04e113bb4ae1",
+      "status": "repaired-valid",
+      "preErrorCodes": [
+        "SOURCE_COVERAGE_MISSING_SELECTED_LABEL",
+        "SOURCE_COVERAGE_MISSING_SELECTED_LABEL",
+        "SOURCE_COVERAGE_MISSING_SELECTED_LABEL"
+      ],
+      "postErrorCodes": [],
+      "postWarningCount": 0,
+      "attemptsRejected": 2,
+      "changedScalars": [
+        "title",
+        "mainQuestion",
+        "studySummary"
+      ],
+      "objectivesAdded": [
+        "obj-notice-obligation-recipients"
+      ],
+      "objectivesRemoved": [
+        "obj-notice-duty-recipients"
+      ],
+      "objectivesChanged": [
+        "obj-notice-required-contents",
+        "obj-parties-to-hearing"
+      ],
+      "sourceCoverageChanged": true,
+      "studyNotesChanged": true,
+      "warningsChanged": false,
+      "postTitle": "Hearing Parties and Notice of Hearing under the Boundaries Confirmation Act",
+      "postMainQuestion": "What persons are parties to a hearing under the Boundaries Confirmation Act, and what must the Registrar General's notice of hearing contain?",
+      "postStudySummary": "The hearing process under the Boundaries Confirmation Act identifies three categories of parties to a section 10 hearing: applicants, persons who deliver a statement of objection, and other persons specified by the Registrar General. The Registrar General is under a mandatory obligation to cause a notice of hearing to be given to all parties and any additionally specified persons. The notice content is prescribed in detail: the date, time, and place of the hearing; a description of the reasons for the application or proceeding; the grounds and arguments in relation to it; the reasons and grounds in any received objections; and, otherwise, conformity with the regulations.",
+      "postObjectives": [
+        {
+          "id": "obj-parties-to-hearing",
+          "objective": "Identify the three categories of persons who are parties to a hearing under section 10(4) of the Boundaries Confirmation Act.",
+          "guidedQuestion": "What three categories of persons are parties to a hearing under section 10(4) of the Boundaries Confirmation Act?",
+          "studyAnswer": "Any applicant, any person who delivers a statement of objection under subsection (1), and such other persons as the Registrar General specifies are parties to a hearing held under this section."
+        },
+        {
+          "id": "obj-notice-obligation-recipients",
+          "objective": "State the Registrar General's mandatory notice obligation under section 10(5) and identify to whom notice must be given.",
+          "guidedQuestion": "What is the Registrar General's obligation regarding notice of hearing under section 10(5), and to whom must the notice be given?",
+          "studyAnswer": "The Registrar General shall cause a notice of hearing to be given, in accordance with subsection (6), to the parties and to such other persons as the Registrar General specifies."
+        },
+        {
+          "id": "obj-notice-required-contents",
+          "objective": "Identify the mandatory content elements of the notice of hearing prescribed in section 10(6).",
+          "guidedQuestion": "What specific information must the notice of hearing under section 10(6) of the Boundaries Confirmation Act specify?",
+          "studyAnswer": "The notice shall specify the date, time and place of the hearing; shall contain a description of the reasons for the making of the application or the initiating of the proceeding, as the case may be; shall set out any grounds and arguments in relation to it; shall describe the reasons and set out the grounds and arguments contained in any objections received; and shall otherwise be given in accordance with the regulations."
+        }
+      ]
+    },
+    {
+      "proposalId": "unit-aef7b1dd69abc34d",
+      "status": "repaired-valid",
+      "preErrorCodes": [
+        "SOURCE_COVERAGE_MISSING_SELECTED_LABEL",
+        "SOURCE_COVERAGE_MISSING_SELECTED_LABEL",
+        "SOURCE_COVERAGE_MISSING_SELECTED_LABEL",
+        "SOURCE_COVERAGE_MISSING_SELECTED_LABEL",
+        "SOURCE_COVERAGE_MISSING_SELECTED_LABEL"
+      ],
+      "postErrorCodes": [],
+      "postWarningCount": 0,
+      "attemptsRejected": 1,
+      "changedScalars": [
+        "mainQuestion",
+        "studySummary"
+      ],
+      "objectivesAdded": [
+        "obj-lrc-annual-report",
+        "obj-lrc-composition",
+        "obj-lrc-responsibilities"
+      ],
+      "objectivesRemoved": [
+        "lrc-annual-report",
+        "lrc-composition",
+        "lrc-responsibilities"
+      ],
+      "objectivesChanged": [],
+      "sourceCoverageChanged": true,
+      "studyNotesChanged": true,
+      "warningsChanged": false,
+      "postTitle": "Legislative Review Committee: Establishment, Responsibilities, and Annual Report",
+      "postMainQuestion": "What are the composition, responsibilities, and annual reporting obligation of the Legislative Review Committee under the Association of New Brunswick Land Surveyors Bylaws?",
+      "postStudySummary": "This unit covers the Legislative Review Committee established under the Association of New Brunswick Land Surveyors Bylaws (sections 6.5.1–6.5.2). The committee is appointed by the Executive Council and must include at least two members. It has three enumerated responsibilities: (a) reviewing the New Brunswick Land Surveyors Act, 1986 and by-laws and advising the Executive Council of desirable changes; (b) preparing proposed revisions to the Act or by-laws when requested by the Executive Council; and (c) reviewing any proposed by-law by other members to insure it conforms with the Act and is not inconsistent with other by-laws. The committee must submit an annual report to the Executive Council by December 1.",
+      "postObjectives": [
+        {
+          "id": "obj-lrc-composition",
+          "objective": "Recall who appoints the Legislative Review Committee and the minimum number of members it must have.",
+          "guidedQuestion": "Who appoints the Legislative Review Committee and what is its minimum membership?",
+          "studyAnswer": "The Legislative Review Committee is appointed by the Executive Council and shall be composed of at least two members."
+        },
+        {
+          "id": "obj-lrc-responsibilities",
+          "objective": "Recall the three enumerated responsibilities of the Legislative Review Committee.",
+          "guidedQuestion": "What are the three enumerated responsibilities of the Legislative Review Committee under the ANBLS Bylaws?",
+          "studyAnswer": "The committee's responsibilities are: (a) to review the New Brunswick Land Surveyors Act, 1986 and by-laws and advise the Executive Council of any changes considered desirable; (b) to prepare proposed revisions to the Act or by-laws when requested to do so by the Executive Council; and (c) to review any proposed by-law by other members to insure it conforms with the Act and is not inconsistent with other by-laws."
+        },
+        {
+          "id": "obj-lrc-annual-report",
+          "objective": "Recall the annual reporting obligation of the Legislative Review Committee, including the recipient and deadline.",
+          "guidedQuestion": "To whom and by what date must the Legislative Review Committee submit its annual report?",
+          "studyAnswer": "The Legislative Review Committee shall submit an annual report to the Executive Council by December 1."
+        }
+      ]
+    },
+    {
+      "proposalId": "unit-c1d2d8aa37da6862",
+      "status": "repaired-valid",
+      "preErrorCodes": [
+        "CONTEXT_REF_LEAKAGE"
+      ],
+      "postErrorCodes": [],
+      "postWarningCount": 3,
+      "attemptsRejected": 1,
+      "changedScalars": [
+        "title",
+        "mainQuestion",
+        "studySummary"
+      ],
+      "objectivesAdded": [
+        "obj-28-appeal-scope"
+      ],
+      "objectivesRemoved": [
+        "obj-28-scope"
+      ],
+      "objectivesChanged": [
+        "obj-28-trigger-deadline"
+      ],
+      "sourceCoverageChanged": true,
+      "studyNotesChanged": true,
+      "warningsChanged": false,
+      "postTitle": "Local Government or Other Taxing Authority Appeal to the Board (s. 28)",
+      "postMainQuestion": "When may a local government or other taxing authority appeal an assessment to the Board under the Assessment Act, and what is the scope of the assessment it may seek to vary?",
+      "postStudySummary": "Section 28 grants a local government or other taxing authority a time-limited right to appeal to the Board. The appeal is triggered when the Director mails the authority a notice under subsection 25(5) following a request for review of assessment. The authority has 21 days from that mailing to appeal. The appeal is narrowly scoped: it is only for the authority to vary the assessment of real property located within its boundaries and affected by the request for review of assessment.",
+      "postObjectives": [
+        {
+          "id": "obj-28-trigger-deadline",
+          "objective": "Identify the trigger event and the 21-day deadline for a local government or other taxing authority to appeal to the Board.",
+          "guidedQuestion": "What event triggers a local government's or other taxing authority's right to appeal to the Board, and within what timeframe must the appeal be taken?",
+          "studyAnswer": "The appeal right is triggered when the Director mails a notice to the local government or other taxing authority under subsection 25(5). The authority may appeal within 21 days after that mailing."
+        },
+        {
+          "id": "obj-28-appeal-scope",
+          "objective": "Identify the scope of the local government or other taxing authority's appeal: what it may seek (variation only) and the two property limitations (within its boundaries; affected by the request for review).",
+          "guidedQuestion": "What is the local government or other taxing authority seeking in its appeal to the Board, and what two limitations define the real property in scope?",
+          "studyAnswer": "The appeal is for the local government or other taxing authority to vary the assessment. The real property in scope must be (1) located within the authority's boundaries and (2) affected by the request for review of assessment."
+        }
+      ]
+    },
+    {
+      "proposalId": "unit-c42303371eff91ee",
+      "status": "repaired-valid",
+      "preErrorCodes": [
+        "SOURCE_COVERAGE_EXTRA_LABEL"
+      ],
+      "postErrorCodes": [],
+      "postWarningCount": 1,
+      "attemptsRejected": 1,
+      "changedScalars": [
+        "mainQuestion",
+        "studySummary"
+      ],
+      "objectivesAdded": [
+        "obj-s42-seal-verification",
+        "obj-s42-signature-office-verification"
+      ],
+      "objectivesRemoved": [
+        "obj-s42-seal",
+        "obj-s42-signature-office"
+      ],
+      "objectivesChanged": [],
+      "sourceCoverageChanged": true,
+      "studyNotesChanged": true,
+      "warningsChanged": false,
+      "postTitle": "No separate verification of seal or signing officer required for registration",
+      "postMainQuestion": "Under section 42 of the Registry Act, what proof verifying a seal and what verification of a signature or office is not required for registration of an acknowledgment or affidavit, and on what condition?",
+      "postStudySummary": "Section 42 of the Registry Act (heading: Proof of signature or seal) sets out what evidentiary verification is dispensed with for registration. Two verifications are not required: (1) any proof verifying the seal affixed to an acknowledgment, affidavit, or other proof, and (2) verification of the signature or office of the person before whom the acknowledgment or affidavit is made, provided the document purports to be sealed and certified by the proper officer as required. Both exemptions are subject to the exception that the Act may otherwise require such proof or verification. The section operates as a default rule reducing the evidentiary burden at the registrar's office for sealed and certified instruments.",
+      "postObjectives": [
+        {
+          "id": "obj-s42-seal-verification",
+          "objective": "State what proof verifying the seal on an acknowledgment, affidavit, or other proof is not required for registration under section 42, and the exception that preserves the Act's other requirements.",
+          "guidedQuestion": "What does section 42 of the Registry Act provide about proof verifying the seal affixed to an acknowledgment, affidavit, or other proof for the purpose of registration?",
+          "studyAnswer": "It is not necessary for the purpose of registration that there be any proof verifying the seal affixed to any acknowledgment, affidavit or other proof, except where it may be otherwise required by this Act."
+        },
+        {
+          "id": "obj-s42-signature-office-verification",
+          "objective": "State the condition under which verification of the signature or office of the person before whom an acknowledgment or affidavit is made is not required, and the Act-specific exception.",
+          "guidedQuestion": "Under what condition is it not necessary to verify the signature or office of the person before whom an acknowledgment or affidavit is made under section 42 of the Registry Act?",
+          "studyAnswer": "It is not necessary to verify the signature or office of any person before whom such acknowledgment or affidavit is made, if the same purports to be sealed and certified by the proper officer as required, except as otherwise required by this Act."
+        }
+      ]
+    },
+    {
+      "proposalId": "unit-c562d9132d24d3e6",
+      "status": "repaired-valid",
+      "preErrorCodes": [
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL"
+      ],
+      "postErrorCodes": [],
+      "postWarningCount": 0,
+      "attemptsRejected": 2,
+      "changedScalars": [
+        "title",
+        "mainQuestion",
+        "studySummary"
+      ],
+      "objectivesAdded": [
+        "obj-authorized-person",
+        "obj-driver-motor-vehicle",
+        "obj-trespass-premises"
+      ],
+      "objectivesRemoved": [
+        "obj-motor-vehicle-driver",
+        "obj-premises-authorized",
+        "obj-trespass"
+      ],
+      "objectivesChanged": [
+        "obj-peace-officer"
+      ],
+      "sourceCoverageChanged": true,
+      "studyNotesChanged": true,
+      "warningsChanged": false,
+      "postTitle": "Trespass Act Core Offence and Enforcement Definitions",
+      "postMainQuestion": "What does the Trespass Act define as trespass, and who or what do the terms premises, authorized person, driver, motor vehicle, and peace officer each cover?",
+      "postStudySummary": "Section 1 of the Trespass Act fixes the vocabulary for the offence and its enforcement. Trespass is entering or remaining without lawful authority on premises owned, occupied or controlled by another, and premises covers any building, structure or land. An authorized person is the occupier or owner of a premises and an agent of the occupier or owner. For vehicle-related offences, driver means a person who drives or has care or control of a motor vehicle, and motor vehicle spans vehicles defined in the Motor Vehicle Act and Off-Road Vehicle Act plus attached trailers and accessories. Peace officer is a four-part definition covering RCMP members, police officers under the Police Act, certain auxiliary officers under supervision, and conservation officers under the Fish and Wildlife Act.",
+      "postObjectives": [
+        {
+          "id": "obj-trespass-premises",
+          "objective": "Define trespass and premises under the Trespass Act.",
+          "guidedQuestion": "What is trespass under the Trespass Act, and what does the term premises include?",
+          "studyAnswer": "Trespass means entering or remaining without lawful authority on premises owned, occupied or controlled by another. Premises means any building, structure or land."
+        },
+        {
+          "id": "obj-authorized-person",
+          "objective": "Identify who qualifies as an authorized person under the Trespass Act.",
+          "guidedQuestion": "Who is an authorized person under the Trespass Act?",
+          "studyAnswer": "An authorized person means an occupier or owner of a premises and an agent of the occupier or owner."
+        },
+        {
+          "id": "obj-driver-motor-vehicle",
+          "objective": "Define driver and motor vehicle under the Trespass Act.",
+          "guidedQuestion": "What does driver mean in the Trespass Act, and what does the motor vehicle definition include?",
+          "studyAnswer": "Driver means a person who drives or has care or control of a motor vehicle. Motor vehicle means a motor vehicle, motor driven cycle, motorcycle or trail groomer as defined in the Motor Vehicle Act or an off-road vehicle as defined in the Off-Road Vehicle Act, and includes any trailer or accessory attached to the motor vehicle."
+        },
+        {
+          "id": "obj-peace-officer",
+          "objective": "Identify who qualifies as a peace officer under the Trespass Act, including the supervision condition for auxiliary officers.",
+          "guidedQuestion": "Who qualifies as a peace officer under the Trespass Act, and what condition applies to auxiliary officers?",
+          "studyAnswer": "A peace officer means: (a) a member of the Royal Canadian Mounted Police; (b) a police officer appointed under section 10, 11 or 17.3 of the Police Act; (c) an auxiliary peace officer or an auxiliary police constable appointed under section 13 of the Police Act, when accompanied by or under the supervision of a police officer appointed under section 10, 11 or 17.3 of the Police Act or a member of the Royal Canadian Mounted Police; or (d) a conservation officer appointed under the Fish and Wildlife Act."
+        }
+      ]
+    },
+    {
+      "proposalId": "unit-d1742361c5ae3778",
+      "status": "repaired-valid",
+      "preErrorCodes": [
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_DERIVED_NOTE_UNGROUNDED"
+      ],
+      "postErrorCodes": [],
+      "postWarningCount": 0,
+      "attemptsRejected": 1,
+      "changedScalars": [
+        "title",
+        "mainQuestion",
+        "studySummary"
+      ],
+      "objectivesAdded": [
+        "obj-food-handling-distribution",
+        "obj-food-labelling",
+        "obj-food-premises-construction",
+        "obj-food-standards"
+      ],
+      "objectivesRemoved": [
+        "obj-1",
+        "obj-2",
+        "obj-3",
+        "obj-4"
+      ],
+      "objectivesChanged": [],
+      "sourceCoverageChanged": true,
+      "studyNotesChanged": true,
+      "warningsChanged": false,
+      "postTitle": "Food premises and food safety regulations under section 68",
+      "postMainQuestion": "What food-related regulatory subjects may the Lieutenant-Governor in Council address under section 68 of the New Brunswick Public Health Act?",
+      "postStudySummary": "Section 68 delegates to the Lieutenant-Governor in Council broad discretionary regulatory authority (\"may make regulations\") over food safety in New Brunswick. The four food-focused paragraphs create distinct regulatory domains: (1) the physical plant of food premises — construction, equipment, sanitary facilities, operation, maintenance, and alteration; (2) the full chain of food handling — manufacturing, processing, preparation, storage, handling, display, transportation, sale, offering for sale, and distribution from food premises; (3) substantive quality standards — chemical and microbiological limits for food with mandatory compliance; and (4) product traceability and consumer information — labelling, identification, and coding of food and its containers across the handling and distribution chain. Each power is permissive, leaving the executive to determine the form and detail of requirements by regulation.",
+      "postObjectives": [
+        {
+          "id": "obj-food-premises-construction",
+          "objective": "Identify the physical and operational aspects of food premises that the Lieutenant-Governor in Council may regulate.",
+          "guidedQuestion": "What aspects of food premises may the Lieutenant-Governor in Council regulate under paragraph 68(e), and what additional regulatory step is included?",
+          "studyAnswer": "The Lieutenant-Governor in Council may make regulations respecting the construction, equipment, facilities, including sanitary facilities, operation, maintenance and alteration of food premises and prescribing standards and requirements in respect thereof."
+        },
+        {
+          "id": "obj-food-handling-distribution",
+          "objective": "Identify the food activities and distribution matters subject to regulation under paragraph 68(g).",
+          "guidedQuestion": "Which food activities on or in food premises, and which distribution matter, may be regulated under paragraph 68(g)?",
+          "studyAnswer": "The Lieutenant-Governor in Council may make regulations respecting the manufacturing, processing, preparation, storage, handling, display, transportation, sale or offering for sale of any food on or in food premises and the distribution of food from food premises and prescribing standards and requirements in respect thereof."
+        },
+        {
+          "id": "obj-food-standards",
+          "objective": "State the food standards the Lieutenant-Governor in Council may prescribe and the compliance obligation attached to them.",
+          "guidedQuestion": "What food standards may the Lieutenant-Governor in Council prescribe under paragraph 68(h), and what does the provision require of those standards?",
+          "studyAnswer": "The Lieutenant-Governor in Council may make regulations prescribing chemical and microbiological standards for food and requiring compliance therewith."
+        },
+        {
+          "id": "obj-food-labelling",
+          "objective": "Identify the labelling, identification, and coding matters for food and food containers that fall within the regulatory power in paragraph 68(n).",
+          "guidedQuestion": "What labelling, identification, and coding matters for food and its containers may be regulated under paragraph 68(n), and what handling or distribution contexts trigger the power?",
+          "studyAnswer": "The Lieutenant-Governor in Council may make regulations respecting the labelling, identification or coding of food and containers of food that are manufactured, processed, prepared, stored, handled, displayed, transported, sold or offered for sale on or in food premises or distributed from food premises."
+        }
+      ]
+    },
+    {
+      "proposalId": "unit-d4b1280dd51c16a3",
+      "status": "repaired-valid",
+      "preErrorCodes": [
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL"
+      ],
+      "postErrorCodes": [],
+      "postWarningCount": 0,
+      "attemptsRejected": 1,
+      "changedScalars": [
+        "title",
+        "mainQuestion",
+        "studySummary"
+      ],
+      "objectivesAdded": [
+        "obj-minister-discretion-criteria",
+        "obj-protect-classified-water-procedures",
+        "obj-review-panel-classification",
+        "obj-water-class-system-establish-exclude"
+      ],
+      "objectivesRemoved": [
+        "obj-1",
+        "obj-2",
+        "obj-3",
+        "obj-4"
+      ],
+      "objectivesChanged": [],
+      "sourceCoverageChanged": true,
+      "studyNotesChanged": false,
+      "warningsChanged": false,
+      "postTitle": "Water classification of a watercourse under the Clean Water Act",
+      "postMainQuestion": "What may the Lieutenant-Governor in Council regulate to establish a water-classification regime for watercourse water under the Clean Water Act?",
+      "postStudySummary": "Section 40 of the Clean Water Act grants the Lieutenant-Governor in Council a broad permissive power to make regulations covering the full water-classification regime for watercourse water. The power spans four functional areas: (1) establishing a water classification system and classifying or excluding any portion of a watercourse's water; (2) setting criteria and standards for classes of water and conferring discretion on the Minister to determine suitability and compliance before and at classification; (3) prohibiting activities that might impair the quality or quantity of already-classified water, requiring pre-classification procedures, consultations, conditions, and restrictions; and (4) establishing a review panel to advise the Minister on classification, with prescribed composition, duties, expenses, and operation. Every element is framed as something regulations 'may' address, leaving implementation to the Lieutenant-Governor in Council's discretion.",
+      "postObjectives": [
+        {
+          "id": "obj-water-class-system-establish-exclude",
+          "objective": "Identify the three regulatory subjects the Lieutenant-Governor in Council may address to create and apply a water classification system to watercourse water.",
+          "guidedQuestion": "What may the Lieutenant-Governor in Council regulate regarding the establishment of a water classification system and the classification or exclusion of watercourse water?",
+          "studyAnswer": "The Lieutenant-Governor in Council may make regulations respecting the establishment of a water classification system, classifying all or any portion of the water of a watercourse, and excluding all or any portion of the water of a watercourse from classification."
+        },
+        {
+          "id": "obj-minister-discretion-criteria",
+          "objective": "Describe the discretion and criteria-related powers regulations may confer on the Minister in determining the classification of watercourse water.",
+          "guidedQuestion": "What discretion and criteria-related powers may regulations confer on the Minister in determining the classification of watercourse water?",
+          "studyAnswer": "Regulations may provide the Minister with the discretion to determine the suitability of classification of the water of a watercourse, respect the criteria or standards that a class of water is to meet, provide the Minister with the discretion to determine whether the water of a watercourse meets the criteria or standards of a particular class before it is classified, and provide that the water of a watercourse may be classified into a class where the water is intended by the Minister to meet or eventually meet the standards or criteria applicable to the class of water."
+        },
+        {
+          "id": "obj-protect-classified-water-procedures",
+          "objective": "Identify the protection and procedural requirements regulations may impose in connection with the classification of watercourse water.",
+          "guidedQuestion": "What protection and procedural requirements may regulations impose in connection with the classification of watercourse water?",
+          "studyAnswer": "Regulations may prohibit any activity that might impair the quality or quantity of the water of a watercourse that is classified, respect procedures, consultations or evaluations to be followed or undertaken before the water of a watercourse may be classified or excluded from a classification, respect conditions to be satisfied before the water of a watercourse is classified, and impose restrictions on the classification of the water of a watercourse."
+        },
+        {
+          "id": "obj-review-panel-classification",
+          "objective": "Describe the review panel regulations may establish to advise the Minister on watercourse water classification and the matters to be prescribed for its operation.",
+          "guidedQuestion": "What review panel may regulations establish for advising the Minister on watercourse water classification, and what matters may be prescribed for its operation?",
+          "studyAnswer": "Regulations may establish or require the Minister to establish a review panel to provide advice to the Minister on the classification of the water of a watercourse, and may prescribe the composition of the panel, terms of office of members, the election or appointment of officers, the duties and responsibilities of the panel, the reimbursement of expenses of and the payments of an allowance to members of the panel when carrying out their duties, and any other matters relating to the operation of the panel."
+        }
+      ]
+    },
+    {
+      "proposalId": "unit-d5879f27382ec6c0",
+      "status": "repaired-valid",
+      "preErrorCodes": [
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL"
+      ],
+      "postErrorCodes": [],
+      "postWarningCount": 1,
+      "attemptsRejected": 0,
+      "changedScalars": [
+        "title",
+        "mainQuestion",
+        "studySummary"
+      ],
+      "objectivesAdded": [
+        "obj-712-enforcement-actions",
+        "obj-712-entry-power"
+      ],
+      "objectivesRemoved": [
+        "obj-1",
+        "obj-2"
+      ],
+      "objectivesChanged": [],
+      "sourceCoverageChanged": true,
+      "studyNotesChanged": false,
+      "warningsChanged": false,
+      "postTitle": "Minister's enforcement entry and compliance actions under section 71.2",
+      "postMainQuestion": "What conditions allow the Minister to enter Crown Lands to enforce an order to comply, and what specific actions may the Minister take under section 71.2?",
+      "postStudySummary": "Section 71.2(1) gives the Minister a self-executing enforcement power: if a person fails or refuses to comply with an order to comply within the time period set out in the order, the Minister may enter the Crown Lands with such persons, materials, and equipment as the Minister considers necessary, using the force the Minister considers necessary, and may take such further action as the Minister considers necessary to effect compliance. Section 71.2(2) then lists six specific enforcement actions—taking possession of, removing, or disposing of property on Crown Lands; restoring the lands; and carrying out other measures specified in the order—but expressly states the list is non-exhaustive ('Without limiting the generality of subsection (1)'), so the Minister is not confined to those six items.",
+      "postObjectives": [
+        {
+          "id": "obj-712-entry-power",
+          "objective": "Identify the conditions that trigger the Minister's enforcement entry and the scope of force and accompaniment permitted under section 71.2(1).",
+          "guidedQuestion": "What conditions must be met before the Minister may enter Crown Lands under section 71.2(1), and what scope of force and accompaniment is permitted?",
+          "studyAnswer": "If a person to whom an order to comply is directed fails or refuses to comply in whole or in part with the order, in the time period set out in the order, the Minister may enter on the Crown Lands, together with such persons, materials and equipment as the Minister considers necessary, using the force the Minister considers necessary, and may take such further action the Minister considers necessary to effect compliance with or to carry out the order."
+        },
+        {
+          "id": "obj-712-enforcement-actions",
+          "objective": "Recall the six enumerated enforcement actions in section 71.2(2) and recognize that the list is non-exhaustive.",
+          "guidedQuestion": "What specific enforcement actions does section 71.2(2) list, and does it limit the Minister to only those actions?",
+          "studyAnswer": "Subsection (2) is expressly non-exhaustive ('Without limiting the generality of subsection (1)'). The Minister may take any one or more of: (a) take possession of any property or thing referred to in subsection 71(1) that is constructed, placed, left, abandoned or disposed of on Crown Lands; (b) restore the Crown Lands to a condition as nearly as practicable as they were before the unauthorized occupation or possession referred to in subsection 71(1); (c) remove any property or thing referred to in subsection 71(1) that is constructed, placed or left on Crown Lands; (d) remove any property or thing referred to in subsection 71(1) that is abandoned or disposed of on Crown Lands; (e) in any manner the Minister sees fit, dispose of any such property or thing; and (f) carry out other measures, specified in the order, in order to effect compliance with subsection 24(1.1), 25(3), 26(6) or 71(1)."
+        }
+      ]
+    },
+    {
+      "proposalId": "unit-e944b3a49f4b9bac",
+      "status": "repaired-valid",
+      "preErrorCodes": [
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL"
+      ],
+      "postErrorCodes": [],
+      "postWarningCount": 0,
+      "attemptsRejected": 1,
+      "changedScalars": [
+        "title",
+        "mainQuestion",
+        "studySummary"
+      ],
+      "objectivesAdded": [
+        "obj-sewage-disposal-y",
+        "obj-water-circulation-z3",
+        "obj-water-premises-q",
+        "obj-water-supply-monitoring-r"
+      ],
+      "objectivesRemoved": [
+        "obj-1",
+        "obj-2",
+        "obj-3",
+        "obj-4"
+      ],
+      "objectivesChanged": [],
+      "sourceCoverageChanged": true,
+      "studyNotesChanged": true,
+      "warningsChanged": false,
+      "postTitle": "Water supply, water circulation and on-site sewage disposal regulations under section 68",
+      "postMainQuestion": "Which water and sewage regulatory subjects may the Lieutenant-Governor in Council address under section 68 of the Public Health Act?",
+      "postStudySummary": "Section 68 of the Public Health Act delegates to the Lieutenant-Governor in Council a broad regulation-making power. Four paragraphs within that power focus on water and sewage infrastructure. Paragraph (q) covers the source, construction, equipment, sanitary facilities, and operational maintenance of premises used to produce bulk or bottled water for human consumption. Paragraph (r) covers the monitoring of water supply systems and public water supply systems and the reporting of monitoring results. Paragraph (y) covers on-site sewage disposal systems, explicitly including approvals, inspections, repairs, replacements and suitable lot sizes, while preserving the open-ended scope of the regulation. Paragraph (z.3) covers the plumbing, inspection, supervision, cleaning, drainage, closure, ventilating and disinfecting of water circulation systems. Together these paragraphs define the regulatory terrain for potable water production, water supply monitoring, decentralized sewage treatment, and water circulation system maintenance.",
+      "postObjectives": [
+        {
+          "id": "obj-water-premises-q",
+          "objective": "Identify the matters that section 68(q) authorizes regulations to address for bulk and bottled water production premises.",
+          "guidedQuestion": "What matters may regulations address regarding premises used to produce bulk or bottled water for human consumption under section 68(q) of the Public Health Act?",
+          "studyAnswer": "The Lieutenant-Governor in Council may make regulations respecting the source, construction, equipment, facilities, including sanitary facilities, used in the procurement, packaging, transportation, treatment, handling, establishment, operation and maintenance of premises used to produce bulk or bottled water for human consumption."
+        },
+        {
+          "id": "obj-water-supply-monitoring-r",
+          "objective": "Identify the monitoring and reporting subjects that section 68(r) authorizes regulations to address for water supply systems.",
+          "guidedQuestion": "What may regulations under section 68(r) of the Public Health Act address in relation to water supply systems and public water supply systems?",
+          "studyAnswer": "The Lieutenant-Governor in Council may make regulations respecting the monitoring of water supply systems and public water supply systems and the reporting of any results of such monitoring."
+        },
+        {
+          "id": "obj-sewage-disposal-y",
+          "objective": "Identify the regulatory subjects for on-site sewage disposal systems under section 68(y), including the illustrative scope language.",
+          "guidedQuestion": "What does section 68(y) of the Public Health Act authorize regulations to cover for on-site sewage disposal systems?",
+          "studyAnswer": "The Lieutenant-Governor in Council may make regulations respecting on-site sewage disposal systems, including without limiting the generality of the foregoing, approvals, inspections, repairs, replacements and suitable lot sizes."
+        },
+        {
+          "id": "obj-water-circulation-z3",
+          "objective": "Identify the water circulation system maintenance and inspection subjects under section 68(z.3).",
+          "guidedQuestion": "What aspects of water circulation systems may regulations address under section 68(z.3) of the Public Health Act?",
+          "studyAnswer": "The Lieutenant-Governor in Council may make regulations respecting the plumbing, inspection, supervision, cleaning, drainage, closure, ventilating and disinfecting of water circulation systems."
+        }
+      ]
+    },
+    {
+      "proposalId": "unit-f821944f8d8fad87",
+      "status": "repaired-valid",
+      "preErrorCodes": [
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "EVIDENCE_NOT_EXACT_VERBATIM",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL"
+      ],
+      "postErrorCodes": [],
+      "postWarningCount": 0,
+      "attemptsRejected": 5,
+      "changedScalars": [
+        "title",
+        "mainQuestion",
+        "studySummary"
+      ],
+      "objectivesAdded": [
+        "obj-institutional-terms",
+        "obj-parcel-terms"
+      ],
+      "objectivesRemoved": [
+        "obj-actor-terms",
+        "obj-cross-ref-terms",
+        "obj-parcel-plan"
+      ],
+      "objectivesChanged": [
+        "obj-surveying-terms"
+      ],
+      "sourceCoverageChanged": true,
+      "studyNotesChanged": true,
+      "warningsChanged": false,
+      "postTitle": "Boundaries Confirmation Act – Key Definitions (s. 1)",
+      "postMainQuestion": "What terms does the Boundaries Confirmation Act define to identify who may apply for boundary confirmation, what a parcel and its boundaries are, and which officials administer the process?",
+      "postStudySummary": "Section 1 of the Boundaries Confirmation Act defines eleven terms that structure the Act's boundary-confirmation process. The surveying terms (boundary, monument, surveyor) fix the physical objects recognized and the authorized practitioners who may mark them. The land-parcel terms (parcel, plan of survey, air space parcel, air space plan) define the units of land whose boundaries may be confirmed, tying the Act to instruments filed under the Registry Act or Land Titles Act and to the Air Space Act. The institutional terms (applicant, Deputy Registrar General, Fund, Registrar General) identify who may apply under section 6, who administers the process through the Land Titles registry, and what financial mechanism (section 18 Fund) supports proceedings. Together these definitions establish that the Act operates on registered or filed land interests, relies on surveyors registered under the New Brunswick Land Surveyors Act, 1986, and is administered by the Registrar General of Land Titles and designated staff.",
+      "postObjectives": [
+        {
+          "id": "obj-surveying-terms",
+          "objective": "Recall the definitions of boundary, monument, and surveyor as set out in section 1 of the Boundaries Confirmation Act.",
+          "guidedQuestion": "What does the Boundaries Confirmation Act define as a boundary, a monument, and a surveyor?",
+          "studyAnswer": "A boundary is a natural or artificial separation that marks the confines of a parcel or the line of division of contiguous parcels. A monument is a device authorized for use by a surveyor under the New Brunswick Land Surveyors Act, 1986 to mark a boundary for the purposes of conducting a survey under the authority of and in accordance with an Act of Canada or an Act of the Legislature, and includes any ancillary components. A surveyor is a person registered under the New Brunswick Land Surveyors Act, 1986 to practise land surveying in the Province of New Brunswick."
+        },
+        {
+          "id": "obj-parcel-terms",
+          "objective": "Recall the definitions of parcel, plan of survey, air space parcel, and air space plan under section 1 of the Boundaries Confirmation Act.",
+          "guidedQuestion": "How does the Boundaries Confirmation Act define parcel, plan of survey, air space parcel, and air space plan?",
+          "studyAnswer": "A parcel is (a) an area of land or an air space parcel defined by a plan of survey or a subdivision plan filed under the Registry Act or the Land Titles Act, as the case may be, that can be separately conveyed as defined, or (b) an area of land described in a single description in a document registered or filed under the Registry Act or the Land Titles Act, as the case may be, that can be separately conveyed as described. A plan of survey includes an air space plan. An air space parcel is an air space parcel as defined in the Air Space Act. An air space plan is an air space plan as defined in the Air Space Act."
+        },
+        {
+          "id": "obj-institutional-terms",
+          "objective": "Recall the definitions of applicant, Deputy Registrar General, Fund, and Registrar General under section 1 of the Boundaries Confirmation Act.",
+          "guidedQuestion": "What does the Boundaries Confirmation Act define as applicant, Deputy Registrar General, Fund, and Registrar General?",
+          "studyAnswer": "An applicant is a person or authority making an application under section 6. A Deputy Registrar General is a Deputy Registrar General of Land Titles appointed by the Lieutenant-Governor in Council under section 5 of the Land Titles Act. The Fund is the Boundaries Confirmation Fund established under section 18. The Registrar General is the Registrar General of Land Titles appointed by the Lieutenant-Governor in Council under section 5 of the Land Titles Act, and includes the Deputy Registrars General and any person designated by Service New Brunswick to perform any of the duties or exercise any of the powers of the Registrar General under this Act or the regulations."
+        }
+      ]
+    },
+    {
+      "proposalId": "unit-fcc8bb2c8653b95d",
+      "status": "repaired-valid",
+      "preErrorCodes": [
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL",
+        "SOURCE_COVERAGE_EXTRA_LABEL"
+      ],
+      "postErrorCodes": [],
+      "postWarningCount": 0,
+      "attemptsRejected": 1,
+      "changedScalars": [
+        "title",
+        "mainQuestion",
+        "studySummary"
+      ],
+      "objectivesAdded": [
+        "obj-claims-actions",
+        "obj-cost-recovery",
+        "obj-fees",
+        "obj-inspectors-analysts"
+      ],
+      "objectivesRemoved": [
+        "obj-1",
+        "obj-2",
+        "obj-3",
+        "obj-4"
+      ],
+      "objectivesChanged": [],
+      "sourceCoverageChanged": true,
+      "studyNotesChanged": true,
+      "warningsChanged": false,
+      "postTitle": "Costs, claims, fees and inspectors under Clean Water Act regulations",
+      "postMainQuestion": "What may the Lieutenant-Governor in Council regulate under Clean Water Act section 40 regarding cost recovery, claims settlement, fees, and inspector powers?",
+      "postStudySummary": "Section 40 of the Clean Water Act grants the Lieutenant-Governor in Council authority to make regulations on administrative matters. The four selected provisions authorize regulations on: (1) responsibility for and recovery of costs incurred by the Minister or any person in carrying out remedial, investigative, and enforcement actions under the Act; (2) carriage, conduct, and settlement of claims and actions relating to matters under the Act and regulations; (3) establishment of fees and payment methods for the application, issuance, transfer, renewal, and reinstatement of registrations, licences, permits, and approvals; and (4) duties and powers of inspectors and analysts, including sample collection and substance analysis for purposes of the Act and regulations.",
+      "postObjectives": [
+        {
+          "id": "obj-cost-recovery",
+          "objective": "Explain the scope of cost-recovery regulations under Clean Water Act section 40(g), including which costs and which actions they cover.",
+          "guidedQuestion": "What costs may regulations under Clean Water Act section 40(g) address, and what actions trigger cost recovery?",
+          "studyAnswer": "Regulations may address the responsibility for and the payment and recovery of any costs incurred by the Minister or any person, including the costs incurred for all persons, materials and equipment employed and by repairing any damage done, to operate, rectify, control, reduce, eliminate, remove, modify, clean up, rehabilitate, remedy or investigate any matter or thing coming within this Act or the regulations."
+        },
+        {
+          "id": "obj-claims-actions",
+          "objective": "State what matters regulations may address under section 40(h) regarding claims and actions.",
+          "guidedQuestion": "What does Clean Water Act section 40(h) authorize regulations to govern regarding claims and actions?",
+          "studyAnswer": "Regulations may address the carriage, conduct and settlement of claims and actions relating to matters coming within this Act and the regulations."
+        },
+        {
+          "id": "obj-fees",
+          "objective": "Identify the fees and payment events that regulations under section 40(y) may establish for registrations, licences, permits, and approvals.",
+          "guidedQuestion": "What fees and payment events may regulations under Clean Water Act section 40(y) establish?",
+          "studyAnswer": "Regulations may establish fees and the manner of payment of fees to be paid upon the application for, and upon the issuance, transfer, renewal and reinstatement of, registrations, licences, permits and approvals."
+        },
+        {
+          "id": "obj-inspectors-analysts",
+          "objective": "Describe the inspector and analyst powers and sample-analysis activities that regulations under section 40(aa) may govern.",
+          "guidedQuestion": "What powers, duties, and activities may regulations under Clean Water Act section 40(aa) govern for inspectors and analysts?",
+          "studyAnswer": "Regulations may address the duties and powers of inspectors and analysts, the taking of samples and the analysis of substances for the purposes of this Act and the regulations."
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "repairedValid": 37,
+    "stillInvalid": 0,
+    "totalAttemptsRejected": 89
+  }
+}
