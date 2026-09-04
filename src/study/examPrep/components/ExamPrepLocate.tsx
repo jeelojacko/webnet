@@ -8,6 +8,8 @@
 // the provision when the frozen target pins one; document-level targets show
 // only the statute title). Found it / Missed it persists one immutable
 // attempt with the frozen elapsed seconds but never reshapes the session.
+// Start copy is honest about scope: targets may be provision-pinned (390) or
+// document-level (62), and the sprint samples the full exam curriculum.
 
 import { useEffect, useState } from 'react';
 import { Eye, GraduationCap, Timer } from 'lucide-react';
@@ -175,9 +177,12 @@ export const ExamPrepLocateView = ({
         <section className="rounded border border-emerald-800 bg-emerald-950 p-4">
           <GraduationCap className="mb-2 text-emerald-400" size={20} />
           <p className="font-semibold text-white">Locate Sprint</p>
-          <p className="mt-1 text-xs text-slate-400">
-            {`${previewQueue.length} questions. Find the exact controlling provision in the statute library before checking the answer.`}
-          </p>
+          <div className="mt-1 space-y-1 text-xs text-slate-400">
+            <p>{`${previewQueue.length} questions.`}</p>
+            <p>Practice finding the correct statute or controlling provision.</p>
+            <p>The answer remains hidden until Check Answer.</p>
+            <p>This sprint samples the full exam curriculum.</p>
+          </div>
           <div className="mt-3 flex flex-wrap gap-2">
             <button
               type="button"

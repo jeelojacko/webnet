@@ -15,9 +15,14 @@ import { useState, useRef, useEffect } from 'react';
 import type { ExamCurriculumUnit } from '../../examCurriculum/examCurriculumTypes';
 import type { ExamPrepAttempt, ExamPrepDrillAttempt } from '../examPrepTypes';
 import { DRILL_DIFFICULTY_LABELS, formatExamDrillTime } from '../examPrepFormat';
-import { buildExamPrepDrillStats, type ExamPrepDrillStats } from '../examPrepDrillStats';
+import { buildExamPrepDrillStats } from '../examPrepDrillStats';
 import { formatExamPrepLocalDate } from '../examPrepLocalDate';
 import { buildDrillAttempt } from '../examPrepAttemptBuilders';
+import {
+  EXAM_PREP_DRILL_STATUS_LABELS,
+  examPrepDrillReadinessReason,
+  examPrepDrillTaskId,
+} from '../examPrepDrillFilters';
 import { EXAM_PREP_OPEN_SOURCE_BUTTON } from './examPrepBits';
 
 export type ExamDrillCardProps = {
@@ -26,13 +31,6 @@ export type ExamDrillCardProps = {
   /** Current attempt history for this drill's readiness summary. */
   attempts?: ExamPrepAttempt[];
   onSaveAttempt?: (_attempt: ExamPrepDrillAttempt) => Promise<void>;
-};
-
-const STATUS_LABEL: Record<ExamPrepDrillStats['status'], string> = {
-  unattempted: 'Unattempted',
-  developing: 'Developing',
-  accurate: 'Accurate',
-  exam_ready: 'Exam-ready',
 };
 
 const createAttemptId = (taskId: string): string =>
@@ -57,8 +55,9 @@ export const ExamDrillCard = ({
   const drill = unit.drill;
 
   const stats = attempts
-    ? buildExamPrepDrillStats(attempts, `drill:${unit.id}`)
+    ? buildExamPrepDrillStats(attempts, examPrepDrillTaskId(unit.id))
     : null;
+  const readinessReason = stats ? examPrepDrillReadinessReason(stats) : null;
 
   useEffect(() => {
     if (phase === 'active') {
@@ -86,9 +85,9 @@ export const ExamDrillCard = ({
     setSaving(true);
     setSaveError(null);
     const attempt = buildDrillAttempt({
-      attemptId: createAttemptId(`drill:${unit.id}`),
+      attemptId: createAttemptId(examPrepDrillTaskId(unit.id)),
       unitId: unit.id,
-      taskId: `drill:${unit.id}`,
+      taskId: examPrepDrillTaskId(unit.id),
       difficulty: drill.difficulty,
       answer: textareaValue,
       elapsedSeconds: elapsed, // frozen at Reveal
@@ -116,7 +115,10 @@ export const ExamDrillCard = ({
   const score = [lawIdentified, provisionLocated, substantiveComplete].filter(Boolean).length;
 
   return (
-    <section className="rounded border border-emerald-800 bg-emerald-950 p-3">
+    <section
+      id={`exam-drill-${unit.id}`}
+      className="rounded border border-emerald-800 bg-emerald-950 p-3"
+    >
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-mono text-xs text-emerald-300">{unit.id}</span>
         <span className="rounded bg-emerald-900 px-1.5 py-0.5 text-[11px] uppercase tracking-wide text-emerald-200">
@@ -129,7 +131,7 @@ export const ExamDrillCard = ({
           {DRILL_DIFFICULTY_LABELS[drill.difficulty]}
         </span>
         <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[11px] text-slate-400">
-          {drill.timeTargetSeconds}s
+          {formatExamDrillTime(drill.timeTargetSeconds)}
         </span>
         <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[11px] text-slate-400">
           review: {unit.reviewWeight}
@@ -137,27 +139,32 @@ export const ExamDrillCard = ({
       </div>
       <h4 className="mt-2 text-sm font-semibold text-white">{unit.title}</h4>
       {phase === 'start' && stats ? (
-        <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px]">
-          <span className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-300">
-            Status: {STATUS_LABEL[stats.status]}
-          </span>
-          <span className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-400">
-            Attempts: {stats.attemptCount}
-          </span>
-          {stats.attemptCount > 0 ? (
-            <>
-              <span className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-400">
-                Best correct: {stats.bestCorrectElapsedSeconds === null ? '—' : formatExamDrillTime(stats.bestCorrectElapsedSeconds)}
-              </span>
-              <span className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-400">
-                Target: {formatExamDrillTime(drill.timeTargetSeconds)}
-              </span>
-              {stats.latestAttempt ? (
+        <div className="mt-2 space-y-1">
+          <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+            <span className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-300">
+              Status: {EXAM_PREP_DRILL_STATUS_LABELS[stats.status]}
+            </span>
+            <span className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-400">
+              Attempts: {stats.attemptCount}
+            </span>
+            {stats.attemptCount > 0 ? (
+              <>
                 <span className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-400">
-                  Latest: {stats.latestScore} / 3 · {formatExamDrillTime(stats.latestElapsedSeconds ?? 0)}
+                  Best correct: {stats.bestCorrectElapsedSeconds === null ? '—' : formatExamDrillTime(stats.bestCorrectElapsedSeconds)}
                 </span>
-              ) : null}
-            </>
+                <span className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-400">
+                  Target: {formatExamDrillTime(drill.timeTargetSeconds)}
+                </span>
+                {stats.latestAttempt ? (
+                  <span className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-400">
+                    Latest: {stats.latestScore} / 3 · {formatExamDrillTime(stats.latestElapsedSeconds ?? 0)}
+                  </span>
+                ) : null}
+              </>
+            ) : null}
+          </div>
+          {readinessReason ? (
+            <p className="text-[11px] italic text-slate-400">{readinessReason}</p>
           ) : null}
         </div>
       ) : null}

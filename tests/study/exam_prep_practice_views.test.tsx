@@ -121,10 +121,13 @@ describe('Exam Prep Recognition sprint view', () => {
     await typeAnswer('the surveying statute');
     await clickButton('Reveal');
 
-    // post-reveal: expected id/title and sources appear, answer preserved
+    // post-reveal: expected identity/title and sources appear, answer preserved.
+    // Learner-facing identity is the curriculum unit id (not the internal
+    // `recognition:…` task id) and the unit title.
     expect(bodyText()).toContain('Expected topic');
-    expect(revealedTaskId()).toBe(first.id);
+    expect(revealedTaskId()).toBe(first.unitId);
     expect(bodyText()).toContain(first.unitTitle);
+    expect(bodyText()).not.toContain(first.id);
     expect(bodyText()).toContain(docTitle);
     expect(bodyText()).toContain('Your answer');
     expect(bodyText()).toContain('the surveying statute');
@@ -152,7 +155,7 @@ describe('Exam Prep Recognition sprint view', () => {
       await clickButton('Reveal');
       // a live recomputed queue would re-rank the just-missed leader to the
       // front; the frozen session must keep showing the original order.
-      expect(revealedTaskId()).toBe(expected.id);
+      expect(revealedTaskId()).toBe(expected.unitId);
       await clickButton('Missed it');
       // simulate an unrelated external attempt landing mid-session
       if (step === 3 || step === 7) {
@@ -182,23 +185,25 @@ describe('Exam Prep Recognition sprint view', () => {
     const second = recognitionSession[1];
     if (!first || !second) throw new Error('expected frozen items');
     let calls = 0;
+    const saved: ExamPrepAttempt[] = [];
     // a non-Error rejection exercises the generic fallback message
-    const saveImpl = async (): Promise<void> => {
+    const saveImpl = async (attempt: ExamPrepAttempt): Promise<void> => {
       calls += 1;
       if (calls === 1) throw 'quota exceeded';
+      saved.push(attempt);
     };
     await renderView([], saveImpl);
     await clickButton('Start Recognition Sprint');
     expect(bodyText()).toContain(first.cue);
     await typeAnswer('my answer');
     await clickButton('Reveal');
-    expect(revealedTaskId()).toBe(first.id);
+    expect(revealedTaskId()).toBe(first.unitId);
 
     await clickButton('Missed it');
     // persistence failure: nothing advanced, card stays revealed with answer
     expect(bodyText()).toContain('The recognition result could not be saved. Try again.');
     expect(bodyText()).toContain('Question 1 of 10');
-    expect(revealedTaskId()).toBe(first.id);
+    expect(revealedTaskId()).toBe(first.unitId);
     expect(bodyText()).toContain('Expected topic');
     expect(bodyText()).toContain('Your answer');
     expect(bodyText()).toContain('my answer');
@@ -206,7 +211,13 @@ describe('Exam Prep Recognition sprint view', () => {
     await clickButton('Missed it');
     expect(bodyText()).toContain('Question 2 of 10');
     await clickButton('Reveal');
-    expect(revealedTaskId()).toBe(second.id);
+    expect(revealedTaskId()).toBe(second.unitId);
+    // the persisted attempt still records the internal task id even though
+    // the learner-facing reveal shows only the curriculum unit id.
+    expect(saved).toHaveLength(1);
+    expect(saved[0]?.kind).toBe('recognition');
+    expect(saved[0]?.taskId).toBe(first.id);
+    expect(saved[0]?.unitId).toBe(first.unitId);
   });
 });
 

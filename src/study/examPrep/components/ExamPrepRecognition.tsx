@@ -2,12 +2,12 @@
 //
 // Ten-question mixed sprints over the frozen recognition-cue pool
 // (317 tasks derived from A-D/NAV recognitionCues; DRILL excluded). The
-// sprint is frozen at Start from the live snapshot: each Got it / Missed it
-// persists one immutable attempt but never refills or reshapes the running
-// session. A cue shows ONLY the frozen cue before Reveal — the expected unit
-// id/title and source documents are hidden until the learner reveals.
-// Persistence failures keep the revealed card, the typed answer, and the
-// question index so the learner can retry.
+// sprint is frozen at Start: each Got it / Missed it persists one immutable
+// attempt but never refills or reshapes the running session. A cue shows ONLY
+// the frozen cue before Reveal — the expected curriculum unit identity (unit
+// id, not the internal `recognition:…` task id) and source documents are
+// hidden until the learner reveals. Persistence failures keep the revealed
+// card, the typed answer, and the question index so the learner can retry.
 
 import { useState } from 'react';
 import { Eye, GraduationCap } from 'lucide-react';
@@ -153,9 +153,12 @@ export const ExamPrepRecognitionView = ({
         <section className="rounded border border-emerald-800 bg-emerald-950 p-4">
           <GraduationCap className="mb-2 text-emerald-400" size={20} />
           <p className="font-semibold text-white">Recognition Sprint</p>
-          <p className="mt-1 text-xs text-slate-400">
-            {`${previewQueue.length} questions. Practice recognizing which law or legal topic applies before looking for exact statutory wording.`}
-          </p>
+          <div className="mt-1 space-y-1 text-xs text-slate-400">
+            <p>{`${previewQueue.length} questions.`}</p>
+            <p>Practice identifying which law or legal topic a fact or cue points to.</p>
+            <p>The expected topic and likely source documents remain hidden until Reveal.</p>
+            <p>This sprint samples the full exam curriculum.</p>
+          </div>
           <div className="mt-3 flex flex-wrap gap-2">
             <button
               type="button"
@@ -222,7 +225,7 @@ export const ExamPrepRecognitionView = ({
                   Expected topic
                 </p>
                 <p className="mt-1 text-sm text-white">
-                  <span className="font-mono text-xs text-sky-300">{item?.id}</span>
+                  <span className="font-mono text-xs text-sky-300">{item?.unitId}</span>
                   <span className="ml-2">{item?.unitTitle}</span>
                 </p>
                 <div className="mt-1 flex flex-wrap gap-1.5 text-[11px]">

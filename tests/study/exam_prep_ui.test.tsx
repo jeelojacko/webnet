@@ -239,11 +239,13 @@ describe('Exam Prep UI', () => {
       />,
     );
     const text = document.body.textContent ?? '';
-    expect(text).toContain('Recommended next unit');
+    // Phase 2.5: the deterministic unstudied Learn pick now lives inside the
+    // Recommended Now block (with workflow/readiness UX around it).
+    expect(text).toContain('Recommended now');
     expect(text).toContain(firstUnitTitle);
     // the recommendation's Open Learn navigates but never marks studied
     const recommendedSection = Array.from(document.querySelectorAll('section')).find((section) =>
-      section.textContent?.includes('Recommended next unit'),
+      section.textContent?.includes('Recommended now'),
     );
     const openLearn = recommendedSection
       ? Array.from(recommendedSection.querySelectorAll('button')).find(
@@ -274,7 +276,16 @@ describe('Exam Prep UI', () => {
         onSaveExamPrepAttempt={vi.fn(async () => undefined)}
       />,
     );
-    expect(document.body.textContent).not.toContain('Recommended next unit');
+    // all units studied: Recommended Now moves on (drill DRILL-01 unattempted)
+    // and the all-studied Curriculum coverage note replaces the Learn pick.
+    const text = document.body.textContent ?? '';
+    expect(text).not.toContain('Recommended next unit');
+    expect(text).not.toContain('Next high-priority unstudied curriculum unit');
+    expect(text).toContain('Curriculum coverage');
+    expect(text).toContain('All 133 curriculum units are marked studied.');
+    expect(text).toContain('Recommended now');
+    expect(text).toContain('DRILL-01');
+    expect(text).toContain('Open Lookup Drills');
   });
 
   it('drills render session-only cards, freeze on Reveal, and format M:SS', async () => {
