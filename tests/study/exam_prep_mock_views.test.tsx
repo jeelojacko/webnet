@@ -184,6 +184,38 @@ describe('Exam Prep mock page (jsdom)', () => {
     expect(text).toContain('Start New Mock');
     expect(text).not.toContain('Question 1 of 30');
   });
+
+  it('fails closed when the storage one-active lock rejects a mock start', async () => {
+    // Simulates the transactional one-active-current-mock creation lock (for
+    // example a second tab already holds an in-progress mock). The landing
+    // screen must surface the failure and must not enter the answering UI.
+    await act(async () => {
+      root?.render(
+        <ExamPrepPage
+          view="mock"
+          data={dataRef.current}
+          onNavigate={vi.fn()}
+          onOpenProvision={vi.fn()}
+          onToggleUnitStudied={vi.fn(async () => undefined)}
+          onRateRecallTask={vi.fn(async () => undefined)}
+          onSaveExamPrepAttempt={vi.fn(async () => undefined)}
+          onSaveExamPrepMockSession={async () => {
+            throw new Error(
+              'A mock exam is already in progress. Submit or abandon it before starting another.',
+            );
+          }}
+        />,
+      );
+    });
+    await clickButton('Start New Mock');
+    await act(async () => {
+      await new Promise((resolve) => window.setTimeout(resolve, 10));
+    });
+    const text = bodyText();
+    expect(text).toContain('A mock exam is already in progress.');
+    expect(text).toContain('Start New Mock');
+    expect(text).not.toContain('Question 1 of 30');
+  });
 });
 
 describe('Exam Prep Home — Mock Exam step 6 and provisional CTA', () => {

@@ -5,9 +5,11 @@ import {
   EXAM_PREP_DEFAULT_MOCK_PROFILE,
   EXAM_PREP_MOCK_PROFILES,
   EXAM_PREP_PROVISIONAL_MOCK_V1,
+  assertValidExamPrepMockProfile,
   examPrepMockProfilePointTotal,
   examPrepMockProfileQuestionTotal,
   selectExamPrepMockProfile,
+  validateExamPrepMockProfile,
 } from '../../src/study/examPrep/mock/examPrepMockProfiles';
 import {
   allocateMockBucketCounts,
@@ -21,6 +23,7 @@ import { EXAM_PREP_LOCATE_TASKS } from '../../src/study/examPrep/examPrepLocateT
 import { EXAM_PREP_DRILL_UNITS } from '../../src/study/examPrep/examPrepDrillFilters';
 import { EXAM_PREP_MANIFEST } from '../../src/study/examPrep/examPrepManifest';
 import type { ExamPrepMockQuestionRef } from '../../src/study/examPrep/mock/examPrepMockTypes';
+import type { ExamPrepMockProfile } from '../../src/study/examPrep/mock/examPrepMockProfiles';
 
 describe('Exam Prep provisional mock profile V1', () => {
   it('describes the provisional 150-minute 30-question 42-point Statute Law profile', () => {
@@ -285,5 +288,118 @@ describe('frozen curriculum integrity used by the mock engine', () => {
     expect(EXAM_PREP_RECOGNITION_TASKS).toHaveLength(317);
     expect(EXAM_PREP_LOCATE_TASKS).toHaveLength(452);
     expect(EXAM_PREP_DRILL_UNITS).toHaveLength(24);
+  });
+});
+
+describe('profile validation fails closed', () => {
+  it('the provisional V1 and the whole registry validate cleanly', () => {
+    expect(validateExamPrepMockProfile(EXAM_PREP_PROVISIONAL_MOCK_V1)).toEqual([]);
+    EXAM_PREP_MOCK_PROFILES.forEach((profile) =>
+      expect(validateExamPrepMockProfile(profile)).toEqual([]),
+    );
+    expect(() => assertValidExamPrepMockProfile(EXAM_PREP_PROVISIONAL_MOCK_V1)).not.toThrow();
+  });
+
+  it('rejects a questionMix whose bucket counts do not sum to the kind count', () => {
+    const malformed = {
+      ...EXAM_PREP_PROVISIONAL_MOCK_V1,
+      id: 'bad-mix-sum',
+      questionMix: { ...EXAM_PREP_PROVISIONAL_MOCK_V1.questionMix, recall: { A: 2, B: 2 } },
+    };
+    const errors = validateExamPrepMockProfile(malformed);
+    expect(errors.some((error) => error.includes('questionMix.recall'))).toBe(true);
+    expect(errors.some((error) => error.includes('must sum to questionCounts.recall'))).toBe(true);
+    expect(() => buildExamPrepMockPaper({ profile: malformed, seed: 'x' })).toThrow(
+      /questionMix\.recall/,
+    );
+  });
+
+  it('rejects unknown mix buckets and unknown question kinds', () => {
+    const badBucket = {
+      ...EXAM_PREP_PROVISIONAL_MOCK_V1,
+      id: 'bad-bucket',
+      questionMix: { recall: { A: 2, B: 2, Q: 2 } },
+    };
+    expect(validateExamPrepMockProfile(badBucket).join(' ')).toContain('unknown bucket: Q');
+    const badKind = {
+      ...EXAM_PREP_PROVISIONAL_MOCK_V1,
+      id: 'bad-kind',
+      questionMix: { essay: { A: 1 } },
+    } as unknown as ExamPrepMockProfile;
+    expect(validateExamPrepMockProfile(badKind).join(' ')).toContain('unknown question kind: essay');
+    expect(() => buildExamPrepMockPaper({ profile: badKind, seed: 'x' })).toThrow(/is invalid/);
+  });
+
+  it('rejects zero-total, negative and structurally broken profiles', () => {
+    const zeroTotal = {
+      ...EXAM_PREP_PROVISIONAL_MOCK_V1,
+      id: 'zero-total',
+      questionCounts: { recall: 0, recognition: 0, locate: 0, drill: 0 },
+      questionMix: {},
+    };
+    expect(validateExamPrepMockProfile(zeroTotal).join(' ')).toContain(
+      'questionCounts must total at least one question',
+    );
+    const negative = {
+      ...EXAM_PREP_PROVISIONAL_MOCK_V1,
+      id: 'negative',
+      questionCounts: { recall: -1, recognition: 8, locate: 10, drill: 6 },
+    };
+    expect(validateExamPrepMockProfile(negative).join(' ')).toContain(
+      'questionCounts.recall must be a non-negative integer',
+    );
+    const closedBookLibrary = {
+      ...EXAM_PREP_PROVISIONAL_MOCK_V1,
+      id: 'library-without-open-book',
+      resources: { openBook: false, builtInStatuteLibrary: true },
+    };
+    expect(validateExamPrepMockProfile(closedBookLibrary).join(' ')).toContain(
+      'builtInStatuteLibrary requires resources.openBook',
+    );
+    const zeroDuration = { ...EXAM_PREP_PROVISIONAL_MOCK_V1, id: 'no-time', durationMinutes: 0 };
+    expect(validateExamPrepMockProfile(zeroDuration).join(' ')).toContain('durationMinutes');
+    const zeroDrillPoints = {
+      ...EXAM_PREP_PROVISIONAL_MOCK_V1,
+      id: 'no-drill-points',
+      pointsPerQuestion: { recall: 1, recognition: 1, locate: 1, drill: 0 },
+    };
+    expect(validateExamPrepMockProfile(zeroDrillPoints).join(' ')).toContain(
+      'pointsPerQuestion.drill must be a positive integer',
+    );
+  });
+
+  it('fails closed when a configured quota exceeds the frozen pool', () => {
+    const overQuota = {
+      ...EXAM_PREP_PROVISIONAL_MOCK_V1,
+      id: 'over-quota',
+      questionCounts: { recall: 6, recognition: 8, locate: 10, drill: 12 },
+      questionMix: {
+        recall: { A: 2, B: 2, NAV: 1, C: 1 },
+        recognition: { A: 3, B: 2, NAV: 2, CD: 1 },
+        locate: { A: 4, B: 3, NAV: 2, CD: 1 },
+        drill: { direct: 12 },
+      },
+    };
+    expect(() => buildExamPrepMockPaper({ profile: overQuota, seed: 'x' })).toThrow(
+      /exceeds the frozen question pool/,
+    );
+  });
+
+  it('accepts an explicitly empty drill mix when the drill count is zero', () => {
+    const noDrills = {
+      ...EXAM_PREP_PROVISIONAL_MOCK_V1,
+      id: 'no-drills-explicit',
+      questionCounts: { recall: 2, recognition: 2, locate: 2, drill: 0 },
+      questionMix: {
+        recall: { A: 1, B: 1 },
+        recognition: { A: 1, NAV: 1 },
+        locate: { A: 1, B: 1 },
+        drill: {},
+      },
+    };
+    expect(validateExamPrepMockProfile(noDrills)).toEqual([]);
+    const paper = buildExamPrepMockPaper({ profile: noDrills, seed: 'none' });
+    expect(paper).toHaveLength(6);
+    expect(paper.every((ref) => ref.kind !== 'drill')).toBe(true);
   });
 });

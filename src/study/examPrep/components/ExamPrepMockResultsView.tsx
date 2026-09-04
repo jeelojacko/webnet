@@ -14,7 +14,7 @@ import { resolveExamPrepMockQuestionContent } from '../mock/examPrepMockQuestion
 import {
   buildMockScore,
   buildMockTypeBreakdown,
-  mockElapsedSeconds,
+  mockTimeUsedSeconds,
   type ExamPrepMockKindScore,
 } from '../mock/examPrepMockResults';
 import type { ExamPrepMockQuestionGrading, ExamPrepMockSession } from '../mock/examPrepMockTypes';
@@ -32,8 +32,7 @@ export const ExamPrepMockResultsView = ({
 }: ExamPrepMockResultsViewProps) => {
   const score = buildMockScore(session);
   const breakdown = buildMockTypeBreakdown(session);
-  const endedAt = session.gradedAt ?? session.submittedAt ?? session.abandonedAt ?? session.updatedAt;
-  const timeUsedSeconds = mockElapsedSeconds(session, Date.parse(endedAt));
+  const timeUsedSeconds = mockTimeUsedSeconds(session);
   const timeAvailable = formatExamMockClock(session.profileSnapshot.durationMinutes * 60);
   const abandoned = session.status === 'abandoned';
 

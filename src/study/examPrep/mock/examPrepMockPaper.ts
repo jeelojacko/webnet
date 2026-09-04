@@ -19,6 +19,11 @@ import { EXAM_PREP_RECOGNITION_TASKS } from '../examPrepRecognitionTasks';
 import { EXAM_PREP_DRILL_UNITS } from '../examPrepDrillFilters';
 import type { ExamLookupDrillDifficulty } from '../../examCurriculum/examCurriculumTypes';
 import { seededMockShuffle } from './examPrepMockRandom';
+import {
+  assertValidExamPrepMockProfile,
+  examPrepMockProfilePointTotal,
+  examPrepMockProfileQuestionTotal,
+} from './examPrepMockProfiles';
 import type { ExamPrepMockProfile } from './examPrepMockProfiles';
 import type {
   ExamPrepMockQuestionKind,
@@ -136,6 +141,63 @@ const padQuestionId = (index: number, width: number): string =>
   `q${String(index).padStart(width, '0')}`;
 
 /**
+ * Fail-closed paper postconditions. The builder derives every field itself,
+ * so any violation here means a malformed profile or an allocation bug must
+ * surface loudly instead of silently handing learners a wrong-size paper.
+ */
+export const assertExamPrepMockPaperPostconditions = ({
+  paper,
+  profile,
+  allocations,
+}: {
+  paper: ExamPrepMockQuestionRef[];
+  profile: ExamPrepMockProfile;
+  allocations: Array<{ kind: ExamPrepMockQuestionKind; counts: Record<string, number> }>;
+}): void => {
+  const fail = (detail: string): never => {
+    throw new Error(
+      `Exam Prep mock paper postcondition failed for profile ${profile.id}: ${detail}.`,
+    );
+  };
+  if (paper.length !== examPrepMockProfileQuestionTotal(profile)) {
+    fail(
+      `expected ${examPrepMockProfileQuestionTotal(profile)} questions but built ${paper.length}`,
+    );
+  }
+  const pointTotal = paper.reduce((sum, ref) => sum + ref.pointsPossible, 0);
+  if (pointTotal !== examPrepMockProfilePointTotal(profile)) {
+    fail(`expected ${examPrepMockProfilePointTotal(profile)} points but built ${pointTotal}`);
+  }
+  allocations.forEach(({ kind, counts }) => {
+    const quota = Object.values(counts).reduce((sum, count) => sum + count, 0);
+    const selected = paper.filter((ref) => ref.kind === kind).length;
+    if (selected !== quota) {
+      fail(`kind ${kind}: expected ${quota} questions but selected ${selected}`);
+    }
+  });
+  const seenQuestionIds = new Set<string>();
+  const seenSourceTaskIds = new Set<string>();
+  paper.forEach((ref, index) => {
+    if (ref.pointsPossible !== profile.pointsPerQuestion[ref.kind]) {
+      fail(
+        `${ref.questionId}: pointsPossible ${ref.pointsPossible} does not match profile ${ref.kind} points ${profile.pointsPerQuestion[ref.kind]}`,
+      );
+    }
+    if (seenQuestionIds.has(ref.questionId)) {
+      fail(`duplicate question id ${ref.questionId}`);
+    }
+    seenQuestionIds.add(ref.questionId);
+    if (ref.questionId !== padQuestionId(index + 1, String(paper.length).length)) {
+      fail(`question ids must be sequential q01..; found ${ref.questionId} at index ${index}`);
+    }
+    if (seenSourceTaskIds.has(ref.sourceTaskId)) {
+      fail(`duplicate source task id ${ref.sourceTaskId}`);
+    }
+    seenSourceTaskIds.add(ref.sourceTaskId);
+  });
+};
+
+/**
  * Builds the session question list for a profile + seed. Deterministic and
  * history-blind. Throws when a profile quota cannot be met by the frozen pool
  * (a configuration error surfaced at paper build time).
@@ -147,6 +209,7 @@ export const buildExamPrepMockPaper = ({
   profile: ExamPrepMockProfile;
   seed: string;
 }): ExamPrepMockQuestionRef[] => {
+  assertValidExamPrepMockProfile(profile);
   const candidatesByKind = buildCandidatesByKind();
   const allocations = KIND_ORDER.map((kind) => ({
     kind,
@@ -226,11 +289,13 @@ export const buildExamPrepMockPaper = ({
   const selectedCandidates = bucketKeys.flatMap((key) => chosen.get(key) ?? []);
   const mixed = seededMockShuffle(selectedCandidates, `${seed}:mix`);
   const width = String(mixed.length).length;
-  return mixed.map((candidate, index) => ({
+  const paper = mixed.map((candidate, index) => ({
     questionId: padQuestionId(index + 1, width),
     kind: candidate.kind,
     sourceTaskId: candidate.sourceTaskId,
     unitId: candidate.unitId,
     pointsPossible: profile.pointsPerQuestion[candidate.kind],
   }));
+  assertExamPrepMockPaperPostconditions({ paper, profile, allocations });
+  return paper;
 };

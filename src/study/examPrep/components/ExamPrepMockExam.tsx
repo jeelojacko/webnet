@@ -22,7 +22,7 @@ import {
   selectDuplicateActiveMockSessions,
   selectRecentMockResults,
 } from '../mock/examPrepMockSelectors';
-import { isMockFullyGraded, mockGradedCount, buildMockScore } from '../mock/examPrepMockResults';
+import { isMockFullyGraded, mockGradedCount, buildMockScore, mockTimeUsedSeconds } from '../mock/examPrepMockResults';
 import type { ExamPrepMockSession } from '../mock/examPrepMockTypes';
 import type { SaveExamPrepMockSession } from './ExamPrepMockActive';
 import { ExamPrepMockActive } from './ExamPrepMockActive';
@@ -290,6 +290,7 @@ const HistoryRow = ({
   const score = buildMockScore(session);
   const gradedCount = mockGradedCount(session);
   const fullyGraded = isMockFullyGraded(session);
+  const timeUsedSeconds = mockTimeUsedSeconds(session);
   let summary: string;
   if (graded) {
     summary = `${score.points} / ${score.totalPoints} · ${score.percent ?? 0}%`;
@@ -306,12 +307,7 @@ const HistoryRow = ({
         <span>{summary}</span>
         {graded ? (
           <span className="font-mono text-slate-500">
-            {formatExamMockClock(
-              Math.floor(
-                (Date.parse(session.gradedAt ?? session.updatedAt) - Date.parse(session.startedAt)) /
-                  1000,
-              ),
-            )}
+            {formatExamMockClock(timeUsedSeconds)}
           </span>
         ) : null}
       </div>

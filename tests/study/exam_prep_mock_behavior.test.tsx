@@ -191,3 +191,148 @@ describe('Exam Prep mock focused answering behavior', () => {
     expect(lastSaved().abandonedAt).toBeTruthy();
   });
 });
+
+describe('Exam Prep mock autosave revision safety and saving state', () => {
+  let root: Root | null = null;
+  let container: HTMLDivElement | null = null;
+
+  beforeEach(() => {
+    (
+      globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
+    ).IS_REACT_ACT_ENVIRONMENT = true;
+    container = document.createElement('div');
+    document.body.appendChild(container);
+    root = createRoot(container);
+  });
+
+  afterEach(() => {
+    root?.unmount();
+    container?.remove();
+    root = null;
+    container = null;
+    vi.restoreAllMocks();
+  });
+
+  const typeAnswerRaw = async (text: string) => {
+    const textarea = document.querySelector('textarea');
+    expect(textarea).toBeTruthy();
+    const setter = Object.getOwnPropertyDescriptor(
+      window.HTMLTextAreaElement.prototype,
+      'value',
+    )?.set;
+    await act(async () => {
+      setter?.call(textarea, text);
+      textarea?.dispatchEvent(new Event('input', { bubbles: true }));
+      await new Promise((resolve) => window.setTimeout(resolve, 0));
+    });
+  };
+
+  it('never lets an in-flight autosave clobber a newer typed revision (Saving… then Saved)', async () => {
+    const session = makeMockSession({ seed: 'race-safety' });
+    const savedList: ExamPrepMockSession[] = [];
+    let releaseFirst: (() => void) | null = null;
+    const gate = new Promise<void>((resolve) => {
+      releaseFirst = resolve;
+    });
+    let callCount = 0;
+    await act(async () => {
+      root?.render(
+        <ExamPrepMockActive
+          session={session}
+          autosaveDebounceMs={0}
+          onNavigate={vi.fn()}
+          onSaveSession={async (next) => {
+            savedList.push(next);
+            callCount += 1;
+            if (callCount === 1) await gate; // hold the first save open
+          }}
+        />,
+      );
+    });
+
+    await typeAnswerRaw('revision one');
+    // The first autosave is now in flight (suspended on the gate) and the
+    // indicator must honestly report that a save is happening.
+    expect(savedList).toHaveLength(1);
+    expect(document.body.textContent ?? '').toContain('Saving…');
+
+    // Type a second revision while that save is still in flight.
+    await typeAnswerRaw('revision two');
+
+    // Release the first save. The queue must then persist the newer revision
+    // and must NOT reset the visible draft back to the stale first revision.
+    await act(async () => {
+      releaseFirst?.();
+      await new Promise((resolve) => window.setTimeout(resolve, 0));
+    });
+    await act(async () => {
+      await new Promise((resolve) => window.setTimeout(resolve, 20));
+    });
+
+    const textarea = document.querySelector('textarea') as HTMLTextAreaElement | null;
+    expect(textarea?.value).toBe('revision two');
+    expect(savedList.map((entry) => entry.responses[0]?.answer)).toEqual([
+      'revision one',
+      'revision two',
+    ]);
+    expect(document.body.textContent ?? '').toContain('Saved');
+  });
+});
+
+describe('Exam Prep mock honors the profile statute-library flag', () => {
+  let root: Root | null = null;
+  let container: HTMLDivElement | null = null;
+
+  beforeEach(() => {
+    (
+      globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
+    ).IS_REACT_ACT_ENVIRONMENT = true;
+    container = document.createElement('div');
+    document.body.appendChild(container);
+    root = createRoot(container);
+  });
+
+  afterEach(() => {
+    root?.unmount();
+    container?.remove();
+    root = null;
+    container = null;
+    vi.restoreAllMocks();
+  });
+
+  const renderActive = async (session: ExamPrepMockSession) => {
+    await act(async () => {
+      root?.render(
+        <ExamPrepMockActive
+          session={session}
+          autosaveDebounceMs={0}
+          onNavigate={vi.fn()}
+          onSaveSession={async () => undefined}
+        />,
+      );
+    });
+  };
+
+  it('shows the library button for the default provisional profile', async () => {
+    await renderActive(makeMockSession({ seed: 'lib-on' }));
+    const text = document.body.textContent ?? '';
+    expect(text).toContain('Open Statute Library');
+    expect(text).toContain('Submit Mock Exam');
+  });
+
+  it('hides the library button when the profile snapshot disables the built-in library', async () => {
+    const base = makeMockSession({ seed: 'lib-off' });
+    const noLibrary = {
+      ...base,
+      profileSnapshot: {
+        ...base.profileSnapshot,
+        resources: { openBook: true, builtInStatuteLibrary: false },
+      },
+    };
+    await renderActive(noLibrary);
+    const text = document.body.textContent ?? '';
+    expect(text).not.toContain('Open Statute Library');
+    expect(text).toContain('Submit Mock Exam');
+    expect(text).toContain('Question 1 of 30');
+  });
+});

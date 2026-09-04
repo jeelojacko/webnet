@@ -924,6 +924,29 @@ export const createStudyStorage = (): StudyStorage => ({
         transaction.abort();
         throw new Error('This mock session changed in another tab. Reload to resume the latest saved version.');
       }
+      // Transactional one-active-current-mock creation lock: a brand-new
+      // in-progress session is only allowed when no OTHER current-binding
+      // in-progress session exists. The read and the put share one
+      // readwrite transaction, so two tabs (or two rapid Start clicks) can
+      // never both create a current mock — exactly one wins and the rest
+      // fail closed. Updates to an existing session id keep their own CAS
+      // guard and imported/legacy duplicates stay resolvable by selectors.
+      if (expectation.kind === 'absent' && session.status === 'in_progress') {
+        const all = await requestToPromise(
+          store.getAll() as IDBRequest<ExamPrepMockSession[]>,
+        );
+        const alreadyActive = all.some(
+          (candidate) =>
+            candidate.id !== session.id &&
+            candidate.status === 'in_progress' &&
+            candidate.curriculumId === session.curriculumId &&
+            candidate.curriculumContentHash === session.curriculumContentHash,
+        );
+        if (alreadyActive) {
+          transaction.abort();
+          throw new Error('A mock exam is already in progress. Submit or abandon it before starting another.');
+        }
+      }
       store.put(session);
       await transactionDone(transaction);
     } finally {

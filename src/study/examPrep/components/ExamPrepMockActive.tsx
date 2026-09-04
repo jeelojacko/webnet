@@ -96,6 +96,8 @@ export const ExamPrepMockActive = ({
     queueRef.current = queueRef.current.then(async () => {
       for (;;) {
         if (!dirtyRef.current) return;
+        setSaveState('saving');
+        setSaveError(null);
         const candidate = latestRef.current;
         const persisted = { ...candidate, updatedAt: nowIso() };
         try {
@@ -103,13 +105,6 @@ export const ExamPrepMockActive = ({
             kind: 'existing',
             updatedAt: lastSavedRef.current.updatedAt,
           });
-          lastSavedRef.current = persisted;
-          dirtyRef.current = false;
-          setDraft(persisted);
-          setSaveState('saved');
-          setSaveError(null);
-          if (dirtyRef.current) continue;
-          return;
         } catch (error) {
           setSaveState('error');
           setSaveError(
@@ -117,9 +112,18 @@ export const ExamPrepMockActive = ({
               ? error.message
               : 'This mock session could not be saved. Reload to resume the latest saved version.',
           );
-          savingRef.current = false;
           return;
         }
+        lastSavedRef.current = persisted;
+        // A revision typed while this save was in flight must never be
+        // clobbered: keep it dirty and save it next instead of resetting the
+        // flag and overwriting the draft with the (older) persisted copy.
+        if (latestRef.current !== candidate) continue;
+        dirtyRef.current = false;
+        setDraft(persisted);
+        setSaveState('saved');
+        setSaveError(null);
+        return;
       }
     });
     return queueRef.current.finally(() => {
@@ -327,20 +331,22 @@ export const ExamPrepMockActive = ({
             Previous
           </button>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                const libraryWindow = window.open(
-                  EXAM_PREP_STATUTE_LIBRARY_PATH,
-                  '_blank',
-                  'noopener,noreferrer',
-                );
-                if (!libraryWindow) setSaveError('Could not open the Statute Library.');
-              }}
-              className="rounded border border-sky-700 bg-sky-900 px-3 py-1.5 text-xs font-semibold text-sky-100 hover:bg-sky-800"
-            >
-              Open Statute Library
-            </button>
+            {draft.profileSnapshot.resources.builtInStatuteLibrary ? (
+              <button
+                type="button"
+                onClick={() => {
+                  const libraryWindow = window.open(
+                    EXAM_PREP_STATUTE_LIBRARY_PATH,
+                    '_blank',
+                    'noopener,noreferrer',
+                  );
+                  if (!libraryWindow) setSaveError('Could not open the Statute Library.');
+                }}
+                className="rounded border border-sky-700 bg-sky-900 px-3 py-1.5 text-xs font-semibold text-sky-100 hover:bg-sky-800"
+              >
+                Open Statute Library
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={() => setConfirmingSubmit(true)}

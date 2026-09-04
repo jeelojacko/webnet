@@ -23,6 +23,7 @@ import {
   mockFlaggedCount,
   mockGradedCount,
   mockRemainingSeconds,
+  mockTimeUsedSeconds,
   mockUnansweredCount,
 } from '../../src/study/examPrep/mock/examPrepMockResults';
 import {
@@ -158,6 +159,72 @@ describe('mock results helpers', () => {
     const fresh = makeMockSession();
     const score = buildMockScore(fresh);
     expect(score).toEqual({ points: 0, totalPoints: 42, percent: 0 });
+  });
+
+  it('counts a drill as complete only at the full 3/3 self-score', () => {
+    let session = submitMock(makeMockSession({ seed: 'drill-partial' }), NOW);
+    const drillQuestions = session.questions.filter((question) => question.kind === 'drill');
+    expect(drillQuestions).toHaveLength(6);
+    const [full, partialTwo, partialOne] = drillQuestions;
+    const gradeDrill = (
+      current: ExamPrepMockSession,
+      questionId: string,
+      points: number,
+    ): ExamPrepMockSession =>
+      gradeMockQuestion(
+        current,
+        questionId,
+        {
+          kind: 'drill',
+          lawIdentified: points >= 1,
+          provisionLocated: points >= 2,
+          substantiveAnswerComplete: points >= 3,
+          pointsAwarded: points as 0 | 1 | 2 | 3,
+          gradedAt: NOW,
+        },
+        NOW,
+      );
+    if (!full || !partialTwo || !partialOne) throw new Error('expected six drills');
+    session = gradeDrill(session, full.questionId, 3);
+    session = gradeDrill(session, partialTwo.questionId, 2);
+    session = gradeDrill(session, partialOne.questionId, 1);
+    const breakdown = buildMockTypeBreakdown(session);
+    // Only the full 3/3 drill counts as correct/complete; 1/3 and 2/3 stay partial.
+    expect(breakdown.drill).toMatchObject({ correct: 1, total: 6, earned: 6 });
+    // The same earned points appear in the overall score regardless.
+    expect(buildMockScore(session).points).toBe(6);
+  });
+
+  it('reports time used from submission, never from later grading', () => {
+    const started = '2026-09-08T14:00:00.000Z';
+    const submittedAt = '2026-09-08T16:00:00.000Z'; // 2h into the 2.5h mock
+    const gradedNextDay = '2026-09-09T09:00:00.000Z';
+    const session = submitMock(makeMockSession({ seed: 'time-submit', startedAt: started }), submittedAt);
+    const graded = finalizeMock(session, gradedNextDay);
+    expect(mockTimeUsedSeconds(graded)).toBe(2 * 60 * 60);
+    expect(mockTimeUsedSeconds(session)).toBe(2 * 60 * 60);
+  });
+
+  it('reports time used for abandoned sessions from abandonment', () => {
+    const started = '2026-09-08T14:00:00.000Z';
+    const abandonedAt = '2026-09-08T14:45:00.000Z';
+    const session = abandonMock(makeMockSession({ seed: 'time-abandon', startedAt: started }), abandonedAt);
+    expect(mockTimeUsedSeconds(session)).toBe(45 * 60);
+  });
+
+  it('clamps time used to the hard-stop deadline for late submissions', () => {
+    const started = '2026-09-08T14:00:00.000Z';
+    // Submitted 10 minutes AFTER the 150-minute deadline expired.
+    const submittedLate = '2026-09-08T16:40:00.000Z';
+    const session = submitMock(
+      makeMockSession({ seed: 'time-late', startedAt: started }),
+      submittedLate,
+    );
+    expect(mockTimeUsedSeconds(session)).toBe(150 * 60);
+  });
+
+  it('returns zero time used while a session is still in progress', () => {
+    expect(mockTimeUsedSeconds(makeMockSession())).toBe(0);
   });
 });
 

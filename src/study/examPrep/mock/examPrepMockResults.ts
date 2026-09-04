@@ -30,6 +30,19 @@ export const mockRemainingSeconds = (session: ExamPrepMockSession, nowMs: number
 export const mockElapsedSeconds = (session: ExamPrepMockSession, nowMs: number): number =>
   Math.max(0, Math.floor((nowMs - Date.parse(session.startedAt)) / 1000));
 
+/**
+ * Time used on the exam as reported after it ends. Based on submission or
+ * abandonment (NOT on grading — self-grading can happen much later) and
+ * clamped to the persisted hard-stop deadline, so a late submission never
+ * reports more time than the profile allowed.
+ */
+export const mockTimeUsedSeconds = (session: ExamPrepMockSession): number => {
+  const endedAt = session.submittedAt ?? session.abandonedAt;
+  if (!endedAt) return 0;
+  const endedMs = Math.min(Date.parse(endedAt), Date.parse(session.deadlineAt));
+  return Math.max(0, Math.floor((endedMs - Date.parse(session.startedAt)) / 1000));
+};
+
 export const mockAnsweredCount = (session: ExamPrepMockSession): number =>
   session.responses.filter((response) => response.answer.trim() !== '').length;
 
@@ -79,6 +92,9 @@ export type ExamPrepMockKindScore = {
 export const buildMockTypeBreakdown = (
   session: ExamPrepMockSession,
 ): Record<ExamPrepMockQuestionKind, ExamPrepMockKindScore> => {
+  const possibleByQuestionId = new Map(
+    session.questions.map((question) => [question.questionId, question.pointsPossible]),
+  );
   const kinds: ExamPrepMockQuestionKind[] = ['recall', 'recognition', 'locate', 'drill'];
   const breakdown = kinds.map((kind) => {
     const questionRefs = session.questions.filter((question) => question.kind === kind);
@@ -90,13 +106,20 @@ export const buildMockTypeBreakdown = (
       (sum, response) => sum + (response.grading ? gradingPoints(response.grading) : 0),
       0,
     );
-    const correct = responses.filter(
-      (response) =>
-        response.grading !== null &&
-        (response.grading.kind === 'drill'
-          ? response.grading.pointsAwarded > 0
-          : response.grading.correct),
-    ).length;
+    // A drill counts as correct/complete only at its FULL self-assessed score
+    // (3/3 for the provisional profile); 1/3 or 2/3 stays a partial, exactly
+    // like the drill-readiness rules that never call a partial attempt
+    // “accurate”. Non-drill kinds are fully correct (1 point) or not.
+    const correct = responses.filter((response) => {
+      if (!response.grading) return false;
+      if (response.grading.kind === 'drill') {
+        return (
+          response.grading.pointsAwarded ===
+          (possibleByQuestionId.get(response.questionId) ?? 3)
+        );
+      }
+      return response.grading.correct;
+    }).length;
     return { kind, earned, possible, correct, total: questionRefs.length };
   });
   return {

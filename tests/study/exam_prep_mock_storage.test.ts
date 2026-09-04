@@ -175,6 +175,98 @@ describe('saveExamPrepMockSession CAS semantics', () => {
     ).rejects.toThrow('changed in another tab');
   });
 
+  it('one-active lock: creating a second current in-progress mock rejects transactionally', async () => {
+    const { storage } = storageWithFixture();
+    const first = makeMockSession({ seed: 'lock-first' });
+    await storage.saveExamPrepMockSession({ session: first, expectation: { kind: 'absent' } });
+    const second = makeMockSession({ seed: 'lock-second' });
+    await expect(
+      storage.saveExamPrepMockSession({ session: second, expectation: { kind: 'absent' } }),
+    ).rejects.toThrow('already in progress');
+    const loaded = await storage.loadAll();
+    expect(loaded.examPrepMockSessions).toHaveLength(1);
+    expect(loaded.examPrepMockSessions[0]?.id).toBe(first.id);
+  });
+
+  it('one-active lock: after submit/abandon the next in-progress creation succeeds', async () => {
+    const { storage } = storageWithFixture();
+    const first = makeMockSession({ seed: 'lock-cycle' });
+    await storage.saveExamPrepMockSession({ session: first, expectation: { kind: 'absent' } });
+    const submitted = {
+      ...first,
+      status: 'submitted' as const,
+      submittedAt: '2026-09-01T12:00:00.000Z',
+      updatedAt: '2026-09-01T12:00:00.000Z',
+    };
+    await storage.saveExamPrepMockSession({
+      session: submitted,
+      expectation: { kind: 'existing', updatedAt: first.updatedAt },
+    });
+    const second = makeMockSession({ seed: 'lock-cycle-2' });
+    await expect(
+      storage.saveExamPrepMockSession({ session: second, expectation: { kind: 'absent' } }),
+    ).resolves.toBeUndefined();
+    const loaded = await storage.loadAll();
+    expect(loaded.examPrepMockSessions.filter((s) => s.status === 'in_progress')).toHaveLength(1);
+    expect(loaded.examPrepMockSessions).toHaveLength(2);
+  });
+
+  it('one-active lock: autosave updates of the OWN in-progress session stay allowed', async () => {
+    const { storage } = storageWithFixture();
+    const first = makeMockSession({ seed: 'lock-own-update' });
+    await storage.saveExamPrepMockSession({ session: first, expectation: { kind: 'absent' } });
+    const updated = {
+      ...first,
+      updatedAt: '2026-09-01T13:00:00.000Z',
+      responses: first.responses.map((response, index) =>
+        index === 0 ? { ...response, answer: 'draft' } : response,
+      ),
+    };
+    await expect(
+      storage.saveExamPrepMockSession({
+        session: updated,
+        expectation: { kind: 'existing', updatedAt: first.updatedAt },
+      }),
+    ).resolves.toBeUndefined();
+    const loaded = await storage.loadAll();
+    expect(loaded.examPrepMockSessions).toHaveLength(1);
+    expect(loaded.examPrepMockSessions[0]?.responses[0]?.answer).toBe('draft');
+  });
+
+  it('one-active lock: an archived-hash in-progress record does not block a current create', async () => {
+    const { storage } = storageWithFixture();
+    const archived = makeMockSession({ seed: 'lock-archived' });
+    const archivedRecord: ExamPrepMockSession = {
+      ...archived,
+      curriculumContentHash: EXAM_PREP_TEST_ARCHIVED_HASH,
+    };
+    await storage.saveExamPrepMockSession({
+      session: archivedRecord,
+      expectation: { kind: 'absent' },
+    });
+    const current = makeMockSession({ seed: 'lock-current-after-archived' });
+    await expect(
+      storage.saveExamPrepMockSession({ session: current, expectation: { kind: 'absent' } }),
+    ).resolves.toBeUndefined();
+    const loaded = await storage.loadAll();
+    expect(loaded.examPrepMockSessions.filter((s) => s.status === 'in_progress')).toHaveLength(2);
+    expect(selectActiveMockSession(loaded.examPrepMockSessions)?.id).toBe(current.id);
+  });
+
+  it('one-active lock: submitting/abandoning still works while another tab holds the active id', async () => {
+    const { storage } = storageWithFixture();
+    const first = makeMockSession({ seed: 'lock-submit-wins' });
+    await storage.saveExamPrepMockSession({ session: first, expectation: { kind: 'absent' } });
+    // A stale tab that never saw the newer revision cannot autosave over it.
+    const staleTab = makeMockSession({ seed: 'lock-second' });
+    await expect(
+      storage.saveExamPrepMockSession({
+        session: staleTab,
+        expectation: { kind: 'absent' },
+      }),
+    ).rejects.toThrow('already in progress');
+  });
+
   it('never touches ordinary Exam Prep or Study records (contamination regression)', async () => {
     const stores = seedMaps('2026-09-01T00:00:00.000Z');
     const unit = makeUnitProgress('unit-surveys-monuments', '2026-09-02T00:00:00.000Z');
